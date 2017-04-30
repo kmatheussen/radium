@@ -218,10 +218,26 @@ SoundPluginTypeContainer *PR_get_container_by_name(const char *container_name, c
   return NULL;
 }
                                                    
-bool PR_populate(SoundPluginTypeContainer *container){
-  R_ASSERT_RETURN_IF_FALSE2(container!=NULL, false);
+enum PopulateResult PR_populate(SoundPluginTypeContainer *container){
+  R_ASSERT_RETURN_IF_FALSE2(container!=NULL, PR_POPULATE_CANCELLED);
   
   if (!container->is_populated){
+
+    if (API_container_is_blacklisted(container)){
+      
+      vector_t v = {};
+      int load_it = VECTOR_push_back(&v, "Load anyway");
+      int cancel = VECTOR_push_back(&v, "Cancel");
+      int hmm=GFX_Message(&v, "Warning: The plugin file \"%s\" crashed last time we tried to scan it.", STRING_get_chars(container->filename));
+      (void) load_it;
+      if (hmm==cancel)
+        return PR_POPULATE_CANCELLED;
+      
+    } else {
+      
+      API_blacklist_container(container);
+      
+    }
     
     container->populate(container);
     
@@ -230,11 +246,14 @@ bool PR_populate(SoundPluginTypeContainer *container){
     g_favourites->set_num_uses(container);
     
     API_incSoundPluginRegistryGeneration();
-    
-    return true;
+    //API_add_disk_entries_from_populated_container(container);
+
+    API_unblacklist_container(container); // Wait as long as possible to unblacklist.
+
+    return PR_POPULATED;
   }
 
-  return false;
+  return PR_ALREADY_POPULATED;
 }
 
 static SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *plugin_name){
@@ -256,7 +275,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
   if (container_name != NULL){
     auto *container = PR_get_container_by_name(container_name, type_name);
     if (container != NULL)
-      if (PR_populate(container)==true)
+      if (PR_populate(container)==PR_POPULATED)
         return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
   }
   
@@ -466,7 +485,18 @@ void PR_add_plugin_type(SoundPluginType *type){
 }
 
 void PR_add_plugin_container(SoundPluginTypeContainer *container){
-  g_plugin_type_containers.push_back(container);
+  SoundPluginTypeContainer *existing = PR_get_container_by_name(container->name, container->type_name);
+  
+  if (existing != NULL){
+    if (!STRING_equals2(container->filename, existing->filename))
+      GFX_Message(NULL, "Warning: Two different plugin files with the same name has been added to the registry:<br><UL><LI>%s<LI>%s</UL>Only the first file will be used.",
+                  STRING_get_chars(existing->filename),
+                  STRING_get_chars(container->filename)
+                  );
+    container = existing;
+  }else
+    g_plugin_type_containers.push_back(container);
+
   PR_add_menu_entry(PluginMenuEntry::container(container));
 }
 
@@ -537,7 +567,9 @@ bool PR_is_initing_vst_first(void){
 
 void PR_init_plugin_types(void){
   API_incSoundPluginRegistryGeneration();
+  API_clearSoundPluginRegistryCache();
   
+  g_plugin_type_containers.clear();
   g_plugin_types.clear();
   g_plugin_menu_entries.clear();
 
@@ -630,5 +662,8 @@ void PR_init_plugin_types(void){
   //create_faust_system_delay_plugin();
 
   recreate_favourites(true);
+
+  // Update cache.
+  getSoundPluginRegistry(false);
 }
 

@@ -294,33 +294,6 @@ int64_t createAudioInstrumentFromDescription(const char *instrument_description,
     name = NULL;
 
   if (instrument_description[0]=='1'){
-    
-    char *descr = talloc_strdup(instrument_description);
-    int sep_pos = 1;
-    while(descr[sep_pos]!=':'){
-      if(descr[sep_pos]==0){
-        handleError("Illegal instrument_description: %s (missing colon separator)",instrument_description);
-        return -1;
-      }
-      sep_pos++;
-    }
-    descr[sep_pos] = 0;
-    char *type_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[1])));
-    char *plugin_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[sep_pos+1])));
-    return createAudioInstrument(type_name, plugin_name, name, x, y);
-    
-  } else if (instrument_description[0]=='2'){
-    
-    wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
-    //printf("filename: %s\n",filename);
-
-    return PRESET_load(filename, name, true, x, y);
-    
-  } else if (instrument_description[0]=='3'){
-
-    return MW_paste(x, y);
-        
-  } else if (instrument_description[0]=='4'){
 
     char *descr = talloc_strdup(instrument_description);
     int sep_pos = 1;
@@ -353,7 +326,18 @@ int64_t createAudioInstrumentFromDescription(const char *instrument_description,
     }
 
     return createAudioInstrument(type_name, plugin_name, name, x, y);
-            
+    
+  } else if (instrument_description[0]=='2'){
+    
+    wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
+    //printf("filename: %s\n",filename);
+
+    return PRESET_load(filename, name, true, x, y);
+    
+  } else if (instrument_description[0]=='3'){
+
+    return MW_paste(x, y);
+        
   } else {
 
     handleError("Illegal instrument_description: %s (string doesn't start with '1', '2' or '3')",instrument_description);

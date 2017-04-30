@@ -307,6 +307,9 @@ typedef struct SoundPluginTypeContainer{
   bool is_populated;
   void (*populate)(struct SoundPluginTypeContainer *container); // Note: populate might be called even if 'is_populated' is true. (If that happens, just do nothing.)
 
+  wchar_t *filename; // full path to plugin file.
+  bool has_saved_disk_entry;
+  
   int num_uses; // Filled in when asking for soundpluginregistry entries
 } SoundPluginTypeContainer;
 

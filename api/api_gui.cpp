@@ -3266,10 +3266,20 @@ int64_t gui_createSingleMixerStrip(int64_t instrument_id, int width, int height)
 #include "mapi_gui.cpp"
 
 
-///////////////// SoundPluginRegistry
-/////////////////////////////////////
+///////////////// SoundPluginRegistry (belongs in api_instruments.c, but that file i not C++)
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+#include <QCryptographicHash>
+#include <QFileInfo>
+#include <QFile>
+#include <QDateTime>
+#include <QDir>
 
 #include "../audio/SoundPluginRegistry_proc.h"
+#include "../common/hashmap_proc.h"
+#include "../common/OS_disk_proc.h"
+#include "../common/OS_string_proc.h"
+
 
 static QString extend_path(const QString a, const QString b){
   if (a=="")
@@ -3285,10 +3295,11 @@ static QString get_path(const QStack<QString> &dir){
   return ret;
 }
 
-static void push_type(hash_t *hash, const SoundPluginType *type, const QString path){
-  if (!HASH_has_key(hash, ":type"))
-    HASH_put_string(hash, ":type", PluginMenuEntry::type_to_string(PluginMenuEntry::IS_NORMAL));
+static hash_t *get_entry_from_type(const SoundPluginType *type, const QString path){
+  hash_t *hash = HASH_create(5);
+  HASH_put_string(hash, ":type", PluginMenuEntry::type_to_string(PluginMenuEntry::IS_NORMAL));
   HASH_put_string(hash, ":path", path);
+  HASH_put_string(hash, ":container-name", type->container==NULL ? "" : type->container->name);
   HASH_put_string(hash, ":type-name", type->type_name);
   HASH_put_string(hash, ":name", type->name);
   HASH_put_int(hash, ":num-inputs", type->num_inputs);
@@ -3296,40 +3307,306 @@ static void push_type(hash_t *hash, const SoundPluginType *type, const QString p
   HASH_put_chars(hash, ":category", type->category==NULL ? "" : type->category);
   HASH_put_chars(hash, ":creator", type->creator==NULL ? "" : type->creator);
   HASH_put_int(hash, ":num-uses", type->num_uses);
+  return hash;
 }
 
-
-static void add_container_entries(dynvec_t &ret, const SoundPluginTypeContainer *plugin_type_container, const QString path){
-  for(int i=0 ; i < plugin_type_container->num_types ; i++){
-    const SoundPluginType *type = plugin_type_container->plugin_types[i];
-    hash_t *new_hash = HASH_create(5);
-    push_type(new_hash, type, extend_path(path, type->name));
-    DYNVEC_push_back(&ret, DYN_create_hash(new_hash));
-    //printf("Pushing back %s\n", type->name);
+static hash_t *get_container_entry(const SoundPluginTypeContainer *container, const QString path, bool is_blacklisted){
+  hash_t *hash = HASH_create(10);
+  HASH_put_string(hash, ":filename", container->filename);
+  HASH_put_string(hash, ":type-name", container->type_name);
+  HASH_put_string(hash, ":name", container->name);
+  HASH_put_string(hash, ":path",  path);
+  HASH_put_int(hash, ":num-uses", container->num_uses);
+  if (is_blacklisted){
+    HASH_put_bool(hash, ":is-blacklisted", true);
+    HASH_put_string(hash, ":category", "Unstable");
+  }else{
+    HASH_put_string(hash, ":category", "");
   }
+  return hash;
 }
-                                  
-static void add_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString path){
 
-  hash_t *hash = HASH_create(5);
-  HASH_put_string(hash, ":type", PluginMenuEntry::type_to_string(entry));
+
+/***************************
+       Blacklist
+ **************************/
+
+#include <QHash>
+
+enum BlacklistCached{
+  NOT_IN_CACHE,
+  NOT_BLACKLISTED,
+  BLACKLISTED
+};
+
+static QHash<const SoundPluginTypeContainer*, enum BlacklistCached> g_blacklisted_cache;
+
+static void update_blacklist_cache(const SoundPluginTypeContainer *container, bool is_blacklisted){
+  g_blacklisted_cache[container] = is_blacklisted ? BLACKLISTED : NOT_BLACKLISTED;
+}
+  
+static QString get_blacklist_filename(const SoundPluginTypeContainer *plugin_type_container){
+  QString s = STRING_get_qstring(plugin_type_container->filename);
+  QString encoded = QCryptographicHash::hash(s.toUtf8(), QCryptographicHash::Sha1).toHex();
+
+  return OS_get_dot_radium_path() + QDir::separator() + SCANNED_PLUGINS_DIRNAME + QDir::separator() + "blacklisted_" + encoded;
+}
+
+void API_blacklist_container(const SoundPluginTypeContainer *container){
+  update_blacklist_cache(container, true);
+  
+  QString disk_blacklist_filename = get_blacklist_filename(container);
+  disk_t *file = DISK_open_for_writing(disk_blacklist_filename);
+  hash_t *hash = HASH_create(1);
+
+  HASH_put_string(hash, "filename", container->filename);
+  
+  HASH_save(hash, file);
+  
+  DISK_close_and_delete(file); // Shows error message if something goes wrong.
+}
+
+void API_unblacklist_container(const SoundPluginTypeContainer *container){
+  update_blacklist_cache(container, false);
+  
+  QString disk_blacklist_filename = get_blacklist_filename(container);
+  
+  if (QFile::remove(disk_blacklist_filename)==false)
+    GFX_Message(NULL, "Error: Unable to delete file \"%s\"", disk_blacklist_filename.toUtf8().constData());
+}
+
+bool API_container_is_blacklisted(const SoundPluginTypeContainer *container){
+  const enum BlacklistCached cached = g_blacklisted_cache[container];
+  
+  if (cached==NOT_BLACKLISTED)
+    return false;
+  
+  if (cached==BLACKLISTED)
+    return true;
+  
+  QString disk_blacklist_filename = get_blacklist_filename(container);
+
+  bool is_blacklisted = QFile::exists(disk_blacklist_filename);
+  
+  update_blacklist_cache(container, is_blacklisted);
+  
+  return is_blacklisted;
+}
+
+
+
+/***************************
+       Entries
+ **************************/
+
+static hash_t *g_disk_entries_cache = NULL;
+static QSet<QString> g_known_noncached_entries;
+
+
+static QString get_disk_entries_filename(const SoundPluginTypeContainer *plugin_type_container, const QString path){
+  QString s = STRING_get_qstring(plugin_type_container->filename) + "%%%%" + path;
+  QString encoded = QCryptographicHash::hash(s.toUtf8(), QCryptographicHash::Sha1).toHex();
+
+  return OS_get_dot_radium_path() + QDir::separator() + SCANNED_PLUGINS_DIRNAME + QDir::separator() + encoded;
+}
+
+static hash_t *get_container_disk_hash(const SoundPluginTypeContainer *container, const QString path){
+  hash_t *hash = HASH_create(container->num_types + 10);
+
+  HASH_put_int(hash, "version", 1);
+
+  {
+    QFileInfo info(STRING_get_qstring(container->filename));
+    if (info.exists()==false){
+      GFX_Message(NULL, "Error: Plugin file %s does not seem to exist anymore.", STRING_get_chars(container->filename));
+      return NULL;
+    }
+
+    int64_t filesize = info.size();
+    if (filesize==0){
+      GFX_Message(NULL, "Error: Plugin file %s seems to have size 0.", STRING_get_chars(container->filename));
+      return NULL;
+    }
+    
+    QDateTime datetime = info.lastModified();
+    if (datetime.isValid()==false)
+      printf("Warning: plugin %s does not have a valid write time", STRING_get_chars(container->filename)); // Could perhaps happen on some filesystems.
+    
+    int64_t writetime = datetime.isValid() ? datetime.toUTC().toMSecsSinceEpoch() : 0;
+    
+    HASH_put_string(hash, "filename", container->filename);
+    HASH_put_int(hash, "filesize", filesize);
+    HASH_put_int(hash, "writetime", writetime);
+    HASH_put_string(hash, "path", path);
+  }
+
+  return hash;
+}
+
+static DiskOpReturn save_disk_hash(const SoundPluginTypeContainer *container, const QString path, hash_t *hash){
+  QString disk_entries_filename = get_disk_entries_filename(container,path);
+    
+  disk_t *file = DISK_open_for_writing(disk_entries_filename);
+  if (file==NULL){
+    GFX_Message(NULL, "Error: Unable to write to file \"%s\"", disk_entries_filename.toUtf8().constData());
+    return DiskOpReturn::ALL_MAY_FAIL;
+  }
+  
+  HASH_save(hash, file);
+  
+  if (DISK_close_and_delete(file)==false) // Shows error message if something goes wrong.
+    return DiskOpReturn::ALL_MAY_FAIL;
+  
+  
+  {
+    const char *key = talloc_strdup(disk_entries_filename.toUtf8().constData());
+    
+    if (HASH_has_key(g_disk_entries_cache, key))
+      HASH_remove(g_disk_entries_cache, key);
+    
+    //printf("         CACHE: Adding %s to cache\n", key);
+    HASH_put_hash(g_disk_entries_cache, key, hash);
+    
+    //printf("         CACHE: Removing %s to known noncached\n", key);
+    g_known_noncached_entries.remove(disk_entries_filename);
+  }
+
+  return DiskOpReturn::SUCCEEDED;
+}
+
+
+static DiskOpReturn save_entries_to_disk(const QVector<hash_t*> &entries, const SoundPluginTypeContainer *container, const QString path){
+  R_ASSERT_RETURN_IF_FALSE2(container->is_populated, DiskOpReturn::THIS_ONE_FAILED);  
+                                       
+  hash_t *hash = get_container_disk_hash(container, path);
+  if (hash==NULL)
+    return DiskOpReturn::THIS_ONE_FAILED;
+  
+  dynvec_t dynvec = {0};
+    
+  for(hash_t *hash : entries)
+    DYNVEC_push_back(&dynvec, DYN_create_hash(hash));
+    
+  HASH_put_array(hash, "entries", dynvec);
+  
+  return save_disk_hash(container, path, hash);
+}
+
+
+static bool load_entries_from_disk(dynvec_t &ret, const SoundPluginTypeContainer *container, const QString path){
+
+  QString disk_entries_filename = get_disk_entries_filename(container, path);
+
+  if (g_known_noncached_entries.contains(disk_entries_filename)){
+    //printf("         CACHE: Getting %s from knwon noncached\n", disk_entries_filename.toUtf8().constData());
+    return false;
+  }
+    
+  hash_t *hash;
+
+  const char *key = talloc_strdup(disk_entries_filename.toUtf8().constData());
+
+  if (HASH_has_key(g_disk_entries_cache, key)){
+
+    //printf("         CACHE: Getting %s from cache\n", key);
+    hash = HASH_get_hash(g_disk_entries_cache, key);
+
+    QString loaded_path = HASH_get_qstring(hash, "path");
+    if (loaded_path != path){
+      // Oops. sha1 crash. How likely is that?
+      printf("             NOT SAME PATH: -%s-",loaded_path.toUtf8().constData());
+      printf("                            -%s-",path.toUtf8().constData());
+      return false;
+    }
+    
+  } else {
+    
+    if (QFile(disk_entries_filename).exists()==false){
+      printf("         CACHE: Adding %s to known noncached\n", key);
+      g_known_noncached_entries.insert(disk_entries_filename);
+      return false;
+    }
+  
+    disk_t *file = DISK_open_for_reading(disk_entries_filename);
+    if (file==NULL){
+      GFX_Message(NULL, "Error: Unable to read file \"%s\"", disk_entries_filename.toUtf8().constData());
+      return false;
+    }
+    
+    hash = HASH_load(file); // HASH_load shows error message
+
+    DISK_close_and_delete(file); // Shows error message if something goes wrong.
+  
+    if (hash == NULL) {
       
+      // File contains errors. Delete it so we don't get the same problem next time.
+      if (QFile::remove(disk_entries_filename)==false)
+        GFX_Message(NULL, "Error: Unable to delete file \"%s\"", disk_entries_filename.toUtf8().constData());
+      
+      return false;
+    }
+
+    printf("         CACHE: Adding %s to cache\n", key);
+    HASH_put_hash(g_disk_entries_cache, key, hash);
+  }
+
+  dynvec_t entries = HASH_get_array(hash, "entries");
+  
+  for(int i = 0 ; i < entries.num_elements ; i++)
+    R_ASSERT_RETURN_IF_FALSE2(entries.elements[i].type==HASH_TYPE, false);
+  
+  for(int i = 0 ; i < entries.num_elements ; i++)
+    DYNVEC_push_back(&ret, entries.elements[i]);
+  
+  return true;
+}
+
+
+static void get_entries_from_populated_container(dynvec_t &ret, SoundPluginTypeContainer *container, const QString path){
+
+  QVector<hash_t*> entries;
+
+  for(int i=0 ; i < container->num_types ; i++){
+    const SoundPluginType *type = container->plugin_types[i];
+    hash_t *new_hash = get_entry_from_type(type, extend_path(path, type->name));
+    entries.push_back(new_hash);
+  }
+
+  if (container->has_saved_disk_entry==false) {
+    save_entries_to_disk(entries, container, path);
+    container->has_saved_disk_entry=true; // We might not have succeded writing disk entry, but we don't want to try again.
+  }
+  
+  for (hash_t *hash : entries)
+    DYNVEC_push_back(&ret, DYN_create_hash(hash));
+}
+
+
+static void get_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString path){
+
+  hash_t *hash = NULL;
+
   if (entry.type==PluginMenuEntry::IS_CONTAINER && entry.plugin_type_container->is_populated){
 
-    add_container_entries(ret, entry.plugin_type_container, path);
-    hash=NULL;
+    get_entries_from_populated_container(ret, entry.plugin_type_container, path);
         
   } else if (entry.type==PluginMenuEntry::IS_CONTAINER){
-        
-    HASH_put_string(hash, ":type-name", entry.plugin_type_container->type_name);
-    HASH_put_string(hash, ":name", entry.plugin_type_container->name);
-    HASH_put_string(hash, ":path",  extend_path(path, entry.plugin_type_container->name));
-    HASH_put_int(hash, ":num-uses", entry.plugin_type_container->num_uses);
+
+    QString new_path = extend_path(path, entry.plugin_type_container->name);
+
+    bool is_blacklisted = API_container_is_blacklisted(entry.plugin_type_container);
+    
+    if (is_blacklisted || load_entries_from_disk(ret, entry.plugin_type_container, new_path) == false)
+      hash = get_container_entry(entry.plugin_type_container, new_path, is_blacklisted);
     
   } else if (entry.type==PluginMenuEntry::IS_LEVEL_UP){
+    
+    hash = HASH_create(2);
     HASH_put_string(hash, ":name", entry.level_up_name);
   
   } else if (entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
+    
+    hash = HASH_create(5);
     HASH_put_string(hash, ":container-name", entry.hepp.container_name);
     HASH_put_string(hash, ":type-name", entry.hepp.type_name);
     HASH_put_string(hash, ":name", entry.hepp.name);
@@ -3337,16 +3614,17 @@ static void add_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString
     
   } else if (entry.type==PluginMenuEntry::IS_NORMAL){
         
-    if (entry.plugin_type!=NULL){
-      push_type(hash, entry.plugin_type, extend_path(path, entry.plugin_type->name));
-    }else{
+    if (entry.plugin_type!=NULL)
+      DYNVEC_push_back(&ret, DYN_create_hash(get_entry_from_type(entry.plugin_type, extend_path(path, entry.plugin_type->name))));
+    else
       R_ASSERT(false);
-      hash = NULL;
-    }
         
+  } else {
+    hash = HASH_create(1);
   }
 
   if (hash!=NULL){
+    HASH_put_string(hash, ":type", PluginMenuEntry::type_to_string(entry));
     DYNVEC_push_back(&ret, DYN_create_hash(hash));
     //printf("Pushing back %p\n", hash);
   }
@@ -3360,7 +3638,12 @@ void API_incSoundPluginRegistryGeneration(void){
 int getSoundPluginRegistryGeneration(void){
   return g_spr_generation;
 }
-  
+
+void API_clearSoundPluginRegistryCache(void){
+  g_disk_entries_cache=HASH_create(1000);
+  g_known_noncached_entries.clear();
+}
+
 dyn_t getSoundPluginRegistry(bool only_normal_and_containers){
   const QVector<PluginMenuEntry> entries = PR_get_menu_entries();
   
@@ -3382,7 +3665,7 @@ dyn_t getSoundPluginRegistry(bool only_normal_and_containers){
     }
     
     if (!only_normal_and_containers || entry.type==PluginMenuEntry::IS_NORMAL || entry.type==PluginMenuEntry::IS_CONTAINER)
-      add_entry(ret, entry, get_path(dir));
+      get_entry(ret, entry, get_path(dir));
     }
   
   return DYN_create_array(ret);
@@ -3397,7 +3680,7 @@ dyn_t populatePluginContainer(dyn_t entry){
   }
 
   {
-    const hash_t *hash=entry.hash;
+    hash_t *hash=entry.hash;
     const char *name = HASH_get_chars(hash, ":name");
     QString type = HASH_get_chars(hash, ":type");
     const char *type_name = HASH_get_chars(hash, ":type-name");
@@ -3430,9 +3713,12 @@ dyn_t populatePluginContainer(dyn_t entry){
         goto exit;
       }
     
-      PR_populate(container);
-
-      add_container_entries(ret, container, path);
+      if (PR_populate(container)==PR_POPULATE_CANCELLED)
+        {
+          //DYNVEC_push_back(&ret, entry); // Causes infinite loop in spr-entry->instrument-description. Not very important to return the entry anyway.
+        }
+      else
+        get_entries_from_populated_container(ret, container, path);
     }
   }
   

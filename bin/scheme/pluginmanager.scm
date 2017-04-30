@@ -100,15 +100,16 @@
 (define *pmg-scan-all-button* (<gui> :child *pluginmanager-gui* "scan_all_button"))
 (<gui> :add-callback *pmg-scan-all-button*
        (lambda ()
-         (<ra> :show-async-message *pluginmanager-gui* "Are you sure? The program could crash if you have unstable plugins." (list "Yes" "No") #t
+         (<ra> :show-async-message *pluginmanager-gui* "Make sure you haved saved all your work.\n\nThe program can crash now.\nPlugins that crash will be blacklisted.\n\nAre you ready?" (list "Yes" "No") #t
                (lambda (res)
                  (if (string=? "Yes" res)
                      (<ra> :schedule 0
                            (lambda ()
                              (if (null? *pmg-populate-funcs*)
                                  (begin
+                                   (<gui> :set-value *pmg-progress-label* "")
                                    #f)
-                                 (begin
+                                 (begin                                   
                                    ((car *pmg-populate-funcs*))
                                    ;;(<gui> :update table-parent)
                                    50)))))))))
@@ -181,7 +182,7 @@
   (set! *pmg-curr-entries* '()))
   
 
-(define (pmg-add-to-table! table entries instrconf y finished-callback)
+(define (pmg-add-to-table! table entries instrconf y finished-callback do-update-progress)
   (set! *pmg-curr-entries* (append *pmg-curr-entries* entries))
   
   (define total-num-entries (length entries))
@@ -190,15 +191,17 @@
   (define start-time (time))
 
   (define (update-progress entries)
-    (<gui> :set-value *pmg-progress-label* (<-> (- total-num-entries (length entries)) "/" total-num-entries)))
-
+    (if do-update-progress
+        (<gui> :set-value *pmg-progress-label* (<-> (- total-num-entries (length entries)) "/" total-num-entries))))
+    
   (update-progress entries)
   
   (let loop ((entries entries)
              (y y))    
     (if (null? entries)
         (begin
-          (<gui> :set-value *pmg-progress-label* "")
+          (if do-update-progress
+              (<gui> :set-value *pmg-progress-label* ""))
           (<gui> :enable-table-sorting table #t)
           (<gui> :set-enabled *pmg-scan-all-button* (not (null? *pmg-populate-funcs*)))
           (for-each (lambda (populate-button)
@@ -225,19 +228,23 @@
             (<gui> :add-table-string-cell table (entry :type-name) *pmg-type-x* y enabled)
             (<gui> :add-table-string-cell table (entry :path) *pmg-path-x* y enabled)
             (cond (is-normal
-
+                  
                    (<gui> :add-table-string-cell table (<-> (entry :category)) *pmg-category-x* y enabled)
                    (<gui> :add-table-string-cell table (<-> (entry :creator)) *pmg-creator-x* y enabled)
                    (<gui> :add-table-int-cell table (entry :num-inputs) *pmg-inputs-x* y enabled)
                    (<gui> :add-table-int-cell table (entry :num-outputs) *pmg-outputs-x* y) enabled)
                   
                   (is-container
-                   
+
+                   (define is-blacklisted (entry :is-blacklisted))
+
                    (define pop1 #f)
                    (define pop2 #f)
                    
                    (define (populate)
                      (c-display "       POPULATE" entry)
+                     (<gui> :set-value *pmg-progress-label* (<-> "Finished Scanning (" (length *pmg-populate-funcs*) "): " (entry :name)))
+                     (<gui> :update *pmg-progress-label*)
                      ;;(<gui> :enable-table-sorting table #f)
                      (let ((new-entries (<ra> :populate-plugin-container entry))
                            (y (<gui> :get-table-row-num table pop1)))
@@ -245,9 +252,10 @@
                        (assert (>= y 0))
                        (<gui> :add-table-rows table y (1- (length new-entries)))
                        (c-display (pp new-entries))
-                       (pmg-add-to-table! table (to-list new-entries) instrconf y #f))
+                       (pmg-add-to-table! table (to-list new-entries) instrconf y #f #f))
                      ;;(<gui> :enable-table-sorting table #t)
-                     (set! *pmg-populate-funcs* (delete-from2 *pmg-populate-funcs* populate))
+                     (if (not is-blacklisted)
+                         (set! *pmg-populate-funcs* (delete-from2 *pmg-populate-funcs* populate)))
                      (set! *pmg-populate-buttons* (delete-from2 *pmg-populate-buttons* pop1))
                      (set! *pmg-populate-buttons* (delete-from2 *pmg-populate-buttons* pop2))
                      (<gui> :close pop1)
@@ -255,13 +263,14 @@
                    
                    (set! pop1 (<gui> :button "Scan" populate))
                    (set! pop2 (<gui> :button "Scan" populate))
-                   
-                   (push! *pmg-populate-funcs* populate)
+
+                   (if (not is-blacklisted)
+                       (push! *pmg-populate-funcs* populate))
                    (<gui> :set-enabled pop1 #f)
                    (<gui> :set-enabled pop2 #f)
                    (push! *pmg-populate-buttons* pop1)
                    (push! *pmg-populate-buttons* pop2)
-                   (<gui> :add-table-string-cell table "" *pmg-category-x* y)
+                   (<gui> :add-table-string-cell table (entry :category) *pmg-category-x* y)
                    (<gui> :add-table-string-cell table "" *pmg-creator-x* y)
                    (<gui> :add-table-gui-cell table pop1 *pmg-inputs-x* y)
                    (<gui> :add-table-gui-cell table pop2 *pmg-outputs-x* y)
@@ -351,7 +360,7 @@
             ;;(c-display "  ADDING TABLE ROWS..." (get-time))
             (<gui> :add-table-rows table 0 (length filtered-entries))
             ;;(c-display "  ADDING ENTRIES..." (length entries) (get-time))
-            (pmg-add-to-table! *pmg-table* filtered-entries *pmg-instrconf* 0 #f))
+            (pmg-add-to-table! *pmg-table* filtered-entries *pmg-instrconf* 0 #f #t))
           #f)))
 
 

@@ -208,8 +208,14 @@ bool OS_config_key_is_color(const char *key){
   return QString(key).contains("color", Qt::CaseInsensitive);
 }
 
-static QDir get_dot_radium_dir(int *error){
-  *error = 0;
+const QString g_dot_radium_dirname(".radium");
+
+QString OS_get_dot_radium_path(void){
+  return OS_get_home_path() + QDir::separator() + g_dot_radium_dirname;
+}
+
+
+QString OS_get_home_path(void){
 
 #ifdef USE_QT5
   QString home_path = QDir::homePath();
@@ -228,19 +234,63 @@ static QDir get_dot_radium_dir(int *error){
 #endif
     }
   }
+
+  static bool has_inited = false;
+
+  if (has_inited==false) {
+
+    QDir dir(home_path);
+      
+    if(dir.mkpath(g_dot_radium_dirname)==false){
+      GFX_Message(NULL, "Unable to create config directory: %s", dir.absolutePath().toUtf8().constData());
+      goto exit;
+    }
+
+    if(dir.cd(g_dot_radium_dirname)==false){
+      GFX_Message(NULL, "Unable to read config directory: %s", dir.absolutePath().toUtf8().constData());
+      goto exit;
+    }
+
+    if(dir.mkpath(SCANNED_PLUGINS_DIRNAME)==false){
+      GFX_Message(NULL, "Unable to create scanned_plugins directory: %s", dir.absolutePath().toUtf8().constData());
+      goto exit;
+    }
+
+    if(dir.cd(SCANNED_PLUGINS_DIRNAME)==false){
+      GFX_Message(NULL, "Unable to read scanned_plugins directory: %s", dir.absolutePath().toUtf8().constData());
+      goto exit;
+    }
+
+    has_inited = true;
+  }
+
+ exit:
+
+  return home_path;
+}
+
+static QDir get_dot_radium_dir(int *error){
+  *error = 0;
+
+  QString home_path = OS_get_home_path();
   
   QDir dir(home_path);
 
-  if(dir.mkpath(".radium")==false){
+  if(dir.mkpath(g_dot_radium_dirname)==false){
     GFX_Message(NULL, "Unable to create config directory");
     *error = 1;
+    goto exit;
   }
-
-  else if(dir.cd(".radium")==false){
+  
+  if(dir.cd(g_dot_radium_dirname)==false){
     GFX_Message(NULL, "Unable to read config directory\n");
     *error = 1;
+    goto exit;
   }
 
+
+ exit:
+  
   return dir;
 }
 
@@ -286,7 +336,7 @@ QString OS_get_conf_filename(QString filename){
 
   if(info.exists()==false)
     info = QFileInfo(OS_get_full_program_file_path(filename));
-
+  
   printf("************* conf filename: -%s\n",info.absoluteFilePath().toLocal8Bit().constData());
   return info.absoluteFilePath();
 }

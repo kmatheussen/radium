@@ -147,7 +147,12 @@ extern LANGSPEC void PR_add_plugin_container(SoundPluginTypeContainer *container
 extern LANGSPEC int PR_get_num_plugin_types(void);
 extern LANGSPEC void PR_inc_plugin_usage_number(SoundPluginType *type);
 extern LANGSPEC SoundPluginTypeContainer *PR_get_container_by_name(const char *container_name, const char *type_name);
-extern LANGSPEC bool PR_populate(SoundPluginTypeContainer *container);
+enum PopulateResult{
+  PR_ALREADY_POPULATED,
+  PR_POPULATED,
+  PR_POPULATE_CANCELLED
+};
+extern LANGSPEC enum PopulateResult PR_populate(SoundPluginTypeContainer *container);
 extern LANGSPEC SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const char *type_name, const char *plugin_name);
 extern LANGSPEC SoundPluginType *PR_get_plugin_type(int num);
 extern LANGSPEC void PR_init_plugin_types(void);

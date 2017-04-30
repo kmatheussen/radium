@@ -561,8 +561,11 @@
 ;; The callback takes an instrument description as argument
 (define (spr-entry->instrument-description entry instrconf callback)
   (define type (entry :type))
-  (cond ((string=? type "NORMAL")
+  (cond ((or (string=? type "NORMAL")
+             (string=? type "NUM_USED_PLUGIN"))
          (callback (<-> "1"
+                        (<ra> :to-base64 (entry :container-name))
+                        ":"
                         (<ra> :to-base64 (entry :type-name))
                         ":"
                         (<ra> :to-base64 (entry :name)))))
@@ -582,13 +585,6 @@
          (request-select-instrument-preset (instrconf :parentgui) callback))
         ((string=? type "PASTE_PRESET")         
          (callback "3"))
-        ((string=? type "NUM_USED_PLUGIN")
-         (callback (<-> "4"
-                        (<ra> :to-base64 (entry :container-name))
-                        ":"
-                        (<ra> :to-base64 (entry :type-name))
-                        ":"
-                        (<ra> :to-base64 (entry :name)))))
         (else
          ;;(c-display "entry:" entry)
          ;;(assert #f)
@@ -664,6 +660,14 @@
 (define *popup-menu-args-cache-generation* -1)
 (define *popup-menu-args-cache-args* #f)
 (define *popup-menu-curr-callback* #f)
+
+#||
+(pp (length (<ra> :get-sound-plugin-registry #t)))
+(pp (<ra> :get-sound-plugin-registry #t))
+(<ra> :get-sound-plugin-registry #t)
+||#
+
+
 
 (define (get-instrument-popup-menu-args instrconf callback)
   

@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <wchar.h>
 
+#define SCANNED_PLUGINS_DIRNAME QString("scanned_plugins")
+
 extern LANGSPEC void OS_set_loading_path(const wchar_t *filename);
 extern LANGSPEC void OS_unset_loading_path(void);
 extern LANGSPEC const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *path);
@@ -35,6 +37,9 @@ extern LANGSPEC bool OS_config_key_is_color(const char *key);
 
 #ifdef USE_QT4
 #include <QString>
+QString OS_get_home_path(void);
+QString OS_get_dot_radium_path(void);
+
 bool OS_has_full_program_file_path(QString filename);
 QString OS_get_full_program_file_path(QString filename); // Note, will exit radium if filename doesn't exist
 bool OS_has_conf_filename(QString filename);

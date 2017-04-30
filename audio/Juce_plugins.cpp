@@ -368,7 +368,6 @@ namespace{
 
   struct ContainerData{
     const wchar_t *file_or_identifier; // used by Juce
-    const wchar_t *library_file_full_path; // used by VST_get_uids()
   };
 
   //int button_height = 10;
@@ -1547,18 +1546,22 @@ static SoundPluginType *create_plugin_type(const PluginDescription description, 
 }
 
 static void add_plugins(OwnedArray<PluginDescription> &descriptions, String filename){
-  VSTPluginFormat vst2_format;
-  vst2_format.findAllTypesForFile(descriptions, filename);
-  
+  CRASHREPORTER_dont_report();{
+    
+    VSTPluginFormat vst2_format;
+    vst2_format.findAllTypesForFile(descriptions, filename);
+    
 #if !defined(FOR_LINUX)
-  VST3PluginFormat vst3_format;
-  vst3_format.findAllTypesForFile(descriptions, filename);
+    VST3PluginFormat vst3_format;
+    vst3_format.findAllTypesForFile(descriptions, filename);
 #endif
-  
+    
 #if FOR_MACOSX
-  AudioUnitPluginFormat au_format;
-  au_format.findAllTypesForFile(descriptions, filename);
+    AudioUnitPluginFormat au_format;
+    au_format.findAllTypesForFile(descriptions, filename);
 #endif
+
+  }CRASHREPORTER_do_report();
 }
                         
 static void populate(SoundPluginTypeContainer *container){
@@ -1578,13 +1581,13 @@ static void populate(SoundPluginTypeContainer *container){
     add_plugins(descriptions, iter.getFile().getFullPathName());
   }
 #else
-  add_plugins(descriptions, data->library_file_full_path);
+  add_plugins(descriptions, container->filename);
 #endif
   
   int size = descriptions.size();
 
   if (size==0) {
-    GFX_Message(NULL, "No plugins found in %s", STRING_get_chars(data->library_file_full_path));
+    GFX_Message(NULL, "No plugins found in %s", STRING_get_chars(container->filename));
     return;
   }
 
@@ -1609,7 +1612,7 @@ static void populate_old(SoundPluginTypeContainer *container){
 
   ContainerData *data = (ContainerData*)container->data;
 
-  vector_t uids = VST_get_uids(data->library_file_full_path);
+  vector_t uids = VST_get_uids(container->filename);
 
   int size = uids.num_elements;
 
@@ -1638,10 +1641,10 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, c
   container->type_name = V_strdup(container_type_name);
   container->name = V_strdup(name);
   container->populate = populate;
-
+  container->filename = wcsdup(library_file_full_path);
+  
   ContainerData *data = (ContainerData*)V_calloc(1, sizeof(ContainerData));
   data->file_or_identifier = wcsdup(file_or_identifier);
-  data->library_file_full_path = wcsdup(library_file_full_path);  
 
   container->data = data;
   

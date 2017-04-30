@@ -77,7 +77,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if !defined(CRASHREPORTER_BIN)
 static const char *g_no_plugin_name = "<noplugin>";
-static DEFINE_ATOMIC(bool, g_dont_report_more) = false;
+static DEFINE_ATOMIC(bool, g_dont_report) = false;
 #endif
 
 #define NOPLUGINNAMES "<nopluginnames>"
@@ -497,7 +497,7 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
   // NOTE: We might not be in the main thread here.
 
   
-  if (ATOMIC_GET(g_dont_report_more))
+  if (ATOMIC_GET(g_dont_report))
     return;
 
 #if defined(FOR_WINDOWS)
@@ -602,7 +602,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 */
 
 void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, Crash_Type crash_type, double time){
-  if (ATOMIC_GET(g_dont_report_more))
+  if (ATOMIC_GET(g_dont_report))
     return;
 
   QString plugin_names = get_plugin_names();
@@ -764,7 +764,7 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
     return;
   }
 
-  if (ATOMIC_GET(g_dont_report_more))
+  if (ATOMIC_GET(g_dont_report))
     return;
 
 #if 0
@@ -821,9 +821,13 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
   ATOMIC_SET(is_currently_sending, false);
 }
 
-// We don't want the crashreporter to pop up when program exits.
-void CRASHREPORTER_dont_report_more(void){
-  ATOMIC_SET(g_dont_report_more, true);
+// We don't want the crashreporter to pop up when program exits, or we scan plugins.
+void CRASHREPORTER_do_report(void){
+  ATOMIC_SET(g_dont_report, false);
+}
+
+void CRASHREPORTER_dont_report(void){
+  ATOMIC_SET(g_dont_report, true);
 }
 
 void CRASHREPORTER_close(void){

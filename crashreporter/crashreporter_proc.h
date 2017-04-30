@@ -42,6 +42,9 @@ extern "C"{
   void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type, double time);
   void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...);
   void CRASHREPORTER_dont_report_more(void);
+  void CRASHREPORTER_do_report(void);
+  void CRASHREPORTER_dont_report(void);
+
   void CRASHREPORTER_close(void);
 
   void CRASHREPORTER_posix_init(void);

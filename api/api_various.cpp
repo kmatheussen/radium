@@ -2206,7 +2206,7 @@ void API_call_very_often(void){
       new_ms = DYN_get_double_from_number(ret);
     
     if (new_ms > 0){
-      event->priority = time + new_ms;
+      event->priority = TIME_get_ms() + new_ms;
       schedule(event);
     } else {
       release_event(event);

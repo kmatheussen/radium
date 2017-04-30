@@ -47,5 +47,4 @@ struct _dynvec_t{
 extern const dyn_t g_empty_dynvec;
 extern const dyn_t g_uninitialized_dyn;
 
-
 #endif
