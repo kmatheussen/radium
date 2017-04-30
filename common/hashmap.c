@@ -527,9 +527,13 @@ static bool get_bool(const hash_t *hash, const char *key, int i){
   if(element->a.type==BOOL_TYPE)
     return element->a.bool_number;
 
-  // Before, bool was saved to disk as integers.
-  if(hash->version<3 && element->a.type==INT_TYPE)
-    return element->a.int_number==1 ? true : false;
+  // Before v3, BOOL_TYPE was saved to disk as integers. Unfortunatly, we can't check the value of hash->version since we don't save old hash types, meaning that this info is lost when loading old song, saving it, and loading it again.
+  if(element->a.type==INT_TYPE){
+    if (element->a.int_number==0)
+      return false;
+    if (element->a.int_number==1)
+      return true;
+  }
 
   RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested BOOL_TYPE, found %d.",key,i,element->a.type);
 
