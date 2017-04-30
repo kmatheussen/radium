@@ -31,8 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "EditorWidget.h"
 
 
-static const int max_submenues = 200;
-
 namespace{
 
   struct MyQMenu : public QMenu{
@@ -203,7 +201,7 @@ static QMenu *create_qmenu(
       menu->addSeparator();
     else {
       
-      if (n_submenues==max_submenues){
+      if (n_submenues==getMaxSubmenuEntries()){
         curr_menu = curr_menu->addMenu("Next");
         //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
         n_submenues=0;

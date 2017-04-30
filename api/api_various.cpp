@@ -277,6 +277,27 @@ void showHideInstrumentWidget(int windownum){
   }
 }
 
+static int g_max_submenues = 200;
+
+int getMaxSubmenuEntries(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_max_submenues = SETTINGS_read_int32("max_submenu_entries", g_max_submenues);
+    has_inited = true;
+  }
+
+  return g_max_submenues;
+}
+
+void setMaxSubmenuEntries(int val){
+  if (val != g_max_submenues){
+    g_max_submenues = val;
+    ATOMIC_SET(g_autobypass_delay, val);
+    SETTINGS_write_int("max_submenu_entries", val);
+  }
+}
+
 
 #if 0
 void toggleInstrumentWidgetOnly(void){

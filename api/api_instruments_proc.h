@@ -6,6 +6,7 @@ extern LANGSPEC void API_instrument_call_me_when_instrument_is_deleted(struct Pa
 extern LANGSPEC void API_incSoundPluginRegistryGeneration(void);
 extern LANGSPEC void API_clearSoundPluginRegistryCache(void);
 
+struct SoundPluginTypeContainer;
 extern LANGSPEC void API_blacklist_container(const SoundPluginTypeContainer *container);
 extern LANGSPEC void API_unblacklist_container(const SoundPluginTypeContainer *container);
 extern LANGSPEC bool API_container_is_blacklisted(const SoundPluginTypeContainer *container);
