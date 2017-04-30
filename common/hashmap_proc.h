@@ -54,9 +54,9 @@ extern LANGSPEC void HASH_put_chars(hash_t *hash, const char *key, const char *v
 extern LANGSPEC void HASH_put_int(hash_t *hash, const char *key, int64_t val);
 extern LANGSPEC void HASH_put_bool(hash_t *hash, const char *key, bool val);
 extern LANGSPEC void HASH_put_float(hash_t *hash, const char *key, double val);
-extern LANGSPEC void HASH_put_ratio(hash_t *hash, const char *key, Ratio val);
+extern LANGSPEC void HASH_put_ratio(hash_t *hash, const char *key, const Ratio val);
 extern LANGSPEC void HASH_put_hash(hash_t *hash, const char *key, hash_t *val);
-extern LANGSPEC void HASH_put_array(hash_t *hash, const char *key, dynvec_t dynvec);
+extern LANGSPEC void HASH_put_array(hash_t *hash, const char *key, const dynvec_t dynvec);
 
 #if USE_QT4
 static inline void HASH_put_string(hash_t *hash, const char *key, const QString &val){
@@ -71,6 +71,7 @@ extern LANGSPEC int64_t HASH_get_int(const hash_t *hash, const char *key);
 extern LANGSPEC bool HASH_get_bool(const hash_t *hash, const char *key);
 extern LANGSPEC double HASH_get_float(const hash_t *hash, const char *key);
 extern LANGSPEC hash_t *HASH_get_hash(const hash_t *hash, const char *key);
+extern LANGSPEC dynvec_t HASH_get_array(const hash_t *hash, const char *key);
 static inline int HASH_get_int32(const hash_t *hash, const char *key){
   return (int)HASH_get_int(hash, key);
 }
@@ -94,9 +95,9 @@ extern LANGSPEC void HASH_put_chars_at(hash_t *hash, const char *key, int i, con
 extern LANGSPEC void HASH_put_int_at(hash_t *hash, const char *key, int i, int64_t val);
 extern LANGSPEC void HASH_put_bool_at(hash_t *hash, const char *key, int i, bool val);
 extern LANGSPEC void HASH_put_float_at(hash_t *hash, const char *key, int i, double val);
-extern LANGSPEC void HASH_put_ratio_at(hash_t *hash, const char *key, int i, Ratio val);
+extern LANGSPEC void HASH_put_ratio_at(hash_t *hash, const char *key, int i, const Ratio val);
 extern LANGSPEC void HASH_put_hash_at(hash_t *hash, const char *key, int i, hash_t *val);
-extern LANGSPEC void HASH_put_array_at(hash_t *hash, const char *key, int i, dynvec_t val);
+extern LANGSPEC void HASH_put_array_at(hash_t *hash, const char *key, int i, const dynvec_t val);
 
 extern LANGSPEC dyn_t HASH_get_dyn_at(hash_t *hash, const char *key, int i);
 extern LANGSPEC const wchar_t *HASH_get_string_at(const hash_t *hash, const char *key, int i);
@@ -109,7 +110,7 @@ extern LANGSPEC hash_t *HASH_get_hash_at(const hash_t *hash, const char *key, in
 
 // Loading and saving (serializing and deserializing to string. (Tip: The 'file' argument can be stdout or stdout (useful for debugging))
 
-extern LANGSPEC void HASH_save(hash_t *hash, disk_t *file);
+extern LANGSPEC void HASH_save(const hash_t *hash, disk_t *file);
 extern LANGSPEC hash_t *HASH_load(disk_t *file);
 
 // This function was used before the array interface was introduced.

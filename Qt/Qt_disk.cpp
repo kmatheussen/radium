@@ -52,7 +52,8 @@ private:
   QTemporaryFile *temporary_write_file;
 
 public:
-
+  
+  int curr_read_line = 0;
   enum Type type;
   bool is_binary;
   QTextStream *stream;  
@@ -321,9 +322,18 @@ int DISK_write(disk_t *disk, const char *cdata){
 
 QString g_file_at_end("_________FILE_AT_END");
 
+int DISK_get_curr_read_line(disk_t *disk){
+  R_ASSERT(disk->is_binary==false);
+  R_ASSERT(disk->type==disk_t::READ);
+
+  return disk->curr_read_line;
+}
+
 QString DISK_read_qstring_line(disk_t *disk){
   R_ASSERT(disk->is_binary==false);
   R_ASSERT(disk->type==disk_t::READ);
+
+  disk->curr_read_line++;
   
   if (disk->stream->atEnd())
     return g_file_at_end;

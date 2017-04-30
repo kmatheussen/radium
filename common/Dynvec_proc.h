@@ -2,11 +2,17 @@
 #if !defined(_RADIUM_COMMON_DYNVEC_PROC_H)
 #define _RADIUM_COMMON_DYNVEC_PROC_H
 
+extern void DYN_save(disk_t *file, const dyn_t dyn);
+extern dyn_t DYN_load(disk_t *file, bool *success);
+
 extern LANGSPEC bool DYNVEC_equal(dynvec_t *v1, dynvec_t *v2);
+
+extern LANGSPEC void DYNVEC_save(disk_t *file, const dynvec_t dynvec);
+extern LANGSPEC dynvec_t DYNVEC_load(disk_t *file, bool *success);
 
 static inline void DYNVEC_ensure_space_for_one_more_element(dynvec_t *v){
   const int num_elements = v->num_elements;
-
+  
   if(num_elements==v->num_elements_allocated){
     if(num_elements==0){
 #ifdef TEST_VECTOR

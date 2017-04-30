@@ -71,13 +71,6 @@ unsigned int oat_hash(const char *key, int i_i)
   return h;
 }
 
-static const char *type_to_typename(enum DynType type){
-  return DYN_type_name(type);
-}
-
-static int typename_to_type(const wchar_t *wtype_name){
-  return DYN_get_type_from_name(STRING_get_chars(wtype_name));
-}
 
 typedef struct _hash_element_t{
   struct _hash_element_t *next;
@@ -360,7 +353,7 @@ void HASH_put_float(hash_t *hash, const char *key, double val){
   put_float(hash, key, 0, val);
 }
 
-void HASH_put_ratio(hash_t *hash, const char *key, Ratio val){
+void HASH_put_ratio(hash_t *hash, const char *key, const Ratio val){
   put_ratio(hash, key, 0, val);
 }
 
@@ -368,7 +361,7 @@ void HASH_put_hash(hash_t *hash, const char *key, hash_t *val){
   put_hash(hash, key, 0, val);
 }
 
-void HASH_put_array(hash_t *hash, const char *key, dynvec_t dynvec){
+void HASH_put_array(hash_t *hash, const char *key, const dynvec_t dynvec){
   put_array(hash, key, 0, dynvec);
 }
 
@@ -413,7 +406,7 @@ void HASH_put_float_at(hash_t *hash, const char *key, int i, double val){
   if(new_size>hash->num_array_elements)
     hash->num_array_elements = new_size;
 }
-void HASH_put_ratio_at(hash_t *hash, const char *key, int i, Ratio val){
+void HASH_put_ratio_at(hash_t *hash, const char *key, int i, const Ratio val){
   put_ratio(hash, key, i, val);
   int new_size = i+1;
   if(new_size>hash->num_array_elements)
@@ -425,7 +418,7 @@ void HASH_put_hash_at(hash_t *hash, const char *key, int i, hash_t *val){
   if(new_size>hash->num_array_elements)
     hash->num_array_elements = new_size;
 }
-void HASH_put_array_at(hash_t *hash, const char *key, int i, dynvec_t val){
+void HASH_put_array_at(hash_t *hash, const char *key, int i, const dynvec_t val){
   put_array(hash, key, i, val);
   int new_size = i+1;
   if(new_size>hash->num_array_elements)
@@ -474,7 +467,7 @@ static hash_element_t *HASH_get(const hash_t *hash, const char *key, int i, enum
   }
   
   if(element->a.type!=type){
-    RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested %d, found %d.",key,i,type,element->a.type);
+    RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested %s, found %s.",key,i,DYN_type_name(type),DYN_type_name(element->a.type));
     return NULL;
   }
 
@@ -553,13 +546,29 @@ static hash_t *get_hash(const hash_t *hash, const char *key, int i){
   hash_element_t *element = HASH_get(hash,key,i,HASH_TYPE);
   if(element==NULL)
     return NULL;
-
+  
   if (element->a.hash==NULL){
     RError("element->hash==NULL. key: %s, i: %d\n", key, i);
     return HASH_create(1);
   }
   
   return element->a.hash;
+}
+
+static dynvec_t get_array(const hash_t *hash, const char *key, int i){
+  hash_element_t *element = HASH_get(hash,key,i,ARRAY_TYPE);
+  if(element==NULL){
+    dynvec_t ret = {0};
+    return ret;
+  }
+
+  if (element->a.array==NULL){
+    RError("element->array==NULL. key: %s, i: %d\n", key, i);
+    dynvec_t ret = {0};
+    return ret;
+  }
+  
+  return *element->a.array;
 }
 
 dyn_t HASH_get_dyn(const hash_t *hash, const char *key){
@@ -590,6 +599,10 @@ hash_t *HASH_get_hash(const hash_t *hash, const char *key){
   return get_hash(hash, key, 0);
 }
 
+dynvec_t HASH_get_array(const hash_t *hash, const char *key){
+  return get_array(hash, key, 0);
+}
+
 dyn_t HASH_get_dyn_at(hash_t *hash, const char *key, int i){
   return get_dyn(hash, key, i);
 }
@@ -617,7 +630,6 @@ double HASH_get_float_at(const hash_t *hash, const char *key, int i){
 hash_t *HASH_get_hash_at(const hash_t *hash, const char *key, int i){
   return get_hash(hash, key, i);
 }
-
 
 static vector_t get_elements(const hash_t *hash){
   vector_t vector = {0};
@@ -647,7 +659,7 @@ static int compare_hash_elements(const void *a2, const void *b2){
   return a->i - b->i;
 }
 
-static vector_t get_sorted_elements(hash_t *hash){
+static vector_t get_sorted_elements(const hash_t *hash){
   vector_t elements = get_elements(hash);
   
   if(elements.num_elements>1) // fsanitize=undefined aborts the program if sending null pointer to qsort.
@@ -657,7 +669,7 @@ static vector_t get_sorted_elements(hash_t *hash){
 }
 
 #if 0
-wchar_t *HASH_to_string(hash_t *hash){
+wchar_t *HASH_to_string(const hash_t *hash){
   GFX_Message(NULL, "Warning, never tested");
   disk_t *disk = DISK_open_temp_for_writing();
   HASH_save(hash, file);
@@ -665,7 +677,7 @@ wchar_t *HASH_to_string(hash_t *hash){
 }
 #endif
 
-void HASH_save(hash_t *hash, disk_t *file){
+void HASH_save(const hash_t *hash, disk_t *file){
   DISK_write(file, ">> HASH MAP V3 BEGIN\n");
 
   R_ASSERT(hash != NULL);
@@ -681,48 +693,14 @@ void HASH_save(hash_t *hash, disk_t *file){
       //DISK_write(file,element->key);DISK_write(file,"\n");
       DISK_printf(file,"%s\n",element->key);
       DISK_printf(file,"%d\n",element->i);
-      DISK_printf(file,"%s\n",type_to_typename(element->a.type));
-      switch(element->a.type){
-        case UNINITIALIZED_TYPE:
-          RError("Uninitialized type not supported when saving hash to disk");
-          break;
-        case STRING_TYPE:
-          DISK_write_wchar(file, element->a.string);
-          DISK_write(file, "\n");
-          break;
-        case INT_TYPE:
-          DISK_printf(file,"%" PRId64 "\n",element->a.int_number);
-          break;
-        case BOOL_TYPE:
-          DISK_printf(file,"%d\n",element->a.bool_number ? 1 : 0);
-          break;
-        case FLOAT_TYPE:
-          DISK_printf(file,"%s\n",OS_get_string_from_double(element->a.float_number));
-          break;
-        case HASH_TYPE:
-          if (element->a.hash==NULL)
-            RError("element->hash==NULL. i: %d, num_elements: %d, element->key: %s. element->i: %d, typename: %s", i, elements.num_elements, element->key, element->i, type_to_typename(element->a.type));
-          else
-            HASH_save(element->a.hash, file);
-          break;
-        case ARRAY_TYPE:
-          RError("Array type not supported when saving hash to disk");
-          break;
-        case RATIO_TYPE:
-          RError("Ratio type not supported when saving hash to disk");
-          break;
-      }
+      DYN_save(file, element->a);
     }
   }
   
   DISK_write(file,"<< HASH MAP V3 END\n");
 }
 
-extern int curr_disk_line;
-
 static wchar_t *read_line(disk_t *file){
-
-  curr_disk_line++;
 
   wchar_t *line = DISK_read_wchar_line(file);
 
@@ -736,10 +714,11 @@ static wchar_t *read_line(disk_t *file){
   return line;
 }
 
+#define READ_LINE(file) read_line(file); if (line==NULL) return NULL;
+
 hash_t *HASH_load(disk_t *file){
 
-  wchar_t *line = read_line(file);
-  if (line==NULL) return NULL;
+  wchar_t *line = READ_LINE(file);
   
   int version;
   if(STRING_equals(line,">> HASH MAP BEGIN")){
@@ -762,15 +741,14 @@ hash_t *HASH_load(disk_t *file){
     return NULL;
   }
 
-  line = read_line(file);
+  line = READ_LINE(file);
+  
   int elements_size = STRING_get_int(line);
 
   hash_t *hash=HASH_create(elements_size);
   hash->version = version;
 
-  line = read_line(file);
-  if (line==NULL)
-    return NULL;
+  line = READ_LINE(file);
   
   while(!STRING_equals(line,"<< HASH MAP END") && !STRING_equals(line,"<< HASH MAP V2 END") && !STRING_equals(line,"<< HASH MAP V3 END")){
     const char *key = STRING_get_chars(line);
@@ -778,8 +756,7 @@ hash_t *HASH_load(disk_t *file){
 
     if(version > 1){
 
-      line = read_line(file);
-      if (line==NULL) return NULL;
+      line = READ_LINE(file);
       
       i = STRING_get_int(line);
       int new_size = i+1;
@@ -794,40 +771,14 @@ hash_t *HASH_load(disk_t *file){
 
     }
 
-    line = read_line(file);
-    if (line==NULL) return NULL;
-    
-    int type = typename_to_type(line);
-
-    //printf("           Putting %d / %s\n",i, key);
-    switch(type){
-      case UNINITIALIZED_TYPE:
-        RError("UNINITIALIZED_TYPE?");
-        break;
-      case STRING_TYPE:
-        line = read_line(file);
-        put_string(hash, key, i, line);
-        break;
-      case INT_TYPE:
-        line = read_line(file);
-        put_int(hash, key, i, STRING_get_int64(line));
-        break;
-      case BOOL_TYPE:
-        line = read_line(file);
-        put_bool(hash, key, i, STRING_get_int(line)==1 ? true : false);
-        break;
-      case FLOAT_TYPE:
-        line = read_line(file);
-        put_float(hash, key, i, STRING_get_double(line));
-        break;
-      case HASH_TYPE:
-        put_hash(hash, key, i, HASH_load(file));
-        break;
-    }
-
-    line = read_line(file);
-    if(line==NULL)
+    bool success;
+    dyn_t dyn = DYN_load(file, &success);
+    if (!success)
       return NULL;
+
+    put_dyn(hash, key, i, dyn);
+            
+    line = READ_LINE(file);
   }
 
   return hash;  

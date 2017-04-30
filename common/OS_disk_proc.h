@@ -4,7 +4,6 @@
 
 #include "OS_string_proc.h"
 
-typedef struct _radium_os_disk disk_t;
 
 extern LANGSPEC bool DISK_file_exists(const wchar_t *filename);
 
@@ -28,6 +27,7 @@ extern LANGSPEC int DISK_write(disk_t *disk, const char *data);
 
 
 // READ TEXT
+extern LANGSPEC int DISK_get_curr_read_line(disk_t *disk);
 extern LANGSPEC wchar_t *DISK_read_wchar_line(disk_t *disk);
 extern LANGSPEC char *DISK_readline(disk_t *disk);
 extern LANGSPEC char *DISK_read_trimmed_line(disk_t *disk);

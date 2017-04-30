@@ -630,6 +630,8 @@ static inline char *ratio_to_string(const Ratio ratio){
 
 
 
+typedef struct _radium_os_disk disk_t;
+
 
 
 #include "dyn_type.h"
