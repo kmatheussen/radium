@@ -1,3 +1,15 @@
+Changes 4.7.7 -> 4.7.8:
+* Fix undo in the sequencer when inserting lines in a block
+* Workaround for a couple of Qt bugs causing crashes
+  when opening menues and doing mouse operations in
+  the modular mixer.
+* Fix async menues.
+* Plugin manager: "Rescan all" button.
+* If there are several plugin files with the same name, load all
+  of them, and figure out which one to use. Give warning if more
+  than one was usable.
+
+
 Changes 4.7.6 -> 4.7.7:
 * Store on disk the result of scanning a plugin, plus store a
   blacklist of plugins that crashed during scanning.
