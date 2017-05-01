@@ -209,15 +209,6 @@ void PR_inc_plugin_usage_number(SoundPluginType *type){
 }
 
 
-SoundPluginTypeContainer *PR_get_container_by_name(const char *container_name, const char *type_name){
-  for(auto container : g_plugin_type_containers)
-    if(!strcmp(container->type_name,type_name))
-      if(!strcmp(container->name,container_name))
-        return container;
-  
-  return NULL;
-}
-                                                   
 enum PopulateResult PR_populate(SoundPluginTypeContainer *container){
   R_ASSERT_RETURN_IF_FALSE2(container!=NULL, PR_POPULATE_CANCELLED);
   
@@ -254,6 +245,42 @@ enum PopulateResult PR_populate(SoundPluginTypeContainer *container){
   }
 
   return PR_ALREADY_POPULATED;
+}
+
+SoundPluginTypeContainer *PR_get_container_by_name(const char *container_name, const char *type_name){
+  QVector<SoundPluginTypeContainer*> containers;
+  
+  for(auto container : g_plugin_type_containers)
+    if(!strcmp(container->type_name,type_name))
+      if(!strcmp(container->name,container_name))
+        containers.push_back(container);
+  
+  if (containers.size()==0)
+    return NULL;
+
+  if (containers.size()==1 || containers[0]->is_populated)
+    return containers[0];
+
+  {
+    ScopedQPointer<MyQMessageBox> box(MyQMessageBox::create());
+    box->setText(talloc_format("Warning: %d different plugin files for %s was found.",
+                               containers.size(),
+                               container_name));
+    
+
+    box->setInformativeText(talloc_format("Will only use %s.", STRING_get_chars(containers[0]->filename)));
+        
+    QString detailed_text = "All files:\n";
+    for(auto *container : containers)
+      detailed_text += STRING_get_qstring(container->filename) + "\n";
+    
+    box->setDetailedText(detailed_text);
+    
+    safeExec(box);
+  }
+
+
+  return containers[0];  
 }
 
 static SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *plugin_name){
@@ -485,6 +512,7 @@ void PR_add_plugin_type(SoundPluginType *type){
 }
 
 void PR_add_plugin_container(SoundPluginTypeContainer *container){
+#if 0
   SoundPluginTypeContainer *existing = PR_get_container_by_name(container->name, container->type_name);
   
   if (existing != NULL){
@@ -494,9 +522,11 @@ void PR_add_plugin_container(SoundPluginTypeContainer *container){
                   STRING_get_chars(container->filename)
                   );
     container = existing;
-  }else
+  } else
+#endif
+    
     g_plugin_type_containers.push_back(container);
-
+    
   PR_add_menu_entry(PluginMenuEntry::container(container));
 }
 
