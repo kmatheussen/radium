@@ -37,6 +37,8 @@ namespace{
 
   static int MyQMenu_g_num = -1;  // Workaround This is really strange. I can not make QMenu::exec() return the action. It only returns NULL. (Must be static, since qmenu is deleted after exec() has returned).
 
+  static bool _has_keyboard_focus = false; // Must be global since more than one QMenu may open simultaneously. (not supposed to happen, but it does happen)
+
 
   struct MyQMenu : public QMenu{
 
@@ -58,8 +60,6 @@ namespace{
       if(_callback!=NULL)
         s7extra_unprotect(_callback);      
     }
-
-    bool _has_keyboard_focus = false;
 
     void showEvent(QShowEvent *event) override {
       if (_has_keyboard_focus==false){

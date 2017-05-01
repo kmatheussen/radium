@@ -1379,8 +1379,16 @@ void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
   QGraphicsScene::mouseDoubleClickEvent(event);
 }
 
+static bool g_is_pressed = false; // Workaround for nasty Qt bug.
+
 void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
-  printf("mousepress: %p\n",_current_connection);
+  if (g_is_pressed==true)
+    return;
+
+  g_is_pressed = true;
+
+  //printf("mousepress: %p\n",_current_connection);
+  EVENTLOG_add_event(talloc_format(">>>>  MyScene::mousePressEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size()));
 
   if (g_radium_runs_custom_exec==true)
     return;
@@ -1445,9 +1453,11 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 }
 
 void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
+  g_is_pressed = false;
+
   printf("mouse release: %p\n",_current_connection);
 
-  EVENTLOG_add_event(talloc_format("MyScene::mouseReleaseEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size()));
+  EVENTLOG_add_event(talloc_format("<<<< MyScene::mouseReleaseEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size()));
   
   GFX_ScheduleRedraw();
 

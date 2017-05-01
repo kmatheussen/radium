@@ -333,7 +333,7 @@
              )))))
     
   (if (<ra> :instrument-is-permanent id-old-instrument)
-      (<ra> :show-async-message (instconf :parentgui) "Can not be replaced")
+      (<ra> :show-async-message (instrconf :parentgui) "Can not be replaced")
       (if (or (not description)
               (string=? description ""))
           (start-instrument-popup-menu instrconf replace)

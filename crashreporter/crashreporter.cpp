@@ -338,6 +338,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 #endif
 
     int ret = box.exec();
+    //int ret = 2;
 
     if(ret==2){ //QMessageBox::AcceptRole){
 
