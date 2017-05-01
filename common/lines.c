@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "visual_proc.h"
 #include "undo_blocks_proc.h"
+#include "undo_sequencer_proc.h"
 #include "player_proc.h"
 #include "player_pause_proc.h"
 #include "wblocks_proc.h"
@@ -203,7 +204,10 @@ void InsertLines_CurrPos(
 
 	if(toinsert==-(num_lines-curr_line)-1) return;
 
+        UNDO_OPEN();
+        ADD_UNDO(Sequencer());
 	ADD_UNDO(Block_CurrPos(window));
+        UNDO_CLOSE();
 
 	InsertLines(window->wblock->block,curr_line,toinsert);
 
