@@ -97,22 +97,54 @@
 
 ;; Set up button and search field callbacks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define (pmg-ask-are-you-sure yes-callback)
+  (<ra> :show-async-message *pluginmanager-gui* "Make sure you haved saved all your work.\n\nThe program can crash now.\n\nPlugins that crash will be blacklisted. Already blacklisted plugins will not be scanned again.\n\nAre you ready?" (list "Yes" "No") #t
+        (lambda (res)
+          (if (string=? "Yes" res)
+              (yes-callback)))))
+  
+(define (pmg-scan-all-remaining callback)
+  (<ra> :schedule 0
+        (lambda ()
+          (if (null? *pmg-populate-funcs*)
+              (begin
+                (<gui> :set-value *pmg-progress-label* "")
+                (if callback
+                    (callback))
+                #f)
+              (begin                                   
+                ((car *pmg-populate-funcs*))
+                ;;(<gui> :update table-parent)
+                50)))))
+
 (define *pmg-scan-all-button* (<gui> :child *pluginmanager-gui* "scan_all_button"))
-(<gui> :add-callback *pmg-scan-all-button*
+(<gui> :add-callback *pmg-scan-all-button* (lambda ()
+                                             (pmg-ask-are-you-sure
+                                              (lambda ()
+                                                (pmg-scan-all-remaining #f)))))
+
+
+(define *pmg-rescan-all-button* (<gui> :child *pluginmanager-gui* "rescan_all_button"))
+(<gui> :add-callback *pmg-rescan-all-button*
        (lambda ()
-         (<ra> :show-async-message *pluginmanager-gui* "Make sure you haved saved all your work.\n\nThe program can crash now.\nPlugins that crash will be blacklisted.\n\nAre you ready?" (list "Yes" "No") #t
-               (lambda (res)
-                 (if (string=? "Yes" res)
-                     (<ra> :schedule 0
-                           (lambda ()
-                             (if (null? *pmg-populate-funcs*)
-                                 (begin
-                                   (<gui> :set-value *pmg-progress-label* "")
-                                   #f)
-                                 (begin                                   
-                                   ((car *pmg-populate-funcs*))
-                                   ;;(<gui> :update table-parent)
-                                   50)))))))))
+         (pmg-ask-are-you-sure
+          (lambda ()
+            (<gui> :set-value *pmg-progress-label* "Clearing saved plugin info and rescanning directories for plugins...")
+            (<ra> :schedule 50
+                  (lambda ()
+                    (<ra> :clear-sound-plugin-registry)
+                    (pmg-search "" #f)
+                    (<ra> :schedule 50
+                          (lambda ()
+                            (if (pmg-finished-searching?)
+                                (let ((finished (lambda ()
+                                                  (<ra> :show-async-message :text "Finished"))))
+                                  (if (not (null? *pmg-populate-funcs*))
+                                      (pmg-scan-all-remaining finished)
+                                      (finished))
+                                  #f)
+                                50)))
+                    #f))))))
 
 (define *pmg-search-text-button* (<gui> :child *pluginmanager-gui* "search_text"))
 (<gui> :set-value *pmg-search-text-button* "")

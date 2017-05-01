@@ -3771,3 +3771,18 @@ dyn_t populatePluginContainer(dyn_t entry){
  exit:
   return DYN_create_array(ret);
 }
+
+void clearSoundPluginRegistry(void){
+  QDir dir(get_disk_entries_dir());
+  QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
+
+  for(auto info : list){
+    QString name = info.fileName();
+    if (!name.startsWith("blacklisted_")){
+      printf("   Deleting file %s\n", name.toUtf8().constData());
+      QFile::remove(info.absoluteFilePath());
+    }
+  }
+
+  PR_init_plugin_types();
+}

@@ -46,8 +46,21 @@
      </item>
      <item>
       <widget class="QPushButton" name="scan_all_button">
+       <property name="toolTip">
+        <string>Blacklisted plugins will not be scanned again</string>
+       </property>
        <property name="text">
-        <string>Scan all</string>
+        <string>Scan all remaining</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="rescan_all_button">
+       <property name="toolTip">
+        <string>Blacklisted plugins will not be scanned again</string>
+       </property>
+       <property name="text">
+        <string>Rescan all</string>
        </property>
       </widget>
      </item>
