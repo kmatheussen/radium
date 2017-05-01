@@ -31,16 +31,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "EditorWidget.h"
 
 
+
+
 namespace{
 
+  static int MyQMenu_g_num = -1;  // Workaround This is really strange. I can not make QMenu::exec() return the action. It only returns NULL. (Must be static, since qmenu is deleted after exec() has returned).
+
+
   struct MyQMenu : public QMenu{
-    
+
     func_t *_callback;
-    
-    MyQMenu(QWidget *parent, func_t *callback)
+
+    MyQMenu(QWidget *parent, bool is_async, func_t *callback)
       : QMenu(parent)
       , _callback(callback)
     {
+
+      if (!is_async)      
+        MyQMenu_g_num = -1;
+
       if(_callback!=NULL)
         s7extra_protect(_callback);
     }
@@ -81,6 +90,7 @@ namespace{
     QString text;
     MyQMenu *qmenu;
     int num;
+    bool is_async;
     func_t *callback;
     std::function<void(int,bool)> callback3;
     
@@ -90,11 +100,12 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    CheckableAction(const QString & text_b, bool is_on, MyQMenu *qmenu_b, int num_b, func_t *callback_b, std::function<void(int,bool)> callback3_b)
+    CheckableAction(const QString & text_b, bool is_on, MyQMenu *qmenu_b, int num_b, bool is_async, func_t *callback_b, std::function<void(int,bool)> callback3_b)
       : QWidgetAction(qmenu_b)
       , text(text_b)
       , qmenu(qmenu_b)
       , num(num_b)
+      , is_async(is_async)
       , callback(callback_b)
       , callback3(callback3_b)
     {
@@ -124,7 +135,12 @@ namespace{
         callFunc_void_int_bool(callback, num, checked);
       if (callback3)
         callback3(num, checked);
-      qmenu->close();
+
+      if (!is_async)
+        MyQMenu_g_num = num; // workaround
+
+      //if (is_async)
+        qmenu->close();
       //delete parent;
     }
   };
@@ -136,6 +152,7 @@ namespace{
     QString text;
     MyQMenu *qmenu;
     int num;
+    bool is_async;
     func_t *callback;
     std::function<void(int,bool)> callback3;
 
@@ -145,11 +162,12 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    ClickableAction(const QString & text, MyQMenu *qmenu, int num, func_t *callback, std::function<void(int,bool)> callback3)
+    ClickableAction(const QString & text, MyQMenu *qmenu, int num, bool is_async, func_t *callback, std::function<void(int,bool)> callback3)
       : QAction(text, qmenu)
       , text(text)
       , qmenu(qmenu)
       , num(num)
+      , is_async(is_async)
       , callback(callback)
       , callback3(callback3)
     {
@@ -164,12 +182,17 @@ namespace{
       if (callback!=NULL)
         s7extra_callFunc_void_int(callback, num);
 
-      //fprintf(stderr,"CLICKED 222222 clickable\n");
+      fprintf(stderr,"CLICKED 222222 clickable %d\n", num);
             
       if (callback3)
         callback3(num, true);
 
-      qmenu->close();
+      if (!is_async)
+        MyQMenu_g_num = num; // workaround
+
+      //if (is_async)
+        qmenu->close();
+
       //delete parent;
     }
   };
@@ -182,11 +205,12 @@ QPointer<QMenu> g_curr_popup_qmenu;
 
 static QMenu *create_qmenu(
                            const vector_t &v,
+                           bool is_async,
                            func_t *callback2,
                            std::function<void(int,bool)> callback3
                            )
 {
-  MyQMenu *menu = new MyQMenu(NULL, callback2);
+  MyQMenu *menu = new MyQMenu(NULL, is_async, callback2);
   menu->setAttribute(Qt::WA_DeleteOnClose);
   
   QMenu *curr_menu = menu;
@@ -220,9 +244,9 @@ static QMenu *create_qmenu(
       if (text.startsWith("[check ")){
         
         if (text.startsWith("[check on]"))
-          action = new CheckableAction(text.right(text.size() - 10), true, menu, i, callback2, callback3);
+          action = new CheckableAction(text.right(text.size() - 10), true, menu, i, is_async, callback2, callback3);
         else
-          action = new CheckableAction(text.right(text.size() - 11), false, menu, i, callback2, callback3);
+          action = new CheckableAction(text.right(text.size() - 11), false, menu, i, is_async, callback2, callback3);
         
       } else if (text.startsWith("[submenu start]")){
         
@@ -243,7 +267,7 @@ static QMenu *create_qmenu(
         
       } else {
         
-        action = new ClickableAction(text, menu, i, callback2, callback3);
+        action = new ClickableAction(text, menu, i, is_async, callback2, callback3);
         
       }
       
@@ -274,7 +298,7 @@ static int GFX_QtMenu(
   if(is_async)
     R_ASSERT(callback2!=NULL || callback3);
 
-  QMenu *menu = create_qmenu(v, callback2, callback3);
+  QMenu *menu = create_qmenu(v, is_async,  callback2, callback3);
   //printf("                CREATED menu %p", menu);
   
   if (is_async){
@@ -285,8 +309,13 @@ static int GFX_QtMenu(
   } else {
     
     QAction *action = safeMenuExec(menu);
-    
-    if(action==NULL)
+    (void)action;
+    //printf("    ACTION: %p\n", action);
+
+    return MyQMenu_g_num; // Strange stuff.
+    /*
+    if(action==NULL) {
+      
       return -1;
     
     if (dynamic_cast<CheckableAction*>(action) != NULL)
@@ -297,10 +326,11 @@ static int GFX_QtMenu(
     
     if (ok)      
       return i;
-    
+
     //RWarning("Got unknown action %p %s\n",action,action->text().toAscii().constData());
     
     return -1;
+    */
   }
 }
 void GFX_Menu3(

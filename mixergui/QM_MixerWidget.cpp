@@ -1320,7 +1320,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     evalScheme(talloc_strdup(command.toUtf8().constData()));
 
   } else if (sel==instrument_info) {
-
+    
     showInstrumentInfo(CHIP_get_patch(chip_under)->id, parentguinum);
 
   } else if (sel==random) {

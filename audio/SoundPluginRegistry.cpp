@@ -366,20 +366,17 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
   // Compatibility with older songs
   if (!strcmp(type_name, "Patchbay") && !strcmp(plugin_name, "Patchbay"))
     plugin_name = "Patchbay 8x8";
+
   
   {
+    if (container_name != NULL)
+      PR_get_container(container_name, type_name); // checks if the container needs to be populated.
+
     auto *type = PR_get_plugin_type_by_name2(container_name, type_name, plugin_name);
     if (type != NULL)
       return type;
   }
     
-  // check if the container needs to be populated.
-  if (container_name != NULL){
-    PR_get_container(container_name, type_name);
-    auto *type = PR_get_plugin_type_by_name2(container_name, type_name, plugin_name);
-    if (type != NULL)
-      return type;
-  }
   
   // Older songs didn't store vst container names (because there were no containers). Try to set container_name to plugin_name and try again.
   if(!strcmp(type_name,"VST") && container_name==NULL){

@@ -456,7 +456,6 @@ static inline int safeExec(QDialog *widget){
 }
 
 static inline QAction *safeMenuExec(QMenu *widget){
-  QAction *ret;
 
   // safeExec might be called recursively if you double click right mouse button to open a pop up menu. Seems like a bug or design flaw in Qt.
 #if !defined(RELEASE)
@@ -477,7 +476,6 @@ static inline QAction *safeMenuExec(QMenu *widget){
     }GL_unlock();    
     return widget->exec(QCursor::pos());
   }
-  return ret;
 }
 
 static inline void safeMenuPopup(QMenu *menu){
