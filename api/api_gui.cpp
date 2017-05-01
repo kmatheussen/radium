@@ -3399,16 +3399,47 @@ bool API_container_is_blacklisted(const SoundPluginTypeContainer *container){
        Entries
  **************************/
 
+static QString get_disk_entries_dir(void){
+  return OS_get_dot_radium_path() + QDir::separator() + SCANNED_PLUGINS_DIRNAME + QDir::separator();
+}
+
 static hash_t *g_disk_entries_cache = NULL;
 static QSet<QString> g_known_noncached_entries;
 
 
-static QString get_disk_entries_filename(const SoundPluginTypeContainer *plugin_type_container, const QString path){
-  QString s = STRING_get_qstring(plugin_type_container->filename) + "%%%%" + path;
+static QString get_disk_entries_filename(const SoundPluginTypeContainer *plugin_type_container){
+  QString s = STRING_get_qstring(plugin_type_container->filename);
   QString encoded = QCryptographicHash::hash(s.toUtf8(), QCryptographicHash::Sha1).toHex();
 
-  return OS_get_dot_radium_path() + QDir::separator() + SCANNED_PLUGINS_DIRNAME + QDir::separator() + encoded;
+  return get_disk_entries_dir() + "v2_" + encoded;
 }
+
+static void cleanup_old_disk_files(void){
+  static bool has_done = false;
+  if (has_done==true)
+    return;
+
+  QDir dir(get_disk_entries_dir());
+  QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
+
+  {
+    bool has_deleted = false;
+    for(auto info : list){
+      QString name = info.fileName();
+      if (!name.startsWith("v2_") && !name.startsWith("blacklisted_")){
+        printf("   Deleting obsolete file %s\n", name.toUtf8().constData());
+        QFile::remove(info.absoluteFilePath());
+        has_deleted = true;
+      }
+    }
+    if (has_deleted==true){
+      GFX_Message(NULL, "Because the file format has changed, the previously stored information from scanning plugins has been deleted. You might want to scan all plugins again. Really sorry for the inconvenience");
+    }
+  }
+
+  has_done = true;
+}
+
 
 static hash_t *get_container_disk_hash(const SoundPluginTypeContainer *container, const QString path){
   hash_t *hash = HASH_create(container->num_types + 10);
@@ -3437,14 +3468,13 @@ static hash_t *get_container_disk_hash(const SoundPluginTypeContainer *container
     HASH_put_string(hash, "filename", container->filename);
     HASH_put_int(hash, "filesize", filesize);
     HASH_put_int(hash, "writetime", writetime);
-    HASH_put_string(hash, "path", path);
   }
 
   return hash;
 }
 
 static DiskOpReturn save_disk_hash(const SoundPluginTypeContainer *container, const QString path, hash_t *hash){
-  QString disk_entries_filename = get_disk_entries_filename(container,path);
+  QString disk_entries_filename = get_disk_entries_filename(container);
     
   disk_t *file = DISK_open_for_writing(disk_entries_filename);
   if (file==NULL){
@@ -3495,7 +3525,7 @@ static DiskOpReturn save_entries_to_disk(const QVector<hash_t*> &entries, const 
 
 static bool load_entries_from_disk(dynvec_t &ret, const SoundPluginTypeContainer *container, const QString path){
 
-  QString disk_entries_filename = get_disk_entries_filename(container, path);
+  QString disk_entries_filename = get_disk_entries_filename(container);
 
   if (g_known_noncached_entries.contains(disk_entries_filename)){
     //printf("         CACHE: Getting %s from knwon noncached\n", disk_entries_filename.toUtf8().constData());
@@ -3511,14 +3541,14 @@ static bool load_entries_from_disk(dynvec_t &ret, const SoundPluginTypeContainer
     //printf("         CACHE: Getting %s from cache\n", key);
     hash = HASH_get_hash(g_disk_entries_cache, key);
 
-    QString loaded_path = HASH_get_qstring(hash, "path");
-    if (loaded_path != path){
+    QString loaded_filename = HASH_get_qstring(hash, "filename");
+    if (loaded_filename != STRING_get_qstring(container->filename)){
       // Oops. sha1 crash. How likely is that?
-      printf("             NOT SAME PATH: -%s-",loaded_path.toUtf8().constData());
-      printf("                            -%s-",path.toUtf8().constData());
+      printf("             NOT SAME FILENAME: -%s-",loaded_filename.toUtf8().constData());
+      printf("                                -%s-",STRING_get_chars(container->filename));
       return false;
     }
-    
+
   } else {
     
     if (QFile(disk_entries_filename).exists()==false){
@@ -3555,12 +3585,32 @@ static bool load_entries_from_disk(dynvec_t &ret, const SoundPluginTypeContainer
   for(int i = 0 ; i < entries.num_elements ; i++)
     R_ASSERT_RETURN_IF_FALSE2(entries.elements[i].type==HASH_TYPE, false);
   
-  for(int i = 0 ; i < entries.num_elements ; i++)
-    DYNVEC_push_back(&ret, entries.elements[i]);
+  for(int i = 0 ; i < entries.num_elements ; i++) {
+
+    // Check that path is correct. It might not be if the same container file exists in several different paths.
+    hash_t *hash = entries.elements[i].hash;
+
+    QString disk_path = HASH_get_qstring(hash, ":path");
+    QString correct_path = extend_path(path, HASH_get_qstring(hash, ":name"));
+
+    if (disk_path != correct_path){
+      HASH_remove(hash, ":path");
+      HASH_put_string(hash, ":path", correct_path);
+      DYNVEC_push_back(&ret, DYN_create_hash(hash));
+    } else {
+      DYNVEC_push_back(&ret, entries.elements[i]);
+    }
+  }
   
   return true;
 }
 
+int API_get_num_entries_in_disk_container(SoundPluginTypeContainer *container){
+  dynvec_t ret = {0};
+  if (load_entries_from_disk(ret, container, "")==false)
+    return -1;
+  return ret.num_elements;
+}
 
 static void get_entries_from_populated_container(dynvec_t &ret, SoundPluginTypeContainer *container, const QString path){
 
@@ -3583,6 +3633,7 @@ static void get_entries_from_populated_container(dynvec_t &ret, SoundPluginTypeC
 
 
 static void get_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString path){
+  cleanup_old_disk_files();
 
   hash_t *hash = NULL;
 
@@ -3707,18 +3758,13 @@ dyn_t populatePluginContainer(dyn_t entry){
     }
 
     {
-      SoundPluginTypeContainer *container = PR_get_container_by_name(name, type_name);
+      SoundPluginTypeContainer *container = PR_get_container(name, type_name);
       if (container==NULL){
-        handleError("Could not find container %s / %s", name, type_name);
+        //handleError("Could not find container %s / %s", name, type_name); // Screws up scanning since handleError casts an exception. Besides, we already get error messages from PR_get_container.
         goto exit;
       }
     
-      if (PR_populate(container)==PR_POPULATE_CANCELLED)
-        {
-          //DYNVEC_push_back(&ret, entry); // Causes infinite loop in spr-entry->instrument-description. Not very important to return the entry anyway.
-        }
-      else
-        get_entries_from_populated_container(ret, container, path);
+      get_entries_from_populated_container(ret, container, path);
     }
   }
   

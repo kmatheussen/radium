@@ -319,11 +319,8 @@ int64_t createAudioInstrumentFromDescription(const char *instrument_description,
 
     printf("  ---------- Container: -%s-, type: -%s-, plugin: -%s-\n", container_name, type_name, plugin_name);
     
-    if (strlen(container_name) > 0){
-      SoundPluginTypeContainer *container = PR_get_container_by_name(container_name, type_name);
-      if (container!=NULL)
-        PR_populate(container);
-    }
+    if (strlen(container_name) > 0)
+      PR_get_container(container_name, type_name); // Might return NULL, but we let createAudioInstrument print error message.
 
     return createAudioInstrument(type_name, plugin_name, name, x, y);
     

@@ -738,15 +738,28 @@ const wchar_t *GFX_GetSaveFileName(
     return STRING_create(filename);
 }
 
+static double g_last_time = -1;
+static double g_ignore_until = -1;
+
+bool GFX_Message_ignore_questionmark(void){
+  return TIME_get_ms() <= g_ignore_until;
+}
+
+bool GFX_Message_ask_ignore_question_questionmark(void){
+  return (TIME_get_ms() - g_last_time) < 2000;
+}
+
+void GFX_Message_call_after_showing(bool clicked_ignore){
+  g_last_time = TIME_get_ms();
+  
+  if (clicked_ignore)
+    g_ignore_until = g_last_time + 2000;
+}
 
 static int GFX_Message(vector_t *buttons, QString message){
   R_ASSERT(THREADING_is_main_thread());
 
-  static double ignore_until = -1;
-  static double last_time = -1;
-  double time_now = TIME_get_ms();
-
-  if (buttons==NULL && time_now <= ignore_until)
+  if (buttons==NULL && GFX_Message_ignore_questionmark())
     return 0;
 
   ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
@@ -759,7 +772,7 @@ static int GFX_Message(vector_t *buttons, QString message){
 
     msgBox->setStandardButtons(QMessageBox::Ok);
 
-    if ( (time_now - last_time) < 2000)
+    if (GFX_Message_ask_ignore_question_questionmark())
       msgBox->addButton(wait_message, QMessageBox::AcceptRole);  
 
   } else {
@@ -793,15 +806,10 @@ static int GFX_Message(vector_t *buttons, QString message){
 
   } else {
 
-    last_time = TIME_get_ms();
-
-    //printf("clicked_button->text(): %s (%d)\n",clicked_button->text().toUtf8().constData(),clicked_button->text()==wait_message);
-    
-    if (clicked_button->text().contains(wait_message)) // Use 'contains' instead of '==' because of KDE library bug. (have not found a way to disable loading that %!#$!#$% library)
-      ignore_until = last_time + 2000;
-
-  }
+    GFX_Message_call_after_showing(clicked_button->text().contains(wait_message));
   
+  }
+
   return 0;
 }
 

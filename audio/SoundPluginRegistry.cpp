@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QString>
 #include <QFileDialog>
+#include <QAbstractButton>
 
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
@@ -208,83 +209,156 @@ void PR_inc_plugin_usage_number(SoundPluginType *type){
   recreate_favourites(false);
 }
 
+enum PopulateResult{
+  PR_ALREADY_POPULATED,
+  PR_POPULATED,
+  PR_POPULATE_CANCELLED
+};
 
-enum PopulateResult PR_populate(SoundPluginTypeContainer *container){
+static enum PopulateResult populate(SoundPluginTypeContainer* container){
   R_ASSERT_RETURN_IF_FALSE2(container!=NULL, PR_POPULATE_CANCELLED);
-  
-  if (!container->is_populated){
 
-    if (API_container_is_blacklisted(container)){
-      
-      vector_t v = {};
-      int load_it = VECTOR_push_back(&v, "Load anyway");
-      int cancel = VECTOR_push_back(&v, "Cancel");
-      int hmm=GFX_Message(&v, "Warning: The plugin file \"%s\" crashed last time we tried to scan it.", STRING_get_chars(container->filename));
-      (void) load_it;
-      if (hmm==cancel)
-        return PR_POPULATE_CANCELLED;
-      
-    } else {
-      
-      API_blacklist_container(container);
-      
-    }
+  if (API_container_is_blacklisted(container)){
     
-    container->populate(container);
+    vector_t v = {};
+    int load_it = VECTOR_push_back(&v, "Load anyway");
+    int cancel = VECTOR_push_back(&v, "Cancel");
+    int hmm=GFX_Message(&v, "Warning: The plugin file \"%s\" crashed last time we tried to scan it.", STRING_get_chars(container->filename));
+    (void) load_it;
+    if (hmm==cancel)
+      return PR_POPULATE_CANCELLED;
     
-    recreate_favourites(false);
+  } else {
     
-    g_favourites->set_num_uses(container);
+    API_blacklist_container(container);
     
-    API_incSoundPluginRegistryGeneration();
-    //API_add_disk_entries_from_populated_container(container);
-
-    API_unblacklist_container(container); // Wait as long as possible to unblacklist.
-
-    return PR_POPULATED;
   }
-
-  return PR_ALREADY_POPULATED;
+  
+  container->populate(container);
+  
+  recreate_favourites(false);
+  
+  g_favourites->set_num_uses(container);
+  
+  API_incSoundPluginRegistryGeneration();
+  //API_add_disk_entries_from_populated_container(container);
+  
+  API_unblacklist_container(container); // Wait as long as possible to unblacklist.
+  
+  return PR_POPULATED;
 }
 
-SoundPluginTypeContainer *PR_get_container_by_name(const char *container_name, const char *type_name){
+SoundPluginTypeContainer *PR_get_container(const char *container_name, const char *type_name){
+
   QVector<SoundPluginTypeContainer*> containers;
-  
+
   for(auto container : g_plugin_type_containers)
     if(!strcmp(container->type_name,type_name))
       if(!strcmp(container->name,container_name))
         containers.push_back(container);
-  
+
   if (containers.size()==0)
     return NULL;
 
-  if (containers.size()==1 || containers[0]->is_populated)
-    return containers[0];
+  // Only one?
+  if (containers.size()==1){
 
-  {
+    if (!containers[0]->is_populated)
+      populate(containers[0]);
+
+    if (!containers[0]->is_populated)
+      return NULL;
+
+    return containers[0];
+  }
+
+  // A populated container with plugins?
+  for(auto *container : containers){
+    if (container->is_populated && container->num_types > 0){
+      return container;
+    }
+  }
+
+
+  // Populate all containers that is not populated, not blacklisted, and not known to have zero plugins.
+
+  QVector<SoundPluginTypeContainer*> populated_containers;
+
+  bool user_has_cancelled_scanning = false;
+
+  for(auto *container : containers){
+    if (!container->is_populated && !API_container_is_blacklisted(container)){
+      int num_previously_recorded_entries = API_get_num_entries_in_disk_container(container);
+      if (num_previously_recorded_entries > 0 || num_previously_recorded_entries==-1){
+        populate(container);
+        if (container->is_populated)
+          populated_containers.push_back(container);
+        else
+          user_has_cancelled_scanning = true;
+      }
+    }
+  }
+
+  // Among the populated containers, find all the usable ones, and return the first one.
+
+  QVector<SoundPluginTypeContainer*> usable_containers;
+
+  for(auto *container : populated_containers){
+    if (container->is_populated && container->num_types > 0){
+      usable_containers.push_back(container);
+    }
+  }
+  
+  if(usable_containers.size()==0){
+    if (user_has_cancelled_scanning==false)
+      GFX_Message(NULL,
+                  "Could not find a usable plugin file for %s.\n"
+                  "It might help to rescan plugins in the plugin manager and try again.",
+                  container_name
+                  );
+    return NULL;
+  }
+  
+  if(usable_containers.size() > 1 && !GFX_Message_ignore_questionmark()){
     ScopedQPointer<MyQMessageBox> box(MyQMessageBox::create());
-    box->setText(talloc_format("Warning: %d different plugin files for %s was found.",
-                               containers.size(),
+    box->setText(talloc_format("Warning: %d different usable plugin files for %s was loaded.",
+                               usable_containers.size(),
                                container_name));
     
-
-    box->setInformativeText(talloc_format("Will only use %s.", STRING_get_chars(containers[0]->filename)));
-        
-    QString detailed_text = "All files:\n";
+    box->setInformativeText(talloc_format("If there are overlaps in the plugins that these two files provide, "
+                                          "plugins from \"%s\" will be used.", STRING_get_chars(usable_containers[0]->filename)));
+    
+    QString detailed_text;
     for(auto *container : containers)
       detailed_text += STRING_get_qstring(container->filename) + "\n";
     
     box->setDetailedText(detailed_text);
+
+    QString wait_message = "Ignore messages for two seconds";
+
+    box->setStandardButtons(QMessageBox::Ok);
+
+    if (GFX_Message_ask_ignore_question_questionmark())
+      box->addButton(wait_message, QMessageBox::AcceptRole);  
     
     safeExec(box);
+
+    GFX_Message_call_after_showing(box->clickedButton()->text().contains(wait_message));
   }
 
-
-  return containers[0];  
+  return usable_containers[0];
 }
 
 static SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *plugin_name){
   return PR_get_plugin_type_by_name(NULL, type_name, plugin_name);
+}
+
+SoundPluginType *PR_get_plugin_type_by_name2(const char *container_name, const char *type_name, const char *plugin_name){
+  for(SoundPluginType *plugin_type : g_plugin_types)
+    if(!strcmp(plugin_type->type_name,type_name))
+      if(!strcmp(plugin_type->name,plugin_name))
+        return plugin_type;
+  return NULL;
 }
 
 SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const char *type_name, const char *plugin_name){
@@ -293,17 +367,18 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
   if (!strcmp(type_name, "Patchbay") && !strcmp(plugin_name, "Patchbay"))
     plugin_name = "Patchbay 8x8";
   
-  for(SoundPluginType *plugin_type : g_plugin_types)
-    if(!strcmp(plugin_type->type_name,type_name))
-      if(!strcmp(plugin_type->name,plugin_name))
-        return plugin_type;
-  
+  {
+    auto *type = PR_get_plugin_type_by_name2(container_name, type_name, plugin_name);
+    if (type != NULL)
+      return type;
+  }
+    
   // check if the container needs to be populated.
   if (container_name != NULL){
-    auto *container = PR_get_container_by_name(container_name, type_name);
-    if (container != NULL)
-      if (PR_populate(container)==PR_POPULATED)
-        return PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
+    PR_get_container(container_name, type_name);
+    auto *type = PR_get_plugin_type_by_name2(container_name, type_name, plugin_name);
+    if (type != NULL)
+      return type;
   }
   
   // Older songs didn't store vst container names (because there were no containers). Try to set container_name to plugin_name and try again.
