@@ -349,6 +349,10 @@ SoundPluginTypeContainer *PR_get_container(const char *container_name, const cha
   return usable_containers[0];
 }
 
+bool PR_ensure_container_is_populated(const char *container_name, const char *type_name){
+  return PR_get_container(container_name, type_name) != NULL;
+}
+
 static SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *plugin_name){
   return PR_get_plugin_type_by_name(NULL, type_name, plugin_name);
 }
@@ -370,7 +374,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
   
   {
     if (container_name != NULL)
-      PR_get_container(container_name, type_name); // checks if the container needs to be populated.
+      PR_ensure_container_is_populated(container_name, type_name);
 
     auto *type = PR_get_plugin_type_by_name2(container_name, type_name, plugin_name);
     if (type != NULL)
