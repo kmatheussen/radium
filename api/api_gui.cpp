@@ -131,7 +131,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define SETVISIBLE_OVERRIDER(classname)                                 \
   void setVisible(bool visible) override {                              \
-    if (parentWidget()==NULL) \
+    if (window()==this)                                                 \
       remember_geometry.remember_geometry_setVisible_override_func(this, visible); \
     classname::setVisible(visible);                                     \
   }
