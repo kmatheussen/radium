@@ -257,6 +257,39 @@ struct MyQMessageBox : public QMessageBox {
 };
 
 namespace radium{
+
+  /*
+    Qt makes it _almost_ impossible to remember geometry of windows (both qdialog and qwidget) without adding a timer that monitors what's happening and tries to do the right thing.
+    (and we most certainly don't want to that)
+
+    The problem is that Qt always opens the windows at the original position when calling setVisible(true) or show(). There's no way to override that. It would be the most
+    natural thing in the world to override, but there is no way. The only way to open at the original position is to remember geometry when hiding, and restore when showing.
+    Unfortunatly things becomes very complicated since it's unclear (probably also for those who develops Qt) when the widgets are actually shown and hidden.
+
+    However, I have found that the following seems to work (at least for Qt 5.5.1 on Linux with FVWM2):
+
+    1. Override setVisible like this:
+
+    void setVisible(bool visible) override {
+      super::setVisible(visible);
+      if (visible && window()==this)
+        remember_geometry.restore(this);
+    }
+
+    2. Override hideEvent like this:
+
+    void hideEvent(QHideEvent *event) override {
+      if (window()==this)
+        remember_geometry.save(this);
+    }
+
+    ANY other combination will fail in more or less subtle ways. Sigh.
+
+    However, the Preferences dialog seems to remember width and height, but not position. Sigh. It's just impossible.
+
+    Perhaps it would take less time to fork Qt and fix all these weird things than to add all these ad-hoc hacks.
+   */
+  
   struct RememberGeometry{
     QByteArray geometry;
     bool has_stored_geometry = false;
@@ -272,7 +305,7 @@ namespace radium{
     }
 
     void remember_geometry_setVisible_override_func(QWidget *widget, bool visible) {
-      //printf("   Set visible %d\n",visible);
+      //printf("   AUIAUAUAU Set visible %d\n",visible);
       
       if (!visible){
 
@@ -347,10 +380,19 @@ public:
     //QDialog::setWindowModality(Qt::ApplicationModal);
     //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
   }
-  void setVisible(bool visible) override {      
-    remember_geometry.remember_geometry_setVisible_override_func(this, visible);
-
-    QDialog::setVisible(visible);    
+  
+  // See comment in helpers.h for the radium::RememberGeometry class.
+  virtual void setVisible(bool visible) override {
+    QWidget::setVisible(visible);    
+    if (visible && window()==this)
+      remember_geometry.restore(this);
+  }
+  
+  // See comment in helpers.h for the radium::RememberGeometry class.
+  virtual void hideEvent(QHideEvent *event_) override {
+    //printf("        HIDEVENT2\n");
+    if (window()==this)
+      remember_geometry.save(this);
   }
 
 };

@@ -129,12 +129,34 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     }                                                                   \
   }                                                                     
 
+
 #define SETVISIBLE_OVERRIDER(classname)                                 \
   void setVisible(bool visible) override {                              \
-    if (window()==this)                                                 \
-      remember_geometry.remember_geometry_setVisible_override_func(this, visible); \
     classname::setVisible(visible);                                     \
+    if (visible && window()==this){                                                \
+      printf("     CALLING remember geometry %d\n", visible);           \
+      remember_geometry.remember_geometry_setVisible_override_func(this, visible); \
+    }                                                                   \
   }
+
+  /*
+#define SHOW_OVERRIDER(classname)                                       \
+  void showEvent(QShowEvent *event) override {                           \
+    if (window()==this){                                                \
+      printf("     SHOWEVENT\n");                                       \
+      remember_geometry.remember_geometry_setVisible_override_func(this, true); \
+    }                                                                   \
+  }
+  */
+#define HIDE_OVERRIDER(classname)                                       \
+  void hideEvent(QHideEvent *event_) override {                         \
+    if (window()==this){                                                \
+      printf("     HIDEEVENT\n");                                       \
+      remember_geometry.remember_geometry_setVisible_override_func(this, false); \
+    }                                                                   \
+  }
+
+
 
 #define OVERRIDERS(classname)                                           \
   MOUSE_OVERRIDERS(classname)                                           \
@@ -142,7 +164,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   CLOSE_OVERRIDER(classname)                                            \
   RESIZE_OVERRIDER(classname)                                           \
   PAINT_OVERRIDER(classname)                                            \
-  SETVISIBLE_OVERRIDER(classname)
+  SETVISIBLE_OVERRIDER(classname)                                       \
+  HIDE_OVERRIDER(classname)                                             
+  /*
+  SHOW_OVERRIDER(classname)                                            \
+
+  */
+
+
 
 /*
 static float gain2db(float val){
@@ -295,13 +324,19 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       if (_created_from_existing_widget)
         g_gui_from_existing_widgets[_widget] = this;
-
+      
       _gui_num = g_guis.size();
       if(_gui_num==250000) // ~2MB
         RWarning("Using 250000 GUIs. Time to change g_guis into a hash table.");
       
       g_guis.push_back(this);
-      _widget->setAttribute(Qt::WA_DeleteOnClose);
+
+      if (!_created_from_existing_widget){
+        auto policy = _widget->sizePolicy();
+        policy.setRetainSizeWhenHidden(true);
+        _widget->setSizePolicy(policy);
+        _widget->setAttribute(Qt::WA_DeleteOnClose);
+      }
       //_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);      
     }
 
@@ -2942,14 +2977,16 @@ void gui_setSizePolicy(int64_t guinum, bool grow_horizontally, bool grow_vertica
   if (gui==NULL)
     return;
 
+  QSizePolicy policy = QSizePolicy(get_grow_policy_from_bool(grow_horizontally),
+                                   get_grow_policy_from_bool(grow_vertically));
+  
+  policy.setRetainSizeWhenHidden(true);
+  
   auto *scroll = dynamic_cast<VerticalScroll*>(gui->_widget);
   if (scroll!=NULL)
-    scroll->contents->setSizePolicy(get_grow_policy_from_bool(grow_horizontally),
-                                    get_grow_policy_from_bool(grow_vertically));
+    scroll->contents->setSizePolicy(policy);
   else
-    gui->_widget->setSizePolicy(get_grow_policy_from_bool(grow_horizontally),
-                                get_grow_policy_from_bool(grow_vertically));
-                              
+    gui->_widget->setSizePolicy(policy);
 }
 
 void gui_setMinWidth(int64_t guinum, int minwidth){

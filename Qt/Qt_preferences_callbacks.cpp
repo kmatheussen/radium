@@ -338,7 +338,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
   }
   
 #if FOR_MACOSX && !USE_QT5
-  void hideEvent(QHideEvent *event) {
+  void hideEvent(QHideEvent *event) override {
     _color_dialog.close();
     release_keyboard_focus();
     event->accept();
@@ -356,7 +356,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
   #endif
 
 #else
-  void hideEvent(QHideEvent *event) {
+  void hideEvent(QHideEvent *event) override {
+    //printf("        HIDEVENT1\n");
+    RememberGeometryQDialog::hideEvent(event);
     release_keyboard_focus();
     event->accept();
   }
