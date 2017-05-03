@@ -612,6 +612,8 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   
   tosend += VERSION "\n\n";
 
+  tosend += "OS version: " + QSysInfo::productVersion() + "\n\n";
+    
   tosend += "OpenGL vendor: " + QString((ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_vendor_string) )) + "\n";
   tosend += "OpenGL renderer: " + QString((ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_renderer_string))) + "\n";
   tosend += "OpenGL version: " + QString((ATOMIC_GET(GE_version_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_version_string))) + "\n";
