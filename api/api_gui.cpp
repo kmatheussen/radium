@@ -86,6 +86,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   }
 
 
+#define KEY_OVERRIDERS(classname)                                       \
+  void keyPressEvent(QKeyEvent *event) override{                        \
+    if(g_radium_runs_custom_exec) return;                               \
+    if (_key_callback==NULL || !Gui::keyPressEvent(event))              \
+      classname::keyPressEvent(event);                                  \
+  }                                                                     \
+                                                                        \
+  void keyReleaseEvent(QKeyEvent *event) override{                      \
+    if(g_radium_runs_custom_exec) return;                               \
+    if (_key_callback==NULL || !Gui::keyReleaseEvent(event))            \
+      classname::keyReleaseEvent(event);                                \
+  }
+
+
+
 #define DOUBLECLICK_OVERRIDER(classname)                                \
   void mouseDoubleClickEvent(QMouseEvent *event) override{              \
     if(g_radium_runs_custom_exec) return;                               \
@@ -165,6 +180,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define OVERRIDERS(classname)                                           \
   MOUSE_OVERRIDERS(classname)                                           \
+  KEY_OVERRIDERS(classname)                                             \
   DOUBLECLICK_OVERRIDER(classname)                                      \
   CLOSE_OVERRIDER(classname)                                            \
   RESIZE_OVERRIDER(classname)                                           \
@@ -372,6 +388,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (_mouse_callback!=NULL)
         s7extra_unprotect(_mouse_callback);
 
+      if (_key_callback!=NULL)
+        s7extra_unprotect(_key_callback);
+
       if (_doubleclick_callback!=NULL)
         s7extra_unprotect(_doubleclick_callback);
 
@@ -464,6 +483,43 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
 
 
+    /************ KEY *******************/
+
+    func_t *_key_callback = NULL;
+
+    bool keyEvent(QKeyEvent *event, int keytype){
+      R_ASSERT_RETURN_IF_FALSE2(_key_callback!=NULL, false);
+
+      QString s = false ? ""
+        : event->key()==Qt::Key_Enter ? "\n"
+        : event->key()==Qt::Key_Return ? "\n"
+        : event->key()==Qt::Key_Escape ? "ESC"
+        : event->text();
+
+      event->accept();
+      
+      return s7extra_callFunc_bool_int_charpointer(_key_callback, keytype, talloc_strdup(s.toUtf8().constData()));
+    }
+    
+    bool keyPressEvent(QKeyEvent *event){
+      return keyEvent(event, 0);
+    }
+
+    
+    bool keyReleaseEvent(QKeyEvent *event){
+      return keyEvent(event, 1);
+    }
+
+    void addKeyCallback(func_t* func){      
+      if (_key_callback!=NULL){
+        handleError("Gui %d already has a key callback.", _gui_num);
+        return;
+      }
+
+      _key_callback = func;
+      s7extra_protect(_key_callback);
+    }
+    
     /************ DOUBLECLICK *******************/
 
     func_t *_doubleclick_callback = NULL;
@@ -2054,6 +2110,15 @@ void gui_addMouseCallback(int64_t guinum, func_t* func){
     return;
 
   gui->addMouseCallback(func);
+}
+
+void gui_addKeyCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->addKeyCallback(func);
 }
 
 void gui_addDoubleClickCallback(int64_t guinum, func_t* func){

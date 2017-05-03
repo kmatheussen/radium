@@ -260,4 +260,14 @@
 (define widget (<gui> :widget 100 100))
 
 (<gui> :show widget)
-(<gui> :close widget)
+(<gui> :cloxse widget)
+
+(<ra> :obtain-keyboard-focus widget);
+
+(<gui> :add-key-callback widget
+       (lambda (presstype key)
+         (c-display presstype key)
+         #f))
+
+(<ra> :release-keyboard-focus)
+
