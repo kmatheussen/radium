@@ -494,6 +494,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         : event->key()==Qt::Key_Enter ? "\n"
         : event->key()==Qt::Key_Return ? "\n"
         : event->key()==Qt::Key_Escape ? "ESC"
+        : event->key()==Qt::Key_Home ? "HOME"
+        : event->key()==Qt::Key_End ? "END"
         : event->text();
 
       event->accept();
@@ -533,14 +535,26 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       s7extra_callFunc_void_int_float_float(_doubleclick_callback, getMouseButtonEventID(event), point.x(), point.y());
     }
 
-    virtual void addDoubleClickCallback(func_t* func){      
-      if (_doubleclick_callback!=NULL){
-        handleError("Gui %d already has a doubleclick callback.", _gui_num);
-        return;
-      }
+    // Should add everyting here.
+    virtual void addDoubleClickCallback(func_t* func){
+      QTableWidget *qtableWidget = dynamic_cast<QTableWidget*>(_widget);
 
-      _doubleclick_callback = func;
-      s7extra_protect(_doubleclick_callback);
+      if (qtableWidget!=NULL){
+        
+        Callback *callback = new Callback(func, _widget);
+        qtableWidget->connect(qtableWidget, SIGNAL(cellDoubleClicked(int,int)), callback, SLOT(cellDoubleClicked(int,int)));
+        _callbacks.push_back(callback);
+        
+      } else {
+        
+        if (_doubleclick_callback!=NULL){
+          handleError("Gui %d already has a doubleclick callback.", _gui_num);
+          return;
+        }        
+        _doubleclick_callback = func;
+        s7extra_protect(_doubleclick_callback);
+        
+      }
     }
 
     
@@ -818,6 +832,19 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     // Try to put as much as possible in here, since GUIs created from ui files does not use the sub classes
     virtual void setGuiValue(dyn_t val){
+
+      {
+        QTableWidget *qtableWidget = dynamic_cast<QTableWidget*>(_widget);
+        if (qtableWidget!=NULL){
+          if(val.type==INT_TYPE)
+            qtableWidget->setCurrentCell(val.int_number, qtableWidget->currentColumn());
+          else
+            handleError("Table->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
+          return;
+        }
+      }
+      
+
       {
         QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
         if (button!=NULL){
@@ -904,8 +931,17 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       handleError("Gui #%d does not have a setValue method", _gui_num);
     }
 
+    // Should put as much as possible in here since ui widgets does not use the sub classes
     virtual dyn_t getGuiValue(void){
 
+      QTableWidget *qtableWidget = dynamic_cast<QTableWidget*>(_widget);
+      if (qtableWidget!=NULL){
+        dynvec_t ret = {};
+        for(const auto *item : qtableWidget->selectedItems())
+          DYNVEC_push_back(&ret, DYN_create_string(item->text().toUtf8().constData()));
+        return DYN_create_array(ret);
+      }
+      
       QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
       if (button!=NULL)
         return DYN_create_bool(button->isChecked());
@@ -1906,19 +1942,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       //horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
                           
       //horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
-    }
-
-    virtual void addDoubleClickCallback(func_t* func) override {
-      Callback *callback = new Callback(func, _widget);
-      connect(this, SIGNAL(cellDoubleClicked(int,int)), callback, SLOT(cellDoubleClicked(int,int)));
-      _callbacks.push_back(callback);
-    }
-    
-    virtual dyn_t getGuiValue(void) override {
-      dynvec_t ret = {};
-      for(const auto *item : selectedItems())
-        DYNVEC_push_back(&ret, DYN_create_string(item->text().toUtf8().constData()));
-      return DYN_create_array(ret);
     }
 
   };

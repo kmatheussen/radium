@@ -200,8 +200,16 @@
 
   (<gui> :add-key-callback *pluginmanager-gui*
          (lambda (presstype key)
-           ;;(c-display "GOT KEY" presstype (string=? key "\n"))           
-           (cond ((= 1 presstype)
+           (c-display "GOT KEY" presstype key (string=? key "\n"))           
+           (cond ((string=? key "HOME")
+                  (c-display "HOME")
+                  (<gui> :set-value *pmg-table* 0)
+                  #t)
+                 ((string=? key "END")
+                  (c-display "END")
+                  (<gui> :set-value *pmg-table* (1- (<gui> :get-num-table-rows *pmg-table*)))
+                  #t)
+                 ((= 1 presstype)
                   #f)
                  ((string=? key "\n")
                   (made-selection)
