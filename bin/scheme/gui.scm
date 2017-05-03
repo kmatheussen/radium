@@ -259,4 +259,82 @@
 (<ra> :show-message "gakk")
 !!#
 
-                                   
+(when (and (defined? '*message-gui*)
+           (number? *message-gui*)
+           (<gui> :is-open *message-gui*))
+  ;;(<gui> :set-static-toplevel-widget *message-gui* #f)
+  (<gui> :close *message-gui*))
+
+
+(define *message-gui* #f)
+(define *message-gui-text-edit* (<gui> :text-edit "" #t))
+
+(define (show-message-gui)
+  (when (not *message-gui*)
+    (define buttonlayout (<gui> :horizontal-layout))
+    (<gui> :set-layout-spacing buttonlayout 2 0 2 0 2)
+
+    (<gui> :add-layout-space buttonlayout 0 0 #t #f)
+    
+    (define hide-button (<gui> :button "Hide"))
+    (<gui> :add-callback hide-button (lambda ()                                       
+                                       (<gui> :hide *message-gui*)))
+    (<gui> :add buttonlayout hide-button)
+
+    (define gui (<gui> :vertical-layout *message-gui-text-edit* buttonlayout))
+    (<gui> :set-layout-spacing gui 2 2 2 2 2)
+    
+    (<gui> :set-size gui
+           (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 oiwaefoajefoijaowepijaeporgijpoaghjto#$#$% 2q3e4tERTQERT paerjgoijaerpoiporegi"))
+           200)
+    ;;(<gui> :set-static-toplevel-widget gui #t)
+    
+    ;; Just hide window when closing it.
+    (<gui> :add-close-callback gui
+           (lambda ()
+             ;;(<gui> :set-parent *message-gui* -3)
+             (c-display "              GAKK GAKK GAKK")
+             (<gui> :hide *message-gui*)
+             #f))
+
+    (set! *message-gui* gui))
+  
+  (let ((changed-parent (<gui> :set-parent *message-gui* -2)))
+    (if (not (<gui> :is-visible *message-gui*))
+        (<gui> :show *message-gui*))
+    (if changed-parent
+        (<gui> :move-to-parent-centre *message-gui*))))
+
+  
+
+;;(<gui> :get-parent-window *message-gui*)
+#!!
+(show-message-gui)
+(<gui> :hide *message-gui*)
+(<gui> :show *message-gui*)
+
+!!#
+
+(define *g-complete-message* #f)
+(define (add-message-window-message message)
+  (set! *g-complete-message* (<-> (if (not (string? *g-complete-message*))
+                                      ""
+                                      (<-> *g-complete-message* "<p><br>\n"))
+                                  "<h4>" (<ra> :get-date-string) " " (<ra> :get-time-string) ":</h4>"
+                                  message))
+  (define old-message (<gui> :get-value *message-gui-text-edit*))
+  (<gui> :set-value *message-gui-text-edit* (<-> "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd\">"
+                                                 "<html><head>" 
+                                                 "</head><body>"
+                                                 *g-complete-message*                                                 
+                                                 "<br></body></html>\n"))
+  (show-message-gui))
+
+#||
+(<ra> :add-message "hello1345weert446        werttqwertqert qqerrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrt                           qerrrrrrrrrrrrrrrrrrrrrrrrt\nasdfasdf")
+(<ra> :show-message "hello1345weert446        werttqwertqert qqerrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrt                           qerrrrrrrrrrrrrrrrrrrrrrrrt\nasdfasdf")
+||#
+
+#!!
+(let ((gui (<gui> :horizontal-layout)))  (<gui> :show gui)  (<gui> :move-to-parent-centre gui)  )  
+!!#

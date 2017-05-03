@@ -1301,7 +1301,7 @@ public:
   {
     msgBox = new QMessageBox(g_main_window);
     msgBox->setModal(false);
-    msgBox->setWindowFlags(Qt::Window | Qt::Tool);
+    msgBox->setWindowFlags(Qt::Window);
     msgBox_dontshowagain = (QAbstractButton*)msgBox->addButton("Dont show this message again",QMessageBox::ApplyRole);
     msgBox_stop_playing = (QAbstractButton*)msgBox->addButton("Stop playing!",QMessageBox::ApplyRole);
     msgBox_ok = (QAbstractButton*)msgBox->addButton("Ok",QMessageBox::AcceptRole);
@@ -1339,8 +1339,16 @@ protected:
       QString message(rt_message);
 
       if (dontshow.contains(message)==false){
+        msgBox->setParent(get_current_parent(), Qt::Window);
         msgBox->setText(message);
+
         safeShow(msgBox);
+
+#if 0 //def FOR_WINDOWS
+        HWND wnd=(HWND)msgBox->winId();
+        SetFocus(msgBox);
+        SetWindowPos(msgBox, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+#endif
       }
 
       ATOMIC_SET(rt_message_status, RT_MESSAGE_SHOWING);

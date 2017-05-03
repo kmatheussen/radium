@@ -1121,7 +1121,7 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
     AudioPluginInstance *instance = formatManager.createPluginInstance(description, sample_rate, block_size, errorMessage);
     
     if (instance==NULL){
-      GFX_Message(NULL, "Unable to open %s plugin %s: %s\n",description.pluginFormatName.toRawUTF8(), description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
+      GFX_addMessage("Unable to open %s plugin %s: %s\n",description.pluginFormatName.toRawUTF8(), description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());
       return NULL;
     }
     
@@ -1206,7 +1206,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     String identifier_string = HASH_get_chars(state, "identifier_string");
     if (!type_data->description.matchesIdentifierString(identifier_string)){
       if (type_data->has_shown_noncompatible_warning == false){
-        GFX_Message(NULL, "Warning: Saved state is not compatible with \"%s\" / \"%s\".\n\nThe state was probably saved for a different plugin with the same name.", plugin->type->type_name, plugin->type->name);
+        GFX_addMessage("Warning: Saved state is not compatible with \"%s\" / \"%s\".\n\nThe state was probably saved for a different plugin with the same name.", plugin->type->type_name, plugin->type->name);
         type_data->has_shown_noncompatible_warning = true;
       }
       is_compatible = false;
@@ -1587,7 +1587,7 @@ static void populate(SoundPluginTypeContainer *container){
   int size = descriptions.size();
 
   if (size==0) {
-    GFX_Message(NULL, "No plugins found in %s", STRING_get_chars(container->filename));
+    GFX_addMessage("No plugins found in %s", STRING_get_chars(container->filename));
     return;
   }
 

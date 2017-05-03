@@ -232,6 +232,10 @@ const_char* showMessage(char *text, dyn_t buttons){
   return STRING_get_chars(buttons.array->elements[ret].string);
 }
 
+void addMessage(const char *text){
+  s7extra_callFunc2_void_charpointer("add-message-window-message", text);
+}
+  
 void showWarning(char *text){
   RWarning(text);
 }

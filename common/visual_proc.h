@@ -60,6 +60,7 @@ extern LANGSPEC bool GFX_Message_ask_ignore_question_questionmark(void);
 extern LANGSPEC void GFX_Message_call_after_showing(bool clicked_ignore);
 
 extern LANGSPEC int GFX_Message(vector_t *buttons,const char *fmt,...);
+extern LANGSPEC void GFX_addMessage(const char *fmt,...);
 extern LANGSPEC const char *GFX_qVersion(void);
 
 extern LANGSPEC void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command);
