@@ -117,14 +117,13 @@
           (if (string=? "Yes" res)
               (yes-callback)))))
   
-(define (pmg-scan-all-remaining callback)
+(define (pmg-scan-all-remaining)
   (<ra> :schedule 0
         (lambda ()
           (if (null? *pmg-populate-funcs*)
               (begin
                 (<gui> :set-value *pmg-progress-label* "")
-                (if callback
-                    (callback))
+                (<ra> :add-message "Finished"))))
                 #f)
               (begin                                   
                 ((car *pmg-populate-funcs*))
@@ -133,9 +132,7 @@
 
 (define *pmg-scan-all-button* (<gui> :child *pluginmanager-gui* "scan_all_button"))
 (<gui> :add-callback *pmg-scan-all-button* (lambda ()
-                                             (pmg-ask-are-you-sure
-                                              (lambda ()
-                                                (pmg-scan-all-remaining #f)))))
+                                             (pmg-ask-are-you-sure pmg-scan-all-remaining)))
 
 
 (define *pmg-rescan-all-button* (<gui> :child *pluginmanager-gui* "rescan_all_button"))
@@ -153,11 +150,10 @@
                     (<ra> :schedule 50
                           (lambda ()
                             (if (pmg-finished-searching?)
-                                (let ((finished (lambda ()
-                                                  (<ra> :add-message "Finished"))))
+                                (begin
                                   (if (not (null? *pmg-populate-funcs*))
-                                      (pmg-scan-all-remaining finished)
-                                      (finished))
+                                      (pmg-scan-all-remaining)
+                                      (<ra> :add-message "Finished"))
                                   #f)
                                 50)))
                     #f))))))
