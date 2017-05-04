@@ -695,6 +695,7 @@ public:
   
   void paint(const QRect &update_rect, QPainter &p){ // QPaintEvent * ev ) override {
     if(g_radium_runs_custom_exec) return;
+    if(g_is_loading) return;
     
     //printf("  PAINTING %d %d -> %d %d\n",t_x1,t_y1,t_x2,t_y2);
 
@@ -1335,6 +1336,7 @@ public:
   
   void paintEvent ( QPaintEvent * ev ) override {
     if(g_radium_runs_custom_exec) return;
+    if(g_is_loading) return;
     
     QPainter p(this);
 
@@ -1517,6 +1519,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   void resizeEvent( QResizeEvent *qresizeevent) override {
     if(g_radium_runs_custom_exec) return;
+    if(g_is_loading) return;
     
     //  set_end_time();
     // _samples_per_pixel = (_end_time-_start_time) / width();
@@ -1793,6 +1796,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   void paintEvent (QPaintEvent *ev) override {
     if(g_radium_runs_custom_exec) return;
+    if(g_is_loading) return;
     
     QPainter p(this);
 
