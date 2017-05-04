@@ -1,3 +1,23 @@
+Changes 4.7.8 -> 4.7.9:
+* Fix some minor plugin scanning issues, such as making it
+  possible to rescan previously blacklisted plugins.
+* Add OS version to crash report.
+* Plugin manager: Make Home/End keys work.
+* Plugin manager: Let the Return and Enter keys select plugin,
+  and let the Escape key cancel/close window. 
+* Show non-critical and non-interactive messages in a static log
+  message window. I.e. no need to press "OK" to continue. Not all
+  messages have been changed to do this yet though.
+* Add "Show plugin manager" entry to the windows menu.
+* More fixes to make mixer widget and other windows remember
+  geometry.
+* Various fixes to make sure windows are put on top of the
+  correct window.
+* API: gui_addKeyCallback, openPluginManager, addMessage,
+  gui_setText, gui_setStaticToplevelWidget, getDateString,
+  getTimeString.
+
+
 Changes 4.7.7 -> 4.7.8:
 * Fix undo in the sequencer when inserting lines in a block
 * Workaround for a couple of Qt bugs causing crashes
