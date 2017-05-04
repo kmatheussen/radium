@@ -3596,15 +3596,15 @@ static hash_t *get_container_entry(const SoundPluginTypeContainer *container, co
 #include <QHash>
 
 enum BlacklistCached{
-  NOT_IN_CACHE,
+  NOT_IN_CACHE = 0,
   NOT_BLACKLISTED,
   BLACKLISTED
 };
 
-static QHash<const SoundPluginTypeContainer*, enum BlacklistCached> g_blacklisted_cache;
+static QHash<QString, enum BlacklistCached> g_blacklisted_cache;
 
 static void update_blacklist_cache(const SoundPluginTypeContainer *container, bool is_blacklisted){
-  g_blacklisted_cache[container] = is_blacklisted ? BLACKLISTED : NOT_BLACKLISTED;
+  g_blacklisted_cache[STRING_get_qstring(container->filename)] = is_blacklisted ? BLACKLISTED : NOT_BLACKLISTED;
 }
   
 static QString get_blacklist_filename(const SoundPluginTypeContainer *plugin_type_container){
@@ -3638,7 +3638,18 @@ void API_unblacklist_container(const SoundPluginTypeContainer *container){
 }
 
 bool API_container_is_blacklisted(const SoundPluginTypeContainer *container){
-  const enum BlacklistCached cached = g_blacklisted_cache[container];
+  const enum BlacklistCached cached = g_blacklisted_cache[STRING_get_qstring(container->filename)];
+
+#if !defined(RELEASE)
+  QString disk_blacklist_filename = get_blacklist_filename(container);
+  bool is_blacklisted = QFile::exists(disk_blacklist_filename);
+  if (cached != NOT_IN_CACHE){
+    if (is_blacklisted)
+      R_ASSERT(cached==BLACKLISTED);
+    if (!is_blacklisted)
+      R_ASSERT(cached==NOT_BLACKLISTED);
+  }
+#endif
   
   if (cached==NOT_BLACKLISTED)
     return false;
@@ -3646,9 +3657,10 @@ bool API_container_is_blacklisted(const SoundPluginTypeContainer *container){
   if (cached==BLACKLISTED)
     return true;
   
+#if defined(RELEASE)
   QString disk_blacklist_filename = get_blacklist_filename(container);
-
   bool is_blacklisted = QFile::exists(disk_blacklist_filename);
+#endif
   
   update_blacklist_cache(container, is_blacklisted);
   

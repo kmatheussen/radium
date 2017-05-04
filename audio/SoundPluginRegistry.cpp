@@ -280,14 +280,14 @@ SoundPluginTypeContainer *PR_get_container(const char *container_name, const cha
   }
 
 
-  // Populate all containers that is not populated, not blacklisted, and not known to have zero plugins.
+  // Populate all containers that are not populated, <strike>not blacklisted,</strike> and not known to have zero plugins.
 
   QVector<SoundPluginTypeContainer*> populated_containers;
 
   bool user_has_cancelled_scanning = false;
 
   for(auto *container : containers){
-    if (!container->is_populated && !API_container_is_blacklisted(container)){
+    if (!container->is_populated){ // && !API_container_is_blacklisted(container)){
       int num_previously_recorded_entries = API_get_num_entries_in_disk_container(container);
       if (num_previously_recorded_entries > 0 || num_previously_recorded_entries==-1){
         populate(container);
@@ -308,7 +308,7 @@ SoundPluginTypeContainer *PR_get_container(const char *container_name, const cha
       usable_containers.push_back(container);
     }
   }
-  
+
   if(usable_containers.size()==0){
     if (user_has_cancelled_scanning==false)
       GFX_addMessage(

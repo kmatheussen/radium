@@ -262,7 +262,7 @@
 (when (and (defined? '*message-gui*)
            (number? *message-gui*)
            (<gui> :is-open *message-gui*))
-  ;;(<gui> :set-static-toplevel-widget *message-gui* #f)
+  (<gui> :set-static-toplevel-widget *message-gui* #f)
   (<gui> :close *message-gui*))
 
 
@@ -287,7 +287,7 @@
     (<gui> :set-size gui
            (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 oiwaefoajefoijaowepijaeporgijpoaghjto#$#$% 2q3e4tERTQERT paerjgoijaerpoiporegi"))
            200)
-    ;;(<gui> :set-static-toplevel-widget gui #t)
+    (<gui> :set-static-toplevel-widget gui #t)
     
     ;; Just hide window when closing it.
     (<gui> :add-close-callback gui
