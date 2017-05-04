@@ -616,6 +616,10 @@ void openToolsDialog(void){
   TOOLS_open();
 }
 
+void openPluginManager(void){
+  evalScheme("(pmg-start (make-instrument-conf) #f)");
+}
+
 void openMidiLearnPreferencesDialog(void){
   MIDILEARN_PREFS_open();
 }

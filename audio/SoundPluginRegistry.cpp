@@ -280,14 +280,14 @@ SoundPluginTypeContainer *PR_get_container(const char *container_name, const cha
   }
 
 
-  // Populate all containers that is not populated, not blacklisted, and not known to have zero plugins.
+  // Populate all containers that are not populated, <strike>not blacklisted,</strike> and not known to have zero plugins.
 
   QVector<SoundPluginTypeContainer*> populated_containers;
 
   bool user_has_cancelled_scanning = false;
 
   for(auto *container : containers){
-    if (!container->is_populated && !API_container_is_blacklisted(container)){
+    if (!container->is_populated){ // && !API_container_is_blacklisted(container)){
       int num_previously_recorded_entries = API_get_num_entries_in_disk_container(container);
       if (num_previously_recorded_entries > 0 || num_previously_recorded_entries==-1){
         populate(container);
@@ -308,42 +308,30 @@ SoundPluginTypeContainer *PR_get_container(const char *container_name, const cha
       usable_containers.push_back(container);
     }
   }
-  
+
   if(usable_containers.size()==0){
     if (user_has_cancelled_scanning==false)
-      GFX_Message(NULL,
-                  "Could not find a usable plugin file for %s.\n"
-                  "It might help to rescan plugins in the plugin manager and try again.",
-                  container_name
-                  );
+      GFX_addMessage(
+                     "Could not find a usable plugin file for %s.\n"
+                     "It might help to rescan plugins in the plugin manager and try again.",
+                     container_name
+                     );
     return NULL;
   }
   
   if(usable_containers.size() > 1 && !GFX_Message_ignore_questionmark()){
-    ScopedQPointer<MyQMessageBox> box(MyQMessageBox::create());
-    box->setText(talloc_format("Warning: %d different usable plugin files for %s was loaded.",
-                               usable_containers.size(),
-                               container_name));
+    QString x = QString("Warning: ") + QString::number(usable_containers.size()) + " different usable plugin files for " + container_name + " was loaded.<br><br>";
     
-    box->setInformativeText(talloc_format("If there are overlaps in the plugins that these two files provide, "
-                                          "plugins from \"%s\" will be used.", STRING_get_chars(usable_containers[0]->filename)));
-    
-    QString detailed_text;
+    x += QString("If there are overlaps in the plugins that these two files provide,<br>") +
+      "plugins from \"" + STRING_get_qstring(usable_containers[0]->filename) + "\" will be used.<br>";
+
+    x += "<UL>Files:";
     for(auto *container : containers)
-      detailed_text += STRING_get_qstring(container->filename) + "\n";
-    
-    box->setDetailedText(detailed_text);
+      x += "<LI>" + STRING_get_qstring(container->filename);
 
-    QString wait_message = "Ignore messages for two seconds";
+    x += "</UL>";
 
-    box->setStandardButtons(QMessageBox::Ok);
-
-    if (GFX_Message_ask_ignore_question_questionmark())
-      box->addButton(wait_message, QMessageBox::AcceptRole);  
-    
-    safeExec(box);
-
-    GFX_Message_call_after_showing(box->clickedButton()->text().contains(wait_message));
+    GFX_addMessage(x.toUtf8().constData());
   }
 
   return usable_containers[0];

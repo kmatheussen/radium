@@ -844,6 +844,19 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   }
 }
 
+void GFX_addMessage(const char *fmt,...){
+
+  char message[1000];
+  va_list argp;
+  
+  va_start(argp,fmt);
+  /*	vfprintf(stderr,fmt,argp); */
+  vsprintf(message,fmt,argp);
+  va_end(argp);
+
+  addMessage(message);
+}
+
 /*
 QXcbConnection: XCB error: 3 (BadWindow), sequence: 8449, resource id: 8913535, major code: 40 (TranslateCoords), minor code: 0
 

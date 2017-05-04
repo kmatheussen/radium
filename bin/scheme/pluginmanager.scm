@@ -5,12 +5,14 @@
   (when (not *pmg-has-keyboard-focus*)
     (<ra> :obtain-keyboard-focus *pmg-search-text-button*) ;; hack. (all of this is just fallback code in case something goes wrong)
     (set! *pmg-has-keyboard-focus* #f))
+  (<gui> :set-static-toplevel-widget *pluginmanager-gui* #f)
   (<gui> :close *pluginmanager-gui*))
 
 (define *pmg-has-keyboard-focus* #f)
 
 (define *pluginmanager-gui* (<gui> :ui "pluginmanager.ui")) ;; Must use relative path. Haven't gotten absolute paths to work in windows when using char* instead of wchar_t*. And s7 uses char*.
 ;;(<gui> :ui (<ra> :append-paths (<ra> :get-program-path) "pluginmanager.ui"))
+(<gui> :set-static-toplevel-widget *pluginmanager-gui* #t)
 
 (<gui> :set-modal *pluginmanager-gui* #t)
 (let ((width (floor (* 3 (<gui> :text-width "Usage  Name  Type    Category    Creator        Path              Inputs Outputs")))))
@@ -37,6 +39,13 @@
 (define *pmg-instrconf* #f)
 (define *pmg-callback* #f)
 
+#!
+(begin *pmg-instrconf*)
+(<gui> :is-open *pluginmanager-gui*)
+(<gui> :is-visible *pluginmanager-gui*)
+(<gui> :hide *pluginmanager-gui*)
+!#
+
 (define (pmg-hide)
   (when (pmg-open?)
     (<ra> :release-keyboard-focus)
@@ -52,6 +61,12 @@
   (set! *pmg-instrconf* instrconf)
   (set! *pmg-callback* callback)
   (<gui> :set-parent *pluginmanager-gui* (instrconf :parentgui))
+  (if callback
+      (<gui> :set-enabled *pmg-add-button* #t)
+      (<gui> :set-enabled *pmg-add-button* #f))
+  (if callback
+      (<gui> :set-text *pmg-cancel-button* "Cancel")
+      (<gui> :set-text *pmg-cancel-button* "Close"))
   (<gui> :show *pluginmanager-gui*)
   (<ra> :obtain-keyboard-focus *pmg-search-text-button*)
   (set! *pmg-has-keyboard-focus* #t))
@@ -73,7 +88,6 @@
 ;; Just hide window when closing it.
 (<gui> :add-close-callback *pluginmanager-gui*
        (lambda ()
-         (c-display "              GAKK GAKK GAKK")
          (catch #t ;; We don't want to risk not returning #f (if that happens, the plugin manager can't be opened again)
                 pmg-hide
                 (lambda args
@@ -98,7 +112,7 @@
 ;; Set up button and search field callbacks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (pmg-ask-are-you-sure yes-callback)
-  (<ra> :show-async-message *pluginmanager-gui* "Make sure you haved saved all your work.\n\nThe program can crash now.\n\nPlugins that crash will be blacklisted. Already blacklisted plugins will not be scanned again.\n\nAre you ready?" (list "Yes" "No") #t
+  (<ra> :show-async-message *pluginmanager-gui* "Make sure you haved saved all your work.\n\nThe program can crash now.\n\nPlugins that crash will be blacklisted. Already blacklisted plugins will not be scanned.\n\nAre you ready?" (list "Yes" "No") #t
         (lambda (res)
           (if (string=? "Yes" res)
               (yes-callback)))))
@@ -129,7 +143,9 @@
        (lambda ()
          (pmg-ask-are-you-sure
           (lambda ()
-            (<gui> :set-value *pmg-progress-label* "Clearing saved plugin info and rescanning directories for plugins...")
+            (let ((message "Please wait. Clearing saved plugin info and rescanning directories for plugins..."))
+              (<gui> :set-value *pmg-progress-label* message)
+              (<ra> :add-message message))
             (<ra> :schedule 50
                   (lambda ()
                     (<ra> :clear-sound-plugin-registry)
@@ -138,7 +154,7 @@
                           (lambda ()
                             (if (pmg-finished-searching?)
                                 (let ((finished (lambda ()
-                                                  (<ra> :show-async-message :text "Finished"))))
+                                                  (<ra> :add-message "Finished"))))
                                   (if (not (null? *pmg-populate-funcs*))
                                       (pmg-scan-all-remaining finished)
                                       (finished))
@@ -155,6 +171,10 @@
              (pmg-search val #t))))
 
 
+(define *pmg-add-button* (<gui> :child *pluginmanager-gui* "add_button"))
+(define *pmg-cancel-button* (<gui> :child *pluginmanager-gui* "cancel_button"))
+
+
 (let ()
   
   (define search-button (<gui> :child *pluginmanager-gui* "search_button"))
@@ -165,28 +185,48 @@
   ;;             (pmg-search (<gui> :get-value search-text) #t))))
 
   (define (made-selection)
-    (assert *pmg-instrconf*)
-    (assert *pmg-callback*)
-    (let ((entry (pmg-find-entry-from-row (<gui> :get-value *pmg-table*)))
-          (instrconf *pmg-instrconf*)
-          (callback *pmg-callback*))
-      (when entry
-        (c-display (pp (<gui> :get-value *pmg-table*)))
-        (c-display (pp entry))
-        (spr-entry->instrument-description entry
-                                           instrconf
-                                           callback)
-        (pmg-hide))))
-    
-  (define add-button (<gui> :child *pluginmanager-gui* "add_button"))
-  (<gui> :add-callback add-button made-selection)
+    (when *pmg-callback*
+      (assert *pmg-instrconf*)
+      (let ((entry (pmg-find-entry-from-row (<gui> :get-value *pmg-table*)))
+            (instrconf *pmg-instrconf*)
+            (callback *pmg-callback*))
+        (when entry
+          (c-display (pp (<gui> :get-value *pmg-table*)))
+          (c-display (pp entry))
+          (spr-entry->instrument-description entry
+                                             instrconf
+                                             callback)
+          (pmg-hide)))))
 
+  (<gui> :add-key-callback *pluginmanager-gui*
+         (lambda (presstype key)
+           (c-display "GOT KEY" presstype key (string=? key "\n"))           
+           (cond ((string=? key "HOME")
+                  (c-display "HOME")
+                  (<gui> :set-value *pmg-table* 0)
+                  #t)
+                 ((string=? key "END")
+                  (c-display "END")
+                  (<gui> :set-value *pmg-table* (1- (<gui> :get-num-table-rows *pmg-table*)))
+                  #t)
+                 ((= 1 presstype)
+                  #f)
+                 ((string=? key "\n")
+                  (made-selection)
+                  #t)
+                 ((string=? key "ESC")
+                  (pmg-hide)
+                  #t)
+                 (else
+                  #f))))
+
+  (<gui> :add-callback *pmg-add-button* made-selection)
+  
   (<gui> :add-double-click-callback *pmg-table*
          (lambda (x y)
            (made-selection)))
 
-  (define cancel-button (<gui> :child *pluginmanager-gui* "cancel_button"))
-  (<gui> :add-callback cancel-button pmg-hide)
+  (<gui> :add-callback *pmg-cancel-button* pmg-hide)
   )
 
 
@@ -401,6 +441,7 @@
   (pmg-show instrconf callback)
   (pmg-search (<gui> :get-value *pmg-search-text-button*) #f))
 
+  
 #||
 (pmg-open?)
 (pmg-visible?)

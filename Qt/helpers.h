@@ -38,49 +38,67 @@ typedef QPointer<QObject> IsAlive;
 static bool can_widget_be_parent_questionmark(QWidget *w){
   if (w==NULL)
     return false;
+  /*
   if (w==g_curr_popup_qmenu)
     return false;
   if (w->windowFlags() & Qt::Popup)
     return false;
   if (w->windowFlags() & Qt::ToolTip)
     return false;
+  */
+  if (!g_static_toplevel_widgets.contains(w))
+    return false;
   
   return true;
 }
 
-// Warning, might return any type of widget, except a popup or the current qmenu.
+// Can only return a widget that is a member of g_static_toplevel_widgets.
 static inline QWidget *get_current_parent(bool may_return_current_parent_before_qmenu_opened = true){
 
-  if (may_return_current_parent_before_qmenu_opened && !g_curr_popup_qmenu.isNull() && !g_current_parent_before_qmenu_opened.isNull())
+  if (may_return_current_parent_before_qmenu_opened && !g_curr_popup_qmenu.isNull() && !g_current_parent_before_qmenu_opened.isNull()){
+    //printf("1111 %p\n", g_current_parent_before_qmenu_opened.data());
     return g_current_parent_before_qmenu_opened;
+  }
 
-  QWidget *ret = QApplication::focusWidget();
-  if (can_widget_be_parent_questionmark(ret))
+  QWidget *ret = QApplication::activeModalWidget();
+  //printf("2222 %p\n", ret);
+  if (can_widget_be_parent_questionmark(ret)){
     return ret;
-    
-  ret = QApplication::activeModalWidget();
-  if (can_widget_be_parent_questionmark(ret))
-    return ret;
+  }
 
-  /*
-    We definitely don't want a menu as parent.
-  if (QApplication::activePopupWidget()!=NULL)
-    return QApplication::activePopupWidget();
-  */
+  ret = QApplication::focusWidget();
+  //printf("333 %p\n", ret);
+  if (can_widget_be_parent_questionmark(ret)){
+    return ret;
+  }
+
+  ret = QApplication::activePopupWidget();
+  //printf("333555 %p\n", ret);
+  if (can_widget_be_parent_questionmark(ret)){
+    return ret;
+  }
 
   ret = QApplication::activeWindow();
-  if (can_widget_be_parent_questionmark(ret))
+  //printf("444 %p\n", ret);
+  if (can_widget_be_parent_questionmark(ret)){
     return ret;
+  }
 
-  
+  /*
   QWidget *mixer_strips_widget = MIXERSTRIPS_get_curr_widget();
-  if (mixer_strips_widget!=NULL)
+  printf("555 %p\n", ret);
+  if (mixer_strips_widget!=NULL){
     return mixer_strips_widget;
+  }
+  */
+  
+  ret = QApplication::widgetAt(QCursor::pos());
+  //printf("666 %p\n", ret);
+  if (g_static_toplevel_widgets.contains(ret)){
+    return ret;
+  }
 
-  QWidget *curr_under = QApplication::widgetAt(QCursor::pos());
-  if (g_static_toplevel_widgets.contains(curr_under))
-    return curr_under;
-
+  //printf("777\n");
   return g_main_window;
     
     /*
@@ -229,7 +247,7 @@ struct MyQMessageBox : public QMessageBox {
   {
     setWindowModality(Qt::ApplicationModal);
     //setWindowModality(Qt::NonModal);
-    setWindowFlags(Qt::Window | Qt::Tool);
+    setWindowFlags(Qt::Window);
   }
 
  public:
@@ -257,6 +275,43 @@ struct MyQMessageBox : public QMessageBox {
 };
 
 namespace radium{
+
+  /*
+    Qt makes it _almost_ impossible to remember geometry of windows (both qdialog and qwidget) without adding a timer that monitors what's happening and tries to do the right thing.
+    (and we most certainly don't want to that)
+
+    The problem is that Qt always opens the windows at the original position when calling setVisible(true) or show(). There's no way to override that. It would be the most
+    natural thing in the world to override, but there is no way. The only way to open at the original position is to remember geometry when hiding, and restore when showing.
+    Unfortunatly things becomes very complicated since it's unclear (probably also for those who develops Qt) when the widgets are actually shown and hidden.
+
+    However, I have found that the following seems to work (at least for Qt 5.5.1 on Linux with FVWM2):
+
+    1. Override setVisible like this:
+
+    void setVisible(bool visible) override {
+      if (visible==false && isVisible()==false)                           
+        return;                                                           
+      if (visible==true && isVisible()==true)                             
+        return;                                                           
+      super::setVisible(visible);
+      if (visible && window()==this)
+        remember_geometry.restore(this);
+    }
+
+    2. Override hideEvent like this:
+
+    void hideEvent(QHideEvent *event) override {
+      if (window()==this)
+        remember_geometry.save(this);
+    }
+
+    ANY other combination will fail in more or less subtle ways. Sigh.
+
+    However, the Preferences dialog seems to remember width and height, but not position. Sigh. It's just impossible.
+
+    Perhaps it would take less time to fork Qt and fix all these weird things than to add all these ad-hoc hacks.
+   */
+  
   struct RememberGeometry{
     QByteArray geometry;
     bool has_stored_geometry = false;
@@ -272,7 +327,7 @@ namespace radium{
     }
 
     void remember_geometry_setVisible_override_func(QWidget *widget, bool visible) {
-      //printf("   Set visible %d\n",visible);
+      //printf("   AUIAUAUAU Set visible %d\n",visible);
       
       if (!visible){
 
@@ -339,7 +394,7 @@ struct RememberGeometryQDialog : public QDialog {
   
 public:
   RememberGeometryQDialog(QWidget *parent_)
-    : QDialog(parent_!=NULL ? parent_ : g_main_window, Qt::Window | Qt::Tool)
+    : QDialog(parent_!=NULL ? parent_ : g_main_window, Qt::Window) // | Qt::Tool)
 #if PUT_ON_TOP
     , timer(this)
 #endif
@@ -347,10 +402,23 @@ public:
     //QDialog::setWindowModality(Qt::ApplicationModal);
     //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
   }
-  void setVisible(bool visible) override {      
-    remember_geometry.remember_geometry_setVisible_override_func(this, visible);
-
-    QDialog::setVisible(visible);    
+  
+  // See comment in helpers.h for the radium::RememberGeometry class.
+  virtual void setVisible(bool visible) override {
+    if (visible==false && isVisible()==false)                           
+      return;                                                           
+    if (visible==true && isVisible()==true)                             
+      return;                                                           
+    QWidget::setVisible(visible);    
+    if (visible && window()==this)
+      remember_geometry.restore(this);
+  }
+  
+  // See comment in helpers.h for the radium::RememberGeometry class.
+  virtual void hideEvent(QHideEvent *event_) override {
+    //printf("        HIDEVENT2\n");
+    if (window()==this)
+      remember_geometry.save(this);
   }
 
 };

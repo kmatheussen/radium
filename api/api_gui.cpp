@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QToolTip>
 #include <QHeaderView>
 #include <QStack>
+#include <QDesktopWidget>
 
 #include "../common/nsmtracker.h"
 
@@ -85,6 +86,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   }
 
 
+#define KEY_OVERRIDERS(classname)                                       \
+  void keyPressEvent(QKeyEvent *event) override{                        \
+    if(g_radium_runs_custom_exec) return;                               \
+    if (_key_callback==NULL || !Gui::keyPressEvent(event))              \
+      classname::keyPressEvent(event);                                  \
+  }                                                                     \
+                                                                        \
+  void keyReleaseEvent(QKeyEvent *event) override{                      \
+    if(g_radium_runs_custom_exec) return;                               \
+    if (_key_callback==NULL || !Gui::keyReleaseEvent(event))            \
+      classname::keyReleaseEvent(event);                                \
+  }
+
+
+
 #define DOUBLECLICK_OVERRIDER(classname)                                \
   void mouseDoubleClickEvent(QMouseEvent *event) override{              \
     if(g_radium_runs_custom_exec) return;                               \
@@ -129,20 +145,54 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     }                                                                   \
   }                                                                     
 
+
 #define SETVISIBLE_OVERRIDER(classname)                                 \
   void setVisible(bool visible) override {                              \
-    if (parentWidget()==NULL) \
-      remember_geometry.remember_geometry_setVisible_override_func(this, visible); \
+    if (visible==false && isVisible()==false)                           \
+      return;                                                           \
+    if (visible==true && isVisible()==true)                             \
+      return;                                                           \
     classname::setVisible(visible);                                     \
+    if (visible && window()==this){                                     \
+      printf("     CALLING remember geometry %d\n", visible);           \
+      remember_geometry.remember_geometry_setVisible_override_func(this, visible); \
+    }                                                                   \
   }
+
+  /*
+#define SHOW_OVERRIDER(classname)                                       \
+  void showEvent(QShowEvent *event) override {                           \
+    if (window()==this){                                                \
+      printf("     SHOWEVENT\n");                                       \
+      remember_geometry.remember_geometry_setVisible_override_func(this, true); \
+    }                                                                   \
+  }
+  */
+#define HIDE_OVERRIDER(classname)                                       \
+  void hideEvent(QHideEvent *event_) override {                         \
+    if (window()==this){                                                \
+      printf("     HIDEEVENT\n");                                       \
+      remember_geometry.remember_geometry_setVisible_override_func(this, false); \
+    }                                                                   \
+  }
+
+
 
 #define OVERRIDERS(classname)                                           \
   MOUSE_OVERRIDERS(classname)                                           \
+  KEY_OVERRIDERS(classname)                                             \
   DOUBLECLICK_OVERRIDER(classname)                                      \
   CLOSE_OVERRIDER(classname)                                            \
   RESIZE_OVERRIDER(classname)                                           \
   PAINT_OVERRIDER(classname)                                            \
-  SETVISIBLE_OVERRIDER(classname)
+  SETVISIBLE_OVERRIDER(classname)                                       \
+  HIDE_OVERRIDER(classname)                                             
+  /*
+  SHOW_OVERRIDER(classname)                                            \
+
+  */
+
+
 
 /*
 static float gain2db(float val){
@@ -295,13 +345,19 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       if (_created_from_existing_widget)
         g_gui_from_existing_widgets[_widget] = this;
-
+      
       _gui_num = g_guis.size();
       if(_gui_num==250000) // ~2MB
         RWarning("Using 250000 GUIs. Time to change g_guis into a hash table.");
       
       g_guis.push_back(this);
-      _widget->setAttribute(Qt::WA_DeleteOnClose);
+
+      if (!_created_from_existing_widget){
+        auto policy = _widget->sizePolicy();
+        policy.setRetainSizeWhenHidden(true);
+        _widget->setSizePolicy(policy);
+        _widget->setAttribute(Qt::WA_DeleteOnClose);
+      }
       //_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);      
     }
 
@@ -310,7 +366,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       R_ASSERT_RETURN_IF_FALSE(g_guis.contains(this));
 #endif
       R_ASSERT_RETURN_IF_FALSE(g_guis[_gui_num] != NULL);
-      
+
+      R_ASSERT(false==g_static_toplevel_widgets.contains(_widget));
+
       //printf("Deleting Gui %p\n",this);
 
       for(func_t *func : _deleted_callbacks){
@@ -329,6 +387,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       if (_mouse_callback!=NULL)
         s7extra_unprotect(_mouse_callback);
+
+      if (_key_callback!=NULL)
+        s7extra_unprotect(_key_callback);
 
       if (_doubleclick_callback!=NULL)
         s7extra_unprotect(_doubleclick_callback);
@@ -422,6 +483,45 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
 
 
+    /************ KEY *******************/
+
+    func_t *_key_callback = NULL;
+
+    bool keyEvent(QKeyEvent *event, int keytype){
+      R_ASSERT_RETURN_IF_FALSE2(_key_callback!=NULL, false);
+
+      QString s = false ? ""
+        : event->key()==Qt::Key_Enter ? "\n"
+        : event->key()==Qt::Key_Return ? "\n"
+        : event->key()==Qt::Key_Escape ? "ESC"
+        : event->key()==Qt::Key_Home ? "HOME"
+        : event->key()==Qt::Key_End ? "END"
+        : event->text();
+
+      event->accept();
+      
+      return s7extra_callFunc_bool_int_charpointer(_key_callback, keytype, talloc_strdup(s.toUtf8().constData()));
+    }
+    
+    bool keyPressEvent(QKeyEvent *event){
+      return keyEvent(event, 0);
+    }
+
+    
+    bool keyReleaseEvent(QKeyEvent *event){
+      return keyEvent(event, 1);
+    }
+
+    void addKeyCallback(func_t* func){      
+      if (_key_callback!=NULL){
+        handleError("Gui %d already has a key callback.", _gui_num);
+        return;
+      }
+
+      _key_callback = func;
+      s7extra_protect(_key_callback);
+    }
+    
     /************ DOUBLECLICK *******************/
 
     func_t *_doubleclick_callback = NULL;
@@ -435,14 +535,26 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       s7extra_callFunc_void_int_float_float(_doubleclick_callback, getMouseButtonEventID(event), point.x(), point.y());
     }
 
-    virtual void addDoubleClickCallback(func_t* func){      
-      if (_doubleclick_callback!=NULL){
-        handleError("Gui %d already has a doubleclick callback.", _gui_num);
-        return;
-      }
+    // Should add everyting here.
+    virtual void addDoubleClickCallback(func_t* func){
+      QTableWidget *qtableWidget = dynamic_cast<QTableWidget*>(_widget);
 
-      _doubleclick_callback = func;
-      s7extra_protect(_doubleclick_callback);
+      if (qtableWidget!=NULL){
+        
+        Callback *callback = new Callback(func, _widget);
+        qtableWidget->connect(qtableWidget, SIGNAL(cellDoubleClicked(int,int)), callback, SLOT(cellDoubleClicked(int,int)));
+        _callbacks.push_back(callback);
+        
+      } else {
+        
+        if (_doubleclick_callback!=NULL){
+          handleError("Gui %d already has a doubleclick callback.", _gui_num);
+          return;
+        }        
+        _doubleclick_callback = func;
+        s7extra_protect(_doubleclick_callback);
+        
+      }
     }
 
     
@@ -704,7 +816,35 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return _widget->layout();
     }
 
+    // Try to put as much as possible in here, since GUIs created from ui files does not use the sub classes
+    virtual void setGuiText(const_char *text){
+      {
+        QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
+        if (button!=NULL){
+          button->setText(text);
+          return;
+        }
+      }
+
+      handleError("Gui #%d does not have a setGuiText method", _gui_num);
+      return;
+    }
+
+    // Try to put as much as possible in here, since GUIs created from ui files does not use the sub classes
     virtual void setGuiValue(dyn_t val){
+
+      {
+        QTableWidget *qtableWidget = dynamic_cast<QTableWidget*>(_widget);
+        if (qtableWidget!=NULL){
+          if(val.type==INT_TYPE)
+            qtableWidget->setCurrentCell(val.int_number, qtableWidget->currentColumn());
+          else
+            handleError("Table->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
+          return;
+        }
+      }
+      
+
       {
         QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
         if (button!=NULL){
@@ -752,10 +892,16 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       {
         QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget);
         if (text_edit!=NULL){ 
-          if(val.type==STRING_TYPE)
-            text_edit->setPlainText(STRING_get_chars(val.string));
-          else
+          if(val.type==STRING_TYPE){
+            QString s = STRING_get_chars(val.string);
+            if (text_edit->isReadOnly())
+              text_edit->setText(s);
+            else
+              text_edit->setPlainText(s);
+          }else
             handleError("Text->setValue received %s, expected STRING_TYPE", DYN_type_name(val.type));
+          if (text_edit->isReadOnly())
+            text_edit->moveCursor(QTextCursor::End);
           return;
         }
       }
@@ -785,8 +931,17 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       handleError("Gui #%d does not have a setValue method", _gui_num);
     }
 
+    // Should put as much as possible in here since ui widgets does not use the sub classes
     virtual dyn_t getGuiValue(void){
 
+      QTableWidget *qtableWidget = dynamic_cast<QTableWidget*>(_widget);
+      if (qtableWidget!=NULL){
+        dynvec_t ret = {};
+        for(const auto *item : qtableWidget->selectedItems())
+          DYNVEC_push_back(&ret, DYN_create_string(item->text().toUtf8().constData()));
+        return DYN_create_array(ret);
+      }
+      
       QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget);
       if (button!=NULL)
         return DYN_create_bool(button->isChecked());
@@ -1296,7 +1451,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     PushButton(const char *text)
       : QPushButton(text)
       , Gui(this)
-    {
+    {      
     }
 
     OVERRIDERS(QPushButton);
@@ -1670,10 +1825,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
   public:
     
-    TextEdit(QString content)
+    TextEdit(QString content, bool read_only)
       : Gui(this)
     {
-      setPlainText(content);
+      if (read_only)
+        setText(content);
+      else
+        setPlainText(content);
+      setReadOnly(read_only);
+      setLineWrapMode(QTextEdit::NoWrap);
     }
 
     OVERRIDERS(FocusSnifferQTextEdit);
@@ -1782,19 +1942,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       //horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
                           
       //horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
-    }
-
-    virtual void addDoubleClickCallback(func_t* func) override {
-      Callback *callback = new Callback(func, _widget);
-      connect(this, SIGNAL(cellDoubleClicked(int,int)), callback, SLOT(cellDoubleClicked(int,int)));
-      _callbacks.push_back(callback);
-    }
-    
-    virtual dyn_t getGuiValue(void) override {
-      dynvec_t ret = {};
-      for(const auto *item : selectedItems())
-        DYNVEC_push_back(&ret, DYN_create_string(item->text().toUtf8().constData()));
-      return DYN_create_array(ret);
     }
 
   };
@@ -1988,6 +2135,15 @@ void gui_addMouseCallback(int64_t guinum, func_t* func){
   gui->addMouseCallback(func);
 }
 
+void gui_addKeyCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->addKeyCallback(func);
+}
+
 void gui_addDoubleClickCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
 
@@ -2156,9 +2312,9 @@ int64_t gui_text(const_char* text, const_char* color){
   return (new Text(text, color))->get_gui_num();
 }
 
-int64_t gui_textEdit(const_char* content){
+int64_t gui_textEdit(const_char* content, bool read_only){
   //return -1;
-  return (new TextEdit(content))->get_gui_num();
+  return (new TextEdit(content, read_only))->get_gui_num();
 }
 
 int64_t gui_line(const_char* content){
@@ -2489,6 +2645,14 @@ void gui_stretchTable(int64_t table_guinum, int x, bool do_stretch, int size){
 
 ////////////////////////////
 
+void gui_setText(int64_t guinum, const_char *value){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->setGuiText(value);
+}
+
 void gui_setValue(int64_t guinum, dyn_t value){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -2625,7 +2789,18 @@ void gui_show(int64_t guinum){
   if (gui==NULL)
     return;
 
-  gui->_widget->show();
+  QWidget *w = gui->_widget;
+  
+  w->show();
+  if (w==w->window()){
+    w->raise();
+    w->activateWindow();
+#if 0 //def FOR_WINDOWS
+    HWND wnd=(HWND)w->winId();
+    SetFocus(wnd);
+    SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+#endif
+  }    
 }
 
 void gui_hide(int64_t guinum){
@@ -2644,6 +2819,16 @@ void gui_close(int64_t guinum){
   if (gui==NULL)
     return;
 
+  if (g_gui_from_existing_widgets.contains(gui->_widget)){
+    handleError("Can not close Gui #%d since it was not created via the API");
+    return;
+  }
+  
+  if (g_static_toplevel_widgets.contains(gui->_widget)){
+    handleError("Can not close Gui #%d since it is marked as a static toplevel widget");
+    return;
+  }
+    
   if(gui->is_full_screen())
     deleteFullscreenParent(gui);
   
@@ -2670,23 +2855,43 @@ int64_t gui_getParentWindow(int64_t guinum){
   return API_get_gui_from_existing_widget(w);
 }
 
-void gui_setParent(int64_t guinum, int64_t parentgui){
+bool gui_setParent(int64_t guinum, int64_t parentgui){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
-    return;
+    return false;
 
   bool is_window = gui->_widget->isWindow() || gui->_widget->parent()==NULL;
   if(!is_window){
     handleError("gui_setParent: Gui #%d is not a window", guinum);
-    return;
+    return false;
   }
   
   QWidget *parent = API_gui_get_parentwidget(parentgui);
+
+  if (parent==gui->_widget){
+    printf("Returned same as me");
+    return false;
+  }
   
-  if (gui->is_full_screen())
+  else if (gui->is_full_screen())
     gui->_non_full_screen_parent = parent;
-  else
+
+  else if (gui->_widget->parent() == parent)
+    return false;
+  
+  else {
+    bool isvisible = gui->_widget->isVisible();
+    if (isvisible)
+      gui->_widget->hide();
+    if (gui->_widget->parent() != NULL)
+      gui->_widget->setParent(NULL);
     gui->_widget->setParent(parent, Qt::Window);
+    if (isvisible)
+      gui->_widget->show();
+  }
+    
+
+  return true;
 }
 
 void gui_setModal(int64_t guinum, bool set_modal){
@@ -2763,24 +2968,39 @@ void gui_moveToParentCentre(int64_t guinum){
   if (gui==NULL)
     return;
 
-  QObject *oparent = gui->_widget->parent();
-  if (oparent==NULL){
-    handleError("gui_moveToParentCentre: Gui #%d has no parent", guinum);
-    return;
-  }
+  QWidget *w = gui->_widget;
+  w->updateGeometry();
+  
+  QObject *oparent = w->parent();
+  QWidget *parent = oparent==NULL ? NULL : dynamic_cast<QWidget*>(oparent);
 
-  QWidget *parent = dynamic_cast<QWidget*>(oparent);
+  QRect rect;
+  
+  if (parent==NULL){
+    // Move to middle of screen instead.
+    rect = QApplication::desktop()->availableGeometry();
+    /*
+    QRect screenGeometry = QApplication::desktop()->screenGeometry();
+    int x = (screenGeometry.width()-w->width()) / 2;
+    int y = (screenGeometry.height()-w->height()) / 2;
+    w->move(x, y);
+    return;
+    */
+  } else
+    rect = parent->geometry();
+
+  /*
   if (parent==NULL){
     handleError("gui_moveToParentCentre: Parent of gui #%d is not a widget", guinum);
     return;
   }
-
-  gui->_widget->updateGeometry();
+  */
   
-  int w = gui->_widget->width();
-  int h = gui->_widget->height();
+  int width = w->width();
+  int height = w->height();
+
   //printf("w: %d, h: %d\n",w,h);
-  gui->_widget->move(parent->x()+parent->width()/2-w/2, parent->y()+parent->height()/2-h/2);
+  w->move(rect.x()+rect.width()/2-width/2, rect.y()+rect.height()/2-height/2);
 }
 
 void gui_setPos(int64_t guinum, int x, int y){
@@ -2942,14 +3162,16 @@ void gui_setSizePolicy(int64_t guinum, bool grow_horizontally, bool grow_vertica
   if (gui==NULL)
     return;
 
+  QSizePolicy policy = QSizePolicy(get_grow_policy_from_bool(grow_horizontally),
+                                   get_grow_policy_from_bool(grow_vertically));
+  
+  policy.setRetainSizeWhenHidden(true);
+  
   auto *scroll = dynamic_cast<VerticalScroll*>(gui->_widget);
   if (scroll!=NULL)
-    scroll->contents->setSizePolicy(get_grow_policy_from_bool(grow_horizontally),
-                                    get_grow_policy_from_bool(grow_vertically));
+    scroll->contents->setSizePolicy(policy);
   else
-    gui->_widget->setSizePolicy(get_grow_policy_from_bool(grow_horizontally),
-                                get_grow_policy_from_bool(grow_vertically));
-                              
+    gui->_widget->setSizePolicy(policy);
 }
 
 void gui_setMinWidth(int64_t guinum, int minwidth){
@@ -3000,6 +3222,46 @@ void gui_setEnabled(int64_t guinum, bool is_enabled){
   gui->_widget->setEnabled(is_enabled);
 }
 
+void gui_setStaticToplevelWidget(int64_t guinum, bool add){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;  
+  
+  bool is_included = g_static_toplevel_widgets.contains(gui->_widget);
+
+  if (add){
+    
+    if (is_included){
+      handleError("Gui #%d is already set as static toplevel widget", guinum);
+      return;
+    }
+    if (gui->_widget->window() != gui->_widget){
+      handleError("Gui #%d is not a toplevel widget", guinum);
+      return;
+    }
+    g_static_toplevel_widgets.push_back(gui->_widget);
+    
+  } else {
+#if defined(RELEASE)
+    R_ASSERT(false);
+#endif
+
+    if (false==is_included){
+      handleError("Gui #%d has not been added as a static toplevel widget", guinum);
+      return;
+    }
+    g_static_toplevel_widgets.remove(g_static_toplevel_widgets.indexOf(gui->_widget));
+  }
+  
+}
+
+const_char *getDateString(const_char* date_format){
+  return talloc_strdup(QDate::currentDate().toString(date_format).toUtf8().constData());
+}
+
+const_char *getTimeString(const_char* time_format){
+  return talloc_strdup(QTime::currentTime().toString(time_format).toUtf8().constData());
+}
 
 // audio meter
 ////////////////
@@ -3334,15 +3596,15 @@ static hash_t *get_container_entry(const SoundPluginTypeContainer *container, co
 #include <QHash>
 
 enum BlacklistCached{
-  NOT_IN_CACHE,
+  NOT_IN_CACHE = 0,
   NOT_BLACKLISTED,
   BLACKLISTED
 };
 
-static QHash<const SoundPluginTypeContainer*, enum BlacklistCached> g_blacklisted_cache;
+static QHash<QString, enum BlacklistCached> g_blacklisted_cache;
 
 static void update_blacklist_cache(const SoundPluginTypeContainer *container, bool is_blacklisted){
-  g_blacklisted_cache[container] = is_blacklisted ? BLACKLISTED : NOT_BLACKLISTED;
+  g_blacklisted_cache[STRING_get_qstring(container->filename)] = is_blacklisted ? BLACKLISTED : NOT_BLACKLISTED;
 }
   
 static QString get_blacklist_filename(const SoundPluginTypeContainer *plugin_type_container){
@@ -3376,7 +3638,18 @@ void API_unblacklist_container(const SoundPluginTypeContainer *container){
 }
 
 bool API_container_is_blacklisted(const SoundPluginTypeContainer *container){
-  const enum BlacklistCached cached = g_blacklisted_cache[container];
+  const enum BlacklistCached cached = g_blacklisted_cache[STRING_get_qstring(container->filename)];
+
+#if !defined(RELEASE)
+  QString disk_blacklist_filename = get_blacklist_filename(container);
+  bool is_blacklisted = QFile::exists(disk_blacklist_filename);
+  if (cached != NOT_IN_CACHE){
+    if (is_blacklisted)
+      R_ASSERT(cached==BLACKLISTED);
+    if (!is_blacklisted)
+      R_ASSERT(cached==NOT_BLACKLISTED);
+  }
+#endif
   
   if (cached==NOT_BLACKLISTED)
     return false;
@@ -3384,9 +3657,10 @@ bool API_container_is_blacklisted(const SoundPluginTypeContainer *container){
   if (cached==BLACKLISTED)
     return true;
   
+#if defined(RELEASE)
   QString disk_blacklist_filename = get_blacklist_filename(container);
-
   bool is_blacklisted = QFile::exists(disk_blacklist_filename);
+#endif
   
   update_blacklist_cache(container, is_blacklisted);
   
