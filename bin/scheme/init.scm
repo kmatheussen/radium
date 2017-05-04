@@ -44,13 +44,13 @@
                        (newline)
                        (catch #t
                               (lambda ()
-                                (ra:show-message message))
+                                (ra:add-message message))
                               (lambda args
                                 #t))
                        (exit))
                       ((and *currently-loading-file*
                             (not *currently-reloading-file*))
-                       (ra:show-message message))
+                       (ra:add-message message))
                       ((defined? 'c-display (rootlet))
                        (c-display message))
                       (else

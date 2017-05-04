@@ -204,7 +204,7 @@ char* requestMidiPort(void){
   return ret;
 }
 
-const_char* showMessage(char *text, dyn_t buttons){
+const_char* showMessage(const char *text, dyn_t buttons){
   if (buttons.type==UNINITIALIZED_TYPE){
     GFX_Message(NULL, text);
     return "Ok";
@@ -233,7 +233,15 @@ const_char* showMessage(char *text, dyn_t buttons){
 }
 
 void addMessage(const char *text){
-  s7extra_callFunc2_void_charpointer("add-message-window-message", text);
+  const char *funcname = "add-message-window-message";
+  
+  static bool gotit = false;
+  if (gotit || s7extra_is_defined(funcname)){
+    s7extra_callFunc2_void_charpointer(funcname, text);
+    gotit = true;
+  } else {
+    showMessage(text, g_uninitialized_dyn);
+  }
 }
   
 void showWarning(char *text){

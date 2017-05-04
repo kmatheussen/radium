@@ -863,6 +863,10 @@ void s7extra_unprotect(void *v){
   s7_gc_unprotect(s7, (s7_pointer)v);  
 }
 
+bool s7extra_is_defined(const char* funcname){
+  return s7_is_defined(s7, funcname);
+}
+
 int placetest(Place dasplacevar,int windownum){
   return dasplacevar.line;
 }

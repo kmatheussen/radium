@@ -99,7 +99,8 @@ extern "C" {
 
   void s7extra_protect(void *v);
   void s7extra_unprotect(void *v);
-  
+
+  bool s7extra_is_defined(const char* funcname);
 #ifdef __cplusplus
 }
 #endif
