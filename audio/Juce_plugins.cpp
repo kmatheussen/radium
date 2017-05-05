@@ -1586,11 +1586,6 @@ static void populate(SoundPluginTypeContainer *container){
   
   int size = descriptions.size();
 
-  if (size==0) {
-    GFX_addMessage("No plugins found in %s", STRING_get_chars(container->filename));
-    return;
-  }
-
   container->num_types = size;
   container->plugin_types = (SoundPluginType**)V_calloc(size, sizeof(SoundPluginType));
 
@@ -1600,7 +1595,11 @@ static void populate(SoundPluginTypeContainer *container){
     i++;
   }
 
-  fflush(stderr);  
+  if (size==0) {
+    GFX_addMessage("No plugins found in %s", STRING_get_chars(container->filename));
+    return;
+  }
+  
 }
 
 #if 0

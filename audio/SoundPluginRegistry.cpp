@@ -260,19 +260,8 @@ SoundPluginTypeContainer *PR_get_container(const char *container_name, const cha
   if (containers.size()==0)
     return NULL;
 
-  // Only one?
-  if (containers.size()==1){
-
-    if (!containers[0]->is_populated)
-      populate(containers[0]);
-
-    if (!containers[0]->is_populated)
-      return NULL;
-
-    return containers[0];
-  }
-
-  // A populated container with plugins?
+  // 1. A populated container with plugins?
+  //
   for(auto *container : containers){
     if (container->is_populated && container->num_types > 0){
       return container;
@@ -280,8 +269,9 @@ SoundPluginTypeContainer *PR_get_container(const char *container_name, const cha
   }
 
 
-  // Populate all containers that are not populated, <strike>not blacklisted,</strike> and not known to have zero plugins.
-
+  // 2. No populated container with plugins.
+  // Now: Populate all containers that are not populated, <strike>not blacklisted,</strike> and not known to have zero plugins.
+  //
   QVector<SoundPluginTypeContainer*> populated_containers;
 
   bool user_has_cancelled_scanning = false;
