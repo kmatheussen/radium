@@ -117,6 +117,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define CLOSE_OVERRIDER(classname)                                      \
   void closeEvent(QCloseEvent *ev) override {                           \
+  Gui::_has_been_closed = true;                                               \
     if(g_radium_runs_custom_exec) return;                               \
     if (_close_callback==NULL)                                          \
       classname::closeEvent(ev);                                        \
@@ -244,9 +245,11 @@ static QVector<Gui*> g_valid_guis;
 static int g_highest_guinum = 0;
 static QHash<int64_t, Gui*> g_guis;
 
-static QHash<QWidget*, Gui*> g_gui_from_widgets; // Q: What if a QWidget is deleted, and later a new QWidget gets the same pointer value? 
-                                                 // A: Shouldn't be a problem. Gui->_widget is immediately set to NULL when the widget is deleted,
-                                                 //    and we always check if Gui->_widget!=NULL when getting a Gui from g_gui_from_widgets.
+static QHash<const QWidget*, Gui*> g_gui_from_widgets; // Q: What if a QWidget is deleted, and later a new QWidget gets the same pointer value? 
+                                                       // A: Shouldn't be a problem. Gui->_widget is immediately set to NULL when the widget is deleted,
+                                                       //    and we always check if Gui->_widget!=NULL when getting a Gui from g_gui_from_widgets.
+
+static QHash<int64_t, const char*> g_guis_can_not_be_closed; // The string contains the reason that this gui can not be closed.
   
 struct VerticalAudioMeter;
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
@@ -327,8 +330,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     int _gui_num;
     int _valid_guis_pos;
 
-    QWidget *_widget_as_key; // Need a way to get hold of the original widget's address in the destructor. (Beware that _widget_as_key might have been deleted. Only _widget can be considered valid.)
-    QPointer<QWidget> _widget; // Stored in a QPointers since we need to know if the widget has been deleted.
+    const QWidget *_widget_as_key; // Need a way to get hold of the original widget's address in the destructor. (Beware that _widget_as_key might have been deleted. Only _widget can be considered valid.)
+    const QPointer<QWidget> _widget; // Stored in a QPointers since we need to know if the widget has been deleted.
     bool _created_from_existing_widget; // Is false if _widget was created by using one of the gui_* functions (except gui_child()). Only used for validation.
 
     // full screen stuff
@@ -348,6 +351,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     int get_gui_num(void) const {
       return _gui_num;
     }
+    bool _has_been_closed = false;
     
     Gui(QWidget *widget, bool created_from_existing_widget = false)
       : _widget_as_key(widget)
@@ -411,6 +415,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (_paint_callback!=NULL)
         s7extra_unprotect(_paint_callback);
 
+      g_guis_can_not_be_closed.remove(_gui_num); // Can call QHash::remove() even when the table doesn't contain the key.
+        
       g_gui_from_widgets.remove(_widget_as_key); // Can't use _widget since it might have been set to NULL.
         
       g_guis.remove(_gui_num);
@@ -2482,11 +2488,14 @@ static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetI
   if (cell_gui==NULL){
     
     if (table->cellWidget(y,x) != NULL)
-      table->removeCellWidget(y,x); // is the cell widget deleted now?
+      table->removeCellWidget(y,x); // is the cell widget deleted now? (yes)
     
     return -1;
   }
-  
+
+  // Workaround for Qt bug.
+  g_guis_can_not_be_closed[cell_gui->get_gui_num()] = "Gui is placed inside a Table. Qt seems to crash with if you close a QTableWidget cell widget manually. However, table cells are deleted automatically when being replaced, or a row is deleted, or a table is cleared, so it's probably never necessary to close them manually.";
+
   table->setCellWidget(y, x, cell_gui->_widget);
 
   return cell_gui->get_gui_num();
@@ -2871,10 +2880,22 @@ void gui_close(int64_t guinum){
   */
   
   if (g_static_toplevel_widgets.contains(gui->_widget)){
-    handleError("Can not close Gui #%d since it is marked as a static toplevel widget");
+    handleError("Can not close Gui #%d since it is marked as a static toplevel widget", (int)guinum);
     return;
   }
-    
+
+  const char *can_not_be_closed_reason = g_guis_can_not_be_closed.value(guinum);
+  if (can_not_be_closed_reason != NULL){
+    handleError("Gui #%d can not be closed.\nReason: %s", guinum, can_not_be_closed_reason);
+    return;
+  }
+  
+  if (gui->_has_been_closed){
+    handleError("Gui #%d has already been closed", (int)guinum);
+    return;
+  }
+  gui->_has_been_closed = true;
+  
   if(gui->is_full_screen())
     deleteFullscreenParent(gui);
 
