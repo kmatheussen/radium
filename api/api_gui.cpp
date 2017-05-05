@@ -326,7 +326,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   public:
     int _gui_num;
     int _valid_guis_pos;
-    
+
+    QWidget *_widget_as_key; // Need a way to get hold of the original widget's address in the destructor. (Beware that _widget_as_key might have been deleted. Only _widget can be considered valid.)
     QPointer<QWidget> _widget; // Stored in a QPointers since we need to know if the widget has been deleted.
     bool _created_from_existing_widget; // Is false if _widget was created by using one of the gui_* functions (except gui_child()). Only used for validation.
 
@@ -349,10 +350,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     
     Gui(QWidget *widget, bool created_from_existing_widget = false)
-      : _widget(widget)
+      : _widget_as_key(widget)
+      , _widget(widget)
       , _created_from_existing_widget(created_from_existing_widget)
     {
-
+      R_ASSERT(widget != NULL);
+      
       g_gui_from_widgets[_widget] = this;
       
       _gui_num = g_highest_guinum++;
@@ -375,7 +378,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       R_ASSERT(g_guis.contains(_gui_num));
       R_ASSERT(g_guis.value(_gui_num) != NULL);
 
-      R_ASSERT(false==g_static_toplevel_widgets.contains(_widget));
+      R_ASSERT(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
 
       printf("Deleting Gui %p\n",this);
 
@@ -408,7 +411,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (_paint_callback!=NULL)
         s7extra_unprotect(_paint_callback);
 
-      g_gui_from_widgets.remove(_widget);
+      g_gui_from_widgets.remove(_widget_as_key); // Can't use _widget since it might have been set to NULL.
         
       g_guis.remove(_gui_num);
 
@@ -2088,8 +2091,9 @@ static void perhaps_collect_a_little_bit_of_gui_garbage(int num_guis_to_check){
     //printf("Checking %d/%d (guinum: %d)\n", pos, g_valid_guis.size(), gui->get_gui_num());
     
     R_ASSERT_RETURN_IF_FALSE(gui!=NULL);
+    
     if (gui->_widget==NULL){
-      printf("        COLLECTING gui garbage: %d\n",pos);
+      printf("        COLLECTING gui garbage. Pos: %d, guinum: %d\n", pos, (int)gui->get_gui_num());
       delete gui;
     }
     
@@ -2108,7 +2112,7 @@ int64_t API_get_gui_from_widget(QWidget *widget){
   
     if (gui != NULL){
       if (gui->_widget == NULL){
-        //handleError("Gui #%d, created from existing widget, has been closed and can not be used.", gui->get_gui_num()); // It probably doesn't happen very often, but it's not an error. (It means that a QWidget has the same pointer as an old deleted QWidget.)
+        //handleError("Gui #%d, created from existing widget, has been closed and can not be used.", gui->get_gui_num()); // It probably doesn't happen very often, but it's not an error. (It means that a new QWidget instance has the same pointer value as an old deleted QWidget.)
         delete gui;
       }else
         return gui->get_gui_num();
@@ -2858,7 +2862,7 @@ void gui_close(int64_t guinum){
     return;
 
   /*
-  // Remove this limitation. It makes sense to do this if removing a child widget from an ui.
+  // Removed this limitation. It makes sense to do this when removing a child widget from an ui.
   //
   if (gui->_created_from_existing_widget){ //g_gui_from_existing_widgets.contains(gui->_widget)){
     handleError("Can not close Gui #%d since it was not created via the API");

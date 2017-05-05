@@ -15,6 +15,7 @@ QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void);
 QWidget *MIXERSTRIPS_get_curr_widget(void);
 QWidget *API_gui_get_widget(int64_t guinum);
 QWidget *API_gui_get_parentwidget(int64_t guinum);
+int64_t API_get_gui_from_widget(QWidget *widget);
 int64_t API_get_gui_from_existing_widget(QWidget *widget);
 #endif
 #endif
