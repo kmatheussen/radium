@@ -3544,6 +3544,12 @@ void releaseKeyboardFocus(void){
   release_keyboard_focus_counting();
 }
 
+bool gui_hasKeyboardFocus(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return false;
+  return gui->_widget->hasFocus();
+}
 
 ////////////
 
@@ -3983,6 +3989,8 @@ int API_get_num_entries_in_disk_container(SoundPluginTypeContainer *container){
 
 static void get_entries_from_populated_container(dynvec_t &ret, SoundPluginTypeContainer *container, const QString path){
 
+  R_ASSERT_RETURN_IF_FALSE(container->is_populated);
+  
   QVector<hash_t*> entries;
 
   for(int i=0 ; i < container->num_types ; i++){
@@ -4132,7 +4140,7 @@ dyn_t populatePluginContainer(dyn_t entry){
         //handleError("Could not find container %s / %s", name, type_name); // Screws up scanning since handleError casts an exception. Besides, we already get error messages from PR_get_container.
         goto exit;
       }
-    
+
       get_entries_from_populated_container(ret, container, path);
     }
   }
