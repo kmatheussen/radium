@@ -248,14 +248,30 @@ static enum PopulateResult populate(SoundPluginTypeContainer* container){
   return PR_POPULATED;
 }
 
-SoundPluginTypeContainer *PR_get_container(const char *container_name, const char *type_name){
+static SoundPluginTypeContainer *find_first_populated_container_or_NULL(const QVector<SoundPluginTypeContainer*> &containers){
+  for(auto *container : containers){
+    if(container->is_populated)
+      return container;
+  }
 
-  QVector<SoundPluginTypeContainer*> containers;
+  return NULL;
+}
 
+
+static QVector<SoundPluginTypeContainer*> PR_get_all_containers_matching(const char *container_name, const char *type_name){
+  QVector<SoundPluginTypeContainer*> ret;
+  
   for(auto container : g_plugin_type_containers)
     if(!strcmp(container->type_name,type_name))
       if(!strcmp(container->name,container_name))
-        containers.push_back(container);
+        ret.push_back(container);
+
+  return ret;
+}
+
+SoundPluginTypeContainer *PR_get_container(const char *container_name, const char *type_name){
+
+  QVector<SoundPluginTypeContainer*> containers = PR_get_all_containers_matching(container_name, type_name);
 
   if (containers.size()==0)
     return NULL;
@@ -289,8 +305,12 @@ SoundPluginTypeContainer *PR_get_container(const char *container_name, const cha
     }
   }
 
+  
+  if (populated_containers.size()==0)
+    return find_first_populated_container_or_NULL(containers);
+  
   // Among the populated containers, find all the usable ones, and return the first one.
-
+  //
   QVector<SoundPluginTypeContainer*> usable_containers;
 
   for(auto *container : populated_containers){
@@ -306,7 +326,8 @@ SoundPluginTypeContainer *PR_get_container(const char *container_name, const cha
                      "It might help to rescan plugins in the plugin manager and try again.",
                      container_name
                      );
-    return NULL;
+
+    return find_first_populated_container_or_NULL(containers);
   }
   
   if(usable_containers.size() > 1 && !GFX_Message_ignore_questionmark()){
@@ -328,7 +349,12 @@ SoundPluginTypeContainer *PR_get_container(const char *container_name, const cha
 }
 
 bool PR_ensure_container_is_populated(const char *container_name, const char *type_name){
-  return PR_get_container(container_name, type_name) != NULL;
+  SoundPluginTypeContainer *container = PR_get_container(container_name, type_name);
+  if (container==NULL)
+    return false;
+  
+  R_ASSERT(container->is_populated);
+  return true;
 }
 
 static SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const char *plugin_name){
