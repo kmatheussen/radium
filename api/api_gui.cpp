@@ -2585,21 +2585,39 @@ void gui_addTableRows(int64_t table_guinum, int pos, int how_many){
     return;
   }
 
-  if (pos < -table->rowCount()){
-    handleError("gui_addTableRows: pos (%d) too large. There's only %d rows in this table", pos, table->rowCount());
-    pos = table->rowCount();
-  }
+  int num_rows = table->rowCount();
 
-  if (how_many > 0)
+  if (pos < -num_rows){
+    handleError("gui_addTableRows: pos (%d) too large. There's only %d rows in this table", pos, table->rowCount());
+    pos = -num_rows;
+  }
+  
+  if(pos==num_rows && how_many > 0){
+    table->setRowCount(num_rows+how_many); // Optimization. Calling table->insertRow() several times in a row sometimes stalls Qt for up to a second (224 rows). Calling setRowCount doesn't, for some reason.
+    
+  }else if(how_many<0 && pos>=num_rows+how_many){
+    if (pos>num_rows+how_many)
+      handleError("gui_addTableRows: Illegal 'pos' argument for Gui #%d. pos: %d, how_many: %d, number of rows: %d. Last legal position: %d",
+                  table_guinum, pos, how_many, num_rows, num_rows+how_many);
+    table->setRowCount(num_rows+how_many);
+    
+  }else if (how_many > 0){
     for(int i=0;i<how_many;i++)
       table->insertRow(pos);
-  else if (pos==0 && how_many==-table->rowCount()){
+
+    /*
+    // This case is covered in the second if above.
+  }else if (pos==0 && how_many==-table->rowCount()){
     printf("   CLEARNGING\n");
     table->clearContents();
     table->setRowCount(0);
+    */
+    
   }else
     for(int i=0;i<-how_many;i++)
       table->removeRow(pos);
+
+  R_ASSERT(table->rowCount() == num_rows+how_many);
 }
 
 int gui_getNumTableRows(int64_t table_guinum){
