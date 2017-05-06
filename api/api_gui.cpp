@@ -117,18 +117,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define CLOSE_OVERRIDER(classname)                                      \
   void closeEvent(QCloseEvent *ev) override {                           \
-  Gui::_has_been_closed = true;                                               \
-    if(g_radium_runs_custom_exec) return;                               \
-    if (_close_callback==NULL)                                          \
+    if (_close_callback==NULL){                                         \
+      Gui::_has_been_closed = true;                                     \
       classname::closeEvent(ev);                                        \
-    else                                                                \
+    }else                                                               \
       Gui::closeEvent(ev);                                              \
   }                                                                     
 
 
 #define RESIZE_OVERRIDER(classname)                                     \
   void resizeEvent( QResizeEvent *event) override {                     \
-    if(g_radium_runs_custom_exec) return;                               \
     if (_image!=NULL)                                                   \
       setNewImage(event->size().width(), event->size().height());       \
     if (_resize_callback==NULL)                                         \
@@ -139,7 +137,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define PAINT_OVERRIDER(classname)                                      \
   void paintEvent(QPaintEvent *ev) override {                           \
-    if(g_radium_runs_custom_exec) return;                               \
     if(_image!=NULL){                                                   \
       QPainter p(this);                                                 \
       p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \
@@ -387,7 +384,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       printf("Deleting Gui %p\n",this);
 
       for(func_t *func : _deleted_callbacks){
-        s7extra_callFunc_void_void(func);
+        s7extra_callFunc_void_bool(func, g_radium_runs_custom_exec);
         s7extra_unprotect(func);
       }
 
@@ -585,10 +582,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void closeEvent(QCloseEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_close_callback!=NULL);
 
-      if (false==s7extra_callFunc_bool_void(_close_callback))
+      if (false==s7extra_callFunc_bool_bool(_close_callback, g_radium_runs_custom_exec))
         event->ignore();
-      else
+      else{
+        Gui::_has_been_closed = true;
         event->accept();
+      }
     }
 
     void addCloseCallback(func_t* func){      
@@ -608,6 +607,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     void resizeEvent(QResizeEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
+
+      if(g_radium_runs_custom_exec){
+#if !defined(RELEASE)
+        R_ASSERT(false);
+#endif
+        return;
+      }
 
       if(gui_isOpen(_gui_num) && _widget->isVisible()) //  && _widget->width()>0 && _widget->height()>0)
         s7extra_callFunc_void_int_int(_resize_callback, event->size().width(), event->size().height());
@@ -635,7 +641,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void paintEvent(QPaintEvent *event) {
       R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL);
-      
+
+      if(g_radium_runs_custom_exec)
+        return;
+
       event->accept();
 
       R_ASSERT_RETURN_IF_FALSE(g_currently_painting==false);
