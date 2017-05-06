@@ -1173,3 +1173,63 @@ for .emacs:
 (define (test-crash)
   (fibgakk 50))
 ||#
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Coroutines (missing yield and so forth, but we don't need it it, at least not yet)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-struct coroutine
+  :func #f
+  :is-scheduled #f
+  :is-running #f
+  :please-stop-me #f)
+
+(define (coroutine-alive? coroutine)
+  ;;(c-display "coroutine:" coroutine (coroutine :is-scheduled))
+  (or (coroutine :is-scheduled)
+      (coroutine :is-running)))
+
+(define (stop-coroutine! coroutine)
+  (cond ((coroutine :is-scheduled)
+         (let ((func (coroutine :func)))
+           (<ra> :remove-schedule func)
+           (set! (coroutine :is-scheduled) #f)))
+        ((coroutine :is-running)
+         (set! (coroutine :please-stop-me) #t))
+        (else
+         #f)))
+        
+(define (run-coroutine coroutine args func)
+  
+  (define (coroutine-helper)
+    (set! (coroutine :is-scheduled) #f)
+    (when (not (coroutine :please-stop-me))
+      (let loop ((args args))
+        (set! (coroutine :is-running) #t)
+        (let ((pausetime-and-args (catch #t
+                                         (lambda ()
+                                           (apply func args))
+                                         (lambda args
+                                           (c-display (ow!))
+                                           #f))))
+          (set! (coroutine :is-running) #f)
+          (if (and (not (coroutine :please-stop-me))
+                   pausetime-and-args)
+              (let* ((pausetime (car pausetime-and-args))
+                     (next-args (cdr pausetime-and-args)))
+                (if (> pausetime 0)
+                    (schedule-next! next-args pausetime)
+                    (loop next-args)))))))
+    #f)
+  
+  (define (schedule-next! next-args pausetime)
+    (set! args next-args)
+    (set! (coroutine :is-scheduled) #t)
+    (<ra> :schedule pausetime coroutine-helper))
+
+  (assert (not (coroutine-alive? coroutine)))
+  (set! (coroutine :please-stop-me) #f)
+  (set! (coroutine :func) coroutine-helper) ;; Not currently used for anything.
+  (schedule-next! args 0))
