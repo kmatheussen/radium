@@ -2,10 +2,14 @@
 
 (when (and (defined? '*pluginmanager-gui*)
            (<gui> :is-open *pluginmanager-gui*))
+  (pmg-stop-search!)
+  (pmg-stop-scanning!)
   (when (not *pmg-has-keyboard-focus*)
-    (<ra> :obtain-keyboard-focus *pmg-search-text-button*) ;; hack. (all of this is just fallback code in case something goes wrong)
+    (<ra> :obtain-keyboard-focus *pmg-search-text-field*) ;; hack. (all of this is just fallback code in case something goes wrong)
     (set! *pmg-has-keyboard-focus* #f))
   (<gui> :set-static-toplevel-widget *pluginmanager-gui* #f)
+  (if *message-gui*
+      (<gui> :set-parent *message-gui* -1)) ;; Change parent of message gui. Don't want to delete it. (Note that we are in DEV mode here. This code should never be run by user.) TODO: We could perhaps, somehow, do this automatically in the setStaticToplevelWidget function. We would probably have less semi-weird crashes during development then.
   (<gui> :close *pluginmanager-gui*))
 
 (define *pmg-has-keyboard-focus* #f)
@@ -39,6 +43,10 @@
 (define *pmg-instrconf* #f)
 (define *pmg-callback* #f)
 
+(define *pmg-search-coroutine* (make-coroutine))
+(define *pmg-scanner-coroutine* (make-coroutine))
+  
+
 #!
 (begin *pmg-instrconf*)
 (<gui> :is-open *pluginmanager-gui*)
@@ -48,10 +56,13 @@
 
 (define (pmg-hide)
   (when (pmg-open?)
-    (<ra> :release-keyboard-focus)
-    (set! *pmg-has-keyboard-focus* #f)
+    (when *pmg-has-keyboard-focus*
+      (<ra> :release-keyboard-focus)
+      (set! *pmg-has-keyboard-focus* #f))
+    (pmg-stop-search!)
+    (pmg-stop-scanning!)
     (<gui> :hide *pluginmanager-gui*)
-    (<gui> :set-parent *pluginmanager-gui* -3) ;; Set parent to NULL. If not, the plugin manager window is deleted when the parent is deleted.
+    (<gui> :set-parent *pluginmanager-gui* -1) ;; Set parent to the main window. If not, the plugin manager window is deleted when the parent is deleted. (the plugin manager window is modal)
     (set! *pmg-callback* #f)
     (set! *pmg-instrconf* #f)))
 
@@ -68,8 +79,9 @@
       (<gui> :set-text *pmg-cancel-button* "Cancel")
       (<gui> :set-text *pmg-cancel-button* "Close"))
   (<gui> :show *pluginmanager-gui*)
-  (<ra> :obtain-keyboard-focus *pmg-search-text-button*)
-  (set! *pmg-has-keyboard-focus* #t))
+  (when (not *pmg-has-keyboard-focus*)
+    (<ra> :obtain-keyboard-focus *pmg-search-text-field*)
+    (set! *pmg-has-keyboard-focus* #t)))
 
 
 
@@ -87,11 +99,12 @@
 
 ;; Just hide window when closing it.
 (<gui> :add-close-callback *pluginmanager-gui*
-       (lambda ()
-         (catch #t ;; We don't want to risk not returning #f (if that happens, the plugin manager can't be opened again)
-                pmg-hide
-                (lambda args
-                  (c-display (ow!))))
+       (lambda (radium-runs-custom-exec)
+         (if (not radium-runs-custom-exec)
+             (catch #t ;; We don't want to risk not returning #f (if that happens, the plugin manager can't be opened again)
+                    pmg-hide
+                    (lambda args
+                      (c-display (ow!)))))
          #f))
 
 ;; init table stuff
@@ -116,52 +129,59 @@
         (lambda (res)
           (if (string=? "Yes" res)
               (yes-callback)))))
-  
+
+
 (define (pmg-scan-all-remaining)
-  (<ra> :schedule 0
-        (lambda ()
-          (if (null? *pmg-populate-funcs*)
-              (begin
-                (<gui> :set-value *pmg-progress-label* "")
-                (<ra> :add-message "Finished"))))
-                #f)
-              (begin                                   
-                ((car *pmg-populate-funcs*))
-                ;;(<gui> :update table-parent)
-                50)))))
+
+  (when (pmg-finished-scanning?)
+    
+    (define (all-plugins-are-scanned)
+      (<gui> :set-value *pmg-progress-label* "")
+      (<ra> :add-message "Finished")
+      (<gui> :set-enabled *pmg-scan-all-button* #f)
+      (define org-search-string *pmg-curr-search-string*)
+      (pmg-search "" ;; Make sure all entries are updated. Even though entries are filled in during update, entries that share the same container are not updated.
+                  #f
+                  (lambda ()
+                    (pmg-search org-search-string #t)))) ;; set back to original search, if necessary
+
+    (run-coroutine *pmg-scanner-coroutine*
+                   '()
+                   (lambda ()
+                     (if (null? *pmg-populate-funcs*)
+                         (begin
+                           (all-plugins-are-scanned)
+                           #f)
+                         (begin
+                           ((car *pmg-populate-funcs*))
+                           (list 50)))))))
+        
 
 (define *pmg-scan-all-button* (<gui> :child *pluginmanager-gui* "scan_all_button"))
 (<gui> :add-callback *pmg-scan-all-button* (lambda ()
-                                             (pmg-ask-are-you-sure pmg-scan-all-remaining)))
+                                             (when (pmg-finished-scanning?)
+                                               (pmg-ask-are-you-sure pmg-scan-all-remaining))))
 
 
 (define *pmg-rescan-all-button* (<gui> :child *pluginmanager-gui* "rescan_all_button"))
 (<gui> :add-callback *pmg-rescan-all-button*
        (lambda ()
-         (pmg-ask-are-you-sure
-          (lambda ()
-            (let ((message "Please wait. Clearing saved plugin info and rescanning directories for plugins..."))
-              (<gui> :set-value *pmg-progress-label* message)
-              (<ra> :add-message message))
-            (<ra> :schedule 50
-                  (lambda ()
-                    (<ra> :clear-sound-plugin-registry)
-                    (pmg-search "" #f)
-                    (<ra> :schedule 50
-                          (lambda ()
-                            (if (pmg-finished-searching?)
-                                (begin
-                                  (if (not (null? *pmg-populate-funcs*))
-                                      (pmg-scan-all-remaining)
-                                      (<ra> :add-message "Finished"))
-                                  #f)
-                                50)))
-                    #f))))))
+         (if (pmg-finished-scanning?)
+             (pmg-ask-are-you-sure
+              (lambda ()
+                (let ((message "Please wait. Clearing saved plugin info and rescanning directories for plugins..."))
+                  (<gui> :set-value *pmg-progress-label* message)
+                  (<ra> :add-message message))
+                (<ra> :schedule 50 ;; Give the "Please wait" message a little bit of time to display.
+                      (lambda ()
+                        (<ra> :clear-sound-plugin-registry)
+                        (pmg-search "" #f pmg-scan-all-remaining)
+                        #f)))))))
 
-(define *pmg-search-text-button* (<gui> :child *pluginmanager-gui* "search_text"))
-(<gui> :set-value *pmg-search-text-button* "")
+(define *pmg-search-text-field* (<gui> :child *pluginmanager-gui* "search_text"))
+(<gui> :set-value *pmg-search-text-field* "")
 
-(<gui> :add-realtime-callback *pmg-search-text-button*
+(<gui> :add-realtime-callback *pmg-search-text-field*
        (lambda (val)
          (if (pmg-visible?)
              (pmg-search val #t))))
@@ -183,26 +203,38 @@
   (define (made-selection)
     (when *pmg-callback*
       (assert *pmg-instrconf*)
-      (let ((entry (pmg-find-entry-from-row (<gui> :get-value *pmg-table*)))
-            (instrconf *pmg-instrconf*)
-            (callback *pmg-callback*))
-        (when entry
-          (c-display (pp (<gui> :get-value *pmg-table*)))
-          (c-display (pp entry))
-          (spr-entry->instrument-description entry
-                                             instrconf
-                                             callback)
-          (pmg-hide)))))
+      (let* ((row (<gui> :get-value *pmg-table*))
+             (entry (pmg-find-entry-from-row row))
+             (instrconf *pmg-instrconf*)
+             (callback *pmg-callback*))
+        (cond (entry
+               (c-display (pp (<gui> :get-value *pmg-table*)))
+               (c-display (pp entry))
+               (spr-entry->instrument-description entry
+                                                  instrconf
+                                                  callback)
+               (pmg-hide))
+              ((> (length row) 0)
+               (<ra> :add-message (<-> "Error. Unable to find instrument description for row " (pp (<gui> :get-value *pmg-table*)))))))))
 
+  (define just-pressed-return-in-search-field #f)
+  
+  (<gui> :add-callback *pmg-search-text-field*
+         (lambda (val)
+           (set! just-pressed-return-in-search-field #t)
+           (<ra> :schedule 50 ;; Instead, we could simply check duration since last time the return was pressed in the text field, but then we could, theoretically, risk not visiting qApp::exec() inbetween, which seems enough in order to distinguish this return from the other one. (evidence for that is that it works to schedule this coroutine just 1 ms into the future but below we need at least 40-50 ms to be safe. (I've set 50ms here too though, just in case.))
+                 (lambda ()
+                   (set! just-pressed-return-in-search-field #f)))))
+  
   (<gui> :add-key-callback *pluginmanager-gui*
          (lambda (presstype key)
-           (c-display "GOT KEY" presstype key (string=? key "\n"))           
-           (cond ((string=? key "HOME")
-                  (c-display "HOME")
+           ;;(c-display "GOT KEY" presstype key (string=? key "\n"))
+           (cond (just-pressed-return-in-search-field
+                  #f)
+                 ((string=? key "HOME")
                   (<gui> :set-value *pmg-table* 0)
                   #t)
                  ((string=? key "END")
-                  (c-display "END")
                   (<gui> :set-value *pmg-table* (1- (<gui> :get-num-table-rows *pmg-table*)))
                   #t)
                  ((= 1 presstype)
@@ -225,6 +257,17 @@
   (<gui> :add-callback *pmg-cancel-button* pmg-hide)
   )
 
+#||
+(let ((i 100))
+  (define (func)
+    (if (> i 0)
+        (begin
+          (c-display "hasit:" (<gui> :has-keyboard-focus *pmg-search-text-field*))
+          (set! i (1- i))
+          1000)
+        #f))
+  (<ra> :schedule 0 func))
+||#
 
 (define *pmg-curr-entries* '())
 
@@ -233,8 +276,6 @@
 
 (define *pmg-curr-search-string* "------------")
 
-(define *pmg-curr-fill-table-coroutine* #f)
-  
 (define (pmg-find-entry-from-row row)
   (if (= 0 (length row))
       #f
@@ -243,139 +284,181 @@
                     (lambda (entry)
                       (string=? (entry :path) path))))))
   
-(define (pmg-clear-table!)
-  (<gui> :add-table-rows *pmg-table* 0 (- (<gui> :get-num-table-rows *pmg-table*))) ;; TODO: Check if this one also closes the cell GUIs.
+(define (pmg-initialize-table! table new-num-entries)
+  ;;(c-display "                pmg-clear-table! SEARCH-CLEAR")
+  (<gui> :enable-table-sorting table #f)  
+
+  (let* ((old-num-entries (<gui> :get-num-table-rows table))
+         (num-new-entries (- new-num-entries old-num-entries)))
+    (cond ((> num-new-entries 0)
+           (<gui> :add-table-rows table old-num-entries num-new-entries))
+          ((< num-new-entries 0)
+           (<gui> :add-table-rows table (+ old-num-entries num-new-entries) num-new-entries))))
+
   (set! *pmg-populate-funcs* '())
   (set! *pmg-populate-buttons* '())
-  (set! *pmg-curr-entries* '()))
+  (set! *pmg-curr-entries* '())
+
+  (<gui> :set-enabled *pmg-scan-all-button* #f))
+
   
 
-(define (pmg-add-to-table! table entries instrconf y finished-callback do-update-progress)
-  (set! *pmg-curr-entries* (append *pmg-curr-entries* entries))
+(define (pmg-add-entry-to-table! table entry instrconf y)
+  (define is-normal (string=? (entry :type) "NORMAL"))
+  (define is-container (string=? (entry :type) "CONTAINER"))
+  ;;(define is-favourite (string=? (entry :type) "NUM_USED_PLUGIN"))
+  ;;(c-display "entry:" entry)
+  
+  (define enabled (or (not is-normal)
+                      (can-spr-entry-be-used? entry instrconf)))
+  
+  (push! *pmg-curr-entries* entry)
+
+  (disable-gui-updates-block ;; The "scan" buttons sometimes pop up temporarily in a position where they are not supposed to be, unless we turn off updates.
+   table
+   (lambda ()
+  
+     (let ((n (entry :num-uses)))
+       (if (> n 0)
+           (<gui> :add-table-int-cell table n *pmg-use-x* y enabled)
+           (<gui> :add-table-string-cell table "" *pmg-use-x* y enabled)))
+     (define name-gui (<gui> :add-table-string-cell table (entry :name) *pmg-name-x* y enabled))
+     (<gui> :add-table-string-cell table (entry :type-name) *pmg-type-x* y enabled)
+     (<gui> :add-table-string-cell table (entry :path) *pmg-path-x* y enabled)
+     
+     (cond (is-normal
+            
+            (<gui> :add-table-string-cell table (<-> (entry :category)) *pmg-category-x* y enabled)
+            (<gui> :add-table-string-cell table (<-> (entry :creator)) *pmg-creator-x* y enabled)
+            (<gui> :add-table-int-cell table (entry :num-inputs) *pmg-inputs-x* y enabled)
+            (<gui> :add-table-int-cell table (entry :num-outputs) *pmg-outputs-x* y) enabled)
+           
+           (is-container
+            
+            (define is-blacklisted (entry :is-blacklisted))
+            
+            (define pop1 #f)
+            (define pop2 #f)
+            
+            (define (populate)
+              (<gui> :set-value *pmg-progress-label* (<-> "Scanning (" (length *pmg-populate-funcs*) "): " (entry :name)))
+              (<gui> :update *pmg-progress-label*)
+              ;;(<gui> :enable-table-sorting table #f)
+              (let ((new-entries (<ra> :populate-plugin-container entry))
+                    (y (<gui> :get-table-row-num table pop1)))
+                (assert (>= y 0))
+                (<gui> :add-table-rows table y (1- (length new-entries)))
+                ;;(c-display (pp new-entries))
+                (pmg-add-entries-to-table! table (to-list new-entries) instrconf y)
+                (<gui> :set-value *pmg-progress-label* (<-> "Finished Scanning (" (length *pmg-populate-funcs*) "): " (entry :name)))
+                )
+              ;;(<gui> :enable-table-sorting table #t)
+              (if (not is-blacklisted)
+                  (set! *pmg-populate-funcs* (delete-from2 *pmg-populate-funcs* populate)))
+              (set! *pmg-populate-buttons* (delete-from2 *pmg-populate-buttons* pop1))
+              (set! *pmg-populate-buttons* (delete-from2 *pmg-populate-buttons* pop2))
+              ;;(<gui> :close pop1) ;; Not needed, and not even possible because Qt crashes as a (not so nice) nice way to tell the user that this is unnecessary.
+              ;;(<gui> :close pop2) ;; Not needed, and not even possible because Qt crashes as a (not so nice) nice way to tell the user that this is unnecessary.
+              )
+            
+            (set! pop1 (<gui> :button "Scan" populate))
+            (set! pop2 (<gui> :button "Scan" populate))
+            
+            (if (not is-blacklisted)
+                (push! *pmg-populate-funcs* populate))
+            (<gui> :set-enabled pop1 #f)
+            (<gui> :set-enabled pop2 #f)
+            (push! *pmg-populate-buttons* pop1)
+            (push! *pmg-populate-buttons* pop2)
+            (<gui> :add-table-string-cell table (entry :category) *pmg-category-x* y)
+            (<gui> :add-table-string-cell table "" *pmg-creator-x* y)
+            (<gui> :add-table-gui-cell table pop1 *pmg-inputs-x* y)
+            (<gui> :add-table-gui-cell table pop2 *pmg-outputs-x* y)
+            )
+           
+           (else
+            (<ra> :addMessage (<-> "Don't know how to handle " entry)))))))
+
+(define (pmg-add-entries-to-table! table entries instrconf y)
+  (let loop ((entries entries)
+             (y y))
+    (when (not (null? entries))
+      (pmg-add-entry-to-table! table (car entries) instrconf y)
+      (loop (cdr entries)
+            (1+ y)))))
+
+
+
+(define (pmg-schedule-adding-entries-to-table! table entries instrconf finished-callback)
   
   (define total-num-entries (length entries))
-  (<gui> :set-enabled *pmg-scan-all-button* #f)
-  (<gui> :enable-table-sorting table #f)
-  (define start-time (time))
 
   (define (update-progress entries)
-    (if do-update-progress
-        (<gui> :set-value *pmg-progress-label* (<-> (- total-num-entries (length entries)) "/" total-num-entries))))
-    
-  (update-progress entries)
+    ;;(c-display "PROGRESS:" (<-> (- total-num-entries (length entries)) "/" total-num-entries))
+    (<gui> :set-value *pmg-progress-label* (<-> (- total-num-entries (length entries)) "/" total-num-entries)))
   
-  (let loop ((entries entries)
-             (y y))    
-    (if (null? entries)
-        (begin
-          (if do-update-progress
-              (<gui> :set-value *pmg-progress-label* ""))
-          (<gui> :enable-table-sorting table #t)
-          (<gui> :set-enabled *pmg-scan-all-button* (not (null? *pmg-populate-funcs*)))
-          (for-each (lambda (populate-button)
-                      (<gui> :set-enabled populate-button #t))
-                    *pmg-populate-buttons*)
-          (if finished-callback
-              (finished-callback)))
-        (begin
-          (define entry (car entries))
-          (define is-normal (string=? (entry :type) "NORMAL"))
-          (define is-container (string=? (entry :type) "CONTAINER"))
-          ;;(define is-favourite (string=? (entry :type) "NUM_USED_PLUGIN"))
-          ;;(c-display "entry:" entry)
+  (define (finalize-search)
+    (<gui> :set-value *pmg-progress-label* (<-> "Num plugins: " (<gui> :get-num-table-rows *pmg-table*)))
+    (<gui> :enable-table-sorting table #t)
+    (<gui> :set-enabled *pmg-scan-all-button* (not (null? *pmg-populate-funcs*)))
+    (for-each (lambda (populate-button)
+                (<gui> :set-enabled populate-button #t))
+              *pmg-populate-buttons*)
+    (finished-callback)
+    #f)
+  
+  (define start-time (time))
 
-          (define enabled (or (not is-normal)
-                              (can-spr-entry-be-used? entry instrconf)))
+  (pmg-stop-search!)
 
-          (when (or is-normal is-container)
-            (let ((n (entry :num-uses)))
-              (if (> n 0)
-                  (<gui> :add-table-int-cell table n *pmg-use-x* y enabled)
-                  (<gui> :add-table-string-cell table "" *pmg-use-x* y enabled)))
-            (define name-gui (<gui> :add-table-string-cell table (entry :name) *pmg-name-x* y enabled))
-            (<gui> :add-table-string-cell table (entry :type-name) *pmg-type-x* y enabled)
-            (<gui> :add-table-string-cell table (entry :path) *pmg-path-x* y enabled)
-            (cond (is-normal
-                  
-                   (<gui> :add-table-string-cell table (<-> (entry :category)) *pmg-category-x* y enabled)
-                   (<gui> :add-table-string-cell table (<-> (entry :creator)) *pmg-creator-x* y enabled)
-                   (<gui> :add-table-int-cell table (entry :num-inputs) *pmg-inputs-x* y enabled)
-                   (<gui> :add-table-int-cell table (entry :num-outputs) *pmg-outputs-x* y) enabled)
-                  
-                  (is-container
+  (update-progress entries)
 
-                   (define is-blacklisted (entry :is-blacklisted))
+  (pmg-initialize-table! table (length entries))
+  
+  (run-coroutine   
+   *pmg-search-coroutine*
+   (list entries 0)
+   
+   (lambda (entries y)
+     
+     (if (null? entries)
 
-                   (define pop1 #f)
-                   (define pop2 #f)
-                   
-                   (define (populate)
-                     (c-display "       POPULATE" entry)
-                     (<gui> :set-value *pmg-progress-label* (<-> "Finished Scanning (" (length *pmg-populate-funcs*) "): " (entry :name)))
-                     (<gui> :update *pmg-progress-label*)
-                     ;;(<gui> :enable-table-sorting table #f)
-                     (let ((new-entries (<ra> :populate-plugin-container entry))
-                           (y (<gui> :get-table-row-num table pop1)))
-                       (c-display "    Y" y pop1 "length:" (length new-entries))
-                       (assert (>= y 0))
-                       (<gui> :add-table-rows table y (1- (length new-entries)))
-                       (c-display (pp new-entries))
-                       (pmg-add-to-table! table (to-list new-entries) instrconf y #f #f))
-                     ;;(<gui> :enable-table-sorting table #t)
-                     (if (not is-blacklisted)
-                         (set! *pmg-populate-funcs* (delete-from2 *pmg-populate-funcs* populate)))
-                     (set! *pmg-populate-buttons* (delete-from2 *pmg-populate-buttons* pop1))
-                     (set! *pmg-populate-buttons* (delete-from2 *pmg-populate-buttons* pop2))
-                     (<gui> :close pop1)
-                     (<gui> :close pop2))
-                   
-                   (set! pop1 (<gui> :button "Scan" populate))
-                   (set! pop2 (<gui> :button "Scan" populate))
-
-                   (if (not is-blacklisted)
-                       (push! *pmg-populate-funcs* populate))
-                   (<gui> :set-enabled pop1 #f)
-                   (<gui> :set-enabled pop2 #f)
-                   (push! *pmg-populate-buttons* pop1)
-                   (push! *pmg-populate-buttons* pop2)
-                   (<gui> :add-table-string-cell table (entry :category) *pmg-category-x* y)
-                   (<gui> :add-table-string-cell table "" *pmg-creator-x* y)
-                   (<gui> :add-table-gui-cell table pop1 *pmg-inputs-x* y)
-                   (<gui> :add-table-gui-cell table pop2 *pmg-outputs-x* y)
-                   )
-                  ))
-
-          (define time-now (time))
-          
-          (if (> (- time-now start-time)
-                 0.05)
-              (begin
-                (update-progress entries)
-                (set! *pmg-curr-fill-table-coroutine* (lambda ()                                                        
-                                                        (set! *pmg-curr-fill-table-coroutine* #f)
-                                                        (set! start-time (time))
-                                                        ;;(<gui> :enable-table-sorting table #f)
-                                                        (loop (cdr entries)
-                                                              (1+ y))
-                                                        #f))
-                ;;(<gui> :enable-table-sorting table #t)
-                (<ra> :schedule 10 *pmg-curr-fill-table-coroutine*))
-              (loop (cdr entries)
-                    (1+ y)))))))
+         (begin
+           (finalize-search)
+           #f)
+         
+         (begin
+           (pmg-add-entry-to-table! table (car entries) instrconf y)
+           
+           (assert (= (<gui> :get-num-table-rows *pmg-table*)
+                      total-num-entries))
+           
+           (define time-now (time))
+           
+           (let ((wait-time (if (> (- time-now start-time)
+                                   0.1) ;; seconds
+                                (begin
+                                  (update-progress entries)
+                                  (set! start-time time-now)
+                                  10) ;; milliseconds
+                                0)))
+             (list wait-time
+                   (cdr entries)
+                   (1+ y))))))))
 
 
+(define (pmg-stop-search!)
+  (stop-coroutine! *pmg-search-coroutine*))
 
+(define (pmg-stop-scanning!)
+  (stop-coroutine! *pmg-scanner-coroutine*))
 
-(define (pmg-stop-search)
-  (when *pmg-curr-fill-table-coroutine*
-    (<ra> :remove-schedule *pmg-curr-fill-table-coroutine*)
-    (set! *pmg-curr-fill-table-coroutine* #f)))
+(define (pmg-finished-scanning?)
+  (not (coroutine-alive? *pmg-scanner-coroutine*)))
 
-
-
-(define (pmg-finished-searching?)
-  (not *pmg-curr-fill-table-coroutine*)) ;; yepp. If searching, either the PC can not be here (there's just one thread), or *pmg-curr-fill-table-coroutine* has a value.
-
+#||
+(begin *pmg-scanner-coroutine*)
+||#
 
 (define *pmg-cached-entries* #f)
 (define *pmg-cached-entries-generation* -1)
@@ -387,7 +470,9 @@
     *pmg-cached-entries*))
           
 
-(define (pmg-search search-string check-same-search)
+(delafina (pmg-search :search-string
+                      :check-same-search
+                      :search-finished-callback #f)
 
   (define table *pmg-table*)
   
@@ -401,44 +486,32 @@
                       (map cdr (map values entry))))
               entries)))
 
+  (define (finished-callback)
+    (if search-finished-callback
+        (search-finished-callback)))
+  
   (set! search-string (string-upcase search-string))
 
-  (<ra> :schedule 10 ;; Feels somewhat better for interactivity to schedule it.
-        (lambda ()
-          (when (or (not check-same-search)
-                    (not (string=? *pmg-curr-search-string* search-string)))
-
-            (define t (time))
-            (define (get-time)
-              (let* ((now (time))
-                     (ret (- now t)))                
-                (set! t (time))
-                ret))
-            
-            ;;(c-display "    SEARCHING FOR" search-string (get-time))
-            (set! *pmg-curr-search-string* search-string)
-            (pmg-stop-search)
-            ;;(c-display " REMOVING..." (get-time))
-            ;;      (<gui> :enable-table-sorting table #f)
-            (pmg-clear-table!)
-            ;;(c-display "  REQUESTING" (get-time))
-            (define raw-entries (pmg-get-entries))
-            ;;(c-display "  FILTERING" (get-time))
-            (define filtered-entries (filter-entries raw-entries search-string))
-            ;;(c-display "  ADDING TABLE ROWS..." (get-time))
-            (<gui> :add-table-rows table 0 (length filtered-entries))
-            ;;(c-display "  ADDING ENTRIES..." (length entries) (get-time))
-            (pmg-add-to-table! *pmg-table* filtered-entries *pmg-instrconf* 0 #f #t))
-          #f)))
+  (if (or (not check-same-search)
+          (not (string=? *pmg-curr-search-string* search-string)))
+      (let* ((raw-entries (pmg-get-entries))
+             (filtered-entries (filter-entries raw-entries search-string)))
+        (set! *pmg-curr-search-string* search-string)
+        (pmg-schedule-adding-entries-to-table! *pmg-table* filtered-entries *pmg-instrconf* finished-callback)
+        )
+      (finished-callback)))
 
 
 ;; Start search and show gui
 (define (pmg-start instrconf callback)
   (pmg-show instrconf callback)
-  (pmg-search (<gui> :get-value *pmg-search-text-button*) #f))
+  (pmg-search (<gui> :get-value *pmg-search-text-field*) #f))
 
   
 #||
+(define hash-test (make-hash-table))
+(hash-test :test)
+
 (pmg-open?)
 (pmg-visible?)
 
