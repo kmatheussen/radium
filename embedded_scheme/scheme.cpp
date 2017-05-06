@@ -610,7 +610,7 @@ void s7extra_callFunc_void_bool(func_t *func, bool arg1){
 }
 
 void s7extra_callFunc2_void_bool(const char *funcname, bool arg1){
-  s7extra_callFunc_void_double((func_t*)s7_name_to_value(s7, funcname), arg1);
+  s7extra_callFunc_void_bool((func_t*)s7_name_to_value(s7, funcname), arg1);
 }
 
 void s7extra_callFunc_void_dyn(func_t *func, dyn_t arg1){
@@ -782,6 +782,28 @@ bool s7extra_callFunc_bool_int_int_float_float(func_t *func, int64_t arg1, int64
 
 bool s7extra_callFunc2_bool_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, float arg3, float arg4){
   return s7extra_callFunc_bool_int_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
+}
+
+bool s7extra_callFunc_bool_bool(func_t *func, bool arg1){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           (s7_pointer)func,
+                           s7_list(s7,
+                                   1,
+                                   s7_make_boolean(s7, arg1)
+                                   )
+                           );
+  if(!s7_is_boolean(ret)){
+    handleError("Callback did not return a boolean");
+    return -1;
+  }else{
+    return s7_boolean(s7, ret);
+  }
+}
+
+bool s7extra_callFunc2_bool_bool(const char *funcname, bool arg1){
+  return s7extra_callFunc_bool_bool((func_t*)s7_name_to_value(s7, funcname), arg1);
 }
 
 int64_t s7extra_callFunc_int_int(func_t *func, int64_t arg1){
@@ -1160,8 +1182,11 @@ void SCHEME_init1(void){
 
   s7_load(s7,"init.scm");
 
-  s7webserver = s7webserver_create(s7, 5080, true);
+  s7webserver = s7webserver_create(s7, 5080, true);  
   s7webserver_set_verbose(s7webserver, true);
+#if !defined(RELEASE)
+  s7webserver_set_very_verbose(s7webserver, true);
+#endif
 }
 
 void SCHEME_init2(void){
