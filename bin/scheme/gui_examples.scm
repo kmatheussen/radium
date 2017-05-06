@@ -161,6 +161,7 @@
 (define ui (<gui> :ui "/home/kjetil/radium/Qt/qt4_bottom_bar_widget.ui"))
 (define ui (<gui> :ui "/home/kjetil/radium/Qt/test.ui"))
 (<gui> :show ui)
+(<gui> :close ui)
 
 (define push (<gui> :child ui "pushButton"))
 (define check (<gui> :child ui "checkBox"))

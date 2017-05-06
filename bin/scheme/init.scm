@@ -114,12 +114,14 @@
 
 
 (define (delete-from das-list element)
+  (assert (not (null? das-list)))
   (if (eqv? (car das-list) element)
       (cdr das-list)
       (cons (car das-list)
             (delete-from (cdr das-list) element))))
 
 (define (delete-from2 das-list element)
+  (assert (not (null? das-list)))
   (if (equal? (car das-list) element)
       (cdr das-list)
       (cons (car das-list)

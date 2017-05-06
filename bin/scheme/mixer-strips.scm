@@ -87,10 +87,11 @@
 
 
 (define (add-gui-effect-monitor gui instrument-id effect-name callback)
-  (define effect-monitor (<ra> :add-effect-monitor effect-name instrument-id callback))
-  (<gui> :add-deleted-callback gui
-         (lambda ()
-           (<ra> :remove-effect-monitor effect-monitor))))
+  (let ((effect-monitor (<ra> :add-effect-monitor effect-name instrument-id callback)))
+    (<gui> :add-deleted-callback gui
+           (lambda (radium-runs-custom-exec)
+             (<ra> :remove-effect-monitor effect-monitor))))) ;; This function should be safe to call also when 'radium-runs-custom-exec' is true.
+                                     
 
 
 
@@ -762,7 +763,7 @@
     (push-back! *send-callbacks* send-callback)
     
     (<gui> :add-deleted-callback gui
-           (lambda ()
+           (lambda (radium-runs-custom-exec)
              (set! *send-callbacks*
                    (remove (lambda (callback)
                              (equal? callback send-callback))
@@ -1607,7 +1608,7 @@
   (push-back! *mixer-strips-objects* mixer-strips-object)
   
   (<gui> :add-deleted-callback parent
-         (lambda ()
+         (lambda (radium-runs-custom-exec)
            (set! *mixer-strips-objects*
                  (remove (lambda (a-mixer-strip-object)
                            (= (a-mixer-strip-object :gui)
@@ -1834,7 +1835,7 @@
   (push-back! *mixer-strips-objects* mixer-strips-object)
 
   (<gui> :add-deleted-callback parent
-         (lambda ()
+         (lambda (radium-runs-custom-exec)
            (set! *mixer-strips-objects*
                  (remove (lambda (a-mixer-strips-object)
                            (= (a-mixer-strips-object :gui)

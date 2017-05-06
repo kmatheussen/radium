@@ -212,6 +212,20 @@
           
           layout)
 
+
+(define (disable-gui-updates-block gui block)
+  (<gui> :disable-updates gui)
+  (let ((ret (catch #t
+                    block
+                    (lambda args ;; Catch exceptions to ensure (<ra> :cose-undo) will be called
+                      (display "args")(display args)(newline)
+                      (apply format #t (cadr args))
+                      (display (ow!))))))
+    (<gui> :enable-updates gui)
+    ret))
+
+
+
 (delafina (ra:show-async-message :parentgui -2
                                  :text ""
                                  :buttons '("OK")
@@ -241,7 +255,7 @@
       (<gui> :set-modal gui #t))
   
   (<gui> :set-parent gui parentgui)
-  (<gui> :add-close-callback gui (lambda ()
+  (<gui> :add-close-callback gui (lambda (radium-runs-custom-exec)
                                    can-be-closed))
 
   ;;(<gui> :set-pos gui (floor (<ra> :get-global-mouse-pointer-x)) (floor (<ra> :get-global-mouse-pointer-y)))
@@ -291,7 +305,7 @@
     
     ;; Just hide window when closing it.
     (<gui> :add-close-callback gui
-           (lambda ()
+           (lambda (radium-runs-custom-exec)
              ;;(<gui> :set-parent *message-gui* -3)
              (c-display "              GAKK GAKK GAKK")
              (<gui> :hide *message-gui*)
@@ -321,13 +335,14 @@
                                       ""
                                       (<-> *g-complete-message* "<p><br>\n"))
                                   "<h4>" (<ra> :get-date-string) " " (<ra> :get-time-string) ":</h4>"
-                                  message))
+                                  "<blockquote>" message "</blockquote>"))
   (define old-message (<gui> :get-value *message-gui-text-edit*))
   (<gui> :set-value *message-gui-text-edit* (<-> "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd\">"
                                                  "<html><head>" 
-                                                 "</head><body>"
+                                                 "</head><body>"                                                 
                                                  *g-complete-message*                                                 
-                                                 "<br></body></html>\n"))
+                                                 "<br>"                                                 
+                                                 "</body></html>\n"))
   (show-message-gui))
 
 #||
