@@ -2225,12 +2225,9 @@ void API_call_very_often(void){
     }
     
     dyn_t ret = s7extra_callFunc_dyn_void(event->_callback);
-    double new_ms = 0;
     
-    if (DYN_is_number(ret))
-      new_ms = DYN_get_double_from_number(ret);
-    
-    if (new_ms > 0){
+    if (DYN_is_number(ret)){
+      double new_ms = DYN_get_double_from_number(ret);
       event->priority = TIME_get_ms() + new_ms;
       schedule(event);
     } else {
