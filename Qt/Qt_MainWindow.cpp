@@ -768,6 +768,7 @@ static int GFX_Message(vector_t *buttons, QString message){
 
   QString wait_message = "Ignore messages for two seconds";
 
+  
   if(buttons==NULL){
 
     msgBox->setStandardButtons(QMessageBox::Ok);
@@ -777,12 +778,17 @@ static int GFX_Message(vector_t *buttons, QString message){
 
   } else {
 
+    QPushButton *last_button = NULL;
+
     VECTOR_FOR_EACH(const char *,button_text,buttons){
-      msgBox->addButton(button_text, QMessageBox::AcceptRole);
+      last_button = msgBox->addButton(button_text, QMessageBox::AcceptRole);
     }END_VECTOR_FOR_EACH;
 
+    R_ASSERT(last_button != NULL);
+    msgBox->setDefaultButton(last_button);
   }
 
+  
   //msgBox->move(QCursor::pos());
   RememberGeometryQDialog::num_open_dialogs++;
   safeExec(msgBox);
