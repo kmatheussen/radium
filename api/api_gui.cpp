@@ -2076,6 +2076,10 @@ int64_t gui_ui(const_char *filename){
   return gui->get_gui_num();
 }
 
+int gui_numOpenGuis(void){
+  return g_valid_guis.size();
+}
+
 int64_t gui_child(int64_t guinum, const_char* childname){
   Gui *gui = get_gui(guinum);
 
@@ -2091,7 +2095,6 @@ int64_t gui_child(int64_t guinum, const_char* childname){
 
   return API_get_gui_from_widget(child);
 }
-
 
 static void perhaps_collect_a_little_bit_of_gui_garbage(int num_guis_to_check){
   static int pos = 0;
