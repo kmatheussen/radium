@@ -367,7 +367,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       
       if (!_created_from_existing_widget){
         auto policy = _widget->sizePolicy();
-        policy.setRetainSizeWhenHidden(true);
+        //policy.setRetainSizeWhenHidden(true); // screws up mixer. Don't know why. (Press "M" two times)
         _widget->setSizePolicy(policy);
         _widget->setAttribute(Qt::WA_DeleteOnClose);
       }
@@ -3257,7 +3257,7 @@ void gui_setSizePolicy(int64_t guinum, bool grow_horizontally, bool grow_vertica
   QSizePolicy policy = QSizePolicy(get_grow_policy_from_bool(grow_horizontally),
                                    get_grow_policy_from_bool(grow_vertically));
   
-  policy.setRetainSizeWhenHidden(true);
+  //policy.setRetainSizeWhenHidden(true);  // screws up mixer. Don't know why.  (Press "M" two times)
   
   auto *scroll = dynamic_cast<VerticalScroll*>(gui->_widget.data());
   if (scroll!=NULL)
