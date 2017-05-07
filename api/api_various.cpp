@@ -2204,7 +2204,7 @@ void removeSchedule(func_t *callback){
   handleError("removeSchedule: Callback not found");
 }
 
-
+// Called every 5 ms.
 void API_call_very_often(void){
   double time = TIME_get_ms();
 
