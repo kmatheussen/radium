@@ -72,7 +72,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include <windows.h>
 #  define mysleep(ms) Sleep(ms)
 #else
-#  define mysleep(ms) msleep(ms)
+#  define mysleep(ms) QThread::msleep(ms)
 #endif
 
 
