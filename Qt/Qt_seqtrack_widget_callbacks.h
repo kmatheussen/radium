@@ -759,6 +759,7 @@ public:
   int _last_num_seqblocks = 0;
   
   void call_very_often(void){
+    
     if (_last_num_seqblocks != _seqtrack->seqblocks.num_elements) {
       SEQUENCER_update();
       _last_num_seqblocks = _seqtrack->seqblocks.num_elements;
@@ -1617,6 +1618,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   void call_very_often(void){
 
+    if (g_radium_runs_custom_exec==false) // Avoids unpainted areas when showing sync widgets.
+      return;
+      
     if (_song_tempo_automation_was_visible != _songtempoautomation_widget.is_visible){
       _song_tempo_automation_was_visible = _songtempoautomation_widget.is_visible;
       position_widgets();
