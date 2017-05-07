@@ -300,7 +300,8 @@
     
     (<gui> :set-size gui
            (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 oiwaefoajefoijaowepijaeporgijpoaghjto#$#$% 2q3e4tERTQERT paerjgoijaerpoiporegi"))
-           200)
+           (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345")))
+    
     (<gui> :set-static-toplevel-widget gui #t)
     
     ;; Just hide window when closing it.
