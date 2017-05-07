@@ -232,14 +232,14 @@
            ;;(c-display "GOT KEY" presstype key (string=? key "\n"))
            (cond (just-pressed-return-in-search-field
                   #f)
+                 ;;((= 1 presstype) ;; Qt eats a lot of key down events, so we can't ignore key up. TODO: Let :add-key-callback sniff native keyboard events from Qt_Main.cpp instead.
+                 ;; #f)
                  ((string=? key "HOME")
                   (<gui> :set-value *pmg-table* 0)
                   #t)
                  ((string=? key "END")
                   (<gui> :set-value *pmg-table* (1- (<gui> :get-num-table-rows *pmg-table*)))
                   #t)
-                 ((= 1 presstype)
-                  #f)
                  ((string=? key "\n")
                   (made-selection)
                   #t)
