@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
 #pragma clang diagnostic pop
 #include <QLinkedList>
+#include <QThread>
 
 #include "../bin/packages/s7/s7.h"
 
@@ -2121,8 +2122,9 @@ char *fromBase64(const char *s){
   return STRING_get_chars(STRING_fromBase64(STRING_create(s)));
 }
 
-void msleep(int ms){
-  usleep(1000*ms);
+void msleep(int64_t ms){
+  QThread::msleep(ms);
+  //usleep(1000*ms); // usleep only works in the range 0->1000000
 }
 
 

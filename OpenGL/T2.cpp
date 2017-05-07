@@ -213,7 +213,7 @@ static void T2_thread_func(QOffscreenSurface *offscreen, QOpenGLContext *offscre
     //printf("gl: %f\n",GL_get_vblank());
     
     //    if (is_playing())
-    //  usleep(GL_get_vblank() * 10 * 1000); // Sleep a little bit to avoid putting too much pressure on the gfx card this frame.
+    //  msleep(GL_get_vblank() * 10); // Sleep a little bit to avoid putting too much pressure on the gfx card this frame.
   }
 }
 
@@ -310,6 +310,6 @@ void T1_stop_t2(void){
 
 void T1_wait_until_t2_got_t1_data(void){
   while(t1_to_t2_queue.size() > 0)
-    usleep(1000*20);
+    msleep(20);
 }
 

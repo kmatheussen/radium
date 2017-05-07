@@ -349,7 +349,7 @@ namespace{
           // todo: Print message to editor window.
           
           //printf("OpenGL quickswapsleeping. Duration: %f. Vblank: %f. average: %f\n", duration, vblank, average_swap_time);
-          usleep(40*1000 * vblank);
+          msleep(40 * vblank);
           _moving_average.reset(vblank/2);
           //_swap_timer.restart();
 
@@ -1194,7 +1194,7 @@ private:
                      monotonic_seconds());
 #endif
               if (how_long > 0)
-                usleep(1000 * how_long);
+                msleep(how_long);
               
               now = monotonic_seconds() * 1000.0; //Time::getMillisecondCounterHiRes();
 
@@ -1297,7 +1297,7 @@ public:
     }
 #endif
 
-    // This is the only place the opengl thread waits. When swap()/usleep() returns, updateEvent is called again immediately.
+    // This is the only place the opengl thread waits. When swap()/msleep() returns, updateEvent is called again immediately.
 
     {
 #if !USE_QT5
@@ -1328,8 +1328,8 @@ public:
             swap();
 
           else
-            //usleep(20); // Don't want to buzy-loop
-            usleep(1000 * time_estimator.get_vblank());
+            //msleep(1); // Don't want to buzy-loop
+            msleep(time_estimator.get_vblank());
           
           //if (g_safe_mode)
           //  GL_unlock();
@@ -1786,7 +1786,7 @@ QWidget *GL_create_widget(QWidget *parent){
       return NULL;
     }
 
-    usleep(10*1000);
+    msleep(10);
     //QThread::currentThread()->wait(1000*10);
   }
 
@@ -1796,7 +1796,7 @@ QWidget *GL_create_widget(QWidget *parent){
 #endif
   
   while(ATOMIC_GET(GE_vendor_string)==NULL || ATOMIC_GET(GE_renderer_string)==NULL || ATOMIC_GET(GE_version_string)==NULL)
-    usleep(5*1000);
+    msleep(5);
   
   {
     QString s_vendor((const char*)ATOMIC_GET(GE_vendor_string));
@@ -2029,7 +2029,7 @@ QWidget *GL_create_widget(QWidget *parent){
   }  
 
   while(ATOMIC_GET(g_has_updated_at_least_once)==false)
-    usleep(5*1000);
+    msleep(5);
 
   g_gl_widget_started = true;
   
@@ -2122,7 +2122,7 @@ void GL_maybe_estimate_vblank(QWidget *qwidget){
     if (box==NULL)
       break;
     
-    usleep(5*1000);
+    msleep(5);
   }
   
   if (box!=NULL && box->clickedButton()==NULL)

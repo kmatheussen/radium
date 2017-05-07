@@ -171,7 +171,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
 
         SOUNDFILESAVER_writer_has_been_stopped();
         
-        //usleep(1000*100); // Wait a bit for saving to stop;
+        //msleep(100); // Wait a bit for saving to stop;
 
         ScrollEditorToRealLine_CurrPos(root->song->tracker_windows, root->song->tracker_windows->wblock->bot_realline);
         root->song->tracker_windows->must_redraw = true;

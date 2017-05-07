@@ -92,7 +92,7 @@ static QString get_latest_diagnostic_report(void){
       return file_to_string(file_path);    
     }
 
-    usleep(1000*1000);
+    msleep(1000);
   }
 
   return "(Unable to find diagnostics)"+ret;

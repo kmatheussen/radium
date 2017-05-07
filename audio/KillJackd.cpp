@@ -116,14 +116,15 @@ int main(void){
 
 
   while(ATOMIC_GET(g_has_called_process)==false)
-    usleep(1000*1000);
+    usleep(900*1000);
 
   if (jack_client_close(client) != 0){
     return COULD_NOT_CLOSE_CLIENT;
   }
 
 #if 0 // Set to 1 to test jackd killer
-  usleep(10*1000*1000);
+  for(int i=0;i<10*1000;i++)
+    usleep(1000); // usleep only works in the range 0->1.000.000
 #endif
   
   return JACK_ALIVE_AND_FINE;
@@ -159,7 +160,7 @@ static void kill_jackd(void){
       if (system(command1)==0)
         killed_check_program = true;
     
-    usleep(1000);
+    msleep(1);
     
     if (system(command2)==0){
       //return;
@@ -174,7 +175,7 @@ static void kill_jackd(void){
     system(command4);
 #endif
     
-    usleep(250*1000);
+    msleep(250);
   }
 }
 
@@ -251,7 +252,7 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
     vector_t v = {0};
     
     int ignore = VECTOR_push_back(&v, "Try to run anyway");
-    int kill = VECTOR_push_back(&v, "Stop the jack process? (recommended)");
+    int kill = VECTOR_push_back(&v, "Stop the jack process! (Strongly recommended)");
     
     message = "There is a problem with the jack server: " + message;
     int hmmm = GFX_Message(&v, message.toUtf8().constData());
@@ -259,7 +260,7 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
     
     if (hmmm==kill){
       kill_jackd();
-      GFX_Message(NULL, "We have now run several commands that should have stopped the jack process.<p>Now you need to start Jack one more time, and after that you can start Radium again.");
+      GFX_Message(NULL, "We have now run several commands that should have stopped the jack process.<p>Now you need to start Jack one more time, and after that start Radium again.");
       return true;
     }
   }

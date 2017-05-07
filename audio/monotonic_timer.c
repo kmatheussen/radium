@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 #define NANOS_PER_SECF 1000000000.0
-#define USECS_PER_SEC 1000000
+#define MSECS_PER_SEC 1000
 
 #include <stdint.h>
 
@@ -159,7 +159,7 @@ static void init_rdtsc_per_sec(void) {
   uint64_t before, after;
   
   before = rdtsc();
-  usleep(USECS_PER_SEC);
+  msleep(MSECS_PER_SEC);
   after = rdtsc();
   
   rdtsc_per_sec = after - before;

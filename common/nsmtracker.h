@@ -241,6 +241,8 @@ extern bool g_is_loading;
 
 #include "validatemem_proc.h"
 
+extern LANGSPEC void msleep(int64_t ms);
+
 static inline int bool_to_int(bool val){
   return val==true ? 1 : 0;
 }

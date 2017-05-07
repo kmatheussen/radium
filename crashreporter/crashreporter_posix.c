@@ -145,9 +145,9 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
   }
 
 #if defined(FOR_LINUX)
-  usleep(1000*1000*3);
+  msleep(1000*3);
 #else
-  usleep(1000*500); // Just wait half second on mac.
+  msleep(500); // Just wait half second on mac.
 #endif
   
   CRASHREPORTER_close();

@@ -504,7 +504,7 @@ static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblo
 // Called from the main thread after the player has stopped
 void MIDI_insert_recorded_midi_events(void){
   while(g_midi_event_queue.size() > 0) // Wait til the recording_queue_pull_thread is finished draining the queue.
-    usleep(1000*5);
+    msleep(5);
 
   ATOMIC_SET(root->song_state_is_locked, false);
          
@@ -516,7 +516,7 @@ void MIDI_insert_recorded_midi_events(void){
   }
 
   
-  usleep(1000*20); // Wait a little bit more for the last event to be transfered into g_recorded_midi_events. (no big deal if we lose it though, CPU is probably so buzy if that happens that the user should expect not everything working as it should. It's also only in theory that we could lose the last event since the transfer only takes some nanoseconds, while here we wait 20 milliseconds.)
+  msleep(20); // Wait a little bit more for the last event to be transfered into g_recorded_midi_events. (no big deal if we lose it though, CPU is probably so buzy if that happens that the user should expect not everything working as it should. It's also only in theory that we could lose the last event since the transfer only takes some nanoseconds, while here we wait 20 milliseconds.)
 
   {
     radium::ScopedMutex lock(g_midi_event_mutex);

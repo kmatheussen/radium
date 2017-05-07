@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPlainTextEdit>
 #include <QLabel>
 #include <QLayout>
+#include <QThread>
 
 #if USE_QT5
 #include <QUrlQuery>
@@ -71,7 +72,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  include <windows.h>
 #  define mysleep(ms) Sleep(ms)
 #else
-#  define mysleep(ms) usleep((ms)*1000);
+#  define mysleep(ms) msleep(ms)
 #endif
 
 
@@ -368,7 +369,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
       while(reply->isFinished()==false) {
         QCoreApplication::processEvents();
-        usleep(1000*50);
+        QThread::msleep(50);
       }
       
 #if 1

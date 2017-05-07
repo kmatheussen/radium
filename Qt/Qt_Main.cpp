@@ -2176,7 +2176,7 @@ int radium_main(char *arg){
 #if 0
   while(1){
     qApp->processEvents();
-    usleep(500000);
+    msleep(500);
   }
 #endif
 
@@ -2240,7 +2240,7 @@ int radium_main(char *arg){
       GTK_HandleEvents();
       qapplication->processEvents();
     }
-    usleep(1000);
+    msleep(1);
   }
 #endif
 
@@ -2252,7 +2252,7 @@ int radium_main(char *arg){
 
   fprintf(stderr,"          ENDING 3\n");
     
-  usleep(3000); // wait a little bit so the player gets back to the main loop
+  msleep(30); // wait a little bit so the player gets back to the main loop
   
   EndProgram(); // shut down most of the program, except audio
 

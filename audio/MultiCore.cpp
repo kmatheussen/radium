@@ -532,7 +532,7 @@ void MULTICORE_set_num_threads(int num_new_cpus){
   // wait until they are ready (takes some time, but if we don't wait here, there will be a moment where there are no active runners, and no sound)
   for(int i=0 ; i < num_new_runners ; i++)
     while(new_runners[i]->can_start_main_loop.numWaiters()==0)
-      usleep(1000);
+      msleep(1);
 
   PLAYER_lock(); {
 

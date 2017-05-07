@@ -194,7 +194,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 
     //g_embed_container->setSizePolicy(QSizePolicy::Maximum,QSizePolicy::Maximum);
 
-    //usleep(1*1000*1000);
+    //msleep(1*1000);
 
     //GTK_CreateVisual(g_embed_container->winId());
 
@@ -235,7 +235,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 
     //g_embed_container->show();
 
-    //usleep(1*1000*1000);
+    //msleep(1*1000);
 #if 1
     int width=800;
     int height=800;
@@ -906,7 +906,7 @@ void GFX_OpenProgress(const char *message){
   for(int i=0; i < 1000 ; i++){
     progressBox->repaint();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    usleep(10);
+    msleep(1);
   }
 }
 

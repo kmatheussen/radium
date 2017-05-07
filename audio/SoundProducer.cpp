@@ -940,7 +940,7 @@ public:
           PLUGIN_touch(link->source->_plugin);
           PLUGIN_touch(link->target->_plugin);
           PLAYER_memory_debug_wake_up();
-          usleep(3000);
+          msleep(3);
         }
       
       // Remove
@@ -967,7 +967,7 @@ public:
       PLUGIN_touch(link->source->_plugin);
       PLUGIN_touch(link->target->_plugin);
       PLAYER_memory_debug_wake_up();
-      usleep(1000);
+      msleep(1);
     }while(link->can_be_removed()==false);
 
     PLAYER_lock();{

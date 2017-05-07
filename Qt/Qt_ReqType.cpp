@@ -267,7 +267,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
     if(reqtype->frame->isVisible()==false)
       break;
     
-    usleep(100);
+    msleep(1);
   }
 #endif
 

@@ -10,6 +10,7 @@
 #include <QDesktopWidget>
 #include <QMainWindow>
 #include <QLayout>
+#include <QThread>
 
 static const QString message_hide = "_MESSAGE_HIDE";
 static const QString message_show = "_MESSAGE_SHOW";
@@ -79,7 +80,7 @@ void process_OpenProgress(QString message, QRect rect){
   for(int i=0; i < 10 ; i++){
     progressBox->repaint();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    usleep(10);
+    QThread::msleep(1);
   }
 
 }
@@ -115,7 +116,7 @@ void process_ShowProgressMessage(QString message, QRect rect){
   for(int i=0; i < 10 ; i++){
     progressBox->repaint();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    usleep(10);
+    QThread::msleep(1);
   }
 }
 
@@ -318,17 +319,17 @@ int main(int argc, char **argv){
 
   GFX_OpenProgress("hello");
 
-  usleep(1000*1000);
+  QThread::msleep(1000);
 
   for(int i =0;i<=5;i++){
     printf("trying to show %d\n",i);
     GFX_ShowProgressMessage((QString("ap ")+QString::number(i)).toUtf8().constData());
-    usleep(1000*1000);
+    QThread::msleep(1000);
   }
   
   GFX_CloseProgress();
 
-  usleep(1000*1000*1);
+  QThread::msleep(1000*1);
   
   return 0;
 }
