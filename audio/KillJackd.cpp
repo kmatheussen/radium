@@ -250,13 +250,13 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
     if (hmmm==kill){
       kill_jackd();
       GFX_Message(NULL, "We have now run several commands that should have stopped the jack process.<p>Now you need to start Jack one more time, and after that you can start Radium again.");
-      return false;
+      return true;
     }
   }
 
   myProcess->connect(myProcess, SIGNAL(finished(int)), myProcess, SLOT(deleteLater()));
   
-  return true;
+  return false;
 }
 
 

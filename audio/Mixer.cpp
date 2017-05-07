@@ -968,7 +968,7 @@ bool MIXER_start(void){
   
   R_ASSERT(THREADING_is_main_thread());
 
-  if (KILLJACKD_kill_jackd_if_unresponsive()==false){
+  if (KILLJACKD_kill_jackd_if_unresponsive()==true){
     return false;
   }
   
