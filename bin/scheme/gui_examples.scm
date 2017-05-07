@@ -272,3 +272,8 @@
 
 (<ra> :release-keyboard-focus)
 
+;; Prints out number of open GUIs every second.
+(<ra> :schedule 0
+      (lambda ()
+        (c-display "Num guis:" (<gui> :num-open-guis))
+        1000))

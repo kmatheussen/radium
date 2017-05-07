@@ -381,7 +381,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       R_ASSERT(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
 
-      printf("Deleting Gui %p\n",this);
+      //printf("Deleting Gui %p\n",this);
 
       for(func_t *func : _deleted_callbacks){
         s7extra_callFunc_void_bool(func, g_radium_runs_custom_exec);

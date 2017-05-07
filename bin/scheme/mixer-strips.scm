@@ -145,6 +145,12 @@
 
   label)
 
+#!!
+(define (trysomething)
+  (define id (last (get-all-audio-instruments)))
+  (<ra> :set-wide-instrument-strip id (not (<ra> :has-wide-instrument-strip id)))
+  (remake-mixer-strips))
+!!#
 
 (define (request-send-instrument instrument-id callback)
   (define is-bus-descendant (<ra> :instrument-is-bus-descendant instrument-id))
@@ -1157,8 +1163,8 @@
   (define paint-voltext #f)
   (define paint-peaktext #f)
 
-  (define voltext (<gui> :widget))
-  (define peaktext (<gui> :widget))
+  (define voltext (and show-voltext (<gui> :widget)))
+  (define peaktext (and show-peaktext (<gui> :widget)))
 
   (define paint-slider #f)
 
@@ -1381,10 +1387,11 @@
 
   (define label (create-mixer-strip-name instrument-id #t is-current-mixer-strip))
 
-  (define meter-instrument-id (find-meter-instrument-id instrument-id))
 
   (<gui> :add gui label 1)
   (<gui> :add gui (create-mixer-strip-mutesolo instrument-id background-color (get-fontheight) #t))
+
+  (define meter-instrument-id (find-meter-instrument-id instrument-id))
 
   (define volume-gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #t))
   (<gui> :add gui volume-gui 1)
@@ -1397,7 +1404,6 @@
            #t
            )
          )
-
   gui)
 
 
@@ -1411,17 +1417,8 @@
   (define background-color (get-mixer-strip-background-color gui instrument-id))
 
   (define system-background-color (<gui> :get-background-color gui))
-  ;;(c-display "               backgroudn: " (<gui> :get-background-color gui))
   (<gui> :set-background-color gui background-color) ;;(<ra> :get-instrument-color instrument-id))
   
-#||
-  (define y1 0)
-  (define x1 0)
-  (define x2 min-width)
-  (define y2 height)
-  (define top-y y1)
-  ||#
-
   (define fontheight (get-fontheight))
   (define fontheight-and-borders (+ 4 fontheight))
 
@@ -1429,39 +1426,6 @@
   (define pan-height fontheight-and-borders)
   (define mutesolo-height fontheight-and-borders)
   (define comment-height fontheight-and-borders)
-
-#||
-  (define min-send-height (* 2 fontheight-and-borders))
-  (define min-volume-height (* 3 fontheight-and-borders))
-
-  (define height-left (- height
-                         (+ name-height pan-height mutesolo-height comment-height)))
-
-  (define sends-height (max min-send-height
-                            (floor (/ height-left 2))))
-  (define volume-height (max min-volume-height
-                             (1+ (floor (/ height-left 2)))))
-||#
-
-#||
-  (define name_y1 y1)
-  (define name_y2 (+ y1 name-height))
-
-  (define sends_y1 name_y2)
-  (define sends_y2 (+ sends_y1 sends-height))
-
-  (define pan_y1 sends_y2)
-  (define pan_y2 (+ pan_y1 pan-height))
-
-  (define mutesolo_y1 pan_y2)
-  (define mutesolo_y2 (+ mutesolo_y1 mutesolo-height))
-
-  (define volume_y1 mutesolo_y2)
-  (define volume_y2 (+ volume_y1 volume-height))
-
-  (define comment_y1 volume_y2)
-  (define comment_y2 (+ comment_y1 comment-height))
-||#
 
   (define name (create-mixer-strip-name instrument-id #f is-current-mixer-strip))
   (set-fixed-height name name-height)
@@ -1507,6 +1471,7 @@
          (lambda (width height)
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
            (draw-mixer-strips-border gui width height (if is-current-mixer-strip -2 instrument-id))))
+
   gui)
 
 (define (create-mixer-strip instrument-id min-width is-current-mixer-strip)
@@ -1798,7 +1763,7 @@
              (run-instrument-data-memoized
               (lambda()
                 (<gui> :disable-updates parent)
-                
+                ;;(c-display "   Size of das-stored:" (length das-stored-mixer-strips))
                 (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
                                      (lambda (new-mixer-strips new-mixer-strips-gui)
                                        (if das-mixer-strips-gui
@@ -1846,6 +1811,7 @@
 
   parent
   )
+
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)
   ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
