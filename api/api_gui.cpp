@@ -866,7 +866,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QTableWidget *qtableWidget = dynamic_cast<QTableWidget*>(_widget.data());
         if (qtableWidget!=NULL){
           if(val.type==INT_TYPE)
-            qtableWidget->setCurrentCell(val.int_number, qtableWidget->currentColumn());
+            qtableWidget->setCurrentCell((int)val.int_number, qtableWidget->currentColumn());
           else
             handleError("Table->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
           return;

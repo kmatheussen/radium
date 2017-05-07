@@ -632,7 +632,7 @@ void openAboutWindow(void){
   
   double vblank = GL_get_vblank();
   
-  GFX_Message(NULL,
+  GFX_addMessage(
               "<center><b>Radium "  VERSION "</b></center>"
               "<p>"
               "OpenGL vendor: \"%s\"<br>"
