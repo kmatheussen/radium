@@ -139,34 +139,44 @@ int main(void){
 
 #include "KillJackd_proc.h"
 
+static void kill_jackd(void){
+  bool killed_check_program = false;
+  
+  for(int i=0;i<20;i++){
 #if defined(FOR_LINUX) || defined(FOR_MACOSX)
-static void kill_jackd(void){
-  for(int i=0;i<20;i++){
-    const char *command = "killall -9 radium_check_jack_status ; usleep 1000 ; killall -9 jackd ; killall -9 jackdmp";
-    fprintf(stderr, "Executing \"%s\"\n", command);
-    system(command);
-    usleep(250*1000);
-  }
-}
-#endif
-
-#if defined(FOR_WINDOWS)
-static void kill_jackd(void){
-  for(int i=0;i<20;i++){
+    const char *command1 = "killall -9 radium_check_jack_status";
+    const char *command2 = "killall -9 jackd";
+    const char *command3 = "killall -9 jackdmp";    
+#elif defined(FOR_WINDOWS)
     const char *command1 = "taskkill /F /T /IM radium_check_jack_status.exe";
     const char *command2 = "taskkill /F /T /IM jackd.exe";
     const char *command3 = "taskkill /F /T /IM jackdmp.exe";
-    fprintf(stderr, "Executing\n   \"%s\"\n   \"%s\"\n   \"%s\"\n", command1, command2, command3);
+#endif
     
-    system(command1);
+    fprintf(stderr, "Executing\n   \"%s\"\n   \"%s\"\n   \"%s\"\n", command1, command2, command3);
+
+    if (killed_check_program==false)
+      if (system(command1)==0)
+        killed_check_program = true;
+    
     usleep(1000);
-    system(command2);
-    system(command3);
+    
+    if (system(command2)==0){
+      //return;
+    }
+    
+    if (system(command3)==0){
+      //return;
+    }
+
+#if defined(FOR_MACOSX)
+    const char *command4 = "killall -9 JackPilot"; // On OSX, jack pilot needs to be restarted after jackd has been killed. (if not, it shows a message about needing to restart the system)
+    system(command4);
+#endif
     
     usleep(250*1000);
   }
 }
-#endif
 
 
 // Returns true if unresponsive. (probably been killed too)
