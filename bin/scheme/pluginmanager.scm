@@ -218,19 +218,17 @@
               ((> (length row) 0)
                (<ra> :add-message (<-> "Error. Unable to find instrument description for row " (pp (<gui> :get-value *pmg-table*)))))))))
 
-  (define just-pressed-return-in-search-field #f)
+  (define last-time-we-pressed-return-in-search-field 0)
   
   (<gui> :add-callback *pmg-search-text-field*
-         (lambda (val)
-           (set! just-pressed-return-in-search-field #t)
-           (<ra> :schedule 50 ;; Instead, we could simply check duration since last time the return was pressed in the text field, but then we could, theoretically, risk not visiting qApp::exec() inbetween, which seems enough in order to distinguish this return from the other one. (evidence for that is that it works to schedule this coroutine just 1 ms into the future but below we need at least 40-50 ms to be safe. (I've set 50ms here too though, just in case.))
-                 (lambda ()
-                   (set! just-pressed-return-in-search-field #f)))))
+         (lambda (val)           
+           (set! last-time-we-pressed-return-in-search-field (time))))
   
   (<gui> :add-key-callback *pluginmanager-gui*
          (lambda (presstype key)
            ;;(c-display "GOT KEY" presstype key (string=? key "\n"))
-           (cond (just-pressed-return-in-search-field
+           (cond ((< (- (time) last-time-we-pressed-return-in-search-field) ;; Another hack: TODO sniff native keyboard events from Qt_Main.cpp instead.
+                     0.2)
                   #f)
                  ;;((= 1 presstype) ;; Qt eats a lot of key down events, so we can't ignore key up. TODO: Let :add-key-callback sniff native keyboard events from Qt_Main.cpp instead.
                  ;; #f)
