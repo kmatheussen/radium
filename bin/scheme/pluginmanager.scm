@@ -409,20 +409,17 @@
     (finished-callback)
     #f)
   
-  (define start-time (time))
-
   (pmg-stop-search!)
 
   (update-progress entries)
 
   (pmg-initialize-table! table (length entries))
-  
+
   (run-coroutine   
    *pmg-search-coroutine*
-   (list entries 0)
+   (list entries 0 #f)
    
-   (lambda (entries y)
-     
+   (lambda (entries y start-time) ;; Start-time needs to be set lazily. Probably not necessary anymore tough since the scheduler resolution has now been reduced from 90ms to 5ms.
      (if (null? entries)
 
          (begin
@@ -435,18 +432,22 @@
            (assert (= (<gui> :get-num-table-rows *pmg-table*)
                       total-num-entries))
            
-           (define time-now (time))
-           
-           (let ((wait-time (if (> (- time-now start-time)
-                                   0.1) ;; seconds
-                                (begin
-                                  (update-progress entries)
-                                  (set! start-time time-now)
-                                  10) ;; milliseconds
-                                0)))
-             (list wait-time
-                   (cdr entries)
-                   (1+ y))))))))
+           ;;(c-display "dur: " (and start-time (- (time) start-time)))
+
+           (if (and start-time
+                    (> (- (time) start-time)
+                       0.1)) ;; seconds
+               (begin
+                 (update-progress entries) ;; Not very CPU hungry. We could have updated all the time. But it looks better only updating every 0.1 seconds.
+                 (list 10 ;; milliseconds
+                       (cdr entries)
+                       (1+ y)
+                       #f))
+               (begin
+                 (list 0
+                       (cdr entries)
+                       (1+ y)
+                       (or start-time (time))))))))))
 
 
 (define (pmg-stop-search!)
