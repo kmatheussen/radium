@@ -523,7 +523,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool keyPressEvent(QKeyEvent *event){
       return keyEvent(event, 0);
     }
-
     
     bool keyReleaseEvent(QKeyEvent *event){
       return keyEvent(event, 1);
@@ -3536,6 +3535,7 @@ void obtainKeyboardFocus(int64_t guinum){
     Gui *gui = get_gui(guinum);
     if (gui==NULL)
       return;
+    gui->_widget->setFocusPolicy(Qt::StrongFocus);
     gui->_widget->setFocus();
   }
 }

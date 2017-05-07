@@ -181,6 +181,7 @@
 (define *pmg-search-text-field* (<gui> :child *pluginmanager-gui* "search_text"))
 (<gui> :set-value *pmg-search-text-field* "")
 
+
 (<gui> :add-realtime-callback *pmg-search-text-field*
        (lambda (val)
          (if (pmg-visible?)
@@ -387,7 +388,8 @@
       (loop (cdr entries)
             (1+ y)))))
 
-
+;; !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
+;; A narrow mixer strip causes widget leak
 
 (define (pmg-schedule-adding-entries-to-table! table entries instrconf finished-callback)
   

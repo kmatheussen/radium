@@ -914,7 +914,7 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
   plugin_type->num_inputs = aeffect->numInputs;
   plugin_type->num_outputs = aeffect->numOutputs;
     
-  int category = aeffect->dispatcher(aeffect, effGetPlugCategory, 0, 0, NULL, 0.0f);
+  int category = (int)aeffect->dispatcher(aeffect, effGetPlugCategory, 0, 0, NULL, 0.0f);
   plugin_type->is_instrument = category==kPlugCategSynth;
 
   TypeDataParam *params = (TypeDataParam*)V_calloc(sizeof(TypeDataParam),plugin_type->num_effects);    
@@ -1454,7 +1454,7 @@ void create_vst_plugins(bool is_juce_plugin){
 std::vector<QString> VST_get_vst_paths(void){
   std::vector<QString> paths;
 
-  int num_paths = SETTINGS_read_int("num_vst_paths", 0);
+  int num_paths = SETTINGS_read_int32("num_vst_paths", 0);
 
   for(int i=0;i<num_paths; i++){
     QString vst_path = SETTINGS_read_qstring(QString("vst_path")+QString::number(i), QString(""));
