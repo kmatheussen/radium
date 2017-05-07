@@ -371,3 +371,4 @@ void JACK_set_name(SoundPlugin *plugin, int portnum, const char *new_name){
   else
     jack_port_set_name(data->input_ports[portnum], new_name);
 }
+

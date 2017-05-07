@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Jack_plugin_proc.h"
 #include "SoundfileSaver_proc.h"
 #include "get_windows_commandlines_proc.h"
+#include "KillJackd_proc.h"
 
 #include "SoundProducer_proc.h"
 #include "SoundPluginRegistry_proc.h"
@@ -967,6 +968,10 @@ bool MIXER_start(void){
   
   R_ASSERT(THREADING_is_main_thread());
 
+  if (KILLJACKD_kill_jackd_if_unresponsive()==false){
+    return false;
+  }
+  
   doAlwaysRunBuses();
   
   SampleRecorder_Init();
@@ -978,7 +983,7 @@ bool MIXER_start(void){
   create_workaround_thread();
 #endif
   
-  g_mixer = new Mixer();
+  g_mixer = new Mixer();  
   
   if(g_mixer->start_jack()==false)
     return false;
