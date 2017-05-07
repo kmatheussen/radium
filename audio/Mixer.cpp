@@ -214,6 +214,7 @@ static LockType player_lock;
 static LockType player_runner_lock;
 
 static __thread bool g_current_thread_has_player_lock = false;
+static bool g_someone_has_player_lock = false;
 static __thread bool g_current_thread_has_player_runner_lock = false;
 
 
@@ -243,11 +244,13 @@ static void lock_player(void){
 
   LOCK_LOCK(player_lock);
   g_current_thread_has_player_lock = true;
+  g_someone_has_player_lock = true;
 }
 
 static void unlock_player(void){
   R_ASSERT_RETURN_IF_FALSE(PLAYER_current_thread_has_lock());
-    
+
+  g_someone_has_player_lock = false;
   g_current_thread_has_player_lock = false;
   LOCK_UNLOCK(player_lock);
 }
@@ -332,6 +335,9 @@ bool PLAYER_current_thread_has_lock(void){
   return g_current_thread_has_player_lock || g_current_thread_has_player_runner_lock;
 }
 
+bool PLAYER_someone_has_player_lock(void){
+  return g_someone_has_player_lock;
+}
 
 static void init_player_lock(void){
 

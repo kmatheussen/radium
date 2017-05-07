@@ -90,25 +90,27 @@
 static bool g_vst_grab_keyboard = true;
 
 static int RT_get_latency(struct SoundPlugin *plugin);
-  
+
+
 namespace{
 
   struct PluginWindow;
 
   struct Listener : public AudioProcessorListener {
 
-    SoundPlugin *plugin;
+    SoundPlugin *_plugin; // Is never NULL. Listener is removed before plugin is deleted.
 
-    Listener(SoundPlugin *plugin) : plugin(plugin) {}
+    Listener(SoundPlugin *plugin) : _plugin(plugin) {}
     
     // Receives a callback when a parameter is changed.
     virtual void 	audioProcessorParameterChanged (AudioProcessor *processor, int parameterIndex, float newValue) {
       //printf("parm %d changed to %f\n",parameterIndex,newValue);
-      volatile struct Patch *patch = plugin->patch;
+
+      volatile struct Patch *patch = _plugin->patch;
       if (patch != NULL)
         ATOMIC_SET(patch->widget_needs_to_be_updated, true);
 
-      ATOMIC_SET(plugin->effect_num_to_show_because_it_was_used_externally, parameterIndex);
+      ATOMIC_SET(_plugin->effect_num_to_show_because_it_was_used_externally, parameterIndex);
     }
  
     // Called to indicate that something else in the plugin has changed, like its program, number of parameters, etc.
@@ -132,7 +134,8 @@ namespace{
   
   struct MyAudioPlayHead : public AudioPlayHead{
 
-    struct SoundPlugin *_plugin;
+    String _plugin_name;
+    struct SoundPlugin *_plugin;  // Set to NULL when SoundPlugin *plugin is deleted. (we can still be alive though, since the deletion of juce plugins are delayed)
     
     double positionOfLastLastBarStart = 0.0;
     bool positionOfLastLastBarStart_is_valid = false;
@@ -140,18 +143,36 @@ namespace{
     double lastLastBarStart = 0.0; // only used for debugging.
         
 
-    MyAudioPlayHead(struct SoundPlugin *plugin)
-      : _plugin(plugin)
+    MyAudioPlayHead(String plugin_name, struct SoundPlugin *plugin)
+      : _plugin_name(plugin_name)
+      , _plugin(plugin)
     {}
+
+    void plugin_will_be_deleted(void){
+      _plugin = NULL;
+    }
     
     // From JUCE documenation: You can ONLY call this from your processBlock() method!
     // I.e. it will only be called from the player thread or a multicore thread.
     virtual bool getCurrentPosition (CurrentPositionInfo &result) {
       memset(&result, 0, sizeof(CurrentPositionInfo));
 
+      if (THREADING_is_main_thread()){
+        RT_message("Error in plugin \"%s\": Asked for timing information from the main thread. Please contact the plugin vendor to fix this bug.\n", _plugin_name.toRawUTF8());
+        return false;
+      }
+      
+      if (false==PLAYER_someone_has_player_lock()){ // Could complicate things by checking if process() is called specifically for this plugin, but this check probably fires if a plugin misbehaves anyway.
+        RT_message("Error in plugin \"%s\": Asked for timing information outside process(). Please contact the plugin vendor to fix this bug.\n", _plugin_name.toRawUTF8());
+        return false;
+      }
+      
       if (ATOMIC_GET(is_starting_up))
         return false;
 
+      if (_plugin==NULL) // This situation is probably picked up by the two RT_message cases above though.
+        return false;
+        
       //RT_PLUGIN_touch(_plugin); // If the plugin needs timing data, it should probably not be autopaused.
 
       bool isplaying = is_playing();
@@ -296,6 +317,8 @@ namespace{
   
   struct Data{
     AudioPluginInstance *audio_instance;
+
+    SoundPlugin *_plugin;
     
     PluginWindow *window;
 
@@ -327,8 +350,9 @@ namespace{
     */
     Data(AudioPluginInstance *audio_instance, SoundPlugin *plugin, int num_input_channels, int num_output_channels)
       : audio_instance(audio_instance)
+      , _plugin(plugin)
       , window(NULL)
-      , playHead(plugin)
+      , playHead(audio_instance->getPluginDescription().name, plugin)
       , buffer(R_MAX(num_input_channels, num_output_channels), RADIUM_BLOCKSIZE)
       , listener(plugin)
       , num_input_channels(num_input_channels)
@@ -338,6 +362,12 @@ namespace{
     {
       audio_instance->addListener(&listener);
       midi_buffer.ensureSize(1024*16);
+    }
+
+    void plugin_will_be_deleted(void){
+      audio_instance->removeListener(&listener);
+      playHead.plugin_will_be_deleted();
+      _plugin = NULL;
     }
   };
 
@@ -415,7 +445,8 @@ namespace{
       else if (dasbutton == &bypass_button) {
         bool new_state = bypass_button.getToggleState();
 
-        struct SoundPlugin *plugin = data->listener.plugin;
+        struct SoundPlugin *plugin = data->_plugin;
+        R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
         
         bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
         
@@ -443,7 +474,9 @@ namespace{
       // bypass button
       {
         bool new_state = bypass_button.getToggleState();
-        struct SoundPlugin *plugin = data->listener.plugin;
+        struct SoundPlugin *plugin = data->_plugin;
+        R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+        
         bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
         if (new_state != is_bypass)
           bypass_button.setToggleState(is_bypass, dontSendNotification);
@@ -464,7 +497,7 @@ namespace{
       , editor(editor)
     {
 
-      struct SoundPlugin *plugin = data->listener.plugin;
+      struct SoundPlugin *plugin = data->_plugin;
       ATOMIC_SET(plugin->auto_suspend_suspended, true);
         
 #if !FOR_WINDOWS
@@ -579,7 +612,9 @@ namespace{
         data->window = NULL;
         V_free((void*)title);
         
-        struct SoundPlugin *plugin = data->listener.plugin;
+        struct SoundPlugin *plugin = data->_plugin;
+        R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+        
         ATOMIC_SET(plugin->auto_suspend_suspended, false);
 
       }GL_unlock();
@@ -1375,10 +1410,10 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
   Data *data = (Data*)plugin->data;
 
-  data->audio_instance->removeListener(&data->listener);
-  
   if (data->window != NULL)
     delete data->window;
+
+  data->plugin_will_be_deleted();
 
   // Wait a little bit first. (if CPU is VERY buzy, perhaps this waiting could prevent a crash)
 #if 0
