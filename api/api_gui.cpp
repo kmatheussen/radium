@@ -151,15 +151,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define SETVISIBLE_OVERRIDER(classname)                                 \
   void setVisible(bool visible) override {                              \
-    if (visible==false && isVisible()==false)                           \
-      return;                                                           \
-    if (visible==true && isVisible()==true)                             \
-      return;                                                           \
-    classname::setVisible(visible);                                     \
-    if (visible && window()==this){                                     \
-      printf("     CALLING remember geometry %d\n", visible);           \
-      remember_geometry.remember_geometry_setVisible_override_func(this, visible); \
-    }                                                                   \
+    remember_geometry.setVisible_override<classname>(this, visible);    \
   }
 
   /*
@@ -173,10 +165,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   */
 #define HIDE_OVERRIDER(classname)                                       \
   void hideEvent(QHideEvent *event_) override {                         \
-    if (window()==this){                                                \
-      printf("     HIDEEVENT\n");                                       \
-      remember_geometry.remember_geometry_setVisible_override_func(this, false); \
-    }                                                                   \
+    remember_geometry.hideEvent_override(this);                         \
   }
 
 

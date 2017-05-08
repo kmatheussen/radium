@@ -162,18 +162,13 @@ public:
 
     radium::RememberGeometry remember_geometry;
 
-    // See comment in helpers.h for the radium::RememberGeometry class.
     void setVisible(bool visible) override {
-      QWidget::setVisible(visible);    
-      if (visible && window()==this)
-        remember_geometry.remember_geometry_setVisible_override_func(this, visible);
+      remember_geometry.setVisible_override<QWidget>(this, visible);
     }
 
-    // See comment in helpers.h for the radium::RememberGeometry class.
     void hideEvent(QHideEvent *event_) override {
-      if (window()==this)
-        remember_geometry.remember_geometry_setVisible_override_func(this, false);
-  }
+      remember_geometry.hideEvent_override(this);
+    }
 };
 
 extern MixerWidget *g_mixer_widget;

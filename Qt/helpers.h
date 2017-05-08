@@ -339,32 +339,18 @@ namespace radium{
 
     However, I have found that the following seems to work (at least for Qt 5.5.1 on Linux with FVWM2):
 
-    1. Override setVisible like this:
+    To use it, override setVisible and hideEvent like this:
 
     void setVisible(bool visible) override {
-      if (visible==false && isVisible()==false)                           
-        return;                                                           
-      if (visible==true && isVisible()==true)                             
-        return;                                                           
-      super::setVisible(visible);
-      if (visible && window()==this)
-        remember_geometry.restore(this);
+      remember_geometry.setVisible_override<QWidget>(this, visible);
     }
 
-    2. Override hideEvent like this:
-
-    void hideEvent(QHideEvent *event) override {
-      if (window()==this)
-        remember_geometry.save(this);
+    void hideEvent(QHideEvent *event_) override {
+      remember_geometry.hideEvent_override(this);
     }
 
-    ANY other combination will fail in more or less subtle ways. Sigh.
-
-    However, the Preferences dialog seems to remember width and height, but not position. Sigh. It's just impossible.
-
-    Perhaps it would take less time to fork Qt and fix all these weird things than to add all these ad-hoc hacks.
    */
-  
+
   struct RememberGeometry{
     QByteArray geometry;
     bool has_stored_geometry = false;
@@ -379,20 +365,29 @@ namespace radium{
         widget->restoreGeometry(geometry);
     }
 
-    void remember_geometry_setVisible_override_func(QWidget *widget, bool visible) {
-      //printf("   AUIAUAUAU Set visible %d\n",visible);
-      
-      if (!visible){
+    ///////////////////
+    // I've tried lots of things, and the only thing that seems to work is overriding setVisible and hideEvent exactly like below.
+    // Other combinations will fail in more or less subtle ways.
+    ///////////////////
+  
+    template <class SuperWidget>
+    void setVisible_override(SuperWidget *widget, bool visible) {
+      if (visible==false && widget->isVisible()==false)
+        return;
+      if (visible==true && widget->isVisible()==true)
+        return;
 
-        save(widget);
-        
-      } else {
-        
-        restore(widget);        
-      }
+      widget->SuperWidget::setVisible(visible);
       
-      //QDialog::setVisible(visible);    
+      if (visible && widget->window()==widget)
+        restore(widget);
     }
+
+    void hideEvent_override(QWidget *widget) {
+      if (widget->window()==widget)
+        save(widget);
+    }
+
   };
 }
 
@@ -457,22 +452,13 @@ public:
     //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
   }
   
-  // See comment in helpers.h for the radium::RememberGeometry class.
   virtual void setVisible(bool visible) override {
-    if (visible==false && isVisible()==false)                           
-      return;                                                           
-    if (visible==true && isVisible()==true)                             
-      return;                                                           
-    QWidget::setVisible(visible);    
-    if (visible && window()==this)
-      remember_geometry.restore(this);
+    remember_geometry.setVisible_override<QDialog>(this, visible);
   }
   
   // See comment in helpers.h for the radium::RememberGeometry class.
   virtual void hideEvent(QHideEvent *event_) override {
-    //printf("        HIDEVENT2\n");
-    if (window()==this)
-      remember_geometry.save(this);
+    remember_geometry.hideEvent_override(this);
   }
 
 };
