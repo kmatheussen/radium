@@ -327,7 +327,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     //adjustSize();
   }
 
-  void showEvent(QShowEvent *event){    
+  /*
+  // Can't override showEvent when remember geometry.
+  void showEvent(QShowEvent *event) override {    
     if (tabWidget->currentWidget() == colors)
       obtain_keyboard_focus_without_greying();
 
@@ -336,6 +338,23 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     if (_needs_to_update)
       updateWidgets();
   }
+  */
+
+  // Must override setVisible instead.
+  virtual void setVisible(bool visible) override {
+    if (visible && isVisible()==false){
+      if (tabWidget->currentWidget() == colors)
+        obtain_keyboard_focus_without_greying();
+      
+      if(g_radium_runs_custom_exec==false){
+        if (_needs_to_update)
+          updateWidgets();
+      }
+    }
+
+    RememberGeometryQDialog::setVisible(visible);
+  }
+
   
 #if FOR_MACOSX && !USE_QT5
   void hideEvent(QHideEvent *event) override {

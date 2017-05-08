@@ -446,7 +446,7 @@ struct RememberGeometryQDialog : public QDialog {
 #endif
   
 public:
-  RememberGeometryQDialog(QWidget *parent_, bool is_modal)
+   RememberGeometryQDialog(QWidget *parent_, bool is_modal)
     : QDialog(parent_!=NULL ? parent_ : g_main_window, Qt::Window) // | Qt::Tool)
 #if PUT_ON_TOP
     , timer(this)
