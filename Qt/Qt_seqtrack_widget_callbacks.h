@@ -693,7 +693,7 @@ public:
     }
   }
   
-  void paint(const QRect &update_rect, QPainter &p){ // QPaintEvent * ev ) override {
+  void paint(const QRect &update_rect, QPainter &p) { // QPaintEvent * ev ) override {
     if(g_radium_runs_custom_exec) return;
     if(g_is_loading) return;
     
@@ -1618,7 +1618,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   void call_very_often(void){
 
-    if (g_radium_runs_custom_exec==false) // Avoids unpainted areas when showing sync widgets.
+    if (g_radium_runs_custom_exec) // Avoids unpainted areas when showing sync widgets.
       return;
       
     if (_song_tempo_automation_was_visible != _songtempoautomation_widget.is_visible){
