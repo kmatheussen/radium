@@ -1370,12 +1370,10 @@ protected:
 
     struct Tracker_Windows *window=root->song->tracker_windows;
 
-
     // No, we still need to do this. At least in qt 5.5.1. Seems like it's not necessary in 5.7 or 5.8 though, but that could be coincidental.
-    if(g_main_timer_num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
+    if(g_main_timer_num_calls<250/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
       updateWidgetRecursively(g_main_window);
     }
-    
     
     {
       DO_GFX({
@@ -2212,6 +2210,7 @@ int radium_main(char *arg){
 
   updateWidgetRecursively(g_main_window);
   main_window->updateGeometry();
+  main_window->adjustSize();
   moveWindowToCentre(main_window);
   main_window->show();
   updateWidgetRecursively(g_main_window);
@@ -2739,9 +2738,10 @@ int main(int argc, char **argv){
   
   g_splashscreen = new QSplashScreen(pixmap);
 #if 1 //def RELEASE
+  g_splashscreen->adjustSize();
+  g_splashscreen->showMessage("Starting up");
   g_splashscreen->show();
   g_splashscreen->raise();
-  g_splashscreen->showMessage("Starting up");
   QApplication::processEvents();
 #endif
   

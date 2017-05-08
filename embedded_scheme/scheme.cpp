@@ -271,8 +271,8 @@ dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
     dynvec_t vec = {0};
     return DYN_create_array(vec);
   }    
-   
-  GFX_Message(NULL, "s7extra_dyn: Unsupported s7 type");
+
+  handleError("s7extra_dyn: Unsupported s7 type");
   return DYN_create_bool(false);
 }
 
@@ -1064,7 +1064,7 @@ Place p_Quantitize(const Place p, const Place q){
 }
 
 void SCHEME_throw(const char *symbol, const char *message){
-  //printf("SCHEME_THROW %d\n", g_evals);
+  //printf("SCHEME_THROW. Message: \"%s\"\n", message);
   //if(g_evals>0){
     s7_error(s7,
              s7_make_symbol(s7, symbol),

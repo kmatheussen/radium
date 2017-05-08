@@ -340,6 +340,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool _has_been_closed = false;
 
     bool _is_modal = false; // We need to remember whether modality should be on or not, since modality is a parameter for set_window_parent.
+    bool _have_set_size = false;
+    bool _have_been_opened_before = false;
     
     Gui(QWidget *widget, bool created_from_existing_widget = false)
       : _widget_as_key(widget)
@@ -2851,17 +2853,15 @@ void gui_show(int64_t guinum){
     return;
 
   QWidget *w = gui->_widget;
+
+  if (gui->_have_set_size==false && gui->_have_been_opened_before==false)
+    w->adjustSize();
+
+  gui->_have_been_opened_before = true;
   
-  w->show();
-  if (w==w->window()){
-    w->raise();
-    w->activateWindow();
-#if 0 //def FOR_WINDOWS
-    HWND wnd=(HWND)w->winId();
-    SetFocus(wnd);
-    SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
-#endif
-  }    
+  //pauseUpdates(w);
+
+  safeShow(w);
 }
 
 void gui_hide(int64_t guinum){
@@ -3066,6 +3066,7 @@ void gui_setSize(int64_t guinum, int width, int height){
   if (gui==NULL)
     return;
 
+  gui->_have_set_size = true;
   gui->_widget->resize(width, height);
 }
 

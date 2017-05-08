@@ -215,14 +215,21 @@
 
 (define (disable-gui-updates-block gui block)
   (<gui> :disable-updates gui)
-  (let ((ret (catch #t
-                    block
-                    (lambda args ;; Catch exceptions to ensure (<ra> :cose-undo) will be called
-                      (display "args")(display args)(newline)
-                      (apply format #t (cadr args))
-                      (display (ow!))))))
-    (<gui> :enable-updates gui)
-    ret))
+  (<ra> :schedule 30
+        (lambda ()
+          (if (<gui> :is-open gui)
+              (<gui> :enable-updates gui))
+          #f))
+  (block))
+
+;  (let ((ret (catch #t
+;                    block
+;                    (lambda args ;; Catch exceptions to ensure (<ra> :cose-undo) will be called
+;                      (display "args")(display args)(newline)
+;                      (apply format #t (cadr args))
+;                      (display (ow!))))))
+;    (<gui> :enable-updates gui)
+;    ret))
 
 
 
@@ -254,12 +261,10 @@
   (if is-modal
       (<gui> :set-modal gui #t))
   
-  (<gui> :set-parent gui parentgui)
   (<gui> :add-close-callback gui (lambda (radium-runs-custom-exec)
                                    can-be-closed))
 
-  ;;(<gui> :set-pos gui (floor (<ra> :get-global-mouse-pointer-x)) (floor (<ra> :get-global-mouse-pointer-y)))
-  (<gui> :move-to-parent-centre gui)
+  (<gui> :set-parent gui parentgui)
   (<gui> :show gui)
   gui)
 
@@ -313,13 +318,16 @@
              #f))
 
     (set! *message-gui* gui))
-  
-  (let ((changed-parent (<gui> :set-parent *message-gui* -2)))
-    (c-display "                  CHANGED-PARENT " changed-parent)
-    (if (not (<gui> :is-visible *message-gui*))
-        (<gui> :show *message-gui*))
-    (if changed-parent
-        (<gui> :move-to-parent-centre *message-gui*))))
+
+  (disable-gui-updates-block
+   gui
+   (lambda ()
+     (let ((changed-parent (<gui> :set-parent *message-gui* -2)))
+       (c-display "                  CHANGED-PARENT " changed-parent)
+       (if (not (<gui> :is-visible *message-gui*))
+           (<gui> :show *message-gui*))
+       (if changed-parent
+           (<gui> :move-to-parent-centre *message-gui*))))))
 
   
 

@@ -328,11 +328,25 @@ struct MyQMessageBox : public QMessageBox {
   
 };
 
+
+static inline void setUpdatesEnabledRecursively(QWidget *widget, bool doit){
+  if (widget != NULL){
+    widget->setUpdatesEnabled(doit);
+    
+    for(auto *c : widget->children()){
+      QWidget *w = dynamic_cast<QWidget*>(c);      
+      if (w && w->isWindow()==false)
+        setUpdatesEnabledRecursively(w, doit);
+    }
+  }
+}
+
 namespace{
   struct PauseUpdatesTimer : public QTimer{
     QWidget *_w;
     QTime _time;
     int _ms;
+    bool _has_done_step1 = false;
     
     PauseUpdatesTimer(QWidget *parent, int ms)
       : _w(parent)
@@ -347,12 +361,13 @@ namespace{
     void timerEvent(QTimerEvent *e) override{
       if (_time.elapsed() >= _ms){ // singleshot is messy since we might get deleted at any time.
         //printf("TEIMERERINE EVENT\n");
-        if (_w->isVisible()==false){
-          _w->show();
-          _w->updateGeometry();
+        if (_has_done_step1==false && _w->isVisible()==false){
+          setUpdatesEnabledRecursively(_w, true);
           _ms *= 2;
+          _has_done_step1=true;
         } else {
-          _w->setUpdatesEnabled(true);
+          setUpdatesEnabledRecursively(_w, true);
+          _w->show();
           stop();
           delete this;
         }
@@ -362,7 +377,7 @@ namespace{
 }
 
 static inline void pauseUpdates(QWidget *w, int ms = 50){
-  w->setUpdatesEnabled(false);
+  setUpdatesEnabledRecursively(w, false);
   new PauseUpdatesTimer(w, ms);
 }
 
@@ -687,6 +702,11 @@ static inline void safeShow(QWidget *widget){
     widget->show();
     widget->raise();
     widget->activateWindow();
+#if 0 //def FOR_WINDOWS
+    HWND wnd=(HWND)w->winId();
+    SetFocus(wnd);
+    SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+#endif
   }GL_unlock();
 }
 

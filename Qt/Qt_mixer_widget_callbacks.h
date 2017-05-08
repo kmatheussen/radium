@@ -314,7 +314,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     //Mixer_widget->update();
   }
   */
-  
+
 public slots:
 
   void on_ab_a_clicked(){ab_rightclicked(0);}
@@ -391,10 +391,13 @@ public slots:
       //  xsplitter = (QWidget*)g_mixer_widget->parent();
       pauseUpdates(w, 15); // Prevent some flickering.
       pauseUpdates(g_main_window, 15); // Prevent some flickering.
+            
       w->hide();
       _bottom_bar->show();
-      w->updateGeometry();
       set_window_parent(w, g_main_window, false);
+
+      w->adjustSize();
+
       //w->show();
     } else {
       EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
