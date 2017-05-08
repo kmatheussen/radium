@@ -387,6 +387,15 @@ static inline void moveWindowToCentre(QWidget *widget){
   widget->move(R_MAX(20, x), R_MAX(20, y));
 }
 
+static inline void updateWidgetRecursively(QWidget *widget){
+  if (widget != NULL){
+    widget->update();
+    
+    for(auto *c : widget->children())
+      updateWidgetRecursively(dynamic_cast<QWidget*>(c));
+  }
+}
+
 
 namespace{
 

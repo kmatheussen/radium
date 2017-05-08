@@ -195,17 +195,18 @@ static QRect get_rect(int fontsize){
 #ifdef TEST_MAIN
   return QRect(50,50,400,400);
 #else
-  QRect rect = g_main_window->rect();
-  QPoint pos = g_main_window->mapToGlobal(QPoint(0,0));
+  QRect rect;
 
-  int middle_x = pos.x() + rect.width()/2;
-  int middle_y = pos.y() + rect.height()/2;
-  
+  if (g_main_window!=NULL && g_main_window->isVisible())
+    rect = g_main_window->rect();
+  else
+    rect = QApplication::desktop()->availableGeometry();
+
   int width = fontsize*600/8;
   int height = fontsize*300/8;
-
-  int x = middle_x - width/2;
-  int y = middle_y - height/2;
+  
+  int x = rect.x()+rect.width()/2-width/2;
+  int y = rect.y()+rect.height()/2-height/2;
 
   return QRect(x,y,width,height);
 #endif

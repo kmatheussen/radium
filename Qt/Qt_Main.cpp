@@ -1370,11 +1370,12 @@ protected:
 
     struct Tracker_Windows *window=root->song->tracker_windows;
 
-    /*
+
+    // No, we still need to do this. At least in qt 5.5.1. Seems like it's not necessary in 5.7 or 5.8 though, but that could be coincidental.
     if(g_main_timer_num_calls<1000/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
-      window->must_redraw = true;
+      updateWidgetRecursively(g_main_window);
     }
-    */
+    
     
     {
       DO_GFX({
@@ -2073,7 +2074,6 @@ int radium_main(char *arg){
     if (showPlaylistDuringStartup())
       GFX_PlayListWindowToFront();
 
-    main_window->show();
   }
 
   PyRun_SimpleString("import menues");
@@ -2155,7 +2155,8 @@ int radium_main(char *arg){
   window->must_redraw = true;
   editor->update();
   editor->resize(editor->width(),editor->height());
-
+  main_window->updateGeometry();
+  
 #if USE_OPENGL
   GL_create(window, window->wblock);
 #endif
@@ -2209,6 +2210,12 @@ int radium_main(char *arg){
   
   g_qtgui_exec_has_started = true;
 
+  updateWidgetRecursively(g_main_window);
+  main_window->updateGeometry();
+  moveWindowToCentre(main_window);
+  main_window->show();
+  updateWidgetRecursively(g_main_window);
+  
 #if defined(FOR_MACOSX) // Only needed on 10.12 though.
   GFX_SetSystemFont(QApplication::font());
 #endif
