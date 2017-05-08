@@ -315,6 +315,7 @@
     (set! *message-gui* gui))
   
   (let ((changed-parent (<gui> :set-parent *message-gui* -2)))
+    (c-display "                  CHANGED-PARENT " changed-parent)
     (if (not (<gui> :is-visible *message-gui*))
         (<gui> :show *message-gui*))
     (if changed-parent

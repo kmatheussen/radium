@@ -1300,8 +1300,8 @@ public:
     : interval(MAIN_TIMER_INTERVAL) // is set to either 1, 2, 5, 10, 25, or 50.
   {
     msgBox = new QMessageBox(g_main_window);
-    msgBox->setModal(false);
-    msgBox->setWindowFlags(Qt::Window);
+    set_window_flags(msgBox, false);
+    
     msgBox_dontshowagain = (QAbstractButton*)msgBox->addButton("Dont show this message again",QMessageBox::ApplyRole);
     msgBox_stop_playing = (QAbstractButton*)msgBox->addButton("Stop playing!",QMessageBox::ApplyRole);
     msgBox_ok = (QAbstractButton*)msgBox->addButton("Ok",QMessageBox::AcceptRole);
@@ -1339,7 +1339,8 @@ protected:
       QString message(rt_message);
 
       if (dontshow.contains(message)==false){
-        msgBox->setParent(get_current_parent(), Qt::Window);
+        set_window_parent(msgBox, get_current_parent(), false);
+        
         msgBox->setText(message);
 
         safeShow(msgBox);

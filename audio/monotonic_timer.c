@@ -12,6 +12,14 @@
 
 #include <stdint.h>
 
+#if FOR_WINDOWS
+#include <windows.h>
+static void sleep_1second(void){
+  Sleep(MSECS_PER_SEC);
+}
+#endif
+
+
 #if 0
 
 // CCALL/INITIALIZER macros picked up from http://stackoverflow.com/questions/1113409/attribute-constructor-equivalent-in-vc
@@ -159,7 +167,7 @@ static void init_rdtsc_per_sec(void) {
   uint64_t before, after;
   
   before = rdtsc();
-  msleep(MSECS_PER_SEC);
+  sleep_1second();
   after = rdtsc();
   
   rdtsc_per_sec = after - before;

@@ -387,7 +387,7 @@ public slots:
     if(show_window){
       //if(xsplitter!=NULL)
       //  xsplitter = (QWidget*)g_mixer_widget->parent();
-      g_mixer_widget->setParent(g_main_window, Qt::Window);
+      set_window_parent(g_mixer_widget, g_main_window, false);
       g_mixer_widget->show();
       _bottom_bar->show();
     } else {

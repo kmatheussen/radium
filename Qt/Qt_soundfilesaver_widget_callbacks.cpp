@@ -205,7 +205,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
   Timer _timer;
 
  Soundfilesaver_widget(QWidget *parent=NULL)
-    : RememberGeometryQDialog(parent)
+   : RememberGeometryQDialog(parent, false)
     , currently_saving_plugin(NULL)
     , msgBox(NULL)
   {

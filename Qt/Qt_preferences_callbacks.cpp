@@ -257,7 +257,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
   Vst_paths_widget *vst_widget = new Vst_paths_widget;
   
  Preferences(QWidget *parent=NULL)
-   : RememberGeometryQDialog(parent)
+   : RememberGeometryQDialog(parent, false)
    , _is_updating_widgets(false)
   {
     R_ASSERT(parent!=NULL);
@@ -1143,7 +1143,6 @@ static Preferences *g_preferences_widget=NULL;
 void PREFERENCES_open(void){
   if(g_preferences_widget==NULL){
     g_preferences_widget = new Preferences(g_main_window);
-    //widget->setWindowModality(Qt::ApplicationModal);
     g_static_toplevel_widgets.push_back(g_preferences_widget);
   }
 

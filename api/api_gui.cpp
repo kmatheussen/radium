@@ -349,6 +349,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return _gui_num;
     }
     bool _has_been_closed = false;
+
+    bool _is_modal = false; // We need to remember whether modality should be on or not, since modality is a parameter for set_window_parent.
     
     Gui(QWidget *widget, bool created_from_existing_widget = false)
       : _widget_as_key(widget)
@@ -2959,7 +2961,8 @@ bool gui_setParent(int64_t guinum, int64_t parentgui){
   }
   
   QWidget *parent = API_gui_get_parentwidget(parentgui);
-
+  printf("**parent is main_window: %d\n", parent==g_main_window);
+  
   if (parent==gui->_widget){
     printf("Returned same as me\n");
     return false;
@@ -2975,9 +2978,12 @@ bool gui_setParent(int64_t guinum, int64_t parentgui){
     bool isvisible = gui->_widget->isVisible();
     if (isvisible)
       gui->_widget->hide();
+    
     if (gui->_widget->parent() != NULL)
-      gui->_widget->setParent(NULL);
-    gui->_widget->setParent(parent, Qt::Window);
+      gui->_widget->setParent(NULL); // Don't remember why I did this. Should have added a comment. Seems unnecessary. And if it is necessary, it should probably be handled in set_window_parent() and not here.
+
+    set_window_parent(gui->_widget, parent, gui->_is_modal);
+
     if (isvisible)
       gui->_widget->show();
   }
@@ -2990,6 +2996,8 @@ void gui_setModal(int64_t guinum, bool set_modal){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
+
+  gui->_is_modal = set_modal;
 
   gui->_widget->setWindowModality(set_modal ? Qt::ApplicationModal : Qt::NonModal);
 }

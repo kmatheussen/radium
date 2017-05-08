@@ -51,7 +51,7 @@ public:
   Timer _timer;
 
  Pd_Controller_Config_dialog(QWidget *parent, struct Patch *patch, int controller_num)
-    : RememberGeometryQDialog(parent)
+    : RememberGeometryQDialog(parent, false)
     , _patch(patch)
     , _controller_num(controller_num)
     , _is_updating_gui(true)

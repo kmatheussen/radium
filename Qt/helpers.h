@@ -111,6 +111,61 @@ static inline QWidget *get_current_parent(bool may_return_current_parent_before_
     */
 }
 
+// Returns true if modality is turned on when 'is_modal'==false.
+static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *parent, bool is_modal, bool only_set_flags){
+
+//  #if defined(FOR_MACOSX)
+#if 1
+  // Although these hacks are only needed on OSX, it's probably best to let the program behave similarly on all platforms. (this behavior is not that bad)
+  // Besides, it may be that setParent isn't always working properly on windows and linux either, for all I know.
+  const bool set_parent_working_properly = false;
+#else
+  const bool set_parent_working_properly = true;
+#endif
+  
+  Qt::WindowFlags f = Qt::Window;
+  bool force_modal = false;
+
+  if (!set_parent_working_properly){
+    if (parent==g_main_window) {
+      f = Qt::Window | Qt::Tool; // On OSX, you can't create an "on-top-of hierarchy" by setting the windows parent. But for level 1, we can work around this by setting the Qt::Tool flag.
+      window->setAttribute(Qt::WA_MacAlwaysShowToolWindow, true); // Qt::Tool windows dissapear on OSX if the application is not active. (At least according to Qt documentation. I haven't tested it.)
+    } else
+      force_modal=true; // Qt::Tool doesn't work for levels larger than 1 (it doesn't work if the parent is a Qt::Tool window), so we work around it by using modal windows. Modal windows seems to always be on top of parent window.
+  }
+  
+  if (only_set_flags)
+    window->setWindowFlags(f);
+  else
+    window->setParent(parent, f);
+ 
+  if (force_modal || is_modal) {
+
+    if (window->windowModality()!=Qt::ApplicationModal)
+      window->setWindowModality(Qt::ApplicationModal);
+
+    return !is_modal;
+
+  } else {
+
+    if (!is_modal && window->windowModality()!=Qt::NonModal) // We may have forcefully turned on modality in a previous call. Turn it off now.
+      window->setWindowModality(Qt::NonModal);
+
+    return false;
+    
+  }
+}
+
+// Returns true if modality is turned on when 'is_modal'==false.
+static inline bool set_window_parent(QWidget *window, QWidget *parent, bool is_modal){
+  return set_window_parent_andor_flags(window, parent, is_modal, false);
+}
+
+// Returns true if modality is turned on when 'is_modal'==false.
+static inline bool set_window_flags(QWidget *window, bool is_modal){
+  return set_window_parent_andor_flags(window, window->parentWidget(), is_modal, true);
+}
+
 namespace radium{
   struct ASMTimer : public QTimer{
     QTime time;
@@ -245,9 +300,7 @@ struct MyQMessageBox : public QMessageBox {
   MyQMessageBox(QWidget *parent_ = NULL)
     : QMessageBox(parent_!=NULL ? parent_ : get_current_parent())
   {
-    setWindowModality(Qt::ApplicationModal);
-    //setWindowModality(Qt::NonModal);
-    setWindowFlags(Qt::Window);
+    set_window_flags(this, true);
   }
 
  public:
@@ -393,12 +446,13 @@ struct RememberGeometryQDialog : public QDialog {
 #endif
   
 public:
-  RememberGeometryQDialog(QWidget *parent_)
+  RememberGeometryQDialog(QWidget *parent_, bool is_modal)
     : QDialog(parent_!=NULL ? parent_ : g_main_window, Qt::Window) // | Qt::Tool)
 #if PUT_ON_TOP
     , timer(this)
 #endif
-  {    
+  {
+    set_window_flags(this, is_modal);
     //QDialog::setWindowModality(Qt::ApplicationModal);
     //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
   }

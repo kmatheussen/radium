@@ -61,7 +61,7 @@ namespace{
 
   public:
     FaustQDialog(QWidget *parent)
-      : RememberGeometryQDialog(parent)
+      : RememberGeometryQDialog(parent, false)
     {
       //QStyle *style = QStyleFactory::create("plastique");
       //if (style!=NULL)
