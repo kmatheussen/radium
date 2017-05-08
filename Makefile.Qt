@@ -1151,7 +1151,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
 
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
-Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h $(P)Qt_seqtrack_widget.h $(P)Qt_seqtrack_widget_callbacks.h 
+Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h $(P)Qt_seqtrack_widget.h $(P)Qt_seqtrack_widget_callbacks.h Qt/helpers.h
 	$(GPLUSPLUS) $(P)Qt_Main.cpp $(QTOPT) $(IS_LINUX_BINARY) -Wno-deprecated-declarations -Wno-shadow
 
 Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
@@ -1290,7 +1290,7 @@ $(P)Qt_seqtrack_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_seqtrack_widget.ui $(P)c
 
 
 
-$(P)Qt_mixer_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_widget.ui $(P)create_source_from_ui.sh $(P)Qt_mixer_widget_callbacks.h $(P)Qt_mixer_direction_menu.h
+$(P)Qt_mixer_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_widget.ui $(P)create_source_from_ui.sh $(P)Qt_mixer_widget_callbacks.h $(P)Qt_mixer_direction_menu.h Qt/helpers.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) mixer_widget
 
 $(P)Qt_mixer_direction_menu.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_direction_menu.ui $(P)create_source_from_ui.sh  $(P)Qt_mixer_direction_menu_callbacks.h
@@ -1615,19 +1615,18 @@ bin/X11_XSendEvent: X11/X11_XSendEvent.c
 # Mixer
 
 $(QM)QM_view.cpp: $(QM)mQM_view.cpp
-$(QM)QM_MixerWidget.cpp: $(QM)mQM_MixerWidget.cpp
 
 $(QM)mQM_view.cpp: $(QM)QM_view.h 
 	cd $(QM) && $(MOC) QM_view.h >mQM_view.cpp
 
-$(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h $(P)Qt_MyQButton.h 
-	cd $(QM) && $(MOC) QM_MixerWidget.h >mQM_MixerWidget.cpp
+$(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h $(QM)QM_MixerWidget.cpp $(P)Qt_MyQButton.h 
+	cd $(QM) && $(MOC) QM_MixerWidget.cpp >mQM_MixerWidget.cpp
 
 #images.o: $(QM)images.qrc
 #	$(RCC) $(QM)images.qrc -name images -o $(QM)images.cpp
 #	$(CCC) $(QM)images.cpp  `$(PKG) --libs --cflags QtGui` -c
 
-QM_MixerWidget.o: $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp Qt/helpers.h
+QM_MixerWidget.o: $(QM)mQM_MixerWidget.cpp $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp Qt/helpers.h
 	$(CCC) $(QM)QM_MixerWidget.cpp $(QTOPT)
 
 QM_view.o: $(QM)QM_view.cpp $(QM)QM_view.h $(QM)QM_chip.h $(QM)mQM_view.cpp $(QM)QM_MixerWidget.h

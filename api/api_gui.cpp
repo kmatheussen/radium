@@ -328,7 +328,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     QVector<func_t*> _deleted_callbacks;
 
-    radium::RememberGeometry remember_geometry;
+    RememberGeometry remember_geometry;
     
     bool is_full_screen(void) const {
       return _full_screen_parent!=NULL;
@@ -3059,37 +3059,8 @@ void gui_moveToParentCentre(int64_t guinum){
 
   QWidget *w = gui->_widget;
   w->updateGeometry();
-  
-  QObject *oparent = w->parent();
-  QWidget *parent = oparent==NULL ? NULL : dynamic_cast<QWidget*>(oparent);
 
-  QRect rect;
-  
-  if (parent==NULL){
-    // Move to middle of screen instead.
-    rect = QApplication::desktop()->availableGeometry();
-    /*
-    QRect screenGeometry = QApplication::desktop()->screenGeometry();
-    int x = (screenGeometry.width()-w->width()) / 2;
-    int y = (screenGeometry.height()-w->height()) / 2;
-    w->move(x, y);
-    return;
-    */
-  } else
-    rect = parent->geometry();
-
-  /*
-  if (parent==NULL){
-    handleError("gui_moveToParentCentre: Parent of gui #%d is not a widget", guinum);
-    return;
-  }
-  */
-  
-  int width = w->width();
-  int height = w->height();
-
-  //printf("w: %d, h: %d\n",w,h);
-  w->move(rect.x()+rect.width()/2-width/2, rect.y()+rect.height()/2-height/2);
+  moveWindowToCentre(w);
 }
 
 void gui_setPos(int64_t guinum, int x, int y){

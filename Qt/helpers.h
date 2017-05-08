@@ -12,6 +12,7 @@
 #include <QVBoxLayout>
 #include <QGuiApplication>
 #include <QPointer>
+#include <QDesktopWidget>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
@@ -327,7 +328,67 @@ struct MyQMessageBox : public QMessageBox {
   
 };
 
-namespace radium{
+namespace{
+  struct PauseUpdatesTimer : public QTimer{
+    QWidget *_w;
+    QTime _time;
+    int _ms;
+    
+    PauseUpdatesTimer(QWidget *parent, int ms)
+      : _w(parent)
+      , _ms(ms)
+    {
+      //setSingleShot(true);
+      _time.start();
+      setInterval(15);
+      start();
+    }
+
+    void timerEvent(QTimerEvent *e) override{
+      if (_time.elapsed() >= _ms){ // singleshot is messy since we might get deleted at any time.
+        //printf("TEIMERERINE EVENT\n");
+        if (_w->isVisible()==false){
+          _w->show();
+          _w->updateGeometry();
+          _ms *= 2;
+        } else {
+          _w->setUpdatesEnabled(true);
+          stop();
+          delete this;
+        }
+      }
+    }
+  };
+}
+
+static inline void pauseUpdates(QWidget *w, int ms = 50){
+  w->setUpdatesEnabled(false);
+  new PauseUpdatesTimer(w, ms);
+}
+
+static inline void moveWindowToCentre(QWidget *widget){
+  QRect rect;
+  
+  QWidget *parent = widget->parentWidget();
+  
+  if (parent==NULL)
+    // Move to middle of screen instead.
+    rect = QApplication::desktop()->availableGeometry();
+  else
+    rect = parent->geometry();
+  
+  int width = widget->width();
+  int height = widget->height();
+  
+  int x = rect.x()+rect.width()/2-width/2;
+  int y = rect.y()+rect.height()/2-height/2;
+  //printf("w: %d, h: %d\n",width,height);
+  
+  widget->move(R_MAX(20, x), R_MAX(20, y));
+}
+
+
+namespace{
 
   /*
     Qt makes it _almost_ impossible to remember geometry of windows (both qdialog and qwidget) without adding a timer that monitors what's happening and tries to do the right thing.
@@ -342,7 +403,7 @@ namespace radium{
     To use it, override setVisible and hideEvent like this:
 
     void setVisible(bool visible) override {
-      remember_geometry.setVisible_override<QWidget>(this, visible);
+      remember_geometry.setVisible_override<superclass>(this, visible);
     }
 
     void hideEvent(QHideEvent *event_) override {
@@ -358,11 +419,23 @@ namespace radium{
     void save(QWidget *widget){
       geometry = widget->saveGeometry();
       has_stored_geometry = true;
+      //printf("   SAVING geometry\n");
     }
 
     void restore(QWidget *widget){
-      if (has_stored_geometry)
+      if (has_stored_geometry){
+
+        //printf("   RESTORING geometry\n");
         widget->restoreGeometry(geometry);
+        
+      }else{
+
+        //printf("   88888888888888888888888888888888888888888888 NO geometry stored\n");
+
+        widget->updateGeometry();
+
+        moveWindowToCentre(widget);
+      }
     }
 
     ///////////////////
@@ -377,6 +450,9 @@ namespace radium{
       if (visible==true && widget->isVisible()==true)
         return;
 
+      if (visible && widget->window()==widget)
+        restore(widget);  // Not necessary for correct operation, but it might seem like it removes some flickering.
+     
       widget->SuperWidget::setVisible(visible);
       
       if (visible && widget->window()==widget)
@@ -389,16 +465,15 @@ namespace radium{
     }
 
   };
-}
 
   
 struct RememberGeometryQDialog : public QDialog {
 
-  radium::RememberGeometry remember_geometry;
-
-  static int num_open_dialogs;
+  RememberGeometry remember_geometry;
 
 #if PUT_ON_TOP
+  
+  static int num_open_dialogs;
 
   struct Timer : public QTimer {
     bool was_visible = false;
@@ -462,6 +537,8 @@ public:
   }
 
 };
+
+}
 
 struct GL_PauseCaller{
   GL_PauseCaller(){

@@ -87,92 +87,17 @@ static const int grid_height = chip_height;
 static const int port_width = chip_width/8;
 static const int port_height = 2;//chip_height/8;
 
-class MyScene : public QGraphicsScene{
-  Q_OBJECT
- public:
-  MyScene(QWidget *parent);
-
- protected:
-  void 	mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event );
-  void 	mouseMoveEvent ( QGraphicsSceneMouseEvent * event );
-  void 	mousePressEvent ( QGraphicsSceneMouseEvent * event );
-  void 	mouseReleaseEvent ( QGraphicsSceneMouseEvent * event );
-
-
-  /*
-  void dragEnterEvent(QGraphicsSceneDragDropEvent *e){
-    printf("               GOT DRAG\n");
-    //e->acceptProposedAction();
-  }
-  */
-  
-  void dragMoveEvent(QGraphicsSceneDragDropEvent *e){
-    printf("               GOT MOVE\n");
-    e->acceptProposedAction();
-  }
-  
-  void dropEvent(QGraphicsSceneDragDropEvent *event){
-    printf("               GOT DOP\n");
-    if (event->mimeData()->hasUrls())
-      {
-        foreach (QUrl url, event->mimeData()->urls())
-          {
-            handleDropEvent(url.toLocalFile(), -100);
-          }
-      }
-  }
-  
- public:
-  QWidget *_parent;
-
-  AudioConnection *_current_connection;
-  Chip *_current_from_chip;
-  Chip *_current_to_chip;
-
-  EventConnection *_current_econnection;
-  Chip *_ecurrent_from_chip;
-  Chip *_ecurrent_to_chip;
-
-  std::vector<Chip*>_moving_chips;
-
-  QPointF _start_mouse_pos;
-
-#if 0
-  public slots:
-    void on_scene_changed ( const QList<QRectF> & region ){
-    printf("Hepp! changed\n");
-  }
-#endif
-};
 
 
 class MyQGraphicsView;
 
-class MixerWidget : public QWidget
-{
-    Q_OBJECT
-public:
-    MixerWidget(QWidget *parent = 0);
-
-    void setupMatrix();
-    void populateScene();
-    
-    MyScene scene;
-    MyQGraphicsView *view;
-
-    radium::RememberGeometry remember_geometry;
-
-    void setVisible(bool visible) override {
-      remember_geometry.setVisible_override<QWidget>(this, visible);
-    }
-
-    void hideEvent(QHideEvent *event_) override {
-      remember_geometry.hideEvent_override(this);
-    }
-};
-
+class MixerWidget;
 extern MixerWidget *g_mixer_widget;
 
+QGraphicsScene *get_scene(MixerWidget *mixer_widget);
+QWidget *get_qwidget(MixerWidget *mixer_widget);
+MixerWidget *create_mixer_widget(QWidget *parent);
+  
 void MW_set_autopos(double *x, double *y);
   
 bool MW_move_chip_to_slot(Chip *chip, float x, float y);

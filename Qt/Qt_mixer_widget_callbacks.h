@@ -383,17 +383,23 @@ public slots:
     if(initing)
       return;
 
+    QWidget *w = get_qwidget(g_mixer_widget);
+    
     //static QWidget *xsplitter = NULL;
     if(show_window){
       //if(xsplitter!=NULL)
       //  xsplitter = (QWidget*)g_mixer_widget->parent();
-      set_window_parent(g_mixer_widget, g_main_window, false);
-      g_mixer_widget->show();
+      pauseUpdates(w, 15); // Prevent some flickering.
+      pauseUpdates(g_main_window, 15); // Prevent some flickering.
+      w->hide();
       _bottom_bar->show();
+      w->updateGeometry();
+      set_window_parent(w, g_main_window, false);
+      //w->show();
     } else {
       EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
       QSplitter *splitter = editor->xsplitter;
-      splitter->addWidget(g_mixer_widget);
+      splitter->addWidget(w);
       //g_mixer_widget->setParent(xsplitter);
       _bottom_bar->hide();
     }

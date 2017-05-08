@@ -58,7 +58,9 @@ bool g_show_key_codes = false;
 
 extern bool g_gc_is_incremental;
 
+#if PUT_ON_TOP
 int RememberGeometryQDialog::num_open_dialogs;
+#endif
 
 namespace{
 

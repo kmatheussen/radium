@@ -790,10 +790,16 @@ static int GFX_Message(vector_t *buttons, QString message){
 
   
   //msgBox->move(QCursor::pos());
+#if PUT_ON_TOP
   RememberGeometryQDialog::num_open_dialogs++;
+#endif
+  
   safeExec(msgBox);
+  
+#if PUT_ON_TOP
   RememberGeometryQDialog::num_open_dialogs--;
-
+#endif
+  
   if (msgBox==NULL) // Theoretically, msgBox could have been deleted while calling exec(). (It is deleted if the parent is deleted, and the parent could basically be any widget)
     return -1;
   

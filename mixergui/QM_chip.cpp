@@ -425,7 +425,7 @@ Chip *find_chip_for_plugin(QGraphicsScene *scene, SoundPlugin *plugin){
 }
 
 void CHIP_update(SoundPlugin *plugin){
-  Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, plugin);
+  Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), plugin);
 
   int eff1 = plugin->type->num_effects+EFFNUM_INPUT_VOLUME;
   int eff2 = plugin->type->num_effects+EFFNUM_VOLUME;
@@ -455,20 +455,20 @@ void CHIP_update(SoundPlugin *plugin){
 
 /*
 void CHIP_init_because_it_has_new_plugin(SoundPlugin *plugin){
-  Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, plugin);
+  Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), plugin);
   chip->init_new_plugin();
 }
 */
 
 float CHIP_get_pos_x(const struct Patch *patch){
-  Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
+  Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), (SoundPlugin*)patch->patchdata);
   if (chip==NULL)
     return 0;
   return chip->x();
 }
 
 float CHIP_get_pos_y(const struct Patch *patch){
-  Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
+  Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), (SoundPlugin*)patch->patchdata);
   if (chip==NULL)
     return 0;
   return chip->y();
@@ -481,7 +481,7 @@ void CHIP_set_pos(Chip *chip, float x, float y){
 }
 
 void CHIP_set_pos(struct Patch *patch,float x,float y){
-  Chip *chip = find_chip_for_plugin(&g_mixer_widget->scene, (SoundPlugin*)patch->patchdata);
+  Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), (SoundPlugin*)patch->patchdata);
   if (chip!=NULL)
     CHIP_set_pos(chip, x, y);
 }
@@ -695,7 +695,7 @@ void CHIP_econnect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *
 
 
 int CHIP_get_num_in_connections(const Patch *patch){
-  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
@@ -708,7 +708,7 @@ int CHIP_get_num_in_connections(const Patch *patch){
 }
 
 int CHIP_get_num_out_connections(const Patch *patch){
-  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
@@ -721,7 +721,7 @@ int CHIP_get_num_out_connections(const Patch *patch){
 }
 
 int CHIP_get_num_in_econnections(const Patch *patch){
-  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
@@ -734,7 +734,7 @@ int CHIP_get_num_in_econnections(const Patch *patch){
 }
 
 int CHIP_get_num_out_econnections(const Patch *patch){
-  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
@@ -747,7 +747,7 @@ int CHIP_get_num_out_econnections(const Patch *patch){
 }
 
 struct Patch* CHIP_get_source(const struct Patch *patch, int connectionnum){
-  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
@@ -763,7 +763,7 @@ struct Patch* CHIP_get_source(const struct Patch *patch, int connectionnum){
 }
   
 struct Patch* CHIP_get_dest(const struct Patch *patch, int connectionnum){
-  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
@@ -779,7 +779,7 @@ struct Patch* CHIP_get_dest(const struct Patch *patch, int connectionnum){
 }
   
 struct Patch* CHIP_get_esource(const struct Patch *patch, int connectionnum){
-  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
@@ -795,7 +795,7 @@ struct Patch* CHIP_get_esource(const struct Patch *patch, int connectionnum){
 }
   
 struct Patch* CHIP_get_edest(const struct Patch *patch, int connectionnum){
-  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   R_ASSERT_RETURN_IF_FALSE2(chip!=NULL,0);
 
   int num=0;
@@ -1042,11 +1042,11 @@ void CHIP_autopos(Chip *chip){
 }
 
 void CHIP_autopos(struct Patch *patch){
-  CHIP_autopos(CHIP_get(&g_mixer_widget->scene, patch));
+  CHIP_autopos(CHIP_get(get_scene(g_mixer_widget), patch));
 }
 
 void CHIP_create(SoundProducer *sound_producer, float x, float y){
-  new Chip(&g_mixer_widget->scene, sound_producer, x, y);
+  new Chip(get_scene(g_mixer_widget), sound_producer, x, y);
 }
 
 Chip::~Chip(){
@@ -1064,7 +1064,7 @@ Chip::~Chip(){
 }
 
 void CHIP_delete(Patch *patch){
-  Chip *chip = CHIP_get(&g_mixer_widget->scene, patch);
+  Chip *chip = CHIP_get(get_scene(g_mixer_widget), patch);
   printf("     Deleting chip %p (%s)\n",chip,CHIP_get_patch(chip)->name);
   delete chip;
 }

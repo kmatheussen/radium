@@ -107,6 +107,102 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern EditorWidget *g_editor;
 
+
+class MyScene : public QGraphicsScene{
+  Q_OBJECT
+ public:
+  MyScene(QWidget *parent);
+
+ protected:
+  void 	mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event );
+  void 	mouseMoveEvent ( QGraphicsSceneMouseEvent * event );
+  void 	mousePressEvent ( QGraphicsSceneMouseEvent * event );
+  void 	mouseReleaseEvent ( QGraphicsSceneMouseEvent * event );
+
+
+  /*
+  void dragEnterEvent(QGraphicsSceneDragDropEvent *e){
+    printf("               GOT DRAG\n");
+    //e->acceptProposedAction();
+  }
+  */
+  
+  void dragMoveEvent(QGraphicsSceneDragDropEvent *e){
+    printf("               GOT MOVE\n");
+    e->acceptProposedAction();
+  }
+  
+  void dropEvent(QGraphicsSceneDragDropEvent *event){
+    printf("               GOT DOP\n");
+    if (event->mimeData()->hasUrls())
+      {
+        foreach (QUrl url, event->mimeData()->urls())
+          {
+            handleDropEvent(url.toLocalFile(), -100);
+          }
+      }
+  }
+  
+ public:
+  QWidget *_parent;
+
+  AudioConnection *_current_connection;
+  Chip *_current_from_chip;
+  Chip *_current_to_chip;
+
+  EventConnection *_current_econnection;
+  Chip *_ecurrent_from_chip;
+  Chip *_ecurrent_to_chip;
+
+  std::vector<Chip*>_moving_chips;
+
+  QPointF _start_mouse_pos;
+
+#if 0
+  public slots:
+    void on_scene_changed ( const QList<QRectF> & region ){
+    printf("Hepp! changed\n");
+  }
+#endif
+};
+
+
+class MixerWidget : public QWidget
+{
+    Q_OBJECT
+public:
+    MixerWidget(QWidget *parent = 0);
+
+    void setupMatrix();
+    void populateScene();
+    
+    MyScene scene;
+    MyQGraphicsView *view;
+
+    RememberGeometry remember_geometry;
+
+    void setVisible(bool visible) override {
+      remember_geometry.setVisible_override<QWidget>(this, visible);
+    }
+
+    void hideEvent(QHideEvent *event_) override {
+      remember_geometry.hideEvent_override(this);
+    }
+};
+
+QGraphicsScene *get_scene(MixerWidget *mixer_widget){
+  return &mixer_widget->scene;
+}
+
+QWidget *get_qwidget(MixerWidget *mixer_widget){
+  return mixer_widget;
+}
+
+MixerWidget *create_mixer_widget(QWidget *parent){
+  return new MixerWidget(parent);
+}
+
+
 /*
 struct HelpText : public QTimer{
   QGraphicsTextItem *_text;

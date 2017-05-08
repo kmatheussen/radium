@@ -2053,7 +2053,7 @@ int radium_main(char *arg){
 
       }
 
-      new MixerWidget(xsplitter);
+      create_mixer_widget(xsplitter);
 
       if(!showMixerStripOnLeftSide())
         add_mixer_strip(xsplitter);
