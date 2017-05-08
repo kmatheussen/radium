@@ -41,21 +41,21 @@ extern char *NotesTexts2[];
 extern char *NotesTexts3[];
 
 
-char *getNoteName2(int notenum){
+const_char *getNoteName2(int notenum){
   if (notenum<0 || notenum>127)
     return "";
   else
     return NotesTexts2[notenum];
 }
 
-char *getNoteName3(int notenum){
+const_char *getNoteName3(int notenum){
   if (notenum<0 || notenum>127)
     return "";
   else
     return NotesTexts3[notenum];
 }
 
-float getNoteNameValue(char *notename){
+float getNoteNameValue(const_char *notename){
   return notenum_from_notetext(notename);
 }
 

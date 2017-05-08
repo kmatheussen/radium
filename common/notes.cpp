@@ -902,7 +902,7 @@ static const char *octave_to_string(int octave){
 }
 
 
-static int get_sharp(char sharptext){
+static int get_sharp(const char sharptext){
   if(sharptext=='#')
     return 1;
   else if(sharptext=='b')
@@ -915,7 +915,7 @@ static int get_sharp(char sharptext){
     return -2;
 }
 
-static char *substring(char *s,int start,int end){
+static char *substring(const char *s,int start,int end){
   char *ret       = (char*)talloc(end-start+1);
   int   read_pos  = start;
   int   write_pos = 0;
@@ -926,7 +926,7 @@ static char *substring(char *s,int start,int end){
   return ret;
 }
 
-static int string_charpos(char *s, char c){
+static int string_charpos(const char *s, char c){
   int pos=0;
   while(s[pos]!=0){
     if(s[pos]==c)
@@ -936,8 +936,8 @@ static int string_charpos(char *s, char c){
   return -1;
 }
 
-static char *strip_whitespace(char *s){
-  char *ret=s;
+static char *strip_whitespace(const char *s){
+  char *ret=talloc_strdup(s);
 
   // strip before
   while(isspace(ret[0]))
@@ -955,12 +955,12 @@ static char *strip_whitespace(char *s){
   return ret;
 }
 
-float notenum_from_notetext(char *notetext){
+float notenum_from_notetext(const char *notetext){
   int chroma, octave, sharp;
 
-  char *stripped = strip_whitespace(notetext);
+  const char *stripped = strip_whitespace(notetext);
 
-  char *notename;
+  const char *notename;
     
   int comma_pos = string_charpos(stripped, ',');
   if (comma_pos != -1)
@@ -991,7 +991,7 @@ float notenum_from_notetext(char *notetext){
   float decimals = 0.0f;
 
   if (comma_pos != -1) {
-    char *decimaltext = stripped + comma_pos + 1;
+    const char *decimaltext = stripped + comma_pos + 1;
 #ifdef TEST_NOTES
     decimals = atof(decimaltext) / 100.0f;
 #else

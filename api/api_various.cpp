@@ -661,7 +661,7 @@ void openAboutWindow(void){
               );
 }
 
-char *getProgramPath(void){
+const_char *getProgramPath(void){
   return (char*)OS_get_program_path();
 }
 
@@ -669,20 +669,20 @@ const_char *appendPaths(const_char* path1, const_char* path2){
   return talloc_format("%s%s%s", path1, OS_get_directory_separator(), path2);
 }
 
-char *getConfPath(char *filename){
-  return (char*)OS_get_conf_filename2(filename);
+const_char *getConfPath(const char *filename){
+  return OS_get_conf_filename2(filename);
 }
 
-bool hasConfPath(char *filename){
+bool hasConfPath(const char *filename){
   return OS_has_conf_filename2(filename);
 }
 
-char *getKeybindingsConfPath(void){
-  return (char*)OS_get_keybindings_conf_filename2();
+const_char *getKeybindingsConfPath(void){
+  return OS_get_keybindings_conf_filename2();
 }
 
-char *getMenuesConfPath(void){
-  return (char*)OS_get_menues_conf_filename2();
+const_char *getMenuesConfPath(void){
+  return OS_get_menues_conf_filename2();
 }
 
 static const char *g_embedded_audio_files_path = NULL;
@@ -719,7 +719,7 @@ void load(void){
   }
 }
 
-void loadSong(char *filename){
+void loadSong(const_char *filename){
   if( LoadSong_CurrPos(getWindowFromNum(-1),STRING_create(filename))){
     isloaded=true;
   }
@@ -1777,7 +1777,7 @@ void setAutobackupIntervalInMinutes(int interval){
   SETTINGS_write_int("autobackup_interval_minutes", interval);
 }
 
-void addMenuMenu(char* name, char* command){
+void addMenuMenu(const char* name, const_char* command){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   GFX_AddMenuMenu(window, name, command);
 }
@@ -1787,12 +1787,12 @@ void goPreviousMenuLevel(void){
   GFX_GoPreviousMenuLevel(window);
 }
 
-void addMenuItem(char* name, char* command){
+void addMenuItem(const char* name, const_char* command){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   GFX_AddMenuItem(window, name, command);
 }
 
-void addCheckableMenuItem(char* name, char* command, int checkval){
+void addCheckableMenuItem(const_char* name, const_char* command, int checkval){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   GFX_AddCheckableMenuItem(window, name, command, checkval==1?true:false);
 }
@@ -1802,7 +1802,7 @@ void addMenuSeparator(void){
   GFX_AddMenuSeparator(window);
 }
 
-void setStatusbarText(char* text, int windownum){
+void setStatusbarText(const_char* text, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   static bool is_empty = false;
   if (text[0]=='\0') {
@@ -2114,11 +2114,11 @@ int getHighestLegalPlaceDenominator(void){
   return MAX_UINT32;
 }
 
-char *toBase64(const char *s){
+const_char *toBase64(const char *s){
   return STRING_get_chars(STRING_toBase64(STRING_create(s)));
 }
 
-char *fromBase64(const char *s){
+const_char *fromBase64(const char *s){
   return STRING_get_chars(STRING_fromBase64(STRING_create(s)));
 }
 
@@ -2235,6 +2235,8 @@ void API_call_very_often(void){
     } else {
       release_event(event);
     }
+
+    throwExceptionIfError();
   }
 }
 

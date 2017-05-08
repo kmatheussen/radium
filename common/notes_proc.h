@@ -97,7 +97,7 @@ extern LANGSPEC struct Notes *FindNote(
 extern LANGSPEC struct Notes *FindNoteCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC char *notetext_from_notenum(float notenumf);
-extern LANGSPEC float notenum_from_notetext(char *notetext);
+extern LANGSPEC float notenum_from_notetext(const char *notetext);
 
 extern LANGSPEC void EditNoteCurrPos(struct Tracker_Windows *window);
 

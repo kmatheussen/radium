@@ -341,7 +341,7 @@ static struct PatchData *getPatchData(struct Patch *patch){
   return patch->patchdata;
 }
 
-void MIDISetPatchData(struct Patch *patch, char *key, char *value){
+void MIDISetPatchData(struct Patch *patch, const char *key, const char *value){
   if(false){
 
   }else if(!strcasecmp(key,"port")){
@@ -364,7 +364,7 @@ void MIDISetPatchData(struct Patch *patch, char *key, char *value){
     GFX_Message(NULL, "MIDISetPatchData: Unknown key \"%s\" for midi instrument", key);
 }
 
-static char *MIDIGetPatchData(struct Patch *patch, char *key){
+static char *MIDIGetPatchData(struct Patch *patch, const char *key){
   if(false){
 
   }else if(!strcasecmp(key,"port")){
@@ -515,7 +515,7 @@ char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool 
 }
 
 // This function must never return NULL.
-struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,char *name){
+struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,const char *name){
   //printf("    Calling MIDIgetPort -%s-\n", name);
   bool created_new_port = false;
 

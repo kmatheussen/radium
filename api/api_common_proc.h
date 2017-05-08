@@ -18,8 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern "C" {
 #endif
 
-extern void callMeBeforeReturningToS7(void);
-extern char *pullErrorMessage(void);
+extern const char *pullErrorMessage(void);
+extern void printExceptionIfError(void);
+extern void throwExceptionIfError(void);
 extern void handleError(const char *fmt,...);
 
 extern struct Tracker_Windows *getWindowFromNum(int windownum);

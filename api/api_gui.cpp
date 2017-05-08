@@ -2979,8 +2979,8 @@ bool gui_setParent(int64_t guinum, int64_t parentgui){
     if (isvisible)
       gui->_widget->hide();
     
-    if (gui->_widget->parent() != NULL)
-      gui->_widget->setParent(NULL); // Don't remember why I did this. Should have added a comment. Seems unnecessary. And if it is necessary, it should probably be handled in set_window_parent() and not here.
+    //if (gui->_widget->parent() != NULL)
+    //   gui->_widget->setParent(NULL); // Don't remember why I did this. Should have added a comment. Seems unnecessary. And if it is necessary, it should probably be handled in set_window_parent() and not here.
 
     set_window_parent(gui->_widget, parent, gui->_is_modal);
 

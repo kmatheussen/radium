@@ -109,7 +109,7 @@
 
 ;; init table stuff
 (let ((table *pmg-table*))
-  (<gui> :stretch-table table *pmg-use-x* #f (floor (* 1.5 (<gui> :text-width "Usage"))))
+  (<gui> :stretch-table table *pmg-use-x* #f (floor (* 1.5 (<gui> :text-width "Usage"))))  ;; TODO: Does ':text-width' consistently return a too small value?
   (<gui> :stretch-table table *pmg-name-x* #f (floor (* 1.5 (<gui> :text-width "Multi-band compressor"))))
   (<gui> :stretch-table table *pmg-type-x* #f (floor (* 1.5 (<gui> :text-width "Sample Player"))))
   (<gui> :stretch-table table *pmg-category-x* #f (floor (* 1.5 (<gui> :text-width "Category"))))

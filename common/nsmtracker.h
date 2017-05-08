@@ -1244,8 +1244,8 @@ struct Instruments{
 	void (*handle_fx_when_theres_a_new_patch_for_track)(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch);
         void (*remove_patchdata)(struct Patch *patch);
 
-	void (*setPatchData)(struct Patch *patch, char *key, char *value);
-	char *(*getPatchData)(struct Patch *patch, char *key);
+	void (*setPatchData)(struct Patch *patch, const char *key, const char *value);
+	char *(*getPatchData)(struct Patch *patch, const char *key);
 };
 #define INSTRUMENT_FAILED 0
 #define INSTRUMENT_SUCCESS 1

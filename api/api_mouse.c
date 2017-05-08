@@ -2401,7 +2401,7 @@ int64_t getFxInstrument(int fxnum, int tracknum, int blocknum, int windownum){
   return fxs->fx->patch->id;
 }
   
-char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){   
+const_char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){   
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;

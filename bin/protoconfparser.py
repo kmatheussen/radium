@@ -67,6 +67,7 @@ class Argument:
         self.varname=parts[len(parts)-1]
 
         self.type_string = self.qualifiers[len(self.qualifiers)-1]
+        
         self.full_type_string = reduce(lambda x,y: x+" "+y, self.qualifiers)
 
 
@@ -79,8 +80,6 @@ class Argument:
             return "s7_make_real"
         elif self.type_string=="double":
             return "s7_make_real"
-        elif self.type_string=="char*":
-            return "s7_make_string"
         elif self.type_string=="const_char*":
             return "s7_make_string"
         elif self.type_string=="bool":
@@ -104,10 +103,8 @@ class Argument:
             return "s7_number_to_real(radiums7_sc, "
         elif self.type_string=="double":
             return "s7_number_to_real(radiums7_sc, "
-        elif self.type_string=="char*":
-            return "(char*)s7_string("
         elif self.type_string=="const_char*":
-            return "(const_char*)s7_string("
+            return "s7_string("
         elif self.type_string=="bool":
             return "s7_boolean(radiums7_sc, "
         elif self.type_string=="Place":
@@ -129,8 +126,6 @@ class Argument:
             return "s7_is_number"
         elif self.type_string=="double":
             return "s7_is_number"
-        elif self.type_string=="char*":
-            return "s7_is_string"
         elif self.type_string=="const_char*":
             return "s7_is_string"
         elif self.type_string=="bool":
@@ -290,14 +285,14 @@ class Proto:
             oh.write("result;\n")
 
         if self.defaults==true:
-            oh.write("static char *kwlist[]={")
+            oh.write("static const char *kwlist[]={")
             for lokke in range(self.arglen):
                 oh.write("\""+self.args[lokke].varname+"\",")
             oh.write("NULL};\n")
 
-            oh.write("if(!PyArg_ParseTupleAndKeywords(args,keywds,(char *)\"")
+            oh.write("if(!PyArg_ParseTupleAndKeywords(args,keywds,(const char *)\"")
         else:
-            oh.write("if(!PyArg_ParseTuple(args,(char *)\"")
+            oh.write("if(!PyArg_ParseTuple(args,(const char *)\"")
 
 
         defaultused=false
@@ -318,8 +313,6 @@ class Proto:
                 t="d"
             elif qualifier=="PyObject*":
                 t="O"
-            elif qualifier=="char*":
-                t="s"
             elif qualifier=="const_char*":
                 t="s"
             elif qualifier=="bool":
@@ -372,8 +365,6 @@ class Proto:
                     t="PyFloat_FromDouble("
                 elif qualifier=="double":
                     t="PyFloat_FromDouble("
-                elif qualifier=="char*":
-                    t="PyString_FromString("
                 elif qualifier=="const_char*":
                     t="PyString_FromString("
                 elif qualifier=="bool":
@@ -391,7 +382,7 @@ class Proto:
         if self.uses_func:
             return
         
-        oh.write("{(char*)\""+self.proc.varname+"\",")
+        oh.write("{(const char*)\""+self.proc.varname+"\",")
         if self.defaults:
             oh.write("(PyCFunction)")
         oh.write("_wrap_"+self.proc.varname+",")
@@ -535,12 +526,13 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         else:
             oh.write("  ");
         callstring = self.proc.varname+"("+self.get_arg_list(self.args)+")"
+        #sys.stderr.write("CASLLTSTITN: "+callstring+"\n")
         if self.proc.type_string=="void":
-            oh.write(callstring+"; callMeBeforeReturningToS7() ; return s7_undefined(radiums7_sc);\n")
+            oh.write(callstring+"; throwExceptionIfError() ; return s7_undefined(radiums7_sc);\n")
         else:
             conversion_function = self.proc.get_s7_make_type_function()
             oh.write("s7_pointer radium_return_value_value = "+conversion_function+"(radiums7_sc, "+callstring+"); ");
-            oh.write("callMeBeforeReturningToS7(); ");
+            oh.write("throwExceptionIfError(); ");
             oh.write("return radium_return_value_value;\n");
 
     def write_s7_func(self,oh):

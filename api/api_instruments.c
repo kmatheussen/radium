@@ -255,14 +255,14 @@ void setUseTrackChannelForMidiInput(bool doit){
 }
 
 
-int64_t createMIDIInstrument(char *name) {
+int64_t createMIDIInstrument(const_char *name) {
   struct Patch *patch = PATCH_create_midi(name);
   GFX_PP_Update(patch,false);
   return patch->id;
 }
 
 // There was a good reason for the 'name' parameter. Think it had something to do with replace instrument, and whether to use old name or autogenerate new one.
-int64_t createAudioInstrument(char *type_name, char *plugin_name, char *name, float x, float y) {
+int64_t createAudioInstrument(const_char *type_name, const_char *plugin_name, const_char *name, float x, float y) {
   printf("createAudioInstrument called\n");
   
   if (name!=NULL && strlen(name)==0)
@@ -282,11 +282,11 @@ int64_t createAudioInstrument(char *type_name, char *plugin_name, char *name, fl
   return patch->id;
 }
 
-int64_t createAudioInstrumentFromPreset(const char *filename, char *name, float x, float y) {
+int64_t createAudioInstrumentFromPreset(const char *filename, const_char *name, float x, float y) {
   return PRESET_load(STRING_create(filename), name, false, x, y);
 }
 
-int64_t createAudioInstrumentFromDescription(const char *instrument_description, char *name, float x, float y){
+int64_t createAudioInstrumentFromDescription(const char *instrument_description, const_char *name, float x, float y){
   if (strlen(instrument_description)==0)
     return -1;
 
@@ -476,7 +476,7 @@ bool hasPureData(void){
 #endif
 }
 
-void setInstrumentSample(int64_t instrument_id, char *filename){
+void setInstrumentSample(int64_t instrument_id, const_char *filename){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -497,7 +497,7 @@ void setInstrumentSample(int64_t instrument_id, char *filename){
   SAMPLER_set_new_sample(plugin, STRING_create(filename), -1);
 }
 
-void setRandomInstrumentSample(int64_t instrument_id, char *path){
+void setRandomInstrumentSample(int64_t instrument_id, const_char *path){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -548,15 +548,15 @@ void setInstrumentLoopData(int64_t instrument_id, int start, int length){
 
 }
 
-char *getInstrumentName(int64_t instrument_id) {
+const_char *getInstrumentName(int64_t instrument_id) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
 
-  return (char*)patch->name;
+  return patch->name;
 }
 
-void setInstrumentName(char *name, int64_t instrument_id) {
+void setInstrumentName(const_char *name, int64_t instrument_id) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -740,7 +740,7 @@ float gainToDb(float gain){
   return gain2db(gain);
 }
 
-void setInstrumentData(int64_t instrument_id, char *key, char *value) {
+void setInstrumentData(int64_t instrument_id, const_char *key, const_char *value) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -750,7 +750,7 @@ void setInstrumentData(int64_t instrument_id, char *key, char *value) {
   (*patch->instrument->PP_Update)(patch->instrument,patch,false);
 }
 
-char *getInstrumentData(int64_t instrument_id, char *key) {
+const_char *getInstrumentData(int64_t instrument_id, const_char *key) {
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
@@ -1265,7 +1265,7 @@ const_char* getSampleBookmarks(int num){
   return SETTINGS_read_string(talloc_format("sample_bookmarks%d",num), "/");
 }
 
-void setSampleBookmarks(int num, char* path){
+void setSampleBookmarks(int num, const_char* path){
   SETTINGS_write_string(talloc_format("sample_bookmarks%d",num), path);
 }
 

@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/visual_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
+#include "../embedded_scheme/s7extra_proc.h"
 
 #include "api_gui_proc.h"
 
@@ -74,20 +75,31 @@ void init_radium(char *arg,PyObject *gkf){
 	Common operations
 *******************************************/
 
-static char *g_error_message = NULL;
+static const char *g_error_message = NULL;
 
-void callMeBeforeReturningToS7(void){
-  if (g_error_message != NULL) {
-    const char *message = g_error_message;
-    g_error_message = NULL;
-    SCHEME_throw("radium-api", message);
-  }
-}
-
-char *pullErrorMessage(void){
-  char *message = g_error_message;
+const char *pullErrorMessage(void){
+  const char *message = g_error_message;
   g_error_message = NULL;
   return message;
+}
+
+static void printException(const char *message){
+  fprintf(stderr, "SCHEME error. Message: \"%s\"\n", message);
+  //s7extra_callFunc2_void_void("display-ow!"); // No point. ow! uses the errorlet, but we haven't thrown exception yet.
+}
+
+void printExceptionIfError(void){
+  const char *message = pullErrorMessage();
+  if (message != NULL)
+    printException(message);
+}
+
+void throwExceptionIfError(void){
+  const char *message = pullErrorMessage();
+  if (message != NULL){
+    printException(message);
+    SCHEME_throw("radium-api", message);
+  }
 }
 
 void handleError(const char *fmt,...){
@@ -101,6 +113,8 @@ void handleError(const char *fmt,...){
   vsprintf(message,fmt,argp);
   va_end(argp);
 
+  printException(message);
+  
   vector_t v = {0};
 
   int ok = VECTOR_push_back(&v, "Ok");
@@ -109,7 +123,7 @@ void handleError(const char *fmt,...){
 
   int ret = GFX_Message(&v, message);
 
-  // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'callMeBeforeReturningToExtensionLanguage' above.
+  // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above.
   if (ret!=continue_)
     g_error_message = talloc_strdup(message);  
 }

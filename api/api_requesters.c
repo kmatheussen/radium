@@ -106,7 +106,7 @@ const char *getSaveFilename(const_char *text, const_char *filetypes, const_char 
 
 static ReqType requester = NULL;
 
-void openRequester(char *text, int width, int height){
+void openRequester(const_char *text, int width, int height){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
   requester = GFX_OpenReq(window,width,height,text);
@@ -121,7 +121,7 @@ void closeRequester(void){
   }
 }
 
-int requestInteger(char *text, int min, int max, bool standalone){
+int requestInteger(const_char *text, int min, int max, bool standalone){
   if (standalone)
     return GFX_GetInteger(NULL, requester, text, min, max);
 
@@ -129,7 +129,7 @@ int requestInteger(char *text, int min, int max, bool standalone){
   return GFX_GetInteger(window, requester, text, min, max);
 }
 
-float requestFloat(char *text, float min, float max, bool standalone){
+float requestFloat(const_char *text, float min, float max, bool standalone){
   if (standalone)
     return GFX_GetFloat(NULL, requester, text, min, max);
 
@@ -137,7 +137,7 @@ float requestFloat(char *text, float min, float max, bool standalone){
   return GFX_GetFloat(window, requester, text, min, max);
 }
 
-char* requestString(char *text, bool standalone){
+const_char* requestString(const_char *text, bool standalone){
   char *ret;
 
   if (standalone)
@@ -152,7 +152,7 @@ char* requestString(char *text, bool standalone){
   return ret;
 }
 
-int requestMenu(char *text, PyObject* arguments){
+int requestMenu(const_char *text, PyObject* arguments){
   handleError("requestMenu not implemented");
   return 0;
 }
@@ -196,7 +196,7 @@ void callFunc_void_int_bool(func_t* callback, int arg1, bool arg2){
   s7extra_callFunc_void_int_bool(callback, arg1, arg2);
 }
 
-char* requestMidiPort(void){
+const_char* requestMidiPort(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
   char *ret = MIDIrequestPortName(window, requester, false);
   if(ret==NULL)
@@ -244,11 +244,11 @@ void addMessage(const char *text){
   }
 }
   
-void showWarning(char *text){
+void showWarning(const_char *text){
   RWarning(text);
 }
 
-void showError(char *text){
+void showError(const_char *text){
   RError(text);
 }
 

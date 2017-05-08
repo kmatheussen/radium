@@ -1011,8 +1011,8 @@ static void AUDIO_remove_patchdata(struct Patch *patch){
   MW_update_all_chips();
 }
 
-static void AUDIO_setPatchData(struct Patch *patch, char *key, char *value){}
-static char *AUDIO_getPatchData(struct Patch *patch, char *key){
+static void AUDIO_setPatchData(struct Patch *patch, const char *key, const char *value){}
+static char *AUDIO_getPatchData(struct Patch *patch, const char *key){
   return NULL;
 }
 

@@ -122,7 +122,7 @@ static char *removeKey(int key, uint32_t qualifiers){
 
    If 'funcname' is NULL or empty string, it means that we need to remove already added keybinding, if there is one.
 */
-const char *ER_keyAdd(int key,char *funcname,PyObject *pykeys,PyObject *pyargs){
+const char *ER_keyAdd(int key,const_char *funcname,PyObject *pykeys,PyObject *pyargs){
 	int keyslen;
 	int argslen;
 	int *keys=PYR_getIntArray(&keyslen,pykeys);

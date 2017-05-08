@@ -32,10 +32,10 @@ void setMaxUndos(int windownum){
   SetMaxUndos(window);
 }
 
-char *getUndoHistory(void){
-  char *ret = "\n";
+const_char *getUndoHistory(void){
+  const char *ret = "\n";
   vector_t history = Undo_get_history();
-  VECTOR_FOR_EACH(char *line, &history){
+  VECTOR_FOR_EACH(const char *line, &history){
     ret = talloc_format("%s%s\n", ret, line);
   }END_VECTOR_FOR_EACH;
 

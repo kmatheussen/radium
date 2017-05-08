@@ -224,7 +224,7 @@ void MIDI_closeMidiPortOs(MidiPortOs port){
   V_free(myport);
 }
 
-MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name_c){
+MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,const char *name_c){
 
   MyMidiPortOs *ret = (MyMidiPortOs*)V_calloc(1, sizeof(MyMidiPortOs));
   

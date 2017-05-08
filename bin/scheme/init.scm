@@ -57,6 +57,9 @@
                        (display message)
                        (newline)))))))
 
+(define (display-ow!)
+  (display (ow!)))
+
 
 ;; Redefine load so that we can show a warning window if redefining a symbol when loading a file for the first time
 (let ((org-load load))
@@ -76,7 +79,7 @@
                                     (org-load filename env)
                                     (org-load filename)))
                               (lambda args
-                                (display (ow!))))))
+                                (display-ow!)))))
               (set! *currently-reloading-file* old-reloading)
               (set! *currently-loading-file* old-loading-filename)
               ret)))))
@@ -93,7 +96,7 @@
 
 (set! (hook-functions *error-hook*) 
       (list (lambda (hook)
-              (display (ow!))
+              (display-ow!)
               (let ((gwhs go-wrong-hooks))
                 (set! go-wrong-hooks '())
                 (for-each (lambda (go-wrong-hook)

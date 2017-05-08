@@ -43,7 +43,7 @@ extern LANGSPEC void MIDI_Delete(void);
 
 extern LANGSPEC void MIDI_closeMidiPortOs(MidiPortOs port);
 
-extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,char *name);
+extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,const char *name);
 //GoodPutMidi(mymidilink->midilink,(ULONG)((cc<<24)|(data1<<16)|(data2<<8)),(ULONG)maxbuff);
 
 extern LANGSPEC void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *portname);

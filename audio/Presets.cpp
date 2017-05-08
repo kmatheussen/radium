@@ -193,7 +193,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
   return state;
 }
 
-static int64_t PRESET_load_multipreset(hash_t *state, char *name, bool inc_usage_number, float x, float y){
+static int64_t PRESET_load_multipreset(hash_t *state, const char *name, bool inc_usage_number, float x, float y){
 
   struct Patch *first_patch = NULL;
   vector_t patches = {0};
@@ -232,7 +232,7 @@ static int64_t PRESET_load_multipreset(hash_t *state, char *name, bool inc_usage
     return first_patch->id;
 }
 
-static int64_t PRESET_load_singlepreset(hash_t *state, char *name, bool inc_usage_number, float x, float y){
+static int64_t PRESET_load_singlepreset(hash_t *state, const_char *name, bool inc_usage_number, float x, float y){
   struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state, x, y);
   if (patch==NULL)
     return -1;
@@ -245,7 +245,7 @@ static int64_t PRESET_load_singlepreset(hash_t *state, char *name, bool inc_usag
   return patch->id;
 }
 
-static int64_t insert_preset_into_program(hash_t *state, char *name, bool inc_usage_number, float x, float y){
+static int64_t insert_preset_into_program(hash_t *state, const_char *name, bool inc_usage_number, float x, float y){
   bool is_multipreset = HASH_has_key(state, "multipreset_presets") && HASH_get_bool(state, "multipreset_presets");
   
   if (is_multipreset)
@@ -258,7 +258,7 @@ static int64_t insert_preset_into_program(hash_t *state, char *name, bool inc_us
 //
 // A less confusing name could perhaps be PRESET_add_instrument
 //
-int64_t PRESET_load(const wchar_t *wfilename, char *patchname, bool inc_usage_number, float x, float y) {
+int64_t PRESET_load(const wchar_t *wfilename, const_char *patchname, bool inc_usage_number, float x, float y) {
   if (patchname!=NULL && strlen(patchname)==0)
     patchname = NULL;
 
@@ -339,7 +339,7 @@ static bool valid_patches(const vector_t *patches){
   return true;
 }
 
-void PRESET_copy(vector_t *patches){
+void PRESET_copy(const vector_t *patches){
   R_ASSERT_RETURN_IF_FALSE(patches->num_elements > 0);
 
   if (!valid_patches(patches))
