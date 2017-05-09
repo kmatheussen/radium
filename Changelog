@@ -1,3 +1,64 @@
+Changes 4.7.9 -> 4.8.0:
+* Various fixes to reduce flickering when opening windows
+* Open the main window at the centre of screen during startup.
+  (On Linux, it often opened up in the upper left corner.)
+* Make sure all new windows are opened at the centre position of the
+  parent window.
+* Fix remember geometry for the Preferences window
+* OSX: Fix window on-top-of hierarchy. Turned out
+  QWidget::setParent() doesn't make windows always stay on top of
+  each other on OSX (which they do on all other platforms). The
+  workaround is a combination of tool windows and modal windows.
+  The workaround behaves approximately the same way and is applied
+  to all platforms.
+* Replace all use of usleep. May fix some bugs on windows, where
+  usleep doesn't work if asking to sleep more than one second.
+* Show taller async message window initially.
+* Sequencer: Don't repaint when a non-async window is visible.
+  This avoids blank sequencer graphics in some situations.
+* Set default button in message windows. I.e. when pressing the
+  Return or Enter key, the default button is pushed. The default
+  button is the rightmost one on Window and Linux (mostly),
+  and it's the leftmost one on OSX. (It's the same button, but
+  systems displays button order differently.)
+* Detect during startup if the jack server is malfunctioning, and
+  kill it if it does. Don't just freeze Radium, as before. This
+  also releaves the user from killing the jack server manually,
+  which is a little bit complicated.
+* Mixer: Fix modular mixer height cut in half when pressing the "M"
+  button two times.
+* Mixer strips: Fix gui leak for narrow-sized mixer strips. Two
+  unused widgets were created every time a narrow-sized mixer
+  strip was created or recreated, and they were never deleted.
+  This could probably have taken up significant amounts of memory
+  after a while.
+* OSX/Plugin manager: Workaround for non-working Return and Enter
+  keys.
+* Show the "About" window asynchronously.
+* Don't crash if a plugin asks for timing information outside
+  realtime audio thread. Also shows warning window if a plugin
+  does this. This avoids crash after closing the "Moody Sampler"
+  AU plugin.
+* Plugin manager: Many fixes.
+* Plugins: Many fixes to the way we load plugins.
+* API:
+  * Reduce scheduling resolution from 90ms to 5ms. (Increases
+    performance on some gui-related things.)
+  * GUI: Optimize adding/removing rows to/from table. (Increases
+    plugin manager performance)
+  * GUI: Don't cancel various virtual methods (paint/resize/etc.)
+    from running when a non-async window is visible. This avoids
+    some of blank widgets when showing file requesters, etc.
+  * GUI: Don't crash when deleting a table cell gui.
+  * GUI: Clean up, make faster, and make safer, the way we
+    store, lookup, and organize qwidgets. (It was possible to
+    crash it before.)
+  * addMessage: Call showMessage if the underlying scheme file
+    that addMessage uses has not been loaded yet.
+  * Removed the char* type. Can only use const_char* now.
+  * New functions: gui_numOpenGuis. gui_hasKeyboardFocus
+
+
 Changes 4.7.8 -> 4.7.9:
 * Fix some minor plugin scanning issues, such as making it
   possible to rescan previously blacklisted plugins.
