@@ -110,7 +110,7 @@ void handleError(const char *fmt,...){
   va_list argp;
   
   va_start(argp,fmt);
-  vsprintf(message,fmt,argp);
+  vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
   printException(message);

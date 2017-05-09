@@ -38,6 +38,8 @@ static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widge
 
 //extern void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument_widget *system_audio_instrument_widget, struct Patch *patch);
 
+namespace{
+  
 class Audio_instrument_widget : public QWidget, public Ui::Audio_instrument_widget{
   Q_OBJECT;
 
@@ -1335,6 +1337,9 @@ public slots:
   }
 };
 
+}
+
+ 
 /*
 static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widget *audio_instrument_widget){
   return audio_instrument_widget->_plugin_widget->_pd_plugin_widget;

@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_comment_dialog.h"
 
-
+namespace{
 class comment_dialog : public RememberGeometryQDialog, public Ui::Comment_dialog {
   Q_OBJECT
 
@@ -57,4 +57,6 @@ public slots:
   }
 
 };
+
+}
 

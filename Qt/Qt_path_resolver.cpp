@@ -235,7 +235,7 @@ void RError(const char *fmt,...){
   
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
-  vsprintf(message,fmt,argp);
+  vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
   fprintf(stderr,"error: %s\n",message);

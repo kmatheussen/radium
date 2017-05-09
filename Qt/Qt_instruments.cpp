@@ -100,7 +100,9 @@ static Instruments_widget *g_instruments_widget;
 //static No_instrument_widget *no_instrument_widget;
 
 class MIDI_instrument_widget;
+namespace{
 class Audio_instrument_widget;
+}
 
 static void tab_name_has_changed(QWidget *tab, QString new_name);
 //static void tab_selected();

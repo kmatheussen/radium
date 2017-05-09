@@ -787,7 +787,7 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
   
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
-  vsprintf(message,fmt,argp);
+  vsnprintf(message,998,fmt,argp);
   va_end(argp);
   
   if (g_crashreporter_file!=NULL) {

@@ -215,21 +215,14 @@
 
 (define (disable-gui-updates-block gui block)
   (<gui> :disable-updates gui)
-  (<ra> :schedule 30
-        (lambda ()
-          (if (<gui> :is-open gui)
-              (<gui> :enable-updates gui))
-          #f))
-  (block))
-
-;  (let ((ret (catch #t
-;                    block
-;                    (lambda args ;; Catch exceptions to ensure (<ra> :cose-undo) will be called
-;                      (display "args")(display args)(newline)
-;                      (apply format #t (cadr args))
-;                      (display (ow!))))))
-;    (<gui> :enable-updates gui)
-;    ret))
+  (let ((ret (catch #t
+                    block
+                    (lambda args ;; Catch exceptions to ensure (<ra> :enable-updates gui) will be called
+                      (display "args")(display args)(newline)
+                      (apply format #t (cadr args))
+                      (display (ow!))))))
+    (<gui> :enable-updates gui)
+    ret))
 
 
 
@@ -300,27 +293,29 @@
                                        (<gui> :hide *message-gui*)))
     (<gui> :add buttonlayout hide-button)
 
-    (define gui (<gui> :vertical-layout *message-gui-text-edit* buttonlayout))
-    (<gui> :set-layout-spacing gui 2 2 2 2 2)
+    (define gui2 (<gui> :vertical-layout *message-gui-text-edit* buttonlayout))
+    (<gui> :set-layout-spacing gui2 2 2 2 2 2)
     
-    (<gui> :set-size gui
+    (<gui> :set-size gui2
            (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 oiwaefoajefoijaowepijaeporgijpoaghjto#$#$% 2q3e4tERTQERT paerjgoijaerpoiporegi"))
            (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345")))
     
-    (<gui> :set-static-toplevel-widget gui #t)
+    (<gui> :set-static-toplevel-widget gui2 #t)
     
     ;; Just hide window when closing it.
-    (<gui> :add-close-callback gui
+    (<gui> :add-close-callback gui2
            (lambda (radium-runs-custom-exec)
              ;;(<gui> :set-parent *message-gui* -3)
              (c-display "              GAKK GAKK GAKK")
              (<gui> :hide *message-gui*)
              #f))
 
-    (set! *message-gui* gui))
+    (set! *message-gui* gui2))
 
+  ;;(c-display gui2)
+  
   (disable-gui-updates-block
-   gui
+   *message-gui*
    (lambda ()
      (let ((changed-parent (<gui> :set-parent *message-gui* -2)))
        (c-display "                  CHANGED-PARENT " changed-parent)
@@ -333,6 +328,40 @@
 
 ;;(<gui> :get-parent-window *message-gui*)
 #!!
+(add-message-window-message "aiai")
+
+(define (disable-gui-updates-block gui block)
+  (let ((ret (catch #t
+                    (lambda ()
+                      gui)
+                    (lambda args
+                      (display (ow!))))))
+    ret))
+
+(define (show-message-gui)
+  (when #f
+    (define gui2 50)
+    #t)
+  (disable-gui-updates-block
+   gui2
+   (lambda ()
+     50)))
+
+
+(define (show-message-gui)
+  (when #f
+    (define gui2 50)
+    #t)
+  gui2)
+
+(eval '(show-message-gui))
+
+(show-message-gui)
+
+
+(<ra> :add-message "aiai")
+
+(<ra> :add-message "hello1345weert446        werttqwertqert qqerrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrt                           qerrrrrrrrrrrrrrrrrrrrrrrrt\nasdfasdf")
 (show-message-gui)
 (<gui> :hide *message-gui*)
 (<gui> :show *message-gui*)

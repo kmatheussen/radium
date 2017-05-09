@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static const int k_timer_interval_here3 = 50;
 
+namespace{
+  
 class Pd_Plugin_widget : public QWidget, public Ui::Pd_Plugin_widget{
   Q_OBJECT;
 
@@ -186,6 +188,9 @@ public:
 public slots:
 
 };
+
+}
+
 
 void PDGUI_is_hidden(void *gui){
   if(gui!=NULL){

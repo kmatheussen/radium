@@ -33,7 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_song_properties.h"
 
-
+namespace{
+  
 class song_properties : public RememberGeometryQDialog, public Ui::Song_properties {
   Q_OBJECT
 
@@ -115,4 +116,6 @@ public slots:
   }
 
 };
+
+}
 

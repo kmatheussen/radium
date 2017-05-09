@@ -834,7 +834,7 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
-  vsprintf(message,fmt,argp);
+  vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
   bool use_system = false;
@@ -863,7 +863,7 @@ void GFX_addMessage(const char *fmt,...){
   
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
-  vsprintf(message,fmt,argp);
+  vsnprintf(message, 998, fmt,argp);
   va_end(argp);
 
   addMessage(message);

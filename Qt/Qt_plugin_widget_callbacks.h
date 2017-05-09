@@ -44,7 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static QString last_fxb_preset_path = "";
 
 
- 
+namespace{
+  
 class Plugin_widget : public QWidget, public Ui::Plugin_widget{
   Q_OBJECT;
 
@@ -486,7 +487,7 @@ private:
 
       
       filename = QFileDialog::getSaveFileName(
-                                              g_mixer_widget,
+                                              this,
                                               is_fxb ? "Save VST FXB file" : "Save VST FXP file",
                                               last_fxb_preset_path,
 #if FOR_WINDOWS
@@ -521,7 +522,7 @@ private:
       radium::ScopedExec scopedExec;
     
       filename = QFileDialog::getOpenFileName(
-                                              g_mixer_widget,
+                                              this,
                                               "Load VST FXB or FXP file",
                                               last_fxb_preset_path,
 #if FOR_WINDOWS
@@ -1017,6 +1018,9 @@ public slots:
     }
   }
 };
+
+}
+
 
 void PLUGINWIDGET_gui_is_hidden(void *w){
   Plugin_widget *plugin_widget = static_cast<Plugin_widget*>(w);

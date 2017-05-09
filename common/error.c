@@ -83,7 +83,7 @@ void RError(const char *fmt,...){
   
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
-  vsprintf(message,fmt,argp);
+  vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
   CRASHREPORTER_send_assert_message(CT_ERROR, "RError: %s",message);
@@ -96,7 +96,7 @@ void RWarning(const char *fmt,...){
   
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
-  vsprintf(message,fmt,argp);
+  vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
   CRASHREPORTER_send_assert_message(CT_WARNING, "RWarning: %s",message);
@@ -110,7 +110,7 @@ void RWarning_not_prod(const char *fmt,...){
   
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
-  vsprintf(message,fmt,argp);
+  vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
   show_message(IS_WARNING,message);
