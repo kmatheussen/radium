@@ -1,3 +1,12 @@
+Changes 4.8.0 -> 4.8.1:
+* Update s7 scheme interpreter.
+* Fix semi-rare freeze when undoing block position in the
+  sequencer while playing.
+* Fix window-on-top and remember-geometry for the help windows.
+* Fix LLVM 4.0 incompat with faust. (Teteros)
+* API: gui_web
+
+
 Changes 4.7.9 -> 4.8.0:
 * Various fixes to reduce flickering when opening windows
 * Open the main window at the centre of screen during startup.
