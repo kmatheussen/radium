@@ -224,6 +224,16 @@
     (<gui> :enable-updates gui)
     ret))
 
+(define (reopen-gui-at-curr-pos gui)
+  (disable-gui-updates-block
+   gui
+   (lambda ()
+     (let ((changed-parent (<gui> :set-parent gui -2)))
+       (c-display "                  CHANGED-PARENT " changed-parent)
+       (if (not (<gui> :is-visible gui))
+           (<gui> :show gui))
+       (if changed-parent
+           (<gui> :move-to-parent-centre gui))))))
 
 
 (delafina (ra:show-async-message :parentgui -2
@@ -313,16 +323,8 @@
     (set! *message-gui* gui2))
 
   ;;(c-display gui2)
-  
-  (disable-gui-updates-block
-   *message-gui*
-   (lambda ()
-     (let ((changed-parent (<gui> :set-parent *message-gui* -2)))
-       (c-display "                  CHANGED-PARENT " changed-parent)
-       (if (not (<gui> :is-visible *message-gui*))
-           (<gui> :show *message-gui*))
-       (if changed-parent
-           (<gui> :move-to-parent-centre *message-gui*))))))
+
+  (reopen-gui-at-curr-pos *message-gui*))
 
   
 
@@ -393,3 +395,16 @@
 (let ((gui (<gui> :horizontal-layout)))  (<gui> :show gui)  (<gui> :move-to-parent-centre gui)  )
 
 !!#
+
+
+(define *help-windows* (make-hash-table 10 string=?))
+
+(define (FROM-C-show-help-window filename)
+  (define web (or (*help-windows* filename)
+                  (let ((web (<gui> :web filename)))
+                    (set! (*help-windows* filename) web)
+                    (<gui> :add-close-callback web (lambda x
+                                                     (<gui> :hide web)
+                                                     #f))
+                    web)))
+  (reopen-gui-at-curr-pos web))

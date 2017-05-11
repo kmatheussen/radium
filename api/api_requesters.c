@@ -263,21 +263,20 @@ void closeProgressWindow(void){
 }
 
 void showMixerHelpWindow(void){
-  GFX_showMixerHelpWindow();
+  evalScheme("(FROM-C-show-help-window \"help/mixer.html\")");
 }
-
 void showChanceHelpWindow(void){
-  GFX_showChanceHelpWindow();
+  evalScheme("(FROM-C-show-help-window \"help/chancetext.html\")");
 }
 void showVelocityHelpWindow(void){
-  GFX_showVelocityHelpWindow();
+  evalScheme("(FROM-C-show-help-window \"help/velocitytext.html\")");
 }
 void showFXHelpWindow(void){
-  GFX_showFXHelpWindow();
+  evalScheme("(FROM-C-show-help-window \"help/fxtext.html\")");
 }
 void showSwingHelpWindow(void){
-  GFX_showSwingHelpWindow();
+  evalScheme("(FROM-C-show-help-window \"help/swingtext.html\")");
 }
 void showKeybindingsHelpWindow(void){
-  GFX_showKeybindingsHelpWindow();
+  evalScheme("(FROM-C-show-help-window \"help/keybindings.html\")");
 }

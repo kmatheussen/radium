@@ -580,7 +580,7 @@ public slots:
   }
 
   void on_help_button_clicked(){
-    GFX_showMixerHelpWindow();
+    showMixerHelpWindow();
   }
 
 };

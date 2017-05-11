@@ -45,6 +45,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QHeaderView>
 #include <QStack>
 #include <QDesktopWidget>
+#include <QDir>
+
+#include <QtWebKitWidgets/QWebView>
+#include <QtWebKitWidgets/QWebFrame>
 
 #include "../common/nsmtracker.h"
 
@@ -1938,6 +1942,26 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   };
 
 
+  struct Web : QWebView, Gui{
+    Q_OBJECT;
+    
+  public:
+    
+    Web(QString url)
+      : Gui(this)
+    {
+      if (url.startsWith("http"))
+        setUrl(url);
+      else if (QFileInfo(url).isAbsolute())
+        setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(url)));
+      else
+        setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path(url))));
+    }
+
+    OVERRIDERS(QWebView);
+  };
+
+
   struct Table : QTableWidget, Gui{
     Q_OBJECT;
 
@@ -2373,6 +2397,13 @@ int64_t gui_floatText(double min, double curr, double max, int num_decimals, dou
   //return -1;
   return (new FloatText(min, curr, max, num_decimals, step_interval))->get_gui_num();
 }
+
+int64_t gui_web(const_char* url){
+  return (new Web(url))->get_gui_num();
+}
+
+
+/************** Table **********************/
 
 int64_t gui_table(dyn_t header_names){
   if (header_names.type != ARRAY_TYPE){
