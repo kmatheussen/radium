@@ -23,6 +23,8 @@ extern LANGSPEC bool OS_OSX_is_key_window(void *void_nsview);
 extern LANGSPEC bool OS_WINDOWS_is_key_window(void *maybewin);
 
 extern LANGSPEC void OS_WINDOWS_set_always_on_top(void *child_handle);
-  
+//extern LANGSPEC void OS_WINDOWS_set_on_top_of_everything(void *child_handle);
+
+
 //extern LANGSPEC bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *event);
 extern LANGSPEC void OS_SYSTEM_ResetKeysUpDowns(void);

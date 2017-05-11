@@ -2018,7 +2018,7 @@ AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp
 	$(CCC) audio/AudioMeterPeaks.cpp $(QTOPT)
 
 
-Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h
+Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h
 	$(CCC) audio/Mixer.cpp $(QTOPT) $(JACKOPT)  $(CPUOPT)
 
 get_windows_commandlines.o: audio/get_windows_commandlines.c

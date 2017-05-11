@@ -56,6 +56,15 @@ void OS_WINDOWS_set_always_on_top(void *child_handle){
 
 #endif
 
+#if 0
+void OS_WINDOWS_set_on_top_of_everything(void *child_handle){
+  HWND wnd=(HWND)child_handle;
+  SetFocus(wnd);
+  SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+}
+#endif
+
+
 extern uint32_t add_mouse_keyswitches(uint32_t keyswitch);
 
 static uint32_t get_keyswitch(void){

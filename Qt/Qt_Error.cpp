@@ -79,6 +79,7 @@ bool MIXERSTRIPS_has_mouse_pointer(void){  // used by helpers.h
   return false;
 }
 
+
 int main(int argc, char **argv){
 #if FOR_LINUX
   bool faulty_installation = false;

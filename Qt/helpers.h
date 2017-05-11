@@ -17,6 +17,7 @@
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/OS_system_proc.h"
 
 #include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
@@ -301,7 +302,17 @@ struct MyQMessageBox : public QMessageBox {
   MyQMessageBox(QWidget *parent_ = NULL)
     : QMessageBox(parent_!=NULL ? parent_ : get_current_parent())
   {
-    set_window_flags(this, true);
+    //printf("            PAERENT: %p. visible: %d\n",parent(),dynamic_cast<QWidget*>(parent())==NULL ? 0 : dynamic_cast<QWidget*>(parent())->isVisible());
+    if(dynamic_cast<QWidget*>(parent())==NULL || dynamic_cast<QWidget*>(parent())->isVisible()==false){
+      //setWindowModality(Qt::ApplicationModal);
+      //setWindowFlags(Qt::Popup | Qt::WindowStaysOnTopHint);
+      //setWindowFlags(windowFlags() | Qt::FramelessWindowHint | Qt::MSWindowsFixedSizeDialogHint);
+      setWindowFlags(windowFlags() | Qt::Window | Qt::WindowStaysOnTopHint | Qt::MSWindowsFixedSizeDialogHint);
+      raise();
+      activateWindow();
+    } else {
+      set_window_flags(this, true);
+    }
   }
 
  public:
