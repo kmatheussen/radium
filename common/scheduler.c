@@ -386,7 +386,7 @@ void SCHEDULER_init(void){
     event->next = g_free_events;
     g_free_events = event;
   }
-  g_event0.time = -100000;
+  g_event0.time = INT64_MIN;
 }
 
 scheduler_t *SCHEDULER_create(void){
