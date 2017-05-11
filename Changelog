@@ -1,3 +1,8 @@
+Changes 4.8.1 -> 4.8.2:
+* Windows: Make sure that notification windows, shown during,
+  startup, are not hidden by other windows.
+
+
 Changes 4.8.0 -> 4.8.1:
 * Update s7 scheme interpreter.
 * Fix semi-rare freeze when undoing block position in the
