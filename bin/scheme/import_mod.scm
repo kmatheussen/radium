@@ -5750,12 +5750,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 (load-protracker-module)
 ||#
 
-(define (load-protracker-module . args)
-
-  (define filename (if (null? args)
-                       (<ra> :get-load-filename "Choose MOD file" "*.mod *.MOD mod.* MOD.*")
-                       (car args)))
-
+(define (load-protracker-module filename)
   (if (string=? filename "")
       (assert #f))
   
@@ -5803,10 +5798,26 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
            ))
 
   (<ra> :reset-undo)
+  (<ra> :internal_update-all-block-graphics)
   )
-                 
+  
 
-
+(delafina (async-load-protracker-module :filename "")
+  (if (string=? "" filename)
+      (let ((gui (<gui> :file-requester "Choose MOD file" "" "Mod files" "*.mod *.MOD mod.* MOD.*" #t
+                        (lambda (filename)
+                          (<gui> :update -1) ;; -1 is the main window.
+                          (<ra> :schedule 50 ;; Give some time to update graphics after closing the file requester
+                                (lambda ()
+                                  (load-protracker-module filename)
+                                  #f))))))
+        (<gui> :set-modal gui #t)
+        (<gui> :set-parent gui -1)
+        (<gui> :show gui))
+      (<ra> :schedule 1
+            (lambda ()
+              (load-protracker-module filename)
+              #f))))
 
 
 

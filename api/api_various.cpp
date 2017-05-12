@@ -738,6 +738,10 @@ void importMidi(void){
   PyRun_SimpleString("import_midi.import_midi()");
 }
 
+void internal_updateAllBlockGraphics(void){
+  GL_create_all(root->song->tracker_windows);
+}
+
 static void import_importmod_file(void){
   static bool imported=false;
   if(imported==false){
@@ -749,13 +753,12 @@ static void import_importmod_file(void){
   GL_create_all(root->song->tracker_windows);
 }
 
-void importMod(void){
+void requestImportMod(void){
   //import_importmod_file();
   //PyRun_SimpleString("import_mod.import_mod()");
   //SCHEME_eval("(let () (load \"import_mod.scm\" (curlet)) (load-protracker-module))");
   SCHEME_eval("(my-require 'import_mod.scm)");
-  SCHEME_eval("(load-protracker-module)");
-  GL_create_all(root->song->tracker_windows);
+  SCHEME_eval("(async-load-protracker-module)");
 }
 
 void importXM(void){

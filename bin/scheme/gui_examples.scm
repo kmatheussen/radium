@@ -277,3 +277,18 @@
       (lambda ()
         (c-display "Num guis:" (<gui> :num-open-guis))
         1000))
+
+
+(define requester (<gui> :file-requester
+                         "header text"
+                         ""
+                         "Radium song files" 
+                         "*.rad *.mmd1 *.cpp"
+                         #f
+                         (lambda (name)
+                           (c-display "GOT" name))))
+
+(<gui> :show requester)
+
+
+

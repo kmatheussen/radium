@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QStack>
 #include <QDesktopWidget>
 #include <QDir>
+#include <QFileDialog>
 
 #include <QtWebKitWidgets/QWebView>
 #include <QtWebKitWidgets/QWebFrame>
@@ -308,6 +309,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     void cellDoubleClicked(int row, int column){
       s7extra_callFunc_void_int_int(_func, column, row);
+    }
+    
+    void fileSelected(const QString &file){
+      s7extra_callFunc_void_charpointer(_func, file.toUtf8().constData());
     }
   };
 
@@ -1022,6 +1027,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     virtual void addGuiCallback(func_t* func){
       Callback *callback = new Callback(func, _widget);
+
+      {
+        QFileDialog *file_dialog = dynamic_cast<QFileDialog*>(_widget.data());
+        if (file_dialog!=NULL){
+          file_dialog->connect(file_dialog, SIGNAL(fileSelected(const QString &)), callback, SLOT(fileSelected(const QString &)));
+          goto gotit;
+        }
+      }
 
       {
         QCheckBox *button = dynamic_cast<QCheckBox*>(_widget.data());
@@ -1962,6 +1975,36 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   };
 
 
+  struct FileRequester : QFileDialog, Gui{
+    Q_OBJECT;
+    
+  public:
+    
+    FileRequester(QString header_text, QString dir, QString filetypename, QString postfixes, bool for_loading)
+      : QFileDialog(NULL, header_text, dir, FileRequester::get_postfixes_filter(filetypename, postfixes))
+      , Gui(this)
+    {
+      if (for_loading)
+        setAcceptMode(QFileDialog::AcceptOpen);
+      else
+        setAcceptMode(QFileDialog::AcceptSave);          
+    }
+    
+    static QString get_postfixes_filter(QString type, QString postfixes){
+      QString postfixes2 = postfixes==NULL ? "*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3" : QString(postfixes);
+      
+#if FOR_WINDOWS
+      return postfixes2 + " ;; All files (*)";
+#else
+      type = type==NULL ? "Song files" : type;
+      return QString(type) + " (" + postfixes2 + ") ;; All files (*)";
+#endif
+    }
+
+    OVERRIDERS(QFileDialog);
+  };
+
+
   struct Table : QTableWidget, Gui{
     Q_OBJECT;
 
@@ -2053,6 +2096,13 @@ static Gui *get_gui_maybeclosed(int64_t guinum){
 
 
 static Gui *get_gui(int64_t guinum){
+
+  if (guinum==-1 || guinum==-2){
+    QWidget *parent = API_gui_get_parentwidget(guinum);
+    if (parent != NULL)
+      guinum = API_get_gui_from_existing_widget(parent);
+  }
+
   Gui *gui = get_gui_maybeclosed(guinum);
 
   if (gui==NULL){
@@ -2402,6 +2452,9 @@ int64_t gui_web(const_char* url){
   return (new Web(url))->get_gui_num();
 }
 
+int64_t gui_fileRequester(const_char* header_text, const_char* dir, const_char* filetypename, const_char* postfixes, bool for_loading){
+  return (new FileRequester(header_text, dir, filetypename, postfixes, for_loading))->get_gui_num();
+}
 
 /************** Table **********************/
 
