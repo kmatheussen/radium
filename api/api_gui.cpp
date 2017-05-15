@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDesktopWidget>
 #include <QDir>
 #include <QFileDialog>
+#include <QTabWidget>
 
 #include <QtWebKitWidgets/QWebView>
 #include <QtWebKitWidgets/QWebFrame>
@@ -241,6 +242,8 @@ static QHash<const QWidget*, Gui*> g_gui_from_widgets; // Q: What if a QWidget i
                                                        //    and we always check if Gui->_widget!=NULL when getting a Gui from g_gui_from_widgets.
 
 static QHash<int64_t, const char*> g_guis_can_not_be_closed; // The string contains the reason that this gui can not be closed.
+
+  
   
 struct VerticalAudioMeter;
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
@@ -325,8 +328,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     int _gui_num;
     int _valid_guis_pos;
 
-    const QWidget *_widget_as_key; // Need a way to get hold of the original widget's address in the destructor. (Beware that _widget_as_key might have been deleted. Only _widget can be considered valid.)
-    const QPointer<QWidget> _widget; // Stored in a QPointers since we need to know if the widget has been deleted.
+    const QWidget *_widget_as_key; // Need a way to get hold of the original widget's address in the destructor, even after the original widget has been deleted. (Note that _widget_as_key might have been deleted. Only _widget can be considered to have a valid widget value.)
+    const QPointer<QWidget> _widget; // Stored in a QPointer since we need to know if the widget has been deleted.
     bool _created_from_existing_widget; // Is false if _widget was created by using one of the gui_* functions (except gui_child()). Only used for validation.
 
     // full screen stuff
@@ -431,13 +434,23 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
     }
 
-    void I_am_the_last_pos_of_valid_guis_move_me_somewhere_else(int new_pos){
+    void I_am_the_last_pos_of_valid_guis_move_me_somewhere_else(int new_pos) {
       R_ASSERT_RETURN_IF_FALSE(g_valid_guis.size()-1 == _valid_guis_pos);
 
       _valid_guis_pos = new_pos;
       g_valid_guis[new_pos] = this;
     }
-    
+
+    template<typename T>
+    T *mycast(const_char* funcname, int argnum = 1) const {
+      T *ret = dynamic_cast<T*>(_widget.data());
+      
+      if (ret==NULL)
+        handleError("%s: argument #%d (gui #%d) is wrong type. Expected %s, got %s.", funcname, argnum, (int)get_gui_num(), T::staticMetaObject.className(), _widget.data()==NULL ? "(deleted)" : _widget->metaObject()->className());
+      
+      return ret;
+    }
+
     /************ MOUSE *******************/
     
     func_t *_mouse_callback = NULL;
@@ -2005,6 +2018,20 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   };
 
 
+  struct Tabs : QTabWidget, Gui{
+    Q_OBJECT;
+    
+  public:
+    
+    Tabs(void)
+      : Gui(this)
+    {
+    }
+    
+    OVERRIDERS(QTabWidget);
+  };
+
+
   struct Table : QTableWidget, Gui{
     Q_OBJECT;
 
@@ -2337,6 +2364,7 @@ void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
 /////// Widgets
 //////////////////////////
 
+
 int64_t gui_widget(int width, int height){
   return (new Widget(width, height))->get_gui_num();
 }
@@ -2456,6 +2484,31 @@ int64_t gui_fileRequester(const_char* header_text, const_char* dir, const_char* 
   return (new FileRequester(header_text, dir, filetypename, postfixes, for_loading))->get_gui_num();
 }
 
+
+/************* Tabs ***************************/
+
+int64_t gui_tabs(void){
+  return (new Tabs())->get_gui_num();
+}
+
+void gui_addTab(int64_t tabs_guinum, int64_t tab_guinum, const_char* name, int pos){ // if pos==-1, tab is append. (same as if pos==num_tabs)
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return;
+
+  Gui *tab_gui = get_gui(tab_guinum);
+  if (tab_gui==NULL)
+    return;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return;
+  
+  tabs->insertTab(pos, tab_gui->_widget, name);
+}
+
+
+                 
 /************** Table **********************/
 
 int64_t gui_table(dyn_t header_names){
@@ -2547,11 +2600,10 @@ static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetI
   if (table_gui==NULL)
     return -1;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+  
+  QTableWidget *table = table_gui->mycast<QTableWidget>("gui_addTableCell");
+  if (table==NULL)
     return -1;
-  }
   
   if (enabled)
     item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
@@ -2627,11 +2679,9 @@ int gui_getTableRowNum(int64_t table_guinum, int cell_guinum){
   if (cell_gui==NULL)
     return -1;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return -1;
-  }
 
   for(int x=0;x<table->columnCount();x++){
     for(int y=0;y<table->rowCount();y++){
@@ -2648,11 +2698,9 @@ void gui_addTableRows(int64_t table_guinum, int pos, int how_many){
   if (table_gui==NULL)
     return;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: First argument (%d) is not a Table", (int)table_guinum);
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return;
-  }
 
   int num_rows = table->rowCount();
 
@@ -2694,11 +2742,9 @@ int gui_getNumTableRows(int64_t table_guinum){
   if (table_gui==NULL)
     return 0;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_getNumTableRows: The argument (%d) is not a Table", (int)table_guinum);
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return 0;
-  }
 
   return table->rowCount();
 }
@@ -2708,11 +2754,10 @@ void gui_enableTableSorting(int64_t table_guinum, bool do_sort){
   if (table_gui==NULL)
     return;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return;
-  }
 
   table->setSortingEnabled(do_sort);
   
@@ -2734,11 +2779,9 @@ void gui_sortTableBy(int64_t table_guinum, int x, bool sort_ascending){
   if (table_gui==NULL)
     return;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return;
-  }
 
   if (table->columnCount()==0){
     handleError("gui_addTableRows: There are no columns in this table");
@@ -2763,11 +2806,9 @@ void gui_stretchTable(int64_t table_guinum, int x, bool do_stretch, int size){
   if (table_gui==NULL)
     return;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return;
-  }
 
   if (table->columnCount()==0){
     handleError("gui_addTableRows: There are no columns in this table");
@@ -2790,7 +2831,20 @@ void gui_stretchTable(int64_t table_guinum, int x, bool do_stretch, int size){
   table->horizontalHeader()->resizeSection(x, size);
 }
 
+
+
 ////////////////////////////
+// various operations on guis
+
+
+// Returns Qt classname. Should not be used for dispatching. Probably only useful for debugging.
+const_char* gui_className(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return "(not found)";
+
+  return gui->_widget->metaObject()->className();
+}
 
 void gui_setText(int64_t guinum, const_char *value){
   Gui *gui = get_gui(guinum);
@@ -3019,7 +3073,7 @@ bool gui_setParent(int64_t guinum, int64_t parentgui){
 
   bool is_window = gui->_widget->isWindow() || gui->_widget->parent()==NULL;
   if(!is_window){
-    handleError("gui_setParent: Gui #%d is not a window", guinum);
+    handleError("gui_setParent: Gui #%d is not a window. (className: %s)", guinum, gui_className(guinum));
     return false;
   }
   
@@ -3371,7 +3425,7 @@ void gui_setStaticToplevelWidget(int64_t guinum, bool add){
       return;
     }
     if (gui->_widget->window() != gui->_widget){
-      handleError("Gui #%d is not a toplevel widget", guinum);
+      handleError("Gui #%d is not a toplevel widget. (class name: %s)", guinum, gui_className(guinum));
       return;
     }
     g_static_toplevel_widgets.push_back(gui->_widget);
@@ -3413,12 +3467,10 @@ void gui_addAudioMeterPeakCallback(int guinum, func_t* func){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
-  
-  VerticalAudioMeter *meter = dynamic_cast<VerticalAudioMeter*>(gui->_widget.data());
-  if (meter==NULL){
-    handleError("Gui #%d is not an audio meter", guinum);
+
+  VerticalAudioMeter *meter = gui->mycast<VerticalAudioMeter>(__FUNCTION__);
+  if (meter==NULL)
     return;
-  }
 
   meter->addPeakCallback(func, guinum);
 }
@@ -3428,11 +3480,9 @@ void gui_resetAudioMeterPeak(int guinum){
   if (gui==NULL)
     return;
   
-  VerticalAudioMeter *meter = dynamic_cast<VerticalAudioMeter*>(gui->_widget.data());
-  if (meter==NULL){
-    handleError("Gui #%d is not an audio meter", guinum);
+  VerticalAudioMeter *meter = gui->mycast<VerticalAudioMeter>(__FUNCTION__);
+  if (meter==NULL)
     return;
-  }
 
   meter->resetPeak();
 }

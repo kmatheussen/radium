@@ -291,4 +291,11 @@
 (<gui> :show requester)
 
 
+(define tabs (<gui> :tabs))
+
+(<gui> :show tabs)
+(<gui> :add-tab tabs (<gui> :button "hello2") "tab2")
+(<gui> :add-tab 5 (<gui> :button "hello2") "tab2")
+
+
 
