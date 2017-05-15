@@ -1,3 +1,17 @@
+Changes 4.8.2 -> 4.8.3:
+* Current mixer strip: Fix resize of wide strip, and don't show
+  two strips above each other in certain situations.
+* Mixer strips: Make sure the label of a minimized mixer strip is
+  always at least two characters high.
+* Async file requester when loading protracker module.
+* API:
+  * GUI: Support tabs container (gui_tabs/gui_addTab)
+  * Deleted: importMod
+  * New: requestImportMod, gui_fileRequester, gui_tabs, gui_addTab,
+    gui_className
+
+
+
 Changes 4.8.1 -> 4.8.2:
 * Windows: Make sure that notification windows, shown during,
   startup, are not hidden by other windows.
