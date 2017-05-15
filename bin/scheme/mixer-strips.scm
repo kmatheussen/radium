@@ -1518,9 +1518,9 @@
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
   (define parent (<gui> :widget width height)) ;; Lots of trouble using a widget as parent instead of a layout. However, it's an easy way to avoid flickering when changing current instrument.
-
+  
   ;;(define width (floor (* 1 (<gui> :text-width "MUTE SOLO"))))
-
+  
   (set-fixed-width parent width)
   ;;(set-fixed-height parent height)
   ;;(<gui> :set-min-width parent 100)
@@ -1533,40 +1533,48 @@
   (define (remake width height)
     (define instrument-is-open (<ra> :instrument-is-open instrument-id))
     
-    (c-display "    remaking mixer-strip" instrument-id parent width height)
     (catch #t
            (lambda ()
              (run-instrument-data-memoized
               (lambda()
-
-                (<gui> :disable-updates parent)
-                
-                (define new-mixer-strip (and instrument-is-open (create-mixer-strip instrument-id width #t)))
-                
                 (when das-mixer-strip-gui
                   (<gui> :close das-mixer-strip-gui)
                   (set! das-mixer-strip-gui #f))
                 
-                (when instrument-is-open
+                (when instrument-is-open                
+                  (set! das-mixer-strip-gui (create-mixer-strip instrument-id width #t))
                   (if *current-mixer-strip-is-wide*
                       (set! width org-width)
-                      (set! width (<gui> :width new-mixer-strip)))
+                            (set! width (<gui> :width das-mixer-strip-gui)))
                   (set-fixed-width parent width)
-                  (<gui> :add parent new-mixer-strip 0 0 width height)
-                  (<gui> :show new-mixer-strip)             
-                  (set! das-mixer-strip-gui new-mixer-strip))
+                  (set-fixed-width das-mixer-strip-gui width)
+                  (<gui> :add parent das-mixer-strip-gui 0 0 width height)
+                  (<gui> :show das-mixer-strip-gui))
+                    
                 )))
            
            (lambda args
              (display (ow!))))
-
-    (<gui> :enable-updates parent)
-
     )
 
   (remake width height)
 
-  (<gui> :add-resize-callback parent remake) ;; Dont need to use safe callback here. 'remake' checks that the instrument is open.
+  (<gui> :add-resize-callback parent
+         (lambda (width height)
+           (<gui> :disable-updates parent)
+
+           ;; (remake) triggers a new resize callback. We avoid complication by scheduling into the future.
+           ;; (TODO: Find better solution. resize callbacks should probably be never called recursively in api_gui.cpp)
+           (<ra> :schedule 1
+                 (lambda ()
+                   (remake width height) ;; Don't need to use safe callback here. 'remake' checks that the instrument is open.
+                   #f))
+
+           ;; We want both calls to remake to run without updates enabled.
+           (<ra> :schedule 15
+                 (lambda ()
+                   (<gui> :enable-updates parent)
+                   #f))))
   
   (define mixer-strips-object (make-mixer-strips-object :gui parent
                                                         :remake (lambda (list-of-modified-instrument-ids)

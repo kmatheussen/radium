@@ -3711,6 +3711,7 @@ bool API_gui_is_painting(void){
 //////////////////////////////
 
 
+// Returns a single mixer strip. (Currently, this function is only used in MIXERSTRIP_call_regularly() in Qt_instruments.cpp)
 int64_t gui_createSingleMixerStrip(int64_t instrument_id, int width, int height){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)

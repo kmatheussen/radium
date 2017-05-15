@@ -964,13 +964,15 @@ void MIXERSTRIP_call_regularly(void){
     g_mixerstrip_is_visible = showMixerStripDuringStartup();
   }
 
-  QWidget *old_mixerstrip_widget = guinum==-1 ? NULL : API_gui_get_widget(guinum);
-  R_ASSERT(guinum==-1 || old_mixerstrip_widget!=NULL);
+  int64_t old_guinum = guinum;
+
+  QWidget *old_mixerstrip_widget = old_guinum==-1 ? NULL : API_gui_get_widget(old_guinum);
+  R_ASSERT(old_guinum==-1 || old_mixerstrip_widget!=NULL);
 
   if (g_mixerstrip_is_visible==false){
     if (old_mixerstrip_widget!=NULL){
       g_mixerstriplayout->removeWidget(old_mixerstrip_widget);
-      gui_close(guinum);
+      gui_close(old_guinum);
       guinum = -1;
       last_patch = NULL;
     }
@@ -984,7 +986,6 @@ void MIXERSTRIP_call_regularly(void){
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
     int height = editor->height();
 
-    int64_t old_guinum = guinum;
     int64_t new_guinum = gui_createSingleMixerStrip(g_currpatch->id, 100, height);
     //R_ASSERT(new_guinum != -1);
     
@@ -993,36 +994,37 @@ void MIXERSTRIP_call_regularly(void){
       QWidget *new_mixerstrip_widget = API_gui_get_widget(new_guinum);
       R_ASSERT(new_mixerstrip_widget!=NULL);
       
-      if(new_mixerstrip_widget==NULL){
+      if(new_mixerstrip_widget==NULL){ // Never the case though. (See R_ASSERT above)
 
         gui_close(new_guinum);
 
       } else {
          
         if (old_mixerstrip_widget==NULL){
-          
+
+          //printf("    ********* Adding %d\n", (int)new_guinum);
           g_mixerstriplayout->addWidget(new_mixerstrip_widget);
+          //new_mixerstrip_widget->show();
           last_patch = g_currpatch;
           
         } else {
-          
+
+          //printf("    ********* REPLACING %d with %d\n", (int)old_guinum, (int)new_guinum);
           QLayoutItem *old_item = g_mixerstriplayout->replaceWidget(old_mixerstrip_widget, new_mixerstrip_widget, Qt::FindDirectChildrenOnly);
           R_ASSERT(old_item!=NULL);
           
-          if (old_item != NULL) {
+          if (old_item != NULL) { // Always the case though. (see R_ASSERT above)
             delete old_item;
             last_patch = g_currpatch;
+            //delete old_mixerstrip_widget;
             old_mixerstrip_widget = NULL;
           }
-        
+          
         }
 
         guinum = new_guinum;
-        
-        if(old_mixerstrip_widget!=NULL)
-          g_mixerstriplayout->removeWidget(old_mixerstrip_widget);
 
-        printf("Closing old gui %d\n", (int)old_guinum);
+        //printf(" ************** Closing old gui %d\n", (int)old_guinum);
         
         if(old_guinum != -1)
           gui_close(old_guinum);
