@@ -1559,22 +1559,16 @@
 
   (remake width height)
 
+  (define is-resizing #f)
+  
   (<gui> :add-resize-callback parent
          (lambda (width height)
-           (<gui> :disable-updates parent)
-
-           ;; (remake) triggers a new resize callback. We avoid complication by scheduling into the future.
-           ;; (TODO: Find better solution. resize callbacks should probably be never called recursively in api_gui.cpp)
-           (<ra> :schedule 1
-                 (lambda ()
-                   (remake width height) ;; Don't need to use safe callback here. 'remake' checks that the instrument is open.
-                   #f))
-
-           ;; We want both calls to remake to run without updates enabled.
-           (<ra> :schedule 15
-                 (lambda ()
-                   (<gui> :enable-updates parent)
-                   #f))))
+           (when (not is-resizing) ;; Unfortunately, remake triggers a new resize, and we get a recursive call here. TODO: Fix this. Resize callback should never call itself.
+             (set! is-resizing #t)             
+             (<gui> :disable-updates parent)
+             (remake width height) ;; Don't need to use safe callback here. 'remake' checks that the instrument is open.
+             (<gui> :enable-updates parent)
+             (set! is-resizing #f))))
   
   (define mixer-strips-object (make-mixer-strips-object :gui parent
                                                         :remake (lambda (list-of-modified-instrument-ids)
