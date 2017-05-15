@@ -3509,6 +3509,7 @@
                                                                                   :seqblocknum new-seqblocknum)))))                     
 
                                      (define (swap-blocks seqblocknum ret-seqblocknum new-pos1 new-pos2)
+                                       
                                        (when (not gakkgakk-has-made-undo)
                                          (<ra> :undo-sequencer)
                                          (set! gakkgakk-has-made-undo #t))

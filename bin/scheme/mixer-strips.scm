@@ -118,6 +118,10 @@
   (define color (<ra> :get-instrument-color instrument-id))
 
   (define label (<gui> :widget))
+  
+  (if is-minimized
+      (<gui> :set-min-height label (* 2 (<gui> :get-system-fontheight))))
+  
   (add-safe-paint-callback label
          (lambda (width height)
            (<gui> :filled-box label color 0 0 width height)
@@ -125,7 +129,7 @@
                (<gui> :draw-vertical-text label *text-color* name 2 7 (+ width 0) height #f #t)
                (<gui> :draw-text label *text-color* name 5 0 width height #f #t #f))
            (<gui> :draw-box label "#202020" 0 0 width height 1.0 2 2)))
-
+  
   (<gui> :add-mouse-callback label (lambda (button state x y)
                                     (when (= state *is-pressing*)
                                       (if (= button *right-button*)
