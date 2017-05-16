@@ -60,6 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/FocusSniffers.h"
 #include "../Qt/ScrollArea.hpp"
 #include "../Qt/Qt_MyQCheckBox.h"
+#include "../Qt/flowlayout.h"
 
 #include "../common/visual_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
@@ -1605,6 +1606,16 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(QWidget);
   };
   
+  struct MyFlowLayout : QWidget, Gui{
+    MyFlowLayout()
+      : Gui(this)
+    {
+      setLayout(new FlowLayout());
+    }
+    
+    OVERRIDERS(QWidget);
+  };
+  
   struct GroupBox : QGroupBox, Gui{
     GroupBox(const char *title)
       : QGroupBox(title)
@@ -2434,6 +2445,10 @@ int64_t gui_tableLayout(int num_columns){
   return (new TableLayout(num_columns))->get_gui_num();
 }
 
+int64_t gui_flowLayout(void){
+  return (new MyFlowLayout())->get_gui_num();
+}
+
 int64_t gui_group(const_char* title){
   //return -1;
   return (new GroupBox(title))->get_gui_num();
@@ -2491,7 +2506,7 @@ int64_t gui_tabs(void){
   return (new Tabs())->get_gui_num();
 }
 
-void gui_addTab(int64_t tabs_guinum, int64_t tab_guinum, const_char* name, int pos){ // if pos==-1, tab is append. (same as if pos==num_tabs)
+void gui_addTab(int64_t tabs_guinum, const_char* name, int64_t tab_guinum, int pos){ // if pos==-1, tab is append. (same as if pos==num_tabs)
   Gui *tabs_gui = get_gui(tabs_guinum);
   if (tabs_gui==NULL)
     return;

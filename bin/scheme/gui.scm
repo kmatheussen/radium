@@ -7,8 +7,9 @@
 (define (gui-create-layout create-layout-func layout-args . guis)
   (define layout (apply create-layout-func layout-args))
   (for-each (lambda (gui)
+              (c-display "Adding" gui "to layout" layout)
               (<ra> :gui_add layout gui))
-            guis)
+            (flatten guis))
   layout)
   
 (define (my-gui_group title args)
@@ -45,6 +46,9 @@
         ((eq? command :horizontal-layout)
          (gui-create-layout ra:gui_horizontal-layout '() args))
         
+        ((eq? command :flow-layout)
+         (gui-create-layout ra:gui_flow-layout '() args))
+
         ((eq? command :empty)
          (<ra> :gui_vertical-layout))
         
@@ -123,7 +127,13 @@
         
         ((eq? command :horizontal-layout)
          `(gui-create-layout ra:gui_horizontal-layout '() ,@args))
-        
+
+        ((eq? command :flow-layout)
+         `(gui-create-layout ra:gui_flow-layout '() ,@args))
+
+        ((eq? command :scroll-area)
+         `(gui-create-layout ra:gui_scroll-area (list ,(car args) ,(cadr args)) ,@(cddr args)))
+
         ((eq? command :empty)
          `(<ra> :gui_vertical-layout))
         
@@ -408,3 +418,5 @@
                                                      #f))
                     web)))
   (reopen-gui-at-curr-pos web))
+
+

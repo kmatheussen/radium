@@ -40,6 +40,7 @@ void transposeTrack(int transpose,int windownum){
   if(window==NULL) return;
 
   TransposeTrack_CurrPos(window,transpose);
+  window->must_redraw_editor = true;
 }
 
 void transposeBlock(int transpose,int windownum){
@@ -47,6 +48,7 @@ void transposeBlock(int transpose,int windownum){
   if(window==NULL) return;
 
   TransposeBlock_CurrPos(window,transpose);
+  window->must_redraw_editor = true;
 }
 
 void transposeRange(int transpose,int windownum){
@@ -55,6 +57,7 @@ void transposeRange(int transpose,int windownum){
 
 
   TransposeRange_CurrPos(window,transpose);
+  window->must_redraw_editor = true;
 }
 
 void transposeNote(int transpose,int windownum){
@@ -62,6 +65,7 @@ void transposeNote(int transpose,int windownum){
   if(window==NULL) return;
 
   TransposeNote_CurrPos(window,transpose);
+  window->must_redraw_editor = true;
 }
 
 
