@@ -285,11 +285,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         line_edit->clearFocus();
       }GL_unlock();
 
-      RatioSnifferQLineEdit *ratioedit = dynamic_cast<RatioSnifferQLineEdit*>(line_edit);
-      if (ratioedit != NULL)
+      RatioSnifferQLineEdit *ratioedit = dynamic_cast<RatioSnifferQLineEdit*>(_widget);
+      if (ratioedit != NULL){
         s7extra_callFunc_void_dyn(_func, DYN_create_ratio(ratioedit->get_ratio()));
-      else
+      }else{
         s7extra_callFunc_void_charpointer(_func, line_edit->text().toUtf8().constData());
+      }
     }
 
     void textChanged(QString text){
@@ -877,7 +878,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return;
     }
 
-    // Try to put as much as possible in here, since GUIs created from ui files does not use the sub classes
+    // Try to put as much as possible in here, since GUIs created from ui files does not use the subclasses
     virtual void setGuiValue(dyn_t val){
 
       {
@@ -925,6 +926,17 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         }
       }
 
+      {
+        RatioSnifferQLineEdit *ratioedit = dynamic_cast<RatioSnifferQLineEdit*>(_widget.data());
+        if (ratioedit != NULL){
+          if (DYN_is_ratio(val))
+            ratioedit->setText(Rational(DYN_get_ratio(val)).toString());
+          else
+            handleError("Ratio->setValue received %s, expected INT_TYPE or RATIO_TYPE", DYN_type_name(val.type));
+          return;
+        }
+      }
+      
       {
         QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget.data());
         if (line_edit!=NULL){
@@ -1001,6 +1013,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (label!=NULL)
         return DYN_create_string(label->text());
 
+      RatioSnifferQLineEdit *ratio_edit = dynamic_cast<RatioSnifferQLineEdit*>(_widget.data());
+      if (ratio_edit != NULL)
+        return DYN_create_ratio(ratio_edit->get_ratio());
+      
       QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget.data());
       if (line_edit!=NULL)
         return DYN_create_string(line_edit->text());
@@ -1092,7 +1108,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget.data());
         if (line_edit!=NULL){
           line_edit->connect(line_edit, SIGNAL(editingFinished()), callback, SLOT(editingFinished()));
-          s7extra_callFunc_void_charpointer(func, line_edit->text().toUtf8().constData()); // Calling the callbacks here was a really bad idea. TODO: Fix that.
+          if (dynamic_cast<RatioSnifferQLineEdit*>(_widget.data())==NULL) // We just ignore calling this callback entirely for ratios. TODO: Remove all of these initial calls to the callbacks.
+            s7extra_callFunc_void_charpointer(func, line_edit->text().toUtf8().constData()); // Calling the callbacks here was a really bad idea. TODO: Fix that.
           goto gotit;
         }
       }
@@ -2096,7 +2113,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     QWidget *createWidget(const QString &className, QWidget *parent = Q_NULLPTR, const QString &name = QString()) override {
       QWidget *ret = NULL;
-      
+
+      //printf("\n\n  CLASSNAME: -%s-\n\n", className.toUtf8().constData());
       if (className=="QTextEdit" || className=="QPlainTextEdit")
         ret = new FocusSnifferQTextEdit(parent);
       else if (className=="QLineEdit")
@@ -2526,20 +2544,23 @@ int64_t gui_tabs(void){
   return (new Tabs())->get_gui_num();
 }
 
-void gui_addTab(int64_t tabs_guinum, const_char* name, int64_t tab_guinum, int pos){ // if pos==-1, tab is append. (same as if pos==num_tabs)
+int gui_addTab(int64_t tabs_guinum, const_char* name, int64_t tab_guinum, int pos){ // if pos==-1, tab is append. (same as if pos==num_tabs)
   Gui *tabs_gui = get_gui(tabs_guinum);
   if (tabs_gui==NULL)
-    return;
+    return -1;
 
   Gui *tab_gui = get_gui(tab_guinum);
   if (tab_gui==NULL)
-    return;
+    return -1;
 
   QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
   if (tabs==NULL)
-    return;
-  
-  tabs->insertTab(pos, tab_gui->_widget, name);
+    return -1;
+
+  int num = tabs->insertTab(pos, tab_gui->_widget, name);
+  tabs->setCurrentIndex(num); // If not, the new tab will be displayed on top of the current tab. Could be a qt 5.5.1 bug though.
+
+  return num;
 }
 
 

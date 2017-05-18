@@ -92,9 +92,11 @@ void Quantitize_fxs(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 quantitize_options_t Quantitize_get_default_options(void){
   quantitize_options_t options;
   options.quant = make_ratio(1,1);
+  /*
   options.quantitize_start = true;
   options.quantitize_end = false;
   options.keep_note_length = false;
+  */
   options.type = 3;
 
   return options;

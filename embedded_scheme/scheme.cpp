@@ -244,7 +244,7 @@ static dynvec_t s7extra_array(s7_scheme *s7, s7_pointer vector){
   return dynvec;
 }
 
-dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
+static dyn_t create_dyn_from_s7(s7_scheme *s7, s7_pointer s, bool undefinedIsError){
   
   if (s7_is_integer(s))
     return DYN_create_int(s7_integer(s));
@@ -272,8 +272,15 @@ dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
     return DYN_create_array(vec);
   }    
 
-  handleError("s7extra_dyn: Unsupported s7 type");
-  return DYN_create_bool(false);
+  if(undefinedIsError)
+    handleError("s7extra_dyn: Unsupported s7 type");
+  
+  return g_uninitialized_dyn;
+}
+
+dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s){
+
+  return create_dyn_from_s7(s7, s, true);
 }
 
 static s7_pointer hash_to_s7(s7_scheme *sc, const hash_t *r_hash){
@@ -943,14 +950,11 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note) {
   s7_pointer result = s7_call(s7,
                               scheme_func,
                               s7_list(s7,
-                                      8,
+                                      5,
                                       place_to_ratio(&note->l.p),
                                       place_to_ratio(&note->end),
                                       s7_make_ratio(s7, root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator),
                                       place_to_ratio(&last_place),
-                                      s7_make_boolean(s7, root->quantitize_options.quantitize_start),
-                                      s7_make_boolean(s7, root->quantitize_options.quantitize_end),
-                                      s7_make_boolean(s7, root->quantitize_options.keep_note_length),
                                       s7_make_integer(s7, root->quantitize_options.type)
                                       )
                               );
@@ -1154,10 +1158,10 @@ bool SCHEME_mouserelease(int button, float x, float y){
   // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
-void SCHEME_eval(const char *code){
+dyn_t SCHEME_eval(const char *code){
   ScopedEvalTracker eval_tracker;
            
-  s7_eval_c_string(s7, code);
+  return create_dyn_from_s7(s7, s7_eval_c_string(s7, code), false);
 }
 
 int SCHEME_get_webserver_port(void){

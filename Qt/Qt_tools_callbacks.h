@@ -171,44 +171,36 @@ class Tools : public RememberGeometryQDialog, public Ui::Tools {
 
     setupUi(this);
 
+    dyn_t quant_gui_dyn = evalScheme("(create-quantitize-gui)");
+    if (quant_gui_dyn.type==INT_TYPE){
+      
+      int64_t quant_gui_num = quant_gui_dyn.int_number;
+      if (quant_gui_num > 0){
+        
+        QWidget *quant_gui = API_gui_get_widget(quant_gui_num);
+        if (quant_gui != NULL)
+          quantization_layout->addWidget(quant_gui);
+        
+      }
+      
+    }
+    
     updateWidgets();
-
+ 
     _initing = false;
 
     adjustSize();
   }
 
+  virtual void showEvent(QShowEvent *event_) override {
+    updateWidgets(); // background color is set back to high_background_color when changing colors in the preferences. This way at least the lighter colors come back when reopening the window.
+    RememberGeometryQDialog::showEvent(event_);
+  }
+  
   void updateWidgets(){
-    switch(root->quantitize_options.type){
-    case 1:
-      type1->setChecked(true);
-      break;
-    case 2:
-      type2->setChecked(true);
-      break;
-    case 3:
-      type3->setChecked(true);
-      break;
-    case 4:
-      type4->setChecked(true);
-      break;
-    case 5:
-      type5->setChecked(true);
-      break;
-    default:
-      RError("Unknwon quantitize option %d",root->quantitize_options.type);
-    }
-
-    if (root->quantitize_options.quantitize_start)
-      quant_start->setChecked(true);
-    if (root->quantitize_options.quantitize_end)
-      quant_end->setChecked(true);
-    if (root->quantitize_options.keep_note_length)
-      keep_length->setChecked(true);
-
-    Rational ratio((int)root->quantitize_options.quant.numerator, (int)root->quantitize_options.quant.denominator);
-
-    quantization_value->setText(ratio.toString());
+    QPalette pal = palette();
+    pal.setColor(QPalette::Background, get_qcolor(LOW_BACKGROUND_COLOR_NUM)); // Default HIGH_BACKGROUND_COLOR is very dark.
+    setPalette(pal);
   }
 
 public slots:
@@ -224,84 +216,6 @@ public slots:
   void on_split_track_button_clicked(){
     splitTrackIntoMonophonicTracks(-1,-1,-1);
   }
-
-  void on_quantitize_track_clicked(){
-    printf("track\n");
-    quantitizeTrack(-1);
-  }
-
-  void on_quantitize_block_clicked(){
-    printf("block\n");
-    quantitizeBlock(-1);
-  }
-
-  void on_quantitize_range_clicked(){
-    printf("range\n");
-    quantitizeRange(-1);
-  }
-
-  void on_quant_start_toggled(bool val){
-    printf("quant start: %d\n",val);
-    root->quantitize_options.quantitize_start = val;    
-  }
-  
-  void on_quant_end_toggled(bool val){
-    printf("quant end: %d\n",val);
-    root->quantitize_options.quantitize_end = val;    
-  }
-  
-  void on_keep_length_toggled(bool val){
-    printf("keep length: %d\n",val);
-    root->quantitize_options.keep_note_length = val;    
-  }
-
-  void on_type1_toggled(bool val){
-    if (val)
-      root->quantitize_options.type = 1;
-  }
-  
-  void on_type2_toggled(bool val){
-    if (val)
-      root->quantitize_options.type = 2;
-  }
-  
-  void on_type3_toggled(bool val){
-    if (val)
-      root->quantitize_options.type = 3;
-  }
-  
-  void on_type4_toggled(bool val){
-    if (val)
-      root->quantitize_options.type = 4;
-  }
-  
-  void on_type5_toggled(bool val){
-    if (val)
-      root->quantitize_options.type = 5;
-  }
-  
-  void on_quantization_value_editingFinished(){
-    printf("qu\n");
-
-    Rational rational = create_rational_from_string(quantization_value->text());
-    quantization_value->pushValuesToRoot(rational);
-
-    updateWidgets();
-
-    GL_lock();{
-      quantization_value->clearFocus();
-    }GL_unlock();
-
-    set_editor_focus();
-
-    /*
-    GL_lock();{
-      quantitize_track->setFocus();
-    }GL_unlock();
-    */
-
-  }
-
 };
 
 }

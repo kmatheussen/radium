@@ -192,6 +192,22 @@ Place getQuantitize(void){
   return place(0, (int)root->quantitize_options.quant.numerator, (int)root->quantitize_options.quant.denominator);
 }
 
+void setQuantitize(Place ratio){
+  root->quantitize_options.quant = ratio_from_place(ratio);
+}
+
+int getQuantitizeType(void){
+  return root->quantitize_options.type;
+}
+
+void setQuantitizeType(int type){
+  if (type>5 || type<1){
+    handleError("setQuantitizeType: type must be 1, 2, 3, 4, or 5. (got %d)", type);
+  }else
+    root->quantitize_options.type = type;
+}
+  
+
 // TODO. Should return ratio
 Place getGrid(void){
   return place(0, (int)root->grid_numerator, (int)root->grid_denominator);

@@ -1835,8 +1835,8 @@ void eraseEstimatedVblank(void){
 #endif
 }
 
-void evalScheme(const_char *code){
-  SCHEME_eval(code);
+dyn_t evalScheme(const_char *code){
+  return SCHEME_eval(code);
 }
 
 void evalPython(const_char *code){
