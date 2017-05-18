@@ -8,8 +8,8 @@ Place get_rational_from_string(const char *string){
   Rational rational = create_rational_from_string(string);
 
   p.line = 0;
-  p.counter = rational.numerator;
-  p.dividor = rational.denominator;
+  p.counter = rational._numerator;
+  p.dividor = rational._denominator;
 
   return p;
 }

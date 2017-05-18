@@ -61,6 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/ScrollArea.hpp"
 #include "../Qt/Qt_MyQCheckBox.h"
 #include "../Qt/flowlayout.h"
+#include "../Qt/lzqlineedit.h"
 
 #include "../common/visual_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
@@ -244,8 +245,6 @@ static QHash<const QWidget*, Gui*> g_gui_from_widgets; // Q: What if a QWidget i
 
 static QHash<int64_t, const char*> g_guis_can_not_be_closed; // The string contains the reason that this gui can not be closed.
 
-  
-  
 struct VerticalAudioMeter;
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
@@ -286,7 +285,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         line_edit->clearFocus();
       }GL_unlock();
 
-      s7extra_callFunc_void_charpointer(_func, line_edit->text().toUtf8().constData());
+      RatioSnifferQLineEdit *ratioedit = dynamic_cast<RatioSnifferQLineEdit*>(line_edit);
+      if (ratioedit != NULL)
+        s7extra_callFunc_void_dyn(_func, DYN_create_ratio(ratioedit->get_ratio()));
+      else
+        s7extra_callFunc_void_charpointer(_func, line_edit->text().toUtf8().constData());
     }
 
     void textChanged(QString text){
@@ -387,7 +390,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       R_ASSERT(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
 
-      //printf("Deleting Gui %p\n",this);
+      //printf("Deleting Gui %p (%d)\n",this,(int)get_gui_num());
 
       for(func_t *func : _deleted_callbacks){
         s7extra_callFunc_void_bool(func, g_radium_runs_custom_exec);
@@ -625,7 +628,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       if(g_radium_runs_custom_exec){
 #if !defined(RELEASE)
-        R_ASSERT(false);
+        //R_ASSERT(false);
 #endif
         return;
       }
@@ -1650,7 +1653,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       //setWidgetResizable(true);
 
-      contents = getWidget(); //new QWidget;//(this);
+      contents = getWidget();//(this);
       //contents->resize(500,500);
       //contents->show();
 
@@ -1882,6 +1885,19 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(MyFocusSnifferQLineEdit);
   };
 
+  struct MyRatioSnifferQLineEdit : RatioSnifferQLineEdit, Gui{
+    Q_OBJECT;
+  public:
+    
+    MyRatioSnifferQLineEdit(QWidget *parent, Ratio ratio, bool wheelMainlyChangesNumerator = true, bool wheelDecrasesDenominatorIfNumeratorIsOne = true)
+      : RatioSnifferQLineEdit(parent, wheelMainlyChangesNumerator, wheelDecrasesDenominatorIfNumeratorIsOne)
+      , Gui(this)
+    {
+      setText(Rational(ratio).toString());
+    }
+    OVERRIDERS(RatioSnifferQLineEdit);
+  };
+  
   struct TextEdit : FocusSnifferQTextEdit, Gui{
     Q_OBJECT;
 
@@ -2085,8 +2101,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         ret = new FocusSnifferQTextEdit(parent);
       else if (className=="QLineEdit")
         ret = new MyFocusSnifferQLineEdit(parent);
-      else if (className=="QLineEdit")
-        ret = new MyFocusSnifferQLineEdit(parent);
+      else if (className=="RatioQLineEdit")
+        ret = new MyRatioSnifferQLineEdit(parent, make_ratio(1,1));
       else if (className=="QSpinBox")
         ret = new MyFocusSnifferQSpinBox(parent);
       else if (className=="QDoubleSpinBox")
@@ -2474,6 +2490,10 @@ int64_t gui_text(const_char* text, const_char* color){
 int64_t gui_textEdit(const_char* content, bool read_only){
   //return -1;
   return (new TextEdit(content, read_only))->get_gui_num();
+}
+
+int64_t gui_ratio(Place ratio, bool wheelMainlyChangesNumerator, bool wheelDecrasesDenominatorIfNumeratorIsOne){
+  return (new MyRatioSnifferQLineEdit(NULL, ratio_from_place(ratio), wheelMainlyChangesNumerator, wheelDecrasesDenominatorIfNumeratorIsOne))->get_gui_num();
 }
 
 int64_t gui_line(const_char* content){
@@ -3323,6 +3343,31 @@ const_char* gui_getBackgroundColor(int64_t guinum){
     return "black";
 
   return talloc_strdup(gui->_widget->palette().color(gui->_widget->backgroundRole()).name().toUtf8().constData());
+}
+
+static inline void setStyleSheetRecursively(QWidget *widget, const_char* stylesheet){
+  if (widget != NULL){
+    widget->setStyleSheet(stylesheet);
+    
+    for(auto *c : widget->children())
+      setStyleSheetRecursively(dynamic_cast<QWidget*>(c), stylesheet);
+  }
+}
+
+void gui_setStyleSheetRecursively(int64_t guinum, const_char* stylesheet){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  setStyleSheetRecursively(gui->_widget, stylesheet);
+}
+
+void gui_setStyleSheet(int64_t guinum, const_char* stylesheet){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setStyleSheet(stylesheet);
 }
 
 void gui_setLayoutSpacing(int64_t guinum, int spacing, int left, int top, int right, int bottom){

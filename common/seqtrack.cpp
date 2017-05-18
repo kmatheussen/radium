@@ -1074,6 +1074,7 @@ void SEQUENCER_create_from_state(hash_t *state){
       radium::PlayerLock lock;
       
       root->song->seqtracks = seqtracks;
+
       ATOMIC_SET(root->song->curr_seqtracknum, new_curr_seqtracknum);
     }
 

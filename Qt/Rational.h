@@ -10,31 +10,36 @@
 namespace{
   
 struct Rational {
-  int numerator;
-  int denominator;
-  Rational(int numerator, int denominator)
-    : numerator(numerator)
-    , denominator(denominator)
+  
+  int _numerator;
+  int _denominator;
+  
+  Rational(const int numerator, const int denominator)
+    : _numerator(numerator)
+    , _denominator(denominator)
   {}
 
-  Rational(Ratio ratio)
-    : numerator((int)ratio.numerator)
-    , denominator((int)ratio.denominator)
+  Rational(const Ratio ratio)
+    : _numerator((int)ratio.numerator)
+    , _denominator((int)ratio.denominator)
   {}
 
-  Ratio get_ratio(void){
-    return make_ratio(numerator, denominator);
+  Ratio get_ratio(void) const {
+    return make_ratio(_numerator, _denominator);
   }
 
-  bool is_valid(void){
-    return denominator != 0;
+  bool is_valid(void) const {
+    return _denominator != 0;
   }
 
-  QString toString(void){
-    return QString::number(numerator) + "/" + QString::number(denominator);
+  QString toString(void) const {
+    return QString::number(_numerator) + "/" + QString::number(_denominator);
   }
   
-  Rational down(void){
+  Rational down(void) const {
+    int numerator = _numerator;
+    int denominator = _denominator;
+    
     if (numerator!=1 && denominator!=1){
       numerator=1;
       denominator=1;
@@ -50,7 +55,10 @@ struct Rational {
       return Rational(numerator-1, 1);
   }
 
-  Rational up(void){
+  Rational up(void) const {
+    int numerator = _numerator;
+    int denominator = _denominator;
+
     if (numerator!=1 && denominator!=1){
       numerator=1;
       denominator=1;
@@ -64,6 +72,25 @@ struct Rational {
 
     else
       return Rational(numerator+1, 1);
+  }
+
+  const Rational upNumerator(void) const {
+    return Rational(_numerator+1, _denominator);
+  }
+
+  const Rational downNumerator(void) const {
+    return Rational(_numerator-1, _denominator);
+  }
+
+  const Rational upDenominator(void) const {
+    return Rational(_numerator, _denominator+1);
+  }
+
+  const Rational downDenominator(void) const {
+    if (_denominator==1)
+      return Rational(_numerator, _denominator);
+    else
+      return Rational(_numerator, _denominator-1);
   }
 };
 }

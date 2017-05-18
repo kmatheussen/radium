@@ -101,6 +101,10 @@ static inline Place DYN_get_place(const dyn_t dyn){
   return place_from_64b(ratio.numerator, ratio.denominator);
 }
 
+static inline Ratio ratio_from_place(const Place place){
+  return make_ratio(place.counter + place.line*place.dividor, place.dividor);
+}
+
 static inline Place *PlaceCreate(int line, int counter, int dividor) {  
   Place *place=(Place*)talloc(sizeof(Place));  
   place->line = line;

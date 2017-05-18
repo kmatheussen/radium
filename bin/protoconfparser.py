@@ -15,6 +15,7 @@
 #Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+# TODO: Add a Ratio type. It's a little bit awkward to use Place instead of Ratio, for instance in 'gui_ratio'.
 
 
 import sys,string,os
