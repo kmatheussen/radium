@@ -153,6 +153,15 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
     }
   }
 
+
+  // Try sounds directory in program path
+  {
+    QString in_sounds = QString("sounds") + QDir::separator() + info.fileName();
+    if (OS_has_full_program_file_path(in_sounds))
+      return STRING_create(OS_get_full_program_file_path(in_sounds));
+  }
+  
+  
   // Ask user for path. Last resort.
   {
     QFileInfo info3;
