@@ -160,9 +160,15 @@ static Place number_to_place(s7_scheme *s7, s7_pointer number, const char **erro
 
   if (s7_is_integer(number)){
     int line = (int)s7_integer(number);
-    if (line < -1){ // We allow -1 as a no-op place.
+    if
+#if defined(RELEASE)
+      (line < -1)  // Earlier we allowed -1 as a no-op place, but now 'same-place must be used instead.
+#else
+      (line < 0)
+#endif
+      {
       if (error)
-        *error = "place>=0 or place==-1";
+        *error = "place>=0";
       else
         R_ASSERT(false);
       return p_Create(0,0,1);

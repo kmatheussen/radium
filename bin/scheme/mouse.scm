@@ -788,10 +788,11 @@
     (if same-pos
         Node
         (let ((node-info (Move-node node-info new-value
-                                    (if (not Use-Place)
-                                        new-y
-                                        (and new-y
-                                             (get-place-from-y Button new-y))))))
+                                    (if Use-Place
+                                        (if new-y
+                                            (get-place-from-y Button new-y)
+                                            'same-place)
+                                        new-y))))
           (Publicize node-info)
           (make-node :node-info node-info
                      :value new-value
@@ -1412,7 +1413,7 @@
                                                #f
                                                (callback Num (temponodeval->01 (<ra> :get-temponode-value Num)))))
                         :Move-node (lambda (Num Value Place)
-                                     (<ra> :set-temponode Num (01->temponodeval Value) (or Place -1))
+                                     (<ra> :set-temponode Num (01->temponodeval Value) Place)
                                      (define new-value (<ra> :get-temponode-value Num)) ;; might differ from Value
                                      ;;(c-display "Place/New:" Place (<ra> :get-temponode-value Num))
                                      (temponodeval->01 new-value)
@@ -1572,7 +1573,7 @@
                                                         (if (<ra> :control-pressed)
                                                             Value
                                                             (round Value))
-                                                        (or Place -1)
+                                                        Place
                                                         *current-track-num*))
                         :Publicize (lambda (Num)
                                      (set-indicator-pitchnum Num *current-track-num*)
@@ -1866,7 +1867,7 @@
                                              (if (<ra> :control-pressed)
                                                  Value
                                                  (round Value))
-                                             (or Place -1)
+                                             Place
                                              (pianonote-info :notenum)
                                              (pianonote-info :tracknum)))
 
@@ -2285,7 +2286,7 @@
                                                                                    (velocity-info :tracknum)))
                                               (set-velocity-statusbar-text value))
                         :Move-node (lambda (velocity-info Value Place)
-                                     (define note-num (<ra> :set-velocity Value (or Place -1) (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
+                                     (define note-num (<ra> :set-velocity Value Place (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
                                      (make-velocity-info :tracknum (velocity-info :tracknum)
                                                          :notenum note-num
                                                          :velocitynum (velocity-info :velocitynum)
@@ -2705,7 +2706,7 @@
                                      (<ra> :set-statusbar-text (<ra> :get-fx-string (fxnode-info :fxnodenum) (fxnode-info :fxnum) (fxnode-info :tracknum))))
 
                         :Move-node (lambda (fxnode-info Value Place)                                     
-                                     (<ra> :set-fxnode (fxnode-info :fxnodenum) Value (or Place -1) (fxnode-info :fxnum) (fxnode-info :tracknum))
+                                     (<ra> :set-fxnode (fxnode-info :fxnodenum) Value Place (fxnode-info :fxnum) (fxnode-info :tracknum))
                                      fxnode-info)
                         )
 
