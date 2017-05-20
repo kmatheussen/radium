@@ -118,6 +118,29 @@ class Argument:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise Exception("Unknown type '"+type_string+"'")
 
+    def get_s7_conversion_function(self):
+        if self.type_string=="int":
+            return "(int)s7extra_get_integer"
+        elif self.type_string=="int64_t":
+            return "s7extra_get_integer"
+        elif self.type_string=="float":
+            return "s7extra_get_float"
+        elif self.type_string=="double":
+            return "s7extra_get_double"
+        elif self.type_string=="const_char*":
+            return "s7extra_get_string"
+        elif self.type_string=="bool":
+            return "s7extra_get_boolean"
+        elif self.type_string=="Place":
+            return "s7extra_get_place"
+        elif self.type_string=="func_t*":
+            return "s7extra_get_func"
+        elif self.type_string=="dyn_t":
+            return "s7extra_get_dyn"
+        else:
+            sys.stderr.write("Unknown type '"+type_string+"'")
+            raise Exception("Unknown type '"+type_string+"'")
+
     def get_s7_variable_check_function(self):
         if self.type_string=="int":
             return "s7_is_integer"
@@ -543,6 +566,8 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         s7funcname = self.proc.get_scheme_varname()
         
         oh.write("static s7_pointer radium_s7_"+self.proc.varname+"(s7_scheme *radiums7_sc, s7_pointer radiums7_args){\n")
+        if len(self.args) > 0:
+            oh.write("  const char *radiums7_error_error = NULL;\n")
         oh.write("  s7_pointer org_radiums7_args = radiums7_args;\n")
         self.write_s7_args(oh) # int arg1; s7_pointer arg1_s7; int arg2; s7_pointer arg2_s7;
 
@@ -560,11 +585,19 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
             oh.write("  if (!s7_is_pair(radiums7_args))\n")
             oh.write('    return (s7_wrong_number_of_args_error(radiums7_sc, "'+s7funcname+': wrong number of args: ~A", org_radiums7_args));\n')
             oh.write('\n')
+
             oh.write("  "+arg.varname+"_s7 = s7_car(radiums7_args);\n")
-            oh.write("  if (!"+arg.get_s7_variable_check_function()+"("+arg.varname+"_s7))\n")
-            oh.write('    return s7_wrong_type_arg_error(radiums7_sc, "'+arg.varname+'", '+str(n)+', '+arg.varname+'_s7, "'+arg.type_string+'");\n')
-            oh.write('\n')
-            oh.write("  "+arg.varname+" = "+arg.get_s7_get_type_function()+arg.varname+"_s7);\n")
+            
+            if True:
+                oh.write("  "+arg.varname+" = "+arg.get_s7_conversion_function()+"(radiums7_sc, "+arg.varname+"_s7, &radiums7_error_error);\n")
+                oh.write("  if (radiums7_error_error != NULL)\n")
+                oh.write('    return s7_wrong_type_arg_error(radiums7_sc, "'+s7funcname+'", '+str(n)+', '+arg.varname+'_s7, radiums7_error_error);\n')
+            else:
+                oh.write("  if (!"+arg.get_s7_variable_check_function()+"("+arg.varname+"_s7))\n")
+                oh.write('    return s7_wrong_type_arg_error(radiums7_sc, "'+arg.varname+'", '+str(n)+', '+arg.varname+'_s7, "'+arg.type_string+'");\n')
+                oh.write('\n')
+                oh.write("  "+arg.varname+" = "+arg.get_s7_get_type_function()+arg.varname+"_s7);\n")
+            
             oh.write("  radiums7_args = s7_cdr(radiums7_args);\n")
             oh.write("\n")
 

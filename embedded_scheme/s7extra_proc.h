@@ -11,7 +11,17 @@ extern "C" {
   dyn_t s7extra_dyn(s7_scheme *s7, s7_pointer s);
   s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn);
 
-  func_t *s7extra_func(s7_scheme *s7, s7_pointer func);  
+  func_t *s7extra_func(s7_scheme *s7, s7_pointer func);
+
+  int64_t s7extra_get_integer(s7_scheme *s7, s7_pointer s, const char **error);
+  float s7extra_get_float(s7_scheme *s7, s7_pointer s, const char **error);
+  double s7extra_get_double(s7_scheme *s7, s7_pointer s, const char **error);
+  const char *s7extra_get_string(s7_scheme *s7, s7_pointer s, const char **error);
+  bool s7extra_get_boolean(s7_scheme *s7, s7_pointer s, const char **error);
+  Place s7extra_get_place(s7_scheme *s7, s7_pointer s, const char **error);
+  func_t *s7extra_get_func(s7_scheme *s7, s7_pointer func, const char **error);
+  dyn_t s7extra_get_dyn(s7_scheme *s7, s7_pointer s, const char **error);
+
   #endif
 
   void s7extra_callFunc_void_void(func_t *func);
