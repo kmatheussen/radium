@@ -351,8 +351,8 @@
 !!#
 
 
-(define *logtype-hold* (ra:get-logtype-hold))
-(define *logtype-linear* 0)
+(define-constant *logtype-hold* (ra:get-logtype-hold))
+(define-constant *logtype-linear* 0)
 
 
 (load "common1.scm")

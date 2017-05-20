@@ -317,6 +317,8 @@
   :b 59
   :c)
 
+(make-test 3 4)
+
 (define t (make-test :c 2))
 (t :b)
 (t :c)
@@ -464,7 +466,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 ;;
 ;; First a helper function:
 
-(define *try-finally-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
+(define-constant *try-finally-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
 
 (define (catch-all-errors-and-display-backtrace-automatically thunk)
   (catch #t
@@ -478,8 +480,8 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 
 ;; Then the function we want to use everywhere:
 
-(define *try-finally-failure-thunk-failed* 'try-finally-failure-thunk-failed)
-(define *try-finally-false-unless-failure-is-overridden* 'false-unless-failure-is-overridden)
+(define-constant *try-finally-failure-thunk-failed* 'try-finally-failure-thunk-failed)
+(define-constant *try-finally-false-unless-failure-is-overridden* 'false-unless-failure-is-overridden)
 
 (delafina (try-finally :try
                        
@@ -1339,8 +1341,8 @@ for .emacs:
                      (c-display "hepp3")))
 ||#
 
-(define *num-radium-ticks* (<ra> :get-highest-legal-place-denominator))
-(define *smallest-radium-tick* (/ 1 *num-radium-ticks*))
+(define-constant *num-radium-ticks* (<ra> :get-highest-legal-place-denominator))
+(define-constant *smallest-radium-tick* (/ 1 *num-radium-ticks*))
 (define (-line linenum)
   (- linenum *smallest-radium-tick*))
 

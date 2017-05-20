@@ -87,8 +87,8 @@
   (for-each print-event events))
                   
                                                  
-(define *default-tpd* 6)
-(define *default-bpm* 125)
+(define-constant *default-tpd* 6)
+(define-constant *default-bpm* 125)
 
 ;; Note: add-event doesn't sort channels
 (define (add-event events new-event)
@@ -147,7 +147,7 @@
 ;; Conversion between note number and period ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define *note-to-period-table* (vector
+(define-constant *note-to-period-table* (vector
   1712 1616 1524 1440 1356 1280 1208 1140 1076 1016  960  906  ;; c0 ->
   856  808  762  720  678  640  604  570  538  508  480  453   ;; c1 ->
   428  404  381  360  339  320  302  285  269  254  240  226   ;; c2 ->
@@ -158,10 +158,10 @@
   27  25  24  22  21  20  19  18  17  16  15  14               ;; c6 ->
   ))
 
-(define *max-period* (*note-to-period-table* 0))
-(define *min-period* (last (vector->list *note-to-period-table*)))
-(define *max-slide-period* 856)
-(define *min-slide-period* 113)
+(define-constant *max-period* (*note-to-period-table* 0))
+(define-constant *min-period* (last (vector->list *note-to-period-table*)))
+(define-constant *max-slide-period* 856)
+(define-constant *min-slide-period* 113)
 
 (define (get-period-to-note-table period period1 period2 note1)
   ;;(c-display period period1 period2 note1)
@@ -186,7 +186,7 @@
 
 ;; Note that period values between 14 and 0 are not correct (the values are scaled between 83 and 84 instead of 83 and +inf),
 ;; but it shouldn't matter since these periods are not allowed/used in modules.
-(define *period-to-note-table* (list->vector
+(define-constant *period-to-note-table* (list->vector
                                 (reverse
                                  (get-period-to-note-table *max-period*
                                                            (*note-to-period-table* 0)
@@ -2112,10 +2112,10 @@ The behavior for these three tests are not needed since break events are always 
        ", new-instrument: " (event :new-instrumentnum)
        "]"))
 
-(define *clashing-effect-types* (list :vibrato   ;; vibrato-with-volume-slide effects have been converted to two separate events earlier
-                                      :tremolo   ;; tremolo-with-volume-slide effects have been converted to two separate events earlier
-                                      :sample-offset
-                                      :finetune))
+(define-constant *clashing-effect-types* (list :vibrato   ;; vibrato-with-volume-slide effects have been converted to two separate events earlier
+                                               :tremolo   ;; tremolo-with-volume-slide effects have been converted to two separate events earlier
+                                               :sample-offset
+                                               :finetune))
 
 (define (is-mayclashing-effect? event)
   (memq (event :type) *clashing-effect-types*))
@@ -3578,7 +3578,7 @@ The behavior for these three tests are not needed since break events are always 
 
 
 
-(define *test-tpds* (list->vector (iota 64))) ;; contains (vector 0 1 2 3 ... 84)
+(define-constant *test-tpds* (list->vector (iota 64))) ;; contains (vector 0 1 2 3 ... 84)
                                   
 (define (create-arpeggio-pitches linenum curr-period val1 val2 tpds)
   (let* ((note1 (period->note curr-period))
@@ -5402,7 +5402,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 ;;;;;;;;;;;;;;;;; Sending events to Radium ;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define *temp* '())
+;;(define *temp* '())
 
 (define (send-pattern-to-radium pattern instruments)
   (define num-lines (pattern-get-num-lines pattern))
@@ -5428,8 +5428,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                            (instrument (instruments (1- instrument-num)))
                            (radium-instrument-num (instrument-radium-instrument-num instrument)))
 
-                      (if (= (first-instrument-event :patternnum) 22)
-                          (set! *temp* pattern))
+                      ;;(if (= (first-instrument-event :patternnum) 22)
+                      ;;    (set! *temp* pattern))
                       
                       (when radium-instrument-num
                          (<ra> :set-instrument-for-track radium-instrument-num tracknum)

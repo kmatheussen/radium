@@ -11,8 +11,8 @@
 (define (get-fontheight)
   (+ 4 (<gui> :get-system-fontheight)))
 
-(define *text-color* "#cccccc")
-(define *arrow-text* "↳")
+(define-constant *text-color* "#cccccc")
+(define-constant *arrow-text* "↳")
 
 (define *current-mixer-strip-is-wide* #f)
 

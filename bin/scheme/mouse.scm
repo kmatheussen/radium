@@ -1,12 +1,12 @@
 (provide 'mouse.scm)
 
-(define *left-button* 1) ;; TR_LEFTMOUSE
-(define *middle-button* 3) ;; TR_MIDDLEMOUSE
-(define *right-button* 5) ;; TR_RIGHTMOUSE
+(define-constant *left-button* 1) ;; TR_LEFTMOUSE
+(define-constant *middle-button* 3) ;; TR_MIDDLEMOUSE
+(define-constant *right-button* 5) ;; TR_RIGHTMOUSE
 
-(define *is-pressing* 1) ;; API_MOUSE_PRESSING
-(define *is-moving* 2) ;; API_MOUSE_MOVING
-(define *is-releasing* 3)  ;; API_MOUSE_RELEASING
+(define-constant *is-pressing* 1) ;; API_MOUSE_PRESSING
+(define-constant *is-moving* 2) ;; API_MOUSE_MOVING
+(define-constant *is-releasing* 3)  ;; API_MOUSE_RELEASING
 
 (define (select-button Button)
   (= *left-button* Button))
@@ -1637,9 +1637,9 @@
 ;; pianoroll
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define *pianonote-move-start* 'move-start)
-(define *pianonote-move-all* 'move-all)
-(define *pianonote-move-end* 'move-end)
+(define-constant *pianonote-move-start* 'move-start)
+(define-constant *pianonote-move-all* 'move-all)
+(define-constant *pianonote-move-end* 'move-end)
 
 (define-struct pianonote-info
   :tracknum
@@ -3745,7 +3745,7 @@
   :seqautomation
   :distance)
 
-(define *seqnode-min-distance* (* 1 (<ra> :get-half-of-node-width)))
+(define-constant *seqnode-min-distance* (* 1 (<ra> :get-half-of-node-width)))
 
 (define *current-seqautomation/distance* #f)
 

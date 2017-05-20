@@ -14,7 +14,7 @@
 
 (define *pmg-has-keyboard-focus* #f)
 
-(define *pluginmanager-gui* (<gui> :ui "pluginmanager.ui")) ;; Must use relative path. Haven't gotten absolute paths to work in windows when using char* instead of wchar_t*. And s7 uses char*.
+(define-constant *pluginmanager-gui* (<gui> :ui "pluginmanager.ui")) ;; Must use relative path. Haven't gotten absolute paths to work in windows when using char* instead of wchar_t*. And s7 uses char*.
 ;;(<gui> :ui (<ra> :append-paths (<ra> :get-program-path) "pluginmanager.ui"))
 (<gui> :set-static-toplevel-widget *pluginmanager-gui* #t)
 
@@ -22,7 +22,7 @@
 (let ((width (floor (* 3 (<gui> :text-width "Usage  Name  Type    Category    Creator        Path              Inputs Outputs")))))
   (<gui> :set-size *pluginmanager-gui* width (floor (/ width 1.5))))
 
-(define *pmg-table* (<gui> :table (list "Usage" "Name" "Type" "Category" "Creator" "Path" "Inputs" "Outputs")))
+(define-constant *pmg-table* (<gui> :table (list "Usage" "Name" "Type" "Category" "Creator" "Path" "Inputs" "Outputs")))
 
 (define-constant *pmg-use-x* 0)
 (define-constant *pmg-name-x* 1)
@@ -38,13 +38,13 @@
   (<gui> :set-layout-spacing *pluginmanager-gui* 2 2 2 2 2)
   (<gui> :add table-parent *pmg-table*))
 
-(define *pmg-progress-label* (<gui> :child *pluginmanager-gui* "progress"))
+(define-constant *pmg-progress-label* (<gui> :child *pluginmanager-gui* "progress"))
 
 (define *pmg-instrconf* #f)
 (define *pmg-callback* #f)
 
-(define *pmg-search-coroutine* (make-coroutine))
-(define *pmg-scanner-coroutine* (make-coroutine))
+(define-constant *pmg-search-coroutine* (make-coroutine))
+(define-constant *pmg-scanner-coroutine* (make-coroutine))
   
 
 #!
@@ -154,13 +154,13 @@
                            (list 50)))))))
         
 
-(define *pmg-scan-all-button* (<gui> :child *pluginmanager-gui* "scan_all_button"))
+(define-constant *pmg-scan-all-button* (<gui> :child *pluginmanager-gui* "scan_all_button"))
 (<gui> :add-callback *pmg-scan-all-button* (lambda ()
                                              (when (pmg-finished-scanning?)
                                                (pmg-ask-are-you-sure pmg-scan-all-remaining))))
 
 
-(define *pmg-rescan-all-button* (<gui> :child *pluginmanager-gui* "rescan_all_button"))
+(define-constant *pmg-rescan-all-button* (<gui> :child *pluginmanager-gui* "rescan_all_button"))
 (<gui> :add-callback *pmg-rescan-all-button*
        (lambda ()
          (if (pmg-finished-scanning?)
@@ -175,7 +175,7 @@
                         (pmg-search "" #f pmg-scan-all-remaining)
                         #f)))))))
 
-(define *pmg-search-text-field* (<gui> :child *pluginmanager-gui* "search_text"))
+(define-constant *pmg-search-text-field* (<gui> :child *pluginmanager-gui* "search_text"))
 (<gui> :set-value *pmg-search-text-field* "")
 
 
@@ -185,8 +185,8 @@
              (pmg-search val #t))))
 
 
-(define *pmg-add-button* (<gui> :child *pluginmanager-gui* "add_button"))
-(define *pmg-cancel-button* (<gui> :child *pluginmanager-gui* "cancel_button"))
+(define-constant *pmg-add-button* (<gui> :child *pluginmanager-gui* "add_button"))
+(define-constant *pmg-cancel-button* (<gui> :child *pluginmanager-gui* "cancel_button"))
 
 
 (let ()

@@ -1,8 +1,8 @@
 (provide 'gui.scm)
 
-(define *min-db* (<ra> :get-min-db))
-(define *max-db* (<ra> :get-max-db))
-(define *max-mixer-db* 6)
+(define-constant *min-db* (<ra> :get-min-db))
+(define-constant *max-db* (<ra> :get-max-db))
+(define-constant *max-mixer-db* 6)
 
 (define (gui-create-layout create-layout-func layout-args . guis)
   (define layout (apply create-layout-func layout-args))
@@ -294,7 +294,7 @@
 
 
 (define *message-gui* #f)
-(define *message-gui-text-edit* (<gui> :text-edit "" #t))
+(define-constant *message-gui-text-edit* (<gui> :text-edit "" #t))
 
 (define (show-message-gui)
   (when (not *message-gui*)
@@ -370,7 +370,7 @@
 !!#
 
 
-(define *help-windows* (make-hash-table 10 string=?))
+(define-constant *help-windows* (make-hash-table 10 string=?))
 
 (define (FROM-C-show-help-window filename)
   (define web (or (*help-windows* filename)

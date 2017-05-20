@@ -1,15 +1,15 @@
 (provide 'instruments.scm)
 
 
-(define *bus-effect-names* (list "System Reverb"
-                                 "System Chorus"
-                                 "System Aux 1"
-                                 "System Aux 2"
-                                 "System Aux 3"))
+(define-constant *bus-effect-names* (list "System Reverb"
+                                          "System Chorus"
+                                          "System Aux 1"
+                                          "System Aux 2"
+                                          "System Aux 3"))
 
-(define *bus-effect-onoff-names* (map (lambda (bus-effect-name)
-                                        (<-> bus-effect-name " On/Off"))
-                                      *bus-effect-names*))
+(define-constant *bus-effect-onoff-names* (map (lambda (bus-effect-name)
+                                                 (<-> bus-effect-name " On/Off"))
+                                               *bus-effect-names*))
 
 (define *instrument-memoized-generation* 0)
 (define *use-instrument-memoization* #f)

@@ -186,7 +186,7 @@
 
 ||#
 
-(define *empty-symbol* '___empty_symbol) ;; s7 doesn't allow converting empty string to symbol
+(define-constant *empty-symbol* '___empty_symbol) ;; s7 doesn't allow converting empty string to symbol
 
 (define (to-string a)
   (cond ((symbol? a)
