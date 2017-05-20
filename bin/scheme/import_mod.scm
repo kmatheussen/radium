@@ -5759,43 +5759,37 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
   (<ra> :open-progress-window (<-> "Please wait, loading " filename))
 
-  (catch #t
-         (lambda ()
-           (<ra> :start-ignoring-undo)
+  (try-finally :try (lambda ()
+                      (<ra> :start-ignoring-undo)
+                            
+                      (<ra> :eval-python "import import_mod2")
+                      (<ra> :eval-python "import_mod2=reload(import_mod2)")
+                      
+                      (set! *playlist* #f)
+                      
+                      (<ra> :eval-python (<-> "import_mod2.import_mod(\"" (<ra> :to-base64 filename) "\")"))
+                      
+                      (let* ((stuff (process-events *playlist*
+                                                    *instrumentlist*
+                                                    (reverse *events*)
+                                                    *num-lines*
+                                                    *num-channels*
+                                                    ))
+                             (playlist (car stuff))
+                             (instruments (cadr stuff))
+                             (patterns (caddr stuff))
+                             (num 0))
+                        (<ra> :show-progress-window-message "Sending pattern data to Radium...")
+                        (send-events-to-radium playlist instruments patterns)
+                        (c-display "playlist before: " *playlist*)
+                        (c-display "playlist after: " playlist)
+                        (<ra> :close-progress-window)
+                        #t))
 
-           (<ra> :eval-python "import import_mod2")
-           (<ra> :eval-python "import_mod2=reload(import_mod2)")
-           
-           (set! *playlist* #f)
-           
-           (<ra> :eval-python (<-> "import_mod2.import_mod(\"" (<ra> :to-base64 filename) "\")"))
+               :finally (lambda ()
+                          (<ra> :stop-ignoring-undo)                          
+                          (<ra> :close-progress-window)
 
-           (let* ((stuff (process-events *playlist*
-                                         *instrumentlist*
-                                         (reverse *events*)
-                                         *num-lines*
-                                         *num-channels*
-                                         ))
-                  (playlist (car stuff))
-                  (instruments (cadr stuff))
-                  (patterns (caddr stuff))
-                  (num 0))
-             (<ra> :show-progress-window-message "Sending pattern data to Radium...")
-             (send-events-to-radium playlist instruments patterns)
-             (c-display "playlist before: " *playlist*)
-             (c-display "playlist after: " playlist)
-             (<ra> :close-progress-window)
-             #t))
-         (lambda args
-           (<ra> :stop-ignoring-undo)
-  
-           (<ra> :close-progress-window)
-           (<ra> :show-async-message -1 (<-> "Something went wrong: " args))
-           
-           (display (ow!))
-           
-           (throw (car args))
-           ))
 
   (<ra> :reset-undo)
   (<ra> :internal_update-all-block-graphics)

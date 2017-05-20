@@ -101,10 +101,7 @@
 (<gui> :add-close-callback *pluginmanager-gui*
        (lambda (radium-runs-custom-exec)
          (if (not radium-runs-custom-exec)
-             (catch #t ;; We don't want to risk not returning #f (if that happens, the plugin manager can't be opened again)
-                    pmg-hide
-                    (lambda args
-                      (c-display (ow!)))))
+             (try-finally :try pmg-hide)) ;; We don't want to risk not returning #f. If that happens, the plugin manager can't be opened again.
          #f))
 
 ;; init table stuff

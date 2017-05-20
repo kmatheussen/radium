@@ -864,7 +864,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return _widget->layout();
     }
 
-    // Try to put as much as possible in here, since GUIs created from ui files does not use the sub classes
+    // Try to put as much as possible in here, since GUIs created from ui files does not use the subclasses
     virtual void setGuiText(const_char *text){
       {
         QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget.data());
@@ -990,7 +990,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       handleError("Gui #%d does not have a setValue method", _gui_num);
     }
 
-    // Should put as much as possible in here since ui widgets does not use the sub classes
+    // Should put as much as possible in here since ui widgets does not use the subclasses. (Actually, the ui widgets can probably use the subclasses by extending the "createWidget" function, but qwidgets created elsewhere can not). The code is cleaner this way too than to add virtual methods into all subclasses. (Virtual methods in subclasses are somewhat faster though, but performance doesn't matter here.))
     virtual dyn_t getGuiValue(void){
 
       QTableWidget *qtableWidget = dynamic_cast<QTableWidget*>(_widget.data());

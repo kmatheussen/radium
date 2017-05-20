@@ -1533,29 +1533,23 @@
   (define (remake width height)
     (define instrument-is-open (<ra> :instrument-is-open instrument-id))
     
-    (catch #t
-           (lambda ()
-             (run-instrument-data-memoized
-              (lambda()
-                (when das-mixer-strip-gui
-                  (<gui> :close das-mixer-strip-gui)
-                  (set! das-mixer-strip-gui #f))
-                
-                (when instrument-is-open                
-                  (set! das-mixer-strip-gui (create-mixer-strip instrument-id width #t))
-                  (if *current-mixer-strip-is-wide*
-                      (set! width org-width)
-                            (set! width (<gui> :width das-mixer-strip-gui)))
-                  (set-fixed-width parent width)
-                  (set-fixed-width das-mixer-strip-gui width)
-                  (<gui> :add parent das-mixer-strip-gui 0 0 width height)
-                  (<gui> :show das-mixer-strip-gui))
-                    
-                )))
-           
-           (lambda args
-             (display (ow!))))
-    )
+    (run-instrument-data-memoized
+     (lambda()
+       (when das-mixer-strip-gui
+         (<gui> :close das-mixer-strip-gui)
+         (set! das-mixer-strip-gui #f))
+       
+       (when instrument-is-open                
+         (set! das-mixer-strip-gui (create-mixer-strip instrument-id width #t))
+         (if *current-mixer-strip-is-wide*
+             (set! width org-width)
+             (set! width (<gui> :width das-mixer-strip-gui)))
+         (set-fixed-width parent width)
+         (set-fixed-width das-mixer-strip-gui width)
+         (<gui> :add parent das-mixer-strip-gui 0 0 width height)
+         (<gui> :show das-mixer-strip-gui))
+       
+       )))
 
   (remake width height)
 
@@ -1763,48 +1757,44 @@
     (set! g-total-time2 0)
     (set! g-total-num-calls 0)
     (set! g-total-sort-time 0)
-
-    (catch #t
-           (lambda ()
-             (run-instrument-data-memoized
-              (lambda()
-                (<gui> :disable-updates parent)
-                ;;(c-display "   Size of das-stored:" (length das-stored-mixer-strips))
-                (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
-                                     (lambda (new-mixer-strips new-mixer-strips-gui)
-                                       (if das-mixer-strips-gui
-                                           (begin
-                                             (<gui> :replace parent das-mixer-strips-gui new-mixer-strips-gui)
-                                             (<gui> :close das-mixer-strips-gui))
-                                           (begin
-                                             (<gui> :add parent new-mixer-strips-gui)
-                                             ;;(<gui> :show mixer-strips-gui)
-                                             ))
-                                       
-                                       (set! das-stored-mixer-strips new-mixer-strips)
-                                       (set! das-mixer-strips-gui new-mixer-strips-gui)
-                                       )))))
-           (lambda args
-             (display (ow!))))
+    
+    (run-instrument-data-memoized
+     (lambda()
+       (<gui> :disable-updates parent)
+       ;;(c-display "   Size of das-stored:" (length das-stored-mixer-strips))
+       (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
+                            (lambda (new-mixer-strips new-mixer-strips-gui)
+                              (if das-mixer-strips-gui
+                                  (begin
+                                    (<gui> :replace parent das-mixer-strips-gui new-mixer-strips-gui)
+                                    (<gui> :close das-mixer-strips-gui))
+                                  (begin
+                                    (<gui> :add parent new-mixer-strips-gui)
+                                    ;;(<gui> :show mixer-strips-gui)
+                                    ))
+                              
+                              (set! das-stored-mixer-strips new-mixer-strips)
+                              (set! das-mixer-strips-gui new-mixer-strips-gui)
+                              ))))
     
     ;; prevent some flickering
     (<ra> :schedule 15 (lambda ()
                          (<gui> :enable-updates parent)
                          #f))
-
+    
     (c-display "   remake-gui duration: " (- (time) start-time) g-total-time "("g-total-num-calls ")" g-total-time2 g-total-sort-time)
     )
-
+    
   (define mixer-strips-object (make-mixer-strips-object :gui parent
                                                         :is-full-screen is-full-screen
                                                         :remake remake
                                                         :pos pos))
   
   (remake '())
-
+  
   (<ra> :inform-about-gui-being-a-mixer-strips parent)
   (push-back! *mixer-strips-objects* mixer-strips-object)
-
+  
   (<gui> :add-deleted-callback parent
          (lambda (radium-runs-custom-exec)
            (set! *mixer-strips-objects*
@@ -1812,9 +1802,9 @@
                            (= (a-mixer-strips-object :gui)
                               parent))
                          *mixer-strips-objects*))))
-
+  
   ;;mixer-strips-object
-
+  
   parent
   )
 

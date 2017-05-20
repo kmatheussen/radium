@@ -1,12 +1,5 @@
 (provide 'instruments.scm)
 
-#||
-  * Sends should be slightly skewed to the left, so that we see that they go in parallel. Arrows indicating this might help too.
-
-  * What if the last sound object in the sequence isn't connected to the main pipe? How should this be visualized?
-    Ardour seems to visualize this with a button under the volume slider ("Master"). (that makes sense)
-
-||#
 
 (define *bus-effect-names* (list "System Reverb"
                                  "System Chorus"
@@ -22,17 +15,12 @@
 (define *use-instrument-memoization* #f)
 
 (define (run-instrument-data-memoized func)
-  (set! *use-instrument-memoization* #t)
-  (inc! *instrument-memoized-generation* 1)
-  (define ret (catch #t
-                     func
-                     (lambda args
-                       (set! *use-instrument-memoization* #f)
-                       (display (ow!))
-                       ;;(throw (car args)) ;; rethrowing
-                       #f)))
-  (set! *use-instrument-memoization* #f)
-  ret)
+  (try-finally :try (lambda ()
+                      (set! *use-instrument-memoization* #t)
+                      (inc! *instrument-memoized-generation* 1)
+                      (func))
+               :finally (lambda ()
+                          (set! *use-instrument-memoization* #f))))
 
 
 (define-macro (define-instrument-memoized name&arg . body)

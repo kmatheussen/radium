@@ -410,47 +410,35 @@
 
   (<ra> :set-statusbar-text "")
   
-  (define ret
-    (catch #t
-           thunk
-           (lambda args
-             ;; Commenting out output printing here since it causes unnecessary lines to be put into the (ow!) backtrace.
-             ;;
-             ;;(display "args")(display args)(newline)
-             ;;(c-display "Resetting mouse cycle since I caught something:" (car args))
-             ;;(apply format (cons '() args)))
-             ;;(if (string? (cadr args))
-             ;;    (apply format #t (cadr args))
-             ;;    (c-display (cadr args)))
-             ;;(c-display "    GAKK GAKK GAKK " args)
-             (display (ow!))
-             ;;
-             (set! *current-mouse-cycle* #f)
-             (throw (car args)) ;; rethrowing
-             #f)))
-  
-  (if (not mouse-fx-has-been-set)
-      (<ra> :set-no-mouse-fx))
-
-  (if (not mouse-track-has-been-set)
-      (<ra> :set-no-mouse-track))
-
-  (if (not mouse-note-has-been-set)
-      (<ra> :set-no-mouse-note))
-
-  (if (not indicator-node-has-been-set)
-      (<ra> :cancel-indicator-node))
-
-  (if (not current-node-has-been-set)
-      (<ra> :cancel-current-node))
-
-  (if (not current-pianonote-has-been-set)
-      (<ra> :cancel-current-pianonote))
-
-  ;;(if (not mouse-pointer-has-been-set)
-  ;;    (<ra> :set-normal-mouse-pointer))
-
-  ret)
+  (try-finally :try thunk
+               :failure (lambda ()
+                          (set! *current-mouse-cycle* #f)
+                          ;; We also used to rethrow the error here. Don't know why. Seems like the wrong thing to do.
+                          #f
+                          )
+               :finally (lambda ()
+                          
+                          (if (not mouse-fx-has-been-set)
+                              (<ra> :set-no-mouse-fx))
+                          
+                          (if (not mouse-track-has-been-set)
+                              (<ra> :set-no-mouse-track))
+                          
+                          (if (not mouse-note-has-been-set)
+                              (<ra> :set-no-mouse-note))
+                          
+                          (if (not indicator-node-has-been-set)
+                              (<ra> :cancel-indicator-node))
+                          
+                          (if (not current-node-has-been-set)
+                              (<ra> :cancel-current-node))
+                          
+                          (if (not current-pianonote-has-been-set)
+                              (<ra> :cancel-current-pianonote))
+                          
+                          ;;(if (not mouse-pointer-has-been-set)
+                          ;;    (<ra> :set-normal-mouse-pointer))
+                          )))
 
 
 (define (radium-mouse-press $button $x $y)

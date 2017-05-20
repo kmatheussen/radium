@@ -20,7 +20,7 @@ extern "C" {
 
 extern const char *pullErrorMessage(void);
 extern void printExceptionIfError(void);
-extern void throwExceptionIfError(void);
+extern void throwExceptionIfError(void); // Warning, is likely to cause a longjmp!
 extern void handleError(const char *fmt,...);
 
 extern struct Tracker_Windows *getWindowFromNum(int windownum);

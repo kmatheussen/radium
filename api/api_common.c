@@ -94,6 +94,7 @@ void printExceptionIfError(void){
     printException(message);
 }
 
+// Warning, is likely to cause a longjmp!
 void throwExceptionIfError(void){
   const char *message = pullErrorMessage();
   if (message != NULL){

@@ -1068,6 +1068,7 @@ Place p_Quantitize(const Place p, const Place q){
   return place_operation_place_p1_p2(scheme_func, p, q);
 }
 
+
 void SCHEME_throw(const char *symbol, const char *message){
   //printf("SCHEME_THROW. Message: \"%s\"\n", message);
   //if(g_evals>0){
@@ -1081,20 +1082,17 @@ void SCHEME_throw(const char *symbol, const char *message){
 }
 
 
-const char *SCHEME_get_backtrace(void){
+const char *SCHEME_get_history(void){
   ScopedEvalTracker eval_tracker;
   
-  SCHEME_eval("(throw \'get-backtrace)"); // Fill in error-lines and so forth into s7.
-  
-  const char *ret = s7_string(
-                              s7_call(s7,
-                                      s7_name_to_value(s7, "ow!"),
-                                      s7_list(s7, 0)
-                                      )
-                              );
+  //SCHEME_eval("(throw \'get-backtrace)"); // Fill in error-lines and so forth into s7. (no, then we risk longjmp a place we don't want to longjmp. We don't want to longjmp at all actually.)
 
-  printf("Got: %s\n", ret);
-  return ret;
+  s7_pointer s7s = s7_call(s7,
+                           s7_name_to_value(s7, "safe-history-ow!"),
+                           s7_list(s7, 0)
+                           );
+
+  return s7_string(s7s);
 }
 
 
@@ -1168,6 +1166,10 @@ int SCHEME_get_webserver_port(void){
   return s7webserver_get_portnumber(s7webserver);
 }
 
+static s7_pointer getHistory(s7_scheme *radiums7_sc, s7_pointer radiums7_args){
+  return s7_history(radiums7_sc);
+}
+
 void SCHEME_init1(void){
   ScopedEvalTracker eval_tracker;
   
@@ -1182,6 +1184,8 @@ void SCHEME_init1(void){
 
   s7_add_to_load_path(s7,(os_path+"packages"+OS_get_directory_separator()+"s7").c_str()); // bin/packages/s7 . No solution to utf-8 here. s7_add_to_load_path takes char* only.
   s7_add_to_load_path(s7,(os_path+"scheme").c_str()); // bin/scheme
+
+  s7_define_function(s7, "s7:get-history", getHistory, 0, 0, false, "(s7:get-history)");
 
   init_radium_s7(s7);
 

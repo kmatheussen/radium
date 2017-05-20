@@ -64,12 +64,6 @@
       )
 ||#
 
-(define (assert something)
-  (if (not something)
-      (throw 'assert-failed)))
-
-;; It is assumed various places that eqv? can be used to compare functions.
-(assert (eqv? assert ((lambda () assert))))
 
  
 #||
