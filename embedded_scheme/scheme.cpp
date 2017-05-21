@@ -44,7 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct TEvent tevent;
 
-static s7_scheme *s7;
+static s7_scheme *s7 = NULL;
 static s7webserver_t *s7webserver;
 
 
@@ -1232,8 +1232,16 @@ const char *SCHEME_get_history(void){
   
   //SCHEME_eval("(throw \'get-backtrace)"); // Fill in error-lines and so forth into s7. (no, then we risk longjmp a place we don't want to longjmp. We don't want to longjmp at all actually.)
 
+  if (s7 == NULL)
+    return "";
+  
+  const char *funcname = "safe-history-ow!";
+  
+  if (!s7_is_defined(s7, funcname))
+    return "";
+  
   s7_pointer s7s = s7_call(s7,
-                           s7_name_to_value(s7, "safe-history-ow!"),
+                           s7_name_to_value(s7, funcname),
                            s7_list(s7, 0)
                            );
 
