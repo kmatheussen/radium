@@ -12,6 +12,16 @@
 (set! (*s7* 'history-size) 80)
 
 
+;;
+;; Important: Radium has not been initialized when this file is loaded.
+;; Many of the ra: function does work though, but many will also crash the program
+;; if accessed here.
+;;
+;; Code that uses ra: functions should be loaded in the function 'init-step-2'
+;; in the end of this function.
+;;
+
+
 (define *is-initializing* #t)
 
 
@@ -79,6 +89,10 @@
            (history-ow!)) ;; to strip down some unnecessary history produced by history-ow!
          (lambda args
            (get-as-displayable-string-as-possible (list "history-ow! failed: " args)))))
+
+#!!
+(safe-history-ow!)
+!!#
 
 (define (handle-assertion-failure-during-startup info)
   (when *is-initializing*
@@ -366,8 +380,6 @@
 
 (my-require 'common2.scm)
 
-(my-require 'gui.scm) ;; Must be loaded early since it creates the <gui> expansion macro.
-
 (my-require 'nodes.scm)
 
 ;;(my-require 'mouse.scm)
@@ -383,12 +395,19 @@
 (my-require 'timing.scm)
 
 
-
+;; The files loaded in init-step-2 can use ra: functions.
 (define (init-step-2)
+
   (set! *is-initializing* #t)
+
+  ;; gui.scm can be loaded this late since expansion macros now can be defined after they are used.
+  ;; Prev comment: Must be loaded early since it creates the <gui> expansion macro.
+  (my-require 'gui.scm)
+  
   (my-require 'mouse.scm)
   (my-require 'mixer-strips.scm)
   (my-require 'pluginmanager.scm)
+  
   (set! *is-initializing* #f))
 
 

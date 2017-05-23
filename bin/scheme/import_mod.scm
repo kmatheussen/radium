@@ -5785,11 +5785,11 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                         (c-display "playlist after: " playlist)
                         (<ra> :close-progress-window)
                         #t))
-
+               
                :finally (lambda ()
                           (<ra> :stop-ignoring-undo)                          
-                          (<ra> :close-progress-window)
-
+                          (<ra> :close-progress-window)))
+                          
 
   (<ra> :reset-undo)
   (<ra> :internal_update-all-block-graphics)
