@@ -2238,7 +2238,9 @@ int radium_main(char *arg){
 #endif
 
   g_qtgui_has_stopped = true;
-  
+
+  PlayStop();
+      
   // We don't want the crashreporter to pop up if there is something wrong when program exits. Not so important, and it looks unprofessional.
   CRASHREPORTER_dont_report();
 
