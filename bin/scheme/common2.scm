@@ -252,7 +252,7 @@
 ||#
 
 
-(define (copy-struct-helper original struct-name keys arguments mapper)
+(define (copy-struct-helper original struct-name keys arguments)
   (if (keyword? original)
       (throw (<-> "Copy " struct-name " struct: First argument is not a struct, but a keyword")))
 
@@ -265,8 +265,8 @@
               (throw (<-displayable-> "key '" key (<-> "' not found in struct '" struct-name "'") ". keys: " (map symbol->keyword keys))))
           (loop (cddr arguments)))))
 
-  (define new-table (copy original))
-
+  (define new-table (copy original)) ;; No worries. 'new-table' will contain the "(cons eq? ,struct-mapper)" argument similar to 'original'.
+  
   ;; add new data
   (let loop ((arguments arguments))
     (if (not (null? arguments))
@@ -281,6 +281,7 @@
 (define-expansion (define-struct name . args)
   (define define-args (keyvalues-to-define-args args))
   (define keys (map car define-args))
+  (define keys-length (length keys))
   (define must-be-defined (keep (lambda (arg)
                                   (equal? ''must-be-defined (cadr arg)))
                                 define-args))
@@ -294,28 +295,33 @@
   (define arguments (gensym "arguments"))
   (define loop (gensym "loop"))
   (define n (gensym "n"))
-  
+
+  (define struct-mapper (<_> name '-struct-mapper))
+                             
   `(begin
      
-     (define ,(<_> name '-struct-mapper)
-       (let ((keytablemapper (make-hash-table (length (quote ,keys)) eq?)))
+     (define ,struct-mapper
+       (let ((keytablemapper (make-hash-table ,keys-length eq?)))
          (for-each (lambda (key n)
                      (hash-table-set! keytablemapper (symbol->keyword key) n))
                    (quote ,keys)
-                   (iota (length (quote ,keys))))
+                   (iota ,keys-length))
          (lambda (key)
            (or (keytablemapper key)
                (throw (<-displayable-> "key " (keyword->symbol key) ,(<-> " not found in struct '" name "'") ". keys: " (quote ,keys)))))))
      
      (define (,(<_> 'copy- name) ,original . ,arguments)
-       (copy-struct-helper ,original (quote ,name) (quote ,keys) ,arguments (cons eq? ,(<_> name '-struct-mapper))))
+       (copy-struct-helper ,original
+                           (quote ,name)
+                           (quote ,keys)
+                           ,arguments))
                      
      (define* (,(<_> 'make- name) ,@(keyvalues-to-define-args args))
        ,@(map (lambda (must-be-defined)
                 `(if (eq? ,(car must-be-defined) 'must-be-defined)
                      (throw ,(<-> "key '" (car must-be-defined) "' not defined when making struct '" name "'"))))
               must-be-defined)
-       (let* ((,table (make-hash-table 32 (cons eq? ,(<_> name '-struct-mapper))))
+       (let* ((,table (make-hash-table ,keys-length (cons eq? ,struct-mapper)))
               (,keysvar (quote ,keys)))
          ,@(map (lambda (key)
                   `(hash-table-set! ,table ,(symbol->keyword key) ,key))
@@ -333,6 +339,12 @@
 (t :b)
 (t :c)
 (t :dir)
+
+(define t2 (copy-test t :b 80))
+(t2 :b)
+(t2 :c)
+(t2 :dir)
+
 
 ;; error, unknown key:
 (copy-test t :unknown-key 2))
