@@ -500,6 +500,15 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 
 (define-constant *try-finally-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
 
+(define (FROM-C-catch-all-errors-and-display-backtrace-automatically func . args)
+  (catch #t
+         (lambda ()
+           (apply func args))
+         (lambda args
+           (safe-display-ow!)
+           *try-finally-failed-return-value*)))
+  
+
 (define (catch-all-errors-and-display-backtrace-automatically thunk)
   (catch #t
          thunk

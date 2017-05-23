@@ -46,6 +46,9 @@ extern "C" {
   dyn_t s7extra_callFunc_dyn_void(func_t *func);
   dyn_t s7extra_callFunc2_dyn_void(const char *funcname);
 
+  dyn_t s7extra_callFunc_dyn_charpointer(func_t *func, const char *arg1);
+  dyn_t s7extra_callFunc2_dyn_charpointer(const char *funcname, const char *arg1);
+
   dyn_t s7extra_callFunc_dyn_int(func_t *func, int64_t arg1);
   dyn_t s7extra_callFunc2_dyn_int(const char *funcname, int64_t arg1);
 
