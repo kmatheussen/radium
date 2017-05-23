@@ -316,6 +316,14 @@
                            (quote ,keys)
                            ,arguments))
                      
+     (define (,(<_> 'make- name '-nokeywords) ,@(map car (keyvalues-to-define-args args)))
+       (let* ((,table (make-hash-table ,keys-length (cons eq? ,struct-mapper)))
+              (,keysvar (quote ,keys)))
+         ,@(map (lambda (key)
+                  `(hash-table-set! ,table ,(symbol->keyword key) ,key))
+                keys)
+         ,table))
+
      (define* (,(<_> 'make- name) ,@(keyvalues-to-define-args args))
        ,@(map (lambda (must-be-defined)
                 `(if (eq? ,(car must-be-defined) 'must-be-defined)
@@ -333,6 +341,7 @@
   :b 59
   :c)
 
+(make-test-nokeywords 3 4)
 (make-test 3 4)
 
 (define t (make-test :c 2))
@@ -363,6 +372,7 @@
                  :b 59
                  :c)))
 
+(hash-table* :a 9 :b 8)
            
 (make-test :b 33)
 

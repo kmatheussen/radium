@@ -34,16 +34,17 @@
                  :tick 0
                  :is-pattern-delay-line #f                 
                  )
-  (make-event pattern
-              channel              
-              line
-              type
-              value
-              value2
-              instrumentnum
-              tick
-              is-pattern-delay-line
-              ))
+  ;;(c-display "gakk gakk" pattern channel line type value value2 instrumentnum tick is-pattern-delay-line)
+  (make-event-nokeywords pattern
+                         channel              
+                         line
+                         type
+                         value
+                         value2
+                         instrumentnum
+                         tick
+                         is-pattern-delay-line
+                         ))
 
 (define (m-e type . rest)
   (if (not (memq type '(:note :velocity :break :loop :stop :pitch-slide :slide-to-note :fine-pitch-slide :vibrato :tremolo :sample-offset :velocity-slide :fine-velocity-slide :pattern-delay :tpd :bpm :retrigger-note :delay-note :arpeggio :position-jump :finetune)))
@@ -52,8 +53,11 @@
          (append (list :type type)
                  rest)))
 #||
+(make-event 0 0 29 :note 0 0 0 0 #f)
+(m-e :note :line 29 :pattern 0)
 (print-event (m-e :break
                   :line 8))
+(pp (procedure-source 'make-event))
 ||#
 
 (define (event-to-string event)  
@@ -4813,7 +4817,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
         ;; set end velocity value
         (<ra> :set-velocity (/ last-velocity-value 64)
-                            -1 ;; i.e. don't change time position
+                            'same-place
                             1
                             radium-notenum
                             channelnum)
@@ -4846,10 +4850,11 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
         ;; whether to add pitches or not
         (when (or (not (= first-pitch-value last-pitch-value))
                   (> (length pitches) 2))
-              
-          (<ra> :set-note-end-pitch (+ *pitch-transpose* last-pitch-value)
-                                 radium-notenum
-                                 channelnum)
+          
+          (<ra> :set-note-end-pitch
+                (+ *pitch-transpose* last-pitch-value)
+                radium-notenum
+                channelnum)
            
           (for-each (lambda (pitch)  ;; TODO: Fix.
                       (assert (< (car pitch) last-pitch-pos))
@@ -5758,7 +5763,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (<ra> :load-song "sounds/mod_song_template.rad")
 
   (<ra> :open-progress-window (<-> "Please wait, loading " filename))
-
+  
   (try-finally :try (lambda ()
                       (<ra> :start-ignoring-undo)
                             
