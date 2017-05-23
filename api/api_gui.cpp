@@ -3534,6 +3534,11 @@ const_char *getTimeString(const_char* time_format){
   return talloc_strdup(QTime::currentTime().toString(time_format).toUtf8().constData());
 }
 
+const_char *getHtmlFromText(const_char* text){
+  QString html = QTextDocumentFragment::fromPlainText(text).toHtml("UTF-8");
+  return talloc_strdup(html.toUtf8().constData());
+}
+
 // audio meter
 ////////////////
 

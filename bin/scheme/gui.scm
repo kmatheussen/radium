@@ -352,7 +352,7 @@
 (define (safe-add-message-window-txt txt)
   (catch #t
          (lambda ()
-           (add-message-window-message (<-> "<pre>" txt "</pre>")))
+           (add-message-window-message (<ra> :get-html-from-text txt)))
          (lambda args
            (get-as-displayable-string-as-possible (list "safe-add-message-window-message failed: " args))
            (display txt))))
