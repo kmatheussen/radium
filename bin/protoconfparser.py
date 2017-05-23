@@ -232,32 +232,36 @@ class Proto:
                 break
             self.reqarglen+=1
 
-        #place
-        self.uses_place = False
-        
+        #place        
         if self.proc.type_string=="Place":
-            self.uses_place = True
+            self.returns_place = True
+        else:
+            self.returns_place = False
 
+        self.uses_place = False
         for arg in self.args:
             if arg.type_string=="Place":
                 self.uses_place = True
 
-        #dyn
-        self.uses_dyn = False
-        
+        #dyn        
         if self.proc.type_string=="dyn_t":
-            self.uses_dyn = True
+            self.returns_dyn = True
+        else:
+            self.returns_dyn = False
 
+        self.uses_dyn = False
         for arg in self.args:
             if arg.type_string=="dyn_t":
                 self.uses_dyn = True
 
         #func
-        self.uses_func = False
          
         if self.proc.type_string=="func_t*":
-            self.uses_func = True
+            self.returns_func = True
+        else:
+            self.returns_func = False
 
+        self.uses_func = False
         for arg in self.args:
             if arg.type_string=="func_t*":
                 self.uses_func = True
@@ -372,26 +376,27 @@ class Proto:
         oh.write("const char *error_message = pullErrorMessage();\n");
         oh.write("if(error_message!=NULL) { PyErr_SetString(PyExc_Exception, error_message); return NULL; }\n");
 
-        if len(self.proc.qualifiers)==1 and self.proc.qualifiers[len(self.proc.qualifiers)-1]=="void":
+        return_type = self.proc.qualifiers[len(self.proc.qualifiers)-1]
+            
+        if (self.returns_dyn or self.returns_func or self.returns_place or len(self.proc.qualifiers)==1 and return_type=="void"):
             oh.write("Py_INCREF(Py_None);\n")
             oh.write("resultobj=Py_None;\n")
         else:
             oh.write("resultobj=")
-            qualifier=self.proc.qualifiers[len(self.proc.qualifiers)-1]
-            if qualifier=="PyObject*":
+            if return_type=="PyObject*":
                 oh.write("result;\n")
             else:
-                if qualifier=="int":
+                if return_type=="int":
                     t="PyInt_FromLong((long)"
-                elif qualifier=="int64_t":
+                elif return_type=="int64_t":
                     t="PyInt_FromLong((long)" # doesn't seem to be a PyInt_FromLongLong function.
-                elif qualifier=="float":
+                elif return_type=="float":
                     t="PyFloat_FromDouble("
-                elif qualifier=="double":
+                elif return_type=="double":
                     t="PyFloat_FromDouble("
-                elif qualifier=="const_char*":
+                elif return_type=="const_char*":
                     t="PyString_FromString("
-                elif qualifier=="bool":
+                elif return_type=="bool":
                     t="PyBool_FromLong((long)"
                 oh.write(t+"result);\n")
 
