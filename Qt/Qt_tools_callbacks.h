@@ -16,6 +16,7 @@
 #include "../common/Vector.hpp"
 #include "../OpenGL/Widget_proc.h"
 #include "../midi/midi_i_input_proc.h"
+#include "../embedded_scheme/s7extra_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -171,7 +172,7 @@ class Tools : public RememberGeometryQDialog, public Ui::Tools {
 
     setupUi(this);
 
-    dyn_t quant_gui_dyn = evalScheme("(create-quantitize-gui)");
+    dyn_t quant_gui_dyn = s7extra_callFunc2_dyn_void("create-quantitize-gui");
     if (quant_gui_dyn.type==INT_TYPE){
       
       int64_t quant_gui_num = quant_gui_dyn.int_number;

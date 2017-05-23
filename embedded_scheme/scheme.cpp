@@ -1374,10 +1374,16 @@ bool SCHEME_mouserelease(int button, float x, float y){
   // [1] Not storing/reusing this value since 'find_scheme_func' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
-dyn_t SCHEME_eval(const char *code){
+dyn_t SCHEME_eval_withreturn(const char *code){
   ScopedEvalTracker eval_tracker;
            
   return create_dyn_from_s7(s7, s7_eval_c_string(s7, code), false);
+}
+
+void SCHEME_eval(const char *code){
+  ScopedEvalTracker eval_tracker;
+           
+  s7_eval_c_string(s7, code);
 }
 
 int SCHEME_get_webserver_port(void){
