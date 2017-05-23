@@ -26,7 +26,8 @@ enum Crash_Type{
 
 #define CR_STRINGIZE_DETAIL(x) #x
 #define CR_STRINGIZE(x) CR_STRINGIZE_DETAIL(x)
-#define CR_FORMATEVENT(msg) (msg ":" __FILE__ " line " CR_STRINGIZE(__LINE__) "." CR_STRINGIZE(__FUNCTION__))
+#define CR_FORMATEVENT(msg,...) (msg ": " __FILE__ " line " CR_STRINGIZE(__LINE__) "." __VA_ARGS__)
+// __FUNCTION__ is a variable. (this is a clear design flaw in gcc and should be fixed)
 
 
 #ifdef __cplusplus

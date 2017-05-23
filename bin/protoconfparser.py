@@ -557,6 +557,7 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
             conversion_function = self.proc.get_s7_make_type_function()
             oh.write("s7_pointer radium_return_value_value = "+conversion_function+"(radiums7_sc, "+callstring+"); ");
             oh.write("throwExceptionIfError(); ");
+            #oh.write("s7_gc_unprotect(radiums7_sc, radiums7_args);\n"); # just testing
             oh.write("return radium_return_value_value;\n");
 
     def write_s7_func(self,oh):
@@ -570,8 +571,9 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
             oh.write("  const char *radiums7_error_error = NULL;\n")
         oh.write("  s7_pointer org_radiums7_args = radiums7_args;\n")
         self.write_s7_args(oh) # int arg1; s7_pointer arg1_s7; int arg2; s7_pointer arg2_s7;
-
+        #oh.write("  s7_gc_protect(radiums7_sc, radiums7_args);\n"); # Just testing
         oh.write("\n")
+
 
         for n in range(len(self.args)):
             arg = self.args[n]

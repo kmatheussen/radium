@@ -26,9 +26,9 @@
 ;; Quantitize
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-match quantitize
-  Place Q :> (* (roundup (/ Place Q))
-                Q))
+(define (quantitize Place Q)
+  (* (roundup (/ Place Q))
+     Q))
 
 #||
 (quantitize 18341/2134 1/3)
@@ -451,7 +451,7 @@
            (if (and new-mouse-cycle
                     (new-mouse-cycle :drag-func))
                (set! *current-mouse-cycle* new-mouse-cycle))))
-     *current-mouse-cycle*)))
+     (get-bool *current-mouse-cycle*))))
 
 (define (radium-mouse-move $button $x $y)
   ;;(c-display "radium-mouse-move" $x $y)

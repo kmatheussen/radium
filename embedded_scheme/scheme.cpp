@@ -151,7 +151,7 @@ static Place number_to_place(s7_scheme *s7, s7_pointer number, const char **erro
       if (error)
         *error = "place>=0";
       else
-        R_ASSERT(false);
+        R_ASSERT_NON_RELEASE(false);
       return p_Create(0,0,1);
     }
     
@@ -170,7 +170,7 @@ static Place number_to_place(s7_scheme *s7, s7_pointer number, const char **erro
       if (error)
         *error = "place>=0";
       else
-        R_ASSERT(false);
+        R_ASSERT_NON_RELEASE(false);
       return p_Create(0,0,1);
     }
     return place((int)s7_integer(number), 0, 1);
@@ -182,7 +182,7 @@ static Place number_to_place(s7_scheme *s7, s7_pointer number, const char **erro
       if (error)
         *error = "place>=0";
       else
-        R_ASSERT(false);
+        R_ASSERT_NON_RELEASE(false);
       return p_Create(0,0,1);
     }
     
@@ -212,7 +212,10 @@ static Place number_to_place(s7_scheme *s7, s7_pointer number, const char **erro
 
 
 bool s7extra_is_place(s7_pointer place){
-  return s7_is_rational(place);
+  if (s7_is_symbol(place) && !strcmp(s7_symbol_name(place), "same-place"))
+    return true;
+  else
+    return s7_is_real(place) || s7_is_rational(place);
 }
 
 Place s7extra_place(s7_scheme *s7, s7_pointer place){
@@ -488,6 +491,14 @@ func_t *s7extra_func(s7_scheme *s7, s7_pointer func){
   return (func_t*)func;
 }
 
+func_t *s7extra_get_func_from_funcname_for_storing(const char *funcname){
+  return (func_t*)find_and_protect_scheme_func(funcname);
+}
+
+func_t *s7extra_get_func_from_funcname(const char *funcname){
+  return (func_t*)s7_name_to_value(s7, funcname);
+}
+
 void s7extra_callFunc_void_void(func_t *func){
   ScopedEvalTracker eval_tracker;
   
@@ -543,9 +554,21 @@ bool s7extra_callFunc2_bool_void(const char *funcname){
 }
 
 
+void s7extra_add_history(const char *funcname, const char *info){
+  //printf("%s - %s", funcname, info);
+#if !defined(RELEASE)
+  s7_add_to_history(s7, s7_make_string(s7, info));
+#endif
+  s7_add_to_history(s7, s7_make_string(s7, funcname));
+}
+
+  
 dyn_t s7extra_callFunc_dyn_void(func_t *func){
   ScopedEvalTracker eval_tracker;
-  
+
+  //s7_add_to_history(s7, s7_make_string(s7, "----------------------s7extra_callFunc_dyn_void---------------------"));
+  //s7_add_to_history(s7, s7_cons(s7, (s7_pointer)func, s7_cons(s7, s7_make_string(s7, "\n\n----------------------s7extra_callFunc_dyn_void222---------------------\n\n"), s7_list(s7, 0))));
+    
   s7_pointer ret = s7_call(s7,
                            (s7_pointer)func,
                            s7_list(s7, 0)
@@ -937,6 +960,30 @@ bool s7extra_callFunc2_bool_int_int_float_float(const char *funcname, int64_t ar
   return s7extra_callFunc_bool_int_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
+bool s7extra_callFunc_bool_int_float_float(func_t *func, int64_t arg1, float arg2, float arg3){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           (s7_pointer)func,
+                           s7_list(s7,
+                                   3,
+                                   s7_make_integer(s7, arg1),
+                                   s7_make_real(s7, arg2),
+                                   s7_make_real(s7, arg3)
+                                   )
+                           );
+  if(!s7_is_boolean(ret)){
+    handleError("Callback did not return a boolean");
+    return false;
+  }else{
+    return s7_boolean(s7, ret);
+  }
+}
+
+bool s7extra_callFunc2_bool_int_float_float(const char *funcname, int64_t arg1, float arg2, float arg3){
+  return s7extra_callFunc_bool_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
+}
+
 bool s7extra_callFunc_bool_bool(func_t *func, bool arg1){
   ScopedEvalTracker eval_tracker;
   
@@ -1052,10 +1099,11 @@ Place placetest2(int a, int b, int c){
 }
 
 
+// Warning: No protection against scheme throwing an error. The function MUST not throw an error.
 Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2) {
   ScopedEvalTracker eval_tracker;
   
-  static s7_pointer scheme_func = find_and_protect_scheme_func("scale");
+  static s7_pointer scheme_func = find_and_protect_scheme_func("safe-scale");
 
   s7_pointer result = s7_call(s7,
                               scheme_func,
@@ -1087,11 +1135,14 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
 
 bool quantitize_note(const struct Blocks *block, struct Notes *note) {
   ScopedEvalTracker eval_tracker;
-  
+
+
   s7_pointer scheme_func = s7_name_to_value(s7, "quantitize-note");
   
   Place last_place = p_Last_Pos(block);
-  
+
+  s7extra_add_history(__func__, CR_FORMATEVENT("========== s7callling quantitize-note"));
+     
   s7_pointer result = s7_call(s7,
                               scheme_func,
                               s7_list(s7,
@@ -1122,11 +1173,12 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note) {
 }
 
 
+// Warning: No protection against scheme throwing an error. The function MUST not throw an error.
 static void place_operation_void_p1_p2(s7_pointer scheme_func, Place *p1,  const Place *p2){
   ScopedEvalTracker eval_tracker;
   
-  R_ASSERT(p1->dividor > 0);
-  R_ASSERT(p2->dividor > 0);
+  R_ASSERT_RETURN_IF_FALSE(p1->dividor > 0);
+  R_ASSERT_RETURN_IF_FALSE(p2->dividor > 0);
   
   s7_pointer result = s7_call(s7,
                               scheme_func,
@@ -1171,6 +1223,7 @@ void PlaceDiv(Place *p1,  const Place *p2){
 }
 
 
+// Warning: No protection against scheme throwing an error. The function MUST not throw an error.
 static Place place_operation_place_p1_p2(s7_pointer scheme_func, const Place p1,  const Place p2){
   ScopedEvalTracker eval_tracker;
   
@@ -1204,11 +1257,28 @@ Place p_Mul(const Place p1, const Place p2){
 }
 
 Place p_Div(const Place p1, const Place p2){
+  R_ASSERT_RETURN_IF_FALSE2(p2.line!=0 || p2.counter!=0, p_Create(0,0,1)); // There is no protection if scheme fails here, so we must make sure the arguments can't cause scheme to throw an error.
+  
   static s7_pointer scheme_func = find_and_protect_scheme_func("/");
   return place_operation_place_p1_p2(scheme_func, p1,p2);
 }
 
 Place p_Quantitize(const Place p, const Place q){
+  R_ASSERT_RETURN_IF_FALSE2(q.line!=0 || q.counter!=0, p); // There is no protection if scheme fails here, so we must make sure the arguments can't cause scheme to throw an error.
+    
+  /*
+    We can probably assume that 'quantitize' will never fail:
+
+  (define (roundup A)
+  (floor (+ A 0.5)))
+
+  (define (quantitize Place Q)
+    (* (roundup (/ Place Q))
+       Q))
+
+  I.e. no need to put it inside catch, add history, etc.
+  */
+  
   static s7_pointer scheme_func = find_and_protect_scheme_func("quantitize");
   return place_operation_place_p1_p2(scheme_func, p, q);
 }
@@ -1255,6 +1325,9 @@ bool SCHEME_mousepress(int button, float x, float y){
   tevent.x  = x;
   tevent.y  = y;
 
+  return S7CALL2(bool_int_float_float,"radium-mouse-press", // [1]
+                 button,x,y);
+  /*
   return s7_boolean(s7,
                     s7_call(s7, 
                             s7_name_to_value(s7, "radium-mouse-press"), // [1]
@@ -1266,6 +1339,7 @@ bool SCHEME_mousepress(int button, float x, float y){
                                     )
                             )
                     );
+  */
   // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
@@ -1275,17 +1349,9 @@ bool SCHEME_mousemove(int button, float x, float y){
   tevent.x  = x;
   tevent.y  = y;
 
-  return s7_boolean(s7,
-                    s7_call(s7, 
-                            s7_name_to_value(s7, "radium-mouse-move"), // [1]
-                            s7_list(s7,
-                                    3,
-                                    s7_make_integer(s7, button),
-                                    s7_make_real(s7, x),
-                                    s7_make_real(s7, y)
-                                    )
-                            )
-                    );
+  return S7CALL2(bool_int_float_float,"radium-mouse-move", // [1]
+                 button,x,y);
+  
   // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
@@ -1295,17 +1361,9 @@ bool SCHEME_mouserelease(int button, float x, float y){
   tevent.x  = x;
   tevent.y  = y;
 
-  return s7_boolean(s7,
-                    s7_call(s7, 
-                            s7_name_to_value(s7, "radium-mouse-release"), // [1]
-                            s7_list(s7,
-                                    3,
-                                    s7_make_integer(s7, button),
-                                    s7_make_real(s7, x),
-                                    s7_make_real(s7, y)
-                                    )
-                            )
-                    );
+  return S7CALL2(bool_int_float_float,"radium-mouse-release", // [1]
+                 button,x,y);
+  
   // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
@@ -1329,6 +1387,7 @@ void SCHEME_init1(void){
   s7 = s7_init();
   if (s7==NULL) {
     RError("Can't start s7 scheme");
+    exit(-1);
     return;
   }
   
@@ -1354,3 +1413,4 @@ void SCHEME_init1(void){
 void SCHEME_init2(void){
   SCHEME_eval("(init-step-2)");
 }
+

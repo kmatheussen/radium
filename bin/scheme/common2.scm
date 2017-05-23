@@ -84,6 +84,16 @@
               (- y2 y1))
            (- x2 x1))))
 
+(define (safe-scale x x1 x2 y1 y2)
+  (let ((div (- x2 x1)))
+    (if (= div 0)
+        (begin
+          (safe-add-message-window-txt (string-append "Error. Almost divided by zero in safe-scale: (= (- x2 x1) 0) " (number->string x2) " " (number->string x1)))
+          0)
+        (+ y1 (/ (* (- x x1)
+                    (- y2 y1))
+                 (- x2 x1))))))
+
 (define (average . numbers)
   (/ (apply + numbers)
      (length numbers)))

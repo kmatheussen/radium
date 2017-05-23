@@ -984,34 +984,49 @@ struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChan
   return stimes;
 }
 
+static func_t *g_create_block_timings = NULL;
+
 static dyn_t get_timings_from_scheme(const struct Blocks *block, const dyn_t dynbeats, const dyn_t filledout_swings, int bpm, int lpb){
-  return s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn("create-block-timings",
-                                                               block->num_lines,
-                                                               bpm,
-                                                               lpb,
-                                                               API_getAllBPM(block),
-                                                               API_getAllLPB(block),
-                                                               API_getAllTemponodes(block),
-                                                               dynbeats,
-                                                               filledout_swings
-                                                               );
+#if defined(RELEASE)
+  if (g_create_block_timings==NULL)
+    g_create_block_timings=s7extra_get_func_from_funcname_for_storing("create-block-timings");
+#else
+  g_create_block_timings=s7extra_get_func_from_funcname("create-block-timings");
+#endif
+  
+  return S7CALL(dyn_int_int_int_dyn_dyn_dyn_dyn_dyn,g_create_block_timings,
+                block->num_lines,
+                bpm,
+                lpb,
+                API_getAllBPM(block),
+                API_getAllLPB(block),
+                API_getAllTemponodes(block),
+                dynbeats,
+                filledout_swings
+                );
 }
 
 // Fallback in case create-block-timings failed.
 static dyn_t get_fallback_timings(const struct Blocks *block, const dyn_t dynbeats, int bpm, int lpb){
+#if defined(RELEASE)
+  if (g_create_block_timings==NULL)
+    g_create_block_timings=s7extra_get_func_from_funcname_for_storing("create-block-timings");
+#else
+  g_create_block_timings=s7extra_get_func_from_funcname("create-block-timings");
+#endif
 
   // First try scheme again, but now without swing.
   {
-    dyn_t ret = s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn("create-block-timings",
-                                                                      block->num_lines,
-                                                                      bpm,
-                                                                      lpb,
-                                                                      API_getAllBPM(block),
-                                                                      API_getAllLPB(block),
-                                                                      API_getAllTemponodes(block),
-                                                                      dynbeats,
-                                                                      g_empty_dynvec
-                                                                      );
+    dyn_t ret = S7CALL(dyn_int_int_int_dyn_dyn_dyn_dyn_dyn,g_create_block_timings,
+                       block->num_lines,
+                       bpm,
+                       lpb,
+                       API_getAllBPM(block),
+                       API_getAllLPB(block),
+                       API_getAllTemponodes(block),
+                       dynbeats,
+                       g_empty_dynvec
+                       );
     
     if (ret.type==ARRAY_TYPE)
       return ret;
@@ -1050,12 +1065,21 @@ static struct STimes *create_stimes(const struct Blocks *block, const dyn_t dynb
 }
 
 static dyn_t create_filledout_swings(const dyn_t global_swings, const dyn_t track_swings, int num_lines, dyn_t beats){
-  return s7extra_callFunc2_dyn_dyn_dyn_dyn_int("create-filledout-swings2",
-                                               beats,
-                                               global_swings,
-                                               track_swings,
-                                               num_lines
-                                               );
+  static func_t *create_filledout_swings2 = NULL;
+
+#if defined(RELEASE)
+  if (create_filledout_swings2==NULL)
+    create_filledout_swings2=s7extra_get_func_from_funcname_for_storing("create-filledout-swings2"); 
+#else
+  create_filledout_swings2=s7extra_get_func_from_funcname("create-filledout-swings2"); 
+#endif
+ 
+  return S7CALL(dyn_dyn_dyn_dyn_int,create_filledout_swings2,
+                beats,
+                global_swings,
+                track_swings,
+                num_lines
+                );
 }
 
 

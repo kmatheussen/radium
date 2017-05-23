@@ -7,3 +7,5 @@ mv -f s7 s7_old
 rm -fr ../../*s7*.o s7.tar.gz
 wget ftp://ccrma-ftp.stanford.edu/pub/Lisp/s7.tar.gz
 tar xvzf s7.tar.gz
+
+meld s7_old s7

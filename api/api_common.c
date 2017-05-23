@@ -115,7 +115,10 @@ void handleError(const char *fmt,...){
   va_end(argp);
 
   printException(message);
-  
+
+  printf("HISTORY:\n%s\n",SCHEME_get_history());
+                     
+
   vector_t v = {0};
 
   int ok = VECTOR_push_back(&v, "Ok");

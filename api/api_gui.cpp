@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDir>
 #include <QFileDialog>
 #include <QTabWidget>
+#include <QTextDocumentFragment>
 
 #include <QtWebKitWidgets/QWebView>
 #include <QtWebKitWidgets/QWebFrame>
@@ -269,11 +270,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
   public slots:
     void clicked(bool checked){
-      s7extra_callFunc_void_void(_func);
+      S7CALL(void_void,_func);
     }
     
     void toggled(bool checked){
-      s7extra_callFunc_void_bool(_func, checked);
+      S7CALL(void_bool, _func, checked);
     }
 
     void editingFinished(){
@@ -287,40 +288,40 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       RatioSnifferQLineEdit *ratioedit = dynamic_cast<RatioSnifferQLineEdit*>(_widget);
       if (ratioedit != NULL){
-        s7extra_callFunc_void_dyn(_func, DYN_create_ratio(ratioedit->get_ratio()));
+        S7CALL(void_dyn, _func, DYN_create_ratio(ratioedit->get_ratio()));
       }else{
-        s7extra_callFunc_void_charpointer(_func, line_edit->text().toUtf8().constData());
+        S7CALL(void_charpointer,_func, line_edit->text().toUtf8().constData());
       }
     }
 
     void textChanged(QString text){
-      s7extra_callFunc_void_charpointer(_func, text.toUtf8().constData());
+      S7CALL(void_charpointer,_func, text.toUtf8().constData());
     }
 
     void intValueChanged(int val){
-      s7extra_callFunc_void_int(_func, val);
+      S7CALL(void_int,_func, val);
     }
 
     void doubleValueChanged(double val){
-      s7extra_callFunc_void_double(_func, val);
+      S7CALL(void_double,_func, val);
     }
 
     void textChanged(){
       QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget);
-      s7extra_callFunc_void_charpointer(_func, text_edit->toPlainText().toUtf8().constData());
+      S7CALL(void_charpointer,_func, text_edit->toPlainText().toUtf8().constData());
     }
     
     void plainTextChanged(){
       QPlainTextEdit *text_edit = dynamic_cast<QPlainTextEdit*>(_widget);
-      s7extra_callFunc_void_charpointer(_func, text_edit->toPlainText().toUtf8().constData());
+      S7CALL(void_charpointer,_func, text_edit->toPlainText().toUtf8().constData());
     }
     
     void cellDoubleClicked(int row, int column){
-      s7extra_callFunc_void_int_int(_func, column, row);
+      S7CALL(void_int_int,_func, column, row);
     }
     
     void fileSelected(const QString &file){
-      s7extra_callFunc_void_charpointer(_func, file.toUtf8().constData());
+      S7CALL(void_charpointer,_func, file.toUtf8().constData());
     }
   };
 
@@ -394,7 +395,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       //printf("Deleting Gui %p (%d)\n",this,(int)get_gui_num());
 
       for(func_t *func : _deleted_callbacks){
-        s7extra_callFunc_void_bool(func, g_radium_runs_custom_exec);
+        S7CALL(void_bool,func, g_radium_runs_custom_exec);
         s7extra_unprotect(func);
       }
 
@@ -480,7 +481,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       _currentButton = getMouseButtonEventID(event);
       const QPoint &point = event->pos();
 
-      return s7extra_callFunc_bool_int_int_float_float(_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
+      return S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
       //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
 
@@ -490,7 +491,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       event->accept();
 
       const QPoint &point = event->pos();
-      bool ret = s7extra_callFunc_bool_int_int_float_float(_mouse_callback, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
+      bool ret = S7CALL(bool_int_int_float_float, _mouse_callback, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
       
       _currentButton = 0;
       //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
@@ -503,7 +504,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       event->accept();
 
       const QPoint &point = event->pos();
-      return s7extra_callFunc_bool_int_int_float_float(_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
+      return S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
 
       //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
@@ -537,7 +538,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       event->accept();
       
-      return s7extra_callFunc_bool_int_charpointer(_key_callback, keytype, talloc_strdup(s.toUtf8().constData()));
+      return S7CALL(bool_int_charpointer,_key_callback, keytype, talloc_strdup(s.toUtf8().constData()));
     }
     
     bool keyPressEvent(QKeyEvent *event){
@@ -568,7 +569,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       const QPoint &point = event->pos();
 
-      s7extra_callFunc_void_int_float_float(_doubleclick_callback, getMouseButtonEventID(event), point.x(), point.y());
+      S7CALL(void_int_float_float,_doubleclick_callback, getMouseButtonEventID(event), point.x(), point.y());
     }
 
     // Should add everyting here.
@@ -601,7 +602,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void closeEvent(QCloseEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_close_callback!=NULL);
 
-      if (false==s7extra_callFunc_bool_bool(_close_callback, g_radium_runs_custom_exec))
+      if (false==S7CALL(bool_bool,_close_callback, g_radium_runs_custom_exec))
         event->ignore();
       else{
         Gui::_has_been_closed = true;
@@ -635,7 +636,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
 
       if(gui_isOpen(_gui_num) && _widget->isVisible()) //  && _widget->width()>0 && _widget->height()>0)
-        s7extra_callFunc_void_int_int(_resize_callback, event->size().width(), event->size().height());
+        S7CALL(void_int_int,_resize_callback, event->size().width(), event->size().height());
     }
 
     void addResizeCallback(func_t* func){
@@ -675,7 +676,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       _current_painter = &p;
 
-      s7extra_callFunc_void_int_int(_paint_callback, _widget->width(), _widget->height());
+      S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
 
       _current_painter = NULL;
 
@@ -1073,7 +1074,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QCheckBox *button = dynamic_cast<QCheckBox*>(_widget.data());
         if (button!=NULL){
           button->connect(button, SIGNAL(toggled(bool)), callback, SLOT(toggled(bool)));
-          s7extra_callFunc_void_bool(func, button->isChecked());
+          S7CALL(void_bool,func, button->isChecked());
           goto gotit;
         }
       }
@@ -1082,7 +1083,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QRadioButton *button = dynamic_cast<QRadioButton*>(_widget.data());
         if (button!=NULL){
           button->connect(button, SIGNAL(toggled(bool)), callback, SLOT(toggled(bool)));
-          s7extra_callFunc_void_bool(func, button->isChecked());
+          S7CALL(void_bool,func, button->isChecked());
           goto gotit;
         }
       }
@@ -1099,7 +1100,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QAbstractSlider *slider = dynamic_cast<QAbstractSlider*>(_widget.data());
         if (slider!=NULL){
           slider->connect(slider, SIGNAL(intValueChanged(int)), callback, SLOT(intValueChanged(int)));
-          s7extra_callFunc_void_int(func, slider->value());
+          S7CALL(void_int,func, slider->value());
           goto gotit;
         }
       }
@@ -1109,7 +1110,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         if (line_edit!=NULL){
           line_edit->connect(line_edit, SIGNAL(editingFinished()), callback, SLOT(editingFinished()));
           if (dynamic_cast<RatioSnifferQLineEdit*>(_widget.data())==NULL) // We just ignore calling this callback entirely for ratios. TODO: Remove all of these initial calls to the callbacks.
-            s7extra_callFunc_void_charpointer(func, line_edit->text().toUtf8().constData()); // Calling the callbacks here was a really bad idea. TODO: Fix that.
+            S7CALL(void_charpointer,func, line_edit->text().toUtf8().constData()); // Calling the callbacks here was a really bad idea. TODO: Fix that.
           goto gotit;
         }
       }
@@ -1118,7 +1119,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QSpinBox *spinbox = dynamic_cast<QSpinBox*>(_widget.data());
         if (spinbox!=NULL){
           spinbox->connect(spinbox, SIGNAL(valueChanged(int)), callback, SLOT(intValueChanged(int)));
-          s7extra_callFunc_void_int(func, spinbox->value());
+          S7CALL(void_int,func, spinbox->value());
           goto gotit;
         }
       }
@@ -1127,7 +1128,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QDoubleSpinBox *spinbox = dynamic_cast<QDoubleSpinBox*>(_widget.data());
         if (spinbox!=NULL){
           spinbox->connect(spinbox, SIGNAL(valueChanged(double)), callback, SLOT(doubleValueChanged(double)));
-          s7extra_callFunc_void_double(func, spinbox->value());
+          S7CALL(void_double,func, spinbox->value());
           goto gotit;
         }
       }
@@ -1136,7 +1137,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget.data());
         if (text_edit!=NULL){
           text_edit->connect(text_edit, SIGNAL(textChanged()), callback, SLOT(textChanged()));
-          s7extra_callFunc_void_charpointer(func, text_edit->toPlainText().toUtf8().constData());
+          S7CALL(void_charpointer,func, text_edit->toPlainText().toUtf8().constData());
           goto gotit;
         }
       }
@@ -1145,7 +1146,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QPlainTextEdit *text_edit = dynamic_cast<QPlainTextEdit*>(_widget.data());
         if (text_edit!=NULL){
           text_edit->connect(text_edit, SIGNAL(plainTextChanged()), callback, SLOT(plainTextChanged()));
-          s7extra_callFunc_void_charpointer(func, text_edit->toPlainText().toUtf8().constData());
+          S7CALL(void_charpointer,func, text_edit->toPlainText().toUtf8().constData());
           goto gotit;
         }
       }
@@ -1282,9 +1283,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void callPeakCallback(void){
       if (_peak_callback != NULL){
         if (_last_peak<=-100.0)
-          s7extra_callFunc_void_charpointer(_peak_callback, "-inf");
+          S7CALL(void_charpointer,_peak_callback, "-inf");
         else
-          s7extra_callFunc_void_charpointer(_peak_callback, talloc_format("%.1f", _last_peak));
+          S7CALL(void_charpointer,_peak_callback, talloc_format("%.1f", _last_peak));
       }
     }
 
@@ -1814,11 +1815,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (_is_int) {
         SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value));
         for(func_t *func : _funcs)
-          s7extra_callFunc_void_int(func, scaled_value);
+          S7CALL(void_int,func, scaled_value);
       } else {
         SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value, 'f', 2));
         for(func_t *func : _funcs)
-          s7extra_callFunc_void_double(func, scaled_value);
+          S7CALL(void_double,func, scaled_value);
       }
     }
 
@@ -3578,7 +3579,7 @@ void informAboutGuiBeingAMixerStrips(int64_t guinum){
 }
 
 int64_t createMixerStripsWindow(int num_rows){
-  return s7extra_callFunc2_int_int("create-mixer-strips-gui", num_rows);
+  return S7CALL2(int_int, "create-mixer-strips-gui", num_rows);
 }
 
 int64_t showMixerStrips(int num_rows){
@@ -3798,7 +3799,7 @@ int64_t gui_createSingleMixerStrip(int64_t instrument_id, int width, int height)
   if(patch==NULL)
     return -1;
 
-  return s7extra_callFunc2_int_int_int_int("create-standalone-mixer-strip", instrument_id, width, height);
+  return S7CALL2(int_int_int_int,"create-standalone-mixer-strip", instrument_id, width, height);
 }
 
 #include "mapi_gui.cpp"

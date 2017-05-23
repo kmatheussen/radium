@@ -137,15 +137,15 @@ void setAutobypassDelay(int val){
 
 
 void selectInstrumentForTrack(int tracknum){
-  s7extra_callFunc2_void_int("select-track-instrument", tracknum);
+  S7CALL2(void_int,"select-track-instrument", tracknum);
 }
 
 void requestReplaceInstrument(int64_t instrument_id, const_char* instrument_description, dyn_t instrconf){
-  s7extra_callFunc2_void_int_charpointer_dyn("async-replace-instrument", instrument_id, instrument_description, instrconf);
+  S7CALL2(void_int_charpointer_dyn,"async-replace-instrument", instrument_id, instrument_description, instrconf);
 }
 
 void requestLoadInstrumentPreset(int64_t instrument_id, const_char* instrument_description, int64_t parentgui){
-  s7extra_callFunc2_void_int_charpointer_int("async-load-instrument-preset", instrument_id, instrument_description, parentgui);
+  S7CALL2(void_int_charpointer_int,"async-load-instrument-preset", instrument_id, instrument_description, parentgui);
 }
 
 
@@ -406,7 +406,7 @@ dyn_t createNewInstrumentConf(float x, float y,
 }
 
 void createInstrumentDescriptionPopupMenu(dyn_t instrconf){
-  s7extra_callFunc2_void_dyn("create-instrument-popup-menu", instrconf);
+  S7CALL2(void_dyn,"create-instrument-popup-menu", instrconf);
 }
 
 dyn_t getAllSinglePresetsInPath(const_char* path){
@@ -1621,7 +1621,7 @@ void API_instruments_call_regularly(void){
       float now = plugin->savable_effect_values[effect_monitor->effect_num];
       if (now != effect_monitor->last_value){
         effect_monitor->last_value = now;
-        s7extra_callFunc_void_void(effect_monitor->func);
+        S7CALL(void_void,effect_monitor->func);
       }
     }
   }END_VECTOR_FOR_EACH;

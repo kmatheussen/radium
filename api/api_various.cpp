@@ -2229,7 +2229,7 @@ void API_call_very_often(void){
       break;
     }
     
-    dyn_t ret = s7extra_callFunc_dyn_void(event->_callback);
+    dyn_t ret = S7CALL(dyn_void, event->_callback);
     
     if (DYN_is_number(ret)){
       double new_ms = DYN_get_double_from_number(ret);

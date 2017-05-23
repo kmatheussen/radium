@@ -24,6 +24,16 @@ extern "C" {
 
   #endif
 
+#define S7CALL(Type,Func,...)                           \
+  (s7extra_add_history(__func__, CR_FORMATEVENT("========== s7call_" # Type, "\n\n")), \
+  s7extra_callFunc_ ## Type (Func,##__VA_ARGS__))
+
+#define S7CALL2(Type,Funcname,...)                           \
+  (s7extra_add_history(__func__, CR_FORMATEVENT("========== s7call_" # Type, "\n\n")), \
+  s7extra_callFunc2_ ## Type (Funcname,##__VA_ARGS__))
+
+  void s7extra_add_history(const char *funcname, const char *info);
+
   void s7extra_callFunc_void_void(func_t *func);
   void s7extra_callFunc2_void_void(const char *funcname);
 
@@ -96,6 +106,9 @@ extern "C" {
   bool s7extra_callFunc_bool_int_int_float_float(func_t *func, int64_t arg1, int64_t arg2, float arg3, float arg4);
   bool s7extra_callFunc2_bool_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, float arg3, float arg4);
 
+  bool s7extra_callFunc_bool_int_float_float(func_t *func, int64_t arg1, int64_t arg2, float arg3, float arg4);
+  bool s7extra_callFunc2_bool_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, float arg3, float arg4);
+
   bool s7extra_callFunc_bool_bool(func_t *func, bool arg1);
   bool s7extra_callFunc2_bool_bool(const char *funcname, bool arg1);
 
@@ -110,6 +123,9 @@ extern "C" {
 
   void s7extra_callFunc_void_charpointer(func_t *func, const char* arg1);
 
+  func_t *s7extra_get_func_from_funcname_for_storing(const char *funcname); // Must be used when storing the pointer. (gc-protected) Must NOT be used if the function is called again and again. (leaks memory)
+  func_t *s7extra_get_func_from_funcname(const char *funcname); // Must NOT be used if the pointer is stored.
+  
   void s7extra_protect(void *v);
   void s7extra_unprotect(void *v);
 

@@ -388,7 +388,7 @@ public:
 
     void done(int result) override{
       if (result==QDialog::Rejected)
-        s7extra_callFunc_void_charpointer(_callback, _initial_color.name().toUtf8().constData());
+        S7CALL(void_charpointer, _callback, _initial_color.name().toUtf8().constData());
       
       QColorDialog::done(result);
     }
@@ -396,7 +396,7 @@ public:
   public slots:
     void color_changed(const QColor &col){
       printf("Color changed\n");
-      s7extra_callFunc_void_charpointer(_callback, col.name().toUtf8().constData());
+      S7CALL(void_charpointer,_callback, col.name().toUtf8().constData());
     }
   };
 }
@@ -412,7 +412,7 @@ void GFX_color_dialog(const char *initial_color, int64_t parentguinum, func_t *c
 
   if (ret==QDialog::Rejected){
     
-    s7extra_callFunc_void_charpointer(callback, initial_color);
+    S7CALL(void_charpointer,callback, initial_color);
     //return talloc_strdup(initial_color);
     
   }
