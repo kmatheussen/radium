@@ -107,9 +107,16 @@ namespace{
   typedef ProtectedS7Pointer Protect;
 }
 
+static s7_pointer find_scheme_func(s7_scheme *s7, const char *funcname){
+  s7_pointer symbol = s7_make_symbol(s7, funcname);
+  s7_pointer scheme_func = s7_eval(s7, symbol, s7_rootlet(s7));
+  
+  return scheme_func;  
+}
 
 static s7_pointer find_and_protect_scheme_func(const char *funcname){
-  s7_pointer scheme_func = s7_name_to_value(s7, funcname);
+  s7_pointer scheme_func = find_scheme_func(s7, funcname);
+  
   s7_gc_protect(s7, scheme_func);
   return scheme_func;
 }
@@ -496,7 +503,7 @@ func_t *s7extra_get_func_from_funcname_for_storing(const char *funcname){
 }
 
 func_t *s7extra_get_func_from_funcname(const char *funcname){
-  return (func_t*)s7_name_to_value(s7, funcname);
+  return (func_t*)find_scheme_func(s7, funcname);
 }
 
 void s7extra_callFunc_void_void(func_t *func){
@@ -509,7 +516,7 @@ void s7extra_callFunc_void_void(func_t *func){
 }
 
 void s7extra_callFunc2_void_void(const char *funcname){
-  s7extra_callFunc_void_void((func_t*)s7_name_to_value(s7, funcname));
+  s7extra_callFunc_void_void((func_t*)find_scheme_func(s7, funcname));
 }
 
 double s7extra_callFunc_double_void(func_t *func){
@@ -529,7 +536,7 @@ double s7extra_callFunc_double_void(func_t *func){
 }
 
 double s7extra_callFunc2_double_void(const char *funcname){
-  return s7extra_callFunc_double_void((func_t*)s7_name_to_value(s7, funcname));
+  return s7extra_callFunc_double_void((func_t*)find_scheme_func(s7, funcname));
 }
 
 
@@ -550,7 +557,7 @@ bool s7extra_callFunc_bool_void(func_t *func){
 }
 
 bool s7extra_callFunc2_bool_void(const char *funcname){
-  return s7extra_callFunc_bool_void((func_t*)s7_name_to_value(s7, funcname));
+  return s7extra_callFunc_bool_void((func_t*)find_scheme_func(s7, funcname));
 }
 
 
@@ -578,7 +585,7 @@ dyn_t s7extra_callFunc_dyn_void(func_t *func){
 }
 
 dyn_t s7extra_callFunc2_dyn_void(const char *funcname){
-  return s7extra_callFunc_dyn_void((func_t*)s7_name_to_value(s7, funcname));
+  return s7extra_callFunc_dyn_void((func_t*)find_scheme_func(s7, funcname));
 }
 
 dyn_t s7extra_callFunc_dyn_int(func_t *func, int64_t arg1){
@@ -597,7 +604,7 @@ dyn_t s7extra_callFunc_dyn_int(func_t *func, int64_t arg1){
 }
 
 dyn_t s7extra_callFunc2_dyn_int(const char *funcname, int64_t arg1){
-  return s7extra_callFunc_dyn_int((func_t*)s7_name_to_value(s7, funcname), arg1);
+  return s7extra_callFunc_dyn_int((func_t*)find_scheme_func(s7, funcname), arg1);
 }
 
 
@@ -619,7 +626,7 @@ dyn_t s7extra_callFunc_dyn_int_int_int(func_t *func, int64_t arg1, int64_t arg2,
 }
 
 dyn_t s7extra_callFunc2_dyn_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3){
-  return s7extra_callFunc_dyn_int_int_int((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
+  return s7extra_callFunc_dyn_int_int_int((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3);
 }
 
 
@@ -644,7 +651,7 @@ dyn_t s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn(func_t *func, int64_t arg1, i
 }
 
 dyn_t s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3, dyn_t arg4, dyn_t arg5, dyn_t arg6){
-  return s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4, arg5, arg6);
+  return s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 dyn_t s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn(func_t *func, int64_t arg1, int64_t arg2, int64_t arg3, dyn_t arg4, dyn_t arg5, dyn_t arg6, dyn_t arg7, dyn_t arg8){
@@ -669,7 +676,7 @@ dyn_t s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn(func_t *func, int64_t
 }
 
 dyn_t s7extra_callFunc2_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3, dyn_t arg4, dyn_t arg5, dyn_t arg6, dyn_t arg7, dyn_t arg8){
-  return s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+  return s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
 
 
@@ -692,7 +699,7 @@ dyn_t s7extra_callFunc_dyn_dyn_dyn_dyn_int(func_t *func, dyn_t arg1, dyn_t arg2,
 }
 
 dyn_t s7extra_callFunc2_dyn_dyn_dyn_dyn_int(const char *funcname, dyn_t arg1, dyn_t arg2, dyn_t arg3, int64_t arg4){
-  return s7extra_callFunc_dyn_dyn_dyn_dyn_int((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
+  return s7extra_callFunc_dyn_dyn_dyn_dyn_int((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
 
@@ -711,7 +718,7 @@ void s7extra_callFunc_void_int_charpointer_dyn(func_t *func, int64_t arg1, const
 }
 
 void s7extra_callFunc2_void_int_charpointer_dyn(const char *funcname, int64_t arg1, const char* arg2, dyn_t arg3){
-  s7extra_callFunc_void_int_charpointer_dyn((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
+  s7extra_callFunc_void_int_charpointer_dyn((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3);
 }
 
 void s7extra_callFunc_void_int_charpointer_int(func_t *func, int64_t arg1, const char* arg2, int64_t arg3){
@@ -729,7 +736,7 @@ void s7extra_callFunc_void_int_charpointer_int(func_t *func, int64_t arg1, const
 }
 
 void s7extra_callFunc2_void_int_charpointer_int(const char *funcname, int64_t arg1, const char* arg2, int64_t arg3){
-  s7extra_callFunc_void_int_charpointer_int((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
+  s7extra_callFunc_void_int_charpointer_int((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3);
 }
 
 void s7extra_callFunc_void_int_bool(func_t *func, int64_t arg1, bool arg2){
@@ -746,7 +753,7 @@ void s7extra_callFunc_void_int_bool(func_t *func, int64_t arg1, bool arg2){
 }
 
 void s7extra_callFunc2_void_int_bool(const char *funcname, int64_t arg1, bool arg2){
-  s7extra_callFunc_void_int_bool((func_t*)s7_name_to_value(s7, funcname), arg1, arg2);
+  s7extra_callFunc_void_int_bool((func_t*)find_scheme_func(s7, funcname), arg1, arg2);
 }
 
 void s7extra_callFunc_void_int(func_t *func, int64_t arg1){
@@ -759,7 +766,7 @@ void s7extra_callFunc_void_int(func_t *func, int64_t arg1){
 }
 
 void s7extra_callFunc2_void_int(const char *funcname, int64_t arg1){
-  s7extra_callFunc_void_int((func_t*)s7_name_to_value(s7, funcname), arg1);
+  s7extra_callFunc_void_int((func_t*)find_scheme_func(s7, funcname), arg1);
 }
 
 void s7extra_callFunc_void_double(func_t *func, double arg1){
@@ -772,7 +779,7 @@ void s7extra_callFunc_void_double(func_t *func, double arg1){
 }
 
 void s7extra_callFunc2_void_double(const char *funcname, double arg1){
-  s7extra_callFunc_void_double((func_t*)s7_name_to_value(s7, funcname), arg1);
+  s7extra_callFunc_void_double((func_t*)find_scheme_func(s7, funcname), arg1);
 }
 
 void s7extra_callFunc_void_bool(func_t *func, bool arg1){
@@ -785,7 +792,7 @@ void s7extra_callFunc_void_bool(func_t *func, bool arg1){
 }
 
 void s7extra_callFunc2_void_bool(const char *funcname, bool arg1){
-  s7extra_callFunc_void_bool((func_t*)s7_name_to_value(s7, funcname), arg1);
+  s7extra_callFunc_void_bool((func_t*)find_scheme_func(s7, funcname), arg1);
 }
 
 void s7extra_callFunc_void_dyn(func_t *func, dyn_t arg1){
@@ -801,7 +808,7 @@ void s7extra_callFunc_void_dyn(func_t *func, dyn_t arg1){
 }
 
 void s7extra_callFunc2_void_dyn(const char *funcname, dyn_t arg1){
-  s7extra_callFunc_void_dyn((func_t*)s7_name_to_value(s7, funcname), arg1);
+  s7extra_callFunc_void_dyn((func_t*)find_scheme_func(s7, funcname), arg1);
 }
 
 void s7extra_callFunc_void_charpointer(func_t *func, const char* arg1){
@@ -817,7 +824,7 @@ void s7extra_callFunc_void_charpointer(func_t *func, const char* arg1){
 }
 
 void s7extra_callFunc2_void_charpointer(const char *funcname, const char* arg1){
-  s7extra_callFunc_void_charpointer((func_t*)s7_name_to_value(s7, funcname), arg1);
+  s7extra_callFunc_void_charpointer((func_t*)find_scheme_func(s7, funcname), arg1);
 }
 
 
@@ -835,7 +842,7 @@ void s7extra_callFunc_void_int_charpointer(func_t *func, int64_t arg1, const cha
 }
 
 void s7extra_callFunc2_void_int_charpointer(const char *funcname, int64_t arg1, const char* arg2){
-  s7extra_callFunc_void_int_charpointer((func_t*)s7_name_to_value(s7, funcname), arg1, arg2);
+  s7extra_callFunc_void_int_charpointer((func_t*)find_scheme_func(s7, funcname), arg1, arg2);
 }
 
 bool s7extra_callFunc_bool_int_charpointer(func_t *func, int64_t arg1, const char* arg2){
@@ -859,7 +866,7 @@ bool s7extra_callFunc_bool_int_charpointer(func_t *func, int64_t arg1, const cha
 }
 
 bool s7extra_callFunc2_bool_int_charpointer(const char *funcname, int64_t arg1, const char* arg2){
-  return s7extra_callFunc_bool_int_charpointer((func_t*)s7_name_to_value(s7, funcname), arg1, arg2);
+  return s7extra_callFunc_bool_int_charpointer((func_t*)find_scheme_func(s7, funcname), arg1, arg2);
 }
 
 void s7extra_callFunc_void_int_charpointer_bool_bool(func_t *func, int64_t arg1, const char* arg2, bool arg3, bool arg4){
@@ -878,7 +885,7 @@ void s7extra_callFunc_void_int_charpointer_bool_bool(func_t *func, int64_t arg1,
 }
 
 void s7extra_callFunc2_void_int_charpointer_bool_bool(const char *funcname, int64_t arg1, const char* arg2, bool arg3, bool arg4){
-  s7extra_callFunc_void_int_charpointer_bool_bool((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
+  s7extra_callFunc_void_int_charpointer_bool_bool((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
 void s7extra_callFunc_void_int_int(func_t *func, int64_t arg1, int64_t arg2){
@@ -895,7 +902,7 @@ void s7extra_callFunc_void_int_int(func_t *func, int64_t arg1, int64_t arg2){
 }
 
 void s7extra_callFunc2_void_int_int(const char *funcname, int64_t arg1, int64_t arg2){
-  s7extra_callFunc_void_int_int((func_t*)s7_name_to_value(s7, funcname), arg1, arg2);
+  s7extra_callFunc_void_int_int((func_t*)find_scheme_func(s7, funcname), arg1, arg2);
 }
 
 void s7extra_callFunc_void_int_float_float(func_t *func, int64_t arg1, float arg2, float arg3){
@@ -913,7 +920,7 @@ void s7extra_callFunc_void_int_float_float(func_t *func, int64_t arg1, float arg
 }
 
 void s7extra_callFunc2_void_int_float_float(const char *funcname, int64_t arg1, float arg2, float arg3){
-  s7extra_callFunc_void_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
+  s7extra_callFunc_void_int_float_float((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3);
 }
 
 void s7extra_callFunc_void_int_int_float_float(func_t *func, int64_t arg1, int64_t arg2, float arg3, float arg4){
@@ -932,7 +939,7 @@ void s7extra_callFunc_void_int_int_float_float(func_t *func, int64_t arg1, int64
 }
 
 void s7extra_callFunc2_void_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, float arg3, float arg4){
-  s7extra_callFunc_void_int_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
+  s7extra_callFunc_void_int_int_float_float((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
 bool s7extra_callFunc_bool_int_int_float_float(func_t *func, int64_t arg1, int64_t arg2, float arg3, float arg4){
@@ -957,7 +964,7 @@ bool s7extra_callFunc_bool_int_int_float_float(func_t *func, int64_t arg1, int64
 }
 
 bool s7extra_callFunc2_bool_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, float arg3, float arg4){
-  return s7extra_callFunc_bool_int_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
+  return s7extra_callFunc_bool_int_int_float_float((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
 bool s7extra_callFunc_bool_int_float_float(func_t *func, int64_t arg1, float arg2, float arg3){
@@ -981,7 +988,7 @@ bool s7extra_callFunc_bool_int_float_float(func_t *func, int64_t arg1, float arg
 }
 
 bool s7extra_callFunc2_bool_int_float_float(const char *funcname, int64_t arg1, float arg2, float arg3){
-  return s7extra_callFunc_bool_int_float_float((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
+  return s7extra_callFunc_bool_int_float_float((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3);
 }
 
 bool s7extra_callFunc_bool_bool(func_t *func, bool arg1){
@@ -1003,7 +1010,7 @@ bool s7extra_callFunc_bool_bool(func_t *func, bool arg1){
 }
 
 bool s7extra_callFunc2_bool_bool(const char *funcname, bool arg1){
-  return s7extra_callFunc_bool_bool((func_t*)s7_name_to_value(s7, funcname), arg1);
+  return s7extra_callFunc_bool_bool((func_t*)find_scheme_func(s7, funcname), arg1);
 }
 
 int64_t s7extra_callFunc_int_int(func_t *func, int64_t arg1){
@@ -1025,7 +1032,7 @@ int64_t s7extra_callFunc_int_int(func_t *func, int64_t arg1){
 }
 
 int64_t s7extra_callFunc2_int_int(const char *funcname, int64_t arg1){
-  return s7extra_callFunc_int_int((func_t*)s7_name_to_value(s7, funcname), arg1);
+  return s7extra_callFunc_int_int((func_t*)find_scheme_func(s7, funcname), arg1);
 }
 
 int64_t s7extra_callFunc_int_int_int_int(func_t *func, int64_t arg1, int64_t arg2, int64_t arg3){
@@ -1049,7 +1056,7 @@ int64_t s7extra_callFunc_int_int_int_int(func_t *func, int64_t arg1, int64_t arg
 }
 
 int64_t s7extra_callFunc2_int_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3){
-  return s7extra_callFunc_int_int_int_int((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3);
+  return s7extra_callFunc_int_int_int_int((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3);
 }
 
 int64_t s7extra_callFunc_int_int_int_int_bool(func_t *func, int64_t arg1, int64_t arg2, int64_t arg3, bool arg4){
@@ -1074,7 +1081,7 @@ int64_t s7extra_callFunc_int_int_int_int_bool(func_t *func, int64_t arg1, int64_
 }
 
 int64_t s7extra_callFunc2_int_int_int_int_bool(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3, bool arg4){
-  return s7extra_callFunc_int_int_int_int_bool((func_t*)s7_name_to_value(s7, funcname), arg1, arg2, arg3, arg4);
+  return s7extra_callFunc_int_int_int_int_bool((func_t*)find_scheme_func(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
 void s7extra_protect(void *v){
@@ -1137,7 +1144,7 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note) {
   ScopedEvalTracker eval_tracker;
 
 
-  s7_pointer scheme_func = s7_name_to_value(s7, "quantitize-note");
+  s7_pointer scheme_func = find_scheme_func(s7, "quantitize-note");
   
   Place last_place = p_Last_Pos(block);
 
@@ -1311,7 +1318,7 @@ const char *SCHEME_get_history(void){
     return "";
   
   s7_pointer s7s = s7_call(s7,
-                           s7_name_to_value(s7, funcname),
+                           find_scheme_func(s7, funcname),
                            s7_list(s7, 0)
                            );
 
@@ -1330,7 +1337,7 @@ bool SCHEME_mousepress(int button, float x, float y){
   /*
   return s7_boolean(s7,
                     s7_call(s7, 
-                            s7_name_to_value(s7, "radium-mouse-press"), // [1]
+                            find_scheme_func(s7, "radium-mouse-press"), // [1]
                             s7_list(s7,
                                     3,
                                     s7_make_integer(s7, button),
@@ -1340,7 +1347,7 @@ bool SCHEME_mousepress(int button, float x, float y){
                             )
                     );
   */
-  // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
+  // [1] Not storing/reusing this value since 'find_scheme_func' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
 bool SCHEME_mousemove(int button, float x, float y){
@@ -1352,7 +1359,7 @@ bool SCHEME_mousemove(int button, float x, float y){
   return S7CALL2(bool_int_float_float,"radium-mouse-move", // [1]
                  button,x,y);
   
-  // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
+  // [1] Not storing/reusing this value since 'find_scheme_func' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
 bool SCHEME_mouserelease(int button, float x, float y){
@@ -1364,7 +1371,7 @@ bool SCHEME_mouserelease(int button, float x, float y){
   return S7CALL2(bool_int_float_float,"radium-mouse-release", // [1]
                  button,x,y);
   
-  // [1] Not storing/reusing this value since 's7_name_to_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
+  // [1] Not storing/reusing this value since 'find_scheme_func' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
 dyn_t SCHEME_eval(const char *code){
