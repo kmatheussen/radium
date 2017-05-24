@@ -251,7 +251,7 @@ struct Data{
   const Sample samples[MAX_NUM_SAMPLES] = {};
 
   // These two are used when switching sound on the fly
-  DEFINE_ATOMIC(struct _Data *, new_data);
+  DEFINE_ATOMIC(struct Data *, new_data);
   RSemaphore *signal_from_RT;
 
   DEFINE_ATOMIC(wchar_t*, recording_path) = NULL; // allocated using malloc
@@ -842,7 +842,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
   if (was_playing_something)
     data->tremolo->type->RT_process(data->tremolo, time, R_NUM_FRAMES, outputs, outputs);
 
-  _Data *new_data = ATOMIC_GET(data->new_data);
+  Data *new_data = ATOMIC_GET(data->new_data);
   
   if(new_data != NULL){
     RT_fade_out(outputs[0],R_NUM_FRAMES);
