@@ -13,6 +13,8 @@
 #include "../OpenGL/Render_proc.h"
 #include "../api/api_proc.h"
 
+#include "helpers.h"
+
 #include "Qt_AutoBackups_proc.h"
 
 
