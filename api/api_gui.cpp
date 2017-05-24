@@ -2104,6 +2104,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       //horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
     }
 
+    OVERRIDERS(QTableWidget);
   };
 
 

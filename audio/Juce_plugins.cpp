@@ -1186,9 +1186,8 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
     
   plugin_type->plugin_takes_care_of_savable_values = true;
   plugin_type->dont_send_effect_values_from_state_into_plugin = true; // Don't need to. Juce takes care of saving and loading all effect parameters (General optimization plus crash fix for buggy CM 505 plugin)
- 
-  const char *wrapper_info = "";
-  
+
+#if 0
   if (false && is_vst2(plugin_type)){
     AEffect *aeffect = (AEffect*)audio_instance->getPlatformSpecificData();
     {
@@ -1198,20 +1197,13 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
       aeffect->dispatcher(aeffect, effGetProductString, 0, 0, product, 0.0f);
 
       if(strlen(vendor)>0 || strlen(product)>0)
-        wrapper_info = talloc_format("Vendor: %s\nProduct: %s\n",vendor,product);
+        plugin_type->info = talloc_format("Vendor: %s\nProduct: %s\n",vendor,product);
     }
-  } else {
-    const PluginDescription &description = type_data->description;
-    wrapper_info = talloc_format("%s\n\nVersion: %s\nVendor: %s\nCategory: %s\n",
-                                 description.descriptiveName.toRawUTF8(),
-                                 description.version.toRawUTF8(),                                 
-                                 description.manufacturerName.toRawUTF8(),
-                                 description.category.toRawUTF8()
-                                 );
-                                 
   }
+#endif
 
-  plugin_type->info = V_strdup(talloc_format("%sAccepts MIDI: %s\nProduces MIDI: %s\n",wrapper_info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No"));
+  // Add some more info to the info string.
+  plugin_type->info = V_strdup(talloc_format("%sAccepts MIDI: %s\nProduces MIDI: %s\n", plugin_type->info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No"));
         
   plugin_type->is_instrument = audio_instance->acceptsMidi(); // doesn't seem like this field ("is_instrument") is ever read...
 
@@ -1530,6 +1522,15 @@ static SoundPluginType *create_plugin_type(const PluginDescription description, 
 
   plugin_type->name      = V_strdup(description.name.toRawUTF8());
 
+  plugin_type->info = V_strdup(talloc_format("%s\n\nVersion: %s\nVendor: %s\nCategory: %s\nInstrument: %s\n",
+                                             description.descriptiveName.toRawUTF8(),
+                                             description.version.toRawUTF8(),                                 
+                                             description.manufacturerName.toRawUTF8(),
+                                             description.category.toRawUTF8(),
+                                             description.isInstrument ? "Yes" : "No"
+                                             )
+                               );
+  
   plugin_type->container = container;
 
   plugin_type->num_inputs = description.numInputChannels;

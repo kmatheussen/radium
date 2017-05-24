@@ -2191,9 +2191,8 @@ void PLUGIN_random(SoundPlugin *plugin){
   };PLAYER_unlock();
 }
 
-void PLUGIN_show_info_window(SoundPlugin *plugin, int64_t parentgui){
-  const SoundPluginType *type = plugin->type;
-
+// plugin can be NULL here.
+void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, int64_t parentgui){
   QString info;
       
   if(type->info!=NULL)
@@ -2207,27 +2206,31 @@ void PLUGIN_show_info_window(SoundPlugin *plugin, int64_t parentgui){
       
   info += "\n\n";
       
-  double latency = 0.0;
-  double tail = -1;
-
-  if (type->RT_get_latency != NULL || type->RT_get_audio_tail_length != NULL) {
-    PLAYER_lock();{
-      if (type->RT_get_latency != NULL)
-        latency = type->RT_get_latency(plugin);
-          
-      if (type->RT_get_audio_tail_length != NULL)
-        tail = type->RT_get_audio_tail_length(plugin);
-    }PLAYER_unlock();
-  }
-      
-  double time_since_last_activity = MIXER_get_last_used_time() - ATOMIC_GET(plugin->time_of_last_activity);
-      
   info += "Inputs: " + QString::number(type->num_inputs) + "\n";
   info += "Outputs: " + QString::number(type->num_outputs) + "\n";
-  info += "Latency: " + QString::number(latency*1000/MIXER_get_sample_rate()) + "ms\n";
-  info += "Audio tail: " + (tail < 0 ? "undefined" : QString::number(tail*1000.0/MIXER_get_sample_rate()) + "ms") + "\n";
-  info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago\n";
 
+  if (plugin != NULL){
+
+    double latency = 0.0;
+    double tail = -1;
+
+    if (type->RT_get_latency != NULL || type->RT_get_audio_tail_length != NULL) {
+      PLAYER_lock();{
+        if (type->RT_get_latency != NULL)
+          latency = type->RT_get_latency(plugin);
+        
+        if (type->RT_get_audio_tail_length != NULL)
+          tail = type->RT_get_audio_tail_length(plugin);
+      }PLAYER_unlock();
+    }
+
+    info += "Latency: " + QString::number(latency*1000/MIXER_get_sample_rate()) + "ms\n";
+    info += "Audio tail: " + (tail < 0 ? "undefined" : QString::number(tail*1000.0/MIXER_get_sample_rate()) + "ms") + "\n";
+
+    double time_since_last_activity = MIXER_get_last_used_time() - ATOMIC_GET(plugin->time_of_last_activity);      
+    info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago\n";
+  }
+  
   MyQMessageBox *infoBox = MyQMessageBox::create(API_gui_get_parentwidget(parentgui));
   infoBox->setAttribute(Qt::WA_DeleteOnClose);
   

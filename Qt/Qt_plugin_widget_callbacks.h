@@ -944,7 +944,7 @@ public slots:
   void on_info_button_clicked(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL)
-      PLUGIN_show_info_window(plugin, API_get_gui_from_existing_widget(this->window()));
+      PLUGIN_show_info_window(plugin->type, plugin, API_get_gui_from_existing_widget(this->window()));
   }
 
   void on_preset_button_clicked(){

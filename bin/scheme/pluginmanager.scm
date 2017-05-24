@@ -175,14 +175,19 @@
                         (pmg-search "" #f pmg-scan-all-remaining)
                         #f)))))))
 
-(define *pmg-popup-menu-visible* #f)
-
 (<gui> :add-mouse-callback *pmg-table*
        (lambda (button state x y)
          (if (and (= button *right-button*)
                   (= state *is-pressing*))
-             (popup-menu "Hello" (lambda ()
-                                   (c-display "a"))))
+             (popup-menu "Show Info" (lambda ()
+                                       (let* ((row (<gui> :get-value *pmg-table*))
+                                              (entry (pmg-find-entry-from-row row))
+                                              (instrconf *pmg-instrconf*))
+                                         (when entry
+                                           (spr-entry->instrument-description entry
+                                                                              instrconf
+                                                                              (lambda (descr)
+                                                                                (<ra> :show-instrument-info descr *pmg-table*))))))))
          #f))
 
 
