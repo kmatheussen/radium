@@ -134,7 +134,7 @@
     
     (define (all-plugins-are-scanned)
       (<gui> :set-value *pmg-progress-label* "")
-      (<ra> :add-message "Finished")
+      (<ra> :add-message "Finished. You should now restart Radium.\nUnstable plugins can also do subtle damage, not just crash the host.")
       (<gui> :set-enabled *pmg-scan-all-button* #f)
       (define org-search-string *pmg-curr-search-string*)
       (pmg-search "" ;; Make sure all entries are updated. Even though entries are filled in during update, entries that share the same container are not updated.

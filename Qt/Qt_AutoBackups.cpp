@@ -81,7 +81,10 @@ static double get_unbackuped_duration(void){
 void BACKUP_call_very_often(void){
   if (MIXER_is_saving())
     return;
-    
+
+  if (g_radium_runs_custom_exec)
+    return;
+  
   static bool has_inited = false;
   if (has_inited==false){
     RT_BACKUP_reset_timer();

@@ -139,20 +139,19 @@ public:
     if (filename=="")
       return true;
 #endif
-    
-    bool exists = QFile::exists(filename);
-    // Maybe take backup of the existing file here.
-    if (exists)
-      QFile::remove(filename);
 
-    // And if this fails, use the backup (but still return false, of course)
+    QString backup_filename = filename + ".bak";
+    if (QFile::exists(backup_filename))
+      QFile::remove(backup_filename);
+
+    bool is_renamed = false;
+    
+    if (QFile::exists(filename))
+      is_renamed = QFile::rename(filename, backup_filename);
+
     bool ret = QFile::copy(temporary_write_file->fileName(), filename);
     if (ret==false){
-      if (exists)
-        GFX_Message(NULL, "Error. Unable to save file \"%s\". In addition the already existing file \"%s\" was deleted.\n",
-                    filename.toUtf8().constData(), filename.toUtf8().constData());
-      else
-        GFX_Message(NULL, "Error. Unable to save file \"%s\"", filename.toUtf8().constData());
+      GFX_Message(NULL, "Error. Unable to save file \"%s\".%s", filename.toUtf8().constData(), is_renamed==false?"":(QString(" (The old file was renamed to \"")+backup_filename+"\").").toUtf8().constData());
     }
     
     return ret;
