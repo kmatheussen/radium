@@ -5806,8 +5806,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (if (string=? "" filename)
       (let ((gui (<gui> :file-requester "Choose MOD file" "" "Mod files" "*.mod *.MOD mod.* MOD.*" #t
                         (lambda (filename)
-                          (<gui> :update -1) ;; -1 is the main window.
-                          (<ra> :schedule 50 ;; Give some time to update graphics after closing the file requester
+                          (<gui> :update -1) ;; -1 is the main window. (not sure this makes any difference)
+                          (<ra> :schedule 50 ;; Give some time to update graphics after closing the file requester (not always enough)
                                 (lambda ()
                                   (load-protracker-module filename)
                                   #f))))))
