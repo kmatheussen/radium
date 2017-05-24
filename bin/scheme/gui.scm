@@ -294,7 +294,7 @@
 
 
 (define *message-gui* #f)
-(define-constant *message-gui-text-edit* (<gui> :text-edit "" #t))
+(define *message-gui-text-edit* (<gui> :text-edit "" #t))
 
 (define (show-message-gui)
   (when (not *message-gui*)
