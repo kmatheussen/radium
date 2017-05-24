@@ -300,7 +300,7 @@ class Sample_requester_widget : public QWidget
     _dir = QDir(path);
     
     if(_dir.exists()==false) {
-      GFX_Message(NULL, "Bookmarked sample directory \"%s\" doesn't exist anymore",_dir.absolutePath().toUtf8().constData());
+      GFX_addMessage("Bookmarked sample directory \"%s\" doesn't exist anymore",_dir.absolutePath().toUtf8().constData());
       _dir = QDir(QDir::currentPath());
     }
   }
