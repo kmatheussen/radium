@@ -21,6 +21,7 @@ extern "C" {
 extern const char *pullErrorMessage(void);
 extern void printExceptionIfError(void);
 extern void throwExceptionIfError(void); // Warning, is likely to cause a longjmp!
+extern void clearErrorMessage(void); // Should be called before running code that might call handleError followed by throwExceptionIfError.
 extern void handleError(const char *fmt,...);
 
 extern struct Tracker_Windows *getWindowFromNum(int windownum);

@@ -103,6 +103,14 @@ void throwExceptionIfError(void){
   }
 }
 
+void clearErrorMessage(void){
+  const char *message = pullErrorMessage();
+  if(message != NULL){
+    printf("********** Warning, the error \"%s\" was not handled by throwing an error.\n", message);
+    message = NULL;
+  }
+}
+
 void handleError(const char *fmt,...){
   if (g_error_message != NULL)
     return;
@@ -127,7 +135,7 @@ void handleError(const char *fmt,...){
 
   int ret = GFX_Message(&v, message);
 
-  // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above.
+  // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above, which is called when exiting an api call.
   if (ret!=continue_)
     g_error_message = talloc_strdup(message);  
 }

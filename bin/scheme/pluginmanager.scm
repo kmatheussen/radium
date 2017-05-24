@@ -383,8 +383,6 @@
       (loop (cdr entries)
             (1+ y)))))
 
-;; !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
-;; A narrow mixer strip causes widget leak
 
 (define (pmg-schedule-adding-entries-to-table! table entries instrconf finished-callback)
   

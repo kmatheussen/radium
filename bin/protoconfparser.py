@@ -295,6 +295,8 @@ class Proto:
         else:
             oh.write("(PyObject *self,PyObject *args){\n")
 
+        oh.write("clearErrorMessage();\n")
+
         oh.write("PyObject *resultobj;\n")
         for lokke in range(self.arglen):
             arg=self.args[lokke]
@@ -572,6 +574,7 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         s7funcname = self.proc.get_scheme_varname()
         
         oh.write("static s7_pointer radium_s7_"+self.proc.varname+"(s7_scheme *radiums7_sc, s7_pointer radiums7_args){\n")
+        oh.write("  clearErrorMessage();\n")
         if len(self.args) > 0:
             oh.write("  const char *radiums7_error_error = NULL;\n")
         oh.write("  s7_pointer org_radiums7_args = radiums7_args;\n")
