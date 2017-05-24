@@ -65,7 +65,7 @@ typedef struct _Data{
   bool using_default_sound;
   
   // These two are used when switching sound in realtime
-  struct _Data *new_data;
+  DEFINE_ATOMIC(struct _Data *, new_data);
   RSemaphore *signal_from_RT;
 
   float pitch;
@@ -114,12 +114,14 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     printf("fluid_synth_write_float failed\n");
 #endif
 
-  if(data->new_data != NULL){
+  Data *new_data = ATOMIC_GET(data->new_data);
+  
+  if(new_data != NULL){
     RT_fade_out(outputs[0],num_frames);
     RT_fade_out(outputs[1],num_frames);
 
-    plugin->data = data->new_data; // hmm.
-    data->new_data = NULL;
+    plugin->data = new_data; // hmm.    
+    ATOMIC_SET(data->new_data, NULL);
 
     RSEMAPHORE_signal(data->signal_from_RT,1);
   }
@@ -494,9 +496,7 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int
 
     if(SP_is_plugin_running(plugin)){
 
-      PLAYER_lock();{  // Hmm. lock for setting a variable type that is atomic on all target platforms?
-        data->new_data = new_data;
-      }PLAYER_unlock();
+      ATOMIC_SET(data->new_data, new_data);
 
       if (PLAYER_is_running())
         RSEMAPHORE_wait(data->signal_from_RT,1);

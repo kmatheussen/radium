@@ -2017,8 +2017,6 @@ int radium_main(char *arg){
 
         ysplitter->setChildrenCollapsible(false);
 
-        qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).dark(110).name() + ";}"); 
-
       } else {
         QWidget *w = new QWidget(main_window);
 
@@ -2073,6 +2071,20 @@ int radium_main(char *arg){
       GFX_PlayListWindowToFront();
 
   }
+  
+  qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).dark(110).name() + ";}"
+                      "QGroupBox {"
+                      "    background-color: rgba(0, 0, 0, 10);"
+                      "    border: 1px solid rgba(10, 10, 10, 50);;"
+                      "    border-radius: 2px;"
+                      "    margin-top: 1.5em;"
+                      "}"
+                      ""
+                      "QGroupBox::title {"
+                      "    subcontrol-origin: margin;"
+                      "    padding: 2px 2px;"
+                      "    background-color: transparent;"
+                      "}");
 
   PyRun_SimpleString("import menues");
 
@@ -2226,7 +2238,9 @@ int radium_main(char *arg){
 #endif
 
   g_qtgui_has_stopped = true;
-  
+
+  PlayStop();
+      
   // We don't want the crashreporter to pop up if there is something wrong when program exits. Not so important, and it looks unprofessional.
   CRASHREPORTER_dont_report();
 
@@ -2698,7 +2712,6 @@ int main(int argc, char **argv){
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);
   qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
-
 
 
 #if 0

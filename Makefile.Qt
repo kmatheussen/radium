@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 4.8.2
+VERSION = 4.8.3
 
 
 #----------------USER SETTINGS-------------------------------
@@ -312,7 +312,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_swing
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_instruments.o Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_PluginWidget.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog.o Qt_song_properties.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_pianorollheader_callbacks.o Qt_Error.o Qt_progresswindow.o Qt_check_for_updates.o Rational.o Qt_AutoBackups.o
+OBJ12= Qt_instruments.o Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_PluginWidget.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog.o Qt_song_properties.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_pianorollheader_callbacks.o Qt_Error.o Qt_progresswindow.o Qt_check_for_updates.o Rational.o Qt_AutoBackups.o flowlayout.o
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
 #Qt_Bs_edit.o 
@@ -1353,7 +1353,9 @@ Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_to
 	$(CCC) $(P)Qt_tools_callbacks.cpp $(QTOPT)
 
 $(P)Qt_tools.h: $(BUILD_DEPENDENCIES) $(P)qt4_tools.ui $(P)Qt_tools_callbacks.h $(P)lzqlineedit.h
-	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) tools
+	cd $(P) && $(UIC) qt4_tools.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_tools.h
+	cd $(P) && $(MOC) Qt_tools_callbacks.h >mQt_tools_callbacks.h
+#	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) tools
 
 Qt_pianorollheader_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_pianorollheader_callbacks.cpp $(P)Qt_pianorollheader_callbacks.h $(P)Qt_pianorollheader.h
 	$(CCC) $(P)Qt_pianorollheader_callbacks.cpp $(QTOPT)
@@ -1415,6 +1417,9 @@ Qt_check_for_updates.o: $(BUILD_DEPENDENCIES) $(P)Qt_check_for_updates.cpp
 
 Qt_AutoBackups.o: $(BUILD_DEPENDENCIES) $(P)Qt_AutoBackups.cpp
 	$(CCC) $(P)Qt_AutoBackups.cpp $(QTOPT) -DVERSION=\"$(VERSION)\"
+
+flowlayout.o: $(BUILD_DEPENDENCIES) $(P)flowlayout.cpp $(P)flowlayout.h
+	$(CCC) $(P)flowlayout.cpp $(QTOPT) -DVERSION=\"$(VERSION)\"
 
 posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
 	$(CC) posix/posix_settings.c $(OPT)
@@ -1519,7 +1524,7 @@ api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.c $(API)radium_proc.h
 api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.c $(API)radium_proc.h
 	$(CC)  $(API)api_seqtracks.c $(OPT)
 
-api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp $(API)radium_proc.h Qt/ScrollArea.hpp Qt/helpers.h
+api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp $(API)radium_proc.h Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS)
 
@@ -2118,7 +2123,7 @@ S7AlignmentSanitize=
 endif
 
 ifeq ($(BUILDTYPE), DEBUG)
-	S7OPTS += -DDEBUGGING=1 -DWITH_PROFILE=1 #-DWITH_GMP
+	S7OPTS += -DDEBUGGING=1 -DWITH_PROFILE=1 -DWITH_MULTITHREAD_CHECKS=1 #-DWITH_GMP
 endif
 
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c

@@ -192,10 +192,6 @@ void colorDialog(const char *initial_color, int64_t parentguinum, func_t* callba
   GFX_color_dialog(initial_color, parentguinum, callback);
 }
 
-void callFunc_void_int_bool(func_t* callback, int arg1, bool arg2){
-  s7extra_callFunc_void_int_bool(callback, arg1, arg2);
-}
-
 const_char* requestMidiPort(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
   char *ret = MIDIrequestPortName(window, requester, false);
@@ -237,7 +233,7 @@ void addMessage(const char *text){
   
   static bool gotit = false;
   if (gotit || s7extra_is_defined(funcname)){
-    s7extra_callFunc2_void_charpointer(funcname, text);
+    S7CALL2(void_charpointer,funcname, text);
     gotit = true;
   } else {
     showMessage(text, g_uninitialized_dyn);

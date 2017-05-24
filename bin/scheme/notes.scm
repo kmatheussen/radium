@@ -394,8 +394,10 @@
 #||
 (reverse-range!)
 
+(reverse-track!)
+
 (pretty-print (get-reversed-range))
-(pretty-print (reverse-track 0 0))
+(pretty-print (get-reversed-track -1 0))
 
 
 (let ((tracknum 0))

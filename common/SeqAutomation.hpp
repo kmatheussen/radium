@@ -310,7 +310,7 @@ private:
   }
 
   void paint_node(QPainter *p, float x, float y, int nodenum, QColor color) const {
-    float minnodesize = root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in getHalfOfNodeWidth in api_mouse.c and OpenGL/Render.cpp
+    float minnodesize = root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in getHalfOfNodeWidth in api/api_mouse.c and OpenGL/Render.cpp
     float x1 = x-minnodesize;
     float x2 = x+minnodesize;
     float y1 = y-minnodesize;

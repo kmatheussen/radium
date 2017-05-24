@@ -17,28 +17,28 @@ public:
   {
   }
 
-  Rational getRational(const struct WBlocks *wblock){
+  const Rational getRational(const struct WBlocks *wblock){
     if (wblock->num_expand_lines > 0)
       return Rational(wblock->num_expand_lines, 1);
     else
       return Rational(1, -wblock->num_expand_lines);
   }
 
-  int getNumExpandLinesFromRational(Rational rational){
+  int getNumExpandLinesFromRational(const Rational &rational){
     if (!rational.is_valid())
       return 0;
     
-    if (rational.numerator==0)      
+    if (rational._numerator==0)      
       return 0;
 
-    if (rational.numerator!=1 && rational.denominator!=1)
+    if (rational._numerator!=1 && rational._denominator!=1)
       return 0;
   
-    if (rational.numerator==1)
-      return -rational.denominator;
+    if (rational._numerator==1)
+      return -rational._denominator;
 
     //if (rational.denominator==1) // always true.
-    return rational.numerator;
+    return rational._numerator;
   }
                                     
   virtual void wheelEvent(QWheelEvent *qwheelevent) {
@@ -65,6 +65,62 @@ public:
   
 };
 
+namespace{
+class RatioSnifferQLineEdit : public FocusSnifferQLineEdit {
+
+public:
+
+  bool _wheelMainlyChangesNumerator;
+  bool _wheelDecrasesDenominatorIfNumeratorIsOne;
+
+  RatioSnifferQLineEdit(QWidget *parent, bool wheelMainlyChangesNumerator = true, bool wheelDecrasesDenominatorIfNumeratorIsOne = true)
+   : FocusSnifferQLineEdit(parent)
+   , _wheelMainlyChangesNumerator(wheelMainlyChangesNumerator)
+   , _wheelDecrasesDenominatorIfNumeratorIsOne(wheelDecrasesDenominatorIfNumeratorIsOne)
+     //, ratio(1,1)
+  {
+    setText("1/1");
+  }
+
+  Ratio get_ratio(void){
+    return create_rational_from_string(text()).get_ratio();
+  }
+    
+  virtual void wheelEvent(QWheelEvent *qwheelevent) {
+
+    Rational ratio = create_rational_from_string(text());
+    //printf("  text: %s, ratio: %s\n", text().toUtf8().constData(), ratio.toString().toUtf8().constData());
+
+    if (_wheelMainlyChangesNumerator){
+      
+      if (qwheelevent->delta()<0 && ratio._numerator>1)
+        ratio = ratio.downNumerator();
+
+      else if (qwheelevent->delta()<0 && _wheelDecrasesDenominatorIfNumeratorIsOne)
+        ratio = ratio.upDenominator();
+        
+      else if(qwheelevent->delta()>0)
+        ratio = ratio.upNumerator();
+
+    } else {
+      
+      if (qwheelevent->delta()<0)
+        ratio = ratio.down();
+      else
+        ratio = ratio.up();
+      
+    }
+
+    //printf("  ratio finished: %s\n\n", ratio.toString().toUtf8().constData());
+    
+    setText(ratio.toString());
+    emit editingFinished();
+    
+    qwheelevent->accept();
+  }
+};
+}
+
 
 class GridFocusSnifferQLineEdit : public FocusSnifferQLineEdit {
 
@@ -76,9 +132,9 @@ public:
   }
 
   void pushValuesToRoot(Rational rational){
-    if (rational.is_valid() && rational.numerator>0 && rational.denominator>0) {
-      root->grid_numerator = rational.numerator;
-      root->grid_denominator = rational.denominator;
+    if (rational.is_valid() && rational._numerator>0 && rational._denominator>0) {
+      root->grid_numerator = rational._numerator;
+      root->grid_denominator = rational._denominator;
     }
   }
   
@@ -86,7 +142,7 @@ public:
     printf("Got grid wheel event\n");
     
     Rational ratio(root->grid_numerator, root->grid_denominator);
-  
+    
     if (qwheelevent->delta()<0)
       ratio = ratio.down();
     else
@@ -95,6 +151,41 @@ public:
     pushValuesToRoot(ratio);
     setText(ratio.toString());
     
+    qwheelevent->accept();
+  }
+  
+};
+
+
+class QuantizationFocusSnifferQLineEdit : public FocusSnifferQLineEdit {
+
+public:
+  
+ QuantizationFocusSnifferQLineEdit(QWidget *parent)
+   : FocusSnifferQLineEdit(parent)
+  {
+  }
+
+  void pushValuesToRoot(Rational rational){
+    if (rational.is_valid() && rational._numerator>0 && rational._denominator>0) {
+      root->quantitize_options.quant.numerator = rational._numerator;
+      root->quantitize_options.quant.denominator = rational._denominator;
+    }
+  }
+  
+  virtual void wheelEvent(QWheelEvent *qwheelevent) {
+    printf("Got quantization wheel event\n");
+    
+    Rational ratio((int)root->quantitize_options.quant.numerator, (int)root->quantitize_options.quant.denominator);
+  
+    if (qwheelevent->delta()<0)
+      ratio = ratio.down();
+    else
+      ratio = ratio.up();
+
+    pushValuesToRoot(ratio);
+    setText(ratio.toString());
+
     qwheelevent->accept();
   }
   
@@ -130,41 +221,6 @@ public:
 };
 
 
-class QuantizationFocusSnifferQLineEdit : public FocusSnifferQLineEdit {
-
-public:
-  
- QuantizationFocusSnifferQLineEdit(QWidget *parent)
-   : FocusSnifferQLineEdit(parent)
-  {
-  }
-
-  void pushValuesToRoot(Rational rational){
-    if (rational.is_valid() && rational.numerator>0 && rational.denominator>0) {
-      root->quantitize_options.quant.numerator = rational.numerator;
-      root->quantitize_options.quant.denominator = rational.denominator;
-    }
-  }
-  
-  virtual void wheelEvent(QWheelEvent *qwheelevent) {
-    printf("Got quantization wheel event\n");
-    
-    Rational ratio((int)root->quantitize_options.quant.numerator, (int)root->quantitize_options.quant.denominator);
-  
-    if (qwheelevent->delta()<0)
-      ratio = ratio.down();
-    else
-      ratio = ratio.up();
-
-    pushValuesToRoot(ratio);
-    setText(ratio.toString());
-
-    qwheelevent->accept();
-  }
-  
-};
-
-
 class SignatureFocusSnifferQLineEdit : public FocusSnifferQLineEdit {
 
 public:
@@ -175,8 +231,8 @@ public:
   }
 
   void pushValuesToRoot(Rational rational){
-    if (rational.is_valid() && rational.numerator>0 && rational.denominator>0) {
-      setMainSignature(rational.numerator, rational.denominator);
+    if (rational.is_valid() && rational._numerator>0 && rational._denominator>0) {
+      setMainSignature(rational._numerator, rational._denominator);
     }
   }
   
@@ -187,11 +243,11 @@ public:
 
     //printf("      bef2: %s.",ratio.toString().toUtf8().constData());
     
-    if (qwheelevent->delta()<0 && ratio.numerator>1)
-      ratio = Rational(ratio.numerator-1, ratio.denominator);
+    if (qwheelevent->delta()<0 && ratio._numerator>1)
+      ratio = ratio.downNumerator();
 
     else if(qwheelevent->delta()>0)
-      ratio = Rational(ratio.numerator+1, ratio.denominator);
+      ratio = ratio.upNumerator();
 
     //printf(" aft: %s.",ratio.toString().toUtf8().constData());
         

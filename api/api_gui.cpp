@@ -47,6 +47,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDesktopWidget>
 #include <QDir>
 #include <QFileDialog>
+#include <QTabWidget>
+#include <QTextDocumentFragment>
 
 #include <QtWebKitWidgets/QWebView>
 #include <QtWebKitWidgets/QWebFrame>
@@ -59,6 +61,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/FocusSniffers.h"
 #include "../Qt/ScrollArea.hpp"
 #include "../Qt/Qt_MyQCheckBox.h"
+#include "../Qt/flowlayout.h"
+#include "../Qt/lzqlineedit.h"
 
 #include "../common/visual_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
@@ -241,7 +245,7 @@ static QHash<const QWidget*, Gui*> g_gui_from_widgets; // Q: What if a QWidget i
                                                        //    and we always check if Gui->_widget!=NULL when getting a Gui from g_gui_from_widgets.
 
 static QHash<int64_t, const char*> g_guis_can_not_be_closed; // The string contains the reason that this gui can not be closed.
-  
+
 struct VerticalAudioMeter;
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
@@ -266,11 +270,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
   public slots:
     void clicked(bool checked){
-      s7extra_callFunc_void_void(_func);
+      S7CALL(void_void,_func);
     }
     
     void toggled(bool checked){
-      s7extra_callFunc_void_bool(_func, checked);
+      S7CALL(void_bool, _func, checked);
     }
 
     void editingFinished(){
@@ -282,37 +286,42 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         line_edit->clearFocus();
       }GL_unlock();
 
-      s7extra_callFunc_void_charpointer(_func, line_edit->text().toUtf8().constData());
+      RatioSnifferQLineEdit *ratioedit = dynamic_cast<RatioSnifferQLineEdit*>(_widget);
+      if (ratioedit != NULL){
+        S7CALL(void_dyn, _func, DYN_create_ratio(ratioedit->get_ratio()));
+      }else{
+        S7CALL(void_charpointer,_func, line_edit->text().toUtf8().constData());
+      }
     }
 
     void textChanged(QString text){
-      s7extra_callFunc_void_charpointer(_func, text.toUtf8().constData());
+      S7CALL(void_charpointer,_func, text.toUtf8().constData());
     }
 
     void intValueChanged(int val){
-      s7extra_callFunc_void_int(_func, val);
+      S7CALL(void_int,_func, val);
     }
 
     void doubleValueChanged(double val){
-      s7extra_callFunc_void_double(_func, val);
+      S7CALL(void_double,_func, val);
     }
 
     void textChanged(){
       QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget);
-      s7extra_callFunc_void_charpointer(_func, text_edit->toPlainText().toUtf8().constData());
+      S7CALL(void_charpointer,_func, text_edit->toPlainText().toUtf8().constData());
     }
     
     void plainTextChanged(){
       QPlainTextEdit *text_edit = dynamic_cast<QPlainTextEdit*>(_widget);
-      s7extra_callFunc_void_charpointer(_func, text_edit->toPlainText().toUtf8().constData());
+      S7CALL(void_charpointer,_func, text_edit->toPlainText().toUtf8().constData());
     }
     
     void cellDoubleClicked(int row, int column){
-      s7extra_callFunc_void_int_int(_func, column, row);
+      S7CALL(void_int_int,_func, column, row);
     }
     
     void fileSelected(const QString &file){
-      s7extra_callFunc_void_charpointer(_func, file.toUtf8().constData());
+      S7CALL(void_charpointer,_func, file.toUtf8().constData());
     }
   };
 
@@ -325,8 +334,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     int _gui_num;
     int _valid_guis_pos;
 
-    const QWidget *_widget_as_key; // Need a way to get hold of the original widget's address in the destructor. (Beware that _widget_as_key might have been deleted. Only _widget can be considered valid.)
-    const QPointer<QWidget> _widget; // Stored in a QPointers since we need to know if the widget has been deleted.
+    const QWidget *_widget_as_key; // Need a way to get hold of the original widget's address in the destructor, even after the original widget has been deleted. (Note that _widget_as_key might have been deleted. Only _widget can be considered to have a valid widget value.)
+    const QPointer<QWidget> _widget; // Stored in a QPointer since we need to know if the widget has been deleted.
     bool _created_from_existing_widget; // Is false if _widget was created by using one of the gui_* functions (except gui_child()). Only used for validation.
 
     // full screen stuff
@@ -383,10 +392,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       R_ASSERT(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
 
-      //printf("Deleting Gui %p\n",this);
+      //printf("Deleting Gui %p (%d)\n",this,(int)get_gui_num());
 
       for(func_t *func : _deleted_callbacks){
-        s7extra_callFunc_void_bool(func, g_radium_runs_custom_exec);
+        S7CALL(void_bool,func, g_radium_runs_custom_exec);
         s7extra_unprotect(func);
       }
 
@@ -431,13 +440,23 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
     }
 
-    void I_am_the_last_pos_of_valid_guis_move_me_somewhere_else(int new_pos){
+    void I_am_the_last_pos_of_valid_guis_move_me_somewhere_else(int new_pos) {
       R_ASSERT_RETURN_IF_FALSE(g_valid_guis.size()-1 == _valid_guis_pos);
 
       _valid_guis_pos = new_pos;
       g_valid_guis[new_pos] = this;
     }
-    
+
+    template<typename T>
+    T *mycast(const_char* funcname, int argnum = 1) const {
+      T *ret = dynamic_cast<T*>(_widget.data());
+      
+      if (ret==NULL)
+        handleError("%s: argument #%d (gui #%d) is wrong type. Expected %s, got %s.", funcname, argnum, (int)get_gui_num(), T::staticMetaObject.className(), _widget.data()==NULL ? "(deleted)" : _widget->metaObject()->className());
+      
+      return ret;
+    }
+
     /************ MOUSE *******************/
     
     func_t *_mouse_callback = NULL;
@@ -462,7 +481,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       _currentButton = getMouseButtonEventID(event);
       const QPoint &point = event->pos();
 
-      return s7extra_callFunc_bool_int_int_float_float(_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
+      return S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
       //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
 
@@ -472,7 +491,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       event->accept();
 
       const QPoint &point = event->pos();
-      bool ret = s7extra_callFunc_bool_int_int_float_float(_mouse_callback, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
+      bool ret = S7CALL(bool_int_int_float_float, _mouse_callback, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
       
       _currentButton = 0;
       //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
@@ -485,7 +504,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       event->accept();
 
       const QPoint &point = event->pos();
-      return s7extra_callFunc_bool_int_int_float_float(_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
+      return S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
 
       //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
@@ -519,7 +538,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       event->accept();
       
-      return s7extra_callFunc_bool_int_charpointer(_key_callback, keytype, talloc_strdup(s.toUtf8().constData()));
+      return S7CALL(bool_int_charpointer,_key_callback, keytype, talloc_strdup(s.toUtf8().constData()));
     }
     
     bool keyPressEvent(QKeyEvent *event){
@@ -550,7 +569,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       const QPoint &point = event->pos();
 
-      s7extra_callFunc_void_int_float_float(_doubleclick_callback, getMouseButtonEventID(event), point.x(), point.y());
+      S7CALL(void_int_float_float,_doubleclick_callback, getMouseButtonEventID(event), point.x(), point.y());
     }
 
     // Should add everyting here.
@@ -583,7 +602,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void closeEvent(QCloseEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_close_callback!=NULL);
 
-      if (false==s7extra_callFunc_bool_bool(_close_callback, g_radium_runs_custom_exec))
+      if (false==S7CALL(bool_bool,_close_callback, g_radium_runs_custom_exec))
         event->ignore();
       else{
         Gui::_has_been_closed = true;
@@ -611,13 +630,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       if(g_radium_runs_custom_exec){
 #if !defined(RELEASE)
-        R_ASSERT(false);
+        //R_ASSERT(false);
 #endif
         return;
       }
 
       if(gui_isOpen(_gui_num) && _widget->isVisible()) //  && _widget->width()>0 && _widget->height()>0)
-        s7extra_callFunc_void_int_int(_resize_callback, event->size().width(), event->size().height());
+        S7CALL(void_int_int,_resize_callback, event->size().width(), event->size().height());
     }
 
     void addResizeCallback(func_t* func){
@@ -657,7 +676,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       _current_painter = &p;
 
-      s7extra_callFunc_void_int_int(_paint_callback, _widget->width(), _widget->height());
+      S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
 
       _current_painter = NULL;
 
@@ -846,7 +865,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return _widget->layout();
     }
 
-    // Try to put as much as possible in here, since GUIs created from ui files does not use the sub classes
+    // Try to put as much as possible in here, since GUIs created from ui files does not use the subclasses
     virtual void setGuiText(const_char *text){
       {
         QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget.data());
@@ -860,7 +879,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return;
     }
 
-    // Try to put as much as possible in here, since GUIs created from ui files does not use the sub classes
+    // Try to put as much as possible in here, since GUIs created from ui files does not use the subclasses
     virtual void setGuiValue(dyn_t val){
 
       {
@@ -908,6 +927,17 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         }
       }
 
+      {
+        RatioSnifferQLineEdit *ratioedit = dynamic_cast<RatioSnifferQLineEdit*>(_widget.data());
+        if (ratioedit != NULL){
+          if (DYN_is_ratio(val))
+            ratioedit->setText(Rational(DYN_get_ratio(val)).toString());
+          else
+            handleError("Ratio->setValue received %s, expected INT_TYPE or RATIO_TYPE", DYN_type_name(val.type));
+          return;
+        }
+      }
+      
       {
         QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget.data());
         if (line_edit!=NULL){
@@ -961,7 +991,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       handleError("Gui #%d does not have a setValue method", _gui_num);
     }
 
-    // Should put as much as possible in here since ui widgets does not use the sub classes
+    // Should put as much as possible in here since ui widgets does not use the subclasses. (Actually, the ui widgets can probably use the subclasses by extending the "createWidget" function, but qwidgets created elsewhere can not). The code is cleaner this way too than to add virtual methods into all subclasses. (Virtual methods in subclasses are somewhat faster though, but performance doesn't matter here.))
     virtual dyn_t getGuiValue(void){
 
       QTableWidget *qtableWidget = dynamic_cast<QTableWidget*>(_widget.data());
@@ -984,6 +1014,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (label!=NULL)
         return DYN_create_string(label->text());
 
+      RatioSnifferQLineEdit *ratio_edit = dynamic_cast<RatioSnifferQLineEdit*>(_widget.data());
+      if (ratio_edit != NULL)
+        return DYN_create_ratio(ratio_edit->get_ratio());
+      
       QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget.data());
       if (line_edit!=NULL)
         return DYN_create_string(line_edit->text());
@@ -1040,7 +1074,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QCheckBox *button = dynamic_cast<QCheckBox*>(_widget.data());
         if (button!=NULL){
           button->connect(button, SIGNAL(toggled(bool)), callback, SLOT(toggled(bool)));
-          s7extra_callFunc_void_bool(func, button->isChecked());
+          S7CALL(void_bool,func, button->isChecked());
           goto gotit;
         }
       }
@@ -1049,7 +1083,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QRadioButton *button = dynamic_cast<QRadioButton*>(_widget.data());
         if (button!=NULL){
           button->connect(button, SIGNAL(toggled(bool)), callback, SLOT(toggled(bool)));
-          s7extra_callFunc_void_bool(func, button->isChecked());
+          S7CALL(void_bool,func, button->isChecked());
           goto gotit;
         }
       }
@@ -1066,7 +1100,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QAbstractSlider *slider = dynamic_cast<QAbstractSlider*>(_widget.data());
         if (slider!=NULL){
           slider->connect(slider, SIGNAL(intValueChanged(int)), callback, SLOT(intValueChanged(int)));
-          s7extra_callFunc_void_int(func, slider->value());
+          S7CALL(void_int,func, slider->value());
           goto gotit;
         }
       }
@@ -1075,7 +1109,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget.data());
         if (line_edit!=NULL){
           line_edit->connect(line_edit, SIGNAL(editingFinished()), callback, SLOT(editingFinished()));
-          s7extra_callFunc_void_charpointer(func, line_edit->text().toUtf8().constData()); // Calling the callbacks here was a really bad idea. TODO: Fix that.
+          if (dynamic_cast<RatioSnifferQLineEdit*>(_widget.data())==NULL) // We just ignore calling this callback entirely for ratios. TODO: Remove all of these initial calls to the callbacks.
+            S7CALL(void_charpointer,func, line_edit->text().toUtf8().constData()); // Calling the callbacks here was a really bad idea. TODO: Fix that.
           goto gotit;
         }
       }
@@ -1084,7 +1119,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QSpinBox *spinbox = dynamic_cast<QSpinBox*>(_widget.data());
         if (spinbox!=NULL){
           spinbox->connect(spinbox, SIGNAL(valueChanged(int)), callback, SLOT(intValueChanged(int)));
-          s7extra_callFunc_void_int(func, spinbox->value());
+          S7CALL(void_int,func, spinbox->value());
           goto gotit;
         }
       }
@@ -1093,7 +1128,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QDoubleSpinBox *spinbox = dynamic_cast<QDoubleSpinBox*>(_widget.data());
         if (spinbox!=NULL){
           spinbox->connect(spinbox, SIGNAL(valueChanged(double)), callback, SLOT(doubleValueChanged(double)));
-          s7extra_callFunc_void_double(func, spinbox->value());
+          S7CALL(void_double,func, spinbox->value());
           goto gotit;
         }
       }
@@ -1102,7 +1137,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget.data());
         if (text_edit!=NULL){
           text_edit->connect(text_edit, SIGNAL(textChanged()), callback, SLOT(textChanged()));
-          s7extra_callFunc_void_charpointer(func, text_edit->toPlainText().toUtf8().constData());
+          S7CALL(void_charpointer,func, text_edit->toPlainText().toUtf8().constData());
           goto gotit;
         }
       }
@@ -1111,7 +1146,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QPlainTextEdit *text_edit = dynamic_cast<QPlainTextEdit*>(_widget.data());
         if (text_edit!=NULL){
           text_edit->connect(text_edit, SIGNAL(plainTextChanged()), callback, SLOT(plainTextChanged()));
-          s7extra_callFunc_void_charpointer(func, text_edit->toPlainText().toUtf8().constData());
+          S7CALL(void_charpointer,func, text_edit->toPlainText().toUtf8().constData());
           goto gotit;
         }
       }
@@ -1248,9 +1283,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void callPeakCallback(void){
       if (_peak_callback != NULL){
         if (_last_peak<=-100.0)
-          s7extra_callFunc_void_charpointer(_peak_callback, "-inf");
+          S7CALL(void_charpointer,_peak_callback, "-inf");
         else
-          s7extra_callFunc_void_charpointer(_peak_callback, talloc_format("%.1f", _last_peak));
+          S7CALL(void_charpointer,_peak_callback, talloc_format("%.1f", _last_peak));
       }
     }
 
@@ -1592,6 +1627,16 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(QWidget);
   };
   
+  struct MyFlowLayout : QWidget, Gui{
+    MyFlowLayout()
+      : Gui(this)
+    {
+      setLayout(new FlowLayout());
+    }
+    
+    OVERRIDERS(QWidget);
+  };
+  
   struct GroupBox : QGroupBox, Gui{
     GroupBox(const char *title)
       : QGroupBox(title)
@@ -1626,7 +1671,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       //setWidgetResizable(true);
 
-      contents = getWidget(); //new QWidget;//(this);
+      contents = getWidget();//(this);
       //contents->resize(500,500);
       //contents->show();
 
@@ -1770,11 +1815,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (_is_int) {
         SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value));
         for(func_t *func : _funcs)
-          s7extra_callFunc_void_int(func, scaled_value);
+          S7CALL(void_int,func, scaled_value);
       } else {
         SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value, 'f', 2));
         for(func_t *func : _funcs)
-          s7extra_callFunc_void_double(func, scaled_value);
+          S7CALL(void_double,func, scaled_value);
       }
     }
 
@@ -1858,6 +1903,19 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(MyFocusSnifferQLineEdit);
   };
 
+  struct MyRatioSnifferQLineEdit : RatioSnifferQLineEdit, Gui{
+    Q_OBJECT;
+  public:
+    
+    MyRatioSnifferQLineEdit(QWidget *parent, Ratio ratio, bool wheelMainlyChangesNumerator = true, bool wheelDecrasesDenominatorIfNumeratorIsOne = true)
+      : RatioSnifferQLineEdit(parent, wheelMainlyChangesNumerator, wheelDecrasesDenominatorIfNumeratorIsOne)
+      , Gui(this)
+    {
+      setText(Rational(ratio).toString());
+    }
+    OVERRIDERS(RatioSnifferQLineEdit);
+  };
+  
   struct TextEdit : FocusSnifferQTextEdit, Gui{
     Q_OBJECT;
 
@@ -2005,6 +2063,20 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   };
 
 
+  struct Tabs : QTabWidget, Gui{
+    Q_OBJECT;
+    
+  public:
+    
+    Tabs(void)
+      : Gui(this)
+    {
+    }
+    
+    OVERRIDERS(QTabWidget);
+  };
+
+
   struct Table : QTableWidget, Gui{
     Q_OBJECT;
 
@@ -2032,6 +2104,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       //horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
     }
 
+    OVERRIDERS(QTableWidget);
   };
 
 
@@ -2042,13 +2115,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     QWidget *createWidget(const QString &className, QWidget *parent = Q_NULLPTR, const QString &name = QString()) override {
       QWidget *ret = NULL;
-      
+
+      //printf("\n\n  CLASSNAME: -%s-\n\n", className.toUtf8().constData());
       if (className=="QTextEdit" || className=="QPlainTextEdit")
         ret = new FocusSnifferQTextEdit(parent);
       else if (className=="QLineEdit")
         ret = new MyFocusSnifferQLineEdit(parent);
-      else if (className=="QLineEdit")
-        ret = new MyFocusSnifferQLineEdit(parent);
+      else if (className=="RatioQLineEdit")
+        ret = new MyRatioSnifferQLineEdit(parent, make_ratio(1,1));
       else if (className=="QSpinBox")
         ret = new MyFocusSnifferQSpinBox(parent);
       else if (className=="QDoubleSpinBox")
@@ -2337,6 +2411,7 @@ void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
 /////// Widgets
 //////////////////////////
 
+
 int64_t gui_widget(int width, int height){
   return (new Widget(width, height))->get_gui_num();
 }
@@ -2406,6 +2481,10 @@ int64_t gui_tableLayout(int num_columns){
   return (new TableLayout(num_columns))->get_gui_num();
 }
 
+int64_t gui_flowLayout(void){
+  return (new MyFlowLayout())->get_gui_num();
+}
+
 int64_t gui_group(const_char* title){
   //return -1;
   return (new GroupBox(title))->get_gui_num();
@@ -2433,6 +2512,10 @@ int64_t gui_textEdit(const_char* content, bool read_only){
   return (new TextEdit(content, read_only))->get_gui_num();
 }
 
+int64_t gui_ratio(Place ratio, bool wheelMainlyChangesNumerator, bool wheelDecrasesDenominatorIfNumeratorIsOne){
+  return (new MyRatioSnifferQLineEdit(NULL, ratio_from_place(ratio), wheelMainlyChangesNumerator, wheelDecrasesDenominatorIfNumeratorIsOne))->get_gui_num();
+}
+
 int64_t gui_line(const_char* content){
   //return -1;
   return (new Line(content))->get_gui_num();
@@ -2456,6 +2539,34 @@ int64_t gui_fileRequester(const_char* header_text, const_char* dir, const_char* 
   return (new FileRequester(header_text, dir, filetypename, postfixes, for_loading))->get_gui_num();
 }
 
+
+/************* Tabs ***************************/
+
+int64_t gui_tabs(void){
+  return (new Tabs())->get_gui_num();
+}
+
+int gui_addTab(int64_t tabs_guinum, const_char* name, int64_t tab_guinum, int pos){ // if pos==-1, tab is append. (same as if pos==num_tabs)
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return -1;
+
+  Gui *tab_gui = get_gui(tab_guinum);
+  if (tab_gui==NULL)
+    return -1;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return -1;
+
+  int num = tabs->insertTab(pos, tab_gui->_widget, name);
+  tabs->setCurrentIndex(num); // If not, the new tab will be displayed on top of the current tab. Could be a qt 5.5.1 bug though.
+
+  return num;
+}
+
+
+                 
 /************** Table **********************/
 
 int64_t gui_table(dyn_t header_names){
@@ -2547,11 +2658,10 @@ static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetI
   if (table_gui==NULL)
     return -1;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+  
+  QTableWidget *table = table_gui->mycast<QTableWidget>("gui_addTableCell");
+  if (table==NULL)
     return -1;
-  }
   
   if (enabled)
     item->setFlags(Qt::ItemIsSelectable|Qt::ItemIsEnabled);
@@ -2627,11 +2737,9 @@ int gui_getTableRowNum(int64_t table_guinum, int cell_guinum){
   if (cell_gui==NULL)
     return -1;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return -1;
-  }
 
   for(int x=0;x<table->columnCount();x++){
     for(int y=0;y<table->rowCount();y++){
@@ -2648,11 +2756,9 @@ void gui_addTableRows(int64_t table_guinum, int pos, int how_many){
   if (table_gui==NULL)
     return;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: First argument (%d) is not a Table", (int)table_guinum);
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return;
-  }
 
   int num_rows = table->rowCount();
 
@@ -2694,11 +2800,9 @@ int gui_getNumTableRows(int64_t table_guinum){
   if (table_gui==NULL)
     return 0;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_getNumTableRows: The argument (%d) is not a Table", (int)table_guinum);
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return 0;
-  }
 
   return table->rowCount();
 }
@@ -2708,11 +2812,10 @@ void gui_enableTableSorting(int64_t table_guinum, bool do_sort){
   if (table_gui==NULL)
     return;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return;
-  }
 
   table->setSortingEnabled(do_sort);
   
@@ -2734,11 +2837,9 @@ void gui_sortTableBy(int64_t table_guinum, int x, bool sort_ascending){
   if (table_gui==NULL)
     return;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return;
-  }
 
   if (table->columnCount()==0){
     handleError("gui_addTableRows: There are no columns in this table");
@@ -2763,11 +2864,9 @@ void gui_stretchTable(int64_t table_guinum, int x, bool do_stretch, int size){
   if (table_gui==NULL)
     return;
 
-  Table *table = dynamic_cast<Table*>(table_gui->_widget.data());
-  if (table==NULL){
-    handleError("gui_addTableCell: table %d is not a Table", (int)table_guinum);
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
     return;
-  }
 
   if (table->columnCount()==0){
     handleError("gui_addTableRows: There are no columns in this table");
@@ -2790,7 +2889,20 @@ void gui_stretchTable(int64_t table_guinum, int x, bool do_stretch, int size){
   table->horizontalHeader()->resizeSection(x, size);
 }
 
+
+
 ////////////////////////////
+// various operations on guis
+
+
+// Returns Qt classname. Should not be used for dispatching. Probably only useful for debugging.
+const_char* gui_className(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return "(not found)";
+
+  return gui->_widget->metaObject()->className();
+}
 
 void gui_setText(int64_t guinum, const_char *value){
   Gui *gui = get_gui(guinum);
@@ -3019,7 +3131,7 @@ bool gui_setParent(int64_t guinum, int64_t parentgui){
 
   bool is_window = gui->_widget->isWindow() || gui->_widget->parent()==NULL;
   if(!is_window){
-    handleError("gui_setParent: Gui #%d is not a window", guinum);
+    handleError("gui_setParent: Gui #%d is not a window. (className: %s)", guinum, gui_className(guinum));
     return false;
   }
   
@@ -3256,6 +3368,31 @@ const_char* gui_getBackgroundColor(int64_t guinum){
   return talloc_strdup(gui->_widget->palette().color(gui->_widget->backgroundRole()).name().toUtf8().constData());
 }
 
+static inline void setStyleSheetRecursively(QWidget *widget, const_char* stylesheet){
+  if (widget != NULL){
+    widget->setStyleSheet(stylesheet);
+    
+    for(auto *c : widget->children())
+      setStyleSheetRecursively(dynamic_cast<QWidget*>(c), stylesheet);
+  }
+}
+
+void gui_setStyleSheetRecursively(int64_t guinum, const_char* stylesheet){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  setStyleSheetRecursively(gui->_widget, stylesheet);
+}
+
+void gui_setStyleSheet(int64_t guinum, const_char* stylesheet){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setStyleSheet(stylesheet);
+}
+
 void gui_setLayoutSpacing(int64_t guinum, int spacing, int left, int top, int right, int bottom){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -3371,7 +3508,7 @@ void gui_setStaticToplevelWidget(int64_t guinum, bool add){
       return;
     }
     if (gui->_widget->window() != gui->_widget){
-      handleError("Gui #%d is not a toplevel widget", guinum);
+      handleError("Gui #%d is not a toplevel widget. (class name: %s)", guinum, gui_className(guinum));
       return;
     }
     g_static_toplevel_widgets.push_back(gui->_widget);
@@ -3398,6 +3535,11 @@ const_char *getTimeString(const_char* time_format){
   return talloc_strdup(QTime::currentTime().toString(time_format).toUtf8().constData());
 }
 
+const_char *getHtmlFromText(const_char* text){
+  QString html = QTextDocumentFragment::fromPlainText(text).toHtml("UTF-8");
+  return talloc_strdup(html.toUtf8().constData());
+}
+
 // audio meter
 ////////////////
 
@@ -3413,12 +3555,10 @@ void gui_addAudioMeterPeakCallback(int guinum, func_t* func){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
-  
-  VerticalAudioMeter *meter = dynamic_cast<VerticalAudioMeter*>(gui->_widget.data());
-  if (meter==NULL){
-    handleError("Gui #%d is not an audio meter", guinum);
+
+  VerticalAudioMeter *meter = gui->mycast<VerticalAudioMeter>(__FUNCTION__);
+  if (meter==NULL)
     return;
-  }
 
   meter->addPeakCallback(func, guinum);
 }
@@ -3428,11 +3568,9 @@ void gui_resetAudioMeterPeak(int guinum){
   if (gui==NULL)
     return;
   
-  VerticalAudioMeter *meter = dynamic_cast<VerticalAudioMeter*>(gui->_widget.data());
-  if (meter==NULL){
-    handleError("Gui #%d is not an audio meter", guinum);
+  VerticalAudioMeter *meter = gui->mycast<VerticalAudioMeter>(__FUNCTION__);
+  if (meter==NULL)
     return;
-  }
 
   meter->resetPeak();
 }
@@ -3447,7 +3585,7 @@ void informAboutGuiBeingAMixerStrips(int64_t guinum){
 }
 
 int64_t createMixerStripsWindow(int num_rows){
-  return s7extra_callFunc2_int_int("create-mixer-strips-gui", num_rows);
+  return S7CALL2(int_int, "create-mixer-strips-gui", num_rows);
 }
 
 int64_t showMixerStrips(int num_rows){
@@ -3661,12 +3799,13 @@ bool API_gui_is_painting(void){
 //////////////////////////////
 
 
+// Returns a single mixer strip. (Currently, this function is only used in MIXERSTRIP_call_regularly() in Qt_instruments.cpp)
 int64_t gui_createSingleMixerStrip(int64_t instrument_id, int width, int height){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
 
-  return s7extra_callFunc2_int_int_int_int("create-standalone-mixer-strip", instrument_id, width, height);
+  return S7CALL2(int_int_int_int,"create-standalone-mixer-strip", instrument_id, width, height);
 }
 
 #include "mapi_gui.cpp"

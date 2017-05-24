@@ -1,12 +1,12 @@
 (provide 'mouse.scm)
 
-(define *left-button* 1) ;; TR_LEFTMOUSE
-(define *middle-button* 3) ;; TR_MIDDLEMOUSE
-(define *right-button* 5) ;; TR_RIGHTMOUSE
+(define-constant *left-button* 1) ;; TR_LEFTMOUSE
+(define-constant *middle-button* 3) ;; TR_MIDDLEMOUSE
+(define-constant *right-button* 5) ;; TR_RIGHTMOUSE
 
-(define *is-pressing* 1) ;; API_MOUSE_PRESSING
-(define *is-moving* 2) ;; API_MOUSE_MOVING
-(define *is-releasing* 3)  ;; API_MOUSE_RELEASING
+(define-constant *is-pressing* 1) ;; API_MOUSE_PRESSING
+(define-constant *is-moving* 2) ;; API_MOUSE_MOVING
+(define-constant *is-releasing* 3)  ;; API_MOUSE_RELEASING
 
 (define (select-button Button)
   (= *left-button* Button))
@@ -26,9 +26,9 @@
 ;; Quantitize
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-match quantitize
-  Place Q :> (* (roundup (/ Place Q))
-                Q))
+(define (quantitize Place Q)
+  (* (roundup (/ Place Q))
+     Q))
 
 #||
 (quantitize 18341/2134 1/3)
@@ -410,47 +410,35 @@
 
   (<ra> :set-statusbar-text "")
   
-  (define ret
-    (catch #t
-           thunk
-           (lambda args
-             ;; Commenting out output printing here since it causes unnecessary lines to be put into the (ow!) backtrace.
-             ;;
-             ;;(display "args")(display args)(newline)
-             ;;(c-display "Resetting mouse cycle since I caught something:" (car args))
-             ;;(apply format (cons '() args)))
-             ;;(if (string? (cadr args))
-             ;;    (apply format #t (cadr args))
-             ;;    (c-display (cadr args)))
-             ;;(c-display "    GAKK GAKK GAKK " args)
-             (display (ow!))
-             ;;
-             (set! *current-mouse-cycle* #f)
-             (throw (car args)) ;; rethrowing
-             #f)))
-  
-  (if (not mouse-fx-has-been-set)
-      (<ra> :set-no-mouse-fx))
-
-  (if (not mouse-track-has-been-set)
-      (<ra> :set-no-mouse-track))
-
-  (if (not mouse-note-has-been-set)
-      (<ra> :set-no-mouse-note))
-
-  (if (not indicator-node-has-been-set)
-      (<ra> :cancel-indicator-node))
-
-  (if (not current-node-has-been-set)
-      (<ra> :cancel-current-node))
-
-  (if (not current-pianonote-has-been-set)
-      (<ra> :cancel-current-pianonote))
-
-  ;;(if (not mouse-pointer-has-been-set)
-  ;;    (<ra> :set-normal-mouse-pointer))
-
-  ret)
+  (try-finally :try thunk
+               :failure (lambda ()
+                          (set! *current-mouse-cycle* #f)
+                          ;; We also used to rethrow the error here. Don't know why. Seems like the wrong thing to do.
+                          #f
+                          )
+               :finally (lambda ()
+                          
+                          (if (not mouse-fx-has-been-set)
+                              (<ra> :set-no-mouse-fx))
+                          
+                          (if (not mouse-track-has-been-set)
+                              (<ra> :set-no-mouse-track))
+                          
+                          (if (not mouse-note-has-been-set)
+                              (<ra> :set-no-mouse-note))
+                          
+                          (if (not indicator-node-has-been-set)
+                              (<ra> :cancel-indicator-node))
+                          
+                          (if (not current-node-has-been-set)
+                              (<ra> :cancel-current-node))
+                          
+                          (if (not current-pianonote-has-been-set)
+                              (<ra> :cancel-current-pianonote))
+                          
+                          ;;(if (not mouse-pointer-has-been-set)
+                          ;;    (<ra> :set-normal-mouse-pointer))
+                          )))
 
 
 (define (radium-mouse-press $button $x $y)
@@ -463,7 +451,7 @@
            (if (and new-mouse-cycle
                     (new-mouse-cycle :drag-func))
                (set! *current-mouse-cycle* new-mouse-cycle))))
-     *current-mouse-cycle*)))
+     (get-bool *current-mouse-cycle*))))
 
 (define (radium-mouse-move $button $x $y)
   ;;(c-display "radium-mouse-move" $x $y)
@@ -800,10 +788,11 @@
     (if same-pos
         Node
         (let ((node-info (Move-node node-info new-value
-                                    (if (not Use-Place)
-                                        new-y
-                                        (and new-y
-                                             (get-place-from-y Button new-y))))))
+                                    (if Use-Place
+                                        (if new-y
+                                            (get-place-from-y Button new-y)
+                                            'same-place)
+                                        new-y))))
           (Publicize node-info)
           (make-node :node-info node-info
                      :value new-value
@@ -1424,7 +1413,7 @@
                                                #f
                                                (callback Num (temponodeval->01 (<ra> :get-temponode-value Num)))))
                         :Move-node (lambda (Num Value Place)
-                                     (<ra> :set-temponode Num (01->temponodeval Value) (or Place -1))
+                                     (<ra> :set-temponode Num (01->temponodeval Value) Place)
                                      (define new-value (<ra> :get-temponode-value Num)) ;; might differ from Value
                                      ;;(c-display "Place/New:" Place (<ra> :get-temponode-value Num))
                                      (temponodeval->01 new-value)
@@ -1584,7 +1573,7 @@
                                                         (if (<ra> :control-pressed)
                                                             Value
                                                             (round Value))
-                                                        (or Place -1)
+                                                        Place
                                                         *current-track-num*))
                         :Publicize (lambda (Num)
                                      (set-indicator-pitchnum Num *current-track-num*)
@@ -1649,9 +1638,9 @@
 ;; pianoroll
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define *pianonote-move-start* 'move-start)
-(define *pianonote-move-all* 'move-all)
-(define *pianonote-move-end* 'move-end)
+(define-constant *pianonote-move-start* 'move-start)
+(define-constant *pianonote-move-all* 'move-all)
+(define-constant *pianonote-move-end* 'move-end)
 
 (define-struct pianonote-info
   :tracknum
@@ -1878,7 +1867,7 @@
                                              (if (<ra> :control-pressed)
                                                  Value
                                                  (round Value))
-                                             (or Place -1)
+                                             Place
                                              (pianonote-info :notenum)
                                              (pianonote-info :tracknum)))
 
@@ -2297,7 +2286,7 @@
                                                                                    (velocity-info :tracknum)))
                                               (set-velocity-statusbar-text value))
                         :Move-node (lambda (velocity-info Value Place)
-                                     (define note-num (<ra> :set-velocity Value (or Place -1) (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
+                                     (define note-num (<ra> :set-velocity Value Place (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
                                      (make-velocity-info :tracknum (velocity-info :tracknum)
                                                          :notenum note-num
                                                          :velocitynum (velocity-info :velocitynum)
@@ -2717,7 +2706,7 @@
                                      (<ra> :set-statusbar-text (<ra> :get-fx-string (fxnode-info :fxnodenum) (fxnode-info :fxnum) (fxnode-info :tracknum))))
 
                         :Move-node (lambda (fxnode-info Value Place)                                     
-                                     (<ra> :set-fxnode (fxnode-info :fxnodenum) Value (or Place -1) (fxnode-info :fxnum) (fxnode-info :tracknum))
+                                     (<ra> :set-fxnode (fxnode-info :fxnodenum) Value Place (fxnode-info :fxnum) (fxnode-info :tracknum))
                                      fxnode-info)
                         )
 
@@ -3509,6 +3498,7 @@
                                                                                   :seqblocknum new-seqblocknum)))))                     
 
                                      (define (swap-blocks seqblocknum ret-seqblocknum new-pos1 new-pos2)
+                                       
                                        (when (not gakkgakk-has-made-undo)
                                          (<ra> :undo-sequencer)
                                          (set! gakkgakk-has-made-undo #t))
@@ -3756,7 +3746,7 @@
   :seqautomation
   :distance)
 
-(define *seqnode-min-distance* (* 1 (<ra> :get-half-of-node-width)))
+(define-constant *seqnode-min-distance* (* 1 (<ra> :get-half-of-node-width)))
 
 (define *current-seqautomation/distance* #f)
 

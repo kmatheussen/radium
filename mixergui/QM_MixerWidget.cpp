@@ -1417,7 +1417,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
   } else if (sel==instrument_info) {
     
-    showInstrumentInfo(CHIP_get_patch(chip_under)->id, parentguinum);
+    showInstrumentInfo(DYN_create_int(CHIP_get_patch(chip_under)->id), parentguinum);
 
   } else if (sel==random) {
 

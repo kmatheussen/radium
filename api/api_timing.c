@@ -628,14 +628,20 @@ dyn_t getAllTrackSwings(int tracknum, int blocknum, int windownum){
   return API_getAllTrackSwings(wtrack->track);
 }
 
+
 /*
 #include "../embedded_scheme/scheme_proc.h"
 dyn_t testsomething(dyn_t arg){
+#if 0
   SCHEME_throw("testsomething-symbol", "testsomething-message");
   printf(" !!!!!!!!!!!!!!!!!   IM HERE !!!!!!!!!!!!!!!!!!\n");
   return DYN_create_int(0);
+#endif
+  return SCHEME_get_history();
 }
 */
+
+
 
 
 /*

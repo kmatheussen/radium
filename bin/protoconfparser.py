@@ -15,6 +15,7 @@
 #Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+# TODO: Add a Ratio type. It's a little bit awkward to use Place instead of Ratio, for instance in 'gui_ratio'.
 
 
 import sys,string,os
@@ -117,6 +118,29 @@ class Argument:
             sys.stderr.write("Unknown type '"+type_string+"'")
             raise Exception("Unknown type '"+type_string+"'")
 
+    def get_s7_conversion_function(self):
+        if self.type_string=="int":
+            return "(int)s7extra_get_integer"
+        elif self.type_string=="int64_t":
+            return "s7extra_get_integer"
+        elif self.type_string=="float":
+            return "s7extra_get_float"
+        elif self.type_string=="double":
+            return "s7extra_get_double"
+        elif self.type_string=="const_char*":
+            return "s7extra_get_string"
+        elif self.type_string=="bool":
+            return "s7extra_get_boolean"
+        elif self.type_string=="Place":
+            return "s7extra_get_place"
+        elif self.type_string=="func_t*":
+            return "s7extra_get_func"
+        elif self.type_string=="dyn_t":
+            return "s7extra_get_dyn"
+        else:
+            sys.stderr.write("Unknown type '"+type_string+"'")
+            raise Exception("Unknown type '"+type_string+"'")
+
     def get_s7_variable_check_function(self):
         if self.type_string=="int":
             return "s7_is_integer"
@@ -208,32 +232,36 @@ class Proto:
                 break
             self.reqarglen+=1
 
-        #place
-        self.uses_place = False
-        
+        #place        
         if self.proc.type_string=="Place":
-            self.uses_place = True
+            self.returns_place = True
+        else:
+            self.returns_place = False
 
+        self.uses_place = False
         for arg in self.args:
             if arg.type_string=="Place":
                 self.uses_place = True
 
-        #dyn
-        self.uses_dyn = False
-        
+        #dyn        
         if self.proc.type_string=="dyn_t":
-            self.uses_dyn = True
+            self.returns_dyn = True
+        else:
+            self.returns_dyn = False
 
+        self.uses_dyn = False
         for arg in self.args:
             if arg.type_string=="dyn_t":
                 self.uses_dyn = True
 
         #func
-        self.uses_func = False
          
         if self.proc.type_string=="func_t*":
-            self.uses_func = True
+            self.returns_func = True
+        else:
+            self.returns_func = False
 
+        self.uses_func = False
         for arg in self.args:
             if arg.type_string=="func_t*":
                 self.uses_func = True
@@ -266,6 +294,8 @@ class Proto:
             oh.write("(PyObject *self,PyObject *args,PyObject *keywds){\n")
         else:
             oh.write("(PyObject *self,PyObject *args){\n")
+
+        oh.write("clearErrorMessage();\n")
 
         oh.write("PyObject *resultobj;\n")
         for lokke in range(self.arglen):
@@ -348,26 +378,27 @@ class Proto:
         oh.write("const char *error_message = pullErrorMessage();\n");
         oh.write("if(error_message!=NULL) { PyErr_SetString(PyExc_Exception, error_message); return NULL; }\n");
 
-        if len(self.proc.qualifiers)==1 and self.proc.qualifiers[len(self.proc.qualifiers)-1]=="void":
+        return_type = self.proc.qualifiers[len(self.proc.qualifiers)-1]
+            
+        if (self.returns_dyn or self.returns_func or self.returns_place or len(self.proc.qualifiers)==1 and return_type=="void"):
             oh.write("Py_INCREF(Py_None);\n")
             oh.write("resultobj=Py_None;\n")
         else:
             oh.write("resultobj=")
-            qualifier=self.proc.qualifiers[len(self.proc.qualifiers)-1]
-            if qualifier=="PyObject*":
+            if return_type=="PyObject*":
                 oh.write("result;\n")
             else:
-                if qualifier=="int":
+                if return_type=="int":
                     t="PyInt_FromLong((long)"
-                elif qualifier=="int64_t":
+                elif return_type=="int64_t":
                     t="PyInt_FromLong((long)" # doesn't seem to be a PyInt_FromLongLong function.
-                elif qualifier=="float":
+                elif return_type=="float":
                     t="PyFloat_FromDouble("
-                elif qualifier=="double":
+                elif return_type=="double":
                     t="PyFloat_FromDouble("
-                elif qualifier=="const_char*":
+                elif return_type=="const_char*":
                     t="PyString_FromString("
-                elif qualifier=="bool":
+                elif return_type=="bool":
                     t="PyBool_FromLong((long)"
                 oh.write(t+"result);\n")
 
@@ -533,6 +564,7 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
             conversion_function = self.proc.get_s7_make_type_function()
             oh.write("s7_pointer radium_return_value_value = "+conversion_function+"(radiums7_sc, "+callstring+"); ");
             oh.write("throwExceptionIfError(); ");
+            #oh.write("s7_gc_unprotect(radiums7_sc, radiums7_args);\n"); # just testing
             oh.write("return radium_return_value_value;\n");
 
     def write_s7_func(self,oh):
@@ -542,10 +574,14 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         s7funcname = self.proc.get_scheme_varname()
         
         oh.write("static s7_pointer radium_s7_"+self.proc.varname+"(s7_scheme *radiums7_sc, s7_pointer radiums7_args){\n")
+        oh.write("  clearErrorMessage();\n")
+        if len(self.args) > 0:
+            oh.write("  const char *radiums7_error_error = NULL;\n")
         oh.write("  s7_pointer org_radiums7_args = radiums7_args;\n")
         self.write_s7_args(oh) # int arg1; s7_pointer arg1_s7; int arg2; s7_pointer arg2_s7;
-
+        #oh.write("  s7_gc_protect(radiums7_sc, radiums7_args);\n"); # Just testing
         oh.write("\n")
+
 
         for n in range(len(self.args)):
             arg = self.args[n]
@@ -559,11 +595,19 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
             oh.write("  if (!s7_is_pair(radiums7_args))\n")
             oh.write('    return (s7_wrong_number_of_args_error(radiums7_sc, "'+s7funcname+': wrong number of args: ~A", org_radiums7_args));\n')
             oh.write('\n')
+
             oh.write("  "+arg.varname+"_s7 = s7_car(radiums7_args);\n")
-            oh.write("  if (!"+arg.get_s7_variable_check_function()+"("+arg.varname+"_s7))\n")
-            oh.write('    return s7_wrong_type_arg_error(radiums7_sc, "'+arg.varname+'", '+str(n)+', '+arg.varname+'_s7, "'+arg.type_string+'");\n')
-            oh.write('\n')
-            oh.write("  "+arg.varname+" = "+arg.get_s7_get_type_function()+arg.varname+"_s7);\n")
+            
+            if True:
+                oh.write("  "+arg.varname+" = "+arg.get_s7_conversion_function()+"(radiums7_sc, "+arg.varname+"_s7, &radiums7_error_error);\n")
+                oh.write("  if (radiums7_error_error != NULL)\n")
+                oh.write('    return s7_wrong_type_arg_error(radiums7_sc, "'+s7funcname+'", '+str(n)+', '+arg.varname+'_s7, radiums7_error_error);\n')
+            else:
+                oh.write("  if (!"+arg.get_s7_variable_check_function()+"("+arg.varname+"_s7))\n")
+                oh.write('    return s7_wrong_type_arg_error(radiums7_sc, "'+arg.varname+'", '+str(n)+', '+arg.varname+'_s7, "'+arg.type_string+'");\n')
+                oh.write('\n')
+                oh.write("  "+arg.varname+" = "+arg.get_s7_get_type_function()+arg.varname+"_s7);\n")
+            
             oh.write("  radiums7_args = s7_cdr(radiums7_args);\n")
             oh.write("\n")
 

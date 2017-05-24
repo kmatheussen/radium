@@ -64,12 +64,6 @@
       )
 ||#
 
-(define (assert something)
-  (if (not something)
-      (throw 'assert-failed)))
-
-;; It is assumed various places that eqv? can be used to compare functions.
-(assert (eqv? assert ((lambda () assert))))
 
  
 #||
@@ -192,7 +186,7 @@
 
 ||#
 
-(define *empty-symbol* '___empty_symbol) ;; s7 doesn't allow converting empty string to symbol
+(define-constant *empty-symbol* '___empty_symbol) ;; s7 doesn't allow converting empty string to symbol
 
 (define (to-string a)
   (cond ((symbol? a)

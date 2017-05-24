@@ -101,10 +101,7 @@
 (<gui> :add-close-callback *pluginmanager-gui*
        (lambda (radium-runs-custom-exec)
          (if (not radium-runs-custom-exec)
-             (catch #t ;; We don't want to risk not returning #f (if that happens, the plugin manager can't be opened again)
-                    pmg-hide
-                    (lambda args
-                      (c-display (ow!)))))
+             (try-finally :try pmg-hide)) ;; We don't want to risk not returning #f. If that happens, the plugin manager can't be opened again.
          #f))
 
 ;; init table stuff
@@ -137,7 +134,7 @@
     
     (define (all-plugins-are-scanned)
       (<gui> :set-value *pmg-progress-label* "")
-      (<ra> :add-message "Finished")
+      (<ra> :add-message "Finished. You should now restart Radium.\nUnstable plugins can also do subtle damage, not just crash the host.")
       (<gui> :set-enabled *pmg-scan-all-button* #f)
       (define org-search-string *pmg-curr-search-string*)
       (pmg-search "" ;; Make sure all entries are updated. Even though entries are filled in during update, entries that share the same container are not updated.
@@ -177,6 +174,22 @@
                         (<ra> :clear-sound-plugin-registry)
                         (pmg-search "" #f pmg-scan-all-remaining)
                         #f)))))))
+
+(<gui> :add-mouse-callback *pmg-table*
+       (lambda (button state x y)
+         (if (and (= button *right-button*)
+                  (= state *is-pressing*))
+             (popup-menu "Show Info" (lambda ()
+                                       (let* ((row (<gui> :get-value *pmg-table*))
+                                              (entry (pmg-find-entry-from-row row))
+                                              (instrconf *pmg-instrconf*))
+                                         (when entry
+                                           (spr-entry->instrument-description entry
+                                                                              instrconf
+                                                                              (lambda (descr)
+                                                                                (<ra> :show-instrument-info descr *pmg-table*))))))))
+         #f))
+
 
 (define *pmg-search-text-field* (<gui> :child *pluginmanager-gui* "search_text"))
 (<gui> :set-value *pmg-search-text-field* "")
@@ -386,8 +399,6 @@
       (loop (cdr entries)
             (1+ y)))))
 
-;; !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11
-;; A narrow mixer strip causes widget leak
 
 (define (pmg-schedule-adding-entries-to-table! table entries instrconf finished-callback)
   

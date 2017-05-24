@@ -1,18 +1,28 @@
 (provide 'quantitize.scm)
 
+(define *curr-quantitize-gui* #f)
 
 (delafina (quantitize-note :start
                            :end
                            :q
                            :max-length
-                           :quantitize-start #t
-                           :quantitize-end #t
-                           :keep-note-length #f
                            :type 3 ;; See GUI. Type 1 is "Move start position ...", type 2 is "Move end ...", etc.
                            )
 
   (define delete-it #f)
-  
+
+  (define quantitize-start (if *curr-quantitize-gui*
+                               (<gui> :get-value (<gui> :child *curr-quantitize-gui* "quant_start"))
+                               #t))
+
+  (define quantitize-end (if *curr-quantitize-gui*
+                             (<gui> :get-value (<gui> :child *curr-quantitize-gui* "quant_end"))
+                             #t))
+
+  (define keep-note-length (if *curr-quantitize-gui*
+                               (<gui> :get-value (<gui> :child *curr-quantitize-gui* "keep_length"))
+                               #f))
+
   (define new-start (if quantitize-start
                         (quantitize start q)
                         start))
@@ -99,3 +109,90 @@
 
 
          
+
+(define (create-quantitize-gui)
+  (define quant-gui (<gui> :ui "quantization.ui"))
+
+  (define (set-me-as-current!)
+    (set! *curr-quantitize-gui* quant-gui))
+
+  
+  ;; Quantitize Options
+  ;;
+  (define quant-type-range (integer-range 1 5))
+  
+  (define quant-type-guis (map (lambda (n)
+                                 (<gui> :child quant-gui (<-> "type" n)))
+                               quant-type-range))
+
+  (<gui> :set-value (quant-type-guis (1- (<ra> :get-quantitize-type))) #t)
+  (for-each (lambda (type-gui n)
+              (<ra> :schedule 1000
+                    (lambda ()
+                      (if (<gui> :is-open type-gui)
+                          (begin
+                            (if (and (= (<ra> :get-quantitize-type)
+                                        n)
+                                     (not (<gui> :get-value type-gui)))
+                                (<gui> :set-value type-gui #t))                                
+                            (+ 400 (random 100)))
+                          #f)))
+              (<gui> :add-callback type-gui
+                     (lambda (is-on)
+                       (when is-on
+                         (<ra> :set-quantitize-type n)))))
+            quant-type-guis
+            quant-type-range)
+
+  
+  ;; Quantitize value 
+  ;;
+  (define value-gui (<gui> :child quant-gui "quantization_value"))
+
+  (<gui> :set-value value-gui (<ra> :get-quantitize))
+
+  (<ra> :schedule 1000
+        (lambda ()
+          (if (<gui> :is-open value-gui)
+              (begin
+                (if (not (= (<gui> :get-value value-gui)
+                            (<ra> :get-quantitize)))
+                    (<gui> :set-value value-gui (<ra> :get-quantitize)))                    
+                (+ 400 (random 100)))
+              #f)))
+           
+  (<gui> :add-callback value-gui
+         (lambda (val)
+           (c-display "Quant: " val (string? val))
+           (<ra> :set-quantitize val)))
+
+
+  ;; Buttons
+  ;;
+  (<gui> :add-callback (<gui> :child quant-gui "quantitize_range")
+         (lambda ()
+           (set-me-as-current!)
+           (<ra> :quantitize-range)))
+  
+  (<gui> :add-callback (<gui> :child quant-gui "quantitize_track")
+         (lambda ()
+           (set-me-as-current!)
+           (<ra> :quantitize-track)))
+  
+  (<gui> :add-callback (<gui> :child quant-gui "quantitize_block")
+         (lambda ()
+           (set-me-as-current!)
+           (<ra> :quantitize-block)))
+  
+  
+  ;; Set me as current quantitize gui, and return me
+  ;;
+  (set-me-as-current!)
+  quant-gui)
+
+
+#!!
+(load "notem.scm")
+(add-notem-tab "Quantization" (create-quantitize-gui))
+!!#
+

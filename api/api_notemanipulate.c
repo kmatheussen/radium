@@ -40,6 +40,7 @@ void transposeTrack(int transpose,int windownum){
   if(window==NULL) return;
 
   TransposeTrack_CurrPos(window,transpose);
+  window->must_redraw_editor = true;
 }
 
 void transposeBlock(int transpose,int windownum){
@@ -47,6 +48,7 @@ void transposeBlock(int transpose,int windownum){
   if(window==NULL) return;
 
   TransposeBlock_CurrPos(window,transpose);
+  window->must_redraw_editor = true;
 }
 
 void transposeRange(int transpose,int windownum){
@@ -55,6 +57,7 @@ void transposeRange(int transpose,int windownum){
 
 
   TransposeRange_CurrPos(window,transpose);
+  window->must_redraw_editor = true;
 }
 
 void transposeNote(int transpose,int windownum){
@@ -62,6 +65,7 @@ void transposeNote(int transpose,int windownum){
   if(window==NULL) return;
 
   TransposeNote_CurrPos(window,transpose);
+  window->must_redraw_editor = true;
 }
 
 
@@ -187,6 +191,22 @@ void quantitizeRange(int windownum){
 Place getQuantitize(void){
   return place(0, (int)root->quantitize_options.quant.numerator, (int)root->quantitize_options.quant.denominator);
 }
+
+void setQuantitize(Place ratio){
+  root->quantitize_options.quant = ratio_from_place(ratio);
+}
+
+int getQuantitizeType(void){
+  return root->quantitize_options.type;
+}
+
+void setQuantitizeType(int type){
+  if (type>5 || type<1){
+    handleError("setQuantitizeType: type must be 1, 2, 3, 4, or 5. (got %d)", type);
+  }else
+    root->quantitize_options.type = type;
+}
+  
 
 // TODO. Should return ratio
 Place getGrid(void){

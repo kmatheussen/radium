@@ -137,15 +137,15 @@ void setAutobypassDelay(int val){
 
 
 void selectInstrumentForTrack(int tracknum){
-  s7extra_callFunc2_void_int("select-track-instrument", tracknum);
+  S7CALL2(void_int,"select-track-instrument", tracknum);
 }
 
 void requestReplaceInstrument(int64_t instrument_id, const_char* instrument_description, dyn_t instrconf){
-  s7extra_callFunc2_void_int_charpointer_dyn("async-replace-instrument", instrument_id, instrument_description, instrconf);
+  S7CALL2(void_int_charpointer_dyn,"async-replace-instrument", instrument_id, instrument_description, instrconf);
 }
 
 void requestLoadInstrumentPreset(int64_t instrument_id, const_char* instrument_description, int64_t parentgui){
-  s7extra_callFunc2_void_int_charpointer_int("async-load-instrument-preset", instrument_id, instrument_description, parentgui);
+  S7CALL2(void_int_charpointer_int,"async-load-instrument-preset", instrument_id, instrument_description, parentgui);
 }
 
 
@@ -286,13 +286,7 @@ int64_t createAudioInstrumentFromPreset(const char *filename, const_char *name, 
   return PRESET_load(STRING_create(filename), name, false, x, y);
 }
 
-int64_t createAudioInstrumentFromDescription(const char *instrument_description, const_char *name, float x, float y){
-  if (strlen(instrument_description)==0)
-    return -1;
-
-  if (name!=NULL && strlen(name)==0)
-    name = NULL;
-
+bool get_type_name_from_description(const char *instrument_description, const char **container_name, const char **type_name, const char **plugin_name){
   if (instrument_description[0]=='1'){
 
     char *descr = talloc_strdup(instrument_description);
@@ -313,9 +307,30 @@ int64_t createAudioInstrumentFromDescription(const char *instrument_description,
     }
     descr[sep_poss[0]] = 0;
     descr[sep_poss[1]] = 0;
-    char *container_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[1])));
-    char *type_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[sep_poss[0]+1])));
-    char *plugin_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[sep_poss[1]+1])));
+
+    *container_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[1])));
+    *type_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[sep_poss[0]+1])));
+    *plugin_name = STRING_get_chars(STRING_fromBase64(STRING_create(&descr[sep_poss[1]+1])));
+
+    return true;
+
+  }
+
+  return false;
+}
+  
+int64_t createAudioInstrumentFromDescription(const char *instrument_description, const_char *name, float x, float y){
+  if (strlen(instrument_description)==0)
+    return -1;
+
+  if (name!=NULL && strlen(name)==0)
+    name = NULL;
+
+  const char *container_name;
+  const char *type_name;
+  const char *plugin_name;
+
+  if (get_type_name_from_description(instrument_description, &container_name, &type_name, &plugin_name)){
 
     printf("  ---------- Container: -%s-, type: -%s-, plugin: -%s-\n", container_name, type_name, plugin_name);
     
@@ -406,7 +421,7 @@ dyn_t createNewInstrumentConf(float x, float y,
 }
 
 void createInstrumentDescriptionPopupMenu(dyn_t instrconf){
-  s7extra_callFunc2_void_dyn("create-instrument-popup-menu", instrconf);
+  S7CALL2(void_dyn,"create-instrument-popup-menu", instrconf);
 }
 
 dyn_t getAllSinglePresetsInPath(const_char* path){
@@ -1482,14 +1497,45 @@ void setCurrentInstrument(int64_t instrument_id, bool show_instrument_window_if_
   patch->instrument->PP_Update(patch->instrument, patch, false);
 }
 
-void showInstrumentInfo(int64_t instrument_id, int64_t parentgui){
-  struct Patch *patch = getAudioPatchFromNum(instrument_id);
-  if(patch==NULL)
-    return;
+void showInstrumentInfo(dyn_t instrument_id_or_description, int64_t parentgui){
+  if (instrument_id_or_description.type==INT_TYPE){
+    
+    int64_t instrument_id = instrument_id_or_description.int_number;
+    struct Patch *patch = getAudioPatchFromNum(instrument_id);
+    if(patch==NULL)
+      return;
   
-  struct SoundPlugin *plugin = patch->patchdata;
-  if (plugin != NULL)
-    PLUGIN_show_info_window(plugin, parentgui);
+    struct SoundPlugin *plugin = patch->patchdata;
+    if (plugin != NULL)
+      PLUGIN_show_info_window(plugin->type, plugin, parentgui);
+    
+  } else if (instrument_id_or_description.type==STRING_TYPE){
+    
+    const char *instrument_description = STRING_get_chars(instrument_id_or_description.string);
+
+    const char *container_name;
+    const char *type_name;
+    const char *plugin_name;
+    
+    if (get_type_name_from_description(instrument_description, &container_name, &type_name, &plugin_name)){
+      
+      printf("  ---------- Container: -%s-, type: -%s-, plugin: -%s-\n", container_name, type_name, plugin_name);
+
+      SoundPluginType *type = PR_get_plugin_type_by_name(container_name, type_name, plugin_name);
+
+      if (type != NULL){
+        PLUGIN_show_info_window(type, NULL, parentgui);
+      }
+      
+    } else
+      handleError("Unable to determine instrument type from description");
+    
+
+  } else {
+    
+    handleError("Illegal first argument for showInstrumentInfo. Expected INT_TYPE or STRING_TYPE, found %s", DYN_type_name(instrument_id_or_description.type));
+      
+  }
 }
 
 
@@ -1621,7 +1667,7 @@ void API_instruments_call_regularly(void){
       float now = plugin->savable_effect_values[effect_monitor->effect_num];
       if (now != effect_monitor->last_value){
         effect_monitor->last_value = now;
-        s7extra_callFunc_void_void(effect_monitor->func);
+        S7CALL(void_void,effect_monitor->func);
       }
     }
   }END_VECTOR_FOR_EACH;

@@ -131,8 +131,10 @@ namespace{
     void toggled(bool checked){
     //void clicked(bool checked){
       printf("CLICKED %d\n",checked);
+      
       if (callback!=NULL)
-        callFunc_void_int_bool(callback, num, checked);
+        S7CALL(void_int_bool,callback, num, checked);
+      
       if (callback3)
         callback3(num, checked);
 
@@ -180,7 +182,7 @@ namespace{
       //fprintf(stderr,"CLICKED clickable\n");
 
       if (callback!=NULL)
-        s7extra_callFunc_void_int(callback, num);
+        S7CALL(void_int, callback, num);
 
       fprintf(stderr,"CLICKED 222222 clickable %d\n", num);
             

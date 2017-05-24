@@ -156,6 +156,97 @@
   )
 
 
+;; flow layout
+(begin
+  (define stuff
+    (<gui> :group "stuff"
+           (<gui> :flow-layout
+                  (list (<gui> :button "hello5" (lambda ()
+                                                  (c-display "clicked5")))
+                        (<gui> :group "V int stuff"
+                               (<gui> :text "this int slider does that")
+                               (<gui-number-input> "aiai"
+                                                   :input-type 'int
+                                                   :direction 'vertical
+                                                   :min 50
+                                                   :curr 5
+                                                   :max -2
+                                                   :callback (lambda (val)
+                                                               (c-display "got" val))))
+                        (<gui> :group "V stuff"
+                               (<gui> :text "this float slider does that")
+                               (<gui-number-input> "aiai"
+                                                   :input-type 'float
+                                                   :direction 'vertical
+                                                   :min -2
+                                                   :curr 5
+                                                   :max 50
+                                                   :callback (lambda (val)
+                                                               (c-display "got" val))))
+                        (<gui> :group "int stuff"
+                               (<gui> :text "this int slider does that")
+                               (<gui-number-input> "aiai"
+                                                   :input-type 'int
+                                                   :min -2
+                                                   :curr 5
+                                                   :max 50
+                                                   :callback (lambda (val)
+                                                               (c-display "got" val))))
+                        (<gui> :group "more stuff"
+                               (<gui> :text "this float slider does that")
+                               (<gui-number-input> "aiai"
+                                                   :curr 0.5
+                                                   :callback (lambda (val)
+                                                               (c-display "got" val)))))
+                  (list (<gui> :button "hello6" (lambda ()
+                                                  (c-display "clicked6")))
+                        (<gui> :checkbox "checkbox" #t (lambda (val)
+                                                         (c-display "checkbox" val)))
+                        (<gui> :radiobutton "radio1" #t (lambda (val)
+                                                          (c-display "radio1" val)))
+                        (<gui> :radiobutton "radio2" #f (lambda (val)
+                                                          (c-display "radio2" val)))
+                        (<gui> :horizontal-int-slider "helloslider1: " -5 10 100 (lambda (asdf) (c-display "moved1" asdf)) )
+                        (<gui> :horizontal-slider "helloslider2: " -5 10 100 (lambda (asdf) (c-display "moved2" asdf)) )
+                        (<gui> :vertical-int-slider "helloslider3: "  -5 10 100 (lambda (asdf) (c-display "moved3" asdf)))
+                        (<gui> :vertical-slider "helloslider4: "  -5 10 100 (lambda (asdf) (c-display "moved4" asdf)))
+                        (<gui> :text "and that slider does that"))
+                  (list (<gui> :int-text -2 8 20 (lambda (val)
+                                                   (c-display "inttext" val)))
+                        (<gui> :line "hello" (lambda (val)
+                                               (c-display "line" val)))                                               
+                        (<gui> :text-edit "hello2" (lambda (val)
+                                                     (c-display "text" val)))                                               
+                        (<gui> :float-text -2 8 20 2 0.5 (lambda (val)
+                                                           (c-display "floattext" val))))
+                  (list (<gui> :text "Some extra text <A href=\"http://www.notam02.no\">here</A> in the bottom <h1>right</h1> corner" "red")                        
+                        (<gui> :horizontal-layout
+                               (<gui> :text "atext1")
+                               (<gui> :text "atext2")
+                               (<gui> :text "atext2"))
+                        (<gui> :vertical-layout
+                               (<gui> :text "text1")
+                               (<gui> :text "text2")
+                               (<gui> :text "text2"))))))
+  (<gui> :show stuff)
+  )
+
+(define flow (<gui> :flow-layout (map (lambda (n)
+                                        (<gui> :text (<-> "hello" n)))
+                                      (iota 30))))
+
+
+(for-each (lambda (n)
+            (<gui> :add flow (<gui> :text (<-> "hello" n))))
+          (iota 30))
+
+(<gui> :show flow)
+
+
+             
+
+       
+
 (define ui (<gui> :ui "/home/kjetil/radium/Qt/qt4_preferences.ui"))
 (define ui (<gui> :ui "/home/kjetil/radium/Qt/qt4_soundfilesaver_widget.ui"))
 (define ui (<gui> :ui "/home/kjetil/radium/Qt/qt4_bottom_bar_widget.ui"))
@@ -289,6 +380,13 @@
                            (c-display "GOT" name))))
 
 (<gui> :show requester)
+
+
+(define tabs (<gui> :tabs))
+
+(<gui> :show tabs)
+(<gui> :add-tab tabs (<gui> :button "hello2") "tab2")
+(<gui> :add-tab 5 (<gui> :button "hello2") "tab2")
 
 
 

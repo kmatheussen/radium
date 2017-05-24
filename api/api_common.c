@@ -94,11 +94,20 @@ void printExceptionIfError(void){
     printException(message);
 }
 
+// Warning, is likely to cause a longjmp!
 void throwExceptionIfError(void){
   const char *message = pullErrorMessage();
   if (message != NULL){
     printException(message);
     SCHEME_throw("radium-api", message);
+  }
+}
+
+void clearErrorMessage(void){
+  const char *message = pullErrorMessage();
+  if(message != NULL){
+    printf("********** Warning, the error \"%s\" was not handled by throwing an error.\n", message);
+    message = NULL;
   }
 }
 
@@ -114,7 +123,10 @@ void handleError(const char *fmt,...){
   va_end(argp);
 
   printException(message);
-  
+
+  printf("HISTORY:\n%s\n",SCHEME_get_history());
+                     
+
   vector_t v = {0};
 
   int ok = VECTOR_push_back(&v, "Ok");
@@ -123,7 +135,7 @@ void handleError(const char *fmt,...){
 
   int ret = GFX_Message(&v, message);
 
-  // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above.
+  // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above, which is called when exiting an api call.
   if (ret!=continue_)
     g_error_message = talloc_strdup(message);  
 }

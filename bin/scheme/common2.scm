@@ -65,6 +65,15 @@
 (define (sort sequence less?)
   (sort! (copy sequence) less?))
 
+(define (flatten l)
+  (cond ((null? l)
+         '())
+        ((pair? l)
+         (append (flatten (car l))
+                 (flatten (cdr l))))
+        (else
+         (list l))))
+
 (define (get-bool something)
   (if something
       #t
@@ -74,6 +83,16 @@
   (+ y1 (/ (* (- x x1)
               (- y2 y1))
            (- x2 x1))))
+
+(define (safe-scale x x1 x2 y1 y2)
+  (let ((div (- x2 x1)))
+    (if (= div 0)
+        (begin
+          (safe-add-message-window-txt (string-append "Error. Almost divided by zero in safe-scale: (= (- x2 x1) 0) " (number->string x2) " " (number->string x1)))
+          0)
+        (+ y1 (/ (* (- x x1)
+                    (- y2 y1))
+                 (- x2 x1))))))
 
 (define (average . numbers)
   (/ (apply + numbers)
@@ -233,7 +252,7 @@
 ||#
 
 
-(define (copy-struct-helper original struct-name keys arguments mapper)
+(define (copy-struct-helper original struct-name keys arguments)
   (if (keyword? original)
       (throw (<-> "Copy " struct-name " struct: First argument is not a struct, but a keyword")))
 
@@ -246,8 +265,8 @@
               (throw (<-displayable-> "key '" key (<-> "' not found in struct '" struct-name "'") ". keys: " (map symbol->keyword keys))))
           (loop (cddr arguments)))))
 
-  (define new-table (copy original))
-
+  (define new-table (copy original)) ;; No worries. 'new-table' will contain the "(cons eq? ,struct-mapper)" argument similar to 'original'.
+  
   ;; add new data
   (let loop ((arguments arguments))
     (if (not (null? arguments))
@@ -262,6 +281,7 @@
 (define-expansion (define-struct name . args)
   (define define-args (keyvalues-to-define-args args))
   (define keys (map car define-args))
+  (define keys-length (length keys))
   (define must-be-defined (keep (lambda (arg)
                                   (equal? ''must-be-defined (cadr arg)))
                                 define-args))
@@ -275,28 +295,41 @@
   (define arguments (gensym "arguments"))
   (define loop (gensym "loop"))
   (define n (gensym "n"))
-  
+
+  (define struct-mapper (<_> name '-struct-mapper))
+                             
   `(begin
      
-     (define ,(<_> name '-struct-mapper)
-       (let ((keytablemapper (make-hash-table (length (quote ,keys)) eq?)))
+     (define ,struct-mapper
+       (let ((keytablemapper (make-hash-table ,keys-length eq?)))
          (for-each (lambda (key n)
                      (hash-table-set! keytablemapper (symbol->keyword key) n))
                    (quote ,keys)
-                   (iota (length (quote ,keys))))
+                   (iota ,keys-length))
          (lambda (key)
            (or (keytablemapper key)
                (throw (<-displayable-> "key " (keyword->symbol key) ,(<-> " not found in struct '" name "'") ". keys: " (quote ,keys)))))))
      
      (define (,(<_> 'copy- name) ,original . ,arguments)
-       (copy-struct-helper ,original (quote ,name) (quote ,keys) ,arguments (cons eq? ,(<_> name '-struct-mapper))))
+       (copy-struct-helper ,original
+                           (quote ,name)
+                           (quote ,keys)
+                           ,arguments))
                      
+     (define (,(<_> 'make- name '-nokeywords) ,@(map car (keyvalues-to-define-args args)))
+       (let* ((,table (make-hash-table ,keys-length (cons eq? ,struct-mapper)))
+              (,keysvar (quote ,keys)))
+         ,@(map (lambda (key)
+                  `(hash-table-set! ,table ,(symbol->keyword key) ,key))
+                keys)
+         ,table))
+
      (define* (,(<_> 'make- name) ,@(keyvalues-to-define-args args))
        ,@(map (lambda (must-be-defined)
                 `(if (eq? ,(car must-be-defined) 'must-be-defined)
                      (throw ,(<-> "key '" (car must-be-defined) "' not defined when making struct '" name "'"))))
               must-be-defined)
-       (let* ((,table (make-hash-table 32 (cons eq? ,(<_> name '-struct-mapper))))
+       (let* ((,table (make-hash-table ,keys-length (cons eq? ,struct-mapper)))
               (,keysvar (quote ,keys)))
          ,@(map (lambda (key)
                   `(hash-table-set! ,table ,(symbol->keyword key) ,key))
@@ -308,10 +341,19 @@
   :b 59
   :c)
 
+(make-test-nokeywords 3 4)
+(make-test 3 4)
+
 (define t (make-test :c 2))
 (t :b)
 (t :c)
 (t :dir)
+
+(define t2 (copy-test t :b 80))
+(t2 :b)
+(t2 :c)
+(t2 :dir)
+
 
 ;; error, unknown key:
 (copy-test t :unknown-key 2))
@@ -330,6 +372,7 @@
                  :b 59
                  :c)))
 
+(hash-table* :a 9 :b 8)
            
 (make-test :b 33)
 
@@ -417,6 +460,276 @@
 
 (aiai2 2 3 4 5 6)
 ||#
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; Try - Catch - Finally ;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;;
+#||
+"try-finally" is NOT the same as dynamic-wind. It doesn't rethrow. I.e. the code following a call to "try-finally" should always run [1].
+
+It would be more accurate to name the function something like "safe-try", "eat-errors", or "catch-all-errors-and-display-backtrace-automatically" etc.,
+but I think the name "try-finally" is faster for the brain to understand when reading code.
+
+
+Also note that the :finally thunk doesn't have an important purpose. It's just syntactic sugar. This:
+
+
+(try-finally :try (lambda () 5)
+             :finally newline)
+
+
+...is the same as this:
+
+
+(let ((ret (try-finally :try (lambda () 5))))
+  (newline)
+  ret)
+
+
+
+[1] At least in the normal situations, not too sure about what happens if there is creative use of call/cc.
+||#
+;;
+;;
+;;
+;; First a helper function:
+
+(define-constant *try-finally-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
+
+(define (FROM-C-catch-all-errors-and-display-backtrace-automatically func . args)
+  (catch #t
+         (lambda ()
+           (apply func args))
+         (lambda args
+           (safe-display-ow!)
+           *try-finally-failed-return-value*)))
+  
+
+(define (catch-all-errors-and-display-backtrace-automatically thunk)
+  (catch #t
+         thunk
+         (lambda args
+           (safe-display-ow!)
+           *try-finally-failed-return-value*)))
+
+(define (catch-all-errors-failed? ret)
+  (eq? ret *try-finally-failed-return-value*))
+
+;; Then the function we want to use everywhere:
+
+(define-constant *try-finally-failure-thunk-failed* 'try-finally-failure-thunk-failed)
+(define-constant *try-finally-false-unless-failure-is-overridden* 'false-unless-failure-is-overridden)
+
+(delafina (try-finally :try
+                       
+                       :rethrow #f
+                       
+                       ;; If overridden, :failure will always return this value. If not overridden, the default :failure implementation will return #f.
+                       :failure-return-value *try-finally-false-unless-failure-is-overridden*
+                       
+                       :failure (lambda ()
+                                  (if (eq? failure-return-value *try-finally-false-unless-failure-is-overridden*)
+                                      #f
+                                      failure-return-value))
+                       
+                       :finally (lambda ()
+                                  #f))
+  (if rethrow
+      (assert "rethrow not implemented"))
+  
+  (define (return ret)
+    (finally)
+    ret)
+  
+  (define try-ret (catch-all-errors-and-display-backtrace-automatically try))
+
+  (if (catch-all-errors-failed? try-ret)
+      (begin                    
+        (define failed-ret (catch-all-errors-and-display-backtrace-automatically failure))
+        (cond ((catch-all-errors-failed? failed-ret)
+               (return *try-finally-failure-thunk-failed*))
+              ((eq? failure-return-value *try-finally-false-unless-failure-is-overridden*)
+               (return failed-ret))
+              (else
+               (return failure-return-value))))
+      (return try-ret)))
+
+
+
+(c-display "\n\n\n\n=======================================================================================================")
+(c-display "    START testing try-catch-failure. Lots of backtrace will be printed, but nothing is wrong, hopefully.")
+(c-display "=======================================================================================================\n\n\n\n")
+
+
+;; Test all fine.
+(***assert*** (try-finally :try (lambda ()
+                                  (c-display "returning 5")
+                                  (+ 2 3))
+                           :rethrow #f)
+              5)
+
+;; Test all fine with finalizer
+(let ((is-finalized #f))
+  (***assert*** (try-finally :try (lambda ()
+                                    (c-display "returning 5")
+                                    (+ 2 3))
+                             :finally (lambda ()
+                                        (c-display "finally")
+                                        (set! is-finalized #t)))
+                5)
+  (***assert*** is-finalized #t))
+
+;; Test all fine and catch not called.
+(let ((is-finalized #f)
+      (is-catched #f))
+  (***assert*** (try-finally :try (lambda ()
+                                    (c-display "returning 5")
+                                    (***assert*** is-finalized #f)
+                                    (+ 2 3))
+                             :failure (lambda ()
+                                        (c-display "catching")
+                                        (***assert*** is-finalized #f)
+                                        (set! is-catched #t))
+                             :finally (lambda ()
+                                        (c-display "finally")
+                                        (***assert*** is-catched #f)
+                                        (set! is-finalized #t)))
+                5)
+  (***assert*** is-finalized #t)
+  (***assert*** is-catched #f))
+
+
+;; Test failure in 'try'. Returns #f by default.
+(let ((is-finalized #f))
+  (define result (try-finally :try (lambda ()
+                                     (c-display "returning 5")
+                                     (***assert*** is-finalized #f)
+                                     (+ a 3))
+                              :failure-return-value 281
+                              :finally (lambda ()
+                                         (c-display "finally")
+                                         (set! is-finalized #t))))
+  (***assert*** result 281)
+  (***assert*** is-finalized #t))
+
+
+;; Test failure in 'try'. Custom failure function.
+(let ((is-finalized #f))
+  (define result (try-finally :try (lambda ()
+                                     (c-display "returning 5")
+                                     (***assert*** is-finalized #f)
+                                     (+ a 3))
+                              :finally (lambda ()
+                                         (c-display "finally")
+                                         (set! is-finalized #t))))
+  (***assert*** result #f)
+  (***assert*** is-finalized #t))
+
+
+;; Test failure in 'try'. Custom failure func.
+(let ((is-finalized #f)
+      (is-catched #f))
+
+  (define result (try-finally :try (lambda ()
+                                     (c-display "returning 5")
+                                     (***assert*** is-finalized #f)
+                                     (+ a 3))
+                              :failure (lambda ()
+                                         (c-display "catching")
+                                         (***assert*** is-finalized #f)
+                                         (set! is-catched #t)
+                                         'failed)
+                              :finally (lambda ()
+                                         (c-display "finally")
+                                         (***assert*** is-catched #t)
+                                         (set! is-finalized #t))))
+  (***assert*** result 'failed)
+  (***assert*** is-finalized #t)
+  (***assert*** is-catched #t))
+
+
+;; Test failure in 'try'. Custom failure function and custom failure return value.
+(let ((is-finalized #f)
+      (is-catched #f))
+  (define result (try-finally :try (lambda ()
+                                     (c-display "returning 5")
+                                     (***assert*** is-finalized #f)
+                                     (+ a 3))
+                              :failure-return-value 281
+                              :failure (lambda ()
+                                         (c-display "catching")
+                                         (***assert*** is-finalized #f)
+                                         (set! is-catched #t)
+                                         'failed)
+                              :finally (lambda ()
+                                         (c-display "finally")
+                                         (***assert*** is-catched #t)
+                                         (set! is-finalized #t))))
+  (***assert*** result 281)
+  (***assert*** is-catched #t)
+  (***assert*** is-finalized #t))
+
+
+;; Test failure in 'failure'. (a lot of backtrace is supposed to be printed now, but the important thing is that the last three asserts are correct.)
+(let ((is-finalized #f)
+      (is-catched #f))
+  (define result (try-finally :try (lambda ()
+                                     (c-display "returning 5")
+                                     (***assert*** is-finalized #f)
+                                     (+ a 3))
+                              :failure (lambda ()
+                                         (c-display "catching")
+                                         (***assert*** is-finalized #f)
+                                         (set! is-catched #t)
+                                         (+ b 4)
+                                         'failed)
+                              :finally (lambda ()
+                                         (c-display "finally")
+                                         (***assert*** is-catched #t)
+                                         (set! is-finalized #t))))
+  (***assert*** result *try-finally-failure-thunk-failed*)
+  (***assert*** is-finalized #t)
+  (***assert*** is-catched #t))
+
+;; Test failure in 'finally'. (we test that a failure in 'finally' is not caught)
+(let ((is-finalized #f)
+      (is-catched #f)
+      (finally-failed #f))
+  (define result (catch #t
+                        (lambda ()
+                          (try-finally :try (lambda ()
+                                              (c-display "returning 5")
+                                              (***assert*** is-finalized #f)
+                                              (+ a 3))
+                                       :failure (lambda ()
+                                                  (c-display "catching")
+                                                  (***assert*** is-finalized #f)
+                                                  (set! is-catched #t)
+                                                  (+ b 4)
+                                                  'failed)
+                                       :finally (lambda ()
+                                                  (c-display "finally")
+                                                  (***assert*** is-catched #t)
+                                                  (set! is-finalized #t)
+                                                  (+ c 5))))
+                        (lambda args
+                          (set! finally-failed #t)
+                          'finally-failed2)))
+  
+  (***assert*** result 'finally-failed2)
+  (***assert*** finally-failed #t)
+  (***assert*** is-finalized #t)
+  (***assert*** is-catched #t))
+
+
+(c-display "\n\n\n\n=======================================================================================================")
+(c-display "    ENDED testing try-catch-failure. Lots of backtrace was printed, but nothing is wrong, hopefully.")
+(c-display "=======================================================================================================\n\n\n\n")
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -641,56 +954,6 @@ for .emacs:
   `( ,(<_> 'ra: (keyword->symbol command)) ,@args))
 
                               
-(define (my-equal? a b)
-  (morally-equal? a b))
-#||
-  ;;(c-display "my-equal?" a b)
-  (cond ((and (pair? a)
-              (pair? b))
-         (and (my-equal? (car a)
-                         (car b))
-              (my-equal? (cdr a)
-                         (cdr b))))
-        ((and (vector? a)
-              (vector? b))
-         (my-equal? (vector->list a)
-                    (vector->list b)))
-        ((and (procedure? a)
-              (procedure? b))
-         (structs-equal? a b))
-        (else
-         (morally-equal? a b))))
-||#
-
-
-(define (***assert*** a b)
-  (define (test -__Arg1 -__Arg2)
-    (define (-__Func1)
-      (let ((A -__Arg1))
-        (if (my-equal? A -__Arg2)
-            (begin
-              (newline)
-              (pretty-print "Correct: ")
-              (pretty-print (to-displayable-string A))
-              (pretty-print "")
-              (newline)
-              #t)
-            (-__Func2))))
-    (define (-__Func2)
-      (let ((A -__Arg1))
-        (let ((B -__Arg2))
-          (begin
-            (newline)
-            (pretty-print "Wrong. Result: ")
-            (pretty-print (to-displayable-string A))
-            (pretty-print ". Correct: ")
-            (pretty-print (to-displayable-string B))
-            (pretty-print "")
-            (newline)
-            #f))))
-    (-__Func1))
-
-  (assert (test a b)))
 
 (define (group-by get-key key-compare elements)
   (define keys '())
@@ -1119,8 +1382,8 @@ for .emacs:
                      (c-display "hepp3")))
 ||#
 
-(define *num-radium-ticks* (<ra> :get-highest-legal-place-denominator))
-(define *smallest-radium-tick* (/ 1 *num-radium-ticks*))
+(define-constant *num-radium-ticks* (<ra> :get-highest-legal-place-denominator))
+(define-constant *smallest-radium-tick* (/ 1 *num-radium-ticks*))
 (define (-line linenum)
   (- linenum *smallest-radium-tick*))
 

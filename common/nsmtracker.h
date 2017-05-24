@@ -763,32 +763,6 @@ static inline dyn_t DYN_create_float(double float_number){
   return a;
 }
 
-static inline dyn_t DYN_create_ratio(const Ratio ratio){
-  dyn_t a;
-  a.type = RATIO_TYPE;
-  a.ratio = (Ratio*)tcopy(&ratio, sizeof(Ratio));
-  return a;
-}
-
-// (There is also a DYN_get_place function in placement_proc.h)
-static inline Ratio DYN_get_ratio(const dyn_t dyn){
-  if (dyn.type==INT_TYPE)
-    return make_ratio(dyn.int_number, 1);
-
-  if (dyn.type==RATIO_TYPE)
-    return *dyn.ratio;
-
-  RError("DYN_Get_ratio: dyn (type: %d) can not be converted to a ratio", dyn.type);
-
-  return make_ratio(0,1);      
-}
-
-
-
-static inline dyn_t DYN_create_place(const Place place){
-  return DYN_create_ratio(ratio_minimize(make_ratio(place.counter + place.line*place.dividor, place.dividor)));
-}
-
 static inline bool DYN_is_number(const dyn_t a){
   if (a.type==INT_TYPE)
     return true;
@@ -824,6 +798,41 @@ static inline int64_t DYN_get_int64_from_number(const dyn_t a){
   RError("DYN_get_double_from_number: 'a' is not a number, but a %s", DYN_type_name(a.type));
   return 0;
 }
+
+static inline dyn_t DYN_create_ratio(const Ratio ratio){
+  dyn_t a;
+  a.type = RATIO_TYPE;
+  a.ratio = (Ratio*)tcopy(&ratio, sizeof(Ratio));
+  return a;
+}
+
+static inline dyn_t DYN_create_place(const Place place){
+  return DYN_create_ratio(ratio_minimize(make_ratio(place.counter + place.line*place.dividor, place.dividor)));
+}
+
+// (There is also a DYN_get_place function in placement_proc.h)
+static inline Ratio DYN_get_ratio(const dyn_t dyn){
+  if (dyn.type==INT_TYPE)
+    return make_ratio(dyn.int_number, 1);
+
+  if (dyn.type==RATIO_TYPE)
+    return *dyn.ratio;
+
+  RError("DYN_Get_ratio: dyn (type: %d) can not be converted to a ratio", dyn.type);
+
+  return make_ratio(0,1);      
+}
+
+static inline bool DYN_is_ratio(const dyn_t a){
+  if (a.type==INT_TYPE)
+    return true;
+  if (a.type==RATIO_TYPE)
+    return true;
+  
+  return false;
+}
+
+
 
 /*
 Must include placement_proc.h to get this function.
@@ -887,9 +896,12 @@ static inline void set_symbol_name(const symbol_t *symbol, const char *new_name)
 
 typedef struct{
   Ratio quant;
+  /*
+    // In scheme, we read these three variables directly from the gui now.
   bool quantitize_start;
   bool quantitize_end;
   bool keep_note_length;
+  */
   int type;
 } quantitize_options_t;
 

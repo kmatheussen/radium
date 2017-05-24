@@ -1,14 +1,15 @@
 (provide 'gui.scm)
 
-(define *min-db* (<ra> :get-min-db))
-(define *max-db* (<ra> :get-max-db))
-(define *max-mixer-db* 6)
+(define-constant *min-db* (<ra> :get-min-db))
+(define-constant *max-db* (<ra> :get-max-db))
+(define-constant *max-mixer-db* 6)
 
 (define (gui-create-layout create-layout-func layout-args . guis)
   (define layout (apply create-layout-func layout-args))
   (for-each (lambda (gui)
+              (c-display "Adding" gui "to layout" layout)
               (<ra> :gui_add layout gui))
-            guis)
+            (flatten guis))
   layout)
   
 (define (my-gui_group title args)
@@ -45,6 +46,9 @@
         ((eq? command :horizontal-layout)
          (gui-create-layout ra:gui_horizontal-layout '() args))
         
+        ((eq? command :flow-layout)
+         (gui-create-layout ra:gui_flow-layout '() args))
+
         ((eq? command :empty)
          (<ra> :gui_vertical-layout))
         
@@ -123,7 +127,13 @@
         
         ((eq? command :horizontal-layout)
          `(gui-create-layout ra:gui_horizontal-layout '() ,@args))
-        
+
+        ((eq? command :flow-layout)
+         `(gui-create-layout ra:gui_flow-layout '() ,@args))
+
+        ((eq? command :scroll-area)
+         `(gui-create-layout ra:gui_scroll-area (list ,(car args) ,(cadr args)) ,@(cddr args)))
+
         ((eq? command :empty)
          `(<ra> :gui_vertical-layout))
         
@@ -215,14 +225,9 @@
 
 (define (disable-gui-updates-block gui block)
   (<gui> :disable-updates gui)
-  (let ((ret (catch #t
-                    block
-                    (lambda args ;; Catch exceptions to ensure (<ra> :enable-updates gui) will be called
-                      (display "args")(display args)(newline)
-                      (apply format #t (cadr args))
-                      (display (ow!))))))
-    (<gui> :enable-updates gui)
-    ret))
+  (try-finally :try block
+               :finally (lambda ()
+                          (<gui> :enable-updates gui))))
 
 (define (reopen-gui-at-curr-pos gui)
   (disable-gui-updates-block
@@ -328,48 +333,6 @@
 
   
 
-;;(<gui> :get-parent-window *message-gui*)
-#!!
-(add-message-window-message "aiai")
-
-(define (disable-gui-updates-block gui block)
-  (let ((ret (catch #t
-                    (lambda ()
-                      gui)
-                    (lambda args
-                      (display (ow!))))))
-    ret))
-
-(define (show-message-gui)
-  (when #f
-    (define gui2 50)
-    #t)
-  (disable-gui-updates-block
-   gui2
-   (lambda ()
-     50)))
-
-
-(define (show-message-gui)
-  (when #f
-    (define gui2 50)
-    #t)
-  gui2)
-
-(eval '(show-message-gui))
-
-(show-message-gui)
-
-
-(<ra> :add-message "aiai")
-
-(<ra> :add-message "hello1345weert446        werttqwertqert qqerrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrt                           qerrrrrrrrrrrrrrrrrrrrrrrrt\nasdfasdf")
-(show-message-gui)
-(<gui> :hide *message-gui*)
-(<gui> :show *message-gui*)
-
-!!#
-
 (define *g-complete-message* #f)
 (define (add-message-window-message message)
   (set! *g-complete-message* (<-> (if (not (string? *g-complete-message*))
@@ -386,6 +349,14 @@
                                                  "</body></html>\n"))
   (show-message-gui))
 
+(define (safe-add-message-window-txt txt)
+  (catch #t
+         (lambda ()
+           (add-message-window-message (<ra> :get-html-from-text txt)))
+         (lambda args
+           (get-as-displayable-string-as-possible (list "safe-add-message-window-message failed: " args))
+           (display txt))))
+
 #||
 (<ra> :add-message "hello1345weert446        werttqwertqert qqerrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrt                           qerrrrrrrrrrrrrrrrrrrrrrrrt\nasdfasdf")
 (<ra> :show-message "hello1345weert446        werttqwertqert qqerrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrt                           qerrrrrrrrrrrrrrrrrrrrrrrrt\nasdfasdf")
@@ -394,10 +365,12 @@
 #!!
 (let ((gui (<gui> :horizontal-layout)))  (<gui> :show gui)  (<gui> :move-to-parent-centre gui)  )
 
+(+ a 9)
+
 !!#
 
 
-(define *help-windows* (make-hash-table 10 string=?))
+(define-constant *help-windows* (make-hash-table 10 string=?))
 
 (define (FROM-C-show-help-window filename)
   (define web (or (*help-windows* filename)
@@ -408,3 +381,5 @@
                                                      #f))
                     web)))
   (reopen-gui-at-curr-pos web))
+
+

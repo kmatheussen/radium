@@ -97,7 +97,7 @@ void cancelIndicatorNode(void){
 
 
 float getHalfOfNodeWidth(void){
-  return root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in Render.cpp
+  return root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in OpenGL/Render.cpp and common/SeqAutomation.hpp
 }
 
 float get_scroll_pos(void){
@@ -1165,7 +1165,7 @@ static void moveNote(struct Blocks *block, struct Tracks *track, struct Notes *n
   }PLAYER_unlock();
 }
 
-int movePianonote(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int movePianonote(int pianonotenum, float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -1179,10 +1179,11 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
 
   window->must_redraw_editor = true;
 
-  //printf("floatplace: %f\n",floatplace);
-  if (floatplace < 0)
+  if (place.line < 0)
     return notenum;
-
+  
+  float floatplace = GetfloatFromPlace(&place);
+  
   struct Tracks *track = wtrack->track;
 
   Place old_place = getPianoNotePlace(pianonotenum, note);
@@ -1194,9 +1195,9 @@ int movePianonote(int pianonotenum, float value, float floatplace, int notenum, 
   return ListPosition3(&track->notes->l, &note->l);
 }
 
-static int setPitchnum2(int num, float value, float floatplace, int tracknum, int blocknum, int windownum, bool replace_note_ends);
+static int setPitchnum2(int num, float value, Place place, int tracknum, int blocknum, int windownum, bool replace_note_ends);
   
-int movePianonoteStart(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int movePianonoteStart(int pianonotenum, float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -1209,7 +1210,7 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
 
   if (note->pitches!=NULL) {
     setPitchnum2(getPitchNumFromPianonoteNum(pianonotenum, notenum, tracknum, blocknum, windownum),
-                 value, floatplace,
+                 value, place,
                  tracknum, blocknum, windownum,
                  false
                  );
@@ -1220,9 +1221,11 @@ int movePianonoteStart(int pianonotenum, float value, float floatplace, int note
     
   window->must_redraw_editor = true;
     
-  if (floatplace < 0)
+  if (place.line < 0)
     return notenum;
 
+  float floatplace = GetfloatFromPlace(&place);
+  
   const float mindiff = 0.001;
     
   float lastplacefloat = GetfloatFromPlace(&note->end);
@@ -1284,7 +1287,7 @@ void setPianonoteLogtype(int logtype, int pianonotenum, int notenum, int tracknu
   setPitchnumLogtype2(logtype, pitchnum, track);
 }
   
-int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int movePianonoteEnd(int pianonotenum, float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -1302,14 +1305,14 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
              
     // 1. Change pitch value
     setPitchnum2(logtype==LOGTYPE_HOLD ? pitchnum : pitchnum + 1,
-                 value, -1,
+                 value, p_Create(-1, 0, 1),
                  tracknum, blocknum, windownum,
                  false
                  );
 
     // 2. Change place of the next pianonote
     setPitchnum2(pitchnum+1,
-                 -1, floatplace,
+                 -1, place,
                  tracknum, blocknum, windownum,
                  false
                  );
@@ -1324,9 +1327,11 @@ int movePianonoteEnd(int pianonotenum, float value, float floatplace, int notenu
     else
       note->note = R_BOUNDARIES(1, value, 127);
   
-    if (floatplace < 0)
+    if (place.line < 0)
       return notenum;
 
+    float floatplace = GetfloatFromPlace(&place);
+      
     const float mindiff = 0.001;
   
     float firstplacefloat = GetfloatFromPlace(&note->l.p);
@@ -1433,7 +1438,7 @@ void cancelCurrentPianonote(void){
 
 static int addPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value);
   
-void addPianonotePitch(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+void addPianonotePitch(float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -1446,9 +1451,6 @@ void addPianonotePitch(float value, float floatplace, int notenum, int tracknum,
     window->must_redraw_editor = true;
     note->pitch_end = note->note;
   }
-
-  Place place;
-  Float2Placement(floatplace, &place);
 
   addPitch2(window, wblock, wtrack, note, &place, value);
 }
@@ -1884,7 +1886,7 @@ void setIndicatorPitchnum(int num, int tracknum, int blocknum){
   }
 }
 
-static int setPitchnum2(int num, float value, float floatplace, int tracknum, int blocknum, int windownum, bool replace_note_ends){
+static int setPitchnum2(int num, float value, Place place, int tracknum, int blocknum, int windownum, bool replace_note_ends){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -1911,13 +1913,10 @@ static int setPitchnum2(int num, float value, float floatplace, int tracknum, in
     if (value > 0)
       pitch->note = clamped_value;
 
-    if (floatplace >= 0.0f) {
+    if (place.line >= 0) {
       Place firstLegalPlace,lastLegalPlace;
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
       PlaceTilLimit(&lastLegalPlace, &note->end);
-
-      Place place;
-      Float2Placement(floatplace, &place);
 
       PLAYER_lock();{
         ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
@@ -1930,8 +1929,8 @@ static int setPitchnum2(int num, float value, float floatplace, int tracknum, in
     if (value > 0)
       note->pitch_end = clamped_value;
     
-    if (floatplace >= 0) {
-      MoveEndNote(block, track, note, PlaceCreate2(floatplace), true);
+    if (place.line >= 0) {
+      MoveEndNote(block, track, note, &place, true);
       return getPitchNum(track, note, NULL, true);
     }
     
@@ -1940,8 +1939,8 @@ static int setPitchnum2(int num, float value, float floatplace, int tracknum, in
     if (value > 0)
       note->note = clamped_value;
 
-    if (floatplace >= 0) {
-      MoveNote(block, track, note, PlaceCreate2(floatplace), replace_note_ends);
+    if (place.line >= 0) {
+      MoveNote(block, track, note, &place, replace_note_ends);
       return getPitchNum(track, note, NULL, false);
     }
   }
@@ -1949,8 +1948,8 @@ static int setPitchnum2(int num, float value, float floatplace, int tracknum, in
   return num;
 }
 
-int setPitchnum(int num, float value, float floatplace, int tracknum, int blocknum, int windownum){
-  return setPitchnum2(num, value, floatplace, tracknum, blocknum, windownum, true);
+int setPitchnum(int num, float value, Place place, int tracknum, int blocknum, int windownum){
+  return setPitchnum2(num, value, place, tracknum, blocknum, windownum, true);
 }
   
 static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){

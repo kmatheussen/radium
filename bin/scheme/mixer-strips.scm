@@ -11,8 +11,8 @@
 (define (get-fontheight)
   (+ 4 (<gui> :get-system-fontheight)))
 
-(define *text-color* "#cccccc")
-(define *arrow-text* "↳")
+(define-constant *text-color* "#cccccc")
+(define-constant *arrow-text* "↳")
 
 (define *current-mixer-strip-is-wide* #f)
 
@@ -118,6 +118,10 @@
   (define color (<ra> :get-instrument-color instrument-id))
 
   (define label (<gui> :widget))
+  
+  (if is-minimized
+      (<gui> :set-min-height label (* 2 (<gui> :get-system-fontheight))))
+  
   (add-safe-paint-callback label
          (lambda (width height)
            (<gui> :filled-box label color 0 0 width height)
@@ -125,7 +129,7 @@
                (<gui> :draw-vertical-text label *text-color* name 2 7 (+ width 0) height #f #t)
                (<gui> :draw-text label *text-color* name 5 0 width height #f #t #f))
            (<gui> :draw-box label "#202020" 0 0 width height 1.0 2 2)))
-
+  
   (<gui> :add-mouse-callback label (lambda (button state x y)
                                     (when (= state *is-pressing*)
                                       (if (= button *right-button*)
@@ -1514,9 +1518,9 @@
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
   (define parent (<gui> :widget width height)) ;; Lots of trouble using a widget as parent instead of a layout. However, it's an easy way to avoid flickering when changing current instrument.
-
+  
   ;;(define width (floor (* 1 (<gui> :text-width "MUTE SOLO"))))
-
+  
   (set-fixed-width parent width)
   ;;(set-fixed-height parent height)
   ;;(<gui> :set-min-width parent 100)
@@ -1529,40 +1533,36 @@
   (define (remake width height)
     (define instrument-is-open (<ra> :instrument-is-open instrument-id))
     
-    (c-display "    remaking mixer-strip" instrument-id parent width height)
-    (catch #t
-           (lambda ()
-             (run-instrument-data-memoized
-              (lambda()
-
-                (<gui> :disable-updates parent)
-                
-                (define new-mixer-strip (and instrument-is-open (create-mixer-strip instrument-id width #t)))
-                
-                (when das-mixer-strip-gui
-                  (<gui> :close das-mixer-strip-gui)
-                  (set! das-mixer-strip-gui #f))
-                
-                (when instrument-is-open
-                  (if *current-mixer-strip-is-wide*
-                      (set! width org-width)
-                      (set! width (<gui> :width new-mixer-strip)))
-                  (set-fixed-width parent width)
-                  (<gui> :add parent new-mixer-strip 0 0 width height)
-                  (<gui> :show new-mixer-strip)             
-                  (set! das-mixer-strip-gui new-mixer-strip))
-                )))
-           
-           (lambda args
-             (display (ow!))))
-
-    (<gui> :enable-updates parent)
-
-    )
+    (run-instrument-data-memoized
+     (lambda()
+       (when das-mixer-strip-gui
+         (<gui> :close das-mixer-strip-gui)
+         (set! das-mixer-strip-gui #f))
+       
+       (when instrument-is-open                
+         (set! das-mixer-strip-gui (create-mixer-strip instrument-id width #t))
+         (if *current-mixer-strip-is-wide*
+             (set! width org-width)
+             (set! width (<gui> :width das-mixer-strip-gui)))
+         (set-fixed-width parent width)
+         (set-fixed-width das-mixer-strip-gui width)
+         (<gui> :add parent das-mixer-strip-gui 0 0 width height)
+         (<gui> :show das-mixer-strip-gui))
+       
+       )))
 
   (remake width height)
 
-  (<gui> :add-resize-callback parent remake) ;; Dont need to use safe callback here. 'remake' checks that the instrument is open.
+  (define is-resizing #f)
+  
+  (<gui> :add-resize-callback parent
+         (lambda (width height)
+           (when (not is-resizing) ;; Unfortunately, remake triggers a new resize, and we get a recursive call here. TODO: Fix this. Resize callback should never call itself.
+             (set! is-resizing #t)             
+             (<gui> :disable-updates parent)
+             (remake width height) ;; Don't need to use safe callback here. 'remake' checks that the instrument is open.
+             (<gui> :enable-updates parent)
+             (set! is-resizing #f))))
   
   (define mixer-strips-object (make-mixer-strips-object :gui parent
                                                         :remake (lambda (list-of-modified-instrument-ids)
@@ -1757,48 +1757,44 @@
     (set! g-total-time2 0)
     (set! g-total-num-calls 0)
     (set! g-total-sort-time 0)
-
-    (catch #t
-           (lambda ()
-             (run-instrument-data-memoized
-              (lambda()
-                (<gui> :disable-updates parent)
-                ;;(c-display "   Size of das-stored:" (length das-stored-mixer-strips))
-                (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
-                                     (lambda (new-mixer-strips new-mixer-strips-gui)
-                                       (if das-mixer-strips-gui
-                                           (begin
-                                             (<gui> :replace parent das-mixer-strips-gui new-mixer-strips-gui)
-                                             (<gui> :close das-mixer-strips-gui))
-                                           (begin
-                                             (<gui> :add parent new-mixer-strips-gui)
-                                             ;;(<gui> :show mixer-strips-gui)
-                                             ))
-                                       
-                                       (set! das-stored-mixer-strips new-mixer-strips)
-                                       (set! das-mixer-strips-gui new-mixer-strips-gui)
-                                       )))))
-           (lambda args
-             (display (ow!))))
+    
+    (run-instrument-data-memoized
+     (lambda()
+       (<gui> :disable-updates parent)
+       ;;(c-display "   Size of das-stored:" (length das-stored-mixer-strips))
+       (create-mixer-strips num-rows das-stored-mixer-strips list-of-modified-instrument-ids
+                            (lambda (new-mixer-strips new-mixer-strips-gui)
+                              (if das-mixer-strips-gui
+                                  (begin
+                                    (<gui> :replace parent das-mixer-strips-gui new-mixer-strips-gui)
+                                    (<gui> :close das-mixer-strips-gui))
+                                  (begin
+                                    (<gui> :add parent new-mixer-strips-gui)
+                                    ;;(<gui> :show mixer-strips-gui)
+                                    ))
+                              
+                              (set! das-stored-mixer-strips new-mixer-strips)
+                              (set! das-mixer-strips-gui new-mixer-strips-gui)
+                              ))))
     
     ;; prevent some flickering
     (<ra> :schedule 15 (lambda ()
                          (<gui> :enable-updates parent)
                          #f))
-
+    
     (c-display "   remake-gui duration: " (- (time) start-time) g-total-time "("g-total-num-calls ")" g-total-time2 g-total-sort-time)
     )
-
+    
   (define mixer-strips-object (make-mixer-strips-object :gui parent
                                                         :is-full-screen is-full-screen
                                                         :remake remake
                                                         :pos pos))
   
   (remake '())
-
+  
   (<ra> :inform-about-gui-being-a-mixer-strips parent)
   (push-back! *mixer-strips-objects* mixer-strips-object)
-
+  
   (<gui> :add-deleted-callback parent
          (lambda (radium-runs-custom-exec)
            (set! *mixer-strips-objects*
@@ -1806,9 +1802,9 @@
                            (= (a-mixer-strips-object :gui)
                               parent))
                          *mixer-strips-objects*))))
-
+  
   ;;mixer-strips-object
-
+  
   parent
   )
 

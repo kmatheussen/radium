@@ -177,9 +177,11 @@ void PlayStop(void){
     PlayStopReally(true);
 }
 
+
 static void start_player(int playtype, int64_t abstime, Place *place, struct Blocks *block, struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
+    
   g_player_was_stopped_manually = false;
 
   {

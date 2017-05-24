@@ -149,7 +149,7 @@ void SetSignatureCurrPos(struct Tracker_Windows *window){
 	if(signaturestring==NULL) return;
 
         Rational rational = create_rational_from_string(signaturestring);
-        if (rational.is_valid()==false || rational.numerator<=0 || rational.denominator<=0)
+        if (rational.is_valid()==false || rational._numerator<=0 || rational._denominator<=0)
           return;
         
 	ADD_UNDO(Signatures_CurrPos(window));

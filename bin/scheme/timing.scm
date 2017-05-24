@@ -105,23 +105,23 @@ list<pos, value> ;; A value can not be 0, and all automatic repeat of swing has 
 ;;  (= prev-bar-length curr-bar-length)) ;; Probably good enough.
 
 
-(define *test-shuffle-swing* '((0 1)
-                               (2 2)
-                               (4 1)
-                               (6 2)
-                               (8 1)
-                               (10 2)
-                               (12 1)
-                               (14 2)))
+(define-constant *test-shuffle-swing* '((0 1)
+                                        (2 2)
+                                        (4 1)
+                                        (6 2)
+                                        (8 1)
+                                        (10 2)
+                                        (12 1)
+                                        (14 2)))
 
-(define *test-4/4-beats* (list (make-bar :barnum 0 :beats '(( 0 0)
-                                                            ( 4 1)
-                                                            ( 8 2)
-                                                            (12 3)))
-                               (make-bar :barnum 1 :beats '((16 0)
-                                                            (20 1)
-                                                            (24 2)
-                                                            (28 3)))))
+(define-constant *test-4/4-beats* (list (make-bar :barnum 0 :beats '(( 0 0)
+                                                                     ( 4 1)
+                                                                     ( 8 2)
+                                                                     (12 3)))
+                                        (make-bar :barnum 1 :beats '((16 0)
+                                                                     (20 1)
+                                                                     (24 2)
+                                                                     (28 3)))))
 
 
 #||
@@ -1364,5 +1364,3 @@ BPM:
               8)
 
 ||#
-
-
