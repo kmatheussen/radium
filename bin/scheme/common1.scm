@@ -83,6 +83,50 @@
 (hash-table-to-string (hash-table* 'b 2 'c 3))
 ||#
 
+(define-expansion (define2 name correct-type? value)
+  (define s (gensym "s"))
+  (define v (gensym "v"))
+  (if (<ra> :release-mode)
+      `(define ,name ,value)
+      `(begin     
+         (define ,name (let ((,v ,value))
+                         (if (,correct-type? ,v)
+                             ,v
+                             (error 'wrong-type (list "For " ',name ': ,v)))))
+         (set! (symbol-access ',name)
+               (lambda (,s ,v)
+                 (if (,correct-type? ,v)
+                     ,v
+                     (error 'wrong-type (list "For " ',name "New value:" ,v "Prev value:" ,name))))))))
+
+#!!
+(pp (macroexpand (define2 add9 integer? 50)))
+
+(define2 anint2 integer? 'b)
+(define2 anint2 integer? 5)
+
+(set! anint2 30)
+(set! anint2 'b)
+!!#
+
+
+;; Partial application
+(define (P-> funcname . args)
+  (lambda args2
+    (apply funcname (append args args2))))
+
+;; Small one-arg function
+(define-expansion (L-> body)
+  `(lambda (_)
+     ,body))
+
+(define (curry-or . funcs)
+  (L-> (let loop ((funcs funcs))
+         (if (null? funcs)
+             #f
+             (or ((car funcs) _)
+                 (loop (cdr funcs)))))))
+
 (define (to-displayable-string a)
   ;;(display "____ a: ")(display a)(newline)
   (cond ((keyword? a)

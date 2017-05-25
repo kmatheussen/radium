@@ -2134,6 +2134,13 @@ void msleep(int64_t ms){
   //usleep(1000*ms); // usleep only works in the range 0->1000000
 }
 
+bool releaseMode(void){
+#if defined(RELEASE)
+  return true;
+#else
+  return false;
+#endif
+}
 
 
 // Scheduler

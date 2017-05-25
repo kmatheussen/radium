@@ -201,7 +201,7 @@
 
 ;; Mouse move handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define *mouse-move-handlers* '())
+(define2 *mouse-move-handlers* list? '())
 
 (delafina (add-mouse-move-handler :move)
   (push-back! *mouse-move-handlers* move))
@@ -221,8 +221,8 @@
   :release-func #f
   )
 
-(define *mouse-cycles* '())
-(define *current-mouse-cycle* #f)
+(define2 *mouse-cycles* list? '())
+(define2 *current-mouse-cycle* (curry-or not hash-table?) #f)
 
 (define (add-mouse-cycle $mouse-cycle)
   (push-back! *mouse-cycles*
@@ -327,12 +327,12 @@
 ;; Functions called from radium
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define mouse-fx-has-been-set #f)
+(define2 mouse-fx-has-been-set boolean? #f)
 (define (set-mouse-fx fxnum tracknum)
   (set! mouse-fx-has-been-set #t)
   (<ra> :set-mouse-fx fxnum tracknum))
 
-(define mouse-track-has-been-set #f)
+(define2 mouse-track-has-been-set boolean? #f)
 (define (set-mouse-track tracknum)
   (set! mouse-track-has-been-set #t)
   (<ra> :set-mouse-track tracknum))
@@ -340,12 +340,12 @@
   (set! mouse-track-has-been-set #t)
   (<ra> :set-mouse-track-to-reltempo))
 
-(define mouse-note-has-been-set #f)
+(define2 mouse-note-has-been-set boolean? #f)
 (define (set-mouse-note notenum tracknum)
   (set! mouse-note-has-been-set #t)
   (<ra> :set-mouse-note notenum tracknum))
 
-(define indicator-node-has-been-set #f)
+(define2 indicator-node-has-been-set boolean? #f)
 (define (set-indicator-temponode num)
   (set! indicator-node-has-been-set #t)
   (<ra> :set-indicator-temponode num))
@@ -359,7 +359,7 @@
   (set! indicator-node-has-been-set #t)
   (<ra> :set-indicator-fxnode fxnodenum notenum tracknum))
 
-(define current-node-has-been-set #f)
+(define2 current-node-has-been-set boolean? #f)
 (define (set-current-temponode num)
   (set! current-node-has-been-set #t)
   (<ra> :set-current-temponode num))
@@ -376,13 +376,13 @@
   (<ra> :set-current-pitchnum pitchnum tracknum)
   (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pitchnum tracknum)))))
 
-(define current-pianonote-has-been-set #f)
+(define2 current-pianonote-has-been-set boolean? #f)
 (define (set-current-pianonote pianonotenum notenum tracknum)
   (set! current-pianonote-has-been-set #t)
   (<ra> :set-current-pianonote pianonotenum notenum tracknum))
 ;;  (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pianonotenum tracknum)))))
 
-(define mouse-pointer-has-been-set #f)
+(define2 mouse-pointer-has-been-set boolean? #f)
 (define (set-mouse-pointer func)
   ;;(c-display "setting to" func)
   (set! mouse-pointer-has-been-set #t)
@@ -441,7 +441,7 @@
                           )))
 
 
-(define (radium-mouse-press $button $x $y)
+(define (radium-mouse-press $button $x $y)  
   (handling-nodes
    (lambda()
      ;;(c-display "%%%%%%%%%%%%%%%%% mouse press" $button $x $y *current-mouse-cycle*)
@@ -521,8 +521,8 @@
 (get-track-num 650 50)
 ||#
 
-(define *current-track-num-all-tracks* #f) ;; Includes the time tracks, linenumbers, and so forth. (see nsmtracker.h)
-(define *current-track-num* #f)
+(define2 *current-track-num-all-tracks* (curry-or not integer?) #f) ;; Includes the time tracks, linenumbers, and so forth. (see nsmtracker.h)
+(define2 *current-track-num* (curry-or not integer?) #f)
 
 (define (set-current-track-num! X Y)
   (define track-num (get-track-num X Y))
@@ -543,7 +543,7 @@
  :move (lambda (Button X Y)
          (set-current-track-num! X Y)))
 
-(define *current-subtrack-num* #f)
+(define2 *current-subtrack-num* (curry-or not integer?) #f)
 
 (define-match get-subtrack-from-x-0
   __ _ Num Num   ________ :> #f  
@@ -646,8 +646,8 @@
   :release
   )
 
-(define *move-existing-node-mouse-cycles* '())
-(define *create-new-node-mouse-cycles* '())
+(define2 *move-existing-node-mouse-cycles* list? '())
+(define2 *create-new-node-mouse-cycles* list? '())
 
 (define-match get-cycle-and-node
   ______ _ _ ()             :> #f
@@ -660,7 +660,7 @@
 
 
 
-(define *mouse-pointer-is-currently-hidden* #t)
+(define2 *mouse-pointer-is-currently-hidden* boolean? #t)
 
 ;; This cycle handler makes sure all move-existing-node cycles are given a chance to run before the create-new-node cycles.
 (add-delta-mouse-handler
@@ -3208,7 +3208,7 @@
 
 
 
-(define *current-seqtrack-num* #f)
+(define2 *current-seqtrack-num* (curry-or not integer?) #f)
 
 (define (get-seqtracknum X Y)
   (define num-seqtracks (<ra> :get-num-seqtracks))
@@ -3291,9 +3291,9 @@
                 (<ra> :delete-gfx-gfx-seqblock 0 seqtracknum)))
             (iota (<ra> :get-num-seqtracks))))
 
-(define gakkgakk-last-inc-time 0)
-(define gakkgakk-really-last-inc-time 0)
-(define gakkgakk-last-inc-track 0)
+(define2 gakkgakk-last-inc-time number? 0)
+(define2 gakkgakk-really-last-inc-time number? 0)
+(define2 gakkgakk-last-inc-track number? 0)
 
 (define (get-data-for-seqblock-moving seqblock-infos inc-time inc-track)
   (define num-seqtracks (<ra> :get-num-seqtracks))
@@ -3356,10 +3356,10 @@
 
 ;; seqblock move
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define gakkgakk-last-value #f) ;; TODO: Fix.
-(define gakkgakk-has-made-undo #f)
-(define gakkgakk-start-pos 0)
-(define gakkgakk-was-selected #f)
+(define2 gakkgakk-last-value (curry-or not number? list?) #f) ;; TODO: Fix.
+(define2 gakkgakk-has-made-undo boolean? #f)
+(define2 gakkgakk-start-pos (curry-or number? list?) 0)
+(define2 gakkgakk-was-selected boolean? #f)
 (define (reset-gakkgakk-values)
   (set! gakkgakk-last-value #f)
   (set! gakkgakk-has-made-undo #f)
@@ -3572,9 +3572,9 @@
                         )
 
 
-(define gakkgakk-startseqtracknum 0)
-(define gakkgakk-startseqblocknum 0)
-(define gakkgakk-smallest-time 0)
+(define2 gakkgakk-startseqtracknum integer? 0)
+(define2 gakkgakk-startseqblocknum integer? 0)
+(define2 gakkgakk-smallest-time number? 0)
 
 ;; Move multiple seqblocks
 (add-node-mouse-handler :Get-area-box (lambda()
@@ -3748,7 +3748,7 @@
 
 (define-constant *seqnode-min-distance* (* 1 (<ra> :get-half-of-node-width)))
 
-(define *current-seqautomation/distance* #f)
+(define2 *current-seqautomation/distance* (curry-or not number?) #f)
 
 (define (get-current-seqautomationnum)
   (and *current-seqautomation/distance*
@@ -4006,7 +4006,7 @@
                 (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time))))
 
 
-(define *seqblock-clipboard* '())
+(define2 *seqblock-clipboard* list? '())
 
 (define-struct clipboard-seqblock
   :seqtracknum
