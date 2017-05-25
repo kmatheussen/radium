@@ -44,7 +44,7 @@ bool NewSong(void){
         root->signature = make_ratio(4,4);
 
         init_player_state();
-
+        
 	AppendBlock();
 
         SONG_init();

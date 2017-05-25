@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Bs_edit_proc.h"
 #include "wblocks_proc.h"
 #include "Beats_proc.h"
+#include "../embedded_scheme/scheme_proc.h"
 
 #include "block_properties_proc.h"
 
@@ -132,7 +133,7 @@ void Block_Set_num_lines(
             }
 
           }
-
+          
           TIME_block_num_lines_have_changed(block);
 
         }PC_StopPause(NULL);
@@ -151,7 +152,7 @@ void Block_Set_num_lines(
 
 
 
-
+// Must be called when inserting or deleting tracks.
 void Block_Set_num_tracks(
 	struct Blocks *block,
 	NInt num_tracks
@@ -200,6 +201,8 @@ void Block_Set_num_tracks(
 			window=NextWindow(window);
 		}
 	}
+
+        TIME_block_num_tracks_have_changed(block);
 }
 
 

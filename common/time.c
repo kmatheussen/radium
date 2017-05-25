@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
+#include "../embedded_scheme/scheme_proc.h"
 
 #include "../api/api_timing_proc.h"
 
@@ -1101,6 +1102,8 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   dynvec_t filledout_trackswingss[num_blocks];
   vector_t trackstimess[num_blocks];
 
+  R_ASSERT_RETURN_IF_FALSE(g_scheme_has_inited1);
+  
   memset(filledout_trackswingss, 0, sizeof(dynvec_t)*num_blocks);
   memset(trackstimess, 0, sizeof(vector_t)*num_blocks);
   
@@ -1306,6 +1309,10 @@ void TIME_block_signatures_have_changed(struct Blocks *block){
 
 void TIME_block_num_lines_have_changed(struct Blocks *block){
   update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, true, true);
+}
+
+void TIME_block_num_tracks_have_changed(struct Blocks *block){
+  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, true);
 }
 
 void TIME_block_swings_have_changed(struct Blocks *block){

@@ -49,6 +49,9 @@ static s7webserver_t *s7webserver;
 
 static s7_pointer g_catchallerrors_func = NULL;
 
+bool g_scheme_has_inited1 = false;
+bool g_scheme_has_inited2 = false;
+
 
 extern "C" {
   void init_radium_s7(s7_scheme *s7);
@@ -1478,9 +1481,12 @@ void SCHEME_init1(void){
 #if !defined(RELEASE)
   s7webserver_set_very_verbose(s7webserver, true);
 #endif
+
+  g_scheme_has_inited1 = true;
 }
 
 void SCHEME_init2(void){
   SCHEME_eval("(init-step-2)");
+  g_scheme_has_inited2 = true;
 }
 

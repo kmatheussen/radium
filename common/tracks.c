@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "track_insert_proc.h"
 #include "clipboard_track_copy_proc.h"
 #include "clipboard_track_paste_proc.h"
+#include "time_proc.h"
 
 #include "tracks_proc.h"
 
@@ -195,7 +196,7 @@ void AppendTrack(struct Blocks *block){
 	temp->l.num=tracknum;
 	NewTrack(block,temp);
 
-        TIME_everything_in_block_has_changed(block); // Update track->timing
+        TIME_block_num_tracks_have_changed(block); // Update track->timing fields.
 }
 
 
