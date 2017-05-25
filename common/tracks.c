@@ -194,6 +194,8 @@ void AppendTrack(struct Blocks *block){
 
 	temp->l.num=tracknum;
 	NewTrack(block,temp);
+
+        TIME_everything_in_block_has_changed(block); // Update track->timing
 }
 
 

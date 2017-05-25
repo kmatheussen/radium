@@ -78,10 +78,11 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     // Reallines
     RT_schedule_reallines_in_block(seqtrack, seqblock, place);
 
-    // Send new track pan values to patches
+    // Send new track pan values to patches (also assert that all tracks have track->times
     //
     struct Tracks *track=block->tracks;
     while(track!=NULL){
+      R_ASSERT_RETURN_IF_FALSE(track->times!=NULL);
       if(track->panonoff && track->patch!=NULL){
         (*track->patch->changeTrackPan)(track->pan,track);
       }

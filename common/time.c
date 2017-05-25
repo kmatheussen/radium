@@ -862,11 +862,17 @@ static double Place2STime_from_times2(
                                       double y
                                       )
 {
+  R_ASSERT_NON_RELEASE(stimes!=NULL);
+  R_ASSERT_NON_RELEASE(&stimes[(int)y] != NULL);
+
   // Find the right time_change to use.
   const struct STimeChange *time_change=stimes[(int)y].tchanges;
+  R_ASSERT_NON_RELEASE(time_change!=NULL);
+  
   while(time_change->y2 < y){
     time_change = time_change + 1; // All changes in a block are allocated sequentially.
     //R_ASSERT_RETURN_IF_FALSE2(time_change->t1 > 0, (time_change-1)->t2); // Can happen, for instance if the second tempo node is crammed to the top of the block.
+    R_ASSERT_NON_RELEASE(time_change!=NULL);
   }
 
   return time_change->t1 + get_stime_from_stimechange(time_change, y, true);
