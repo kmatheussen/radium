@@ -113,8 +113,8 @@ namespace{
 
 static s7_pointer find_scheme_func(s7_scheme *s7, const char *funcname){
   s7_pointer symbol = s7_make_symbol(s7, funcname);
-  s7_pointer scheme_func = s7_eval(s7, symbol, s7_rootlet(s7));
-  
+  s7_pointer scheme_func = s7_symbol_local_value(s7, symbol, s7_rootlet(s7));
+     
   return scheme_func;  
 }
 
