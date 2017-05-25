@@ -94,6 +94,9 @@
 (safe-history-ow!)
 !!#
 
+(define (safe-display-history-ow!)
+  (safe-display-txt-as-displayable-as-possible (safe-history-ow!)))
+
 (define (handle-assertion-failure-during-startup info)
   (when *is-initializing*
     (display info)(newline)
@@ -107,9 +110,7 @@
              )
            (lambda args
              (display "(Something failed 1. This is not good.)")(display args)(display (defined? 'ra:show-error))(newline)
-             (if (defined? 'safe-display-ow!)
-                 (safe-display-ow!)
-                 (safe-display-txt-as-displayable-as-possible (safe-history-ow!)))))
+             (safe-display-history-ow!)))
     (exit)))
 
 
@@ -251,7 +252,7 @@
                                     (org-load filename env)
                                     (org-load filename)))
                               (lambda args
-                                (safe-display-ow!)))))
+                                (safe-display-history-ow!)))))
               (set! *currently-reloading-file* old-reloading)
               (set! *currently-loading-file* old-loading-filename)
               ret)))))
@@ -264,6 +265,7 @@
   (catch #t
          ow!
          (lambda args
+           (safe-display-history-ow!)
            (get-as-displayable-string-as-possible (list "ow! failed: " args)))))
   
 (define (safe-display-ow!)
@@ -281,7 +283,7 @@
 (set! (hook-functions *error-hook*) 
       (list (lambda (hook)
               (define backtrace-txt (safe-ow!))
-              (safe-display-txt-as-displayable-as-possible (string-append "backtrace:\n" backtrace-txt))
+              (safe-display-txt-as-displayable-as-possible backtrace-txt)
               (catch #t
                      (lambda ()
                        (let ((gwhs go-wrong-hooks))
@@ -290,7 +292,8 @@
                                      (go-wrong-hook))
                                    gwhs)))
                      (lambda args
-                       (get-as-displayable-string-as-possible (list "Custom error hook catch failed:\n" (safe-ow!)))))
+                       (safe-display-history-ow!)
+                       (get-as-displayable-string-as-possible (list "Custom error hook catch failed:\n"))))
               (handle-assertion-failure-during-startup (list "error-hook failed\n" backtrace-txt)))))
 
 ;;(handle-assertion-failure-during-startup "hello")

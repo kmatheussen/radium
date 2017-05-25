@@ -462,6 +462,18 @@
 ||#
 
 
+(define-constant *try-finally-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
+
+(define (FROM-C-catch-all-errors-and-display-backtrace-automatically func . args)
+  (catch #t
+         (lambda ()
+           (apply func args))
+         (lambda args
+           (safe-display-history-ow!)
+           *try-finally-failed-return-value*)))
+  
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Try - Catch - Finally ;;;;;;;
@@ -498,22 +510,11 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 ;;
 ;; First a helper function:
 
-(define-constant *try-finally-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
-
-(define (FROM-C-catch-all-errors-and-display-backtrace-automatically func . args)
-  (catch #t
-         (lambda ()
-           (apply func args))
-         (lambda args
-           (safe-display-ow!)
-           *try-finally-failed-return-value*)))
-  
-
 (define (catch-all-errors-and-display-backtrace-automatically thunk)
   (catch #t
          thunk
          (lambda args
-           (safe-display-ow!)
+           (safe-display-history-ow!)
            *try-finally-failed-return-value*)))
 
 (define (catch-all-errors-failed? ret)
@@ -1395,25 +1396,15 @@ for .emacs:
 
 (define (undo-block block)
   (<ra> :open-undo)
-  (let ((ret (catch #t
-                    block
-                    (lambda args ;; Catch exceptions to ensure (<ra> :cose-undo) will be called
-                      (display "args")(display args)(newline)
-                      (apply format #t (cadr args))
-                      (display (ow!))))))
-    (<ra> :close-undo)
-    ret))
+  (try-finally :try block
+               :finally (lambda ()
+                          (<ra> :close-undo))))
 
 (define (ignore-undo-block block)
   (<ra> :start-ignoring-undo)
-  (let ((ret (catch #t
-                    block
-                    (lambda args ;; Catch exceptions to ensure (<ra> :cose-undo) will be called
-                      (display "args")(display args)(newline)
-                      (apply format #t (cadr args))
-                      (display (ow!))))))
-    (<ra> :stop-ignoring-undo)
-    ret))
+  (try-finally :try block
+               :finally (lambda ()
+                          (<ra> :stop-ignoring-undo))))
 
 (define (draw-plot xs func)
   (define ys (map func xs))
@@ -1471,12 +1462,9 @@ for .emacs:
     (when (not (coroutine :please-stop-me))
       (let loop ((args args))
         (set! (coroutine :is-running) #t)
-        (let ((pausetime-and-args (catch #t
-                                         (lambda ()
-                                           (apply func args))
-                                         (lambda args
-                                           (c-display (ow!))
-                                           #f))))
+        (let ((pausetime-and-args (try-finally :try (lambda ()
+                                                      (apply func args))
+                                               :failure-return-value #f)))
           (set! (coroutine :is-running) #f)
           (if (and (not (coroutine :please-stop-me))
                    pausetime-and-args)

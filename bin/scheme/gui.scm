@@ -354,6 +354,7 @@
          (lambda ()
            (add-message-window-message (<ra> :get-html-from-text txt)))
          (lambda args
+           ;; Don't want to display history-ow! here since we could have been called from history-ow!.
            (get-as-displayable-string-as-possible (list "safe-add-message-window-message failed: " args))
            (display txt))))
 
