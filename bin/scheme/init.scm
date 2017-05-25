@@ -110,7 +110,7 @@
              )
            (lambda args
              (display "(Something failed 1. This is not good.)")(display args)(display (defined? 'ra:show-error))(newline)
-             (safe-display-history-ow!)))
+             (safe-display-ow!)))
     (exit)))
 
 
@@ -193,7 +193,7 @@
 (define (assert something)
   (when (not something)
     (handle-assertion-failure-during-startup 'assert-failed) ;; we have a better call to handle-assertion-failure in ***assert***
-    (throw 'assert-failed)))
+    (error 'assert-failed)))
 
 ;; It is assumed various places that eqv? can be used to compare functions.
 (assert (eqv? assert ((lambda () assert))))
@@ -224,7 +224,7 @@
             (pretty-print "")
             (handle-assertion-failure-during-startup (list "***assert*** failed. Result:" A ". Expected:" B))
             (newline)
-            (throw 'assert-failed)
+            (error 'assert-failed)
             #f))))
     (-__Func1))
 
@@ -252,7 +252,12 @@
                                     (org-load filename env)
                                     (org-load filename)))
                               (lambda args
-                                (safe-display-history-ow!)))))
+                                (cond ((defined? 'safe-display-ow!)
+                                       (safe-display-ow!))
+                                      ((defined? 'safe-ow!)
+                                       (safe-display-txt-as-displayable-as-possible (safe-ow!)))
+                                      (else
+                                       (display (ow!))))))))
               (set! *currently-reloading-file* old-reloading)
               (set! *currently-loading-file* old-loading-filename)
               ret)))))
@@ -292,7 +297,7 @@
                                      (go-wrong-hook))
                                    gwhs)))
                      (lambda args
-                       (safe-display-history-ow!)
+                       (safe-display-ow!)
                        (get-as-displayable-string-as-possible (list "Custom error hook catch failed:\n"))))
               (handle-assertion-failure-during-startup (list "error-hook failed\n" backtrace-txt)))))
 

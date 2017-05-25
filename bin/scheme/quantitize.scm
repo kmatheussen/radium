@@ -41,7 +41,7 @@
           (set! new-start (- new-end org-length)))))
 
   (if (<= q 0)
-      (throw 'illegal-quantitize-value q))
+      (error 'illegal-quantitize-value q))
 
   (c-display "*** Calling quantitizenote" start end ", len:" org-length ", q:" q ", quant start:" quantitize-start ", quant end:" quantitize-end ", keep-note-length:" keep-note-length ", type:" type)
   

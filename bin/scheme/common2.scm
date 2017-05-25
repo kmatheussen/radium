@@ -254,7 +254,7 @@
 
 (define (copy-struct-helper original struct-name keys arguments)
   (if (keyword? original)
-      (throw (<-> "Copy " struct-name " struct: First argument is not a struct, but a keyword")))
+      (error 'not-a-struct-but-a-keyword (<-> "Copy " struct-name " struct: First argument is not a struct, but a keyword")))
 
   ;; check that new data is valid
   (let loop ((arguments arguments))
@@ -262,7 +262,7 @@
         (let ((key (car arguments))
               (value (cadr arguments)))
           (if (not (memq (keyword->symbol key) keys))
-              (throw (<-displayable-> "key '" key (<-> "' not found in struct '" struct-name "'") ". keys: " (map symbol->keyword keys))))
+              (error 'key-not-found-in-struct1 (<-displayable-> "key '" key (<-> "' not found in struct '" struct-name "'") ". keys: " (map symbol->keyword keys))))
           (loop (cddr arguments)))))
 
   (define new-table (copy original)) ;; No worries. 'new-table' will contain the "(cons eq? ,struct-mapper)" argument similar to 'original'.
@@ -308,7 +308,7 @@
                    (iota ,keys-length))
          (lambda (key)
            (or (keytablemapper key)
-               (throw (<-displayable-> "key " (keyword->symbol key) ,(<-> " not found in struct '" name "'") ". keys: " (quote ,keys)))))))
+               (error 'key-not-found-in-struct2 (<-displayable-> "key " (keyword->symbol key) ,(<-> " not found in struct '" name "'") ". keys: " (quote ,keys)))))))
      
      (define (,(<_> 'copy- name) ,original . ,arguments)
        (copy-struct-helper ,original
@@ -327,7 +327,7 @@
      (define* (,(<_> 'make- name) ,@(keyvalues-to-define-args args))
        ,@(map (lambda (must-be-defined)
                 `(if (eq? ,(car must-be-defined) 'must-be-defined)
-                     (throw ,(<-> "key '" (car must-be-defined) "' not defined when making struct '" name "'"))))
+                     (error 'missing-key-when-making-struct ,(<-> "key '" (car must-be-defined) "' not defined when making struct '" name "'"))))
               must-be-defined)
        (let* ((,table (make-hash-table ,keys-length (cons eq? ,struct-mapper)))
               (,keysvar (quote ,keys)))
@@ -424,7 +424,7 @@
 
 (define-match delafina-args-to-define*-args
   ()                 :> '()
-  (Var . Rest)       :> (throw (<-> "All parameters for a delafina functions must be keywords. '" Var "' is not a keyword"))
+  (Var . Rest)       :> (error 'delafina-error (<-> "All parameters for a delafina functions must be keywords. '" Var "' is not a keyword"))
                         :where (not (keyword? Var))
   (Key)              :> (list (keyword->symbol Key))
   (Key1 Key2 . Rest) :> (cons (keyword->symbol Key1)
@@ -469,7 +469,7 @@
          (lambda ()
            (apply func args))
          (lambda args
-           (safe-display-history-ow!)
+           (safe-display-ow!)
            *try-finally-failed-return-value*)))
   
 
@@ -514,7 +514,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
   (catch #t
          thunk
          (lambda args
-           (safe-display-history-ow!)
+           (safe-display-ow!)
            *try-finally-failed-return-value*)))
 
 (define (catch-all-errors-failed? ret)
@@ -870,7 +870,7 @@ for .emacs:
 
 (define-match get-lazy-replacement
   (define-lazy Name _____) :> `(,Name (force ,Name))
-  ________________________ :> (throw 'something-went-wrong-in-get-lazy-replacement-in-lazy))
+  ________________________ :> (error 'something-went-wrong-in-get-lazy-replacement-in-lazy))
   
 (define-match transform-lazy-code
   Replacements (define-lazy Name Value) :> `(define ,Name (delay ,(deep-list-replace-several Replacements Value)))
