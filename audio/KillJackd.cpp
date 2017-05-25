@@ -117,7 +117,7 @@ int main(void){
       const char *portname1 = portnames[0];
       
       if (portname1!=NULL){
-        if (jack_connect (client, jack_port_name (input_port1), portname1)){
+        if (jack_connect (client, portname1, jack_port_name (input_port1))){
           fprintf (stderr, "KillJackd.cpp: Could not connect input port 1\n");
           return COULD_NOT_CONNECT_PORT;
         }
@@ -125,7 +125,7 @@ int main(void){
         const char *portname2 = portname1==NULL ? NULL : portnames[1];
         
         if (portname2!=NULL){
-          if (jack_connect (client, jack_port_name (input_port2), portname2)){
+          if (jack_connect (client, portname2, jack_port_name (input_port2))){
             fprintf (stderr, "KillJackd.cpp: Could not connect input port 2\n");
             return COULD_NOT_CONNECT_PORT;
           }
@@ -265,9 +265,13 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
   if (timed_out==true) {
     message = "Jack is unresponsive.";
     
+  } else if (myProcess->exitStatus()==QProcess::CrashExit) {
+
+    message = "Crash while testing jack.";
+    
   } else {
     
-    status = myProcess->exitStatus();
+    status = myProcess->exitCode();
       
     switch(status){
     case JACK_ALIVE_AND_FINE:
