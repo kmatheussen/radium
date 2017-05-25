@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 4.8.3
+VERSION = 4.8.5
 
 
 #----------------USER SETTINGS-------------------------------
