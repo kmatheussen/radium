@@ -32,14 +32,20 @@ enum{
 
 static DEFINE_ATOMIC(bool, g_has_called_process) = false;
 
+static jack_port_t *input_port1, *input_port2;
 static jack_port_t *output_port1, *output_port2;
 
 int process (jack_nframes_t nframes, void *arg){
-  jack_default_audio_sample_t *out1, *out2;
+  jack_default_audio_sample_t *in1, *in2, *out1, *out2;
   
+  in1 = (jack_default_audio_sample_t*)jack_port_get_buffer (input_port1, nframes);
+  in2 = (jack_default_audio_sample_t*)jack_port_get_buffer (input_port2, nframes);
   out1 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port1, nframes);
   out2 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port2, nframes);
 
+  (void) in1;
+  (void) in2;
+  
   memset(out1, 0, sizeof(jack_default_audio_sample_t)*nframes);
   memset(out2, 0, sizeof(jack_default_audio_sample_t)*nframes);
 
@@ -70,6 +76,19 @@ int main(void){
     return COULD_NOT_SET_PROCESS_CALLBACK;
   }
 
+  input_port1 = jack_port_register (client, "input1",
+                                     JACK_DEFAULT_AUDIO_TYPE,
+                                     JackPortIsInput, 0);
+  
+  input_port2 = jack_port_register (client, "input2",
+                                     JACK_DEFAULT_AUDIO_TYPE,
+                                     JackPortIsInput, 0);
+  
+  if ((input_port1 == NULL) || (input_port2 == NULL)) {
+    fprintf (stderr, "KillJackd.cpp: Could not create input ports\n");
+    return COULD_NOT_CREATE_PORTS;
+  }
+
   output_port1 = jack_port_register (client, "output1",
                                      JACK_DEFAULT_AUDIO_TYPE,
                                      JackPortIsOutput, 0);
@@ -79,7 +98,7 @@ int main(void){
                                      JackPortIsOutput, 0);
   
   if ((output_port1 == NULL) || (output_port2 == NULL)) {
-    fprintf (stderr, "KillJackd.cpp: Could not create ports\n");
+    fprintf (stderr, "KillJackd.cpp: Could not create output ports\n");
     return COULD_NOT_CREATE_PORTS;
   }
 
@@ -88,30 +107,62 @@ int main(void){
     return COULD_NOT_ACTIVATE_CLIENT;
   }
 
-  const char **portnames = jack_get_ports (client, NULL, NULL,
-                                           JackPortIsInput);
-
-  if (portnames != NULL) {
+  // Connect input ports
+  {
+    const char **portnames = jack_get_ports (client, NULL, NULL,
+                                             JackPortIsPhysical|JackPortIsOutput);
     
-    const char *portname1 = portnames[0];
-
-    if (portname1!=NULL){
-      if (jack_connect (client, jack_port_name (output_port1), portname1)){
-        fprintf (stderr, "KillJackd.cpp: Could not connect port 1\n");
-        return COULD_NOT_CONNECT_PORT;
-      }
+    if (portnames != NULL) {
       
-      const char *portname2 = portname1==NULL ? NULL : portnames[1];
-
-      if (portname2!=NULL){
-        if (jack_connect (client, jack_port_name (output_port2), portname2)){
-          fprintf (stderr, "KillJackd.cpp: Could not connect port 2\n");
+      const char *portname1 = portnames[0];
+      
+      if (portname1!=NULL){
+        if (jack_connect (client, jack_port_name (input_port1), portname1)){
+          fprintf (stderr, "KillJackd.cpp: Could not connect input port 1\n");
           return COULD_NOT_CONNECT_PORT;
         }
+        
+        const char *portname2 = portname1==NULL ? NULL : portnames[1];
+        
+        if (portname2!=NULL){
+          if (jack_connect (client, jack_port_name (input_port2), portname2)){
+            fprintf (stderr, "KillJackd.cpp: Could not connect input port 2\n");
+            return COULD_NOT_CONNECT_PORT;
+          }
+        }
       }
+      
+      jack_free (portnames);
     }
+  }
+
+  // Connect output ports
+  {
+    const char **portnames = jack_get_ports (client, NULL, NULL,
+                                             JackPortIsPhysical|JackPortIsInput);
     
-    jack_free (portnames);
+    if (portnames != NULL) {
+      
+      const char *portname1 = portnames[0];
+      
+      if (portname1!=NULL){
+        if (jack_connect (client, jack_port_name (output_port1), portname1)){
+          fprintf (stderr, "KillJackd.cpp: Could not connect output port 1\n");
+          return COULD_NOT_CONNECT_PORT;
+        }
+        
+        const char *portname2 = portname1==NULL ? NULL : portnames[1];
+        
+        if (portname2!=NULL){
+          if (jack_connect (client, jack_port_name (output_port2), portname2)){
+            fprintf (stderr, "KillJackd.cpp: Could not connect output port 2\n");
+            return COULD_NOT_CONNECT_PORT;
+          }
+        }
+      }
+      
+      jack_free (portnames);
+    }
   }
 
 
@@ -266,7 +317,9 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
   }
 
   myProcess->connect(myProcess, SIGNAL(finished(int)), myProcess, SLOT(deleteLater()));
-  
+
+  msleep(1000); // Give jack some time to rest
+
   return false;
 }
 
