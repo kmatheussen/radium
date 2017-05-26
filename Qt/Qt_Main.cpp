@@ -2084,7 +2084,11 @@ int radium_main(char *arg){
                       "    subcontrol-origin: margin;"
                       "    padding: 2px 2px;"
                       "    background-color: transparent;"
-                      "}");
+                      "}"
+                      ""
+                      "QScrollArea { background: transparent; }"
+                      "QScrollArea > QWidget > QWidget { background: transparent; }"
+                      );
 
   PyRun_SimpleString("import menues");
 
