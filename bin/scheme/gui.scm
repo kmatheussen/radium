@@ -354,7 +354,12 @@
          (lambda ()
            (add-message-window-message (<ra> :get-html-from-text txt)))
          (lambda args
-           (get-as-displayable-string-as-possible (list "safe-add-message-window-message failed: " args))
+           ;; Don't want to call safe-ow! here since we might have been called from safe-ow!.
+           (define txt (catch #t
+                              ow!
+                              (lambda args
+                                (get-as-displayable-string-as-possible (list "safe-add-message-window-message failed very hard: " args)))))
+           
            (display txt))))
 
 #||

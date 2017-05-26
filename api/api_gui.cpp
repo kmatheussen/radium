@@ -3556,6 +3556,26 @@ const_char *getTimeString(const_char* time_format){
 
 const_char *getHtmlFromText(const_char* text){
   QString html = QTextDocumentFragment::fromPlainText(text).toHtml("UTF-8");
+
+  // Remove <!--StartFragment--> and <!--EndFragment-->
+  html.remove("<!--StartFragment-->");
+  html.remove("<!--EndFragment-->");
+  
+  // Only keep what's inbetween <body>
+  int pos1 = html.indexOf("<body>");
+  int pos2 = html.lastIndexOf("</body>");
+
+  if (pos1>= 0 && pos2>5){
+    pos1 += QString("<body>").size();
+    if (pos2>pos1){
+      auto ref = html.midRef(pos1, pos2-pos1).toString();
+      return talloc_strdup(ref.toUtf8().constData());
+    }
+  }
+
+  printf("html: %s\n", html.toUtf8().constData());
+  R_ASSERT_NON_RELEASE(false);
+
   return talloc_strdup(html.toUtf8().constData());
 }
 

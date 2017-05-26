@@ -1,3 +1,56 @@
+Changes 4.8.3 -> 4.8.5:
+* Fix a bug in the jack check program that made it not always
+  work.
+* Let radium_check_jack_status also check opening input ports.
+* Make the crashreporter window always pop up in front of other
+  windows.
+* Update s7 scheme interpreter.
+* Fix crash if playing right after loading MIDI file. I could
+  only make it crash on Windows, but the underlying bug causing
+  this crash could have caused crashes in other situations and
+  on other platforms as well.
+* Removing the hermes filter ladspa plugin since it was very
+  unstable.
+* Removed the surround encoder ladspa plugins since the
+  documentation for it says that it hasn't been tested.
+* Show the "Bookmarked sample directory doesn't exist anymore"
+  message in the log message window instead of opening a
+  new dialog.
+* Plugin manager: Add "Show Info" popup menu to show instrument
+  info.
+* Add info about whether a plugin is an instrument to the plugin
+  info window.
+* Save old file as <filename>.bak when saving file.
+* Inform that Radium should be restarted after scanning plugins
+  (in case an unstable, but non-crashing, plugin was loaded while
+  scanning).
+* Don't freeze when the program receives SIGINT while playing.
+* Improve performance changing sample for the sampler instrument
+  or the fluidsynth instrument.
+* Fix showing text in the message window that contains <, >, or
+  other characters that could confuse the html renderer.
+* Pop up the message window and show scheme history when catching
+  an error.
+* If soundfile can't be found, check the "sounds" directory of
+  the program before asking the user.
+* Set lighter background color for the post-recording dialog.
+* Paint gui groups with a more distinct background color.
+* Various internal changes to prevent bugs.
+* Various internal changes to detect bugs.
+* Some internal changes to improve performance.
+* API:
+  * Make functions returning Place/dyn_t*/func_t* available to
+    Python. Radium does not return any value from these
+    functions when called from Python though.
+  * Don't allow -1 as a place anymore. Use 'same-place instead.
+    This in order to detect if setting a place to -1 by mistake.
+  * Removed: callFunc_void_int_bool
+  * Added: evalSchemeWithReturn, getHtmlFromText, gui_ratio,
+    gui_setStyleSheet, gui_setStyleSheetRecursively,
+    setQuantitize, getQuantitizeType, setQuantitizeType,
+    gui_flowlayout
+ 
+
 Changes 4.8.2 -> 4.8.3:
 * Current mixer strip: Fix resize of wide strip, and don't show
   two strips above each other in certain situations.

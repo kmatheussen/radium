@@ -47,6 +47,7 @@ extern LANGSPEC void TIME_block_tempos_have_changed(struct Blocks *block);
 extern LANGSPEC void TIME_block_LPBs_have_changed(struct Blocks *block);
 extern LANGSPEC void TIME_block_signatures_have_changed(struct Blocks *block);
 extern LANGSPEC void TIME_block_num_lines_have_changed(struct Blocks *block);
+extern LANGSPEC void TIME_block_num_tracks_have_changed(struct Blocks *block);
 extern LANGSPEC void TIME_block_swings_have_changed(struct Blocks *block);
 extern LANGSPEC void TIME_global_tempos_have_changed(void);
 extern LANGSPEC void TIME_global_LPB_has_changed(void);

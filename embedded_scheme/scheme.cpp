@@ -49,6 +49,9 @@ static s7webserver_t *s7webserver;
 
 static s7_pointer g_catchallerrors_func = NULL;
 
+bool g_scheme_has_inited1 = false;
+bool g_scheme_has_inited2 = false;
+
 
 extern "C" {
   void init_radium_s7(s7_scheme *s7);
@@ -110,8 +113,8 @@ namespace{
 
 static s7_pointer find_scheme_func(s7_scheme *s7, const char *funcname){
   s7_pointer symbol = s7_make_symbol(s7, funcname);
-  s7_pointer scheme_func = s7_eval(s7, symbol, s7_rootlet(s7));
-  
+  s7_pointer scheme_func = s7_symbol_local_value(s7, symbol, s7_rootlet(s7));
+     
   return scheme_func;  
 }
 
@@ -1478,9 +1481,12 @@ void SCHEME_init1(void){
 #if !defined(RELEASE)
   s7webserver_set_very_verbose(s7webserver, true);
 #endif
+
+  g_scheme_has_inited1 = true;
 }
 
 void SCHEME_init2(void){
   SCHEME_eval("(init-step-2)");
+  g_scheme_has_inited2 = true;
 }
 

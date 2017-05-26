@@ -971,7 +971,7 @@ bool MIXER_start(void){
   if (KILLJACKD_kill_jackd_if_unresponsive()==true){
     return false;
   }
-  
+
   doAlwaysRunBuses();
   
   SampleRecorder_Init();

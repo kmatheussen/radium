@@ -261,6 +261,7 @@ void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
   struct Tracks *track=seqblock->block->tracks;
 
   while(track!=NULL){
+    R_ASSERT_NON_RELEASE(track->times!=NULL);
     
     struct Notes *note=track->notes;
     

@@ -48,7 +48,7 @@
 
 (define (m-e type . rest)
   (if (not (memq type '(:note :velocity :break :loop :stop :pitch-slide :slide-to-note :fine-pitch-slide :vibrato :tremolo :sample-offset :velocity-slide :fine-velocity-slide :pattern-delay :tpd :bpm :retrigger-note :delay-note :arpeggio :position-jump :finetune)))
-      (throw (<-> "Unknwon event type " type)))
+      (error 'unknown-event-type (<-> "Unknwon event type " type)))
   (apply m-e-0
          (append (list :type type)
                  rest)))

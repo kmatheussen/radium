@@ -1,3 +1,10 @@
+
+#ifndef _RADIUM_EMBEDDED_SCHEME_SCHEME_PROC_H
+#define _RADIUM_EMBEDDED_SCHEME_SCHEME_PROC_H
+
+extern bool g_scheme_has_inited1;
+extern bool g_scheme_has_inited2;
+
 extern LANGSPEC bool quantitize_note(const struct Blocks *block, struct Notes *note);
 
 extern LANGSPEC void SCHEME_throw(const char *symbol, const char *message);
@@ -10,3 +17,5 @@ extern LANGSPEC void SCHEME_eval(const char *code);
 extern LANGSPEC int SCHEME_get_webserver_port(void);
 extern LANGSPEC void SCHEME_init1(void);
 extern LANGSPEC void SCHEME_init2(void);
+
+#endif

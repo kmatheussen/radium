@@ -94,6 +94,9 @@
 (safe-history-ow!)
 !!#
 
+(define (safe-display-history-ow!)
+  (safe-display-txt-as-displayable-as-possible (safe-history-ow!)))
+
 (define (handle-assertion-failure-during-startup info)
   (when *is-initializing*
     (display info)(newline)
@@ -107,9 +110,7 @@
              )
            (lambda args
              (display "(Something failed 1. This is not good.)")(display args)(display (defined? 'ra:show-error))(newline)
-             (if (defined? 'safe-display-ow!)
-                 (safe-display-ow!)
-                 (safe-display-txt-as-displayable-as-possible (safe-history-ow!)))))
+             (safe-display-ow!)))
     (exit)))
 
 
@@ -192,7 +193,7 @@
 (define (assert something)
   (when (not something)
     (handle-assertion-failure-during-startup 'assert-failed) ;; we have a better call to handle-assertion-failure in ***assert***
-    (throw 'assert-failed)))
+    (error 'assert-failed)))
 
 ;; It is assumed various places that eqv? can be used to compare functions.
 (assert (eqv? assert ((lambda () assert))))
@@ -223,7 +224,7 @@
             (pretty-print "")
             (handle-assertion-failure-during-startup (list "***assert*** failed. Result:" A ". Expected:" B))
             (newline)
-            (throw 'assert-failed)
+            (error 'assert-failed)
             #f))))
     (-__Func1))
 
@@ -251,7 +252,12 @@
                                     (org-load filename env)
                                     (org-load filename)))
                               (lambda args
-                                (safe-display-ow!)))))
+                                (cond ((defined? 'safe-display-ow!)
+                                       (safe-display-ow!))
+                                      ((defined? 'safe-ow!)
+                                       (safe-display-txt-as-displayable-as-possible (safe-ow!)))
+                                      (else
+                                       (display (ow!))))))))
               (set! *currently-reloading-file* old-reloading)
               (set! *currently-loading-file* old-loading-filename)
               ret)))))
@@ -264,6 +270,7 @@
   (catch #t
          ow!
          (lambda args
+           (safe-display-history-ow!)
            (get-as-displayable-string-as-possible (list "ow! failed: " args)))))
   
 (define (safe-display-ow!)
@@ -281,7 +288,7 @@
 (set! (hook-functions *error-hook*) 
       (list (lambda (hook)
               (define backtrace-txt (safe-ow!))
-              (safe-display-txt-as-displayable-as-possible (string-append "backtrace:\n" backtrace-txt))
+              (safe-display-txt-as-displayable-as-possible backtrace-txt)
               (catch #t
                      (lambda ()
                        (let ((gwhs go-wrong-hooks))
@@ -290,7 +297,8 @@
                                      (go-wrong-hook))
                                    gwhs)))
                      (lambda args
-                       (get-as-displayable-string-as-possible (list "Custom error hook catch failed:\n" (safe-ow!)))))
+                       (safe-display-ow!)
+                       (get-as-displayable-string-as-possible (list "Custom error hook catch failed:\n"))))
               (handle-assertion-failure-during-startup (list "error-hook failed\n" backtrace-txt)))))
 
 ;;(handle-assertion-failure-during-startup "hello")
@@ -392,7 +400,8 @@
 
 (my-require 'quantitize.scm)
 
-(my-require 'timing.scm)
+(my-require 'timing.scm) ;; Note that the program assumes that g_scheme_has_inited1 is true after timing.scm has been loaded.
+
 
 
 ;; The files loaded in init-step-2 can use ra: functions.
