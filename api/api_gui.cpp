@@ -1185,6 +1185,19 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(QWidget);
   };
 
+  /*
+  struct Frame : QFrame, Gui{
+    Q_OBJECT;
+
+  public:
+    Frame()
+      : Gui(this)
+    {
+    }
+    
+    OVERRIDERS(QFrame);
+  };
+  */
   
   struct VerticalAudioMeter : QWidget, Gui{
     Q_OBJECT;
@@ -2415,6 +2428,12 @@ void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
 int64_t gui_widget(int width, int height){
   return (new Widget(width, height))->get_gui_num();
 }
+
+/*
+int64_t gui_frame(void){
+  return (new Frame())->get_gui_num();
+}
+*/
 
 int64_t gui_button(const_char *text){
   return (new PushButton(text))->get_gui_num();
