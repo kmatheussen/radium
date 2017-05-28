@@ -2088,6 +2088,7 @@ int radium_main(char *arg){
                       ""
                       "QScrollArea { background: transparent; }"
                       "QScrollArea > QWidget > QWidget { background: transparent; }"
+                      "QScrollArea > QWidget > QScrollBar { background: rgba(ff, ff, ff, 50); }"
                       );
 
   PyRun_SimpleString("import menues");
