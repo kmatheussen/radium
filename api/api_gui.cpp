@@ -65,6 +65,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/lzqlineedit.h"
 
 #include "../common/visual_proc.h"
+#include "../common/seqtrack_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
 
 #include "../common/OS_system_proc.h"
@@ -216,7 +217,7 @@ static QColor getQColor(int64_t color){
 static QColor getQColor(const_char* colorname){
   QColor color = get_config_qcolor(colorname);
   if (!color.isValid())
-    handleError("Color \"%s\" is not valid");
+    handleError("Color \"%s\" is not valid", colorname);
   //return QColor(color);
   return color;
 }
@@ -2084,7 +2085,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       setTabPosition((QTabWidget::TabPosition)tab_pos);
-
+      setDocumentMode(true); // Remove white border
+      tabBar()->setDocumentMode(false); // Remove white border
+                
       QColor background = get_qcolor(HIGH_BACKGROUND_COLOR_NUM);
 
       QPalette pal = palette();
@@ -2344,6 +2347,20 @@ int64_t API_get_gui_from_existing_widget(QWidget *widget){
   return API_get_gui_from_widget(widget);
 }
 
+int64_t gui_getMainXSplitter(void){
+  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  return API_get_gui_from_existing_widget(editor->xsplitter);
+}
+
+int64_t gui_getSequencerGui(void){
+  return API_get_gui_from_existing_widget(SEQUENCER_getWidget());
+}
+
+extern QWidget *g_parent_for_instrument_widget_ysplitter;
+
+int64_t gui_getInstrumentGui(void){
+  return API_get_gui_from_existing_widget(g_parent_for_instrument_widget_ysplitter);
+}
 
 /////// Callbacks
 //////////////////////////
@@ -2561,7 +2578,7 @@ int64_t gui_horizontalScroll(void){
 
 int64_t gui_text(const_char* text, const_char* color){
   //return -1;
-  return (new Text(text, color))->get_gui_num();
+  return (new Text(text, getQColor(color).name()))->get_gui_num();
 }
 
 int64_t gui_textEdit(const_char* content, bool read_only){
@@ -2603,6 +2620,18 @@ int64_t gui_tabs(int tab_pos){
   return (new Tabs(tab_pos))->get_gui_num();
 }
 
+void gui_removeTab(int64_t tabs_guinum, int pos){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return;
+
+  tabs->removeTab(pos);
+}
+
 int gui_addTab(int64_t tabs_guinum, const_char* name, int64_t tab_guinum, int pos){ // if pos==-1, tab is append. (same as if pos==num_tabs)
   Gui *tabs_gui = get_gui(tabs_guinum);
   if (tabs_gui==NULL)
@@ -2622,8 +2651,51 @@ int gui_addTab(int64_t tabs_guinum, const_char* name, int64_t tab_guinum, int po
   return num;
 }
 
+int gui_currentTab(int64_t tabs_guinum){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return -1;
 
-                 
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return -1;
+
+  return tabs->currentIndex();
+}
+
+void gui_setCurrentTab(int64_t tabs_guinum, int pos){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return;
+
+  return tabs->setCurrentIndex(pos);
+}
+
+int gui_getTabPos(int64_t tabs_guinum, int64_t tab_guinum){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return -1;
+
+  Gui *tab_gui = get_gui(tab_guinum);
+  if (tab_gui==NULL)
+    return -1;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return -1;
+
+  int ret = tabs->indexOf(tab_gui->_widget);
+  if (ret<0)
+    return ret-1;
+  else
+    return ret;
+}
+
+
 /************* Splitter ***************************/
 
 int64_t gui_verticalSplitter(bool childrenCollappsible){
@@ -3031,6 +3103,7 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
       
       int stretch = x1_or_stretch == -1 ? 0 : x1_or_stretch;
       splitter->setStretchFactor(splitter->count()-1, stretch);
+      splitter->setSizes({900000,1}); // Hack
       
     } else {
     
@@ -3444,9 +3517,11 @@ void gui_setBackgroundColor(int64_t guinum, const_char* color){
   if (gui==NULL)
     return;
 
+  QColor c = getQColor(color);
+  
   QPalette pal = gui->_widget->palette();
-  pal.setColor(QPalette::Background, QColor(color));
-  pal.setColor(QPalette::Base, QColor(color));
+  pal.setColor(QPalette::Background, c);
+  pal.setColor(QPalette::Base, c);
   //gui->_widget->setAutoFillBackground(true);
   gui->_widget->setPalette(pal);
 }
@@ -3576,6 +3651,16 @@ void gui_setMaxHeight(int64_t guinum, int minheight){
 
   gui->_widget->setMaximumHeight(minheight);
 }
+
+void gui_minimizeAsMuchAsPossible(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->updateGeometry();
+  gui->_widget->adjustSize();
+}
+
 
 void gui_setEnabled(int64_t guinum, bool is_enabled){
   Gui *gui = get_gui(guinum);
@@ -3904,6 +3989,57 @@ bool API_gui_is_painting(void){
   return g_currently_painting;
 }
   
+
+
+///////////////// main y splitter
+/////////////////////////////////
+
+QWidget *API_get_main_ysplitter(void){
+  int64_t gui = S7CALL2(int_void,"FROM-C-get-main-y-splitter");
+  return API_gui_get_widget(gui);
+}
+
+
+///////////////// Lower tabs
+//////////////////////////////
+
+QWidget *API_get_lowertabs(void){
+  int64_t gui = S7CALL2(int_void,"FROM-C-get-lowertab-gui");
+  return API_gui_get_widget(gui);
+}
+
+bool instrumentGuiIsInLowerTab(void){
+  return !positionInstrumentWidgetInMixer();
+}
+    
+void API_setLowertabIncludesInstrument(bool includeit){
+  S7CALL2(void_bool, "FROM-C-set-lowertab-includes-instrument", includeit);
+}
+
+void API_showInstrumentGui(void){
+  S7CALL2(void_void, "FROM-C-show-instrument-gui");
+}
+
+void API_hideInstrumentGui(void){
+  S7CALL2(void_void, "FROM-C-hide-instrument-gui");
+}
+
+bool API_instrumentGuiIsVisibleInLowerTab(void){
+  return S7CALL2(bool_void, "FROM-C-instrument-gui-is-visible");
+}
+
+
+void API_showSequencerGui(void){
+  S7CALL2(void_void, "FROM-C-show-sequencer-gui");
+}
+
+void API_hideSequencerGui(void){
+  S7CALL2(void_void, "FROM-C-hide-sequencer-gui");
+}
+
+bool GFX_SequencerIsVisible(void){
+  return S7CALL2(bool_void, "FROM-C-sequencer-gui-is-visible");
+}
 
 
 ///////////////// Mixer strips

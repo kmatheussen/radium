@@ -412,6 +412,7 @@
   ;; gui.scm can be loaded this late since expansion macros now can be defined after they are used.
   ;; Prev comment: Must be loaded early since it creates the <gui> expansion macro.
   (my-require 'gui.scm)
+  (my-require 'main_layout.scm)
   
   (my-require 'mouse.scm)
   (my-require 'mixer-strips.scm)

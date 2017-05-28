@@ -191,8 +191,18 @@
   quant-gui)
 
 
+(define (create-quantitize-gui-for-tab)
+  (let ((hor (<gui> :horizontal-layout)))
+    (<gui> :add hor (create-quantitize-gui))
+    (<gui> :add-layout-space hor 10 10 #t #f)
+    (<gui> :set-layout-spacing hor 0 0 0 0 0)
+    hor))
+
 #!!
 (load "notem.scm")
-(add-notem-tab "Quantization" (create-quantitize-gui))
+(add-notem-tab "Quantization" (let ((hor (<gui> :horizontal-layout)))
+                                (<gui> :add hor (create-quantitize-gui))
+                                (<gui> :add-layout-space hor 10 10 #t #f)
+                                hor))
 !!#
 

@@ -17,6 +17,15 @@ QWidget *API_gui_get_widget(int64_t guinum);
 QWidget *API_gui_get_parentwidget(int64_t guinum);
 int64_t API_get_gui_from_widget(QWidget *widget);
 int64_t API_get_gui_from_existing_widget(QWidget *widget);
+
+QWidget *API_get_main_ysplitter(void);
+QWidget *API_get_lowertabs(void);
+void API_setLowertabIncludesInstrument(bool includeit);
+bool API_instrumentGuiIsVisibleInLowerTab(void);
+void API_showInstrumentGui(void);
+void API_hideInstrumentGui(void);
+void API_showSequencerGui(void);
+void API_hideSequencerGui(void);
 #endif
 #endif
 

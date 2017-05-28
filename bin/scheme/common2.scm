@@ -728,7 +728,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 
 
 (c-display "\n\n\n\n=======================================================================================================")
-(c-display "    ENDED testing try-catch-failure. Lots of backtrace was printed, but nothing is wrong, hopefully.")
+(c-display "    FINISHED testing try-catch-failure. Lots of backtrace was printed, but nothing is wrong, hopefully.")
 (c-display "=======================================================================================================\n\n\n\n")
 
 

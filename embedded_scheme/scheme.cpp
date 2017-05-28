@@ -1066,6 +1066,28 @@ bool s7extra_callFunc2_bool_bool(const char *funcname, bool arg1){
   return s7extra_callFunc_bool_bool((func_t*)find_scheme_func(s7, funcname), arg1);
 }
 
+int64_t s7extra_callFunc_int_void(func_t *func){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = s7_call(s7,
+                           g_catchallerrors_func,
+                           s7_list(s7,
+                                   1,
+                                   (s7_pointer)func
+                                   )
+                           );
+  if(!s7_is_integer(ret)){
+    handleError("Callback did not return an integer");
+    return -1;
+  }else{
+    return s7_integer(ret);
+  }
+}
+
+int64_t s7extra_callFunc2_int_void(const char *funcname){
+  return s7extra_callFunc_int_void((func_t*)find_scheme_func(s7, funcname));
+}
+
 int64_t s7extra_callFunc_int_int(func_t *func, int64_t arg1){
   ScopedEvalTracker eval_tracker;
   

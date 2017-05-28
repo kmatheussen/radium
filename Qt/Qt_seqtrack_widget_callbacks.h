@@ -1841,6 +1841,12 @@ static void g_position_widgets(void){
     g_sequencer_widget->position_widgets();
 }
 
+QWidget *SEQUENCER_getWidget(void){
+  R_ASSERT(g_sequencer_widget != NULL);
+  return g_sequencer_widget;
+}
+
+
 // sequencer
 
 float SEQUENCER_get_x1(void){
@@ -2186,20 +2192,20 @@ static void init_sequencer_visible(void){
   }
 }
 
+/*
 bool GFX_SequencerIsVisible(void){
   init_sequencer_visible();
   return g_sequencer_visible;
 }
+*/
 
 void GFX_ShowSequencer(void){
   init_sequencer_visible();
   
   //set_widget_height(30);
   if (g_sequencer_hidden_because_instrument_widget_is_large == false){
-    GL_lock(); {
-      g_sequencer_widget->show();
-      g_sequencer_visible = true;
-    }GL_unlock();
+    API_showSequencerGui();
+    g_sequencer_visible = true;
   }
 
   set_editor_focus();
@@ -2207,8 +2213,8 @@ void GFX_ShowSequencer(void){
 
 void GFX_HideSequencer(void){
   init_sequencer_visible();
-  
-  g_sequencer_widget->hide();
+
+  API_hideSequencerGui();
   g_sequencer_visible = false;
   //set_widget_height(0);
 

@@ -496,6 +496,8 @@ QWidget *getInstrumentsWidget(void){
 
 #if 1
 static void set_widget_height(int height){
+  return;
+  
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   QSplitter *splitter = editor->ysplitter;
@@ -514,9 +516,14 @@ static void set_widget_height(int height){
 }
 #endif
 
+
 bool GFX_InstrumentWindowIsVisible(void){
-  return g_instruments_widget->isVisible();
+  if (positionInstrumentWidgetInMixer())
+    return g_instruments_widget->isVisible();
+  else
+    return API_instrumentGuiIsVisibleInLowerTab();
 }
+
 
 void GFX_SetMinimalInstrumentWindow(void){
   set_widget_height(30);
@@ -531,33 +538,45 @@ void GFX_InstrumentWindowToFront(void){
   if (!positionInstrumentWidgetInMixer()){
     //EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
     //g_instruments_widget->setParent(editor->ysplitter);
-    g_parent_for_instrument_widget_ysplitter->show();
+    //g_parent_for_instrument_widget_ysplitter->show();
     //editor->ysplitter->handle(2)->setEnabled(false);
     //editor->ysplitter->setStretchFactor(2,0);
-  }
 
-  GL_lock(); {
-    g_instruments_widget->show();
-  }GL_unlock();
+    API_showInstrumentGui();
+    
+    GFX_update_current_instrument_widget();
+        
+  } else {
 
-  GFX_update_current_instrument_widget();
-
-  if(positionInstrumentWidgetInMixer() && GFX_MixerIsVisible()==false){
-    GFX_ShowMixer();
+    GL_lock(); {
+      g_instruments_widget->show();
+    }GL_unlock();
+    
+    GFX_update_current_instrument_widget();
+    
+    if(positionInstrumentWidgetInMixer() && GFX_MixerIsVisible()==false){
+      GFX_ShowMixer();
+    }
+    
   }
   
   set_editor_focus();
 }
 
 void GFX_InstrumentWindowToBack(void){
-  g_instruments_widget->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored); // might not be needed.
-  g_instruments_widget->hide();
-  if (!positionInstrumentWidgetInMixer())
-    g_parent_for_instrument_widget_ysplitter->hide();
-  //g_parent_for_instrument_widget_ysplitter->setParent(NULL);
-  set_widget_height(0);
-  g_instruments_widget->adjustSize();
-  set_editor_focus();
+  if (!positionInstrumentWidgetInMixer()) {
+    //g_parent_for_instrument_widget_ysplitter->hide();
+    API_hideInstrumentGui();
+    //g_parent_for_instrument_widget_ysplitter->setParent(NULL);
+  } else {
+    
+    g_instruments_widget->hide();
+    g_instruments_widget->setSizePolicy(QSizePolicy::Ignored,QSizePolicy::Ignored); // might not be needed.
+
+    set_widget_height(0);
+    g_instruments_widget->adjustSize();
+    set_editor_focus();
+  }
 }
 
 

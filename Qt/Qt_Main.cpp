@@ -1975,21 +1975,20 @@ int radium_main(char *arg){
       block_selector->resize(100,block_selector->height());
 
       if(1){
-        QSplitter *ysplitter = new QSplitter(Qt::Vertical, main_window);
-        editor->ysplitter = ysplitter;
-        ysplitter->setOpaqueResize(true);
+        //ysplitter->setOpaqueResize(true);
         
-        xsplitter->setParent(ysplitter); //, QPoint(0,0), true);
+        //xsplitter->setParent(ysplitter); //, QPoint(0,0), true);
 
         {
 #if 1
           g_sequencer_widget = new Sequencer_widget(main_window);
           //sequencer_widget->setMinimumHeight(220);
           //sequencer_widget->setMaximumHeight(220);
-          g_sequencer_widget->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
-          g_sequencer_widget->move(0, main_window->height()-220);        
+          
+          //g_sequencer_widget->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
+          //g_sequencer_widget->move(0, main_window->height()-220);        
 #endif     
-          g_parent_for_instrument_widget_ysplitter = new QWidget(ysplitter);
+          g_parent_for_instrument_widget_ysplitter = new QWidget(main_window); //ysplitter);
 
           {
             auto *layout = new QHBoxLayout;
@@ -2002,20 +2001,25 @@ int radium_main(char *arg){
           }
 
           //instruments->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
-          g_parent_for_instrument_widget_ysplitter->move(0, main_window->height()-220);
+          //g_parent_for_instrument_widget_ysplitter->move(0, main_window->height()-220);
         }
-        
+
+        //ysplitter->addWidget(API_get_lowertabs());
+
+        QSplitter *ysplitter = dynamic_cast<QSplitter*>(API_get_main_ysplitter()); //new QSplitter(Qt::Vertical, main_window);
+        editor->ysplitter = ysplitter;
+
         main_window->setCentralWidget(ysplitter);
 
-        ysplitter->setStretchFactor(0,1);//00000);
+        //ysplitter->setStretchFactor(0,1);//00000);
         //ysplitter->setStretchFactor(0,0);
-        ysplitter->setStretchFactor(1,1);
-        ysplitter->setStretchFactor(2,0);
+        //ysplitter->setStretchFactor(1,0);
+        //ysplitter->setStretchFactor(2,0);
         ysplitter->handle(1)->setEnabled(true);//false);
-        ysplitter->handle(2)->setEnabled(false);
-        ysplitter->handle(2)->hide();
+        //ysplitter->handle(2)->setEnabled(false);
+        //ysplitter->handle(2)->hide();
 
-        ysplitter->setChildrenCollapsible(false);
+        //ysplitter->setChildrenCollapsible(false);
 
       } else {
         QWidget *w = new QWidget(main_window);

@@ -474,6 +474,7 @@ public slots:
       return;
     
     if(include_instrument_widget){
+      API_setLowertabIncludesInstrument(false);
       verticalLayout->insertWidget(verticalLayout->count()-1, getInstrumentsWidget(), 0);
       g_parent_for_instrument_widget_ysplitter->hide();
     }else{
@@ -488,6 +489,9 @@ public slots:
     
     if (include_instrument_widget && getInstrumentsWidget()->isVisible()==false)
       GFX_InstrumentWindowToFront();
+
+    if (!include_instrument_widget)
+      API_setLowertabIncludesInstrument(true);
   }
 
   void on_rows1_toggled(bool val){

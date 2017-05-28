@@ -869,35 +869,6 @@ void GFX_addMessage(const char *fmt,...){
   addMessage(message);
 }
 
-/*
-QXcbConnection: XCB error: 3 (BadWindow), sequence: 8449, resource id: 8913535, major code: 40 (TranslateCoords), minor code: 0
-
-Program received signal SIGABRT, Aborted.
-0x0000003b49435935 in raise () from /lib64/libc.so.6
-Missing separate debuginfos, use: debuginfo-install cyrus-sasl-lib-2.1.23-31.fc17.x86_64 fftw-libs-single-3.3.3-5.fc17.x86_64 flac-1.2.1-9.fc17.x86_64 glibc-2.15-59.fc17.x86_64 gsm-1.0.13-6.fc17.x86_64 gstreamer-0.10.36-1.fc17.x86_64 libcurl-7.24.0-10.fc17.x86_64 libidn-1.24-1.fc17.x86_64 liblrdf-0.5.0-3.fc17.x86_64 libssh2-1.4.1-2.fc17.x86_64 libudev-182-3.fc17.x86_64 libvorbis-1.3.3-1.fc17.x86_64 libxml2-2.7.8-9.fc17.x86_64 libxslt-1.1.26-10.fc17.x86_64 nspr-4.10.0-3.fc17.x86_64 nss-3.14.3-2.fc17.x86_64 nss-mdns-0.10-10.fc17.x86_64 nss-util-3.14.3-1.fc17.x86_64 openldap-2.4.33-3.fc17.x86_64 orc-0.4.17-2.fc17.x86_64 raptor2-2.0.7-1.fc17.x86_64 tslib-1.0-4.fc17.x86_64 xcb-util-0.3.8-2.fc17.x86_64 xcb-util-image-0.3.8-3.fc17.x86_64 xcb-util-keysyms-0.3.8-3.fc17.x86_64 xcb-util-renderutil-0.3.8-1.fc17.x86_64 xcb-util-wm-0.3.8-2.fc17.x86_64 yajl-2.0.4-1.fc17.x86_64
-(gdb) bt
-#0  0x0000003b49435935 in raise () from /lib64/libc.so.6
-#1  0x0000003b494370e8 in abort () from /lib64/libc.so.6
-#2  0x00007ffff46dceda in qt_message_fatal (context=..., message=...) at global/qlogging.cpp:1680
-#3  QMessageLogger::warning (this=<optimized out>, msg=<optimized out>) at global/qlogging.cpp:560
-#4  0x00007ffff26dad1e in QXcbConnection::handleXcbError (this=0x5b31970, error=0xcc941b0) at qxcbconnection.cpp:1000
-#5  0x00007ffff26e0c6b in QXcbConnection::processXcbEvents (this=0x5b31970) at qxcbconnection.cpp:1712
-#6  0x00007ffff48e7c21 in QObject::event (this=0x5b31970, e=<optimized out>) at kernel/qobject.cpp:1263
-#7  0x00007ffff782689c in QApplicationPrivate::notify_helper (this=<optimized out>, receiver=0x5b31970, e=0x7fffe0005e30) at kernel/qapplication.cpp:3799
-#8  0x00007ffff782dcb6 in QApplication::notify (this=0x5b21fb0, receiver=0x5b31970, e=0x7fffe0005e30) at kernel/qapplication.cpp:3556
-#9  0x00007ffff48bdc98 in QCoreApplication::notifyInternal2 (receiver=0x5b31970, event=event@entry=0x7fffe0005e30) at kernel/qcoreapplication.cpp:988
-#10 0x00007ffff48c028b in sendEvent (event=0x7fffe0005e30, receiver=<optimized out>) at ../../include/QtCore/../../src/corelib/kernel/qcoreapplication.h:231
-#11 QCoreApplicationPrivate::sendPostedEvents (receiver=0x0, event_type=0, data=0x5b0d5c0) at kernel/qcoreapplication.cpp:1649
-#12 0x00007ffff490e183 in postEventSourceDispatch (s=s@entry=0x5b762a0) at kernel/qeventdispatcher_glib.cpp:276
-#13 0x0000003b4b047825 in g_main_dispatch (context=0x7fffe0002e00) at gmain.c:2539
-#14 g_main_context_dispatch (context=context@entry=0x7fffe0002e00) at gmain.c:3075
-#15 0x0000003b4b047b58 in g_main_context_iterate (context=context@entry=0x7fffe0002e00, block=block@entry=0, dispatch=dispatch@entry=1, self=<optimized out>) at gmain.c:3146
-#16 0x0000003b4b047c14 in g_main_context_iteration (context=0x7fffe0002e00, may_block=may_block@entry=0) at gmain.c:3207
-#17 0x00007ffff490e58f in QEventDispatcherGlib::processEvents (this=0x5b676a0, flags=...) at kernel/qeventdispatcher_glib.cpp:423
-#18 0x00000000006c63f5 in GFX_OpenProgress (message=<optimized out>, message@entry=0xb523d30 "Please wait, loading /home/kjetil/Downloads/estrayk_-_horizon.mod") at Qt/Qt_MainWindow.cpp:731
-#19 0x00000000007086cd in openProgressWindow (message=message@entry=0xb523d30 "Please wait, loading /home/kjetil/Downloads/estrayk_-_horizon.mod") at api/api_requesters.c:180
-#20 0x00000000005f5b46 in radium_s7_openProgressWindow (radiums7_sc=0x5fe9770, radiums7_args=<optimized out>) at api/radium_s7_wrap.c:11671
- */
 
 /*
 static QMessageBox *progressBox = NULL;
