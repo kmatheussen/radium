@@ -2071,24 +2071,9 @@ int radium_main(char *arg){
       GFX_PlayListWindowToFront();
 
   }
-  
-  qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).dark(110).name() + ";}"
-                      "QGroupBox {"
-                      "    background-color: rgba(0, 0, 0, 10);"
-                      "    border: 1px solid rgba(10, 10, 10, 50);;"
-                      "    border-radius: 2px;"
-                      "    margin-top: 1.5em;"
-                      "}"
-                      ""
-                      "QGroupBox::title {"
-                      "    subcontrol-origin: margin;"
-                      "    padding: 2px 2px;"
-                      "    background-color: transparent;"
-                      "}"
-                      ""
-                      "QScrollArea { background: transparent; }"
-                      "QScrollArea > QWidget > QWidget { background: transparent; }"
-                      "QScrollArea > QWidget > QScrollBar { background: rgba(ff, ff, ff, 50); }"
+
+  qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).dark(110).name() + ";}" +
+                      DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"))
                       );
 
   PyRun_SimpleString("import menues");

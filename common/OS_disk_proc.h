@@ -76,6 +76,14 @@ static inline QString DISK_read_qstring_file(disk_t *disk){
 
   return res;
 }
+
+static inline QString DISK_file_to_qstring(QString filename){
+  disk_t *disk = DISK_open_for_reading(filename);
+  R_ASSERT_RETURN_IF_FALSE2(disk!=NULL, "");
+  QString ret = DISK_read_qstring_file(disk);
+  DISK_close_and_delete(disk);
+  return ret;
+}
 #endif
 
 
