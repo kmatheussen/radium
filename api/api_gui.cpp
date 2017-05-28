@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileDialog>
 #include <QTabWidget>
 #include <QTextDocumentFragment>
+#include <QSplitter>
 
 #include <QtWebKitWidgets/QWebView>
 #include <QtWebKitWidgets/QWebFrame>
@@ -2079,12 +2080,51 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
   public:
     
-    Tabs(void)
+    Tabs(int tab_pos)
       : Gui(this)
     {
+      setTabPosition((QTabWidget::TabPosition)tab_pos);
+
+      QColor background = get_qcolor(HIGH_BACKGROUND_COLOR_NUM);
+
+      QPalette pal = palette();
+      pal.setColor(QPalette::Background, background);
+      pal.setColor(QPalette::Base, background);
+      setAutoFillBackground(true);
+      setPalette(pal);
     }
-    
+    /*
+    virtual QSize sizeHint() const override {
+      if (currentWidget()==NULL)
+        return QSize(10,10);
+      
+      return currentWidget()->sizeHint();
+    }
+    */
     OVERRIDERS(QTabWidget);
+  };
+
+
+  struct Splitter : QSplitter, Gui{
+    Q_OBJECT;
+    
+  public:
+    
+    Splitter(bool horizontal, bool childrenCollappsible)
+      : QSplitter(horizontal ? Qt::Horizontal : Qt::Vertical)
+      , Gui(this)
+    {
+      setChildrenCollapsible(childrenCollappsible);
+    }
+    /*
+    virtual QSize sizeHint() const override {
+      if (currentWidget()==NULL)
+        return QSize(10,10);
+      
+      return currentWidget()->sizeHint();
+    }
+    */
+    OVERRIDERS(QSplitter);
   };
 
 
@@ -2559,8 +2599,8 @@ int64_t gui_fileRequester(const_char* header_text, const_char* dir, const_char* 
 
 /************* Tabs ***************************/
 
-int64_t gui_tabs(void){
-  return (new Tabs())->get_gui_num();
+int64_t gui_tabs(int tab_pos){
+  return (new Tabs(tab_pos))->get_gui_num();
 }
 
 int gui_addTab(int64_t tabs_guinum, const_char* name, int64_t tab_guinum, int pos){ // if pos==-1, tab is append. (same as if pos==num_tabs)
@@ -2580,6 +2620,18 @@ int gui_addTab(int64_t tabs_guinum, const_char* name, int64_t tab_guinum, int po
   tabs->setCurrentIndex(num); // If not, the new tab will be displayed on top of the current tab. Could be a qt 5.5.1 bug though.
 
   return num;
+}
+
+
+                 
+/************* Splitter ***************************/
+
+int64_t gui_verticalSplitter(bool childrenCollappsible){
+  return (new Splitter(false, childrenCollappsible))->get_gui_num();
+}
+
+int64_t gui_horizontalSplitter(bool childrenCollappsible){
+  return (new Splitter(true, childrenCollappsible))->get_gui_num();
 }
 
 
@@ -2954,11 +3006,13 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
   if (child==NULL)
     return;
 
+  QSplitter *splitter = dynamic_cast<QSplitter*>(parent);
+  
   QLayout *layout = parent->getLayout();
 
-  if(layout==NULL || y1!=-1) {
+  if(splitter!=NULL || layout==NULL || y1!=-1) {
 
-    if (layout==NULL && (y1==-1 || x2==-1 || y2==-1)){
+    if (splitter==NULL && layout==NULL && (y1==-1 || x2==-1 || y2==-1)){
       handleError("Warning: Parent gui #%d does not have a layout", parentnum);
       x1_or_stretch = 0;
       y1 = 0;
@@ -2970,35 +3024,45 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
       x1 = 0;
     if (y1<0)
       y1 = 0;
-    
-    ScrollArea *scroll_area = dynamic_cast<ScrollArea*>(parent); // Think this one should be changed to parent->_widget.
-    if (scroll_area != NULL){
-      //printf("      Adding to scroll child\n");
-      child->_widget->setParent(scroll_area->contents);
-      child->_widget->move(x1,y1);
-      child->_widget->show();
 
-      int new_width = R_MAX(parent->_widget->width(), x2);
-      int new_height = R_MAX(parent->_widget->height(), y2);
+    if (splitter != NULL) {
+
+      splitter->addWidget(child->_widget);
       
-      //parent->_widget->resize(new_width, new_height);
-      scroll_area->contents->resize(new_width, new_height);
+      int stretch = x1_or_stretch == -1 ? 0 : x1_or_stretch;
+      splitter->setStretchFactor(splitter->count()-1, stretch);
+      
+    } else {
+    
+      ScrollArea *scroll_area = dynamic_cast<ScrollArea*>(parent); // Think this one should be changed to parent->_widget.
+      if (scroll_area != NULL){
+        //printf("      Adding to scroll child\n");
+        child->_widget->setParent(scroll_area->contents);
+        child->_widget->move(x1,y1);
+        child->_widget->show();
+        
+        int new_width = R_MAX(parent->_widget->width(), x2);
+        int new_height = R_MAX(parent->_widget->height(), y2);
+        
+        //parent->_widget->resize(new_width, new_height);
+        scroll_area->contents->resize(new_width, new_height);
+        
+      }else{
+        child->_widget->setParent(parent->_widget);
+        child->_widget->move(x1,y1);
+      }
 
-    }else{
-      child->_widget->setParent(parent->_widget);
-      child->_widget->move(x1,y1);
+      if (x2>x1 && y2 > y1)
+        child->_widget->resize(x2-x1, y2-y1);
+
+      
+      /*
+        int new_width = R_MAX(parent->_widget->width(), x2);
+        int new_height = R_MAX(parent->_widget->height(), y2);
+        
+        parent->_widget->resize(new_width, new_height);
+      */
     }
-
-    if (x2>x1 && y2 > y1)
-      child->_widget->resize(x2-x1, y2-y1);
-
-
-    /*
-    int new_width = R_MAX(parent->_widget->width(), x2);
-    int new_height = R_MAX(parent->_widget->height(), y2);
-
-    parent->_widget->resize(new_width, new_height);
-    */
 
   } else {
 
@@ -3141,15 +3205,17 @@ int64_t gui_getParentWindow(int64_t guinum){
   return API_get_gui_from_widget(w);
 }
 
-bool gui_setParent(int64_t guinum, int64_t parentgui){
+bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return false;
 
-  bool is_window = gui->_widget->isWindow() || gui->_widget->parent()==NULL;
-  if(!is_window){
-    handleError("gui_setParent: Gui #%d is not a window. (className: %s)", guinum, gui_className(guinum));
-    return false;
+  if (mustBeWindow){
+    bool is_window = gui->_widget->isWindow() || gui->_widget->parent()==NULL;
+    if(!is_window){
+      handleError("gui_setParent: Gui #%d is not a window. (className: %s)", guinum, gui_className(guinum));
+      return false;
+    }
   }
   
   QWidget *parent = API_gui_get_parentwidget(parentgui);
@@ -3182,6 +3248,14 @@ bool gui_setParent(int64_t guinum, int64_t parentgui){
     
 
   return true;
+}
+
+bool gui_setAsWindow(int64_t guinum, int64_t parentgui){
+  return gui_setParent2(guinum, parentgui, false);
+}
+
+bool gui_setParent(int64_t guinum, int64_t parentgui){
+  return gui_setParent2(guinum, parentgui, true);
 }
 
 void gui_setModal(int64_t guinum, bool set_modal){
