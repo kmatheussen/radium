@@ -144,19 +144,20 @@ int SYSTEM_show_message(const char *message){
   QStringList arguments;
   arguments << message;
 
-  QProcess myProcess;
-
+  QProcess *myProcess = new QProcess();
+  myProcess->connect(myProcess, SIGNAL(finished(int)), myProcess, SLOT(deleteLater()));
+  
 #if defined(FOR_LINUX) || defined(FOR_MACOSX)
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   env.insert("LD_LIBRARY_PATH", getenv("LD_LIBRARY_PATH"));
-  myProcess.setProcessEnvironment(env);
+  myProcess->setProcessEnvironment(env);
 #endif
 
   GL_lock();
   
-  myProcess.start(program, arguments);
+  myProcess->start(program, arguments);
 
-  if (myProcess.waitForFinished(10000)==false) {
+  if (myProcess->waitForStarted(10000)==false) {
     fprintf(stderr,"Something went wrong when trying to start radium_error_message executable \"%s\"\n",(program+" "+message).toUtf8().constData());
     //system((program+" "+message).toUtf8().constData());
     //abort();
@@ -167,9 +168,17 @@ int SYSTEM_show_message(const char *message){
 
   GL_unlock();
 
-  last_time = TIME_get_ms();
+  if (myProcess->waitForFinished(20000)==false){ // Have timeout value in case the GUI doesn't show up or is hidden somehow.
+    printf("WARN: radium_error_message timed out. Returning -1\n");
+    return -1;
+  }
   
-  int status = myProcess.exitCode();
+  last_time = TIME_get_ms();
+
+  R_ASSERT_RETURN_IF_FALSE2(myProcess->exitStatus()==QProcess::NormalExit, -1);
+  
+      
+  int status = myProcess->exitCode();
 
   if (status==1){
     exit(-1);
