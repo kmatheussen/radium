@@ -98,7 +98,7 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
 
 
   virtual void paintEvent( QPaintEvent *e ) override {
-    radium::PaintEventTracker pet;
+    TRACK_PAINT();
     
     //static int upcounter = 0;
     //printf("upperleft paintEvent %d\n",upcounter++);

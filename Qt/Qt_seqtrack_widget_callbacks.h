@@ -1075,7 +1075,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
   }
 
   void paintEvent ( QPaintEvent * ev ) override {
-    radium::PaintEventTracker pet;
+    TRACK_PAINT();
 
     if(g_radium_runs_custom_exec) return;
     
@@ -1338,7 +1338,7 @@ public:
   }
   
   void paintEvent ( QPaintEvent * ev ) override {
-    radium::PaintEventTracker pet;
+    TRACK_PAINT();
     
     if(g_radium_runs_custom_exec) return;
     if(g_is_loading) return;
@@ -1803,7 +1803,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void paintEvent (QPaintEvent *ev) override {
-    radium::PaintEventTracker pet;
+    TRACK_PAINT();
     
     if(g_radium_runs_custom_exec) return;
     if(g_is_loading) return;

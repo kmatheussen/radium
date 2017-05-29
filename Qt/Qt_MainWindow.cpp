@@ -123,7 +123,7 @@ public:
 #endif
   }
   void paintEvent( QPaintEvent *e ) override {
-    radium::PaintEventTracker pet;
+    TRACK_PAINT();
     
     //printf("got emb paint event %p\n",gtk_hwnd);
     // Shouldn't we call the super method here?

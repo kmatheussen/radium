@@ -164,6 +164,7 @@ static bool editor_has_keyboard = true;
 static int someone_else_has_keyboard_counting = 0;
 bool g_radium_runs_custom_exec = false;
 bool g_qt_is_painting = false;
+const char *g_qt_is_painting_where = "nowhere";
 
 bool g_gc_is_incremental = false;
 

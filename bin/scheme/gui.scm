@@ -297,39 +297,41 @@
 (define *message-gui-text-edit* (<gui> :text-edit "" #t))
 
 (define (show-message-gui)
-  (when (not *message-gui*)
-    (define buttonlayout (<gui> :horizontal-layout))
-    (<gui> :set-layout-spacing buttonlayout 2 0 2 0 2)
-
-    (<gui> :add-layout-space buttonlayout 0 0 #t #f)
-    
-    (define hide-button (<gui> :button "Hide"))
-    (<gui> :add-callback hide-button (lambda ()                                       
-                                       (<gui> :hide *message-gui*)))
-    (<gui> :add buttonlayout hide-button)
-
-    (define gui2 (<gui> :vertical-layout *message-gui-text-edit* buttonlayout))
-    (<gui> :set-layout-spacing gui2 2 2 2 2 2)
-    
-    (<gui> :set-size gui2
-           (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 oiwaefoajefoijaowepijaeporgijpoaghjto#$#$% 2q3e4tERTQERT paerjgoijaerpoiporegi"))
-           (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345")))
-    
-    (<gui> :set-static-toplevel-widget gui2 #t)
-    
-    ;; Just hide window when closing it.
-    (<gui> :add-close-callback gui2
-           (lambda (radium-runs-custom-exec)
-             ;;(<gui> :set-parent *message-gui* -3)
-             (c-display "              GAKK GAKK GAKK")
-             (<gui> :hide *message-gui*)
-             #f))
-
-    (set! *message-gui* gui2))
-
-  ;;(c-display gui2)
-
-  (reopen-gui-at-curr-pos *message-gui*))
+  (<ra> :schedule 0 ;; In case we are called from a paint callback. Not only isn't the message displayed if we call directly, we also end up in an infinite loop since this function is called from various error handlers.
+        (lambda ()
+          (when (not *message-gui*)
+            (define buttonlayout (<gui> :horizontal-layout))
+            (<gui> :set-layout-spacing buttonlayout 2 0 2 0 2)
+            
+            (<gui> :add-layout-space buttonlayout 0 0 #t #f)
+            
+            (define hide-button (<gui> :button "Hide"))
+            (<gui> :add-callback hide-button (lambda ()                                       
+                                               (<gui> :hide *message-gui*)))
+            (<gui> :add buttonlayout hide-button)
+            
+            (define gui2 (<gui> :vertical-layout *message-gui-text-edit* buttonlayout))
+            (<gui> :set-layout-spacing gui2 2 2 2 2 2)
+            
+            (<gui> :set-size gui2
+                   (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 oiwaefoajefoijaowepijaeporgijpoaghjto#$#$% 2q3e4tERTQERT paerjgoijaerpoiporegi"))
+                   (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345")))
+            
+            (<gui> :set-static-toplevel-widget gui2 #t)
+            
+            ;; Just hide window when closing it.
+            (<gui> :add-close-callback gui2
+                   (lambda (radium-runs-custom-exec)
+                     ;;(<gui> :set-parent *message-gui* -3)
+                     (c-display "              GAKK GAKK GAKK")
+                     (<gui> :hide *message-gui*)
+                     #f))
+            
+            (set! *message-gui* gui2))
+          
+          ;;(c-display gui2)
+          
+          (reopen-gui-at-curr-pos *message-gui*))))
 
   
 
@@ -358,8 +360,7 @@
            (define txt (catch #t
                               ow!
                               (lambda args
-                                (get-as-displayable-string-as-possible (list "safe-add-message-window-message failed very hard: " args)))))
-           
+                                (get-as-displayable-string-as-possible (list "safe-add-message-window-message failed very hard: " args)))))           
            (display txt))))
 
 #||

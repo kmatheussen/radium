@@ -24,14 +24,16 @@ extern "C" {
 
   #endif
 
+  extern bool g_scheme_failed;
+  
 #define S7CALL(Type,Func,...)                           \
   (s7extra_add_history(__func__, CR_FORMATEVENT("========== s7call_" # Type, "\n\n")), \
-  s7extra_callFunc_ ## Type (Func,##__VA_ARGS__))
-
-#define S7CALL2(Type,Funcname,...)                           \
+   s7extra_callFunc_ ## Type (Func,##__VA_ARGS__))
+  
+#define S7CALL2(Type,Funcname,...)                                      \
   (s7extra_add_history(__func__, CR_FORMATEVENT("========== s7call_" # Type, "\n\n")), \
-  s7extra_callFunc2_ ## Type (Funcname,##__VA_ARGS__))
-
+   s7extra_callFunc2_ ## Type (Funcname,##__VA_ARGS__))
+    
   void s7extra_add_history(const char *funcname, const char *info);
 
   void s7extra_callFunc_void_void(func_t *func);

@@ -41,7 +41,7 @@ struct MyQButton : public QToolButton{
   */
 
   void paintEvent ( QPaintEvent * ev ) override {
-    radium::PaintEventTracker pet;
+    TRACK_PAINT();
     //QToolButton::paintEvent(ev);
     QPainter p(this);
     //p.eraseRect(rect());

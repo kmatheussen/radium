@@ -262,7 +262,7 @@ namespace cvs{
           event->accept();
       }
       void paintEvent ( QPaintEvent * ev ) override {
-        radium::PaintEventTracker pet;
+        TRACK_PAINT();
         
         if(g_radium_runs_custom_exec) return;
         

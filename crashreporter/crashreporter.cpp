@@ -396,6 +396,7 @@ QMainWindow *g_main_window = NULL; // referenced by helpers.h
 QSplashScreen *g_splashscreen = NULL; // referenced by helpers.h
 bool g_radium_runs_custom_exec = false; // used by helpers.h
 bool g_qt_is_painting = false;
+const char *g_qt_is_painting_where = "nowhere";
 QVector<QWidget*> g_static_toplevel_widgets; // same here
 QPointer<QWidget> g_current_parent_before_qmenu_opened;
 QPointer<QMenu> g_curr_popup_qmenu; // and here
@@ -623,8 +624,9 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
   tosend += "Running plugins: " + plugin_names + "\n\n";
   tosend += "Running time: " + QString::number(time/1000.0) + " seconds.\n\n";
-  tosend += "\n\n";
+  tosend += "Last painter: " + QString(g_qt_is_painting_where) + "\n\n";
 
+  tosend += "\n\n";
 
   for(int i=0;i<num_messages;i++)
     tosend += QString::number(i) + ": "+messages[i] + "\n";

@@ -146,7 +146,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define PAINT_OVERRIDER(classname)                                      \
   void paintEvent(QPaintEvent *ev) override {                           \
-    radium::PaintEventTracker pet;                                      \
+    TRACK_PAINT();                                      \
     if(_image!=NULL){                                                   \
       QPainter p(this);                                                 \
       p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \
@@ -463,7 +463,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     func_t *_mouse_callback = NULL;
     int _currentButton = 0;
-
+    bool _mouse_event_failed = false;
+    
     int getMouseButtonEventID(QMouseEvent *qmouseevent) const {
       if(qmouseevent->button()==Qt::LeftButton)
         return TR_LEFTMOUSEDOWN;
@@ -478,22 +479,42 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool mousePressEvent(QMouseEvent *event){
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
+#ifndef RELEASE // Don't want endless debug messages.
+      if (_mouse_event_failed){
+        printf("mouse_event failed last time. Won't try again\n");
+        return false;
+      }
+#endif
+      
       event->accept();
 
       _currentButton = getMouseButtonEventID(event);
       const QPoint &point = event->pos();
 
-      return S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
+      int ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
+      if (g_scheme_failed==true)
+        _mouse_event_failed = true;
+      return ret;
+      
       //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
 
     bool mouseReleaseEvent(QMouseEvent *event) {
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
+#ifndef RELEASE
+      if (_mouse_event_failed){
+        printf("mouse_event failed last time. Won't try again\n");
+        return false;
+      }
+#endif
+      
       event->accept();
 
       const QPoint &point = event->pos();
       bool ret = S7CALL(bool_int_int_float_float, _mouse_callback, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
+      if (g_scheme_failed==true)
+        _mouse_event_failed = true;
       
       _currentButton = 0;
       //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
@@ -503,11 +524,22 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool mouseMoveEvent(QMouseEvent *event){
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
+#ifndef RELEASE
+      if (_mouse_event_failed){
+        printf("mouse_event failed last time. Won't try again\n");
+        return false;
+      }
+#endif
+      
       event->accept();
 
       const QPoint &point = event->pos();
-      return S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
-
+      
+      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
+      if (g_scheme_failed==true)
+        _mouse_event_failed = true;
+      return ret;
+      
       //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
 
@@ -660,13 +692,19 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     QImage *_image = NULL;
     QPainter *_image_painter = NULL;
     QPainter *_current_painter = NULL;
-
+    bool _paint_event_failed = false;
+    
     void paintEvent(QPaintEvent *event) {
       R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL);
 
       if(g_radium_runs_custom_exec)
         return;
 
+      if (_paint_event_failed){
+        printf("paint_event failed last time. Won't try again\n");
+        return;
+      }
+        
       event->accept();
 
       QPainter p(_widget);
@@ -675,7 +713,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       _current_painter = &p;
 
       S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
-
+      if (g_scheme_failed==true)
+        _paint_event_failed = true;
+      
       _current_painter = NULL;
     }
 
@@ -1401,7 +1441,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     
     void paintEvent(QPaintEvent *ev) override {
-      radium::PaintEventTracker pet;
+      TRACK_PAINT();
       
       QPainter p(this);
 
@@ -3274,6 +3314,11 @@ bool gui_isVisible(int64_t guinum){
 }
 
 void gui_show(int64_t guinum){
+  if (g_qt_is_painting){
+    handleError("Can not call gui_show from a paint callback");
+    return;
+  }
+  
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;

@@ -469,7 +469,12 @@
          (lambda ()
            (apply func args))
          (lambda args
-           (safe-display-ow!)
+           (catch #t
+                  safe-display-ow!
+                  (lambda args
+                    (display "safe-display-ow! failed:")
+                    (display args)
+                    (newline)))
            *try-finally-failed-return-value*)))
   
 

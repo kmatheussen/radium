@@ -113,7 +113,7 @@ bool g_allowed_to_grow_queue = false;
 
 #if USE_QT_VISUAL
 void EditorWidget::paintEvent( QPaintEvent *e ){
-  radium::PaintEventTracker pet;
+  TRACK_PAINT();
   
   if(ATOMIC_GET(is_starting_up)==true)
     return;

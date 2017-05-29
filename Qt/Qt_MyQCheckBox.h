@@ -259,7 +259,7 @@ struct MyQCheckBox : public QCheckBox{
 
 
   void paintEvent ( QPaintEvent * ev ) override {
-    radium::PaintEventTracker pet;
+    TRACK_PAINT();
     
     QPainter p(this);
 

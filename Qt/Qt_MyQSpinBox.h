@@ -86,7 +86,7 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
 
 #if 0
   void paintEvent ( QPaintEvent * ev ){
-    radium::PaintEventTracker pet;
+    TRACK_PAINT();
     
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
 

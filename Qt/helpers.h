@@ -236,12 +236,14 @@ namespace radium{
 }
 
 extern bool g_qt_is_painting;
+extern const char *g_qt_is_painting_where;
 
 namespace radium{
   struct PaintEventTracker{
-    PaintEventTracker(){
+    PaintEventTracker(const char *where){
       R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
       R_ASSERT_NON_RELEASE(g_qt_is_painting==false);
+      g_qt_is_painting_where = where;
       g_qt_is_painting=true;
     }
     ~PaintEventTracker(){
@@ -250,6 +252,8 @@ namespace radium{
     }
   };
 }
+
+#define TRACK_PAINT() radium::PaintEventTracker radium_internal_pet(CR_FORMATEVENT(""))
 
 
 // Why doesn't Qt provide this one?
