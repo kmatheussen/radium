@@ -163,6 +163,7 @@ bool g_do_grey_editor = false;
 static bool editor_has_keyboard = true;
 static int someone_else_has_keyboard_counting = 0;
 bool g_radium_runs_custom_exec = false;
+bool g_qt_is_painting = false;
 
 bool g_gc_is_incremental = false;
 

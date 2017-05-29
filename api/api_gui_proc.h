@@ -6,7 +6,7 @@ extern LANGSPEC void API_gui_call_regularly(void);
 
 extern LANGSPEC bool MIXERSTRIPS_has_mouse_pointer(void);
 
-extern LANGSPEC bool API_gui_is_painting(void);
+//extern LANGSPEC bool API_gui_is_painting(void);
 
 #ifdef __cplusplus
 #if USE_QT5

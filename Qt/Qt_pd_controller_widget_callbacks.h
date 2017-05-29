@@ -186,7 +186,8 @@ public:
   }
 
 #if 0
-  void paintEvent ( QPaintEvent * ev ){
+  void paintEvent ( QPaintEvent * ev ) override {
+    radium::PaintEventTracker pet;
     printf("paintEvent called\n");
     paint_slider_text();
   }

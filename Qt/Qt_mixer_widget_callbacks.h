@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qmath.h>
 #include <assert.h>
 
+#include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
 
 #include <QSplitter>

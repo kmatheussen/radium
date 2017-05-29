@@ -18,6 +18,7 @@
 #include "../midi/midi_i_input_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
 
+#include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
 
 #include "Qt_MyQButton.h"

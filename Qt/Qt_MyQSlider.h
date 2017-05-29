@@ -437,6 +437,8 @@ struct MyQSlider : public QSlider {
   }
 
   void paintEvent ( QPaintEvent * ev ) override {
+    radium::PaintEventTracker pet;
+    
     if(_minimum_size_set==false){
       _minimum_size_set=true;
       setMinimumHeight(g_minimum_height);

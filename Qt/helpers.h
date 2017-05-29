@@ -19,8 +19,8 @@
 #include "../common/visual_proc.h"
 #include "../common/OS_system_proc.h"
 
-#include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
+
 
 #define PUT_ON_TOP 0
 
@@ -233,6 +233,22 @@ namespace radium{
   };
 
 
+}
+
+extern bool g_qt_is_painting;
+
+namespace radium{
+  struct PaintEventTracker{
+    PaintEventTracker(){
+      R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+      R_ASSERT_NON_RELEASE(g_qt_is_painting==false);
+      g_qt_is_painting=true;
+    }
+    ~PaintEventTracker(){
+      R_ASSERT_NON_RELEASE(g_qt_is_painting==true);
+      g_qt_is_painting=false;
+    }
+  };
 }
 
 
@@ -632,6 +648,8 @@ static inline void set_those_menu_variables_when_starting_a_popup_menu(QMenu *me
 }
 
 static inline int safeExec(QMessageBox *widget){
+  R_ASSERT_RETURN_IF_FALSE2(g_qt_is_painting==false, -1);
+    
   closePopup();
 
 #if defined(RELEASE)
@@ -666,6 +684,8 @@ static inline int safeExec(QMessageBox &widget){
 */
 
 static inline int safeExec(QDialog *widget){
+  R_ASSERT_RETURN_IF_FALSE2(g_qt_is_painting==false, -1);
+  
   closePopup();
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
@@ -676,7 +696,8 @@ static inline int safeExec(QDialog *widget){
 }
 
 static inline QAction *safeMenuExec(QMenu *widget){
-
+  R_ASSERT(g_qt_is_painting==false);
+  
   // safeExec might be called recursively if you double click right mouse button to open a pop up menu. Seems like a bug or design flaw in Qt.
 #if !defined(RELEASE)
   if (g_radium_runs_custom_exec==true)
@@ -699,13 +720,17 @@ static inline QAction *safeMenuExec(QMenu *widget){
 }
 
 static inline void safeMenuPopup(QMenu *menu){
+  R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
+  
   closePopup();
   set_those_menu_variables_when_starting_a_popup_menu(menu);
 
   menu->popup(QCursor::pos());
 }
 
-static inline void safeShow(QWidget *widget){  
+static inline void safeShow(QWidget *widget){
+  R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
+  
   closePopup();
 
   GL_lock(); {

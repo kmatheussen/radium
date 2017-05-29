@@ -43,7 +43,9 @@ class Pianorollheader : public QWidget, public Ui::Pianorollheader {
   }
 
   // TODO: Why is this necessary?
-  void paintEvent ( QPaintEvent * ev ){
+  void paintEvent ( QPaintEvent * ev ) override {
+    radium::PaintEventTracker pet;
+    
     QPainter p(this);
     p.eraseRect(rect());
   }

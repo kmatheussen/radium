@@ -122,7 +122,9 @@ public:
     setWFlags(Qt::WStaticContents | Qt::WResizeNoErase | Qt::WRepaintNoErase | Qt::WNoAutoErase);
 #endif
   }
-  void paintEvent( QPaintEvent *e ){
+  void paintEvent( QPaintEvent *e ) override {
+    radium::PaintEventTracker pet;
+    
     //printf("got emb paint event %p\n",gtk_hwnd);
     // Shouldn't we call the super method here?
     EditorWidgetParent::paintEvent(e);
@@ -837,7 +839,7 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
-  if (API_gui_is_painting() || g_is_loading || g_qtgui_has_stopped==true || !THREADING_is_main_thread()){
+  if (g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || !THREADING_is_main_thread()){
     
     SYSTEM_show_message(message);
     return -1;

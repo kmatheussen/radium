@@ -126,7 +126,9 @@ public:
   }
   */
   
-  void paintEvent ( QPaintEvent * ev ){
+  void paintEvent ( QPaintEvent * ev ) override {
+    radium::PaintEventTracker pet;
+    
     //QToolButton::paintEvent(ev);
     QPainter p(this);
     p.eraseRect(rect());

@@ -146,6 +146,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define PAINT_OVERRIDER(classname)                                      \
   void paintEvent(QPaintEvent *ev) override {                           \
+    radium::PaintEventTracker pet;                                      \
     if(_image!=NULL){                                                   \
       QPainter p(this);                                                 \
       p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \
@@ -228,7 +229,7 @@ static QPen getPen(const_char* color){
   return pen;
 }
 
-static bool g_currently_painting = false;
+//static bool g_currently_painting = false;
 
 
 namespace radium_gui{
@@ -668,10 +669,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       event->accept();
 
-      R_ASSERT_RETURN_IF_FALSE(g_currently_painting==false);
-
-      g_currently_painting = true;
-
       QPainter p(_widget);
       p.setRenderHints(QPainter::Antialiasing,true);
 
@@ -680,8 +677,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
 
       _current_painter = NULL;
-
-      g_currently_painting = false;
     }
 
     void addPaintCallback(func_t* func){
@@ -1406,6 +1401,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     
     void paintEvent(QPaintEvent *ev) override {
+      radium::PaintEventTracker pet;
+      
       QPainter p(this);
 
       p.setRenderHints(QPainter::Antialiasing,true);
@@ -2481,7 +2478,7 @@ void gui_updateRecursively(int64_t guinum){
   if (gui==NULL)
     return;
 
-  R_ASSERT_RETURN_IF_FALSE(g_currently_painting==false);
+  R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
 
   updateWidgetRecursively(gui->_widget);
 }
@@ -2493,7 +2490,7 @@ void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
   if (gui==NULL)
     return;
 
-  R_ASSERT_RETURN_IF_FALSE(g_currently_painting==false);
+  R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
 
   if (x1==-1)
     gui->_widget->update();
@@ -4069,10 +4066,11 @@ QWidget *API_gui_get_parentwidget(int64_t parentnum){
   return parent;
 }
 
+/*
 bool API_gui_is_painting(void){
   return g_currently_painting;
 }
-  
+*/
 
 
 ///////////////// main y splitter
