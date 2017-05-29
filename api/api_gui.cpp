@@ -2079,10 +2079,24 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(QFileDialog);
   };
 
+  struct TabBar : QTabBar, Gui{
+    Q_OBJECT;
+
+  public:
+    
+    TabBar(int tab_pos)
+      : Gui(this)
+    {
+      setShape((QTabBar::Shape)tab_pos);
+    }
+
+    OVERRIDERS(QTabBar);
+  };
+
 
   struct Tabs : QTabWidget, Gui{
     Q_OBJECT;
-    
+
   public:
     
     Tabs(int tab_pos)
@@ -2090,8 +2104,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     {
       setTabPosition((QTabWidget::TabPosition)tab_pos);
       setDocumentMode(true); // Remove white border
+      
+      setTabBar(new TabBar(tab_pos));
+      
       tabBar()->setDocumentMode(false); // Remove white border
-                
+
+            
       QColor background = get_qcolor(HIGH_BACKGROUND_COLOR_NUM);
 
       QPalette pal = palette();
@@ -2623,6 +2641,24 @@ int64_t gui_tabs(int tab_pos){
   return (new Tabs(tab_pos))->get_gui_num();
 }
 
+int64_t gui_getTabBar(int64_t tabs_guinum){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return -1;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return -1;
+
+  TabBar *tab_bar = dynamic_cast<TabBar*>(tabs->tabBar());
+  if (tab_bar != NULL)
+    return tab_bar->get_gui_num();
+
+  printf("Warning. tabBar of %d is not a TabBar instance. Can not override paint and mouse methods, etc.\n", (int)tabs_guinum);
+         
+  return API_get_gui_from_widget(tabs->tabBar()); 
+}
+
 void gui_removeTab(int64_t tabs_guinum, int pos){
   Gui *tabs_gui = get_gui(tabs_guinum);
   if (tabs_gui==NULL)
@@ -2697,6 +2733,41 @@ int gui_getTabPos(int64_t tabs_guinum, int64_t tab_guinum){
   else
     return ret;
 }
+
+int gui_numTabs(int64_t tabs_guinum){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return -1;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return -1;
+
+  return tabs->count();
+}
+
+const_char* gui_tabName(int64_t tabs_guinum, int pos){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return "";
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return "";
+
+  if (pos==-1)
+    pos = tabs->currentIndex();
+
+  if (pos < 0 || pos >= tabs->count()){
+    handleError("No tab %d in tabs #%d", pos, (int)tabs_guinum);
+    return "";
+  }
+  
+  return talloc_strdup(tabs->tabText(pos).toUtf8().constData());
+}
+
+
+
 
 
 /************* Splitter ***************************/
