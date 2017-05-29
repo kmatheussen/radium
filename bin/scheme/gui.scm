@@ -331,7 +331,9 @@
           
           ;;(c-display gui2)
           
-          (reopen-gui-at-curr-pos *message-gui*))))
+          (reopen-gui-at-curr-pos *message-gui*)
+          
+          #f)))
 
   
 
@@ -350,6 +352,10 @@
                                                  "<br>"                                                 
                                                  "</body></html>\n"))
   (show-message-gui))
+
+#!!
+(add-message-window-message "hello")
+!!#
 
 (define (safe-add-message-window-txt txt)
   (catch #t

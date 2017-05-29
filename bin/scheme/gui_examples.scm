@@ -251,6 +251,7 @@
 (define ui (<gui> :ui "/home/kjetil/radium/Qt/qt4_soundfilesaver_widget.ui"))
 (define ui (<gui> :ui "/home/kjetil/radium/Qt/qt4_bottom_bar_widget.ui"))
 (define ui (<gui> :ui "/home/kjetil/radium/Qt/test.ui"))
+(define ui (<gui> :ui "/home/kjetil/radium/bin/test.ui"))
 (<gui> :show ui)
 (<gui> :close ui)
 
@@ -312,11 +313,38 @@
 (<gui> :draw-line widget #xffff0060 59 60 150 190 2.0)
 (<gui> :draw-line widget #x00ff0060 9 60 150 190 2.0)
 
-(<gui> :draw-line widget  #x80ff0000 30 60 150 190 40.0)
+(<gui> :draw-line widget  "#80ff0000" 30 60 150 190 40.0)
 (<gui> :filled-box widget "#800000ff" 20 20 180 190)
 
 (<gui> :draw-text widget "#80000050" "hello" 50 50 100 120)
+(<gui> :draw-vertical-text widget "white" "hello" 50 50 100 120)
 
+(let ()
+  (define widget (<gui> :widget 600 600))
+  (<gui> :show widget)
+  (define x 0)
+  (define y 0)
+  (<gui> :add-paint-callback widget
+         (lambda (width height)
+           (<gui> :filled-box widget "white" 0 0 width height)
+           (define x1 150)
+           (define x2 450)
+           (define y1 150)
+           (define y2 450)
+           (<gui> :draw-box widget "black" x y (+ x 200) (+ y 200) 2)
+           (<gui> :draw-text widget "red" "hello" x y (+ x 200) (+ y 200))
+           (<gui> :draw-text widget "red" "hello" x y (+ x 200) (+ y 200) #t #f #f 200)
+           ))
+
+  (<gui> :add-mouse-callback widget
+         (lambda (button state x_ y_)
+           (set! x x_)
+           (set! y y_)
+           (c-display "UPDATING A")
+           (<gui> :update widget)
+           (c-display "FINISHED UPDATING A")
+           #t)))
+  
 (define hslider (<gui> :horizontal-int-slider "helloslider: " -5 10 100 (lambda (asdf) (c-display "moved" asdf)) ))
 
 (<gui> :add widget hslider 50 50 290 100)
@@ -382,11 +410,85 @@
 (<gui> :show requester)
 
 
-(define tabs (<gui> :tabs))
+(define ui (<gui> :ui "/home/kjetil/radium/bin/test.ui"))
+(<gui> :show ui)
 
-(<gui> :show tabs)
-(<gui> :add-tab tabs (<gui> :button "hello2") "tab2")
-(<gui> :add-tab 5 (<gui> :button "hello2") "tab2")
+(<gui> :add-mouse-callback (<gui> :get-tab-bar (<gui> :child ui "tabWidget"))
+       (lambda (button state x y)
+         (c-display "tab bar callback" button state x y)
+         #f))
+
+(let ()
+  (define horizontal #f)
+  (define tabs (<gui> :tabs (if horizontal 0 2)))
+  
+  (<gui> :show tabs)
+  (<gui> :add-tab tabs "Quantitize 1" (create-quantitize-gui-for-tab))
+  (<gui> :add-tab tabs "Sequencer" (create-transpose-notem))
+  (<gui> :add-tab tabs "Instrument" (create-transpose-notem))
+  (<gui> :add-tab tabs "Edit" (create-quantitize-gui-for-tab))
+  
+  (define tab-bar (<gui> :get-tab-bar tabs))
+
+  (define background-color (<gui> :get-background-color tab-bar))
+  (define curr-tab-background (<gui> :mix-colors "white" background-color 0.07))
+    
+  (define (get-index-from-x-y x y)
+    (define num-tabs (<gui> :num-tabs tabs))
+    (if horizontal
+        (between 0
+                 (floor (scale x 0 (<gui> :width tab-bar) 0 num-tabs))
+                 (1- num-tabs))
+        (between 0
+                 (floor (scale y 0 (<gui> :height tab-bar) num-tabs 0))
+                 (1- num-tabs))))
+
+  (define (get-tab-coords i num-tabs width height kont)
+    (if horizontal
+        (kont (scale i 0 num-tabs 0 width)
+              0
+              (scale (1+ i) 0 num-tabs 0 width)
+              height)
+        (kont 0
+              (scale (1+ i) 0 num-tabs height 0)
+              width
+              (scale i 0 num-tabs height 0))))
+              
+  (<gui> :add-paint-callback tab-bar
+         (lambda (width height)
+           (define num-tabs (<gui> :num-tabs tabs))
+           (<gui> :filled-box tab-bar background-color 0 0 width height)
+           (for-each (lambda (i)
+                       (get-tab-coords i num-tabs width height
+                                       (lambda (x1 y1 x2 y2)
+                                         ;;(c-display i (floor y1) (floor y2) "x1/x2" (floor x1) (floor x2) width)
+                                         (if (not (= i (<gui> :current-tab tabs)))
+                                             (<gui> :filled-box tab-bar curr-tab-background x1 y1 x2 y2))
+                                         (<gui> :draw-text tab-bar *text-color* (<gui> :tab-name tabs i) x1 y1 x2 y2 #t #f #f (if horizontal 0 270)))))
+                     (iota num-tabs))))
+  
+  (<gui> :add-mouse-callback tab-bar
+         (lambda (button state x y)
+           (if (and (= state *is-pressing*)
+                    (= button *left-button*))
+               (begin
+                 (<gui> :set-current-tab tabs (get-index-from-x-y x y))
+                 #t)
+               #f)))
+
+  ;; Prevent Qt from painting it's background. We don't want border.
+  (<gui> :add-paint-callback tabs
+         (lambda (width height)
+           ;;(c-display "paint" width height)
+           ;;(<gui> :filled-box tabs background-color 0 0 width height)
+           #t))
+
+  )
+
+
+(define (add-notem-tab name gui)
+  ...)
+
 
 
 

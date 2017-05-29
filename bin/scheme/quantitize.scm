@@ -199,6 +199,9 @@
     hor))
 
 #!!
+(let ((gui (create-quantitize-gui)))
+  (<gui> :show gui))
+
 (load "notem.scm")
 (add-notem-tab "Quantization" (let ((hor (<gui> :horizontal-layout)))
                                 (<gui> :add hor (create-quantitize-gui))

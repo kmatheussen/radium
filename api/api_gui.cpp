@@ -849,7 +849,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       myupdate(x1, y1, x2, y2);
     }
 
-    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, bool draw_vertical) {
+    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate) {
       QPainter *painter = get_painter();
 
       QRectF rect(x1, y1, x2-x1, y2-y1);
@@ -868,15 +868,26 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       else
         flags |= Qt::AlignVCenter;
 
-
-      if (draw_vertical){
-
+      if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
         painter->setFont(GFX_getFittingFont(text, flags, y2-y1, x2-x1));
+      else
+        painter->setFont(GFX_getFittingFont(text, flags, x2-x1, y2-y1));
+      
+      if (rotate != 0) {
 
         painter->save();
-        painter->rotate(90);
-        painter->translate(y1,-x1-rect.width());
 
+        painter->rotate(rotate);
+
+        // Not good enough. Need some trigonometry here to get it correct for all rotate values, but we have only used 90 and 270 degrees in the code so far.
+        if (rotate==270){
+          painter->translate(-y1-rect.height(), x1);
+        } else if (rotate==90){
+          painter->translate(y1, -x1-rect.width());
+        }else{
+          handleError("Only rotate values of 90 and 270 are supported. (It's probably not hard to fix this though.)");
+        }
+        
         QRect rect2(0,0,rect.height(),rect.width());
         painter->drawText(rect2, flags, text);
 
@@ -884,12 +895,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       } else {
 
-        painter->setFont(GFX_getFittingFont(text, flags, x2-x1, y2-y1));
-
         painter->drawText(rect, flags, text);
       
       }
-
 
       myupdate(x1, y1, x2, y2);
     }
@@ -4015,12 +4023,12 @@ void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float 
   gui->filledBox(color, x1, y1, x2, y2, round_x, round_y);
 }
 
-void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left) {
+void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate) {
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, false);
+  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, rotate);
 }
 
 void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left) {
@@ -4028,7 +4036,7 @@ void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, f
   if (gui==NULL)
     return;
 
-  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, true);
+  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, 90);
 }
 
 
