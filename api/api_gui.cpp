@@ -360,14 +360,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool _is_modal = false; // We need to remember whether modality should be on or not, since modality is a parameter for set_window_parent.
     bool _have_set_size = false;
     bool _have_been_opened_before = false;
+
+    QString _class_name;
     
     Gui(QWidget *widget, bool created_from_existing_widget = false)
       : _widget_as_key(widget)
       , _widget(widget)
       , _created_from_existing_widget(created_from_existing_widget)
-    {
-      R_ASSERT(widget != NULL);
-      
+      , _class_name(widget->metaObject()->className())
+    {      
       g_gui_from_widgets[_widget] = this;
       
       _gui_num = g_highest_guinum++;
@@ -392,7 +393,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       R_ASSERT(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
 
-      //printf("Deleting Gui %p (%d)\n",this,(int)get_gui_num());
+      //printf("Deleting Gui %p (%d) (classname: %s)\n",this,(int)get_gui_num(), _class_name.toUtf8().constData());
 
       for(func_t *func : _deleted_callbacks){
         S7CALL(void_bool,func, g_radium_runs_custom_exec);
@@ -2241,7 +2242,7 @@ static Gui *get_gui(int64_t guinum){
   
   if (gui->_widget==NULL) {
     R_ASSERT(gui->_created_from_existing_widget); // GUI's that are not created from an existing widget are (i.e. should be) automatically removed when the QWidget is deleted.
-    handleError("Gui #%d, created from an existing widget, has been closed and can not be used.", gui->get_gui_num());
+    handleError("Gui #%d (class %s), created from an existing widget, has been closed and can not be used.", gui->get_gui_num(), gui->_class_name.toUtf8().constData());
     delete gui;
     return NULL;
   }
@@ -3042,7 +3043,7 @@ const_char* gui_className(int64_t guinum){
   if (gui==NULL)
     return "(not found)";
 
-  return gui->_widget->metaObject()->className();
+  return talloc_strdup(gui->_class_name.toUtf8().constData()); //widget->metaObject()->className(); // ->metaObject()->className() is always supposed to work though.
 }
 
 void gui_setText(int64_t guinum, const_char *value){
