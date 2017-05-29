@@ -3337,7 +3337,12 @@ void gui_close(int64_t guinum){
 }
 
 bool gui_isOpen(int64_t guinum){
-  return get_gui_maybeclosed(guinum)!=NULL;
+  Gui *gui = get_gui_maybeclosed(guinum);
+
+  if (gui==NULL || gui->_widget==NULL)
+    return false;
+  else
+    return true;
 }
 
 int64_t gui_getParentWindow(int64_t guinum){
