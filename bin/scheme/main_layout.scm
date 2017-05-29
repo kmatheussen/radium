@@ -36,7 +36,7 @@
 
 (define-constant *lowertab-gui* (if (defined? '*lowertab-gui*) ;; So that we can reload the file after the program has started.
                                     *lowertab-gui*
-                                    (<gui> :tabs 2)))
+                                    (my-tabs #f)))
 
 
 (define (init-lowertab-gui)

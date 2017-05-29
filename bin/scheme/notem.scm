@@ -6,20 +6,20 @@
 ;;; Edit tab in the lower tabs
 
 
-(define *notem-gui* (if (not (defined? '*notem-gui*))
-                        (begin
-                          (let ((gui (<gui> :tabs)))
-                            (<gui> :set-static-toplevel-widget gui #t)
-                            
-                            ;; Just hide window when closing it.
-                            (<gui> :add-close-callback gui
-                                   (lambda (radium-runs-custom-exec)
-                                     ;;(<gui> :set-parent *notem-gui* -3)
-                                     (c-display "              GAKK GAKK GAKK")
-                                     (<gui> :hide *notem-gui*)
-                                     #f))
-                            gui))
-                        *notem-gui*))
+(define-constant *notem-gui* (if (not (defined? '*notem-gui*))
+                                 (begin
+                                   (let ((gui (my-tabs #t)))
+                                     (<gui> :set-static-toplevel-widget gui #t)
+                                     
+                                     ;; Just hide window when closing it.
+                                     (<gui> :add-close-callback gui
+                                            (lambda (radium-runs-custom-exec)
+                                              ;;(<gui> :set-parent *notem-gui* -3)
+                                              (c-display "              GAKK GAKK GAKK")
+                                              (<gui> :hide *notem-gui*)
+                                              #f))
+                                     gui))
+                                 *notem-gui*))
 
 
 (define (add-notem-tab name gui)
@@ -38,17 +38,21 @@
 
 
 (define (create-transpose-buttons groupname func-creator)
+  (define (up how-much)
+    (<-> "↑  " how-much))
+  (define (down how-much)
+    (<-> "↓  " how-much))
   (define ret (<gui> :group groupname
          (<gui> :horizontal-layout
                 (<gui> :vertical-layout
-                       (<gui> :button "Up 1" (func-creator 1))
-                       (<gui> :button "Down 1" (func-creator -1)))
+                       (<gui> :button (up 1) (func-creator 1))
+                       (<gui> :button (down 1) (func-creator -1)))
                 (<gui> :vertical-layout
-                       (<gui> :button "Up 7" (func-creator 7))
-                       (<gui> :button "Down 7" (func-creator -7)))
+                       (<gui> :button (up 7) (func-creator 7))
+                       (<gui> :button (down 7) (func-creator -7)))
                 (<gui> :vertical-layout
-                       (<gui> :button "Up 12" (func-creator 12))
-                       (<gui> :button "Down 12" (func-creator -12))))))
+                       (<gui> :button (up 12) (func-creator 12))
+                       (<gui> :button (down 12) (func-creator -12))))))
   ret)
 
 

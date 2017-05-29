@@ -395,3 +395,82 @@
   (reopen-gui-at-curr-pos web))
 
 
+;; ra:gui_tabs with simpler gfx. (no borders, etc.)
+;;
+(define (my-tabs horizontal)
+  (define tabs (<gui> :tabs (if horizontal 0 2)))
+
+  ;;(<gui> :set-style-sheet tabs "QTabWidget::pane { border: 0; }")
+  
+  (define tab-bar (<gui> :get-tab-bar tabs))
+
+  (define background-color (<gui> :get-background-color tab-bar))
+  (define curr-tab-background (<gui> :mix-colors "green" background-color 0.27))
+
+  
+  (define (get-index-from-x-y x y)
+    (define num-tabs (<gui> :num-tabs tabs))
+    (between 0
+             (if horizontal
+                 (floor (scale x 0 (<gui> :width tab-bar) 0 num-tabs))
+                 (floor (scale y 0 (<gui> :height tab-bar) 0 num-tabs)))
+             (1- num-tabs)))
+
+  (define (get-tab-coords i num-tabs width height kont)
+    (if horizontal
+        (kont (scale i 0 num-tabs 0 width)
+              0
+              (scale (1+ i) 0 num-tabs 0 width)
+              height)
+        (kont 0
+              (scale i 0 num-tabs 0 height)
+              width
+              (scale (1+ i) 0 num-tabs 0 height))))
+              
+  (<gui> :add-paint-callback tab-bar
+         (lambda (width height)
+           (define num-tabs (<gui> :num-tabs tabs))
+           (<gui> :filled-box tab-bar background-color 0 0 width height)
+           (for-each (lambda (i)
+                       (get-tab-coords i num-tabs width height
+                                       (lambda (x1 y1 x2 y2)
+                                         ;;(c-display i (floor y1) (floor y2) "x1/x2" (floor x1) (floor x2) width)
+                                         (if (= i (<gui> :current-tab tabs))
+                                             (<gui> :filled-box tab-bar curr-tab-background x1 y1 x2 y2))
+                                         (<gui> :draw-text tab-bar *text-color* (<gui> :tab-name tabs i) x1 y1 x2 y2 #t #f #f (if horizontal 0 270)))))
+                     (iota num-tabs))))
+  
+  (<gui> :add-mouse-callback tab-bar
+         (lambda (button state x y)
+           (if (and (= state *is-pressing*)
+                    (= button *left-button*))
+               (begin
+                 (<gui> :set-current-tab tabs (get-index-from-x-y x y))
+                 #t)
+               #f)))
+
+  ;; Prevent Qt from painting background. We don't want border.
+  (<gui> :add-paint-callback tabs
+         (lambda (width height)
+           ;;(c-display "paint" width height)
+           ;;(<gui> :filled-box tabs background-color 0 0 width height)
+           #t))
+
+  (<gui> :add-resize-callback tabs
+         (lambda (width height)
+           (if horizontal
+               (set-fixed-width tab-bar width)
+               (set-fixed-height tab-bar height))))
+               
+  tabs
+  )
+
+#!!
+(let ((tabs (my-tabs #f)))
+  (<gui> :show tabs)
+  (<gui> :add-tab tabs "Quantitize 1" (create-quantitize-gui-for-tab))
+  (<gui> :add-tab tabs "Sequencer" (create-transpose-notem))
+  (<gui> :add-tab tabs "Instrument" (create-transpose-notem))
+  (<gui> :add-tab tabs "Edit" (create-quantitize-gui-for-tab))
+  )
+!!#

@@ -2079,6 +2079,7 @@ int radium_main(char *arg){
   }
 
   qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).dark(110).name() + ";}" +
+                      "QTabWidget::pane { border: 0; background: " + get_qcolor(LOW_BACKGROUND_COLOR_NUM).name() + "}" +
                       DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"))
                       );
 

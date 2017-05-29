@@ -138,10 +138,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   void resizeEvent( QResizeEvent *event) override {                     \
     if (_image!=NULL)                                                   \
       setNewImage(event->size().width(), event->size().height());       \
-    if (_resize_callback==NULL)                                         \
-      classname::resizeEvent(event);                                    \
-    else                                                                \
+    if (_resize_callback!=NULL)                                         \
       Gui::resizeEvent(event);                                          \
+    classname::resizeEvent(event);                                      \
   }                                                                     
 
 #define PAINT_OVERRIDER(classname)                                      \
@@ -2134,6 +2133,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       , Gui(this)
     {
       setShape(shape);
+      setUsesScrollButtons(false); // The "my-tabs" function scales the text.
+      setExpanding(true); // Doesn't work. In "my-tabs", the resize callback sets size manually.
     }
 
     OVERRIDERS(QTabBar);
@@ -2150,11 +2151,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       , Gui(this)
     {
       setTabPosition((QTabWidget::TabPosition)tab_pos);
-      setDocumentMode(true); // Remove white border
+      setDocumentMode(false); // Remove border
       
       setTabBar(new TabBar((QTabBar::Shape)tab_pos, this));
       
-      tabBar()->setDocumentMode(false); // Remove white border
+      tabBar()->setDocumentMode(false); // Remove border
 
             
       QColor background = get_qcolor(HIGH_BACKGROUND_COLOR_NUM);
