@@ -2084,10 +2084,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
   public:
     
-    TabBar(int tab_pos)
-      : Gui(this)
+    TabBar(QTabBar::Shape shape, QWidget *parent = NULL)
+      : QTabBar(parent)
+      , Gui(this)
     {
-      setShape((QTabBar::Shape)tab_pos);
+      setShape(shape);
     }
 
     OVERRIDERS(QTabBar);
@@ -2099,13 +2100,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
   public:
     
-    Tabs(int tab_pos)
-      : Gui(this)
+    Tabs(int tab_pos, QWidget *parent = NULL)
+      : QTabWidget(parent)
+      , Gui(this)
     {
       setTabPosition((QTabWidget::TabPosition)tab_pos);
       setDocumentMode(true); // Remove white border
       
-      setTabBar(new TabBar(tab_pos));
+      setTabBar(new TabBar((QTabBar::Shape)tab_pos, this));
       
       tabBar()->setDocumentMode(false); // Remove white border
 
@@ -2118,6 +2120,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       setAutoFillBackground(true);
       setPalette(pal);
     }
+    
     /*
     virtual QSize sizeHint() const override {
       if (currentWidget()==NULL)
@@ -2203,6 +2206,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         ret = new MyFocusSnifferQSpinBox(parent);
       else if (className=="QDoubleSpinBox")
         ret = new MyFocusSnifferQDoubleSpinBox(parent);
+      else if (className=="QTabWidget")
+        ret = new Tabs(0, parent);
       else
         return QUiLoader::createWidget(className, parent, name);
 

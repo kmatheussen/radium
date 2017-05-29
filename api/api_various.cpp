@@ -2250,7 +2250,7 @@ void API_call_very_often(void){
       release_event(event);
     }
 
-    throwExceptionIfError();
+    //throwExceptionIfError();
   }
 }
 
