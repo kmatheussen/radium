@@ -1870,13 +1870,16 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   };
 
   struct Text : QLabel, Gui{
-    Text(QString text, QString color)
+    Text(QString text, const_char* colorname)
       : Gui(this)
     {
-      if (color=="")
+      if (!strcmp(colorname,""))
         setText(text);
-      else
-        setText("<span style=\" color:" + color + ";\">" + text + "</span>");
+      else {
+        QColor color = getQColor(colorname);
+        if(color.isValid())
+          setText("<span style=\" color:" + color.name() + ";\">" + text + "</span>");
+      }
     }
 
     OVERRIDERS(QLabel);
@@ -2578,8 +2581,7 @@ int64_t gui_horizontalScroll(void){
 }
 
 int64_t gui_text(const_char* text, const_char* color){
-  //return -1;
-  return (new Text(text, getQColor(color).name()))->get_gui_num();
+  return (new Text(text, color))->get_gui_num();
 }
 
 int64_t gui_textEdit(const_char* content, bool read_only){
