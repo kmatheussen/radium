@@ -222,7 +222,7 @@ const_char* showMessage(const char *text, dyn_t buttons){
   }
 
   int ret = GFX_Message(&v, text);
-  if (ret<0 || ret>= buttons.array->num_elements) // don't this can happen though.
+  if (ret<0 || ret>= buttons.array->num_elements) // don't think this can happen though.
     return "";
 
   return STRING_get_chars(buttons.array->elements[ret].string);

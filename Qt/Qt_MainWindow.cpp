@@ -837,14 +837,7 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
-  bool use_system = false;
-
-  if (buttons==NULL){
-    use_system = g_is_loading || API_gui_is_painting();
-  }
-  
-  //g_qtgui_has_started==false || 
-  if (use_system || g_qtgui_has_stopped==true || !THREADING_is_main_thread()){
+  if (API_gui_is_painting() || g_is_loading || g_qtgui_has_stopped==true || !THREADING_is_main_thread()){
     
     SYSTEM_show_message(message);
     return -1;
