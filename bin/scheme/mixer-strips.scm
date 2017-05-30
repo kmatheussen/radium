@@ -1370,7 +1370,8 @@
 (define (create-current-instrument-border gui instrument-id)
   (define rubberband-resize (gui-rubberband gui 5 "#bb111144" (lambda ()
                                                                 (= (<ra> :get-current-instrument) instrument-id))))
-  (add-safe-resize-callback gui rubberband-resize))
+  (add-safe-resize-callback gui (lambda (width height)
+                                  (rubberband-resize 0 0 width height))))
 
   
 (define (create-mixer-strip-minimized instrument-id is-current-mixer-strip)

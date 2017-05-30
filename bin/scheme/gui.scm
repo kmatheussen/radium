@@ -477,7 +477,9 @@
 
 
 ;; Proper rubberband. (QRubberBand doesn't work)
-;; The function returns a function that must be called when parent resizes.
+;; The function returns a function that must be called to update position.
+;; Note that the lines are drawn at integer position. floating points are ignored.
+;; It also draws in between the rectangle, not on the rectangle, which :draw-box does.
 (define (gui-rubberband parent w color is-enabled-func)
   (define top (<gui> :widget w w))
   (define right (<gui> :widget w w))
@@ -495,17 +497,25 @@
                      (<gui> :filled-box part color 0 0 width height)))))
             (list top right bottom left))
 
-  (lambda (width height)
-    (<gui> :set-pos top 0 0)
+  (lambda (x1 y1 x2 y2)
+    (set! x1 (floor x1))
+    (set! y1 (floor y1))
+    (set! x2 (floor x2))
+    (set! y2 (floor y2))
+    
+    (define width (- x2 x1))
+    (define height (- y2 y1))
+    
+    (<gui> :set-pos top x1 y1)
     (<gui> :set-size top width w)
     
-    (<gui> :set-pos right (- width w) 0)
+    (<gui> :set-pos right (- x2 w) y1)
     (<gui> :set-size right w height)
 
-    (<gui> :set-pos bottom 0 (- height w))
+    (<gui> :set-pos bottom x1 (- y2 w))
     (<gui> :set-size bottom width w)
 
-    (<gui> :set-pos left 0 0)
+    (<gui> :set-pos left x1 y1)
     (<gui> :set-size left w height)))
 
     
