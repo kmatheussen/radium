@@ -15,6 +15,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#define TRANSPORT_STUFF 0 // Just some preliminary things.
+
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -585,7 +588,10 @@ struct Mixer{
     jack_set_freewheel_callback(_rjack_client, RT_rjack_freewheel_changed, this);
     jack_on_info_shutdown(_rjack_client, RT_rjack_shutdown, this);
     jack_set_process_thread(_rjack_client,RT_rjack_thread,this);
-
+#if TRANSPORT_STUFF
+    jack_set_sync_callback(_rjack_client, RT_rjack_sync, this);
+#endif
+    
     if (jack_activate (_rjack_client)){
       fprintf (stderr, "Error. Cannot activate jack client.\n");
 
@@ -670,6 +676,7 @@ struct Mixer{
     AVOIDDENORMALS;
     //#endif
 
+        
     touch_stack();
 
     pause_time.start();
@@ -693,6 +700,16 @@ struct Mixer{
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
 
+#if TRANSPORT_STUFF
+      jack_transport_state_t state = jack_transport_query(_rjack_client,NULL);
+      if(state==JackTransportStopped){
+        if (is_playing())
+          RT_request_to_stop_playing();
+      }else if (state==JackTransportStarting){
+      }else if (state==JackTransportRolling){
+      }
+#endif
+    
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
 
@@ -921,6 +938,27 @@ struct Mixer{
     return 0;
   }
 
+#if TRANSPORT_STUFF
+  static int RT_rjack_sync(jack_transport_state_t state, jack_position_t *pos, void *arg){
+    //Mixer *mixer = static_cast<Mixer*>(arg);
+    
+    if(state==JackTransportStopped)
+      printf("    trans: Stopped\n");
+    
+    else if (state==JackTransportStarting){
+      printf("    trans: Starting\n");
+      if (!is_playing())
+        RT_request_to_start_playing();
+    }else if (state==JackTransportRolling)
+      printf("    trans: Rolling\n");
+    
+    else
+      printf("    trans: ?? %d\n", (int)state);
+    
+    return 1;
+  }
+#endif
+  
 };
 
 static Mixer *g_mixer = NULL;
