@@ -228,6 +228,12 @@ static QPen getPen(const_char* color){
   return pen;
 }
 
+static void setDefaultSpacing(QLayout *layout){
+  layout->setSpacing(0);
+  layout->setContentsMargins(0,0,0,0);
+}
+  
+
 //static bool g_currently_painting = false;
 
 
@@ -1633,12 +1639,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     OVERRIDERS(QRadioButton);
   };
-  
+
   struct VerticalLayout : QWidget, Gui{
     VerticalLayout()
       : Gui(this)
     {
-      QVBoxLayout *mainLayout = new QVBoxLayout;      
+      QVBoxLayout *mainLayout = new QVBoxLayout;
+      setDefaultSpacing(mainLayout);
+
       setLayout(mainLayout);
     }
 
@@ -1650,7 +1658,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       QHBoxLayout *mainLayout = new QHBoxLayout;      
-
+      setDefaultSpacing(mainLayout);
+      
       setLayout(mainLayout);
     }
 
@@ -1663,8 +1672,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     MyGridLayout(int num_columns)
       : _num_columns(num_columns)
-    {}
-
+    {
+      setDefaultSpacing(this);
+    }
+    
     void addItem(QLayoutItem *item) override {
       QGridLayout::addItem(item, _y, _x);
       _x++;
@@ -1680,6 +1691,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       setLayout(new MyGridLayout(num_columns));
+      setDefaultSpacing(layout());
     }
     
     OVERRIDERS(QWidget);
@@ -1690,6 +1702,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       setLayout(new FlowLayout());
+      setDefaultSpacing(layout());
     }
     
     OVERRIDERS(QWidget);
@@ -1701,6 +1714,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       , Gui(this)        
     {
       QVBoxLayout *mainLayout = new QVBoxLayout;
+      setDefaultSpacing(mainLayout);
       setLayout(mainLayout);
     }
 
@@ -1769,7 +1783,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       //contents = new QWidget(this);
 
       mylayout = new QVBoxLayout(contents);
-      mylayout->setSpacing(1);
+      setDefaultSpacing(mylayout);
+      //mylayout->setSpacing(1);
       //mylayout->setContentsMargins(1,1,1,1);
 
       contents->setLayout(mylayout);
@@ -1801,7 +1816,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       QWidget *contents = new QWidget(this);
 
       mylayout = new QHBoxLayout(contents);
-      mylayout->setSpacing(1);
+      setDefaultSpacing(mylayout);
+      //mylayout->setSpacing(1);
       //mylayout->setContentsMargins(1,1,1,1);
 
       contents->setLayout(mylayout);
