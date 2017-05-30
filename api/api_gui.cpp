@@ -2217,6 +2217,33 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(QSplitter);
   };
 
+  // QRubberBand doesn't work. I've also searched the internet, and no one seems to have made it work.
+  // Use gui-rubber-band from gui.scm instead (workaround)
+  /*
+  struct RubberBand : QWidget, Gui{
+    Q_OBJECT;
+
+  public:
+
+    RubberBand(float opacity)
+    //: QWidgetRubberBand(QRubberBand::Rectangle)
+      , Gui(this)
+    {
+      setWindowOpacity(opacity);
+      setWindowFlags(Qt::FramelessWindowHint);
+    }
+
+    //OVERRIDERS(QRubberBand);
+    void paintEvent(QPaintEvent *)
+    {
+      QColor backgroundColor = palette().background().color();
+      backgroundColor.setAlpha(216); // Use Alphachannel u want
+      QPainter painter(this);
+      painter.fillRect(rect(),backgroundColor);
+    }
+
+  };
+  */
 
   struct Table : QTableWidget, Gui{
     Q_OBJECT;
@@ -2847,8 +2874,12 @@ int64_t gui_horizontalSplitter(bool childrenCollappsible){
   return (new Splitter(true, childrenCollappsible))->get_gui_num();
 }
 
+/*
+int64_t gui_rubberBand(float opacity){
+  return (new RubberBand(opacity))->get_gui_num();
+}
+*/
 
-                 
 /************** Table **********************/
 
 int64_t gui_table(dyn_t header_names){

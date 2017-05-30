@@ -474,3 +474,39 @@
   (<gui> :add-tab tabs "Edit" (create-quantitize-gui-for-tab))
   )
 !!#
+
+
+;; Proper rubberband. (QRubberBand doesn't work)
+;; The function returns a function that must be called when parent resizes.
+(define (gui-rubberband parent w color is-enabled-func)
+  (define top (<gui> :widget w w))
+  (define right (<gui> :widget w w))
+  (define bottom (<gui> :widget w w))
+  (define left (<gui> :widget w w))
+
+  (for-each (lambda (part)
+              (<gui> :add parent part)
+              (<gui> :show part)
+              
+              (add-safe-paint-callback
+               part
+               (lambda (width height)
+                 (if (is-enabled-func)
+                     (<gui> :filled-box part color 0 0 width height)))))
+            (list top right bottom left))
+
+  (lambda (width height)
+    (<gui> :set-pos top 0 0)
+    (<gui> :set-size top width w)
+    
+    (<gui> :set-pos right (- width w) 0)
+    (<gui> :set-size right w height)
+
+    (<gui> :set-pos bottom 0 (- height w))
+    (<gui> :set-size bottom width w)
+
+    (<gui> :set-pos left 0 0)
+    (<gui> :set-size left w height)))
+
+    
+                                              

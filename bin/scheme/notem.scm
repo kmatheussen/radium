@@ -43,16 +43,16 @@
   (define (down how-much)
     (<-> "↓  " how-much))
   (define ret (<gui> :group groupname
-         (<gui> :horizontal-layout
-                (<gui> :vertical-layout
-                       (<gui> :button (up 1) (func-creator 1))
-                       (<gui> :button (down 1) (func-creator -1)))
-                (<gui> :vertical-layout
-                       (<gui> :button (up 7) (func-creator 7))
-                       (<gui> :button (down 7) (func-creator -7)))
-                (<gui> :vertical-layout
-                       (<gui> :button (up 12) (func-creator 12))
-                       (<gui> :button (down 12) (func-creator -12))))))
+                     (<gui> :horizontal-layout
+                            (<gui> :vertical-layout
+                                   (<gui> :button (up 1) (func-creator 1))
+                                   (<gui> :button (down 1) (func-creator -1)))
+                            (<gui> :vertical-layout
+                                   (<gui> :button (up 7) (func-creator 7))
+                                   (<gui> :button (down 7) (func-creator -7)))
+                            (<gui> :vertical-layout
+                                   (<gui> :button (up 12) (func-creator 12))
+                                   (<gui> :button (down 12) (func-creator -12))))))
   ret)
 
 

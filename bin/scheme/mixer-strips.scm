@@ -1364,10 +1364,15 @@
 
 (define (draw-mixer-strips-border gui width height instrument-id)
   ;;(c-display "    Draw mixer strips border called for " instrument-id)
-  (if (= (<ra> :get-current-instrument) instrument-id)
-      (<gui> :draw-box gui "#bb111144" 0 0 width height 10 3 3)
+  (if (not (= (<ra> :get-current-instrument) instrument-id)) ;; (The current instrument border covers the box.)
       (<gui> :draw-box gui "#bb222222" 0 0 width height 2 3 3)))
 
+(define (create-current-instrument-border gui instrument-id)
+  (define rubberband-resize (gui-rubberband gui 5 "#bb111144" (lambda ()
+                                                                (= (<ra> :get-current-instrument) instrument-id))))
+  (add-safe-resize-callback gui rubberband-resize))
+
+  
 (define (create-mixer-strip-minimized instrument-id is-current-mixer-strip)
   (define color (<ra> :get-instrument-color instrument-id))
 
@@ -1399,12 +1404,14 @@
 
   (define volume-gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #t))
   (<gui> :add gui volume-gui 1)
+
+  (create-current-instrument-border gui instrument-id)
   
   (add-safe-paint-callback gui
          (lambda (width height)
            ;;(set-fixed-height volume-gui (floor (/ height 2)))
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
-           (draw-mixer-strips-border gui width height (if is-current-mixer-strip -2 instrument-id))
+           (draw-mixer-strips-border gui width height instrument-id)
            #t
            )
          )
@@ -1471,11 +1478,13 @@
   (<gui> :add gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #f) 1)
   (<gui> :add gui (create-mixer-strip-comment instrument-id comment-height))
 
-  (add-safe-paint-callback gui
-         (lambda (width height)
-           (<gui> :filled-box gui background-color 0 0 width height 0 0)
-           (draw-mixer-strips-border gui width height (if is-current-mixer-strip -2 instrument-id))))
+  (create-current-instrument-border gui instrument-id)
 
+  (add-safe-paint-callback gui
+                           (lambda (width height)
+                             (<gui> :filled-box gui background-color 0 0 width height 0 0)
+                             (draw-mixer-strips-border gui width height instrument-id)))
+  
   gui)
 
 (define (create-mixer-strip instrument-id min-width is-current-mixer-strip)
