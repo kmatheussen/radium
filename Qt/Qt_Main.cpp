@@ -2009,7 +2009,6 @@ int radium_main(char *arg){
         //ysplitter->addWidget(API_get_lowertabs());
 
         QSplitter *ysplitter = dynamic_cast<QSplitter*>(API_get_main_ysplitter()); //new QSplitter(Qt::Vertical, main_window);
-        editor->ysplitter = ysplitter;
 
         main_window->setCentralWidget(ysplitter);
 

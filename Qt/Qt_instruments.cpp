@@ -497,7 +497,8 @@ QWidget *getInstrumentsWidget(void){
 #if 1
 static void set_widget_height(int height){
   return;
-  
+
+#if 0
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   QSplitter *splitter = editor->ysplitter;
@@ -513,6 +514,8 @@ static void set_widget_height(int height){
 #if USE_QT4
 #  undef QValueList
 #endif
+
+#endif // 0
 }
 #endif
 

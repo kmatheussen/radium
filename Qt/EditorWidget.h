@@ -133,7 +133,7 @@ public:
     //QVector<QLabel*> status_labels;
 
     QSplitter *xsplitter;
-    QSplitter *ysplitter;
+    //QSplitter *ysplitter;
 
     int get_editor_width(){
       //return this->width()-XOFFSET-2; // Fine tuned. No logical reason behind it. (2 is probably just the frame border width)

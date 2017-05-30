@@ -295,8 +295,9 @@ void grabKeyboard(void){
   }GL_unlock();
 }
 
-static bool widgets_are_disabled = false;
 
+/*
+static bool widgets_are_disabled = false;
 void Qt_DisableAllWidgets(QWidget *not_me){
   widgets_are_disabled = true;
 #if USE_GTK_REQTYPE
@@ -320,7 +321,10 @@ void Qt_EnableAllWidgets(void){
 
   widgets_are_disabled = false;
 }
+*/
+
 #endif
+
 
 bool GFX_EditorIsVisible(void){
   return !g_editor->isHidden();
@@ -410,14 +414,12 @@ public:
 
   void closeEvent(QCloseEvent *ce) override{
     ce->ignore();
-    if(widgets_are_disabled==false){
-      struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
-      doquit = Quit(window);
+    struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
+    doquit = Quit(window);
 #if USE_QT_VISUAL
-      if(doquit==true)
-        QApplication::quit();
+    if(doquit==true)
+      QApplication::quit();
 #endif
-    }
   }
 
 #if 0
