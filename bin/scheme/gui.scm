@@ -404,8 +404,8 @@
   
   (define tab-bar (<gui> :get-tab-bar tabs))
 
-  (define background-color (<gui> :get-background-color tab-bar))
-  (define curr-tab-background (<gui> :mix-colors "green" background-color 0.27))
+  (define background-color (<gui> :get-background-color tabs))
+  (define curr-tab-background (<gui> :mix-colors "green" background-color 0.47))
 
   
   (define (get-index-from-x-y x y)
@@ -453,7 +453,8 @@
   (<gui> :add-paint-callback tabs
          (lambda (width height)
            ;;(c-display "paint" width height)
-           ;;(<gui> :filled-box tabs background-color 0 0 width height)
+           (define background-color (<gui> :mix-colors "color11" "color9" 0.8))
+           (<gui> :filled-box tabs background-color 0 0 width height)
            #t))
 
   (<gui> :add-resize-callback tabs

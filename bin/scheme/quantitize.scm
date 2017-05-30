@@ -192,11 +192,14 @@
 
 
 (define (create-quantitize-gui-for-tab)
-  (let ((hor (<gui> :horizontal-layout)))
-    (<gui> :add hor (create-quantitize-gui))
-    (<gui> :add-layout-space hor 10 10 #t #f)
-    (<gui> :set-layout-spacing hor 0 0 0 0 0)
-    hor))
+  (if #t
+      (let ((hor (<gui> :horizontal-layout)))
+        (<gui> :add-layout-space hor 10 10 #t #f)
+        (<gui> :add hor (create-quantitize-gui))
+        (<gui> :add-layout-space hor 10 10 #t #f)
+        (<gui> :set-layout-spacing hor 0 0 0 0 0)
+        hor)
+      (create-quantitize-gui)))
 
 #!!
 (let ((gui (create-quantitize-gui)))
