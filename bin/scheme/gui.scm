@@ -477,6 +477,7 @@
 !!#
 
 
+
 ;; Proper rubberband. (QRubberBand doesn't work)
 ;; The function returns a function that must be called to update position.
 ;; Note that the lines are drawn at integer position. floating points are ignored.

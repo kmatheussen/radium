@@ -663,19 +663,24 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     /************ RESIZE *******************/
     
     func_t *_resize_callback = NULL;
+    bool _resize_callback_failed = false;
     
     void resizeEvent(QResizeEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
 
-      if(g_radium_runs_custom_exec){
-#if !defined(RELEASE)
-        //R_ASSERT(false);
-#endif
+      if(g_radium_runs_custom_exec)
+        return;
+
+      if (_resize_callback_failed){
+        printf("resize_event failed last time. Won't try again to avoid a debug output bonanza (%s).\n", _class_name.toUtf8().constData());
         return;
       }
 
-      if(gui_isOpen(_gui_num) && _widget->isVisible()) //  && _widget->width()>0 && _widget->height()>0)
+      if(gui_isOpen(_gui_num) && _widget->isVisible()){ //  && _widget->width()>0 && _widget->height()>0)
         S7CALL(void_int_int,_resize_callback, event->size().width(), event->size().height());
+        if (g_scheme_failed==true)
+          _resize_callback_failed = true;
+      }
     }
 
     void addResizeCallback(func_t* func){
@@ -697,7 +702,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     QImage *_image = NULL;
     QPainter *_image_painter = NULL;
     QPainter *_current_painter = NULL;
-    bool _paint_event_failed = false;
+    bool _paint_callback_failed = false;
     
     void paintEvent(QPaintEvent *event) {
       R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL);
@@ -705,8 +710,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if(g_radium_runs_custom_exec)
         return;
 
-      if (_paint_event_failed){
-        printf("paint_event failed last time. Won't try again\n");
+      if (_paint_callback_failed){
+        printf("paint_event failed last time. Won't try again to avoid a debug output bonanza (%s).\n", _class_name.toUtf8().constData());
         return;
       }
         
@@ -719,7 +724,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
       if (g_scheme_failed==true)
-        _paint_event_failed = true;
+        _paint_callback_failed = true;
       
       _current_painter = NULL;
     }
