@@ -329,6 +329,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void fileSelected(const QString &file){
       S7CALL(void_charpointer,_func, file.toUtf8().constData());
     }
+
+    void currentChanged(int index){
+      S7CALL(void_int,_func, index);
+    }
   };
 
   
@@ -1116,6 +1120,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     virtual void addGuiCallback(func_t* func){
       Callback *callback = new Callback(func, _widget);
 
+      {
+        QTabWidget *tabs = dynamic_cast<QTabWidget*>(_widget.data());
+        if (tabs != NULL){
+          tabs->connect(tabs, SIGNAL(currentChanged(int)), callback, SLOT(currentChanged(int)));
+          goto gotit;
+        }
+      }
+      
       {
         QFileDialog *file_dialog = dynamic_cast<QFileDialog*>(_widget.data());
         if (file_dialog!=NULL){
@@ -2879,6 +2891,29 @@ int64_t gui_horizontalSplitter(bool childrenCollappsible){
   return (new Splitter(true, childrenCollappsible))->get_gui_num();
 }
 
+int64_t gui_getSplitterHandle(int64_t splitter_guinum, int pos){
+  Gui *gui = get_gui(splitter_guinum);
+  if (gui==NULL)
+    return -1;
+
+  QSplitter *splitter = gui->mycast<QSplitter>(__FUNCTION__);
+  if (splitter==NULL)
+    return -1;
+
+  if (pos < 0 || pos >= splitter->count()){
+    handleError("No splitter handle %d in splitter #%d", pos, (int)splitter_guinum);
+    return -1;
+  }
+
+  auto *handle = splitter->handle(pos);
+  if (handle==NULL){
+    handleError("Qt returned NULL when asking for splitter handle %d in splitter #%d. (that's very strange)", pos, (int)splitter_guinum);
+    return -1;
+  }
+  
+  return API_get_gui_from_widget(handle);
+}
+
 /*
 int64_t gui_rubberBand(float opacity){
   return (new RubberBand(opacity))->get_gui_num();
@@ -3278,8 +3313,8 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
 
       splitter->addWidget(child->_widget);
       
-      int stretch = x1_or_stretch == -1 ? 0 : x1_or_stretch;
-      splitter->setStretchFactor(splitter->count()-1, stretch);
+      //int stretch = x1_or_stretch == -1 ? 0 : x1_or_stretch;
+      //splitter->setStretchFactor(splitter->count()-1, stretch);
       splitter->setSizes({900000,1}); // Hack
       
     } else {
@@ -3614,7 +3649,46 @@ void gui_setSize(int64_t guinum, int width, int height){
     return;
 
   gui->_have_set_size = true;
-  gui->_widget->resize(width, height);
+
+  QSplitter *splitter = dynamic_cast<QSplitter*>(gui->_widget->parent());
+  if(splitter != NULL){
+    
+    int count = splitter->count();
+    int pos = 0;
+    
+    for(int i=0;i<count;i++)
+      if(splitter->widget(i)==gui->_widget.data()){
+        pos = i;
+        break;
+      }
+
+    QList<int> sizes = splitter->sizes();
+
+    int new_height = height;
+    int old_height = sizes[pos];
+    int diff_height = new_height - old_height;
+
+    /*
+    printf("\n\npos: %d, old: %d, new: %d, diff: %d. 0: %d -> %d, 1: %d -> %d\n",
+           pos,
+           old_height, new_height, diff_height,
+           sizes[0], sizes[0] - diff_height/(count-1),
+           sizes[1], new_height);
+    */
+    
+    for(int i=0;i<count;i++)
+      if (i==pos)
+        sizes[i] = new_height;
+      else
+        sizes[i] -= diff_height/(count-1);
+    
+    splitter->setSizes(sizes);
+
+    //printf("Actual: %d %d   (req: %d, %d, new_height: %d)\n\n", splitter->sizes()[0], splitter->sizes()[1], sizes[0], sizes[1], new_height);
+    
+  } else {
+    gui->_widget->resize(width, height);
+  }
 }
 
 bool gui_mousePointsMainlyAt(int64_t guinum){

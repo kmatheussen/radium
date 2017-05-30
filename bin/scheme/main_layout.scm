@@ -38,13 +38,45 @@
                                     *lowertab-gui*
                                     (my-tabs #f)))
 
+(define2 *sequencer-gui-height* (curry-or not integer?) #f)
+(define2 *lowertab-gui-height* (curry-or not integer?) #f)
 
+(define2 *curr-lowertab-is-sequencer* boolean? #t)
+
+(define (lowertab-index-callback index)
+  ;;(c-display "\n\n\n                ****lowertab changed to index" index *sequencer-gui-height* "\n\n\n")
+  (define handle (<gui> :get-splitter-handle *ysplitter* 1))
+  
+  (if (string=? (<gui> :tab-name *lowertab-gui* index) *sequencer-gui-tab-name*)
+      (let ((seq (<gui> :get-sequencer-gui)))
+        (<gui> :set-enabled handle #t)
+        (set! *curr-lowertab-is-sequencer* #t)
+        (if *sequencer-gui-height*
+            (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) *sequencer-gui-height*)))
+      (begin
+        (when *curr-lowertab-is-sequencer*
+          (if (and (<gui> :is-visible *lowertab-gui*)
+                   (> (<gui> :height *lowertab-gui*) 0))
+              (set! *sequencer-gui-height* (<gui> :height *lowertab-gui*)))
+          (set! *curr-lowertab-is-sequencer* #f))
+
+        (<gui> :set-enabled handle #f)
+        
+        ;;(c-display "minimizing")
+        (<gui> :minimize-as-much-as-possible (<gui> :get-instrument-gui))
+        (<gui> :minimize-as-much-as-possible *notem-gui*)
+        ;;(<gui> :set-size (<gui> :get-instrument-gui) 50 10)
+        (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) 10))))
+  
 (define (init-lowertab-gui)
   (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* (<gui> :get-sequencer-gui))
   (if (not (<ra> :position-instrument-widget-in-mixer))
       (<gui> :add-tab *lowertab-gui* *instrument-gui-tab-name* (<gui> :get-instrument-gui)))
   (<gui> :add-tab *lowertab-gui* *edit-gui-tab-name* *notem-gui*)
-  (<gui> :set-current-tab *lowertab-gui* 0))
+  (<gui> :set-current-tab *lowertab-gui* 0)
+  (<gui> :add-callback *lowertab-gui*
+         (lambda (index)
+           (lowertab-index-callback index))))
 
 
 (define (FROM-C-get-lowertab-gui)
