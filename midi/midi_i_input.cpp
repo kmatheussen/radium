@@ -837,10 +837,10 @@ void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data
 
   switch(cc){
     case 0xfa:
-      RT_request_to_start_playing();
+      RT_request_to_start_playing_block();
       return;
     case 0xfb:
-      RT_request_to_continue_playing();
+      RT_request_to_continue_playing_block();
       return;
     case 0xfc:
       RT_request_to_stop_playing();

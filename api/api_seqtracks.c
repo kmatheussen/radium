@@ -558,7 +558,7 @@ void setSeqtempoLength(double end_time, bool do_shrink){
 double getSeqtempoLength(void){
   return TEMPOAUTOMATION_get_length();
 }
-double getSeqtempoAbsabstime(double abstime){
+int64_t getSeqtempoAbsabstime(double abstime){
   return TEMPOAUTOMATION_get_absabstime(abstime);
 }
 

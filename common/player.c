@@ -41,14 +41,17 @@ extern struct Root *root;
 
 extern LANGSPEC void OS_InitMidiTiming(void);
 
-static bool g_time_was_stopped = true;
 
 
-void PlayerTask(double reltime){
+void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_we_have_told_jack_transport_that_we_are_not_ready_yet){
 
-  
+        
         if (ATOMIC_GET(is_starting_up))
           return;
+
+
+        
+        static bool g_time_was_stopped = true; // If SCHEDULER_clear_all() always returned true, this variable didn't have to be static.
 
 
         
@@ -87,9 +90,11 @@ void PlayerTask(double reltime){
           //  return;
         }
 
-        
-        
         R_ASSERT(player_state==PLAYER_STATE_STARTING_TO_PLAY || player_state==PLAYER_STATE_PLAYING || player_state==PLAYER_STATE_STOPPED);
+
+
+        if (player_state==PLAYER_STATE_STARTING_TO_PLAY && can_not_start_playing_right_now_because_we_have_told_jack_transport_that_we_are_not_ready_yet)
+          return;
 
         
         if (player_state != PLAYER_STATE_STOPPED)

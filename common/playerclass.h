@@ -118,7 +118,7 @@ typedef struct{
 
         DEFINE_ATOMIC(Player_State, player_state);
 
-        double absabstime; // time in frames when taking song tempo automation into consideration. This is the time sent to the plugins.
+        int64_t absabstime; // time in frames when taking song tempo automation into consideration. This is the time sent to the plugins.
         
         /*
 	DEFINE_ATOMIC (bool, isplaying);

@@ -15,7 +15,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#define TRANSPORT_STUFF 0 // Just some preliminary things.
+#ifndef WITH_JACK_TRANSPORT
+#  define WITH_JACK_TRANSPORT 1 // Just some preliminary things.
+#endif
 
 
 #include <unistd.h>
@@ -46,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/scheduler_proc.h"
 //#include "../common/PEQ_LPB_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../common/seqtrack_proc.h"
 #include "../midi/midi_i_input_proc.h"
 
 #include "Jack_plugin_proc.h"
@@ -429,6 +432,15 @@ struct Mixer{
   int _buffer_size;
 
   jack_port_t *_main_inputs[2];
+
+#if WITH_JACK_TRANSPORT
+  enum class TransportPlayState{
+    NO_STATE,
+    WAITING_FOR_PLAYER_TO_BE_READY,
+    PLAY_REQUEST_FAILED,
+    PLAYER_IS_READY
+  } _transport_state = Mixer::TransportPlayState::NO_STATE;
+#endif
   
   bool _is_freewheeling;
 
@@ -588,7 +600,7 @@ struct Mixer{
     jack_set_freewheel_callback(_rjack_client, RT_rjack_freewheel_changed, this);
     jack_on_info_shutdown(_rjack_client, RT_rjack_shutdown, this);
     jack_set_process_thread(_rjack_client,RT_rjack_thread,this);
-#if TRANSPORT_STUFF
+#if WITH_JACK_TRANSPORT
     jack_set_sync_callback(_rjack_client, RT_rjack_sync, this);
 #endif
     
@@ -699,16 +711,6 @@ struct Mixer{
       
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
-
-#if TRANSPORT_STUFF
-      jack_transport_state_t state = jack_transport_query(_rjack_client,NULL);
-      if(state==JackTransportStopped){
-        if (is_playing())
-          RT_request_to_stop_playing();
-      }else if (state==JackTransportStarting){
-      }else if (state==JackTransportRolling){
-      }
-#endif
     
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
@@ -806,8 +808,15 @@ struct Mixer{
             
             double curr_song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
             ATOMIC_DOUBLE_SET(g_curr_song_tempo_automation_tempo, curr_song_tempo_automation_tempo);
-            
-            PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo);
+
+            bool can_not_start_playing_right_now_because_we_have_told_jack_transport_that_we_are_not_ready_yet = false;
+            if (_transport_state==Mixer::TransportPlayState::WAITING_FOR_PLAYER_TO_BE_READY)
+              can_not_start_playing_right_now_because_we_have_told_jack_transport_that_we_are_not_ready_yet = true;
+              
+            PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo, can_not_start_playing_right_now_because_we_have_told_jack_transport_that_we_are_not_ready_yet);
+
+            if (_transport_state == Mixer::TransportPlayState::PLAYER_IS_READY)
+              _transport_state = Mixer::TransportPlayState::NO_STATE;
             
             if (is_playing()) {
               if (pc->playtype==PLAYBLOCK)
@@ -938,22 +947,62 @@ struct Mixer{
     return 0;
   }
 
-#if TRANSPORT_STUFF
+#if WITH_JACK_TRANSPORT
   static int RT_rjack_sync(jack_transport_state_t state, jack_position_t *pos, void *arg){
-    //Mixer *mixer = static_cast<Mixer*>(arg);
+    Mixer *mixer = static_cast<Mixer*>(arg);
     
-    if(state==JackTransportStopped)
-      printf("    trans: Stopped\n");
+    if(state==JackTransportStopped){
+      //printf("    trans: Stopped\n");
     
-    else if (state==JackTransportStarting){
-      printf("    trans: Starting\n");
-      if (!is_playing())
-        RT_request_to_start_playing();
-    }else if (state==JackTransportRolling)
-      printf("    trans: Rolling\n");
+    } else if (state==JackTransportStarting){
+      
+      int64_t absabstime = (int64_t)pos->frame; // song position frame number is called absabstime in radium.
+      
+      Player_State state = ATOMIC_GET(pc->player_state);
+        
+      if(state==PLAYER_STATE_STARTING_TO_PLAY && pc->absabstime==absabstime) {
+        //printf("    trans: Starting. frame: %d, is playing: %d.\n", (int)absabstime, is_playing());
+        mixer->_transport_state = Mixer::TransportPlayState::PLAYER_IS_READY;
+        return 1;
+      }
+      
+      if (mixer->_transport_state != Mixer::TransportPlayState::WAITING_FOR_PLAYER_TO_BE_READY){
+
+        if (mixer->_transport_state != Mixer::TransportPlayState::PLAY_REQUEST_FAILED || RT_play_song_request_is_finished())
+          RT_request_to_start_playing_song(absabstime); // (pos->frame is unsigned, so no need to ensure that pos->frame>=0)
+        
+        //printf("    trans: Requesting start. frame: %d, is playing: %d.\n", (int)absabstime, is_playing());
+        mixer->_transport_state = Mixer::TransportPlayState::WAITING_FOR_PLAYER_TO_BE_READY;
+        return 0;
+      }
+
+      if (state==PLAYER_STATE_STARTING_TO_PLAY || RT_play_song_request_is_finished()){
+        //
+        // We have already requested to play song, but the player state is wrong. (could be many reasons for this)
+        //
+        // Now we need to set _transport_state to something other than WAITING_FOR_PLAYER_TO_BE_READY, to avoid deadlock.
+        //
+        // Next time this function is called, we will do a new request.
+        //
+        // We can not call RT_request_to_start_playing_song directly, now, since _transport_state != WAITING_FOR_PLAYER_TO_BE_READY.
+        // If _transport_state != WAITING_FOR_PLAYER_TO_BE_READY, we could start playing before returning 1 from this function,
+        // i.e. that we start playing before all other clients. (we could work around this by adding another state, and so forth, but it's proabably not worth it)
+        
+        //printf("    trans: Failed start. Waiting. frame: %d, is playing: %d.\n", (int)absabstime, is_playing());              
+        mixer->_transport_state = Mixer::TransportPlayState::PLAY_REQUEST_FAILED;
+        return 0;
+      }
+
+      //printf("    trans: Waiting... frame: %d, is playing: %d.\n", (int)absabstime, is_playing());
+
+      return 0;
+      
+    }else if (state==JackTransportRolling) {
+      //printf("    trans: Rolling\n");
     
-    else
-      printf("    trans: ?? %d\n", (int)state);
+    } else {
+      //printf("    trans: ?? %d\n", (int)state);
+    }
     
     return 1;
   }
@@ -1058,6 +1107,50 @@ static STime g_startup_time = 0;
 void OS_InitAudioTiming(void){
   g_startup_time = g_mixer->_time;
   printf("OS_InitAudioTiming called. New time: %d\n",(int)g_startup_time);
+}
+
+void MIXER_set_pos(double abstime){
+#if WITH_JACK_TRANSPORT
+  int64_t absabstime = TEMPOAUTOMATION_get_absabstime(abstime);
+  jack_transport_locate(g_jack_client, absabstime);
+#endif
+}
+
+void MIXER_call_very_often(void){
+#if WITH_JACK_TRANSPORT
+  
+  if (is_called_every_ms(15)){
+
+    bool isplaying = is_playing();
+    
+    jack_position_t pos;
+  
+    jack_transport_state_t state = jack_transport_query(g_jack_client,&pos);
+    
+    if(state==JackTransportStopped){
+      if (isplaying)
+        PlayStop();
+    }else if (state==JackTransportStarting){
+    }else if (state==JackTransportRolling){
+    }
+
+    if (!isplaying){
+
+      int64_t absabstime = (int64_t)pos.frame;
+
+      if (absabstime != pc->absabstime){
+        pc->absabstime = absabstime; // pc->absabstime can be written to when not playing.
+        
+        double abstime = TEMPOAUTOMATION_get_abstime_from_absabstime(absabstime);
+        if (abstime != ATOMIC_DOUBLE_GET(pc->song_abstime)){
+          ATOMIC_DOUBLE_SET(pc->song_abstime, abstime);
+          SEQUENCER_update();
+        }
+      }
+    }
+  }
+
+#endif
 }
 
 bool MIXER_is_saving(void){

@@ -22,6 +22,8 @@ extern LANGSPEC void MIXER_start_saving_soundfile(void);
 extern LANGSPEC void MIXER_request_stop_saving_soundfile(void);
 
 extern LANGSPEC void OS_InitAudioTiming(void);
+extern LANGSPEC void MIXER_set_pos(double abstime);
+extern LANGSPEC void MIXER_call_very_often(void);
 extern LANGSPEC STime MIXER_get_block_delta_time(STime time);
 extern LANGSPEC void MIXER_get_main_inputs(float **audio);
 //extern LANGSPEC int64_t MIXER_get_time(void);

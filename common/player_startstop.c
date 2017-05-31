@@ -178,9 +178,16 @@ void PlayStop(void){
 }
 
 
-static void start_player(int playtype, int64_t abstime, const Place *place, struct Blocks *block, struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
+static void start_player(int playtype, double abstime, int64_t absabstime, const Place *place, struct Blocks *block, struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
+  if (abstime<0)
+    R_ASSERT(absabstime>=0);
+  else if (absabstime<0)
+    R_ASSERT(abstime>=0);
+  else
+    R_ASSERT(false);
+  
     
   g_player_was_stopped_manually = false;
 
@@ -206,7 +213,20 @@ static void start_player(int playtype, int64_t abstime, const Place *place, stru
   
   ATOMIC_ADD(pc->play_id, 1);
 
-  
+  if (abstime < 0){
+    if (playtype==PLAYBLOCK)
+      abstime = absabstime;
+    else
+      abstime = TEMPOAUTOMATION_get_abstime_from_absabstime(absabstime);
+  }
+
+  if (absabstime < 0){
+    if (playtype==PLAYBLOCK)
+      absabstime = abstime;
+    else
+      absabstime = TEMPOAUTOMATION_get_absabstime(abstime);
+  }
+
   if (playtype==PLAYSONG) {
 
     R_ASSERT(block==NULL);
@@ -238,14 +258,13 @@ static void start_player(int playtype, int64_t abstime, const Place *place, stru
   root->song->tracker_windows->must_redraw_editor = true; // Because we have set new curr_seqblock values.
   
   // We can set pc->absabstime here without getting a tsan hit since pc->absabstime is neither read nor written to in a player thread while the player is stopped.
-  if (playtype==PLAYBLOCK)
-    pc->absabstime = abstime;
-  else
-    pc->absabstime = TEMPOAUTOMATION_get_absabstime(abstime);
+  pc->absabstime = absabstime;
   
   ATOMIC_SET(pc->player_state, PLAYER_STATE_STARTING_TO_PLAY);
-  while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING && ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
+  while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING && ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED){
+    //printf("  WATING FOR STATE. Now: %d\n", ATOMIC_GET(pc->player_state));
     OS_WaitForAShortTime(2);
+  }
 }
 
 // pc->is_playing_range must be set before calling this function
@@ -260,7 +279,7 @@ static void PlayBlock(
   else
     playtype=PLAYBLOCK_NONLOOP;
 
-  start_player(playtype, 0, place, block, NULL, NULL);
+  start_player(playtype, 0.0, -1, place, block, NULL, NULL);
 }
 
 void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
@@ -468,6 +487,7 @@ static void PlayHandleSequencerLoop(void){
   }
 }
 
+
 // called very often
 void PlayCallVeryOften(void){
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING)
@@ -478,17 +498,17 @@ void PlayCallVeryOften(void){
 }
 
 
-void PlaySong(int64_t abstime){
-  printf("Play song. abstime: %d\n", (int)abstime);
+static void play_song(double abstime, int64_t absabstime){
+  printf("Play song. abstime: %f, absabstime: %f\n", abstime, (double)absabstime/44100.0);
 
   PlayStopReally(false);
 
-  if (abstime==0)
+  if (abstime==0.0 || absabstime==0)
     InitAllInstrumentsForPlaySongFromStart();
 
   pc->is_playing_range = false;
 
-  start_player(PLAYSONG, abstime, NULL, NULL, NULL, NULL);
+  start_player(PLAYSONG, abstime, absabstime, NULL, NULL, NULL, NULL);
 
   // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
 #if STOP_GC_WHILE_PLAYING
@@ -496,6 +516,14 @@ void PlaySong(int64_t abstime){
   while(GC_is_disabled()==false)
     Threadsafe_GC_disable();
 #endif
+}
+
+void PlaySong(double abstime){
+  play_song(R_MAX(0, abstime), -1);
+}
+
+void PlaySong_using_absabstime(int64_t absabstime){
+  play_song(-1.0, R_MAX(0, absabstime));
 }
 
 void PlaySongCurrPos(void){

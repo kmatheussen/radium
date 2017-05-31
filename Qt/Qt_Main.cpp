@@ -1281,9 +1281,10 @@ static DEFINE_ATOMIC(int, rt_message_status) = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;
 static char rt_message[rt_message_length];
 
-static DEFINE_ATOMIC(bool, request_to_start_playing) = false;
-static DEFINE_ATOMIC(bool, request_to_continue_playing) = false;
-static DEFINE_ATOMIC(bool, request_to_stop_playing) = false;
+static DEFINE_ATOMIC(int64_t, g_request_to_start_playing_at_absabstime) = -1;
+static DEFINE_ATOMIC(bool, g_request_to_start_playing) = false;
+static DEFINE_ATOMIC(bool, g_request_to_continue_playing) = false;
+static DEFINE_ATOMIC(bool, g_request_to_stop_playing) = false;
 
 int g_main_timer_num_calls = 0;
 
@@ -1393,19 +1394,29 @@ protected:
     if (PLAYER_is_running()==false)
       PlayStop();
 
-    if(ATOMIC_GET(request_to_start_playing) == true) {
+    MIXER_call_very_often();
+    
+    {
+      int64_t absabstime = ATOMIC_GET(g_request_to_start_playing_at_absabstime);
+      if(absabstime >= 0){
+        PlaySong_using_absabstime(absabstime);
+        ATOMIC_SET(g_request_to_start_playing_at_absabstime, -1);
+      }
+    }
+    
+    if(ATOMIC_GET(g_request_to_start_playing) == true) {
       PlayBlockFromStart(window, true);
-      ATOMIC_SET(request_to_start_playing, false);
+      ATOMIC_SET(g_request_to_start_playing, false);
     }
     
-    if(ATOMIC_GET(request_to_continue_playing) == true) {
+    if(ATOMIC_GET(g_request_to_continue_playing) == true) {
       PlayBlockCurrPos(window);
-      ATOMIC_SET(request_to_continue_playing, false);
+      ATOMIC_SET(g_request_to_continue_playing, false);
     }
     
-    if(ATOMIC_GET(request_to_stop_playing) == true) {
+    if(ATOMIC_GET(g_request_to_stop_playing) == true) {
       PlayStop();
-      ATOMIC_SET(request_to_stop_playing, false);
+      ATOMIC_SET(g_request_to_stop_playing, false);
     }
     
     if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING){
@@ -1555,19 +1566,30 @@ void RT_message(const char *fmt,...){
   ATOMIC_SET(rt_message_status, RT_MESSAGE_READY_FOR_SHOWING);
 }
 
-void RT_request_to_start_playing(void){
-  //abort();
-  ATOMIC_SET(request_to_start_playing, true);
+
+bool RT_play_song_request_is_finished(void){
+  return ATOMIC_GET(g_request_to_start_playing_at_absabstime) == -1;
 }
 
-void RT_request_to_continue_playing(void){
+
+void RT_request_to_start_playing_song(int64_t absabstime){
+  ATOMIC_SET(g_request_to_start_playing_at_absabstime, absabstime);
+}
+
+
+void RT_request_to_start_playing_block(void){
   //abort();
-  ATOMIC_SET(request_to_continue_playing, true);
+  ATOMIC_SET(g_request_to_start_playing, true);
+}
+
+void RT_request_to_continue_playing_block(void){
+  //abort();
+  ATOMIC_SET(g_request_to_continue_playing, true);
 }
 
 void RT_request_to_stop_playing(void){
   //abort();
-  ATOMIC_SET(request_to_stop_playing, true);
+  ATOMIC_SET(g_request_to_stop_playing, true);
 }
 
 #endif

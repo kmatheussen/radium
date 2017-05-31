@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/song_tempo_automation_proc.h"
 #include "../common/tracks_proc.h"
 
+#include "../audio/Mixer_proc.h"
 
 #include "../common/seqtrack_proc.h"
 
@@ -304,14 +305,16 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
 
   } else {
 
-    int64_t pos = R_MAX(0, scale(e->x(), x1, x2, start_play_time, end_play_time));
+    double pos = R_MAX(0, scale(e->x(), x1, x2, start_play_time, end_play_time));
     if (e->delta() > 0)
       PlaySong(pos);
     else {
       PlayStop();
       ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
       SEQUENCER_update();
+      MIXER_set_pos(pos);
     }
+    
   }
 }
 

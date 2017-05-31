@@ -2690,7 +2690,7 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
 #if !RENDER_IN_SEPARATE_THREAD
 
 void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
-#if defined(RELEASE)
+#if 1 //defined(RELEASE)
   GL_create2(window, wblock);
 #else
   double start = TIME_get_ms();
