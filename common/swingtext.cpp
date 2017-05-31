@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "swingtext_proc.h"
 
 
-int SWINGTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack){
+int SWINGTEXT_subsubtrack(const struct Tracker_Windows *window, const struct WTracks *wtrack){
 
   int curr_track_sub;
       

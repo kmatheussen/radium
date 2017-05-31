@@ -38,12 +38,12 @@ struct WBlocks *cb_wblock=NULL;
 /* OBOY! This one use quite a bit of memory. */
 
 struct WBlocks *CB_CopyBlock(
-	struct WBlocks *wblock
+                             const struct WBlocks *wblock
 ){
 	int lokke;
 	struct WBlocks *towblock;
 	struct Blocks *toblock;
-	struct Blocks *block=wblock->block;
+	const struct Blocks *block=wblock->block;
 
         // wblock
         
@@ -98,9 +98,9 @@ struct WBlocks *CB_CopyBlock(
 
 
 void CB_CopyBlock_CurrPos(
-	struct Tracker_Windows *window
+                          const struct Tracker_Windows *window
 ){
-	cb_wblock=CB_CopyBlock(window->wblock);
+  cb_wblock=CB_CopyBlock(window->wblock);
 }
 
 

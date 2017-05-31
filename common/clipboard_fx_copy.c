@@ -30,19 +30,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_track_copy_proc.h"
 
 
+Don''t think this file is used.
 
 
 struct FXs *cb_fxs=NULL;
 
 struct FXs *CB_CopyFx(
-                      struct WBlocks *wblock,
-                      struct WTracks *wtrack
+                      const struct WBlocks *wblock,
+                      const struct WTracks *wtrack
 ){
-	Place *p1,p2;
 
-	struct Tracks *track=wtrack->track;
+	const struct Tracks *track=wtrack->track;
 
-	p1=PlaceGetFirstPos();
+	const Place *p1=PlaceGetFirstPos();
+	Place p2;
 	PlaceSetLastPos(wblock->block,&p2);
 
 	CopyRange_fxs(&cb_fxs,track->fxs,p1,&p2);
@@ -52,11 +53,11 @@ struct FXs *CB_CopyFx(
 
 
 void CB_CopyFx_CurrPos(
-	struct Tracker_Windows *window
+                       const struct Tracker_Windows *window
 ){
-	struct WBlocks *wblock=window->wblock;
-	struct Blocks *block=wblock->block;
-	struct WTracks *wtrack=wblock->wtrack;
+  const struct WBlocks *wblock=window->wblock;
+  const struct Blocks *block=wblock->block;
+  const struct WTracks *wtrack=wblock->wtrack;
 
         if (wtrack != NULL)
           cb_fxs = CB_CopyFx(wblock, wtrack);

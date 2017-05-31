@@ -20,11 +20,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 extern struct WBlocks *CB_CopyBlock(
-	struct WBlocks *wblock
+                                    const struct WBlocks *wblock
 );
 
 extern void CB_CopyBlock_CurrPos(
-	struct Tracker_Windows *window
+                                 const struct Tracker_Windows *window
 );
 
 #endif

@@ -18,18 +18,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 void CutRange_notes(
-	struct Notes **tonote,
-	struct Notes *fromnote,
-	Place *p1,
-	Place *p2
+                    struct Notes **tonote,
+                    const struct Notes *fromnote,
+                    const Place *p1,
+                    const Place *p2
 );
 
 extern void CutRange(
-	struct Blocks *block,
-	NInt starttrack,
-	NInt endtrack,
-	Place *p1,
-	Place *p2
+                     struct Blocks *block,
+                     NInt starttrack,
+                     NInt endtrack,
+                     const Place *p1,
+                     const Place *p2
 );
 
 extern void CutRange_CurrPos(

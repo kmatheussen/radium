@@ -116,7 +116,7 @@ static void stop_pause(struct Tracker_Windows *window, bool force_play_block){
     return;
   
   int realline = R_BOUNDARIES(0, ATOMIC_GET(g_pause_realline), wblock->num_reallines-1);
-  Place *place = &wblock->reallines[realline]->l.p;
+  const Place *place = &wblock->reallines[realline]->l.p;
     
   if (g_was_playing) {
     if (force_play_block)

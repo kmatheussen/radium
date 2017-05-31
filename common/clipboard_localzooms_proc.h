@@ -22,19 +22,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 extern void CB_CopyLocalZoomsRec(
-	struct LocalZooms **tolocalzoom,
-	struct LocalZooms *localzoom
+                                 struct LocalZooms **tolocalzoom,
+                                 const struct LocalZooms *localzoom
 );
 
 extern struct LocalZooms *CB_CopyLocalZooms(
-	struct WBlocks *wblock
+                                            const struct WBlocks *wblock
 );
 
 extern void CB_UnpackLocalZooms(
-	struct LocalZooms **tolocalzoom,
-	struct LocalZooms *localzoom,
-	int num_lines
-);
+                                struct LocalZooms **tolocalzoom,
+                                const struct LocalZooms *localzoom,
+                                int num_lines
+                                );
 
 #endif
 

@@ -38,8 +38,8 @@ static int maxnote;
 
 static void PExpand_SetMinMax(
 			      struct Notes *note,
-			      Place *p1,
-			      Place *p2,
+			      const Place *p1,
+			      const Place *p2,
 			      bool firsttime
 			      )
 {
@@ -65,8 +65,8 @@ static void PExpand_SetMinMax(
 
 static void PExpand_DoIt(
 	struct Notes *note,
-	Place *p1,
-	Place *p2,
+	const Place *p1,
+	const Place *p2,
 	float scalefactor
 ){
 	if(note==NULL) return;
@@ -100,12 +100,11 @@ void PExpandRange(
 	struct Tracks *track;
 	int lokke;
 	bool firsttime=true;
-	Place *p1,*p2;
 
 	if( ! wblock->isranged) return;
 
-	p1=GetRangeStartPlace(wblock);
-	p2=GetRangeEndPlace(wblock);
+	const Place *p1=GetRangeStartPlace(wblock);
+	const Place *p2=GetRangeEndPlace(wblock);
 
 	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 

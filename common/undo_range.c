@@ -45,7 +45,7 @@ void ADD_UNDO_FUNC(Range(
                            ));
 }
 
-#if 0
+/*
 // too flaky
 
 void *Undo_Do_Range(
@@ -126,6 +126,4 @@ void *Undo_Do_Range(
 
 	return undo_range;
 }
-
-
-#endif
+*/

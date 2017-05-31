@@ -27,10 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   FUNCTION
     Returns the place where the range starts.
 ********************************************************/
-Place *GetRangeStartPlace(
-	struct WBlocks *wblock
+const Place *GetRangeStartPlace(
+                                const struct WBlocks *wblock
 ){
-	struct LocalZooms **reallines=wblock->reallines;
+        struct LocalZooms **reallines=wblock->reallines;
 	if(
 		wblock->rangey1>=wblock->num_reallines ||
 		wblock->rangey1<0
@@ -42,7 +42,7 @@ Place *GetRangeStartPlace(
 			wblock->rangey1,wblock->num_reallines
 		);
           */
-		wblock->rangey1=0;
+          ((struct WBlocks*)wblock)->rangey1=0;
 	}
 	return &reallines[wblock->rangey1]->l.p;
 }
@@ -51,10 +51,9 @@ Place *GetRangeStartPlace(
   FUNCTION
     Returns the place where the range ends.
 ********************************************************/
-Place *GetRangeEndPlace(
-	struct WBlocks *wblock
+const Place *GetRangeEndPlace(
+                              const struct WBlocks *wblock
 ){
-	Place *place;
 	struct LocalZooms **reallines=wblock->reallines;
 	if(
 		wblock->rangey2>wblock->num_reallines ||
@@ -67,10 +66,10 @@ Place *GetRangeEndPlace(
 			wblock->rangey2,wblock->num_reallines
 		);
           */
-          wblock->rangey2=wblock->num_reallines;
+          ((struct WBlocks*)wblock)->rangey2=wblock->num_reallines;
 	}
 	if(wblock->rangey2==wblock->num_reallines){
-		place=talloc_atomic(sizeof(Place));
+		Place *place=talloc_atomic(sizeof(Place));
 		PlaceSetLastPos(wblock->block,place);
 		return place;
 	}
@@ -83,16 +82,16 @@ Place *GetRangeEndPlace(
     the wblock. (Does not check track)
 ********************************************************/
 bool IsPlaceRanged(
-	struct WBlocks *wblock,
-	Place *p
+                   const struct WBlocks *wblock,
+                   const Place *p
 ){
-	Place *p1= GetRangeStartPlace(wblock);
-	Place *p2= GetRangeEndPlace(wblock);
+  const Place *p1= GetRangeStartPlace(wblock);
+  const Place *p2= GetRangeEndPlace(wblock);
 
-	if(PlaceLessThan(p,p1)) return false;
-	if(PlaceGreaterOrEqual(p,p2)) return false;
-
-	return true;
+  if(PlaceLessThan(p,p1)) return false;
+  if(PlaceGreaterOrEqual(p,p2)) return false;
+  
+  return true;
 
 }
 
@@ -103,14 +102,14 @@ bool IsPlaceRanged(
     into the place
 ********************************************************/
 void GetRangePlaceLength(
-	Place *place,
-	struct WBlocks *wblock
+                         Place *place,
+                         const struct WBlocks *wblock
 ){
-	Place *p1= GetRangeStartPlace(wblock);
-	Place *p2= GetRangeEndPlace(wblock);
-
-	PlaceCopy(place,p2);
-	PlaceSub(place,p1);
+  const Place *p1= GetRangeStartPlace(wblock);
+  const Place *p2= GetRangeEndPlace(wblock);
+  
+  PlaceCopy(place,p2);
+  PlaceSub(place,p1);
 }
 
 

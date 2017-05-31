@@ -55,11 +55,11 @@ void Transpose_note(
   }
 }
 
-void Transpose_notes(
-	struct Notes *note,
-	Place *p1,
-	Place *p2,
-	int trans
+static void Transpose_notes(
+                     struct Notes *note,
+                     const Place *p1,
+                     const Place *p2,
+                     int trans
 ){
 	if(note==NULL) return;
 
@@ -81,12 +81,11 @@ void TransposeRange(
 ){
 	struct Tracks *track;
 	int lokke;
-	Place *p1,*p2;
 
 	if( ! wblock->isranged) return;
 
-	p1=GetRangeStartPlace(wblock);
-	p2=GetRangeEndPlace(wblock);
+	const Place *p1=GetRangeStartPlace(wblock);
+	const Place *p2=GetRangeEndPlace(wblock);
 
 	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 
@@ -193,7 +192,7 @@ void TransposeBlock_CurrPos(
 		window->wblock,
 		0,window->wblock->block->num_tracks-1,
 		window->wblock->curr_realline
-                       ));
+                                   ));
 
 	TransposeBlock(window->wblock->block,trans);
 

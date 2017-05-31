@@ -39,12 +39,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void BackWards_notes(
+static void BackWards_notes(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
-	Place *p1,
-	Place *p2
+	const Place *p1,
+	const Place *p2
 ){
 	float f_p1=GetfloatFromPlace(p1);
 	float f_p2=GetfloatFromPlace(p2);
@@ -83,12 +83,11 @@ void BackWardsRange(
 ){
 	struct WTracks *wtrack;
 	int lokke;
-	Place *p1,*p2;
 
 	if( ! wblock->isranged) return;
 
-	p1=GetRangeStartPlace(wblock);
-	p2=GetRangeEndPlace(wblock);
+	const Place *p1=GetRangeStartPlace(wblock);
+	const Place *p2=GetRangeEndPlace(wblock);
 
 	wtrack=ListFindElement1(&wblock->wtracks->l,wblock->rangex1);
 

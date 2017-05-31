@@ -37,15 +37,15 @@ extern struct Range *range;
 
 
 void CutRange_notes(
-	struct Notes **tonote,
-	struct Notes *fromnote,
-	Place *p1,
-	Place *p2
-){
-	struct Notes *next;
+                    struct Notes **tonote,
+                    const struct Notes *fromnote,
+                    const Place *p1,
+                    const Place *p2
+                    )
+{
 	if(fromnote==NULL) return;
 
-	next=NextNote(fromnote);
+	const struct Notes *next=NextNote(fromnote);
 
 	if(PlaceLessThan(&fromnote->l.p,p1)){
 		CutRange_notes(tonote,next,p1,p2);
@@ -61,11 +61,12 @@ void CutRange_notes(
 
 
 void CutRange_stops(
-	struct Stops **tostop,
-	struct Stops *fromstop,
-	Place *p1,
-	Place *p2
-){
+                    struct Stops **tostop,
+                    const struct Stops *fromstop,
+                    const Place *p1,
+                    const Place *p2
+                    )
+{
 	struct Stops *next;
 	if(fromstop==NULL) return;
 
@@ -85,11 +86,11 @@ void CutRange_stops(
 
 
 void CutRange(
-	struct Blocks *block,
-	NInt starttrack,
-	NInt endtrack,
-	Place *p1,
-	Place *p2
+              struct Blocks *block,
+              NInt starttrack,
+              NInt endtrack,
+              const Place *p1,
+              const Place *p2
 ){
 	struct Tracks *track;
 	int lokke;
@@ -109,8 +110,8 @@ void CutRange(
             if(track==NULL) break;
           }
           
-          Place *startplace = p1;
-          Place *endplace = p2;
+          const Place *startplace = p1;
+          const Place *endplace = p2;
 
           SCHEME_eval(
                       talloc_format("(cut-fx-range! %d %d %d (+ %d (/ %d %d)) (+ %d (/ %d %d)))",
@@ -131,14 +132,13 @@ void CutRange(
     area. (decided to wait with FXes)
 **********************************************/
 void CutRangedRange(
-	struct WBlocks *wblock
+                    struct WBlocks *wblock
 ){
-	Place *p1,*p2;
 
 	if(!wblock->isranged) return;
 
-	p1=GetRangeStartPlace(wblock);
-	p2=GetRangeEndPlace(wblock);
+	const Place *p1=GetRangeStartPlace(wblock);
+	const Place *p2=GetRangeEndPlace(wblock);
 
 	CutRange(wblock->block,wblock->rangex1,wblock->rangex2,p1,p2);
         
@@ -147,9 +147,9 @@ void CutRangedRange(
 
 
 void CutRange_CurrPos(
-	struct Tracker_Windows *window
+                      struct Tracker_Windows *window
 ){
-  struct WBlocks *wblock = window->wblock;
+        struct WBlocks *wblock = window->wblock;
   
 	if( ! window->wblock->isranged) return;
 

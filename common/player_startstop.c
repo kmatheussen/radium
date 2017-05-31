@@ -178,7 +178,7 @@ void PlayStop(void){
 }
 
 
-static void start_player(int playtype, int64_t abstime, Place *place, struct Blocks *block, struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
+static void start_player(int playtype, int64_t abstime, const Place *place, struct Blocks *block, struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
     
@@ -251,7 +251,7 @@ static void start_player(int playtype, int64_t abstime, Place *place, struct Blo
 // pc->is_playing_range must be set before calling this function
 static void PlayBlock(
 	struct Blocks *block,
-	Place *place,
+	const Place *place,
         bool do_loop
 ){
   int playtype;
@@ -275,7 +275,7 @@ void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
         }
 }
 
-void PlayBlockCurrPos2(struct Tracker_Windows *window, Place *place){
+void PlayBlockCurrPos2(struct Tracker_Windows *window, const Place *place){
 	struct WBlocks *wblock;
 	PlayStopReally(false);
 
@@ -286,15 +286,15 @@ void PlayBlockCurrPos2(struct Tracker_Windows *window, Place *place){
 }
 
 void PlayBlockCurrPos(struct Tracker_Windows *window){
-  Place *place = &window->wblock->reallines[window->wblock->curr_realline]->l.p;
+  const Place *place = &window->wblock->reallines[window->wblock->curr_realline]->l.p;
   PlayBlockCurrPos2(window, place);
 }
 
-static void PlayRange(struct Tracker_Windows *window, Place *place){
+static void PlayRange(struct Tracker_Windows *window, const Place *place){
   struct WBlocks *wblock = window->wblock;
   
   //Place *place_start = GetRangeStartPlace(wblock);
-  Place *place_end   = GetRangeEndPlace(wblock);
+  const Place *place_end   = GetRangeEndPlace(wblock);
   pc->range_duration = Place2STime(wblock->block, place_end) - Place2STime(wblock->block, place);
   
   pc->is_playing_range = true;
@@ -309,12 +309,12 @@ void PlayRangeFromStart(struct Tracker_Windows *window){
 
 	if( ! wblock->isranged) return;
 
-        Place *place = GetRangeStartPlace(wblock);
+        const Place *place = GetRangeStartPlace(wblock);
           
         PlayRange(window, place);
 }
 
-void PlayRangeCurrPos2(struct Tracker_Windows *window, Place *place){
+void PlayRangeCurrPos2(struct Tracker_Windows *window, const Place *place){
   PlayStopReally(false);
 
   struct WBlocks *wblock = window->wblock;
@@ -510,7 +510,7 @@ void PlaySongCurrPos(void){
   if (seqblock==NULL)
     return;
 
-  Place *place;
+  const Place *place;
   if (wblock->block != seqblock->block){
     place=PlaceGetFirstPos();
   }else{

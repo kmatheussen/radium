@@ -15,31 +15,31 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern void CopyRange_notes(
-	struct Notes **tonote,
-	struct Notes *fromnote,
-	Place *p1,
-	Place *p2
+                            struct Notes **tonote,
+                            const struct Notes *fromnote,
+                            const Place *p1,
+                            const Place *p2
 );
 
 extern void CopyRange_stops(
 	struct Stops **tostop,
-	struct Stops *fromstop,
-	Place *p1,
-	Place *p2
+	const struct Stops *fromstop,
+	const Place *p1,
+	const Place *p2
 );
 
 extern void CopyRange_fxs(
 	vector_t *tofxs,
-	vector_t *fromfxs,
-	Place *p1,
-	Place *p2
+	const vector_t *fromfxs,
+	const Place *p1,
+	const Place *p2
 );
 
 extern void CopyRange(
-	struct WBlocks *wblock
+                      struct WBlocks *wblock
 );
 
 extern void CopyRange_CurrPos(
-	struct Tracker_Windows *window
+                              struct Tracker_Windows *window
 );
 

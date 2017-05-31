@@ -35,10 +35,10 @@ extern struct Range *range;
 
 
 void CopyRange_velocities(
-	struct Velocities **tovelocity,
-	struct Velocities *fromvelocity,
-	Place *p1,
-	Place *p2
+                          struct Velocities **tovelocity,
+                          const struct Velocities *fromvelocity,
+                          const Place *p1,
+                          const Place *p2
 ){
 	struct Velocities *velocity;
 
@@ -57,10 +57,10 @@ void CopyRange_velocities(
 
 
 void CopyRange_pitches(
-	struct Pitches **topitch,
-	struct Pitches *frompitch,
-	Place *p1,
-	Place *p2
+                       struct Pitches **topitch,
+                       const struct Pitches *frompitch,
+                       const Place *p1,
+                       const Place *p2
 ){
 	struct Pitches *pitch;
 
@@ -79,10 +79,10 @@ void CopyRange_pitches(
 
 
 void CopyRange_notes(
-	struct Notes **tonote,
-	struct Notes *fromnote,
-	Place *p1,
-	Place *p2
+                     struct Notes **tonote,
+                     const struct Notes *fromnote,
+                     const Place *p1,
+                     const Place *p2
 ){
 	struct Notes *note;
 
@@ -117,10 +117,10 @@ void CopyRange_notes(
 
 
 void CopyRange_stops(
-	struct Stops **tostop,
-	struct Stops *fromstop,
-	Place *p1,
-	Place *p2
+                     struct Stops **tostop,
+                     const struct Stops *fromstop,
+                     const Place *p1,
+                     const Place *p2
 ){
 	if(fromstop==NULL) return;
 
@@ -142,7 +142,7 @@ void CopyRange_stops(
 
 static void add_fxnodeline(
                            struct FXNodeLines **tofxnodeline,
-                           struct FXNodeLines *fromfxnodeline,
+                           const struct FXNodeLines *fromfxnodeline,
                            Place subtract
 ){               
   struct FXNodeLines *fxnodeline=tcopy(fromfxnodeline, sizeof(struct FXNodeLines));
@@ -155,8 +155,8 @@ static void add_fxnodeline(
 
 static void add_scaled_fxnodeline(
                                   struct FXNodeLines **tofxnodeline,
-                                  struct FXNodeLines *nodeline1,
-                                  struct FXNodeLines *nodeline2,
+                                  const struct FXNodeLines *nodeline1,
+                                  const struct FXNodeLines *nodeline2,
                                   Place p,
                                   Place subtract
 ){
@@ -176,8 +176,8 @@ static void add_scaled_fxnodeline(
 
 static void CopyRange_fxnodelines(
                                   struct FXNodeLines **tofxnodeline,
-                                  struct FXNodeLines *fromfxnodeline,
-                                  struct FXNodeLines *last,
+                                  const struct FXNodeLines *fromfxnodeline,
+                                  const struct FXNodeLines *last,
                                   Place p1,
                                   Place p2
 ){
@@ -214,12 +214,12 @@ static void CopyRange_fxnodelines(
 
 void CopyRange_fxs(
                    vector_t *tofxs,
-                   vector_t *das_fromfxs,
-                   Place *p1,
-                   Place *p2
+                   const vector_t *das_fromfxs,
+                   const Place *p1,
+                   const Place *p2
                    )
 {
-  VECTOR_FOR_EACH(struct FXs *fromfxs, das_fromfxs){
+  VECTOR_FOR_EACH(const struct FXs *fromfxs, das_fromfxs){
 
         R_ASSERT_RETURN_IF_FALSE(fromfxs->fx->patch->is_usable);
         
@@ -244,12 +244,10 @@ void CopyRange_fxs(
 
 
 void CopyRange(
-	struct WBlocks *wblock
+               struct WBlocks *wblock
 ){
-	struct Tracks *track;
 	NInt num_tracks;
 	int lokke;
-	Place *p1,*p2;
 
 	if( ! wblock->isranged) return;
 
@@ -266,12 +264,12 @@ void CopyRange(
 	//range->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
 	range->fxs=talloc((int)sizeof(vector_t)*num_tracks);
 
-	p1=GetRangeStartPlace(wblock);
-	p2=GetRangeEndPlace(wblock);
+	const Place *p1=GetRangeStartPlace(wblock);
+	const Place *p2=GetRangeEndPlace(wblock);
 	GetRangePlaceLength(&range->length,wblock);
         range->num_lines = wblock->rangey2 - wblock->rangey1;
         
-	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
+	const struct Tracks *track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 
 	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){
           //range->instruments[lokke]=track->instrument;
@@ -285,8 +283,8 @@ void CopyRange(
 	}
 
         
-        Place *startplace = p1;
-        Place *endplace = p2;
+        const Place *startplace = p1;
+        const Place *endplace = p2;
         
         SCHEME_eval(
                     talloc_format("(copy-fx-range! %d %d %d (+ %d (/ %d %d)) (+ %d (/ %d %d)))",
@@ -302,8 +300,9 @@ void CopyRange(
 }
 
 void CopyRange_CurrPos(
-	struct Tracker_Windows *window
-){
+                       struct Tracker_Windows *window
+                       )
+{
 	CopyRange(window->wblock);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(

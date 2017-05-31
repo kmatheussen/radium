@@ -6,6 +6,6 @@
 const FXText_trss FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
 #endif
 
-extern LANGSPEC int FXTEXT_subsubtrack(const struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs **to_fxs);
+extern LANGSPEC int FXTEXT_subsubtrack(const struct Tracker_Windows *window, const struct WTracks *wtrack, struct FXs **to_fxs);
 extern LANGSPEC bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key);
 
