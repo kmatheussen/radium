@@ -422,6 +422,8 @@ namespace{
   };
 }
 
+namespace{
+  
 struct Mixer{
   SoundProducer *_bus[NUM_BUSES];
 
@@ -597,7 +599,9 @@ struct Mixer{
     jack_on_info_shutdown(_rjack_client, RT_rjack_shutdown, this);
     jack_set_process_thread(_rjack_client,RT_rjack_thread,this);
     jack_set_sync_callback(_rjack_client, RT_rjack_sync, this);
-    
+    if(isJackTimebaseMaster())
+      MIXER_set_jack_timebase_master(true);
+  
     if (jack_activate (_rjack_client)){
       fprintf (stderr, "Error. Cannot activate jack client.\n");
 
@@ -1040,9 +1044,69 @@ struct Mixer{
     
     return 1;
   }
-  
-};
 
+  static void RT_rjack_timebase(jack_transport_state_t state, jack_nframes_t nframes, jack_position_t *pos, int new_pos, void *arg){
+    /*
+      int32_t   bar
+      int32_t 	beat
+      int32_t 	tick
+      double 	bar_start_tick
+      float 	beats_per_bar
+      float 	beat_type
+      double 	ticks_per_beat
+      double 	beats_per_minute
+    */
+
+    pos->valid = JackPositionBBT;
+
+    const struct SeqTrack *seqtrack;
+
+    if (pc->playtype==PLAYBLOCK)
+      seqtrack = root->song->block_seqtrack;
+    else
+      seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[0];
+    
+    const int ticks_per_beat = 1920;
+      
+    const struct Beats *beat = seqtrack->beat_iterator.next_beat;
+
+    if (beat==NULL) {
+      pos->bar = 1;
+      pos->beat = 1;
+    } else {
+      pos->bar = beat->bar_num;
+      pos->beat = beat->beat_num;
+    }
+    
+    pos->bar_start_tick = seqtrack->beat_iterator.beat_position_of_last_bar_start * ticks_per_beat;
+
+    double beatpos = RT_LPB_get_beat_position(seqtrack);
+    double beats_since_beat_start = beatpos - floor(beatpos);
+    
+    pos->tick           =  ticks_per_beat * beats_since_beat_start;
+
+    //printf("bar_tick: %f. beat_tick: %f\n", (float)pos->bar_start_tick / (float)ticks_per_beat, (float)pos->tick/(float)ticks_per_beat);
+      
+    Ratio signature = RT_Signature_get_current_Signature(seqtrack);
+    pos->beats_per_bar = signature.numerator;
+    pos->beat_type = signature.denominator;
+
+    pos->ticks_per_beat = ticks_per_beat;
+    
+    pos->beats_per_minute = RT_LPB_get_current_BPM(seqtrack);
+
+    
+    /* The documentation says that we are encouraged to fill out the field bbt_offset. And here's the documentation for it:
+
+       "frame offset for the BBT fields (the given bar, beat, and tick values actually refer to a time frame_offset frames before the start of the cycle), should be assumed to be 0 if JackBBTFrameOffset is not set. If JackBBTFrameOffset is set and this value is zero, the BBT time refers to the first frame of this cycle. If the value is positive, the BBT time refers to a frame that many frames before the start of the cycle."
+
+      So... uh...
+     */
+    //pos->bbt_offset = ???;
+  }
+};
+}
+    
 static Mixer *g_mixer = NULL;
 
 #if USE_WORKAROUND
@@ -1166,6 +1230,11 @@ void MIXER_TRANSPORT_stop(void){
     jack_transport_stop(g_jack_client);
 }
 
+void MIXER_set_jack_timebase_master(bool doit){
+  jack_set_timebase_callback(g_jack_client, 0, doit ? Mixer::RT_rjack_timebase : NULL, g_mixer);
+}
+
+ 
 void MIXER_call_very_often(void){
 
   if (g_jack_client==NULL)

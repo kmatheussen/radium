@@ -721,6 +721,26 @@ void setUseJackTransport(bool doit){
 }
 
 
+static bool g_is_jack_timebase_master = true;
+
+bool isJackTimebaseMaster(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_is_jack_timebase_master = SETTINGS_read_bool("is_jack_timebase_master", g_is_jack_timebase_master);
+    has_inited = true;
+  }
+
+  return g_is_jack_timebase_master;
+}
+
+void setIsJackTimebaseMaster(bool doit){
+  g_is_jack_timebase_master = doit;
+  SETTINGS_write_bool("is_jack_timebase_master", doit);
+  MIXER_set_jack_timebase_master(doit);
+}
+
+
 int64_t getSeqGriddedTime(int64_t pos, int seqtracknum, const_char* type){
   if (!strcmp(type, "no"))
     return pos;

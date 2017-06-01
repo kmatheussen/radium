@@ -534,7 +534,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         jack_transport->setChecked(true);
       else
         internal_transport->setChecked(true);
-        
+
+      is_timebase_master->setChecked(isJackTimebaseMaster());
+      
       
       if (!strcmp(getSeqBlockGridType(), "no"))
         block_no_grid->setChecked(true);
@@ -947,6 +949,11 @@ public slots:
   void on_jack_transport_toggled(bool val){
     if (_initing==false)
       setUseJackTransport(val);
+  }
+
+  void on_is_timebase_master_toggled(bool val){
+    if (_initing==false)
+      setIsJackTimebaseMaster(val);
   }
   
   void on_block_no_grid_toggled(bool val){

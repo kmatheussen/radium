@@ -3349,7 +3349,7 @@ by mixing sound for all the buses.
          </layout>
         </widget>
        </item>
-       <item row="6" column="2">
+       <item row="6" column="3">
         <spacer name="horizontalSpacer_14">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -3362,7 +3362,7 @@ by mixing sound for all the buses.
          </property>
         </spacer>
        </item>
-       <item row="5" column="0" colspan="3">
+       <item row="5" column="0" colspan="4">
         <widget class="Line" name="line_15">
          <property name="palette">
           <palette>
@@ -4026,7 +4026,7 @@ by mixing sound for all the buses.
          </layout>
         </widget>
        </item>
-       <item row="2" column="0" colspan="3">
+       <item row="2" column="0" colspan="4">
         <widget class="Line" name="line_23">
          <property name="palette">
           <palette>
@@ -4531,6 +4531,22 @@ by mixing sound for all the buses.
            <widget class="QRadioButton" name="jack_transport">
             <property name="text">
              <string>Jack</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <widget class="QGroupBox" name="groupBox_12">
+         <property name="title">
+          <string>Jack Transport</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_9">
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="is_timebase_master">
+            <property name="text">
+             <string>Radium is Jack Timebase Master</string>
             </property>
            </widget>
           </item>

@@ -26,6 +26,7 @@ extern LANGSPEC void OS_InitAudioTiming(void);
 extern LANGSPEC void MIXER_TRANSPORT_set_pos(double abstime);
 extern LANGSPEC void MIXER_TRANSPORT_play(double abstime);
 extern LANGSPEC void MIXER_TRANSPORT_stop(void);
+extern LANGSPEC void MIXER_set_jack_timebase_master(bool doit);
 
 extern LANGSPEC void MIXER_call_very_often(void);
 extern LANGSPEC STime MIXER_get_block_delta_time(STime time);
