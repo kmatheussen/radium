@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -699,7 +699,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
           <item>
            <widget class="QLabel" name="label_13">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Auto-suspend automatically turns off processsing when an instrument has been inactive for a while.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Auto-suspend automatically disables audio processsing when an instrument has been inactive for a while.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;
 </string>
             </property>
            </widget>
@@ -4511,6 +4511,32 @@ by mixing sound for all the buses.
          </property>
         </widget>
        </item>
+       <item row="3" column="1">
+        <widget class="QGroupBox" name="groupBox_11">
+         <property name="toolTip">
+          <string>Enable Jack to sync play/stop/position with other programs</string>
+         </property>
+         <property name="title">
+          <string>Transport</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="QRadioButton" name="internal_transport">
+            <property name="text">
+             <string>Internal</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="jack_transport">
+            <property name="text">
+             <string>Jack</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="Various">
@@ -5331,8 +5357,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>398</width>
-            <height>28</height>
+            <width>829</width>
+            <height>564</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -7931,8 +7957,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>100</width>
-               <height>30</height>
+               <width>983</width>
+               <height>298</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -8149,8 +8175,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

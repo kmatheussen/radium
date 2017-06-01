@@ -312,7 +312,8 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
       PlayStop();
       ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
       SEQUENCER_update();
-      MIXER_set_pos(pos);
+      if (useJackTransport())
+        MIXER_TRANSPORT_set_pos(pos);
     }
     
   }

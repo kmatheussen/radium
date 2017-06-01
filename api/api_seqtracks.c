@@ -701,6 +701,26 @@ void setShowBarsInTimeline(bool doit){
 }
 
 
+static DEFINE_ATOMIC(bool, g_use_jack_transport) = false;
+
+bool useJackTransport(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    ATOMIC_SET(g_use_jack_transport, SETTINGS_read_bool("use_jack_transport", ATOMIC_GET(g_use_jack_transport)));
+    has_inited = true;
+  }
+
+  return ATOMIC_GET(g_use_jack_transport);
+}
+
+void setUseJackTransport(bool doit){
+  ATOMIC_SET(g_use_jack_transport, doit);
+  SETTINGS_write_bool("use_jack_transport", doit);
+  SEQUENCER_update();
+}
+
+
 int64_t getSeqGriddedTime(int64_t pos, int seqtracknum, const_char* type){
   if (!strcmp(type, "no"))
     return pos;

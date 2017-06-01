@@ -7,6 +7,8 @@
 #include "placement_proc.h"
 #include "realline_calc_proc.h"
 
+#include "../audio/Mixer_proc.h"
+
 #include "scheduler_proc.h"
 
 

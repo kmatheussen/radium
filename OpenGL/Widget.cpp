@@ -774,7 +774,7 @@ public:
   }
     
   virtual void leaveEvent(QEvent * event){
-    fprintf(stderr, "LEAVING\n");
+    //fprintf(stderr, "LEAVING\n");
     setNormalMousePointer(-1);
   }
   

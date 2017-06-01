@@ -50,8 +50,9 @@ extern LANGSPEC void PLAYER_volumeUp(float db);
 extern LANGSPEC void PLAYER_volumeDown(float db);
 extern LANGSPEC void PLAYER_mute(void);
 
-extern LANGSPEC bool RT_play_song_request_is_finished(void);
-extern LANGSPEC void RT_request_to_start_playing_song(int64_t absabstime); // Made to be called from a transport handler. (that's why it takes an absabstime argument and not abstime)
+extern LANGSPEC bool RT_jack_transport_play_request_is_finished(void);
+extern LANGSPEC void RT_request_from_jack_transport_to_play(int64_t absabstime);
+
 extern LANGSPEC void RT_request_to_start_playing_block(void);
 extern LANGSPEC void RT_request_to_continue_playing_block(void);
 extern LANGSPEC void RT_request_to_stop_playing(void);

@@ -1281,7 +1281,7 @@ static DEFINE_ATOMIC(int, rt_message_status) = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;
 static char rt_message[rt_message_length];
 
-static DEFINE_ATOMIC(int64_t, g_request_to_start_playing_at_absabstime) = -1;
+static DEFINE_ATOMIC(int64_t, g_request_from_jack_transport_to_start_playing) = -1;
 static DEFINE_ATOMIC(bool, g_request_to_start_playing) = false;
 static DEFINE_ATOMIC(bool, g_request_to_continue_playing) = false;
 static DEFINE_ATOMIC(bool, g_request_to_stop_playing) = false;
@@ -1397,10 +1397,10 @@ protected:
     MIXER_call_very_often();
     
     {
-      int64_t absabstime = ATOMIC_GET(g_request_to_start_playing_at_absabstime);
+      int64_t absabstime = ATOMIC_GET(g_request_from_jack_transport_to_start_playing);
       if(absabstime >= 0){
-        PlaySong_using_absabstime(absabstime);
-        ATOMIC_SET(g_request_to_start_playing_at_absabstime, -1);
+        PlaySong_from_jack_transport(absabstime);
+        ATOMIC_SET(g_request_from_jack_transport_to_start_playing, -1);
       }
     }
     
@@ -1567,13 +1567,13 @@ void RT_message(const char *fmt,...){
 }
 
 
-bool RT_play_song_request_is_finished(void){
-  return ATOMIC_GET(g_request_to_start_playing_at_absabstime) == -1;
+bool RT_jack_transport_play_request_is_finished(void){
+  return ATOMIC_GET(g_request_from_jack_transport_to_start_playing) == -1;
 }
 
 
-void RT_request_to_start_playing_song(int64_t absabstime){
-  ATOMIC_SET(g_request_to_start_playing_at_absabstime, absabstime);
+void RT_request_from_jack_transport_to_play(int64_t absabstime){
+  ATOMIC_SET(g_request_from_jack_transport_to_start_playing, absabstime);
 }
 
 

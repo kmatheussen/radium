@@ -53,7 +53,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "song_tempo_automation_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "player_proc.h"
+
 
 // Safer (and simpler) if set to 1, except that we might run out of memory while playing.
 #define STOP_GC_WHILE_PLAYING 0
@@ -81,15 +84,24 @@ static void clear_scheduler_and_stop_player(void){
   if (is_clear){
     R_ASSERT(is_playing()==false);
     //printf("          IS_CLEAR\n");
-    return;
+    //return;
   }
-      
-  ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
-  while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
-    OS_WaitForAShortTime(3);
+
+  if (ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED){
+    ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
+    while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
+      OS_WaitForAShortTime(3);
+  }
 }
 
-static void PlayStopReally(bool doit){
+static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
+
+    if (stop_jack_transport_as_well)
+      if (useJackTransport()){
+        MIXER_TRANSPORT_stop();
+        // We can not exit here. Some code depends on the player to have stopped when PlayStopReally returns.
+      }
+    
     g_player_was_stopped_manually = true;
     
         //ATOMIC_SET(pc->isplaying, false);
@@ -113,7 +125,7 @@ static void PlayStopReally(bool doit){
 
         clear_scheduler_and_stop_player();
         
-        R_ASSERT(is_playing()==false);
+        R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
 
         //R_ASSERT(is_playing()==false);
                 
@@ -128,7 +140,7 @@ static void PlayStopReally(bool doit){
 
         ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
 
-        R_ASSERT(is_playing()==false);
+        R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
                 
 #if !USE_OPENGL
         DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
@@ -139,7 +151,7 @@ static void PlayStopReally(bool doit){
         printf("[hb gakkgakk: %d\n",GC_dont_gc);
 #endif
 
-        R_ASSERT(is_playing()==false);
+        R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
                 
 #if STOP_GC_WHILE_PLAYING
 #error "must make gc_dont_gc thread safe"
@@ -150,7 +162,7 @@ static void PlayStopReally(bool doit){
         
         MIDI_insert_recorded_midi_events();
 
-        R_ASSERT(is_playing()==false);
+        R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
         
         //InitPEQmempool(); // Clean memory used by player so it can be freed by the garbage collector.
 
@@ -161,20 +173,29 @@ static void PlayStopReally(bool doit){
           }END_ALL_SEQTRACKS_FOR_EACH;
         }PLAYER_unlock();
 
-          
-        R_ASSERT(is_playing()==false);
+
+        R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
 }
 
-
-void PlayStop(void){
+static void play_stop(bool called_from_jack_transport){
   g_player_was_stopped_manually = true;
   
   if(!is_playing()){
     StopAllInstruments();
     R_ASSERT(is_playing()==false);
   }
+  else if (called_from_jack_transport)
+    PlayStopReally(true, false);
   else
-    PlayStopReally(true);
+    PlayStopReally(true, true);
+}
+                      
+void PlayStop(void){
+  play_stop(false);
+}
+
+void PlayStop_from_jack_transport(void){
+  play_stop(true);
 }
 
 
@@ -259,7 +280,9 @@ static void start_player(int playtype, double abstime, int64_t absabstime, const
   
   // We can set pc->absabstime here without getting a tsan hit since pc->absabstime is neither read nor written to in a player thread while the player is stopped.
   pc->absabstime = absabstime;
-  
+
+  R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
+    
   ATOMIC_SET(pc->player_state, PLAYER_STATE_STARTING_TO_PLAY);
   while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING && ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED){
     //printf("  WATING FOR STATE. Now: %d\n", ATOMIC_GET(pc->player_state));
@@ -283,7 +306,7 @@ static void PlayBlock(
 }
 
 void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
-	PlayStopReally(false);
+        PlayStopReally(false, true);
 
         {
           struct WBlocks *wblock=window->wblock;
@@ -296,7 +319,7 @@ void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
 
 void PlayBlockCurrPos2(struct Tracker_Windows *window, const Place *place){
 	struct WBlocks *wblock;
-	PlayStopReally(false);
+	PlayStopReally(false, true);
 
 	wblock=window->wblock;
 
@@ -322,7 +345,7 @@ static void PlayRange(struct Tracker_Windows *window, const Place *place){
 
 
 void PlayRangeFromStart(struct Tracker_Windows *window){
-	PlayStopReally(false);
+        PlayStopReally(false, true);
         
 	struct WBlocks *wblock = window->wblock;
 
@@ -334,7 +357,7 @@ void PlayRangeFromStart(struct Tracker_Windows *window){
 }
 
 void PlayRangeCurrPos2(struct Tracker_Windows *window, const Place *place){
-  PlayStopReally(false);
+  PlayStopReally(false, true);
 
   struct WBlocks *wblock = window->wblock;
 
@@ -448,7 +471,7 @@ static void PlayHandleRangeLoop(void){
       StopAllInstruments();
       
       if (MIXER_is_saving())
-        PlayStopReally(true);
+        PlayStopReally(true, true);
       else
         PlayRangeFromStart(root->song->tracker_windows);
     }
@@ -475,12 +498,16 @@ static void PlayHandleSequencerLoop(void){
     if (g_player_was_stopped_manually==false) {
       maybe_draw_lock(&got_lock);
 
-      StopAllInstruments();
-      
+      if (useJackTransport()) // PlayStopReally (which calls StopAllInstruments()) isn't called directly by PlaySong when using jack transport. 
+        StopAllInstruments(); // This function was not called when the player state was set to PLAYER_STATE_STOPPED by the player.
+
+      g_player_was_stopped_manually = true; // When using jack transport, playstop is not called directly, and then PlaySong will be called several times.
+            
       if (MIXER_is_saving())
-        PlayStopReally(true);
+        PlayStopReally(true, true);
       else
         PlaySong(SEQUENCER_get_loop_start());
+
     }
 
     maybe_draw_unlock(&got_lock);
@@ -497,12 +524,19 @@ void PlayCallVeryOften(void){
   PlayHandleSequencerLoop();
 }
 
+// All calls to 'start_player', where the first argument is PLAYSONG, MUST go through here.
+static void play_song(double abstime, int64_t absabstime, bool called_from_jack_transport){
+  //printf("Play song. abstime: %f, absabstime: %f\n", abstime, (double)absabstime/44100.0);
 
-static void play_song(double abstime, int64_t absabstime){
-  printf("Play song. abstime: %f, absabstime: %f\n", abstime, (double)absabstime/44100.0);
+  if (called_from_jack_transport==false && useJackTransport()){
+    R_ASSERT_RETURN_IF_FALSE(abstime>=0);
+    R_ASSERT_RETURN_IF_FALSE(absabstime<0);
+    MIXER_TRANSPORT_play(abstime); // This call will eventually trigger a new call to play_song, where 'called_from_jack_transport' is true.
+    return;
+  }
 
-  PlayStopReally(false);
-
+  PlayStopReally(false, false);
+  
   if (abstime==0.0 || absabstime==0)
     InitAllInstrumentsForPlaySongFromStart();
 
@@ -519,11 +553,11 @@ static void play_song(double abstime, int64_t absabstime){
 }
 
 void PlaySong(double abstime){
-  play_song(R_MAX(0, abstime), -1);
+  play_song(R_MAX(0, abstime), -1, false);
 }
 
-void PlaySong_using_absabstime(int64_t absabstime){
-  play_song(-1.0, R_MAX(0, absabstime));
+void PlaySong_from_jack_transport(int64_t absabstime){
+  play_song(-1.0, R_MAX(0, absabstime), true);
 }
 
 void PlaySongCurrPos(void){

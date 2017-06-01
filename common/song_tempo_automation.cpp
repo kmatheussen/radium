@@ -332,14 +332,11 @@ void TEMPOAUTOMATION_reset(void){
 
 
 static bool absabstime_scales_linearly_with_abstime(double time){ // time can be either abstime or absabstime.
-  printf("lin1\n");
   if (time < 0.00001)
     return true;
       
   int size = g_tempo_automation.size();
 
-  printf("lin2\n");
-    
   if (size < 2)
     return true;
 
@@ -349,13 +346,9 @@ static bool absabstime_scales_linearly_with_abstime(double time){ // time can be
   double val1 = node1.value;
   double val2 = node2.value;
 
-  printf("lin3\n");
-    
   if (time <= node2.time && fabs(val1-1.0)<0.000001 && (node1.logtype==LOGTYPE_HOLD || fabs(val2-1.0)<0.000001))
     return true;
 
-  printf("lin4\n");
-    
   return false;
 }
                                                     
@@ -399,6 +392,10 @@ int64_t get_absabstime_from_abstime(double goal){
 
 int64_t TEMPOAUTOMATION_get_absabstime(double goal){
 
+#if !defined(RELEASE)
+  printf(".......... Note: TEMPOAUTOMATION_get_absabstime(%f) called.\n", goal);
+#endif
+
   if(absabstime_scales_linearly_with_abstime(goal))
     return goal;
 
@@ -415,7 +412,7 @@ static double BinarySearch_abstime(int64_t absabstime, double low, double high) 
   
   int64_t try_ = get_absabstime_from_abstime(mid);
 
-  printf("Goal: %d. Try: %d, low: %f, mid: %f, high: %f\n", (int)absabstime, (int)try_, low, mid, high);
+  //printf("Goal: %d. Try: %d, low: %f, mid: %f, high: %f\n", (int)absabstime, (int)try_, low, mid, high);
   
   if (try_==absabstime)
     return mid;
@@ -428,6 +425,11 @@ static double BinarySearch_abstime(int64_t absabstime, double low, double high) 
 
 // This function could spend a lot of time.
 double TEMPOAUTOMATION_get_abstime_from_absabstime(int64_t absabstime){
+
+#if !defined(RELEASE)
+  printf(".......... Note: TEMPOAUTOMATION_get_abstime_from_absabstime(%d) called.\n", (int)absabstime);
+#endif
+  
   if(absabstime_scales_linearly_with_abstime(absabstime))
     return absabstime;
   
@@ -436,7 +438,7 @@ double TEMPOAUTOMATION_get_abstime_from_absabstime(int64_t absabstime){
 
   int64_t high_absabs = get_absabstime_from_abstime(high);
   if (absabstime >= high_absabs){
-    printf("  PAST end. absabs: %f, high_absabs: %f. Song len: %f\n", (double)absabstime/44100.0, (double)high_absabs/44100.0, high);
+    //printf("  PAST end. absabs: %f, high_absabs: %f. Song len: %f\n", (double)absabstime/44100.0, (double)high_absabs/44100.0, high);
     return high + (absabstime-high_absabs);
   }
   

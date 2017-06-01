@@ -529,6 +529,12 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         show_bars_in_timeline->setChecked(true);
       else
         show_time_in_timeline->setChecked(true);
+
+      if (useJackTransport())
+        jack_transport->setChecked(true);
+      else
+        internal_transport->setChecked(true);
+        
       
       if (!strcmp(getSeqBlockGridType(), "no"))
         block_no_grid->setChecked(true);
@@ -937,7 +943,12 @@ public slots:
     if (_initing==false)
       setShowBarsInTimeline(val);
   }
-    
+
+  void on_jack_transport_toggled(bool val){
+    if (_initing==false)
+      setUseJackTransport(val);
+  }
+  
   void on_block_no_grid_toggled(bool val){
     if (_initing==false)
       if (val)
