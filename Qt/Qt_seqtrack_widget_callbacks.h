@@ -1814,6 +1814,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     
     QPainter p(this);
 
+    p.eraseRect(rect()); // We don't paint everything.
+    
     p.setRenderHints(QPainter::Antialiasing,true);    
 
     _seqtracks_widget.paint(ev->rect(), p);
