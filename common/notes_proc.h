@@ -24,7 +24,7 @@ extern LANGSPEC int GetNumSubtracks(const struct WTracks *wtrack);
 extern LANGSPEC void StopAllNotesAtPlace(
                                          struct Blocks *block,
                                          struct Tracks *track,
-                                         Place *placement
+                                         const Place *placement
                                          );
 
 extern LANGSPEC struct Notes *GetCurrNote(struct Tracker_Windows *window);
@@ -41,8 +41,8 @@ extern LANGSPEC void NOTE_validate(const struct Blocks *block, struct Tracks *tr
 extern LANGSPEC struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
-	Place *placement,
-        Place *end_placement,
+	const Place *placement,
+        const Place *end_placement,
 	float notenum,
 	int velocity,
 	bool polyphonic
@@ -55,43 +55,43 @@ extern LANGSPEC void InsertNoteCurrPos(struct Tracker_Windows *window,float note
 extern LANGSPEC void LengthenNotesTo(
                      struct Blocks *block,
                      struct Tracks *track,
-                     Place *placement
+                     const Place *placement
                      );
 extern LANGSPEC void ReplaceNoteEnds(
                     struct Blocks *block,
                     struct Tracks *track,
-                    Place *old_placement,
-                    Place *new_placement,
+                    const Place *old_placement,
+                    const Place *new_placement,
                     int subtrack
                     );
 
-extern LANGSPEC void CutNoteAt(struct Blocks *block, struct Tracks *track,struct Notes *note, Place *place);
+extern LANGSPEC void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Notes *note, const Place *place);
   
 extern LANGSPEC void RemoveNote(struct Blocks *block,
                 struct Tracks *track,
-                struct Notes *note
+                const struct Notes *note
                 );
 
 extern LANGSPEC void RemoveNoteCurrPos(struct Tracker_Windows *window);
 
-extern LANGSPEC struct Notes *FindPrevNoteOnSameSubTrack(struct Tracks *track, struct Notes *note);
+extern LANGSPEC struct Notes *FindPrevNoteOnSameSubTrack(const struct Tracks *track, const struct Notes *note);
 
 extern LANGSPEC struct Notes *FindNoteOnSubTrack(
                                         const struct WTracks *wtrack,
                                         int subtrack,
-                                        Place *placement
+                                        const Place *placement
 );
 
 extern LANGSPEC struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note);
 
 extern LANGSPEC struct Notes *FindNextNote(
                                            struct Tracks *track,
-                                           Place *placement
+                                           const Place *placement
                                            );
 
 extern LANGSPEC struct Notes *FindNote(
                        struct Tracks *track,
-                       Place *placement
+                       const Place *placement
                        );
 
 extern LANGSPEC struct Notes *FindNoteCurrPos(struct Tracker_Windows *window);

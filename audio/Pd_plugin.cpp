@@ -467,7 +467,7 @@ void RT_PD_set_absolute_time(int64_t time){
 }
 
 // called from radium
-void RT_PD_set_realline(int64_t time, int64_t time_nextsubline, Place *p){
+void RT_PD_set_realline(int64_t time, int64_t time_nextsubline, const Place *p){
 
   if(g_instances != NULL) {
     t_atom v[8];
@@ -1172,7 +1172,7 @@ void PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *wname){
   }PLAYER_unlock();
 }
 
-void PD_recreate_controllers_from_state(SoundPlugin *plugin, hash_t *state){
+void PD_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state){
   Data *data=(Data*)plugin->data;
 
   PDGUI_clear(ATOMIC_GET(data->qtgui));

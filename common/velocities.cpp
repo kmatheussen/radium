@@ -154,7 +154,7 @@ int AddVelocity(
 void AddVelocityCurrPos(struct Tracker_Windows *window){
 
 	struct WBlocks *wblock=window->wblock;
-	struct LocalZooms *realline= wblock->reallines[wblock->curr_realline];
+	const struct LocalZooms *realline= wblock->reallines[wblock->curr_realline];
 	int subtrack=window->curr_track_sub;
 
         if(-1==subtrack)

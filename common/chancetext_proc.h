@@ -15,4 +15,4 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC int CHANCETEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack);
-extern LANGSPEC bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key);
+extern LANGSPEC bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, const Place *place, int key);

@@ -97,7 +97,7 @@ int FXTEXT_subsubtrack(const struct Tracker_Windows *window, const struct WTrack
   return -1;
 }
 
-bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key){
+bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, const Place *place, int key){
   struct FXs *fxs;
   
   int subsubtrack = FXTEXT_subsubtrack(window, wtrack, &fxs);

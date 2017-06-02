@@ -577,7 +577,7 @@ static void create_background(const struct Tracker_Windows *window, const struct
  ************************************/
 
 static void draw_linenumber(const struct Tracker_Windows *window, const struct WBlocks *wblock, const WSignature &wsignature, int realline){
-  struct LocalZooms *localzoom = wblock->reallines[realline];
+  const struct LocalZooms *localzoom = wblock->reallines[realline];
 
   bool is_beatnum = wsignature.beat_num > 0;
   bool is_barnum = wsignature.bar_num>0 && WSIGNATURE_is_first_beat(wsignature);

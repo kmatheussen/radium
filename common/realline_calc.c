@@ -32,7 +32,7 @@ float FindReallineForF(
     reallineF=0;
   
         int realline = reallineF;
-	struct LocalZooms **reallines=wblock->reallines;
+	const struct LocalZooms **reallines=wblock->reallines;
 
 	if(realline>=wblock->num_reallines){
 		RError("\n\nError In the function \"FindReallineForF\" in the file \"realline_calc.c\"\n"
@@ -62,8 +62,8 @@ float FindReallineForF(
           return wblock->block->num_lines;
         }
         
-        Place *p1 = &reallines[realline-1]->l.p;
-        Place *p2 = realline==wblock->num_reallines ? NULL  : &reallines[realline]->l.p;
+        const Place *p1 = &reallines[realline-1]->l.p;
+        const Place *p2 = realline==wblock->num_reallines ? NULL  : &reallines[realline]->l.p;
 
         float y=GetFloatFromPlace(place);
         float y1=GetFloatFromPlace(p1);
@@ -88,7 +88,7 @@ int FindRealLineFor(
   if (wblock->num_expand_lines<0)
     realline=0;
 
-	struct LocalZooms **reallines=wblock->reallines;
+  const struct LocalZooms **reallines=wblock->reallines;
 
 	if(realline>=wblock->num_reallines){
 		RError("\n\nError In the function \"FindReallineFor\" in the file \"realline_calc.c\"\n"
@@ -166,8 +166,8 @@ int FindSubRealLine(
 	uint_32 counter=p->counter;
 	uint_32 dividor=p->dividor;
 
-	struct LocalZooms *firstlz=wblock->reallines[realline];
-	struct LocalZooms *nextlz;
+	const struct LocalZooms *firstlz=wblock->reallines[realline];
+	const struct LocalZooms *nextlz;
 	uint_32 next_counter;
 	uint_32 next_dividor;
 	float placement=GetfloatFromCounterDividor(counter,dividor);

@@ -25,7 +25,7 @@ extern LANGSPEC void UpdateWTempoNodes(
 extern LANGSPEC struct TempoNodes *AddTempoNode(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	Place *p,
+	const Place *p,
 	float reltempo
 );
 

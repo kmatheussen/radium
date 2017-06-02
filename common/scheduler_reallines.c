@@ -23,7 +23,7 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
 #ifdef WITH_PD
   bool inserted_pd_realline = false;
   int64_t org_time = time;
-  Place *org_pos = NULL;
+  const Place *org_pos = NULL;
 
   if (realline < wblock->num_reallines) // number of reallines can change while playing.
     org_pos = &wblock->reallines[realline]->l.p;

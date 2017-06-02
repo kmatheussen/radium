@@ -192,14 +192,14 @@ static const struct NodeLine *create_nodelines(
 
   // 3. Insert all non-node break-points. (caused by realline level changes)
   {
-    struct LocalZooms **reallines=wblock->reallines;
+    const struct LocalZooms **reallines=wblock->reallines;
     int curr_level = reallines[0]->level;
     int realline;
     float reallineF = 0.0f;
     
     for(realline = 1; realline < wblock->num_reallines ; realline++) {
           
-      struct LocalZooms *localzoom = reallines[realline];
+      const struct LocalZooms *localzoom = reallines[realline];
       
       if (localzoom->level != curr_level){
         reallineF = FindReallineForF(wblock, reallineF, &localzoom->l.p);

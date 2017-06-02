@@ -147,7 +147,7 @@ struct Signatures *SetSignature(
 void SetSignatureCurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	int curr_realline=wblock->curr_realline;
-	Place *place= &wblock->reallines[curr_realline]->l.p;
+	const Place *place= &wblock->reallines[curr_realline]->l.p;
 	char *signaturestring = GFX_GetString(window,NULL,"New Time Signature: >");
 	if(signaturestring==NULL) return;
 

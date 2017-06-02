@@ -126,8 +126,8 @@ static void Quantitize_range(
 	if( ! wblock->isranged) return;
 
 
-	struct LocalZooms *realline1 = wblock->reallines[wblock->rangey1];
-	struct LocalZooms *realline2 = wblock->reallines[wblock->rangey2];
+	const struct LocalZooms *realline1 = wblock->reallines[wblock->rangey1];
+	const struct LocalZooms *realline2 = wblock->reallines[wblock->rangey2];
 
         struct Tracks *track = ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 

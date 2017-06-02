@@ -74,9 +74,9 @@ void NewLocalZooms(struct Tracker_Windows *window,struct WBlocks *wblock){
     Returns the LocalZoom Element that is placed on the next
     realline. Or NULL if there is no more reallines.
 *******************************************************************/
-struct LocalZooms *GetNextRealLocalZoom(
-	struct WBlocks *wblock,
-	struct LocalZooms *localzoom
+const struct LocalZooms *GetNextRealLocalZoom(
+	const struct WBlocks *wblock,
+	const struct LocalZooms *localzoom
 ){
 	if(localzoom->realline<wblock->num_reallines-1){
 		return wblock->reallines[localzoom->realline+1];
@@ -108,11 +108,11 @@ struct LocalZooms *GetNextRealLocalZoom(
     Obsolete, I think.. placement.c has a better function for this..
 *******************************************************************/
 int IsOnRealLine(
-	struct WBlocks *wblock,
-	struct LocalZooms *localzoom,
-	Place *placement
+	const struct WBlocks *wblock,
+	const struct LocalZooms *localzoom,
+	const Place *placement
 ){
-	struct LocalZooms *localzoom2;
+	const struct LocalZooms *localzoom2;
 	uint_32 counter1;
 	uint_32 dividor1;
 	uint_32 counter2;

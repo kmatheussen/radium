@@ -480,8 +480,8 @@ struct SeqBlock *getGfxGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, str
 
 // NOTES
 
-static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){
-  Place *end = PlaceGetFirstPos(); // small bug here, cant move pitch to first position, only almost to first position.
+static const Place *getPrevLegalNotePlace(const struct Tracks *track, const struct Notes *note){
+  const Place *end = PlaceGetFirstPos(); // small bug here, cant move pitch to first position, only almost to first position.
 
   struct Notes *prev = FindPrevNoteOnSameSubTrack(track, note);
   //printf("prev: %p. next(prev): %p, note: %p, next(note): %p\n",prev,prev!=NULL?NextNote(prev):NULL,note,NextNote(note));
@@ -497,8 +497,8 @@ static Place *getPrevLegalNotePlace(struct Tracks *track, struct Notes *note){
   return end;
 }
 
-static Place *getNextLegalNotePlace(struct Notes *note){
-  Place *end = &note->end;
+static const Place *getNextLegalNotePlace(const struct Notes *note){
+  const Place *end = &note->end;
 
   if (note->velocities != NULL)
     end = PlaceMin(end, &note->velocities->l.p);
@@ -510,7 +510,7 @@ static Place *getNextLegalNotePlace(struct Notes *note){
 }
 
 
-void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool last_legal_may_be_next_note){
+void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, const Place *place, bool last_legal_may_be_next_note){
   Place firstLegal, lastLegal;
 
   if (last_legal_may_be_next_note && !ControlPressed()){
@@ -529,16 +529,16 @@ void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note,
   }
 
   
-  Place *last_pitch = ListLastPlace3(&note->pitches->l);
-  Place *last_velocity = ListLastPlace3(&note->velocities->l);
-  Place *startPlace = &note->l.p;
+  const Place *last_pitch = ListLastPlace3(&note->pitches->l);
+  const Place *last_velocity = ListLastPlace3(&note->velocities->l);
+  const Place *startPlace = &note->l.p;
 
   if (last_pitch==NULL)
     last_pitch = startPlace;
   if (last_velocity==NULL)
     last_velocity = startPlace;
 
-  Place *firstLegalConst = PlaceMax(last_pitch, last_velocity);
+  const Place *firstLegalConst = PlaceMax(last_pitch, last_velocity);
   PlaceFromLimit(&firstLegal, firstLegalConst);
 
   PLAYER_lock();{
@@ -557,12 +557,12 @@ int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Pla
     //printf("MoveNote. old: %f, new: %f\n", GetfloatFromPlace(&old_place), GetfloatFromPlace(place));
          
     if (PlaceLessThan(place, &old_place)) {
-      Place *prev_legal = getPrevLegalNotePlace(track, note);
+      const Place *prev_legal = getPrevLegalNotePlace(track, note);
       //printf("prev_legal: %f\n",GetfloatFromPlace(prev_legal));
       if (PlaceLessOrEqual(place, prev_legal))
         PlaceFromLimit(place, prev_legal);
     } else {
-      Place *next_legal = getNextLegalNotePlace(note);
+      const Place *next_legal = getNextLegalNotePlace(note);
       if (PlaceGreaterOrEqual(place, next_legal))
         PlaceTilLimit(place, next_legal);
     }

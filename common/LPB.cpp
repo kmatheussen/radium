@@ -93,7 +93,7 @@ QVector<LPBs*> LPBs_get(const struct WBlocks *wblock, int realline){
 
 struct LPBs *SetLPB(
 	struct Blocks *block,
-	Place *place,
+	const Place *place,
 	int newlpb
 ){
   if (newlpb<=0){
@@ -124,7 +124,7 @@ struct LPBs *SetLPB(
 void SetLPBCurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	int curr_realline=wblock->curr_realline;
-	Place *place= &wblock->reallines[curr_realline]->l.p;
+	const Place *place= &wblock->reallines[curr_realline]->l.p;
 	int newlpb=GFX_GetInteger(window,NULL,"New LPB: >",1,99);
 	if(newlpb<=0) return;
 

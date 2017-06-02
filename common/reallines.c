@@ -92,12 +92,12 @@ void UpdateReallinesDependens(
 
     The next two procedures are to be seen as one function.
 ************************************************************************/
-static struct LocalZooms *FindLocalZoomRootTheHardWay(
-	struct WBlocks *wblock,
-	struct LocalZooms *localzoom,
-	struct LocalZooms *org
+static const struct LocalZooms *FindLocalZoomRootTheHardWay(
+                                                            const struct WBlocks *wblock,
+                                                            const struct LocalZooms *localzoom,
+                                                            const struct LocalZooms *org
 ){
-	struct LocalZooms *ret;
+        const struct LocalZooms *ret;
 
 	while(localzoom!=NULL){
 		if(localzoom==org) return org;
@@ -112,13 +112,13 @@ static struct LocalZooms *FindLocalZoomRootTheHardWay(
 	return NULL;
 }
 
-static struct LocalZooms *FindLocalZoomRoot(
-	struct WBlocks *wblock,
-	int *realline
+static const struct LocalZooms *FindLocalZoomRoot(
+                                                  const struct WBlocks *wblock,
+                                                  int *realline
 ){
-	struct LocalZooms **reallines=wblock->reallines;
-	struct LocalZooms *localzoom=reallines[*realline];
-	struct LocalZooms *org=localzoom;
+	const struct LocalZooms **reallines=wblock->reallines;
+	const struct LocalZooms *localzoom=reallines[*realline];
+	const struct LocalZooms *org=localzoom;
 	int level=localzoom->level;
 //	int set=0;
 	if(0==level) return NULL;
@@ -164,8 +164,8 @@ firstline:
     Find out how many reallines there is in a wblock.
 **************************************************************************/
 static int FindNumberOfRealLines(
-	struct LocalZooms *localzoom,
-	int realline
+                                 const struct LocalZooms *localzoom,
+                                 int realline
 ){
 	while(localzoom!=NULL){
 		if(localzoom->uplevel!=NULL){
@@ -227,7 +227,7 @@ static int UpdateRealLinesRec(
 	return realline;
 }
 
-static struct LocalZooms **get_shrinked_reallines(const struct Tracker_Windows *window, const struct WBlocks *wblock, int factor, int *num_returned_reallines){
+static const struct LocalZooms **get_shrinked_reallines(const struct Tracker_Windows *window, const struct WBlocks *wblock, int factor, int *num_returned_reallines){
   R_ASSERT(factor>1);
 
   int realline = 0;
@@ -257,7 +257,7 @@ static struct LocalZooms **get_shrinked_reallines(const struct Tracker_Windows *
 
   *num_returned_reallines = realline;
 
-  return reallines;
+  return (const struct LocalZooms**)reallines;
 }
 
 
@@ -267,10 +267,10 @@ static void set_curr_realline(struct WBlocks *wblock, int new_curr_realline){
   GE_set_curr_realline(wblock->curr_realline);
 }
 
-static void set_curr_realline_from_place(const struct Tracker_Windows *window, struct WBlocks *wblock, Place *curr_place){
+static void set_curr_realline_from_place(const struct Tracker_Windows *window, struct WBlocks *wblock, const Place *curr_place){
   if (curr_place!=NULL) {
 
-    Place *curr_place2 = &wblock->reallines[wblock->curr_realline]->l.p;
+    const Place *curr_place2 = &wblock->reallines[wblock->curr_realline]->l.p;
     if (PlaceEqual(curr_place, curr_place2))
       return;
     
@@ -278,8 +278,8 @@ static void set_curr_realline_from_place(const struct Tracker_Windows *window, s
   }
 }
 
-static struct LocalZooms **GenerateExpandedReallines(const struct Tracker_Windows *window, const struct WBlocks *wblock, int *num_new_reallines){
-  struct LocalZooms *localzoom=wblock->localzooms;
+static const struct LocalZooms **GenerateExpandedReallines(const struct Tracker_Windows *window, const struct WBlocks *wblock, int *num_new_reallines){
+  struct LocalZooms *localzoom=(struct LocalZooms*)wblock->localzooms;
     
   *num_new_reallines = FindNumberOfRealLines(localzoom,0);
 
@@ -288,14 +288,14 @@ static struct LocalZooms **GenerateExpandedReallines(const struct Tracker_Window
   UpdateRealLinesRec(reallines,localzoom,0);
   //wblock->num_reallines=UpdateRealLinesRec(wblock->reallines,localzoom,0);
 
-  return reallines;
+  return (const struct LocalZooms**)reallines;
 }
 
-static struct LocalZooms **GenerateReallines(const struct Tracker_Windows *window, const struct WBlocks *wblock, int *num_new_reallines){
+static const struct LocalZooms **GenerateReallines(const struct Tracker_Windows *window, const struct WBlocks *wblock, int *num_new_reallines){
   if (wblock->num_expand_lines > 0)
     return GenerateExpandedReallines(window, wblock, num_new_reallines);
 
-  struct LocalZooms **reallines = get_shrinked_reallines(window, wblock, -wblock->num_expand_lines, num_new_reallines);
+  const struct LocalZooms **reallines = get_shrinked_reallines(window, wblock, -wblock->num_expand_lines, num_new_reallines);
   
   if (reallines==NULL) // 'get_shrinked_reallines' fails if trying to shrink too much.
     return GenerateExpandedReallines(window, wblock, num_new_reallines);
@@ -304,14 +304,14 @@ static struct LocalZooms **GenerateReallines(const struct Tracker_Windows *windo
 }
 
 void UpdateRealLines(struct Tracker_Windows *window,struct WBlocks *wblock){
-  Place *curr_place = NULL;
+  const Place *curr_place = NULL;
 
   if (wblock->reallines!=NULL && wblock->curr_realline<wblock->num_reallines)
     curr_place = &wblock->reallines[wblock->curr_realline]->l.p;
 
   {
     int num_reallines;
-    struct LocalZooms **reallines = GenerateReallines(window, wblock, &num_reallines);
+    const struct LocalZooms **reallines = GenerateReallines(window, wblock, &num_reallines);
 
     //if(num_reallines==wblock->block->num_lines)
     //  wblock->zoomlinearea.width=0;
@@ -378,8 +378,8 @@ static void ExpandLineInternal(
                                int num_newreallines,
                                bool autogenerated
 ){
-	struct LocalZooms **reallines = wblock->reallines;
-	struct LocalZooms  *localzoom = reallines[realline];
+        const struct LocalZooms **reallines = wblock->reallines;
+	struct LocalZooms  *localzoom = (struct LocalZooms*)reallines[realline];
 	int lokke;
 
 	if(localzoom->Tdividor*num_newreallines>=MAX_UINT32){
@@ -449,7 +449,7 @@ void ExpandLineCurrPos(
 	window->must_redraw = true;
 }
 
-int FindNumReallinesFor(struct LocalZooms *localzoom){
+int FindNumReallinesFor(const struct LocalZooms *localzoom){
 	int ret=0;
 
 	while(localzoom!=NULL){
@@ -469,10 +469,10 @@ void Unexpand(struct Tracker_Windows *window,struct WBlocks *wblock,int realline
     return;
 
   
-	struct LocalZooms *localzoom=FindLocalZoomRoot(wblock,&realline);
+	const struct LocalZooms *localzoom=FindLocalZoomRoot(wblock,&realline);
 	if(localzoom==NULL) return;
 
-	localzoom->uplevel=NULL;
+	((struct LocalZooms *)localzoom)->uplevel=NULL;
 
 	set_curr_realline(wblock, realline+1);
 
@@ -619,18 +619,18 @@ void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int n
   Place curr_place = wblock->reallines[curr_realline]->l.p;
 
   {
-    struct LocalZooms *localzoom = wblock->localzooms;
+    const struct LocalZooms *localzoom = wblock->localzooms;
     while(localzoom != NULL) {
       if (localzoom->uplevel != NULL)
         if (localzoom->uplevel->autogenerated==true)
-          localzoom->uplevel = NULL;
+          ((struct LocalZooms *)localzoom)->uplevel = NULL;
       localzoom = NextLocalZoom(localzoom);
     }
     
     UpdateRealLines(window,wblock);
     
     for(realline = wblock->num_reallines - 1; realline>=0 ; realline--){
-      struct LocalZooms *localzoom=wblock->reallines[realline];
+      const struct LocalZooms *localzoom=wblock->reallines[realline];
       
       if(localzoom->Tcounter==0 && localzoom->level==0){
         if(num_lines>1)

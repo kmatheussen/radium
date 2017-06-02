@@ -25,10 +25,10 @@ QVector<LPBs*> LPBs_get(const struct WBlocks *wblock, int realline);
 #endif
   
 extern LANGSPEC struct LPBs *SetLPB(
-                           struct Blocks *block,
-                           Place *place,
-                           int newlpb
-                           );
+                                    struct Blocks *block,
+                                    const Place *place,
+                                    int newlpb
+                                    );
 extern LANGSPEC void SetLPBCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC void RemoveLPB(struct Blocks *block,struct LPBs *lpb);

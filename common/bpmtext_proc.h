@@ -3,6 +3,6 @@
 #define _RADIUM_COMMON_BPMTEXT_PROC_H
 
 extern LANGSPEC int BPMTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack);
-extern LANGSPEC bool BPMTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, int realline, Place *place, int key);
+extern LANGSPEC bool BPMTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, int realline, const Place *place, int key);
 
 #endif

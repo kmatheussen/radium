@@ -113,7 +113,7 @@ struct Tempos *SetTempo(
 void SetTempoCurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	int curr_realline=wblock->curr_realline;
-	Place *place= &wblock->reallines[curr_realline]->l.p;
+	const Place *place= &wblock->reallines[curr_realline]->l.p;
 	int newtempo=GFX_GetInteger(window,NULL,"New tempo: >",1,999);
 	if(newtempo<=0) return;
 
@@ -129,12 +129,12 @@ void SetTempoCurrPos(struct Tracker_Windows *window){
 #endif
 }
 
-void RemoveTempo(struct Blocks *block,struct Tempos *tempo){
+void RemoveTempo(struct Blocks *block,const struct Tempos *tempo){
   ListRemoveElement3(&block->tempos,&tempo->l);
   TIME_block_tempos_have_changed(block);
 }
 
-void RemoveTempos(struct Blocks *block,Place *p1,Place *p2){
+static void RemoveTempos(struct Blocks *block,const Place *p1,const Place *p2){
   ListRemoveElements3(&block->tempos,p1,p2);
   TIME_block_tempos_have_changed(block);
 }

@@ -115,7 +115,7 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
     if (next_track == NULL)
       return -1;
           
-    Place *p = NULL;
+    const Place *p = NULL;
           
     if (next_track->notes!=NULL)
       p = &next_track->notes->l.p;

@@ -167,9 +167,9 @@ void InsertRealLines_CurrPos(
 	float toplace;
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
-	struct LocalZooms **reallines=wblock->reallines;
+	const struct LocalZooms **reallines=wblock->reallines;
 	int curr_realline=wblock->curr_realline;
-	struct LocalZooms *realline=reallines[curr_realline];
+	const struct LocalZooms *realline=reallines[curr_realline];
 
 	if(num_reallines==0) return;
 

@@ -70,15 +70,15 @@ extern LANGSPEC void ListRemoveElement1(
 );
 
 extern LANGSPEC void ListRemoveElements3(
-	void *voidlistroot,
-	Place *p1,
-	Place *p2
+                                         void *voidlistroot,
+                                         const Place *p1,
+                                         const Place *p2
 );
 
 extern LANGSPEC void ListMoveElement3_ns(
                                 const void *voidlistroot,
                                 struct ListHeader3 *element,
-                                Place *newplace,
+                                const Place *newplace,
                                 const Place *firstlegalpos,
                                 const Place *lastlegalpos
                                 );
@@ -86,7 +86,7 @@ extern LANGSPEC void ListMoveElement3_ns(
 struct ListHeader3 *ListMoveElement3_FromNum_ns(
                                                 const void *voidlistroot,
                                                 int num,
-                                                Place *newplace,
+                                                const Place *newplace,
                                                 const Place *firstlegalpos,
                                                 const Place *lastlegalpos
                                                 );
@@ -154,8 +154,8 @@ extern LANGSPEC void *ListPrevElement3(
 	struct ListHeader3 *element
 );
 
-extern LANGSPEC void CutListAt(void *listroot,Place *place);
-extern LANGSPEC void CutListAt_a(void *listroot,Place *place);
+extern LANGSPEC void CutListAt(void *listroot,const Place *place);
+extern LANGSPEC void CutListAt_a(void *listroot,const Place *place);
 extern LANGSPEC void CutListAt1(void *listroot,NInt num);
 
 extern LANGSPEC int ListPosition3(struct ListHeader3 *list,

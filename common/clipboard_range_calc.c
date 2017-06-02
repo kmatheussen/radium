@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 const Place *GetRangeStartPlace(
                                 const struct WBlocks *wblock
 ){
-        struct LocalZooms **reallines=wblock->reallines;
+        const struct LocalZooms **reallines=wblock->reallines;
 	if(
 		wblock->rangey1>=wblock->num_reallines ||
 		wblock->rangey1<0
@@ -54,7 +54,7 @@ const Place *GetRangeStartPlace(
 const Place *GetRangeEndPlace(
                               const struct WBlocks *wblock
 ){
-	struct LocalZooms **reallines=wblock->reallines;
+	const struct LocalZooms **reallines=wblock->reallines;
 	if(
 		wblock->rangey2>wblock->num_reallines ||
 		wblock->rangey2<0

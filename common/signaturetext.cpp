@@ -32,7 +32,7 @@ int SIGNATURETEXT_subsubtrack(struct Tracker_Windows *window){
   return 0;
 }
 
-bool SIGNATURETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, int realline, Place *place, int key){
+bool SIGNATURETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, int realline, const Place *place, int key){
   int subsubtrack = SIGNATURETEXT_subsubtrack(window);
 
   if (subsubtrack==-1)

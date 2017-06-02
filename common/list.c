@@ -360,8 +360,8 @@ void ListRemoveElement3(
 ******************************************************************************/
 void ListRemoveElements3(
 	void *voidlistroot,
-	Place *p1,
-	Place *p2
+	const Place *p1,
+	const Place *p2
 ){
 	struct ListHeaderPointer3 *listroot=voidlistroot;
 	struct ListHeader3 *l=listroot->root;
@@ -395,7 +395,7 @@ void ListRemoveElements3(
 void ListMoveElement3_ns(
                          const void *voidlistroot,
                          struct ListHeader3 *element,
-                         Place *newplace,
+                         const Place *newplace,
                          const Place *firstlegalpos,
                          const Place *lastlegalpos
 ){
@@ -433,7 +433,7 @@ void ListMoveElement3_ns(
 struct ListHeader3 *ListMoveElement3_FromNum_ns(
                                                 const void *voidlistroot,
                                                 int num,
-                                                Place *newplace,
+                                                const Place *newplace,
                                                 const Place *firstlegalpos,
                                                 const Place *lastlegalpos
 ){
@@ -728,7 +728,7 @@ void *ListPrevElement3(
     Remove all elements that is placed after or has the same position as
     'placement'.
 ******************************************************************************/
-void CutListAt(void *listroot,Place *place){
+void CutListAt(void *listroot,const Place *place){
 	struct ListHeaderPointer3 *root=(struct ListHeaderPointer3 *)listroot;
 	struct ListHeader3 *element=root->root;
 
@@ -755,7 +755,7 @@ void CutListAt(void *listroot,Place *place){
 
 
 /* Nearly the same, except that it cuts first one that is placed _after_ 'place' */
-void CutListAt_a(void *listroot,Place *place){
+void CutListAt_a(void *listroot,const Place *place){
   ValidatePlace(place);
           
 	struct ListHeaderPointer3 *root=(struct ListHeaderPointer3 *)listroot;

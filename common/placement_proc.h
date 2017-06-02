@@ -175,7 +175,7 @@ static inline int PlaceCmp(  const Place *p1,  const Place *p2){
     obvious things, unless you really really have to, you
     think. :)
 *************************************************************/
-static inline Place *PlaceMax(  Place *p1,  Place *p2){
+static inline const Place *PlaceMax(  const Place *p1,  const Place *p2){
   if (p1==NULL)
     return p2;
   if (p2==NULL)
@@ -197,7 +197,7 @@ static inline Place *PlaceMax(  Place *p1,  Place *p2){
     obvious things, unless you really really have to, you
     think. :)
 *************************************************************/
-static inline Place *PlaceMin(  Place *p1,  Place *p2){
+static inline const Place *PlaceMin(  const Place *p1,  const Place *p2){
   if (p1==NULL)
     return p2;
 

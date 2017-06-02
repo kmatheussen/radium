@@ -240,7 +240,7 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
     return true;
 
   int realline = wblock->curr_realline;
-  Place *place = &wblock->reallines[realline]->l.p;
+  const Place *place = &wblock->reallines[realline]->l.p;
 
   if (VELTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
     if (FXTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {

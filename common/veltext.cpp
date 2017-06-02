@@ -125,7 +125,7 @@ int VELTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack){
 
 
 
-bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, Place *place, int key){
+bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, const Place *place, int key){
   int subsubtrack = VELTEXT_subsubtrack(window, wtrack);
 
   if (subsubtrack==-1)

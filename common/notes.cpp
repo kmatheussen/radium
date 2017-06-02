@@ -47,11 +47,11 @@ extern struct Root *root;
 extern PlayerClass *pc;
 
 static const int end_places_size = 1024*32;
-static Place **end_places = NULL;
+static const Place **end_places = NULL;
 
 static int last_free_polyphony_num;
 
-static int FindFirstFreePolyphony_num(Place *p){
+static int FindFirstFreePolyphony_num(const Place *p){
   int i;
   for(i=0 ; i < end_places_size ; i++){
     if (i==last_free_polyphony_num) {
@@ -70,7 +70,7 @@ void SetNotePolyphonyAttributes(struct Tracks *track){
   last_free_polyphony_num = 0; // reset
   
   if (end_places==NULL)
-    end_places = (Place**)V_calloc(end_places_size,sizeof(Place*)); // Using calloc since this memory is only used temporarily in here, so it's not necessary for the GC to know about it in any way.
+    end_places = (const Place**)V_calloc(end_places_size,sizeof(const Place*)); // Using calloc since this memory is only used temporarily in here, so it's not necessary for the GC to know about it in any way.
 
   track->polyphony = 1;
   
@@ -127,11 +127,11 @@ void SetEndAttributes(
 	const struct Tracks *track,
 	struct Notes *note
 ){
-	Place *place;
-	Place *p1=NULL,*p2=NULL;
+	const Place *place;
+	const Place *p1=NULL,*p2=NULL;
 
         bool endSetEarlier = PlaceGreaterThan(&note->end, &note->l.p);
-        Place *earliest = endSetEarlier ? &note->end : &note->l.p;
+        const Place *earliest = endSetEarlier ? &note->end : &note->l.p;
 
         struct ListHeader3 *nextnote=note->l.next;
         while(nextnote!=NULL){
@@ -142,7 +142,7 @@ void SetEndAttributes(
           nextnote=nextnote->next;
         }
 
-        struct ListHeader3 *stop= &track->stops->l;
+        const struct ListHeader3 *stop= &track->stops->l;
         while(stop!=NULL){
           if(PlaceGreaterThan(&stop->p, earliest)){
             p2 = &stop->p;
@@ -173,7 +173,7 @@ void SetEndAttributes(
 void StopAllNotesAtPlace(
                          struct Blocks *block,
                          struct Tracks *track,
-                         Place *placement
+                         const Place *placement
 ){
   if (PLAYER_current_thread_has_lock()==false && is_playing()==true){
     RError("StopAllNotesAtPlace. PLAYER_current_thread_has_lock(): %d, is_playing(): %d", PLAYER_current_thread_has_lock()==false, is_playing()==true);
@@ -416,8 +416,8 @@ void NOTE_validate(const struct Blocks *block, struct Tracks *track, struct Note
 struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
-	Place *placement,
-        Place *end_placement,
+	const Place *placement,
+        const Place *end_placement,
 	float notenum,
 	int velocity,
 	bool polyphonic
@@ -525,7 +525,7 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
     }PLAYER_unlock();
   }
 
-  struct LocalZooms *realline = wblock->reallines[curr_realline];
+  const struct LocalZooms *realline = wblock->reallines[curr_realline];
   
   InsertNote(
              wblock,wtrack,&realline->l.p,NULL,notenum,
@@ -544,7 +544,7 @@ static void InsertStop(
                        struct Tracker_Windows *window,
                        struct WBlocks *wblock,
                        struct WTracks *wtrack,
-                       Place *placement
+                       const Place *placement
 ){
 	struct Stops *stop;
 
@@ -565,7 +565,7 @@ static void InsertStop(
 void LengthenNotesTo(
 	struct Blocks *block,
 	struct Tracks *track,
-	Place *placement
+	const Place *placement
 ){
 	struct Notes *note=track->notes;
 	while(note!=NULL){
@@ -584,8 +584,8 @@ void LengthenNotesTo(
 void ReplaceNoteEnds(
 	struct Blocks *block,
 	struct Tracks *track,
-	Place *old_placement,
-        Place *new_placement,
+	const Place *old_placement,
+        const Place *new_placement,
         int polyphony_num
 ){
 	struct Notes *note=track->notes;
@@ -604,7 +604,7 @@ void ReplaceNoteEnds(
 void RemoveNote(
 	struct Blocks *block,
 	struct Tracks *track,
-	struct Notes *note
+	const struct Notes *note
 ){
 	ListRemoveElement3(&track->notes,&note->l);
         LengthenNotesTo(block,track,&note->l.p);
@@ -614,7 +614,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   struct WBlocks       *wblock        = window->wblock;
   struct WTracks       *wtrack        = wblock->wtrack;
   struct Tracks        *track         = wtrack->track;
-  struct LocalZooms    *realline      = wblock->reallines[wblock->curr_realline];
+  const struct LocalZooms    *realline      = wblock->reallines[wblock->curr_realline];
   int                   curr_realline = wblock->curr_realline;
   
   const Trs &trs = TRS_get(wblock, wtrack, curr_realline);
@@ -668,7 +668,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
     maybe_scroll_down(window);
 }
 
-struct Notes *FindPrevNoteOnSameSubTrack(struct Tracks *track, struct Notes *note){
+struct Notes *FindPrevNoteOnSameSubTrack(const struct Tracks *track, const struct Notes *note){
   struct Notes *notes = track->notes;
   struct Notes *prev = NULL;
   
@@ -698,7 +698,7 @@ struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note){
 struct Notes *FindNoteOnSubTrack(
                                  const struct WTracks *wtrack,
                                  int subtrack,
-                                 Place *placement
+                                 const Place *placement
 ){
         SetNotePolyphonyAttributes(wtrack->track);
   
@@ -717,7 +717,7 @@ struct Notes *FindNoteOnSubTrack(
 
 struct Notes *FindNote(
                        struct Tracks *track,
-                       Place *placement
+                       const Place *placement
                        )
 {
   struct Notes *note = track->notes;
@@ -731,7 +731,7 @@ struct Notes *FindNote(
 
 struct Notes *FindNextNote(
                        struct Tracks *track,
-                       Place *placement
+                       const Place *placement
                        )
 {
   struct Notes *note = track->notes;
@@ -753,7 +753,7 @@ static bool is_at_last_line_of_note(const struct WBlocks *wblock, const struct N
   if (realline>=wblock->num_reallines-1) // Shouldn't happen, but just for safety.
     return false;
   
-  struct LocalZooms *realline_plus1 = wblock->reallines[realline+1];
+  const struct LocalZooms *realline_plus1 = wblock->reallines[realline+1];
   if (realline_plus1->l.p.counter==0 && last_note_line == realline+1)
     return true;
 
@@ -764,7 +764,7 @@ struct Notes *FindNoteCurrPos(struct Tracker_Windows *window){
   struct WBlocks    *wblock   = window->wblock;
   struct WTracks    *wtrack   = wblock->wtrack;
   struct Tracks     *track    = wtrack->track;
-  struct LocalZooms *realline = wblock->reallines[wblock->curr_realline];
+  const struct LocalZooms *realline = wblock->reallines[wblock->curr_realline];
 
   return FindNote(track, &realline->l.p);
 }
@@ -1063,7 +1063,7 @@ static float request_notenum(struct Tracker_Windows *window, const char *title, 
   return notenum;
 }
 
-static void r_add_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *p){
+static void r_add_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, const Place *p){
   float notenum = request_notenum(window, "Add pitch", -1);
   if(notenum > 0.0f)
     AddPitch(window, wblock, wtrack, note, p, notenum);
@@ -1075,7 +1075,7 @@ static void r_add_last_pitch(struct Tracker_Windows *window, struct Notes *note)
     note->pitch_end = notenum;
 }
 
-static void r_add_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, Place *p){
+static void r_add_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const Place *p){
   float notenum = request_notenum(window, "Add note", -1);
   
   if(notenum > 0.0f)
@@ -1113,8 +1113,8 @@ void EditNoteCurrPos(struct Tracker_Windows *window){
 
   if (trs.size()==0) {
 
-    struct LocalZooms *realline = wblock->reallines[curr_realline];
-    Place             *p        = &realline->l.p;
+    const struct LocalZooms *realline = wblock->reallines[curr_realline];
+    const Place             *p        = &realline->l.p;
     struct Notes      *note     = FindNote(wtrack->track, p);
       
     if (note != NULL) {
@@ -1148,7 +1148,7 @@ void EditNoteCurrPos(struct Tracker_Windows *window){
  /* Not General RETURN anymore */
 /******************************/
 
-void CutNoteAt(struct Blocks *block, struct Tracks *track,struct Notes *note, Place *place){
+void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Notes *note, const Place *place){
 
   R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
           
@@ -1172,7 +1172,7 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	struct WBlocks *wblock;
 	struct WTracks *wtrack;
 	int reallinerealline;
-	struct LocalZooms *realline;
+	const struct LocalZooms *realline;
 	struct Notes *note;
 	int subtrack;
 

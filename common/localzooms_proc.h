@@ -31,15 +31,15 @@ extern void NewLocalZoom(
 extern void NewLocalZooms(struct Tracker_Windows *window,struct WBlocks *wblock);
 // extern void NewLocalZooms(struct LocalZooms **tolocalzoom,int num_lines);
 
-extern struct LocalZooms *GetNextRealLocalZoom(
-	struct WBlocks *wblock,
-	struct LocalZooms *localzoom
-);
+extern const struct LocalZooms *GetNextRealLocalZoom(
+                                                     const struct WBlocks *wblock,
+                                                     const struct LocalZooms *localzoom
+                                                     );
 
 extern int IsOnRealLine(
-	struct WBlocks *wblock,
-	struct LocalZooms *localzoom,
-	Place *placement
+	const struct WBlocks *wblock,
+	const struct LocalZooms *localzoom,
+	const Place *placement
 );
 
 

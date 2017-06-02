@@ -47,7 +47,7 @@ int BPMTEXT_subsubtrack(struct Tracker_Windows *window){
   return curr_track_sub;
 }
 
-bool BPMTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, int realline, Place *place, int key){
+bool BPMTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, int realline, const Place *place, int key){
   int subsubtrack = BPMTEXT_subsubtrack(window);
 
   if (subsubtrack==-1)

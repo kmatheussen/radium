@@ -66,7 +66,7 @@ static void PasteRange_velocities(
 static bool PasteRange_FXs(
                            struct Blocks *block,
                            NInt starttrack,
-                           Place *startplace
+                           const Place *startplace
 ){
 
   SCHEME_eval(
@@ -150,7 +150,7 @@ void PasteRange_stops(
 	struct Blocks *block,
 	struct Tracks *track,
 	struct Stops *fromstop,
-	Place *place
+	const Place *place
 ){
 
 	if(fromstop==NULL) return;
@@ -172,7 +172,7 @@ void PasteRange_stops(
 void PasteRange(
 	struct Blocks *block,
 	NInt tracknum,
-	Place *place
+	const Place *place
 ){
 	NInt lokke;
 	Place p2;
@@ -219,7 +219,7 @@ void PasteRange_CurrPos(
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
 	NInt curr_track=window->curr_track;
-	struct LocalZooms **realline=wblock->reallines;
+	const struct LocalZooms **realline=wblock->reallines;
 	int curr_realline=wblock->curr_realline;
 
 	if(curr_track<0 || range==NULL) return;

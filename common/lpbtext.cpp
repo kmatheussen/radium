@@ -45,7 +45,7 @@ int LPBTEXT_subsubtrack(struct Tracker_Windows *window){
   return curr_track_sub;
 }
 
-bool LPBTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, int realline, Place *place, int key){
+bool LPBTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, int realline, const Place *place, int key){
   int subsubtrack = LPBTEXT_subsubtrack(window);
 
   if (subsubtrack==-1)

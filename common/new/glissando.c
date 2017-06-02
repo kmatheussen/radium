@@ -79,7 +79,7 @@ void Glissando_CurrPos(struct Tracker_Windows *window){
 	struct WTracks *wtrack=wblock->wtrack;
 	struct Notes *note=wtrack->track->notes;
 	struct Notes *nextnote;
-	Place *p=&wblock->reallines[wblock->curr_realline]->l.p;
+	const Place *p=&wblock->reallines[wblock->curr_realline]->l.p;
 
         while(note!=NULL){
           nextnote=NextNote(note);
