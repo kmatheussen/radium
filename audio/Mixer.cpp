@@ -1057,6 +1057,8 @@ struct Mixer{
       double 	beats_per_minute
     */
 
+    bool isplaying = is_playing();
+          
     pos->valid = JackPositionBBT;
 
     const struct SeqTrack *seqtrack;
@@ -1066,25 +1068,38 @@ struct Mixer{
     else
       seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[0];
     
-    const int ticks_per_beat = 1920;
-      
-    const struct Beats *beat = seqtrack->beat_iterator.next_beat;
+    const int ticks_per_beat = 1920*16;
 
-    if (beat==NULL) {
+    if (!isplaying) {
+
       pos->bar = 1;
       pos->beat = 1;
+
+      pos->bar_start_tick = 0;
+      pos->tick = 0;
+
     } else {
-      pos->bar = beat->bar_num;
-      pos->beat = beat->beat_num;
+
+      const struct Beats *beat = seqtrack->beat_iterator.next_beat;
+      
+      if (beat==NULL) {
+        R_ASSERT_NON_RELEASE(false);
+        pos->bar = 1;
+        pos->beat = 1;
+      } else {
+        pos->bar = beat->bar_num;
+        pos->beat = beat->beat_num;
+      }
+    
+      pos->bar_start_tick = seqtrack->beat_iterator.beat_position_of_last_bar_start * ticks_per_beat;
+
+      double beatpos = RT_LPB_get_beat_position(seqtrack);
+      double beats_since_beat_start = beatpos - floor(beatpos);
+    
+      pos->tick           =  ticks_per_beat * beats_since_beat_start;
+      
     }
-    
-    pos->bar_start_tick = seqtrack->beat_iterator.beat_position_of_last_bar_start * ticks_per_beat;
-
-    double beatpos = RT_LPB_get_beat_position(seqtrack);
-    double beats_since_beat_start = beatpos - floor(beatpos);
-    
-    pos->tick           =  ticks_per_beat * beats_since_beat_start;
-
+      
     //printf("bar_tick: %f. beat_tick: %f\n", (float)pos->bar_start_tick / (float)ticks_per_beat, (float)pos->tick/(float)ticks_per_beat);
       
     Ratio signature = RT_Signature_get_current_Signature(seqtrack);

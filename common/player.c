@@ -186,7 +186,7 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
 
           ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
           
-          if(pc->playtype==PLAYSONG && useJackTransport())
+          if(pc->playtype==PLAYSONG && useJackTransport() && !SEQUENCER_is_looping())
             MIXER_TRANSPORT_stop(); // end of song
           
         }
