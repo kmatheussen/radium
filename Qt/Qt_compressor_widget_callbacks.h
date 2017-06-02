@@ -95,7 +95,7 @@ static float read_float(FILE *file){
   return OS_get_double_from_string_here(temp);
 }
 
-
+namespace{
 class Compressor_widget : public QWidget, public Ui::Compressor_widget{
   Q_OBJECT
 
@@ -297,6 +297,7 @@ void on_enable_checkbox_toggled(bool val){
     fclose(file);
   }
 };
+}
 
   //#ifdef COMPILING_RADIUM
   //} // radium_comp namespace
