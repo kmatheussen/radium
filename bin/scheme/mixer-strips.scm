@@ -304,6 +304,8 @@
                       (lambda (enabled)
                         (<ra> :set-wide-instrument-strip instrument-id enabled)
                         (remake-mixer-strips instrument-id)))
+                "Show Info" (lambda ()
+                              (<ra> :show-instrument-info instrument-id parentgui))
                 "Show GUI" :enabled (<ra> :has-native-instrument-gui instrument-id)
                 (lambda ()
                   (<ra> :show-instrument-gui instrument-id #f))
