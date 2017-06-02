@@ -32,10 +32,9 @@ struct SharedVariables{
   
   const struct STimes *times; // Also stored in g_shread_variables_gc_storage.
 
-  Place *realline_places;
+  const struct LocalZooms **reallines; // We store it in g_shared_variables_gc_storage, so it can not be garbage collected while it is here.
   
   SharedVariables()
-    : realline_places(NULL)
   {}
 
   ~SharedVariables();
@@ -49,7 +48,6 @@ static vector_t g_shared_variables_gc_storage = {}; // Here we store stuff used 
 
 // Called from T2 or main thread
 SharedVariables::~SharedVariables(){
-  V_free(realline_places);
   {
     radium::ScopedMutex locker(vector_mutex);
 
@@ -62,6 +60,8 @@ SharedVariables::~SharedVariables(){
       //VECTOR_remove(&g_shared_variables_gc_storage, this->times_with_global_swings);
       VECTOR_remove(&g_shared_variables_gc_storage, this->block);
       VECTOR_remove(&g_shared_variables_gc_storage, this->curr_playing_block);
+
+      VECTOR_remove(&g_shared_variables_gc_storage, this->reallines);
       
     }if(!is_main_thread)Threadsafe_GC_enable();
   }
@@ -76,10 +76,12 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   sv->root          = root;
   sv->top_realline  = wblock->top_realline;
-  sv->num_reallines = wblock->num_reallines;
   sv->curr_realline = wblock->curr_realline;
   sv->fontheight    = window->fontheight;
-  
+
+  sv->num_reallines = wblock->num_reallines;
+  sv->reallines     = wblock->reallines;  
+
   sv->reltempo       = ATOMIC_DOUBLE_GET(block->reltempo);
   sv->block_duration = getBlockSTimeLength(block);
 
@@ -115,13 +117,9 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
     //VECTOR_push_back(&g_shared_variables_gc_storage, sv->times_with_global_swings);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->block);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->curr_playing_block);
+    VECTOR_push_back(&g_shared_variables_gc_storage, sv->reallines);
   }
 
-  // TODO: Just tcopy wblock->reallines.
-  sv->realline_places = (Place*)V_malloc(sv->num_reallines * sizeof(Place));
-  for(int i=0;i<sv->num_reallines;i++){
-    sv->realline_places[i] = wblock->reallines[i]->l.p;
-  }
 }
 
 #endif
