@@ -151,7 +151,7 @@ double RT_LPB_get_current_BPM(const struct SeqTrack *seqtrack){
 
 
 static void print_lpb_iterator_status(const struct Blocks *block, LPB_Iterator *iterator){
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
   printf("\n\nplace: %f -> %f (%d)\nlpb_value: %d\n",iterator->place1_f,iterator->place2_f,block==NULL?-1:(int)getBlockSTimeLength(block),iterator->lpb_value);
   printf("num_beats_so_far: %f", iterator->num_beats_played_so_far);
   printf("num_beats_between: %f\n\n",iterator->num_beats_between_place1_and_place2);

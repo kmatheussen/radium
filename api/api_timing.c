@@ -94,8 +94,12 @@ int addSignature(int numerator, int denominator,
 
   ADD_UNDO(Signatures_CurrPos(window));
         
-  struct Signatures *signature = SetSignature(wblock->block,&place,make_ratio(numerator, denominator));
+  struct Signatures *signature;
 
+  PC_Pause();{
+    signature = SetSignature(wblock->block,&place,make_ratio(numerator, denominator));
+  }PC_StopPause(window);
+  
   window->must_redraw=true;
 
   return ListFindElementPos3(&wblock->block->signatures->l,&signature->l);

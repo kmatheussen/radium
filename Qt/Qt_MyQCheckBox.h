@@ -259,6 +259,8 @@ struct MyQCheckBox : public QCheckBox{
 
 
   void paintEvent ( QPaintEvent * ev ) override {
+    TRACK_PAINT();
+    
     QPainter p(this);
 
     if(text().startsWith("V ")){

@@ -118,7 +118,7 @@ typedef struct{
 
         DEFINE_ATOMIC(Player_State, player_state);
 
-        double absabstime; // time in frames when taking song tempo automation into consideration. This is the time sent to the plugins.
+        int64_t absabstime; // time in frames when taking song tempo automation into consideration. This is the time sent to the plugins.
         
         /*
 	DEFINE_ATOMIC (bool, isplaying);
@@ -129,7 +129,7 @@ typedef struct{
         bool is_treating_editor_events; // Used by "SCHEDULER_add_event" to determine whether to run events (which belongs to the current block) NOW, or schedule it.
         //DEFINE_ATOMIC(bool, playertask_has_been_called); // if true, we can be sure that the timing values are valid.
         
-	int playtype;
+	int playtype; // Written to by the main thread. Can be read from the main thread or a player thread.
 
         // These two are used when looping a range.
         bool is_playing_range;

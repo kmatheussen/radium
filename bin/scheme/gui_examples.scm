@@ -251,6 +251,7 @@
 (define ui (<gui> :ui "/home/kjetil/radium/Qt/qt4_soundfilesaver_widget.ui"))
 (define ui (<gui> :ui "/home/kjetil/radium/Qt/qt4_bottom_bar_widget.ui"))
 (define ui (<gui> :ui "/home/kjetil/radium/Qt/test.ui"))
+(define ui (<gui> :ui "/home/kjetil/radium/bin/test.ui"))
 (<gui> :show ui)
 (<gui> :close ui)
 
@@ -312,11 +313,38 @@
 (<gui> :draw-line widget #xffff0060 59 60 150 190 2.0)
 (<gui> :draw-line widget #x00ff0060 9 60 150 190 2.0)
 
-(<gui> :draw-line widget  #x80ff0000 30 60 150 190 40.0)
+(<gui> :draw-line widget  "#80ff0000" 30 60 150 190 40.0)
 (<gui> :filled-box widget "#800000ff" 20 20 180 190)
 
 (<gui> :draw-text widget "#80000050" "hello" 50 50 100 120)
+(<gui> :draw-vertical-text widget "white" "hello" 50 50 100 120)
 
+(let ()
+  (define widget (<gui> :widget 600 600))
+  (<gui> :show widget)
+  (define x 0)
+  (define y 0)
+  (<gui> :add-paint-callback widget
+         (lambda (width height)
+           (<gui> :filled-box widget "white" 0 0 width height)
+           (define x1 150)
+           (define x2 450)
+           (define y1 150)
+           (define y2 450)
+           (<gui> :draw-box widget "black" x y (+ x 200) (+ y 200) 2)
+           (<gui> :draw-text widget "red" "hello" x y (+ x 200) (+ y 200))
+           (<gui> :draw-text widget "red" "hello" x y (+ x 200) (+ y 200) #t #f #f 200)
+           ))
+
+  (<gui> :add-mouse-callback widget
+         (lambda (button state x_ y_)
+           (set! x x_)
+           (set! y y_)
+           (c-display "UPDATING A")
+           (<gui> :update widget)
+           (c-display "FINISHED UPDATING A")
+           #t)))
+  
 (define hslider (<gui> :horizontal-int-slider "helloslider: " -5 10 100 (lambda (asdf) (c-display "moved" asdf)) ))
 
 (<gui> :add widget hslider 50 50 290 100)
@@ -382,11 +410,19 @@
 (<gui> :show requester)
 
 
-(define tabs (<gui> :tabs))
+(define ui (<gui> :ui "/home/kjetil/radium/bin/test.ui"))
+(<gui> :show ui)
 
-(<gui> :show tabs)
-(<gui> :add-tab tabs (<gui> :button "hello2") "tab2")
-(<gui> :add-tab 5 (<gui> :button "hello2") "tab2")
+(<gui> :add-mouse-callback (<gui> :get-tab-bar (<gui> :child ui "tabWidget"))
+       (lambda (button state x y)
+         (c-display "tab bar callback" button state x y)
+         #f))
+
+
+
+(define (add-notem-tab name gui)
+  ...)
+
 
 
 

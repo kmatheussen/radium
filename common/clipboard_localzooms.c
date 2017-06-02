@@ -29,8 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 void CB_CopyLocalZoomsRec(
-	struct LocalZooms **tolocalzoom,
-	struct LocalZooms *localzoom
+                          struct LocalZooms **tolocalzoom,
+                          const struct LocalZooms *localzoom
 ){
 	struct LocalZooms *new;
 	if(localzoom==NULL) return;
@@ -51,7 +51,7 @@ void CB_CopyLocalZoomsRec(
 }
 
 struct LocalZooms *CB_CopyLocalZooms(
-	struct WBlocks *wblock
+                                     const struct WBlocks *wblock
 ){
 	struct LocalZooms *tolocalzoom=NULL;
 	struct LocalZooms *localzoom=wblock->localzooms;
@@ -86,9 +86,9 @@ struct LocalZooms *CB_CopyLocalZooms(
 ********************************************************/
 
 void CB_UnpackLocalZooms(
-	struct LocalZooms **tolocalzoom,
-	struct LocalZooms *localzoom,
-	int num_lines
+                         struct LocalZooms **tolocalzoom,
+                         const struct LocalZooms *localzoom,
+                         int num_lines
 ){
 	struct LocalZooms *new;
 	struct LocalZooms *uplevel;

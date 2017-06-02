@@ -24,7 +24,11 @@
 #include "SoundPluginRegistry_proc.h"
 #include "audio_instrument_proc.h"
 
+#include "../api/api_gui_proc.h"
+
+
 #include "Presets_proc.h"
+
 
 
 static hash_t *g_preset_clipboard = NULL;

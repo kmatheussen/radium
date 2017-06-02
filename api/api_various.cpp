@@ -2251,6 +2251,7 @@ void API_call_very_often(void){
     }
 
     // Should not do this. Although it's not supposed to happen, We MIGHT have been called from scheme here if inside a custom Qt exec() call.
+    // (In addition, I don't think it's necessary to call this function to have the correct scheme history printed anyway)
     //    throwExceptionIfError();
   }
 }

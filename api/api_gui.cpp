@@ -43,12 +43,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QUiLoader>
 #include <QToolTip>
 #include <QHeaderView>
-#include <QStack>
 #include <QDesktopWidget>
 #include <QDir>
 #include <QFileDialog>
 #include <QTabWidget>
 #include <QTextDocumentFragment>
+#include <QSplitter>
 
 #include <QtWebKitWidgets/QWebView>
 #include <QtWebKitWidgets/QWebFrame>
@@ -65,6 +65,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/lzqlineedit.h"
 
 #include "../common/visual_proc.h"
+#include "../common/seqtrack_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
 
 #include "../common/OS_system_proc.h"
@@ -76,7 +77,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_common_proc.h"
 
 #include "radium_proc.h"
-#include "api_instruments_proc.h"
 #include "api_gui_proc.h"
 
 
@@ -138,14 +138,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   void resizeEvent( QResizeEvent *event) override {                     \
     if (_image!=NULL)                                                   \
       setNewImage(event->size().width(), event->size().height());       \
-    if (_resize_callback==NULL)                                         \
-      classname::resizeEvent(event);                                    \
-    else                                                                \
+    if (_resize_callback!=NULL)                                         \
       Gui::resizeEvent(event);                                          \
+    classname::resizeEvent(event);                                      \
   }                                                                     
 
 #define PAINT_OVERRIDER(classname)                                      \
   void paintEvent(QPaintEvent *ev) override {                           \
+    TRACK_PAINT();                                      \
     if(_image!=NULL){                                                   \
       QPainter p(this);                                                 \
       p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \
@@ -217,7 +217,7 @@ static QColor getQColor(int64_t color){
 static QColor getQColor(const_char* colorname){
   QColor color = get_config_qcolor(colorname);
   if (!color.isValid())
-    handleError("Color \"%s\" is not valid");
+    handleError("Color \"%s\" is not valid", colorname);
   //return QColor(color);
   return color;
 }
@@ -228,7 +228,13 @@ static QPen getPen(const_char* color){
   return pen;
 }
 
-static bool g_currently_painting = false;
+static void setDefaultSpacing(QLayout *layout){
+  layout->setSpacing(0);
+  layout->setContentsMargins(0,0,0,0);
+}
+  
+
+//static bool g_currently_painting = false;
 
 
 namespace radium_gui{
@@ -323,6 +329,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void fileSelected(const QString &file){
       S7CALL(void_charpointer,_func, file.toUtf8().constData());
     }
+
+    void currentChanged(int index){
+      S7CALL(void_int,_func, index);
+    }
   };
 
   
@@ -360,14 +370,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool _is_modal = false; // We need to remember whether modality should be on or not, since modality is a parameter for set_window_parent.
     bool _have_set_size = false;
     bool _have_been_opened_before = false;
+
+    QString _class_name;
     
     Gui(QWidget *widget, bool created_from_existing_widget = false)
       : _widget_as_key(widget)
       , _widget(widget)
       , _created_from_existing_widget(created_from_existing_widget)
-    {
-      R_ASSERT(widget != NULL);
-      
+      , _class_name(widget->metaObject()->className())
+    {      
       g_gui_from_widgets[_widget] = this;
       
       _gui_num = g_highest_guinum++;
@@ -392,7 +403,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       R_ASSERT(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
 
-      //printf("Deleting Gui %p (%d)\n",this,(int)get_gui_num());
+      //printf("Deleting Gui %p (%d) (classname: %s)\n",this,(int)get_gui_num(), _class_name.toUtf8().constData());
 
       for(func_t *func : _deleted_callbacks){
         S7CALL(void_bool,func, g_radium_runs_custom_exec);
@@ -461,7 +472,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     func_t *_mouse_callback = NULL;
     int _currentButton = 0;
-
+    bool _mouse_event_failed = false;
+    
     int getMouseButtonEventID(QMouseEvent *qmouseevent) const {
       if(qmouseevent->button()==Qt::LeftButton)
         return TR_LEFTMOUSEDOWN;
@@ -476,22 +488,42 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool mousePressEvent(QMouseEvent *event){
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
+#ifndef RELEASE // Don't want endless debug messages.
+      if (_mouse_event_failed){
+        printf("mouse_event failed last time. Won't try again\n");
+        return false;
+      }
+#endif
+      
       event->accept();
 
       _currentButton = getMouseButtonEventID(event);
       const QPoint &point = event->pos();
 
-      return S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
+      int ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
+      if (g_scheme_failed==true)
+        _mouse_event_failed = true;
+      return ret;
+      
       //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
 
     bool mouseReleaseEvent(QMouseEvent *event) {
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
+#ifndef RELEASE
+      if (_mouse_event_failed){
+        printf("mouse_event failed last time. Won't try again\n");
+        return false;
+      }
+#endif
+      
       event->accept();
 
       const QPoint &point = event->pos();
       bool ret = S7CALL(bool_int_int_float_float, _mouse_callback, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
+      if (g_scheme_failed==true)
+        _mouse_event_failed = true;
       
       _currentButton = 0;
       //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
@@ -501,11 +533,22 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool mouseMoveEvent(QMouseEvent *event){
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
+#ifndef RELEASE
+      if (_mouse_event_failed){
+        printf("mouse_event failed last time. Won't try again\n");
+        return false;
+      }
+#endif
+      
       event->accept();
 
       const QPoint &point = event->pos();
-      return S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
-
+      
+      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
+      if (g_scheme_failed==true)
+        _mouse_event_failed = true;
+      return ret;
+      
       //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
     }
 
@@ -624,19 +667,24 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     /************ RESIZE *******************/
     
     func_t *_resize_callback = NULL;
+    bool _resize_callback_failed = false;
     
     void resizeEvent(QResizeEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
 
-      if(g_radium_runs_custom_exec){
-#if !defined(RELEASE)
-        //R_ASSERT(false);
-#endif
+      if(g_radium_runs_custom_exec)
+        return;
+
+      if (_resize_callback_failed){
+        printf("resize_event failed last time. Won't try again to avoid a debug output bonanza (%s).\n", _class_name.toUtf8().constData());
         return;
       }
 
-      if(gui_isOpen(_gui_num) && _widget->isVisible()) //  && _widget->width()>0 && _widget->height()>0)
+      if(gui_isOpen(_gui_num) && _widget->isVisible()){ //  && _widget->width()>0 && _widget->height()>0)
         S7CALL(void_int_int,_resize_callback, event->size().width(), event->size().height());
+        if (g_scheme_failed==true)
+          _resize_callback_failed = true;
+      }
     }
 
     void addResizeCallback(func_t* func){
@@ -658,18 +706,20 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     QImage *_image = NULL;
     QPainter *_image_painter = NULL;
     QPainter *_current_painter = NULL;
-
+    bool _paint_callback_failed = false;
+    
     void paintEvent(QPaintEvent *event) {
       R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL);
 
       if(g_radium_runs_custom_exec)
         return;
 
+      if (_paint_callback_failed){
+        printf("paint_event failed last time. Won't try again to avoid a debug output bonanza (%s).\n", _class_name.toUtf8().constData());
+        return;
+      }
+        
       event->accept();
-
-      R_ASSERT_RETURN_IF_FALSE(g_currently_painting==false);
-
-      g_currently_painting = true;
 
       QPainter p(_widget);
       p.setRenderHints(QPainter::Antialiasing,true);
@@ -677,10 +727,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       _current_painter = &p;
 
       S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
-
+      if (g_scheme_failed==true)
+        _paint_callback_failed = true;
+      
       _current_painter = NULL;
-
-      g_currently_painting = false;
     }
 
     void addPaintCallback(func_t* func){
@@ -813,7 +863,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       myupdate(x1, y1, x2, y2);
     }
 
-    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, bool draw_vertical) {
+    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate) {
       QPainter *painter = get_painter();
 
       QRectF rect(x1, y1, x2-x1, y2-y1);
@@ -832,15 +882,26 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       else
         flags |= Qt::AlignVCenter;
 
-
-      if (draw_vertical){
-
+      if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
         painter->setFont(GFX_getFittingFont(text, flags, y2-y1, x2-x1));
+      else
+        painter->setFont(GFX_getFittingFont(text, flags, x2-x1, y2-y1));
+      
+      if (rotate != 0) {
 
         painter->save();
-        painter->rotate(90);
-        painter->translate(y1,-x1-rect.width());
 
+        painter->rotate(rotate);
+
+        // Not good enough. Need some trigonometry here to get it correct for all rotate values, but we have only used 90 and 270 degrees in the code so far.
+        if (rotate==270){
+          painter->translate(-y1-rect.height(), x1);
+        } else if (rotate==90){
+          painter->translate(y1, -x1-rect.width());
+        }else{
+          handleError("Only rotate values of 90 and 270 are supported. (It's probably not hard to fix this though.)");
+        }
+        
         QRect rect2(0,0,rect.height(),rect.width());
         painter->drawText(rect2, flags, text);
 
@@ -848,12 +909,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       } else {
 
-        painter->setFont(GFX_getFittingFont(text, flags, x2-x1, y2-y1));
-
         painter->drawText(rect, flags, text);
       
       }
-
 
       myupdate(x1, y1, x2, y2);
     }
@@ -1063,6 +1121,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       Callback *callback = new Callback(func, _widget);
 
       {
+        QTabWidget *tabs = dynamic_cast<QTabWidget*>(_widget.data());
+        if (tabs != NULL){
+          tabs->connect(tabs, SIGNAL(currentChanged(int)), callback, SLOT(currentChanged(int)));
+          goto gotit;
+        }
+      }
+      
+      {
         QFileDialog *file_dialog = dynamic_cast<QFileDialog*>(_widget.data());
         if (file_dialog!=NULL){
           file_dialog->connect(file_dialog, SIGNAL(fileSelected(const QString &)), callback, SLOT(fileSelected(const QString &)));
@@ -1185,6 +1251,19 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(QWidget);
   };
 
+  /*
+  struct Frame : QFrame, Gui{
+    Q_OBJECT;
+
+  public:
+    Frame()
+      : Gui(this)
+    {
+    }
+    
+    OVERRIDERS(QFrame);
+  };
+  */
   
   struct VerticalAudioMeter : QWidget, Gui{
     Q_OBJECT;
@@ -1392,6 +1471,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     
     void paintEvent(QPaintEvent *ev) override {
+      TRACK_PAINT();
+      
       QPainter p(this);
 
       p.setRenderHints(QPainter::Antialiasing,true);
@@ -1575,12 +1656,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     OVERRIDERS(QRadioButton);
   };
-  
+
   struct VerticalLayout : QWidget, Gui{
     VerticalLayout()
       : Gui(this)
     {
-      QVBoxLayout *mainLayout = new QVBoxLayout;      
+      QVBoxLayout *mainLayout = new QVBoxLayout;
+      setDefaultSpacing(mainLayout);
+
       setLayout(mainLayout);
     }
 
@@ -1592,7 +1675,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       QHBoxLayout *mainLayout = new QHBoxLayout;      
-
+      setDefaultSpacing(mainLayout);
+      
       setLayout(mainLayout);
     }
 
@@ -1605,8 +1689,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     MyGridLayout(int num_columns)
       : _num_columns(num_columns)
-    {}
-
+    {
+      setDefaultSpacing(this);
+    }
+    
     void addItem(QLayoutItem *item) override {
       QGridLayout::addItem(item, _y, _x);
       _x++;
@@ -1622,6 +1708,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       setLayout(new MyGridLayout(num_columns));
+      setDefaultSpacing(layout());
     }
     
     OVERRIDERS(QWidget);
@@ -1632,6 +1719,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       setLayout(new FlowLayout());
+      setDefaultSpacing(layout());
     }
     
     OVERRIDERS(QWidget);
@@ -1643,6 +1731,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       , Gui(this)        
     {
       QVBoxLayout *mainLayout = new QVBoxLayout;
+      setDefaultSpacing(mainLayout);
       setLayout(mainLayout);
     }
 
@@ -1711,7 +1800,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       //contents = new QWidget(this);
 
       mylayout = new QVBoxLayout(contents);
-      mylayout->setSpacing(1);
+      setDefaultSpacing(mylayout);
+      //mylayout->setSpacing(1);
       //mylayout->setContentsMargins(1,1,1,1);
 
       contents->setLayout(mylayout);
@@ -1743,7 +1833,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       QWidget *contents = new QWidget(this);
 
       mylayout = new QHBoxLayout(contents);
-      mylayout->setSpacing(1);
+      setDefaultSpacing(mylayout);
+      //mylayout->setSpacing(1);
       //mylayout->setContentsMargins(1,1,1,1);
 
       contents->setLayout(mylayout);
@@ -1856,13 +1947,16 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   };
 
   struct Text : QLabel, Gui{
-    Text(QString text, QString color)
+    Text(QString text, const_char* colorname)
       : Gui(this)
     {
-      if (color=="")
+      if (!strcmp(colorname,""))
         setText(text);
-      else
-        setText("<span style=\" color:" + color + ";\">" + text + "</span>");
+      else {
+        QColor color = getQColor(colorname);
+        if(color.isValid())
+          setText("<span style=\" color:" + color.name() + ";\">" + text + "</span>");
+      }
     }
 
     OVERRIDERS(QLabel);
@@ -2062,20 +2156,111 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(QFileDialog);
   };
 
+  struct TabBar : QTabBar, Gui{
+    Q_OBJECT;
+
+  public:
+    
+    TabBar(QTabBar::Shape shape, QWidget *parent = NULL)
+      : QTabBar(parent)
+      , Gui(this)
+    {
+      setShape(shape);
+      setUsesScrollButtons(false); // The "my-tabs" function scales the text.
+      setExpanding(true); // Doesn't work. In "my-tabs", the resize callback sets size manually.
+    }
+
+    OVERRIDERS(QTabBar);
+  };
+
 
   struct Tabs : QTabWidget, Gui{
+    Q_OBJECT;
+
+  public:
+    
+    Tabs(int tab_pos, QWidget *parent = NULL)
+      : QTabWidget(parent)
+      , Gui(this)
+    {
+      setTabPosition((QTabWidget::TabPosition)tab_pos);
+      setDocumentMode(false); // Remove border
+      
+      setTabBar(new TabBar((QTabBar::Shape)tab_pos, this));
+      
+      tabBar()->setDocumentMode(false); // Remove border
+
+            
+      QColor background = get_qcolor(HIGH_BACKGROUND_COLOR_NUM);
+
+      QPalette pal = palette();
+      pal.setColor(QPalette::Background, background);
+      pal.setColor(QPalette::Base, background);
+      setAutoFillBackground(true);
+      setPalette(pal);
+    }
+    
+    /*
+    virtual QSize sizeHint() const override {
+      if (currentWidget()==NULL)
+        return QSize(10,10);
+      
+      return currentWidget()->sizeHint();
+    }
+    */
+    OVERRIDERS(QTabWidget);
+  };
+
+
+  struct Splitter : QSplitter, Gui{
     Q_OBJECT;
     
   public:
     
-    Tabs(void)
-      : Gui(this)
+    Splitter(bool horizontal, bool childrenCollappsible)
+      : QSplitter(horizontal ? Qt::Horizontal : Qt::Vertical)
+      , Gui(this)
     {
+      setChildrenCollapsible(childrenCollappsible);
     }
-    
-    OVERRIDERS(QTabWidget);
+    /*
+    virtual QSize sizeHint() const override {
+      if (currentWidget()==NULL)
+        return QSize(10,10);
+      
+      return currentWidget()->sizeHint();
+    }
+    */
+    OVERRIDERS(QSplitter);
   };
 
+  // QRubberBand doesn't work. I've also searched the internet, and no one seems to have made it work.
+  // Use gui-rubber-band from gui.scm instead (workaround)
+  /*
+  struct RubberBand : QWidget, Gui{
+    Q_OBJECT;
+
+  public:
+
+    RubberBand(float opacity)
+    //: QWidgetRubberBand(QRubberBand::Rectangle)
+      , Gui(this)
+    {
+      setWindowOpacity(opacity);
+      setWindowFlags(Qt::FramelessWindowHint);
+    }
+
+    //OVERRIDERS(QRubberBand);
+    void paintEvent(QPaintEvent *)
+    {
+      QColor backgroundColor = palette().background().color();
+      backgroundColor.setAlpha(216); // Use Alphachannel u want
+      QPainter painter(this);
+      painter.fillRect(rect(),backgroundColor);
+    }
+
+  };
+  */
 
   struct Table : QTableWidget, Gui{
     Q_OBJECT;
@@ -2127,6 +2312,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         ret = new MyFocusSnifferQSpinBox(parent);
       else if (className=="QDoubleSpinBox")
         ret = new MyFocusSnifferQDoubleSpinBox(parent);
+      else if (className=="QTabWidget")
+        ret = new Tabs(0, parent);
       else
         return QUiLoader::createWidget(className, parent, name);
 
@@ -2187,7 +2374,7 @@ static Gui *get_gui(int64_t guinum){
   
   if (gui->_widget==NULL) {
     R_ASSERT(gui->_created_from_existing_widget); // GUI's that are not created from an existing widget are (i.e. should be) automatically removed when the QWidget is deleted.
-    handleError("Gui #%d, created from an existing widget, has been closed and can not be used.", gui->get_gui_num());
+    handleError("Gui #%d (class %s), created from an existing widget, has been closed and can not be used.", gui->get_gui_num(), gui->_class_name.toUtf8().constData());
     delete gui;
     return NULL;
   }
@@ -2293,6 +2480,20 @@ int64_t API_get_gui_from_existing_widget(QWidget *widget){
   return API_get_gui_from_widget(widget);
 }
 
+int64_t gui_getMainXSplitter(void){
+  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  return API_get_gui_from_existing_widget(editor->xsplitter);
+}
+
+int64_t gui_getSequencerGui(void){
+  return API_get_gui_from_existing_widget(SEQUENCER_getWidget());
+}
+
+extern QWidget *g_parent_for_instrument_widget_ysplitter;
+
+int64_t gui_getInstrumentGui(void){
+  return API_get_gui_from_existing_widget(g_parent_for_instrument_widget_ysplitter);
+}
 
 /////// Callbacks
 //////////////////////////
@@ -2386,7 +2587,7 @@ void gui_updateRecursively(int64_t guinum){
   if (gui==NULL)
     return;
 
-  R_ASSERT_RETURN_IF_FALSE(g_currently_painting==false);
+  R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
 
   updateWidgetRecursively(gui->_widget);
 }
@@ -2398,7 +2599,7 @@ void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
   if (gui==NULL)
     return;
 
-  R_ASSERT_RETURN_IF_FALSE(g_currently_painting==false);
+  R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
 
   if (x1==-1)
     gui->_widget->update();
@@ -2415,6 +2616,12 @@ void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
 int64_t gui_widget(int width, int height){
   return (new Widget(width, height))->get_gui_num();
 }
+
+/*
+int64_t gui_frame(void){
+  return (new Frame())->get_gui_num();
+}
+*/
 
 int64_t gui_button(const_char *text){
   return (new PushButton(text))->get_gui_num();
@@ -2503,7 +2710,6 @@ int64_t gui_horizontalScroll(void){
 }
 
 int64_t gui_text(const_char* text, const_char* color){
-  //return -1;
   return (new Text(text, color))->get_gui_num();
 }
 
@@ -2542,8 +2748,38 @@ int64_t gui_fileRequester(const_char* header_text, const_char* dir, const_char* 
 
 /************* Tabs ***************************/
 
-int64_t gui_tabs(void){
-  return (new Tabs())->get_gui_num();
+int64_t gui_tabs(int tab_pos){
+  return (new Tabs(tab_pos))->get_gui_num();
+}
+
+int64_t gui_getTabBar(int64_t tabs_guinum){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return -1;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return -1;
+
+  TabBar *tab_bar = dynamic_cast<TabBar*>(tabs->tabBar());
+  if (tab_bar != NULL)
+    return tab_bar->get_gui_num();
+
+  printf("Warning. tabBar of %d is not a TabBar instance. Can not override paint and mouse methods, etc.\n", (int)tabs_guinum);
+         
+  return API_get_gui_from_widget(tabs->tabBar()); 
+}
+
+void gui_removeTab(int64_t tabs_guinum, int pos){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return;
+
+  tabs->removeTab(pos);
 }
 
 int gui_addTab(int64_t tabs_guinum, const_char* name, int64_t tab_guinum, int pos){ // if pos==-1, tab is append. (same as if pos==num_tabs)
@@ -2565,8 +2801,125 @@ int gui_addTab(int64_t tabs_guinum, const_char* name, int64_t tab_guinum, int po
   return num;
 }
 
+int gui_currentTab(int64_t tabs_guinum){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return -1;
 
-                 
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return -1;
+
+  return tabs->currentIndex();
+}
+
+void gui_setCurrentTab(int64_t tabs_guinum, int pos){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return;
+
+  return tabs->setCurrentIndex(pos);
+}
+
+int gui_getTabPos(int64_t tabs_guinum, int64_t tab_guinum){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return -1;
+
+  Gui *tab_gui = get_gui(tab_guinum);
+  if (tab_gui==NULL)
+    return -1;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return -1;
+
+  int ret = tabs->indexOf(tab_gui->_widget);
+  if (ret<0)
+    return ret-1;
+  else
+    return ret;
+}
+
+int gui_numTabs(int64_t tabs_guinum){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return -1;
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return -1;
+
+  return tabs->count();
+}
+
+const_char* gui_tabName(int64_t tabs_guinum, int pos){
+  Gui *tabs_gui = get_gui(tabs_guinum);
+  if (tabs_gui==NULL)
+    return "";
+
+  QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
+  if (tabs==NULL)
+    return "";
+
+  if (pos==-1)
+    pos = tabs->currentIndex();
+
+  if (pos < 0 || pos >= tabs->count()){
+    handleError("No tab %d in tabs #%d", pos, (int)tabs_guinum);
+    return "";
+  }
+  
+  return talloc_strdup(tabs->tabText(pos).toUtf8().constData());
+}
+
+
+
+
+
+/************* Splitter ***************************/
+
+int64_t gui_verticalSplitter(bool childrenCollappsible){
+  return (new Splitter(false, childrenCollappsible))->get_gui_num();
+}
+
+int64_t gui_horizontalSplitter(bool childrenCollappsible){
+  return (new Splitter(true, childrenCollappsible))->get_gui_num();
+}
+
+int64_t gui_getSplitterHandle(int64_t splitter_guinum, int pos){
+  Gui *gui = get_gui(splitter_guinum);
+  if (gui==NULL)
+    return -1;
+
+  QSplitter *splitter = gui->mycast<QSplitter>(__FUNCTION__);
+  if (splitter==NULL)
+    return -1;
+
+  if (pos < 0 || pos >= splitter->count()){
+    handleError("No splitter handle %d in splitter #%d", pos, (int)splitter_guinum);
+    return -1;
+  }
+
+  auto *handle = splitter->handle(pos);
+  if (handle==NULL){
+    handleError("Qt returned NULL when asking for splitter handle %d in splitter #%d. (that's very strange)", pos, (int)splitter_guinum);
+    return -1;
+  }
+  
+  return API_get_gui_from_widget(handle);
+}
+
+/*
+int64_t gui_rubberBand(float opacity){
+  return (new RubberBand(opacity))->get_gui_num();
+}
+*/
+
 /************** Table **********************/
 
 int64_t gui_table(dyn_t header_names){
@@ -2901,7 +3254,7 @@ const_char* gui_className(int64_t guinum){
   if (gui==NULL)
     return "(not found)";
 
-  return gui->_widget->metaObject()->className();
+  return talloc_strdup(gui->_class_name.toUtf8().constData()); //widget->metaObject()->className(); // ->metaObject()->className() is always supposed to work though.
 }
 
 void gui_setText(int64_t guinum, const_char *value){
@@ -2937,11 +3290,13 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
   if (child==NULL)
     return;
 
+  QSplitter *splitter = dynamic_cast<QSplitter*>(parent);
+  
   QLayout *layout = parent->getLayout();
 
-  if(layout==NULL || y1!=-1) {
+  if(splitter!=NULL || layout==NULL || y1!=-1) {
 
-    if (layout==NULL && (y1==-1 || x2==-1 || y2==-1)){
+    if (splitter==NULL && layout==NULL && (y1==-1 || x2==-1 || y2==-1)){
       handleError("Warning: Parent gui #%d does not have a layout", parentnum);
       x1_or_stretch = 0;
       y1 = 0;
@@ -2953,35 +3308,46 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
       x1 = 0;
     if (y1<0)
       y1 = 0;
-    
-    ScrollArea *scroll_area = dynamic_cast<ScrollArea*>(parent); // Think this one should be changed to parent->_widget.
-    if (scroll_area != NULL){
-      //printf("      Adding to scroll child\n");
-      child->_widget->setParent(scroll_area->contents);
-      child->_widget->move(x1,y1);
-      child->_widget->show();
 
-      int new_width = R_MAX(parent->_widget->width(), x2);
-      int new_height = R_MAX(parent->_widget->height(), y2);
+    if (splitter != NULL) {
+
+      splitter->addWidget(child->_widget);
       
-      //parent->_widget->resize(new_width, new_height);
-      scroll_area->contents->resize(new_width, new_height);
+      //int stretch = x1_or_stretch == -1 ? 0 : x1_or_stretch;
+      //splitter->setStretchFactor(splitter->count()-1, stretch);
+      splitter->setSizes({900000,1}); // Hack
+      
+    } else {
+    
+      ScrollArea *scroll_area = dynamic_cast<ScrollArea*>(parent); // Think this one should be changed to parent->_widget.
+      if (scroll_area != NULL){
+        //printf("      Adding to scroll child\n");
+        child->_widget->setParent(scroll_area->contents);
+        child->_widget->move(x1,y1);
+        child->_widget->show();
+        
+        int new_width = R_MAX(parent->_widget->width(), x2);
+        int new_height = R_MAX(parent->_widget->height(), y2);
+        
+        //parent->_widget->resize(new_width, new_height);
+        scroll_area->contents->resize(new_width, new_height);
+        
+      }else{
+        child->_widget->setParent(parent->_widget);
+        child->_widget->move(x1,y1);
+      }
 
-    }else{
-      child->_widget->setParent(parent->_widget);
-      child->_widget->move(x1,y1);
+      if (x2>x1 && y2 > y1)
+        child->_widget->resize(x2-x1, y2-y1);
+
+      
+      /*
+        int new_width = R_MAX(parent->_widget->width(), x2);
+        int new_height = R_MAX(parent->_widget->height(), y2);
+        
+        parent->_widget->resize(new_width, new_height);
+      */
     }
-
-    if (x2>x1 && y2 > y1)
-      child->_widget->resize(x2-x1, y2-y1);
-
-
-    /*
-    int new_width = R_MAX(parent->_widget->width(), x2);
-    int new_height = R_MAX(parent->_widget->height(), y2);
-
-    parent->_widget->resize(new_width, new_height);
-    */
 
   } else {
 
@@ -3044,6 +3410,11 @@ bool gui_isVisible(int64_t guinum){
 }
 
 void gui_show(int64_t guinum){
+  if (g_qt_is_painting){
+    handleError("Can not call gui_show from a paint callback");
+    return;
+  }
+  
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
@@ -3109,7 +3480,12 @@ void gui_close(int64_t guinum){
 }
 
 bool gui_isOpen(int64_t guinum){
-  return get_gui_maybeclosed(guinum)!=NULL;
+  Gui *gui = get_gui_maybeclosed(guinum);
+
+  if (gui==NULL || gui->_widget==NULL)
+    return false;
+  else
+    return true;
 }
 
 int64_t gui_getParentWindow(int64_t guinum){
@@ -3124,15 +3500,17 @@ int64_t gui_getParentWindow(int64_t guinum){
   return API_get_gui_from_widget(w);
 }
 
-bool gui_setParent(int64_t guinum, int64_t parentgui){
+bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return false;
 
-  bool is_window = gui->_widget->isWindow() || gui->_widget->parent()==NULL;
-  if(!is_window){
-    handleError("gui_setParent: Gui #%d is not a window. (className: %s)", guinum, gui_className(guinum));
-    return false;
+  if (mustBeWindow){
+    bool is_window = gui->_widget->isWindow() || gui->_widget->parent()==NULL;
+    if(!is_window){
+      handleError("gui_setParent: Gui #%d is not a window. (className: %s)", guinum, gui_className(guinum));
+      return false;
+    }
   }
   
   QWidget *parent = API_gui_get_parentwidget(parentgui);
@@ -3165,6 +3543,14 @@ bool gui_setParent(int64_t guinum, int64_t parentgui){
     
 
   return true;
+}
+
+bool gui_setAsWindow(int64_t guinum, int64_t parentgui){
+  return gui_setParent2(guinum, parentgui, false);
+}
+
+bool gui_setParent(int64_t guinum, int64_t parentgui){
+  return gui_setParent2(guinum, parentgui, true);
 }
 
 void gui_setModal(int64_t guinum, bool set_modal){
@@ -3263,7 +3649,46 @@ void gui_setSize(int64_t guinum, int width, int height){
     return;
 
   gui->_have_set_size = true;
-  gui->_widget->resize(width, height);
+
+  QSplitter *splitter = dynamic_cast<QSplitter*>(gui->_widget->parent());
+  if(splitter != NULL){
+    
+    int count = splitter->count();
+    int pos = 0;
+    
+    for(int i=0;i<count;i++)
+      if(splitter->widget(i)==gui->_widget.data()){
+        pos = i;
+        break;
+      }
+
+    QList<int> sizes = splitter->sizes();
+
+    int new_height = height;
+    int old_height = sizes[pos];
+    int diff_height = new_height - old_height;
+
+    /*
+    printf("\n\npos: %d, old: %d, new: %d, diff: %d. 0: %d -> %d, 1: %d -> %d\n",
+           pos,
+           old_height, new_height, diff_height,
+           sizes[0], sizes[0] - diff_height/(count-1),
+           sizes[1], new_height);
+    */
+    
+    for(int i=0;i<count;i++)
+      if (i==pos)
+        sizes[i] = new_height;
+      else
+        sizes[i] -= diff_height/(count-1);
+    
+    splitter->setSizes(sizes);
+
+    //printf("Actual: %d %d   (req: %d, %d, new_height: %d)\n\n", splitter->sizes()[0], splitter->sizes()[1], sizes[0], sizes[1], new_height);
+    
+  } else {
+    gui->_widget->resize(width, height);
+  }
 }
 
 bool gui_mousePointsMainlyAt(int64_t guinum){
@@ -3353,9 +3778,11 @@ void gui_setBackgroundColor(int64_t guinum, const_char* color){
   if (gui==NULL)
     return;
 
+  QColor c = getQColor(color);
+  
   QPalette pal = gui->_widget->palette();
-  pal.setColor(QPalette::Background, QColor(color));
-  pal.setColor(QPalette::Base, QColor(color));
+  pal.setColor(QPalette::Background, c);
+  pal.setColor(QPalette::Base, c);
   //gui->_widget->setAutoFillBackground(true);
   gui->_widget->setPalette(pal);
 }
@@ -3485,6 +3912,16 @@ void gui_setMaxHeight(int64_t guinum, int minheight){
 
   gui->_widget->setMaximumHeight(minheight);
 }
+
+void gui_minimizeAsMuchAsPossible(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->updateGeometry();
+  gui->_widget->adjustSize();
+}
+
 
 void gui_setEnabled(int64_t guinum, bool is_enabled){
   Gui *gui = get_gui(guinum);
@@ -3713,12 +4150,12 @@ void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float 
   gui->filledBox(color, x1, y1, x2, y2, round_x, round_y);
 }
 
-void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left) {
+void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate) {
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, false);
+  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, rotate);
 }
 
 void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left) {
@@ -3726,7 +4163,7 @@ void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, f
   if (gui==NULL)
     return;
 
-  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, true);
+  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, 90);
 }
 
 
@@ -3809,10 +4246,62 @@ QWidget *API_gui_get_parentwidget(int64_t parentnum){
   return parent;
 }
 
+/*
 bool API_gui_is_painting(void){
   return g_currently_painting;
 }
-  
+*/
+
+
+///////////////// main y splitter
+/////////////////////////////////
+
+QWidget *API_get_main_ysplitter(void){
+  int64_t gui = S7CALL2(int_void,"FROM-C-get-main-y-splitter");
+  return API_gui_get_widget(gui);
+}
+
+
+///////////////// Lower tabs
+//////////////////////////////
+
+QWidget *API_get_lowertabs(void){
+  int64_t gui = S7CALL2(int_void,"FROM-C-get-lowertab-gui");
+  return API_gui_get_widget(gui);
+}
+
+bool instrumentGuiIsInLowerTab(void){
+  return !positionInstrumentWidgetInMixer();
+}
+    
+void API_setLowertabIncludesInstrument(bool includeit){
+  S7CALL2(void_bool, "FROM-C-set-lowertab-includes-instrument", includeit);
+}
+
+void API_showInstrumentGui(void){
+  S7CALL2(void_void, "FROM-C-show-instrument-gui");
+}
+
+void API_hideInstrumentGui(void){
+  S7CALL2(void_void, "FROM-C-hide-instrument-gui");
+}
+
+bool API_instrumentGuiIsVisibleInLowerTab(void){
+  return S7CALL2(bool_void, "FROM-C-instrument-gui-is-visible");
+}
+
+
+void API_showSequencerGui(void){
+  S7CALL2(void_void, "FROM-C-show-sequencer-gui");
+}
+
+void API_hideSequencerGui(void){
+  S7CALL2(void_void, "FROM-C-hide-sequencer-gui");
+}
+
+bool GFX_SequencerIsVisible(void){
+  return S7CALL2(bool_void, "FROM-C-sequencer-gui-is-visible");
+}
 
 
 ///////////////// Mixer strips
@@ -3831,540 +4320,3 @@ int64_t gui_createSingleMixerStrip(int64_t instrument_id, int width, int height)
 #include "mapi_gui.cpp"
 
 
-///////////////// SoundPluginRegistry (belongs in api_instruments.c, but that file i not C++)
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-#include <QCryptographicHash>
-#include <QFileInfo>
-#include <QFile>
-#include <QDateTime>
-#include <QDir>
-
-#include "../audio/SoundPluginRegistry_proc.h"
-#include "../common/hashmap_proc.h"
-#include "../common/OS_disk_proc.h"
-#include "../common/OS_string_proc.h"
-
-
-static QString extend_path(const QString a, const QString b){
-  if (a=="")
-    return b;
-  else
-    return a + " / " + b;
-}
-
-static QString get_path(const QStack<QString> &dir){
-  QString ret;
-  for(QString s : dir)
-    ret = extend_path(ret, s);
-  return ret;
-}
-
-static hash_t *get_entry_from_type(const SoundPluginType *type, const QString path){
-  hash_t *hash = HASH_create(5);
-  HASH_put_string(hash, ":type", PluginMenuEntry::type_to_string(PluginMenuEntry::IS_NORMAL));
-  HASH_put_string(hash, ":path", path);
-  HASH_put_string(hash, ":container-name", type->container==NULL ? "" : type->container->name);
-  HASH_put_string(hash, ":type-name", type->type_name);
-  HASH_put_string(hash, ":name", type->name);
-  HASH_put_int(hash, ":num-inputs", type->num_inputs);
-  HASH_put_int(hash, ":num-outputs", type->num_outputs);
-  HASH_put_chars(hash, ":category", type->category==NULL ? "" : type->category);
-  HASH_put_chars(hash, ":creator", type->creator==NULL ? "" : type->creator);
-  HASH_put_int(hash, ":num-uses", type->num_uses);
-  return hash;
-}
-
-static hash_t *get_container_entry(const SoundPluginTypeContainer *container, const QString path, bool is_blacklisted){
-  hash_t *hash = HASH_create(10);
-  HASH_put_string(hash, ":filename", container->filename);
-  HASH_put_string(hash, ":type-name", container->type_name);
-  HASH_put_string(hash, ":name", container->name);
-  HASH_put_string(hash, ":path",  path);
-  HASH_put_int(hash, ":num-uses", container->num_uses);
-  if (is_blacklisted){
-    HASH_put_bool(hash, ":is-blacklisted", true);
-    HASH_put_string(hash, ":category", "Unstable");
-  }else{
-    HASH_put_string(hash, ":category", "");
-  }
-  return hash;
-}
-
-
-/***************************
-       Blacklist
- **************************/
-
-#include <QHash>
-
-enum BlacklistCached{
-  NOT_IN_CACHE = 0,
-  NOT_BLACKLISTED,
-  BLACKLISTED
-};
-
-static QHash<QString, enum BlacklistCached> g_blacklisted_cache;
-
-static void update_blacklist_cache(const SoundPluginTypeContainer *container, bool is_blacklisted){
-  g_blacklisted_cache[STRING_get_qstring(container->filename)] = is_blacklisted ? BLACKLISTED : NOT_BLACKLISTED;
-}
-  
-static QString get_blacklist_filename(const SoundPluginTypeContainer *plugin_type_container){
-  QString s = STRING_get_qstring(plugin_type_container->filename);
-  QString encoded = QCryptographicHash::hash(s.toUtf8(), QCryptographicHash::Sha1).toHex();
-
-  return OS_get_dot_radium_path() + QDir::separator() + SCANNED_PLUGINS_DIRNAME + QDir::separator() + "blacklisted_" + encoded;
-}
-
-void API_blacklist_container(const SoundPluginTypeContainer *container){
-  update_blacklist_cache(container, true);
-  
-  QString disk_blacklist_filename = get_blacklist_filename(container);
-  disk_t *file = DISK_open_for_writing(disk_blacklist_filename);
-  hash_t *hash = HASH_create(1);
-
-  HASH_put_string(hash, "filename", container->filename);
-  
-  HASH_save(hash, file);
-  
-  DISK_close_and_delete(file); // Shows error message if something goes wrong.
-}
-
-void API_unblacklist_container(const SoundPluginTypeContainer *container){
-  update_blacklist_cache(container, false);
-  
-  QString disk_blacklist_filename = get_blacklist_filename(container);
-  
-  if (QFile::remove(disk_blacklist_filename)==false)
-    GFX_Message(NULL, "Error: Unable to delete file \"%s\"", disk_blacklist_filename.toUtf8().constData());
-}
-
-bool API_container_is_blacklisted(const SoundPluginTypeContainer *container){
-  const enum BlacklistCached cached = g_blacklisted_cache[STRING_get_qstring(container->filename)];
-
-#if !defined(RELEASE)
-  QString disk_blacklist_filename = get_blacklist_filename(container);
-  bool is_blacklisted = QFile::exists(disk_blacklist_filename);
-  if (cached != NOT_IN_CACHE){
-    if (is_blacklisted)
-      R_ASSERT(cached==BLACKLISTED);
-    if (!is_blacklisted)
-      R_ASSERT(cached==NOT_BLACKLISTED);
-  }
-#endif
-  
-  if (cached==NOT_BLACKLISTED)
-    return false;
-  
-  if (cached==BLACKLISTED)
-    return true;
-  
-#if defined(RELEASE)
-  QString disk_blacklist_filename = get_blacklist_filename(container);
-  bool is_blacklisted = QFile::exists(disk_blacklist_filename);
-#endif
-  
-  update_blacklist_cache(container, is_blacklisted);
-  
-  return is_blacklisted;
-}
-
-
-
-/***************************
-       Entries
- **************************/
-
-static QString get_disk_entries_dir(void){
-  return OS_get_dot_radium_path() + QDir::separator() + SCANNED_PLUGINS_DIRNAME + QDir::separator();
-}
-
-static hash_t *g_disk_entries_cache = NULL;
-static QSet<QString> g_known_noncached_entries;
-
-
-static QString get_disk_entries_filename(const SoundPluginTypeContainer *plugin_type_container){
-  QString s = STRING_get_qstring(plugin_type_container->filename);
-  QString encoded = QCryptographicHash::hash(s.toUtf8(), QCryptographicHash::Sha1).toHex();
-
-  return get_disk_entries_dir() + "v2_" + encoded;
-}
-
-static void cleanup_old_disk_files(void){
-  static bool has_done = false;
-  if (has_done==true)
-    return;
-
-  QDir dir(get_disk_entries_dir());
-  QFileInfoList list = dir.entryInfoList(QDir::Files);
-
-  {
-    bool has_deleted = false;
-    for(auto info : list){
-      QString name = info.fileName();
-      if (!name.startsWith("v2_") && !name.startsWith("blacklisted_")){
-        printf("   Deleting obsolete file %s\n", name.toUtf8().constData());
-        QFile::remove(info.absoluteFilePath());
-        has_deleted = true;
-      }
-    }
-    if (has_deleted==true){
-      GFX_addMessage("Because the file format has changed, the previously stored information<br>"
-                      "from scanning plugins has been deleted. You might want to scan all<br>"
-                     "plugins again. Really sorry for the inconvenience");
-    }
-  }
-
-  has_done = true;
-}
-
-
-static hash_t *get_container_disk_hash(const SoundPluginTypeContainer *container, const QString path){
-  hash_t *hash = HASH_create(container->num_types + 10);
-
-  HASH_put_int(hash, "version", 1);
-
-  {
-    QFileInfo info(STRING_get_qstring(container->filename));
-    if (info.exists()==false){
-      GFX_Message(NULL, "Error: Plugin file %s does not seem to exist anymore.", STRING_get_chars(container->filename));
-      return NULL;
-    }
-
-    int64_t filesize = info.size();
-    if (filesize==0){
-      //GFX_addMessage("Error: Plugin file %s seems to have size 0.", STRING_get_chars(container->filename));
-      printf("Error: Plugin file %s seems to have size 0.", STRING_get_chars(container->filename));
-      //return NULL;  // No need to fail.
-    }
-    
-    QDateTime datetime = info.lastModified();
-    if (datetime.isValid()==false)
-      printf("Warning: plugin %s does not have a valid write time", STRING_get_chars(container->filename)); // Could perhaps happen on some filesystems.
-    
-    int64_t writetime = datetime.isValid() ? datetime.toUTC().toMSecsSinceEpoch() : 0;
-    
-    HASH_put_string(hash, "filename", container->filename);
-    HASH_put_int(hash, "filesize", filesize);
-    HASH_put_int(hash, "writetime", writetime);
-  }
-
-  return hash;
-}
-
-static DiskOpReturn save_disk_hash(const SoundPluginTypeContainer *container, const QString path, hash_t *hash){
-  QString disk_entries_filename = get_disk_entries_filename(container);
-    
-  disk_t *file = DISK_open_for_writing(disk_entries_filename);
-  if (file==NULL){
-    GFX_Message(NULL, "Error: Unable to write to file \"%s\"", disk_entries_filename.toUtf8().constData());
-    return DiskOpReturn::ALL_MAY_FAIL;
-  }
-  
-  HASH_save(hash, file);
-  
-  if (DISK_close_and_delete(file)==false) // Shows error message if something goes wrong.
-    return DiskOpReturn::ALL_MAY_FAIL;
-  
-  
-  {
-    const char *key = talloc_strdup(disk_entries_filename.toUtf8().constData());
-    
-    if (HASH_has_key(g_disk_entries_cache, key))
-      HASH_remove(g_disk_entries_cache, key);
-    
-    //printf("         CACHE: Adding %s to cache\n", key);
-    HASH_put_hash(g_disk_entries_cache, key, hash);
-    
-    //printf("         CACHE: Removing %s to known noncached\n", key);
-    g_known_noncached_entries.remove(disk_entries_filename);
-  }
-
-  return DiskOpReturn::SUCCEEDED;
-}
-
-
-static DiskOpReturn save_entries_to_disk(const QVector<hash_t*> &entries, const SoundPluginTypeContainer *container, const QString path){
-  R_ASSERT_RETURN_IF_FALSE2(container->is_populated, DiskOpReturn::THIS_ONE_FAILED);  
-                                       
-  hash_t *hash = get_container_disk_hash(container, path);
-  if (hash==NULL)
-    return DiskOpReturn::THIS_ONE_FAILED;
-  
-  dynvec_t dynvec = {0};
-    
-  for(hash_t *hash : entries)
-    DYNVEC_push_back(&dynvec, DYN_create_hash(hash));
-    
-  HASH_put_array(hash, "entries", dynvec);
-  
-  return save_disk_hash(container, path, hash);
-}
-
-
-static bool load_entries_from_disk(dynvec_t &ret, const SoundPluginTypeContainer *container, const QString path){
-
-  QString disk_entries_filename = get_disk_entries_filename(container);
-
-  if (g_known_noncached_entries.contains(disk_entries_filename)){
-    //printf("         CACHE: Getting %s from knwon noncached\n", disk_entries_filename.toUtf8().constData());
-    return false;
-  }
-    
-  hash_t *hash;
-
-  const char *key = talloc_strdup(disk_entries_filename.toUtf8().constData());
-
-  if (HASH_has_key(g_disk_entries_cache, key)){
-
-    //printf("         CACHE: Getting %s from cache\n", key);
-    hash = HASH_get_hash(g_disk_entries_cache, key);
-
-    QString loaded_filename = HASH_get_qstring(hash, "filename");
-    if (loaded_filename != STRING_get_qstring(container->filename)){
-      // Oops. sha1 crash. How likely is that?
-      printf("             NOT SAME FILENAME: -%s-",loaded_filename.toUtf8().constData());
-      printf("                                -%s-",STRING_get_chars(container->filename));
-      return false;
-    }
-
-  } else {
-    
-    if (QFile(disk_entries_filename).exists()==false){
-      printf("         CACHE: Adding %s to known noncached\n", key);
-      g_known_noncached_entries.insert(disk_entries_filename);
-      return false;
-    }
-  
-    disk_t *file = DISK_open_for_reading(disk_entries_filename);
-    if (file==NULL){
-      GFX_Message(NULL, "Error: Unable to read file \"%s\"", disk_entries_filename.toUtf8().constData());
-      return false;
-    }
-    
-    hash = HASH_load(file); // HASH_load shows error message
-
-    DISK_close_and_delete(file); // Shows error message if something goes wrong.
-  
-    if (hash == NULL) {
-      
-      // File contains errors. Delete it so we don't get the same problem next time.
-      if (QFile::remove(disk_entries_filename)==false)
-        GFX_Message(NULL, "Error: Unable to delete file \"%s\"", disk_entries_filename.toUtf8().constData());
-      
-      return false;
-    }
-
-    printf("         CACHE: Adding %s to cache\n", key);
-    HASH_put_hash(g_disk_entries_cache, key, hash);
-  }
-
-  dynvec_t entries = HASH_get_array(hash, "entries");
-  
-  for(int i = 0 ; i < entries.num_elements ; i++)
-    R_ASSERT_RETURN_IF_FALSE2(entries.elements[i].type==HASH_TYPE, false);
-  
-  for(int i = 0 ; i < entries.num_elements ; i++) {
-
-    // Check that path is correct. It might not be if the same container file exists in several different paths.
-    hash_t *hash = entries.elements[i].hash;
-
-    QString disk_path = HASH_get_qstring(hash, ":path");
-    QString correct_path = extend_path(path, HASH_get_qstring(hash, ":name"));
-
-    if (disk_path != correct_path){
-      HASH_remove(hash, ":path");
-      HASH_put_string(hash, ":path", correct_path);
-      DYNVEC_push_back(&ret, DYN_create_hash(hash));
-    } else {
-      DYNVEC_push_back(&ret, entries.elements[i]);
-    }
-  }
-  
-  return true;
-}
-
-int API_get_num_entries_in_disk_container(SoundPluginTypeContainer *container){
-  dynvec_t ret = {0};
-  if (load_entries_from_disk(ret, container, "")==false)
-    return -1;
-  return ret.num_elements;
-}
-
-static void get_entries_from_populated_container(dynvec_t &ret, SoundPluginTypeContainer *container, const QString path){
-
-  R_ASSERT_RETURN_IF_FALSE(container->is_populated);
-  
-  QVector<hash_t*> entries;
-
-  for(int i=0 ; i < container->num_types ; i++){
-    const SoundPluginType *type = container->plugin_types[i];
-    hash_t *new_hash = get_entry_from_type(type, extend_path(path, type->name));
-    entries.push_back(new_hash);
-  }
-
-  if (container->has_saved_disk_entry==false) {
-    save_entries_to_disk(entries, container, path);
-    container->has_saved_disk_entry=true; // We might not have succeded writing disk entry, but we don't want to try again.
-  }
-  
-  for (hash_t *hash : entries)
-    DYNVEC_push_back(&ret, DYN_create_hash(hash));
-}
-
-
-static void get_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString path){
-  cleanup_old_disk_files();
-
-  hash_t *hash = NULL;
-
-  if (entry.type==PluginMenuEntry::IS_CONTAINER && entry.plugin_type_container->is_populated){
-
-    get_entries_from_populated_container(ret, entry.plugin_type_container, path);
-        
-  } else if (entry.type==PluginMenuEntry::IS_CONTAINER){
-
-    QString new_path = extend_path(path, entry.plugin_type_container->name);
-
-    bool is_blacklisted = API_container_is_blacklisted(entry.plugin_type_container);
-    
-    if (is_blacklisted || load_entries_from_disk(ret, entry.plugin_type_container, new_path) == false)
-      hash = get_container_entry(entry.plugin_type_container, new_path, is_blacklisted);
-    
-  } else if (entry.type==PluginMenuEntry::IS_LEVEL_UP){
-    
-    hash = HASH_create(2);
-    HASH_put_string(hash, ":name", entry.level_up_name);
-  
-  } else if (entry.type==PluginMenuEntry::IS_NUM_USED_PLUGIN){
-    
-    hash = HASH_create(5);
-    HASH_put_string(hash, ":container-name", entry.hepp.container_name);
-    HASH_put_string(hash, ":type-name", entry.hepp.type_name);
-    HASH_put_string(hash, ":name", entry.hepp.name);
-    HASH_put_int(hash, ":num-uses", entry.hepp.num_uses);
-    
-  } else if (entry.type==PluginMenuEntry::IS_NORMAL){
-        
-    if (entry.plugin_type!=NULL)
-      DYNVEC_push_back(&ret, DYN_create_hash(get_entry_from_type(entry.plugin_type, extend_path(path, entry.plugin_type->name))));
-    else
-      R_ASSERT(false);
-        
-  } else {
-    hash = HASH_create(1);
-  }
-
-  if (hash!=NULL){
-    HASH_put_string(hash, ":type", PluginMenuEntry::type_to_string(entry));
-    DYNVEC_push_back(&ret, DYN_create_hash(hash));
-    //printf("Pushing back %p\n", hash);
-  }
-}
-
-static int g_spr_generation = 0;
-void API_incSoundPluginRegistryGeneration(void){
-  g_spr_generation++;
-}
-
-int getSoundPluginRegistryGeneration(void){
-  return g_spr_generation;
-}
-
-void API_clearSoundPluginRegistryCache(void){
-  g_disk_entries_cache=HASH_create(1000);
-  g_known_noncached_entries.clear();
-}
-
-dyn_t getSoundPluginRegistry(bool only_normal_and_containers){
-  const QVector<PluginMenuEntry> entries = PR_get_menu_entries();
-  
-  dynvec_t ret = {};
-  
-  QStack<QString> dir;
-  
-  for(const PluginMenuEntry &entry : entries){
-    
-    switch(entry.type){
-    case PluginMenuEntry::IS_LEVEL_UP:
-      dir.push(entry.level_up_name);
-      break;
-    case PluginMenuEntry::IS_LEVEL_DOWN:
-      dir.pop();
-      break;
-    default:
-      break;
-    }
-    
-    if (!only_normal_and_containers || entry.type==PluginMenuEntry::IS_NORMAL || entry.type==PluginMenuEntry::IS_CONTAINER)
-      get_entry(ret, entry, get_path(dir));
-    }
-  
-  return DYN_create_array(ret);
-}
-
-dyn_t populatePluginContainer(dyn_t entry){
-  dynvec_t ret = {};
-
-  if (entry.type!=HASH_TYPE){
-    handleError("openPluginContainer: argument is not a hash table");
-    goto exit;
-  }
-
-  {
-    hash_t *hash=entry.hash;
-    const char *name = HASH_get_chars(hash, ":name");
-    QString type = HASH_get_chars(hash, ":type");
-    const char *type_name = HASH_get_chars(hash, ":type-name");
-    const char *path = HASH_get_chars(hash, ":path");
-  
-    if (PluginMenuEntry::type_to_string(PluginMenuEntry::IS_CONTAINER) != type){
-      handleError("openPluginContainer: Excpected %s, found %s", PluginMenuEntry::type_to_string(PluginMenuEntry::IS_CONTAINER).toUtf8().constData(), HASH_get_chars(hash, ":type"));
-      goto exit;
-    }
-  
-    if(name==NULL){
-      handleError("Missing :name");
-      goto exit;
-    }
-  
-    if(type_name==NULL){
-      handleError("Missing :type-name");
-      goto exit;
-    }
-  
-    if(path==NULL){
-      handleError("Missing :path");
-      goto exit;
-    }
-
-    {
-      SoundPluginTypeContainer *container = PR_get_container(name, type_name);
-      if (container==NULL){
-        //handleError("Could not find container %s / %s", name, type_name); // Screws up scanning since handleError casts an exception. Besides, we already get error messages from PR_get_container.
-        goto exit;
-      }
-
-      get_entries_from_populated_container(ret, container, path);
-    }
-  }
-  
- exit:
-  return DYN_create_array(ret);
-}
-
-void clearSoundPluginRegistry(void){
-  QDir dir(get_disk_entries_dir());
-  QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
-
-  for(auto info : list){
-    QString name = info.fileName();
-    if (!name.startsWith("blacklisted_")){
-      printf("   Deleting file %s\n", name.toUtf8().constData());
-      QFile::remove(info.absoluteFilePath());
-    }
-  }
-
-  PR_init_plugin_types();
-}

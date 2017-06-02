@@ -34,21 +34,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "seqtrack_proc.h"
 #include "seqtrack_automation_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "player_proc.h"
+
 
 extern PlayerClass *pc;
 extern struct Root *root;
 
 extern LANGSPEC void OS_InitMidiTiming(void);
 
-static bool g_time_was_stopped = true;
 
 
-void PlayerTask(double reltime){
+void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet){
 
-  
+        
         if (ATOMIC_GET(is_starting_up))
           return;
+
+
+        
+        static bool g_time_was_stopped = true; // If SCHEDULER_clear_all() always returned true, this variable didn't have to be static.
 
 
         
@@ -87,9 +93,11 @@ void PlayerTask(double reltime){
           //  return;
         }
 
-        
-        
         R_ASSERT(player_state==PLAYER_STATE_STARTING_TO_PLAY || player_state==PLAYER_STATE_PLAYING || player_state==PLAYER_STATE_STOPPED);
+
+
+        if (player_state==PLAYER_STATE_STARTING_TO_PLAY && can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet)
+          return;
 
         
         if (player_state != PLAYER_STATE_STOPPED)
@@ -174,8 +182,14 @@ void PlayerTask(double reltime){
 
         
         //printf("num_scheduled: %d. state: %d\n",num_scheduled_events,player_state);
-        if(player_state == PLAYER_STATE_PLAYING && is_finished)
+        if(player_state == PLAYER_STATE_PLAYING && is_finished){
+
           ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
+          
+          if(pc->playtype==PLAYSONG && useJackTransport() && !SEQUENCER_is_looping())
+            MIXER_TRANSPORT_stop(); // end of song
+          
+        }
 
         if(pc->playtype==PLAYSONG){
           if (SEQUENCER_is_looping()){

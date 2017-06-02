@@ -32,10 +32,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void Invert_notes(
+static void Invert_notes(
 	struct Notes *note,
-	Place *p1,
-	Place *p2,
+	const Place *p1,
+	const Place *p2,
 	bool firsttime,
 	int last
 ){
@@ -64,12 +64,11 @@ void InvertRange(
 ){
 	struct Tracks *track;
 	int lokke;
-	Place *p1,*p2;
 
 	if( ! wblock->isranged) return;
 
-	p1=GetRangeStartPlace(wblock);
-	p2=GetRangeEndPlace(wblock);
+	const Place *p1=GetRangeStartPlace(wblock);
+	const Place *p2=GetRangeEndPlace(wblock);
 
 	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 

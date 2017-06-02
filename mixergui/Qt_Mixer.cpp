@@ -44,7 +44,9 @@ public:
     update();
   }
 
-  void paintEvent( QPaintEvent *e ){
+  void paintEvent( QPaintEvent *e ) override {
+    radium::PaintEventTracker pet;
+    
     printf("Got paintevent\n");
     QPainter painter(this);
     painter.drawRect(2,3,50,50);

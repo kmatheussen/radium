@@ -7,7 +7,7 @@
 
 
 
-// Called from ../audio/Juce_plugins.cpp
+// Called from ../audio/Juce_plugins.cpp and ../audio/Mixer.cpp
 //
 Ratio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack){
   if (is_playing())

@@ -558,7 +558,7 @@ void setSeqtempoLength(double end_time, bool do_shrink){
 double getSeqtempoLength(void){
   return TEMPOAUTOMATION_get_length();
 }
-double getSeqtempoAbsabstime(double abstime){
+int64_t getSeqtempoAbsabstime(double abstime){
   return TEMPOAUTOMATION_get_absabstime(abstime);
 }
 
@@ -698,6 +698,46 @@ void setShowBarsInTimeline(bool doit){
   g_show_bars_in_timeline = doit;
   SETTINGS_write_bool("show_bars_in_timeline", doit);
   SEQUENCER_update();
+}
+
+
+static DEFINE_ATOMIC(bool, g_use_jack_transport) = false;
+
+bool useJackTransport(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    ATOMIC_SET(g_use_jack_transport, SETTINGS_read_bool("use_jack_transport", ATOMIC_GET(g_use_jack_transport)));
+    has_inited = true;
+  }
+
+  return ATOMIC_GET(g_use_jack_transport);
+}
+
+void setUseJackTransport(bool doit){
+  ATOMIC_SET(g_use_jack_transport, doit);
+  SETTINGS_write_bool("use_jack_transport", doit);
+  SEQUENCER_update();
+}
+
+
+static bool g_is_jack_timebase_master = true;
+
+bool isJackTimebaseMaster(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_is_jack_timebase_master = SETTINGS_read_bool("is_jack_timebase_master", g_is_jack_timebase_master);
+    has_inited = true;
+  }
+
+  return g_is_jack_timebase_master;
+}
+
+void setIsJackTimebaseMaster(bool doit){
+  g_is_jack_timebase_master = doit;
+  SETTINGS_write_bool("is_jack_timebase_master", doit);
+  MIXER_set_jack_timebase_master(doit);
 }
 
 

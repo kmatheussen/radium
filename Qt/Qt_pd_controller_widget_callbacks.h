@@ -186,7 +186,8 @@ public:
   }
 
 #if 0
-  void paintEvent ( QPaintEvent * ev ){
+  void paintEvent ( QPaintEvent * ev ) override {
+    TRACK_PAINT();
     printf("paintEvent called\n");
     paint_slider_text();
   }

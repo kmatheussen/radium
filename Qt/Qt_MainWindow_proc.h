@@ -16,5 +16,5 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 void SetupMainWindow(void);
-extern LANGSPEC void Qt_DisableAllWidgets(QWidget *not_me);
-extern LANGSPEC void Qt_EnableAllWidgets(void);
+//extern LANGSPEC void Qt_DisableAllWidgets(QWidget *not_me);
+//extern LANGSPEC void Qt_EnableAllWidgets(void);

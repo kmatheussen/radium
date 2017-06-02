@@ -326,7 +326,7 @@ OBJ_WIN ?= X11_disk.o X11_Qtstuff.o W_Keyboard.o
 OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o cocoa_Keyboard.o do.o
 
 #Python
-OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_velocities.o api_pitches.o api_timing.o api_support.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_requesters.o api_mouse.o api_seqtracks.o api_gui.o
+OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_velocities.o api_pitches.o api_timing.o api_support.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_soundpluginregistry.o api_requesters.o api_mouse.o api_seqtracks.o api_gui.o
 
 #Midi
 OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_i_input.o midi_menues.o
@@ -1341,8 +1341,8 @@ $(P)Qt_preferences.h: $(BUILD_DEPENDENCIES) $(P)qt4_preferences.ui $(P)Qt_prefer
 $(P)mQt_vst_paths_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)create_source_from_ui.sh $(P)Qt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h
 	cd $(P) && $(MOC) Qt_vst_paths_widget_callbacks.h >mQt_vst_paths_widget_callbacks.h
 
-$(P)Qt_vst_paths_widget_callbacks.h:
-	cd $(P) && $(UIC) qt4_vst_paths_widget.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_vst_paths_widget_callbacks.h
+$(P)Qt_vst_paths_widget.h: $(P)qt4_vst_paths_widget.ui
+	cd $(P) && $(UIC) qt4_vst_paths_widget.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_vst_paths_widget.h
 
 
 $(P)Qt_vst_paths_widget.h: $(P)qt4_vst_paths_widget.ui
@@ -1512,8 +1512,12 @@ api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.c $(API)radium_proc.h
 api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp $(API)radium_proc.h
 	$(CCC)  $(API)api_various.cpp $(QTOPT) -DVERSION=\"$(VERSION)\"
 
-api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.c $(API)radium_proc.h
+api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.c $(API)radium_proc.h $(API)api_instruments_proc.h
 	$(CC)  $(API)api_instruments.c $(OPT)
+
+api_soundpluginregistry.o:  $(BUILD_DEPENDENCIES) $(API)api_soundpluginregistry.cpp $(API)radium_proc.h $(API)api_instruments_proc.h
+#	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
+	$(CCC)  $(API)api_soundpluginregistry.cpp $(QTOPT)
 
 api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.c $(API)radium_proc.h
 	$(CC)  $(API)api_requesters.c $(OPT)

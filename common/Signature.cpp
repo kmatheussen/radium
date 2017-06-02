@@ -121,8 +121,11 @@ struct Signatures *SetSignature(
 	const Place *place,
         Ratio ratio
 ){
-  
-  R_ASSERT(is_playing()==false);
+
+  if(is_playing()==false){
+    PlayStop();
+    R_ASSERT(false);
+  }
   
         struct Signatures *signature=(struct Signatures *)ListFindElement3(&block->signatures->l,place);
 

@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_tempos_copy_proc.h"
 #include "wtracks_proc.h"
 #include "fxtext_proc.h"
-#include "time_proc.h"
 #include "swingtext_proc.h"
 
 #include "clipboard_track_copy_proc.h"
@@ -53,13 +52,14 @@ struct FXs *CB_CopyFX(
 }
 */
 
-
+// Also used in clipboard_track_cut.c
 struct WTracks *internal_copy_track(
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-        bool always_copy_all_fxs,
-        bool *only_one_fxs_was_copied
-){
+                                    const struct WBlocks *wblock,
+                                    const struct WTracks *wtrack,
+                                    bool always_copy_all_fxs,
+                                    bool *only_one_fxs_was_copied
+                                    )
+{
   if (!always_copy_all_fxs)
     R_ASSERT(only_one_fxs_was_copied!=NULL);
   
@@ -113,21 +113,20 @@ struct WTracks *internal_copy_track(
 }
 
 struct WTracks *CB_CopyTrack(
-                             struct WBlocks *wblock,
-                             struct WTracks *wtrack
+                             const struct WBlocks *wblock,
+                             const struct WTracks *wtrack
                              )
 {
   struct WTracks *ret = internal_copy_track(wblock, wtrack, true, NULL);
-  TIME_block_swings_have_changed(wblock->block);
   return ret;
 }
 
 void CB_CopyTrack_CurrPos(
-	struct Tracker_Windows *window
+                          const struct Tracker_Windows *window
 ){
-	struct WBlocks *wblock=window->wblock;
-	struct Blocks *block=wblock->block;
-	struct WTracks *wtrack=wblock->wtrack;
+  const struct WBlocks *wblock=window->wblock;
+  const struct Blocks *block=wblock->block;
+  const struct WTracks *wtrack=wblock->wtrack;
 
 	switch(window->curr_track){
 		case SWINGTRACK:

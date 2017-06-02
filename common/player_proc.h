@@ -17,20 +17,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_COMMON_PLAYER_PROC_H
 #define _RADIUM_COMMON_PLAYER_PROC_H
 
-extern LANGSPEC void PlayerTask(double reltime);
+extern LANGSPEC void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_we_have_told_jack_transport_that_we_are_not_ready_yet);
 extern LANGSPEC void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop);
-extern LANGSPEC void PlayBlockCurrPos2(struct Tracker_Windows *window, Place *place);
+extern LANGSPEC void PlayBlockCurrPos2(struct Tracker_Windows *window, const Place *place);
 extern LANGSPEC void PlayBlockCurrPos(struct Tracker_Windows *window);
 extern LANGSPEC void PlayRangeFromStart(struct Tracker_Windows *window);
 extern LANGSPEC void PlayRangeCurrPos(struct Tracker_Windows *window);
-extern LANGSPEC void PlayRangeCurrPos2(struct Tracker_Windows *window, Place *place);
+extern LANGSPEC void PlayRangeCurrPos2(struct Tracker_Windows *window, const Place *place);
 extern LANGSPEC void Play_set_curr_playing_realline(int realline, int blocknum);
 extern LANGSPEC void Play_get_curr_playing_realline(int *realline, int *blocknum);
 extern LANGSPEC void PlayCallVeryOften(void);
 extern LANGSPEC void PlaySongCurrPos(void);
-extern LANGSPEC void PlaySong(int64_t abstime);
+extern LANGSPEC void PlaySong(double abstime);
+extern LANGSPEC void PlaySong_from_jack_transport(int64_t absabstime);
 extern LANGSPEC void PlaySongFromStart(void);
 extern LANGSPEC void PlayStop(void);
+extern LANGSPEC void PlayStop_from_jack_transport(void);
 
 extern STime g_last_seq_time_converted_to_delta_time; // This one can be used since calls to patch->playnote, patch->stopnote, etc. are single threaded.
 extern LANGSPEC int PLAYER_get_block_delta_time(struct SeqTrack *seqtrack, STime time);

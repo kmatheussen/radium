@@ -3748,7 +3748,7 @@
 
 (define-constant *seqnode-min-distance* (* 1 (<ra> :get-half-of-node-width)))
 
-(define2 *current-seqautomation/distance* (curry-or not number?) #f)
+(define2 *current-seqautomation/distance* (curry-or not hash-table?) #f)
 
 (define (get-current-seqautomationnum)
   (and *current-seqautomation/distance*

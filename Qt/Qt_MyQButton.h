@@ -40,7 +40,8 @@ struct MyQButton : public QToolButton{
   }    
   */
 
-  void paintEvent ( QPaintEvent * ev ){
+  void paintEvent ( QPaintEvent * ev ) override {
+    TRACK_PAINT();
     //QToolButton::paintEvent(ev);
     QPainter p(this);
     //p.eraseRect(rect());

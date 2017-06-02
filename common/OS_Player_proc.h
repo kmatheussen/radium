@@ -50,8 +50,11 @@ extern LANGSPEC void PLAYER_volumeUp(float db);
 extern LANGSPEC void PLAYER_volumeDown(float db);
 extern LANGSPEC void PLAYER_mute(void);
 
-extern LANGSPEC void RT_request_to_start_playing(void);
-extern LANGSPEC void RT_request_to_continue_playing(void);
+extern LANGSPEC bool RT_jack_transport_play_request_is_finished(void);
+extern LANGSPEC void RT_request_from_jack_transport_to_play(int64_t absabstime);
+
+extern LANGSPEC void RT_request_to_start_playing_block(void);
+extern LANGSPEC void RT_request_to_continue_playing_block(void);
 extern LANGSPEC void RT_request_to_stop_playing(void);
 extern LANGSPEC void RT_pause_plugins(void);
 

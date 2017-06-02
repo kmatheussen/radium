@@ -297,39 +297,43 @@
 (define *message-gui-text-edit* (<gui> :text-edit "" #t))
 
 (define (show-message-gui)
-  (when (not *message-gui*)
-    (define buttonlayout (<gui> :horizontal-layout))
-    (<gui> :set-layout-spacing buttonlayout 2 0 2 0 2)
-
-    (<gui> :add-layout-space buttonlayout 0 0 #t #f)
-    
-    (define hide-button (<gui> :button "Hide"))
-    (<gui> :add-callback hide-button (lambda ()                                       
-                                       (<gui> :hide *message-gui*)))
-    (<gui> :add buttonlayout hide-button)
-
-    (define gui2 (<gui> :vertical-layout *message-gui-text-edit* buttonlayout))
-    (<gui> :set-layout-spacing gui2 2 2 2 2 2)
-    
-    (<gui> :set-size gui2
-           (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 oiwaefoajefoijaowepijaeporgijpoaghjto#$#$% 2q3e4tERTQERT paerjgoijaerpoiporegi"))
-           (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345")))
-    
-    (<gui> :set-static-toplevel-widget gui2 #t)
-    
-    ;; Just hide window when closing it.
-    (<gui> :add-close-callback gui2
-           (lambda (radium-runs-custom-exec)
-             ;;(<gui> :set-parent *message-gui* -3)
-             (c-display "              GAKK GAKK GAKK")
-             (<gui> :hide *message-gui*)
-             #f))
-
-    (set! *message-gui* gui2))
-
-  ;;(c-display gui2)
-
-  (reopen-gui-at-curr-pos *message-gui*))
+  (<ra> :schedule 0 ;; In case we are called from a paint callback. Not only isn't the message displayed if we call directly, we also end up in an infinite loop since this function is called from various error handlers.
+        (lambda ()
+          (when (not *message-gui*)
+            (define buttonlayout (<gui> :horizontal-layout))
+            (<gui> :set-layout-spacing buttonlayout 2 0 2 0 2)
+            
+            (<gui> :add-layout-space buttonlayout 0 0 #t #f)
+            
+            (define hide-button (<gui> :button "Hide"))
+            (<gui> :add-callback hide-button (lambda ()                                       
+                                               (<gui> :hide *message-gui*)))
+            (<gui> :add buttonlayout hide-button)
+            
+            (define gui2 (<gui> :vertical-layout *message-gui-text-edit* buttonlayout))
+            (<gui> :set-layout-spacing gui2 2 2 2 2 2)
+            
+            (<gui> :set-size gui2
+                   (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 oiwaefoajefoijaowepijaeporgijpoaghjto#$#$% 2q3e4tERTQERT paerjgoijaerpoiporegi"))
+                   (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345")))
+            
+            (<gui> :set-static-toplevel-widget gui2 #t)
+            
+            ;; Just hide window when closing it.
+            (<gui> :add-close-callback gui2
+                   (lambda (radium-runs-custom-exec)
+                     ;;(<gui> :set-parent *message-gui* -3)
+                     (c-display "              GAKK GAKK GAKK")
+                     (<gui> :hide *message-gui*)
+                     #f))
+            
+            (set! *message-gui* gui2))
+          
+          ;;(c-display gui2)
+          
+          (reopen-gui-at-curr-pos *message-gui*)
+          
+          #f)))
 
   
 
@@ -349,6 +353,10 @@
                                                  "</body></html>\n"))
   (show-message-gui))
 
+#!!
+(add-message-window-message "hello")
+!!#
+
 (define (safe-add-message-window-txt txt)
   (catch #t
          (lambda ()
@@ -358,8 +366,7 @@
            (define txt (catch #t
                               ow!
                               (lambda args
-                                (get-as-displayable-string-as-possible (list "safe-add-message-window-message failed very hard: " args)))))
-           
+                                (get-as-displayable-string-as-possible (list "safe-add-message-window-message failed very hard: " args)))))           
            (display txt))))
 
 #||
@@ -388,3 +395,130 @@
   (reopen-gui-at-curr-pos web))
 
 
+;; ra:gui_tabs with simpler gfx. (no borders, etc.)
+;;
+(define (my-tabs horizontal)
+  (define tabs (<gui> :tabs (if horizontal 0 2)))
+
+  ;;(<gui> :set-style-sheet tabs "QTabWidget::pane { border: 0; }")
+  
+  (define tab-bar (<gui> :get-tab-bar tabs))
+
+  (define background-color (<gui> :get-background-color tabs))
+  (define curr-tab-background (<gui> :mix-colors "green" background-color 0.47))
+
+  
+  (define (get-index-from-x-y x y)
+    (define num-tabs (<gui> :num-tabs tabs))
+    (between 0
+             (if horizontal
+                 (floor (scale x 0 (<gui> :width tab-bar) 0 num-tabs))
+                 (floor (scale y 0 (<gui> :height tab-bar) 0 num-tabs)))
+             (1- num-tabs)))
+
+  (define (get-tab-coords i num-tabs width height kont)
+    (if horizontal
+        (kont (scale i 0 num-tabs 0 width)
+              0
+              (scale (1+ i) 0 num-tabs 0 width)
+              height)
+        (kont 0
+              (scale i 0 num-tabs 0 height)
+              width
+              (scale (1+ i) 0 num-tabs 0 height))))
+              
+  (<gui> :add-paint-callback tab-bar
+         (lambda (width height)
+           (define num-tabs (<gui> :num-tabs tabs))
+           (<gui> :filled-box tab-bar background-color 0 0 width height)
+           (for-each (lambda (i)
+                       (get-tab-coords i num-tabs width height
+                                       (lambda (x1 y1 x2 y2)
+                                         ;;(c-display i (floor y1) (floor y2) "x1/x2" (floor x1) (floor x2) width)
+                                         (if (= i (<gui> :current-tab tabs))
+                                             (<gui> :filled-box tab-bar curr-tab-background x1 y1 x2 y2))
+                                         (<gui> :draw-text tab-bar *text-color* (<gui> :tab-name tabs i) x1 y1 x2 y2 #t #f #f (if horizontal 0 270)))))
+                     (iota num-tabs))))
+  
+  (<gui> :add-mouse-callback tab-bar
+         (lambda (button state x y)
+           (if (and (= state *is-pressing*)
+                    (= button *left-button*))
+               (begin
+                 (<gui> :set-current-tab tabs (get-index-from-x-y x y))
+                 #t)
+               #f)))
+
+  ;; Prevent Qt from painting background. We don't want border.
+  (<gui> :add-paint-callback tabs
+         (lambda (width height)
+           ;;(c-display "paint" width height)
+           (define background-color (<gui> :mix-colors "color11" "color9" 0.8))
+           (<gui> :filled-box tabs background-color 0 0 width height)
+           #t))
+
+  (<gui> :add-resize-callback tabs
+         (lambda (width height)
+           (if horizontal
+               (set-fixed-width tab-bar width)
+               (set-fixed-height tab-bar height))))
+               
+  tabs
+  )
+
+#!!
+(let ((tabs (my-tabs #f)))
+  (<gui> :show tabs)
+  (<gui> :add-tab tabs "Quantitize 1" (create-quantitize-gui-for-tab))
+  (<gui> :add-tab tabs "Sequencer" (create-transpose-notem))
+  (<gui> :add-tab tabs "Instrument" (create-transpose-notem))
+  (<gui> :add-tab tabs "Edit" (create-quantitize-gui-for-tab))
+  )
+!!#
+
+
+
+;; Proper rubberband. (QRubberBand doesn't work)
+;; The function returns a function that must be called to update position.
+;; Note that the lines are drawn at integer position. floating points are ignored.
+;; It also draws in between the rectangle, not on the rectangle, which :draw-box does.
+(define (gui-rubberband parent w color is-enabled-func)
+  (define top (<gui> :widget w w))
+  (define right (<gui> :widget w w))
+  (define bottom (<gui> :widget w w))
+  (define left (<gui> :widget w w))
+
+  (for-each (lambda (part)
+              (<gui> :add parent part)
+              (<gui> :show part)
+              
+              (add-safe-paint-callback
+               part
+               (lambda (width height)
+                 (if (is-enabled-func)
+                     (<gui> :filled-box part color 0 0 width height)))))
+            (list top right bottom left))
+
+  (lambda (x1 y1 x2 y2)
+    (set! x1 (floor x1))
+    (set! y1 (floor y1))
+    (set! x2 (floor x2))
+    (set! y2 (floor y2))
+    
+    (define width (- x2 x1))
+    (define height (- y2 y1))
+    
+    (<gui> :set-pos top x1 y1)
+    (<gui> :set-size top width w)
+    
+    (<gui> :set-pos right (- x2 w) y1)
+    (<gui> :set-size right w height)
+
+    (<gui> :set-pos bottom x1 (- y2 w))
+    (<gui> :set-size bottom width w)
+
+    (<gui> :set-pos left x1 y1)
+    (<gui> :set-size left w height)))
+
+    
+                                              

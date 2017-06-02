@@ -1016,8 +1016,10 @@ int getNumPianonotes(int notenum, int tracknum, int blocknum, int windownum){
 }
 
 static void MOVE_PLACE(Place *place, float diff){
-  float oldplace = GetfloatFromPlace(place);
-  Float2Placement(oldplace+diff, place);
+  if (diff < 0)
+    *place = p_Sub(*place, p_FromFloat(-diff));
+  else
+    *place = p_Add(*place, p_FromFloat(diff));
 }
 
 static void setPianoNoteValues(float value, int pianonotenum, struct Notes *note){

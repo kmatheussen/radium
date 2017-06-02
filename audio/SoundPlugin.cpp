@@ -51,7 +51,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "CpuUsage.hpp"
 #include "SmoothDelay.hpp"
 
+#include "../api/api_gui_proc.h"
+
+
 #include "SoundPlugin_proc.h"
+
+
 
 #define FILTER_MIN_DB -35
 #define FILTER_MAX_DB 35

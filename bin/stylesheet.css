@@ -1,0 +1,24 @@
+/* Main style sheet for radium. */
+
+QGroupBox {
+    background-color: rgba(0, 0, 0, 10);
+    border: 1px solid rgba(10, 10, 10, 50);
+    border-radius: 2px;
+    margin-top: 1.5em;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    padding: 2px 2px;
+    background-color: transparent;
+}
+
+QScrollArea { background: transparent; }
+QScrollArea > QWidget > QWidget { background: transparent; }
+QScrollArea > QWidget > QScrollBar { background: rgba(ff, ff, ff, 50); }
+
+QTabBar::pane { border: 0; }
+
+/*
+QTabWidget::pane { border: 0; background: blue}
+*/

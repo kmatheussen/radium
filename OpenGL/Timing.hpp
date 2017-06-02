@@ -75,7 +75,7 @@ struct VBlankEstimator{
     double interval = (time_now - last_time)*1000.0;
     int num_periods = (interval+(base_interval/2.0)) / base_interval;
     last_time = time_now;
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
     if (num_periods != 1)
       printf("interval: %f, num_periods: %d, base_interval: %f\n",interval,num_periods,base_interval);
 #endif

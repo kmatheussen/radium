@@ -13,7 +13,8 @@ extern LANGSPEC void TEMPOAUTOMATION_set(int nodenum, double abstime, double val
 extern LANGSPEC void TEMPOAUTOMATION_set_length(double end_time, bool do_shrink);
 extern LANGSPEC double TEMPOAUTOMATION_get_length(void);
 extern LANGSPEC void TEMPOAUTOMATION_reset(void);
-extern LANGSPEC double TEMPOAUTOMATION_get_absabstime(double abstime);
+extern LANGSPEC int64_t TEMPOAUTOMATION_get_absabstime(double abstime);
+extern LANGSPEC double TEMPOAUTOMATION_get_abstime_from_absabstime(int64_t absabstime);
 
 extern LANGSPEC hash_t *TEMPOAUTOMATION_get_state(void);
 extern LANGSPEC void TEMPOAUTOMATION_create_from_state(hash_t *state);

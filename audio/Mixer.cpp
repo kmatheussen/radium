@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/scheduler_proc.h"
 //#include "../common/PEQ_LPB_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../common/seqtrack_proc.h"
 #include "../midi/midi_i_input_proc.h"
 
 #include "Jack_plugin_proc.h"
@@ -412,7 +413,17 @@ extern "C" {
 }
 #endif
 
+namespace{
+  enum class RadiumTransportState{
+    NO_STATE,
+    WAITING_FOR_PLAYER_TO_BE_READY,
+    PLAY_REQUEST_FAILED,
+    PLAYER_IS_READY
+  };
+}
 
+namespace{
+  
 struct Mixer{
   SoundProducer *_bus[NUM_BUSES];
 
@@ -429,6 +440,8 @@ struct Mixer{
   
   bool _is_freewheeling;
 
+  RadiumTransportState _radium_transport_state = RadiumTransportState::NO_STATE;
+  
   Mixer()
     : _rjack_client(NULL)
     , _last_time(0)
@@ -585,7 +598,10 @@ struct Mixer{
     jack_set_freewheel_callback(_rjack_client, RT_rjack_freewheel_changed, this);
     jack_on_info_shutdown(_rjack_client, RT_rjack_shutdown, this);
     jack_set_process_thread(_rjack_client,RT_rjack_thread,this);
-
+    jack_set_sync_callback(_rjack_client, RT_rjack_sync, this);
+    if(isJackTimebaseMaster())
+      MIXER_set_jack_timebase_master(true);
+  
     if (jack_activate (_rjack_client)){
       fprintf (stderr, "Error. Cannot activate jack client.\n");
 
@@ -670,6 +686,7 @@ struct Mixer{
     AVOIDDENORMALS;
     //#endif
 
+        
     touch_stack();
 
     pause_time.start();
@@ -692,7 +709,7 @@ struct Mixer{
       
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
-
+    
       if((int)num_frames!=_buffer_size)
         printf("What???\n");
 
@@ -780,6 +797,48 @@ struct Mixer{
       for (SoundProducer *sp : _sound_producers)
         SP_RT_called_for_each_soundcard_block2(sp, _time);
 
+      bool can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet = false;
+
+      if (useJackTransport()){
+        
+        jack_transport_state_t state = jack_transport_query(g_jack_client,NULL);
+        
+        if (state == JackTransportStarting){
+
+          R_ASSERT(_radium_transport_state!=RadiumTransportState::NO_STATE);
+                   
+          if (_radium_transport_state!=RadiumTransportState::PLAY_REQUEST_FAILED)
+            can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet = true;
+          
+        }
+        
+#if 0
+        // When debugging jack transport handling
+        {
+          static int downcount = 0;
+          static jack_transport_state_t last_state = (jack_transport_state_t)-1;
+          static jack_nframes_t frame0time = -1894944768; // Must be a constant in order to compare values of several simultaneous running radium instances.
+          jack_position_t pos;
+          jack_transport_state_t state = jack_transport_query(_rjack_client,&pos);
+          if (state != last_state){
+            downcount = 5;
+            last_state = state;
+          }
+          if (downcount > 0 || state==JackTransportStarting){
+            printf("** %d: %d - %s. seq: %d, jack: %d\n", (int)pos.frame, can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet, state==JackTransportStarting ? "Starting" : state==JackTransportRolling ? "Rolling" : "Stopped", (int)ATOMIC_DOUBLE_GET(pc->song_abstime), (int)(jack_last_frame_time(_rjack_client) - frame0time));
+            downcount--;
+          }
+        }
+#endif
+        
+        if (_radium_transport_state == RadiumTransportState::PLAYER_IS_READY && !can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet){
+          //R_ASSERT(state==JackTransportRolling); Guess it could be JackTransportStopped too.
+          R_ASSERT(state!=JackTransportStarting);
+          _radium_transport_state = RadiumTransportState::NO_STATE;
+        }
+      }
+      
+
       ATOMIC_SET(g_currently_processing_dsp, true); {
         
         MULTICORE_start_block(); {
@@ -789,8 +848,8 @@ struct Mixer{
             
             double curr_song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
             ATOMIC_DOUBLE_SET(g_curr_song_tempo_automation_tempo, curr_song_tempo_automation_tempo);
-            
-            PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo);
+
+            PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo, can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet);
             
             if (is_playing()) {
               if (pc->playtype==PLAYBLOCK)
@@ -921,8 +980,148 @@ struct Mixer{
     return 0;
   }
 
-};
+  static int RT_rjack_sync(jack_transport_state_t state, jack_position_t *pos, void *arg){
+    Mixer *mixer = static_cast<Mixer*>(arg);
+    
+    if(state==JackTransportStopped){
+      //printf("    trans: Stopped\n");
+    
+    } else if (state==JackTransportStarting){
 
+      if (useJackTransport()==false)
+        return 1;
+
+      int64_t absabstime = (int64_t)pos->frame; // song position frame number is called absabstime in radium.
+      
+      Player_State state = ATOMIC_GET(pc->player_state);
+        
+      if(state==PLAYER_STATE_STARTING_TO_PLAY && pc->absabstime==absabstime) {
+        //printf(" ************************   trans: Starting. frame: %d, abstime: %f, is playing: %d.\n", (int)absabstime, TEMPOAUTOMATION_get_abstime_from_absabstime(absabstime), is_playing());
+        mixer->_radium_transport_state = RadiumTransportState::PLAYER_IS_READY;
+        return 1;
+      }
+      
+      if(mixer->_radium_transport_state != RadiumTransportState::WAITING_FOR_PLAYER_TO_BE_READY){
+
+        if (mixer->_radium_transport_state != RadiumTransportState::PLAY_REQUEST_FAILED || RT_jack_transport_play_request_is_finished()){
+          //printf(" ************************   trans: Requesting start. frame: %d, is playing: %d.\n", (int)absabstime, is_playing());
+          RT_request_from_jack_transport_to_play(absabstime); // (pos->frame is unsigned, so no need to ensure that pos->frame>=0)
+        } else{
+          //printf(" ************************   trans: Has already requested start. frame: %d, is playing: %d.\n", (int)absabstime, is_playing());
+        }
+        
+        mixer->_radium_transport_state = RadiumTransportState::WAITING_FOR_PLAYER_TO_BE_READY;
+        return 0;
+      }
+
+      if (state==PLAYER_STATE_STARTING_TO_PLAY || RT_jack_transport_play_request_is_finished()){
+        //
+        // We have already requested to play song, but the player state is wrong. (could be many reasons for this)
+        //
+        // Now we need to set _radium_transport_state to something other than WAITING_FOR_PLAYER_TO_BE_READY, to avoid deadlock.
+        //
+        // Next time this function is called, we will do a new request.
+        //
+        // We can not call RT_request_to_start_playing_song directly, now, since _radium_transport_state != WAITING_FOR_PLAYER_TO_BE_READY.
+        // If _radium_transport_state != WAITING_FOR_PLAYER_TO_BE_READY, we could start playing before returning 1 from this function,
+        // i.e. that we start playing before all other clients. (we could work around this by adding another state, and so forth, but it's proabably not worth it)
+        
+        //printf(" ************************   trans: Failed start. Waiting. frame: %d, is playing: %d.\n", (int)absabstime, is_playing());              
+        mixer->_radium_transport_state = RadiumTransportState::PLAY_REQUEST_FAILED;
+        return 0;
+      }
+
+      //printf(" ************************   trans: Waiting... frame: %d, is playing: %d.\n", (int)absabstime, is_playing());
+
+      return 0;
+      
+    }else if (state==JackTransportRolling) {
+      //printf("    trans: Rolling\n");
+    
+    } else {
+      //printf("    trans: ?? %d\n", (int)state);
+    }
+    
+    return 1;
+  }
+
+  static void RT_rjack_timebase(jack_transport_state_t state, jack_nframes_t nframes, jack_position_t *pos, int new_pos, void *arg){
+    /*
+      int32_t   bar
+      int32_t 	beat
+      int32_t 	tick
+      double 	bar_start_tick
+      float 	beats_per_bar
+      float 	beat_type
+      double 	ticks_per_beat
+      double 	beats_per_minute
+    */
+
+    bool isplaying = is_playing();
+          
+    pos->valid = JackPositionBBT;
+
+    const struct SeqTrack *seqtrack;
+
+    if (pc->playtype==PLAYBLOCK)
+      seqtrack = root->song->block_seqtrack;
+    else
+      seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[0];
+    
+    const int ticks_per_beat = 1920*16;
+
+    if (!isplaying) {
+
+      pos->bar = 1;
+      pos->beat = 1;
+
+      pos->bar_start_tick = 0;
+      pos->tick = 0;
+
+    } else {
+
+      const struct Beats *beat = seqtrack->beat_iterator.next_beat;
+      
+      if (beat==NULL) {
+        R_ASSERT_NON_RELEASE(false);
+        pos->bar = 1;
+        pos->beat = 1;
+      } else {
+        pos->bar = beat->bar_num;
+        pos->beat = beat->beat_num;
+      }
+    
+      pos->bar_start_tick = seqtrack->beat_iterator.beat_position_of_last_bar_start * ticks_per_beat;
+
+      double beatpos = RT_LPB_get_beat_position(seqtrack);
+      double beats_since_beat_start = beatpos - floor(beatpos);
+    
+      pos->tick           =  ticks_per_beat * beats_since_beat_start;
+      
+    }
+      
+    //printf("bar_tick: %f. beat_tick: %f\n", (float)pos->bar_start_tick / (float)ticks_per_beat, (float)pos->tick/(float)ticks_per_beat);
+      
+    Ratio signature = RT_Signature_get_current_Signature(seqtrack);
+    pos->beats_per_bar = signature.numerator;
+    pos->beat_type = signature.denominator;
+
+    pos->ticks_per_beat = ticks_per_beat;
+    
+    pos->beats_per_minute = RT_LPB_get_current_BPM(seqtrack);
+
+    
+    /* The documentation says that we are encouraged to fill out the field bbt_offset. And here's the documentation for it:
+
+       "frame offset for the BBT fields (the given bar, beat, and tick values actually refer to a time frame_offset frames before the start of the cycle), should be assumed to be 0 if JackBBTFrameOffset is not set. If JackBBTFrameOffset is set and this value is zero, the BBT time refers to the first frame of this cycle. If the value is positive, the BBT time refers to a frame that many frames before the start of the cycle."
+
+      So... uh...
+     */
+    //pos->bbt_offset = ???;
+  }
+};
+}
+    
 static Mixer *g_mixer = NULL;
 
 #if USE_WORKAROUND
@@ -972,8 +1171,10 @@ bool MIXER_start(void){
     return false;
   }
 
+  // Read a couple of settings variables from disk, so we don't read from disk in the realtime threads.
   doAlwaysRunBuses();
-  
+  useJackTransport();
+    
   SampleRecorder_Init();
     
   init_player_lock();
@@ -1019,7 +1220,77 @@ void MIXER_stop(void){
 static STime g_startup_time = 0;
 void OS_InitAudioTiming(void){
   g_startup_time = g_mixer->_time;
-  printf("OS_InitAudioTiming called. New time: %d\n",(int)g_startup_time);
+  //printf("OS_InitAudioTiming called. New time: %d\n",(int)g_startup_time);
+}
+
+void MIXER_TRANSPORT_set_pos(double abstime){
+  if (g_jack_client==NULL)
+    return;
+  int64_t absabstime = TEMPOAUTOMATION_get_absabstime(abstime);
+  jack_transport_locate(g_jack_client, absabstime);
+}
+
+void MIXER_TRANSPORT_play(double abstime){
+  if (g_jack_client==NULL)
+    return;
+  MIXER_TRANSPORT_set_pos(abstime);
+  if(jack_transport_query(g_jack_client,NULL) == JackTransportStopped)
+    jack_transport_start(g_jack_client);
+}
+
+void MIXER_TRANSPORT_stop(void){
+  if (g_jack_client==NULL)
+    return;
+  if (jack_transport_query(g_jack_client,NULL) != JackTransportStopped)
+    jack_transport_stop(g_jack_client);
+}
+
+void MIXER_set_jack_timebase_master(bool doit){
+  jack_set_timebase_callback(g_jack_client, 0, doit ? Mixer::RT_rjack_timebase : NULL, g_mixer);
+}
+
+ 
+void MIXER_call_very_often(void){
+
+  if (g_jack_client==NULL)
+    return;
+
+  static bool use_jack_transport = useJackTransport();
+  
+  if (is_called_every_ms(100)){
+    use_jack_transport = useJackTransport();
+  }
+  
+  if (use_jack_transport && is_called_every_ms(15)){
+
+    bool isplaying = is_playing();
+
+    jack_position_t pos;
+    jack_transport_state_t state = jack_transport_query(g_jack_client,isplaying ? NULL : &pos);
+          
+    if(state==JackTransportStopped){
+      if (isplaying && pc->playtype==PLAYSONG)
+        PlayStop_from_jack_transport();
+    }else if (state==JackTransportStarting){
+    }else if (state==JackTransportRolling){
+    }
+    
+    if (!isplaying) {
+
+      int64_t absabstime = (int64_t)pos.frame;
+
+      if (absabstime != pc->absabstime){
+        pc->absabstime = absabstime; // pc->absabstime can be written to when not playing.
+        
+        double abstime = TEMPOAUTOMATION_get_abstime_from_absabstime(absabstime);
+        if (abstime != ATOMIC_DOUBLE_GET(pc->song_abstime)){
+          ATOMIC_DOUBLE_SET(pc->song_abstime, abstime);
+          SEQUENCER_update();
+        }
+      }
+    }
+  }
+
 }
 
 bool MIXER_is_saving(void){

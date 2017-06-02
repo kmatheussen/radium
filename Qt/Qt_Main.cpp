@@ -163,6 +163,8 @@ bool g_do_grey_editor = false;
 static bool editor_has_keyboard = true;
 static int someone_else_has_keyboard_counting = 0;
 bool g_radium_runs_custom_exec = false;
+bool g_qt_is_painting = false;
+const char *g_qt_is_painting_where = "nowhere";
 
 bool g_gc_is_incremental = false;
 
@@ -1279,9 +1281,10 @@ static DEFINE_ATOMIC(int, rt_message_status) = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;
 static char rt_message[rt_message_length];
 
-static DEFINE_ATOMIC(bool, request_to_start_playing) = false;
-static DEFINE_ATOMIC(bool, request_to_continue_playing) = false;
-static DEFINE_ATOMIC(bool, request_to_stop_playing) = false;
+static DEFINE_ATOMIC(int64_t, g_request_from_jack_transport_to_start_playing) = -1;
+static DEFINE_ATOMIC(bool, g_request_to_start_playing) = false;
+static DEFINE_ATOMIC(bool, g_request_to_continue_playing) = false;
+static DEFINE_ATOMIC(bool, g_request_to_stop_playing) = false;
 
 int g_main_timer_num_calls = 0;
 
@@ -1391,19 +1394,29 @@ protected:
     if (PLAYER_is_running()==false)
       PlayStop();
 
-    if(ATOMIC_GET(request_to_start_playing) == true) {
+    MIXER_call_very_often();
+    
+    {
+      int64_t absabstime = ATOMIC_GET(g_request_from_jack_transport_to_start_playing);
+      if(absabstime >= 0){
+        PlaySong_from_jack_transport(absabstime);
+        ATOMIC_SET(g_request_from_jack_transport_to_start_playing, -1);
+      }
+    }
+    
+    if(ATOMIC_GET(g_request_to_start_playing) == true) {
       PlayBlockFromStart(window, true);
-      ATOMIC_SET(request_to_start_playing, false);
+      ATOMIC_SET(g_request_to_start_playing, false);
     }
     
-    if(ATOMIC_GET(request_to_continue_playing) == true) {
+    if(ATOMIC_GET(g_request_to_continue_playing) == true) {
       PlayBlockCurrPos(window);
-      ATOMIC_SET(request_to_continue_playing, false);
+      ATOMIC_SET(g_request_to_continue_playing, false);
     }
     
-    if(ATOMIC_GET(request_to_stop_playing) == true) {
+    if(ATOMIC_GET(g_request_to_stop_playing) == true) {
       PlayStop();
-      ATOMIC_SET(request_to_stop_playing, false);
+      ATOMIC_SET(g_request_to_stop_playing, false);
     }
     
     if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING){
@@ -1553,19 +1566,30 @@ void RT_message(const char *fmt,...){
   ATOMIC_SET(rt_message_status, RT_MESSAGE_READY_FOR_SHOWING);
 }
 
-void RT_request_to_start_playing(void){
-  //abort();
-  ATOMIC_SET(request_to_start_playing, true);
+
+bool RT_jack_transport_play_request_is_finished(void){
+  return ATOMIC_GET(g_request_from_jack_transport_to_start_playing) == -1;
 }
 
-void RT_request_to_continue_playing(void){
+
+void RT_request_from_jack_transport_to_play(int64_t absabstime){
+  ATOMIC_SET(g_request_from_jack_transport_to_start_playing, absabstime);
+}
+
+
+void RT_request_to_start_playing_block(void){
   //abort();
-  ATOMIC_SET(request_to_continue_playing, true);
+  ATOMIC_SET(g_request_to_start_playing, true);
+}
+
+void RT_request_to_continue_playing_block(void){
+  //abort();
+  ATOMIC_SET(g_request_to_continue_playing, true);
 }
 
 void RT_request_to_stop_playing(void){
   //abort();
-  ATOMIC_SET(request_to_stop_playing, true);
+  ATOMIC_SET(g_request_to_stop_playing, true);
 }
 
 #endif
@@ -1975,21 +1999,20 @@ int radium_main(char *arg){
       block_selector->resize(100,block_selector->height());
 
       if(1){
-        QSplitter *ysplitter = new QSplitter(Qt::Vertical, main_window);
-        editor->ysplitter = ysplitter;
-        ysplitter->setOpaqueResize(true);
+        //ysplitter->setOpaqueResize(true);
         
-        xsplitter->setParent(ysplitter); //, QPoint(0,0), true);
+        //xsplitter->setParent(ysplitter); //, QPoint(0,0), true);
 
         {
 #if 1
           g_sequencer_widget = new Sequencer_widget(main_window);
           //sequencer_widget->setMinimumHeight(220);
           //sequencer_widget->setMaximumHeight(220);
-          g_sequencer_widget->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
-          g_sequencer_widget->move(0, main_window->height()-220);        
+          
+          //g_sequencer_widget->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
+          //g_sequencer_widget->move(0, main_window->height()-220);        
 #endif     
-          g_parent_for_instrument_widget_ysplitter = new QWidget(ysplitter);
+          g_parent_for_instrument_widget_ysplitter = new QWidget(main_window); //ysplitter);
 
           {
             auto *layout = new QHBoxLayout;
@@ -2002,20 +2025,24 @@ int radium_main(char *arg){
           }
 
           //instruments->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
-          g_parent_for_instrument_widget_ysplitter->move(0, main_window->height()-220);
+          //g_parent_for_instrument_widget_ysplitter->move(0, main_window->height()-220);
         }
-        
+
+        //ysplitter->addWidget(API_get_lowertabs());
+
+        QSplitter *ysplitter = dynamic_cast<QSplitter*>(API_get_main_ysplitter()); //new QSplitter(Qt::Vertical, main_window);
+
         main_window->setCentralWidget(ysplitter);
 
-        ysplitter->setStretchFactor(0,1);//00000);
+        //ysplitter->setStretchFactor(0,1);//00000);
         //ysplitter->setStretchFactor(0,0);
-        ysplitter->setStretchFactor(1,1);
-        ysplitter->setStretchFactor(2,0);
+        //ysplitter->setStretchFactor(1,0);
+        //ysplitter->setStretchFactor(2,0);
         ysplitter->handle(1)->setEnabled(true);//false);
-        ysplitter->handle(2)->setEnabled(false);
-        ysplitter->handle(2)->hide();
+        //ysplitter->handle(2)->setEnabled(false);
+        //ysplitter->handle(2)->hide();
 
-        ysplitter->setChildrenCollapsible(false);
+        //ysplitter->setChildrenCollapsible(false);
 
       } else {
         QWidget *w = new QWidget(main_window);
@@ -2071,20 +2098,11 @@ int radium_main(char *arg){
       GFX_PlayListWindowToFront();
 
   }
-  
-  qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).dark(110).name() + ";}"
-                      "QGroupBox {"
-                      "    background-color: rgba(0, 0, 0, 10);"
-                      "    border: 1px solid rgba(10, 10, 10, 50);;"
-                      "    border-radius: 2px;"
-                      "    margin-top: 1.5em;"
-                      "}"
-                      ""
-                      "QGroupBox::title {"
-                      "    subcontrol-origin: margin;"
-                      "    padding: 2px 2px;"
-                      "    background-color: transparent;"
-                      "}");
+
+  qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).dark(110).name() + ";}" +
+                      "QTabWidget::pane { border: 0; background: " + get_qcolor(LOW_BACKGROUND_COLOR_NUM).name() + "}" +
+                      DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"))
+                      );
 
   PyRun_SimpleString("import menues");
 

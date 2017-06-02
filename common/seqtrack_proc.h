@@ -17,6 +17,11 @@ extern LANGSPEC int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack
 extern LANGSPEC int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime); // Result is rounded down to nearest integer.
   
 // sequencer gfx
+#ifdef USE_QT4
+#include <QWidget>
+extern QWidget *SEQUENCER_getWidget(void);
+#endif
+
 extern LANGSPEC float SEQUENCER_get_x1(void);
 extern LANGSPEC float SEQUENCER_get_x2(void);
 extern LANGSPEC float SEQUENCER_get_y1(void);

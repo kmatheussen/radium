@@ -126,7 +126,9 @@ public:
   }
   */
   
-  void paintEvent ( QPaintEvent * ev ){
+  void paintEvent ( QPaintEvent * ev ) override {
+    TRACK_PAINT();
+    
     //QToolButton::paintEvent(ev);
     QPainter p(this);
     p.eraseRect(rect());
@@ -527,6 +529,14 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         show_bars_in_timeline->setChecked(true);
       else
         show_time_in_timeline->setChecked(true);
+
+      if (useJackTransport())
+        jack_transport->setChecked(true);
+      else
+        internal_transport->setChecked(true);
+
+      is_timebase_master->setChecked(isJackTimebaseMaster());
+      
       
       if (!strcmp(getSeqBlockGridType(), "no"))
         block_no_grid->setChecked(true);
@@ -935,7 +945,17 @@ public slots:
     if (_initing==false)
       setShowBarsInTimeline(val);
   }
-    
+
+  void on_jack_transport_toggled(bool val){
+    if (_initing==false)
+      setUseJackTransport(val);
+  }
+
+  void on_is_timebase_master_toggled(bool val){
+    if (_initing==false)
+      setIsJackTimebaseMaster(val);
+  }
+  
   void on_block_no_grid_toggled(bool val){
     if (_initing==false)
       if (val)

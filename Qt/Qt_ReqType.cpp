@@ -59,8 +59,8 @@ extern struct Root *root;
 
 #endif //  TEST_MAIN
 
-static const int x_margin = 5;
-static const int y_margin = 5;
+static const int x_margin = 25;
+static const int y_margin = 15;
 
 struct MyReqType{
   QFrame *frame;
@@ -81,26 +81,19 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
   GL_lock(); {
     GL_pause_gl_thread_a_short_while();
 
-    if(tvisual==NULL || g_main_window==NULL || g_main_window->updatesEnabled()==false || OS_GFX_main_window_has_focus()==false){
-
-      reqtype->frame = new QFrame();
-      reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
-      auto pos = QCursor::pos();
-      reqtype->frame->move(pos);
-      reqtype->frame->show();
-
-    }else {
-      
-      EditorWidget *editor = g_editor;
-      QSplitter *ysplitter = editor->ysplitter;
-      
-      reqtype->frame = new QFrame(ysplitter);
-      
-      ysplitter->insertWidget(0,reqtype->frame);
+    reqtype->frame = new QFrame(get_current_parent());
+    //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
+    //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
+    set_window_flags(reqtype->frame, true);
+    
+    if (reqtype->frame->layout() != NULL){
+      reqtype->frame->layout()->setSpacing(10);
+      reqtype->frame->layout()->setContentsMargins(20,20,20,20);
     }
-
-    reqtype->frame->resize(5,10);
-    reqtype->frame->show();
+    reqtype->frame->setContentsMargins(20,20,20,20);
+                         
+    //reqtype->frame->resize(5,10);
+    //reqtype->frame->show();
     reqtype->y = y_margin;
     reqtype->widgets_disabled = false;
   
@@ -121,7 +114,7 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
   OS_SYSTEM_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
 
   if(reqtype->widgets_disabled==true){
-    Qt_EnableAllWidgets();
+    //Qt_EnableAllWidgets();
     GFX_enable_mouse_keyboard();
   }
 
@@ -227,8 +220,24 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
     edit->move(x + 5, reqtype->y);
     edit->show();
   
-    reqtype->frame->adjustSize();
     reqtype->frame->setMinimumHeight(reqtype->y+R_MAX(20,edit->height()+10));
+    reqtype->frame->adjustSize();
+
+    if (reqtype->frame->isVisible()==false){
+      
+      const bool show_at_mouse_position = false;
+      
+      if (show_at_mouse_position){
+        auto pos = QCursor::pos();
+        pos += QPoint(-reqtype->frame->width()/2, -reqtype->frame->height() - 10);
+        reqtype->frame->move(pos);
+      } else {
+        moveWindowToCentre(reqtype->frame);
+      }
+
+      reqtype->frame->show();
+    }
+    
     legalize_pos(reqtype);
     
     // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
@@ -236,7 +245,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   }GL_unlock();
 
   if(reqtype->widgets_disabled==false){
-    Qt_DisableAllWidgets(reqtype->frame);
+    //Qt_DisableAllWidgets(reqtype->frame);
     GFX_disable_mouse_keyboard();
     reqtype->widgets_disabled=true;
   }

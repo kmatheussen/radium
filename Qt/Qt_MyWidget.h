@@ -261,7 +261,9 @@ namespace cvs{
         if(mywidget->mouseRelease(event->x(),event->y()))
           event->accept();
       }
-      void paintEvent ( QPaintEvent * ev ){
+      void paintEvent ( QPaintEvent * ev ) override {
+        TRACK_PAINT();
+        
         if(g_radium_runs_custom_exec) return;
         
         QPainter qp(this);

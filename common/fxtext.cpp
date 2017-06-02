@@ -63,7 +63,7 @@ const FXText_trss FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks
   return fxtexts;
 }
 
-int FXTEXT_subsubtrack(const struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs **to_fxs){
+int FXTEXT_subsubtrack(const struct Tracker_Windows *window, const struct WTracks *wtrack, struct FXs **to_fxs){
   if (wtrack->fxtext_on == false)
     return -1;
 

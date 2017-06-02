@@ -115,18 +115,25 @@ static void stop_pause(struct Tracker_Windows *window, bool force_play_block){
   if (wblock==NULL)
     return;
   
-  int realline = R_BOUNDARIES(0, ATOMIC_GET(g_pause_realline), wblock->num_reallines-1);
-  Place *place = &wblock->reallines[realline]->l.p;
-    
   if (g_was_playing) {
-    if (force_play_block)
-      PlayBlockCurrPos2(window, place);
-    else if (g_was_playing_range)
-      PlayRangeCurrPos2(window, place);
-    else if (g_playtype==PLAYBLOCK)
-      PlayBlockCurrPos2(window, place);
-    else if (g_playtype==PLAYSONG)
+
+    if (g_playtype==PLAYSONG) {
+      
       PlaySong(g_pause_song_abstime);
+
+    } else {
+      
+      int realline = R_BOUNDARIES(0, ATOMIC_GET(g_pause_realline), wblock->num_reallines-1);
+      const Place *place = &wblock->reallines[realline]->l.p;
+    
+      if (force_play_block)
+        PlayBlockCurrPos2(window, place);
+      else if (g_was_playing_range)
+        PlayRangeCurrPos2(window, place);
+      else if (g_playtype==PLAYBLOCK)
+        PlayBlockCurrPos2(window, place);
+      
+    }
   }
 }
 
