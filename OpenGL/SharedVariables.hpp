@@ -88,10 +88,12 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   sv->block          = block;
 
-  if (root->song->editor_should_swing_along)
-    sv->times = block->times_with_global_swings;
+  if (!root->song->editor_should_swing_along)
+    sv->times = block->times_without_global_swings; 
+  else if (window->curr_track >= 0)
+    sv->times = wblock->wtrack->track->times;
   else
-    sv->times = block->times_without_global_swings;
+    sv->times = block->times_with_global_swings;
 
   //printf("    CHANGE. %d. sv->times: %p (%p %p)\n", block->l.num, sv->times, block->times_with_global_swings, block->times_without_global_swings);
 
