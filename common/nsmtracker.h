@@ -1956,7 +1956,8 @@ struct WBlocks{
 	struct Blocks *block;			/* Only referenced. wblocknum=block->blocknum */
 
 	struct LocalZooms *localzooms;    /* These two variables (localzooms and reallines) contain the same elements, but 'localzooms' is organized as a tree, while 'reallines' is organized as an array. (roughly)*/
-        const struct LocalZooms **reallines;   // Used by the player. Must be protected by PLAYER_lock
+        const struct LocalZooms **reallines;   // Used by the player. Must be protected by PLAYER_lock. Also Used by the OpenGL thread. The content must not be modified after creation, but it can be replaced. It's also fine to modify the content of individual elements. The OpenGL thread only uses the ->l.p values.
+
 	int num_reallines;               // Same here. Must be protected by PLAYER_lock.
 
         int num_expand_lines;
