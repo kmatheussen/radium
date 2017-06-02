@@ -2250,7 +2250,8 @@ void API_call_very_often(void){
       release_event(event);
     }
 
-    throwExceptionIfError();
+    // Should not do this. Although it's not supposed to happen, We MIGHT have been called from scheme here if inside a custom Qt exec() call.
+    //    throwExceptionIfError();
   }
 }
 
