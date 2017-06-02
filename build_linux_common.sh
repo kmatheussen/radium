@@ -162,9 +162,9 @@ if ! file bin/radium |grep Linux ; then
     rm -f bin/radium_error_message
 fi
 
-make buildtype.opt
-make flagopts.opt
-make radium $@
+make buildtype.opt --stop
+make flagopts.opt --stop
+make radium $@ --stop
 #make pluginhost/Builds/Linux/build/libMyPluginHost.a
 
 mv bin/radium bin/radium_linux.bin
