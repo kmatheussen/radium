@@ -105,7 +105,7 @@ void process_OpenProgress(QString message, QRect rect){
   
   
 #if 1 // defined(FOR_LINUX) // popup locks up X on my computer if radium crashes while the progress window is open.
-  progressWindow->setWindowFlags(progressWindow->windowFlags() | Qt::FramelessWindowHint | Qt::Tool | Qt::MSWindowsFixedSizeDialogHint);
+  progressWindow->setWindowFlags(progressWindow->windowFlags() | Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint | Qt::MSWindowsFixedSizeDialogHint);
 #else
   progressWindow->setWindowFlags(progressWindow->windowFlags() | Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
 #endif
@@ -115,6 +115,8 @@ void process_OpenProgress(QString message, QRect rect){
   setContent("");
   
   progressWindow->show();
+  progressWindow->raise();
+  progressWindow->activateWindow();
 }
 
 void process_ShowProgressMessage(QString message, QRect rect){

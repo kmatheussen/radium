@@ -2136,6 +2136,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : QFileDialog(NULL, header_text, dir, FileRequester::get_postfixes_filter(filetypename, postfixes))
       , Gui(this)
     {
+      /*
+      setWindowTitle(header_text);
+      setDirectory(dir);
+      setSupportedSchemes(FileRequester::get_postfixes_filter(filetypename, postfixes).split(";;"));
+      */
+      
       if (for_loading)
         setAcceptMode(QFileDialog::AcceptOpen);
       else
