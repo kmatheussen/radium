@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 #include <QApplication>
-#include <QMessageBox>
+#include <QTextBrowser>
 #include <QFile>
 #include <QProcess>
 #include <QTimer>
@@ -11,14 +11,21 @@
 #include <QMainWindow>
 #include <QLayout>
 #include <QThread>
+#include <QMutex>
+#include <QQueue>
+#include <QMutexLocker>
+
 
 static const QString message_hide = "_MESSAGE_HIDE";
 static const QString message_show = "_MESSAGE_SHOW";
 static const QString message_exit = "_MESSAGE_EXIT";
+static const QString message_split_string = "_____SPLIT______";
+
 
 #ifdef P_CLIENT
 
-static QMessageBox *progressBox = NULL;
+static QString g_main_message;
+static QTextBrowser *progressWindow = NULL;
 
 static int longest_line(QString text){
   int ret = 0;
@@ -36,8 +43,8 @@ public:
   }
 
   void timerEvent(QTimerEvent *e) override {
-    if (progressBox != NULL && progressBox->isVisible()) {
-      progressBox->raise();
+    if (progressWindow != NULL && progressWindow->isVisible()) {
+      progressWindow->raise();
     }
   }
 };
@@ -45,88 +52,147 @@ public:
 static MyTimer mytimer;
 
 static void positionWindow(const QRect &rect, QWidget *widget){
-  widget->setMinimumWidth(rect.width());
-  widget->setMinimumHeight(rect.height());
-  widget->setMaximumWidth(rect.width());
-  widget->setMaximumHeight(rect.height());
+  int height = widget->height();
+  int width = widget->width();
 
+  if (rect.height() > height){
+    height = rect.height() + 100;
+  }
+
+  if (rect.width() > width){
+    width = rect.width() + 100;
+  }
+
+  widget->setMinimumHeight(height);
+  widget->setMaximumHeight(height);
+  widget->setMinimumWidth(width);
+  widget->setMaximumWidth(width);
+  widget->resize(width, height);
+  
   widget->move(rect.x(), rect.y());
 }
 
-void process_OpenProgress(QString message, QRect rect){
-  delete progressBox;
+static QString handle_rect_in_message(QString message, QWidget *widget){
+  QStringList spl = message.split(message_split_string);
+  if (spl.size() != 2)
+    return "Something is wrong in Qt_progresswindow.cpp. Size of spl:" + QString::number(spl.size()) + ", message: "+message;
 
-  progressBox = new QMessageBox;
+#if 0  // Set to 1 let window always adjust to the middle of the main window.
+  QString rectstring = spl[0];
+  auto spl2 = spl[0].split(",");
+  if (spl2.size() != 4)
+    return "Something is wrong in Qt_progresswindow.cpp. Size of spl2:" + QString::number(spl2.size()) + ", message: "+message;
+
+  QRect rect(spl2[0].toInt(), spl2[1].toInt(), spl2[2].toInt(), spl2[3].toInt());
+
+  positionWindow(rect, widget);
+#endif
+  
+  return spl[1];
+}
+
+static void setContent(QString message){
+  progressWindow->setHtml("<p><pre>\n\n</pre><center><b>" + g_main_message + "</b></center><p><pre>\n\n\n</pre><blockquote>" + message + "</blockquote>");
+}
+
+void process_OpenProgress(QString message, QRect rect){
+  delete progressWindow;
+
+  g_main_message = message;
+  
+  progressWindow = new QTextBrowser;
+  progressWindow->setStyleSheet("QTextBrowser { padding-left:20; padding-top:20; padding-bottom:20; padding-right:20; background-color: white;}");
+  
+  
 #if 1 // defined(FOR_LINUX) // popup locks up X on my computer if radium crashes while the progress window is open.
-  progressBox->setWindowFlags(progressBox->windowFlags() | Qt::FramelessWindowHint | Qt::MSWindowsFixedSizeDialogHint);
+  progressWindow->setWindowFlags(progressWindow->windowFlags() | Qt::FramelessWindowHint | Qt::Tool | Qt::MSWindowsFixedSizeDialogHint);
 #else
-  progressBox->setWindowFlags(progressBox->windowFlags() | Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
+  progressWindow->setWindowFlags(progressWindow->windowFlags() | Qt::Popup);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
 #endif
 
-  progressBox->setStandardButtons(0);
-  progressBox->setText(message + "                                                                                                                " + "\n\n\n\n                                                                                                                ");
-  progressBox->setInformativeText("             \n            \n              \n                \n               \n");
-
-
-  progressBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-  progressBox->layout()->setSizeConstraint( QLayout::SetFixedSize );
+  progressWindow->resize(30,50); // positionWindow doesn't shrink window.
+  positionWindow(rect, progressWindow);
+  setContent("");
   
-  positionWindow(rect, progressBox);
-  
-  progressBox->show();
-
-  //positionWindow(rect, progressBox);
-  
-  for(int i=0; i < 10 ; i++){
-    progressBox->repaint();
-    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    QThread::msleep(1);
-  }
-
+  progressWindow->show();
 }
 
 void process_ShowProgressMessage(QString message, QRect rect){
-  if (progressBox == NULL)
+  if (progressWindow == NULL)
     process_OpenProgress("...", rect);
 
-  // Some ridiculous code to try to work around QMessageBox window size jumping
-  {
-    int len1 = longest_line(progressBox->informativeText());
-    int len2 = longest_line(message);
-
-    if (len2 < len1) {
-      message += "\n";
-      for(int i=0;i<len2;i++)
-        message += " ";
-      message += "\n";
-    }
-    
-    int num_ls = message.count("\n");
-    
-    QString out = message;
-    for(int i=num_ls ; i<5;i++) {
-      out+="                   \n";
-    }
-      
-    progressBox->setInformativeText(out);
-  }
-
-  positionWindow(rect, progressBox);
-
-  for(int i=0; i < 10 ; i++){
-    progressBox->repaint();
-    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    QThread::msleep(1);
-  }
+  setContent(message);
 }
 
 void process_CloseProgress(void){
-  delete progressBox;
-  progressBox = NULL;
+  delete progressWindow;
+  progressWindow = NULL;
 }
 
-int main(int argc, char **argv){
+
+namespace{
   
+class ReadStdinThread : public QThread
+{
+  QMutex mutex;
+  QQueue<QString> queue;
+  
+  QFile in;
+  
+public:
+
+  ReadStdinThread(){
+    if (in.open(stdin, QIODevice::ReadOnly)==false){
+      printf("Unable to open stdin\n");
+    }else{
+      start();
+    }
+  }
+  
+  QString get_data(void){
+    QMutexLocker locker(&mutex);
+    //printf("queue.size: %d\n", queue.size());
+    if (queue.size()==0)
+      return "";
+    else
+      return queue.dequeue();
+  }
+  
+private:
+  void run() override {
+
+    for(;;){
+      
+      char data[1024];
+      int64_t num_bytes = in.readLine(data, 1024-10);
+      
+      QString line;
+      
+      if (num_bytes==-1){
+        printf("   Unable to read data. Exiting progress window process.\n");
+        line = message_exit;
+      }else{
+        line = QByteArray::fromBase64(data);
+        //printf(" *********** Got line -%s- ************* \n",line.toUtf8().constData());
+      }
+
+      if (line != ""){
+        QMutexLocker locker(&mutex);
+        //printf("Adding -%s- to queue\n", line.toUtf8().constData());
+        queue.enqueue(line);
+      }
+    
+      if (line==message_exit)
+        return;
+    }
+  }
+};
+
+}
+
+
+int main(int argc, char **argv){
+
   QApplication app(argc, argv);
 
   int fontsize = atoi(argv[1]);
@@ -136,44 +202,47 @@ int main(int argc, char **argv){
   QFont font = QApplication::font();
   font.setPointSize(fontsize);
   QApplication::setFont(font);
-  
 
   mytimer.start();
 
   QString header = QByteArray::fromBase64(argv[6]).constData();
+
   process_OpenProgress(header, rect);
 
-  QFile in;
-  in.open(stdin, QIODevice::ReadOnly);
+  ReadStdinThread read_thread;
 
   while(true){
-    char data[1024];
-    int64_t num_bytes = in.readLine(data, 1024-10);
 
-    if (num_bytes==-1){
-      fprintf(stderr,"   Unable to read data. Exiting progress window process.\n");
-      break;
-    }
+    QString line;
+    
+    do{
+      QCoreApplication::processEvents();
+      QThread::msleep(20);
+      line = read_thread.get_data();
+    }while(line == "");
 
-    QString line = QByteArray::fromBase64(data);
-    printf(" *********** Got line -%s- ************* \n",line.toUtf8().constData());
-    //getchar();
+    //printf("LINE: -%s-. size: %d. Empty? %d\n", line.toUtf8().constData(), line.size(), line=="");
     
     if (line==message_exit)
       break;
     else if (line==message_hide) {
-      //progressBox->setText("HIDING\n");
-      progressBox->hide();
+      //progressWindow->setText("HIDING\n");
+      progressWindow->hide();
     } else if (line==message_show) {
-      progressBox->show();
-      progressBox->raise();
-      positionWindow(rect, progressBox);
-    } else if (progressBox->isVisible())
-      process_ShowProgressMessage(line, rect);
+      progressWindow->show();
+      progressWindow->raise();
+    } else if (progressWindow->isVisible()){
+      QString message = handle_rect_in_message(line, progressWindow);
+      process_ShowProgressMessage(message, rect);
+    }
+
+    fflush(stdout);
   }
 
   process_CloseProgress();
 
+  read_thread.wait();
+  
   return 0;
 }
 
@@ -186,6 +255,26 @@ int main(int argc, char **argv){
 #include "../common/visual_proc.h"
 #include "../common/OS_settings_proc.h"
 
+#ifdef TEST_MAIN
+static QPoint getCentrePosition(QWidget *parent, int width, int height){
+  QRect rect;
+  
+  if (parent==NULL)
+    // Move to middle of screen instead.
+    rect = QApplication::desktop()->availableGeometry();
+  else
+    rect = parent->geometry();
+  
+  int x = rect.x()+rect.width()/2-width/2;
+  int y = rect.y()+rect.height()/2-height/2;
+  //printf("w: %d, h: %d\n",width,height);
+
+  return QPoint(R_MAX(20, x), R_MAX(20, y));
+}
+#else
+#include "helpers.h"
+#endif
+
 extern QMainWindow *g_main_window;
 
 static QProcess *g_process = NULL;
@@ -195,22 +284,28 @@ static QRect get_rect(int fontsize){
 #ifdef TEST_MAIN
   return QRect(50,50,400,400);
 #else
-  QRect rect;
-
-  if (g_main_window!=NULL && g_main_window->isVisible())
-    rect = g_main_window->rect();
-  else
-    rect = QApplication::desktop()->availableGeometry();
 
   int width = fontsize*600/8;
   int height = fontsize*300/8;
   
-  int x = rect.x()+rect.width()/2-width/2;
-  int y = rect.y()+rect.height()/2-height/2;
+  QPoint point = getCentrePosition(g_main_window, width, height);
 
-  return QRect(x,y,width,height);
+  return QRect(point.x(), point.y(), width, height);
 #endif
 }
+
+static QString get_rect_string(void){
+  QRect rect = get_rect(QApplication::font().pointSize());
+
+  return QString("%1,%2,%3,%4%5")
+    .arg(rect.x())
+    .arg(rect.y())
+    .arg(rect.width())
+    .arg(rect.height())
+    .arg(message_split_string);    
+}
+
+
 
 void GFX_OpenProgress(const char *message){
   delete g_process;
@@ -235,6 +330,9 @@ void GFX_OpenProgress(const char *message){
   printf("   %d %d %d %d\n", rect.x(),rect.y(),rect.width(),rect.height());
   //getchar();
 
+  //g_process->setReadChannel(QProcess::StandardOutput);
+  //g_process->setProcessChannelMode(QProcess::MergedChannels);
+    
   g_process->start(program+" "+
                    QString::number(fontsize) + " " +
                    QString::number(rect.x()) + " " +
@@ -253,24 +351,27 @@ void GFX_OpenProgress(const char *message){
     delete g_process;
     g_process = NULL;
   }
+
+  //g_process->setReadChannel(QProcess::StandardOutput);
 }
 
 static void send_string(QString message){
   printf("-______ sending string %s\n",message.toUtf8().constData());
-  g_process->write((QString(message.toUtf8().toBase64().constData())+"\n").toUtf8());
+  int result = g_process->write((QString(message.toUtf8().toBase64().constData())+"\n").toUtf8());
+  printf("num bytes sent: %d\n", result);
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
   g_process->waitForBytesWritten();
+  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  
+  //printf("From client: -----------------%s\n-------------------\n", g_process->readAllStandardOutput().constData());
 }
     
 void GFX_ShowProgressMessage(const char *message){
   if (g_process == NULL)
     GFX_OpenProgress("...");
 
-  if (g_process != NULL) {
-    send_string(message);
-
-    //g_process->waitForFinished();
-    //g_process->closeWriteChannel();
-  }
+  if (g_process != NULL)
+    send_string(get_rect_string() + message);
 }
 
 bool GFX_ProgressIsOpen(void){
@@ -303,16 +404,13 @@ void GFX_ShowProgress(void){
 
 
 /*
-cd ..
-BUILDTYPE=DEBUG ./build_linux.sh
-cd Qt
-g++ Qt_progresswindow.cpp -DTEST_MAIN `pkg-config --libs Qt5Gui --cflags Qt5Gui --cflags Qt5Widgets` -std=gnu++11 -DNDEBUG -DP_SERVER -I../Qt -DFOR_LINUX -DUSE_QT4 -DUSE_QT5 `cat ../flagopts.opt` -fPIC
-./a.out
+cd /home/kjetil/radium && BUILDTYPE=DEBUG ./build_linux.sh && cd Qt && g++ Qt_progresswindow.cpp -DTEST_MAIN `pkg-config --libs Qt5Gui --cflags Qt5Gui --cflags Qt5Widgets` -std=gnu++11 -DNDEBUG -DP_SERVER -I../Qt -DFOR_LINUX -DUSE_QT4 -DUSE_QT5 `cat ../flagopts.opt` -fPIC && ./a.out
 */
 
   
 QString OS_get_full_program_file_path(QString name){
-  return "/home/kjetil/radium/bin/radium_progress_window";
+  //return "tee /tmp/gakk.txt";
+  return "/home/kjetil/radium/bin/" + name;
 }
 
 int main(int argc, char **argv){
@@ -325,7 +423,10 @@ int main(int argc, char **argv){
   for(int i =0;i<=5;i++){
     printf("trying to show %d\n",i);
     GFX_ShowProgressMessage((QString("ap ")+QString::number(i)).toUtf8().constData());
-    QThread::msleep(1000);
+    for(int i=0;i<100;i++){
+      QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+      QThread::msleep(10);
+    }
   }
   
   GFX_CloseProgress();
