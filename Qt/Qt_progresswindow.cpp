@@ -361,9 +361,12 @@ static void send_string(QString message){
   printf("-______ sending string %s\n",message.toUtf8().constData());
   int result = g_process->write((QString(message.toUtf8().toBase64().constData())+"\n").toUtf8());
   printf("num bytes sent: %d\n", result);
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  
+  // MUST NOT DO THIS. We risk ending up at the same place two times (in case there is an error message), and then we could hit a deadlock qt (in QXcbConnection). (seems like a bug in qt)
+  //QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  
   g_process->waitForBytesWritten();
-  QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+  //QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents); // This is probably not safe either.
   
   //printf("From client: -----------------%s\n-------------------\n", g_process->readAllStandardOutput().constData());
 }
