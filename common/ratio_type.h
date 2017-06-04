@@ -21,13 +21,14 @@ extern "C"{
 extern wchar_t *RATIO_as_string(Ratio ratio);
 extern Ratio RATIO_from_string(const wchar_t *wstring);
 
-#if defined(USE_QT4) && defined(QSTRING_H)
-  extern QString RATIO_as_qstring(Ratio ratio);
-#endif
-  
 #ifdef __cplusplus
 }
 #endif
+
+#if defined(USE_QT4) && defined(QSTRING_H)
+extern QString RATIO_as_qstring(Ratio ratio);
+#endif
+  
 
   
 #endif
