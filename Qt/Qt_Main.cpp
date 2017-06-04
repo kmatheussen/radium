@@ -169,7 +169,6 @@ const char *g_qt_is_painting_where = "nowhere";
 bool g_gc_is_incremental = false;
 
 QHBoxLayout *g_mixerstriplayout = NULL;
-QWidget *g_parent_for_instrument_widget_ysplitter = NULL;
 
 
 DEFINE_ATOMIC(bool, g_mixer_strips_needs_remake) = false;
@@ -1985,12 +1984,6 @@ int radium_main(char *arg){
       if(showMixerStripOnLeftSide())
         add_mixer_strip(xsplitter);
       
-
-#if USE_QT3
-      // Fix. Why does this crash QT4?
-      editor->reparent(xsplitter, QPoint(0,0), true);
-#endif
-      //xsplitter->show();
       editor->setParent(xsplitter); //, QPoint(0,0), false);
 
       block_selector->setParent(xsplitter);//, QPoint(main_window->width()-100,0), true);
@@ -1998,85 +1991,17 @@ int radium_main(char *arg){
 
       block_selector->resize(100,block_selector->height());
 
-      if(1){
-        //ysplitter->setOpaqueResize(true);
-        
-        //xsplitter->setParent(ysplitter); //, QPoint(0,0), true);
-
-        {
-#if 1
-          g_sequencer_widget = new Sequencer_widget(main_window);
-          //sequencer_widget->setMinimumHeight(220);
-          //sequencer_widget->setMaximumHeight(220);
-          
-          //g_sequencer_widget->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
-          //g_sequencer_widget->move(0, main_window->height()-220);        
-#endif     
-          g_parent_for_instrument_widget_ysplitter = new QWidget(main_window); //ysplitter);
-
-          {
-            auto *layout = new QHBoxLayout;
-            layout->setSpacing(0);
-            layout->setContentsMargins(0,0,0,0);
-            g_parent_for_instrument_widget_ysplitter->setLayout(layout);
-
-            QWidget *instruments = createInstrumentsWidget();
-            layout->addWidget(instruments);
-          }
-
-          //instruments->setParent(ysplitter); //, QPoint(0, main_window->height()-220), true);
-          //g_parent_for_instrument_widget_ysplitter->move(0, main_window->height()-220);
-        }
-
-        //ysplitter->addWidget(API_get_lowertabs());
-
-        QSplitter *ysplitter = dynamic_cast<QSplitter*>(API_get_main_ysplitter()); //new QSplitter(Qt::Vertical, main_window);
-
-        main_window->setCentralWidget(ysplitter);
-
-        //ysplitter->setStretchFactor(0,1);//00000);
-        //ysplitter->setStretchFactor(0,0);
-        //ysplitter->setStretchFactor(1,0);
-        //ysplitter->setStretchFactor(2,0);
-        ysplitter->handle(1)->setEnabled(true);//false);
-        //ysplitter->handle(2)->setEnabled(false);
-        //ysplitter->handle(2)->hide();
-
-        //ysplitter->setChildrenCollapsible(false);
-
-      } else {
-        QWidget *w = new QWidget(main_window);
-
-        QVBoxLayout *layout = new QVBoxLayout(0);
-        w->setLayout(layout);
-
-        QWidget *instruments = createInstrumentsWidget();
-        instruments->layout()->setSpacing(0);
-        //xsplitter->layout()->setSpacing(0);
-
-        instruments->setMinimumHeight(instruments->height() + 10);
-
-        layout->addWidget(xsplitter);
-        layout->addWidget(instruments);
-        
-
-        layout->setStretch(0,10000);
-        layout->setStretch(1,0);
-
-
-        QLabel *label = new QLabel("hello",main_window);
-        layout->addWidget(label);
-        layout->setStretch(0,10000);
-        layout->setStretch(1,0);
-        layout->setStretch(2,0);
-
-        //xsplitter->reparent(w, QPoint(0,0), true);
-        //instruments->reparent(w, QPoint(0, main_window->height()-100), true);
-
-        main_window->setCentralWidget(w);
-
+      {
+        g_sequencer_widget = new Sequencer_widget(main_window);
+        createInstrumentsWidget();
       }
 
+      QSplitter *ysplitter = dynamic_cast<QSplitter*>(API_get_main_ysplitter()); //new QSplitter(Qt::Vertical, main_window);
+
+      main_window->setCentralWidget(ysplitter);
+
+      ysplitter->handle(1)->setEnabled(true);
+      
       create_mixer_widget(xsplitter);
 
       if(!showMixerStripOnLeftSide())

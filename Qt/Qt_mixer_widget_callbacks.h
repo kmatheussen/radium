@@ -31,7 +31,6 @@ static QSlider *g_zoom_slider = NULL;
 //static QWidget *g_view = NULL;
 
 extern bool g_pause_scroll_area_updates_when_resizing;
-extern QWidget *g_parent_for_instrument_widget_ysplitter;
 
 
 class MyQGraphicsView : public QGraphicsView{
@@ -477,16 +476,11 @@ public slots:
     if(include_instrument_widget){
       API_setLowertabIncludesInstrument(false);
       verticalLayout->insertWidget(verticalLayout->count()-1, getInstrumentsWidget(), 0);
-      g_parent_for_instrument_widget_ysplitter->hide();
-    }else{
-      g_parent_for_instrument_widget_ysplitter->layout()->addWidget(getInstrumentsWidget());
-      g_parent_for_instrument_widget_ysplitter->show();
     }
 
     setPositionInstrumentWidgetInMixer(include_instrument_widget);
       
     GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
-
     
     if (include_instrument_widget && getInstrumentsWidget()->isVisible()==false)
       GFX_InstrumentWindowToFront();

@@ -420,7 +420,9 @@
 
 ;; ra:gui_tabs with simpler gfx. (no borders, etc.)
 ;;
-(define (my-tabs horizontal)
+(delafina (my-tabs :horizontal
+                   :width 5
+                   :height 5)
   (define tabs (<gui> :tabs (if horizontal 0 2)))
 
   ;;(<gui> :set-style-sheet tabs "QTabWidget::pane { border: 0; }")
@@ -460,6 +462,7 @@
                                          ;;(c-display i (floor y1) (floor y2) "x1/x2" (floor x1) (floor x2) width)
                                          (if (= i (<gui> :current-tab tabs))
                                              (<gui> :filled-box tab-bar curr-tab-background x1 y1 x2 y2))
+                                         ;;(<gui> :draw-box tab-bar "#202020" x1 y1 x2 y2 1.0 2 2)
                                          (<gui> :draw-text tab-bar *text-color* (<gui> :tab-name tabs i) x1 y1 x2 y2 #t #f #f (if horizontal 0 270)))))
                      (iota num-tabs))))
   
@@ -487,7 +490,7 @@
   
   (<gui> :add-resize-callback tabs resize-callback)
 
-  (resize-callback 5 5)
+  (resize-callback width height)
                
   tabs
   )

@@ -77,7 +77,8 @@
 
 
 #!!
-       
+(<gui> :show (create-transpose-notem))
+
 (add-notem-tab "Transpose" (create-transpose-notem))
 (add-notem-tab "Transpose2" (<gui> :flow-layout
                                   (<gui> :button "b1")

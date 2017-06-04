@@ -73,13 +73,20 @@
   
   (define instrument-gui (<gui> :get-instrument-gui))
   (define sequencer-gui (<gui> :get-sequencer-gui))
-  
-  (<gui> :minimize-as-much-as-possible instrument-gui)
-  
-  (define width (<gui> :width instrument-gui))
-  (define height (<gui> :height instrument-gui))
 
-  ;; sequencer gui is quite tall initially. This causes a jump during startup. We set it smaller here to avoid this. (we also set *notem-gui* size, just in case)
+  ;; Try to make tabs have same size
+  (<gui> :minimize-as-much-as-possible sequencer-gui)
+  (<gui> :minimize-as-much-as-possible instrument-gui)
+  (<gui> :minimize-as-much-as-possible *notem-gui*)
+  
+  (define width (max (<gui> :width sequencer-gui)
+                     (<gui> :width instrument-gui)
+                     (<gui> :width *notem-gui*)))
+  (define height (max (<gui> :height sequencer-gui)
+                      (<gui> :height instrument-gui)
+                      (<gui> :height *notem-gui*)))
+
+  (<gui> :set-size instrument-gui width height)
   (<gui> :set-size sequencer-gui width height)
   (<gui> :set-size *notem-gui* width height)
   
@@ -95,6 +102,9 @@
   (<gui> :add-callback *lowertab-gui*
          (lambda (index)
            (lowertab-index-callback index)))
+
+  ;; Make sure tab bar is drawn in correct size from the beginning.
+  (set-fixed-height (<gui> :get-tab-bar *lowertab-gui*) height) ;; Hack. Calling (<gui> :set-height *lowertab-gui*) doesn't work immediately. TODO: Investigate why.
   )
 
 
@@ -113,10 +123,13 @@
   
   (cond ((and (not includeit)
               is-included)
+         (if (= 1 (<gui> :current-tab *lowertab-gui*))
+             (<gui> :set-current-tab *lowertab-gui* 0))
          (<gui> :remove-tab *lowertab-gui* pos))
         ((and includeit
               (not is-included))
-         (<gui> :add-tab *lowertab-gui* *instrument-gui-tab-name* instr 1))))
+         (<gui> :add-tab *lowertab-gui* *instrument-gui-tab-name* instr 1)
+         (<gui> :set-current-tab *lowertab-gui* 1))))
       
 
 (define (show-lowertab-gui gui)

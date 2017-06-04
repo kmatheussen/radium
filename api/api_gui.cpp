@@ -2502,10 +2502,8 @@ int64_t gui_getSequencerGui(void){
   return API_get_gui_from_existing_widget(SEQUENCER_getWidget());
 }
 
-extern QWidget *g_parent_for_instrument_widget_ysplitter;
-
 int64_t gui_getInstrumentGui(void){
-  return API_get_gui_from_existing_widget(g_parent_for_instrument_widget_ysplitter);
+  return API_get_gui_from_existing_widget(getInstrumentsWidget());
 }
 
 /////// Callbacks

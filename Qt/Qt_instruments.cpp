@@ -64,7 +64,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern QApplication *qapplication;
-extern QWidget *g_parent_for_instrument_widget_ysplitter;
 
 
 
@@ -471,7 +470,7 @@ static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch){
   return instrument;
 }
 
-
+// TODO: Rename to INSTRUMENTWIDGET_init(), or similar. (
 QWidget *createInstrumentsWidget(void){
   g_instruments_widget = new Instruments_widget();
 
@@ -541,7 +540,6 @@ void GFX_InstrumentWindowToFront(void){
   if (!positionInstrumentWidgetInMixer()){
     //EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
     //g_instruments_widget->setParent(editor->ysplitter);
-    //g_parent_for_instrument_widget_ysplitter->show();
     //editor->ysplitter->handle(2)->setEnabled(false);
     //editor->ysplitter->setStretchFactor(2,0);
 
@@ -568,9 +566,9 @@ void GFX_InstrumentWindowToFront(void){
 
 void GFX_InstrumentWindowToBack(void){
   if (!positionInstrumentWidgetInMixer()) {
-    //g_parent_for_instrument_widget_ysplitter->hide();
+    
     API_hideInstrumentGui();
-    //g_parent_for_instrument_widget_ysplitter->setParent(NULL);
+    
   } else {
     
     g_instruments_widget->hide();
