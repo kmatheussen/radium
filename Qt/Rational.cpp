@@ -1,4 +1,6 @@
 
+#include <math.h>
+
 #include <QString>
 
 #include "../common/nsmtracker.h"

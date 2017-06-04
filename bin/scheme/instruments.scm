@@ -796,7 +796,9 @@
 
 (define (show/hide-instrument-gui)
   (let ((id (ra:get-current-instrument)))
-    (when (and (not (= -1 id)) (ra:has-native-instrument-gui id))
-      (if (ra:instrument-gui-is-visible id)
-          (ra:hide-instrument-gui id)
-          (ra:show-instrument-gui id)))))
+    (when (not (= -1 id))
+      (if (ra:has-native-instrument-gui id)
+          (if (ra:instrument-gui-is-visible id)
+              (ra:hide-instrument-gui id)
+              (ra:show-instrument-gui id))
+          (<ra> :show-async-message -2 (<-> "Instrument #" id " (" (<ra> :get-instrument-name id) ") doesn't have a GUI"))))))

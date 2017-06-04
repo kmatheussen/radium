@@ -396,6 +396,7 @@
 
 #!!
 (add-message-window-message "hello")
+(<ra> :add-message "hello2")
 !!#
 
 (define (safe-add-message-window-txt txt)
