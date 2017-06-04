@@ -501,10 +501,14 @@ namespace{
   
     template <class SuperWidget>
     void setVisible_override(SuperWidget *widget, bool visible) {
-      if (visible==false && widget->isVisible()==false)
+      if (visible==false && widget->isVisible()==false){
+        widget->SuperWidget::setVisible(visible);
         return;
-      if (visible==true && widget->isVisible()==true)
+      }
+      if (visible==true && widget->isVisible()==true){
+        widget->SuperWidget::setVisible(visible);
         return;
+      }
 
       if (visible && widget->window()==widget)
         restore(widget);  // Not necessary for correct operation, but it might seem like it removes some flickering.
