@@ -204,6 +204,7 @@ then
     rm -fr libxcb-1.12
     tar xvjf libxcb-1.12.tar.bz2 
     cd libxcb-1.12
+    patch -p1 <../libxcb-1.12.patch
     export PKG_CONFIG_PATH=`pwd`/../xcb-proto-1.12/install/lib/pkgconfig:$PKG_CONFIG_PATH
     ./configure
     make
