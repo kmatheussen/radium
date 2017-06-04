@@ -105,6 +105,7 @@
 
   ;; Make sure tab bar is drawn in correct size from the beginning.
   (set-fixed-height (<gui> :get-tab-bar *lowertab-gui*) height) ;; Hack. Calling (<gui> :set-height *lowertab-gui*) doesn't work immediately. TODO: Investigate why.
+  
   )
 
 

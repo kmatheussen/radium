@@ -502,15 +502,19 @@
            (<gui> :filled-box tabs background-color 0 0 width height)
            #t))
 
-  (define (resize-callback width height)
+  (define (resize-tabs tabs horizontal width height)
+    (define tab-bar (<gui> :get-tab-bar tabs))
     (if horizontal
         (set-fixed-width tab-bar width)
         (set-fixed-height tab-bar height)))
   
+  (define (resize-callback width height)
+    (resize-tabs tabs horizontal width height))
+  
   (<gui> :add-resize-callback tabs resize-callback)
-
-  (resize-callback width height)
                
+  (<gui> :set-size tabs width height)
+  
   tabs
   )
 

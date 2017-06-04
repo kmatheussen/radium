@@ -681,7 +681,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         return;
       }
 
-      if(gui_isOpen(_gui_num) && _widget->isVisible()){ //  && _widget->width()>0 && _widget->height()>0)
+      if(gui_isOpen(_gui_num)){ // && _widget->isVisible()){ //  && _widget->width()>0 && _widget->height()>0)
         S7CALL(void_int_int,_resize_callback, event->size().width(), event->size().height());
         if (g_scheme_failed==true)
           _resize_callback_failed = true;
