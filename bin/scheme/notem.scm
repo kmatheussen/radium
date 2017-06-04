@@ -55,24 +55,31 @@
                                    (<gui> :button (down 12) (func-creator -12))))))
   ret)
 
+  
+         
+(define (create-under-construction)
+  (mid-horizontal-layout (<gui> :text "Under construction. Look at the Editor menu.")))
 
 (define (create-transpose-notem)
   (define (create-callback-creator func)
     (lambda (how-much)
       (lambda ()
         (func how-much))))
-  (<gui> :scroll-area #t #t
-         (<gui> :flow-layout
-                (create-transpose-buttons "Note" (create-callback-creator ra:transpose-note))
-                (create-transpose-buttons "Range" (create-callback-creator ra:transpose-range))
-                (create-transpose-buttons "Track" (create-callback-creator ra:transpose-track))
-                (create-transpose-buttons "Block" (create-callback-creator ra:transpose-block))
-                )
-         )
-  )
 
+  (<gui> :scroll-area #t #t (<gui> :vertical-layout
+                                   (<gui> :flow-layout
+                                          (create-transpose-buttons "Note" (create-callback-creator ra:transpose-note))
+                                          (create-transpose-buttons "Range" (create-callback-creator ra:transpose-range))
+                                          (create-transpose-buttons "Track" (create-callback-creator ra:transpose-track))
+                                          (create-transpose-buttons "Block" (create-callback-creator ra:transpose-block))
+                                          )
+                                   (mid-vertical-layout (create-under-construction)))))
+         
+  
 (add-notem-tab "Quantization" (create-quantitize-gui-for-tab))
 (add-notem-tab "Transpose" (create-transpose-notem))
+(add-notem-tab "More" (mid-vertical-layout (create-under-construction)))
+
 
 
 

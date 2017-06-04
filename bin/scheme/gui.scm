@@ -27,6 +27,24 @@
   (<gui> :set-size-policy gui #f #t))
 
 
+(define (mid-vertical-layout . guis)
+  (define layout (<gui> :vertical-layout))
+  (<gui> :add-layout-space layout 10 10 #f #t)
+  (for-each (lambda (gui)
+              (<gui> :add layout gui))
+            guis)
+  (<gui> :add-layout-space layout 10 10 #f #t)
+  layout)
+  
+(define (mid-horizontal-layout . guis)
+  (define layout (<gui> :horizontal-layout))
+  (<gui> :add-layout-space layout 10 10 #t #f)
+  (for-each (lambda (gui)
+              (<gui> :add layout gui))
+            guis)
+  (<gui> :add-layout-space layout 10 10 #t #f)
+  layout)
+
 (define (gui-create-layout create-layout-func layout-args . guis)
   (define layout (apply create-layout-func layout-args))
   (for-each (lambda (gui)
