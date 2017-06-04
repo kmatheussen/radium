@@ -338,7 +338,7 @@ public slots:
   void on_signature_editingFinished(){
     printf("signature bottombar\n");
     
-    Rational rational = create_rational_from_string(signature->text());
+    Rational rational(signature->text());
     signature->pushValuesToRoot(rational);
 
     signature->setText(Rational(root->signature).toString());

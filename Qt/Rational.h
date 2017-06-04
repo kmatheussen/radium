@@ -7,6 +7,8 @@
 #include <QString>
 #include <QStringList>
 
+extern Ratio RATIO_from_string(QString string);
+  
 namespace{
   
 struct Rational {
@@ -23,7 +25,12 @@ struct Rational {
     : _numerator((int)ratio.numerator)
     , _denominator((int)ratio.denominator)
   {}
-
+  
+  Rational(QString string)
+    : Rational(RATIO_from_string(string)) // C++11 FTW!
+  {             
+  }
+  
   Ratio get_ratio(void) const {
     return make_ratio(_numerator, _denominator);
   }
@@ -95,39 +102,8 @@ struct Rational {
 };
 }
 
-static inline Rational create_rational_from_string(QString string){
-  QStringList splitted = string.split("/", QString::SkipEmptyParts);
-
-  if (splitted.size() >= 2) {
-      
-    QString a = splitted[0];
-    QString b = splitted[1];
-
-    int numerator = a.toInt();
-    int denominator = b.toInt();
-
-    return Rational(numerator, denominator);
-    
-  } else {
-    
-    bool ok;
-    int value = string.toInt(&ok);
-
-    if (ok)
-      return Rational(value,1);
-    else
-      return Rational(0,0);
-    
-  }
-  
-}
 #endif // __cplusplus
 
-// line is always 0
-// dividor is 0 if error, or the input denominator was actually 0
-// counter is undefined if error
-extern LANGSPEC Place get_rational_from_string(const char *string);
-extern LANGSPEC char *get_string_from_rational(const Place *r);
 
 
 #endif // QT_RATIONAL_H

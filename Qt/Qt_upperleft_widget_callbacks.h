@@ -309,7 +309,7 @@ public slots:
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
 
-    Rational rational = create_rational_from_string(lz->text());
+    Rational rational(lz->text());
 
     int value = lz->getNumExpandLinesFromRational(rational);
 
@@ -336,7 +336,7 @@ public slots:
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
 
-    Rational rational = create_rational_from_string(grid->text());
+    Rational rational(grid->text());
     grid->pushValuesToRoot(rational);    
 
     updateWidgets(wblock);
@@ -352,7 +352,7 @@ public slots:
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
 
-    Rational rational = create_rational_from_string(signature->text());
+    Rational rational(signature->text());
     signature->pushValuesToRoot(rational);
     
     //setSignature(rational.numerator, rational.denominator);

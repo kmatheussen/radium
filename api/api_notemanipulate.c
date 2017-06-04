@@ -188,12 +188,19 @@ void quantitizeRange(int windownum){
 }
 
 // TODO. Should return ratio
-Place getQuantitize(void){
-  return place(0, (int)root->quantitize_options.quant.numerator, (int)root->quantitize_options.quant.denominator);
+dyn_t getQuantitize(bool as_string){
+  if (as_string)
+    return DYN_create_string_dont_copy(RATIO_as_string(root->quantitize_options.quant));
+  else
+    return DYN_create_ratio(root->quantitize_options.quant);
 }
 
-void setQuantitize(Place ratio){
-  root->quantitize_options.quant = ratio_from_place(ratio);
+void setQuantitize(dyn_t dyn){
+  if (!DYN_is_liberal_ratio(dyn)){
+    handleError("setQuantitize: Expected number or string. Found %s", DYN_type_name(dyn.type));
+    return;
+  }
+  root->quantitize_options.quant = DYN_get_liberal_ratio(dyn);
 }
 
 int getQuantitizeType(void){

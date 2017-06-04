@@ -126,6 +126,7 @@ wchar_t *STRING_copy(const wchar_t *string){
   return STRING_create(STRING_get_qstring(string));
 }
 
+// TODO: Rename to STRING_create_chars. It doesn't return a constant string which is available somewhere.
 char* STRING_get_chars(const wchar_t *string){
   QString s = STRING_get_qstring(string);
   return talloc_strdup(s.toLocal8Bit().constData());

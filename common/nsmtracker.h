@@ -763,6 +763,10 @@ static inline dyn_t DYN_create_float(double float_number){
   return a;
 }
 
+static inline bool DYN_is_float(const dyn_t a){
+  return a.type==FLOAT_TYPE;
+}
+
 static inline bool DYN_is_number(const dyn_t a){
   if (a.type==INT_TYPE)
     return true;
@@ -810,7 +814,7 @@ static inline dyn_t DYN_create_place(const Place place){
   return DYN_create_ratio(ratio_minimize(make_ratio(place.counter + place.line*place.dividor, place.dividor)));
 }
 
-// (There is also a DYN_get_place function in placement_proc.h)
+// (There is also a DYN_get_place function in placement_proc.h, and a DYN_get_liberal_ratio function further down in this file)
 static inline Ratio DYN_get_ratio(const dyn_t dyn){
   if (dyn.type==INT_TYPE)
     return make_ratio(dyn.int_number, 1);
@@ -831,6 +835,30 @@ static inline bool DYN_is_ratio(const dyn_t a){
   
   return false;
 }
+
+// Also allows strings and floats.
+static inline Ratio DYN_get_liberal_ratio(const dyn_t dyn){
+  if (dyn.type==INT_TYPE)
+    return make_ratio(dyn.int_number, 1);
+
+  if (dyn.type==RATIO_TYPE)
+    return *dyn.ratio;
+
+  else if (dyn.type==FLOAT_TYPE)
+    return make_ratio(dyn.float_number*1000, 1000);
+
+  else if (dyn.type==STRING_TYPE)
+    return RATIO_from_string(dyn.string);
+    
+  RError("DYN_Get_ratio: dyn (type: %d) can not be converted to a ratio", dyn.type);
+
+  return make_ratio(0,1);      
+}
+
+static inline bool DYN_is_liberal_ratio(const dyn_t a){
+  return a.type==INT_TYPE || a.type==RATIO_TYPE || a.type==FLOAT_TYPE || a.type==STRING_TYPE;
+}
+
 
 
 

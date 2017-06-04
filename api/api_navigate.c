@@ -324,11 +324,11 @@ void requestCursorMove(void){
     
   } else {
   
-    Place p = get_rational_from_string(line);
-    if (p.dividor==0)
+    Ratio ratio = RATIO_from_string(STRING_create(line));
+    if (ratio.denominator==0)
       goto exit;
     
-    int realline = get_realline_from_beat(wblock, p.counter, p.dividor);
+    int realline = get_realline_from_beat(wblock, ratio.numerator, ratio.denominator);
     if (realline==-1)
       goto exit;
 

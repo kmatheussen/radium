@@ -260,6 +260,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     func_t *_func;
     QWidget *_widget;
+
+    QString _last_string_value = "__________________________________"; // Workaround for https://bugreports.qt.io/browse/QTBUG-40
     
   public:
     
@@ -285,18 +287,17 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void editingFinished(){
       QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
-      
+      QString value = line_edit->text();
+            
       set_editor_focus();
 
       GL_lock();{
         line_edit->clearFocus();
       }GL_unlock();
 
-      RatioSnifferQLineEdit *ratioedit = dynamic_cast<RatioSnifferQLineEdit*>(_widget);
-      if (ratioedit != NULL){
-        S7CALL(void_dyn, _func, DYN_create_ratio(ratioedit->get_ratio()));
-      }else{
-        S7CALL(void_charpointer,_func, line_edit->text().toUtf8().constData());
+      if (value != _last_string_value){
+        _last_string_value = value;
+        S7CALL(void_charpointer,_func, value.toUtf8().constData());
       }
     }
 
@@ -988,10 +989,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       {
         RatioSnifferQLineEdit *ratioedit = dynamic_cast<RatioSnifferQLineEdit*>(_widget.data());
         if (ratioedit != NULL){
-          if (DYN_is_ratio(val))
-            ratioedit->setText(Rational(DYN_get_ratio(val)).toString());
+          if (DYN_is_liberal_ratio(val))
+            ratioedit->setText(RATIO_as_qstring(DYN_get_liberal_ratio(val)));
           else
-            handleError("Ratio->setValue received %s, expected INT_TYPE or RATIO_TYPE", DYN_type_name(val.type));
+            handleError("Ratio->setValue received %s, expected a number or a string", DYN_type_name(val.type));
           return;
         }
       }
@@ -1072,9 +1073,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (label!=NULL)
         return DYN_create_string(label->text());
 
+      /*
+        // gui_ratio returns a string now since denominators are not preserved in rational types.
       RatioSnifferQLineEdit *ratio_edit = dynamic_cast<RatioSnifferQLineEdit*>(_widget.data());
       if (ratio_edit != NULL)
         return DYN_create_ratio(ratio_edit->get_ratio());
+      */
       
       QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget.data());
       if (line_edit!=NULL)
@@ -2006,8 +2010,18 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       , Gui(this)
     {
       setText(Rational(ratio).toString());
+      connect(this, SIGNAL(editingFinished()), this, SLOT(editingFinished()));
     }
+    
     OVERRIDERS(RatioSnifferQLineEdit);
+                                     
+  public slots:
+    void editingFinished(){
+      set_editor_focus();
+      GL_lock();{
+        clearFocus();
+      }GL_unlock();
+    }
   };
   
   struct TextEdit : FocusSnifferQTextEdit, Gui{
@@ -2724,8 +2738,13 @@ int64_t gui_textEdit(const_char* content, bool read_only){
   return (new TextEdit(content, read_only))->get_gui_num();
 }
 
-int64_t gui_ratio(Place ratio, bool wheelMainlyChangesNumerator, bool wheelDecrasesDenominatorIfNumeratorIsOne){
-  return (new MyRatioSnifferQLineEdit(NULL, ratio_from_place(ratio), wheelMainlyChangesNumerator, wheelDecrasesDenominatorIfNumeratorIsOne))->get_gui_num();
+int64_t gui_ratio(dyn_t ratio, bool wheelMainlyChangesNumerator, bool wheelDecrasesDenominatorIfNumeratorIsOne){
+  if (!DYN_is_liberal_ratio(ratio)){
+    handleError("gui_ratio: Expected a number or string as 'ratio' argument. Found %s", DYN_type_name(ratio.type));
+    return -1;
+  }
+
+  return (new MyRatioSnifferQLineEdit(NULL, DYN_get_liberal_ratio(ratio), wheelMainlyChangesNumerator, wheelDecrasesDenominatorIfNumeratorIsOne))->get_gui_num();
 }
 
 int64_t gui_line(const_char* content){

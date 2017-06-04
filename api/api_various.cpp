@@ -2121,6 +2121,20 @@ int getHighestLegalPlaceDenominator(void){
   return MAX_UINT32;
 }
 
+dyn_t getRatioFromString(const_char* s){
+  return DYN_create_ratio(RATIO_from_string(STRING_create(s)));
+}
+
+const_char* getStringFromRatio(dyn_t ratio){
+  if (!DYN_is_liberal_ratio(ratio)){
+    handleError("getStringFromRatio: Expected number or string. Found %s", DYN_type_name(ratio.type));
+    return "";
+  }
+
+  return STRING_get_chars(RATIO_as_string(DYN_get_liberal_ratio(ratio)));
+}
+
+
 const_char *toBase64(const char *s){
   return STRING_get_chars(STRING_toBase64(STRING_create(s)));
 }

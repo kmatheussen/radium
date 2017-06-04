@@ -149,39 +149,36 @@
   ;;
   (define value-gui (<gui> :child quant-gui "quantization_value"))
 
-  (<gui> :set-value value-gui (<ra> :get-quantitize))
+  (define (set-global-quantitize-value!)
+    <ra> :set-quantitize (<gui> :get-value value-gui))
+  
+  (<gui> :set-value value-gui (<ra> :get-quantitize #t))
 
-  (<ra> :schedule 1000
-        (lambda ()
-          (if (<gui> :is-open value-gui)
-              (begin
-                (if (not (= (<gui> :get-value value-gui)
-                            (<ra> :get-quantitize)))
-                    (<gui> :set-value value-gui (<ra> :get-quantitize)))                    
-                (+ 400 (random 100)))
-              #f)))
-           
   (<gui> :add-callback value-gui
          (lambda (val)
            (c-display "Quant: " val (string? val))
-           (<ra> :set-quantitize val)))
-
+           (if (not (string=? val (<ra> :get-quantitize #t)))
+               (<ra> :set-quantitize val))
+           (<gui> :set-value value-gui (<ra> :get-quantitize #t))))
 
   ;; Buttons
   ;;
   (<gui> :add-callback (<gui> :child quant-gui "quantitize_range")
          (lambda ()
            (set-me-as-current!)
+           (set-global-quantitize-value!)
            (<ra> :quantitize-range)))
   
   (<gui> :add-callback (<gui> :child quant-gui "quantitize_track")
          (lambda ()
            (set-me-as-current!)
+           (set-global-quantitize-value!)
            (<ra> :quantitize-track)))
   
   (<gui> :add-callback (<gui> :child quant-gui "quantitize_block")
          (lambda ()
            (set-me-as-current!)
+           (set-global-quantitize-value!)
            (<ra> :quantitize-block)))
   
   

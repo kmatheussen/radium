@@ -151,7 +151,7 @@ void SetSignatureCurrPos(struct Tracker_Windows *window){
 	char *signaturestring = GFX_GetString(window,NULL,"New Time Signature: >");
 	if(signaturestring==NULL) return;
 
-        Rational rational = create_rational_from_string(signaturestring);
+        Rational rational(signaturestring);
         if (rational.is_valid()==false || rational._numerator<=0 || rational._denominator<=0)
           return;
         

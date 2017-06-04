@@ -265,14 +265,14 @@ void SetQuantitize_CurrPos(
                            struct Tracker_Windows *window
 ){
     
-        Place before = {0, (uint32_t)root->quantitize_options.quant.numerator, (uint32_t)root->quantitize_options.quant.denominator};
-        Place after;
+        Ratio before = root->quantitize_options.quant;
+        Ratio after;
                   
         ReqType reqtype = GFX_OpenReq(window, 100, 100, "Quantitize");
 
         do{
           GFX_WriteString(reqtype, "Quantitize Value : ");
-          GFX_SetString(reqtype, get_string_from_rational(&before));
+          GFX_SetString(reqtype, STRING_get_chars(RATIO_as_string(before)));
           
           char temp[1024];
           GFX_ReadString(reqtype, temp, 1010);
@@ -283,16 +283,15 @@ void SetQuantitize_CurrPos(
             return;
           }
           
-          after = get_rational_from_string(temp);
-        } while (after.dividor==0);
+          after = RATIO_from_string(STRING_create(temp));
+        } while (after.denominator==0);
         
         GFX_CloseReq(window, reqtype);
 
-        if (root->quantitize_options.quant.numerator == (int)after.counter && root->quantitize_options.quant.denominator == (int)after.dividor)
+        if (RATIO_literary_equal(root->quantitize_options.quant, after))
           return;
 
         ADD_UNDO(MainTempo(window, window->wblock));
                        
-        root->quantitize_options.quant.numerator = after.counter;
-        root->quantitize_options.quant.denominator = after.dividor;
+        root->quantitize_options.quant = after;
 }

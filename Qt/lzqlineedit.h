@@ -83,15 +83,23 @@ public:
   }
 
   Ratio get_ratio(void){
-    return create_rational_from_string(text()).get_ratio();
+    return RATIO_from_string(text());
   }
     
   virtual void wheelEvent(QWheelEvent *qwheelevent) {
 
-    Rational ratio = create_rational_from_string(text());
+    Rational ratio(text());
     //printf("  text: %s, ratio: %s\n", text().toUtf8().constData(), ratio.toString().toUtf8().constData());
 
-    if (_wheelMainlyChangesNumerator){
+    if (qwheelevent->modifiers() & Qt::ControlModifier) {
+
+      if (qwheelevent->delta()<0 && ratio._denominator >= 2)
+        ratio = ratio.downDenominator();
+      
+      else if (qwheelevent->delta()>0)
+        ratio = ratio.upDenominator();
+      
+    } else if (_wheelMainlyChangesNumerator){
       
       if (qwheelevent->delta()<0 && ratio._numerator>1)
         ratio = ratio.downNumerator();

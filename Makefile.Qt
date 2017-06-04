@@ -1524,9 +1524,10 @@ api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.c $(API)radium_proc.h
 api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.c $(API)radium_proc.h
 	$(CC)  $(API)api_seqtracks.c $(OPT)
 
-api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp $(API)radium_proc.h Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h
+api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp $(API)radium_proc.h Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS)
+
 
 radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c $(API)radium_proc.h
 	$(CC)  $(API)radium_wrap.c $(OPT) -w

@@ -424,5 +424,20 @@
   ...)
 
 
+(define ratio (<gui> :ratio 5/2))
 
+(<gui> :show ratio)
+
+(<gui> :get-value ratio)
+
+
+
+
+(define aline (<gui> :line "hello"))
+
+(<gui> :show aline)
+
+(<gui> :add-callback aline
+       (lambda (val)
+         (c-display "val:" val)))
 
