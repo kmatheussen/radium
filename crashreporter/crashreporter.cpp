@@ -414,12 +414,13 @@ int main(int argc, char **argv){
   bool faulty_installation = false;
   if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")==NULL){
     faulty_installation = true;
-  }else
-    QCoreApplication::setLibraryPaths(QStringList());    
+  }else{
+    QCoreApplication::setLibraryPaths(QStringList());
+  }
 #else
   QCoreApplication::setLibraryPaths(QStringList());
 #endif
-  
+
   QApplication app(argc,argv);
 
 #if FOR_LINUX
