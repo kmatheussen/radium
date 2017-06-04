@@ -74,10 +74,6 @@
 (add-notem-tab "Quantization" (create-quantitize-gui-for-tab))
 (add-notem-tab "Transpose" (create-transpose-notem))
 
-(<ra> :schedule 500 ;; tabs behave strange.
-      (lambda ()
-        (<gui> :set-current-tab *notem-gui* 0)
-        #f))
 
 
 #!!

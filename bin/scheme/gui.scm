@@ -4,6 +4,29 @@
 (define-constant *max-db* (<ra> :get-max-db))
 (define-constant *max-mixer-db* 6)
 
+
+(define (set-fixed-size gui width height)
+  (<gui> :set-min-height gui height)
+  (<gui> :set-max-height gui height)
+  (<gui> :set-min-width gui width)
+  (<gui> :set-max-width gui width)
+  (<gui> :set-size gui width height);
+  (<gui> :set-size-policy gui #f #f))
+  
+(define (set-fixed-height gui height)
+  (<gui> :set-min-height gui height)
+  (<gui> :set-max-height gui height)
+  (<gui> :set-size gui (<gui> :width gui) height)
+  (<gui> :set-size-policy gui #t #f))
+
+
+(define (set-fixed-width gui width)
+  (<gui> :set-min-width gui width)
+  (<gui> :set-max-width gui width)
+  (<gui> :set-size gui width (<gui> :height gui))
+  (<gui> :set-size-policy gui #f #t))
+
+
 (define (gui-create-layout create-layout-func layout-args . guis)
   (define layout (apply create-layout-func layout-args))
   (for-each (lambda (gui)
@@ -457,16 +480,21 @@
            (<gui> :filled-box tabs background-color 0 0 width height)
            #t))
 
-  (<gui> :add-resize-callback tabs
-         (lambda (width height)
-           (if horizontal
-               (set-fixed-width tab-bar width)
-               (set-fixed-height tab-bar height))))
+  (define (resize-callback width height)
+    (if horizontal
+        (set-fixed-width tab-bar width)
+        (set-fixed-height tab-bar height)))
+  
+  (<gui> :add-resize-callback tabs resize-callback)
+
+  (resize-callback 5 5)
                
   tabs
   )
 
+
 #!!
+
 (let ((tabs (my-tabs #f)))
   (<gui> :show tabs)
   (<gui> :add-tab tabs "Quantitize 1" (create-quantitize-gui-for-tab))

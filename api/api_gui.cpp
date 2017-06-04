@@ -150,17 +150,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
       QPainter p(this);                                                 \
       p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \
     }else{                                                              \
-      if (_paint_callback==NULL)                                        \
-        classname::paintEvent(ev);                                      \
-      else                                                              \
+      if (_paint_callback!=NULL)                                        \
         Gui::paintEvent(ev);                                            \
+      else                                                              \
+        classname::paintEvent(ev);                                      \
     }                                                                   \
   }                                                                     
 
 
 #define SETVISIBLE_OVERRIDER(classname)                                 \
   void setVisible(bool visible) override {                              \
-    remember_geometry.setVisible_override<classname>(this, visible);    \
+    remember_geometry.setVisible_override<classname>(this, visible);  \
   }
 
   /*
@@ -2204,20 +2204,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       , Gui(this)
     {
       setTabPosition((QTabWidget::TabPosition)tab_pos);
+
       setDocumentMode(false); // Remove border
       
       setTabBar(new TabBar((QTabBar::Shape)tab_pos, this));
       
       tabBar()->setDocumentMode(false); // Remove border
-
-            
-      QColor background = get_qcolor(HIGH_BACKGROUND_COLOR_NUM);
-
-      QPalette pal = palette();
-      pal.setColor(QPalette::Background, background);
-      pal.setColor(QPalette::Base, background);
-      setAutoFillBackground(true);
-      setPalette(pal);
     }
     
     /*
@@ -2228,6 +2220,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return currentWidget()->sizeHint();
     }
     */
+    
     OVERRIDERS(QTabWidget);
   };
 
@@ -2819,10 +2812,9 @@ int gui_addTab(int64_t tabs_guinum, const_char* name, int64_t tab_guinum, int po
   QTabWidget *tabs = tabs_gui->mycast<QTabWidget>(__FUNCTION__);
   if (tabs==NULL)
     return -1;
-
+  
   int num = tabs->insertTab(pos, tab_gui->_widget, name);
-  tabs->setCurrentIndex(num); // If not, the new tab will be displayed on top of the current tab. Could be a qt 5.5.1 bug though.
-
+  
   return num;
 }
 

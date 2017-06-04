@@ -35,18 +35,6 @@
         (else
          (one-decimal-string db))))
 
-(define (set-fixed-height gui height)
-  (<gui> :set-size gui (<gui> :width gui) height)
-  (<gui> :set-min-height gui height)
-  (<gui> :set-max-height gui height)
-  (<gui> :set-size-policy gui #t #f))
-
-(define (set-fixed-width gui width)
-  (<gui> :set-size gui width (<gui> :height gui))
-  (<gui> :set-min-width gui width)
-  (<gui> :set-max-width gui width)
-  (<gui> :set-size-policy gui #f #t))
-
 
 ;; callback is not called after an instrument (any instrument) has been deleted.
 (define (add-safe-callback gui add-func callback)

@@ -1,5 +1,6 @@
 /* Main style sheet for radium. */
 
+
 QGroupBox {
     background-color: rgba(0, 0, 0, 10);
     border: 1px solid rgba(10, 10, 10, 50);
@@ -18,6 +19,7 @@ QScrollArea > QWidget > QWidget { background: transparent; }
 QScrollArea > QWidget > QScrollBar { background: rgba(ff, ff, ff, 50); }
 
 QTabBar::pane { border: 0; }
+
 
 /*
 QTabWidget::pane { border: 0; background: blue}

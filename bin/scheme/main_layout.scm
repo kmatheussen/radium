@@ -59,7 +59,7 @@
                    (> (<gui> :height *lowertab-gui*) 0))
               (set! *sequencer-gui-height* (<gui> :height *lowertab-gui*)))
           (set! *curr-lowertab-is-sequencer* #f))
-
+        
         (<gui> :set-enabled handle #f)
         
         ;;(c-display "minimizing")
@@ -67,16 +67,35 @@
         (<gui> :minimize-as-much-as-possible *notem-gui*)
         ;;(<gui> :set-size (<gui> :get-instrument-gui) 50 10)
         (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) 10))))
-  
+
+
 (define (init-lowertab-gui)
-  (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* (<gui> :get-sequencer-gui))
+  
+  (define instrument-gui (<gui> :get-instrument-gui))
+  (define sequencer-gui (<gui> :get-sequencer-gui))
+  
+  (<gui> :minimize-as-much-as-possible instrument-gui)
+  
+  (define width (<gui> :width instrument-gui))
+  (define height (<gui> :height instrument-gui))
+
+  ;; sequencer gui is quite tall initially. This causes a jump during startup. We set it smaller here to avoid this. (we also set *notem-gui* size, just in case)
+  (<gui> :set-size sequencer-gui width height)
+  (<gui> :set-size *notem-gui* width height)
+  
+  (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-gui)
+  
   (if (not (<ra> :position-instrument-widget-in-mixer))
-      (<gui> :add-tab *lowertab-gui* *instrument-gui-tab-name* (<gui> :get-instrument-gui)))
+      (<gui> :add-tab *lowertab-gui* *instrument-gui-tab-name* instrument-gui))
+  
   (<gui> :add-tab *lowertab-gui* *edit-gui-tab-name* *notem-gui*)
-  (<gui> :set-current-tab *lowertab-gui* 0)
+
+  ;;(<gui> :set-current-tab *lowertab-gui* 0)
+  
   (<gui> :add-callback *lowertab-gui*
          (lambda (index)
-           (lowertab-index-callback index))))
+           (lowertab-index-callback index)))
+  )
 
 
 (define (FROM-C-get-lowertab-gui)

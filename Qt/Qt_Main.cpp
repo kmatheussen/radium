@@ -2638,7 +2638,7 @@ void processEventsALittleBit(void){
 
 #if TEST_CRASHREPORTER
 static void
-foo()
+crashreporter_foo()
 {
   int *f=NULL;
   *f = 0;
@@ -2647,7 +2647,7 @@ foo()
 static void
 bar()
 {
-  foo();
+  crashreporter_foo();
 }
 #endif
 
