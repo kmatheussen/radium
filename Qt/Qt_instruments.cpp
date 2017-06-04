@@ -973,9 +973,14 @@ void GFX_showHideMixerStrip(struct Tracker_Windows *window){
     MIXERSTRIP_show();
 }
 
+static int64_t mixerstrip_guinum = -1;
+
+int64_t MIXERSTRIP_get_curr_mixerstrip_guinum(void){
+  return mixerstrip_guinum;
+}
+
 void MIXERSTRIP_call_regularly(void){
   static struct Patch *last_patch = NULL;
-  static int64_t guinum = -1;
 
   static bool has_inited = false;
 
@@ -984,7 +989,7 @@ void MIXERSTRIP_call_regularly(void){
     g_mixerstrip_is_visible = showMixerStripDuringStartup();
   }
 
-  int64_t old_guinum = guinum;
+  int64_t old_guinum = mixerstrip_guinum;
 
   QWidget *old_mixerstrip_widget = old_guinum==-1 ? NULL : API_gui_get_widget(old_guinum);
   R_ASSERT(old_guinum==-1 || old_mixerstrip_widget!=NULL);
@@ -993,7 +998,7 @@ void MIXERSTRIP_call_regularly(void){
     if (old_mixerstrip_widget!=NULL){
       g_mixerstriplayout->removeWidget(old_mixerstrip_widget);
       gui_close(old_guinum);
-      guinum = -1;
+      mixerstrip_guinum = -1;
       last_patch = NULL;
     }
     return;
@@ -1042,7 +1047,7 @@ void MIXERSTRIP_call_regularly(void){
           
         }
 
-        guinum = new_guinum;
+        mixerstrip_guinum = new_guinum;
 
         //printf(" ************** Closing old gui %d\n", (int)old_guinum);
         

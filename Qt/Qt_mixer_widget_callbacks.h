@@ -402,11 +402,27 @@ public slots:
     } else {
       EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
       QSplitter *splitter = editor->xsplitter;
-      splitter->addWidget(w);
-      //g_mixer_widget->setParent(xsplitter);
+
+      int pos = splitter->count() - 1;
+      
+      if (splitter->count() > 0){
+        
+        int64_t curr_mixerstrip_guinum = MIXERSTRIP_get_curr_mixerstrip_guinum();
+        
+        if (curr_mixerstrip_guinum >= 0 && gui_isOpen(curr_mixerstrip_guinum)) {
+
+          QWidget *mixerstrip_widget = API_gui_get_widget(curr_mixerstrip_guinum);
+
+          if (mixerstrip_widget == splitter->widget(pos) && pos>0)
+            pos--;
+        }
+      }
+          
+      splitter->insertWidget(pos, w);
+
       _bottom_bar->hide();
     }
-
+    
     if(include_instrument_widget->isChecked())
       GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }

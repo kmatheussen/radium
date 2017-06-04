@@ -48,6 +48,7 @@ extern LANGSPEC void GFX_update_current_instrument_widget(void);
 extern LANGSPEC bool MIXERSTRIP_is_visible(void);
 extern LANGSPEC void MIXERSTRIP_show(void);
 extern LANGSPEC void MIXERSTRIP_hide(void);
+extern LANGSPEC int64_t MIXERSTRIP_get_curr_mixerstrip_guinum(void);
 extern LANGSPEC void MIXERSTRIP_call_regularly(void);
 
 #ifdef USE_QT4
