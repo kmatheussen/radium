@@ -196,7 +196,7 @@ then
     tar xvjf xcb-proto-1.12.tar.bz2
     cd xcb-proto-1.12/
     mkdir install
-    ./configure --prefix=`pwd`/install
+    ./configure --prefix=`pwd`/install PYTHON=`which python2`
     make
     make install
     cd ..
@@ -206,7 +206,7 @@ then
     cd libxcb-1.12
     patch -p1 <../libxcb-1.12.patch
     export PKG_CONFIG_PATH=`pwd`/../xcb-proto-1.12/install/lib/pkgconfig:$PKG_CONFIG_PATH
-    ./configure
+    ./configure PYTHON=`which python2`
     make
     cd ..
     
