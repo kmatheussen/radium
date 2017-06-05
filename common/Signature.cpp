@@ -122,7 +122,7 @@ struct Signatures *SetSignature(
         Ratio ratio
 ){
 
-  if(is_playing()==false){
+  if(is_playing()==true){
     PlayStop();
     R_ASSERT(false);
   }
