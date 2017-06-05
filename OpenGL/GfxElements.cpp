@@ -255,24 +255,63 @@ static radium::Queue<GradientTriangles*, GQUEUE_SIZE>  gradienttrianglesqueue[2]
 #define TYPE_TO_GQUEUE(T) (T==GradientType::HORIZONTAL ? 0 : 1)
 
 void T3_create_gradienttriangles_if_needed(void){
+  static bool alloced_last_time = false;
+
+  const int p64 = 64;
+
   bool isplaying = is_playing();
-  
-  for(int i=0;i<2;i++){
-    auto &queue = gradienttrianglesqueue[i];
-    while (queue.size() < GQUEUE_SIZE){
+  bool has_alloced = false;
+
+  auto &queues = gradienttrianglesqueue;
+  int size1 = queues[0].size();
+  int size2 = queues[1].size();
+
+  int first_pos; // Queue # with the least number of elements.
+
+  if (size1 < size2)
+    first_pos = 0;
+  else
+    first_pos = 1;
+
+  for(int i=first_pos ; i<first_pos+2 ; i++){
+
+    int pos = i;
+    if (pos==2)
+      pos = 0;
+
+    auto &queue = queues[pos];
+
+    int size = queue.size();
+
+    if (size > p64)
+      if (has_alloced || alloced_last_time || isplaying)  // Preferably, we only create at most one shader each second frame.
+        break;
+
+    while (size < GQUEUE_SIZE){
 #if !defined(RELEASE)
-      printf("T2: Creating new GradientTriangles instance\n");
+      printf("T3: Creating new GradientTriangles instance. Queue #%d. size: %d\n", pos, size);
 #endif
-      queue.put(new GradientTriangles(GQUEUE_TO_TYPE(i)));
-      
-      if (isplaying) // Not too sure about this one. Maybe remove these two lines.
+      queue.put(new GradientTriangles(GQUEUE_TO_TYPE(pos)));
+      size = queue.size();
+
+      has_alloced = true;
+
+      if (isplaying || size > p64)
         break;
     }
   }
+
+  alloced_last_time = has_alloced;
 }
   
-static GradientTriangles *get_gradienttriangles(GradientType::Type type){
-  return gradienttrianglesqueue[TYPE_TO_GQUEUE(type)].get();
+static GradientTriangles *T1_get_gradienttriangles(GradientType::Type type){
+  auto &queue = gradienttrianglesqueue[TYPE_TO_GQUEUE(type)];
+
+#if !defined(RELEASE)
+  printf("T1: Requesting new gradient triangles. Queue #%d. size: %d\n", TYPE_TO_GQUEUE(type), queue.size());
+#endif
+
+  return queue.get();
 }
 
 struct GradientTrianglesCollection {
@@ -334,32 +373,16 @@ struct GradientTrianglesCollection {
 
 
   // main thread
-  void T1_add_gradient_triangles(void){
-    for(int i=0;i<15;i++){
-      GradientTriangles *gradient = get_gradienttriangles(type); //new GradientTriangles(type);
-      gradient->next = free_gradient_triangles;
-      free_gradient_triangles = gradient;
-    }
-  }
-
-
-  // main thread
   GradientTriangles *T1_get_gradient_triangles(void){
     if (free_gradient_triangles==NULL)
       T1_collect_gradient_triangles_garbage();
     
-    if (free_gradient_triangles==NULL) {
-#if !defined(RELEASE)
-      printf("T1: Requesting new gradient triangles\n");
-#endif
-      T1_add_gradient_triangles();
-    } else {
-      //printf("2222. Using recycled gradient triangles\n");
-    }
-    
-    // pop free
     GradientTriangles *gradient = free_gradient_triangles;
-    free_gradient_triangles = gradient->next;
+
+    if (gradient==NULL)
+      gradient = ::T1_get_gradienttriangles(type);
+    else
+      free_gradient_triangles = gradient->next;
     
     // push used
     gradient->next = used_gradient_triangles;
