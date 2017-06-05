@@ -34,6 +34,8 @@ then
     fi
 fi
 
+#export INCLUDE_FAUSTDEV="jadda"
+
 # Always compile pddev. Must of it is placed in a dynamic library, so it doesn't contribute to higher link time or startup time.
 export INCLUDE_PDDEV="jadda"
 

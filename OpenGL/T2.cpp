@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 /**
    T1: Main thread
    T2: Drawer thread
-   T3: Rendering thread
+   T3: Rendering thread (OpenGL Thread)
 
    If opengl_draw_in_separate_process is set to false, the T2 tasks are performed by T3 instead.
 */

@@ -796,6 +796,9 @@ private:
   // OpenGL thread
   bool draw(void){
   
+
+    T3_create_gradienttriangles_if_needed();
+
     
 #if TEST_TIME
     double start1 = TIME_get_ms();
@@ -1129,7 +1132,7 @@ private:
   double lastSwapTime = 0;
   int underrunCounter = 0;
 #endif
-  
+
   // OpenGL thread
   void swap(void){
     if (USE_GL_LOCK)
@@ -1153,6 +1156,7 @@ private:
         now = monotonic_seconds() * 1000.0;
 #endif
         openglContext()->swapBuffers();
+
       }else{
 #if USE_JUCE_CPU_PROTECTION_LOGIC
         now = monotonic_seconds() * 1000.0;
@@ -1313,7 +1317,7 @@ public:
           
           {
             radium::ScopedMutex lock(draw_mutex);
-            
+
             if (canDraw()) {
               must_swap = draw();
             } else {

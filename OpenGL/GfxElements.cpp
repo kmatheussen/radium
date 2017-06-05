@@ -41,6 +41,7 @@ static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_da
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/Mutex.hpp"
+#include "../common/Queue.hpp"
 
 #include "../Qt/Qt_colors_proc.h"
 
@@ -104,9 +105,6 @@ static vl::GLSLFragmentShader *get_gradient_fragment_shader(GradientType::Type t
     
     gradient_velocity_shader = new vl::GLSLFragmentShader(path1.append("gradient.fs"));
     gradient_horizontal_shader = new vl::GLSLFragmentShader(path2.append("horizontal_gradient.fs"));
-
-    R_ASSERT(gradient_velocity_shader.get()!=NULL);
-    R_ASSERT(gradient_horizontal_shader.get()!=NULL);
   }
 
   if (type==GradientType::VELOCITY)
@@ -154,52 +152,88 @@ struct GradientTriangles : public vl::Effect {
   vl::fvec4 color2;
    
   vl::ref<vl::GLSLProgram> glsl; // seems like reference must be stored here to avoid memory problems.
+  bool glsl_is_valid = true;
+  
   vl::Uniform *uniform_y;
+  vl::Uniform *uniform_height;
+  vl::Uniform *uniform_color1;
+  vl::Uniform *uniform_color2;
+  vl::Uniform *uniform_x;
+  vl::Uniform *uniform_width;
 
   SpinlockIMutex ref_mutex;
-
+  
   GradientTriangles(GradientType::Type type)
     : next(NULL)
     , type(type)
   {
     setRefCountMutex(&ref_mutex);
     setAutomaticDelete(false);
+
+    init_shader();
   }
 
   ~GradientTriangles(){
     RError("~GradientTriangles was called. That should not happen. Expect crash.");
     //abort();
   }
+
+private:
+
+  void init_shader(void){
+    vl::Shader* shader = this->shader();
+    shader->enable(vl::EN_BLEND);
+    
+    // These two lines probably takes a lot of time.
+    glsl = shader->gocGLSLProgram();    
+    if (glsl->attachShader(get_gradient_fragment_shader(type)) == false){
+      GFX_Message(NULL, "Unable to create OpenGL Shader. It might help to disable \"Draw in separate process\".");
+      glsl_is_valid = false;
+      return;
+    }
+    
+    // And this one.
+    glsl->linkProgram();
+    
+    if (glsl->linked()==false){
+      GFX_Message(NULL, "Linking OpenGL Shader failed. It might help to disable \"Draw in separate process\".");
+      glsl_is_valid = false;
+      return;
+    }
+    
+    if (type==GradientType::VELOCITY) {
+      uniform_y = glsl->gocUniform("y");
+      uniform_height = glsl->gocUniform("height");
+    }
+    
+    uniform_color1 = glsl->gocUniform("color1");
+    uniform_color2 = glsl->gocUniform("color2");
+    
+    uniform_x = glsl->gocUniform("x");
+    uniform_width = glsl->gocUniform("width");
+  }
+  
+public:
   
   vl::Actor *render(vl::VectorGraphics *vg){
-
+      
     vl::Actor *actor = vg->fillTriangles(triangles);
 
     actor->setEffect(this);
 
-    if (glsl.get()==NULL) {
-      vl::Shader* shader = this->shader();
-      shader->enable(vl::EN_BLEND);
-
-      // These two lines probably takes a lot of time.
-      glsl = shader->gocGLSLProgram();    
-      glsl->attachShader(get_gradient_fragment_shader(type)); 
-
+    if (glsl_is_valid==true) {
+    
+      uniform_color1->setUniform(color1);
+      uniform_color2->setUniform(color2);
       if (type==GradientType::VELOCITY)
-        uniform_y = glsl->gocUniform("y");
+        uniform_height->setUniformF(height);
+      uniform_x->setUniformF(x);
+      uniform_width->setUniformF(width);
+      
+      if (type==GradientType::VELOCITY)
+        set_y_offset(0.0f);
     }
 
-
-    glsl->gocUniform("color1")->setUniform(color1);
-    glsl->gocUniform("color2")->setUniform(color2);
-    if (type==GradientType::VELOCITY)
-      glsl->gocUniform("height")->setUniformF(height);
-    glsl->gocUniform("x")->setUniformF(x);
-    glsl->gocUniform("width")->setUniformF(width);
-
-    if (type==GradientType::VELOCITY)
-      set_y_offset(0.0f);
-    
     return actor;
   }
 
@@ -207,13 +241,39 @@ struct GradientTriangles : public vl::Effect {
   void clean(){
     triangles.clear();
   }
-  
+
+  // OpenGL thread, except when initializing. During initialization, it's T3 thread.
   void set_y_offset(float y_offset){
-    if (type==GradientType::VELOCITY)
+    if (glsl_is_valid && type==GradientType::VELOCITY)
       uniform_y->setUniformF(y + y_offset);
   }
 };
 
+#define GQUEUE_SIZE 128
+static radium::Queue<GradientTriangles*, GQUEUE_SIZE>  gradienttrianglesqueue[2]; // t3 -> t2
+#define GQUEUE_TO_TYPE(I) ((I)==0 ? GradientType::HORIZONTAL : GradientType::VELOCITY)
+#define TYPE_TO_GQUEUE(T) (T==GradientType::HORIZONTAL ? 0 : 1)
+
+void T3_create_gradienttriangles_if_needed(void){
+  bool isplaying = is_playing();
+  
+  for(int i=0;i<2;i++){
+    auto &queue = gradienttrianglesqueue[i];
+    while (queue.size() < GQUEUE_SIZE){
+#if !defined(RELEASE)
+      printf("T2: Creating new GradientTriangles instance\n");
+#endif
+      queue.put(new GradientTriangles(GQUEUE_TO_TYPE(i)));
+      
+      if (isplaying) // Not too sure about this one. Maybe remove these two lines.
+        break;
+    }
+  }
+}
+  
+static GradientTriangles *get_gradienttriangles(GradientType::Type type){
+  return gradienttrianglesqueue[TYPE_TO_GQUEUE(type)].get();
+}
 
 struct GradientTrianglesCollection {
 
@@ -230,7 +290,7 @@ struct GradientTrianglesCollection {
   {}
   
   // main thread
-  void collect_gradient_triangles_garbage(void){
+  void T1_collect_gradient_triangles_garbage(void){
     GradientTriangles *new_used = NULL;
     GradientTriangles *new_free = NULL;
     
@@ -239,29 +299,27 @@ struct GradientTrianglesCollection {
     GradientTriangles *gradient = used_gradient_triangles;
 
     int numa=0,numb=0;
-    //printf("    Collecting gradient garbage\n");
-    //    GL_draw_lock();{
-      while(gradient!=NULL){
-        GradientTriangles *next = gradient->next;
-
-        gradient->ref_mutex.lock();
-        bool is_free = gradient->referenceCount()==0;
-        gradient->ref_mutex.unlock();
-          
-        if(is_free) {
-          //gradient->clean(); // TODO: Check if this operation frees memory. If it does, it might improve performance to call clean() outside of the lock.
-          gradient->next = new_free;
-          new_free = gradient;
-          numa++;
-        } else {
-          gradient->next = new_used;
-          new_used = gradient;
-        }
-        numb++;
-        gradient = next;
+    
+    while(gradient!=NULL){
+      GradientTriangles *next = gradient->next;
+      
+      gradient->ref_mutex.lock();
+      bool is_free = gradient->referenceCount()==0;
+      gradient->ref_mutex.unlock();
+      
+      if(is_free) {
+        //gradient->clean(); // TODO: Check if this operation frees memory. If it does, it might improve performance to call clean() outside of the lock.
+        gradient->next = new_free;
+        new_free = gradient;
+        numa++;
+      } else {
+        gradient->next = new_used;
+        new_used = gradient;
       }
-      //    }GL_draw_unlock();
-
+      numb++;
+      gradient = next;
+    }
+    
     gradient = new_free;
     while(gradient != NULL){
       gradient->clean();
@@ -276,9 +334,9 @@ struct GradientTrianglesCollection {
 
 
   // main thread
-  void add_gradient_triangles(void){
+  void T1_add_gradient_triangles(void){
     for(int i=0;i<15;i++){
-      GradientTriangles *gradient = new GradientTriangles(type);
+      GradientTriangles *gradient = get_gradienttriangles(type); //new GradientTriangles(type);
       gradient->next = free_gradient_triangles;
       free_gradient_triangles = gradient;
     }
@@ -286,15 +344,15 @@ struct GradientTrianglesCollection {
 
 
   // main thread
-  GradientTriangles *get_gradient_triangles(void){  
+  GradientTriangles *T1_get_gradient_triangles(void){
     if (free_gradient_triangles==NULL)
-      collect_gradient_triangles_garbage();
+      T1_collect_gradient_triangles_garbage();
     
     if (free_gradient_triangles==NULL) {
 #if !defined(RELEASE)
-      printf("1111. Allocating new gradient triangles\n");
+      printf("T1: Requesting new gradient triangles\n");
 #endif
-      add_gradient_triangles();
+      T1_add_gradient_triangles();
     } else {
       //printf("2222. Using recycled gradient triangles\n");
     }
@@ -328,11 +386,11 @@ struct GradientTrianglesCollection {
 static GradientTrianglesCollection horizontalGradientTriangles(GradientType::HORIZONTAL);
 static GradientTrianglesCollection velocityGradientTriangles(GradientType::VELOCITY);
 
-static GradientTriangles *get_gradient_triangles(GradientType::Type type){
+static GradientTriangles *T1_get_gradient_triangles(GradientType::Type type){
   if (type==GradientType::HORIZONTAL)
-    return horizontalGradientTriangles.get_gradient_triangles();
+    return horizontalGradientTriangles.T1_get_gradient_triangles();
   else if (type==GradientType::VELOCITY)
-    return velocityGradientTriangles.get_gradient_triangles();
+    return velocityGradientTriangles.T1_get_gradient_triangles();
 
   RWarning("Unknown gradient type %d",type);
   return NULL;
@@ -573,6 +631,8 @@ static void setColorEnd(vl::VectorGraphics *vg, const GE_Context *c){
 
 // This function can probably be avoided somehow. The absolute y position of the vertexes should be available for the shader GLSL code, but I haven't
 // figured out how to get it yet.
+//
+// OpenGL Thread
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset){
   for (const auto hepp : painting_data->contexts) {
       
@@ -587,8 +647,9 @@ void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_of
   }
 }
 
-
+// T2 thread.
 void GE_draw_vl(T2_data *t2_data){
+  //GL_draw_lock();
 
   PaintingData *painting_data = t2_data->painting_data;
   vl::VectorGraphics *vg = t2_data->vg.get();
@@ -643,7 +704,7 @@ void GE_draw_vl(T2_data *t2_data){
 #else
           for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
             setScrollTransform(c, gradient_triangles->render(vg), t2_data);
-
+          
           if(c->triangles.size() > 0) {
             setColorBegin(vg, c);
           
@@ -713,6 +774,7 @@ void GE_draw_vl(T2_data *t2_data){
     }
     
   }vg->endDrawing();
+  //GL_draw_unlock();           
 }
 
 
@@ -1122,7 +1184,7 @@ static float triangles_min_y;
 static float triangles_max_y;
 
 void GE_gradient_triangle_start(GradientType::Type type){
-  current_gradient_rectangle = get_gradient_triangles(type);
+  current_gradient_rectangle = T1_get_gradient_triangles(type);
   num_gradient_triangles = 0;
 }
 

@@ -14,6 +14,7 @@
 
 #include "../common/nsmtracker.h"
 #include "../common/spinlock.h"
+#include "../common/Mutex.hpp"
 #include "../common/OS_error_proc.h"
 #include "../Qt/Qt_colors_proc.h"
 
@@ -27,20 +28,21 @@ namespace{
 
 struct SpinlockIMutex : public vl::IMutex{
   radium::Spinlock spinlock;
+  //radium::Mutex spinlock;
 
   bool is_obtained = false;
 
-  virtual void 	lock () {
+  void 	lock () override {
     spinlock.lock();
     is_obtained = true;
   }
   
-  virtual void 	unlock () {
+  void 	unlock () override {
     is_obtained = false;
     spinlock.unlock();
   }
   
-  virtual int isLocked () const {
+  int isLocked () const override {
     //Returns 1 if locked, 0 if non locked, -1 if unknown. 
     return is_obtained ? 1 : 0;
   }
