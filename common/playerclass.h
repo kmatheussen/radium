@@ -96,12 +96,15 @@ typedef struct{
 
 
 typedef enum {
-  PLAYER_STATE_PROGRAM_NOT_READY = 0,
-  PLAYER_STATE_STARTING_TO_PLAY,
-  PLAYER_STATE_PLAYING,
-  PLAYER_STATE_STOPPING,
-  PLAYER_STATE_STOPPED,
-  PLAYER_STATE_ENDING
+  PLAYER_STATE_PROGRAM_NOT_READY = 0, // Program startup
+  
+  PLAYER_STATE_STARTING_TO_PLAY, // Set by the main thread. When setting this state, the main thread waits until the state becomes PLAYER_STATE_PLAYING or PLAYER_STATE_STOPPED.
+  PLAYER_STATE_PLAYING, // Set by the player thread.
+  
+  PLAYER_STATE_STOPPING, // Can be set by any thread (also the player thread). The PlayStop() function first sets this state and then waits until the player has set player state to PLAYER_STATE_STOPPED.
+  PLAYER_STATE_STOPPED, // Set by the player thread.
+  
+  PLAYER_STATE_ENDING // Program exit
 } Player_State;
 
 typedef struct{

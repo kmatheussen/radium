@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QKeyEvent>
 #include <QSplitter>
 #include <QDesktopWidget>
+#include <QPointer>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -62,15 +63,36 @@ extern struct Root *root;
 static const int x_margin = 25;
 static const int y_margin = 15;
 
+namespace{
+
+struct MyQFrame : public QFrame{
+  MyQFrame(QWidget *parent)
+    : QFrame(parent)
+  {}
+
+  QPointer<QWidget> _widget_to_get_focus_when_shown;
+  
+  void showEvent(QShowEvent* e) override {
+    this->activateWindow();
+    if (_widget_to_get_focus_when_shown != NULL){
+      GL_lock();{
+        _widget_to_get_focus_when_shown->setFocus();
+      }GL_unlock();
+    }
+    QFrame::showEvent(e);
+  }
+};
+  
 struct MyReqType{
-  QFrame *frame;
+  MyQFrame *frame;
   QString label_text;
   QString default_value;
   int y;
   bool widgets_disabled;
 };
 
-extern EditorWidget *g_editor;
+}
+
 
 // tvisual might be NULL
 ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title){
@@ -81,7 +103,7 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
   GL_lock(); {
     GL_pause_gl_thread_a_short_while();
 
-    reqtype->frame = new QFrame(get_current_parent());
+    reqtype->frame = new MyQFrame(get_current_parent());
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
     set_window_flags(reqtype->frame, true);
@@ -211,39 +233,41 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
     }GL_unlock();
   }
 
-  MyQLineEdit *edit;
+  MyQLineEdit *edit = new MyQLineEdit(reqtype->frame);
+  edit->insert(reqtype->default_value);
+  edit->move(x + 5, reqtype->y);
+  reqtype->frame->_widget_to_get_focus_when_shown = edit;
   
-  GL_lock(); {
+  reqtype->frame->setMinimumWidth(R_MAX(reqtype->frame->width(), x + 5 + 5 + x_margin + R_MAX(20,edit->width()+10)));
+  reqtype->frame->setMinimumHeight(reqtype->y+R_MAX(20,edit->height()+10));
+  reqtype->frame->adjustSize();
+  reqtype->frame->updateGeometry();
+  
+  if (reqtype->frame->isVisible()==false){
     
-    edit = new MyQLineEdit(reqtype->frame);
-    edit->insert(reqtype->default_value);
-    edit->move(x + 5, reqtype->y);
-    edit->show();
-  
-    reqtype->frame->setMinimumHeight(reqtype->y+R_MAX(20,edit->height()+10));
-    reqtype->frame->adjustSize();
-
-    if (reqtype->frame->isVisible()==false){
-      
-      const bool show_at_mouse_position = false;
-      
-      if (show_at_mouse_position){
-        auto pos = QCursor::pos();
-        pos += QPoint(-reqtype->frame->width()/2, -reqtype->frame->height() - 10);
-        reqtype->frame->move(pos);
-      } else {
-        moveWindowToCentre(reqtype->frame);
-      }
-
-      reqtype->frame->show();
+    const bool show_at_mouse_position = false;
+    
+    if (show_at_mouse_position){
+      auto pos = QCursor::pos();
+      pos += QPoint(-reqtype->frame->width()/2, -reqtype->frame->height() - 10);
+      reqtype->frame->move(pos);
+    } else {
+      moveWindowToCentre(reqtype->frame);
     }
     
-    legalize_pos(reqtype);
+    reqtype->frame->show();
     
-    // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-    edit->setFocus();
-  }GL_unlock();
+  } else {
 
+    GL_lock();{
+      edit->show();
+      edit->setFocus();
+    }GL_unlock();
+    
+  }
+  
+  legalize_pos(reqtype);
+  
   if(reqtype->widgets_disabled==false){
     //Qt_DisableAllWidgets(reqtype->frame);
     GFX_disable_mouse_keyboard();
