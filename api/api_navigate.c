@@ -328,7 +328,7 @@ void requestCursorMove(void){
     if (ratio.denominator==0)
       goto exit;
     
-    int realline = get_realline_from_beat(wblock, ratio.numerator, ratio.denominator);
+    int realline = get_realline_from_beat(wblock, (int)ratio.numerator, (int)ratio.denominator);
     if (realline==-1)
       goto exit;
 

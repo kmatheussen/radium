@@ -42,9 +42,12 @@ static inline void leave_radium_lock_if_playing_scope(bool *was_locked){
   else
     R_ASSERT(!is_playing());
 }
-                                         
-#define Scoped_Player_Lock_if_Playing() bool radium_scoped_lock_if_playing __attribute__ ((__cleanup__(leave_radium_lock_if_playing_scope))) = enter_radium_lock_if_playing_scope()
 
+#if defined(__clang__)
+#define Scoped_Player_Lock_if_Playing() bool radium_scoped_lock_if_playing __attribute__ ((__cleanup__(leave_radium_lock_if_playing_scope))) = enter_radium_lock_if_playing_scope();(void)radium_scoped_lock_if_playing 
+#else
+#define Scoped_Player_Lock_if_Playing() bool radium_scoped_lock_if_playing __attribute__ ((__cleanup__(leave_radium_lock_if_playing_scope))) = enter_radium_lock_if_playing_scope()
+#endif
   
 extern LANGSPEC bool MIXER_is_saving(void);
 

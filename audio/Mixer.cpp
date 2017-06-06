@@ -1233,7 +1233,10 @@ void MIXER_TRANSPORT_set_pos(double abstime){
   if (g_jack_client==NULL)
     return;
   int64_t absabstime = TEMPOAUTOMATION_get_absabstime(abstime);
-  jack_transport_locate(g_jack_client, absabstime);
+  if (absabstime >= UINT32_MAX)
+    RT_message("Can not seek that far when using Jack Transport. Jack time format is 32 bit only.");
+  else
+    jack_transport_locate(g_jack_client, (jack_nframes_t)absabstime);
 }
 
 void MIXER_TRANSPORT_play(double abstime){

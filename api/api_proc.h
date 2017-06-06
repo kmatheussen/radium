@@ -14,11 +14,12 @@ extern "C" {
 #endif
 #endif
 
-#include "radium_proc.h"
-
 #ifdef __cplusplus
 }
 #endif
+
+
+#include "radium_proc.h"
 
 
 #endif

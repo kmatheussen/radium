@@ -390,7 +390,7 @@ const char *s7extra_get_string(s7_scheme *s7, s7_pointer s, const char **error){
 bool s7extra_get_boolean(s7_scheme *s7, s7_pointer s, const char **error){
   if (!s7_is_boolean(s)){
     *error = "bool";
-    return NULL;
+    return false;
   }
 
   return s7_boolean(s7, s);
