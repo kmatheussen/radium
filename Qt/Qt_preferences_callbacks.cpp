@@ -439,7 +439,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       high_cpu_protection->setChecked(doHighCpuOpenGlProtection());
 #endif
 
-#if FOR_MACOSX
+#if 0 // FOR_MACOSX
       // Of course it doesn't work on OSX.
       bool draw_in_separate_process = false;
       draw_in_separate_process_onoff->setEnabled(false);
