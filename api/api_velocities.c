@@ -217,10 +217,11 @@ int setVelocity(float value, Place place, int velocitynum, int notenum, int trac
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
       PlaceTilLimit(&lastLegalPlace, &note->end);
       
-      PLAYER_lock();{
+      {
+        Scoped_Player_Lock_if_Playing();
         velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
         NOTE_validate(block, track, note);
-      }PLAYER_unlock();
+      }
     }
     
     velocity->velocity=R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);

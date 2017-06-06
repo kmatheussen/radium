@@ -26,6 +26,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC void PLAYER_lock(void);
 extern LANGSPEC void PLAYER_unlock(void);
 
+static inline bool enter_radium_lock_if_playing_scope(void){
+  R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
+  if (is_playing()){
+    PLAYER_lock();
+    return true;
+  }else
+    return false;  
+}
+
+static inline void leave_radium_lock_if_playing_scope(bool *was_locked){
+  if (*was_locked)
+    PLAYER_unlock();
+  else
+    R_ASSERT(!is_playing());
+}
+                                         
+#define Scoped_Player_Lock_if_Playing() bool radium_scoped_lock_if_playing __attribute__ ((__cleanup__(leave_radium_lock_if_playing_scope))) = enter_radium_lock_if_playing_scope()
+
+  
 extern LANGSPEC bool MIXER_is_saving(void);
 
 // Must be called in SoundPlugin::RT_process if doing things there which requires the PLAYER_lock. (separate lock because of multicore processing, PLAYER_lock is always held inside SoundPlugin::RT_process)

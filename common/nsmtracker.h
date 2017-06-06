@@ -127,18 +127,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 
-#include "debug_proc.h"
-#include "atomic.h"
-#include "OS_Player_proc.h"
-#include "memory_proc.h"
-#include "nsmtracker_events.h"
-#include "OS_error_proc.h"
-#include "OS_Semaphores.h"
-#include "keyboard_focus_proc.h"
-#include "threading.h"
-#include "../crashreporter/crashreporter_proc.h"
-
-
 /* Unfortunately, AmigaOS has one absolute address that is legal to
    read from; 4, which often makes MuForce not to report reading
    from the wrong address (radiums fault, not MuFurces). By 
@@ -185,6 +173,8 @@ enum{
 #endif
 
 extern bool g_is_loading;
+
+#include "../crashreporter/crashreporter_proc.h"
 
 
 #include <OS_Visual.h>
@@ -237,6 +227,21 @@ extern bool g_is_loading;
 #  define R_NUM_FRAMES radium_num_frames___ RADIUM_BLOCKSIZE
 #  define R_NUM_FRAMES_ARG
 #endif
+
+static inline bool is_playing(void);
+
+
+#include "debug_proc.h"
+#include "atomic.h"
+#include "threading.h"
+#include "OS_Player_proc.h"
+#include "memory_proc.h"
+#include "nsmtracker_events.h"
+#include "OS_error_proc.h"
+#include "OS_Semaphores.h"
+#include "keyboard_focus_proc.h"
+
+
 
 
 #include "validatemem_proc.h"
