@@ -58,7 +58,7 @@
   
          
 (define (create-under-construction)
-  (mid-horizontal-layout (<gui> :text "Under construction. Look at the Editor menu.")))
+  (mid-horizontal-layout (<gui> :text "Under construction.")))
 
 (define (create-transpose-notem)
   (define (create-callback-creator func)

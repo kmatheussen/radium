@@ -1493,8 +1493,11 @@ protected:
       }
     }
 
-    if (GL_maybe_notify_that_main_window_is_exposed(interval)==true)
-      GL_maybe_estimate_vblank(static_cast<EditorWidget*>(window->os_visual.widget)->gl_widget);
+    {
+      int gl_status = GL_maybe_notify_that_main_window_is_exposed(interval);
+      if (gl_status>=1)
+        GL_maybe_estimate_vblank(static_cast<EditorWidget*>(window->os_visual.widget)->gl_widget);
+    }
     
     #if 0
     static bool main_window_is_exposed = false;
@@ -2169,7 +2172,7 @@ int radium_main(char *arg){
   moveWindowToCentre(main_window);
   main_window->show();
   updateWidgetRecursively(g_main_window);
-  
+
 #if defined(FOR_MACOSX) // Only needed on 10.12 though.
   GFX_SetSystemFont(QApplication::font());
 #endif
@@ -2523,6 +2526,7 @@ static int gc_has_static_roots_func(
 
   
   
+#if 0
 
   #if !defined(FOR_MACOSX)
     const char *executable_path = "";
@@ -2531,7 +2535,8 @@ static int gc_has_static_roots_func(
   printf("   ===== has_static_roots: -%s-, %fMB (%f). is_main: %d.  (%p). argv0: -%s-\n", dlpi_name, (double)total / (1024*1024.0), (double)size / (1024*1024.0), is_main_root, p, executable_path);
   //getchar();
   //abort();
-
+#endif
+  
 #endif // !defined(RELEASE)
 
 #if defined(FOR_LINUX)
