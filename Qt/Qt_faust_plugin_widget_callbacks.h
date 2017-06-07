@@ -50,6 +50,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static void ADD_UNDO_FUNC(FaustDev_CurrPos(struct Patch *patch, const QString &code, int cursor_line, int cursor_index));
 
+namespace{
+  
 class FaustResultScrollArea : public QScrollArea{
   Q_OBJECT
   
@@ -67,10 +69,13 @@ public:
       verticalScrollBar()->setValue(verticalScrollBar()->value() - qwheelevent->delta()/5);
   }
 };
+}
 
 
 #include "Qt_faust_plugin_widget.h"
 
+namespace{
+  
 struct FaustResultWebView
 #if USE_QWEBENGINE
   : public QWebEngineView
@@ -225,6 +230,7 @@ struct FaustResultWebView
     }
   }
 };
+}
 
 namespace radium{
   
@@ -366,6 +372,8 @@ static radium::Editor *create_editor(QWidget *parent){
   return faust_code;
 }
 
+namespace{
+  
 class Faust_Plugin_widget : public QWidget, public Ui::Faust_Plugin_widget{
   Q_OBJECT;
 
@@ -1017,6 +1025,9 @@ public slots:
   }
   
 };
+
+}
+
 
 /*
 // Doesn't work so well. The gui is deleted at inconvenient times.
