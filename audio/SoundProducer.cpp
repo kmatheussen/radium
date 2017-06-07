@@ -486,6 +486,26 @@ static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_f
     return NULL;
 }
 
+static void show_high_peak_message(const SoundPlugin *plugin, const char *what_did_it_do_questionmark, const float *out, int ch, float peak){
+  volatile struct Patch *patch = plugin->patch;
+  RT_message("Warning!\n"
+             "\n"
+             "The instrument named \"%s\" of type %s/%s has %s a signal of at least 50dB in channel %d. Numch: %d\n"
+             "\n"
+             "Raw peak value: %f.\n"
+             "\n"
+             "10 first frames: %f %f %f %f %f %f %f %f %f %f."
+             "\n"
+             "This warning will pop up as long as the instrument does so.\n",
+             patch==NULL?"<no name>":patch->name,
+             plugin->type->type_name, plugin->type->name,
+             what_did_it_do_questionmark,
+             ch,plugin->type->num_outputs,
+             peak,
+             out[0], out[1],out[2],out[2],out[3],out[4],out[5],out[6],out[7],out[8],out[9]
+             );
+}
+
 static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs, bool process_plugins){
 
   if (process_plugins == false){
@@ -531,22 +551,8 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
         if (peak > MIN_AUTOSUSPEND_PEAK)
           RT_PLUGIN_touch(plugin);
 
-        if (peak > 317) {
-          volatile struct Patch *patch = plugin->patch;
-          RT_message("Warning! (1)\n"
-                     "\n"
-                     "The instrument named \"%s\" of type %s/%s\n"
-                     "has generated a signal of at least 50dB in channel %d.\n"
-                     "Raw peak value: %f.\n"
-                     "10 first frames: %f %f %f %f %f %f %f %f %f %f."
-                     "\n"
-                     "This warning will pop up as long as the instrument does so.\n",
-                     patch==NULL?"<no name>":patch->name,
-                     plugin->type->type_name, plugin->type->name,
-                     ch,peak,
-                     out[0], out[1],out[2],out[2],out[3],out[4],out[5],out[6],out[7],out[8],out[9]
-                     );        
-        }
+        if (peak > 317)
+          show_high_peak_message(plugin, "generated", out, ch, peak);
       }
     }
 
@@ -1053,7 +1059,10 @@ public:
         if(s[0] != output[0])
           memcpy(output[0],s[0],sizeof(float)*num_frames);
       }else{
-        COMPRESSOR_process(_plugin->compressor, input, output, num_frames);
+        COMPRESSOR_process(_plugin->compressor, input, output, num_frames); // Two first channels
+        for(int ch=2 ; ch < num_channels ; ch++) // Rest of the channels. (no compression)
+          if (input[ch] != output[ch])
+            memcpy(output[ch], input[ch], sizeof(float)*num_frames);
       }
     else
       for(int ch=0;ch<num_channels;ch++)
@@ -1068,7 +1077,7 @@ public:
     {
       float *s[num_channels];
       float filter_sound[num_channels*num_frames];
-      
+
       for(int ch=0;ch<num_channels;ch++)
         s[ch] = &filter_sound[ch*num_frames];
       
@@ -1213,29 +1222,9 @@ public:
     for(int ch=0;ch<_num_dry_sounds;ch++){
       float peak = input_peaks[ch];
       
-      if (RT_message_will_be_sent()==true) {
-        if (peak > 317) {
-          volatile struct Patch *patch = _plugin->patch;
-          
-          const float *out = dry_sound[ch];
-          
-          RT_message("Warning! (2)\n"
-                     "\n"
-                     "The instrument named \"%s\" received\n"
-                     "a signal of at least 50dB in channel %d.\n"
-                     "Raw peak value: %f.\n"
-                     "10 first frames: %f %f %f %f %f %f %f %f %f %f."
-                     "Input volume: %f.\n"
-                     "\n"
-                     "This warning will pop up as long as the instrument does so.\n",
-                     patch==NULL?"<no name>":patch->name,
-                     //_plugin->type->type_name, _plugin->type->name,
-                     ch,peak,
-                     out[0], out[1],out[2],out[2],out[3],out[4],out[5],out[6],out[7],out[8],out[9],
-                     SMOOTH_get_target_value(&_plugin->input_volume)
-                     );        
-        }
-      }
+      if (RT_message_will_be_sent()==true)
+        if (peak > 317)
+          show_high_peak_message(_plugin, "received", dry_sound[ch], ch, peak);
 
       RT_AUDIOMETERPEAKS_add(_plugin->input_volume_peaks, ch, peak);
       
@@ -1252,29 +1241,9 @@ public:
       for(int ch=0;ch<_num_outputs;ch++){
         float volume_peak = volume_peaks[ch];
 
-        if (RT_message_will_be_sent()==true) {
-          if (volume_peak > 317) {
-            volatile struct Patch *patch = _plugin->patch;
-
-            float *out = _output_sound[ch];
-                    
-            RT_message("Warning! (3)\n"
-                       "\n"
-                       "The instrument named \"%s\" has generated\n"
-                       "a signal of at least 50dB in channel %d.\n"
-                       "Raw peak value: %f.\n"
-                       "10 first frames: %f %f %f %f %f %f %f %f %f %f."
-                       "Volume: %f.\n"
-                       "\n"
-                       "This warning will pop up as long as the instrument does so.\n",
-                       patch==NULL?"<no name>":patch->name,
-                       _plugin->type->type_name, _plugin->type->name,
-                       ch,volume_peak,
-                       out[0], out[1],out[2],out[2],out[3],out[4],out[5],out[6],out[7],out[8],out[9],
-                       _plugin->volume
-                       );        
-          }
-        }
+        if (RT_message_will_be_sent()==true)
+          if (volume_peak > 317)
+            show_high_peak_message(_plugin, "generated (after applying volume and system effects)", _output_sound[ch], ch, volume_peak);
           
         // "Volume"
         //safe_float_write(&_plugin->volume_peak_values[ch], volume_peak);
@@ -1441,6 +1410,7 @@ public:
     
     // compressor
     RT_apply_system_filter(&_plugin->comp,      _output_sound, _num_outputs, num_frames, process_plugins);
+
     
     // filters
     RT_apply_system_filter(&_plugin->lowshelf,  _output_sound, _num_outputs, num_frames, process_plugins);
