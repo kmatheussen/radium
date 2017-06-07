@@ -494,7 +494,6 @@ public:
     faust_webview_widget->setMaximumHeight(_initial_height);
     faust_webview_widget->setMaximumWidth(_initial_width);
 
-
     //web->setHtml("<object id=\"svg1\" data=\"file:///home/kjetil/radium/audio/faust_multibandcomp-svg/process.svg\" type=\"image/svg+xml\"></object>");
     //web->setUrl(QUrl("file:///home/kjetil/radium/audio/faust_multibandcomp-svg/process.svg"));
     web->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(FAUST_get_svg_path(plugin))));

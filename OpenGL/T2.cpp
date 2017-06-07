@@ -311,11 +311,12 @@ void T1_send_data_to_t2(PaintingData *painting_data, GE_Rgb background_color){
 }
 
 void T1_stop_t2(void){
-  T1_data *t1_data = new T1_data;
-  t1_data->stop_me = true;
-  t1_to_t2_queue.put(t1_data);
-  if(t2_thread!=NULL)
+  if(t2_thread!=NULL){
+    T1_data *t1_data = new T1_data;
+    t1_data->stop_me = true;
+    t1_to_t2_queue.put(t1_data);
     t2_thread->wait();
+  }
 }
 
 void T1_wait_until_t2_got_t1_data(void){
