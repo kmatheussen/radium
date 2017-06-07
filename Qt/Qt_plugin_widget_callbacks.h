@@ -560,7 +560,7 @@ private:
 
 #ifdef WITH_FAUST_DEV
     if (_faust_plugin_widget != NULL)
-      _faust_plugin_widget->change_height(type, header->height());
+      _faust_plugin_widget->change_height(type);
 #else
     delete _plugin_widget;
     _plugin_widget=PluginWidget_create(this, _patch, type);

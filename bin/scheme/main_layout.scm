@@ -43,6 +43,13 @@
 
 (define2 *curr-lowertab-is-sequencer* boolean? #t)
 
+(define (minimize-lowertab)
+  ;;(c-display "minimizing")
+  (<gui> :minimize-as-much-as-possible (<gui> :get-instrument-gui))
+  (<gui> :minimize-as-much-as-possible *notem-gui*)
+  ;;(<gui> :set-size (<gui> :get-instrument-gui) 50 10)
+  (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) 10))
+  
 (define (lowertab-index-callback index)
   ;;(c-display "\n\n\n                ****lowertab changed to index" index *sequencer-gui-height* "\n\n\n")
   (define handle (<gui> :get-splitter-handle *ysplitter* 1))
@@ -61,12 +68,8 @@
           (set! *curr-lowertab-is-sequencer* #f))
         
         (<gui> :set-enabled handle #f)
-        
-        ;;(c-display "minimizing")
-        (<gui> :minimize-as-much-as-possible (<gui> :get-instrument-gui))
-        (<gui> :minimize-as-much-as-possible *notem-gui*)
-        ;;(<gui> :set-size (<gui> :get-instrument-gui) 50 10)
-        (<gui> :set-size *lowertab-gui* (<gui> :width *lowertab-gui*) 10))))
+
+        (minimize-lowertab))))
 
 
 (define (init-lowertab-gui)

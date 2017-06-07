@@ -196,6 +196,11 @@ struct FaustResultWebView
     setPointer(event);
   }
 
+  // Seems like QWebView tries to find a smart sizeHint by default. We don't want that.
+  QSize sizeHint() const override {
+    return QSize(-1,-1);
+  }
+
   void wheelEvent(QWheelEvent *qwheelevent) override {
     if (qwheelevent->modifiers() & Qt::ControlModifier){
       float zoom = zoomFactor();      
@@ -232,7 +237,9 @@ struct FaustResultWebView
 };
 }
 
+
 namespace radium{
+
   
 class Editor : public FocusSnifferQsciScintilla{
   public:
@@ -398,9 +405,7 @@ public:
 
   SizeType _size_type;
   SizeType _size_type_before_hidden;
-  int _header_height;
   
-  int _last_height;
   int _update_count_down;
   
   int _prev_cursor_line, _cursor_line;
@@ -414,10 +419,6 @@ public:
   QDialog *_options_dialog;
   radium::Editor *_options_editor;
 
-  int _initial_height;
-  int _initial_parent_height;
-  int _initial_width;
-  
   Faust_Plugin_widget(QWidget *parent, QLabel *faust_compilation_status, struct Patch *patch)
     : QWidget(parent)
     , parent(parent)
@@ -430,8 +431,6 @@ public:
     , _error_zoom_factor(1.0)
     , _size_type(SIZETYPE_NORMAL)
     , _size_type_before_hidden(SIZETYPE_NORMAL)
-    , _header_height(40)
-    , _last_height(10)
     , _update_count_down(0)
     , _prev_cursor_line(0) , _cursor_line(0)
     , _prev_cursor_index(0) , _cursor_index(0)
@@ -456,19 +455,8 @@ public:
       if (style!=NULL)
         setStyle(style);
     }
-    {
-    }
-    
-    _initial_height = height();
-    _initial_width = width();
-    
-    printf("Initial height: %d\n", height());
     
     _faust_editor = create_editor(this);
-    _faust_editor->resize(50,50);
-    
-    //_faust_editor->setFolding(QsciScintilla::FoldStyle::PlainFoldStyle);
-    //_faust_editor->resize(width()*2/3,height());
     
     develop_layout->insertWidget(0, _faust_editor);
 
@@ -477,23 +465,7 @@ public:
     connect(_faust_editor, SIGNAL(cursorPositionChanged(int,int)), this, SLOT(a_on__faust_editor_cursorPositionChanged(int,int)));
 
     web = new FaustResultWebView(this);
-    web->resize(50,50);
-        
     
-    QSizePolicy fixedPolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    QSizePolicy expandingPolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    
-    //web->setSizePolicy(expandingPolicy);
-    faust_webview_widget->setSizePolicy(fixedPolicy);
-    faust_webview_widget->resize(50,50);
-
-    _faust_editor->setSizePolicy(fixedPolicy);
-
-    _faust_editor->setMaximumHeight(_initial_height);
-    _faust_editor->setMaximumWidth(_initial_width);
-    faust_webview_widget->setMaximumHeight(_initial_height);
-    faust_webview_widget->setMaximumWidth(_initial_width);
-
     //web->setHtml("<object id=\"svg1\" data=\"file:///home/kjetil/radium/audio/faust_multibandcomp-svg/process.svg\" type=\"image/svg+xml\"></object>");
     //web->setUrl(QUrl("file:///home/kjetil/radium/audio/faust_multibandcomp-svg/process.svg"));
     web->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(FAUST_get_svg_path(plugin))));
@@ -507,34 +479,13 @@ public:
     web->page()->setZoomFactor(0.5);
 #endif
     
-    //_faust_editor->setText(FAUST_get_code(plugin));
-    //_faust_editor->zoomIn(10);
-
-    /*
-    web->resize(100,100);
-    web->setMaximumHeight(parent->height() - 2);
-    web->setMinimumWidth(parent->width() / 2);
-    web->setMaximumWidth(parent->width() / 2);
-    */
-    
-    //faust_webview_widget->setUpdatesEnabled(false);
-    //_update_count_down = 3; // Hack to avoid some flicker in qt
-
-    faust_webview_layout->addWidget(web);
+    faust_webview_layout->addWidget(web, 4);
 
     _plugin_widget = PluginWidget_create(this, patch, SIZETYPE_NORMAL);
     faust_interface_layout_radium->insertWidget(0, _plugin_widget);
 
     update_gui(); // <--- Note, update_gui sets _initing to false.
 
-    updateGeometry();
-    adjustSize();
-
-    _initial_parent_height = parent->height();
-    
-    calculate_small_web_heights();
-    
-    calculate_widths();
     _initing = false;
   }
 
@@ -657,10 +608,7 @@ public:
           _update_count_down = 3; // Hack to avoid flicker in qt (not working perfectly though, this is a design issue in qt where the widget configuration updates are spread over several events)
           
           faust_webview_layout->removeWidget(old);
-          faust_webview_layout->addWidget(_plugin_widget);
-          
-          if (old==NULL || _plugin_widget->_num_rows != old->_num_rows)
-            calculate_large_web_heights();
+          faust_webview_layout->addWidget(_plugin_widget, 1);
           
         }else {
           
@@ -689,66 +637,9 @@ public:
     }
   }
 
-  void set_max_heights(int height, bool set_web_height = true, bool set_min = true){
-    _faust_editor->setMinimumHeight(set_min ? height : 0);
-    _faust_editor->setMaximumHeight(height);
-
-    faust_webview_widget->setMinimumHeight(set_min ? height : 0);
-    faust_webview_widget->setMaximumHeight(height);
-
-    if (set_web_height){
-      web->setMinimumHeight(set_min ? height : 0);
-      web->setMaximumHeight(height);
-    }
-  }
-  
-  void calculate_small_web_heights(){
-    int the_height = _initial_parent_height;//parent->height() - 10;
-
-    printf("    TEH ehgith: %d. initial: %d\n", the_height, _initial_height);
-    
-    set_max_heights(the_height);
-  }
-  
-  void calculate_large_web_heights(void){
-    int height = g_main_window->height() - 50;
-
-    int full_height;
-
-    if (_size_type==SIZETYPE_HALF)
-      full_height = height/2 - _header_height - 8;
-    else
-      full_height = height - _header_height - 8;
-    
-    int plugin_widget_height =
-      _plugin_widget->_num_rows==0
-      ? 0
-      : (1+_plugin_widget->_num_rows) * (root->song->tracker_windows->systemfontheight) + 20;
-    
-    if (plugin_widget_height > full_height/2)
-      plugin_widget_height = full_height/2;
-
-    int max_web_height = full_height - (plugin_widget_height==0 ? 2 : (plugin_widget_height+20));
-    printf("max_web: %d, full: %d, plugin: %d, num_rows: %d\n",max_web_height,full_height,plugin_widget_height,_plugin_widget->_num_rows);
-    
-    web->setMaximumWidth(g_main_window->width()); // To ensure we don't see a small web browser in the left part of the widget with a lot of empty space to the right of it.
-
-    set_max_heights(full_height, false, _size_type==SIZETYPE_HALF);
-
-    if (_size_type==SIZETYPE_FULL)
-      web->setMinimumHeight(max_web_height);
-    else
-      web->setMinimumHeight(max_web_height);
-    
-    web->setMaximumHeight(max_web_height);
-  }
-  
-  void set_large(SizeType new_size_type, int header_height = 0){
+  void set_large(SizeType new_size_type){
     _size_type = new_size_type;
 
-    if (header_height > 0)
-      _header_height = header_height;
-    
     // Change vertical scroll bar policy (not easy...)
     {
 #if !USE_QWEBENGINE
@@ -770,10 +661,7 @@ public:
     main_layout->addWidget(code_widget);
     
     tab_widget->hide();
-    faust_webview_layout->addWidget(_plugin_widget);
-
-    calculate_large_web_heights();
-    calculate_widths();
+    faust_webview_layout->addWidget(_plugin_widget, 1);
   }
 
   void set_small(void){
@@ -782,37 +670,21 @@ public:
 #if !USE_QWEBENGINE
     _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOn);
 #endif
-    set_max_heights(_initial_height);
-
+    
     faust_interface_layout_radium->insertWidget(0, _plugin_widget);
 
     tab_develop_layout->addWidget(code_widget);
 
     tab_widget->show();
 
-    updateGeometry();
-    adjustSize();
-
-    calculate_small_web_heights();
-    calculate_widths();
+    evalScheme("(minimize-lowertab)");
   }
-
-  void change_height(SizeType type, int header_height = 0){
-    QSizePolicy fixedPolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    QSizePolicy expandingPolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    if (type==SIZETYPE_FULL){
-      faust_webview_widget->setSizePolicy(expandingPolicy);
-      _faust_editor->setSizePolicy(expandingPolicy);
-    } else {
-      faust_webview_widget->setSizePolicy(fixedPolicy);
-      _faust_editor->setSizePolicy(fixedPolicy);
-    }
-    
+  
+  void change_height(SizeType type){
     if (type==SIZETYPE_NORMAL)
       set_small();
     else
-      set_large(type, header_height);
+      set_large(type);
   }
   
   void start_compilation(QString code){
@@ -923,7 +795,7 @@ public:
     _size_type_before_hidden = _size_type;
     
     if(_size_type!=SIZETYPE_NORMAL)
-      set_small(); // If not, all instrument widgets will have large height (due to the call to web->setMaximumHeight(window_height/2) in set_large()).
+      set_small(); // If not, all instrument widgets will have large height, maybe
   }
 
   void showEvent(QShowEvent * event) override {
@@ -931,51 +803,6 @@ public:
     
     if (_size_type_before_hidden != SIZETYPE_NORMAL)
       set_large(_size_type_before_hidden);
-  }
-
-  void calculate_widths(void){
-    int the_width;
-
-    if (_size_type != SIZETYPE_NORMAL){
-      the_width = width() - 1;
-    } else {
-      the_width = tab_code_widget->width();
-    }
-
-    int the_middle = the_width/2;
-    int editor_width = (the_width / 2);
-    int border = 5;
-    int svg_width = (the_width / 2) - border - 10; // Subtract a little bit so that it won't trigger a new resizeEvent.
-      
-    //printf("          Calculating widths. height: %d\n",the_height);
-    
-    // code
-    _faust_editor->move(0,0);
-    if (editor_width > 0){
-      _faust_editor->setMinimumWidth(editor_width);
-      _faust_editor->setMaximumWidth(editor_width);
-    }
-    
-    // svg / interface
-    faust_webview_widget->move(the_middle+border,0);
-
-    if (svg_width > 0){
-      faust_webview_widget->setMinimumWidth(svg_width);
-      faust_webview_widget->setMaximumWidth(svg_width);
-    }
-    
-    // Ensure that web uses as much space as possible.
-    if (svg_width > 0)
-      web->setMaximumWidth(svg_width);
-  }
-  
-  void resizeEvent( QResizeEvent *qresizeevent) override{
-    printf("Resizeevent called\n");
-    if(g_radium_runs_custom_exec) return;
-    
-    setUpdatesEnabled(false);
-    calculate_widths();
-    setUpdatesEnabled(true);
   }
 
 public slots:
