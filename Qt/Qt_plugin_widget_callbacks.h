@@ -560,12 +560,20 @@ private:
 
 #ifdef WITH_FAUST_DEV
     if (_faust_plugin_widget != NULL)
-      _faust_plugin_widget->change_height(type, header->height());
-#else
-    delete _plugin_widget;
-    _plugin_widget=PluginWidget_create(this, _patch, type);
-    vertical_layout->insertWidget(1,_plugin_widget);
+      _faust_plugin_widget->change_height(type);
 #endif
+    //    else
+      //#endif
+#if 0
+    // ?? This code was enabled before.
+      {
+        delete _plugin_widget;
+        _plugin_widget=PluginWidget_create(this, _patch, type);
+        vertical_layout->insertWidget(1,_plugin_widget);
+      }
+#endif
+    if (type==SIZETYPE_NORMAL)
+      evalScheme("(minimize-lowertab)");
   }
 
   int _ab_checkbox_width = -1;

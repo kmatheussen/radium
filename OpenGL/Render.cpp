@@ -2761,17 +2761,30 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
 
 #endif
 
+DEFINE_ATOMIC(bool, g_is_creating_all_GL_blocks) = false;
 
 void GL_create_all(const struct Tracker_Windows *window){
   struct WBlocks *wblock = window->wblocks;
 
-  if (NextWBlock(wblock) != NULL){
-    while(wblock!=NULL){
+  ATOMIC_SET(g_is_creating_all_GL_blocks, true);
+  
+  while(wblock!=NULL){
+    if (wblock != window->wblock){
+      int org_left_track = wblock->left_track;
+      int org_right_track = wblock->right_track;
+      wblock->left_track = 0;
+      wblock->right_track = wblock->block->num_tracks-1;
+      
       GL_create(window, wblock);
       GE_wait_until_block_is_rendered();
-      wblock = NextWBlock(wblock);
+
+      wblock->left_track = org_left_track;
+      wblock->right_track = org_right_track;
     }
-    GL_create(window, window->wblock);
+    wblock = NextWBlock(wblock);
   }
-  
+
+  GL_create(window, window->wblock);
+    
+  ATOMIC_SET(g_is_creating_all_GL_blocks, false);
 }

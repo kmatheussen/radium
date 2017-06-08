@@ -359,8 +359,8 @@ void GFX_OpenProgress(const char *message){
 
 static void send_string(QString message){
   printf("-______ sending string %s\n",message.toUtf8().constData());
-  int result = g_process->write((QString(message.toUtf8().toBase64().constData())+"\n").toUtf8());
-  printf("num bytes sent: %d\n", result);
+  int64_t result = g_process->write((QString(message.toUtf8().toBase64().constData())+"\n").toUtf8());
+  printf("num bytes sent: %d\n", (int)result);
   
   // MUST NOT DO THIS. We risk ending up at the same place two times (in case there is an error message), and then we could hit a deadlock qt (in QXcbConnection). (seems like a bug in qt)
   //QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);

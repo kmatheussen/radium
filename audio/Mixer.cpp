@@ -273,10 +273,15 @@ static priority_t g_priority_used_before_obtaining_PLAYER_lock; // This variable
 #endif
 
 void PLAYER_lock(void){
-  
+ 
   R_ASSERT(!THREADING_is_player_thread());
 
 #if !defined(RELEASE)
+  printf("  PLAYER_LOCK  \n");
+  if (ATOMIC_GET(root->editonoff)==false){
+    fprintf(stderr," Aborting since edit is turned off. (this is a debug feature and not a bug!)");
+    abort();
+  }
   /*
   printf("   >> Obtaining player lock\n");
   if (is_playing())
@@ -292,7 +297,7 @@ void PLAYER_lock(void){
 #elif defined(FOR_WINDOWS) || defined(FOR_MACOSX)
   priority_t priority = THREADING_get_priority();
   
-  PLAYER_acquire_same_priority();
+  PLAYER_acquire_same_priority(); // Manually avoid priority inversion
   lock_player();
 
   g_priority_used_before_obtaining_PLAYER_lock = priority;
@@ -1228,7 +1233,10 @@ void MIXER_TRANSPORT_set_pos(double abstime){
   if (g_jack_client==NULL)
     return;
   int64_t absabstime = TEMPOAUTOMATION_get_absabstime(abstime);
-  jack_transport_locate(g_jack_client, absabstime);
+  if (absabstime >= UINT32_MAX)
+    RT_message("Can not seek that far when using Jack Transport. Jack time format is 32 bit only.");
+  else
+    jack_transport_locate(g_jack_client, (jack_nframes_t)absabstime);
 }
 
 void MIXER_TRANSPORT_play(double abstime){

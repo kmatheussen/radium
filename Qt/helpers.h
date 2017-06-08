@@ -37,6 +37,30 @@ extern QPointer<QMenu> g_curr_popup_qmenu;
 
 typedef QPointer<QObject> IsAlive;
 
+
+static QPoint getCentrePosition(QWidget *parent, int width, int height){
+  QRect rect;
+  
+  if (parent==NULL || parent->isVisible()==false)
+    // Move to middle of screen instead.
+    rect = QApplication::desktop()->availableGeometry();
+  else
+    rect = parent->geometry();
+  
+  int x = rect.x()+rect.width()/2-width/2;
+  int y = rect.y()+rect.height()/2-height/2;
+  //printf("w: %d, h: %d\n",width,height);
+
+  return QPoint(R_MAX(20, x), R_MAX(20, y));
+}
+
+static inline void moveWindowToCentre(QWidget *widget){
+  QPoint point = getCentrePosition(widget->parentWidget(), widget->width(), widget->height());
+
+  widget->move(point);
+}
+
+
 static bool can_widget_be_parent_questionmark(QWidget *w){
   if (w==NULL)
     return false;
@@ -333,6 +357,7 @@ struct MyQMessageBox : public QMessageBox {
     } else {
       set_window_flags(this, true);
     }
+    moveWindowToCentre(this);
   }
 
  public:
@@ -410,28 +435,6 @@ namespace{
 static inline void pauseUpdates(QWidget *w, int ms = 50){
   setUpdatesEnabledRecursively(w, false);
   new PauseUpdatesTimer(w, ms);
-}
-
-static QPoint getCentrePosition(QWidget *parent, int width, int height){
-  QRect rect;
-  
-  if (parent==NULL || parent->isVisible()==false)
-    // Move to middle of screen instead.
-    rect = QApplication::desktop()->availableGeometry();
-  else
-    rect = parent->geometry();
-  
-  int x = rect.x()+rect.width()/2-width/2;
-  int y = rect.y()+rect.height()/2-height/2;
-  //printf("w: %d, h: %d\n",width,height);
-
-  return QPoint(R_MAX(20, x), R_MAX(20, y));
-}
-
-static inline void moveWindowToCentre(QWidget *widget){
-  QPoint point = getCentrePosition(widget->parentWidget(), widget->width(), widget->height());
-
-  widget->move(point);
 }
 
 static inline void updateWidgetRecursively(QWidget *widget){

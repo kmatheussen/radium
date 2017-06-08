@@ -17,7 +17,10 @@ extern double GL_get_vblank(void);
 
 extern bool GL_should_do_modal_windows(void);
 
-extern bool GL_maybe_notify_that_main_window_is_exposed(int interval);
+    // returns 0 if gl not started
+    // returns 1 if gl just started (only returned once)
+    // returns 2 if gl had been started earlier
+extern int GL_maybe_notify_that_main_window_is_exposed(int interval);
     
 extern void GL_pause_gl_thread_a_short_while(void);
 extern void GL_EnsureMakeCurrentIsCalled(void);

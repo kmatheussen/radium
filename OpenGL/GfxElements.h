@@ -248,7 +248,7 @@ struct GradientType {
   };
 };
 
-void T3_create_gradienttriangles_if_needed(void);
+void T3_create_gradienttriangles_if_needed(bool got_new_t2_data);
 
 void GE_gradient_triangle_start(GradientType::Type type);
 void GE_gradient_triangle_add(GE_Context *c, float x, float y);

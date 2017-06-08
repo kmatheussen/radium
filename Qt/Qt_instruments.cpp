@@ -112,7 +112,9 @@ static void updateMidiPortsWidget(MIDI_instrument_widget *instrument);
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch);
 static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch, bool is_loading);
 
+namespace{
 class Faust_Plugin_widget;
+}
 static Faust_Plugin_widget *AUDIOWIDGET_get_faust_plugin_widget(Audio_instrument_widget *audio_instrument_widget);
 
 

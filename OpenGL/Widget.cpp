@@ -797,8 +797,6 @@ private:
   bool draw(void){
   
 
-    T3_create_gradienttriangles_if_needed();
-
     
 #if TEST_TIME
     double start1 = TIME_get_ms();
@@ -816,6 +814,8 @@ private:
     //if (!is_playing || (draw_counter % 6 == 0))
     new_t2_data = T3_maybe_get_t2_data();
 
+    T3_create_gradienttriangles_if_needed(new_t2_data != NULL);
+        
     draw_counter++;
     
     if (new_t2_data != NULL){
@@ -1063,7 +1063,7 @@ private:
     double dur6 = TIME_get_ms();
     double total = dur6-start1;
 
-    if (false && total>15)// || new_t2_data != NULL)
+    if (true) //false && total>15)// || new_t2_data != NULL)
       printf("%f: mask: %s  Total: %f. s-1: %f, 1-2: %f, 2-3: %f - %f, 3-4: %f, 4-5: %f, 5-6: %f. Num actors: %d\n",
              scroll_pos,
              std::bitset<32>(_rendering->enableMask()).to_string().c_str(),
@@ -1324,7 +1324,7 @@ public:
               must_swap = true;
             }
           }
-          
+
           if (must_swap)
             swap();
           
@@ -1525,20 +1525,23 @@ double GL_get_vblank(void){
     return ATOMIC_DOUBLE_GET(g_vblank);
 }
 
-bool GL_maybe_notify_that_main_window_is_exposed(int interval){
-  static bool gotit=false;
+int GL_maybe_notify_that_main_window_is_exposed(int interval){
+  static int ret = 0;
 
 #if USE_QT5
   
-  if (gotit==false){
+  if (ret==0){
     QWindow *window = widget->windowHandle();
     if (window != NULL){
       if (window->isExposed()) {
         ATOMIC_SET(widget->_main_window_is_exposed, true);
-        gotit = true;
+        ret = 1;
       }
     }
   }else{
+    
+    ret = 2;
+    
     static int downcounter = 0;
     if (downcounter==0) {
 #if !defined(RELEASE)
@@ -1560,14 +1563,15 @@ bool GL_maybe_notify_that_main_window_is_exposed(int interval){
 
 #else
   
-  if (gotit==false){
+  if (ret==0){
     ATOMIC_SET(widget->_main_window_is_exposed, true);
-    gotit = true;
-  }
+    ret = 1;
+  } else
+    ret = 2;
   
 #endif
   
-  return gotit;
+  return ret;
 }
             
 void GL_pause_gl_thread_a_short_while(void){

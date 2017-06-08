@@ -101,11 +101,22 @@ T2_data *T3_maybe_get_t2_data(void){
   }
 }
 
+/*
+void T1_wait_until_t3_got_t2_data(void){
+  if (ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::YES){
+    while(t2_to_t3_queue.size() > 0)
+      msleep(20);
+  }
+}
+*/
+
 bool T3_use_t2_thread(void){
   R_ASSERT(ATOMIC_GET(g_use_t2_thread) != Use_T2_Thread::UNINITIALIZED);
   
   return ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::YES;
 }
+
+
 
 void T3_send_back_old_t2_data(T2_data *t2_data){  
   R_ASSERT(ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::YES);
@@ -300,13 +311,13 @@ void T1_send_data_to_t2(PaintingData *painting_data, GE_Rgb background_color){
 }
 
 void T1_stop_t2(void){
-  T1_data *t1_data = new T1_data;
-  t1_data->stop_me = true;
-  t1_to_t2_queue.put(t1_data);
-  if(t2_thread!=NULL)
+  if(t2_thread!=NULL){
+    T1_data *t1_data = new T1_data;
+    t1_data->stop_me = true;
+    t1_to_t2_queue.put(t1_data);
     t2_thread->wait();
+  }
 }
-
 
 void T1_wait_until_t2_got_t1_data(void){
   while(t1_to_t2_queue.size() > 0)

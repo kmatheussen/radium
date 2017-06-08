@@ -41,6 +41,7 @@ static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_da
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/Mutex.hpp"
+#include "../common/spinlock.h"
 #include "../common/Queue.hpp"
 
 #include "../Qt/Qt_colors_proc.h"
@@ -51,6 +52,12 @@ static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_da
 
 #include "T2.hpp"
 
+
+#define DEBUG_PRINT 0
+
+#if defined(RELEASE) && DEBUG_PRINT==1
+#error "oops"
+#endif
 
 
 #define USE_TRIANGLE_STRIPS 0
@@ -139,7 +146,7 @@ static vl::GLSLVertexShader *get_gradient_vertex_shader(void){
 
 
 struct GradientTriangles : public vl::Effect {
-  GradientTriangles *next;
+  GradientTriangles *next = NULL;
   
   std::vector<vl::dvec2> triangles;
 
@@ -164,8 +171,7 @@ struct GradientTriangles : public vl::Effect {
   SpinlockIMutex ref_mutex;
   
   GradientTriangles(GradientType::Type type)
-    : next(NULL)
-    , type(type)
+    : type(type)
   {
     setRefCountMutex(&ref_mutex);
     setAutomaticDelete(false);
@@ -249,91 +255,256 @@ public:
   }
 };
 
-#define GQUEUE_SIZE 128
-static radium::Queue<GradientTriangles*, GQUEUE_SIZE>  gradienttrianglesqueue[2]; // t3 -> t2
+static int gradlist_length(GradientTriangles *gradients){
+  int ret = 0;
+  while(gradients!=NULL){
+    ret++;
+    gradients = gradients->next;
+  }
+  return ret;
+}
+
+static void TS_push_free_gradient_triangle(GradientType::Type type, GradientTriangles* gradient);
+
+#define GQUEUE_MIN_SIZE 128 // If we have less gradients than this, we panic and allocate immediately.
+#define GQUEUE_MAX_SIZE 256 // If we have less gradients than this, we allocate new ones when it's a good time to do so.
+
 #define GQUEUE_TO_TYPE(I) ((I)==0 ? GradientType::HORIZONTAL : GradientType::VELOCITY)
 #define TYPE_TO_GQUEUE(T) (T==GradientType::HORIZONTAL ? 0 : 1)
 
-void T3_create_gradienttriangles_if_needed(void){
-  static bool alloced_last_time = false;
+// Having two collections is not necessary, but I figured the code would be simpler this way (not so sure anymore).
+// Buffer1 (GradientTrianglesCollection1) holds gradients which are currently used and
+// gradients which have been used earlier, while Buffer2 (GradientTrianglesCollection2) holds fresh, i.e. never used, gradients.
+// Of course, the "earlier used" and the "never used" buffers could be merged, and the code would probably be cleaner if we did.
+//
+// Why so complicated? Because there's some indication (virtualbox opengl driver) that drivers sometimes doesn't work
+// if we allocate shaders on a different thread than the main OpenGL thread. Earlier we allocated in the T2 thread,
+// which has it's own context, so it should be fine, but it didn't work with the virtualbox opengl driver. It's not very
+// important what the virtualbox opengl driver does though, but it might be an indication that it's better to do it this way.
+// Maybe it will fix the crashes that happens when enabling "draw in separate process" on OSX.
+struct GradientTrianglesCollection2 {
 
-  const int p64 = 64;
+  GradientType::Type _type;
 
-  bool isplaying = is_playing();
-  bool has_alloced = false;
+  radium::Queue<GradientTriangles*, GQUEUE_MAX_SIZE> _queue; // t3 -> t2
 
-  auto &queues = gradienttrianglesqueue;
-  int size1 = queues[0].size();
-  int size2 = queues[1].size();
+  DEFINE_ATOMIC(int, _num_gradients_to_push_to_1) = 0;
 
-  int first_pos; // Queue # with the least number of elements.
-
-  if (size1 < size2)
-    first_pos = 0;
-  else
-    first_pos = 1;
-
-  for(int i=first_pos ; i<first_pos+2 ; i++){
-
-    int pos = i;
-    if (pos==2)
-      pos = 0;
-
-    auto &queue = queues[pos];
-
-    int size = queue.size();
-
-    if (size > p64)
-      if (has_alloced || alloced_last_time || isplaying)  // Preferably, we only create at most one shader each second frame.
-        break;
-
-    while (size < GQUEUE_SIZE){
 #if !defined(RELEASE)
-      printf("T3: Creating new GradientTriangles instance. Queue #%d. size: %d\n", pos, size);
+  int _num_created_total = 0;
+  int _num_requested_total = 0;
 #endif
-      queue.put(new GradientTriangles(GQUEUE_TO_TYPE(pos)));
-      size = queue.size();
 
+  
+  GradientTrianglesCollection2(GradientType::Type type)
+    : _type(type)
+  {}
+
+  DEFINE_ATOMIC(int, _visitnum) = 0;
+  
+  bool T3_create_gradienttriangles_if_needed(bool force_creating_all, bool has_alloced_this_time, bool spent_some_time_last_call, bool got_new_t2_data){
+
+    bool has_alloced = false;
+    
+    int size = _queue.size();
+
+    if (size > GQUEUE_MIN_SIZE && !force_creating_all)
+      if (has_alloced_this_time || spent_some_time_last_call || got_new_t2_data || is_playing())  // Preferably, we only create at most one shader each second frame while not playing. We don't want to allocate when we get new t2 data either, because those frames takes much longer time to render.
+        return has_alloced;
+      
+    int num_to_push_to_1 = ATOMIC_GET(_num_gradients_to_push_to_1);
+    int num_pushed_to_1 = 0;
+      
+    while (size < GQUEUE_MAX_SIZE || num_to_push_to_1>num_pushed_to_1){
+#if DEBUG_PRINT
+      printf("T3: Creating new GradientTriangles instance. Queue #%d. queue size: %d. NULL: %d, Total: %d\n", TYPE_TO_GQUEUE(_type), size, num_to_push_to_1, ++_num_created_total);
+#endif
+      auto *gradient = new GradientTriangles(_type);
       has_alloced = true;
 
-      if (isplaying || size > p64)
+      if (size==GQUEUE_MAX_SIZE){
+        TS_push_free_gradient_triangle(_type, gradient);
+        num_pushed_to_1++;
+      }else{
+        _queue.put(gradient);
+        size++;
+      }
+      
+      if (size > GQUEUE_MIN_SIZE && !force_creating_all)
         break;
+    }
+
+    if (num_pushed_to_1 > 0){
+      int newnum = ATOMIC_ADD_RETURN_NEW(_num_gradients_to_push_to_1, -num_pushed_to_1);
+      if (newnum < 0)
+        ATOMIC_SET(_num_gradients_to_push_to_1, 0);
+    }
+
+    ATOMIC_ADD(_visitnum, 1);
+    
+    return has_alloced;
+  }
+
+  void T1_wait_until_all_gradients_are_created(void){
+    int visitnum = ATOMIC_GET(_visitnum);
+
+    if (visitnum==0) // Program startup. Deadlock without this check.
+      return;
+
+    do{
+      msleep(20);
+    }while(ATOMIC_GET(_visitnum) < visitnum+2 || _queue.size() < GQUEUE_MAX_SIZE || ATOMIC_GET(_num_gradients_to_push_to_1) > 0);
+  }
+  
+  void T1_prepare_for_new_rendering(void){
+    ATOMIC_SET(_num_gradients_to_push_to_1, 0); // If not, this number can grow very large.
+  }
+  
+  GradientTriangles *T1_get_gradienttriangles(void){
+    
+    int size = _queue.size();
+
+
+#if DEBUG_PRINT
+    printf("T1: Requesting new gradient triangles. Queue #%d. queue size: %d. Total: %d. \n", TYPE_TO_GQUEUE(_type), size, ++_num_requested_total);
+#endif
+    
+    if (size > 0)
+      return _queue.get();
+    else{
+      ATOMIC_ADD(_num_gradients_to_push_to_1, 1);
+      return NULL;
     }
   }
 
-  alloced_last_time = has_alloced;
+};
+
+  
+static GradientTrianglesCollection2 horizontalGradientTriangles2(GradientType::HORIZONTAL);
+static GradientTrianglesCollection2 velocityGradientTriangles2(GradientType::VELOCITY);
+
+static GradientTrianglesCollection2 &get_collection2(GradientType::Type type){
+  if (type==GradientType::HORIZONTAL)
+    return horizontalGradientTriangles2;
+  else
+    return velocityGradientTriangles2;
+}
+
+void T3_create_gradienttriangles_if_needed(bool got_new_t2_data){
+  static bool spent_some_time_last_call = false;
+  static bool has_inited = false;
+  
+  GradientTrianglesCollection2 *queue1, *queue2;
+  
+  if (horizontalGradientTriangles2._queue.size() < velocityGradientTriangles2._queue.size()){
+    queue1 = &horizontalGradientTriangles2;
+    queue2 = &velocityGradientTriangles2;
+  } else {
+    queue1 = &velocityGradientTriangles2;
+    queue2 = &horizontalGradientTriangles2;
+  }
+
+  bool force_creating_all = has_inited==false || ATOMIC_GET(g_is_creating_all_GL_blocks);
+    
+  bool has_alloced_this_time1 = queue1->T3_create_gradienttriangles_if_needed(force_creating_all, false, spent_some_time_last_call, got_new_t2_data);
+  bool has_alloced_this_time2 = queue2->T3_create_gradienttriangles_if_needed(force_creating_all, has_alloced_this_time1, spent_some_time_last_call, got_new_t2_data);
+
+  spent_some_time_last_call = has_alloced_this_time1 || has_alloced_this_time2 || got_new_t2_data;
+  
+  has_inited = true;
+}
+
+static void T1_wait_until_all_gradients_are_created(void){
+  horizontalGradientTriangles2.T1_wait_until_all_gradients_are_created();
+  velocityGradientTriangles2.T1_wait_until_all_gradients_are_created();
 }
   
-static GradientTriangles *T1_get_gradienttriangles(GradientType::Type type){
-  auto &queue = gradienttrianglesqueue[TYPE_TO_GQUEUE(type)];
-
-#if !defined(RELEASE)
-  printf("T1: Requesting new gradient triangles. Queue #%d. size: %d\n", TYPE_TO_GQUEUE(type), queue.size());
-#endif
-
-  return queue.get();
+static void T1_prepare_gradients2_for_new_rendering(void){
+  horizontalGradientTriangles2.T1_prepare_for_new_rendering();
+  velocityGradientTriangles2.T1_prepare_for_new_rendering();
 }
+
+static GradientTriangles *T1_get_gradienttriangles2(GradientType::Type type){
+  return get_collection2(type).T1_get_gradienttriangles();
+}
+
+  
+
+
+  
 
 struct GradientTrianglesCollection {
 
   GradientType::Type type;
 
+  radium::Spinlock lock;
+  
   // These two are only accessed by the main thread
-  GradientTriangles *used_gradient_triangles;
-  GradientTriangles *free_gradient_triangles;
+  GradientTriangles *used_gradient_triangles; // Only used by T3.
+  
+  GradientTriangles *free_gradient_triangles; // Used by both T1 and T3. Must be protected by lock
 
   GradientTrianglesCollection(GradientType::Type type)
     : type(type)
     , used_gradient_triangles(NULL)
     , free_gradient_triangles(NULL)
   {}
+
+  int freesize(void){
+    radium::ScopedSpinlock daslock(lock);
+    return gradlist_length(free_gradient_triangles);
+  }
+  
+  GradientTriangles *TS_get_free_gradient_triangle(void){
+    radium::ScopedSpinlock daslock(lock);
+
+    GradientTriangles *gradient = free_gradient_triangles;
+
+    if (gradient == NULL) {
+      
+      return NULL;
+      
+    } else {
+    
+      free_gradient_triangles = gradient->next;
+
+      return gradient;
+    }
+  }
+  
+  void TS_push_free_gradient_triangle(GradientTriangles *gradient){
+    radium::ScopedSpinlock daslock(lock);
+
+    R_ASSERT_NON_RELEASE(gradient->next==NULL);
+    
+    gradient->next = free_gradient_triangles;
+    free_gradient_triangles = gradient;    
+  }
+  
+  void TS_push_several_free_gradient_triangle(GradientTriangles *gradients, GradientTriangles *last_element){
+    if (gradients==NULL){
+      
+      R_ASSERT(last_element==NULL);
+
+    } else {      
+      radium::ScopedSpinlock daslock(lock);
+      
+      last_element->next = free_gradient_triangles;
+      free_gradient_triangles = gradients;
+    }
+  }
   
   // main thread
   void T1_collect_gradient_triangles_garbage(void){
     GradientTriangles *new_used = NULL;
     GradientTriangles *new_free = NULL;
+    GradientTriangles *last_new_free = NULL;
     
-    R_ASSERT(free_gradient_triangles == NULL);
+    //R_ASSERT(free_gradient_triangles == NULL); // T3 could have pushed a free gradient since last check.
+
+#if DEBUG_PRINT
+    int bef = gradlist_length(used_gradient_triangles);
+#endif
     
     GradientTriangles *gradient = used_gradient_triangles;
 
@@ -347,8 +518,9 @@ struct GradientTrianglesCollection {
       gradient->ref_mutex.unlock();
       
       if(is_free) {
-        //gradient->clean(); // TODO: Check if this operation frees memory. If it does, it might improve performance to call clean() outside of the lock.
         gradient->next = new_free;
+        if (new_free==NULL)
+          last_new_free = gradient;
         new_free = gradient;
         numa++;
       } else {
@@ -358,49 +530,47 @@ struct GradientTrianglesCollection {
       numb++;
       gradient = next;
     }
-    
+
+    /*
+      // We clean it when allocating instead. Might cause less cpu spikes.
     gradient = new_free;
     while(gradient != NULL){
       gradient->clean();
       gradient = gradient->next;
     }
+    */
 
-    //printf("    Collecting gradient garbage finished %d / %d\n",numa,numb);
-
+#if DEBUG_PRINT
+    int aft = gradlist_length(new_used);
+    int fbef = freesize();
+#endif
+    
     used_gradient_triangles = new_used;
-    free_gradient_triangles = new_free;
+    TS_push_several_free_gradient_triangle(new_free, last_new_free);
+
+#if DEBUG_PRINT
+    printf("    Collecting gradient garbage finished #%d. %d / %d. Len: %d / %d. Free: %d/%d\n",TYPE_TO_GQUEUE(type), numa,numb,bef,aft,fbef,freesize());
+#endif
   }
 
 
   // main thread
   GradientTriangles *T1_get_gradient_triangles(void){
-    if (free_gradient_triangles==NULL)
-      T1_collect_gradient_triangles_garbage();
-    
-    GradientTriangles *gradient = free_gradient_triangles;
-
-    if (gradient==NULL)
-      gradient = ::T1_get_gradienttriangles(type);
+    GradientTriangles *gradient = TS_get_free_gradient_triangle(); // Reuse old.
+    if (gradient!=NULL)
+      gradient->clean();
     else
-      free_gradient_triangles = gradient->next;
+      gradient = ::T1_get_gradienttriangles2(type); // Get a new.
+    
+    if (gradient==NULL)
+      return NULL;
     
     // push used
     gradient->next = used_gradient_triangles;
     used_gradient_triangles = gradient;
     
-#if 0
-    if(free_gradient_triangles!=NULL)
-      assert(free_gradient_triangles != used_gradient_triangles);
-    
-    if (free_gradient_triangles!=NULL)
-      assert(free_gradient_triangles->next != free_gradient_triangles);
-    
-    assert(used_gradient_triangles->next != used_gradient_triangles);
-    
-    if(free_gradient_triangles!=NULL)
-      assert(free_gradient_triangles != used_gradient_triangles);
-#endif
-  
+    //printf("Size of #%d: %d. Freesize: %d\n", TYPE_TO_GQUEUE(type), gradlist_length(used_gradient_triangles), freesize());
+      
     return gradient;
   }
 
@@ -409,16 +579,26 @@ struct GradientTrianglesCollection {
 static GradientTrianglesCollection horizontalGradientTriangles(GradientType::HORIZONTAL);
 static GradientTrianglesCollection velocityGradientTriangles(GradientType::VELOCITY);
 
-static GradientTriangles *T1_get_gradient_triangles(GradientType::Type type){
+static GradientTrianglesCollection &get_collection(GradientType::Type type){
   if (type==GradientType::HORIZONTAL)
-    return horizontalGradientTriangles.T1_get_gradient_triangles();
-  else if (type==GradientType::VELOCITY)
-    return velocityGradientTriangles.T1_get_gradient_triangles();
-
-  RWarning("Unknown gradient type %d",type);
-  return NULL;
+    return horizontalGradientTriangles;
+  else
+    return velocityGradientTriangles;
 }
-    
+
+static GradientTriangles *T1_get_gradient_triangles(GradientType::Type type){
+  return get_collection(type).T1_get_gradient_triangles();
+}
+
+static void TS_push_free_gradient_triangle(GradientType::Type type, GradientTriangles* gradient){
+  get_collection(type).TS_push_free_gradient_triangle(gradient);
+}
+
+// Called from GE_start_writing();
+static void T1_collect_gradients1_garbage(void){
+  horizontalGradientTriangles.T1_collect_gradient_triangles_garbage();
+  velocityGradientTriangles.T1_collect_gradient_triangles_garbage();
+}
 
 struct _GE_Context : public vl::Object{
   //std::map< int, std::vector<vl::dvec2> > lines; // lines, boxes and polylines
@@ -613,6 +793,9 @@ void GE_start_writing(int full_height){
   
   g_painting_data = new PaintingData(full_height);
   GE_fill_in_shared_variables(&g_painting_data->shared_variables);
+
+  T1_prepare_gradients2_for_new_rendering();
+  T1_collect_gradients1_garbage();
 }
 
 // Called from the main thread
@@ -625,6 +808,8 @@ void GE_end_writing(GE_Rgb new_background_color){
 // Called from the main thread. Only used when loading song to ensure all gradients are created before starting to play.
 void GE_wait_until_block_is_rendered(void){
   T1_wait_until_t2_got_t1_data();
+  // T1_wait_until_t3_got_t2_data(); // A bit inconvenient to make that function since the t2_to_t3 queue is not threadsafe. Instead we let T1_wait_until_all_gradients_are_created wait at least two periods.
+  T1_wait_until_all_gradients_are_created();
 }
 
 
@@ -1205,9 +1390,11 @@ static int num_gradient_triangles;
 static vl::ref<GradientTriangles> current_gradient_rectangle;
 static float triangles_min_y;
 static float triangles_max_y;
+static GradientType::Type current_gradient_type;
 
 void GE_gradient_triangle_start(GradientType::Type type){
   current_gradient_rectangle = T1_get_gradient_triangles(type);
+  current_gradient_type = type;
   num_gradient_triangles = 0;
 }
 
@@ -1215,6 +1402,18 @@ void GE_gradient_triangle_add(GE_Context *c, float x, float y){
   static float y2,y1;
   static float x2,x1;
 
+  if (current_gradient_rectangle.get()==NULL){ // Happens when we are too buzy.
+    current_gradient_rectangle = T1_get_gradient_triangles(current_gradient_type); // try again.
+    if (current_gradient_rectangle.get()==NULL){
+
+      // We could have slept for the duration of a frame here, and tried again, but that would probably have been worse than using a non-gradient triangle.
+      
+      GE_trianglestrip_start(); // fallback to non-gradient triangles
+      GE_trianglestrip_add(c, x, y);
+      return;
+    }
+  }
+  
   if(num_gradient_triangles==0){
     triangles_min_y = triangles_max_y = y;
   }else{
@@ -1238,6 +1437,11 @@ void GE_gradient_triangle_add(GE_Context *c, float x, float y){
 }
 
 void GE_gradient_triangle_end(GE_Context *c, float x1, float x2){
+  if (current_gradient_rectangle.get()==NULL){
+    GE_trianglestrip_end(c);
+    return;
+  }
+  
   //printf("min_y: %f, max_y: %f. height: %f\n",triangles_min_y, triangles_max_y, triangles_max_y-triangles_min_y);
   current_gradient_rectangle->y = c->y(triangles_max_y);
   current_gradient_rectangle->height = triangles_max_y-triangles_min_y;

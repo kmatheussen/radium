@@ -1,3 +1,108 @@
+Changes 4.8.5 -> 4.8.7:
+* Include a "Kill Jack" program with Radium. "Kill Jack" kills the
+  jack server unconditionally. It could be a very useful tool.
+* Re-enable "draw in separate process" on OSX. (Hopefully it
+  doesn't crashes anymore.)
+* Make sure message windows are opened at the centre of parent or
+  screen
+* OpenGL: Create shaders in the main OpenGL thread, and not in the
+  OpenGL helper thread. This makes the shaders work when rendering
+  in a separate process in VirtualBox. This change might make
+  "draw in separate process" work on more configurations.
+* OpenGL: Force linking shader immediately after creation. Also
+  give an error message if linking failed. Might fix problems
+  with "Draw in separate process" and other things.
+* GUI: Fix keyboard focus for the input requester. Especially on
+  windows, it didn't always get keyboard focus when initialized.
+* GUI: Make sure the input requetser window is wide enough to
+  show all content.
+* GUI: Fix problem that sometimes caused the current mixer strip
+  to be placed between the editor and the mixer.
+* Show a "Doesn't have a gui" message when selecting
+  "Show/hide GUI of current instrument" and current instrument
+  doesn't have a GUI.
+* GUI/Flowlayout: Horizontally centre all items.
+* GUI: Fixed a couple of bugs that caused widgets not to always
+  resize properly and not to always paint properly.
+* Packages/libxcb: Fix compilation if python points to python3
+  instead of python2. (Alyssa P. Hacker)
+* Packages/libxcb: Fix compilation error caused by indentation
+  errors in python file. (Alyssa P. Hacker)
+* Quantitize GUI: Don't synchronize the quantitize value across
+  quantitize GUIs. Each quantitize GUI has it's own value.
+* Quantitize GUI: The inserted value will no longer be
+  automatically divided by greatest common denominator.
+* Ratio GUI: Pressing control causes denominator to change value
+  when using mouse wheel. (Instead of changing the numerator
+  value)
+* Ratio GUI: Possible to write floating point numbers.
+* Ratio GUI: Writing e.g. "9/b" will be converted to "9/1", not
+  "0/1".
+* Ratio GUI: Writing e.g. "b/9" will be converted to "0/9", not
+  "0/1".
+* Import mod: Fix keyboard focus in file requester
+* Progress window: Fix flickering, and fix not always working
+  properly.
+* Swing: Make the editor use current track swing setting when
+  swinging along while playing
+* Mixer Strips: mixer strips: Add "Show Info" popup menu option
+  when right clicking an instrument
+* Import MIDI: Don't show assertion reporter when importing MIDI
+  while playing
+* Fix keyboard focus in vst path line edit widget
+* Preferences: Various GUI tweaks.
+* Don't pause player when copying a track. This bug also
+  manifested istelf on lots of other functions.
+* Sequencer height is always remembered and constant.
+* Instrument height is always minimal.
+* Jack Transport: Fully implemented, includin an option to let
+  Radium be the "Jack Timebase Master". Enable under the
+  "Sequencer" tab in preferences.
+* Input requester: Pop up a modal window. Never show it between the
+  menus and the editor anymore. (Created keyboard problems and
+  often autoresized the main window.)
+* Mixer strips: Minor fix to instrument border rendering.
+* Don't show assertion reporter when moving very short notes in the
+  piano bar.
+* Lots of assertions that we are not calling update()/show()/exec()
+  while painting.
+* Always use radium_error_message program to show message when
+  painting or loading song. Fix for crash.
+* Fix the radium_error_message program program. It didn't
+  properly wait for start and finish.
+* Put the sequencer and the instrument into a new tab bar. Also
+  added a new tab called "Edit".
+* Move stylesheet css into a separate file called
+  "bin/stylesheet.css" so that it can be modified without
+  recompiling, and also modified by user.
+* Some Qt stylesheet tweaks
+* Let QScrollArea widgets have transparent background
+* API:
+  * GUI: Make sure tab background is correct
+  * GUI: Fix empty color for gui_text
+  * GUI: Various bug fixes
+  * GUI: Add "rotate" parameter to gui_drawText
+  * GUI: By default, there are no spacing or borders
+  * GUI: Don"t call resize callback again if it failed.
+  * GUI: Fix keyboard focus for line requesters that has no
+    callback
+  * GUI: First argument to gui_ratio can also be a string or a
+    float.
+  * setQuantitize: First argument can also be a string or a float.
+  * getQuantitize: Take an optional argument "as_string". If true,
+    returns quantitize value as string instead of ratio.
+  * GUI: Workaround for a Qt bug causing callback for gui_line to
+    be called twice. (QTBUG-40. Reported in 2005!)
+  * New functions: gui_verticalSplitter, gui_horizontalSplitter,
+    gui_setAsWindow, gui_removeTab, gui_currentTab,
+    gui_setCurrentTab, gui_getTabPos,
+    gui_minimizeAsMuchAsPossible, gui_getMainXSplitter,
+    gui_getSequencerGui, gui_getInstrumentGui, gui_getTabBar,
+    gui_numTabs, gui_tabName, gui_getSplitterHandle,
+    getRatioFromString, getStringFromRatio
+
+
+
 Changes 4.8.3 -> 4.8.5:
 * Fix a bug in the jack check program that made it not always
   work.
