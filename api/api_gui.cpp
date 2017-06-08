@@ -2137,6 +2137,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path(url))));
     }
 
+    /*
+    QSize sizeHint() const override {
+      return QSize(-1,-1);
+    }
+    */
+    
     OVERRIDERS(QWebView);
   };
 

@@ -250,9 +250,11 @@ class Editor : public FocusSnifferQsciScintilla{
     : FocusSnifferQsciScintilla(parent)
   {
     minimizeMargins(this);
+    /*
     static QStyle *style = QStyleFactory::create("fusion"); // parent is platique
     if (style!=NULL)
       setStyle(style);
+    */
   }
 
 
@@ -406,8 +408,6 @@ public:
   SizeType _size_type;
   SizeType _size_type_before_hidden;
   
-  int _update_count_down;
-  
   int _prev_cursor_line, _cursor_line;
   int _prev_cursor_index, _cursor_index;
 
@@ -431,7 +431,6 @@ public:
     , _error_zoom_factor(1.0)
     , _size_type(SIZETYPE_NORMAL)
     , _size_type_before_hidden(SIZETYPE_NORMAL)
-    , _update_count_down(0)
     , _prev_cursor_line(0) , _cursor_line(0)
     , _prev_cursor_index(0) , _cursor_index(0)
     , _cpp_dialog(NULL)
@@ -450,7 +449,7 @@ public:
 
     setupUi(this);
 
-    {
+    if(0){
       static QStyle *style = QStyleFactory::create("plastique");
       if (style!=NULL)
         setStyle(style);
@@ -604,8 +603,6 @@ public:
         _plugin_widget=PluginWidget_create(this, _patch, SIZETYPE_NORMAL);
 
         if (_size_type != SIZETYPE_NORMAL){
-          faust_webview_widget->setUpdatesEnabled(false);
-          _update_count_down = 3; // Hack to avoid flicker in qt (not working perfectly though, this is a design issue in qt where the widget configuration updates are spread over several events)
           
           faust_webview_layout->removeWidget(old);
           faust_webview_layout->addWidget(_plugin_widget, 1);
@@ -622,17 +619,6 @@ public:
         //_plugin_widget->set_automation_value_pointers(plugin);
 
         delete old;
-      }
-    }
-
-    // Hack to avoid flicker in qt
-    if (_update_count_down > 0){
-      _update_count_down--;
-      if (_update_count_down==0){
-        
-        faust_webview_widget->setUpdatesEnabled(true);
-        struct Tracker_Windows *window = root->song->tracker_windows;
-        window->must_redraw = true;
       }
     }
   }
@@ -655,9 +641,6 @@ public:
 #endif
     }
     
-    faust_webview_widget->setUpdatesEnabled(false);
-    _update_count_down = 3; // Hack to avoid some flicker in qt
-
     main_layout->addWidget(code_widget);
     
     tab_widget->hide();
@@ -676,8 +659,6 @@ public:
     tab_develop_layout->addWidget(code_widget);
 
     tab_widget->show();
-
-    evalScheme("(minimize-lowertab)");
   }
   
   void change_height(SizeType type){

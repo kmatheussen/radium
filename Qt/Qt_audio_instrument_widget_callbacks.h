@@ -840,7 +840,7 @@ private:
       setMaximumHeight(g_main_window->height() / 2);
     } else {
       setMinimumHeight(0);
-      setMaximumHeight(g_main_window->height());
+      setMaximumHeight(16777214);//g_main_window->height());
     }
 
     _size_type = new_size_type;
@@ -855,7 +855,7 @@ private:
     
     setMinimumHeight(10);
     setMaximumHeight(16777214);
-    resize(width(), height_before_large);
+    //resize(width(), height_before_large);
     
     for (auto *widget : hidden_widgets)
       widget->show();
