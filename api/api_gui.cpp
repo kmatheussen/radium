@@ -646,9 +646,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void closeEvent(QCloseEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_close_callback!=NULL);
 
-      if (false==S7CALL(bool_bool,_close_callback, g_radium_runs_custom_exec))
+      if (false==S7CALL(bool_bool,_close_callback, g_radium_runs_custom_exec)){
+        Gui::_has_been_closed = false;
         event->ignore();
-      else{
+      }else{
         Gui::_has_been_closed = true;
         event->accept();
       }
