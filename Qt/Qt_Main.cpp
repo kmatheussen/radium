@@ -1715,12 +1715,27 @@ void GFX_toggleCurrWindowFullScreen(void){
   }
   
   for(auto *window : QGuiApplication::topLevelWindows()){
+    //printf("window: %p. toplevel: %p. Equal? %d\n",window, toplevel->windowHandle(), window==toplevel->windowHandle());
     if (window==toplevel->windowHandle()){
-      if(toplevel->isFullScreen()){
-        toplevel->showNormal();
-      }else{
-        toplevel->showFullScreen();
+      
+      if (toplevel != g_main_window){
+
+        // Setting full screen is a little bit complicated for other windows than g_main_window. gui_setFullScreen takes care of all that.
+        int64_t guinum = API_get_gui_from_existing_widget(toplevel);
+        gui_setFullScreen(guinum, !gui_isFullScreen(guinum));
+        
+      } else {
+        
+        if(toplevel->isFullScreen()){
+          printf("Trying to set normal\n");
+          toplevel->showNormal();
+        }else{
+          printf("Trying to set full screen\n");
+          toplevel->showFullScreen();
+        }
+        
       }
+      
       return;
     }
   }

@@ -63,6 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_MyQCheckBox.h"
 #include "../Qt/flowlayout.h"
 #include "../Qt/lzqlineedit.h"
+#include "../Qt/Timer.hpp"
 
 #include "../common/visual_proc.h"
 #include "../common/seqtrack_proc.h"
@@ -239,6 +240,7 @@ static void setDefaultSpacing(QLayout *layout){
 
 namespace radium_gui{
 
+struct FullScreenParent;
 struct Gui;
 
 static QVector<Gui*> g_valid_guis;
@@ -252,6 +254,8 @@ static QHash<const QWidget*, Gui*> g_gui_from_widgets; // Q: What if a QWidget i
 
 static QHash<int64_t, const char*> g_guis_can_not_be_closed; // The string contains the reason that this gui can not be closed.
 
+static QHash<const FullScreenParent*, Gui*> g_gui_from_full_screen_widgets;
+  
 struct VerticalAudioMeter;
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
@@ -336,6 +340,138 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
   };
 
+
+  /*
+    FullScreenParent should/must:
+    1. When asked to close, it must ask child if it wants to close. Only if child wants to close, we can close.
+    2. When child is hidden, we must also hide instead.
+    3. When child is becoming visible, we must also become visible.
+    4. When child is deleted, we must delete too.
+    5. When the original parent of the child is deleted, we must delete too.
+    6. When the child changes parent, we must delete, or preferably, monitor when to hide and so forth.
+    */
+  struct FullScreenParent : public QWidget, radium::Timer {
+
+    QPointer<QWidget> _child;
+    
+    bool _had_original_parent;
+    QPointer<QObject> _original_parent;
+    Qt::WindowFlags _original_flags;
+    QRect _original_geometry;
+    
+    
+    FullScreenParent(QWidget *child, Gui *gui)
+      : radium::Timer(15, true)
+      , _child(child)
+    {
+      R_ASSERT(_child->isWindow());
+        
+      _original_parent = _child->parent();
+      
+      _had_original_parent = _original_parent != NULL;
+      
+      _original_flags = _child->windowFlags();      
+      _original_geometry = _child->geometry();
+
+      showFullScreen();
+
+      QVBoxLayout *mainLayout = new QVBoxLayout(this);
+      mainLayout->setSpacing(0);
+      mainLayout->setContentsMargins(0,0,0,0);
+      
+      setLayout(mainLayout);
+      
+      mainLayout->addWidget(_child);
+
+      g_gui_from_full_screen_widgets[this] = gui;
+
+#if defined(FOR_WINDOWS)
+      OS_WINDOWS_set_key_window((void*)winId()); // To avoid losing keyboard focus
+#endif
+    }
+
+    ~FullScreenParent(){
+      g_gui_from_full_screen_widgets.remove(this);
+    }
+
+    void setNewParent(QWidget *new_parent){
+      _original_parent = new_parent;
+    }
+      
+    void resetChildToOriginalState(void){
+      R_ASSERT_RETURN_IF_FALSE(_child != NULL);
+
+      layout()->removeWidget(_child);
+
+      if (_original_parent != NULL){
+        QWidget *parentWidget = dynamic_cast<QWidget*>(_original_parent.data());
+        _child->setParent(parentWidget, _original_flags);
+      }
+      
+      _child->setGeometry(_original_geometry);
+    }
+
+    bool someone_else_has_become_parent = false;
+    
+    void calledFromTimer(void){
+      if (_child==NULL){
+        // 4.
+        //printf("   CHILD==NULL\n");
+        delete this;
+        return;
+      }
+
+      if (_had_original_parent && _original_parent==NULL){
+        // 5.
+        //printf("   ORIGINAL PARENT==NULL\n");
+        delete this;
+        return;
+      }
+
+      if (_child->parent() != this && _child->isWindow() && someone_else_has_become_parent==true){
+        // 6.
+        //printf("   I AM STEALING CHILD BACK\n");
+        someone_else_has_become_parent = false;
+        _original_parent = _child->parent();
+        layout()->addWidget(_child);
+        show();
+      }
+          
+      if (_child->parent() != this && someone_else_has_become_parent==false){
+        // 6.
+        //printf("   SOMEONE ELSE HAS BECOME PARENT\n");
+        hide();
+        _original_parent = _child->parent();
+        someone_else_has_become_parent = true;
+        return;
+      }
+        
+      if (_child->isVisibleTo(this)==false){
+        if (isVisible()==true){
+          // 2.
+          //printf("   HIDE\n");
+          hide();
+        }
+      } else {
+        if (isVisible()==false){
+          // 3.
+          //printf("   SHOW\n");
+          show();
+        }
+      }
+
+    }
+    
+    void closeEvent(QCloseEvent *ev) override {
+      printf("   CLOSING\n");
+      ev->ignore(); // We only react to what the child might do.
+
+      // 1.
+      if (_child != NULL)
+        _child->close();
+    }
+  };
+
   
   struct Gui {
 
@@ -349,12 +485,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     const QPointer<QWidget> _widget; // Stored in a QPointer since we need to know if the widget has been deleted.
     bool _created_from_existing_widget; // Is false if _widget was created by using one of the gui_* functions (except gui_child()). Only used for validation.
 
-    // full screen stuff
-    QWidget *_full_screen_parent = NULL;
-    QPointer<QWidget> _non_full_screen_parent; // Only has a valid value if is_full_screen(). (A QPointer sets the value to NULL automatically when parent is deleted)
-    Qt::WindowFlags _non_full_screen_flags; // Only has a valid value if is_full_screen() 
-    QRect _non_full_screen_rect;  // Only has a valid value if is_full_screen()
-    
+    // Has value when running full screen.
+    QPointer<FullScreenParent> _full_screen_parent = NULL;
+
     QVector<func_t*> _deleted_callbacks;
 
     RememberGeometry remember_geometry;
@@ -2473,6 +2606,8 @@ int64_t API_get_gui_from_widget(QWidget *widget){
 
   {
     Gui *gui = g_gui_from_widgets.value(widget);
+    if (gui==NULL)
+      gui = g_gui_from_full_screen_widgets.value(dynamic_cast<FullScreenParent*>(widget));
   
     if (gui != NULL){
       if (gui->_widget == NULL){
@@ -2492,6 +2627,9 @@ int64_t API_get_gui_from_existing_widget(QWidget *widget){
 #if !defined(RELEASE)
   // Check that it's hasn't been added as normal GUI. (this assertion is the only difference between API_get_gui_from_existing_widget and get_gui_from_widget).
   const Gui *gui = g_gui_from_widgets.value(widget);
+  if (gui==NULL)
+    gui = g_gui_from_full_screen_widgets.value(dynamic_cast<FullScreenParent*>(widget));
+  
   if (gui!=NULL)
     R_ASSERT(gui->_created_from_existing_widget);
 #endif
@@ -3460,8 +3598,6 @@ void gui_hide(int64_t guinum){
   gui->_widget->hide();
 }
 
-static void deleteFullscreenParent(Gui *gui);
-
 
 void gui_close(int64_t guinum){
   Gui *gui = get_gui(guinum);
@@ -3492,11 +3628,7 @@ void gui_close(int64_t guinum){
     handleError("Gui #%d has already been closed", (int)guinum);
     return;
   }
-  gui->_has_been_closed = true;
   
-  if(gui->is_full_screen())
-    deleteFullscreenParent(gui);
-
   gui->_widget->close();
 }
 
@@ -3543,7 +3675,7 @@ bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
   }
   
   else if (gui->is_full_screen())
-    gui->_non_full_screen_parent = parent;
+    gui->_full_screen_parent->setNewParent(parent);
 
   else if (gui->_widget->parent() == parent)
     return false;
@@ -3731,17 +3863,6 @@ bool gui_mousePointsMainlyAt(int64_t guinum){
   return gui->_widget->window()==QApplication::topLevelAt(QCursor::pos());
 }
 
-static void deleteFullscreenParent(Gui *gui){
-  R_ASSERT_RETURN_IF_FALSE(gui->is_full_screen());
-  
-  gui->_full_screen_parent->layout()->removeWidget(gui->_widget);
-
-  gui->_widget->setParent(gui->_non_full_screen_parent, gui->_non_full_screen_flags);
-  gui->_widget->setGeometry(gui->_non_full_screen_rect);
-  
-  delete gui->_full_screen_parent;
-  gui->_full_screen_parent = NULL;
-}
 
 void gui_setFullScreen(int64_t guinum, bool enable){
   Gui *gui = get_gui(guinum);
@@ -3753,34 +3874,19 @@ void gui_setFullScreen(int64_t guinum, bool enable){
     if(gui->is_full_screen())
       return;
 
-    gui->_non_full_screen_parent = gui->_widget->parentWidget();
-    gui->_non_full_screen_flags  = gui->_widget->windowFlags();
-    gui->_non_full_screen_rect   = gui->_widget->geometry();
-      
-    gui->_full_screen_parent = new QWidget();
-
-    gui->_full_screen_parent->showFullScreen();
-    
-    QVBoxLayout *mainLayout = new QVBoxLayout(gui->_full_screen_parent);
-    mainLayout->setSpacing(0);
-    mainLayout->setContentsMargins(0,0,0,0);
-
-    gui->_full_screen_parent->setLayout(mainLayout);
-
-    mainLayout->addWidget(gui->_widget);
-
-#if defined(FOR_WINDOWS)
-    OS_WINDOWS_set_key_window((void*)gui->_full_screen_parent->winId()); // To avoid losing keyboard focus
-#endif
-    
+    gui->_full_screen_parent = new FullScreenParent(gui->_widget, gui);
+        
   }else{
 
     if(!gui->is_full_screen())
       return;
 
-    deleteFullscreenParent(gui);
+    gui->_full_screen_parent->resetChildToOriginalState();
     
+    delete gui->_full_screen_parent;
+
     gui->_widget->show();
+    
   }
   
 }
