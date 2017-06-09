@@ -133,7 +133,13 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     
     reltempomax->setValue(wblock->reltempomax);
 
+    update();
+
+    //printf("UpperLeft: Has updated\n");
+    
     _is_initing = false;
+
+    set_editor_focus();
   }
 
   void updateLayout(QWidget *w, int x1, int x2, int height){
@@ -198,10 +204,14 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     int width = wblock->t.x1;
     int height = wblock->t.y1;
     
-    //printf("resizing to %d - %d - %d - %d\n",x1,x2,x3,x4);
+    //printf("Upper left: resizing to %d - %d - %d - %d\n",x(),y(),width,height);
 
+    /*
+    move(0,0); // Necessary on windows. I have no idea why.
     resize(width,height);
-
+    */
+    setGeometry(0, 0, width, height); // Not enought just to call resize. On windows, the widget moves to around 700, 300 after initialization, even though move(0,0) is called in the EditorWidget constructor. I have no idea why that happens.
+                 
     // Grid / tempocolor
     /////////////////////
     int x1 = 0; //wblock->tempocolorarea.x;

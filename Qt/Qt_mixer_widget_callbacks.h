@@ -403,8 +403,12 @@ public slots:
       EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
       QSplitter *splitter = editor->xsplitter;
 
-      int pos = splitter->count() - 1;
-      
+      int pos = splitter->count();
+
+      if (pos>0 && g_mixerstripparent == splitter->widget(pos-1))
+        pos--;
+
+      /*
       if (splitter->count() > 0){
         
         int64_t curr_mixerstrip_guinum = MIXERSTRIP_get_curr_mixerstrip_guinum();
@@ -413,11 +417,11 @@ public slots:
 
           QWidget *mixerstrip_widget = API_gui_get_widget(curr_mixerstrip_guinum);
 
-          if (mixerstrip_widget == splitter->widget(pos) && pos>0)
-            pos--;
+          printf("pos: %d, count: %d. strip: %p, w-2: %p, w-1: %p.\n", pos, splitter->count(), mixerstrip_widget, splitter->widget(pos-2), splitter->widget(pos-1));
         }
       }
-          
+      */
+      
       splitter->insertWidget(pos, w);
 
       _bottom_bar->hide();

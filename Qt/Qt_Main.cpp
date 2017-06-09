@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLayout>
 #include <QDesktopServices>
 #include <QTextCodec>
+#include <QWindow>
 
 #include <QStyleFactory>
 
@@ -261,7 +262,7 @@ bool tevent_autorepeat = false;
 
 static bool g_up_downs[EVENT_DASMAX];
 
-static bool maybe_got_key_window(QWidget *window);
+static bool maybe_got_key_window(QWindow *window);
   
 extern "C" uint32_t add_mouse_keyswitches(uint32_t keyswitch);
 uint32_t add_mouse_keyswitches(uint32_t keyswitch){
@@ -469,9 +470,10 @@ protected:
 
    bool SystemEventFilter(void *event){
 
-    if(ATOMIC_GET(is_starting_up)==true)
+     if(ATOMIC_GET(is_starting_up)==true){
       return false;
-
+     }
+     
     OS_SYSTEM_EventPreHandler(event);
 
     /*
@@ -485,11 +487,21 @@ protected:
 
     //printf("Got key. Another window has focus? %d\n",(int)g_a_non_radium_window_has_focus);
     //return false;    
-    if (g_a_non_radium_window_has_focus && JUCE_native_gui_grabs_keyboard())
+    if (g_a_non_radium_window_has_focus && JUCE_native_gui_grabs_keyboard()){
+      /*
+      static int downcount = 10;
+      if ((--downcount) == 0){
+        printf(" Got key -2. Focus widget: %s\n",QApplication::focusWidget()==NULL ? "(null)" : QApplication::focusWidget()->metaObject()->className());
+        downcount = 40;
+      }
+      */
       return false;
+    }
 
-    if (MIXER_is_saving())
+    if (MIXER_is_saving()){
+      //printf(" Got key -1\n");
       return false;
+    }
 
     struct Tracker_Windows *window = root->song->tracker_windows;
 
@@ -524,7 +536,7 @@ protected:
     //printf("modifier: %d\n",modifier);
     if (g_show_key_codes){
       char *message = talloc_format("%d - %d - %d", is_key_press ? 1 : 0, modifier, OS_SYSTEM_get_scancode(event));
-      printf("  Got key: %s\n",message);
+      //printf("  Got key: %s\n",message);
       window->message=message;
       
       GL_create(window,window->wblock);
@@ -532,6 +544,8 @@ protected:
               
     static int last_pressed_key = EVENT_NO;
 
+    //printf(" Got key 1\n");
+    
     if (modifier != EVENT_NO) {
 
       bool must_return_true = false;
@@ -593,6 +607,8 @@ protected:
       set_keyswitch();
       //printf("__________________________ Got modifier %s. Returning false\n",is_key_press ? "down" : "up");
 
+      //printf(" Got key 2\n");
+      
       if (modifier==EVENT_ALT_R || must_return_true)
         return true; // If not, Qt starts to navigate the menues.
 
@@ -606,10 +622,14 @@ protected:
     if (is_key_press==false && keynum==EVENT_MENU)
       return true; // swallow the general qt menu popup menu. Sometimes it pops up when configuring block. If you need it, just press right mouse button.
 #endif
+
+    //printf(" Got key 3\n");
     
     if (editor_has_keyboard_focus()==false)
       return false;
 
+    //printf(" Got key 4\n");
+    
     int keynum = OS_SYSTEM_get_keynum(event);
     
     last_pressed_key = keynum;
@@ -630,6 +650,8 @@ protected:
     }
     }
 
+    //printf(" Got key 5\n");
+        
     window->must_redraw = true;
 
     if (is_key_press)
@@ -681,14 +703,18 @@ protected:
     }
 
     //printf("ret2: %d\n",ret);
+
+    //printf(" Got key 6\n");
     
     if(ret==true)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
+
+    //printf(" Got key 7\n");
     
     return true;
    }
   
-  
+
   /*
   int _last_keynum = EVENT_NO;
   int _last_qwerty_keynum = EVENT_NO;
@@ -1136,15 +1162,17 @@ void *OS_GFX_get_native_main_window(void){
   return (void*)main_window->winId();
 }
 
-static bool maybe_got_key_window(QWidget *window){
+static bool maybe_got_key_window(QWindow *window){
 #if FOR_MACOSX
   return OS_OSX_is_key_window((void*)window->winId());
 #elif FOR_WINDOWS
   return OS_WINDOWS_is_key_window((void*)window->winId());
 #elif FOR_LINUX
   //return g_qapplication->focusWidget()!=NULL && window==g_qapplication->focusWidget()->window(); //activeWindow();
-  return window==QApplication::topLevelAt(QCursor::pos());
-                            //->isActiveWindow();
+  if (QApplication::topLevelAt(QCursor::pos())==NULL)
+    return false;
+  return window==QApplication::topLevelAt(QCursor::pos())->window()->windowHandle();
+  //->isActiveWindow();
 #else
   RError("Unknown platform");
   return true;
@@ -1153,7 +1181,7 @@ static bool maybe_got_key_window(QWidget *window){
 
 bool OS_GFX_main_window_has_focus(void){
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
-  return maybe_got_key_window(main_window);
+  return maybe_got_key_window(main_window->window()->windowHandle());
 }
   
 bool a_radium_window_has_focus(void){
@@ -1165,20 +1193,30 @@ bool a_radium_window_has_focus(void){
   return g_qapplication->activeWindow() != NULL;
   
 #else
-  
+
+  /*
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   if (maybe_got_key_window(main_window))
     return true;
 
-  if (get_qwidget(g_mixer_widget)->parent()==NULL)
-    if (maybe_got_key_window(get_qwidget(g_mixer_widget)))
+  if (get_qwidget(g_mixer_widget)->parentWidget()()==NULL)
+    if (maybe_got_key_window(get_qwidget(g_mixer_widget)->parentWidget()))
       return true;
+  */
 
+  /*
   QVector<QWidget*> all_windows = MIXERSTRIPS_get_all_widgets();
   for(auto *window : all_windows)
+    if (maybe_got_key_window(window->window()->windowHandle()))
+      return true;
+  */
+  
+  for(auto *window : QGuiApplication::topLevelWindows()){
+    //printf("window: %p. Got it? %d\n",window, maybe_got_key_window(window));
     if (maybe_got_key_window(window))
       return true;
-
+  }
+      
   return false;
 #endif
 }
@@ -1703,10 +1741,10 @@ void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
 
 void GFX_toggleCurrWindowFullScreen(void){
   QWidget *toplevel = QApplication::topLevelAt(QCursor::pos()); // Note, QApplication::topLevelAt does not return a toplevel window, but instead a top level widget, which may, or may not, be a top level window.
-  printf("       toplevel: %p\n",toplevel);
+  //printf("       toplevel: %p\n",toplevel);
   if(toplevel==NULL)
     return;
-  
+
   QVector<QWidget*> all_windows = MIXERSTRIPS_get_all_widgets();
   for(auto *window : all_windows){
     if (window==toplevel){
@@ -1718,9 +1756,15 @@ void GFX_toggleCurrWindowFullScreen(void){
   for(auto *window : QGuiApplication::topLevelWindows()){
     //printf("window: %p. toplevel: %p. Equal? %d\n",window, toplevel->windowHandle(), window==toplevel->windowHandle());
     if (window==toplevel->windowHandle()){
-      
+
       if (toplevel != g_main_window){
 
+        QWidget *w = get_qwidget(g_mixer_widget);
+        //printf("top: %p. w: %p. g_mixer_widget: %p. parentWidget1: %p\n", toplevel, w, g_mixer_widget, w->parentWidget());
+        
+        if (toplevel==w->parentWidget())
+          toplevel = w; // Think this was necessary on windows. Don't remember why. Not entirely sure what the releationship is between Mixer_widget and MixerWidget.
+        
         // Setting full screen is a little bit complicated for other windows than g_main_window. gui_setFullScreen takes care of all that.
         int64_t guinum = API_get_gui_from_existing_widget(toplevel);
         gui_setFullScreen(guinum, !gui_isFullScreen(guinum));
@@ -1728,10 +1772,16 @@ void GFX_toggleCurrWindowFullScreen(void){
       } else {
         
         if(toplevel->isFullScreen()){
-          printf("Trying to set normal\n");
+          //printf("Trying to set normal\n");
           toplevel->showNormal();
         }else{
-          printf("Trying to set full screen\n");
+
+          /*
+          if (toplevel->parent() != NULL)
+            toplevel->setParent(NULL, Qt::Window);
+          */
+          
+          //printf("Trying to set full screen\n");
           toplevel->showFullScreen();
         }
         

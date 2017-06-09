@@ -1049,7 +1049,7 @@ static void init_menues(){
 }
 
 void create_ladspa_plugins(void){
-#if 0 //!defined(RELEASE)
+#if !defined(RELEASE)
   return; // takes long time to load ladspa plugins in gdb.
 #endif
   

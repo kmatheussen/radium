@@ -62,6 +62,8 @@ class Mixer_Direction_Menu : public QDialog, public Ui::Mixer_Direction_Menu{
     _timer.start();
     safeExec(this);
     _timer.stop();
+
+    set_editor_focus();
   }
   
   void clicked(float rotate){

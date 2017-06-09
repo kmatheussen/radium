@@ -1075,9 +1075,9 @@ public:
       return;
 
     {
+      // Set up buffers used when fading in/out
       float *s[num_channels];
       float filter_sound[num_channels*num_frames];
-
       for(int ch=0;ch<num_channels;ch++)
         s[ch] = &filter_sound[ch*num_frames];
       

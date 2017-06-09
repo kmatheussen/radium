@@ -178,6 +178,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     remember_geometry.hideEvent_override(this);                         \
   }
 
+#define CHANGE_OVERRIDER(classname)             \
+  void changeEvent(QEvent *event) override {    \
+    Gui::changeEvent(event);                     \
+  }
 
 
 #define OVERRIDERS(classname)                                           \
@@ -189,6 +193,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   PAINT_OVERRIDER(classname)                                            \
   SETVISIBLE_OVERRIDER(classname)                                       \
   HIDE_OVERRIDER(classname)                                             
+//CHANGE_OVERRIDER(classname)                                             
   /*
   SHOW_OVERRIDER(classname)                                            \
 
@@ -365,15 +370,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       , _child(child)
     {
       R_ASSERT(_child->isWindow());
-        
+      
       _original_parent = _child->parent();
       
       _had_original_parent = _original_parent != NULL;
       
-      _original_flags = _child->windowFlags();      
+      _original_flags = _child->windowFlags();
       _original_geometry = _child->geometry();
 
-      showFullScreen();
+      g_gui_from_full_screen_widgets[this] = gui;
 
       QVBoxLayout *mainLayout = new QVBoxLayout(this);
       mainLayout->setSpacing(0);
@@ -383,13 +388,17 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       
       mainLayout->addWidget(_child);
 
-      g_gui_from_full_screen_widgets[this] = gui;
+      showFullScreen();
+      _child->show();
+      show();
+
+      //printf("   CREATED FULL SCREEN %p\n", this->parent());
 
 #if defined(FOR_WINDOWS)
       OS_WINDOWS_set_key_window((void*)winId()); // To avoid losing keyboard focus
 #endif
     }
-
+    
     ~FullScreenParent(){
       g_gui_from_full_screen_widgets.remove(this);
     }
@@ -411,9 +420,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       _child->setGeometry(_original_geometry);
     }
 
-    bool someone_else_has_become_parent = false;
+    bool _someone_else_has_become_parent = false;
     
     void calledFromTimer(void){
+
       if (_child==NULL){
         // 4.
         //printf("   CHILD==NULL\n");
@@ -428,42 +438,51 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         return;
       }
 
-      if (_child->parent() != this && _child->isWindow() && someone_else_has_become_parent==true){
-        // 6.
-        //printf("   I AM STEALING CHILD BACK\n");
-        someone_else_has_become_parent = false;
-        _original_parent = _child->parent();
-        layout()->addWidget(_child);
-        show();
-      }
-          
-      if (_child->parent() != this && someone_else_has_become_parent==false){
-        // 6.
-        //printf("   SOMEONE ELSE HAS BECOME PARENT\n");
-        hide();
-        _original_parent = _child->parent();
-        someone_else_has_become_parent = true;
-        return;
-      }
+      if (_someone_else_has_become_parent==true) {
         
-      if (_child->isVisibleTo(this)==false){
-        if (isVisible()==true){
-          // 2.
-          //printf("   HIDE\n");
-          hide();
+        if (_child->parent() != this && _child->isWindow()) {
+            // 6.
+            //printf("   I AM STEALING CHILD BACK\n");
+            _someone_else_has_become_parent = false;
+            _original_parent = _child->parent();
+            _had_original_parent = _original_parent != NULL;
+            layout()->addWidget(_child);
+            show();
+            return;
         }
+
       } else {
-        if (isVisible()==false){
-          // 3.
-          //printf("   SHOW\n");
-          show();
+          
+        if (_child->parent() != this) {
+          // 6.
+          //printf("   SOMEONE ELSE HAS BECOME PARENT\n");
+          hide();
+          _original_parent = _child->parent();
+          _someone_else_has_become_parent = true;
+          _had_original_parent = true;
+          return;
         }
+
+        if (_child->isVisibleTo(this)==false){
+          if (isVisible()==true){
+            // 2.
+            //printf("   HIDE\n");
+            hide();
+          }
+        } else {
+          if (isVisible()==false){
+            // 3.
+            //printf("   SHOW\n");
+            show();
+          }
+        }
+        
       }
 
     }
     
     void closeEvent(QCloseEvent *ev) override {
-      printf("   CLOSING\n");
+      //printf("   CLOSING\n");
       ev->ignore(); // We only react to what the child might do.
 
       // 1.
@@ -486,13 +505,19 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool _created_from_existing_widget; // Is false if _widget was created by using one of the gui_* functions (except gui_child()). Only used for validation.
 
     // Has value when running full screen.
+    bool _is_full_screen = false;
     QPointer<FullScreenParent> _full_screen_parent = NULL;
-
+    Qt::WindowFlags _original_flags;
+    QPointer<QWidget> _original_parent;
+    QRect _original_geometry;
+    
     QVector<func_t*> _deleted_callbacks;
 
     RememberGeometry remember_geometry;
     
     bool is_full_screen(void) const {
+      //return _is_full_screen;
+      //return _widget->isFullScreen();
       return _full_screen_parent!=NULL;
     }
     
@@ -601,6 +626,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       
       return ret;
     }
+
 
     /************ MOUSE *******************/
     
@@ -833,7 +859,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
 
 
-    
     /************ DRAWING *******************/
 
     func_t *_paint_callback = NULL;
@@ -3675,8 +3700,8 @@ bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
     return false;
   }
   
-  else if (gui->is_full_screen())
-    gui->_full_screen_parent->setNewParent(parent);
+  //  else if (gui->is_full_screen())
+  //   gui->_full_screen_parent->setNewParent(parent);
 
   else if (gui->_widget->parent() == parent)
     return false;
@@ -3850,20 +3875,8 @@ bool gui_mousePointsMainlyAt(int64_t guinum){
   if (gui==NULL)
     return false;
 
-  if (gui->is_full_screen()){
-    if (gui->_full_screen_parent->window()==QApplication::topLevelAt(QCursor::pos()))
-      return true;
-    /*
-    if (gui->_full_screen_parent->hasFocus())
-      return true;
-    if (gui->_widget->hasFocus())
-      return true;
-    */
-  }
-
   return gui->_widget->window()==QApplication::topLevelAt(QCursor::pos());
 }
-
 
 void gui_setFullScreen(int64_t guinum, bool enable){
   Gui *gui = get_gui(guinum);
@@ -3875,8 +3888,17 @@ void gui_setFullScreen(int64_t guinum, bool enable){
     if(gui->is_full_screen())
       return;
 
+#if 0    
+#if FOR_WINDOWS
+    gui->_widget->hide(); // To prevent a warning in Windows about illegal geometry. (must be called before calling the FullScreenParent constructor) (doesn't really work)
+#endif
+#endif
+
+    // I've spent xx hours trying to show full screen work by calling showFullScreen() directly on the widget, but it's not working very well.
+    // Creating a new full screen parent works much better.
+    
     gui->_full_screen_parent = new FullScreenParent(gui->_widget, gui);
-        
+    
   }else{
 
     if(!gui->is_full_screen())
@@ -3884,10 +3906,10 @@ void gui_setFullScreen(int64_t guinum, bool enable){
 
     gui->_full_screen_parent->resetChildToOriginalState();
     
+    //printf("Hiding full\n\n");
     delete gui->_full_screen_parent;
 
     gui->_widget->show();
-    
   }
   
 }

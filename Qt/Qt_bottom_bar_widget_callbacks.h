@@ -383,6 +383,7 @@ public slots:
   }
 
   void on_editlines_editingFinished(){
+    editlines->clearFocus();
     set_editor_focus();
   }
 
