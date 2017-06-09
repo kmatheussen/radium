@@ -168,6 +168,7 @@ const char *g_qt_is_painting_where = "nowhere";
 
 bool g_gc_is_incremental = false;
 
+QWidget *g_mixerstripparent = NULL;
 QHBoxLayout *g_mixerstriplayout = NULL;
 
 
@@ -1845,14 +1846,15 @@ void Qt_EventHandler(void){
 }
 
 
+
 static void add_mixer_strip(QSplitter *xsplitter){
   //MixerWidget *mixer_widget =
-  QWidget *mixerstripparent = new QWidget(xsplitter);
+  g_mixerstripparent = new QWidget(xsplitter);
   //mixerwidgetandmixerstrip->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   g_mixerstriplayout = new QHBoxLayout;
   g_mixerstriplayout->setSpacing(0);
   g_mixerstriplayout->setContentsMargins(0,0,0,0);
-  mixerstripparent->setLayout(g_mixerstriplayout);
+  g_mixerstripparent->setLayout(g_mixerstriplayout);
 }
   
 //extern void updateAllFonts(QWidget *widget);

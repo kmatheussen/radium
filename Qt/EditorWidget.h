@@ -269,5 +269,8 @@ protected:
 };
 
 extern QMainWindow *g_main_window;
+extern QWidget *g_mixerstripparent;
+extern QHBoxLayout *g_mixerstriplayout;
+
 #endif
 

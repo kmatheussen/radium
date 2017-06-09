@@ -73,7 +73,6 @@ extern QApplication *qapplication;
 #include "../GTK/GTK_visual_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
-extern QHBoxLayout *g_mixerstriplayout;
 
 void set_editor_focus(void){
   if(root==NULL)
