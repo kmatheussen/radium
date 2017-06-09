@@ -1,3 +1,25 @@
+Changes 4.8.7 -> 4.8.8:
+* Windows/Faust Dev instrument: Don't crash. (LLVM had to be
+  recompiled after upgrading the compiler.)
+* Mixer strips: Make it impossible to resize the parent of the
+  main window mixer strip. Also make it impossible to collaps
+  the parent widget of the main window mixer strip.
+* Mixer strips: Don't paint blue border around the main window
+  mixer strip.
+* GUI: Fix widget positions in the main window when
+  adding/removing mixer widget
+* GUI/Windows: Fix switching fullscreen (F11) for the mixer
+  window. (This fix might have fixed other problems related to
+  fullscreen as well, and not just on Windows.)
+* GUI: Fix FaustDev GUI. Widget positions seems to be perfect now,
+  also when selecting "half" or "full" size.
+* Stability: Fix a couple of crashes that sometimes happend when
+  quitting the program.
+* Audio: Remove audio artifacts when disablng or enabling the
+  system compressor. Happened for instruments with more than two
+  output audio channels.
+
+
 Changes 4.8.5 -> 4.8.7:
 * Include a "Kill Jack" program with Radium. "Kill Jack" kills the
   jack server unconditionally. It could be a very useful tool.
