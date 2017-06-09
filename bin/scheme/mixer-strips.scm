@@ -1396,7 +1396,8 @@
   (define volume-gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #t))
   (<gui> :add gui volume-gui 1)
 
-  (create-current-instrument-border gui instrument-id)
+  (if (not is-current-mixer-strip)
+      (create-current-instrument-border gui instrument-id))
   
   (add-safe-paint-callback gui
          (lambda (width height)
@@ -1469,7 +1470,8 @@
   (<gui> :add gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #f) 1)
   (<gui> :add gui (create-mixer-strip-comment instrument-id comment-height))
 
-  (create-current-instrument-border gui instrument-id)
+  (if (not is-current-mixer-strip)
+      (create-current-instrument-border gui instrument-id))
 
   (add-safe-paint-callback gui
                            (lambda (width height)
