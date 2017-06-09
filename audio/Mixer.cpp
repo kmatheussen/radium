@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/time_proc.h"
 #include "../common/Mutex.hpp"
+#include "../common/Time.hpp"
 #include "../common/visual_proc.h"
 #include "../common/player_proc.h"
 #include "../common/playerclass.h"
@@ -697,8 +698,7 @@ struct Mixer{
 
     pause_time.start();
     
-    QTime excessive_time;
-    excessive_time.start();
+    radium::Time excessive_time;
 
     RT_lock_player();  // This is an RT-safe lock. Priority inversion can (or at least should) not happen.
 
