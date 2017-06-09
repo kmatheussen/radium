@@ -2051,8 +2051,9 @@ int radium_main(char *arg){
       xsplitter->setOpaqueResize(true);
       //xsplitter->setOpaqueResize(false);
 
-      if(showMixerStripOnLeftSide())
+      if(showMixerStripOnLeftSide()){
         add_mixer_strip(xsplitter);
+      }
       
       editor->setParent(xsplitter); //, QPoint(0,0), false);
 
@@ -2074,8 +2075,14 @@ int radium_main(char *arg){
       
       create_mixer_widget(xsplitter);
 
-      if(!showMixerStripOnLeftSide())
+      if(!showMixerStripOnLeftSide()){
         add_mixer_strip(xsplitter);
+        xsplitter->setCollapsible(xsplitter->count()-1, false);
+        xsplitter->handle(xsplitter->count()-1)->setEnabled(false);
+      }else{
+        xsplitter->setCollapsible(0, false);
+        xsplitter->handle(1)->setEnabled(false);
+      }
 
       //QWidget *gakk = new MixerWidget(mixerwidgetandmixerstrip);
       //g_mixerstriplayout->addWidget(gakk);
