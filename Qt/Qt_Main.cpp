@@ -625,6 +625,9 @@ protected:
 
     //printf(" Got key 3\n");
     
+    if (g_radium_runs_custom_exec)
+      return false;
+      
     if (editor_has_keyboard_focus()==false)
       return false;
 
