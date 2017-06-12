@@ -2049,6 +2049,8 @@ int radium_main(char *arg){
 
     {
       QSplitter *xsplitter = new QSplitter(Qt::Horizontal);//, main_window);
+      xsplitter->setChildrenCollapsible(false);
+      
       editor->xsplitter = xsplitter;
 
       xsplitter->setOpaqueResize(true);
@@ -2059,7 +2061,7 @@ int radium_main(char *arg){
       }
       
       editor->setParent(xsplitter); //, QPoint(0,0), false);
-
+ 
       block_selector->setParent(xsplitter);//, QPoint(main_window->width()-100,0), true);
       block_selector->move(main_window->width()-100,0);
 
@@ -2080,10 +2082,8 @@ int radium_main(char *arg){
 
       if(!showMixerStripOnLeftSide()){
         add_mixer_strip(xsplitter);
-        xsplitter->setCollapsible(xsplitter->count()-1, false);
         xsplitter->handle(xsplitter->count()-1)->setEnabled(false);
       }else{
-        xsplitter->setCollapsible(0, false);
         xsplitter->handle(1)->setEnabled(false);
       }
 
