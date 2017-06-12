@@ -343,6 +343,8 @@ static void set_keyswitch(void){
 #endif
 
 void OS_SYSTEM_ResetKeysUpDowns(void){
+  //if (root!=NULL && ATOMIC_GET(root->editonoff)==false)
+  //  printf("   Reset keys up downs. Backtrace:\n %s\n\n", JUCE_get_backtrace());
   for(int i=0;i<EVENT_DASMAX;i++)
     g_up_downs[i]=false;
   set_keyswitch();
@@ -533,7 +535,7 @@ protected:
     
     int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
 
-    //printf("modifier: %d\n",modifier);
+    //printf("modifier: %d. Right shift: %d\n",modifier, modifier==EVENT_SHIFT_R);
     if (g_show_key_codes){
       char *message = talloc_format("%d - %d - %d", is_key_press ? 1 : 0, modifier, OS_SYSTEM_get_scancode(event));
       //printf("  Got key: %s\n",message);
@@ -716,8 +718,17 @@ protected:
     
     return true;
    }
-  
 
+#if FOR_LINUX
+  virtual bool eventFilter(QObject *obj, QEvent *event) override {
+    if (event->type()==QEvent::FocusAboutToChange){
+      //printf("EventFilter called\n");
+      OS_SYSTEM_ResetKeysUpDowns();
+    }
+    return QApplication::eventFilter(obj, event);
+  }
+#endif
+  
   /*
   int _last_keynum = EVENT_NO;
   int _last_qwerty_keynum = EVENT_NO;
@@ -1153,7 +1164,9 @@ MyApplication::MyApplication(int &argc,char **argv)
   //setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
 #if USE_QT5
   installNativeEventFilter(this);
-  //installEventFilter(this);
+#if FOR_LINUX
+  installEventFilter(this);
+#endif
 #endif
 }
 

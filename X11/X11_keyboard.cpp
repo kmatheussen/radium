@@ -356,6 +356,13 @@ int OS_SYSTEM_get_scancode(void *void_event){
 
 #if USE_QT5
 void OS_SYSTEM_EventPreHandler(void *void_event){
+
+  // We check that event->type()==QEvent::FocusAboutToChange in QApplication::eventFilter instead.
+  // (the commented code below was too eager to reset keys)
+  return;
+
+  
+  /*
   xcb_generic_event_t *event = (xcb_generic_event_t *)void_event;
   
   //printf("Response type: %x (%x / %x)\n", event->response_type, XCB_ENTER_NOTIFY, XCB_LEAVE_NOTIFY);
@@ -363,17 +370,20 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   switch (event->response_type & ~0x80) {
     case XCB_ENTER_NOTIFY:
       {
-        //printf("got enter notify\n");
+        xcb_enter_notify_event_t *ev2 = (xcb_enter_notify_event_t *)event;
+        printf("....got enter notify. same: %d. root: %x, event: %x, child: %x\n", ev2->same_screen_focus, ev2->root, ev2->event, ev2->child);
         OS_SYSTEM_ResetKeysUpDowns();
       }
     break;
     case XCB_LEAVE_NOTIFY:
       {
-        //printf("got leave notify.\n");
+        xcb_leave_notify_event_t *ev2 = (xcb_leave_notify_event_t *)event;
+        printf("....got leave notify. same: %d. root: %x, event: %x, child: %x\n", ev2->same_screen_focus, ev2->root, ev2->event, ev2->child);
         OS_SYSTEM_ResetKeysUpDowns();
       }
       break;
   }
+  */
 }
 #else
 void OS_SYSTEM_EventPreHandler(void *void_event){

@@ -616,7 +616,10 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   static void *oldHotKeyMode = NULL;
   if(type==NSAppKitDefined || type==NSSystemDefined || type==NSApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.
     //printf("      DAS EVENT: %x\n",(unsigned int)type);
+
+    // TODO: Check if it's better if Qt_Main.cpp:OS_SYSTEM_ResetKeysUpDowns calls clear_modifiers.
     clear_modifiers();
+    
     if(oldHotKeyMode!=NULL){
       PushSymbolicHotKeyMode(kHIHotKeyModeAllEnabled);
       oldHotKeyMode = NULL;
