@@ -228,11 +228,13 @@ const_char* showMessage(const char *text, dyn_t buttons){
   return STRING_get_chars(buttons.array->elements[ret].string);
 }
 
+extern bool g_qtgui_has_stopped;
+
 void addMessage(const char *text){
   const char *funcname = "add-message-window-message";
   
   static bool gotit = false;
-  if (gotit || s7extra_is_defined(funcname)){
+  if (g_qtgui_has_stopped==false && (gotit || s7extra_is_defined(funcname))){
     S7CALL2(void_charpointer,funcname, text);
     gotit = true;
   } else {
