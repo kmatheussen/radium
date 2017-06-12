@@ -205,9 +205,7 @@ public slots:
 
   void on_value_slider_valueChanged( int val) {
     if (_calling_from_timer==false) {
-      PLAYER_lock();{
-        PLUGIN_set_effect_value(_plugin, -1, _controller->num, val/10000.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-      }PLAYER_unlock();
+      PLUGIN_set_effect_value(_plugin, -1, _controller->num, val/10000.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
     }
 
     paint_slider_text();
@@ -223,9 +221,7 @@ public slots:
 
     //printf("Setting to %f\n",effect_value);
 
-    PLAYER_lock();{
-      PLUGIN_set_effect_value(_plugin, -1, _controller->num, effect_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-    }PLAYER_unlock();
+    PLUGIN_set_effect_value(_plugin, -1, _controller->num, effect_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
     paint_onoff_text();
   }

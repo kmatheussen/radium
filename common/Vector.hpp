@@ -171,6 +171,8 @@ private:
         while (num_elements > num_elements_max)
           num_elements_max *= 2;
 
+        R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock()); // V_realloc should already have an assert for this, but the memory functions are a bit chaotic.
+
         elements = (T*) V_realloc(elements, sizeof(T) * num_elements_max);
       }
       

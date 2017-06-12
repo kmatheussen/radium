@@ -1247,7 +1247,9 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
 
     if (only_update_beats_for_all_blocks==false){
       PLAYER_lock();{
+        int i = 0;
         ALL_SEQTRACKS_FOR_EACH(){
+          PLAYER_maybe_pause_lock_a_little_bit(i++);
           RT_legalize_seqtrack_timing(seqtrack);
         }END_ALL_SEQTRACKS_FOR_EACH;
       }PLAYER_unlock();

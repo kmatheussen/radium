@@ -282,6 +282,7 @@ void AUDIO_stop_all_notes(struct Patch *patch){
     PLUGIN_touch(plugin);
     
     while(plugin->playing_voices != NULL) {
+
       note_t note = plugin->playing_voices->note;
       struct SeqTrack *seqtrack = plugin->playing_voices->seqtrack;
       
@@ -878,10 +879,14 @@ static int AUDIO_getPatch(struct Tracker_Windows *window,ReqType reqtype,const s
 static void AUDIO_CloseInstrument(struct Instruments *instrument){}
 //static void AUDIO_InitTrack(struct Instruments *instrument,const struct Tracks *track){}
 static void AUDIO_StopPlaying(struct Instruments *instrument){
+  R_ASSERT(PLAYER_current_thread_has_lock());
+  
   VECTOR_FOR_EACH(struct Patch *patch, &get_audio_instrument()->patches){
     SoundPlugin *plugin = patch->patchdata;
-    if (plugin!=NULL && plugin->type->player_is_stopped != NULL)
+    if (plugin!=NULL && plugin->type->player_is_stopped != NULL){
+      PLAYER_maybe_pause_lock_a_little_bit(iterator666);
       plugin->type->player_is_stopped(plugin);
+    }
   }END_VECTOR_FOR_EACH;
 }
 

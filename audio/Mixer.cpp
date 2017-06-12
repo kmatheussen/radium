@@ -59,6 +59,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "MultiCore_proc.h"
 #include "CpuUsage.hpp"
 #include "SampleRecorder_proc.h"
+#include "Juce_plugins_proc.h"
 
 #include "Mixer_proc.h"
 
@@ -217,6 +218,11 @@ static pthread_mutexattr_t player_lock_mutexattr;
 static LockType player_lock;
 static LockType player_runner_lock;
 
+// The main thread waits for this semaphore before it can obtain the player lock.
+// This to make sure the player lock is obtained right after the player thread releases the lock (and not, for instance, right before the player thread tries to obtain the lock)
+// (currently not used since it too long time to stop player, which is bad when we want to pause the player as quickly as possible, and probably other situations).
+static radium::Semaphore player_lock_semaphore;
+
 static __thread bool g_current_thread_has_player_lock = false;
 static bool g_someone_has_player_lock = false;
 static __thread bool g_current_thread_has_player_runner_lock = false;
@@ -243,6 +249,7 @@ static void print_backtrace(void){
 }
 #endif
 
+
 static void lock_player(void){
   R_ASSERT(!PLAYER_current_thread_has_lock()); // the player lock is reentrant, just in case, but reentrancy is not supposed to be used.
 
@@ -259,61 +266,88 @@ static void unlock_player(void){
   LOCK_UNLOCK(player_lock);
 }
 
+static bool g_signalled_someone = false;
+
 static void RT_lock_player(){
   R_ASSERT(THREADING_is_player_thread());
   lock_player();
+  g_signalled_someone = player_lock_semaphore.signalIfAnyoneIsWaiting();
 }
 
 static void RT_unlock_player(){
   R_ASSERT(THREADING_is_player_thread());
+  if (!g_signalled_someone)
+    player_lock_semaphore.signalIfAnyoneIsWaiting();
   unlock_player();
 }
 
 #ifndef FOR_LINUX
-static priority_t g_priority_used_before_obtaining_PLAYER_lock; // This variable can only be read/written while holding the player lock.
+static priority_t g_priority_used_before_obtaining_PLAYER_lock; // Protected by the player lock
 #endif
 
-void PLAYER_lock(void){
- 
-  R_ASSERT(!THREADING_is_player_thread());
+static radium::Time g_player_lock_timer; // Calling 'restart' is protected by the player lock. ('elapsed' is thread safe)
 
-#if !defined(RELEASE)
-  printf("  PLAYER_LOCK  \n");
-  if (ATOMIC_GET(root->editonoff)==false){
-    fprintf(stderr," Aborting since edit is turned off. (this is a debug feature and not a bug!)");
-    abort();
-  }
-  /*
-  printf("   >> Obtaining player lock\n");
-  if (is_playing())
-    abort();
-  */
+#define MAX_LOCK_DURATION_MS 1
+
+// Set to 0 since it takes a very long time to stop playing if we wait for player. TODO: Set to 1 if block size is very low.
+#define DO_WAIT_FOR_PLAYER_TO_FINISH_BEFORE_ACQUIRING_PLAYER_LOCK 0
+
+#if DO_WAIT_FOR_PLAYER_TO_FINISH_BEFORE_ACQUIRING_PLAYER_LOCK
+#define MAYBE_WAIT_FOR_PLAYER_TO_FINISH() player_lock_semaphore.wait(); // Make sure we don't try to hold the lock until right after the player is finished with it.
+#else
+#define MAYBE_WAIT_FOR_PLAYER_TO_FINISH() /* */
 #endif
+
+// Only called from PLAYER_maybe_pause_lock_a_little_bit and PLAYER_lock.
+static void lock_player_from_nonrt_thread(void){
+
+  // I.e. if it's less than 10ms since we released the lock, we sleep a little bit to make sure the player thread isn't blocked by us.
+  //if(g_player_lock_timer.RT_elapsed() < 10)
+  //  msleep(10);
   
-#ifdef FOR_LINUX // we use mutex with the PTHREAD_PRIO_INHERIT on linux. (From the source code of OSX, it seems like OSX ignores this flag)
+#ifdef FOR_LINUX
+
+  MAYBE_WAIT_FOR_PLAYER_TO_FINISH();
+
+  // we use mutex with the PTHREAD_PRIO_INHERIT on linux, so we don't have to acquire same thread priority as the player.
   
   lock_player();
   //print_backtrace();
-  
+
 #elif defined(FOR_WINDOWS) || defined(FOR_MACOSX)
   priority_t priority = THREADING_get_priority();
-  
-  PLAYER_acquire_same_priority(); // Manually avoid priority inversion
+
+  // Manually avoid priority inversion
+  //
+  // OSX: From the source code of OSX, it seems like OSX doesn't support PTHREAD_PRIO_INHERIT.
+  //
+  // Windows: It's a bit unclear how well priority inheritance works on this platform.
+  // Probably we don't have to acquire same priority, but we do it anyway to be sure.
+  //
+  PLAYER_acquire_same_priority();
+
+  MAYBE_WAIT_FOR_PLAYER_TO_FINISH();
+
   lock_player();
 
   g_priority_used_before_obtaining_PLAYER_lock = priority;
 #else
   #error "undknown architehercu"
 #endif
+    
+  g_player_lock_timer.restart();
 }
 
-void PLAYER_unlock(void){
-  R_ASSERT(!THREADING_is_player_thread());
+// Only called from PLAYER_maybe_pause_lock_a_little_bit and PLAYER_unlock
+static void unlock_player_from_nonrt_thread(int iteration){
 
 #if !defined(RELEASE)
-  //printf("   << Releasing player lock\n");
+  float elapsed = g_player_lock_timer.elapsed();
 #endif
 
+  //g_player_lock_timer.restart();
+
+    
 #ifdef FOR_LINUX // we use mutex with the PTHREAD_PRIO_INHERIT on linux
   
   unlock_player();
@@ -328,6 +362,64 @@ void PLAYER_unlock(void){
 #else
   #error "undknown architehercu"
 #endif
+
+#if !defined(RELEASE)
+  printf("Elapsed: %f. (%d)\n", elapsed, iteration);
+  if(elapsed > MAX_LOCK_DURATION_MS){  // The lock is realtime safe, but we can't hold it a long time.
+    addMessage(talloc_format("Warning: Holding player lock for more than %fms (%d): %f<br>\n<pre>%s</pre>\n",
+                             iteration,
+                             MAX_LOCK_DURATION_MS,
+                             elapsed,
+                             JUCE_get_backtrace()));
+  }
+#endif
+}
+
+void PLAYER_maybe_pause_lock_a_little_bit(int iteration){
+  
+  R_ASSERT_NON_RELEASE(!THREADING_is_player_thread());
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
+
+  float elapsed = g_player_lock_timer.elapsed();
+  if (elapsed > MAX_LOCK_DURATION_MS){
+    unlock_player_from_nonrt_thread(iteration);
+#if !defined(RELEASE)
+    printf("   Player lock pausing. Elapsed: %f.\n", elapsed);
+#endif
+#if !DO_WAIT_FOR_PLAYER_TO_FINISH_BEFORE_ACQUIRING_PLAYER_LOCK
+    msleep(1);
+#endif
+    lock_player_from_nonrt_thread();
+  }
+}
+
+void PLAYER_lock(void){
+
+  R_ASSERT(!THREADING_is_player_thread());
+
+#if !defined(RELEASE)
+  printf("  PLAYER_LOCK  \n");
+  if (ATOMIC_GET(root->editonoff)==false){
+    static int downcount = 1;
+    fprintf(stderr," Aborting since edit is turned off. (this is a debug feature and not a bug!). count down: %d\n", downcount);
+    if (downcount==0)
+      abort();
+    downcount--;
+  }
+  /*
+  printf("   >> Obtaining player lock\n");
+  if (is_playing())
+    abort();
+  */
+#endif
+
+  lock_player_from_nonrt_thread();
+}
+
+void PLAYER_unlock(void){
+  R_ASSERT(!THREADING_is_player_thread());
+
+  unlock_player_from_nonrt_thread(-1);
 }
 
 void RT_PLAYER_runner_lock(void){

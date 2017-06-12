@@ -51,7 +51,7 @@ void CloseAllInstruments(void){
 /* Called during program init. */
 bool OpenInstruments(void){
   {
-    struct Instruments *instrument=talloc(sizeof(struct Instruments));
+    struct Instruments *instrument=(struct Instruments*)talloc(sizeof(struct Instruments));
     instrument->l.num=0;
     if(MIDI_initInstrumentPlugIn(instrument)==INSTRUMENT_FAILED) return false;
 
@@ -59,7 +59,7 @@ bool OpenInstruments(void){
   }
 
   {
-    struct Instruments *instrument=talloc(sizeof(struct Instruments));
+    struct Instruments *instrument=(struct Instruments*)talloc(sizeof(struct Instruments));
     instrument->l.num=1;
     if(AUDIO_initInstrumentPlugIn(instrument)==INSTRUMENT_FAILED) return false;
 
@@ -109,15 +109,18 @@ int get_type_from_instrument(struct Instruments *instrument){
 void StopAllInstruments(void){
         struct Instruments *instrument=g_instruments;
 
-	while(instrument!=NULL){
-          VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches)
+        radium::PlayerRecursiveLock lock;
+          
+        while(instrument!=NULL){              
+          VECTOR_FOR_EACH(struct Patch *, patch, &instrument->patches){
+            PLAYER_maybe_pause_lock_a_little_bit(iterator666);
             PATCH_stop_all_notes(patch);
-          END_VECTOR_FOR_EACH;
-
+          }END_VECTOR_FOR_EACH;
+          
           (*instrument->StopPlaying)(instrument);
-
+            
           instrument=NextInstrument(instrument);
-	}
+        }
 }
 
 

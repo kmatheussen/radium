@@ -35,12 +35,6 @@ enum WhereToGetValue{
   VALUE_FROM_STORAGE
 };
 
-enum PlayerLockRequired{
-  PLAYERLOCK_REQUIRED,
-  PLAYERLOCK_NOT_REQUIRED,
-  PLAYERLOCK_MAYBE_REQUIRED
-};
-
 extern LANGSPEC SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading);
 extern LANGSPEC void PLUGIN_delete(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_update_smooth_values(SoundPlugin *plugin);
@@ -53,11 +47,11 @@ extern LANGSPEC int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char
 extern LANGSPEC const char *PLUGIN_get_effect_name(SoundPlugin *plugin, int effect_num);
 extern LANGSPEC const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_type, int effect_num);
 extern LANGSPEC void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
-extern LANGSPEC void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired, enum ValueFormat value_format, bool sent_from_midi_learn);
+extern LANGSPEC void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum ValueFormat value_format, bool sent_from_midi_learn);
 #define PLUGIN_set_effect_value(a,b,c,d,e,f,g) \
-       PLUGIN_set_effect_value2(a,b,c,d,e,f,g,PLAYERLOCK_MAYBE_REQUIRED, PLUGIN_FORMAT_SCALED, false)
+       PLUGIN_set_effect_value2(a,b,c,d,e,f,g,PLUGIN_FORMAT_SCALED, false)
 #define PLUGIN_set_native_effect_value(a,b,c,d,e,f,g) \
-       PLUGIN_set_effect_value2(a,b,c,d,e,f,g,PLAYERLOCK_MAYBE_REQUIRED, PLUGIN_FORMAT_NATIVE, false)
+       PLUGIN_set_effect_value2(a,b,c,d,e,f,g,PLUGIN_FORMAT_NATIVE, false)
 extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum WhereToGetValue where);
 
 extern LANGSPEC void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state);

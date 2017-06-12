@@ -510,7 +510,7 @@ void MIDI_insert_recorded_midi_events(void){
          
   {
     radium::ScopedMutex lock(g_midi_event_mutex);
-    printf("MIDI_insert_recorded_midi_events called %d\n", g_recorded_midi_events.size());
+    //printf("MIDI_insert_recorded_midi_events called. Num events recorded: %d\n", g_recorded_midi_events.size());
     if (g_recorded_midi_events.size() == 0)
       goto exit;
   }

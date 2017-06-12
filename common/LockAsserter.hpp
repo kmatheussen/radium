@@ -7,8 +7,8 @@ namespace radium{
 
 class LockAsserter{
 
-  DEFINE_ATOMIC(int, number_of_readers);
-  DEFINE_ATOMIC(int, number_of_writers);
+  DEFINE_ATOMIC(int, number_of_readers) = 0;
+  DEFINE_ATOMIC(int, number_of_writers) = 0;
 
   LockAsserter(const LockAsserter&) = delete;
   LockAsserter& operator=(const LockAsserter&) = delete;
@@ -16,8 +16,6 @@ class LockAsserter{
 public:
   
   LockAsserter(){
-    ATOMIC_SET(number_of_readers, 0); // stupid c/c++
-    ATOMIC_SET(number_of_writers, 0); // stupid c/c++
   }
   
   struct Exclusive {

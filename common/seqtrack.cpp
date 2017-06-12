@@ -585,6 +585,8 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
     //printf("bef %d: %f\n", iterator666, abstimes[iterator666] / 44100.0);
   }END_VECTOR_FOR_EACH;
 
+  //printf("    SEQTRACK_delete_seqblock\n");
+  
   {
     radium::PlayerPause pause;
     radium::PlayerRecursiveLock lock;

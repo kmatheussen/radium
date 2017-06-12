@@ -181,9 +181,6 @@ SUMMARY: AddressSanitizer: new-delete-type-mismatch ../../.././libsanitizer/asan
 */
 
 
-extern double monotonic_seconds();
-
-
 #if FOR_LINUX
 static int set_pthread_priority(pthread_t pthread,int policy,int priority,const char *message,const char *name){
   struct sched_param par={};

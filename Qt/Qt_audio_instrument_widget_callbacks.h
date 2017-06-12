@@ -801,7 +801,7 @@ public:
     int effect_num = type->num_effects + system_effect;
 
     if (is_starting==false)
-      PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single); // Don't need to lock player for setting system effects, I think. (it's probably better to let the plugins themselves decide whether to lock or not...)
+      PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
     updateSliderString(system_effect);
   }

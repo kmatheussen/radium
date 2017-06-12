@@ -22,10 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //extern LANGSPEC void PLAYER_drop_same_priority(void);
 
 // PLAYER_lock is a RT-safe lock. Priority of the calling thread is set to the same value as the player before acquiring the lock.
-// Warning, PLAYER_lock will deadlock if called from the player thread.
+// Can not be called from a player thread.
 extern LANGSPEC void PLAYER_lock(void);
 extern LANGSPEC void PLAYER_unlock(void);
-
+extern LANGSPEC void PLAYER_maybe_pause_lock_a_little_bit(int iteration); // Check if we have held the lock for a certain amount of time. If we have, unlock, wait 10ms, lock.
+  
 static inline bool enter_radium_lock_if_playing_scope(void){
   R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
 

@@ -110,17 +110,14 @@ static void *Undo_Do_AudioEffect(
 
     printf("Calling Undo_do for %d. Current value: %f. Now setting it back to %f\n",undo_ae->effect_num,new_value,undo_ae->value);
 
-    PLAYER_lock();{
-
-      PLUGIN_set_effect_value(plugin,
-                              0,
-                              undo_ae->effect_num, 
-                              undo_ae->value, 
-                              PLUGIN_STORED_TYPE,
-                              PLUGIN_STORE_VALUE,
-                              FX_single
-                              );
-    }PLAYER_unlock();
+    PLUGIN_set_effect_value(plugin,
+                            0,
+                            undo_ae->effect_num, 
+                            undo_ae->value, 
+                            PLUGIN_STORED_TYPE,
+                            PLUGIN_STORE_VALUE,
+                            FX_single
+                            );
 
     undo_ae->value = new_value;
 

@@ -108,6 +108,14 @@ class Semaphore{
         signal();
     }
 
+    bool signalIfAnyoneIsWaiting(void){
+      if (numWaiters() > 0){
+        signal();
+        return true;
+      } else
+        return false;
+    }
+  
     void signalAll(void){
       while(numWaiters() > 0)
         signal();

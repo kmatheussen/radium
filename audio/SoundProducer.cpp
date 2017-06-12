@@ -47,10 +47,10 @@ static inline int myisinf(float val){
 //#include "pa_memorybarrier.h"
 
 
+#include "../common/nsmtracker.h"
+
 #include "monotonic_timer.c"
 
-
-#include "../common/nsmtracker.h"
 
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_visual_input.h"
@@ -934,24 +934,26 @@ public:
   static void remove_links(const radium::Vector<SoundProducerLink*> &links){
 
       // tell them to turn off
-    for(auto link : links)
+    for(auto *link : links)
       link->turn_off();
   
     if (PLAYER_is_running()) {
       PLAYER_memory_debug_wake_up();
 
       // Wait until all sound links can be removed
-      for(auto link : links)
+      for(auto *link : links)
         while(link->can_be_removed()==false){
           PLUGIN_touch(link->source->_plugin);
           PLUGIN_touch(link->target->_plugin);
           PLAYER_memory_debug_wake_up();
-          msleep(3);
+          msleep(10);
         }
-      
+
       // Remove
       PLAYER_lock();{
-        for(auto link : links){
+        int i = 0;
+        for(auto *link : links){
+          PLAYER_maybe_pause_lock_a_little_bit(i++);
           link->target->_input_links.remove(link);
           link->source->_output_links.remove(link);
         }
@@ -960,7 +962,7 @@ public:
     }
 
     // Delete
-    for(auto link : links)
+    for(auto *link : links)
       delete link;
   }
   

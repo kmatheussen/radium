@@ -514,7 +514,9 @@ func_t *s7extra_get_func_from_funcname(const char *funcname){
 
 static s7_pointer catch_call(s7_scheme *sc, s7_pointer args){
   g_scheme_failed=false;
-    
+
+  R_ASSERT(PLAYER_current_thread_has_lock()==false);
+   
   s7_pointer ret = s7_call(sc, g_catchallerrors_func, args);
    
   if (s7_is_symbol(ret) && s7_symbol_name(ret)==s7_symbol_name(g_try_finally_failed))
@@ -525,7 +527,7 @@ static s7_pointer catch_call(s7_scheme *sc, s7_pointer args){
 
 void s7extra_callFunc_void_void(func_t *func){
   ScopedEvalTracker eval_tracker;
-  
+
   catch_call(s7,
              s7_list(s7, 1, (s7_pointer)func)
              );
@@ -577,6 +579,9 @@ bool s7extra_callFunc2_bool_void(const char *funcname){
 
 void s7extra_add_history(const char *funcname, const char *info){
   //printf("%s - %s", funcname, info);
+
+  R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock()==false);
+
 #if !defined(RELEASE)
   s7_add_to_history(s7, s7_make_string(s7, info));
 #endif

@@ -833,9 +833,7 @@ public slots:
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       int effect_num = PLUGIN_get_effect_num(plugin, "Limiter Bypass");
 
-      PLAYER_lock();{
-        PLUGIN_set_effect_value(plugin, -1, effect_num, val==true ? 1.0 : 0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-      }PLAYER_unlock();
+      PLUGIN_set_effect_value(plugin, -1, effect_num, val==true ? 1.0 : 0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 
       //update_limiter_sliders();
     }

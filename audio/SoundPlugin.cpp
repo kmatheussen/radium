@@ -917,7 +917,7 @@ static float get_chance(struct SoundPlugin *plugin, int num){
   safe_float_write(&plugin->bus_volume[busnum], store_value);           \
   break;
 
-void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum PlayerLockRequired player_lock_required, enum ValueFormat value_format, bool sent_from_midi_learn){
+void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum ValueFormat value_format, bool sent_from_midi_learn){
   float store_value = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
@@ -933,18 +933,15 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
   
   if(effect_num < plugin->type->num_effects){
 
-    if (PLAYER_current_thread_has_lock()==false && is_playing()==true){
-      if (player_lock_required==PLAYERLOCK_REQUIRED)
-        RWarning("PLUGIN_set_effect_value_internal called without holding the player lock");
-      else if (player_lock_required==PLAYERLOCK_MAYBE_REQUIRED)
-        RWarning_not_prod("PLUGIN_set_effect_value_internal called without holding the player lock");
+    {
+      radium::PlayerRecursiveLock lock;
+    
+      plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
+
+      if (value_format==PLUGIN_FORMAT_NATIVE)
+        store_value = plugin->type->get_effect_value(plugin, effect_num, PLUGIN_FORMAT_SCALED);
     }
-
-    plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
-
-    if (value_format==PLUGIN_FORMAT_NATIVE)
-      store_value = plugin->type->get_effect_value(plugin, effect_num, PLUGIN_FORMAT_SCALED);
-
+    
     if (PLUGIN_is_recording_automation(plugin, effect_num) && sent_from_midi_learn==false && when==FX_single)
       MIDI_add_automation_recording_event(plugin, effect_num, store_value);
     
@@ -1326,6 +1323,9 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     if (!THREADING_is_player_thread())
       if (PLAYER_current_thread_has_lock())
         abort();
+  
+  //if (where==VALUE_FROM_PLUGIN)
+  //  R_ASSERT(PLAYER_current_thread_has_lock());
 #endif
 
   if(effect_num >= plugin->type->num_effects + NUM_SYSTEM_EFFECTS){
@@ -1714,15 +1714,11 @@ void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, f
   }
 
   //printf("      Going to set %s to %f\n",effect_name,value);
-  PLAYER_lock();{
-    PLUGIN_set_native_effect_value(plugin, -1, i, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-  }PLAYER_unlock();
+  PLUGIN_set_native_effect_value(plugin, -1, i, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 }
 
 void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   const SoundPluginType *type=plugin->type;
-
-  int i;
 
 #if 0
   // original code:
@@ -1746,7 +1742,7 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   bool has_value[type->num_effects+NUM_SYSTEM_EFFECTS];
   float values[type->num_effects+NUM_SYSTEM_EFFECTS];
     
-  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++) {
+  for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++) {
     const char *effect_name = PLUGIN_get_effect_name(plugin,i);
     has_value[i] = HASH_has_key(effects, effect_name);
 
@@ -1781,7 +1777,7 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   }
   
   // 2. Store system effects
-  for(i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+  for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
     if(has_value[i]){
       float val = values[i];
       PLUGIN_set_native_effect_value(plugin, -1, i, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
@@ -1795,7 +1791,9 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   if (type->dont_send_effect_values_from_state_into_plugin ==false) {
     radium::PlayerLock lock;
 
-    for(i=0;i<type->num_effects;i++){
+    for(int i=0 ; i<type->num_effects ; i++){
+      PLAYER_maybe_pause_lock_a_little_bit(i);
+      
       if(has_value[i]){
         float val = values[i];
         type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
@@ -1978,9 +1976,9 @@ void SoundPluginEffectMidiLearn::RT_callback(float val) {
 
   if(system_effect==EFFNUM_COMP_ATTACK || system_effect==EFFNUM_COMP_RELEASE) {
     val = scale(val, 0, 1, 0, 500);
-    PLUGIN_set_effect_value2(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED, PLUGIN_FORMAT_NATIVE, true);
+    PLUGIN_set_effect_value2(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLUGIN_FORMAT_NATIVE, true);
   } else
-    PLUGIN_set_effect_value2(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED, PLUGIN_FORMAT_SCALED, true);
+    PLUGIN_set_effect_value2(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLUGIN_FORMAT_SCALED, true);
   
   volatile struct Patch *patch = plugin->patch;
   if (patch != NULL)
@@ -2158,9 +2156,7 @@ void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
   
   ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
-  PLAYER_lock();{
-    PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-  }PLAYER_unlock();
+  PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
 }
 
 static float get_rand(void){

@@ -1063,15 +1063,16 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
 }
 
 static void player_is_stopped(struct SoundPlugin *plugin){
+  R_ASSERT(PLAYER_current_thread_has_lock());
+  
   Data *data = (Data*)plugin->data;
-  PLAYER_lock();{
-    memset(data->last_end_pitch, 0, sizeof(float)*(NUM_PATCH_VOICES << 4));
-    Voice *voice = data->voices_playing;
-    while(voice!=NULL){
-      voice->set_last_end_pitch = false;
-      voice = voice->next;      
-    }
-  }PLAYER_unlock();
+  
+  memset(data->last_end_pitch, 0, sizeof(float)*(NUM_PATCH_VOICES << 4));
+  Voice *voice = data->voices_playing;
+  while(voice!=NULL){
+    voice->set_last_end_pitch = false;
+    voice = voice->next;      
+  }
   //printf("********** Player is stopped called\n");
 }
 
@@ -2263,7 +2264,7 @@ static bool set_new_sample(struct SoundPlugin *plugin,
   set_loop_data(data, loop_start, loop_end, false);
   
   // Put loop_onoff into storage.
-  PLUGIN_set_effect_value2(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLAYERLOCK_NOT_REQUIRED, PLUGIN_FORMAT_SCALED, false);
+  PLUGIN_set_effect_value2(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLUGIN_FORMAT_SCALED, false);
 
   if(SP_is_plugin_running(plugin)){
 

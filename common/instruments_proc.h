@@ -15,10 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-extern bool OpenInstruments(void);
-extern void CloseAllInstruments(void);
-extern void StopAllInstruments(void);
-extern void InitAllInstrumentsForPlaySongFromStart(void);
+extern LANGSPEC bool OpenInstruments(void);
+extern LANGSPEC void CloseAllInstruments(void);
+extern LANGSPEC void StopAllInstruments(void);
+extern LANGSPEC void InitAllInstrumentsForPlaySongFromStart(void);
 
 extern LANGSPEC struct Instruments *get_all_instruments(void);
 extern LANGSPEC struct Instruments *get_default_instrument(void);

@@ -26,7 +26,7 @@ extern "C" {
 
   extern bool g_scheme_failed;
   
-#define S7CALL(Type,Func,...)                           \
+#define S7CALL(Type,Func,...)                                           \
   (s7extra_add_history(__func__, CR_FORMATEVENT("========== s7call_" # Type, "\n\n")), \
    s7extra_callFunc_ ## Type (Func,##__VA_ARGS__))
   

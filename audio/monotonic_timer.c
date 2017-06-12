@@ -17,6 +17,10 @@
 static void sleep_1second(void){
   Sleep(MSECS_PER_SEC);
 }
+#else
+static void sleep_1second(void){
+  usleep(1000*1000);
+}
 #endif
 
 
@@ -150,7 +154,11 @@ static void sleep_1second(void){
 
 
 #if defined(NEED_RDTSC)
-  
+
+#if defined(RELEASE)
+#error "should not be necessary"
+#endif
+
 static inline uint64_t rdtsc() {
   uint32_t hi, lo;
   asm volatile("rdtscp\n"
@@ -177,7 +185,6 @@ static inline double monotonic_rdtsc_seconds(){
   return (double) rdtsc() / (double) rdtsc_per_sec;
 }
 
-#undef NEED_RDTSC
 #endif
  
 
@@ -199,3 +206,6 @@ void MONOTONIC_TIMER_init(void ){
   fflush(stdout);
 }
 
+#if defined(NEED_RDTSC)
+#undef NEED_RDTSC
+#endif

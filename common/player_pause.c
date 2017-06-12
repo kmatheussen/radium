@@ -86,6 +86,8 @@ void PC_Pause(void){
     g_pause_song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
     PlayStop();
     g_was_playing = true;
+
+    //printf("   PAUSING\n\n\n");
   }  
 }
 
@@ -117,6 +119,8 @@ static void stop_pause(struct Tracker_Windows *window, bool force_play_block){
   
   if (g_was_playing) {
 
+    //printf("\n\n   RESTARTING\n");
+          
     if (g_playtype==PLAYSONG) {
       
       PlaySong(g_pause_song_abstime);

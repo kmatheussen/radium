@@ -1455,11 +1455,19 @@ void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, float new_t
 // to start playing after this function returns.
 void PATCH_stop_all_notes(struct Patch *patch){
 
-  printf("STOP ALL NOTES on \"%s\".\n", patch->name);
+  //
+  // We might hold player lock while calling this function.
+  //
+  
 
+  if (PLAYER_current_thread_has_lock())
+    PLAYER_maybe_pause_lock_a_little_bit((int)patch->id);
+  else
+    printf("STOP ALL NOTES on \"%s\".\n", patch->name);
+  
   {
-    radium::PlayerLock lock;
-    
+    radium::PlayerRecursiveLock lock;
+
     // Note that we use RT_stop_voice instead of RT_stop_note to turn off sound.
     //
     // The reason is that all sound must be stopped after returning from this function,
@@ -1478,8 +1486,9 @@ void PATCH_stop_all_notes(struct Patch *patch){
 
     // 2. Clean patch->playing_notes
     //
-    while(patch->playing_notes != NULL)
+    while(patch->playing_notes != NULL){
       Patch_removePlayingNote(patch, patch->playing_notes->note.id, patch->playing_notes->seqtrack, patch->playing_notes->note.seqblock);
+    }
 
     // 3. Do the same to the playing voices in the audio system. (may be hanging notes there due to notes started later because of latency compensation)
     //

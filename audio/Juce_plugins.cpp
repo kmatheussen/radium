@@ -454,9 +454,7 @@ namespace{
         
         if (new_state != is_bypass) {
           int num_effects = plugin->type->num_effects;
-          PLAYER_lock();{  
-            PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, !new_state, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-          }PLAYER_unlock();
+          PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, !new_state, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
           GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
         }
         
@@ -1010,6 +1008,8 @@ static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
+  R_ASSERT(PLAYER_current_thread_has_lock());
+  
   //if (effect_num==99)
   //  printf("   Juce_plugins.cpp:set_effect_value.   parm %d: %f\n",effect_num,value);
 
@@ -1027,6 +1027,8 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
 }
 
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
+  radium::PlayerRecursiveLock lock;
+
   Data *data = (Data*)plugin->data;
   if (is_vst2(plugin)){
     // juce::VSTPluginInstance::getParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.

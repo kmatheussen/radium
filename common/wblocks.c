@@ -419,24 +419,13 @@ void UpdateWBlocks(struct Tracker_Windows *window){
 
 void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
         
-	if(wblock==NULL) return;
+      if(wblock==NULL) return;
 
+      if (window->wblock == wblock)
+        return;
 
-	//#undef GFX_FilledBox
-/*
-	This command was removed for v0.60g. If this is readed many versions later,
-	and there are no problem with gfx-garbage in this area, please remove all this.
-
-	GFX_FilledBox(
-		      window,0,
-		      wblock->lpbTypearea.x+1,
-		      wblock->a.y1,
-
-		      window->wblock->temponodearea.x2+3,
-		      window->wblock->t.y1-2
-		      );
-*/
-
+      PC_Pause();{
+        
 	ATOMIC_WRITE(window->wblock, wblock);
 	if( ! wblock->isgfxdatahere){
 #if !USE_OPENGL
@@ -496,18 +485,16 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
         SEQUENCER_update();
         
 	window->must_redraw = true;
+
+      }PC_StopPause(window);
 }
 
 void SelectPrevWBlock(struct Tracker_Windows *window){
-        PC_Pause();{
-          SelectWBlock(window,ListPrevElement1(&window->wblocks->l,&window->wblock->l));
-        }PC_StopPause(NULL);
+  SelectWBlock(window,ListPrevElement1(&window->wblocks->l,&window->wblock->l));
 }
 
 void SelectNextWBlock(struct Tracker_Windows *window){
-  PC_Pause();{
-    SelectWBlock(window,NextWBlock(window->wblock));
-  }PC_StopPause(NULL);
+  SelectWBlock(window,NextWBlock(window->wblock));
 }
 
 void SelectPrevPlaylistWBlock(struct Tracker_Windows *window){

@@ -861,9 +861,7 @@ void selectBlock(int blocknum, int windownum){
                                              );
   if(wblock==NULL) return;
 
-  PC_Pause();{
-    SelectWBlock(window, wblock);    
-  }PC_StopPause(window);
+  SelectWBlock(window, wblock);    
 }
 
 void setBlockColor(const_char *colorname, int blocknum, int windownum){

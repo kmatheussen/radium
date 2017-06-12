@@ -551,9 +551,7 @@ static void faust_gui_zone_callback(float val, void* arg){
 
   // We are now pretty certain that this update was caused by a user interaction in the faust gui, and not a roundtrip from radium.
   
-  PLAYER_lock();{
-    PLUGIN_set_native_effect_value(plugin, -1, effect_num, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-  }PLAYER_unlock();
+  PLUGIN_set_native_effect_value(plugin, -1, effect_num, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
   
   volatile struct Patch *patch = plugin->patch;
   ATOMIC_SET(patch->widget_needs_to_be_updated, true);

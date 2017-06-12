@@ -45,11 +45,15 @@ static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, 
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+  radium::PlayerRecursiveLock lock;
+  
   Data *data = (Data*)plugin->data;
   printf("####################################################### Setting sine volume to %f\n",value);
 }
 
 float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
+  radium::PlayerRecursiveLock lock;
+        
   Data *data = (Data*)plugin->data;
   return data->volume;
 }
