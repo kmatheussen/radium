@@ -414,7 +414,7 @@ int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, WhatT
   struct SeqBlock *last_seqblock = NULL;
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-
+    
     int64_t starttime = seqblock->time;
     int64_t endtime = seqblock->time + getBlockSTimeLength(seqblock->block);
     

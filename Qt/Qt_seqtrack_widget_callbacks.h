@@ -1739,22 +1739,29 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     float y2 = _seqtracks_widget.t_y2;
 
     if (grid_type==BAR_GRID) {
-      QPen pen(get_qcolor(SEQUENCER_GRID_COLOR_NUM));
-      p.setPen(pen);
-      int64_t last_bar = -50000;
-      int64_t abstime = _start_time;
+      
       int inc = (_end_time-_start_time) / width;
-      while(abstime < _end_time){
-        int64_t maybe = SEQUENCER_find_closest_bar_start(0, abstime);
-        if (maybe > last_bar){
-          float x = scale(maybe, _start_time, _end_time, 0, width);
-          //printf("x: %f, abstime: %f\n",x,(float)maybe/44100.0);
-          QLineF line(x, y1+2, x, y2-4);
-          p.drawLine(line);
-          last_bar = maybe;
-          abstime = maybe;
+      
+      if (inc > 0) {
+        
+        QPen pen(get_qcolor(SEQUENCER_GRID_COLOR_NUM));
+        p.setPen(pen);
+        
+        int64_t last_bar = -50000;
+        int64_t abstime = _start_time;
+      
+        while(abstime < _end_time){
+          int64_t maybe = SEQUENCER_find_closest_bar_start(0, abstime);
+          if (maybe > last_bar){
+            float x = scale(maybe, _start_time, _end_time, 0, width);
+            //printf("x: %f, abstime: %f\n",x,(float)maybe/44100.0);
+            QLineF line(x, y1+2, x, y2-4);
+            p.drawLine(line);
+            last_bar = maybe;
+            abstime = maybe;
+          }
+          abstime += inc;
         }
-        abstime += inc;
       }
     }
   }
