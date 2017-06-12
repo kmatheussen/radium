@@ -264,8 +264,7 @@ static bool g_up_downs[EVENT_DASMAX];
 
 static bool maybe_got_key_window(QWindow *window);
   
-extern "C" uint32_t add_mouse_keyswitches(uint32_t keyswitch);
-uint32_t add_mouse_keyswitches(uint32_t keyswitch){
+uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch){
 
   bool mixer_strips_has_focus = false;
   
@@ -300,7 +299,7 @@ static void set_mouse_keyswitches(void){
   if(ATOMIC_GET(is_starting_up)==true)
     return;
   
-  tevent.keyswitch = add_mouse_keyswitches(tevent.keyswitch);
+  tevent.keyswitch = OS_SYSTEM_add_mouse_keyswitches(tevent.keyswitch);
 }
 
 #ifdef FOR_WINDOWS
@@ -469,7 +468,8 @@ public:
 protected:
 
   bool last_key_was_lalt;
-
+  int menu_should_be_active = 0; // When value is 1, or higher, we are about to navigate menues. We need this variable since GFX_MenuActive() doesn't return true until the menu actually pops up.
+  
    bool SystemEventFilter(void *event){
 
      if(ATOMIC_GET(is_starting_up)==true){
@@ -551,34 +551,67 @@ protected:
     if (modifier != EVENT_NO) {
 
       bool must_return_true = false;
+
+      //printf("   Modifier: %d. EVENT_ALT_L: %d\n", modifier, EVENT_ALT_L);
       
       if (modifier==EVENT_ALT_L && OS_GFX_main_window_has_focus()){
+        
         if (is_key_press){
-          last_key_was_lalt = true;
+          //last_key_was_lalt = true;
         }else {
-
+          
           // release
           
-          must_return_true = true;
-          
-          if(last_key_was_lalt==true){
+          //printf("**** last_key_was_lalt: %d. menu_should_be_active: %d\n", last_key_was_lalt, menu_should_be_active);
+
+          if (!GFX_MenuVisible(window)) {
             
-            if (GFX_MenuVisible(window) && GFX_MenuActive()==true) {
+            // It doesn't work trying to start navigating the menues immediately after calling GFX_ShowMenu(). Qt doesn't allow that.
+            // So the only thing we can do is to show the menu.
+            
+            last_key_was_lalt = false;
+            menu_should_be_active = 0;
+            must_return_true = true;
+            
+            printf("   SHOW MENU\n");
+            GFX_ShowMenu(window);
+            
+          } else if(last_key_was_lalt==true) {
+
+            // Double-pressed left alt key.
+            
+            last_key_was_lalt = false;
+            menu_should_be_active = 0;
+            must_return_true = true;
+            
+            //printf("  EVENT_ALT_L. Visible: %d.\n", GFX_MenuVisible(window));
+
+            if (GFX_MenuVisible(window)){
+              printf("   HIDING\n");
               GFX_HideMenu(window);
               set_editor_focus();
-            } else if (!GFX_MenuVisible(window)) {
-              GFX_ShowMenu(window);
             }
-              
-            must_return_true = false; // pass the EVENT_ALT_L event to qt so that we can navigate the menues.
             
-            last_key_was_lalt = false;                      
+            
+          } else {
+
+            // Single-pressed left alt key.
+            
+            //printf("    Making MENU active\n");
+            menu_should_be_active = 1;
+            last_key_was_lalt = true;
+
           }
 
         }
-      }else
-        last_key_was_lalt = false;
+        
+      } else {
 
+        //printf("Setting lalt==false 1\n");
+        last_key_was_lalt = false;
+        
+      }
+      
       static double last_pressed_key_time = 0;
 
       double time_now = TIME_get_ms();
@@ -606,18 +639,23 @@ protected:
       }
 
       g_up_downs[modifier] = is_key_press;
-      set_keyswitch();
+
+#if !defined(FOR_WINDOWS)
+      set_keyswitch(); // In windows, tevent.keyswitch was set when calling OS_SYSTEM_EventPreHandler.
+#endif
+      
       //printf("__________________________ Got modifier %s. Returning false\n",is_key_press ? "down" : "up");
 
       //printf(" Got key 2\n");
       
-      if (modifier==EVENT_ALT_R || must_return_true)
+      if (modifier==EVENT_ALT_R || must_return_true){
+        //printf("  Returning true 1\n");
         return true; // If not, Qt starts to navigate the menues.
+      }
 
+      //printf("  Returning false 1\n");
       return false;
     }
-
-    last_key_was_lalt = false;
 
 #if 0
     printf("is_key_press: %d, keynum: %d, EVENT_MENU: %d\n",is_key_press,keynum,EVENT_MENU);
@@ -627,11 +665,15 @@ protected:
 
     //printf(" Got key 3\n");
     
-    if (g_radium_runs_custom_exec)
+    if (g_radium_runs_custom_exec) {
+      //printf("  Returning false 2.1\n");
       return false;
+    }
       
-    if (editor_has_keyboard_focus()==false)
+    if (editor_has_keyboard_focus()==false){
+      //printf("  Returning false 2.2\n");
       return false;
+    }
 
     //printf(" Got key 4\n");
     
@@ -640,20 +682,58 @@ protected:
     last_pressed_key = keynum;
             
     //printf("keynum1: %d. switch: %d\n",keynum,tevent.keyswitch);
-    
-    switch(keynum){
-    case EVENT_ESC:
-    case EVENT_UPARROW:
-    case EVENT_DOWNARROW:
-    case EVENT_LEFTARROW:
-    case EVENT_RIGHTARROW:
-    case EVENT_RETURN:
-    case EVENT_KP_ENTER: {
-      if(GFX_MenuActive()==true)
-        return false;
-      break;
+
+
+    //
+    if (GFX_MenuActive() || menu_should_be_active>0){
+      
+      if (GFX_MenuActive())
+        menu_should_be_active = 0; // we can't rely entirely on menu_should_be_active to be true, since it won't be false when using the mouse to cancel menu navigation.
+      
+      switch(keynum){
+
+        case EVENT_ESC:
+        case EVENT_RETURN:{
+          menu_should_be_active = 0; // In case we press esc or return right after pressing left alt.
+          //printf("  Returning false 3.1\n");
+          return false;
+          break;
+        }
+          
+        case EVENT_NO: // We get one or more of these right after showing menues on windows.          
+        case EVENT_KP_ENTER:
+        case EVENT_UPARROW:
+        case EVENT_DOWNARROW:
+        case EVENT_LEFTARROW:
+        case EVENT_RIGHTARROW:{
+          //printf("     Menu active? %d. menu_should_be_active: %d\n", GFX_MenuActive(), menu_should_be_active);
+          if (keynum != EVENT_NO && menu_should_be_active>0)
+            menu_should_be_active++;
+
+          if (menu_should_be_active > 3)
+            menu_should_be_active = 0; // Something is wrong. Qt doesn't navigate the menues now. (happens on windows after making menues visible)
+          else {
+            //printf("  Returning false 3.2 %d\n", menu_should_be_active);
+            return false;
+          }
+          break;
+        }
+          
+        default:{
+          //printf("  Something else: %d (left alt: %d)\n", keynum, EVENT_ALT_L);
+          if (GFX_MenuActive())
+            return false; // Since the menus are active, we can assume that the user knew, or should know, that we are navigating the menues.
+          else
+            menu_should_be_active = 0; // There's a good chance the user doesn't know that we are navigating the menues now, so we stop navigating it to avoid further confusion.
+        }
+      }
+
     }
-    }
+
+
+    //printf("Setting lalt==false 2\n");
+    last_key_was_lalt = false;
+
 
     //printf(" Got key 5\n");
         
@@ -715,7 +795,8 @@ protected:
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
 
     //printf(" Got key 7\n");
-    
+
+    //printf("  Returning true 4\n");
     return true;
    }
 

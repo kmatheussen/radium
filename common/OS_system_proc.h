@@ -26,5 +26,7 @@ extern LANGSPEC void OS_WINDOWS_set_always_on_top(void *child_handle);
 //extern LANGSPEC void OS_WINDOWS_set_on_top_of_everything(void *child_handle);
 
 
+extern LANGSPEC uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch);
+  
 //extern LANGSPEC bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *event);
 extern LANGSPEC void OS_SYSTEM_ResetKeysUpDowns(void);

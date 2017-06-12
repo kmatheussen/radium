@@ -65,8 +65,6 @@ void OS_WINDOWS_set_on_top_of_everything(void *child_handle){
 #endif
 
 
-extern uint32_t add_mouse_keyswitches(uint32_t keyswitch);
-
 static uint32_t get_keyswitch(void){
   uint32_t keyswitch=0;
 
@@ -111,7 +109,7 @@ static uint32_t get_keyswitch(void){
     keyswitch |= EVENT_RIGHTALT;
   }
 
-  keyswitch = add_mouse_keyswitches(keyswitch);
+  keyswitch = OS_SYSTEM_add_mouse_keyswitches(keyswitch);
   
   return keyswitch;
 }

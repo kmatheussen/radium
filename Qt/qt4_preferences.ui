@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>5</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -4610,7 +4610,7 @@ by mixing sound for all the buses.
        </item>
        <item>
         <layout class="QGridLayout" name="gridLayout_2">
-         <item row="1" column="0">
+         <item row="2" column="0">
           <widget class="QCheckBox" name="gcOnOff">
            <property name="enabled">
             <bool>true</bool>
@@ -4626,7 +4626,7 @@ by mixing sound for all the buses.
            </property>
           </widget>
          </item>
-         <item row="2" column="0">
+         <item row="3" column="0">
           <widget class="QCheckBox" name="incrementalGcNextTime">
            <property name="enabled">
             <bool>true</bool>
@@ -4658,7 +4658,7 @@ by mixing sound for all the buses.
            </property>
           </widget>
          </item>
-         <item row="3" column="0">
+         <item row="4" column="0">
           <widget class="QCheckBox" name="incrementalGc">
            <property name="enabled">
             <bool>true</bool>
@@ -4674,16 +4674,16 @@ by mixing sound for all the buses.
            </property>
           </widget>
          </item>
-         <item row="3" column="1">
+         <item row="4" column="1">
           <widget class="QLabel" name="lab_3">
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Enable incremental garbage collection.&lt;br&gt;
- Note that you have to set &quot;Enable Incremental Garbage Collector next time&quot;&lt;br&gt;and restart Radium before you can set this value.
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Enable incremental garbage collection permanently.&lt;br&gt;
+ Note that you have to set &quot;Enable Incremental Garbage Collector next time&quot;&lt;br&gt;and restart Radium before you can set this value. (The reason is that the&lt;br&gt;program might crash before you have the chance to disable this option.)
 &lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
+         <item row="3" column="1">
           <widget class="QLabel" name="lab_2">
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Try to enable incremental garbage collection the next time Radium starts up.
@@ -4691,7 +4691,7 @@ by mixing sound for all the buses.
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
+         <item row="2" column="1">
           <widget class="QLabel" name="lab">
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Disabling this mode should only be used to debug Radium.&lt;br&gt;
@@ -4710,10 +4710,23 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
           <widget class="QLabel" name="label_6">
            <property name="text">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Enable this option to show key codes in the editor. 
-This option is only useful&lt;br&gt;for debugging Radium. If a key doesn'twork, report which key&lt;br&gt;and what numbers are shown in the editor.
+This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work, report which key&lt;br&gt;and what numbers are shown in the editor.
 &lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
+         </item>
+         <item row="1" column="0">
+          <spacer name="verticalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>10</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>
@@ -5405,8 +5418,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>398</width>
-            <height>28</height>
+            <width>829</width>
+            <height>564</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -8005,8 +8018,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>100</width>
-               <height>30</height>
+               <width>983</width>
+               <height>298</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">

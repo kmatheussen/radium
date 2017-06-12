@@ -34,12 +34,36 @@ extern struct Root *root;
 extern QApplication *qapplication;
 
 namespace{
+
+static bool g_menu_is_open = false;
+  
+struct MyMenu : public QMenu{
+  Q_OBJECT;
+
+public:
+  
+  MyMenu(){
+    connect(this, SIGNAL(aboutToHide()), this, SLOT(aboutToHide()));
+    connect(this, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
+  }
+
+public slots:
+  
+  void 	aboutToHide(){
+    g_menu_is_open = false;
+  }
+  void 	aboutToShow(){
+    g_menu_is_open = true;
+  }
+};
+  
 struct Menues{
   struct Menues *up;
-  QMenu *menu;
+  MyMenu *menu;
   QMenuBar *base;
 };
 
+static QMenu *g_first_menu = NULL;
 
 static struct Menues *current_menu = NULL;
 
@@ -148,7 +172,10 @@ void GFX_AddMenuSeparator(struct Tracker_Windows *tvisual){
 void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const char *command){
   struct Menues *menu = (struct Menues*)V_calloc(1, sizeof(struct Menues));
   menu->up = current_menu;
-  menu->menu = new QMenu();
+  menu->menu = new MyMenu();
+  if (g_first_menu==NULL)
+    g_first_menu = menu->menu;
+  
   //QFont sansFont("Liberation Mono", 8);
   //QFont sansFont("DejaVu Sans Mono", 7);
   //QFont sansFont("Nimbus Mono L", 9);
@@ -186,10 +213,10 @@ void gakk(){
 }
 */
 
-bool GFX_MenuActive(){
-  return current_menu->base->activeAction() != NULL;
+bool GFX_MenuActive(void){
+  //return current_menu->base->activeAction() != NULL;
+  return g_menu_is_open;
 }
-
 
 bool GFX_MenuVisible(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
