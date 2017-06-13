@@ -150,6 +150,14 @@ typedef struct{
 extern PlayerClass *pc;
 
 
+//playtypes:
+#define PLAYSONG 0
+#define PLAYBLOCK 1
+#define PLAYRANGE 2 // Must never be set. We set pc->is_playing_range to true instead.
+#define PLAYBLOCK_NONLOOP 3
+
+
+
 // Should only be used if it's not important if the variables that are initialized when starting to play, have actually been initialized.
 // If that is important, then ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING must be used instead.
 static inline bool is_playing(void){
@@ -159,18 +167,15 @@ static inline bool is_playing(void){
   return state==PLAYER_STATE_STARTING_TO_PLAY || state==PLAYER_STATE_PLAYING;
 }
 
+static inline bool is_playing_song(void){
+  return is_playing() && pc->playtype==PLAYSONG;
+}
+
 static inline void init_player_state(void){
   ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);
 }
 
 
-//playtypes:
-#define PLAYSONG 0
-#define PLAYBLOCK 1
-#define PLAYRANGE 2 // Must never be set. We set pc->is_playing_range to true instead.
-#define PLAYBLOCK_NONLOOP 3
-
-//typedef struct ListHeader1 PEQ_UsedTracks;
 
 #endif
 

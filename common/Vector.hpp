@@ -205,7 +205,7 @@ private:
     memset(&elements[num_elements], 0, sizeof(T)); // for debugging
   }
 
-  int find_pos_internal(T t){
+  int find_pos_internal(T t) const {
     int pos;
     
     for(pos=0 ; pos<num_elements ; pos++)
@@ -276,7 +276,7 @@ public:
   }
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
-  int find_pos(T t){
+  int find_pos(T t) const {
     LOCKASSERTER_SHARED(&lockAsserter);
 
     return find_pos_internal(t);

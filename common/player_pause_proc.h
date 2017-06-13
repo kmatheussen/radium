@@ -25,13 +25,20 @@ extern LANGSPEC void PC_StopPause_ForcePlayBlock(struct Tracker_Windows *window)
 
 #ifdef __cplusplus
 namespace radium{
+namespace{
   struct PlayerPause{
-    PlayerPause(){
-      PC_Pause();
+    const bool _enable;    
+    PlayerPause(const bool enable = true)
+      : _enable(enable)
+    {
+      if (_enable)
+        PC_Pause();
     }
     ~PlayerPause(){
-      PC_StopPause(NULL);
+      if (_enable)
+        PC_StopPause(NULL);
     }
   };
+}
 }
 #endif

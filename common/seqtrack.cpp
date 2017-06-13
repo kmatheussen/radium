@@ -588,7 +588,7 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
   //printf("    SEQTRACK_delete_seqblock\n");
   
   {
-    radium::PlayerPause pause;
+    radium::PlayerPause pause(is_playing_song());
     radium::PlayerRecursiveLock lock;
       
     VECTOR_delete(&seqtrack->seqblocks, pos);
@@ -636,7 +636,7 @@ void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int 
   printf("move_all_to_left %d %d\n",seqblocknum, (int)how_much);
 
   {
-    radium::PlayerPause pause;
+    radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
     
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
@@ -699,7 +699,7 @@ static void move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, 
     legalize_seqtrack_timing(seqtrack, true);
     
   } else {
-    radium::PlayerPause pause;
+    radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
 
     seqblock->time = new_seqblock_time;
@@ -743,7 +743,7 @@ void SEQTRACK_move_gfx_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
 void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t length){
 
   {
-    radium::PlayerPause pause;
+    radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
     
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
@@ -792,7 +792,7 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
 
   {
-    radium::PlayerPause pause;
+    radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
 
     seqblock->time = seqtime;
@@ -873,7 +873,7 @@ void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
   }END_VECTOR_FOR_EACH;
 
   if(to_remove.size() > 0){
-    radium::PlayerPause pause;
+    radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
 
     for(auto pair : to_remove)
@@ -891,7 +891,7 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos){
   VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
 
   {
-    radium::PlayerPause pause;
+    radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
             
     VECTOR_insert(&root->song->seqtracks, new_seqtrack, pos);
@@ -906,7 +906,7 @@ void SEQUENCER_append_seqtrack(struct SeqTrack *new_seqtrack){
   
 void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos){
   {
-    radium::PlayerPause pause;
+    radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
     
     VECTOR_set(&root->song->seqtracks, pos, new_seqtrack);
@@ -922,7 +922,7 @@ void SEQUENCER_delete_seqtrack(int pos){
   R_ASSERT_RETURN_IF_FALSE(pos < root->song->seqtracks.num_elements);
   
   {
-    radium::PlayerPause pause;
+    radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
     
     VECTOR_delete(&root->song->seqtracks, pos);
@@ -1072,7 +1072,7 @@ void SEQUENCER_create_from_state(hash_t *state){
     int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;
     
     {
-      radium::PlayerPause pause;
+      radium::PlayerPause pause(is_playing_song());
       radium::PlayerLock lock;
       
       root->song->seqtracks = seqtracks;

@@ -8,7 +8,10 @@
 //#define GET_MS_FUNC() TIME_get_ms()
 #define GET_MS_FUNC() (monotonic_seconds() * 1000.0)
 
+  
 namespace radium{
+namespace{
+  
   struct Time{
     DEFINE_ATOMIC(double, _start_time);
 
@@ -35,5 +38,9 @@ namespace radium{
     }
   };
 }
+}
+
+#undef GET_MS_FUNC
+
 
 #endif

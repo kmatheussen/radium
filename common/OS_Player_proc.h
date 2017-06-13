@@ -85,15 +85,22 @@ extern LANGSPEC void RT_pause_plugins(void);
 #ifdef __cplusplus
 
 namespace radium{
-  
+
+namespace{  
+
 struct PlayerLock{
-  PlayerLock()
+  const bool _enable;
+  
+  PlayerLock(const bool enable = true)
+  : _enable(enable)
   {
-    PLAYER_lock();
+    if (enable)
+      PLAYER_lock();
   }
 
   ~PlayerLock(){
-    PLAYER_unlock();
+    if (_enable)
+      PLAYER_unlock();
   }
 };
  
@@ -113,6 +120,7 @@ struct PlayerRecursiveLock{
   }
 };
  
+}
 }
 
 #endif
