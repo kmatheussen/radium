@@ -58,8 +58,8 @@ extern LANGSPEC int SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double
 //extern LANGSPEC bool SCHEDULER_called_per_block(double reltime);
 
 extern LANGSPEC int SCHEDULER_num_events(scheduler_t *scheduler);
-extern LANGSPEC bool SCHEDULER_clear(scheduler_t *scheduler);
-extern LANGSPEC bool SCHEDULER_clear_all(void);
+extern LANGSPEC bool SCHEDULER_clear(scheduler_t *scheduler, float max_audio_cycle_fraction);
+extern LANGSPEC bool SCHEDULER_clear_all(float max_audio_cycle_fraction);
 extern LANGSPEC bool SCHEDULER_is_clear(scheduler_t *scheduler);
 extern LANGSPEC bool SCHEDULER_all_is_clear(void);
 extern LANGSPEC void SCHEDULER_set_seqtrack_timing(struct SeqTrack *seqtrack, double start_time, double end_time);

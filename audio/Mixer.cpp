@@ -936,6 +936,7 @@ struct Mixer{
         }
       }
       
+      static float max_playertask_audio_cycle_fraction = 0.01;
 
       ATOMIC_SET(g_currently_processing_dsp, true); {
         
@@ -947,7 +948,7 @@ struct Mixer{
             double curr_song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
             ATOMIC_DOUBLE_SET(g_curr_song_tempo_automation_tempo, curr_song_tempo_automation_tempo);
 
-            PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo, can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet);
+            PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo, can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet, max_playertask_audio_cycle_fraction);
             
             if (is_playing()) {
               if (pc->playtype==PLAYBLOCK)
@@ -959,8 +960,19 @@ struct Mixer{
             }
             
             RT_MIDI_handle_play_buffer();
-            
-            MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
+
+            float start_time;
+
+            if (jackblock_delta_time==0) start_time = MIXER_get_curr_audio_block_cycle_fraction(); else start_time = 0; // else clause added to silence compiler warning.
+            {
+              MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
+            }
+            if (jackblock_delta_time==0){
+              float curr_audio_fraction = MIXER_get_curr_audio_block_cycle_fraction() - start_time;
+              curr_audio_fraction *= (num_frames / RADIUM_BLOCKSIZE);
+              max_playertask_audio_cycle_fraction = (1.0 - curr_audio_fraction) / 2;
+              //printf("   max fract: %f\n", max_playertask_audio_cycle_fraction);
+            }
             
             _time += RADIUM_BLOCKSIZE;
             jackblock_delta_time += RADIUM_BLOCKSIZE;
@@ -974,6 +986,8 @@ struct Mixer{
       
       jack_time_t end_time = jack_get_time();
 
+
+               
 
       // Tell jack we are finished.
 
@@ -1438,6 +1452,14 @@ int64_t MIXER_get_time(void){
   return g_mixer->_time;
 }
 */
+
+// Returns a number between 0 and infinity.
+// 0 = audio block cycle just started
+// 1 = audio block cycle just ended.
+// > ~1 = we will probably get xrun(s)
+float MIXER_get_curr_audio_block_cycle_fraction(void){
+  return (float)jack_frames_since_cycle_start(g_jack_client) / (float)g_mixer->_buffer_size;
+}
 
 // Not quite accurate. Should not be called from the player thread or any other realtime thread.
 int64_t MIXER_get_last_used_time(void){

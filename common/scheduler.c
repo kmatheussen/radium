@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Player_proc.h"
 #include "OS_visual_input.h"
 #include "seqtrack_automation_proc.h"
+#include "../audio/Mixer_proc.h"
 
 #include "scheduler_proc.h"
 
@@ -314,29 +315,37 @@ bool SCHEDULER_called_per_block(double reltime){
 // * Must be called when deleting a patch or track. (why?)
 // * Can't there be hanging notes, or other undefined behaviors, when the event callback is not called?
 // Returns true if everything was cleared.
-bool SCHEDULER_clear(scheduler_t *scheduler){
+bool SCHEDULER_clear(scheduler_t *scheduler, float max_audio_cycle_fraction){
   //printf("TODO: Implermnet SCHEDULER_clear\n");
 
-  const int max_to_remove = 20; // 2048/20 = 102.4. 102.4 * 64 frames / (48000 frames / seconds) = 0.1365 seconds. I.e. we should never wait more than approx. 0.14 seconds for all events to be cleared.
-  int num_removed = 0;
-  
-  while(scheduler->queue_size>0 && num_removed < max_to_remove){
-    event_t *event = get_first_event(scheduler);
-    remove_first_event(scheduler);
-    release_event(event);
-    num_removed++;
-  }
+  const int num_to_free_before_checking_time = 1000;
 
-  if (scheduler->queue_size > 0)
-    return false;
-  else
-    return true;
+  for(;;){
+    
+    for(int i = 0 ; i < num_to_free_before_checking_time ; i ++){
+      
+      if (scheduler->queue_size==0) {
+        
+        return true;
+        
+      } else {
+        
+        event_t *event = get_first_event(scheduler);
+        remove_first_event(scheduler);
+        release_event(event);
+        
+      }
+    }
+    
+    if (MIXER_get_curr_audio_block_cycle_fraction() > max_audio_cycle_fraction)
+      return false;    
+  }
 }
 
-bool SCHEDULER_clear_all(void){
+bool SCHEDULER_clear_all(float max_audio_cycle_fraction){
 
   ALL_SEQTRACKS_FOR_EACH(){
-    if (SCHEDULER_clear(seqtrack->scheduler)==false)
+    if (SCHEDULER_clear(seqtrack->scheduler, max_audio_cycle_fraction)==false)
       return false;
   }END_ALL_SEQTRACKS_FOR_EACH;
   

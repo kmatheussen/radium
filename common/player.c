@@ -46,9 +46,8 @@ extern LANGSPEC void OS_InitMidiTiming(void);
 
 
 
-void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet){
+void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet, float max_audio_cycle_fraction){
 
-        
         if (ATOMIC_GET(is_starting_up))
           return;
 
@@ -80,14 +79,19 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
 
           SCHEDULER_reset_all_timing();
 
-          if (SCHEDULER_clear_all()) {
+          if (SCHEDULER_clear_all(max_audio_cycle_fraction)) {
             ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);  // Finished. SCHEDULER_clear() cleared everything.
             //RT_BACKUP_reset_timer(); // Don't want to take backup right after stopping to play. It's quite annoying. (we handle this directly in Qt_AutoBackups instead)
             
             player_state = PLAYER_STATE_STOPPED;
-            
-          } else            
+            //printf("************ PlayerTask finished clearing. fraction: %f. Max fraction: %f\n", MIXER_get_curr_audio_block_cycle_fraction(), max_audio_cycle_fraction);
+                        
+          } else {
+#if !defined(RELEASE)
+            printf("************ PlayerTask not finished clearing yet. fraction: %f. Max fraction: %f\n", MIXER_get_curr_audio_block_cycle_fraction(), max_audio_cycle_fraction);
+#endif
             return; // Must run SCHEDULER_clear() at least one more time. We don't want clear too much at once since it could cause CPU spikes.
+          }
           
           //} else if (player_state==PLAYER_STATE_STOPPED) {
           //  return;

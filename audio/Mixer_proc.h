@@ -32,6 +32,8 @@ extern LANGSPEC void MIXER_call_very_often(void);
 extern LANGSPEC STime MIXER_get_block_delta_time(STime time);
 extern LANGSPEC void MIXER_get_main_inputs(float **audio);
 //extern LANGSPEC int64_t MIXER_get_time(void);
+
+extern LANGSPEC float MIXER_get_curr_audio_block_cycle_fraction(void);
 extern LANGSPEC int64_t MIXER_get_last_used_time(void);
 extern LANGSPEC bool MIXER_fill_in_time_position(time_position_t *time_position);
 
