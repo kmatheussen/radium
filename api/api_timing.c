@@ -242,11 +242,10 @@ void setMainBPM(int bpm_value){
   
   ADD_UNDO(MainTempo(window,wblock));
 
-  PLAYER_lock();{
+  PC_Pause();{
     root->tempo=bpm_value;
-  }PLAYER_unlock();
-
-  TIME_global_LPB_has_changed();
+    TIME_global_tempos_have_changed();
+  }PC_StopPause(window);
       
   R_ASSERT(wblock->block->beats != NULL);
 

@@ -1298,7 +1298,7 @@ static void update_block(struct Blocks *block,
 
 
 void TIME_block_tempos_have_changed(struct Blocks *block){
-  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, false);
+  update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, true);
 }
 
 void TIME_block_LPBs_have_changed(struct Blocks *block){
@@ -1330,7 +1330,7 @@ void TIME_everything_in_block_has_changed(struct Blocks *block){
 }
 
 void TIME_global_tempos_have_changed(void){
-  update_all(root->song, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, false);
+  update_all(root->song, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, false, true);
 }
 
 void TIME_global_LPB_has_changed(void){
