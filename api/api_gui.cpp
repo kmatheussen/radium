@@ -161,7 +161,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define SETVISIBLE_OVERRIDER(classname)                                 \
   void setVisible(bool visible) override {                              \
-    remember_geometry.setVisible_override<classname>(this, visible);  \
+    remember_geometry.setVisible_override<classname>(this, visible);    \
   }
 
   /*
@@ -2324,9 +2324,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (for_loading)
         setAcceptMode(QFileDialog::AcceptOpen);
       else
-        setAcceptMode(QFileDialog::AcceptSave);          
+        setAcceptMode(QFileDialog::AcceptSave);
     }
-    
+
     static QString get_postfixes_filter(QString type, QString postfixes){
       QString postfixes2 = postfixes==NULL ? "*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3" : QString(postfixes);
       

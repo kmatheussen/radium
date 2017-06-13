@@ -5816,9 +5816,10 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                                            #t))
         (<gui> :set-modal gui #t)
         (<gui> :set-parent gui -1)
-        (<gui> :show gui)
+        (<ra> :obtain-keyboard-focus gui) ;; Must obtain keyboard focus before showing the gui. If not, the qlineedit widget in the filedialog loses focus.
         (c-display "    OBTAINING   ")
-        (<ra> :obtain-keyboard-focus gui))
+        (<gui> :show gui)
+        )
       (<ra> :schedule 1
             (lambda ()
               (load-protracker-module filename)
