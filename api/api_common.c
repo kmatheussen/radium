@@ -541,10 +541,11 @@ void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note,
   const Place *firstLegalConst = PlaceMax(last_pitch, last_velocity);
   PlaceFromLimit(&firstLegal, firstLegalConst);
 
-  PLAYER_lock();{
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
     note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
     NOTE_validate(block, track, note);
-  }PLAYER_unlock();
+  }
     
   R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
 }
@@ -567,14 +568,16 @@ int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Pla
         PlaceTilLimit(place, next_legal);
     }
     
-    PLAYER_lock();{
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
+      
       ListRemoveElement3(&track->notes, &note->l);
       note->l.p = *place;
       ListAddElement3_a(&track->notes, &note->l);
       if (replace_note_ends && !ControlPressed())
         ReplaceNoteEnds(block, track, &old_place, place, note->polyphony_num);
       NOTE_validate(block, track, note);
-    }PLAYER_unlock();
+    }
 
   }
   

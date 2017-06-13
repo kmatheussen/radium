@@ -1141,7 +1141,9 @@ static void moveNote(struct Blocks *block, struct Tracks *track, struct Notes *n
 
   //printf("new_start 2: %f\n",old_start+diff);
 
-  PLAYER_lock();{
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
+    
     ListRemoveElement3(&track->notes, &note->l);
     
     //Float2Placement(new_start, &note->l.p);
@@ -1164,7 +1166,7 @@ static void moveNote(struct Blocks *block, struct Tracks *track, struct Notes *n
     ListAddElement3_a(&track->notes, &note->l);
 
     NOTE_validate(block, track, note);
-  }PLAYER_unlock();
+  }
 }
 
 int movePianonote(int pianonotenum, float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
@@ -1242,7 +1244,9 @@ int movePianonoteStart(int pianonotenum, float value, Place place, int notenum, 
 
   // (there are no pitches here)
     
-  PLAYER_lock();{
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
+    
     ListRemoveElement3(&track->notes, &note->l);
     
     Float2Placement(floatplace, &note->l.p);
@@ -1250,7 +1254,7 @@ int movePianonoteStart(int pianonotenum, float value, Place place, int notenum, 
     ListAddElement3_a(&track->notes, &note->l);
 
     NOTE_validate(block, track, note);
-  }PLAYER_unlock();
+  }
 
 
   return ListPosition3(&track->notes->l, &note->l);
@@ -1348,10 +1352,12 @@ int movePianonoteEnd(int pianonotenum, float value, Place place, int notenum, in
 
     // (there are no pitches here)
     
-    PLAYER_lock();{
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
+      
       Float2Placement(floatplace, &note->end);
       NOTE_validate(block, track, note);
-    }PLAYER_unlock();
+    }
 
   }
 
@@ -1405,9 +1411,10 @@ void deletePianonote(int pianonotenum, int notenum, int tracknum, int blocknum, 
   if (pianonotenum==0) {
     window->must_redraw_editor=true;
 
-    PLAYER_lock();{
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
       ListRemoveElement3(&wtrack->track->notes, &note->l);
-    }PLAYER_unlock();
+    }
     
     return;
   }
@@ -1547,9 +1554,10 @@ void deletePitchnum(int pitchnum, int tracknum, int blocknum){
   while(notes!=NULL){
 
     if (pitchnum==num) {
-      PLAYER_lock();{
+      {
+        SCOPED_PLAYER_LOCK_IF_PLAYING();
         RemoveNote(block, track, notes);
-      }PLAYER_unlock();
+      }
       goto gotit;
     }
     
@@ -1558,10 +1566,12 @@ void deletePitchnum(int pitchnum, int tracknum, int blocknum){
     struct Pitches *pitches = notes->pitches;
     while(pitches!=NULL){
       if (pitchnum==num){
-        PLAYER_lock();{
+        {
+          SCOPED_PLAYER_LOCK_IF_PLAYING();
+          
           ListRemoveElement3(&notes->pitches,&pitches->l);
           NOTE_validate(block, track, notes);
-        }PLAYER_unlock();
+        }
         goto gotit;
       }
       
@@ -1920,10 +1930,12 @@ static int setPitchnum2(int num, float value, Place place, int tracknum, int blo
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
       PlaceTilLimit(&lastLegalPlace, &note->end);
 
-      PLAYER_lock();{
+      {
+        SCOPED_PLAYER_LOCK_IF_PLAYING();
+        
         ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
         NOTE_validate(block, track, note);
-      }PLAYER_unlock();
+      }
     }
                         
   } else if (is_end_pitch){
@@ -2070,10 +2082,11 @@ void disablePortamento(int notenum, int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return;
 
-  PLAYER_lock();{
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
     note->pitches = NULL;
     note->pitch_end = 0;
-  }PLAYER_unlock();
+  }
   
   window->must_redraw_editor = true;
 }
@@ -2562,9 +2575,10 @@ void setFxnode(int fxnodenum, float value, Place place, int fxnum, int tracknum,
   if (place.line >= 0){
     Place *last_pos = PlaceGetLastPos(wblock->block);
     
-    PLAYER_lock();{
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
       ListMoveElement3_FromNum_ns(&fx->fxnodelines, fxnodenum, &place, PlaceGetFirstPos(), last_pos);      
-    }PLAYER_unlock();
+    }
   }
   
   int max = fx->fx->max;

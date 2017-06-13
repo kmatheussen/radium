@@ -399,9 +399,10 @@ void cutNote(Place place, int notenum, int tracknum, int blocknum, int windownum
   if (PlaceLessOrEqual(&place, &note->l.p))
     return;
 
-  PLAYER_lock();{
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
     CutNoteAt(wblock->block, wtrack->track, note, &place);
-  }PLAYER_unlock();
+  }
   
 }
 

@@ -373,11 +373,13 @@ int AddFXNodeLine(
 
         int ret;
         
-        PLAYER_lock();{
+        {
+          SCOPED_PLAYER_LOCK_IF_PLAYING();
+          
           fxnodeline->val=R_BOUNDARIES(fxs->fx->min, val, fxs->fx->max);
           PlaceCopy(&fxnodeline->l.p,p1);
           ret = ListAddElement3_ns(&fxs->fxnodelines,&fxnodeline->l);
-        }PLAYER_unlock();
+        }
 
         return ret;
 }
@@ -531,9 +533,10 @@ void DeleteFxNodeLine(struct Tracker_Windows *window, struct WTracks *wtrack, st
 
   if (num_elements > 2){
   
-    PLAYER_lock();{
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
       ListRemoveElement3(&fxs->fxnodelines,&fxnodeline->l);
-    }PLAYER_unlock();
+    }
 
   } else if (NextFXNodeLine(fxnodeline) == NULL && fxnodeline->val != fxs->fxnodelines->val) {
     

@@ -218,7 +218,8 @@ int setVelocity(float value, Place place, int velocitynum, int notenum, int trac
       PlaceTilLimit(&lastLegalPlace, &note->end);
       
       {
-        Scoped_Player_Lock_if_Playing();
+        SCOPED_PLAYER_LOCK_IF_PLAYING();
+        
         velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
         NOTE_validate(block, track, note);
       }
@@ -265,24 +266,27 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
   bool is_last_and_there_are_pitches = is_last && note->pitches!=NULL;
 
   if (is_first || is_last_and_no_velocities || is_last_and_there_are_pitches){
-    PLAYER_lock();{
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
       RemoveNote(block, track, note);
-    }PLAYER_unlock();
+    }
 
   } else if (velocitynum==nodes->num_elements-1) {
     struct Velocities *last = (struct Velocities*)ListLast3(&note->velocities->l);
-    PLAYER_lock();{
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
       note->end = last->l.p;
       note->velocity_end = last->velocity;
       ListRemoveElement3(&note->velocities, &last->l);
       NOTE_validate(block, track, note);
-    }PLAYER_unlock();
+    }
 
   } else {
-    PLAYER_lock();{
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
       ListRemoveElement3_fromNum(&note->velocities, velocitynum-1);
       NOTE_validate(block, track, note);
-    }PLAYER_unlock();
+    }
   }
 
   window->must_redraw_editor = true;

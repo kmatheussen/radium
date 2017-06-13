@@ -72,9 +72,10 @@ struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock,
 }
 
 void DeletePitch(struct Tracks *track, struct Notes *note, struct Pitches *pitch){
-  PLAYER_lock();{
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
     ListRemoveElement3(&note->pitches, &pitch->l);
     //if (note->pitches==NULL)
     //  note->pitch_end = 0;
-  }PLAYER_unlock();
+  }
 }

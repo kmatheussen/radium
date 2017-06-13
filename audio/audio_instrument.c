@@ -908,7 +908,7 @@ static void AUDIO_PlayFromStartHook(struct Instruments *instrument){
 
 
 static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
-  R_ASSERT(PLAYER_current_thread_has_lock());
+  R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
 
   R_ASSERT_RETURN_IF_FALSE(old_patch != NULL);
   R_ASSERT_RETURN_IF_FALSE(new_patch != NULL);

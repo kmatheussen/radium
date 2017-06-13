@@ -218,10 +218,11 @@ int setPitch(float value, Place place, int pitchnum, int notenum, int tracknum, 
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
       PlaceTilLimit(&lastLegalPlace, &note->end);
       
-      PLAYER_lock();{
+      {
+        SCOPED_PLAYER_LOCK_IF_PLAYING();
         pitch = (struct Pitches*)ListMoveElement3_FromNum_ns(&note->pitches, pitchnum-1, &place, &firstLegalPlace, &lastLegalPlace);
         NOTE_validate(block, track, note);
-      }PLAYER_unlock();
+      }
     }
     
     pitch->note=value;

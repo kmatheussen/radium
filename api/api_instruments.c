@@ -198,14 +198,15 @@ void setInstrumentForTrack(int64_t instrument_id, int tracknum, int blocknum, in
 
   ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
 
-  PLAYER_lock();{
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
     
     if (old_patch != NULL)
       handle_fx_when_theres_a_new_patch_for_track(wtrack->track, old_patch, new_patch);
     
     wtrack->track->patch = new_patch;
     
-  }PLAYER_unlock();
+  }
   
   wblock->block->is_dirty = true;
 

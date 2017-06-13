@@ -712,6 +712,10 @@ protected:
           
         case EVENT_NO: // We get one or more of these right after showing menues on windows.          
         case EVENT_KP_ENTER:
+        case EVENT_PAGE_UP:
+        case EVENT_PAGE_DOWN:
+        case EVENT_HOME:
+        case EVENT_END:
         case EVENT_UPARROW:
         case EVENT_DOWNARROW:
         case EVENT_LEFTARROW:

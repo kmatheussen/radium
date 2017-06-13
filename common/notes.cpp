@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "wtracks_proc.h"
 #include "realline_calc_proc.h"
-#include "player_pause_proc.h"
 #include "undo_notes_proc.h"
 #include "cursor_updown_proc.h"
 #include "blts_proc.h"
@@ -42,9 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #ifndef TEST_NOTES
-
-extern struct Root *root;
-extern PlayerClass *pc;
 
 static const int end_places_size = 1024*32;
 static const Place **end_places = NULL;
@@ -279,23 +275,23 @@ static void set_new_position(struct Tracks *track, struct Notes *note, Place *st
 
   if (track==NULL && has_lock)
     RError("track==NULL && has_lock");
-  
-  if (track!=NULL) {
-    if (has_lock==false)
-      PLAYER_lock();
-    ListRemoveElement3(&track->notes, &note->l);
-  }
 
-  if (start!=NULL && start!=&note->l.p)
-    note->l.p = *start;
+  bool need_lock = (track!=NULL && has_lock==false && is_playing()==false);
 
-  if (end!=NULL && end!=&note->end)
-    note->end = *end;
-
-  if (track!=NULL){
-    ListAddElement3(&track->notes, &note->l);
-    if (has_lock==false)
-      PLAYER_unlock();
+  {
+    radium::PlayerLock lock(need_lock);
+    
+    if (track!=NULL)
+      ListRemoveElement3(&track->notes, &note->l);
+    
+    if (start!=NULL && start!=&note->l.p)
+      note->l.p = *start;
+    
+    if (end!=NULL && end!=&note->end)
+      note->end = *end;
+    
+    if (track!=NULL)
+      ListAddElement3(&track->notes, &note->l);
   }
 }
 
@@ -435,9 +431,10 @@ struct Notes *InsertNote(
 	note->velocity=velocity;
 //	note->velocity=(*wtrack->track->instrument->getStandardVelocity)(wtrack->track);
 	note->velocity_end=note->velocity;
-        
-        PLAYER_lock();
+
         {
+          SCOPED_PLAYER_LOCK_IF_PLAYING();
+          
           ListAddElement3(&track->notes,&note->l);
 
           if(polyphonic==false)
@@ -450,7 +447,6 @@ struct Notes *InsertNote(
 
           track->notes = NOTES_sort_by_pitch(track->notes);
         }
-        PLAYER_unlock();
 
         NOTE_validate(block, NULL, note);
 
@@ -520,9 +516,10 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
     }
 
     const struct Stops *stop = tr2.stop;
-    PLAYER_lock();{
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
       ListRemoveElement3(&track->stops, &stop->l);
-    }PLAYER_unlock();
+    }
   }
 
   const struct LocalZooms *realline = wblock->reallines[curr_realline];
@@ -551,10 +548,11 @@ static void InsertStop(
         stop = (struct Stops*)talloc(sizeof(struct Stops));
 	PlaceCopy(&stop->l.p,placement);
 
-        PLAYER_lock();{
+        {
+          SCOPED_PLAYER_LOCK_IF_PLAYING();
           StopAllNotesAtPlace(wblock->block,wtrack->track,placement);
   	  ListAddElement3_ns(&wtrack->track->stops,&stop->l);
-        }PLAYER_unlock();
+        }
 }
 
 /**********************************************************************
@@ -588,6 +586,8 @@ void ReplaceNoteEnds(
         const Place *new_placement,
         int polyphony_num
 ){
+        R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
+  
 	struct Notes *note=track->notes;
 	while(note!=NULL){
           if (note->polyphony_num == polyphony_num) {
@@ -606,8 +606,9 @@ void RemoveNote(
 	struct Tracks *track,
 	const struct Notes *note
 ){
-	ListRemoveElement3(&track->notes,&note->l);
-        LengthenNotesTo(block,track,&note->l.p);
+  R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
+  ListRemoveElement3(&track->notes,&note->l);
+  LengthenNotesTo(block,track,&note->l.p);
 }
 
 void RemoveNoteCurrPos(struct Tracker_Windows *window){
@@ -647,10 +648,11 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   }
                               
   if (tr2.note != NULL) {
-    PLAYER_lock();{
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
       ListRemoveElement3(&track->notes,&tr2.note->l);
       LengthenNotesTo(wblock->block,track,&realline->l.p);
-    }PLAYER_unlock();
+    }
     SetNotePolyphonyAttributes(wtrack->track);
     ValidateCursorPos(window);
     if (trs.size()==1)
@@ -659,10 +661,11 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   }
 
   const struct Stops *stop = tr2.stop;
-  PLAYER_lock();{
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
     ListRemoveElement3(&track->stops, &stop->l);
     LengthenNotesTo(wblock->block,track,&realline->l.p);
-  }PLAYER_unlock();
+  }
   
   if (trs.size()==1)
     maybe_scroll_down(window);
@@ -1188,8 +1191,9 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 
         ADD_UNDO(Notes_CurrPos(window));
 
-        PLAYER_lock();{
-
+        {
+          SCOPED_PLAYER_LOCK_IF_PLAYING();
+          
           if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
             RemoveNote(wblock->block,wtrack->track,note);
             SetNotePolyphonyAttributes(wtrack->track);
@@ -1200,7 +1204,7 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 
           note->noend=noend;
           
-        }PLAYER_unlock();
+        }
         
         window->must_redraw=true;
 }

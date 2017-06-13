@@ -45,9 +45,9 @@ static inline void leave_radium_lock_if_playing_scope(bool *was_locked){
 }
 
 #if defined(__clang__)
-#define Scoped_Player_Lock_if_Playing() bool radium_scoped_lock_if_playing __attribute__ ((__cleanup__(leave_radium_lock_if_playing_scope))) = enter_radium_lock_if_playing_scope();(void)radium_scoped_lock_if_playing 
+#define SCOPED_PLAYER_LOCK_IF_PLAYING() bool radium_scoped_lock_if_playing __attribute__ ((__cleanup__(leave_radium_lock_if_playing_scope))) = enter_radium_lock_if_playing_scope();(void)radium_scoped_lock_if_playing 
 #else
-#define Scoped_Player_Lock_if_Playing() bool radium_scoped_lock_if_playing __attribute__ ((__cleanup__(leave_radium_lock_if_playing_scope))) = enter_radium_lock_if_playing_scope()
+#define SCOPED_PLAYER_LOCK_IF_PLAYING() bool radium_scoped_lock_if_playing __attribute__ ((__cleanup__(leave_radium_lock_if_playing_scope))) = enter_radium_lock_if_playing_scope()
 #endif
   
 extern LANGSPEC bool MIXER_is_saving(void);
@@ -92,7 +92,7 @@ struct PlayerLock{
   const bool _enable;
   
   PlayerLock(const bool enable = true)
-  : _enable(enable)
+    : _enable(enable)
   {
     if (enable)
       PLAYER_lock();

@@ -120,7 +120,7 @@ static struct Velocities *add_velocity(
      if there already is an element with the same placement. */
 
   {
-    Scoped_Player_Lock_if_Playing();
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
     *pos = ListAddElement3_ns(&note->velocities,&velocity->l);
   }
 

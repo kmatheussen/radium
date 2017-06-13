@@ -151,7 +151,7 @@ struct Patch *PATCH_get_from_id(int64_t id){
 }
 
 void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
-  R_ASSERT(PLAYER_current_thread_has_lock());
+  R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
   
   if(old_patch==NULL || new_patch==NULL) {
     VECTOR_clean(&track->fxs);
