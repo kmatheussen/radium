@@ -651,6 +651,7 @@ struct Mixer{
     jack_status_t status;
 
     _rjack_client=jack_client_open("radium_audio",JackNoStartServer,&status,NULL);
+    g_jack_client = _rjack_client;
 
     if (_rjack_client == NULL) {
       fprintf (stderr, "jack_client_open() failed, "
@@ -743,7 +744,6 @@ struct Mixer{
       }
     }
 
-    g_jack_client = _rjack_client;
     //create_jack_plugins(_rjack_client);
 
     return true;

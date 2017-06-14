@@ -917,6 +917,18 @@ static float get_chance(struct SoundPlugin *plugin, int num){
   safe_float_write(&plugin->bus_volume[busnum], store_value);           \
   break;
 
+static void set_bus_onoff(struct SoundPlugin *plugin, float value, int busnum){
+  bool oldval = ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, busnum);
+  bool newval = value > 0.5f;
+  if (oldval != newval){
+    ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, busnum, newval);
+    RT_schedule_mixer_strips_remake();
+#if !defined(RELEASE)
+    printf("       Remake: BUS_ONOFF %d\n", busnum);
+#endif
+  }
+}
+
 void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum ValueFormat value_format, bool sent_from_midi_learn){
   float store_value = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
@@ -1015,56 +1027,21 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
       SET_BUS_VOLUME(4);
       
     case EFFNUM_BUS1_ONOFF:
-      if (value > 0.5f)
-        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, true);
-      else
-        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 0, false);
-#if !defined(RELEASE)
-      printf("       Remake: BUS1_ONOFF\n");
-#endif
-      RT_schedule_mixer_strips_remake();
+      set_bus_onoff(plugin, value, 0);
       break;
     case EFFNUM_BUS2_ONOFF:
-      if (value > 0.5f)
-        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, true);
-      else
-        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, false);
-#if !defined(RELEASE)
-      printf("       Remake: BUS2_ONOFF\n");
-#endif
-      RT_schedule_mixer_strips_remake();
+      set_bus_onoff(plugin, value, 1);
       break;
     case EFFNUM_BUS3_ONOFF:
-      if (value > 0.5f)
-        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 2, true);
-      else
-        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 2, false);
-#if !defined(RELEASE)
-      printf("       Remake: BUS3_ONOFF\n");
-#endif
-      RT_schedule_mixer_strips_remake();
+      set_bus_onoff(plugin, value, 2);
+      break;
       break;
     case EFFNUM_BUS4_ONOFF:
-      if (value > 0.5f)
-        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 3, true);
-      else
-        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 3, false);
-#if !defined(RELEASE)
-      printf("       Remake: BUS4_ONOFF\n");
-#endif
-      RT_schedule_mixer_strips_remake();
+      set_bus_onoff(plugin, value, 3);
       break;
     case EFFNUM_BUS5_ONOFF:
-      if (value > 0.5f)
-        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 4, true);
-      else
-        ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 4, false);
-#if !defined(RELEASE)
-      printf("       Remake: BUS5_ONOFF\n");
-#endif
-      RT_schedule_mixer_strips_remake();
+      set_bus_onoff(plugin, value, 4);
       break;
-
     case EFFNUM_PAN:
       if(ATOMIC_GET(plugin->pan_is_on)==true)
         SMOOTH_set_target_value(&plugin->pan, value);

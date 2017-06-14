@@ -424,6 +424,10 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
       if (window->wblock==wblock && window->curr_block==wblock->l.num)
         return;
 
+      
+      g_assert_not_stopping_player++; // A lot of things happens here. Assert that we are not stopping the player.
+      
+      
       ATOMIC_WRITE(window->wblock, wblock);
       if( ! wblock->isgfxdatahere){
 #if !USE_OPENGL
@@ -483,6 +487,8 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
       SEQUENCER_update();
       
       window->must_redraw = true;
+
+      g_assert_not_stopping_player--;
 }
 
 void SelectPrevWBlock(struct Tracker_Windows *window){

@@ -156,6 +156,7 @@ extern PlayerClass *pc;
 #define PLAYRANGE 2 // Must never be set. We set pc->is_playing_range to true instead.
 #define PLAYBLOCK_NONLOOP 3
 
+extern int g_assert_not_stopping_player;
 
 
 // Should only be used if it's not important if the variables that are initialized when starting to play, have actually been initialized.

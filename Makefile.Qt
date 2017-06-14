@@ -160,7 +160,7 @@ FULL_VERSION ?= 1
 UNDEFINED_SANITIZE_OPTS=
 
 # Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
-OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) -fsanitize=address #-DDISABLE_BDWGC # -fsanitize=address  -Og -fcheck-pointer-bounds -mmpx  # -DDISABLE_BDWGC -Og -
+OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) #-Og -fsanitize=thread #-fsanitize=address #-DDISABLE_BDWGC # -fsanitize=address  -Og -fcheck-pointer-bounds -mmpx  # -DDISABLE_BDWGC -Og -
 DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 # -Og -Og -fsanitize=address
 #-Og 

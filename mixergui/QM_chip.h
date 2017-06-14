@@ -224,7 +224,7 @@ public:
   }
   
   void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ) override {
-    printf("hover enter\n");
+    //printf("hover enter\n");
 
     /*
     QPen pen(Qt::gray,6);
@@ -256,7 +256,7 @@ public:
   }
 
   void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ) override {
-    printf("hover leave\n");
+    //printf("hover leave\n");
 
     /*
     QPen pen(Qt::gray,6);
