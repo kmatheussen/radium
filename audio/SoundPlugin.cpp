@@ -918,13 +918,12 @@ static float get_chance(struct SoundPlugin *plugin, int num){
   break;
 
 static void set_bus_onoff(struct SoundPlugin *plugin, float value, int busnum){
-  bool oldval = ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, busnum);
   bool newval = value > 0.5f;
+  bool oldval = ATOMIC_SET_RETURN_OLD_ARRAY(plugin->bus_volume_is_on, busnum, newval);
   if (oldval != newval){
-    ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, busnum, newval);
     RT_schedule_mixer_strips_remake();
 #if !defined(RELEASE)
-    printf("       Remake: BUS_ONOFF %d\n", busnum);
+    printf("       Remake: BUS_ONOFF %d. On: %d\n", busnum, newval);
 #endif
   }
 }
