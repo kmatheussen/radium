@@ -424,69 +424,65 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
       if (window->wblock==wblock && window->curr_block==wblock->l.num)
         return;
 
-      PC_Pause();{
-        
-	ATOMIC_WRITE(window->wblock, wblock);
-	if( ! wblock->isgfxdatahere){
+      ATOMIC_WRITE(window->wblock, wblock);
+      if( ! wblock->isgfxdatahere){
 #if !USE_OPENGL
-		UpdateWTempoNodes(window,wblock);
-		UpdateAllFXNodeLines(window,wblock);
+        UpdateWTempoNodes(window,wblock);
+        UpdateAllFXNodeLines(window,wblock);
 #endif              
-		wblock->isgfxdatahere=true;
-	}
+        wblock->isgfxdatahere=true;
+      }
 
-	if(wblock->curr_realline>=wblock->num_reallines){
-		wblock->curr_realline=wblock->num_reallines-1;
-	}
-
-        /*
+      if(wblock->curr_realline>=wblock->num_reallines){
+        wblock->curr_realline=wblock->num_reallines-1;
+      }
+      
+      /*
         if (window->curr_track < 0){
-          ATOMIC_WRITE(wblock->wtrack, wblock->wtracks);
+        ATOMIC_WRITE(wblock->wtrack, wblock->wtracks);
         } else {
           if (window->curr_track >= ListFindNumElements1(&wblock->wtracks->l))
-            ATOMIC_WRITE(window->curr_track, ListFindNumElements1(&wblock->wtracks->l)-1);
+          ATOMIC_WRITE(window->curr_track, ListFindNumElements1(&wblock->wtracks->l)-1);
           ATOMIC_WRITE(wblock->wtrack, ListFindElement1(&wblock->wtracks->l,window->curr_track));
-        }
-        */
+          }
+      */
+      
+      NInt newcurrtrack=wblock->wtrack->l.num;
+      int newcurrtracksub=window->curr_track_sub;
+      
+      window->curr_track_sub=-1;
+      ATOMIC_WRITE(window->curr_track, newcurrtrack);
+      
+      SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub);
+      
+      //if (SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub)==false)
+      //  ATOMIC_WRITE(window->curr_track, 0);
+      
+      window->curr_block=wblock->l.num;
+      ATOMIC_SET(g_curr_block, wblock->block);
+      
+      //printf("   curr_track: %d,   wtrack->l.num: %d\n",window->curr_track,wblock->wtrack->l.num);
+      
+      //MinimizeBlock_CurrPos(window);
+      //window->must_redraw = false;
+      
+      //window->must_redraw = true;
 
-        NInt newcurrtrack=wblock->wtrack->l.num;
-	int newcurrtracksub=window->curr_track_sub;
-
-	window->curr_track_sub=-1;
-        ATOMIC_WRITE(window->curr_track, newcurrtrack);
-
-        SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub);
-        
-        //if (SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub)==false)
-        //  ATOMIC_WRITE(window->curr_track, 0);
-
-	window->curr_block=wblock->l.num;
-        ATOMIC_SET(g_curr_block, wblock->block);
-
-        //printf("   curr_track: %d,   wtrack->l.num: %d\n",window->curr_track,wblock->wtrack->l.num);
-        
-        //MinimizeBlock_CurrPos(window);
-        //window->must_redraw = false;
-
-	//window->must_redraw = true;
-
-        BS_SelectBlock(wblock->block);
-
-	if( ! is_playing()){
-          GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
-	}
-
-	//window->must_redraw = false;
-        //MinimizeBlock_CurrPos(window);
-        //wblock->block->is_dirty = true;
-
-        GE_set_curr_realline(wblock->curr_realline);
-
-        SEQUENCER_update();
-        
-	window->must_redraw = true;
-
-      }PC_StopPause(window);
+      BS_SelectBlock(wblock->block);
+      
+      if( ! is_playing()){
+        GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
+      }
+      
+      //window->must_redraw = false;
+      //MinimizeBlock_CurrPos(window);
+      //wblock->block->is_dirty = true;
+      
+      GE_set_curr_realline(wblock->curr_realline);
+      
+      SEQUENCER_update();
+      
+      window->must_redraw = true;
 }
 
 void SelectPrevWBlock(struct Tracker_Windows *window){
