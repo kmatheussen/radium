@@ -1499,7 +1499,7 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 
   printf("mouse button: %d %d\n",event->button(),Qt::MiddleButton);
 
-  GFX_ScheduleRedraw();
+  root->song->tracker_windows->must_redraw = true;
 
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
   
@@ -1554,8 +1554,8 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   printf("mouse release: %p\n",_current_connection);
 
   EVENTLOG_add_event(talloc_format("<<<< MyScene::mouseReleaseEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size()));
-  
-  GFX_ScheduleRedraw();
+
+  root->song->tracker_windows->must_redraw = true; // why?
 
   QPointF pos=event->scenePos();
   float mouse_x = pos.x();

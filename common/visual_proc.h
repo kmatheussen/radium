@@ -118,6 +118,11 @@ static inline void GFX_ScheduleEditorRedraw(void){
   ATOMIC_SET(atomic_must_redraw_editor, true);
 }
 
+static inline void GFX_ScheduleEditorRedrawIfCurrentBlockIsVisible(void){
+  if(RT_get_curr_visible_block() != NULL)
+    ATOMIC_SET(atomic_must_redraw_editor, true);
+}
+
 extern struct Patch *g_currpatch;
 
 static inline void GFX_ScheduleInstrumentRedraw(struct Patch *patch){

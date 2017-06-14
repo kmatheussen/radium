@@ -632,7 +632,7 @@ void setInstrumentColor(const_char *colorname, int64_t instrument_id){
   printf("       Remake: setInstrumentColor\n");
   remakeMixerStrips();
 
-  GFX_ScheduleRedraw();
+  root->song->tracker_windows->must_redraw=true;
 }
 
 const char *getInstrumentColor(int64_t instrument_id){

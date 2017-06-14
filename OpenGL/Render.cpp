@@ -66,7 +66,7 @@ bool GL_get_colored_tracks(void){
   return SETTINGS_read_bool("colored_tracks", true);
 }
 
-static void set_g_colored_tracks(void){
+static void init_g_colored_tracks_if_necessary(void){
   static bool has_inited = false;
 
   if (!has_inited){
@@ -2595,11 +2595,7 @@ static void create_playcursor(const struct Tracker_Windows *window, const struct
   }
 }
 
-static void create_message(const struct Tracker_Windows *window){
-  const char *message = window->message;
-
-  if (message==NULL)
-    return;
+static void create_message(const struct Tracker_Windows *window, const char *message){
 
   int width = (int)strlen(message) * window->fontwidth;
   int height = window->fontheight;
@@ -2646,38 +2642,49 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
   if (g_gl_widget_started==false) // This check is probably not necessary
     return;
   
-  set_g_colored_tracks();
+  init_g_colored_tracks_if_necessary();
   
   //static int n=0; printf("GL_create called %d\n",n++);
 
-  int y2=get_realline_y2(window, wblock->num_reallines-1);
+  bool block_is_visible = wblock != NULL;
+  
+  int y2 = wblock==NULL ? -1 : get_realline_y2(window, wblock->num_reallines-1);
+
+  GE_start_writing(y2, block_is_visible); {
+
+    if (block_is_visible) {
+      const WSignature_trss wsignatures_trss = WSignatures_get(window, wblock);
+      
+      create_left_slider(window, wblock);
+      create_background(window, wblock, wsignatures_trss);
+      create_block_borders(window, wblock);
+      create_linenumbers(window, wblock, wsignatures_trss);
+      create_tempograph(window, wblock);
+      if(window->show_signature_track)
+        create_signaturetrack(window, wblock, wsignatures_trss);
+      if(window->show_swing_track)
+        create_swingtrack(window, wblock, wblock->block->filledout_swings.array, wblock->swingTypearea.x);
+      if(window->show_lpb_track)
+        create_lpbtrack(window, wblock);
+      if(window->show_bpm_track)
+        create_bpmtrack(window, wblock);
+      if(window->show_reltempo_track)
+        create_reltempotrack(window, wblock);
+      create_tracks(window, wblock);
+      create_range(window, wblock);
+      create_cursor(window, wblock);
+      create_playcursor(window, wblock);
+    }
+
+    {
+      const char *message = window->message;
+      if (message==NULL && block_is_visible==false)
+        message = "Current sequencer track is pausing.";
+
+      if (message != NULL)
+        create_message(window, message);
+    }
     
-  GE_start_writing(y2); {
-    
-    const WSignature_trss wsignatures_trss = WSignatures_get(window, wblock);
-
-    create_left_slider(window, wblock);
-    create_background(window, wblock, wsignatures_trss);
-    create_block_borders(window, wblock);
-    create_linenumbers(window, wblock, wsignatures_trss);
-    create_tempograph(window, wblock);
-    if(window->show_signature_track)
-      create_signaturetrack(window, wblock, wsignatures_trss);
-    if(window->show_swing_track)
-      create_swingtrack(window, wblock, wblock->block->filledout_swings.array, wblock->swingTypearea.x);
-    if(window->show_lpb_track)
-      create_lpbtrack(window, wblock);
-    if(window->show_bpm_track)
-      create_bpmtrack(window, wblock);
-    if(window->show_reltempo_track)
-      create_reltempotrack(window, wblock);
-    create_tracks(window, wblock);
-    create_range(window, wblock);
-    create_cursor(window, wblock);
-    create_playcursor(window, wblock);
-
-    create_message(window);
-
     create_lacking_keyboard_focus_greyed_out(window);
     
   } GE_end_writing(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM));
@@ -2689,12 +2696,12 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
 
 #if !RENDER_IN_SEPARATE_THREAD
 
-void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
-#if 1 //defined(RELEASE)
-  GL_create2(window, wblock);
+void GL_create(const struct Tracker_Windows *window){
+#if 0 //defined(RELEASE)
+  GL_create2(window, window->curr_block < 0 ? NULL : window->wblock);
 #else
   double start = TIME_get_ms();
-  GL_create2(window, wblock);
+  GL_create2(window, window->curr_block < 0 ? NULL : window->wblock);
   printf("   GL_create. dur: %f\n", TIME_get_ms() - start);
 #endif
 }
@@ -2729,7 +2736,7 @@ static void gl_create_thread(){
 extern void processEventsALittleBit(void);
 extern bool g_qtgui_has_started,g_qtgui_has_stopped;
 
-void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
+void GL_create(const struct Tracker_Windows *window){
   static std::thread t1(gl_create_thread);
 
   if (g_qtgui_has_started==false || g_qtgui_has_stopped==true)
@@ -2738,7 +2745,7 @@ void GL_create(const struct Tracker_Windows *window, struct WBlocks *wblock){
   Threadsafe_GC_disable(); // Could also turn on thread support in gc for the worker thread, but this is simpler, and perhaps faster too.
   {
     g_window = window;
-    g_wblock = wblock;
+    g_wblock = window->wblock;
 
     double start = TIME_get_ms();
     sem_req.signal();
@@ -2775,7 +2782,7 @@ void GL_create_all(const struct Tracker_Windows *window){
       wblock->left_track = 0;
       wblock->right_track = wblock->block->num_tracks-1;
       
-      GL_create(window, wblock);
+      GL_create2(window, wblock);
       GE_wait_until_block_is_rendered();
 
       wblock->left_track = org_left_track;
@@ -2784,7 +2791,7 @@ void GL_create_all(const struct Tracker_Windows *window){
     wblock = NextWBlock(wblock);
   }
 
-  GL_create(window, window->wblock);
+  GL_create2(window, window->wblock);
     
   ATOMIC_SET(g_is_creating_all_GL_blocks, false);
 }

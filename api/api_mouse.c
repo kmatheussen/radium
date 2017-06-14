@@ -2933,7 +2933,7 @@ void setTrackWidth (float new_width, int tracknum, int blocknum, int windownum){
   }
 
   //UpdateWBlockCoordinates(window,wblock);
-  //GL_create(window, window->wblock);
+  //GL_create(window);
   
   window->must_redraw=true;
 }

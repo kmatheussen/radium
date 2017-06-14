@@ -33,8 +33,11 @@ struct SharedVariables{
   const struct STimes *times; // Also stored in g_shread_variables_gc_storage.
 
   const struct LocalZooms **reallines; // We store it in g_shared_variables_gc_storage, so it can not be garbage collected while it is here.
+
+  bool block_is_visible;
   
-  SharedVariables()
+  SharedVariables(bool block_is_visible)
+    : block_is_visible(block_is_visible)
   {}
 
   ~SharedVariables();

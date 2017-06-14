@@ -408,7 +408,7 @@ class Sample_requester_widget : public QWidget
         } else {
           const char *message = talloc_format("Loading sample directory into memory. (%d / %d)", i, list.size());       
           window->message = message;
-          GL_create(window, window->wblock);
+          GL_create(window);
         }
       }
 
@@ -463,7 +463,7 @@ class Sample_requester_widget : public QWidget
             
     if (window->message!=NULL){      
       window->message=NULL;
-      GL_create(window, window->wblock);
+      GL_create(window);
     }
   }  
 

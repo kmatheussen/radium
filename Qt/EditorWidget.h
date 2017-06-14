@@ -205,7 +205,9 @@ public:
         }GL_unlock();
         GE_set_height(height_);
         //printf("a2\n");
-        GL_create(window2, window2->wblock);
+
+        // TODO: Check if this is any point:
+        //GL_create(window2);
       }
     }
 #endif

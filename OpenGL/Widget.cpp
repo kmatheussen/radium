@@ -725,14 +725,11 @@ public:
   /** Event generated when the bound OpenGLContext bocomes initialized or when the event listener is bound to an initialized OpenGLContext. */
   // OpenGL thread
   virtual void initEvent() {
-    printf("initEvent\n");
-    
+    //printf("initEvent\n");
     _rendering->sceneManagers()->clear();
-
     vgscene = new vl::SceneManagerVectorGraphics;
     _rendering->sceneManagers()->push_back(vgscene.get());
   }
-
   
 private:
   
@@ -780,11 +777,19 @@ public:
     fprintf(stderr,"destroyEvent\n");
   }
 
+  /*
+    // No need to override paintEvent. OpenGL takes care of that by itself.
+
+  // Only called when parent needs to be repainted. For instances if another window has covered it, or it is resized.
   virtual void paintEvent( QPaintEvent *e ){
     //fprintf(stderr,"GLWindow paintEvent\n");
-    GL_create(get_window(), get_window()->wblock);
-  }
 
+    // Doesn't seem to make any difference whether to call GL_create or set must_redraw=true.
+    // I guess calling GL_create as soon as possible is best to avoid flickering.
+    //GL_create(get_window());
+    //get_window()->must_redraw=true;
+  }
+  */
   
 private:
 
@@ -819,7 +824,7 @@ private:
     int player_id = ATOMIC_GET(pc->play_id);
     bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
 
-    bool use_t2_thread = T3_use_t2_thread();
+    static bool use_t2_thread = T3_use_t2_thread(); // Minor optimization to set static.
     
     T2_data *new_t2_data = NULL;
 
@@ -895,13 +900,15 @@ private:
     }
 
     SharedVariables *sv = GE_get_shared_variables(t2_data->painting_data);
+    if (sv->block_is_visible==false && is_playing)
+      is_playing = false; // I.e. we are not rendering the block that is currently playing (if any).
 
     double blocktime = 0.0;
 
     int playing_blocknum = -1;
-
+  
     if (is_playing){
-
+      
       if ((sv->curr_playing_block==NULL || sv->block!=sv->curr_playing_block)) { // Check that our blocktime belongs to the block that is rendered.
         
         if (new_t2_data!=NULL && use_t2_thread)
@@ -950,7 +957,7 @@ private:
         }
       }
 
-    } // is_playing
+    }
 
     double current_realline_while_playing =
       is_playing
@@ -1010,7 +1017,15 @@ private:
       float upper = middle - 100;
       float lower = middle + 100;
 #endif
-      _rendering->setEnableMask(getMask(upper,lower,GE_get_slice_size(t2_data->painting_data)));
+
+      uint32_t mask;
+            
+      if (sv->block_is_visible)
+        mask = (uint32_t)-1; // i.e. paint everything.
+      else
+        mask = getMask(upper,lower,GE_get_slice_size(t2_data->painting_data));
+      
+      _rendering->setEnableMask(mask);
     }
     
 

@@ -421,7 +421,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
         
       if(wblock==NULL) return;
 
-      if (window->wblock == wblock)
+      if (window->wblock==wblock && window->curr_block==wblock->l.num)
         return;
 
       PC_Pause();{

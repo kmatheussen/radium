@@ -527,7 +527,9 @@ struct GradientTrianglesCollection {
         gradient->next = new_used;
         new_used = gradient;
       }
+
       numb++;
+      
       gradient = next;
     }
 
@@ -756,7 +758,9 @@ struct PaintingData{
 
   int slice_size;
   
-  PaintingData(int full_height){
+  PaintingData(int full_height, bool block_is_visible)
+    : shared_variables(block_is_visible)
+  {
     slice_size = full_height / 32;
     if (slice_size < MIN_SLICE_SIZE)
       slice_size = MIN_SLICE_SIZE;
@@ -786,12 +790,12 @@ int GE_get_slice_size(const PaintingData *painting_data){
 }
 
 // Called from the main thread
-void GE_start_writing(int full_height){
+void GE_start_writing(int full_height, bool block_is_visible){
   R_ASSERT(g_painting_data==NULL);
 
   T1_ensure_t2_is_initialized();
   
-  g_painting_data = new PaintingData(full_height);
+  g_painting_data = new PaintingData(full_height, block_is_visible);
   GE_fill_in_shared_variables(&g_painting_data->shared_variables);
 
   T1_prepare_gradients2_for_new_rendering();

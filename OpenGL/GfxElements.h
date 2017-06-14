@@ -150,7 +150,7 @@ int GE_get_slice_size(const PaintingData *painting_data);
 
 void GE_delete_painting_data(PaintingData *painting_data);
 
-void GE_start_writing(int full_height);
+void GE_start_writing(int full_height, bool block_is_visible); // 'full_height' is not used if block_is_visible is false.
 void GE_end_writing(GE_Rgb new_background_color);
 void GE_wait_until_block_is_rendered(void);
 

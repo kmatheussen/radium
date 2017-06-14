@@ -184,7 +184,7 @@ void EditorWidget::updateEditor(){
   }
 
   if (this->window->must_redraw_editor==true){
-    GL_create(this->window, this->window->wblock);
+    GL_create(this->window);
     if (!is_playing())
       SEQUENCER_update();
     this->window->must_redraw_editor=false;
@@ -202,7 +202,7 @@ void GFX_ScheduleRedraw(void){
     bool is_main_thread = THREADING_is_main_thread(); 
     
     if (is_main_thread)
-      GL_create(window, window->wblock);
+      GL_create(window);
     
     window->must_redraw = true;
 
@@ -225,7 +225,7 @@ void GFX_ScheduleRedrawEditor(void){
     bool is_main_thread = THREADING_is_main_thread(); 
     
     if (is_main_thread)
-      GL_create(window, window->wblock);
+      GL_create(window);
     
     window->must_redraw = true;
 

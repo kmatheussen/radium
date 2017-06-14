@@ -2090,7 +2090,7 @@ struct Tracker_Windows{
   
 	NInt curr_track;
 	int curr_track_sub;				/* -1=note, 0,1,2,...,n=vel */
-        NInt curr_block;
+        NInt curr_block; // Used by P2MUpdateSongPosCallBack to keep track of whether to switch current block. The value -1 means that current block is not visible. (happens when playing song)
         int curr_othertrack_sub; // subtrack for bpm track, and so forth.
         
 	int maxwtracksize;					/* The size of the widest wtrack for all wblocks. */
@@ -2442,11 +2442,14 @@ static inline struct Blocks *RT_get_curr_visible_block(void){
   struct SeqBlock *seqblock = RT_get_curr_seqblock();
   if (seqblock != NULL)
     return seqblock->block;
-
+  else
+    return NULL;
+  /*
   if (root->song->tracker_windows != NULL)
     return root->song->tracker_windows->wblock->block;
   else
     return root->song->blocks;
+  */
 }
 
 static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,

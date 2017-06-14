@@ -69,39 +69,73 @@ int default_scrolls_per_second = 20;
 // Simpler version when using opengl
 void P2MUpdateSongPosCallBack(void){
 
-  struct Blocks *block = RT_get_curr_visible_block();
-  if (block==NULL)
-    return;
-  
-  NInt curr_block_num = block->l.num;
-  
+  bool isplaying = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
+        
   struct Tracker_Windows *window=root->song->tracker_windows;
-  struct WBlocks *wblock = ListFindElement1(&window->wblocks->l,curr_block_num);
+  struct WBlocks *wblock;
 
-  int old_curr_realline = wblock->curr_realline;
-  int till_curr_realline = R_BOUNDARIES(0, ATOMIC_GET(wblock->till_curr_realline), wblock->num_reallines-1); // till_curr_realline can be set from any thread, at any time, to any value.
+  if (isplaying){
 
-  if (!ATOMIC_GET(root->play_cursor_onoff)){
-    //printf("P2MUpdateSongPosCallBack: Setting to %d\n",till_curr_realline);
-    wblock->curr_realline = till_curr_realline;
-    wblock->top_realline += till_curr_realline - old_curr_realline;
-    wblock->bot_realline += till_curr_realline - old_curr_realline;
+    struct Blocks *block = RT_get_curr_visible_block();
+    
+    if (block==NULL){
+          
+      if (window->curr_block != -1){
+        window->curr_block = -1;
+        GL_create(window);
+      }
+
+      //printf("         Returning\n");
+      return;
+      
+    }
+
+    wblock = ListFindElement1(&window->wblocks->l, block->l.num);
+    
+  } else {
+
+    wblock = window->wblock;
+
   }
+
   
+  NInt curr_block_num = wblock->l.num;
+    
+
+  //printf("  P2Mupdatesongposcallback: window->curr_block: %d\n", window->curr_block);
+
+  
+  if (isplaying) {
+
+    int old_curr_realline = wblock->curr_realline;
+    int till_curr_realline = R_BOUNDARIES(0, ATOMIC_GET(wblock->till_curr_realline), wblock->num_reallines-1); // till_curr_realline can be set from any thread, at any time, to any value.
+    
+    if (!ATOMIC_GET(root->play_cursor_onoff)){
+      //printf("P2MUpdateSongPosCallBack: Setting to %d\n",till_curr_realline);
+      wblock->curr_realline = till_curr_realline;
+      wblock->top_realline += till_curr_realline - old_curr_realline;
+      wblock->bot_realline += till_curr_realline - old_curr_realline;
+    }  
+
+  }
+
+  
+
   if(window->curr_block!=curr_block_num){
 
 #if 0
     if (ATOMIC_GET(root->editonoff)==false)
-      GL_create(window,wblock); // <-- Faster update (no, doesn't seem to make a difference), but it's also complicated to avoid calling GL_create twice when doing this. (need separate update variables for editor and non-editor)
+      GL_create(window); // <-- Faster update (no, doesn't seem to make a difference), but it's also complicated to avoid calling GL_create twice when doing this. (need separate update variables for editor and non-editor)
 #endif
 
-    //printf("Bef. w: %d, r: %d\n",window->curr_block,root->curr_block);
+    //printf("Bef. w: %d\n",window->curr_block);
 
     SelectWBlock(
                  window,
                  wblock
                  );
-    //printf("Aft. w: %d, r: %d\n",window->curr_block,root->curr_block);
+    
+    //printf("Aft. w: %d\n",window->curr_block);
   }      
 
   //GE_set_curr_realline(wblock->curr_realline);

@@ -51,13 +51,13 @@ static void make_backup(void){
   g_undo_generation_for_last_backup = g_curr_undo_generation;
 
   root->song->tracker_windows->message = "Please wait. Saving backup";
-  GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
+  GL_create(root->song->tracker_windows);
 
   wchar_t *backup_filename = get_backup_filename();
   Save_Backup(backup_filename, root);
 
   root->song->tracker_windows->message = NULL;
-  GL_create(root->song->tracker_windows, root->song->tracker_windows->wblock);
+  GL_create(root->song->tracker_windows);
     
   //printf("               BACKUP finished\n");  
 }

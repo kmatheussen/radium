@@ -57,7 +57,7 @@ DC_start("TRACKER_WINDOW");
 	DC_SSI("fontheight",window->fontheight);
 	DC_SSI("org_fontheight",window->org_fontheight);
 
-	DC_SSN("curr_block",window->wblock->l.num);
+	DC_SSN("curr_block",window->wblock->l.num); // Save window->wblock->l.num instead of window->curr_block since window->curr_block might not always have a legal value.
 
 	DC_SSI("maxwtracksize",window->maxwtracksize);
 
@@ -160,7 +160,7 @@ var8:
         DC_LoadI();
 	goto start;
 var9:
-	window->curr_block=DC_LoadN();
+	window->curr_block=DC_LoadN();        
 	goto start;
 var10:
 	//window->maxwtracksize=

@@ -192,7 +192,7 @@ void obtain_keyboard_focus_without_greying(void){
     editor_has_keyboard = false;
     g_do_grey_editor = false;
   }
-  GFX_ScheduleEditorRedraw();
+  root->song->tracker_windows->must_redraw_editor = true;
 }
 
 void obtain_keyboard_focus(void){
@@ -200,7 +200,7 @@ void obtain_keyboard_focus(void){
     editor_has_keyboard = false;
     g_do_grey_editor = !editor_has_keyboard_focus();
   }
-  GFX_ScheduleEditorRedraw();
+  root->song->tracker_windows->must_redraw_editor = true;
 }
 
 void release_keyboard_focus(void){
@@ -208,7 +208,7 @@ void release_keyboard_focus(void){
     editor_has_keyboard = true;
     g_do_grey_editor = !editor_has_keyboard_focus();
   }
-  GFX_ScheduleEditorRedraw();
+  root->song->tracker_windows->must_redraw_editor = true;
 }
 
 void obtain_keyboard_focus_counting(void){
@@ -216,7 +216,7 @@ void obtain_keyboard_focus_counting(void){
     someone_else_has_keyboard_counting++;
     g_do_grey_editor = !editor_has_keyboard_focus();
   }
-  GFX_ScheduleEditorRedraw();
+  root->song->tracker_windows->must_redraw_editor = true;
 }
 
 void release_keyboard_focus_counting(void){
@@ -227,7 +227,7 @@ void release_keyboard_focus_counting(void){
       someone_else_has_keyboard_counting--;
     g_do_grey_editor = !editor_has_keyboard_focus();
   }
-  GFX_ScheduleEditorRedraw();
+  root->song->tracker_windows->must_redraw_editor = true;
 }
 
 
@@ -541,7 +541,7 @@ protected:
       //printf("  Got key: %s\n",message);
       window->message=message;
       
-      GL_create(window,window->wblock);
+      GL_create(window);
     }
               
     static int last_pressed_key = EVENT_NO;
@@ -814,15 +814,20 @@ protected:
     return true;
    }
 
-#if FOR_LINUX
   virtual bool eventFilter(QObject *obj, QEvent *event) override {
+#if FOR_LINUX
     if (event->type()==QEvent::FocusAboutToChange){
       //printf("EventFilter called\n");
       OS_SYSTEM_ResetKeysUpDowns();
     }
+#endif
+
+    // TODO: Check if getting this event:
+    // QEvent::ApplicationFontChange
+    // could be used for something. For instance to fix OpenGL widget position.
+    
     return QApplication::eventFilter(obj, event);
   }
-#endif
   
   /*
   int _last_keynum = EVENT_NO;
@@ -1038,7 +1043,7 @@ protected:
       printf("  Got key: %s\n",message);
       window->message=message;
       
-      GL_create(window,window->wblock);
+      GL_create(window);
     }
               
     static int last_pressed_key = EVENT_NO;
@@ -1259,9 +1264,7 @@ MyApplication::MyApplication(int &argc,char **argv)
   //setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
 #if USE_QT5
   installNativeEventFilter(this);
-#if FOR_LINUX
   installEventFilter(this);
-#endif
 #endif
 }
 
@@ -1568,9 +1571,8 @@ protected:
       ATOMIC_SET(g_request_to_stop_playing, false);
     }
     
-    if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING){
-      P2MUpdateSongPosCallBack();
-    }
+
+    P2MUpdateSongPosCallBack();
 
     {
       struct Tracks *track = window->wblock->wtrack->track;
@@ -1599,7 +1601,7 @@ protected:
       if (window->message_duration_left <= 0){
         window->message_duration_left = 0;
         window->message = NULL;
-        GL_create(window, window->wblock);
+        GL_create(window);
       }
     }
 
@@ -1608,12 +1610,12 @@ protected:
     if (window->message==NULL && GC_is_disabled()) {
       
       window->message = gc_warning_message;
-      GL_create(window, window->wblock);
+      GL_create(window);
       
     } else if (window->message==gc_warning_message && GC_is_disabled()==false){
       
       window->message=NULL;
-      GL_create(window, window->wblock);
+      GL_create(window);
       
     }
 
@@ -2299,7 +2301,7 @@ int radium_main(char *arg){
   main_window->updateGeometry();
   
 #if USE_OPENGL
-  GL_create(window, window->wblock);
+  GL_create(window);
 #endif
 
 #if 0
