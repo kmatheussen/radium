@@ -91,6 +91,11 @@ void PC_Pause(void){
   }  
 }
 
+const Place *get_place_from_realline(const struct WBlocks *wblock, int realline){
+  int bounded_realline = R_BOUNDARIES(0, realline, wblock->num_reallines-1);
+  return &wblock->reallines[bounded_realline]->l.p;
+}
+
 static void stop_pause(struct Tracker_Windows *window, bool force_play_block){
   R_ASSERT(THREADING_is_main_thread());
 
@@ -120,20 +125,23 @@ static void stop_pause(struct Tracker_Windows *window, bool force_play_block){
   if (g_was_playing) {
 
     //printf("\n\n   RESTARTING\n");
-          
-    if (g_playtype==PLAYSONG) {
+    
+    if (force_play_block) {
+
+      const Place *place = get_place_from_realline(wblock, ATOMIC_GET(g_pause_realline));
+      PlayBlockCurrPos2(window, place);
+
+    } else if (g_playtype==PLAYSONG) {
       
       PlaySong(g_pause_song_abstime);
 
     } else {
       
-      int realline = R_BOUNDARIES(0, ATOMIC_GET(g_pause_realline), wblock->num_reallines-1);
-      const Place *place = &wblock->reallines[realline]->l.p;
+      const Place *place = get_place_from_realline(wblock, ATOMIC_GET(g_pause_realline));
     
-      if (force_play_block)
-        PlayBlockCurrPos2(window, place);
-      else if (g_was_playing_range)
+      if (g_was_playing_range)
         PlayRangeCurrPos2(window, place);
+      
       else if (g_playtype==PLAYBLOCK)
         PlayBlockCurrPos2(window, place);
       

@@ -40,6 +40,9 @@
 #define ATOMIC_SET_ARRAY(name, pos, val)                            \
   __atomic_store_n (&(ATOMIC_NAME(name)[pos]), (val), __ATOMIC_SEQ_CST)
 
+#define ATOMIC_SET_RETURN_OLD_ARRAY(name, pos, val)                         \
+  __atomic_exchange_n (&ATOMIC_NAME(name)[pos], val, __ATOMIC_SEQ_CST)
+
 
 /*
   __atomic_compare_exchange_n(type *ptr,
