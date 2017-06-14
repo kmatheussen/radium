@@ -53,7 +53,7 @@ struct T1_data{
 
 static radium::Queue<T1_data*, 1>  t1_to_t2_queue;
 static radium::SyncQueue<T2_data*> t2_to_t3_queue;
-static radium::Queue<T2_data*, 8>  t3_to_t2_queue;
+static radium::Queue<T2_data*, T3_TO_T2_QUEUE_SIZE>  t3_to_t2_queue; // The queue doesn't really have to be able to hold more than 1, perhaps 2 or 3 elements, ideally, but we set it somewhat higher to lower the risk of growing the buffers indefinitely in case something is wrong.
 
 
 enum Use_T2_Thread{ // doesn't work with clang to use enum class here (enum class doesn't work with atomic operations).
@@ -111,23 +111,26 @@ void T1_wait_until_t3_got_t2_data(void){
 */
 
 bool T3_use_t2_thread(void){
-  R_ASSERT(ATOMIC_GET(g_use_t2_thread) != Use_T2_Thread::UNINITIALIZED);
+  bool state = ATOMIC_GET(g_use_t2_thread);
+  R_ASSERT(state != Use_T2_Thread::UNINITIALIZED);
   
-  return ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::YES;
+  return state==Use_T2_Thread::YES;
 }
 
 
 
-void T3_send_back_old_t2_data(T2_data *t2_data){  
+bool T3_send_back_old_t2_data(T2_data *t2_data){  
   R_ASSERT(ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::YES);
-  
-  t3_to_t2_queue.put(t2_data);
+
+  // Using tryPut instead of put in case queue is full. If not, we can deadlock. Shouldn't happen, but just in case.
+  return t3_to_t2_queue.tryPut(t2_data);
 }
 
-void T3_t2_data_picked_up_but_old_data_will_be_sent_back_later(void){
+bool T3_t2_data_picked_up_but_old_data_will_be_sent_back_later(void){
   R_ASSERT(ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::YES);
-    
-  t3_to_t2_queue.put(NULL);
+
+  // Using tryPut instead of put in case queue is full. If not, we can deadlock. Shouldn't happen, but just in case.
+  return t3_to_t2_queue.tryPut(NULL); // Wake up t2 thread. See [ref 1] below.
 }
 
 T2_data::T2_data(PaintingData *painting_data, GE_Rgb background_color)
@@ -214,7 +217,7 @@ static void T2_thread_func(QOffscreenSurface *offscreen, QOpenGLContext *offscre
     t2_to_t3_queue.T1_put(t2_data);
     t2_to_t3_queue.T1_wait_for_T2_to_pick_up();    
 
-    T2_data *old_t2_data = t3_to_t2_queue.get();
+    T2_data *old_t2_data = t3_to_t2_queue.get(); // [ref 1]
 
     if (old_t2_data != NULL){
       offscreen_context->makeCurrent(qsurface);{      

@@ -624,7 +624,7 @@ public:
 
   T2_data *t2_data;
   bool t2_data_can_be_used;
-  radium::Vector<T2_data*> old_t2_datas;
+  radium::Vector<T2_data*> old_t2_datas; // Waiting to be sent back to t2.
   
   vl::ref<vl::SceneManagerVectorGraphics> vgscene;
 
@@ -788,6 +788,21 @@ public:
   
 private:
 
+  void send_back_old_t2_data(bool keep_last_element){
+#if !defined(RELEASE)
+    if (old_t2_datas.size() > 0)
+      R_ASSERT(T3_use_t2_thread());
+#endif
+    
+    int when_to_stop = keep_last_element ? 1 : 0;
+    
+    while(old_t2_datas.size() > when_to_stop){
+      if (T3_send_back_old_t2_data(old_t2_datas.at(0)) == false)
+        break;
+      old_t2_datas.remove_pos(0, true);
+    }
+  }
+  
   int64_t draw_counter = 0;
   
   // OpenGL thread
@@ -863,14 +878,21 @@ private:
         old_t2_datas.push_back(old_t2_data);
       else
         delete old_t2_data;
+
+#if !defined(RELEASE)
+      if (old_t2_datas.size() > 1)
+        printf("  Warning: old_t2_data is growing: %d\n", old_t2_datas.size());
+#endif
       
 #if TEST_TIME
       dur3 = TIME_get_ms();
 #endif
     }
         
-    if (t2_data==NULL)
+    if (t2_data==NULL){
+      //printf("Retfalse1\n");
       return false;
+    }
 
     SharedVariables *sv = GE_get_shared_variables(t2_data->painting_data);
 
@@ -890,6 +912,8 @@ private:
           _rendering->render();
           return true;
         }else{
+
+          //printf("Retfalse2. old_t2_datas.size: %d. sv->curr_playing_block==NULL (%d) || sv->block!=sv->curr_playing_block (%d)\n",old_t2_datas.size(), sv->curr_playing_block==NULL, sv->block!=sv->curr_playing_block);
           return false; // Returning false uses 100% CPU on Intel gfx / Linux, and could possibly cause jumpy graphics, but here we are just waiting for the block to be rendered.
         }
       }
@@ -921,6 +945,7 @@ private:
           _rendering->render();
           return true;
         } else {
+          //printf("Retfalse3\n");
           return false;
         }
       }
@@ -955,7 +980,8 @@ private:
       
       if (new_t2_data!=NULL && use_t2_thread)
         T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
-      
+
+      //printf("Retfalse4\n");
       return false;
     }
 
@@ -964,6 +990,7 @@ private:
         _rendering->render();
         return true;
       }else{
+        //printf("Retfalse5\n");
         return false; // TODO: Check if this still uses 100% cpu on Intel/linux. It's a little bit wasteful to render the same frame again and again while not playing just because of one driver on one platform.
       }
     }
@@ -1045,15 +1072,14 @@ private:
     t2_data_can_be_used = true;
     _rendering->render();
 
+    // [ref 1]
     // Must do this after calling render() (and possibly after transform->setLocalAndWorldMatrix() is called)
     // Could seem like some objects are cached and not removed until render() is called.
     //
     // If we don't do it here, we get tsan hits when vl::Object->decReferences() is called,
     // and the objects may also be freed here instead of in the T2 thread.
-    while(old_t2_datas.size() > 0){
-      T2_data *old_t2_data = old_t2_datas.pop(0, true);
-      T3_send_back_old_t2_data(old_t2_data);
-    }
+    //
+    send_back_old_t2_data(false);
     
     
 #if TEST_TIME
@@ -1322,15 +1348,23 @@ public:
             }
           }
 
+          //printf("Must swap: %d\n", must_swap);
+          
           if (must_swap)
             swap();
           
           else if (g_safe_mode || !sleep_when_not_painting) // probably doesn't make any sense setting sleep_when_not_painting to false. Besides, setting it to false may cause 100% CPU usage (intel gfx) or very long calls to GL_lock() (nvidia gfx).
             swap();
 
-          else
-            //msleep(1); // Don't want to buzy-loop
-            msleep(time_estimator.get_vblank());
+          else {
+            if (old_t2_datas.size() >= T3_TO_T2_QUEUE_SIZE){
+              // Something is very wrong, and it's risky to free here [ref 1], but we can't let this data grow forever.
+              // It might be safe to call this function at any time though when the 'keep_last_element' argument is true. Not sure.
+              swap(); // Swap too. Maybe it's safer to free this data after swapping even though it hasn't been rendered.
+              send_back_old_t2_data(true);
+            } else
+              msleep(time_estimator.get_vblank());  // Don't have to call swap() here. We sleep instead since swap() in some GFX drivers returns immediately if calling swap without rendering.
+          }
           
           //if (g_safe_mode)
           //  GL_unlock();
