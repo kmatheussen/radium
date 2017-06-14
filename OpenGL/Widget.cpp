@@ -1265,10 +1265,10 @@ public:
 
     radium::ScopedMutex lock(make_current_mutex);
 
-    bool handle_current = true; // I don't know if there's any point setting this to true.
+    bool handle_current = true;
 
     if (handle_current)
-      QGLWidget::makeCurrent();
+      QGLWidget::makeCurrent();  // Not sure about this. updateEvent() is called immediately again after it returns.
       
     if (g_order_pause_gl_thread.tryWait()) {
       g_ack_pause_gl_thread.notify_one();
@@ -1324,7 +1324,7 @@ public:
     }
 #endif
 
-    // This is the only place the opengl thread waits. When swap()/msleep() returns, updateEvent is called again immediately.
+    // This is the only place the opengl thread waits. After swap()/msleep() returns, and updateEvent() is finished, updateEvent is called again immediately.
 
     {
 #if !USE_QT5

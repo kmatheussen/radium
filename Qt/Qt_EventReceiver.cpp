@@ -89,23 +89,17 @@ DEFINE_ATOMIC(bool, atomic_must_calculate_coordinates) = false;
 
 static void transfer_atomic_must_redraws(struct Tracker_Windows *window)
 {
-  bool a_must_redraw = ATOMIC_GET(atomic_must_redraw);
-  if (a_must_redraw){
-    ATOMIC_SET(atomic_must_redraw, false);
+  bool a_must_redraw = ATOMIC_COMPARE_AND_SET_BOOL(atomic_must_redraw, true, false);
+  if (a_must_redraw)
     window->must_redraw = true;
-  }
   
-  bool a_must_redraw_editor = ATOMIC_GET(atomic_must_redraw_editor);
-  if (a_must_redraw_editor){
-    ATOMIC_SET(atomic_must_redraw_editor, false);
+  bool a_must_redraw_editor = ATOMIC_COMPARE_AND_SET_BOOL(atomic_must_redraw_editor, true, false);
+  if (a_must_redraw_editor)
     window->must_redraw_editor = true;
-  }
   
-  bool a_must_calculate = ATOMIC_GET(atomic_must_calculate_coordinates);
-  if (a_must_calculate){
-    ATOMIC_SET(atomic_must_calculate_coordinates, false);
+  bool a_must_calculate = ATOMIC_COMPARE_AND_SET_BOOL(atomic_must_calculate_coordinates, true, false);
+  if (a_must_calculate)
     window->must_calculate_coordinates = true;
-  }
 }
 
 
