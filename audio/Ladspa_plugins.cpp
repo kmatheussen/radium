@@ -93,6 +93,7 @@ struct TypeData{
   float *max_values;
   bool uses_two_handles;
 
+  LADSPA_PortRangeHintDescriptor *hint_descriptors;
   const char **effect_names;
 };
 }
@@ -308,6 +309,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     }
   }
 
+
   if(descriptor->activate!=NULL){
     descriptor->activate(data->handles[0]);
     if(type_data->uses_two_handles==true)
@@ -408,7 +410,7 @@ static void set_effect_value(SoundPlugin *plugin, int time, int effect_num, floa
 
   if(value_format==PLUGIN_FORMAT_SCALED){
 
-    LADSPA_PortRangeHintDescriptor hints = get_hintdescriptor(type,effect_num);
+    LADSPA_PortRangeHintDescriptor hints = type_data->hint_descriptors[effect_num];
 
     if(LADSPA_IS_HINT_LOGARITHMIC(hints)){
 
@@ -450,7 +452,7 @@ static float get_effect_value(SoundPlugin *plugin, int effect_num, enum ValueFor
 #endif
 
   if(value_format==PLUGIN_FORMAT_SCALED){
-    const LADSPA_PortRangeHintDescriptor hints = get_hintdescriptor(type,effect_num);
+    const LADSPA_PortRangeHintDescriptor hints = type_data->hint_descriptors[effect_num];
 
     if(LADSPA_IS_HINT_LOGARITHMIC(hints)){
 
@@ -477,8 +479,9 @@ static const char *get_effect_name(SoundPlugin *plugin, int effect_num){
 }
 
 static int get_effect_format(SoundPlugin *plugin, int effect_num){
-  const struct SoundPluginType *type = plugin->type;
-  const LADSPA_PortRangeHintDescriptor hints = get_hintdescriptor(type,effect_num);
+  TypeData *type_data = (struct TypeData*)plugin->type->data;
+  
+  const LADSPA_PortRangeHintDescriptor hints = type_data->hint_descriptors[effect_num];
 
   if(LADSPA_IS_HINT_TOGGLED(hints))
     return EFFECT_FORMAT_BOOL;
@@ -651,6 +654,10 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
     type_data->min_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
     type_data->default_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
     type_data->max_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
+
+    type_data->hint_descriptors = (LADSPA_PortRangeHintDescriptor*)V_calloc(sizeof(LADSPA_PortRangeHintDescriptor), plugin_type->num_effects);
+    for(int i = 0 ; i < plugin_type->num_effects ; i++)
+      type_data->hint_descriptors[i] = get_hintdescriptor(plugin_type,i);
 
     {
       int effect_num = 0;

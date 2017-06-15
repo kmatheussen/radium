@@ -219,8 +219,8 @@ public:
     can_start_main_loop.wait();
 
 #ifdef FOR_MACOSX
-    bool started = false;
-    printf("  Trying to call soundproducer_queue.get();\n");
+    //bool started = false;
+    //printf("  Trying to call soundproducer_queue.get();\n");
 #endif
 
     while(true){
@@ -268,10 +268,10 @@ public:
       
 
 #ifdef FOR_MACOSX
-      if (started==false){
-        printf("  Success. Running Runner thread main loop started.\n");
-        started = true;
-      }
+      //if (started==false){
+      //  printf("  Success. Running Runner thread main loop started.\n");
+      //  started = true;
+      //}
 #endif
 
       if (ATOMIC_GET(must_exit)) {
