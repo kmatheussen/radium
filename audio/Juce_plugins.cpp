@@ -288,18 +288,24 @@ namespace{
     }
   };
 
-  static bool is_vst2(const struct SoundPluginType *type){
+  static bool is_vst2(const struct SoundPluginType *type) {
     return !strcmp(type->type_name, "VST");
   }
   
-  static bool is_vst2(const SoundPlugin *plugin){
+  static bool is_vst2(const SoundPlugin *plugin) {
     return is_vst2(plugin->type);
   }
-  
-  static bool is_vst3(const SoundPlugin *plugin){
+
+  static bool is_vst3(const SoundPlugin *plugin) {
     return !strcmp(plugin->type->type_name, "VST3");
   }
 
+  /*
+  static bool is_vst(const SoundPlugin *plugin) {
+    return is_vst2(plugin) || is_vst3(plugin);
+  }
+  */
+  
   /*
   static bool is_vst2(AudioProcessor *processor){
     return processor->wrapperType == AudioProcessor::wrapperType_VST;
@@ -379,7 +385,7 @@ namespace{
   */
 
   struct TypeData{
-    const wchar_t *file_or_identifier; // used by Juce
+    const wchar_t *file_or_identifier; // used by Juce.
     PluginDescription description;
     const char **effect_names = NULL; // set the first time the plugin is loaded
     bool has_shown_noncompatible_warning = false; // TODO: recreate_from_state is called twice when loading preset.
@@ -1147,11 +1153,9 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
   String errorMessage;
 
   const PluginDescription &description = type_data->description;
-  
-  bool exists = File (description.fileOrIdentifier).exists();
-  printf("  Trying to load -%s-. Exists? %d. Identifier: -%s-\n", STRING_get_chars(type_data->file_or_identifier),exists?1:0,description.createIdentifierString().toRawUTF8());
-  //getchar();
 
+  printf("  Trying to load -%s-. Identifier: -%s-\n", STRING_get_chars(type_data->file_or_identifier),description.createIdentifierString().toRawUTF8());
+  
   {
     radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
     
