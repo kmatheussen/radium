@@ -111,9 +111,9 @@ void T1_wait_until_t3_got_t2_data(void){
 */
 
 bool T3_use_t2_thread(void){
-  bool state = ATOMIC_GET(g_use_t2_thread);
+  enum Use_T2_Thread state = ATOMIC_GET(g_use_t2_thread);
   R_ASSERT(state != Use_T2_Thread::UNINITIALIZED);
-  
+
   return state==Use_T2_Thread::YES;
 }
 
@@ -281,14 +281,10 @@ void T1_start_t2_thread(QOpenGLContext *widget_context){
 
 void T1_ensure_t2_is_initialized(void){
   if (ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::UNINITIALIZED){
-#if FOR_MACOSX
-    ATOMIC_SET(g_use_t2_thread, Use_T2_Thread::NO);
-#else
     if(SETTINGS_read_bool("opengl_draw_in_separate_process",true))
       ATOMIC_SET(g_use_t2_thread, Use_T2_Thread::YES);
     else
       ATOMIC_SET(g_use_t2_thread, Use_T2_Thread::NO);
-#endif
   }
 }
 
