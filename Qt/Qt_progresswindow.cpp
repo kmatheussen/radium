@@ -193,9 +193,14 @@ private:
 }
 
 
+#include "getqapplicationconstructorargs.hpp"
+
+
 int main(int argc, char **argv){
 
-  QApplication app(argc, argv);
+  int new_argc = argc;
+  char **new_argv = getQApplicationConstructorArgs(new_argc, argv);
+  QApplication app(new_argc, new_argv);
 
   int fontsize = atoi(argv[1]);
 

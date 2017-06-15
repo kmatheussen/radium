@@ -1384,12 +1384,12 @@ Qt_Error.o: $(BUILD_DEPENDENCIES) $(P)Qt_Error.cpp
 	$(CCC) $(P)Qt_Error.cpp $(QTOPT)
 
 bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
-	$(CCC) -Wall -Werror $(P)Qt_Error.cpp $(CPPOPT) $(QT_CFLAGS) -DCOMPILE_EXECUTABLE $(QT_GUI_CFLAGS) -o errormessagebin.o
+	$(CCC) -Wall -Werror $(P)Qt_Error.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DCOMPILE_EXECUTABLE $(QT_GUI_CFLAGS) -o errormessagebin.o
 	$(LINKER) `cat buildtype.opt` errormessagebin.o -o bin/radium_error_message $(QT_GUI_LDFLAGS)
 	rm errormessagebin.o
 
 bin/radium_progress_window: $(P)Qt_progresswindow.cpp
-	$(CCC) -Wall -Werror $(P)Qt_progresswindow.cpp $(CPPOPT) $(QT_CFLAGS) -DP_CLIENT $(QT_GUI_CFLAGS) -o radium_progress_window.o
+	$(CCC) -Wall -Werror $(P)Qt_progresswindow.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DP_CLIENT $(QT_GUI_CFLAGS) -o radium_progress_window.o
 	$(LINKER) `cat buildtype.opt` radium_progress_window.o -o bin/radium_progress_window $(QT_GUI_LDFLAGS)
 	rm radium_progress_window.o
 
@@ -2072,7 +2072,7 @@ audio/system_compressor.cpp: audio/system_compressor.dsp
 	$(FAUST) -I `pwd`/audio -vec -cn Faust_system_compressor audio/system_compressor.dsp -o audio/system_compressor.cpp
 
 bin/crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) -o crashbin.o
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) -o crashbin.o
 	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm crashbin.o
 

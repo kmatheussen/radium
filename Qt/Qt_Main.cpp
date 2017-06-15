@@ -2354,8 +2354,11 @@ int radium_main(char *arg){
   g_qtgui_exec_has_started = true;
 
   updateWidgetRecursively(g_main_window);
-  main_window->updateGeometry();
+
   main_window->adjustSize();
+  main_window->updateGeometry();
+  main_window->resize(main_window->width()+100, main_window->height()+100);
+  
   moveWindowToCentre(main_window);
   main_window->show();
   updateWidgetRecursively(g_main_window);
@@ -2845,7 +2848,9 @@ int main(int argc, char **argv){
   QLocale::setDefault(QLocale::C);
 
   // Create application here in order to get default style. (not recommended, but can't find another way)
-  qapplication=new MyApplication(argc,argv);
+  int new_argc = argc;
+  char **new_argv = getQApplicationConstructorArgs(new_argc, argv);
+  qapplication=new MyApplication(new_argc,new_argv);
   qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
 
 

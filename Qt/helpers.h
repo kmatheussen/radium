@@ -18,6 +18,7 @@
 #include "../common/keyboard_focus_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_system_proc.h"
+#include "getqapplicationconstructorargs.hpp"
 
 #include "../api/api_proc.h"
 
