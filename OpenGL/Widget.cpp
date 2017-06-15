@@ -1020,10 +1020,10 @@ private:
 
       uint32_t mask;
             
-      if (sv->block_is_visible)
-        mask = (uint32_t)-1; // i.e. paint everything.
-      else
+      if (sv->block_is_visible) 
         mask = getMask(upper,lower,GE_get_slice_size(t2_data->painting_data));
+      else
+        mask = (uint32_t)-1; // i.e. paint everything.
       
       _rendering->setEnableMask(mask);
     }
