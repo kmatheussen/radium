@@ -91,8 +91,19 @@ int getLineZoomBlock(int blocknum, int windownum){
   struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
   if (wblock==NULL)
     return 1;
-
+  
   return GetLineZoomBlock(wblock);
+}
+
+dyn_t getLineZoomBlockRatio(int blocknum, int windownum){
+  int lz = getLineZoomBlock(blocknum, windownum);
+
+  R_ASSERT(lz!=0);
+  
+  if (lz > 0)
+    return DYN_create_int(lz);
+  else
+    return DYN_create_ratio(make_ratio(1, -lz));
 }
 
 void expandLine(int numlines,int windownum){

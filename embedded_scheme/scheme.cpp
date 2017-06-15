@@ -1214,14 +1214,16 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note) {
   Place last_place = p_Last_Pos(block);
 
   s7extra_add_history(__func__, CR_FORMATEVENT("========== s7callling quantitize-note"));
-     
+
+  Ratio quant = RATIO_divide(root->quantitize_options.quant, DYN_get_ratio(getLineZoomBlockRatio(block->l.num, -1)));
+                           
   s7_pointer result = catch_call(s7,
                                  s7_list(s7,
                                          5,
                                          scheme_func,
                                          place_to_ratio(&note->l.p),
                                          place_to_ratio(&note->end),
-                                         s7_make_ratio(s7, root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator),
+                                         s7_make_ratio(s7, quant.numerator, quant.denominator),
                                          place_to_ratio(&last_place),
                                          s7_make_integer(s7, root->quantitize_options.type)
                                          )

@@ -1011,13 +1011,14 @@
                     (create-fxnode 8 5 'e)))
                                            
 
+#||
 (define (simple-quantitize-fxs-internal fxs)
   (map (lambda (fx)
          (create-fx (fx-name fx)
                     (fx-instrument fx)
                     (simple-quantitize-fxnodes (fx-nodes fx))))
        fxs))
-
+||#
 
 (define (simple-quantitize-fxs! blocknum tracknum fxnum quant)
   (define old-fxs (get-track-fxs blocknum tracknum))

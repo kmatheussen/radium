@@ -315,7 +315,7 @@ public slots:
 
     // Also see lzqlineedit.h, where the 'wheelEvent' handler is implemented.
 
-    printf("lz\n");
+    //printf("lz\n");
     struct Tracker_Windows *window = root->song->tracker_windows;
     struct WBlocks *wblock = window->wblock;
 

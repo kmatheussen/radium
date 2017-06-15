@@ -74,13 +74,15 @@ void Quantitize_fxs(struct Tracker_Windows *window, struct WBlocks *wblock, stru
   Undo_start_ignoring_undo_operations();{
 
     int fxnum = getFx(fxs->fx->name, wtrack->l.num, fxs->fx->patch->id, wblock->l.num, window->l.num);
-                   
+
+    Ratio quant = RATIO_divide(root->quantitize_options.quant, DYN_get_ratio(getLineZoomBlockRatio(wblock->l.num, -1)));
+    
     SCHEME_eval(
                 talloc_format("(simple-quantitize-fxs! %d %d %d %d/%d)",
                               wblock->block->l.num,
                               wtrack->track->l.num,
                               fxnum,
-                              root->quantitize_options.quant.numerator, root->quantitize_options.quant.denominator
+                              quant.numerator, quant.denominator
                               )
                 );
 

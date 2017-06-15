@@ -587,50 +587,6 @@ typedef struct{
 
 #include "ratio_type.h"
 
-// Function copied from s7 scheme. (c_gcd)
-static inline int64_t ratio_gcd(int64_t u, int64_t v){
-  R_ASSERT_RETURN_IF_FALSE2(v>0, 1);
-
-  int64_t a, b;
-  a = u;
-  b = v;
-  while (b != 0)
-    {
-      int64_t temp;
-      temp = a % b;
-      a = b;
-      b = temp;
-    }
-  return(a);
-}
-
-static inline Ratio make_ratio(int64_t numerator, int64_t denominator) {
-#if !defined(RELEASE)
-  if (numerator!=0 && denominator!=0){
-    R_ASSERT(numerator>=0);
-    R_ASSERT(denominator>0);
-  }
-#endif
-
-  Ratio ratio = {numerator, denominator};
-  return ratio;
-}
-
-static inline Ratio ratio_minimize(const Ratio a){
-  int64_t gcd_a = ratio_gcd(a.numerator, a.denominator);
-  return make_ratio(a.numerator/gcd_a, a.denominator/gcd_a);
-}
-
-static inline bool ratio_equal(const Ratio a, const Ratio b){
-  if (a.numerator==b.numerator && a.denominator==b.denominator)
-    return true;
-
-  Ratio a2 = ratio_minimize(a);
-  Ratio b2 = ratio_minimize(b);
-
-  return a2.numerator==b2.numerator && a2.denominator==b2.denominator;
-}
-
 static inline char *ratio_to_string(const Ratio ratio){
   return talloc_format("%d/%d", ratio.numerator, ratio.denominator);
 }
@@ -716,7 +672,7 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
     case ARRAY_TYPE:
       return DYNVEC_equal(a1.array, a2.array);
     case RATIO_TYPE:
-      return ratio_equal(*a1.ratio, *a2.ratio);
+      return RATIO_equal(*a1.ratio, *a2.ratio);
     case BOOL_TYPE:
       return a1.bool_number==a2.bool_number;
   }
@@ -816,7 +772,7 @@ static inline dyn_t DYN_create_ratio(const Ratio ratio){
 }
 
 static inline dyn_t DYN_create_place(const Place place){
-  return DYN_create_ratio(ratio_minimize(make_ratio(place.counter + place.line*place.dividor, place.dividor)));
+  return DYN_create_ratio(RATIO_minimize(make_ratio(place.counter + place.line*place.dividor, place.dividor)));
 }
 
 // (There is also a DYN_get_place function in placement_proc.h, and a DYN_get_liberal_ratio function further down in this file)

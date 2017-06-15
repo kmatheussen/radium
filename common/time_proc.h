@@ -40,8 +40,29 @@ extern LANGSPEC Place STime2Place(
                                   STime time
                                   );
 
-extern LANGSPEC bool isSTimeInBlock(const struct Blocks *block,STime time);
-extern LANGSPEC STime getBlockSTimeLength(const struct Blocks *block);
+static inline STime getBlockSTimeLength(const struct Blocks *block){
+  if (block==NULL){
+#if !defined(RELEASE)
+    abort();
+#else
+    return 48000; // This should never happen, and it has never happened.
+#endif
+  }
+  if (block->num_lines != block->num_time_lines) // 'num_time_lines' is the actual allocated number of lines.
+    RWarning("block->num_lines != block->num_time_lines: %d != %d",block->num_lines, block->num_time_lines);
+    
+  return block->times[block->num_time_lines].time;
+}
+
+static inline bool isSTimeInBlock(const struct Blocks *block,STime time){
+  STime block_length = getBlockSTimeLength(block);
+  if(time > block_length)
+    return false;
+  else
+    return true;
+}
+
+
 
 extern LANGSPEC void TIME_block_tempos_have_changed(struct Blocks *block);
 extern LANGSPEC void TIME_block_LPBs_have_changed(struct Blocks *block);

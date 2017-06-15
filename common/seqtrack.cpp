@@ -150,8 +150,10 @@ static struct SeqBlock *SEQBLOCK_create(struct Blocks *block){
 // Preserves original pause times.
 static void legalize_seqtrack_timing(struct SeqTrack *seqtrack, bool is_gfx){
 
+#if !defined(RELEASE)
   if (!is_gfx)
     R_ASSERT(PLAYER_current_thread_has_lock());
+#endif
   
   int64_t last_end_time = 0;
   int64_t time_to_add = 0;
@@ -177,6 +179,7 @@ static void legalize_seqtrack_timing(struct SeqTrack *seqtrack, bool is_gfx){
 }
 
 void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack){
+  radium::PlayerRecursiveLock lock;
   legalize_seqtrack_timing(seqtrack, false);
 }
 
@@ -548,9 +551,7 @@ struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state){
   for(int i=0;i<num_seqblocks;i++)
     VECTOR_push_back(&seqtrack->seqblocks, SEQBLOCK_create_from_state(HASH_get_hash_at(state, "seqblock", i)));
 
-  PLAYER_lock();{
-    RT_legalize_seqtrack_timing(seqtrack); // Block length may change slightly between versions due to different ways to calculate timings.
-  }PLAYER_unlock();
+  RT_legalize_seqtrack_timing(seqtrack); // Block length may change slightly between versions due to different ways to calculate timings.
 
   return seqtrack;
 }
