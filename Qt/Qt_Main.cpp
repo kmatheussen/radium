@@ -192,7 +192,7 @@ void obtain_keyboard_focus_without_greying(void){
     editor_has_keyboard = false;
     g_do_grey_editor = false;
   }
-  root->song->tracker_windows->must_redraw_editor = true;
+  //root->song->tracker_windows->must_redraw_editor = true;
 }
 
 void obtain_keyboard_focus(void){
@@ -200,7 +200,7 @@ void obtain_keyboard_focus(void){
     editor_has_keyboard = false;
     g_do_grey_editor = !editor_has_keyboard_focus();
   }
-  root->song->tracker_windows->must_redraw_editor = true;
+  //root->song->tracker_windows->must_redraw_editor = true;
 }
 
 void release_keyboard_focus(void){
@@ -208,7 +208,7 @@ void release_keyboard_focus(void){
     editor_has_keyboard = true;
     g_do_grey_editor = !editor_has_keyboard_focus();
   }
-  root->song->tracker_windows->must_redraw_editor = true;
+  //root->song->tracker_windows->must_redraw_editor = true;
 }
 
 void obtain_keyboard_focus_counting(void){
@@ -216,7 +216,7 @@ void obtain_keyboard_focus_counting(void){
     someone_else_has_keyboard_counting++;
     g_do_grey_editor = !editor_has_keyboard_focus();
   }
-  root->song->tracker_windows->must_redraw_editor = true;
+  //root->song->tracker_windows->must_redraw_editor = true;
 }
 
 void release_keyboard_focus_counting(void){
@@ -227,7 +227,7 @@ void release_keyboard_focus_counting(void){
       someone_else_has_keyboard_counting--;
     g_do_grey_editor = !editor_has_keyboard_focus();
   }
-  root->song->tracker_windows->must_redraw_editor = true;
+  //root->song->tracker_windows->must_redraw_editor = true;
 }
 
 
