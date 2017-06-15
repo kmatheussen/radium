@@ -266,11 +266,30 @@ static void unlock_player(void){
   LOCK_UNLOCK(player_lock);
 }
 
+#define MAX_LOCK_DURATION_MS 0.05
+#define MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS 0.1 // Set this value lower to get more messages about spending too much time holding the player lock.
+
 static bool g_signalled_someone = false;
+
+static DEFINE_ATOMIC(bool, g_player_wants_player_lock) = false;
 
 static void RT_lock_player(){
   R_ASSERT(THREADING_is_player_thread());
+
+  ATOMIC_SET(g_player_wants_player_lock, true);
+
+#if !defined(RELEASE)
+  double start = TIME_get_ms();{
+    lock_player();
+  }double dur = TIME_get_ms() - start;
+  if (dur > MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS)
+    RT_message("RT_lock_player: Waiting longer than %fms to get lock: %fms", MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS, dur);
+#else
   lock_player();
+#endif
+
+  ATOMIC_SET(g_player_wants_player_lock, false);
+    
   g_signalled_someone = player_lock_semaphore.signalIfAnyoneIsWaiting();
 }
 
@@ -287,7 +306,6 @@ static priority_t g_priority_used_before_obtaining_PLAYER_lock; // Protected by 
 
 static radium::Time g_player_lock_timer; // Calling 'restart' is protected by the player lock. ('elapsed' is thread safe)
 
-#define MAX_LOCK_DURATION_MS 1
 
 // Set to 0 since it takes a very long time to stop playing if we wait for player. TODO: Set to 1 if block size is very low.
 #define DO_WAIT_FOR_PLAYER_TO_FINISH_BEFORE_ACQUIRING_PLAYER_LOCK 0
@@ -365,10 +383,10 @@ static void unlock_player_from_nonrt_thread(int iteration){
 
 #if !defined(RELEASE)
   printf("Elapsed: %f. (%d)\n", elapsed, iteration);
-  if(elapsed > MAX_LOCK_DURATION_MS){  // The lock is realtime safe, but we can't hold it a long time.
+  if(elapsed > MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS){  // The lock is realtime safe, but we can't hold it a long time.
     addMessage(talloc_format("Warning: Holding player lock for more than %fms (%d): %f<br>\n<pre>%s</pre>\n",
                              iteration,
-                             MAX_LOCK_DURATION_MS,
+                             MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS,
                              elapsed,
                              JUCE_get_backtrace()));
   }
@@ -380,11 +398,17 @@ void PLAYER_maybe_pause_lock_a_little_bit(int iteration){
   R_ASSERT_NON_RELEASE(!THREADING_is_player_thread());
   R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
 
+  bool player_wants_lock = ATOMIC_GET(g_player_wants_player_lock);
+#if defined(RELEASE)
+  float elapsed = player_wants_lock ? 0.0 : g_player_lock_timer.elapsed();
+#else
   float elapsed = g_player_lock_timer.elapsed();
-  if (elapsed > MAX_LOCK_DURATION_MS){
+#endif
+    
+  if (player_wants_lock || elapsed > MAX_LOCK_DURATION_MS){
     unlock_player_from_nonrt_thread(iteration);
 #if !defined(RELEASE)
-    printf("   Player lock pausing. Elapsed: %f.\n", elapsed);
+    printf("   Player lock pausing. Player wants lock: %d. Elapsed: %f.\n", player_wants_lock, elapsed);
 #endif
 #if !DO_WAIT_FOR_PLAYER_TO_FINISH_BEFORE_ACQUIRING_PLAYER_LOCK
     msleep(1);
