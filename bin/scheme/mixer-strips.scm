@@ -1415,7 +1415,7 @@
   (<gui> :set-min-width gui min-width)
   ;;(<gui> :set-max-width gui width)
   ;;(<gui> :set-size-policy gui #f #t)
-  (<gui> :set-layout-spacing gui 2 4 4 4 4)
+  (<gui> :set-layout-spacing gui 2 4 4 4 0)
 
   (define background-color (get-mixer-strip-background-color gui instrument-id))
 
@@ -1468,7 +1468,8 @@
   (<gui> :add gui (create-mixer-strip-pan instrument-id system-background-color background-color pan-height))
   (<gui> :add gui (create-mixer-strip-mutesolo instrument-id background-color mutesolo-height #f))
   (<gui> :add gui (create-mixer-strip-volume instrument-id meter-instrument-id background-color #f) 1)
-  (<gui> :add gui (create-mixer-strip-comment instrument-id comment-height))
+  (define comment (create-mixer-strip-comment instrument-id comment-height))
+  (<gui> :add gui comment)
 
   (if (not is-current-mixer-strip)
       (create-current-instrument-border gui instrument-id))
