@@ -3606,9 +3606,11 @@ void gui_show(int64_t guinum){
 
   QWidget *w = gui->_widget;
 
-  if (gui->_have_set_size==false && gui->_have_been_opened_before==false)
+  if (gui->_have_set_size==false && gui->_have_been_opened_before==false){
     w->adjustSize();
-
+    w->updateGeometry();
+  }
+  
   gui->_have_been_opened_before = true;
   
   //pauseUpdates(w);
@@ -3809,6 +3811,7 @@ void gui_moveToParentCentre(int64_t guinum){
     return;
 
   QWidget *w = gui->_widget;
+
   w->updateGeometry();
 
   moveWindowToCentre(w);
@@ -4068,8 +4071,8 @@ void gui_minimizeAsMuchAsPossible(int64_t guinum){
   if (gui==NULL)
     return;
 
-  gui->_widget->updateGeometry();
   gui->_widget->adjustSize();
+  gui->_widget->updateGeometry();
 }
 
 

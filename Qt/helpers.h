@@ -56,11 +56,18 @@ static QPoint getCentrePosition(QWidget *parent, int width, int height){
 }
 
 static inline void moveWindowToCentre(QWidget *widget){
-  QPoint point = getCentrePosition(widget->parentWidget(), widget->width(), widget->height());
+  int width = R_MAX(widget->width(), 100);
+  int height = R_MAX(widget->height(), 50);
+  QPoint point = getCentrePosition(widget->parentWidget(), width, height);
 
   widget->move(point);
 }
 
+static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget){
+  widget->adjustSize();
+  widget->updateGeometry();
+  moveWindowToCentre(widget);
+}
 
 static bool can_widget_be_parent_questionmark(QWidget *w){
   if (w==NULL)
@@ -358,7 +365,7 @@ struct MyQMessageBox : public QMessageBox {
     } else {
       set_window_flags(this, true);
     }
-    moveWindowToCentre(this);
+    adjustSizeAndMoveWindowToCentre(this);
   }
 
  public:
@@ -491,8 +498,6 @@ namespace{
       }else{
 
         //printf("   88888888888888888888888888888888888888888888 NO geometry stored\n");
-
-        widget->updateGeometry();
 
         moveWindowToCentre(widget);
       }

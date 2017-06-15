@@ -202,8 +202,13 @@ static void legalize_pos(MyReqType *reqtype){
   if (w->parent()!=NULL)
     return;
 
+  w->adjustSize();
+  w->updateGeometry();
+
+  int frame_width = R_MAX(100, w->width());
+  
   int width = QApplication::desktop()->screenGeometry().width();
-  int legal_pos = width - w->width();
+  int legal_pos = width - frame_width;
   //printf("legal_pos: %d. width: %d, x: %d\n",legal_pos, width, w->x());
 
   if (w->x() > legal_pos){
