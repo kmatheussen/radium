@@ -80,6 +80,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "radium_proc.h"
 #include "api_gui_proc.h"
 
+
+QByteArray g_filedialog_geometry;
+
+
 // To make sure we don't sent double click events to a widget that has just been opened. (seems like a minor qt quirk/bug)
 static QPointer<QWidget> g_last_pressed_widget = NULL;
 static QPointer<QWidget> g_last_released_widget = NULL;
@@ -187,16 +191,20 @@ static QPointer<QWidget> g_last_released_widget = NULL;
     Gui::changeEvent(event);                     \
   }
 
-
-#define OVERRIDERS(classname)                                           \
+#define OVERRIDERS_WITHOUT_SETVISIBLE_AND_HIDE(classname)               \
   MOUSE_OVERRIDERS(classname)                                           \
   KEY_OVERRIDERS(classname)                                             \
   DOUBLECLICK_OVERRIDER(classname)                                      \
   CLOSE_OVERRIDER(classname)                                            \
   RESIZE_OVERRIDER(classname)                                           \
-  PAINT_OVERRIDER(classname)                                            \
-  SETVISIBLE_OVERRIDER(classname)                                       \
+  PAINT_OVERRIDER(classname)
+  
+#define OVERRIDERS(classname)                           \
+  OVERRIDERS_WITHOUT_SETVISIBLE_AND_HIDE(classname)     \
+  SETVISIBLE_OVERRIDER(classname)                       \
   HIDE_OVERRIDER(classname)                                             
+  
+
 //CHANGE_OVERRIDER(classname)                                             
   /*
   SHOW_OVERRIDER(classname)                                            \
@@ -2314,7 +2322,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     Q_OBJECT;
     
   public:
-    
+
     FileRequester(QString header_text, QString dir, QString filetypename, QString postfixes, bool for_loading)
       : QFileDialog(NULL, header_text, dir, FileRequester::get_postfixes_filter(filetypename, postfixes))
       , Gui(this)
@@ -2329,8 +2337,18 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         setAcceptMode(QFileDialog::AcceptOpen);
       else
         setAcceptMode(QFileDialog::AcceptSave);
+
+      if (!g_filedialog_geometry.isEmpty()){
+        restoreGeometry(g_filedialog_geometry);
+      }
+      
+      _have_set_size = true;
     }
 
+    ~FileRequester(){
+      g_filedialog_geometry = saveGeometry();
+    }
+    
     static QString get_postfixes_filter(QString type, QString postfixes){
       QString postfixes2 = postfixes==NULL ? "*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3" : QString(postfixes);
       

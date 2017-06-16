@@ -454,6 +454,8 @@ static inline void updateWidgetRecursively(QWidget *widget){
   }
 }
 
+// uncomment if needed.
+//extern QByteArray g_filedialog_geometry;
 
 namespace{
 
@@ -535,7 +537,7 @@ namespace{
 
   };
 
-  
+
 struct RememberGeometryQDialog : public QDialog {
 
   RememberGeometry remember_geometry;
