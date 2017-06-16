@@ -1201,6 +1201,8 @@
                                      (<ra> :show-velocity-help-window))
               "Help FX text" (lambda ()
                                (<ra> :show-fx-help-window))
+              "Help Swing text" (lambda ()
+                                  (<ra> :show-swing-help-window))
               ))
 
 #||        
