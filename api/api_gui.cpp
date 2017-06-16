@@ -80,15 +80,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "radium_proc.h"
 #include "api_gui_proc.h"
 
+// To make sure we don't sent double click events to a widget that has just been opened. (seems like a minor qt quirk/bug)
+static QPointer<QWidget> g_last_pressed_widget = NULL;
+static QPointer<QWidget> g_last_released_widget = NULL;
 
 #define MOUSE_OVERRIDERS(classname)                                     \
   void mousePressEvent(QMouseEvent *event) override{                    \
+    g_last_pressed_widget = this;                                       \
     if(g_radium_runs_custom_exec) return;                               \
     if (_mouse_callback==NULL || !Gui::mousePressEvent(event))          \
       classname::mousePressEvent(event);                                \
   }                                                                     \
                                                                         \
   void mouseReleaseEvent(QMouseEvent *event) override {                 \
+    g_last_released_widget = this;                                      \
     if(g_radium_runs_custom_exec) return;                               \
     if (_mouse_callback==NULL || !Gui::mouseReleaseEvent(event))        \
       classname::mouseReleaseEvent(event);                              \
@@ -99,6 +104,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     if (_mouse_callback==NULL || !Gui::mouseMoveEvent(event))           \
       classname::mouseMoveEvent(event);                                 \
   }
+
+#define DOUBLECLICK_OVERRIDER(classname)                                \
+  void mouseDoubleClickEvent(QMouseEvent *event) override{              \
+    if(g_radium_runs_custom_exec) return;                               \
+    if (_doubleclick_callback==NULL)                                    \
+      classname::mouseDoubleClickEvent(event);                          \
+    else if(this==g_last_pressed_widget && this==g_last_released_widget) \
+      Gui::mouseDoubleClickEvent(event);                                \
+  }                                                                     
 
 
 #define KEY_OVERRIDERS(classname)                                       \
@@ -114,16 +128,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
       classname::keyReleaseEvent(event);                                \
   }
 
-
-
-#define DOUBLECLICK_OVERRIDER(classname)                                \
-  void mouseDoubleClickEvent(QMouseEvent *event) override{              \
-    if(g_radium_runs_custom_exec) return;                               \
-    if (_doubleclick_callback==NULL)                                    \
-      classname::mouseDoubleClickEvent(event);                          \
-    else                                                                \
-      Gui::mouseDoubleClickEvent(event);                                \
-  }                                                                     
 
 #define CLOSE_OVERRIDER(classname)                                      \
   void closeEvent(QCloseEvent *ev) override {                           \
