@@ -61,7 +61,7 @@ public:
   ~Vector(){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
-    // Don't want to free static global memory during shut down since it may be used by threads which are not shut down.
+    // Don't want to free static global memory during shut down since it may be used by threads which are not shut down. (hmm, this will probably cover bugs)
     if (g_qtgui_has_stopped==false){
       V_free(elements);      
       elements = NULL; // For debugging
@@ -127,14 +127,14 @@ public:
   // but it can not be called in parallel with itself or any other non-const/mutating function.
   // (it is not asserted that this function is not called in parallell with itself)
   //
-  // post_add MUST be called after calling add after calling ensure_there_is_room_for_one_more_without_having_to_allocate_memory.
-  void ensure_there_is_room_for_one_more_without_having_to_allocate_memory(void){
+  // post_add MUST be called after calling add after calling ensure_there_is_room_for_more_without_having_to_allocate_memory.
+  void ensure_there_is_room_for_more_without_having_to_allocate_memory(int how_many = 1){
     LOCKASSERTER_SHARED(&lockAsserter);
 
     R_ASSERT(elements_ready_for_freeing == NULL);
     R_ASSERT(next_elements == NULL);
     
-    int new_num_elements = num_elements+1;
+    int new_num_elements = num_elements + how_many;
 
     R_ASSERT(num_elements_max > 0);
       
@@ -205,7 +205,7 @@ private:
     memset(&elements[num_elements], 0, sizeof(T)); // for debugging
   }
 
-  int find_pos_internal(T t) const {
+  int find_pos_internal(const T t) const {
     int pos;
     
     for(pos=0 ; pos<num_elements ; pos++)
@@ -276,7 +276,7 @@ public:
   }
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
-  int find_pos(T t) const {
+  int find_pos(const T t) const {
     LOCKASSERTER_SHARED(&lockAsserter);
 
     return find_pos_internal(t);
@@ -310,6 +310,13 @@ public:
     T ret = at(pos);
     remove_pos(pos, keep_order);
     return ret;
+  }
+
+  template <class S>
+  void sort(S comp){
+    LOCKASSERTER_EXCLUSIVE(&lockAsserter);
+    
+    std::sort(&elements[0], &elements[num_elements], comp);
   }
   
   // RT safe

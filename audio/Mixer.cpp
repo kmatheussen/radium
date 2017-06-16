@@ -602,7 +602,7 @@ struct Mixer{
       }
     }
     
-    _sound_producers.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
+    _sound_producers.ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
 
     PLAYER_lock();{
 
@@ -640,7 +640,9 @@ struct Mixer{
 
     _sound_producers.post_add();
   }
-    
+
+  // Called from MIXER_remove_SoundProducer, which is called from ~SoundProducer
+  //
   void remove_SoundProducer(SoundProducer *sound_producer){
     const SoundPlugin *plugin = SP_get_plugin(sound_producer);
     
@@ -1630,6 +1632,7 @@ void MIXER_add_SoundProducer(SoundProducer *sound_producer){
   g_mixer->add_SoundProducer(sound_producer);
 }
 
+// Called from ~SoundProducer
 void MIXER_remove_SoundProducer(SoundProducer *sound_producer){
   g_mixer->remove_SoundProducer(sound_producer);
 }

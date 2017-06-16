@@ -825,7 +825,7 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mo
 
     Chip *before=NULL;
     Chip *after=NULL;
-    get_before_and_after_chip(chip, &before, &after);
+    bool is_slash_was_connected = get_before_and_after_chip(chip, &before, &after);
 
     UNDO_OPEN_REC();{
       
@@ -838,7 +838,7 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mo
         }
       }END_VECTOR_FOR_EACH;
       
-      if(before!=NULL)
+      if(is_slash_was_connected)
         CHIP_connect_chips(scene, before, after);
       
     }UNDO_CLOSE();

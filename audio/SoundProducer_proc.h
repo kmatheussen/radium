@@ -29,6 +29,21 @@ struct SoundProducer;
 #include "../common/Vector.hpp"
 
 
+struct LinkParameter{
+  SoundProducer *source;
+  int source_ch;
+  SoundProducer *target;
+  int target_ch;
+
+  LinkParameter(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch)
+    : source(source)
+    , source_ch(source_ch)
+    , target(target)
+    , target_ch(target_ch)
+  {}
+};
+
+
 enum SoundProducerRunningState {HASNT_RUN_YET, IS_RUNNING, FINISHED_RUNNING};
 
 int64_t SP_get_id(const SoundProducer *producer);

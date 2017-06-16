@@ -624,7 +624,7 @@ void MIDI_insert_recorded_midi_events(void){
  *********************************************************/
 
 void MIDI_add_midi_learn(MidiLearn *midi_learn){
-  g_midi_learns.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
+  g_midi_learns.ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
 
   {
     radium::ScopedMutex lock(g_midi_learns_mutex); // obtain this lock first to avoid priority inversion

@@ -198,7 +198,7 @@ public:
     int ret = automation->automation.add_node(create_node(seqtime2, value2, logtype));
     
     if (already_here==false){
-      _automations.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
+      _automations.ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
       {
         radium::PlayerLock lock;    
         _automations.push_back(automation);

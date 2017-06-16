@@ -78,6 +78,8 @@ static inline int myisinf(float val){
 
 #include "SoundProducer_proc.h"
 
+
+
 // Updated each block in Mixer.cpp
 bool g_rt_always_run_buses = false;
 
@@ -244,11 +246,11 @@ struct SoundProducerLink {
 
   bool is_active;
 
-  DEFINE_ATOMIC(bool, should_be_turned_off);
+  bool should_be_turned_off = false;
 
-  void turn_off(void){
-    R_ASSERT(ATOMIC_GET(should_be_turned_off)==false);
-    ATOMIC_SET(should_be_turned_off, true);
+  void request_turn_off(void){
+    R_ASSERT_NON_RELEASE(should_be_turned_off==false);
+    should_be_turned_off = true;
   }
 
   bool turn_off_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(void) const {
@@ -262,9 +264,9 @@ struct SoundProducerLink {
     if (turn_off_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis())
       return 0.0f;
 
-    if (ATOMIC_GET_RELAXED(should_be_turned_off))
+    if (should_be_turned_off)
       return 0.0f;
-
+    
     else if (is_bus_link){
       
       int bus_num = SP_get_bus_num(target);
@@ -341,8 +343,6 @@ struct SoundProducerLink {
     , link_volume(1.0)
     , is_active(is_event_link)
   {
-    ATOMIC_SET(should_be_turned_off, false);
-    
     //SMOOTH_init(&volume, get_total_link_volume(), MIXER_get_buffer_size());
     SMOOTH_init(&volume, 0.0f, MIXER_get_buffer_size()); // To fade in, we start with 0.0f as initial volume.
   }
@@ -792,6 +792,7 @@ public:
     //getchar();
   }
 
+  // Called from SP_delete
   ~SoundProducer(){
     R_ASSERT(THREADING_is_main_thread());
 
@@ -878,25 +879,135 @@ public:
     return false;
   }
 
-  static bool add_link(SoundProducerLink *link){
+  // Warning: No check if we would create a recursive connection.
+  static void add_and_remove_links(const radium::Vector<SoundProducerLink*> &to_add, const radium::Vector<SoundProducerLink*> &to_remove){
     R_ASSERT(THREADING_is_main_thread());
 
-    link->source->_output_links.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
-    link->target->_input_links.ensure_there_is_room_for_one_more_without_having_to_allocate_memory();
-
-    PLAYER_lock();{
-
-      link->source->_output_links.push_back(link);
+    // ADD
+    {
+      // A little bit tricky since we need to find out how many more elements that is added to each soundproducerlink vector.
       
-      link->target->_input_links.push_back(link);
+      QMap < radium::Vector<SoundProducerLink*>* , int > howmanys;
+        
+      for(auto *link : to_add){
+        auto *input_linkvector = &link->source->_output_links;
+        auto *output_linkvector = &link->target->_input_links;
+        
+        howmanys[input_linkvector] = howmanys.value(input_linkvector) + 1;
+        howmanys[output_linkvector] = howmanys.value(output_linkvector) + 1;
+
+        printf("..Adding 1 to %p (%d)\n", input_linkvector, howmanys.value(input_linkvector));
+        printf("..Adding 1 to %p (%d)\n", output_linkvector, howmanys.value(output_linkvector));
+      }
+
+      for(auto *linkvector : howmanys.keys()){
+        printf("...Asking %p to ensure room for %d new\n", linkvector, howmanys.value(linkvector));
+        linkvector->ensure_there_is_room_for_more_without_having_to_allocate_memory(howmanys.value(linkvector));
+      }
+    }
+    
+    {
+      radium::PlayerLock lock;
+      
+      // REMOVE
+      for(auto *link : to_remove)
+        link->request_turn_off(); // Do this inside the player lock so that we are sure they all fade out at the same time as the to_add links fades in.
+
+      // ADD
+      for(auto *link : to_add){
+        link->source->_output_links.push_back(link);
+        link->target->_input_links.push_back(link);
+      }
       
       SoundProducer::RT_set_bus_descendant_types();
-    }PLAYER_unlock();
+    }
 
-    link->source->_output_links.post_add();
-    link->target->_input_links.post_add();
 
-    return true;
+    // ADD
+    for(auto *link : to_add){
+      link->source->_output_links.post_add();
+      link->target->_input_links.post_add();
+    }
+
+    // REMOVE
+    for(auto *link : to_remove){
+      PLUGIN_touch(link->source->_plugin);
+      PLUGIN_touch(link->target->_plugin);
+      while(link->can_be_removed()==false){
+        PLUGIN_touch(link->source->_plugin);
+        PLUGIN_touch(link->target->_plugin);
+        PLAYER_memory_debug_wake_up();
+        msleep(5);
+      }
+    }
+
+
+    /*
+
+    // fix later.
+
+    radium::Vector<int> input_remove_poss;
+    radium::Vector<int> output_remove_poss;
+
+    
+    // REMOVE
+    for(auto *link : to_remove){
+      input_remove_poss.push_back(link->target->_input_links.find_pos(link));
+      output_remove_poss.push_back(link->source->_output_links.find_pos(link));
+    }
+
+    
+    // Sort the pos vectors from high to low. If not, positions may not stay legal after removing an element. (doesn't work because we haven't sorted to_remove the same way)
+    input_remove_poss.sort(std::greater<int>());
+    output_remove_poss.sort(std::greater<int>());
+
+
+    // REMOVE
+    {
+      radium::PlayerLock lock;
+
+      int i = 0;
+
+      for(auto *link : to_remove){
+        int iposs = input_remove_poss.at(i);
+        int oposs = output_remove_poss.at(i);
+        fprintf(stderr, "%d: pos: %d %d\n", i, iposs, oposs);
+        
+        PLAYER_maybe_pause_lock_a_little_bit(i);
+        
+        link->target->_input_links.remove_pos(iposs);
+        link->source->_output_links.remove_pos(oposs);
+        
+        i++;
+      }
+      
+    }
+    */
+
+    // REMOVE
+    {
+      radium::PlayerLock lock;
+
+      int i = 0;
+      for(auto *link : to_remove){
+        PLAYER_maybe_pause_lock_a_little_bit(i++);
+        link->target->_input_links.remove(link);
+        link->source->_output_links.remove(link);
+      }
+    }
+
+    // REMOVE
+    for(auto *link : to_remove)
+      delete link;
+  }
+  
+  static void add_link(SoundProducerLink *link){
+    radium::Vector<SoundProducerLink*> to_add;
+    radium::Vector<SoundProducerLink*> to_remove;
+
+    to_add.push_back(link);
+
+    add_and_remove_links(to_add, to_remove);
   }
 
   bool add_eventSoundProducerInput(SoundProducer *source){
@@ -910,7 +1021,9 @@ public:
 
     SoundProducerLink *elink = new SoundProducerLink(source, this, true);
     
-    return SoundProducer::add_link(elink);
+    SoundProducer::add_link(elink);
+
+    return true;
   }
   
   bool add_SoundProducerInput(SoundProducer *source, int source_ch, int target_ch){
@@ -928,66 +1041,24 @@ public:
     link->source_ch = source_ch;
     link->target_ch = target_ch;
     
-    return SoundProducer::add_link(link);
+    SoundProducer::add_link(link);
+
+    return true;
   }
 
   static void remove_links(const radium::Vector<SoundProducerLink*> &links){
-
-      // tell them to turn off
-    for(auto *link : links)
-      link->turn_off();
-  
-    if (PLAYER_is_running()) {
-      PLAYER_memory_debug_wake_up();
-
-      // Wait until all sound links can be removed
-      for(auto *link : links)
-        while(link->can_be_removed()==false){
-          PLUGIN_touch(link->source->_plugin);
-          PLUGIN_touch(link->target->_plugin);
-          PLAYER_memory_debug_wake_up();
-          msleep(10);
-        }
-
-      // Remove
-      PLAYER_lock();{
-        int i = 0;
-        for(auto *link : links){
-          PLAYER_maybe_pause_lock_a_little_bit(i++);
-          link->target->_input_links.remove(link);
-          link->source->_output_links.remove(link);
-        }
-      }PLAYER_unlock();
-      
-    }
-
-    // Delete
-    for(auto *link : links)
-      delete link;
+    radium::Vector<SoundProducerLink*> to_add;
+    
+    add_and_remove_links(to_add, links);
   }
   
   static void remove_link(SoundProducerLink *link){
-    R_ASSERT(THREADING_is_main_thread());
+    radium::Vector<SoundProducerLink*> to_add;
+    radium::Vector<SoundProducerLink*> to_remove;
 
-    link->turn_off();
+    to_remove.push_back(link);
 
-    do{
-      PLUGIN_touch(link->source->_plugin);
-      PLUGIN_touch(link->target->_plugin);
-      PLAYER_memory_debug_wake_up();
-      msleep(1);
-    }while(link->can_be_removed()==false);
-
-    PLAYER_lock();{
-
-      link->target->_input_links.remove(link);
-      
-      link->source->_output_links.remove(link);
-
-      SoundProducer::RT_set_bus_descendant_types();
-    }PLAYER_unlock();
-
-    delete link;    
+    add_and_remove_links(to_add, to_remove);
   }
   
   void remove_eventSoundProducerInput(const SoundProducer *source){
@@ -1007,26 +1078,29 @@ public:
     R_ASSERT(false);
   }
 
+  SoundProducerLink *find_input_link(const SoundProducer *source, int source_ch, int target_ch){
+    //fprintf(stderr,"*** this: %p. Removeing input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
+    for (SoundProducerLink *link : _input_links) {
 
+      if(link->is_bus_link==false && link->is_event_link==false && link->source==source && link->source_ch==source_ch && link->target_ch==target_ch){
+
+        return link;
+      }
+    }
+
+    RError("Could not find input link. Size: %p. source: %p. sch: %d, tch: %d\n",_input_links.size(), source, source_ch, target_ch);
+    return NULL;
+  }
+  
   void remove_SoundProducerInput(const SoundProducer *source, int source_ch, int target_ch){
     //printf("**** Asking to remove connection\n");
 
     if (PLAYER_is_running()==false)
       return;
 
-    //fprintf(stderr,"*** this: %p. Removeing input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
-    for (SoundProducerLink *link : _input_links) {
-
-      if(link->is_bus_link==false && link->is_event_link==false && link->source==source && link->source_ch==source_ch && link->target_ch==target_ch){
-
-        SoundProducer::remove_link(link);
-
-        return;
-      }
-    }
-
-    fprintf(stderr,"huffda. links: %p. ch: %d\n",_input_links.elements,target_ch);
-    R_ASSERT(false);
+    SoundProducerLink *link = find_input_link(source, source_ch, target_ch);
+    if (link!=NULL)
+      SoundProducer::remove_link(link);
   }
 
   // fade in 'input'
@@ -1466,6 +1540,9 @@ SoundProducer *SP_create(SoundPlugin *plugin, Buses buses){
   return new SoundProducer(plugin, MIXER_get_buffer_size(), buses);
 }
 
+// Called from AUDIO_remove_patchdata.
+// AUDIO_remove_patchdata has already called CHIP_delete, which took care of deleting all non-bus links.
+//
 void SP_delete(SoundProducer *producer){
   printf("Deleting \"%s\"\n",producer->_plugin->type->type_name);
   delete producer;
@@ -1478,6 +1555,31 @@ int64_t SP_get_id(const SoundProducer *producer){
 // Returns false if the link could not be made. (i.e. the link was recursive)
 bool SP_add_elink(SoundProducer *target, SoundProducer *source){
   return target->add_eventSoundProducerInput(source);
+}
+
+
+// Should simultaneously fade out the old and fade in the new.
+void SP_add_and_remove_links_simultaneously(const QVector<LinkParameter> parm_to_add, const QVector<LinkParameter> parm_to_remove){
+  if (PLAYER_is_running()==false)
+    return;
+
+  radium::Vector<SoundProducerLink*> to_add;
+  radium::Vector<SoundProducerLink*> to_remove;
+
+  for(auto &parm : parm_to_add){
+    SoundProducerLink *link = new SoundProducerLink(parm.source, parm.target, false);
+    link->source_ch = parm.source_ch;
+    link->target_ch = parm.target_ch;
+    to_add.push_back(link);
+  }
+
+  for(auto &parm : parm_to_remove){
+    SoundProducerLink *link = parm.target->find_input_link(parm.source, parm.source_ch, parm.target_ch);
+    if (link != NULL)
+      to_remove.push_back(link);
+  }
+  
+  SoundProducer::add_and_remove_links(to_add, to_remove);
 }
 
 bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch){
