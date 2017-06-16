@@ -1352,10 +1352,11 @@
   (set-fixed-height comment-edit height)
   comment-edit)
 
-(define (draw-mixer-strips-border gui width height instrument-id)
+(define (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip)
   ;;(c-display "    Draw mixer strips border called for " instrument-id)
   (if (= (<ra> :get-current-instrument) instrument-id)
-      (<gui> :draw-box gui "#bb111166" 0 0 width height 10 3 3)
+      (if (not is-standalone-mixer-strip)
+          (<gui> :draw-box gui "#bb111166" 0 0 width height 10 3 3))
       (<gui> :draw-box gui "#bb222222" 0 0 width height 2 3 3)))
 
 (define (create-current-instrument-border gui instrument-id)
@@ -1376,15 +1377,18 @@
   ;(<gui> :set-background-color gui (<ra> :get-instrument-color instrument-id))
   ;;(set-fixed-width gui (get-fontheight))
 
+  (define bsize (if is-standalone-mixer-strip 0 5))
+  
   (define gui (<gui> :vertical-layout)) ;; min-width height))
-  (<gui> :set-layout-spacing gui 5 5 5 5 5);;2 2 2 2)
-
+  (<gui> :set-layout-spacing gui 5 bsize bsize bsize bsize)
+      
   (define background-color (get-mixer-strip-background-color gui instrument-id))
   (<gui> :set-background-color gui color)
   
   ;;(define gui (<gui> :widget))
-  (set-fixed-width gui (+ 10 (max (floor (<gui> :text-width "-14.2"))
-                                  (get-fontheight))))
+  (set-fixed-width gui (+ (* bsize)
+                          (max (floor (<gui> :text-width "-14.2"))
+                               (get-fontheight))))
 
   (define label (create-mixer-strip-name instrument-id #t is-standalone-mixer-strip))
 
@@ -1404,7 +1408,7 @@
          (lambda (width height)
            ;;(set-fixed-height volume-gui (floor (/ height 2)))
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
-           (draw-mixer-strips-border gui width height instrument-id)
+           (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip)
            #t
            )
          )
@@ -1417,7 +1421,10 @@
   (<gui> :set-min-width gui min-width)
   ;;(<gui> :set-max-width gui width)
   ;;(<gui> :set-size-policy gui #f #t)
-  (<gui> :set-layout-spacing gui 2 5 5 5 5)
+
+  (define bsize (if is-standalone-mixer-strip 0 5))
+  
+  (<gui> :set-layout-spacing gui 2 bsize bsize bsize bsize)
 
   (define background-color (get-mixer-strip-background-color gui instrument-id))
 
@@ -1485,7 +1492,7 @@
   (add-safe-paint-callback gui
                            (lambda (width height)
                              (<gui> :filled-box gui background-color 0 0 width height 0 0)
-                             (draw-mixer-strips-border gui width height instrument-id)))
+                             (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip)))
   
   gui)
 
