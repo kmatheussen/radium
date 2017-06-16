@@ -368,9 +368,7 @@ static void buffer_size_is_changed(SoundPlugin *plugin, int new_buffer_size){
   }
 }
 
-static LADSPA_PortRangeHintDescriptor get_hintdescriptor(const SoundPluginType *plugin_type, int effect_num){
-  TypeData *type_data = (TypeData*)plugin_type->data;
-  const LADSPA_Descriptor *descriptor = type_data->descriptor;
+static LADSPA_PortRangeHintDescriptor get_hintdescriptor(const LADSPA_Descriptor *descriptor, int effect_num){
 
   int effect_num2 = 0;
   for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
@@ -385,7 +383,7 @@ static LADSPA_PortRangeHintDescriptor get_hintdescriptor(const SoundPluginType *
     }
   }
 
-  RWarning("Unknown effect %d for Ladspa plugin \"%s\"\n",effect_num,type_data->Name);
+  RWarning("Unknown effect %d for Ladspa plugin \"%s\"\n", effect_num);
   return 0;
 }
 
@@ -634,6 +632,8 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
 
     plugin_type->is_instrument = false;
 
+    // Find num_effects, num_inputs, and num_outputs
+    //
     for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
       const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
 
@@ -655,10 +655,19 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
     type_data->default_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
     type_data->max_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
 
+    // Find type_data->hint_descriptors.
+    // type_data->hint_descriptor maps effect_num to descriptor for effect_num. (speeds up set_effect())
+    //
+    // Note that we are not storing pointers to LADSPA_PortRangeHintDescriptor (which would not work). Instead
+    // we are copying the memory areas of LADSPA_PortRangeHintDescriptor from the dynamically loaded library and into type_data.
+    // (LADSPA_PortRangeHintDescriptor is actually just an integer)
+    //
     type_data->hint_descriptors = (LADSPA_PortRangeHintDescriptor*)V_calloc(sizeof(LADSPA_PortRangeHintDescriptor), plugin_type->num_effects);
     for(int i = 0 ; i < plugin_type->num_effects ; i++)
-      type_data->hint_descriptors[i] = get_hintdescriptor(plugin_type,i);
+      type_data->hint_descriptors[i] = get_hintdescriptor(descriptor,i);
 
+    // Find type_data->min_values and type_data->max_values
+    //
     {
       int effect_num = 0;
       type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
@@ -1057,7 +1066,7 @@ static void init_menues(){
 
 void create_ladspa_plugins(void){
 #if !defined(RELEASE)
-  return; // takes long time to load ladspa plugins in gdb.
+  //return; // takes long time to load ladspa plugins in gdb.
 #endif
   
   char ladspa_path[1024];
