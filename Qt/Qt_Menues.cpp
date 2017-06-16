@@ -35,6 +35,7 @@ extern QApplication *qapplication;
 
 namespace{
 
+static QMenu *g_curr_menu = NULL;
 static bool g_menu_is_open = false;
   
 struct MyMenu : public QMenu{
@@ -54,6 +55,7 @@ public slots:
   }
   void 	aboutToShow(){
     g_menu_is_open = true;
+    g_curr_menu = this;
   }
 };
   
@@ -216,6 +218,14 @@ void gakk(){
 bool GFX_MenuActive(void){
   //return current_menu->base->activeAction() != NULL;
   return g_menu_is_open;
+}
+
+QMenu *GFX_GetActiveMenu(void){
+  //return current_menu->base->activeAction() != NULL;
+  if (g_menu_is_open)
+    return g_curr_menu;
+  else
+    return NULL;
 }
 
 bool GFX_MenuVisible(struct Tracker_Windows *tvisual){

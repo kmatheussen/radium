@@ -283,6 +283,10 @@ static void RT_lock_player(){
     lock_player();
   }double dur = TIME_get_ms() - start;
   if (dur > MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS)
+
+    //if (elapsed > 1)
+    //  abort(); // That's really bad. Need a backtrace. (No, the relevant backtrace is gone now. TODO: fix.)
+    
     RT_message("RT_lock_player: Waiting longer than %fms to get lock: %fms", MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS, dur);
 #else
   lock_player();
@@ -384,6 +388,7 @@ static void unlock_player_from_nonrt_thread(int iteration){
 #if !defined(RELEASE)
   printf("Elapsed: %f. (%d)\n", elapsed, iteration);
   if(elapsed > MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS){  // The lock is realtime safe, but we can't hold it a long time.
+    
     addMessage(talloc_format("Warning: Holding player lock for more than %fms (%d): %f<br>\n<pre>%s</pre>\n",
                              iteration,
                              MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS,

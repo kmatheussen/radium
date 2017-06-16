@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qtabwidget.h>
 #include <qfontdatabase.h>
 #include <QEvent>
+#include <QKeyEvent>
+#include <QMenuBar>
 #include <Qt>
 #include <QDir>
 #include <QTextEdit>
@@ -455,6 +457,24 @@ static bool handle_qt_keyboard(QKeyEvent *event, bool is_key_down){
 #include <QAbstractNativeEventFilter>
 #endif
 
+static void send_key_up(QObject *where, int how_many){
+  if (where==NULL)
+    return;
+  for(int i=0;i<how_many;i++){
+    QKeyEvent *eve1 = new QKeyEvent((enum QEvent::Type)6, Qt::Key_Up, Qt::NoModifier);
+    qApp->postEvent(where,eve1);
+  }
+}
+
+static void send_key_down(QObject *where, int how_many){
+  if (where==NULL)
+    return;
+  for(int i=0;i<how_many;i++){
+    QKeyEvent *eve1 = new QKeyEvent((enum QEvent::Type)6, Qt::Key_Down, Qt::NoModifier);
+    qApp->postEvent(where,eve1);
+  }
+}
+
 class MyApplication
   : public QApplication
 #if USE_QT5
@@ -699,6 +719,34 @@ protected:
       
       if (GFX_MenuActive())
         menu_should_be_active = 0; // we can't rely entirely on menu_should_be_active to be true, since it won't be false when using the mouse to cancel menu navigation.
+
+      // Qt doesn't do anything when pressing page down / page up / shift+down / shift+up / home / end
+      switch(keynum){
+        case EVENT_DOWNARROW:
+          if (is_key_press && shiftPressed())
+            send_key_down(GFX_GetActiveMenu(), 3);
+          break;
+        case EVENT_UPARROW:
+          if (is_key_press && shiftPressed())
+            send_key_up(GFX_GetActiveMenu(), 3);
+          break;
+        case EVENT_PAGE_DOWN:
+          if (is_key_press)
+            send_key_down(GFX_GetActiveMenu(), 3);
+          break;
+        case EVENT_PAGE_UP:
+          if (is_key_press)
+            send_key_up(GFX_GetActiveMenu(), 3);
+          break;
+        case EVENT_HOME:
+          if (is_key_press)
+            send_key_down(GFX_GetActiveMenu(), 5);
+          break;
+        case EVENT_END:
+          if (is_key_press)
+            send_key_up(GFX_GetActiveMenu(), 5);
+          break;
+      }
       
       switch(keynum){
 
