@@ -2161,7 +2161,10 @@ int radium_main(char *arg){
         struct MixerStripParentLayout : public QHBoxLayout {
 
           // Sets maximum size of the layout of the parent widget to be the size of the mixer strip.
-          virtual QSize sizeHint(){
+          // Something was wrong. It didn't override anything. Works without this one.
+          //
+          /*
+          virtual QSize sizeHint() override {
             QWidget *strip = itemAt(0)->widget();
             if (strip==NULL)
               return QSize(-1,-1);
@@ -2169,6 +2172,7 @@ int radium_main(char *arg){
             //printf("Size: %d, %d\n", strip->size().width(), strip->size().height());
             return strip->size();
           }
+          */
         };
         
         void add_mixer_strip(void){
