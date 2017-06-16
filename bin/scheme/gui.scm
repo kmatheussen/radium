@@ -536,6 +536,10 @@
 ;; The function returns a function that must be called to update position.
 ;; Note that the lines are drawn at integer position. floating points are ignored.
 ;; It also draws in between the rectangle, not on the rectangle, which :draw-box does.
+;;
+;; Warning: Strange thing(s) seems to happen if parent has a layout.
+;; (extra gap at the bottom with size of layout()->spacing()*n, where n seems to be around 4.)
+;;
 (define (gui-rubberband parent w color is-enabled-func)
   (define top (<gui> :widget w w))
   (define right (<gui> :widget w w))

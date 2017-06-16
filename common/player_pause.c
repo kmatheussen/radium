@@ -91,7 +91,7 @@ void PC_Pause(void){
   }  
 }
 
-const Place *get_place_from_realline(const struct WBlocks *wblock, int realline){
+static const Place *get_place_from_realline(const struct WBlocks *wblock, int realline){
   int bounded_realline = R_BOUNDARIES(0, realline, wblock->num_reallines-1);
   return &wblock->reallines[bounded_realline]->l.p;
 }
