@@ -2010,16 +2010,6 @@ void Qt_EventHandler(void){
 
 
 
-static void add_mixer_strip(QSplitter *xsplitter){
-  //MixerWidget *mixer_widget =
-  g_mixerstripparent = new QWidget(xsplitter);
-  //mixerwidgetandmixerstrip->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  g_mixerstriplayout = new QHBoxLayout;
-  g_mixerstriplayout->setSpacing(0);
-  g_mixerstriplayout->setContentsMargins(0,0,0,0);
-  g_mixerstripparent->setLayout(g_mixerstriplayout);
-}
-  
 //extern void updateAllFonts(QWidget *widget);
 
 static bool g_load_new_song=true;
@@ -2158,7 +2148,44 @@ int radium_main(char *arg){
     EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
 
     {
-      QSplitter *xsplitter = new QSplitter(Qt::Horizontal);//, main_window);
+
+      struct XSplitter : public QSplitter { public:
+        
+        bool _strip_on_left_side;
+
+        XSplitter(bool strip_on_left_side)
+          : QSplitter(Qt::Horizontal)
+          , _strip_on_left_side(strip_on_left_side)
+        {}
+
+        struct MixerStripParentLayout : public QHBoxLayout {
+
+          // Sets maximum size of the layout of the parent widget to be the size of the mixer strip.
+          virtual QSize sizeHint(){
+            QWidget *strip = itemAt(0)->widget();
+            if (strip==NULL)
+              return QSize(-1,-1);
+
+            //printf("Size: %d, %d\n", strip->size().width(), strip->size().height());
+            return strip->size();
+          }
+        };
+        
+        void add_mixer_strip(void){
+          g_mixerstripparent = new QWidget;
+          
+          g_mixerstriplayout = new MixerStripParentLayout;
+          g_mixerstriplayout->setSizeConstraint(QLayout::SetMaximumSize); // I.e. as small as possible, and never bigger than sizeHint(). (the layout type names in qt are not very intuitive)
+          g_mixerstriplayout->setSpacing(0);          
+          g_mixerstriplayout->setContentsMargins(0,0,0,0);
+          
+          g_mixerstripparent->setLayout(g_mixerstriplayout);
+
+          addWidget(g_mixerstripparent);
+        }
+      };
+      
+      XSplitter *xsplitter = new XSplitter(showMixerStripOnLeftSide());
       xsplitter->setChildrenCollapsible(false);
       
       editor->xsplitter = xsplitter;
@@ -2166,13 +2193,12 @@ int radium_main(char *arg){
       xsplitter->setOpaqueResize(true);
       //xsplitter->setOpaqueResize(false);
 
-      if(showMixerStripOnLeftSide()){
-        add_mixer_strip(xsplitter);
-      }
-      
-      editor->setParent(xsplitter); //, QPoint(0,0), false);
- 
-      block_selector->setParent(xsplitter);//, QPoint(main_window->width()-100,0), true);
+      if(xsplitter->_strip_on_left_side)
+        xsplitter->add_mixer_strip();
+
+      xsplitter->addWidget(editor);
+
+      xsplitter->addWidget(block_selector);
       block_selector->move(main_window->width()-100,0);
 
       block_selector->resize(100,block_selector->height());
@@ -2188,14 +2214,10 @@ int radium_main(char *arg){
 
       ysplitter->handle(1)->setEnabled(true);
       
-      create_mixer_widget(xsplitter);
+      xsplitter->addWidget(get_qwidget(create_mixer_widget(main_window)));
 
-      if(!showMixerStripOnLeftSide()){
-        add_mixer_strip(xsplitter);
-        xsplitter->handle(xsplitter->count()-1)->setEnabled(false);
-      }else{
-        xsplitter->handle(1)->setEnabled(false);
-      }
+      if(!xsplitter->_strip_on_left_side)
+        xsplitter->add_mixer_strip();
 
       //QWidget *gakk = new MixerWidget(mixerwidgetandmixerstrip);
       //g_mixerstriplayout->addWidget(gakk);
