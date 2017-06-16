@@ -612,7 +612,8 @@ void OS_WINDOWS_set_key_window(void *win){
   
 bool OS_WINDOWS_is_key_window(void *maybewin){
   //printf("a: %p, b: %p. %d\n",maybewin, GetForegroundWindow(), maybewin == GetForegroundWindow());
-  return maybewin == GetForegroundWindow();
+  HWND f = GetForegroundWindow();
+  return f==NULL || maybewin == f;
 }
 
 static VOID CALLBACK WinEventProcCallback ( HWINEVENTHOOK hWinEventHook, DWORD dwEvent, HWND hwnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime)

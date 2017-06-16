@@ -1576,6 +1576,15 @@ protected:
     // No, we still need to do this. At least in qt 5.5.1. Seems like it's not necessary in 5.7 or 5.8 though, but that could be coincidental.
     if(g_main_timer_num_calls<250/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
       updateWidgetRecursively(g_main_window);
+    }else{
+#if defined(FOR_WINDOWS)
+      // We started to lose keyboard focus at startup between 4.8.8 and 4.9.0 (but only if no message windows showed up, and only in RELEASE mode). Clicking the window did not help. I have no idea why.
+      static bool has_focused = false;
+      if (has_focused==false){
+        OS_WINDOWS_set_key_window((void*)g_main_window->winId());
+        has_focused=true;
+      }
+#endif
     }
     
     {

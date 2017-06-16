@@ -185,6 +185,7 @@ namespace{
         QThread::wait();
 
         free((void*)text);
+        free((void*)text2);
 
         delete this;
       }
