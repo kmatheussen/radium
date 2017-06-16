@@ -380,7 +380,7 @@
   (<gui> :set-min-height widget (get-fontheight))
 
   (add-safe-paint-callback widget paintit)
-  
+
   (<gui> :add-mouse-callback widget (lambda (button state x y)
                                       (when (and (= button *left-button*)
                                                  (= state *is-pressing*))
@@ -1437,7 +1437,13 @@
 
   (define mixer-strip-path-gui (<gui> :vertical-scroll))
   (<gui> :set-layout-spacing mixer-strip-path-gui 5 5 5 5 5)
-
+  (<gui> :set-style-sheet mixer-strip-path-gui
+         (<-> "QScrollArea {"
+              "  background: " system-background-color ";"
+              "  border: 1px solid rgba(10, 10, 10, 50);"
+              "  border-radius:3px;"
+              "}"))
+ 
 
   (define hepp (<gui> :horizontal-layout))
   (<gui> :set-layout-spacing hepp 0 5 2 5 2)
@@ -1656,10 +1662,18 @@
   (define vertical-layout (<gui> :vertical-layout))
   (<gui> :set-layout-spacing vertical-layout strip-separator-width 0 0 0 0)
 
-  (define layout (<gui> :horizontal-layout))
-  (<gui> :set-layout-spacing layout strip-separator-width 0 0 0 0)
+  (define mixer-strip-num 0)
+  (define horizontal-layout #f)
 
-  (<gui> :add vertical-layout layout)
+  (define (add-new-horizontal-layout!)
+    (set! horizontal-layout (<gui> :horizontal-layout))
+    (<gui> :set-layout-spacing horizontal-layout strip-separator-width 0 0 0 0)
+    (<gui> :add vertical-layout horizontal-layout)
+    (set! mixer-strip-num 0))
+
+  (add-new-horizontal-layout!)
+
+
   (<gui> :add mixer-strips-gui vertical-layout)
 
 
@@ -1674,7 +1688,6 @@
   (define min-mixer-strip-width (1+ (floor (max (<gui> :text-width " -14.2 -23.5 ")
                                                 (<gui> :text-width " Mute Solo ")))))
 
-  (define mixer-strip-num 0)
   (define num-strips-per-row (ceiling (/ num-strips num-rows)))
 
   (define (add-strips id-instruments)
@@ -1687,14 +1700,10 @@
            '(c-display "   Creating" instrument-id ". Stored is valid?" (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
                       "stored-mixer-strip:" stored-mixer-strip
                       "list-of-modified:" list-of-modified-instrument-ids)
-           (<gui> :add layout mixer-strip)
+           (<gui> :add horizontal-layout mixer-strip)
            (set! mixer-strip-num (1+ mixer-strip-num))
            (if (= num-strips-per-row mixer-strip-num)
-               (begin
-                 (set! layout (<gui> :horizontal-layout))
-                 (<gui> :set-layout-spacing layout strip-separator-width 0 0 0 0)
-                 (<gui> :add vertical-layout layout)
-                 (set! mixer-strip-num 0)))
+               (add-new-horizontal-layout!))
            (create-stored-mixer-strip instrument-id
                                       mixer-strip))
          id-instruments))
@@ -1702,7 +1711,7 @@
   (define instrument-mixer-strips (add-strips (sort-instruments-by-mixer-position
                                                instruments)))
   (if (> mixer-strip-num 0)
-      (<gui> :add-layout-space layout instruments-buses-separator-width 10 #f #f))
+      (<gui> :add-layout-space horizontal-layout instruments-buses-separator-width 10 #f #f))
 
   (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections
                                         all-buses)))
