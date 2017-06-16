@@ -53,6 +53,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static bool g_colored_tracks = false;
 
+static bool g_is_creating_all_GL_blocks = false; // When true, we must create as many gradients as might be shown later, to avoid linking gradients when playing.
+
 void GL_set_colored_tracks(bool onoff){
   printf("setting safe mode to %d\n",onoff);
   SETTINGS_write_bool("colored_tracks", onoff);
@@ -116,43 +118,20 @@ static void draw_bordered_text(
 {
   GE_text(c, text, x, y);
   
-#if 1
   int z = GE_get_z(c);
-    
   int x2=x+((int)strlen(text)*window->fontwidth);
-
-#if 0
-  int y2=y+window->fontheight-1;
-  // 1. Line
-  GE_line(GE_color_z(9, z),
-          x,y,x,y2,0.5f);
-#endif
   
   // 2. Line (the gradient one)
   QColor qc1 = GE_qcolor(LOW_BACKGROUND_COLOR_NUM).darker(96);
   QColor qc2 = GE_qcolor(LOW_BACKGROUND_COLOR_NUM).darker(113);
   GE_Context *c2 = GE_gradient_z(qc1, qc2, z, y); //GE_get_rgb(9), GE_get_rgb(11), z);
 
-#if 0  
-  GE_line(c2,
-          x,y+1,x2,y+1,0.5f);
-#else
   GE_gradient_triangle_start(GradientType::HORIZONTAL);
   GE_gradient_triangle_add(c2, x,  y+0.75 - 0.5);
   GE_gradient_triangle_add(c2, x2, y+0.75 - 0.5);
   GE_gradient_triangle_add(c2, x,  y+1.25);
   GE_gradient_triangle_add(c2, x2, y+1.25);
-  GE_gradient_triangle_end(c2, x,  x2);
-#endif
-  
-  // 3. More lines
-  #if 0
-  GE_Context *c3 = GE_mix_color_z(GE_get_rgb(11), Black_rgb(), 800, z);
-
-  GE_line(c3, x2,y, x2,y2, 0.5f);
-  GE_line(c3, x,y2, x2,y2, 0.5f);
-  #endif
-#endif
+  GE_gradient_triangle_end(c2, x,  x2);  
 }
 
 
@@ -1434,9 +1413,12 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     if (trs.size() > 1)
       paint_multinotes(wtrack, trs, NotesTexts, y1, y2);
 
-    else if (wblock->mouse_track == wtrack->l.num || cents!=0 || wtrack->is_wide==true) {
+    else if ((g_is_creating_all_GL_blocks==false && wblock->mouse_track == wtrack->l.num)
+             || cents!=0
+             || wtrack->is_wide==true
+             ){
       GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO), y1);
-
+        
       if (cents==0 || wtrack->centtext_on==true)
         GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1); 
       else{
@@ -1447,7 +1429,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
           sprintf(temp,"%s %d",NotesTexts[(int)notenum],cents);
         GE_text(foreground, temp, wtrack->notearea.x, y1); 
       }
-
+      
       //GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1);
         
     }else
@@ -2774,6 +2756,7 @@ void GL_create_all(const struct Tracker_Windows *window){
   struct WBlocks *wblock = window->wblocks;
 
   ATOMIC_SET(g_is_creating_all_GL_blocks, true);
+  g_is_creating_all_GL_blocks = true;
   
   while(wblock!=NULL){
     if (wblock != window->wblock){
@@ -2793,5 +2776,6 @@ void GL_create_all(const struct Tracker_Windows *window){
 
   GL_create2(window, window->wblock);
     
+  g_is_creating_all_GL_blocks = false;
   ATOMIC_SET(g_is_creating_all_GL_blocks, false);
 }
