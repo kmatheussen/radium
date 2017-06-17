@@ -1,3 +1,92 @@
+Changes 4.8.8 -> 4.9.0:
+* Import mod: Remember file requester geometry, and don't
+  minimize the file requester when showed for the first time.
+* OpenGL: Fix pre-render blocks when loading song. Before, it
+  only prerendered visible tracks. Reduces the chance of
+  experiencing small delays when switching to a new block,
+  especially when playing song.
+* Main menus: Support the following keys when navigating the
+  main menus with the keyboard: page up, page down, shift+up,
+  shift+down, home, end.
+* Track menu: Add "Help Swing text" entry.
+* Mixer strips: Make sure the main window mixer strip doesn't
+  obtain more vertical space than it needs.
+* Mixer strips: Remove all margins from the main window mixer
+  strip.
+* Mixer strips: Remove large gap at the bottom of the mixer
+  strip, especially for minimized mixer strips. Bug introduced
+  in 4.8.7.
+* Mixer strips: Make the background frame visible again for the
+  send/insert areas. Bug introduced in 4.8.5 or 4.8.7.
+* Mixer strips: Don't cancel last undo if double-clicking
+  a minimized mixer strip at a position where the mouse pointer
+  would end up on top of a plugin slider after the mixer strip is
+  not minimized anymore.
+* Quantization: Take LZ Zoomlevel into account for the quantize
+  value.
+* GUI: More window position tweaks.
+* OSX: Increase default font sizes so that Radium looks more
+  the same on the three platforms by default.
+* Windows/OSX: Use the FreeType font engine instead of the font
+  engine provided by the operating system.
+  * Makes the three platforms look more the same.
+  * Could make fonts look much better, depending on the
+    operating system.
+  * The default fonts look better.
+  * Other fonts could look worse. If using custom fonts, you
+    might need to adjust font settings.
+* Audio: Less time to set an effect values. (Pre-compute port
+  range hints.)
+* OpenGL/OSX: Actually re-enable "draw in separate process" on
+  OSX. Turns out it was only the GUI to enable
+  "draw in separate process" that was re-enabled in 4.8.7.
+* Playlist: Fix starting to play block when selecting a block in
+  the playlist, and we were playing song.
+* GUI: Fixes slow graphics that could happen when using
+  automation to turn a bus on or off.
+* Editor: Only show the text "Current sequencer track is pausing"
+  when the current sequencer track isn't playing a block.
+* OpenGL: Avoid semi-rare deadlock in situations where the
+  current seqtrack isn't playing a block.
+* Import Mod: Fix import mod that has tempo modifications. This
+  might also fix other problems related to adding, removing or
+  changing a BPM value. Bug introduced in 4.8.7.
+* Import mod: Fix keyboard focus when opening the file requester.
+* Audio: Some minor improvements to performance.
+* Sequencer: Don't pause player when editing if playing block
+  instead of playing song. The result is less audio stuttering.
+* Audio: Use less time to stop playing.
+* Menus: Stop navigating the menues if pressing left alt when
+  the menues are active. Previously, the main menu bar was
+  hidden.
+* Menus: Fix showing/hiding/navigating the menues with the
+  keyboard (by pressing left alt). Tested on all three platforms.
+* Preferences GUI: Add a note that some GFX drivers have
+  significantly lower performance if enabling
+  "Draw in separate process".
+* Linux: Don't lose keyboard modifiers when switching instrument
+  (and possibly other situations). Fixes e.g shift+left and
+  shift+right for switching to previous or next track.
+* Main window: Make sure no elements in the horizontal splitter
+  can collapse.
+* Sequencer: Fix program freeze while trying to paint grid and
+  we have zoomed in so much that there is no grid to paint.
+* Log window: When shutting down, messages are shown in custom
+  dialogs instead. If not these messages would never be shown,
+* Sequencer: Speed up moving sequencer blocks, especially when
+  playing.
+* Audio: Some minor improvements to prevent xruns.
+* Audio: Don't restart player if trying to switch block to the
+  same block.
+* Load: Show the "plugin not found" messages in the log window
+  instead of custom dialog boxes so that the user doesn't have
+  to click "Ok" many times.
+* GUI: Fix rare program freeze that could happen when pressing
+  return in the editor while a custom dialog needs reply from
+  the keyboard.
+
+
+
 Changes 4.8.7 -> 4.8.8:
 * Windows/Faust Dev instrument: Don't crash. (LLVM had to be
   recompiled after upgrading the compiler.)
