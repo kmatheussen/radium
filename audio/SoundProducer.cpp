@@ -1557,9 +1557,10 @@ bool SP_add_elink(SoundProducer *target, SoundProducer *source){
   return target->add_eventSoundProducerInput(source);
 }
 
+const radium::LinkParameters g_empty_linkparameters;
 
 // Should simultaneously fade out the old and fade in the new.
-void SP_add_and_remove_links_simultaneously(const QVector<LinkParameter> parm_to_add, const QVector<LinkParameter> parm_to_remove){
+void SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove){
   if (PLAYER_is_running()==false)
     return;
 

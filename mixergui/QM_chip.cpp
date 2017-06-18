@@ -663,8 +663,57 @@ void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   remakeMixerStrips();
 }
 
+
+namespace radium{
+  void LinkParameters::add(::Chip *source, int source_ch, ::Chip *target, int target_ch){
+    add(source->_sound_producer, source_ch, target->_sound_producer, target_ch);
+  }
+}
+
+bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
+  
+  AudioConnection *connection = CONNECTION_find_audio_connection(scene, from, to);
+
+  if (connection==NULL){  
+    //GFX_Message(NULL, "There is no audio connection from %s to %s\n", CHIP_get_patch(from)->name, CHIP_get_patch(to)->name);
+    return false;
+  }
+  
+  radium::LinkParameters linkparameters;
+  
+  bool from_is_mono = from->_num_outputs==1;
+  bool to_is_mono   = to->_num_inputs==1;
+
+  if(from_is_mono==true){
+    for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++){
+      linkparameters.add(to, to_portnum, from, 0);
+    }
+  }else if(to_is_mono==true){
+    for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++){
+      linkparameters.add(to, 0, from, from_portnum);
+    }
+  }else{
+    for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++){
+      linkparameters.add(to, portnum, from, portnum);
+    }
+  }
+
+  SP_add_and_remove_links(g_empty_linkparameters, linkparameters);
+  
+  CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(connection);
+
+  return true;
+}
+
 void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to){
   CHIP_connect_chips(scene, find_chip_for_plugin(scene, from), find_chip_for_plugin(scene, to));
+}
+
+// Simultaneously do these three things:
+// 1. Remove connection between before and middle
+// 2. Remove connection between middle and after
+// 3. Add connection between before and after
+void CHIP_remove_chip_from_connection_sequence(QGraphicsScene *scene, Chip *before, Chip *middle, Chip *after){
 }
 
 void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
@@ -831,11 +880,12 @@ void CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(Eve
   delete connection;
 }
 
-
 void CONNECTION_delete_audio_connection(AudioConnection *connection){
   Chip *from = connection->from;
   Chip *to = connection->to;
 
+  //
+  
   bool from_is_mono = from->_num_outputs==1;
   bool to_is_mono   = to->_num_inputs==1;
 
@@ -1788,6 +1838,17 @@ Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch){
   return NULL;
 }
 
+AudioConnection *CONNECTION_find_audio_connection(const QGraphicsScene *scene, Chip *from, Chip *to){
+  QList<QGraphicsItem *> das_items = scene->items();
+  for (int i = 0; i < das_items.size(); ++i) {
+    AudioConnection *connection = dynamic_cast<AudioConnection*>(das_items.at(i));
+    if(connection!=NULL && connection->from==from && connection->to==to)
+      return connection;
+  }
+
+  return NULL;
+}
+                     
 static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id){
   struct Patch *patch = PATCH_get_from_id(patch_id);
 
@@ -1807,7 +1868,7 @@ static int64_t get_saving_patch_id(struct Patch *patch, const vector_t *patches)
   
   return -1;
 }
-                            
+
 hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *patches){
   hash_t *state=HASH_create(4);
 

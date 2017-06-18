@@ -28,25 +28,59 @@ struct SoundProducer;
 
 #include "../common/Vector.hpp"
 
-
+class Chip;
+  
+namespace radium{
+  
 struct LinkParameter{
   SoundProducer *source;
   int source_ch;
   SoundProducer *target;
   int target_ch;
 
+  /*
+  // Various attempts to avoid creating the empty constructor.
+  LinkParameter(const LinkParameter&) = default;
+  LinkParameter(LinkParameter&) = default;
+  LinkParameter(LinkParameter *parm)
+    : LinkParameter(*parm)
+  {}
+  LinkParameter(const LinkParameter *parm)
+    : LinkParameter(*parm)
+  {}
+  */
+  
   LinkParameter(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch)
     : source(source)
     , source_ch(source_ch)
     , target(target)
     , target_ch(target_ch)
   {}
+
+  // QVector requires empty constructor in LinkParameters::add
+  LinkParameter()
+    :LinkParameter(NULL, -1, NULL, -1)
+  {}
 };
+
+struct LinkParameters : public QVector<LinkParameter> {
+  void add(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch){
+    push_back(LinkParameter(source, source_ch, target, target_ch));
+  }
+
+  // Implemented in QM_chip.cpp
+  void add(Chip *source, int source_ch, Chip *target, int target_ch);
+};
+
+}
+
+extern const radium::LinkParameters g_empty_linkparameters;
 
 
 enum SoundProducerRunningState {HASNT_RUN_YET, IS_RUNNING, FINISHED_RUNNING};
 
 int64_t SP_get_id(const SoundProducer *producer);
+void SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove);
 bool SP_add_elink(SoundProducer *target, SoundProducer *source);
 bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
 void SP_remove_elink(SoundProducer *target, const SoundProducer *source);

@@ -2182,20 +2182,13 @@ void MW_connect(Patch *source, Patch *dest){
 }
 
 bool MW_disconnect(Patch *source, Patch *dest){
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
-  for (int i = 0; i < das_items.size(); ++i) {
-    AudioConnection *connection = dynamic_cast<AudioConnection*>(das_items.at(i));
-    if(connection!=NULL){
-      Patch *a = CHIP_get_patch(connection->from);
-      Patch *b = CHIP_get_patch(connection->to);
-      if (a==source && b==dest) {
-        CONNECTION_delete_audio_connection(connection);
-        return true;
-      }
-    }
-  }
 
-  return false;
+  QGraphicsScene *scene = &g_mixer_widget->scene;
+    
+  Chip *chip_from = CHIP_get(scene, source);
+  Chip *chip_to = CHIP_get(scene, dest);
+  
+  return CHIP_disconnect_chips(scene, chip_from, chip_to);
 }
 
 void MW_econnect(Patch *source, Patch *dest){

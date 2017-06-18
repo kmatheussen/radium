@@ -1578,7 +1578,7 @@ protected:
       updateWidgetRecursively(g_main_window);
     }else{
 #if defined(FOR_WINDOWS)
-      // We started to lose keyboard focus at startup between 4.8.8 and 4.9.0 (but only if no message windows showed up, and only in RELEASE mode). Clicking the window did not help. I have no idea why.
+      // We started to lose keyboard focus at startup between 4.8.8 and 4.9.0 (but only if no message windows showed up, and only in RELEASE mode). Clicking the window did not help. I don't know wny.
       static bool has_focused = false;
       if (has_focused==false){
         OS_WINDOWS_set_key_window((void*)g_main_window->winId());

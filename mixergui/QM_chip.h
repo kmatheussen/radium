@@ -421,6 +421,7 @@ extern void CHIP_kick_right(Chip *chip);
 extern Chip *find_chip_for_plugin(QGraphicsScene *scene, SoundPlugin *plugin);
 extern void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
 extern void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to);
+extern bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
 extern bool CHIPS_are_connected(Chip *from, Chip *to);
 extern bool CHIPS_are_econnected(Chip *from, Chip *to);
 
@@ -454,6 +455,7 @@ Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch);
 
 struct Patch *CHIP_get_patch(const Chip *chip);
 
+AudioConnection * CONNECTION_find_audio_connection(const QGraphicsScene *scene, Chip *from, Chip *to);
 hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *patches);
 void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new, int64_t patch_id_old2, int64_t patch_id_new2);
 void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new);
