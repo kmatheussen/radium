@@ -1948,7 +1948,7 @@ void GFX_toggleCurrWindowFullScreen(void){
 
           /*
           if (toplevel->parent() != NULL)
-            toplevel->setParent(NULL, Qt::Window);
+            toplevel->setParent(NULL, Qt::Window  | DEFAULT_WINDOW_FLAGS);
           */
           
           //printf("Trying to set full screen\n");

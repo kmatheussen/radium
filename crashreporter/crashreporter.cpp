@@ -175,7 +175,9 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
   {
     QDialog box;
-    box.setWindowFlags(box.windowFlags() | Qt::WindowStaysOnTopHint);
+    //box.stackUnder(box.parentWidget());
+    box.setWindowFlags(Qt::Window | DEFAULT_WINDOW_FLAGS);
+    box.setWindowModality(Qt::ApplicationModal);
     
     QVBoxLayout layout;
 
@@ -318,10 +320,6 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     //layout.setSizeConstraint(QLayout::SetFixedSize);
     box.setLayout(&layout);
 
-
-    //box.stackUnder(box.parentWidget());
-    box.setWindowFlags(box.windowFlags() | Qt::Window | Qt::WindowStaysOnTopHint);
-    box.setWindowModality(Qt::ApplicationModal);
 
     const QFontMetrics fn = QFontMetrics(QApplication::font()); //editor->font);
     int width = 2.3 * fn.width("Note: Sometimes it is virtually impossible to fix the bug");

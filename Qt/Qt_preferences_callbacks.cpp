@@ -285,11 +285,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 #if FOR_MACOSX && !USE_QT5
       //_color_dialog.hide();
       _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);
-#if 0
-      _color_dialog.setWindowFlags(_color_dialog.windowFlags() | Qt::Widget);
-      _color_dialog.setParent(this);
-      colorlayout_right->insertWidget(0, &_color_dialog);
-#endif
       
 #else
       _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);
@@ -1184,6 +1179,7 @@ static Preferences *g_preferences_widget=NULL;
 void PREFERENCES_open(void){
   if(g_preferences_widget==NULL){
     g_preferences_widget = new Preferences(g_main_window);
+    
     g_static_toplevel_widgets.push_back(g_preferences_widget);
   }
 

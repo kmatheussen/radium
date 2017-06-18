@@ -2103,7 +2103,7 @@ void GL_stop_widget(QWidget *widget){
 #if !USE_QT5
 static void show_message_box(QMessageBox *box){
   //box->setWindowFlags(Qt::WindowStaysOnTopHint);//Qt::WindowStaysOnTopHint|Qt::SplashScreen|Qt::Window | Qt::FramelessWindowHint|Qt::Popup);
-  box->setWindowFlags(box->windowFlags() | Qt::WindowStaysOnTopHint); //Qt::Popup);
+  box->setWindowFlags(box->windowFlags() | DEFAULT_WINDOW_FLAGS); //Qt::Popup);
   
     
   box->setText("Please wait, estimating vblank refresh rate. This takes 3 - 10 seconds");

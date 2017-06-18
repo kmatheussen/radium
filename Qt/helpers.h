@@ -145,6 +145,8 @@ static inline QWidget *get_current_parent(bool may_return_current_parent_before_
     */
 }
 
+#define DEFAULT_WINDOW_FLAGS (Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowStaysOnTopHint)
+
 // Returns true if modality is turned on when 'is_modal'==false.
 static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *parent, bool is_modal, bool only_set_flags){
 
@@ -156,14 +158,19 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
 #else
   const bool set_parent_working_properly = true;
 #endif
-  
-  Qt::WindowFlags f = Qt::Window;
+
+  Qt::WindowFlags f = Qt::Window | DEFAULT_WINDOW_FLAGS;
   bool force_modal = false;
 
   if (!set_parent_working_properly){
     if (parent==g_main_window) {
-      f = Qt::Window | Qt::Tool; // On OSX, you can't create an "on-top-of hierarchy" by setting the windows parent. But for level 1, we can work around this by setting the Qt::Tool flag.
-      window->setAttribute(Qt::WA_MacAlwaysShowToolWindow, true); // Qt::Tool windows dissapear on OSX if the application is not active. (At least according to Qt documentation. I haven't tested it.)
+
+      // On OSX, you can't create an "on-top-of hierarchy" by setting the windows parent. But for level 1, we can work around this by setting the Qt::Tool flag.
+      f = Qt::Window | Qt::Tool | DEFAULT_WINDOW_FLAGS;
+      
+      // Qt::Tool windows dissapear on OSX if the application is not active. (At least according to Qt documentation. I haven't tested it.)
+      window->setAttribute(Qt::WA_MacAlwaysShowToolWindow, true);
+      
     } else
       force_modal=true; // Qt::Tool doesn't work for levels larger than 1 (it doesn't work if the parent is a Qt::Tool window), so we work around it by using modal windows. Modal windows seems to always be on top of parent window.
   }
@@ -359,7 +366,7 @@ struct MyQMessageBox : public QMessageBox {
       //setWindowModality(Qt::ApplicationModal);
       //setWindowFlags(Qt::Popup | Qt::WindowStaysOnTopHint);
       //setWindowFlags(windowFlags() | Qt::FramelessWindowHint | Qt::MSWindowsFixedSizeDialogHint);
-      setWindowFlags(windowFlags() | Qt::Window | Qt::WindowStaysOnTopHint | Qt::MSWindowsFixedSizeDialogHint);
+      setWindowFlags(Qt::Window | Qt::WindowStaysOnTopHint | Qt::MSWindowsFixedSizeDialogHint);
       raise();
       activateWindow();
     } else {
