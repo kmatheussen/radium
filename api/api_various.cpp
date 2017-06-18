@@ -1072,7 +1072,7 @@ void setTrackMidiChannel(int channelnum, int tracknum, int blocknum, int windown
 
   if(wtrack==NULL) return;
 
-  ADD_UNDO(TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline));
+  ADD_UNDO(TrackHeader(wblock->l.num, wtrack->l.num));
   ATOMIC_SET(wtrack->track->midi_channel, channelnum);
 }
 

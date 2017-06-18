@@ -150,20 +150,22 @@ struct Patch *PATCH_get_from_id(int64_t id){
 #endif
 }
 
-void handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
-  R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
+void PATCH_handle_fx_when_theres_a_new_patch_for_track(struct Blocks *block, struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch, bool *has_paused){
   
-  if(old_patch==NULL || new_patch==NULL) {
+  if (old_patch==NULL)
+    return;
+  
+  if(new_patch==NULL || old_patch->instrument != new_patch->instrument) {
+    if ( (*has_paused) == false) {
+      PC_Pause();
+      *has_paused = true;
+    }
+
     VECTOR_clean(&track->fxs);
     return;
   }
 
-  if (old_patch->instrument != new_patch->instrument) {
-    VECTOR_clean(&track->fxs);
-    return;
-  }
-  
-  old_patch->instrument->handle_fx_when_theres_a_new_patch_for_track(track,old_patch,new_patch);
+  old_patch->instrument->handle_fx_when_a_patch_has_been_replaced(old_patch, new_patch, block, track, has_paused);
 }
 
 
@@ -403,122 +405,112 @@ void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch){
 
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   QList<QString> effect_names = get_plugin_effect_names(plugin);
-  
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  struct WBlocks *wblock = window->wblocks;
-    
-  while(wblock!=NULL){
-    struct WTracks *wtrack = wblock->wtracks;
-    while(wtrack!=NULL){
-      bool has_added_undo = false;
-      
-      struct Tracks *track = wtrack->track;
-      
-      VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
-        struct FX *fx = fxs->fx;
-                   
-        if (fx->patch==patch){
-
-          int index = effect_names.indexOf(fx->name);
-          
-          if (index==-1) {
-            
-            if (has_added_undo==false){
-              ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
-              has_added_undo = true;
-            }
-            
-            PLAYER_lock();{
-              VECTOR_remove(&track->fxs, fxs);
-            }PLAYER_unlock();
-
-            window->must_redraw = true;
-            
-          } else if (index != fx->effect_num) {
-            if (has_added_undo==false){
-              ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
-              has_added_undo = true;
-            }
-
-            PLAYER_lock();{            
-              fx->effect_num = index;
-            }PLAYER_unlock();
-            
-          }
-          
-        }
-        
-      }END_VECTOR_FOR_EACH;
-      
-      wtrack = NextWTrack(wtrack);
-    }
-    wblock = NextWBlock(wblock);
-  }    
-  
-}
-
-
-void PATCH_remove_patch_from_song(struct Patch *patch){
-  R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
-
-  ADD_UNDO(SeqAutomations());
-  SEQTRACK_AUTOMATION_replace_all_automations(patch, NULL);
-
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  struct WBlocks *wblock = window->wblocks;
 
   bool has_paused = false;
-  
-  while(wblock!=NULL){
-    struct WTracks *wtrack = wblock->wtracks;
-    while(wtrack!=NULL){
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
+  FOR_EACH_TRACK(){
+    
+    bool has_added_undo = false;
       
-      struct Tracks *track = wtrack->track;
-      if(track->patch==patch){
-
-        if (!has_paused){
-          PC_Pause();
-          has_paused = true;
-        }
+    VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
+      struct FX *fx = fxs->fx;
+      
+      if (fx->patch==patch){
         
-        ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
-
-        PLAYER_lock();{
-          handle_fx_when_theres_a_new_patch_for_track(track,track->patch,NULL);
-          track->patch = NULL;
-        }PLAYER_unlock();
-                  
-      } else {
-        bool has_added_undo = false;
-
-      again:
-        VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){          
-          if (fxs->fx->patch==patch){
-
-            if (has_added_undo==false){
-              ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
-              has_added_undo=true;
-            }
-            
-            PLAYER_lock();{
-
-              VECTOR_remove(&track->fxs, fxs);
-              
-            }PLAYER_unlock();
-
-            goto again;
-
+        int index = effect_names.indexOf(fx->name);
+        
+        if (index==-1) {
+          
+          if (has_added_undo==false){
+            ADD_UNDO(Track_CurrPos(block->l.num, track->l.num));
+            has_added_undo = true;
           }
-        }END_VECTOR_FOR_EACH;
+          
+          if (has_paused==false){
+            PC_Pause();
+            has_paused =true;
+          }
+          
+          PLAYER_lock();{
+            VECTOR_remove(&track->fxs, fxs);
+          }PLAYER_unlock();
+          
+          window->must_redraw = true;
+          
+        } else if (index != fx->effect_num) {
+          if (has_added_undo==false){
+            ADD_UNDO(Track_CurrPos(block->l.num, track->l.num));
+            has_added_undo = true;
+          }
+          
+          if (has_paused==false){
+            PC_Pause();
+            has_paused =true;
+          }
+          
+          fx->effect_num = index;
+          
+        }
         
       }
       
-      wtrack = NextWTrack(wtrack);
+    }END_VECTOR_FOR_EACH;
+      
+  }END_FOR_EACH_TRACK;
+  
+  if (has_paused)
+    PC_StopPause(NULL);
+}
+
+
+void PATCH_handle_editor_and_automation_when_replacing_patch(struct Patch *old_patch, struct Patch *new_patch){
+  R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
+
+  R_ASSERT_RETURN_IF_FALSE(old_patch!=NULL);
+
+  // 1. Sequencer automation
+  //
+  ADD_UNDO(SeqAutomations());
+  SEQTRACK_AUTOMATION_replace_all_automations(old_patch, new_patch);
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
+  bool has_paused = false;
+
+
+  // 2. track->patch
+  //
+  FOR_EACH_TRACK(){
+
+    bool has_added_undo = false;
+    
+    if(track->patch==old_patch){
+
+      if (has_added_undo==false){
+        ADD_UNDO(Track_CurrPos(block->l.num, track->l.num));
+        has_added_undo = true;
+      }
+      
+      PATCH_handle_fx_when_theres_a_new_patch_for_track(block, track, track->patch, new_patch, &has_paused);
+
+      if (!has_paused){
+        PC_Pause(); // Don't remember the rule for setting track->patch. It's possible that it's enough just obtaining the player lock.
+        has_paused = true;
+      }
+
+      track->patch = new_patch;                  
     }
-    wblock = NextWBlock(wblock);
-  }
 
+  }END_FOR_EACH_TRACK;
 
+  
+  // 3. FX
+  //
+  old_patch->instrument->handle_fx_when_a_patch_has_been_replaced(old_patch, new_patch, NULL, NULL, &has_paused);
+
+  
   if (has_paused)
     PC_StopPause(window);
 }
@@ -542,7 +534,7 @@ static void make_inactive(struct Patch *patch, bool force_removal){
     return;
   }
 
-  PATCH_remove_patch_from_song(patch);
+  PATCH_handle_editor_and_automation_when_replacing_patch(patch, NULL);
 
   hash_t *audio_patch_state = AUDIO_get_audio_patch_state(patch); // The state is unavailable after calling remove_patch().
 

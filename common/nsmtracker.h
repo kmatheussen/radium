@@ -1218,6 +1218,8 @@ enum{
 };
 
 struct Tracker_Windows;
+struct Blocks;
+struct Tracks;
 struct Instruments{
 	struct ListHeader1 l;
 
@@ -1242,7 +1244,10 @@ struct Instruments{
 
 	void *(*LoadFX)(struct FX *fx,const struct Tracks *track);
 
-	void (*handle_fx_when_theres_a_new_patch_for_track)(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch);
+        // 'has_pause' will be set to true if we needed to pause the player, but we will only pause the player if the value was already false.
+        // If only_check_this_block/only_check_this_track is defined, we don't add undo.
+        void (*handle_fx_when_a_patch_has_been_replaced)(const struct Patch *old_patch, struct Patch *new_patch, struct Blocks *only_check_this_block, struct Tracks *only_check_this_track, bool *has_paused);
+  
         void (*remove_patchdata)(struct Patch *patch);
 
 	void (*setPatchData)(struct Patch *patch, const char *key, const char *value);
@@ -1362,6 +1367,31 @@ static inline float TRACK_get_velocity(const struct Tracks *track, int velocity)
   return TRACK_get_volume(track) * VELOCITY_get(velocity);
 }
 
+#define FOR_EACH_TRACK()                                                \
+  struct Blocks *block = root->song->blocks;                            \
+  while(block != NULL){                                                 \
+    struct Tracks *track = block->tracks;                               \
+    while(track != NULL){                                               
+
+#define END_FOR_EACH_TRACK                                              \
+      track = NextTrack(track);                                            \
+    }                                                                     \
+    block = NextBlock(block);                                           \
+  }                                                                   
+
+#define FOR_EACH_WTRACK(window)                                         \
+  struct WBlocks *wblock = window->wblocks;                             \
+  while(wblock != NULL){                                                \
+    struct WTracks *wtrack = wblock->wtracks;                           \
+    while(wtrack != NULL){                                              \
+      struct Tracks *track = wtrack->track;
+      
+#define END_FOR_EACH_WTRACK                                             \
+      wtrack = NextWTrack(wtrack);                                      \
+    }                                                                   \
+    wblock = NextWBlock(wblock);                                        \
+  }                                                                     
+      
 
 
 /*********************************************************************

@@ -177,7 +177,7 @@ void CB_CutTrack_CurrPos(
                         TIME_block_tempos_have_changed(block);
 			break;
 		default:
-                  ADD_UNDO(Track_CurrPos(window));
+                  ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
                   if (SWINGTEXT_subsubtrack(window, wtrack) != -1){
                     cb_swing = wtrack->track->swings;
                     wtrack->track->swings = NULL;

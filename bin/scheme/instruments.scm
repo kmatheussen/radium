@@ -285,11 +285,13 @@
                     to-instrument))
             (get-instruments-econnecting-from-instrument id-old-instrument)))
 
+#||
 (define (replace-instrument-in-all-tracks! id-old-instrument id-new-instrument)
   (for-all-tracks
    (lambda (blocknum tracknum)
      (if (= id-old-instrument (<ra> :get-instrument-for-track tracknum blocknum))
          (<ra> :set-instrument-for-track id-new-instrument tracknum blocknum)))))
+||#
 
 (define (replace-instrument-in-mixer id-old-instrument id-new-instrument)
   (define x (+ 0 (<ra> :get-instrument-x id-old-instrument)))
@@ -314,9 +316,10 @@
              (<ra> :set-instrument-effect
                    id-new-instrument "System Dry/Wet"
                    (<ra> :get-instrument-effect id-old-instrument "System Dry/Wet"))
-             (<ra> :replace-all-seq-automation id-old-instrument id-new-instrument)
+             ;;(<ra> :replace-all-seq-automation id-old-instrument id-new-instrument)
+             (<ra> :replace-use-of-instrument id-old-instrument id-new-instrument)
              (duplicate-connections id-old-instrument id-new-instrument)
-             (replace-instrument-in-all-tracks! id-old-instrument id-new-instrument)
+             ;;(replace-instrument-in-all-tracks! id-old-instrument id-new-instrument)
              (replace-instrument-in-mixer id-old-instrument id-new-instrument)
              )))))
     

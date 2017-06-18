@@ -493,7 +493,7 @@ typedef struct SoundPlugin{
 } SoundPlugin;
 
 
-static inline enum ColorNums get_effect_color(SoundPlugin *plugin, int effect_num){
+static inline enum ColorNums get_effect_color(const SoundPlugin *plugin, int effect_num){
   const int start = AUTOMATION1_COLOR_NUM;
   const int end = AUTOMATION8_COLOR_NUM;
   const int len = end-start + 1;

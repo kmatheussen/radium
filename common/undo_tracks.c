@@ -24,9 +24,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "fxlines_proc.h"
 #include "clipboard_track_copy_proc.h"
 #include "clipboard_track_paste_proc.h"
+#include "list_proc.h"
 
 #include "undo_tracks_proc.h"
 
+
+struct Undo_Tracks{
+  NInt blocknum;
+  NInt tracknum;
+  struct WTracks *wtrack;
+};
 
 static void *Undo_Do_Track(
 	struct Tracker_Windows *window,
@@ -36,53 +43,79 @@ static void *Undo_Do_Track(
 	void *pointer
 );
 
-
+// TODO: API should change. It should only take blocknum and tracknum as arguments.
 void ADD_UNDO_FUNC(Track(
                          struct Tracker_Windows *window,
                          struct WBlocks *wblock,
                          struct WTracks *wtrack,
-                         int realline
+                         int realline,
+                         NInt blocknum,
+                         NInt tracknum
                          )
                    )
 {
-	Undo_Add(
-                 window->l.num,
-                 wblock->l.num,
-                 wtrack->l.num,
-                 realline,
-                 CB_CopyTrack(wblock,wtrack),
-                 Undo_Do_Track,
-                 "Track"
-                 );
+  R_ASSERT_RETURN_IF_FALSE(blocknum>=0);
+  R_ASSERT_RETURN_IF_FALSE(tracknum>=0);
+  
+  struct WBlocks *wblock_to_undo = ListFindElement1(&window->wblocks->l, blocknum);
+  struct WTracks *wtrack_to_undo = ListFindElement1(&wblock_to_undo->wtracks->l, tracknum);
+  
+  struct Undo_Tracks *undo_tracks = talloc(sizeof(struct Undo_Tracks));
+  undo_tracks->blocknum = blocknum;
+  undo_tracks->tracknum = tracknum;
+  undo_tracks->wtrack = CB_CopyTrack(wblock_to_undo,wtrack_to_undo);
+    
+  Undo_Add(
+           window->l.num,
+           wblock->l.num,
+           wtrack->l.num,
+           realline,
+           undo_tracks,
+           Undo_Do_Track,
+           "Track"
+           );
 }
 
+// TODO: Track_CurrPos is supposed to undo current track. This made it easy to do the wrong thing, so I changed the API to take blocknum and tracknum as arguments instead of window. But that doesn't make sense since it's not a "CurrPos" function anymore. The best thing would be to remove this function, and instead change the Track undo function (above) to only take these two arguments.
 void ADD_UNDO_FUNC(Track_CurrPos(
-                                 struct Tracker_Windows *window
+                                 NInt blocknum,
+                                 NInt tracknum
                                  )
                    )
 {
-  CALL_ADD_UNDO_FUNC(Track(window,window->wblock,window->wblock->wtrack,window->wblock->curr_realline));
+  R_ASSERT_RETURN_IF_FALSE(blocknum>=0);
+  R_ASSERT_RETURN_IF_FALSE(tracknum>=0);
+  
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
+  CALL_ADD_UNDO_FUNC(Track(window,window->wblock,window->wblock->wtrack,window->wblock->curr_realline, blocknum, tracknum));
 }
 
 static void *Undo_Do_Track(
 	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
+	struct WBlocks *currwblock,
+	struct WTracks *currwtrack,
 	int realline,
 	void *pointer
 ){
-	struct WTracks *undo_wtrack=(struct WTracks *)pointer;
-	struct WTracks *temp=CB_CopyTrack(wblock,wtrack);
+  struct Undo_Tracks *undo_tracks = pointer;
 
-        printf("*** undo_do_track called. Tracknum: %d\n",wtrack->l.num);
+  struct WBlocks *wblock = ListFindElement1(&window->wblocks->l, undo_tracks->blocknum);
+  struct WTracks *wtrack = ListFindElement1(&wblock->wtracks->l, undo_tracks->tracknum);
 
-	mo_CB_PasteTrack(wblock,undo_wtrack,wtrack);
+  struct WTracks *temp=CB_CopyTrack(wblock,wtrack);
+  
+  printf("*** undo_do_track called. Tracknum: %d\n",wtrack->l.num);
 
+
+  mo_CB_PasteTrack(wblock, undo_tracks->wtrack, wtrack);
+  
 #if !USE_OPENGL
-	UpdateFXNodeLines(window,wblock,wtrack);
+  UpdateFXNodeLines(window,wblock,wtrack);
 #endif
 
-	return temp;
+  undo_tracks->wtrack = temp;
+  return undo_tracks;
 }
 
 

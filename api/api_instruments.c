@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo.h"
 #include "../common/undo_tracks_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
+#include "../common/player_pause_proc.h"
 #include "../audio/undo_plugin_state_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
@@ -196,16 +197,22 @@ void setInstrumentForTrack(int64_t instrument_id, int tracknum, int blocknum, in
   if (new_patch==old_patch)
     return;
 
-  ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
+  ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
 
   {
-    SCOPED_PLAYER_LOCK_IF_PLAYING();
+
+    bool has_paused = false;
     
     if (old_patch != NULL)
-      handle_fx_when_theres_a_new_patch_for_track(wtrack->track, old_patch, new_patch);
-    
-    wtrack->track->patch = new_patch;
-    
+      PATCH_handle_fx_when_theres_a_new_patch_for_track(wblock->block, wtrack->track, old_patch, new_patch, &has_paused);
+
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
+      wtrack->track->patch = new_patch;
+    }
+
+    if (has_paused)
+      PC_StopPause(NULL);
   }
   
   wblock->block->is_dirty = true;
@@ -213,7 +220,18 @@ void setInstrumentForTrack(int64_t instrument_id, int tracknum, int blocknum, in
   (*new_patch->instrument->PP_Update)(new_patch->instrument,new_patch,false);
 }
 
+void replaceUseOfInstrument(int64_t old_instrument_id, int64_t new_instrument_id){
+  struct Patch *old_patch = getPatchFromNum(old_instrument_id);
+  if (old_patch==NULL)
+    return;
+  
+  struct Patch *new_patch = new_instrument_id==-1 ? NULL : getPatchFromNum(new_instrument_id);
+  if (new_patch==old_patch)
+    return;
 
+  PATCH_handle_editor_and_automation_when_replacing_patch(old_patch, new_patch);
+}
+  
 // 
 
 static bool g_split_into_monophonic_tracks_after_recording = false;

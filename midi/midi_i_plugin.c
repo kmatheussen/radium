@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/settings_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/fxlines_proc.h"
+#include "../common/player_pause_proc.h"
+#include "../common/undo_tracks_proc.h"
 
 #include "midi_i_plugin.h"
 
@@ -655,15 +657,49 @@ void MIDIStopPlaying(struct Instruments *instrument){
   }END_VECTOR_FOR_EACH;
 }
 
-static void MIDI_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
-  R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
+static void handle_fx_when_patch_is_replaced(struct Blocks *block,
+                                             struct Tracks *track,
+                                             const struct Patch *old_patch,
+                                             struct Patch *new_patch,
+                                             bool *has_paused,
+                                             bool add_undo)
+{
+  bool has_made_undo = false;
 
   VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
     struct FX *fx = fxs->fx;
-    fx->patch = new_patch; // Only need to change patch. All patches use the same fx system.
+    if (fx->patch == old_patch) {
+      
+      if ( (*has_paused)==false ){
+        PC_Pause();
+        *has_paused = true;
+      }
+      
+      if (add_undo && has_made_undo==false){
+        ADD_UNDO(Track_CurrPos(block->l.num, track->l.num));
+        has_made_undo = true;
+      }
+      
+      fx->patch = new_patch; // Only need to change patch. All patches use the same fx system.
+    }
+    
   }END_VECTOR_FOR_EACH;
+}
 
-  return;
+
+static void MIDI_handle_fx_when_a_patch_has_been_replaced(const struct Patch *old_patch, struct Patch *new_patch, struct Blocks *only_check_this_block, struct Tracks *only_check_this_track, bool *has_paused){
+
+  if (only_check_this_track != NULL) {
+
+    handle_fx_when_patch_is_replaced(only_check_this_block, only_check_this_track, old_patch, new_patch, has_paused, false);
+
+  } else {
+
+    FOR_EACH_TRACK(){
+      handle_fx_when_patch_is_replaced(NULL, track, old_patch, new_patch, has_paused, true);
+    }END_FOR_EACH_TRACK;
+
+  }
 }
 
 static void MIDI_remove_patchdata(struct Patch *patch){
@@ -698,8 +734,8 @@ int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
 
   instrument->PP_Update = MIDI_PP_Update;
 
-  instrument->handle_fx_when_theres_a_new_patch_for_track = MIDI_handle_fx_when_theres_a_new_patch_for_track;
-  instrument->remove_patchdata                            = MIDI_remove_patchdata;
+  instrument->handle_fx_when_a_patch_has_been_replaced = MIDI_handle_fx_when_a_patch_has_been_replaced;
+  instrument->remove_patchdata                         = MIDI_remove_patchdata;
 
   instrument->setPatchData = MIDISetPatchData;
   instrument->getPatchData = MIDIGetPatchData;

@@ -28,8 +28,11 @@ struct SoundProducer;
 
 #include "../common/Vector.hpp"
 
+
+#if USE_QT4
+
 class Chip;
-  
+
 namespace radium{
   
 struct LinkParameter{
@@ -76,13 +79,16 @@ struct LinkParameters : public QVector<LinkParameter> {
 
 extern const radium::LinkParameters g_empty_linkparameters;
 
+bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove); // returns true if successful. Shows message before it returns false.
+
+#endif
+
 
 enum SoundProducerRunningState {HASNT_RUN_YET, IS_RUNNING, FINISHED_RUNNING};
 
 int64_t SP_get_id(const SoundProducer *producer);
-void SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove);
-bool SP_add_elink(SoundProducer *target, SoundProducer *source);
-bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch);
+bool SP_add_elink(SoundProducer *target, SoundProducer *source); // returns true if successful. Shows message before it returns false.
+bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch); // returns true if successful. Shows message before it returns false.
 void SP_remove_elink(SoundProducer *target, const SoundProducer *source);
 void SP_remove_link(SoundProducer *target, int target_ch, const SoundProducer *source, int source_ch);
 void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers);

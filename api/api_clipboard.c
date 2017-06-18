@@ -146,7 +146,7 @@ void pasteTrack(int tracknum, int blocknum, int windownum){
 
   if (cb_wtrack != NULL) {
     UNDO_OPEN_REC();{
-      ADD_UNDO(Track(window, wblock, wtrack, wblock->curr_realline));
+      ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
       co_CB_PasteTrack(wblock, cb_wtrack, wtrack);
     }UNDO_CLOSE();
   }

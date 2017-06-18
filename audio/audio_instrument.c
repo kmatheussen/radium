@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/fxlines_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/scheduler_proc.h"
+#include "../common/player_pause_proc.h"
+#include "../common/undo_tracks_proc.h"
 
 #include "SoundPlugin.h"
 #include "Mixer_proc.h"
@@ -906,60 +908,97 @@ static void *AUDIO_CopyInstrumentData(const struct Tracks *track){
 static void AUDIO_PlayFromStartHook(struct Instruments *instrument){
 }
 
+static void handle_fx_when_patch_is_replaced(struct Blocks *block,
+                                             struct Tracks *track,
+                                             const struct Patch *old_patch,
+                                             struct Patch *new_patch,
+                                             bool same_instrument_type,
+                                             int num_old_effects,
+                                             int num_new_effects,
+                                             const struct SoundPlugin *new_plugin,
+                                             bool *has_paused,
+                                             bool add_undo)
+{
+  bool has_made_undo = false;
+  
+ again:
+  {
+    int i;
+    for(i=0 ; i < track->fxs.num_elements ; i++){
+      struct FXs *fxs = track->fxs.elements[i];
+      struct FX *fx = fxs->fx;
+      
+      if (fx->patch == old_patch) {
+        
+        if ((*has_paused) == false){
+          PC_Pause();
+          *has_paused = true;
+        }
 
-static void AUDIO_handle_fx_when_theres_a_new_patch_for_track(struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch){
-  R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
+        if (add_undo && has_made_undo==false){
+          ADD_UNDO(Track_CurrPos(block->l.num, track->l.num));
+          has_made_undo = true;
+        }
+        
+        if (new_patch == NULL) {
+
+          VECTOR_remove(&track->fxs, fxs);
+          goto again;
+          
+        } else if (same_instrument_type) {
+          
+          fx->patch = new_patch;
+          
+        } else {
+          
+          if(fx->effect_num >= num_old_effects){
+            fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
+            fx->color = get_effect_color(new_plugin, fx->effect_num);
+            fx->patch = new_patch;
+          }else{
+            VECTOR_remove(&track->fxs, fxs);
+            goto again;
+          }
+        }
+      }
+    }
+  }
+}
+  
+static void AUDIO_handle_fx_when_a_patch_has_been_replaced(const struct Patch *old_patch, struct Patch *new_patch, struct Blocks *only_check_this_block, struct Tracks *only_check_this_track, bool *has_paused){
 
   R_ASSERT_RETURN_IF_FALSE(old_patch != NULL);
-  R_ASSERT_RETURN_IF_FALSE(new_patch != NULL);
 
-  SoundPlugin *old_plugin = (SoundPlugin*) old_patch->patchdata;
+  const SoundPlugin *old_plugin = (const SoundPlugin*) old_patch->patchdata;
   R_ASSERT_RETURN_IF_FALSE(old_plugin!=NULL);
 
   const SoundPluginType *old_type = old_plugin->type;
   int num_old_effects = old_type->num_effects;
 
-  SoundPlugin *new_plugin = (SoundPlugin*) new_patch->patchdata;
-  const SoundPluginType *new_type = new_plugin->type;
-  int num_new_effects = new_type->num_effects;
+  const SoundPlugin *new_plugin = new_patch==NULL ? NULL : (const SoundPlugin*) new_patch->patchdata;
+  const SoundPluginType *new_type = new_patch==NULL ? NULL : new_plugin->type;
+  int num_new_effects = new_patch==NULL ? -1 : new_type->num_effects;
 
   bool same_instrument_type = false;
   
   if(true
+     && new_patch != NULL 
      && !strcmp(old_type->type_name, new_type->type_name)
      && !strcmp(old_type->name,      new_type->name)
      )
     same_instrument_type = true;
   
 
- again:
-  {
-  int i;
-  for(i=0 ; i < track->fxs.num_elements ; i++){
-    struct FXs *fxs = track->fxs.elements[i];
-    struct FX *fx = fxs->fx;
+  if (only_check_this_track != NULL) {
+    
+    handle_fx_when_patch_is_replaced(only_check_this_block, only_check_this_track, old_patch, new_patch, same_instrument_type, num_old_effects, num_new_effects, new_plugin, has_paused, false);
+    
+  } else {
 
-    if (fx->patch == old_patch) {
-      
-      if (same_instrument_type) {
-        
-        fx->patch = new_patch;
-        
-      } else {
-        
-        if(fx->effect_num >= num_old_effects){
-          fx->effect_num = num_new_effects + (fx->effect_num - num_old_effects);
-          fx->color = get_effect_color(new_plugin, fx->effect_num);
-          fx->patch = new_patch;
-        }else{
-          VECTOR_remove(&track->fxs, fxs);
-          goto again;
-        }
-        
-      }
-      
-    }
-  }
+    FOR_EACH_TRACK(){
+      handle_fx_when_patch_is_replaced(block, track, old_patch, new_patch, same_instrument_type, num_old_effects, num_new_effects, new_plugin, has_paused, true);
+    }END_FOR_EACH_TRACK;
+    
   }
 }
 
@@ -1090,7 +1129,7 @@ int AUDIO_initInstrumentPlugIn(struct Instruments *instrument){
 
   instrument->PP_Update = AUDIO_PP_Update;
 
-  instrument->handle_fx_when_theres_a_new_patch_for_track=AUDIO_handle_fx_when_theres_a_new_patch_for_track;
+  instrument->handle_fx_when_a_patch_has_been_replaced = AUDIO_handle_fx_when_a_patch_has_been_replaced;
   instrument->remove_patchdata = AUDIO_remove_patchdata;
 
   instrument->setPatchData = AUDIO_setPatchData;

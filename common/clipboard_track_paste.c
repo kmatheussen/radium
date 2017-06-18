@@ -316,7 +316,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                     Place p2;
                     PlaceSetLastPos(wblock->block,&p2);
 
-                    ADD_UNDO(Track_CurrPos(window));
+                    ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
                     wtrack->track->swings = CB_CopySwings(cb_swing,&p2);
                     TIME_block_swings_have_changed(block);
 
@@ -325,7 +325,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 
                         UNDO_OPEN_REC();{
                           printf("curr_track_sub: %d\n",window->curr_track_sub);
-                          ADD_UNDO(Track_CurrPos(window));
+                          ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
                           
                           if(window->curr_track_sub==-1 && cb_wtrack_only_contains_one_fxs==false){
 

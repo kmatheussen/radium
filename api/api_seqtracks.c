@@ -60,6 +60,10 @@ float getSequencerY2(void){
   return SEQUENCER_get_y2();
 }
 
+void undoSequencerAutomation(void){
+  ADD_UNDO(SeqAutomations());
+}
+
 void undoSequencer(void){
   ADD_UNDO(Sequencer());
 }
@@ -226,7 +230,7 @@ int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, i
   if(patch==NULL)
     return -1;
 
-  undoSequencer();
+  undoSequencerAutomation();
 
   int64_t seqtime1 = get_seqtime_from_abstime(seqtrack, NULL, time1);
   int64_t seqtime2 = get_seqtime_from_abstime(seqtrack, NULL, time2);
@@ -243,7 +247,7 @@ void replaceAllSeqAutomation(int64_t old_instrument, int64_t new_instrument){
   if(new_patch==NULL)
     return;
 
-  undoSequencer();
+  undoSequencerAutomation();
 
   SEQTRACK_AUTOMATION_replace_all_automations(old_patch, new_patch);
 }
@@ -345,7 +349,7 @@ int addSeqAutomationNode(int64_t time, float value, int logtype, int automationn
 
   VALIDATE_AUTOMATIONNUM(-1);
 
-  undoSequencer();
+  undoSequencerAutomation();
 
   int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
   return SEQTRACK_AUTOMATION_add_node(seqtrack->seqtrackautomation, automationnum, seqtime, value, logtype);
@@ -359,7 +363,7 @@ void deleteSeqAutomationNode(int nodenum, int automationnum, int seqtracknum){
   VALIDATE_AUTOMATIONNUM();
   VALIDATE_NODENUM();
 
-  undoSequencer();
+  undoSequencerAutomation();
 
   SEQTRACK_AUTOMATION_delete_node(seqtrack->seqtrackautomation, automationnum, nodenum);
 }

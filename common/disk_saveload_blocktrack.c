@@ -345,7 +345,7 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
   
   printf("Got it: %p / %p\n",wtrack,track);
 
-  ADD_UNDO(Track(window, wblock, old_wtrack, wblock->curr_realline));
+  ADD_UNDO(Track_CurrPos(wblock->l.num, old_wtrack->l.num));
   have_made_undo = true;
 
   PC_Pause();{

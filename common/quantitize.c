@@ -206,7 +206,7 @@ void Quantitize_track_CurrPos(
 ){
 	struct WBlocks *wblock=window->wblock;
 
-	ADD_UNDO(Track_CurrPos(window));
+        ADD_UNDO(Track_CurrPos(wblock->l.num, wblock->wtrack->l.num));
 	Quantitize_track(wblock->block,wblock->wtrack->track);
 
 	UpdateAndClearSomeTrackReallinesAndGfxWTracks(

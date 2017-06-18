@@ -620,6 +620,12 @@ bool CHIPS_are_econnected(Chip *from, Chip *to){
   return false;
 }
 
+namespace radium{
+  void LinkParameters::add(::Chip *source, int source_ch, ::Chip *target, int target_ch){
+    add(source->_sound_producer, source_ch, target->_sound_producer, target_ch);
+  }
+}
+
 void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   if(from->_num_outputs==0 || to->_num_inputs==0)
     return;
@@ -664,11 +670,6 @@ void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
 }
 
 
-namespace radium{
-  void LinkParameters::add(::Chip *source, int source_ch, ::Chip *target, int target_ch){
-    add(source->_sound_producer, source_ch, target->_sound_producer, target_ch);
-  }
-}
 
 bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   

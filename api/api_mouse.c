@@ -457,7 +457,7 @@ void undoTrackPanOnOff(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
-  ADD_UNDO(TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline));
+  ADD_UNDO(TrackHeader(wblock->l.num, wtrack->l.num));
 }
 
 void setTrackPanOnOff(bool onoff, int tracknum, int blocknum, int windownum){
@@ -530,7 +530,7 @@ void undoTrackVolumeOnOff(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
-  ADD_UNDO(TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline));
+  ADD_UNDO(TrackHeader(wblock->l.num, wtrack->l.num));
 }
 
 void setTrackVolumeOnOff(bool onoff, int tracknum, int blocknum, int windownum){
@@ -604,7 +604,7 @@ void undoTrackPan(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
-  ADD_UNDO(TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline));
+  ADD_UNDO(TrackHeader(wblock->l.num, wtrack->l.num));
 }
 
 // void setTrackPan(float pan, int tracknum, int blocknum, int windownum)
@@ -669,7 +669,7 @@ void undoTrackVolume(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
-  ADD_UNDO(TrackHeader(window, wblock->block, wtrack->track, wblock->curr_realline));
+  ADD_UNDO(TrackHeader(wblock->l.num, wtrack->l.num));
 }
 
 // void setTrackVolume(float volume, int tracknum, int blocknum, int windownum)

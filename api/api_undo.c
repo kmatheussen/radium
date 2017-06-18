@@ -73,7 +73,7 @@ void addUndoBlock(void){
 
 void addUndoTrack(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
-  ADD_UNDO(Track_CurrPos(window));
+  ADD_UNDO(Track_CurrPos(window->wblock->l.num, window->wblock->wtrack->l.num));
 }
 
 void openUndo(void){

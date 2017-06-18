@@ -365,7 +365,7 @@ struct MyQSlider : public QSlider {
 
         if (seqtrack != NULL) {
 
-          undoSequencer();
+          undoSequencerAutomation();
 
           float value_ = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
 
