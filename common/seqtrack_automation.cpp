@@ -177,7 +177,7 @@ public:
     for(auto *automation : _automations)
       delete automation;
   }
-
+  
   hash_t *get_state(void) const {
     hash_t *state = HASH_create(_automations.size());
     for(int i = 0 ; i < _automations.size() ; i++)
@@ -185,6 +185,35 @@ public:
     return state;
   }
 
+  /*
+  //
+  // Not used. Instead, we just do: auto *a = SEQTRACK_AUTOMATION_create(seqtrack, automation_state); lock() = seqtrack->seqtrackautomation = a ; unlock()
+  //
+  void apply_state(const hash_t *state){
+    R_ASSERT_RETURN_IF_FALSE(state != NULL);
+    
+    int size = HASH_get_array_size(state, "automation");
+
+    radium::Vector<Automation*> new_automations;
+    
+    for(int i = 0 ; i < size ; i++){
+      Automation *automation = new Automation(HASH_get_hash_at(state, "automation", i));
+      if (automation->effect_num >= 0)
+        new_automations.push_back(automation);
+    }
+
+    _automations.ensure_there_is_room_for_at_least_n_without_having_to_allocate_memory(new_automations.size());
+    
+    {
+      radium::PlayerLock lock;    
+      _automations.clear();
+
+      for(auto *automation : new_automations)
+        _automations.push_back(automation);
+    }
+  }
+  */
+  
   int add_automation(struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2){
     bool already_here = true;
     Automation *automation = find_automation(patch, effect_num, true);

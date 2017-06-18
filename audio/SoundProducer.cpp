@@ -58,6 +58,7 @@ static inline int myisinf(float val){
 #include "../common/visual_proc.h"
 #include "../common/Vector.hpp"
 #include "../common/Queue.hpp"
+#include "../common/Time.hpp"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -848,6 +849,8 @@ public:
   }
 
   static void RT_set_bus_descendant_types(void){
+    radium::Time time;
+    
     const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
   
     // First set all descendant types to MAYBE.
@@ -857,6 +860,8 @@ public:
     // Then set one by one.
     for (SoundProducer *sp : *sp_all)
       sp->RT_set_bus_descendant_type();
+    
+    g_rt_set_bus_descendant_types_duration = time.elapsed();    
   }
 
   void allocate_sound_buffers(int num_frames){

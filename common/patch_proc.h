@@ -32,7 +32,6 @@ extern LANGSPEC void PATCH_set_name(struct Patch *patch, const char *name);
 extern LANGSPEC struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y);
 extern LANGSPEC struct Patch *PATCH_create_midi(const char *name);
 extern LANGSPEC void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch);
-extern LANGSPEC void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patch);
 extern LANGSPEC void PATCH_make_inactive(struct Patch *patch);
 extern LANGSPEC void PATCH_force_make_inactive(struct Patch *patch);
 extern LANGSPEC void PATCH_call_very_often(void);

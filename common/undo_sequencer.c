@@ -24,6 +24,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_sequencer_proc.h"
 
 
+
+/////////////////////////////////////////////////////////////////////
+// 1. Everything.                                                  //
+/////////////////////////////////////////////////////////////////////
+
 static void *Undo_Do_Sequencer(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -60,3 +65,48 @@ static void *Undo_Do_Sequencer(
 
   return ret;
 }
+
+
+
+
+/////////////////////////////////////////////////////////////////////////
+// 2. Just automation. (doesn't require player to pause when modified) //
+/////////////////////////////////////////////////////////////////////////
+
+static void *Undo_Do_SeqAutomations(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+);
+
+
+void ADD_UNDO_FUNC(SeqAutomations(void)){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             window->wblock->l.num,
+                             window->curr_track,
+                             window->wblock->curr_realline,
+                             SEQUENCER_get_automations_state(),
+                             Undo_Do_SeqAutomations,
+                             "SeqAutomations"
+                             );
+}
+
+static void *Undo_Do_SeqAutomations(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+){
+  hash_t *ret = SEQUENCER_get_automations_state();
+
+  SEQUENCER_create_automations_from_state(pointer);
+
+  return ret;
+}
+

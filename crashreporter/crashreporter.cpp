@@ -75,6 +75,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define mysleep(ms) QThread::msleep(ms)
 #endif
 
+double g_rt_set_bus_descendant_types_duration;
 
 #if !defined(CRASHREPORTER_BIN)
 static const char *g_no_plugin_name = "<noplugin>";

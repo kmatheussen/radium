@@ -148,5 +148,9 @@ extern LANGSPEC double SONG_get_gfx_length(void);
 extern LANGSPEC void SEQUENCER_init(struct Song *song);
 extern LANGSPEC void SONG_init(void);
 
+// automation state
+extern LANGSPEC hash_t *SEQUENCER_get_automations_state(void);
+extern LANGSPEC void SEQUENCER_create_automations_from_state(hash_t *state);
+
 #endif
 

@@ -458,11 +458,11 @@ void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch){
 }
 
 
-void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patch){
+void PATCH_remove_patch_from_song(struct Patch *patch){
   R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
 
-  ADD_UNDO(Sequencer());
-  SEQTRACK_AUTOMATION_replace_all_automations(old_patch, new_patch);
+  ADD_UNDO(SeqAutomations());
+  SEQTRACK_AUTOMATION_replace_all_automations(patch, NULL);
 
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblocks;
@@ -472,10 +472,9 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
   while(wblock!=NULL){
     struct WTracks *wtrack = wblock->wtracks;
     while(wtrack!=NULL){
-      bool has_added_undo = false;
       
       struct Tracks *track = wtrack->track;
-      if(track->patch==old_patch){
+      if(track->patch==patch){
 
         if (!has_paused){
           PC_Pause();
@@ -485,15 +484,16 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
         ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
 
         PLAYER_lock();{
-          handle_fx_when_theres_a_new_patch_for_track(track,track->patch,new_patch);
-          track->patch = new_patch;
+          handle_fx_when_theres_a_new_patch_for_track(track,track->patch,NULL);
+          track->patch = NULL;
         }PLAYER_unlock();
                   
-      } else if (new_patch == NULL){
+      } else {
+        bool has_added_undo = false;
 
       again:
         VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){          
-          if (fxs->fx->patch==old_patch){
+          if (fxs->fx->patch==patch){
 
             if (has_added_undo==false){
               ADD_UNDO(Track(window,wblock,wtrack,wblock->curr_realline));
@@ -523,11 +523,6 @@ void PATCH_replace_patch_in_song(struct Patch *old_patch, struct Patch *new_patc
     PC_StopPause(window);
 }
 
-static void remove_patch_from_song(struct Patch *patch){
-  PATCH_replace_patch_in_song(patch, NULL);
-}
-
-
 static void make_inactive(struct Patch *patch, bool force_removal){
 
   R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
@@ -547,7 +542,7 @@ static void make_inactive(struct Patch *patch, bool force_removal){
     return;
   }
 
-  remove_patch_from_song(patch);
+  PATCH_remove_patch_from_song(patch);
 
   hash_t *audio_patch_state = AUDIO_get_audio_patch_state(patch); // The state is unavailable after calling remove_patch().
 

@@ -515,13 +515,14 @@ static void seqtrackgcfinalizer(void *actual_mem_start, void *user_data){
   SEQTRACK_AUTOMATION_free(seqtrack->seqtrackautomation);
 }
 
-
 struct SeqTrack *SEQTRACK_create(const hash_t *automation_state){
   struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
 
   memset(seqtrack, 0, sizeof(struct SeqTrack));
   seqtrack->scheduler = SCHEDULER_create();
-  seqtrack->seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, automation_state);
+
+  auto *seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, automation_state);
+  seqtrack->seqtrackautomation = seqtrackautomation;
   
   GC_register_finalizer(seqtrack, seqtrackgcfinalizer, seqtrack, NULL, NULL);
 
@@ -1095,3 +1096,39 @@ void SEQUENCER_create_from_state(hash_t *state){
   BS_UpdatePlayList();
   SEQUENCER_update();
 }
+
+
+
+hash_t *SEQUENCER_get_automations_state(void){
+  hash_t *state = HASH_create(root->song->seqtracks.num_elements);
+
+  VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    hash_t *seqtrack_state = SEQTRACK_AUTOMATION_get_state(seqtrack->seqtrackautomation);
+    HASH_put_hash_at(state, "seqtrackautomations", iterator666, seqtrack_state);
+  }END_VECTOR_FOR_EACH;
+
+  return state;
+}
+
+void SEQUENCER_create_automations_from_state(hash_t *state){
+  int num_seqtracks = HASH_get_array_size(state, "seqtrackautomations");
+  R_ASSERT_RETURN_IF_FALSE(num_seqtracks > 0);
+  R_ASSERT_RETURN_IF_FALSE(num_seqtracks == root->song->seqtracks.num_elements);
+  
+  for(int i = 0 ; i < num_seqtracks ; i++){
+    struct SeqTrack *seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[i];
+
+    auto *old_seqtrackautomation = seqtrack->seqtrackautomation;
+    auto *new_seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, HASH_get_hash_at(state, "seqtrackautomations", i));
+
+    {
+      radium::PlayerLock lock;
+      seqtrack->seqtrackautomation = new_seqtrackautomation;
+    }
+
+    SEQTRACK_AUTOMATION_free(old_seqtrackautomation);
+  }
+
+  SEQUENCER_update();
+}
+

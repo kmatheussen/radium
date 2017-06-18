@@ -30,6 +30,8 @@ enum Crash_Type{
 // __FUNCTION__ is a variable. (this is a clear design flaw in gcc and should be fixed)
 
 
+extern double g_rt_set_bus_descendant_types_duration;
+
 #ifdef __cplusplus
 extern "C"{
 #endif

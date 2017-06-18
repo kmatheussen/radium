@@ -96,7 +96,7 @@ static void clear_scheduler_and_stop_player_and_releases_player_lock(void){
 int g_assert_not_stopping_player = 0;
 
 static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
-
+  
   R_ASSERT(g_assert_not_stopping_player==0);
   
     if (stop_jack_transport_as_well)

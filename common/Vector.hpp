@@ -133,7 +133,7 @@ public:
 
     R_ASSERT(elements_ready_for_freeing == NULL);
     R_ASSERT(next_elements == NULL);
-    
+
     int new_num_elements = num_elements + how_many;
 
     R_ASSERT(num_elements_max > 0);
@@ -150,6 +150,10 @@ public:
     }
   }
 
+  void ensure_there_is_room_for_more_at_least_n_without_having_to_allocate_memory(int n){
+    ensure_there_is_room_for_more_without_having_to_allocate_memory(n - num_elements);
+  }
+    
   // Must be called after calling 'add' if 'ensure_there_is_room_for_one_more_without_having_to_allocate_memory' was called before 'add'.
   void post_add(void){
     LOCKASSERTER_SHARED(&lockAsserter);
