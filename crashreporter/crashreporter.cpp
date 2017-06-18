@@ -202,6 +202,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     
 
     QLabel text2;
+    text2.setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     
     bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
     
@@ -236,7 +237,8 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     //box.setDetailedText(message);
     layout.addWidget(&text2);
     text2.adjustSize();
-
+    text2.updateGeometry();
+    
     /*
     QButtonGroup buttons;
     buttons.addButton(new QPushButton("Show Details"), 0);
@@ -279,22 +281,19 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     QLabel text_edit_label("<br><br>"
                            "Please also include additional information below.<br>"
                            "<br>"
-                           "The best type of help you "
-                           "can give is to write "
-                           "down<br>a step by step "
-                           "recipe in the following "
-                           "format:"
-                           "<br><br>"
+                           "The best type of help you can give is to write down a step by step recipe in the following format:<br>"
+                           "<br>"
                            "1. Start Radium<br>"
                            "2. Move the cursor to track 3.<br>"
                            "3. Press the Q button.<br>"
                            "4. Radium crashes<br>"
                            "<br>"
-                           "<b>Note: Sometimes it is virtually impossible to fix the bug<br>"
-                           "without a recipe on how to reproduce the bug</b><br>"
+                           "<b>Note: Sometimes it is virtually impossible to fix the bug without a recipe on how to reproduce the bug</b><br>"
                            "<br>"
+                           "In case you provide an email address, please let me know if you want to get informed when bug is fixed."
                            );
-
+    text_edit_label.setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+ 
     //text_edit.setMinimumWidth(1000000);
     //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
     layout.addWidget(&text_edit_label);
@@ -303,7 +302,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     layout.addWidget(&space2);
 
     QTextEdit text_edit;
-    text_edit.setText("<Please add recipe and/or email address here>");
+    text_edit.setText("<Please add recipe and/or email address here>\n");
     //text_edit.setMinimumWidth(1000000);
     //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
     layout.addWidget(&text_edit);
@@ -324,9 +323,14 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
     box.setWindowFlags(box.windowFlags() | Qt::Window | Qt::WindowStaysOnTopHint);
     box.setWindowModality(Qt::ApplicationModal);
 
+    const QFontMetrics fn = QFontMetrics(QApplication::font()); //editor->font);
+    int width = 2.3 * fn.width("Note: Sometimes it is virtually impossible to fix the bug");
+
     //box.setMaximumWidth(600);
     box.adjustSize();
-    
+    box.updateGeometry();
+    box.resize(width, box.height());
+
     box.setVisible(true);
     box.show();
     box.activateWindow();
@@ -628,7 +632,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "Running plugins: " + plugin_names + "\n\n";
   tosend += "Running time: " + QString::number(time/1000.0) + " seconds.\n\n";
   tosend += "Last painter: " + QString(g_qt_is_painting_where) + "\n\n";
-
+  tosend += "Last g_rt_set_bus_descendant_types_duration: " + QString::number(g_rt_set_bus_descendant_types_duration) + "ms\n\n";  
   tosend += "\n\n";
 
   for(int i=0;i<num_messages;i++)
