@@ -636,23 +636,22 @@ void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   bool from_is_mono = from->_num_outputs==1;
   bool to_is_mono   = to->_num_inputs==1;
 
+  radium::LinkParameters linkparameters;
+    
   if(from_is_mono==true){
-    for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++){
-      if(connect(scene, from, 0, to, to_portnum)==false)
-        return; // trying to make recursive connection
-    }
+    for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++)
+      linkparameters.add(from, 0, to, to_portnum);
   }else if(to_is_mono==true){
-    for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++){
-      if(connect(scene, from, from_portnum, to, 0)==false)
-        return; // trying to make recursive connection
-    }
+    for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++)
+      linkparameters.add(from, from_portnum, to, 0);
   }else{
-    for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++){
-      if(connect(scene, from, portnum, to, portnum)==false)
-        return; // trying to make recursive connection
-    }
+    for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++)
+      linkparameters.add(from, portnum, to, portnum);
   }
 
+  if (SP_add_and_remove_links(linkparameters, g_empty_linkparameters)==false)
+    return; // recursive connection
+    
   AudioConnection *connection = new AudioConnection(scene);
   connection->from = from;
   connection->to = to;

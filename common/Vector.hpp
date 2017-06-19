@@ -231,7 +231,7 @@ public:
   void push_back(T t){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
-    R_ASSERT(elements_ready_for_freeing == NULL);
+    //R_ASSERT(elements_ready_for_freeing == NULL); <-- Fails when we have preallocated for more than one element.
 
     if (next_elements == NULL) {
 
