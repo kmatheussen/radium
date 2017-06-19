@@ -40,7 +40,8 @@ struct LinkParameter{
   int source_ch;
   SoundProducer *target;
   int target_ch;
-
+  float volume;
+  
   /*
   // Various attempts to avoid creating the empty constructor.
   LinkParameter(const LinkParameter&) = default;
@@ -53,33 +54,35 @@ struct LinkParameter{
   {}
   */
   
-  LinkParameter(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch)
+  LinkParameter(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch, float volume = 1.0)
     : source(source)
     , source_ch(source_ch)
     , target(target)
     , target_ch(target_ch)
+    , volume(volume)
   {}
 
-  // QVector requires empty constructor in LinkParameters::add
+  // QVector requires an empty constructor in LinkParameters::add
   LinkParameter()
     :LinkParameter(NULL, -1, NULL, -1)
   {}
 };
 
 struct LinkParameters : public QVector<LinkParameter> {
-  void add(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch){
-    push_back(LinkParameter(source, source_ch, target, target_ch));
+  void add(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch, float volume = 1.0){
+    push_back(LinkParameter(source, source_ch, target, target_ch, volume));
   }
 
   // Implemented in QM_chip.cpp
-  void add(Chip *source, int source_ch, Chip *target, int target_ch);
+  void add(Chip *source, int source_ch, Chip *target, int target_ch, float volume = 1.0);
 };
 
 }
 
 extern const radium::LinkParameters g_empty_linkparameters;
 
-bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove); // returns true if successful. Shows message before it returns false.
+// Either does everything or nothing. Returns false if it did nothing.
+bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove); // Shows message before returning false and something was wrong.
 
 #endif
 

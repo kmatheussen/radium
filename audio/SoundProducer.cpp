@@ -280,7 +280,7 @@ struct SoundProducerLink {
     } else {
     
       if (ATOMIC_GET(source_plugin->output_volume_is_on))
-        return source_plugin->output_volume * plugin_volume * link_volume; // * link_volume (Not included since there currently isn't an interface to set the link volume.)
+        return source_plugin->output_volume * plugin_volume * link_volume;
       else
         return 0.0f;
 
@@ -1668,6 +1668,9 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
   if (PLAYER_is_running()==false)
     return false;
 
+  if (parm_to_add.size()==0 && parm_to_remove.size()==0)
+    return false;
+  
   radium::Vector<SoundProducerLink*> to_add;
   radium::Vector<SoundProducerLink*> to_remove;
 
@@ -1675,6 +1678,7 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
     SoundProducerLink *link = new SoundProducerLink(parm.source, parm.target, false);
     link->source_ch = parm.source_ch;
     link->target_ch = parm.target_ch;
+    link->link_volume = parm.volume;
     to_add.push_back(link);
   }
 

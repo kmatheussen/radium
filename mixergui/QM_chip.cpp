@@ -604,15 +604,11 @@ static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
   return true;
 }
 
-bool CHIPS_are_connected(Chip *from, Chip *to){
-  for(AudioConnection *connection : from->audio_connections)
-    if(connection->from==from && connection->to==to)
-      return true;
-
-  return false;
+bool CHIPS_are_connected(const Chip *from, const Chip *to){
+  return CONNECTION_find_audio_connection(from, to) != NULL;
 }
 
-bool CHIPS_are_econnected(Chip *from, Chip *to){
+bool CHIPS_are_econnected(const Chip *from, const Chip *to){
   for(EventConnection *connection : from->event_connections)
     if(connection->from==from && connection->to==to)
       return true;
@@ -621,88 +617,169 @@ bool CHIPS_are_econnected(Chip *from, Chip *to){
 }
 
 namespace radium{
-  void LinkParameters::add(::Chip *source, int source_ch, ::Chip *target, int target_ch){
-    add(source->_sound_producer, source_ch, target->_sound_producer, target_ch);
+  void LinkParameters::add(::Chip *source, int source_ch, ::Chip *target, int target_ch, float volume){
+    add(source->_sound_producer, source_ch, target->_sound_producer, target_ch, volume);
   }
 }
 
-void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
-  if(from->_num_outputs==0 || to->_num_inputs==0)
-    return;
-
-  if(CHIPS_are_connected(from,to)==true)
-    return;
-
-  bool from_is_mono = from->_num_outputs==1;
-  bool to_is_mono   = to->_num_inputs==1;
-
-  radium::LinkParameters linkparameters;
+namespace{
+  struct ConnectParm{
+    Chip *_from;
+    Chip *_to;
+    float _volume;
     
-  if(from_is_mono==true){
-    for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++)
-      linkparameters.add(from, 0, to, to_portnum);
-  }else if(to_is_mono==true){
-    for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++)
-      linkparameters.add(from, from_portnum, to, 0);
-  }else{
-    for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++)
-      linkparameters.add(from, portnum, to, portnum);
+    ConnectParm(Chip *from, Chip *to, float volume = 1.0)
+      : _from(from)
+      , _to(to)
+      , _volume(volume)
+    {}
+
+    // QVector requires an empty constructor in ConnectParms::ad
+    ConnectParm()
+      : ConnectParm(NULL, NULL)
+    {}
+
+    bool can_be_connected(void) const {
+      if(_from->_num_outputs==0 || _to->_num_inputs==0)
+        return false;
+    
+      if(CHIPS_are_connected(_from,_to)==true)
+        return false;
+
+      return true;
+    }
+
+    bool can_be_disconnected(void) const {
+      return CHIPS_are_connected(_from,_to);
+    }
+  };
+
+  struct ConnectParms : public QVector<ConnectParm> {
+    void add(Chip *from, Chip *to, float volume = 1.0){
+      push_back(ConnectParm(from, to, volume));
+    }
+  };
+
+  static const ConnectParms g_empty_connectParms;
+}
+
+
+bool CHIP_connect_and_disconnect(QGraphicsScene *scene, const ConnectParms &to_add, const ConnectParms &to_remove){
+  radium::LinkParameters add_linkparameters;
+  radium::LinkParameters remove_linkparameters;
+
+  
+  // ADD: Create parameters
+  for(const auto &parm : to_add){
+    if (parm.can_be_connected()){
+      
+      Chip *from = parm._from;
+      Chip *to = parm._to;
+    
+      bool from_is_mono = from->_num_outputs==1;
+      bool to_is_mono   = to->_num_inputs==1;
+    
+      if(from_is_mono==true){
+        for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++)
+          add_linkparameters.add(from, 0, to, to_portnum, parm._volume);
+      }else if(to_is_mono==true){
+        for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++)
+          add_linkparameters.add(from, from_portnum, to, 0, parm._volume);
+      }else{
+        for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++)
+          add_linkparameters.add(from, portnum, to, portnum, parm._volume);
+      }
+    }
   }
 
-  if (SP_add_and_remove_links(linkparameters, g_empty_linkparameters)==false)
-    return; // recursive connection
-    
-  AudioConnection *connection = new AudioConnection(scene);
-  connection->from = from;
-  connection->to = to;
   
-  from->audio_connections.push_back(connection);
-  to->audio_connections.push_back(connection);
-  
-  connection->setVisibility(MW_get_connections_visibility());
-  
-  connection->update_position();
-  scene->addItem(connection);
+  // REMOVE: Create parameters
+  for(const auto &parm : to_remove){
+    if (parm.can_be_disconnected()){
 
-  printf("       Remake: CHIP_connect_chips\n");
+      Chip *from = parm._from;
+      Chip *to = parm._to;
+
+      bool from_is_mono = from->_num_outputs==1;
+      bool to_is_mono   = to->_num_inputs==1;
+      
+      if(from_is_mono==true){
+        for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++){
+          remove_linkparameters.add(to, to_portnum, from, 0);
+        }
+      }else if(to_is_mono==true){
+        for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++){
+          remove_linkparameters.add(to, 0, from, from_portnum);
+        }
+      }else{
+        for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++){
+          remove_linkparameters.add(to, portnum, from, portnum);
+        }
+      }
+
+    }
+  }
+
+
+  
+  // Create/remove mixer connections
+  if (SP_add_and_remove_links(add_linkparameters, remove_linkparameters)==false)
+    return false; // Nothing done. (either recursive connection, or empty parameters)
+
+
+  
+  // ADD: Create mixergui connections
+  for(const auto &parm : to_add){
+    if (parm.can_be_connected()){
+      
+      AudioConnection *connection = new AudioConnection(scene);
+      connection->from = parm._from;
+      connection->to = parm._to;
+      
+      parm._from->audio_connections.push_back(connection);
+      parm._to->audio_connections.push_back(connection);
+      
+      connection->setVisibility(MW_get_connections_visibility());
+      
+      connection->update_position();
+      scene->addItem(connection);
+    }
+  }
+
+  
+  // REMOVE: Delete mixergui connections
+  for(const auto &parm : to_remove){
+    if (parm.can_be_disconnected()){
+      AudioConnection *connection = CONNECTION_find_audio_connection(parm._from, parm._to);
+      if (connection==NULL)
+        R_ASSERT(false);
+      else
+        CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(connection);
+    }
+  }
+
+  
+  //printf("       Remake: CHIP_connect_and_disconnect\n");
   remakeMixerStrips();
+
+  return true;
+}
+
+
+void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
+  ConnectParms to_add;
+  to_add.add(from, to);
+  
+  CHIP_connect_and_disconnect(scene, to_add, g_empty_connectParms);
 }
 
 
 
 bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
-  
-  AudioConnection *connection = CONNECTION_find_audio_connection(scene, from, to);
+  ConnectParms to_remove;
+  to_remove.add(from, to);
 
-  if (connection==NULL){  
-    //GFX_Message(NULL, "There is no audio connection from %s to %s\n", CHIP_get_patch(from)->name, CHIP_get_patch(to)->name);
-    return false;
-  }
-  
-  radium::LinkParameters linkparameters;
-  
-  bool from_is_mono = from->_num_outputs==1;
-  bool to_is_mono   = to->_num_inputs==1;
-
-  if(from_is_mono==true){
-    for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++){
-      linkparameters.add(to, to_portnum, from, 0);
-    }
-  }else if(to_is_mono==true){
-    for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++){
-      linkparameters.add(to, 0, from, from_portnum);
-    }
-  }else{
-    for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++){
-      linkparameters.add(to, portnum, from, portnum);
-    }
-  }
-
-  SP_add_and_remove_links(g_empty_linkparameters, linkparameters);
-  
-  CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(connection);
-
-  return true;
+  return CHIP_connect_and_disconnect(scene, g_empty_connectParms, to_remove);
 }
 
 void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to){
@@ -1838,14 +1915,11 @@ Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch){
   return NULL;
 }
 
-AudioConnection *CONNECTION_find_audio_connection(const QGraphicsScene *scene, Chip *from, Chip *to){
-  QList<QGraphicsItem *> das_items = scene->items();
-  for (int i = 0; i < das_items.size(); ++i) {
-    AudioConnection *connection = dynamic_cast<AudioConnection*>(das_items.at(i));
-    if(connection!=NULL && connection->from==from && connection->to==to)
+AudioConnection *CONNECTION_find_audio_connection(const Chip *from, const Chip *to){
+  for(AudioConnection *connection : from->audio_connections)
+    if(connection->from==from && connection->to==to)
       return connection;
-  }
-
+  
   return NULL;
 }
                      
