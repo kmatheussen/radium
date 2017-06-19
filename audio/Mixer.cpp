@@ -1322,6 +1322,7 @@ bool MIXER_start(void){
     
   init_player_lock();
   g_freewheeling_has_started = RSEMAPHORE_create(0);
+  g_player_stopped_semaphore = RSEMAPHORE_create(0);
 
 #if USE_WORKAROUND
   create_workaround_thread();

@@ -117,3 +117,7 @@ void RSEMAPHORE_signal(RSemaphore *semaphore, int num_signallers){
   semaphore->signal(num_signallers);
 }
 
+void RSEMAPHORE_signal_all(RSemaphore *semaphore){
+  semaphore->signalAll();
+}
+

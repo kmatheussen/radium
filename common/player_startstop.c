@@ -88,8 +88,7 @@ static void clear_scheduler_and_stop_player_and_releases_player_lock(void){
 
   if (ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED){
     ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
-    while(ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED)
-      OS_WaitForAShortTime(3);
+    RSEMAPHORE_wait(g_player_stopped_semaphore, 1);
   }
 }
 

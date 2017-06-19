@@ -157,6 +157,7 @@ extern PlayerClass *pc;
 #define PLAYBLOCK_NONLOOP 3
 
 extern int g_assert_not_stopping_player;
+extern RSemaphore *g_player_stopped_semaphore;
 
 
 // Should only be used if it's not important if the variables that are initialized when starting to play, have actually been initialized.

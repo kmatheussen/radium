@@ -163,6 +163,8 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
         
         
         if (player_state==PLAYER_STATE_STOPPED) {
+          RSEMAPHORE_signal_all(g_player_stopped_semaphore);
+            
           RT_SEQTRACK_AUTOMATION_called_when_player_stopped();
           return;
         }

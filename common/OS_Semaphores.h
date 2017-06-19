@@ -38,3 +38,4 @@ extern LANGSPEC bool RSEMAPHORE_trywait(RSemaphore *semaphore, int num_waiters);
 extern LANGSPEC bool RSEMAPHORE_trywait_timeout(RSemaphore *semaphore, int num_waiters, int msecs);
 
 extern LANGSPEC void RSEMAPHORE_signal(RSemaphore *semaphore, int num_signallers);
+extern LANGSPEC void RSEMAPHORE_signal_all(RSemaphore *semaphore);
