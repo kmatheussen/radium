@@ -659,49 +659,56 @@ namespace{
     }
   };
 
-  struct ConnectParms : public QVector<ConnectParm> {
+  struct AudioGraphChanges {
+    QVector<ConnectParm> to_add;
+    QVector<ConnectParm> to_remove;
+
+    void add(Chip *from, Chip *to, float volume = -1.0){
+      to_add.push_back(ConnectParm(from, to, volume));
+    }
+    
+    void remove(Chip *from, Chip *to){
+      to_remove.push_back(ConnectParm(from, to));
+    }
+    
+    void remove(AudioConnection *connection){
+      remove(connection->from, connection->to);
+    }
+  };
+
+  struct ConnectParms : public AudioGraphChanges {
     ConnectParms(){
     }
     
     ConnectParms(Chip *from, Chip *to, float volume = -1.0){
       add(from, to, volume);
     }
-    
-    void add(Chip *from, Chip *to, float volume = -1.0){
-      push_back(ConnectParm(from, to, volume));
-    }
   };
   
-  struct DisconnectParms : public QVector<ConnectParm> {
+  struct DisconnectParms : public AudioGraphChanges {
     DisconnectParms(){
     }
     
     DisconnectParms(Chip *from, Chip *to){
-      add(from, to);
+      remove(from, to);
     }
     
     DisconnectParms(AudioConnection *connection){
-      add(connection);
-    }
-    
-    void add(Chip *from, Chip *to){
-      push_back(ConnectParm(from, to));
-    }
-    
-    void add(AudioConnection *connection){
-      add(connection->from, connection->to);
+      remove(connection);
     }
   };
+
+
 }
 
 
-bool CHIP_connect_and_disconnect(QGraphicsScene *scene, const ConnectParms &to_add, const DisconnectParms &to_remove){
+static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const AudioGraphChanges &changes){
   radium::LinkParameters add_linkparameters;
   radium::LinkParameters remove_linkparameters;
 
   
   // ADD: Create parameters
-  for(const auto &parm : to_add){
+  for(const auto &parm : changes.to_add){
     if (parm.can_be_connected()){
       
       Chip *from = parm._from;
@@ -725,7 +732,7 @@ bool CHIP_connect_and_disconnect(QGraphicsScene *scene, const ConnectParms &to_a
 
   
   // REMOVE: Create parameters
-  for(const auto &parm : to_remove){
+  for(const auto &parm : changes.to_remove){
     if (parm.can_be_disconnected()){
 
       Chip *from = parm._from;
@@ -760,7 +767,7 @@ bool CHIP_connect_and_disconnect(QGraphicsScene *scene, const ConnectParms &to_a
 
   
   // ADD: Create mixergui connections
-  for(const auto &parm : to_add){
+  for(const auto &parm : changes.to_add){
     R_ASSERT(scene != NULL);
     
     if (parm.can_be_connected()){
@@ -781,7 +788,7 @@ bool CHIP_connect_and_disconnect(QGraphicsScene *scene, const ConnectParms &to_a
 
   
   // REMOVE: Delete mixergui connections
-  for(const auto &parm : to_remove){
+  for(const auto &parm : changes.to_remove){
     if (parm.can_be_disconnected()){
       AudioConnection *connection = CONNECTION_find_audio_connection(parm._from, parm._to);
       if (connection==NULL)
@@ -792,7 +799,7 @@ bool CHIP_connect_and_disconnect(QGraphicsScene *scene, const ConnectParms &to_a
   }
 
   
-  //printf("       Remake: CHIP_connect_and_disconnect\n");
+  //printf("       Remake: CONNECTIONS_apply_changes\n");
   remakeMixerStrips();
 
   return true;
@@ -800,13 +807,13 @@ bool CHIP_connect_and_disconnect(QGraphicsScene *scene, const ConnectParms &to_a
 
 
 void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
-  CHIP_connect_and_disconnect(scene, ConnectParms(from, to), DisconnectParms());
+  CONNECTIONS_apply_changes(scene, ConnectParms(from, to));
 }
 
 
 
 bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
-  return CHIP_connect_and_disconnect(scene, ConnectParms(), DisconnectParms(from, to));
+  return CONNECTIONS_apply_changes(scene, DisconnectParms(from, to));
 }
 
 void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to){
@@ -985,7 +992,7 @@ void CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(Eve
 }
 
 void CONNECTION_delete_audio_connection(AudioConnection *connection){
-  CHIP_connect_and_disconnect(NULL, ConnectParms(), DisconnectParms(connection));
+  CONNECTIONS_apply_changes(NULL, DisconnectParms(connection));
 }
 
 void CONNECTION_delete_event_connection(EventConnection *connection){
@@ -1049,34 +1056,32 @@ void EventConnection::update_position(void){
 
 // 'right_chip' is inserted in the middle of 'left_chip' and all chips 'left_chip' sends to.
 void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip){
-  ConnectParms to_add;
-  DisconnectParms to_remove;
+  AudioGraphChanges changes;
   
   for (AudioConnection *connection : left_chip->audio_connections)
     if(connection->from==left_chip){
-      to_remove.add(connection);
-      to_add.add(right_chip, connection->to);
+      changes.remove(connection);
+      changes.add(right_chip, connection->to);
     }
 
-  to_add.add(left_chip, right_chip);
+  changes.add(left_chip, right_chip);
 
-  CHIP_connect_and_disconnect(scene, to_add, to_remove);
+  CONNECTIONS_apply_changes(scene, changes);
 }
 
 // 'left_chip' is inserted in the middle of 'right_chip' and all chips 'right_chip' receives from.
 void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip){
-  ConnectParms to_add;
-  DisconnectParms to_remove;
+  AudioGraphChanges changes;
 
   for (AudioConnection *connection : right_chip->audio_connections)
     if(connection->to==right_chip){
-      to_remove.add(connection);
-      to_add.add(connection->from, left_chip);
+      changes.remove(connection);
+      changes.add(connection->from, left_chip);
     }
 
-  to_add.add(left_chip, right_chip);
+  changes.add(left_chip, right_chip);
 
-  CHIP_connect_and_disconnect(scene, to_add, to_remove);
+  CONNECTIONS_apply_changes(scene, changes);
 }
 
 void Chip::init_new_plugin(void){
