@@ -40,8 +40,10 @@ struct LinkParameter{
   int source_ch;
   SoundProducer *target;
   int target_ch;
-  float volume;
-  
+
+  float volume = 1.0;
+  bool must_set_volume = false;
+
   /*
   // Various attempts to avoid creating the empty constructor.
   LinkParameter(const LinkParameter&) = default;
@@ -54,13 +56,17 @@ struct LinkParameter{
   {}
   */
   
-  LinkParameter(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch, float volume = 1.0)
+  LinkParameter(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch, float volume = -1.0)
     : source(source)
     , source_ch(source_ch)
     , target(target)
     , target_ch(target_ch)
-    , volume(volume)
-  {}
+  {
+    if(volume >= 0){
+      this->volume = volume;
+      this->must_set_volume = true;
+    }
+  }
 
   // QVector requires an empty constructor in LinkParameters::add
   LinkParameter()
@@ -69,12 +75,12 @@ struct LinkParameter{
 };
 
 struct LinkParameters : public QVector<LinkParameter> {
-  void add(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch, float volume = 1.0){
+  void add(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch, float volume = -1.0){
     push_back(LinkParameter(source, source_ch, target, target_ch, volume));
   }
 
   // Implemented in QM_chip.cpp
-  void add(Chip *source, int source_ch, Chip *target, int target_ch, float volume = 1.0);
+  void add(Chip *source, int source_ch, Chip *target, int target_ch, float volume = -1.0);
 };
 
 }

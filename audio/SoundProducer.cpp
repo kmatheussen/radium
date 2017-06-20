@@ -910,10 +910,11 @@ public:
     for(auto *link : to_add)
       if (link != start_link)
         if (link->target == this)
-          if (link->source->is_recursive(start_producer, start_link, to_add)==false){
-            P(2);
-            return true;
-          }
+          if (!link->is_bus_link)
+            if (link->source->is_recursive(start_producer, start_link, to_add)==true){
+              P(2);
+              return true;
+            }
       
     return false;
   }
@@ -937,7 +938,7 @@ public:
     return false;
   }
 
-  // Note: Will delete all links in to_add if it failed.
+  // Note: Will delete all links in to_add if it succeeded.
   //
   static bool add_and_remove_links(const radium::Vector<SoundProducerLink*> &to_add, const radium::Vector<SoundProducerLink*> &to_remove, bool *isrecursive_feedback = NULL){
     R_ASSERT(THREADING_is_main_thread());
@@ -1192,7 +1193,7 @@ public:
       }
     }
 
-    RError("Could not find input link. Size: %p. source: %p. sch: %d, tch: %d\n",_input_links.size(), source, source_ch, target_ch);
+    RError("Could not find input link. Size: %d. source: %p. sch: %d, tch: %d\n",_input_links.size(), source, source_ch, target_ch);
     return NULL;
   }
   
@@ -1678,7 +1679,8 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
     SoundProducerLink *link = new SoundProducerLink(parm.source, parm.target, false);
     link->source_ch = parm.source_ch;
     link->target_ch = parm.target_ch;
-    link->link_volume = parm.volume;
+    if (parm.must_set_volume)
+      link->link_volume = parm.volume;
     to_add.push_back(link);
   }
 
