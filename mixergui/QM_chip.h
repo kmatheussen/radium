@@ -468,6 +468,8 @@ void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connecti
                                    int64_t patch_id_old2 = -1, int64_t patch_id_new2 = -1
                                    );
 
+void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections);
+
 void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *connections,
                                            const vector_t *patches
                                            );

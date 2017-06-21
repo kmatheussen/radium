@@ -2523,8 +2523,7 @@ static void MW_position_chips_from_state(const hash_t *chips, const vector_t *pa
 
 // Called from undo_mixer_connections.c
 void MW_create_connections_from_state(const hash_t *connections){
-  MW_cleanup_connections(false);
-  CONNECTIONS_create_from_state(&g_mixer_widget->scene, connections);
+  CONNECTIONS_replace_all_with_state(&g_mixer_widget->scene, connections);
 }
 
 static void add_undo_for_all_chip_positions(void){
@@ -2816,7 +2815,7 @@ static bool in_patches(const vector_t *patches, int64_t id){
 static void apply_ab_connections_state(hash_t *connections){
   const vector_t &patches = get_audio_instrument()->patches;
 
-  vector_t connections_to_create = {0}; // Using vector_t instead of QVector so that the GC won't delete it.
+  vector_t connections_to_create = {0}; // Using vector_t instead of QVector so that the GC won't delete the contents.
   
   for(int i=0;i<HASH_get_int(connections, "num_connections");i++) {
     hash_t *connection_state = HASH_get_hash_at(connections, "", i);

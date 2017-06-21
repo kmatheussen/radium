@@ -723,13 +723,13 @@ namespace{
 }
 
 
-static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::AudioGraph &changes){
+static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::AudioGraph *changes){
   radium::LinkParameters add_linkparameters;
   radium::LinkParameters remove_linkparameters;
 
   
   // ADD: Create parameters
-  for(const auto &parm : changes.to_add){
+  for(const auto &parm : changes->to_add){
     if (parm.can_be_connected()){
       
       Chip *from = parm._from;
@@ -753,7 +753,7 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
 
   
   // REMOVE: Create parameters
-  for(const auto &parm : changes.to_remove){
+  for(const auto &parm : changes->to_remove){
     if (parm.can_be_disconnected()){
 
       Chip *from = parm._from;
@@ -788,7 +788,7 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
 
   
   // ADD: Create mixergui connections
-  for(const auto &parm : changes.to_add){
+  for(const auto &parm : changes->to_add){
     R_ASSERT(scene != NULL);
     
     if (parm.can_be_connected()){
@@ -809,7 +809,7 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
 
   
   // REMOVE: Delete mixergui connections
-  for(const auto &parm : changes.to_remove){
+  for(const auto &parm : changes->to_remove){
     if (parm.can_be_disconnected()){
       AudioConnection *connection = CONNECTION_find_audio_connection(parm._from, parm._to);
       if (connection==NULL)
@@ -828,36 +828,34 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
 
 
 void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
-  CONNECTIONS_apply_changes(scene, changes::Connect(from, to));
+  changes::Connect changes(from, to);
+  CONNECTIONS_apply_changes(scene, &changes);
 }
 
 bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
-  return CONNECTIONS_apply_changes(scene, changes::Disconnect(from, to));
+  changes::Disconnect changes(from, to);
+  return CONNECTIONS_apply_changes(scene, &changes);
 }
 
 void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to){
   CHIP_connect_chips(scene, find_chip_for_plugin(scene, from), find_chip_for_plugin(scene, to));
 }
 
-static void changeremove_all_audio_connections(const QGraphicsScene *scene, changes::AudioGraph &changes){
+static void changeremove_all_audio_connections(const QGraphicsScene *scene, changes::AudioGraph *changes){
   QList<QGraphicsItem *> das_items = scene->items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     AudioConnection *audio_connection = dynamic_cast<AudioConnection*>(das_items.at(i));      
     if(audio_connection!=NULL)
-      changes.remove(audio_connection);
+      changes->remove(audio_connection);
   }
 }
 
-void CONNECTIONS_remove_all(QGraphicsScene *scene){
+static void CONNECTIONS_remove_all2(QGraphicsScene *scene, changes::AudioGraph *changes){
   radium::Vector<SoundProducer*> producers;
   radium::Vector<EventConnection*> event_connections;
   
-  {
-    changes::AudioGraph changes;
-    changeremove_all_audio_connections(scene, changes);
-    CONNECTIONS_apply_changes(scene, changes);
-  }
+  changeremove_all_audio_connections(scene, changes);
 
   {
     QList<QGraphicsItem *> das_items = scene->items();
@@ -875,14 +873,14 @@ void CONNECTIONS_remove_all(QGraphicsScene *scene){
   }
 
   // Think this must be done before calling SP_remove_all_links. (it was opposite before)
-  for(auto producer : producers){
+  for(auto *producer : producers){
     SoundPlugin *plugin = SP_get_plugin(producer);
     volatile struct Patch *patch = plugin->patch;
     if (patch!=NULL)
       PATCH_remove_all_event_receivers((struct Patch*)patch);
   }
 
-  SP_remove_all_links(producers); // Remove remaining links (i.e. all elinks)
+  SP_remove_all_elinks(producers);
 
   for(auto event_connection : event_connections) {
     //if (is_loading)
@@ -891,6 +889,12 @@ void CONNECTIONS_remove_all(QGraphicsScene *scene){
     CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(event_connection);
   }
 
+}
+
+void CONNECTIONS_remove_all(QGraphicsScene *scene){
+  changes::AudioGraph changes;
+  CONNECTIONS_remove_all2(scene, &changes);
+  CONNECTIONS_apply_changes(scene, &changes);
 }
 
 // Simultaneously do these three things:
@@ -1065,7 +1069,8 @@ void CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(Eve
 }
 
 void CONNECTION_delete_audio_connection(AudioConnection *connection){
-  CONNECTIONS_apply_changes(NULL, changes::Disconnect(connection));
+  changes::Disconnect changes(connection);
+  CONNECTIONS_apply_changes(NULL, &changes);
 }
 
 void CONNECTION_delete_event_connection(EventConnection *connection){
@@ -1139,7 +1144,7 @@ void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip)
 
   changes.add(left_chip, right_chip);
 
-  CONNECTIONS_apply_changes(scene, changes);
+  CONNECTIONS_apply_changes(scene, &changes);
 }
 
 // 'left_chip' is inserted in the middle of 'right_chip' and all chips 'right_chip' receives from.
@@ -1154,7 +1159,7 @@ void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip
 
   changes.add(left_chip, right_chip);
 
-  CONNECTIONS_apply_changes(scene, changes);
+  CONNECTIONS_apply_changes(scene, &changes);
 }
 
 void Chip::init_new_plugin(void){
@@ -2030,10 +2035,10 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
   return state;
 }
 
-static void STATE_changeadd_connection(QGraphicsScene *scene, changes::AudioGraph &changes, const hash_t *state,
-                                       int patch_id_old, int patch_id_new,
-                                       int64_t patch_id_old2, int64_t patch_id_new2
-                                       )
+static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioGraph *changes, const hash_t *state,
+                                          int patch_id_old, int patch_id_new,
+                                          int64_t patch_id_old2 = -1, int64_t patch_id_new2 = -1
+                                          )
 {
   int64_t id_from = HASH_get_int(state, "from_patch");
   int64_t id_to = HASH_get_int(state, "to_patch");
@@ -2064,19 +2069,27 @@ static void STATE_changeadd_connection(QGraphicsScene *scene, changes::AudioGrap
     float gain = -1.0;
     if (HASH_has_key(state, "gain"))
       gain = HASH_get_float(state, "gain");
-    changes.add(from_chip, to_chip, gain);
+    changes->add(from_chip, to_chip, gain);
   }
 }
   
-void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new, int64_t patch_id_old2, int64_t patch_id_new2){
+void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new){
   changes::AudioGraph changes;
 
-  STATE_changeadd_connection(scene, changes, state, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2);
-  CONNECTIONS_apply_changes(scene, changes);
+  CONNECTION_create_from_state2(scene, &changes, state, patch_id_old, patch_id_new);
+  CONNECTIONS_apply_changes(scene, &changes);
 }
 
-void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new){
-  CONNECTION_create_from_state2(scene, state, patch_id_old, patch_id_new, -1, -1);
+void CONNECTIONS_create_from_state2(QGraphicsScene *scene, changes::AudioGraph *changes, const hash_t *connections,
+                                    int patch_id_old = -1, int patch_id_new = -1,
+                                    int64_t patch_id_old2 = -1, int64_t patch_id_new2 = -1
+                                    )
+{
+  int num_connections = HASH_get_int(connections, "num_connections");
+  for(int i=0;i<num_connections;i++){
+    const hash_t *state = HASH_get_hash_at(connections, "", i);
+    CONNECTION_create_from_state2(scene, changes, state, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2);
+  }
 }
 
 void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connections,
@@ -2085,16 +2098,21 @@ void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connecti
                                    )
 {
   changes::AudioGraph changes;
-  
-  int num_connections = HASH_get_int(connections, "num_connections");
-  for(int i=0;i<num_connections;i++){
-    const hash_t *state = HASH_get_hash_at(connections, "", i);
-    STATE_changeadd_connection(scene, changes, state, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2);
-  }
-
-  CONNECTIONS_apply_changes(scene, changes);
+  CONNECTIONS_create_from_state2(scene, &changes, connections, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2);
+  CONNECTIONS_apply_changes(scene, &changes);
 }
+
+void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections)
+{
+  changes::AudioGraph changes;
+
+  CONNECTIONS_remove_all2(scene, &changes);
   
+  CONNECTIONS_create_from_state2(scene, &changes, connections);
+
+  CONNECTIONS_apply_changes(scene, &changes);
+}
+
 // Called from MW_create_from_state, which is called from Presets.cpp.
 void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *connections,
                                            const vector_t *patches
@@ -2118,14 +2136,14 @@ void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *
       int64_t id_from = ((struct Patch*)patches->elements[index_from])->id;
       int64_t id_to = ((struct Patch*)patches->elements[index_to])->id;
       
-      STATE_changeadd_connection(scene,
-                                 changes,
-                                 connection_state,
-                                 index_from, id_from,
-                                 index_to, id_to
-                                 );
+      CONNECTION_create_from_state2(scene,
+                                    &changes,
+                                    connection_state,
+                                    index_from, id_from,
+                                    index_to, id_to
+                                    );
     }
   }
 
-  CONNECTIONS_apply_changes(scene, changes);
+  CONNECTIONS_apply_changes(scene, &changes);
 }
