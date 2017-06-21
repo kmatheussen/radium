@@ -92,7 +92,7 @@ public:
   bool is_event_connection;
   enum ColorNums color_num;
 
-  bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
+  //bool is_ab_touched = false; // used by a/b to determine wheter it should be deleted or not after changing ab.
   
   QColor getColor(void) {
     if (is_selected)

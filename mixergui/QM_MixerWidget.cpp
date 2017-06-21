@@ -2483,6 +2483,8 @@ hash_t *MW_get_state(const vector_t *patches, bool include_ab){
 
 // Only used when loading song
 static void MW_create_chips_from_full_state(hash_t *chips, Buses buses, bool is_loading){
+
+  R_ASSERT(is_loading);
   
   int64_t num_chips = HASH_get_int(chips, "num_chips");
   printf("number of chips: %d\n",(int)num_chips);
@@ -2625,6 +2627,8 @@ static void autoposition_missing_bus_chips(hash_t *bus_chips_state){
 // Only called when loading song. (earlier it was also used when undoing)
 void MW_create_full_from_state(const hash_t *state, bool is_loading){
 
+  R_ASSERT(is_loading);
+  
   //MW_cleanup();
 
   hash_t *bus_chips_state;
@@ -2813,6 +2817,12 @@ static bool in_patches(const vector_t *patches, int64_t id){
 }
 
 static void apply_ab_connections_state(hash_t *connections){
+
+  // All the stuff that was done below should now be handled in QM_chip.cpp / SoundProducer.cpp instead when applying graph changes, and in much better ways.
+  CONNECTIONS_replace_all_with_state(&g_mixer_widget->scene, connections);
+
+  
+#if 0
   const vector_t &patches = get_audio_instrument()->patches;
 
   vector_t connections_to_create = {0}; // Using vector_t instead of QVector so that the GC won't delete the contents.
@@ -2873,6 +2883,7 @@ static void apply_ab_connections_state(hash_t *connections){
                                  -1, -1);
     R_ASSERT_RETURN_IF_FALSE(get_connection(id_from, id_to, is_event_connection) != NULL);
   }END_VECTOR_FOR_EACH;
+#endif
 }
 
 static void apply_ab_state(hash_t *state, hash_t *curr_state){
