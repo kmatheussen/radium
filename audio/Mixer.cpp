@@ -428,7 +428,7 @@ void PLAYER_lock(void){
 
   R_ASSERT(!THREADING_is_player_thread());
 
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
   printf("  PLAYER_LOCK  \n");
   if (ATOMIC_GET(root->editonoff)==false){
     static int downcount = 1;

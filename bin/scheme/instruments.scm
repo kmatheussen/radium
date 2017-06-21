@@ -257,21 +257,32 @@
                 (would-this-create-a-recursive-connection? from-id to-id)))
           (get-all-audio-instruments)))
 
-(define (duplicate-connections id-old-instrument id-new-instrument)
+(define (move-connections-to-new-instrument id-old-instrument id-new-instrument)
+  (define changes '())
+  
   ;; in audio
   (for-each (lambda (from-instrument)
-              (<ra> :create-audio-connection
-                    from-instrument
-                    id-new-instrument
-                    (<ra> :get-audio-connection-gain from-instrument id-old-instrument)))
+              (push-back! changes (hash-table* :type "connect"
+                                               :source from-instrument
+                                               :target id-new-instrument
+                                               :gain (<ra> :get-audio-connection-gain from-instrument id-old-instrument)))
+              (push-back! changes (hash-table* :type "disconnect"
+                                               :source from-instrument
+                                               :target id-old-instrument)))
             (get-instruments-connecting-to-instrument id-old-instrument))
   ;; out audio
   (for-each (lambda (to-instrument)
-              (<ra> :create-audio-connection
-                    id-new-instrument
-                    to-instrument
-                    (<ra> :get-audio-connection-gain id-old-instrument to-instrument)))
+              (push-back! changes (hash-table* :type "connect"
+                                               :source id-new-instrument
+                                               :target to-instrument
+                                               :gain (<ra> :get-audio-connection-gain id-old-instrument to-instrument)))
+              (push-back! changes (hash-table* :type "disconnect"
+                                               :source id-old-instrument
+                                               :target to-instrument)))
             (get-instruments-connecting-from-instrument id-old-instrument))
+
+  (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
+  
   ;; in event
   (for-each (lambda (from-instrument)
               (<ra> :create-event-connection
@@ -318,7 +329,8 @@
                    (<ra> :get-instrument-effect id-old-instrument "System Dry/Wet"))
              ;;(<ra> :replace-all-seq-automation id-old-instrument id-new-instrument)
              (<ra> :replace-use-of-instrument id-old-instrument id-new-instrument)
-             (duplicate-connections id-old-instrument id-new-instrument)
+             (<ra> :undo-mixer-connections)
+             (move-connections-to-new-instrument id-old-instrument id-new-instrument)
              ;;(replace-instrument-in-all-tracks! id-old-instrument id-new-instrument)
              (replace-instrument-in-mixer id-old-instrument id-new-instrument)
              )))))

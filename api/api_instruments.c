@@ -1115,6 +1115,10 @@ void deleteAudioConnection(int64_t source_id, int64_t dest_id){
     handleError("Could not find audio connection between \"%s\" and \"%s\"", source->name, dest->name);
 }
 
+bool changeAudioConnections(dyn_t changes){
+  return CONNECTIONS_apply_changes(changes);
+}
+
 bool hasAudioConnection(int64_t source_id, int64_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)

@@ -14,6 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef _RADIUM_API_API_COMMON_PROC_H
+#define _RADIUM_API_API_COMMON_PROC_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,7 +25,7 @@ extern const char *pullErrorMessage(void);
 extern void printExceptionIfError(void);
 extern void throwExceptionIfError(void); // Warning, is likely to cause a longjmp!
 extern void clearErrorMessage(void); // Should be called before running code that might call handleError followed by throwExceptionIfError.
-extern void handleError(const char *fmt,...);
+
 
 extern struct Tracker_Windows *getWindowFromNum(int windownum);
 
@@ -89,4 +92,6 @@ extern int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *no
   
 #ifdef __cplusplus
 }
+#endif
+
 #endif

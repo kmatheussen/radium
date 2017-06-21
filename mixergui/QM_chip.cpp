@@ -87,7 +87,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_mix_colors.h"
 #include "../Qt/Qt_colors_proc.h"
 
+#include "../api/api_common_proc.h"
+
 #include "../common/patch_proc.h"
+
 
 extern EditorWidget *g_editor;
 
@@ -575,6 +578,12 @@ void CHIP_kick_right(Chip *chip){
   remakeMixerStrips();
 }
 
+static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id){
+  struct Patch *patch = PATCH_get_from_id(patch_id);
+
+  return CHIP_get(scene, patch);
+}
+
 static bool connect(QGraphicsScene *scene, Chip *from, int from_portnum, Chip *to, int to_portnum){
   return SP_add_link(to->_sound_producer, to_portnum, 
                      from->_sound_producer, from_portnum);
@@ -832,6 +841,83 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
   return true;
 }
 
+bool CONNECTIONS_apply_changes(const dyn_t dynchanges){
+  changes::AudioGraph changes;
+
+  auto *scene = get_scene(g_mixer_widget);
+    
+  if (!DYN_check_type(dynchanges, ARRAY_TYPE, ""))
+    return false;
+  
+  for(int i = 0 ; i < dynchanges.array->num_elements ; i++){
+
+    const dyn_t &element = dynchanges.array->elements[i];
+    
+    const char *errorstring = talloc_format("Element %d: ", i);
+    
+    if (!DYN_check_type(element, HASH_TYPE, errorstring))
+      return false;
+
+    if (!HASH_check_type(element.hash, ":type", STRING_TYPE, errorstring))
+      return false;
+
+    if (!HASH_check_type(element.hash, ":source", INT_TYPE, errorstring))
+      return false;
+    
+    if (!HASH_check_type(element.hash, ":target", INT_TYPE, errorstring))
+      return false;
+
+    int64_t source_id = HASH_get_int(element.hash, ":source");
+    int64_t target_id = HASH_get_int(element.hash, ":target");
+
+    Chip *source = get_chip_from_patch_id(scene, source_id);
+    Chip *target = get_chip_from_patch_id(scene, target_id);
+
+    if (source==NULL){
+      handleError("Source instrument #%d not found", source_id);
+      return false;
+    }
+
+    if (target==NULL){
+      handleError("Target instrument #%d not found", target_id);
+      return false;
+    }
+
+    //bool are_connected = CHIPS_are_connected(source, target); // No, it's legal to disconnect/connect simultaneously.
+          
+    const wchar_t *type_name = HASH_get_string(element.hash, ":type");
+    
+    if (STRING_equals(type_name, "connect")){
+      
+      if (HASH_has_key(element.hash, ":gain")){
+        
+        if (!HASH_check_type(element.hash, ":gain", FLOAT_TYPE, errorstring))
+          return false;
+        
+        changes.add(source, target, HASH_get_float(element.hash, ":gain"));
+        
+      } else {
+
+        changes.add(source, target);
+        
+      }
+
+      
+    } else if (STRING_equals(type_name, "disconnect")){
+
+      changes.remove(source, target);
+      
+    } else {
+      handleError("Element %d[\"type\"]: Expected \"connect\" or \"disconnect\", found \"%s\"", i, STRING_get_chars(type_name));
+      return false;
+    }
+      
+  }
+
+  
+  return CONNECTIONS_apply_changes(scene, changes);
+}
+  
 
 void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
   CONNECTIONS_apply_changes(scene, changes::Connect(from, to));
@@ -2023,13 +2109,6 @@ AudioConnection *CONNECTION_find_audio_connection(const Chip *from, const Chip *
   return NULL;
 }
                      
-static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id){
-  struct Patch *patch = PATCH_get_from_id(patch_id);
-
-  return CHIP_get(scene, patch);
-}
-
-
 static int64_t get_saving_patch_id(struct Patch *patch, const vector_t *patches){
   if (patches==NULL)
     return patch->id;

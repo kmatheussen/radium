@@ -1850,6 +1850,10 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
   return SoundProducer::add_and_remove_links(to_add, to_remove, &isrecursive, volume_changes);
 }
 
+bool SP_add_and_remove_links(const dyn_t changes){
+  return CONNECTIONS_apply_changes(changes);
+}
+
 bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch){
   return target->add_SoundProducerInput(source,source_ch,target_ch);
 }

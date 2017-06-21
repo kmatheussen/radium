@@ -241,6 +241,7 @@ static inline bool is_playing(void);
 #include "OS_Semaphores.h"
 #include "keyboard_focus_proc.h"
 
+extern LANGSPEC void handleError(const char *fmt,...);
 
 
 
@@ -700,6 +701,25 @@ static inline dyn_t DYN_create_string(QString string){
 
 static inline dyn_t DYN_create_string_from_chars(const char *chars){
   return DYN_create_string_dont_copy(STRING_create(chars));
+}
+
+
+static inline bool DYN_check_type(const dyn_t dyn, enum DynType type, const char *error){
+  if (dyn.type != type){
+    handleError("%sExpected %s, found %s", error, DYN_type_name(type), DYN_type_name(dyn.type));
+    return false;
+  }
+  
+  return true;
+}
+
+static inline bool HASH_check_type(const hash_t *hash, const char *key, enum DynType type, const char *error){
+  if (!HASH_has_key(hash, key)){
+    handleError("%sCould not find \"%s\" in hash table", error, key);
+    return false;
+  }    
+
+  return DYN_check_type(HASH_get_dyn(hash, key), type, error);
 }
 
 
