@@ -42,7 +42,10 @@ extern LANGSPEC void PATCH_init(void);
 
 extern LANGSPEC bool PATCH_add_event_receiver(struct Patch *source, struct Patch *destination);
 extern LANGSPEC void PATCH_remove_event_receiver(struct Patch *source, struct Patch *destination);
-extern LANGSPEC void PATCH_remove_all_event_receivers(struct Patch *patch);
+
+#ifdef __cplusplus
+extern LANGSPEC void PATCH_remove_all_event_receivers(struct Patch *patch, radium::PlayerLockOnlyIfNeeded &lock);
+#endif
 
 extern LANGSPEC void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_send_stop_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note,STime time);

@@ -608,11 +608,14 @@ bool PATCH_add_event_receiver(struct Patch *source, struct Patch *destination){
 
 // MUST ONLY BE CALLED FROM mixergui/QM_chip.cpp:PATCH_remove_event_receiver (because PATCH_add_event_receiver must be called at the same time as SP_remove_link)
 void PATCH_remove_event_receiver(struct Patch *source, struct Patch *destination){
-  int i;
   int num_event_receivers = source->num_event_receivers;
-
-  PLAYER_lock();{
-    for(i=0; i<num_event_receivers; i++){
+  if (num_event_receivers==0)
+    return;
+  
+  {
+    radium::PlayerRecursiveLock lock;
+  
+    for(int i=0; i<num_event_receivers; i++){
       if(source->event_receivers[i]==destination){
         source->event_receivers[i] = source->event_receivers[num_event_receivers-1];
         source->num_event_receivers = num_event_receivers-1;
@@ -620,19 +623,20 @@ void PATCH_remove_event_receiver(struct Patch *source, struct Patch *destination
         break;
       }
     }
-  }PLAYER_unlock();
+  }
 }
 
-void PATCH_remove_all_event_receivers(struct Patch *patch){
+void PATCH_remove_all_event_receivers(struct Patch *patch, radium::PlayerLockOnlyIfNeeded &lock){
   int num_event_receivers = patch->num_event_receivers;
 
-  PLAYER_lock();{
-    int i;
-    for(i=0; i<num_event_receivers; i++)
-      patch->event_receivers[i] = NULL;
-
-    patch->num_event_receivers = 0;
-  }PLAYER_unlock();
+  if (num_event_receivers==0)
+    return;
+  
+  lock.lock();
+  for(int i=0; i<num_event_receivers; i++)
+    patch->event_receivers[i] = NULL;
+  
+  patch->num_event_receivers = 0;
 }
 
 

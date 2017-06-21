@@ -36,6 +36,7 @@ private:
   LockAsserter lockAsserter;
 
   
+  // Normally it would be a typo or an error if trying to copy a radium::Vector.
   Vector(const Vector&) = delete;
   Vector& operator=(const Vector&) = delete;
 

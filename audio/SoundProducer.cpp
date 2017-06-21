@@ -633,10 +633,8 @@ namespace{
       : link(link)
       , new_volume(new_volume)
     {}
-    VolumeChange(){
-    }
   };
-  struct VolumeChanges : public QVector<VolumeChange> {
+  struct VolumeChanges : public radium::Vector<VolumeChange> {
   };
   const VolumeChanges g_empty_volume_changes;
 }

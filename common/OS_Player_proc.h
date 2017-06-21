@@ -90,7 +90,10 @@ namespace{
 
 struct PlayerLock{
   const bool _enable;
-  
+
+  PlayerLock(const PlayerLock&) = delete;
+  PlayerLock& operator=(const PlayerLock&) = delete;
+
   PlayerLock(const bool enable = true)
     : _enable(enable)
   {
@@ -106,7 +109,10 @@ struct PlayerLock{
  
 struct PlayerRecursiveLock{
   bool gotit;
-  
+
+  PlayerRecursiveLock(const PlayerRecursiveLock&) = delete;
+  PlayerRecursiveLock& operator=(const PlayerRecursiveLock&) = delete;
+
   PlayerRecursiveLock()
   : gotit (!PLAYER_current_thread_has_lock())
   {
@@ -118,6 +124,35 @@ struct PlayerRecursiveLock{
     if (gotit)
       PLAYER_unlock();
   }
+};
+
+// TODO: Go through all use of PlayerRecursiveLock and see if it can be replaced with PlayerLockOnlyIfNeeded.
+struct PlayerLockOnlyIfNeeded{
+  bool gotit = false;
+
+  void lock(){
+    if (gotit==false){
+      PLAYER_lock();
+      gotit = true;
+    }
+  }
+
+  void maybe_pause(int i){
+    if (gotit)
+      PLAYER_maybe_pause_lock_a_little_bit(i);
+  }
+
+  PlayerLockOnlyIfNeeded(const PlayerLockOnlyIfNeeded&) = delete;
+  PlayerLockOnlyIfNeeded& operator=(const PlayerLockOnlyIfNeeded&) = delete;
+
+  
+  PlayerLockOnlyIfNeeded(){
+  }
+  
+  ~PlayerLockOnlyIfNeeded(){
+    if (gotit)
+      PLAYER_unlock();
+  }  
 };
  
 }
