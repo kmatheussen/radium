@@ -912,6 +912,20 @@ void CONNECTIONS_remove_all(QGraphicsScene *scene){
 // 2. Remove connection between middle and after
 // 3. Add connection between before and after
 void CHIP_remove_chip_from_connection_sequence(QGraphicsScene *scene, Chip *before, Chip *middle, Chip *after){
+  changes::AudioGraph changes;
+  changes.remove(before, middle);
+  changes.remove(middle, after);
+  changes.add(before, after);
+  CONNECTIONS_apply_changes(scene, changes);
+}
+
+// Opposite of remove_chip_from_connection_sequence
+void CHIP_add_chip_to_connection_sequence(QGraphicsScene *scene, Chip *before, Chip *middle, Chip *after){
+  changes::AudioGraph changes;
+  changes.add(before, middle);
+  changes.add(middle, after);
+  changes.remove(before, after);
+  CONNECTIONS_apply_changes(scene, changes);
 }
 
 void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){

@@ -1548,6 +1548,7 @@ void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state){
   hash_t *values_state = HASH_get_hash(state, "values");
 
   float values[num_effects];
+  
   for(int i=0;i<num_effects;i++)
     values[i] = HASH_get_float_at(values_state,"value",i);
   
@@ -1555,9 +1556,10 @@ void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state){
     for(int i=0;i<num_effects;i++)
       PLUGIN_set_effect_value(plugin, 0, i, values[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
   }PLAYER_unlock();
-  
+
   if(type->recreate_from_state!=NULL)
     type->recreate_from_state(plugin, HASH_get_hash(state, "plugin_state"), false);
+
 }
 
 hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin){

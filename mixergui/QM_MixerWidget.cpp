@@ -584,10 +584,9 @@ static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
 
       Chip *from = connection->from;
       Chip *to = connection->to;
-      CONNECTION_delete_audio_connection(connection);
-      CHIP_connect_chips(myscene, from, chip);
-      CHIP_connect_chips(myscene, chip, to);
 
+      CHIP_add_chip_to_connection_sequence(myscene, from, chip, to);
+      
       return true;
     }
 
@@ -828,18 +827,12 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mo
     bool is_slash_was_connected = get_before_and_after_chip(chip, &before, &after);
 
     UNDO_OPEN_REC();{
-      
-      struct Instruments *instrument = get_audio_instrument();
-      VECTOR_FOR_EACH(struct Patch *,patch,&instrument->patches){
-        if(patch->patchdata==SP_get_plugin(chip->_sound_producer)){
-          printf("Found patch\n");
-          deleteInstrument(patch->id);
-          break;
-        }
-      }END_VECTOR_FOR_EACH;
-      
+
       if(is_slash_was_connected)
-        CHIP_connect_chips(scene, before, after);
+        CHIP_remove_chip_from_connection_sequence(scene, before, chip, after);
+
+      struct Patch *patch = CHIP_get_patch(chip);
+      deleteInstrument(patch->id);
       
     }UNDO_CLOSE();
     
