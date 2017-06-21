@@ -457,8 +457,20 @@ struct Patch *CHIP_get_patch(const Chip *chip);
 
 AudioConnection *CONNECTION_find_audio_connection(const Chip *from, const Chip *to);
 hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *patches);
+
+void CONNECTIONS_remove_all(QGraphicsScene *scene);
+
 void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new, int64_t patch_id_old2, int64_t patch_id_new2);
 void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new);
+
+void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connections,
+                                   int patch_id_old = -1, int patch_id_new = -1,
+                                   int64_t patch_id_old2 = -1, int64_t patch_id_new2 = -1
+                                   );
+
+void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *connections,
+                                           const vector_t *patches
+                                           );
 
 #endif // __cplusplus
 

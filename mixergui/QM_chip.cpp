@@ -623,13 +623,15 @@ namespace radium{
 }
 
 namespace{
-  struct ConnectParm{
+  namespace changes{
+    
+  struct Parm{
     Chip *_from;
     Chip *_to;
     float _volume = 1.0;
     bool _must_set_volume = false;
     
-    ConnectParm(Chip *from, Chip *to, float volume = -1.0)
+    Parm(Chip *from, Chip *to, float volume = -1.0)
       : _from(from)
       , _to(to)
     {
@@ -638,10 +640,10 @@ namespace{
         _must_set_volume = true;
       }
     }
-    
-    // QVector requires an empty constructor in ConnectParms::add
-    ConnectParm()
-      : ConnectParm(NULL, NULL)
+
+    // QVector requires an empty constructor in Parms::add
+    Parm()
+      : Parm(NULL, NULL)
     {}
 
     bool can_be_connected(void) const {
@@ -659,16 +661,32 @@ namespace{
     }
   };
 
-  struct AudioGraphChanges {
-    QVector<ConnectParm> to_add;
-    QVector<ConnectParm> to_remove;
+  struct AudioGraph {
+    QVector<Parm> to_add;
+    QVector<Parm> to_remove;
 
+    int find_pos(const QVector<Parm> &parms, const Chip *from, const Chip *to) const {
+      for(int i = 0 ; i < parms.size() ; i++)
+        if (parms.at(i)._from==from && parms.at(i)._to==to)
+          return i;
+      
+      return -1;
+    }
+    
     void add(Chip *from, Chip *to, float volume = -1.0){
-      to_add.push_back(ConnectParm(from, to, volume));
+      int pos = find_pos(to_remove, from, to);
+      if (pos >= 0)
+        to_remove.remove(pos); // This way we don't need to implement an AudioGraph 'diff' function. Instead we just remove all existing connections and add all connections in a state.
+      else
+        to_add.push_back(Parm(from, to, volume));
     }
     
     void remove(Chip *from, Chip *to){
-      to_remove.push_back(ConnectParm(from, to));
+      int pos = find_pos(to_add, from, to);
+      if (pos >= 0)
+        to_add.remove(pos); // This way we don't need to implement an AudioGraph 'diff' function. Instead we just remove all existing connections and add all connections in a state.
+      else
+        to_remove.push_back(Parm(from, to));
     }
     
     void remove(AudioConnection *connection){
@@ -676,33 +694,36 @@ namespace{
     }
   };
 
-  struct ConnectParms : public AudioGraphChanges {
-    ConnectParms(){
+  struct Connect : public AudioGraph {
+    Connect(){
     }
     
-    ConnectParms(Chip *from, Chip *to, float volume = -1.0){
+    Connect(Chip *from, Chip *to, float volume = -1.0){
       add(from, to, volume);
     }
   };
   
-  struct DisconnectParms : public AudioGraphChanges {
-    DisconnectParms(){
+  struct Disconnect : public AudioGraph {
+    Disconnect(){
     }
     
-    DisconnectParms(Chip *from, Chip *to){
+    Disconnect(Chip *from, Chip *to){
       remove(from, to);
     }
     
-    DisconnectParms(AudioConnection *connection){
+    Disconnect(AudioConnection *connection){
       remove(connection);
     }
   };
 
+  struct Volume : public AudioGraph {
+  };
 
+  }
 }
 
 
-static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const AudioGraphChanges &changes){
+static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::AudioGraph &changes){
   radium::LinkParameters add_linkparameters;
   radium::LinkParameters remove_linkparameters;
 
@@ -807,17 +828,69 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const AudioGraphCha
 
 
 void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
-  CONNECTIONS_apply_changes(scene, ConnectParms(from, to));
+  CONNECTIONS_apply_changes(scene, changes::Connect(from, to));
 }
 
-
-
 bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
-  return CONNECTIONS_apply_changes(scene, DisconnectParms(from, to));
+  return CONNECTIONS_apply_changes(scene, changes::Disconnect(from, to));
 }
 
 void CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to){
   CHIP_connect_chips(scene, find_chip_for_plugin(scene, from), find_chip_for_plugin(scene, to));
+}
+
+static void changeremove_all_audio_connections(const QGraphicsScene *scene, changes::AudioGraph &changes){
+  QList<QGraphicsItem *> das_items = scene->items();
+
+  for (int i = 0; i < das_items.size(); ++i) {
+    AudioConnection *audio_connection = dynamic_cast<AudioConnection*>(das_items.at(i));      
+    if(audio_connection!=NULL)
+      changes.remove(audio_connection);
+  }
+}
+
+void CONNECTIONS_remove_all(QGraphicsScene *scene){
+  radium::Vector<SoundProducer*> producers;
+  radium::Vector<EventConnection*> event_connections;
+  
+  {
+    changes::AudioGraph changes;
+    changeremove_all_audio_connections(scene, changes);
+    CONNECTIONS_apply_changes(scene, changes);
+  }
+
+  {
+    QList<QGraphicsItem *> das_items = scene->items();
+    
+    for (int i = 0; i < das_items.size(); ++i) {
+      Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+      if(chip!=NULL)
+        producers.push_back(chip->_sound_producer);
+      else{
+        EventConnection *event_connection = dynamic_cast<EventConnection*>(das_items.at(i));
+        if(event_connection!=NULL)
+          event_connections.push_back(event_connection);
+      }
+    }
+  }
+
+  // Think this must be done before calling SP_remove_all_links. (it was opposite before)
+  for(auto producer : producers){
+    SoundPlugin *plugin = SP_get_plugin(producer);
+    volatile struct Patch *patch = plugin->patch;
+    if (patch!=NULL)
+      PATCH_remove_all_event_receivers((struct Patch*)patch);
+  }
+
+  SP_remove_all_links(producers); // Remove remaining links (i.e. all elinks)
+
+  for(auto event_connection : event_connections) {
+    //if (is_loading)
+    //  GFX_ShowProgressMessage(talloc_format("Deleting event connection between %s and %s", CHIP_get_patch(event_connection->from)->name, CHIP_get_patch(event_connection->to)->name));
+    
+    CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(event_connection);
+  }
+
 }
 
 // Simultaneously do these three things:
@@ -992,7 +1065,7 @@ void CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(Eve
 }
 
 void CONNECTION_delete_audio_connection(AudioConnection *connection){
-  CONNECTIONS_apply_changes(NULL, DisconnectParms(connection));
+  CONNECTIONS_apply_changes(NULL, changes::Disconnect(connection));
 }
 
 void CONNECTION_delete_event_connection(EventConnection *connection){
@@ -1056,7 +1129,7 @@ void EventConnection::update_position(void){
 
 // 'right_chip' is inserted in the middle of 'left_chip' and all chips 'left_chip' sends to.
 void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip){
-  AudioGraphChanges changes;
+  changes::AudioGraph changes;
   
   for (AudioConnection *connection : left_chip->audio_connections)
     if(connection->from==left_chip){
@@ -1071,7 +1144,7 @@ void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip)
 
 // 'left_chip' is inserted in the middle of 'right_chip' and all chips 'right_chip' receives from.
 void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip){
-  AudioGraphChanges changes;
+  changes::AudioGraph changes;
 
   for (AudioConnection *connection : right_chip->audio_connections)
     if(connection->to==right_chip){
@@ -1957,7 +2030,11 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
   return state;
 }
 
-void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new, int64_t patch_id_old2, int64_t patch_id_new2){
+static void STATE_changeadd_connection(QGraphicsScene *scene, changes::AudioGraph &changes, const hash_t *state,
+                                       int patch_id_old, int patch_id_new,
+                                       int64_t patch_id_old2, int64_t patch_id_new2
+                                       )
+{
   int64_t id_from = HASH_get_int(state, "from_patch");
   int64_t id_to = HASH_get_int(state, "to_patch");
 
@@ -1984,14 +2061,71 @@ void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t
   if(HASH_has_key(state, "is_event_connection") && HASH_get_bool(state, "is_event_connection")) // .rad files before 1.9.31 did not have event connections.
     CHIP_econnect_chips(scene, from_chip, to_chip);
   else {
-    CHIP_connect_chips(scene, from_chip, to_chip);
-    if (HASH_has_key(state, "gain")){
-      float gain = HASH_get_float(state, "gain");
-      setAudioConnectionGain(id_from, id_to, gain, false);
-    }
+    float gain = -1.0;
+    if (HASH_has_key(state, "gain"))
+      gain = HASH_get_float(state, "gain");
+    changes.add(from_chip, to_chip, gain);
   }
+}
+  
+void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new, int64_t patch_id_old2, int64_t patch_id_new2){
+  changes::AudioGraph changes;
+
+  STATE_changeadd_connection(scene, changes, state, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2);
+  CONNECTIONS_apply_changes(scene, changes);
 }
 
 void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new){
   CONNECTION_create_from_state2(scene, state, patch_id_old, patch_id_new, -1, -1);
+}
+
+void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connections,
+                                   int patch_id_old, int patch_id_new,
+                                   int64_t patch_id_old2, int64_t patch_id_new2
+                                   )
+{
+  changes::AudioGraph changes;
+  
+  int num_connections = HASH_get_int(connections, "num_connections");
+  for(int i=0;i<num_connections;i++){
+    const hash_t *state = HASH_get_hash_at(connections, "", i);
+    STATE_changeadd_connection(scene, changes, state, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2);
+  }
+
+  CONNECTIONS_apply_changes(scene, changes);
+}
+  
+// Called from MW_create_from_state, which is called from Presets.cpp.
+void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *connections,
+                                           const vector_t *patches
+                                           )
+{
+  R_ASSERT(patches != NULL);
+  R_ASSERT(Undo_Is_Open());
+  
+  changes::AudioGraph changes;
+    
+  for(int i=0;i<HASH_get_int(connections, "num_connections");i++) {
+    hash_t *connection_state = HASH_get_hash_at(connections, "", i);
+      
+    int64_t index_from = HASH_get_int(connection_state, "from_patch");
+    int64_t index_to = HASH_get_int(connection_state, "to_patch");
+
+    R_ASSERT_RETURN_IF_FALSE(index_from < patches->num_elements);
+    R_ASSERT_RETURN_IF_FALSE(index_to < patches->num_elements);
+
+    if (patches->elements[index_from]!=NULL && patches->elements[index_to]!=NULL) {
+      int64_t id_from = ((struct Patch*)patches->elements[index_from])->id;
+      int64_t id_to = ((struct Patch*)patches->elements[index_to])->id;
+      
+      STATE_changeadd_connection(scene,
+                                 changes,
+                                 connection_state,
+                                 index_from, id_from,
+                                 index_to, id_to
+                                 );
+    }
+  }
+
+  CONNECTIONS_apply_changes(scene, changes);
 }

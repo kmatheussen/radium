@@ -279,13 +279,55 @@ public:
       basic_add(t);
   }
 
+  Vector<T> intersection(const Vector<T> &ts) const {
+    Vector<T> ret;
+    
+    for (const T &t : ts)
+      if (contains(t))
+        ret.push_back(ret);
+
+    return ret;
+  }
+  
+  bool intersects(const Vector<T> &ts) const {
+    for (const T &t : ts)
+      if (contains(t))
+        return true;
+
+    return false;
+  }
+
+  bool intersects(const Vector<T> &ts, bool (*equal)(const T, const T)) const {
+    for (const T &t1 : ts)
+      for(int i = 0 ; i < num_elements ; i++)
+        if (equal(elements[i], t1))
+          return true;
+
+    return false;
+  }
+
+  bool only_unique_elements(bool (*equal)(const T, const T)) const {
+    for(int i1 = 0 ; i1 < num_elements-1 ; i1++)
+      for(int i2 = i1+1 ; i2 < num_elements ; i2++){
+        printf("i1: %d, i2: %d\n", i1, i2);
+        if (equal(elements[i1], elements[i2]))
+          return false;
+      }
+
+    return true;
+  }
+  
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
   int find_pos(const T t) const {
     LOCKASSERTER_SHARED(&lockAsserter);
 
     return find_pos_internal(t);
   }
-  
+
+  bool contains(const T t) const {
+    return find_pos(t) >= 0;
+  }
+    
   // RT safe (except for the O(n) performance)
   //
   // This function can NOT be called in parallell with other functions

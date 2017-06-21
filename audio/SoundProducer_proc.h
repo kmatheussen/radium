@@ -100,7 +100,8 @@ bool SP_add_elink(SoundProducer *target, SoundProducer *source); // returns true
 bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch); // returns true if successful. Shows message before it returns false.
 void SP_remove_elink(SoundProducer *target, const SoundProducer *source);
 void SP_remove_link(SoundProducer *target, int target_ch, const SoundProducer *source, int source_ch);
-void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers);
+void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers); // Note: Removes BOTH audio and event links.
+void SP_remove_all_elinks(const radium::Vector<SoundProducer*> &soundproducers); // Only elinks.
 void SP_RT_called_for_each_soundcard_block1(SoundProducer *producer, int64_t time);
 void SP_RT_called_for_each_soundcard_block2(SoundProducer *producer, int64_t time);
 void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins);

@@ -249,6 +249,45 @@ struct SoundProducerLink {
 
   bool should_be_turned_off = false;
 
+  // Why does gcc complain when the arguments are (const SoundProducerLink *a, const SoundProducerLink *b), and why doesn't it complain now?
+  static bool equal(SoundProducerLink *a, SoundProducerLink *b){
+
+    if (a->source!=b->source)
+      return false;
+    
+    if (a->target!=b->target)
+      return false;
+
+    if (a->is_event_link!=b->is_event_link)
+      return false;
+    
+
+    if (a->is_event_link) {
+#if !defined(RELEASE)
+      fprintf(stderr, "EVENT: a: %p, b: %p\n", a, b);
+      abort();
+#else
+      R_ASSERT(false); // This function, as it is used so far, is only supposed to return false.
+#endif
+      return true;
+    }
+    
+    if (a->source_ch==b->source_ch && a->target_ch==b->target_ch){
+#if !defined(RELEASE)
+      fprintf(stderr, "AUDIO: a: %p, b: %p\n", a, b);
+      abort();
+#else
+      R_ASSERT(false); // This function, as it is used so far, is only supposed to return false.
+#endif
+      return true;
+      
+    } else {
+
+      return false;
+
+    }
+  }
+  
   void request_turn_off(void){
     R_ASSERT_NON_RELEASE(should_be_turned_off==false);
     should_be_turned_off = true;
@@ -586,6 +625,22 @@ namespace{
   struct Owner;
 }
 
+namespace{
+  struct VolumeChange{
+    SoundProducerLink *link;
+    float new_volume;
+    VolumeChange(SoundProducerLink *link, float new_volume)
+      : link(link)
+      , new_volume(new_volume)
+    {}
+    VolumeChange(){
+    }
+  };
+  struct VolumeChanges : public QVector<VolumeChange> {
+  };
+  const VolumeChanges g_empty_volume_changes;
+}
+
 //struct Owner *owner;
 
 struct SoundProducer {
@@ -890,10 +945,35 @@ public:
 #else
 #define P(n) printf("%d: this: %p. Size: %d. to_add[0]: %p\n", n, start_producer, to_add.size(), to_add.at(0));
 #endif
-  
+
+  bool is_still_recursive(const SoundProducerLink* recursive_link,
+                          radium::Vector<SoundProducerLink*> &to_remove,
+                          radium::Vector<SoundProducerLink*> &links_that_must_be_removed_first
+                          )
+  {
+    for(auto *to_remove_link : to_remove){
+      if (to_remove_link->source == recursive_link->source && to_remove_link->target == recursive_link->target){
+
+        // Transfer link 'to_remove' --> 'links_that_must_be_removed_first'
+        links_that_must_be_removed_first.push_back(to_remove_link);
+        to_remove.remove(to_remove_link);
+        
+        return false;
+      }
+    }
+
+    return true;
+  }
+                           
   // Traverse graph backwards and see if we end up in the same position as we started.
-  bool is_recursive(const SoundProducer *start_producer, const SoundProducerLink *start_link, const radium::Vector<SoundProducerLink*> &to_add){
-    if(start_producer==this){
+  bool is_recursive(const SoundProducer *start_producer, const SoundProducerLink *start_link,
+                    const radium::Vector<SoundProducerLink*> &to_add,
+                    radium::Vector<SoundProducerLink*> &to_remove,
+                    radium::Vector<SoundProducerLink*> &links_that_must_be_removed_first
+                    )
+  {
+                    
+    if(start_producer==this){      
       P(0);
       return true;
     }
@@ -901,17 +981,18 @@ public:
     // Traverse input links that are already there.
     for (SoundProducerLink *link : _input_links)
       if (!link->is_bus_link)
-        if(link->source->is_recursive(start_producer, start_link, to_add)==true){
-          P(1);
-          return true;
-        }
+        if(link->source->is_recursive(start_producer, start_link, to_add, to_remove, links_that_must_be_removed_first)==true)
+          if (is_still_recursive(link, to_remove, links_that_must_be_removed_first)==false){
+            P(1);
+            return true;
+          }
     
-    // Traverse input links that we are going to add
+    // Traverse input links that we are going to add (we don't check is_still_recursive here since we assume to_add and to_remove don't overlap. We would probably cover a bug if doing so.)
     for(auto *link : to_add)
       if (link != start_link)
         if (link->target == this)
           if (!link->is_bus_link)
-            if (link->source->is_recursive(start_producer, start_link, to_add)==true){
+            if (link->source->is_recursive(start_producer, start_link, to_add, to_remove, links_that_must_be_removed_first)==true){
               P(2);
               return true;
             }
@@ -921,34 +1002,49 @@ public:
   
 #undef P
   
-  // We can not take 'to_remove' into account when calling this function since we would still end up with a recursive graphics for a little while.
-  // (well, we could take the event links in 'to_remove' into account since they are removed immediately, but we don't need this functionality yet.)
-  //
   // The actualy links to to_remove are not removed until after this function has returned.
   // In step 3 in 'add_and_remove_links', we are just requesting the engine to make it safe to remove the links, not actually remove the links.
   // (this way we can fade out / fade in several links simultaneously.)
   //
-  static bool is_recursive(const radium::Vector<SoundProducerLink*> &to_add) {
-
+  static bool is_recursive(const radium::Vector<SoundProducerLink*> &to_add,
+                           radium::Vector<SoundProducerLink*> &to_remove,
+                           radium::Vector<SoundProducerLink*> &links_that_must_be_removed_first
+                           )
+  {
     for(auto *link : to_add){
-      if (link->source->is_recursive(link->target, link, to_add)==true)
+      if (link->source->is_recursive(link->target, link, to_add, to_remove, links_that_must_be_removed_first)==true)
         return true;
     }
 
     return false;
   }
 
-  // Note: Will delete all links in to_add if it succeeded.
+  // Note 1: Will delete all links in to_add if it succeeded.
+  // Note 2: Might modify to_remove.
   //
-  static bool add_and_remove_links(const radium::Vector<SoundProducerLink*> &to_add, const radium::Vector<SoundProducerLink*> &to_remove, bool *isrecursive_feedback = NULL){
+  static bool add_and_remove_links(const radium::Vector<SoundProducerLink*> &to_add, radium::Vector<SoundProducerLink*> &to_remove, bool *isrecursive_feedback = NULL, const VolumeChanges &volume_changes = g_empty_volume_changes) {
+    
     R_ASSERT(THREADING_is_main_thread());
 
-    // 1. ADDING: Check if graph will be recursive
+    R_ASSERT(to_add.only_unique_elements(SoundProducerLink::equal));
+    R_ASSERT(to_remove.only_unique_elements(SoundProducerLink::equal));
+    R_ASSERT(!to_add.intersects(to_remove, SoundProducerLink::equal));
+
+    
+    radium::Vector<SoundProducerLink*> links_that_must_be_removed_first; // Sometimes it is not possible to add and remove everything in one go without creating a recursive graph.
+
+    
+    // 1. ADDING/REMOVING: Check if graph will be recursive
     //
-    bool isrecursive = is_recursive(to_add);
+    bool isrecursive = SoundProducer::is_recursive(to_add, to_remove, links_that_must_be_removed_first);
     if (isrecursive_feedback != NULL)
       *isrecursive_feedback = isrecursive;
 
+    if (to_add.size()==0 && to_remove.size()==0 && volume_changes.size()==0)
+      return false;
+
+    R_ASSERT(!to_remove.intersects(links_that_must_be_removed_first, SoundProducerLink::equal));
+        
     if (isrecursive) {
 
       R_ASSERT(isrecursive_feedback != NULL);
@@ -960,9 +1056,17 @@ public:
 
       return false;      
     }
+
     
+    // 2. REMOVING: Remove links that must be removed first to avoid recursive graph. (these are found in the is_recursive function)
+    //
+    {
+      radium::Vector<SoundProducerLink*> empty_to_add;
+      SoundProducer::add_and_remove_links(empty_to_add, links_that_must_be_removed_first);
+    }
+
     
-    // 2. ADDING: Allocate memory for new links in the radium::Vector vectors.
+    // 3. ADDING: Allocate memory for new links in the radium::Vector vectors.
     //
     {
       // A little bit tricky. Find how many more elements that is added to each soundproducerlink vector.
@@ -971,12 +1075,13 @@ public:
       QMap < radium::Vector<SoundProducerLink*>* , int > howmanys;
         
       for(auto *link : to_add){
+        
         auto *input_linkvector = &link->source->_output_links;
         auto *output_linkvector = &link->target->_input_links;
         
         howmanys[input_linkvector] = howmanys.value(input_linkvector) + 1;
         howmanys[output_linkvector] = howmanys.value(output_linkvector) + 1;
-
+        
         printf("..Adding 1 to %p (%d)\n", input_linkvector, howmanys.value(input_linkvector));
         printf("..Adding 1 to %p (%d)\n", output_linkvector, howmanys.value(output_linkvector));
       }
@@ -987,7 +1092,7 @@ public:
       }
     }
 
-    // 3. REMOVING/ADDING: Request links to be removed to turn off, and add new links.
+    // 4. REMOVING/ADDING: Request links to be removed to turn off, and add new links.
     //
     {
       radium::PlayerLock lock;
@@ -1001,12 +1106,17 @@ public:
         link->source->_output_links.push_back(link);
         link->target->_input_links.push_back(link);
       }
+
+      // Change volume
+      for(const auto &volume_change : volume_changes){
+        volume_change.link->link_volume = volume_change.new_volume;
+      }
       
       SoundProducer::RT_set_bus_descendant_types();
     }
 
 
-    // 4. ADDING: Do some necessary memory stuff in the radium::Vector vectors.
+    // 5. ADDING: Do some post-add stuff in the radium::Vector vectors.
     //
     for(auto *link : to_add){
       link->source->_output_links.post_add();
@@ -1014,7 +1124,7 @@ public:
     }
 
     
-    // 5. REMOVING: Wait until all links in 'to_remove' can be removed.
+    // 6. REMOVING: Wait until all links in 'to_remove' can be removed.
     //
     for(auto *link : to_remove){
       PLUGIN_touch(link->source->_plugin);
@@ -1070,7 +1180,7 @@ public:
     }
     */
 
-    // 6. REMOVING: Remove the 'to_remove' links from the graph.
+    // 7. REMOVING: Remove the 'to_remove' links from the graph.
     //
     {
       radium::PlayerLock lock;
@@ -1083,7 +1193,7 @@ public:
       }
     }
 
-    // 6. REMOVING: Deallocate the 'to_remove' links.
+    // 8. REMOVING: Deallocate the 'to_remove' links.
     //
     for(auto *link : to_remove)
       delete link;
@@ -1151,7 +1261,7 @@ public:
     return ret;
   }
 
-  static void remove_links(const radium::Vector<SoundProducerLink*> &links){
+  static void remove_links(radium::Vector<SoundProducerLink*> &links){
     radium::Vector<SoundProducerLink*> to_add;
     
     add_and_remove_links(to_add, links);
@@ -1169,31 +1279,66 @@ public:
   void remove_eventSoundProducerInput(const SoundProducer *source){
     if (PLAYER_is_running()==false)
       return;
-     
-    for (SoundProducerLink *link : _input_links) {
 
-      if(link->source==source && link->is_event_link==true){
-        SoundProducer::remove_link(link);
-        return;
-      }
-      
-    }
-    
-    fprintf(stderr,"huffda2. links: %p.\n",_input_links.elements);
-    R_ASSERT(false);
+    SoundProducerLink *link = find_input_event_link(source);
+    if (link!=NULL)
+      SoundProducer::remove_link(link);
   }
 
-  SoundProducerLink *find_input_link(const SoundProducer *source, int source_ch, int target_ch){
-    //fprintf(stderr,"*** this: %p. Removeing input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
+  SoundProducerLink *find_input_link(const SoundProducer *source, bool may_return_null = false){
     for (SoundProducerLink *link : _input_links) {
 
-      if(link->is_bus_link==false && link->is_event_link==false && link->source==source && link->source_ch==source_ch && link->target_ch==target_ch){
-
-        return link;
-      }
+      if(true
+         && link->is_bus_link==false
+         && link->source==source
+         )
+        {
+          return link;
+        }
     }
 
-    RError("Could not find input link. Size: %d. source: %p. sch: %d, tch: %d\n",_input_links.size(), source, source_ch, target_ch);
+    if (may_return_null==false)
+      RError("Could not find input link. Size: %d. source: %p.\n",_input_links.size(), source);
+    
+    return NULL;
+  }
+  
+  SoundProducerLink *find_input_audio_link(const SoundProducer *source, int source_ch, int target_ch, bool may_return_null = false){
+    for (SoundProducerLink *link : _input_links) {
+
+      if(true
+         && link->is_bus_link==false
+         && link->is_event_link==false
+         && link->source==source
+         && link->source_ch==source_ch
+         && link->target_ch==target_ch
+         )
+        {
+          return link;
+        }
+    }
+
+    if (may_return_null==false)
+      RError("Could not find input audio link. Size: %d. source: %p. sch: %d, tch: %d\n",_input_links.size(), source, source_ch, target_ch);
+    
+    return NULL;
+  }
+  
+  SoundProducerLink *find_input_event_link(const SoundProducer *source, bool may_return_null = false){
+    for (SoundProducerLink *link : _input_links) {
+
+      if(true
+         && link->is_event_link==true
+         && link->source==source
+         )
+        {
+          return link;
+        }
+    }
+
+    if (may_return_null==false)
+      RError("Could not find input event link. Size: %d. source: %p.\n",_input_links.size(), source);
+    
     return NULL;
   }
   
@@ -1203,7 +1348,7 @@ public:
     if (PLAYER_is_running()==false)
       return;
 
-    SoundProducerLink *link = find_input_link(source, source_ch, target_ch);
+    SoundProducerLink *link = find_input_audio_link(source, source_ch, target_ch);
     if (link!=NULL)
       SoundProducer::remove_link(link);
   }
@@ -1665,6 +1810,7 @@ bool SP_add_elink(SoundProducer *target, SoundProducer *source){
 const radium::LinkParameters g_empty_linkparameters;
 
 // Should simultaneously fade out the old and fade in the new.
+// Only audio links.
 bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove){
   if (PLAYER_is_running()==false)
     return false;
@@ -1674,24 +1820,36 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
   
   radium::Vector<SoundProducerLink*> to_add;
   radium::Vector<SoundProducerLink*> to_remove;
+  VolumeChanges volume_changes;
 
   for(auto &parm : parm_to_add){
-    SoundProducerLink *link = new SoundProducerLink(parm.source, parm.target, false);
-    link->source_ch = parm.source_ch;
-    link->target_ch = parm.target_ch;
-    if (parm.must_set_volume)
-      link->link_volume = parm.volume;
-    to_add.push_back(link);
+    SoundProducerLink *existing_link = parm.target->find_input_audio_link(parm.source, parm.source_ch, parm.target_ch, true);
+
+    if (existing_link != NULL) {
+
+      R_ASSERT(parm.must_set_volume);
+      volume_changes.push_back(VolumeChange(existing_link, parm.volume));
+      
+    } else {
+      
+      SoundProducerLink *link = new SoundProducerLink(parm.source, parm.target, false);
+      link->source_ch = parm.source_ch;
+      link->target_ch = parm.target_ch;
+      if (parm.must_set_volume)
+        link->link_volume = parm.volume;
+      to_add.push_back(link);
+      
+    }
   }
 
   for(auto &parm : parm_to_remove){
-    SoundProducerLink *link = parm.target->find_input_link(parm.source, parm.source_ch, parm.target_ch);
+    SoundProducerLink *link = parm.target->find_input_audio_link(parm.source, parm.source_ch, parm.target_ch);
     if (link != NULL)
       to_remove.push_back(link);
   }
 
   bool isrecursive;
-  return SoundProducer::add_and_remove_links(to_add, to_remove, &isrecursive);
+  return SoundProducer::add_and_remove_links(to_add, to_remove, &isrecursive, volume_changes);
 }
 
 bool SP_add_link(SoundProducer *target, int target_ch, SoundProducer *source, int source_ch){
@@ -1707,6 +1865,7 @@ void SP_remove_link(SoundProducer *target, int target_ch, const SoundProducer *s
 }
 
 
+// Removes all links, both audio and event.
 // Does NOT delete the bus links. Those are deleted in the SoundProducer destructor.
 void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers){
 
@@ -1716,6 +1875,19 @@ void SP_remove_all_links(const radium::Vector<SoundProducer*> &soundproducers){
   for(auto soundproducer : soundproducers)
     for(auto link : soundproducer->_input_links)
       if (link->is_bus_link==false)
+        links_to_delete.push_back(link);
+  
+  SoundProducer::remove_links(links_to_delete);
+}
+
+void SP_remove_all_elinks(const radium::Vector<SoundProducer*> &soundproducers){
+
+  radium::Vector<SoundProducerLink *> links_to_delete;
+  
+  // Find all non-bus links
+  for(auto soundproducer : soundproducers)
+    for(auto link : soundproducer->_input_links)
+      if (link->is_event_link==true)
         links_to_delete.push_back(link);
   
   SoundProducer::remove_links(links_to_delete);

@@ -2249,52 +2249,10 @@ static bool delete_a_connection(){
 #endif
 
 static void MW_cleanup_connections(bool is_loading){
-  radium::Vector<SoundProducer*> producers;
-  radium::Vector<AudioConnection*> audio_connections;
-  radium::Vector<EventConnection*> event_connections;
-
   if (is_loading)
     GFX_ShowProgressMessage("Deleting all connection between instruments");
 
-  QList<QGraphicsItem *> das_items = g_mixer_widget->scene.items();
-
-  for (int i = 0; i < das_items.size(); ++i) {
-    Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
-    if(chip!=NULL)
-      producers.push_back(chip->_sound_producer);
-    else{
-      AudioConnection *audio_connection = dynamic_cast<AudioConnection*>(das_items.at(i));
-      if(audio_connection!=NULL)
-        audio_connections.push_back(audio_connection);
-      EventConnection *event_connection = dynamic_cast<EventConnection*>(das_items.at(i));
-      if(event_connection!=NULL)
-        event_connections.push_back(event_connection);
-    }
-  }
-
-  SP_remove_all_links(producers);
-
-  for(auto producer : producers){
-    SoundPlugin *plugin = SP_get_plugin(producer);
-    volatile struct Patch *patch = plugin->patch;
-    if (patch!=NULL)
-      PATCH_remove_all_event_receivers((struct Patch*)patch);
-  }
-
-  for(auto audio_connection : audio_connections) {
-    //if (is_loading)
-    //  GFX_ShowProgressMessage(talloc_format("Deleting audio connection between %s and %s", CHIP_get_patch(audio_connection->from)->name, CHIP_get_patch(audio_connection->to)->name));
-
-    CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(audio_connection);
-  }
-  
-  for(auto event_connection : event_connections) {
-    //if (is_loading)
-    //  GFX_ShowProgressMessage(talloc_format("Deleting event connection between %s and %s", CHIP_get_patch(event_connection->from)->name, CHIP_get_patch(event_connection->to)->name));
-
-    CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(event_connection);
-  }
-    
+  CONNECTIONS_remove_all(&g_mixer_widget->scene);
 }
 
 
@@ -2563,18 +2521,10 @@ static void MW_position_chips_from_state(const hash_t *chips, const vector_t *pa
   }
 }
 
-static void MW_create_connections_from_state_internal(const hash_t *connections, int patch_id_old, int patch_id_new){
-  for(int i=0;i<HASH_get_int(connections, "num_connections");i++)
-    CONNECTION_create_from_state(&g_mixer_widget->scene, HASH_get_hash_at(connections, "", i), patch_id_old, patch_id_new);
-}
-
-void MW_create_connections_from_state_and_replace_patch(const hash_t *connections, int patch_id_old, int patch_id_new){
-  MW_cleanup_connections(false);
-  MW_create_connections_from_state_internal(connections, patch_id_old, patch_id_new);
-}
-
+// Called from undo_mixer_connections.c
 void MW_create_connections_from_state(const hash_t *connections){
-  MW_create_connections_from_state_and_replace_patch(connections, -1, -1);
+  MW_cleanup_connections(false);
+  CONNECTIONS_create_from_state(&g_mixer_widget->scene, connections);
 }
 
 static void add_undo_for_all_chip_positions(void){
@@ -2587,7 +2537,7 @@ static void add_undo_for_all_chip_positions(void){
   }
 }
 
-// Not used when loading song.
+// Called from audio/Presest.cpp. (Not used when loading song.)
 void MW_create_from_state(const hash_t *state, const vector_t *patches, float x, float y){
   R_ASSERT(patches != NULL);
   R_ASSERT(Undo_Is_Open());
@@ -2598,28 +2548,8 @@ void MW_create_from_state(const hash_t *state, const vector_t *patches, float x,
   MW_position_chips_from_state(HASH_get_hash(state, "chips"), patches, x, y);
 
   hash_t *connections = HASH_get_hash(state, "connections");
-  
-  for(int i=0;i<HASH_get_int(connections, "num_connections");i++) {
-    hash_t *connection_state = HASH_get_hash_at(connections, "", i);
-      
-    int64_t index_from = HASH_get_int(connection_state, "from_patch");
-    int64_t index_to = HASH_get_int(connection_state, "to_patch");
 
-    R_ASSERT_RETURN_IF_FALSE(index_from < patches->num_elements);
-    R_ASSERT_RETURN_IF_FALSE(index_to < patches->num_elements);
-
-    if (patches->elements[index_from]!=NULL && patches->elements[index_to]!=NULL) {
-      int64_t id_from = ((struct Patch*)patches->elements[index_from])->id;
-      int64_t id_to = ((struct Patch*)patches->elements[index_to])->id;
-      
-      CONNECTION_create_from_state2(&g_mixer_widget->scene,
-                                    connection_state,
-                                    index_from, id_from,
-                                    index_to, id_to
-                                    );
-    }
-  }
-
+  CONNECTIONS_create_from_presets_state(&g_mixer_widget->scene, connections, patches);
   
   if (patches->num_elements > 1)
     cleanup_chip_positions(&g_mixer_widget->scene);
@@ -2692,6 +2622,8 @@ static void autoposition_missing_bus_chips(hash_t *bus_chips_state){
 
 // Patches must be created before calling this one.
 // However, patch->patchdata are created here.
+//
+// Only called when loading song. (earlier it was also used when undoing)
 void MW_create_full_from_state(const hash_t *state, bool is_loading){
 
   //MW_cleanup();
@@ -2740,7 +2672,7 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   if (is_loading)
     GFX_ShowProgressMessage("Creating connections between sound objects");
 
-  MW_create_connections_from_state_internal(HASH_get_hash(state, "connections"), -1, -1);
+  CONNECTIONS_create_from_state(&g_mixer_widget->scene, HASH_get_hash(state, "connections"), -1, -1);
 
   if (HASH_has_key(state, "ab_state"))
     MW_recreate_ab_from_state(HASH_get_hash(state, "ab_state"));
