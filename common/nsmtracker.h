@@ -639,6 +639,12 @@ static inline const char *DYN_type_name(enum DynType type){
   return "";
 }
 
+#ifdef __cplusplus
+static inline const char *DYN_type_name(const dyn_t &type){
+  return DYN_type_name(type.type);
+}
+#endif
+
 static inline enum DynType DYN_get_type_from_name(const char* type_name){
   for(int i=0;i<NUM_DYNTYPE_TYPES;i++)
     if(!strcmp(type_name, DYN_type_name((enum DynType)i)))

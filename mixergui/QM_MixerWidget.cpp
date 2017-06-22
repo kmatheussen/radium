@@ -828,9 +828,11 @@ static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mo
 
     UNDO_OPEN_REC();{
 
-      if(is_slash_was_connected)
+      if(is_slash_was_connected){
+        ADD_UNDO(MixerConnections_CurrPos());
         CHIP_remove_chip_from_connection_sequence(scene, before, chip, after);
-
+      }
+      
       struct Patch *patch = CHIP_get_patch(chip);
       deleteInstrument(patch->id);
       

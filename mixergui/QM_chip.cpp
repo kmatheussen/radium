@@ -890,11 +890,14 @@ bool CONNECTIONS_apply_changes(const dyn_t dynchanges){
     if (STRING_equals(type_name, "connect")){
       
       if (HASH_has_key(element.hash, ":gain")){
-        
-        if (!HASH_check_type(element.hash, ":gain", FLOAT_TYPE, errorstring))
+
+        const dyn_t dyngain = HASH_get_dyn(element.hash, ":gain");
+        if (!DYN_is_number(dyngain)){
+          handleError("Element %d[\"gain\"]: Expected number, found \"%s\"", i, DYN_type_name(dyngain));
           return false;
-        
-        changes.add(source, target, HASH_get_float(element.hash, ":gain"));
+        }
+
+        changes.add(source, target, DYN_get_double_from_number(dyngain));
         
       } else {
 
