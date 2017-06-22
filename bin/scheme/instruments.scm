@@ -14,32 +14,6 @@
 (define *instrument-memoized-generation* 0)
 (define *use-instrument-memoization* #f)
 
-(delafina (create-audio-connection-change :type
-                                          :source
-                                          :target
-                                          :gain #f)
-  (assert (or (string=? type "connect")
-              (string=? type "disconnect")))
-  (assert (integer? source))
-  (assert (integer? target))
-  (if (string=? type "disconnect")
-      (assert (not gain))
-      (assert (or (not gain)
-                  (number? gain))))  
-  (hash-table* :type type :source source :target target :gain gain))
-
-(define-macro (push-audio-connection-change! changes rest)
-  `(push-back! ,changes (create-audio-connection-change ,@(cdr rest))))
-
-#!!
-(macroexpand (push-audio-connection-change! changes (list :type "connect"
-                                                          :source from-instrument
-                                                          :target id-new-instrument
-                                                          :gain (<ra> :get-audio-connection-gain from-instrument id-old-instrument))))
-
-!!#
-               
-               
 (define (run-instrument-data-memoized func)
   (try-finally :try (lambda ()
                       (set! *use-instrument-memoization* #t)
@@ -72,6 +46,32 @@
                (apply ,func ,args-name)))))))
 
 
+(delafina (create-audio-connection-change :type
+                                          :source
+                                          :target
+                                          :gain #f)
+  (assert (or (string=? type "connect")
+              (string=? type "disconnect")))
+  (assert (integer? source))
+  (assert (integer? target))
+  (if (string=? type "disconnect")
+      (assert (not gain))
+      (assert (or (not gain)
+                  (number? gain))))  
+  (hash-table* :type type :source source :target target :gain gain))
+
+(define-macro (push-audio-connection-change! changes rest)
+  `(push-back! ,changes (create-audio-connection-change ,@(cdr rest))))
+
+#!!
+(macroexpand (push-audio-connection-change! changes (list :type "connect"
+                                                          :source from-instrument
+                                                          :target id-new-instrument
+                                                          :gain (<ra> :get-audio-connection-gain from-instrument id-old-instrument))))
+
+!!#
+               
+               
 (define (for-all-tracks func)
   (for-each (lambda (blocknum)
               (for-each (lambda (tracknum)

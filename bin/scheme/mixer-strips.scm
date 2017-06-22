@@ -447,20 +447,37 @@
 (define (create-mixer-strip-plugin gui first-instrument-id parent-instrument-id instrument-id)
   (define (get-drywet)
     (<ra> :get-instrument-effect instrument-id "System Dry/Wet"))
-
+  
   (define (delete-instrument)
-    (define ids (get-instruments-connecting-from-instrument instrument-id))
-    (define gains (map (lambda (to)
-                         (<ra> :get-audio-connection-gain instrument-id to))
-                       ids))
+    (define child-ids (get-instruments-connecting-from-instrument instrument-id))
+    (define child-gains (map (lambda (to)
+                               (<ra> :get-audio-connection-gain instrument-id to))
+                             child-ids))
     (undo-block
      (lambda ()
-       (<ra> :delete-instrument instrument-id)
-       (for-each (lambda (id gain)
-                   (<ra> :create-audio-connection parent-instrument-id id gain))
-                 ids
-                 gains)))
-    ;;(remake-mixer-strips) ;; (makes very little difference in snappiness, and it also causes mixer strips to be remade twice)
+       (define changes '())
+       
+       ;; Disconnect parent -> me
+       (push-audio-connection-change! changes (list :type "disconnect"
+                                                    :source parent-instrument-id
+                                                    :target instrument-id))
+       
+       (for-each (lambda (child-id child-gain)
+                   ;; Disconnect me -> child
+                   (push-audio-connection-change! changes (list :type "disconnect"
+                                                                :source instrument-id
+                                                                :target child-id))
+                   ;; Connect parent -> child
+                   (push-audio-connection-change! changes (list :type "connect"
+                                                                :source parent-instrument-id
+                                                                :target child-id
+                                                                :gain child-gain)))
+                 child-ids
+                 child-gains)
+       (<ra> :undo-mixer-connections)
+       (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
+       (<ra> :delete-instrument instrument-id)))
+       ;;(remake-mixer-strips) ;; (makes very little difference in snappiness, and it also causes mixer strips to be remade twice)
     )
 
 
