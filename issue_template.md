@@ -24,9 +24,12 @@ plus that we avoid many follow-up questions.
 * Step 6: ...
 * Step 7: ...
 * Step 8: ...
-* Step 9. This happened: .... But I expected ... to happen.
 
-This always happens / sometimes happens / almost never happens / only happened once.
+* This happened: .... But I expected ... to happen.
+
+* I've tried this recipe ... times.
+
+* The unexpected behavior always happens / sometimes happens / almost never happens / only happened once.
 
 
 
