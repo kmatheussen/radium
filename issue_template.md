@@ -1,8 +1,15 @@
-If you are requesting a new feature, just delete all this text.
+If you are requesting a new feature, just delete all text below.
 
 If you are reporting a bug, please use the template below.
-When making a step-by-step recipe, you often include crucial steps that you wouldn't have thought of othervice.
-In addition, reporting a bug this way should be easier. It also makes the job much easier for the programmers,
+
+When making a step-by-step recipe, you often include crucial
+steps that you wouldn't have thought of othervice.
+
+It's hard to know what's relevant, so just describe all steps
+down to the smallest detail.
+
+In addition, reporting a bug this way should be easier.
+It also makes the job much easier for the programmers,
 plus that we avoid many follow-up questions.
 
 
