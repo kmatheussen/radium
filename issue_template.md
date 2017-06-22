@@ -29,7 +29,7 @@ plus that we avoid many follow-up questions.
 
 * I've tried this recipe ... times.
 
-* The unexpected behavior has happend ... times / approximately ..% of the times / exactly ..% of the times / only one time, but I'm not sure I did exactly as the recipe above.
+* The unexpected behavior has happened ... times / approximately ..% of the times / exactly ..% of the times / only one time, but I'm not sure I did exactly as the recipe above.
 
 I also did ..., and .... Or perhaps I did ....
 
