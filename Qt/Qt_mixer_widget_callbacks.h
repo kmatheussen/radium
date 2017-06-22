@@ -425,6 +425,10 @@ public slots:
       splitter->insertWidget(pos, w);
 
       _bottom_bar->hide();
+
+#if defined(FOR_WINDOWS)
+      OS_WINDOWS_set_key_window((void*)g_main_window->winId()); // Don't know why.
+#endif
     }
     
     if(include_instrument_widget->isChecked())
