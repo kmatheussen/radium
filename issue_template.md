@@ -1,9 +1,9 @@
-If you are requesting a new feature, just delete all text below.
+If you are requesting a new feature, just delete all this text.
 
 If you are reporting a bug, please use the template below.
 
 When making a step-by-step recipe, you often include crucial
-steps that you wouldn't have thought of othervice.
+steps that you wouldn't have thought of otherwise.
 
 It's hard to know what's relevant, so just describe all steps
 down to the smallest detail.
