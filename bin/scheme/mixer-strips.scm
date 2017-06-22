@@ -149,6 +149,10 @@
   (define buses (get-buses))
   (define (create-entry-text instrument-id)
     (<-> *arrow-text* " " (<ra> :get-instrument-name instrument-id)))
+
+  (define (apply-changes changes)
+    (<ra> :undo-mixer-connections)
+    (<ra> :change-audio-connections changes))
   
   (define args
     (run-instrument-data-memoized
@@ -161,7 +165,7 @@
                      :enabled (and (not is-bus-descendant)
                                    (< (<ra> :get-instrument-effect instrument-id bus-onoff-effect-name) 0.5))
                      (lambda ()
-                       (callback (lambda (gain)
+                       (callback (lambda (gain changes)
                                    (undo-block (lambda ()
                                                  (<ra> :undo-instrument-effect instrument-id bus-onoff-effect-name)
                                                  (if gain
@@ -170,7 +174,9 @@
                                                  (if gain
                                                      (<ra> :set-instrument-effect instrument-id bus-effect-name (scale (<ra> :gain-to-db gain)
                                                                                                                        *min-db* *max-db*
-                                                                                                                       0 1))))))))))
+                                                                                                                       0 1)))
+                                                 (apply-changes changes))))))))
+
              *bus-effect-names*
              *bus-effect-onoff-names*
              buses)
@@ -184,9 +190,12 @@
                                    (not (<ra> :has-audio-connection instrument-id send-id))
                                    (> (<ra> :get-num-input-channels send-id) 0))
                      (lambda ()
-                       (callback (lambda (gain)
-                                   (<ra> :undo-mixer-connections)
-                                   (<ra> :create-audio-connection instrument-id send-id gain))))))
+                       (callback (lambda (gain changes)
+                                   (push-audio-connection-change! changes (list :type "connect"
+                                                                                :source instrument-id
+                                                                                :target send-id
+                                                                                :gain gain))
+                                   (apply-changes changes))))))
              (sort-instruments-by-mixer-position-and-connections
               (keep (lambda (id)
                       (not (member id buses)))
@@ -262,7 +271,7 @@
                                                   instrument-id))))
                         (request-send-instrument instrument-id
                                                  (lambda (create-send-func)
-                                                   (create-send-func 0)
+                                                   (create-send-func 0 '())
                                                    (<ra> :set-current-instrument first-instrument-id))))))
               "----------"
 
@@ -509,9 +518,11 @@
                                   (define db (get-db-value))
                                   (define gain (<ra> :db-to-gain db))
                                   ;;(delete)
-                                  (<ra> :undo-mixer-connections)
-                                  (<ra> :delete-audio-connection parent-instrument-id instrument-id)
-                                  (create-send-func gain))))))
+                                  (define changes '())
+                                  (push-audio-connection-change! changes (list :type "disconnect"
+                                                                               :source parent-instrument-id
+                                                                               :target instrument-id))
+                                  (create-send-func gain changes))))))
 
   (define (set-db-value db)
     (<ra> :set-instrument-effect instrument-id "System In" (scale db *min-db* *max-db* 0 1)))
@@ -694,7 +705,7 @@
                                   (define db (get-db-value))
                                   (define gain (<ra> :db-to-gain db))
                                   (delete)
-                                  (create-send-func gain))))))
+                                  (create-send-func gain '()))))))
   (define (get-db-value)
     (let ((db (<ra> :get-instrument-effect instrument-id effect-name)))
       (scale db
@@ -735,8 +746,11 @@
                                (define gain (<ra> :get-audio-connection-gain source-id target-id))
                                (undo-block
                                 (lambda ()
-                                  (delete)
-                                  (create-send-func gain))))))
+                                  (define changes '())
+                                  (push-audio-connection-change! changes (list :type "disconnect"
+                                                                               :source source-id
+                                                                               :target target-id))
+                                  (create-send-func gain changes))))))
   
   (define (get-db-value)
     (and (<ra> :has-audio-connection source-id target-id)

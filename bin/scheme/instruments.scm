@@ -14,6 +14,32 @@
 (define *instrument-memoized-generation* 0)
 (define *use-instrument-memoization* #f)
 
+(delafina (create-audio-connection-change :type
+                                          :source
+                                          :target
+                                          :gain #f)
+  (assert (or (string=? type "connect")
+              (string=? type "disconnect")))
+  (assert (integer? source))
+  (assert (integer? target))
+  (if (string=? type "disconnect")
+      (assert (not gain))
+      (assert (or (not gain)
+                  (number? gain))))  
+  (hash-table* :type type :source source :target target :gain gain))
+
+(define-macro (push-audio-connection-change! changes rest)
+  `(push-back! ,changes (create-audio-connection-change ,@(cdr rest))))
+
+#!!
+(macroexpand (push-audio-connection-change! changes (list :type "connect"
+                                                          :source from-instrument
+                                                          :target id-new-instrument
+                                                          :gain (<ra> :get-audio-connection-gain from-instrument id-old-instrument))))
+
+!!#
+               
+               
 (define (run-instrument-data-memoized func)
   (try-finally :try (lambda ()
                       (set! *use-instrument-memoization* #t)
@@ -262,23 +288,23 @@
   
   ;; in audio
   (for-each (lambda (from-instrument)
-              (push-back! changes (hash-table* :type "connect"
-                                               :source from-instrument
-                                               :target id-new-instrument
-                                               :gain (<ra> :get-audio-connection-gain from-instrument id-old-instrument)))
-              (push-back! changes (hash-table* :type "disconnect"
-                                               :source from-instrument
-                                               :target id-old-instrument)))
+              (push-audio-connection-change! changes (list :type "connect"
+                                                           :source from-instrument
+                                                           :target id-new-instrument
+                                                           :gain (<ra> :get-audio-connection-gain from-instrument id-old-instrument)))
+              (push-audio-connection-change! changes (list :type "disconnect"
+                                                           :source from-instrument
+                                                           :target id-old-instrument)))
             (get-instruments-connecting-to-instrument id-old-instrument))
   ;; out audio
   (for-each (lambda (to-instrument)
-              (push-back! changes (hash-table* :type "connect"
-                                               :source id-new-instrument
-                                               :target to-instrument
-                                               :gain (<ra> :get-audio-connection-gain id-old-instrument to-instrument)))
-              (push-back! changes (hash-table* :type "disconnect"
-                                               :source id-old-instrument
-                                               :target to-instrument)))
+              (push-audio-connection-change! changes (list :type "connect"
+                                                           :source id-new-instrument
+                                                           :target to-instrument
+                                                           :gain (<ra> :get-audio-connection-gain id-old-instrument to-instrument)))
+              (push-audio-connection-change! changes (list :type "disconnect"
+                                                           :source id-old-instrument
+                                                           :target to-instrument)))
             (get-instruments-connecting-from-instrument id-old-instrument))
 
   (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
@@ -486,19 +512,30 @@
                       (else
                        
                        (<ra> :set-instrument-position x y new-instrument #t)
+
+                       (define changes '())
                        
                        (<ra> :undo-mixer-connections)
                        
                        (when instrument-id1
                          (for-each (lambda (to)
-                                     (<ra> :delete-audio-connection instrument-id1 to))
+                                     (push-audio-connection-change! changes (list :type "disconnect"
+                                                                                  :source instrument-id1
+                                                                                  :target to)))
                                    out-list)
-                         (<ra> :create-audio-connection instrument-id1 new-instrument))
+                         (push-audio-connection-change! changes (list :type "connect"
+                                                                      :source instrument-id1
+                                                                      :target new-instrument)))
                        
                        (for-each (lambda (out-id gain)
-                                   (<ra> :create-audio-connection new-instrument out-id gain))
+                                   (push-audio-connection-change! changes (list :type "connect"
+                                                                                :source new-instrument
+                                                                                :target out-id
+                                                                                :gain gain)))
                                  out-list
                                  gain-list)
+
+                       (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
                        
                        new-instrument)))
               #f))))
