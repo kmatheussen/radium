@@ -1427,6 +1427,8 @@ bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not
   if(patch==NULL)
     return false;
 
+  bool instrument_window_was_visible = GFX_InstrumentWindowIsVisible();
+    
   //if(showInstrumentWidgetWhenDoubleClickingSoundObject())
   if(show_instrument_window_if_not_visible)
     GFX_InstrumentWindowToFront();
@@ -1442,7 +1444,19 @@ bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not
       plugin->type->show_gui(plugin);
       return true;
       
+    } else {
+
+      bool instrument_window_is_visible = GFX_InstrumentWindowIsVisible();
+      
+      if (false
+          || (!instrument_window_was_visible && !instrument_window_is_visible)
+          || (instrument_window_was_visible && instrument_window_is_visible))
+        {
+          GFX_Message(NULL, "Instrument %s of type %s / %s does not have a native GUI", patch->name, plugin->type->type_name, plugin->type->name);
+        }
+      
     }
+    
   }
 
   return false;
