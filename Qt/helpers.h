@@ -39,34 +39,37 @@ extern QPointer<QMenu> g_curr_popup_qmenu;
 typedef QPointer<QObject> IsAlive;
 
 
-static QPoint getCentrePosition(QWidget *parent, int width, int height){
-  QRect rect;
+static QPoint getCentrePosition(QWidget *parent, int width, int height, QRect parentRect = QRect()){
+
+  if (parentRect.isNull() || parentRect.isEmpty() || !parentRect.isValid()) {
+    
+    if (parent==NULL || parent->isVisible()==false)
+      // Move to middle of screen instead.
+      parentRect = QApplication::desktop()->availableGeometry();
+    else
+      parentRect = parent->geometry();
+    
+  }
   
-  if (parent==NULL || parent->isVisible()==false)
-    // Move to middle of screen instead.
-    rect = QApplication::desktop()->availableGeometry();
-  else
-    rect = parent->geometry();
-  
-  int x = rect.x()+rect.width()/2-width/2;
-  int y = rect.y()+rect.height()/2-height/2;
+  int x = parentRect.x()+parentRect.width()/2-width/2;
+  int y = parentRect.y()+parentRect.height()/2-height/2;
   //printf("w: %d, h: %d\n",width,height);
 
   return QPoint(R_MAX(20, x), R_MAX(20, y));
 }
 
-static inline void moveWindowToCentre(QWidget *widget){
+static inline void moveWindowToCentre(QWidget *widget, QRect parentRect = QRect()){
   int width = R_MAX(widget->width(), 100);
   int height = R_MAX(widget->height(), 50);
-  QPoint point = getCentrePosition(widget->parentWidget(), width, height);
+  QPoint point = getCentrePosition(widget->parentWidget(), width, height, parentRect);
 
   widget->move(point);
 }
 
-static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget){
+static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget, QRect parentRect = QRect()){
   widget->adjustSize();
   widget->updateGeometry();
-  moveWindowToCentre(widget);
+  moveWindowToCentre(widget, parentRect);
 }
 
 static bool can_widget_be_parent_questionmark(QWidget *w){

@@ -157,6 +157,7 @@ MyApplication *qapplication = NULL;
 QApplication *g_qapplication = NULL;
 QSplashScreen *g_splashscreen = NULL;
 
+static QRect g_startup_rect;
 
 extern bool doquit;
 
@@ -1905,6 +1906,9 @@ void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
     main_window->showNormal();
   }else{
     main_window->showFullScreen();
+#if defined(FOR_WINDOWS)
+    OS_WINDOWS_set_key_window((void*)g_main_window->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
+#endif
   }
 #endif
 }
@@ -1953,6 +1957,9 @@ void GFX_toggleCurrWindowFullScreen(void){
           
           //printf("Trying to set full screen\n");
           toplevel->showFullScreen();
+#if defined(FOR_WINDOWS)
+          OS_WINDOWS_set_key_window((void*)toplevel->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
+#endif
         }
         
       }
@@ -2442,7 +2449,7 @@ int radium_main(char *arg){
   main_window->updateGeometry();
   main_window->resize(main_window->width()+100, main_window->height()+100);
   
-  moveWindowToCentre(main_window);
+  moveWindowToCentre(main_window, g_startup_rect);
   main_window->show();
   updateWidgetRecursively(g_main_window);
 
@@ -2936,7 +2943,11 @@ int main(int argc, char **argv){
   qapplication=new MyApplication(new_argc,new_argv);
   qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
 
+  g_startup_rect = QApplication::desktop()->screenGeometry(); // Probably no point. Hoped that it would force radium to open on the same desktop that was current when program started.
 
+  printf("********* Has set startup rect %d, %d**********\n", g_startup_rect.x(), g_startup_rect.y());
+  //getchar();
+  
 #if 0
  #if defined(IS_LINUX_BINARY) || defined(FOR_WINDOWS) || defined(FOR_MACOSX)
     QApplication::addLibraryPath(QCoreApplication::applicationDirPath() + QDir::separator() + "qt5_plugins");
