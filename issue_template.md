@@ -29,7 +29,7 @@ plus that we avoid many follow-up questions.
 
 * I've tried this recipe ... times.
 
-* The unexpected behavior always happens / sometimes happens / almost never happens / only happened once.
+* The unexpected behavior has happend ... times / approximately ..% of the times / exactly ..% of the times.
 
 
 
