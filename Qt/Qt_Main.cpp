@@ -2937,10 +2937,10 @@ int main(int argc, char **argv){
 
   QLocale::setDefault(QLocale::C);
 
+  argv = getQApplicationConstructorArgs(argc, argv); // Add Qt things to the command line arguments. (freetype).
+  
   // Create application here in order to get default style. (not recommended, but can't find another way)
-  int new_argc = argc;
-  char **new_argv = getQApplicationConstructorArgs(new_argc, argv);
-  qapplication=new MyApplication(new_argc,new_argv);
+  qapplication=new MyApplication(argc,argv);
   qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
 
   g_startup_rect = QApplication::desktop()->screenGeometry(); // Probably no point. Hoped that it would force radium to open on the same desktop that was current when program started.

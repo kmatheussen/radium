@@ -94,9 +94,8 @@ int main(int argc, char **argv){
   QCoreApplication::setLibraryPaths(QStringList());
 #endif
 
-  int new_argc = argc;
-  char **new_argv = getQApplicationConstructorArgs(new_argc, argv);
-  QApplication app(new_argc, new_argv);
+  argv = getQApplicationConstructorArgs(argc, argv);
+  QApplication app(argc, argv);
 
 #if FOR_LINUX
   if(faulty_installation){

@@ -198,9 +198,8 @@ private:
 
 int main(int argc, char **argv){
 
-  int new_argc = argc;
-  char **new_argv = getQApplicationConstructorArgs(new_argc, argv);
-  QApplication app(new_argc, new_argv);
+  argv = getQApplicationConstructorArgs(argc, argv);
+  QApplication app(argc, argv);
 
   int fontsize = atoi(argv[1]);
 

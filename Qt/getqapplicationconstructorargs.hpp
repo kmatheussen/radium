@@ -3,20 +3,31 @@
 #define _RADIUM_QT_GETQAPPLICATIONCONSTRUCTORARGS_HPP
 
 static inline char **getQApplicationConstructorArgs(int &argc, char **argv){
+  
 #if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
-  // Use freetype font
-  argc = 4;
+  
+  // Add command line arguments to use the freetype font engine
+  argc += 2;
+
   char **ft_argv = (char**)calloc(sizeof(char*), argc);
-  ft_argv[0] = strdup(argv[0]);
-  ft_argv[1] = strdup("-platform");
+  
+  for(int i=0;i<argc-2;i++)
+    ft_argv[i] = strdup(argv[i]);
+
+  ft_argv[argc-2] = strdup("-platform");
+  
 #if defined(FOR_WINDOWS)
-  ft_argv[2] = strdup("windows:fontengine=freetype");
+  ft_argv[argc-1] = strdup("windows:fontengine=freetype");
 #else
-  ft_argv[2] = strdup("cocoa:fontengine=freetype");
+  ft_argv[argc-1] = strdup("cocoa:fontengine=freetype");
 #endif
+  
   return ft_argv;
+
 #else
-  return argv;
+
+  return argv; // linux already uses freetype
+
 #endif
 }
 
