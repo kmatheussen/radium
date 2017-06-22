@@ -2,8 +2,9 @@ If you are requesting a new feature, just delete all this text.
 
 If you are reporting a bug, please use the template below.
 
-When making a step-by-step recipe, you often include crucial
-steps that you wouldn't have thought of otherwise.
+The most important part of the template is the step-by-step
+recipe. When making a step-by-step recipe, you often include
+crucial steps that you wouldn't have thought of otherwise.
 
 It's hard to know what's relevant, so just describe all steps
 down to the smallest detail.
