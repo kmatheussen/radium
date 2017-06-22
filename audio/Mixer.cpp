@@ -279,17 +279,21 @@ static void RT_lock_player(){
   ATOMIC_SET(g_player_wants_player_lock, true);
 
 #if !defined(RELEASE)
+  
   double start = TIME_get_ms();{
     lock_player();
   }double dur = TIME_get_ms() - start;
-  if (dur > MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS)
-
+  
+  if (dur > MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS) {
     //if (elapsed > 1)
-    //  abort(); // That's really bad. Need a backtrace. (No, the relevant backtrace is gone now. TODO: fix.)
-    
-    RT_message("RT_lock_player: Waiting longer than %fms to get lock: %fms (%fms)", MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS, dur, g_rt_set_bus_descendant_types_duration);
+    //  abort(); // That's really bad. Need a backtrace. (No, the relevant backtrace is gone now. TODO: fix. When obtaining lock we should store __FILE__ and __LINE__.)
+    RT_message("RT_lock_player: Waiting longer than %fms to get lock: %fms (bus-desc-type dur: %fms)", MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS, dur, g_rt_set_bus_descendant_types_duration);
+  }
+  
 #else
+  
   lock_player();
+  
 #endif
 
   ATOMIC_SET(g_player_wants_player_lock, false);
@@ -365,7 +369,7 @@ static void unlock_player_from_nonrt_thread(int iteration){
 
 #if !defined(RELEASE)
   float elapsed = g_player_lock_timer.elapsed();
-  bool setdur = g_rt_set_bus_descendant_types_duration;
+  double setdur = g_rt_set_bus_descendant_types_duration;
 #endif
 
   //g_player_lock_timer.restart();
@@ -390,10 +394,9 @@ static void unlock_player_from_nonrt_thread(int iteration){
   printf("Elapsed: %f. (%d)\n", elapsed, iteration);
   if(elapsed > MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS){  // The lock is realtime safe, but we can't hold it a long time.
     
-    addMessage(talloc_format("Warning: Holding player lock for more than %fms (%d, %d): %f<br>\n<pre>%s</pre>\n",
+    addMessage(talloc_format("Warning: Holding player lock (%d) for more than %fms: %fms. (bus-descptype dur: %fms)<br>\n<pre>%s</pre>\n",
                              iteration,
-                             MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS,
-                             elapsed,
+                             MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS, elapsed,
                              setdur,
                              JUCE_get_backtrace()));
   }

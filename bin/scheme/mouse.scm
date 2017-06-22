@@ -243,21 +243,23 @@
   (define prev-x #f)
   (define prev-y #f)
   (define value #f)
-  
+
+  (define next-mouse-x-set-time 0)
   (define next-mouse-x #f)
   (define next-mouse-y #f)
   
   (define (call-move-and-release $button $x $y)
-    ;;(c-display "call-move-and-release" $x $y)
+    ;;(c-display "call-move-and-release" $x $y ", next-mouse-x:" next-mouse-x)
     ;; Ignore all $x and $y values that was already queued when we sat a new mouse pointer position. (needed in qt5)
     (when next-mouse-x
-      (if (and (< (abs (- $x next-mouse-x)) 100)  ;; Need some buffer, unfortunately we don't always get the same mouse event back when calling (<ra> :move-mouse-pointer).
-               (< (abs (- $y next-mouse-y)) 100)) ;; same here.
+      (if (or (> (- (time) next-mouse-x-set-time) 0.1) ;; We give up after 0.1 seconds.
+              (and (< (abs (- $x next-mouse-x)) 100)  ;; Need some buffer, unfortunately we don't always get the same mouse event back when calling (<ra> :move-mouse-pointer).
+                   (< (abs (- $y next-mouse-y)) 100))) ;; same here.
           (begin
             (set! prev-x next-mouse-x)
             (set! prev-y next-mouse-y)
             (set! next-mouse-x #f))
-          (begin
+          (begin            
             (set! $x prev-x)
             (set! $y prev-y))))
             
@@ -281,6 +283,8 @@
                            (else
                             (- $y prev-y))))
 
+          ;;(c-display "               $x:" $x ", prev-x:" prev-x)
+          
           (set! prev-x $x)
           (set! prev-y $y)
           
@@ -296,6 +300,7 @@
               ;;(c-display "x/y" (<ra> :get-mouse-pointer-x) (<ra> :get-mouse-pointer-y))
               ;;(set! prev-x 300)
               ;;(set! prev-y 300)
+              (set! next-mouse-x-set-time (time))
               (set! next-mouse-x 300)
               (set! next-mouse-y 300)
               ))
@@ -454,17 +459,18 @@
      (get-bool *current-mouse-cycle*))))
 
 (define (radium-mouse-move $button $x $y)
-  ;;(c-display "radium-mouse-move" $x $y)
 
   (handling-nodes
    (lambda()
      ;;(c-display "mouse move2" $button $x $y (<ra> :control-pressed) (<ra> :shift-pressed))
      ;;(cancel-current-stuff)
      (if *current-mouse-cycle*
-         (begin 
+         (begin
+           ;;(c-display "           1. Running current mouse cycle" $x $y)
            ((*current-mouse-cycle* :drag-func) $button $x $y)
            #t)
          (begin
+           ;;(c-display "           2. Mouse-move-handlers        " $x $y)
            (run-mouse-move-handlers $button $x $y)
            #f)))))
 
@@ -783,7 +789,7 @@
     (define same-pos (and (morally-equal? new-y (Node :y))
                           (morally-equal? new-value (Node :value))))
     
-    ;;(c-display "same-pos" same-pos new-y (Node :y) new-value (Node :value))
+    ;;(c-display "Dx:" Dx ", Dy:" Dy ", same-pos:" same-pos "new-y:" new-y "(Node :y):" (Node :y) "new-value:" new-value "(Node :value):" (Node :value))
 
     (if same-pos
         Node
@@ -3446,6 +3452,8 @@
                                         (define old-pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
                                         (define new-pos (or gakkgakk-last-value old-pos))
 
+                                        ;;(c-display "  RELEASING GFX " (/ old-pos 44100.0) (/ new-pos 44100.0))
+                                        
                                         (if (not (= old-pos new-pos))
                                             (begin
                                               (when (not gakkgakk-has-made-undo)
@@ -3453,10 +3461,12 @@
                                                 (set! gakkgakk-has-made-undo #f))
                                               (begin
                                                 (<ra> :move-seqblock seqblocknum new-pos seqtracknum)
-                                                (c-display "moving 1")))
+                                                ;;(c-display "moving 1")
+                                                ))
                                             (begin
                                               (<ra> :move-seqblock-gfx seqblocknum old-pos seqtracknum)
-                                              (c-display "moving 2")))
+                                              ;;(c-display "moving 2. old:" old-pos ". new-pos:" new-pos)
+                                              ))
                                         (set-grid-type #f)
                                         (if (and (<ra> :control-pressed)
                                                  (not has-moved))
@@ -3468,7 +3478,6 @@
                         :Move-node (lambda (seqblock-info Value Y)
                                      (define seqtracknum (seqblock-info :seqtracknum))
                                      (define seqblocknum (seqblock-info :seqblocknum))
-                                     ;;(c-display "  MOVING GFX " (/ new-pos 44100.0))
                                      (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y) seqtracknum))
                                      ;;(c-display "  Y" Y new-seqtracknum)
 
@@ -3477,6 +3486,8 @@
                                                          (floor Value)
                                                          (<ra> :get-seq-gridded-time (floor Value) 0 (<ra> :get-seq-block-grid-type))))
 
+                                     ;;(c-display "  MOVING GFX " (/ new-pos 44100.0))
+                                     
                                      (set! gakkgakk-last-value new-pos)
                                      
                                      (set-grid-type #t)
@@ -3520,9 +3531,10 @@
                                      
                                      (if (not (= (seqblock-info :seqtracknum) new-seqtracknum))
 
-                                         ;; change track
+                                         ;; changing track
                                          (replace-seqblock new-pos #f)
 
+                                         ;; not changing track
                                          (begin
                                            (define prev-pos (and (> seqblocknum 0) (<ra> :get-seqblock-start-time (1- seqblocknum) seqtracknum)))
                                            (define curr-pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
@@ -3557,6 +3569,7 @@
 
                                                  ;; Move gfx
                                                  (else
+                                                  ;;(c-display "  22. MOVING GFX " (/ new-pos 44100.0))
                                                   (<ra> :move-seqblock-gfx seqblocknum new-pos seqtracknum)
                                                   seqblock-info)))))
 

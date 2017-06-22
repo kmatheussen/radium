@@ -1,5 +1,9 @@
 
 // QTime sometimes crashes when used in threads, and we shut down.
+//
+// Also, it is not specified that QTime::elapsed() can be used in realtime.
+// (Although, last time I checked, QTime::elapsed() just called gettimeoftheday, and there should be no reason to do anything else.)
+
 
 #ifndef _RADIUM_COMMON_TIME_HPP
 #define _RADIUM_COMMON_TIME_HPP
