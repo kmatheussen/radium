@@ -1,21 +1,26 @@
-Bug reporting template
-======================
+If you are requesting a new feature, just delete all this text.
+
+If you are reporting a bug, please use the template below.
+When making a step-by-step recipe, you often include crucial steps that you wouldn't have thought of othervice.
+In addition, reporting a bug this way should be easier. It also makes the job much easier for the programmers,
+plus that we avoid many follow-up questions.
+
 
 ### 1. Steps to reproduce the problem.
 
-Make a recipe in the following format:
+* Step 1: Start Radium.
+* Step 2: ...
+* Step 3: ...
+* Step 4: ...
+* Step 5: ...
+* Step 6: ...
+* Step 7: ...
+* Step 8: ...
+* Step 9. This happened: .... But I expected ... to happen.
 
-* Step 1. Start Radium. (This should always be step 1)
-* Step 2. Do something
-* ...
-* Step 9. This happened: ... But I expected ... to happen.
+This always happens / sometimes happens / almost never happens / only happened once.
 
-Also inform whether this always happens, sometimes happens, almost never happens, or if it only happened once.
 
-When making a recipe like this, you often include crucial steps that you wouldn't have thought of othervice.
-
-In addition, reporting a bug this way should be easier. It also makes the job much easier for the programmers,
-plus that we usually avoid many follow-up questions.
 
 ### 2. Which version of Radium are you using? Do you know if an earlier version has worked?
 
