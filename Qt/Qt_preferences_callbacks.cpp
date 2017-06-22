@@ -572,8 +572,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
     // Windows
     {
-      show_instrument_widget_when_double_clicking->setChecked(showInstrumentWidgetWhenDoubleClickingSoundObject());
-
       show_playlist_during_startup->setChecked(showPlaylistDuringStartup());
       show_mixer_strip_during_startup->setChecked(showMixerStripDuringStartup());
       show_mixer_strip_on_the_left->setChecked(showMixerStripOnLeftSide());
@@ -715,11 +713,6 @@ public slots:
       GL_set_colored_tracks(val);
   }
   
-  void on_show_instrument_widget_when_double_clicking_toggled(bool val){
-    if (_initing==false)
-      setShowInstrumentWidgetWhenDoubleClickingSoundObject(val);
-  }
-
   void on_show_playlist_during_startup_toggled(bool val){
     if (_initing==false)
       setShowPlaylistDuringStartup(val);

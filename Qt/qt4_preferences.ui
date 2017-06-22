@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>5</number>
+      <number>6</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -4763,7 +4763,7 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
        <string>Windows</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="6" column="1">
+       <item row="5" column="1">
         <widget class="QLabel" name="label_8">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot;color:#000000;&quot;&gt;
@@ -4779,7 +4779,7 @@ you should check this box.
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="5" column="0">
         <widget class="QCheckBox" name="modal_windows">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -4807,7 +4807,7 @@ you should check this box.
          </property>
         </widget>
        </item>
-       <item row="8" column="0">
+       <item row="7" column="0">
         <widget class="QCheckBox" name="native_file_requesters">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -4835,7 +4835,7 @@ you should check this box.
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="6" column="1">
         <widget class="QLabel" name="label_7">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
@@ -4847,7 +4847,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
+       <item row="6" column="0">
         <widget class="QCheckBox" name="pauseRenderingOnoff">
          <property name="enabled">
           <bool>true</bool>
@@ -4887,27 +4887,20 @@ This option should be considered as a lightweight version of  &quot;Only show mo
         </spacer>
        </item>
        <item row="2" column="0" colspan="2">
-        <widget class="QCheckBox" name="show_instrument_widget_when_double_clicking">
-         <property name="text">
-          <string>Automatically show the instrument window when double-clicking a sound object in the mixer</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="2">
         <widget class="QCheckBox" name="show_mixer_strip_during_startup">
          <property name="text">
           <string>Show current mixer strip during startup</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="0" colspan="2">
+       <item row="3" column="0" colspan="2">
         <widget class="QCheckBox" name="show_mixer_strip_on_the_left">
          <property name="text">
           <string>Show current mixer strip on the left side of the screen (restart required)</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="0" colspan="2">
+       <item row="4" column="0" colspan="2">
         <widget class="Line" name="line_22">
          <property name="palette">
           <palette>
@@ -8236,8 +8229,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

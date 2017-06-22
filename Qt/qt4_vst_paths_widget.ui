@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1090</width>
+    <width>1117</width>
     <height>575</height>
    </rect>
   </property>
@@ -26,29 +26,6 @@
       <string>GUI</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="1" column="0">
-       <widget class="QCheckBox" name="lock_juce_when_swapping_onoff">
-        <property name="text">
-         <string>Don't run plugin GUI code when swapping OpenGL</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeType">
-         <enum>QSizePolicy::Fixed</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>60</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
       <item row="0" column="0">
        <widget class="QCheckBox" name="always_on_top">
         <property name="text">
@@ -56,7 +33,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="3">
+      <item row="2" column="3">
        <spacer name="horizontalSpacer_3">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -69,7 +46,14 @@
         </property>
        </spacer>
       </item>
-      <item row="1" column="2">
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="lock_juce_when_swapping_onoff">
+        <property name="text">
+         <string>Don't run plugin GUI code when swapping OpenGL</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
        <widget class="QLabel" name="label_12">
         <property name="text">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Enabling this option might prevent some plugins using OpenGL&lt;br/&gt;from crashing.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
@@ -87,6 +71,29 @@ OpenGL.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
 
 
 &lt;/pre&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>60</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="show_instrument_widget_when_double_clicking">
+        <property name="text">
+         <string>Also bring the instrument widget to front when showing GUI</string>
         </property>
        </widget>
       </item>
