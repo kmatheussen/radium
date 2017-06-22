@@ -148,7 +148,7 @@ static inline QWidget *get_current_parent(bool may_return_current_parent_before_
     */
 }
 
-#define DEFAULT_WINDOW_FLAGS (Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint | Qt::WindowStaysOnTopHint)
+#define DEFAULT_WINDOW_FLAGS (Qt::CustomizeWindowHint | Qt::WindowFullscreenButtonHint | Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint | Qt::WindowStaysOnTopHint)
 
 // Returns true if modality is turned on when 'is_modal'==false.
 static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *parent, bool is_modal, bool only_set_flags){
