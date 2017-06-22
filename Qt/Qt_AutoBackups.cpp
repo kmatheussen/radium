@@ -43,6 +43,9 @@ static void make_backup(void){
 
   if (!editor_has_keyboard_focus()) // If showing popup menu, editing text widgets, etc. we don't want to disturb the user.
     return;
+
+  if (g_radium_runs_custom_exec==true) // Same here.
+    return;
   
   if (g_undo_generation_for_last_backup == g_curr_undo_generation)
     return;
