@@ -314,7 +314,7 @@
   (define (delete)
     (<ra> :delete-instrument instrument-id))
   (define (replace)
-    (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs #f :must-have-outputs #f :parent gui)))
+    (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs #f :must-have-outputs #f :parentgui gui)))
   
   (define reset #f)
 
@@ -456,7 +456,7 @@
 
 
   (define (das-replace-instrument)
-    (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs #t :must-have-outputs #t :parent gui)))
+    (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs #t :must-have-outputs #t :parentgui gui)))
 
   (define (reset)
     (<ra> :set-instrument-effect instrument-id "System Dry/Wet" 1))
