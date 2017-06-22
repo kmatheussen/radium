@@ -40,7 +40,7 @@
 
 
 
-static DEFINE_SPINLOCK(spinlock);
+static SPINLOCK_TYPE spinlock;
 
 // Use spinlock instead of mutex since it's somewhat complicated to initialize the mutex portably and extremly early in the lifetime of the program. (the lock is held for such short time anyway, so it probably doesn't matter much, could even be faster this way)
 static void mylock(void){

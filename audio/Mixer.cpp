@@ -212,8 +212,8 @@ static void check_jackd_arguments(void){
 #endif
 }
 
-#if defined(FOR_LINUX) || defined(FOR_MACOSX)
-static pthread_mutexattr_t player_lock_mutexattr;
+#if !USE_SPINLOCK_FOR_PLAYER_LOCK && (defined(FOR_LINUX) || defined(FOR_MACOSX))
+static pthread_mutexattr_t player_lock_mutexattr; // Why is this one global?
 #endif
 static LockType player_lock;
 static LockType player_runner_lock;
@@ -308,7 +308,7 @@ static void RT_unlock_player(){
   unlock_player();
 }
 
-#ifndef FOR_LINUX
+#if !defined(FOR_LINUX) || USE_SPINLOCK_FOR_PLAYER_LOCK
 static priority_t g_priority_used_before_obtaining_PLAYER_lock; // Protected by the player lock
 #endif
 
@@ -331,7 +331,7 @@ static void lock_player_from_nonrt_thread(void){
   //if(g_player_lock_timer.RT_elapsed() < 10)
   //  msleep(10);
   
-#ifdef FOR_LINUX
+#if defined(FOR_LINUX) && !USE_SPINLOCK_FOR_PLAYER_LOCK
 
   MAYBE_WAIT_FOR_PLAYER_TO_FINISH();
 
@@ -340,7 +340,8 @@ static void lock_player_from_nonrt_thread(void){
   lock_player();
   //print_backtrace();
 
-#elif defined(FOR_WINDOWS) || defined(FOR_MACOSX)
+#else
+  
   priority_t priority = THREADING_get_priority();
 
   // Manually avoid priority inversion
@@ -357,8 +358,7 @@ static void lock_player_from_nonrt_thread(void){
   lock_player();
 
   g_priority_used_before_obtaining_PLAYER_lock = priority;
-#else
-  #error "undknown architehercu"
+  
 #endif
     
   g_player_lock_timer.restart();
@@ -375,19 +375,19 @@ static void unlock_player_from_nonrt_thread(int iteration){
   //g_player_lock_timer.restart();
 
     
-#ifdef FOR_LINUX // we use mutex with the PTHREAD_PRIO_INHERIT on linux
+#if defined(FOR_LINUX) && !USE_SPINLOCK_FOR_PLAYER_LOCK // we use mutex with the PTHREAD_PRIO_INHERIT on linux
   
   unlock_player();
     
-#elif defined(FOR_WINDOWS) || defined(FOR_MACOSX)
+#else
+  
   priority_t priority = g_priority_used_before_obtaining_PLAYER_lock; // 
   
   unlock_player();
 
   //PLAYER_drop_same_priority();
   THREADING_set_priority(priority);
-#else
-  #error "undknown architehercu"
+  
 #endif
 
 #if !defined(RELEASE)
@@ -478,7 +478,12 @@ static void init_player_lock(void){
 
   LOCK_INITIALIZE(player_runner_lock); // Don't have to do anything special. The player_runner_lock is always called from a realtime thread, and never recursively.
 
-#if defined(FOR_LINUX) || defined(FOR_MACOSX)
+#if defined(FOR_WINDOWS) || USE_SPINLOCK_FOR_PLAYER_LOCK
+  
+   LOCK_INITIALIZE(player_lock);
+
+#else
+   
   int s1 = pthread_mutexattr_init(&player_lock_mutexattr);
   if (s1!=0)
     GFX_Message(NULL, "pthread_mutexattr_init failed: %d\n",s1);
@@ -497,11 +502,6 @@ static void init_player_lock(void){
   if (s4!=0)
     GFX_Message(NULL, "pthread_mutex_init failed: %d\n",s4);
 
-#elif defined(FOR_WINDOWS)
-   LOCK_INITIALIZE(player_lock);
-#else
-
-#error "unkwndonw arcthinerture"
 #endif
 }
 

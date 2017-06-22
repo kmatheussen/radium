@@ -14,11 +14,10 @@
 #define SPINLOCK_FALSE 0
 #define SPINLOCK_TRUE 1
 
-#define DEFINE_SPINLOCK_NOINIT(name) \
-  DEFINE_ATOMIC(SPINLOCK_TYPE, name)
+//#define DEFINE_SPINLOCK_NOINIT(name) SPINLOCK_TYPE name
 
 #define SPINLOCK_INIT(name) \
-  ATOMIC_SET(name, SPINLOCK_FALSE)
+  (name = SPINLOCK_FALSE)
 
 //#define DEFINE_SPINLOCK(name)                 
 //  DEFINE_SPINLOCK_NOINIT(name) = false
@@ -26,7 +25,7 @@
 #define SPINLOCK_TRYLOCK(name)                                          \
   ({                                                                    \
     SPINLOCK_TYPE old_value = SPINLOCK_FALSE;                           \
-    __atomic_compare_exchange_n(&ATOMIC_NAME(name), &old_value, SPINLOCK_TRUE, false,  __ATOMIC_ACQUIRE, __ATOMIC_RELAXED); \
+    __atomic_compare_exchange_n(&(name), &old_value, SPINLOCK_TRUE, false,  __ATOMIC_ACQUIRE, __ATOMIC_RELAXED); \
   })
   
 
@@ -35,11 +34,11 @@
     SPINLOCK_TYPE old_value;                                            \
     do{                                                                 \
       old_value = SPINLOCK_FALSE;                                       \
-    }while(__atomic_compare_exchange_n(&ATOMIC_NAME(name), &old_value, SPINLOCK_TRUE, true,  __ATOMIC_ACQUIRE, __ATOMIC_RELAXED)==false); \
+    }while(__atomic_compare_exchange_n(&(name), &old_value, SPINLOCK_TRUE, true,  __ATOMIC_ACQUIRE, __ATOMIC_RELAXED)==false); \
   }while(0);
 
 #define SPINLOCK_RELEASE(name) \
-  __atomic_store_n (&(ATOMIC_NAME(name)), SPINLOCK_FALSE, __ATOMIC_RELEASE);
+  __atomic_store_n (&(name), SPINLOCK_FALSE, __ATOMIC_RELEASE);
 
 
 #define SPINLOCK_DESTROY(name)
@@ -117,7 +116,7 @@ namespace radium{
 
 class Spinlock {
   
-  DEFINE_SPINLOCK_NOINIT(_lock);
+  SPINLOCK_TYPE _lock;
 
 # if !defined(RELEASE)
   bool _holds_lock = false;
