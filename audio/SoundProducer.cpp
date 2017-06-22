@@ -635,7 +635,10 @@ namespace{
     {}
   };
   struct VolumeChanges : public radium::Vector<VolumeChange> {
+    VolumeChanges(){
+    }
   };
+  
   const VolumeChanges g_empty_volume_changes;
 }
 

@@ -75,6 +75,9 @@ struct LinkParameter{
 };
 
 struct LinkParameters : public QVector<LinkParameter> {
+  LinkParameters(){
+  }
+  
   void add(SoundProducer *source, int source_ch, SoundProducer *target, int target_ch, float volume = -1.0){
     push_back(LinkParameter(source, source_ch, target, target_ch, volume));
   }

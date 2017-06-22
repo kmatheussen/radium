@@ -14,6 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef _RADIUM_COMMON_PATCH_PROC_H
+#define _RADIUM_COMMON_PATCH_PROC_H
+
 
 extern LANGSPEC void PATCH_remove_from_instrument(struct Patch *patch);
 extern LANGSPEC void PATCH_add_to_instrument(struct Patch *patch);
@@ -44,7 +47,7 @@ extern LANGSPEC bool PATCH_add_event_receiver(struct Patch *source, struct Patch
 extern LANGSPEC void PATCH_remove_event_receiver(struct Patch *source, struct Patch *destination);
 
 #ifdef __cplusplus
-extern LANGSPEC void PATCH_remove_all_event_receivers(struct Patch *patch, radium::PlayerLockOnlyIfNeeded &lock);
+extern void PATCH_remove_all_event_receivers(struct Patch *patch, radium::PlayerLockOnlyIfNeeded &lock);
 #endif
 
 extern LANGSPEC void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note,STime time);
@@ -84,3 +87,5 @@ extern LANGSPEC int PATCH_get_peaks(struct Patch *patch,
                                     int64_t start_time, int64_t end_time, 
                                     float *min_value, float *max_value
                                     );
+
+#endif

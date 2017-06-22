@@ -125,7 +125,10 @@ struct PlayerRecursiveLock{
       PLAYER_unlock();
   }
 };
-
+ 
+} // End anon. namespace
+  
+  
 // TODO: Go through all use of PlayerRecursiveLock and see if it can be replaced with PlayerLockOnlyIfNeeded.
 struct PlayerLockOnlyIfNeeded{
   bool gotit = false;
@@ -155,8 +158,8 @@ struct PlayerLockOnlyIfNeeded{
   }  
 };
  
-}
-}
+} // End radium namespace
+
 
 #endif
 
