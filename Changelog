@@ -1,3 +1,38 @@
+Changes 4.9.0 -> 4.9.1:
+* Windows: Fix approximately 99.99% of the keyboard focus
+  problems.
+* GUI: Show full screen and close buttons on all windows by
+  default.
+* OSX: Fix strange error message during startup about missing
+  file.
+* Mouse: Fix sequencer (and more seldomly the editor) not
+  always working.
+* Preferences: Move the "Bring instrument widget to front"
+  option from the "Windows" tab into the "Plugins" tab.
+* GUI: Show message about instrument not having a GUI.
+* Mixer strips: Fix replace instrument.
+* Audio: Always connect and disconnect all connections
+  simultaneously. Before, connections were often created and
+  deleted one by one.
+* Audio: Simultaneously fade out the old connections while
+  fading in the new connections. Before, old connections were
+  faded out before new connections were faded in.
+* Mixer: Faster to create and remove audio connections.
+* Player: Approx. 1.5ms faster to stop playing.
+* Sequencer: Don't pause player when undoing/redoing
+  automation.
+* Sequencer: Fix bugs that could have caused undo/redo to
+  operate on wrong tracks.
+* Editor: Be more intelligent about whether to remove
+  automation when replacing an instrument.
+* Don't pause player unnecessarily when undoing or redoing
+  removing or adding instrument.
+* GUI: Try to add minimize and maximize buttons to all
+  windows.
+* Crashreporter: Make sure window is big enough to show all
+  content
+
+
 Changes 4.8.8 -> 4.9.0:
 * Import mod: Remember file requester geometry, and don't
   minimize the file requester when showed for the first time.
