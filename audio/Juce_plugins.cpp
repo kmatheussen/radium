@@ -87,6 +87,7 @@
 #define CUSTOM_MM_THREAD 0
 #endif
 
+static int g_num_visible_plugin_windows = 0;
 static bool g_vst_grab_keyboard = true;
 
 static int RT_get_latency(struct SoundPlugin *plugin);
@@ -1115,6 +1116,9 @@ static void show_gui(struct SoundPlugin *plugin){
 
         const char *title = V_strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
         data->window = new PluginWindow(title, data, editor);
+
+        g_num_visible_plugin_windows++;
+        
       }
 
     }GL_unlock();
@@ -1131,6 +1135,8 @@ static void hide_gui(struct SoundPlugin *plugin){
   
   Data *data = (Data*)plugin->data;
 
+  g_num_visible_plugin_windows--;
+  
   //data->window->setVisible(false);
   delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
 }
@@ -1779,7 +1785,7 @@ void JUCE_unlock(void *lock){
 }
 
 bool JUCE_native_gui_grabs_keyboard(void){
-  return g_vst_grab_keyboard;
+  return g_num_visible_plugin_windows > 0 && g_vst_grab_keyboard;
 }
 
 char *JUCE_download(const char *url_url){

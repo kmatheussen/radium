@@ -1325,6 +1325,7 @@ void *OS_GFX_get_native_main_window(void){
   return (void*)main_window->winId();
 }
 
+// Warning: Does not always work on windows.
 static bool maybe_got_key_window(QWindow *window){
 #if FOR_MACOSX
   return OS_OSX_is_key_window((void*)window->winId());
@@ -1342,11 +1343,13 @@ static bool maybe_got_key_window(QWindow *window){
 #endif
 }
 
+// Warning: Does not always work on windows.
 bool OS_GFX_main_window_has_focus(void){
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   return maybe_got_key_window(main_window->window()->windowHandle());
 }
-  
+
+// Warning: Does not always work on windows.
 bool a_radium_window_has_focus(void){
   if(ATOMIC_GET(is_starting_up)==true)
     return false;
@@ -1379,7 +1382,7 @@ bool a_radium_window_has_focus(void){
     if (maybe_got_key_window(window))
       return true;
   }
-      
+
   return false;
 #endif
 }
@@ -1577,16 +1580,38 @@ protected:
     // No, we still need to do this. At least in qt 5.5.1. Seems like it's not necessary in 5.7 or 5.8 though, but that could be coincidental.
     if(g_main_timer_num_calls<250/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
       updateWidgetRecursively(g_main_window);
-    }else{
-#if defined(FOR_WINDOWS)
+    }
+
+#if 0
+    // Does not work.
+    {
+      static bool has_raised = false;
+      if (has_raised==false && g_main_timer_num_calls > 300/interval){
+        g_main_window->raise();
+        g_main_window->activateWindow();
+        //BringWindowToTop((HWND)g_main_window->winId());
+        //SetWindowPos((HWND)g_main_window->winId(), HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+
+        has_raised = true;
+      }
+    }
+#endif
+      
+#if 0 //defined(FOR_WINDOWS)
+    
+    // Does not work.
+    
+    static bool has_focused = false;
+    if(has_focused==false && g_main_timer_num_calls>400/interval){ // Set focus constantly between 0.4 and 1.0 seconds after startup.
+      
       // We started to lose keyboard focus at startup between 4.8.8 and 4.9.0 (but only if no message windows showed up, and only in RELEASE mode). Clicking the window did not help. I don't know wny.
-      static bool has_focused = false;
-      if (has_focused==false){
-        OS_WINDOWS_set_key_window((void*)g_main_window->winId());
+      OS_WINDOWS_set_key_window((void*)g_main_window->winId());
+
+      if (g_main_timer_num_calls>5000/interval){
         has_focused=true;
       }
-#endif
     }
+#endif
     
     {
       DO_GFX({
@@ -1906,10 +1931,11 @@ void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
     main_window->showNormal();
   }else{
     main_window->showFullScreen();
-#if defined(FOR_WINDOWS)
-    OS_WINDOWS_set_key_window((void*)g_main_window->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
-#endif
   }
+#if defined(FOR_WINDOWS)
+  OS_WINDOWS_set_key_window((void*)g_main_window->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
+#endif
+    
 #endif
 }
 
@@ -1957,11 +1983,12 @@ void GFX_toggleCurrWindowFullScreen(void){
           
           //printf("Trying to set full screen\n");
           toplevel->showFullScreen();
-#if defined(FOR_WINDOWS)
-          OS_WINDOWS_set_key_window((void*)toplevel->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
-#endif
         }
-        
+
+#if defined(FOR_WINDOWS)
+        OS_WINDOWS_set_key_window((void*)toplevel->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
+#endif
+
       }
       
       return;
@@ -2082,6 +2109,8 @@ static QString g_startup_path;
 
 extern void TIME_init(void);
 extern void UPDATECHECKER_doit(void);
+
+
 
 int radium_main(char *arg){
 
@@ -2346,10 +2375,6 @@ int radium_main(char *arg){
 
   //QApplication::quit();
 
-#if !GTK_IS_USED
-  CalledPeriodically periodic_timer;
-#endif
-
   window->must_redraw = true;
 
   //printf("col: -%s-, font: -%s-\n",SETTINGS_read_string("last_color_version","0.0"),SETTINGS_read_string("last_system_font_version","0.0"));
@@ -2451,12 +2476,24 @@ int radium_main(char *arg){
   
   moveWindowToCentre(main_window, g_startup_rect);
   main_window->show();
+  main_window->raise();
+  main_window->activateWindow();
+
   updateWidgetRecursively(g_main_window);
 
+#if defined(FOR_WINDWS)
+  // Probably makes no difference.
+  OS_WINDOWS_set_key_window((void*)g_main_window->winId());
+#endif
+  
 #if defined(FOR_MACOSX) // Only needed on 10.12 though.
   GFX_SetSystemFont(QApplication::font());
 #endif
-  
+
+
+  CalledPeriodically periodic_timer;
+
+
 #if USE_QT_VISUAL
   qapplication->exec();
 #else

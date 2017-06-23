@@ -61,8 +61,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <algorithm>
 #include <set>
 
-#include <QMainWindow>
-
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
 #include "../common/undo.h"
@@ -2141,7 +2139,7 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
 }
 
 static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioGraph &changes, const hash_t *state,
-                                          int patch_id_old, int patch_id_new,
+                                          int64_t patch_id_old, int64_t patch_id_new,
                                           int64_t patch_id_old2 = -1, int64_t patch_id_new2 = -1
                                           )
 {
@@ -2190,7 +2188,7 @@ void CONNECTIONS_create_from_state2(QGraphicsScene *scene, changes::AudioGraph &
                                     int64_t patch_id_old2 = -1, int64_t patch_id_new2 = -1
                                     )
 {
-  int num_connections = HASH_get_int(connections, "num_connections");
+  int num_connections = HASH_get_int32(connections, "num_connections");
   for(int i=0;i<num_connections;i++){
     const hash_t *state = HASH_get_hash_at(connections, "", i);
     CONNECTION_create_from_state2(scene, changes, state, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2);
