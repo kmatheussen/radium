@@ -1326,6 +1326,11 @@ void *OS_GFX_get_native_main_window(void){
 }
 
 // Warning: Does not always work on windows.
+//
+// Maybe this test is better: QWidget::find(GetForegroundWindow()) != NULL
+//
+// Or: Use effectWinId() instead of winId().
+//
 static bool maybe_got_key_window(QWindow *window){
 #if FOR_MACOSX
   return OS_OSX_is_key_window((void*)window->winId());
@@ -2721,6 +2726,13 @@ static bool char_inside(const char *a, const char *b, const char *c) {
 
 #include <windows.h>
 #include <dbghelp.h>
+
+/*
+void OS_WINDOWS_move_main_window_to_front(void){
+  HWND wnd=(HWND)g_main_window->effectiveWinId();
+  SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+}
+*/                                        
 
 // https://msdn.microsoft.com/en-us/library/windows/desktop/ms680341(v=vs.85).aspx
 // http://www.csn.ul.ie/~caolan/pub/winresdump/winresdump/doc/pefile2.html

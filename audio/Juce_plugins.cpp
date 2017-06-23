@@ -1127,6 +1127,7 @@ static void show_gui(struct SoundPlugin *plugin){
   
 }
 
+//void OS_WINDOWS_move_main_window_to_front(void);
 
 static void hide_gui(struct SoundPlugin *plugin){
 #if CUSTOM_MM_THREAD
@@ -1139,6 +1140,7 @@ static void hide_gui(struct SoundPlugin *plugin){
   
   //data->window->setVisible(false);
   delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
+  //OS_WINDOWS_move_main_window_to_front();
 }
 
 
