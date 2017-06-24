@@ -88,7 +88,7 @@ static void PATCH_clean_unused_patches(void){
 void PATCH_remove_from_instrument(struct Patch *patch){
   //R_ASSERT(patch->patchdata == NULL); (not true for MIDI)
 
-  API_instrument_call_me_when_instrument_is_deleted(patch);
+  API_instrument_call_me_when_instrument_is_deleted(patch); // In this world, "patch" is the same as "instrument" in the API world. "instrument" in this world is either audio or midi.
 
   VECTOR_remove(&patch->instrument->patches, patch);
   VECTOR_push_back(&g_unused_patches, patch);
@@ -534,6 +534,8 @@ static void make_inactive(struct Patch *patch, bool force_removal){
     return;
   }
 
+  PATCH_stop_all_notes(patch);
+
   PATCH_handle_editor_and_automation_when_replacing_patch(patch, NULL);
 
   hash_t *audio_patch_state = AUDIO_get_audio_patch_state(patch); // The state is unavailable after calling remove_patch().
@@ -543,8 +545,6 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   R_ASSERT(patch->patchdata==NULL);
   
   ADD_UNDO(Audio_Patch_Remove_CurrPos(patch, audio_patch_state)); // Must be called last, if not the undo/redo order will be wrong.
-
-  PATCH_stop_all_notes(patch);
 
   PATCH_remove_from_instrument(patch);
 

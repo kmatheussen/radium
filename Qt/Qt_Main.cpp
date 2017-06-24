@@ -2018,6 +2018,7 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
 }
 
 void assertRadiumInHomeDirectory(void){
+  
   QString program_path = QCoreApplication::applicationDirPath();
 
 #if 0

@@ -411,7 +411,7 @@ public:
   MyQMainWindow() : QMainWindow(NULL) {
     setAcceptDrops(true);
 #if FOR_MACOSX
-    setWindowFlag(Qt::WindowFullscreenButtonHint, true); // F11 doesn't work in sierra. Setting this flag probably doesn't work though.
+    setWindowFlags(windowFlags () | Qt::WindowFullscreenButtonHint); // F11 doesn't work in sierra. Setting this flag probably doesn't work though.
 #endif
     raise();
     activateWindow();
