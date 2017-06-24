@@ -482,6 +482,8 @@ class MyApplication
   , public QAbstractNativeEventFilter
 #endif
 {
+  Q_OBJECT;
+  
 public:
 
   MyApplication(int &argc,char **argv);
@@ -567,7 +569,7 @@ protected:
               
     static int last_pressed_key = EVENT_NO;
 
-    //printf(" Got key 1\n");
+    //printf(" Got key 1. modifier: %d. Left ctrl: %d, Press: %d\n", modifier, EVENT_CTRL_L, is_key_press);
     
     if (modifier != EVENT_NO) {
 
@@ -864,13 +866,24 @@ protected:
    }
 
   virtual bool eventFilter(QObject *obj, QEvent *event) override {
+
 #if FOR_LINUX
+
     if (event->type()==QEvent::FocusAboutToChange){
-      //printf("EventFilter called\n");
+      //printf("EventFilter called\n");    
       OS_SYSTEM_ResetKeysUpDowns();
     }
-#endif
 
+#elif 0 //FOR_MACOSX
+
+    // Call os_osx_clear_modifiers in applicationStateChanged instead.
+    if (event->type()==QEvent::ApplicationDeactivate){
+      printf("       app deactivate called\n");
+      OS_OSX_clear_modifiers();    
+    }
+    
+#endif
+      
     // TODO: Check if getting this event:
     // QEvent::ApplicationFontChange
     // could be used for something. For instance to fix OpenGL widget position.
@@ -1304,7 +1317,20 @@ protected:
     return QApplication::event(event);
   }
   */
+
+public slots:
+  void applicationStateChanged(Qt::ApplicationState state){
+    //printf("   *** applicationStateChanged called: %s.\n", state==Qt::ApplicationHidden ? "HIDDEN" :  state==Qt::ApplicationInactive ? "INACTIVE" : state==Qt::ApplicationActive ? "ACTIVE" : "WHAT?");
+#if FOR_MACOSX
+    OS_OSX_clear_modifiers();
+#elif FOR_LINUX
+    //OS_SYSTEM_ResetKeysUpDowns();
+#endif
+  }
+
 };
+
+#include "mQt_Main.cpp"
 
 MyApplication::MyApplication(int &argc,char **argv)
   : QApplication(argc,argv)
@@ -1315,6 +1341,8 @@ MyApplication::MyApplication(int &argc,char **argv)
   installNativeEventFilter(this);
   installEventFilter(this);
 #endif
+
+  connect(this, SIGNAL(applicationStateChanged(Qt::ApplicationState)), this, SLOT(applicationStateChanged(Qt::ApplicationState)));
 }
 
 
@@ -2497,6 +2525,10 @@ int radium_main(char *arg){
 #endif
 
 
+#if defined(FOR_MACOSX)
+  OS_OSX_clear_modifiers(); // Don't know why we need to call this again. (it's also called from OS_SYSTEM_init_keyboard)
+#endif
+  
   CalledPeriodically periodic_timer;
 
 

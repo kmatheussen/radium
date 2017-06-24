@@ -8,6 +8,8 @@ extern LANGSPEC int OS_SYSTEM_get_event_type(void *event, bool ignore_autorepeat
 
 extern LANGSPEC int OS_SYSTEM_get_scancode(void *void_event);
 
+extern LANGSPEC void OS_OSX_clear_modifiers(void);
+
 extern LANGSPEC int OS_SYSTEM_get_modifier(void *void_event);
 extern LANGSPEC int OS_SYSTEM_get_keynum(void *void_event);
 extern LANGSPEC int OS_SYSTEM_get_qwerty_keynum(void *void_event); // e.g. using scancode.

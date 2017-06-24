@@ -52,14 +52,20 @@ extern struct TEvent tevent;
 extern struct Root *root;
 
 
-static bool modifiers[64] = {false}; // These are used to keep track of whether it's a key up or key down event when pressing a modifier key. Unfortunately we get NSFlagsChanged events for modifier keys.
+static bool g_modifiers[64] = {false}; // These are used to keep track of whether it's a key up or key down event when pressing a modifier key. Unfortunately we get NSFlagsChanged events for modifier keys.
 
 static void clear_modifiers(void){
   int i;
   for(i=0;i<64;i++)
-    modifiers[i]=false;
+    g_modifiers[i]=false;
 
   OS_SYSTEM_ResetKeysUpDowns(); // Sync
+}
+
+// Called from MyQApplication::applicationStateChanged
+void OS_OSX_clear_modifiers(void){
+  //printf(" Clear mod 4\n");
+  clear_modifiers();
 }
 
 // https://developer.apple.com/library/mac/documentation/Cocoa/Reference/ApplicationKit/Classes/NSEvent_Class
@@ -81,25 +87,37 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
     if(type==NSFlagsChanged){
       int keycode = [event keyCode];
       
-      if (modifiers[keycode])
+      if (g_modifiers[keycode])
         ret = TR_KEYBOARDUP;
       else
         ret = TR_KEYBOARD;
-      
-      modifiers[keycode] = !modifiers[keycode]; // This seems a bit fragile, so all modifiers are also reset when modifierFlags is 0 for all the osx modifiers. (see below)
+
+      //printf("  M: 1\n");
+      g_modifiers[keycode] = !g_modifiers[keycode]; // This seems a bit fragile, so all modifiers are also reset when modifierFlags is 0 for all the osx modifiers. (see below)
       
       //printf("   modifier is %s\n",(ret==TR_KEYBOARDUP)?"released":"pressed");
       
-    }else if(type==NSKeyDown)
+    }else if(type==NSKeyDown){
       ret = TR_KEYBOARD;
+      //printf("  M: 2\n");
+    }
     
-    else if (type==NSKeyUp)
+    else if (type==NSKeyUp){
       ret = TR_KEYBOARDUP;
+      //printf("  M: 3\n");
+    }
 
-    if (type==NSKeyDown || type==NSKeyUp)
-      if([event isARepeat])
+    if (type==NSKeyDown || type==NSKeyUp){
+      if([event isARepeat]){
         ret = TR_AUTOREPEAT;
+        //printf("  M: 4\n");
+      }else{
+        //printf("  M: 5\n");
+      }
+    }
 
+    
+#if 0 // Disabled. If not, shift is not released after shift+right clicking something (shift was just an example).
     
     // Probably not necessary, but just in case, in case things get out sync (see above)
     // WARNING: [event modifierFlags] is resetted when clicking mouse.
@@ -113,8 +131,10 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
       {
         //printf("****** No modifiers. Resetting\n");
         // Since modifierFlags are resetted when clicking mouse, perhaps it's better not to do this. (no, tried it, didn't work)
+        //printf(" Clear mod 2\n");
         clear_modifiers();
       }
+#endif
   }
 
   return ret;
@@ -585,6 +605,7 @@ void OS_SYSTEM_init_keyboard(void){
   static bool has_inited = false;
   if (has_inited==false){
     init_keymaps();
+    printf(" Clear mod 3\n");
     clear_modifiers();
     has_inited=true;
   }
@@ -617,8 +638,8 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
   if(type==NSAppKitDefined || type==NSSystemDefined || type==NSApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.
     //printf("      DAS EVENT: %x\n",(unsigned int)type);
 
-    // TODO: Check if it's better if Qt_Main.cpp:OS_SYSTEM_ResetKeysUpDowns calls clear_modifiers.
-    clear_modifiers();
+    //printf(" Clear mod 1\n");
+    //clear_modifiers(); // We call clear_modifiers from MyQApplication::applicationStateChanged instead.
     
     if(oldHotKeyMode!=NULL){
       PushSymbolicHotKeyMode(kHIHotKeyModeAllEnabled);

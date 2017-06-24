@@ -415,6 +415,7 @@ public:
 #endif
     raise();
     activateWindow();
+
   }
 
   void closeEvent(QCloseEvent *ce) override{
