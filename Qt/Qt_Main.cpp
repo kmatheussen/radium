@@ -1585,6 +1585,7 @@ protected:
 
         safeShow(msgBox);
 
+                                        
 #if 0 //def FOR_WINDOWS
         HWND wnd=(HWND)msgBox->winId();
         SetFocus(msgBox);

@@ -801,10 +801,18 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
 
 
   
-  // Create/remove mixer connections
-  if (SP_add_and_remove_links(add_linkparameters, remove_linkparameters)==false)
-    return false; // Nothing done. (either recursive connection, or empty parameters)
+  if (PLAYER_is_running()==true){
+    
+    // Create/remove mixer connections
+    if (SP_add_and_remove_links(add_linkparameters, remove_linkparameters)==false)
+      return false; // Nothing done. (either recursive connection, or empty parameters)
+    
+  } else {
 
+    if (add_linkparameters.size()==0 && remove_linkparameters.size()==0)
+      return false;
+    
+  }
 
   
   // ADD: Create mixergui connections
@@ -1371,6 +1379,7 @@ void CHIP_create(SoundProducer *sound_producer, float x, float y){
 }
 
 Chip::~Chip(){
+    
   while(audio_connections.size()>0){
     fprintf(stderr,"Deleting connection. Connections left: %d\n",(int)audio_connections.size());
     CONNECTION_delete_audio_connection(audio_connections[0]);

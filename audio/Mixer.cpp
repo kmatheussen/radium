@@ -1098,6 +1098,7 @@ struct Mixer{
 
   static void RT_rjack_shutdown(jack_status_t code, const char *reason, void *arg){
     ATOMIC_SET(g_jack_is_running, false); // must be set before rt_message to avoid deadlock
+    ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);
     RT_message("The jack server shut down\n"
                "(Reason from the server: \"%s\").\n"
                "\n"

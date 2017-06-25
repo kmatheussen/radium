@@ -88,6 +88,7 @@ static void clear_scheduler_and_stop_player_and_releases_player_lock(void){
 
   if (ATOMIC_GET(pc->player_state) != PLAYER_STATE_STOPPED){
     ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
+
     RSEMAPHORE_wait(g_player_stopped_semaphore, 1);
   }
 }
@@ -110,6 +111,11 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
     abort();
   */
 #endif
+
+  if (PLAYER_current_thread_has_lock()){
+    RError("Potential deadlock detected: Calling PlayStopReally while holding player lock.");
+    return;
+  }
 
   R_ASSERT(g_assert_not_stopping_player==0);
   
@@ -134,11 +140,6 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
           return;
         }
         
-        if (PLAYER_current_thread_has_lock()){
-          RError("Potential deadlock detected: Calling PlayStopReally while holding player lock.");
-          return;
-        }
-
         PLAYER_lock();{
         
           StopAllInstruments();
@@ -223,6 +224,9 @@ void PlayStop_from_jack_transport(void){
 static void start_player(int playtype, double abstime, int64_t absabstime, const Place *place, struct Blocks *block, struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
+  if (PLAYER_is_running()==false)
+    return;
+  
   if (abstime<0)
     R_ASSERT(absabstime>=0);
   else if (absabstime<0)
