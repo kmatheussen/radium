@@ -2903,6 +2903,9 @@ void MW_change_ab(int ab_num){
   int old_ab_num = g_curr_ab;
   int new_ab_num = ab_num;
 
+  if (old_ab_num==new_ab_num)
+    return;
+  
   hash_t *curr_state = create_ab_state();
   
   // save old data

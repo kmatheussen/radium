@@ -140,7 +140,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     zoomin_button->hide();
     zoomout_button->hide();
     
-    update_ab_buttons();
+    update_ab_buttons(true);
     show_modular_mixer_widgets(true);
     
     connections_visibility->setChecked(MW_get_connections_visibility());
@@ -178,7 +178,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     view->setMatrix(matrix);    
   }
 
-  void update_ab_buttons(void){
+  void update_ab_buttons(bool update_current_button){
     int curr = MW_get_curr_ab();
 
     MyQCheckBox *buttons[MW_NUM_AB] = {ab_a, ab_b, ab_c, ab_d, ab_e, ab_f, ab_g, ab_h};
@@ -202,15 +202,17 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
       else
         buttons[i]->setText(names[i]);
 
-      if (curr==i)
-        buttons[i]->setChecked(true);
+      if (curr==i){
+        if (buttons[i]->isChecked()==false && update_current_button)
+          buttons[i]->setChecked(true);
+      }
     }
   }
 
   void ab_rightclicked(int num){
     if (simplePopupMenu(talloc_format("%sReset",MW_get_curr_ab()==num?"[disabled]":""))==0){
       MW_reset_ab(num);
-      update_ab_buttons();
+      update_ab_buttons(false);
     }
   }
 
@@ -327,56 +329,66 @@ public slots:
   void on_ab_h_clicked(){ab_rightclicked(6);}
     
   void on_ab_a_toggled(bool val){
-    if (val && !initing)
+    printf("  CHECK A. val: %d\n", val);
+    if (val && !initing){
       MW_change_ab(0);
-    update_ab_buttons();
+      update_ab_buttons(false);
+    }
   }
   
   void on_ab_b_toggled(bool val){
-    if (val && !initing)
+    printf("  CHECK B. val: %d\n", val);
+    if (val && !initing){
       MW_change_ab(1);
-    update_ab_buttons();
+      update_ab_buttons(false);
+    }
   }
   
   void on_ab_c_toggled(bool val){
-    if (val && !initing)
+    if (val && !initing){
       MW_change_ab(2);
-    update_ab_buttons();
+      update_ab_buttons(false);
+    }
   }
   
   void on_ab_d_toggled(bool val){
-    if (val && !initing)
+    if (val && !initing){
       MW_change_ab(3);
-    update_ab_buttons();
+      update_ab_buttons(false);
+    }
   }
   
   void on_ab_e_toggled(bool val){
-    if (val && !initing)
+    if (val && !initing){
       MW_change_ab(4);
-    update_ab_buttons();
+      update_ab_buttons(false);
+    }
   }
   
   void on_ab_f_toggled(bool val){
-    if (val && !initing)
+    if (val && !initing){
       MW_change_ab(5);
-    update_ab_buttons();
+      update_ab_buttons(false);
+    }
   }
   
   void on_ab_g_toggled(bool val){
-    if (val && !initing)
+    if (val && !initing){
       MW_change_ab(6);
-    update_ab_buttons();
+      update_ab_buttons(false);
+    }
   }
   
   void on_ab_h_toggled(bool val){
-    if (val && !initing)
+    if (val && !initing){
       MW_change_ab(7);
-    update_ab_buttons();
+      update_ab_buttons(false);
+    }
   }
   
   void on_ab_reset_clicked(){    
     MW_reset_ab(-1);
-    update_ab_buttons();
+    update_ab_buttons(true);
   }
 
   void on_window_mode_toggled(bool show_window){
@@ -614,7 +626,7 @@ void MW_set_rotate(float rotate){
 }
 
 void MW_update_mixer_widget(void){
-  g_mixer_widget2->update_ab_buttons();
+  g_mixer_widget2->update_ab_buttons(true);  
   g_mixer_widget2->update();
 }
 
