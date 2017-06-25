@@ -1687,7 +1687,7 @@
 
 (define (create-mixer-strips num-rows stored-mixer-strips list-of-modified-instrument-ids kont)
   ;;(set! num-rows 3)
-  (define strip-separator-width 5)
+  (define strip-separator-width 1)
   (define instruments-buses-separator-width (* (get-fontheight) 2))
 
   ;;(define mixer-strips (<gui> :widget 800 800))
