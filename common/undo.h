@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   do{                                                                   \
     if (Undo_Currently_Adding_Undo())                                   \
       RError("Can not add undo while adding undo (something is very spaghetti)"); \
-    else if (Undo_Is_Currently_Undoing()==false){                       \
+    else if (Undo_Is_Currently_Undoing()==false && Undo_Is_Currently_Ignoring()==false){ \
       Undo_Start_Adding_Undo(LOC());                                    \
       CALL_ADD_UNDO_FUNC(call);                                         \
       Undo_End_Adding_Undo();                                           \

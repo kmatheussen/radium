@@ -13,7 +13,7 @@
 
 // NOTE. All the 'call_very_often' functions can be called from a custom exec().
 // This means that _patch->plugin might be gone, and the same goes for soundproducer.
-// (_patch is never gone, never deleted)
+// (Note that _patch is never deleted, except when loading song.)
 
 static void call_very_often(AudioMeterPeaks &peaks, bool reset_falloff, float ms){
 
@@ -81,8 +81,9 @@ void AUDIOMETERPEAKS_call_very_often(int ms){
     reset_falloff = true;
   }
 
+  vector_t *audio_patches = &(get_audio_instrument()->patches);
   
-  VECTOR_FOR_EACH(struct Patch *, patch, &(get_audio_instrument()->patches)){
+  VECTOR_FOR_EACH(struct Patch *, patch, audio_patches){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     if(plugin != NULL){
       call_very_often(plugin, reset_falloff, ms);
