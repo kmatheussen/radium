@@ -50,8 +50,7 @@ static void RT_bus_process(SoundPlugin *plugin, int64_t time, int num_frames, fl
 #endif
 
 static void RT_pipe_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  int ch;
-  for(ch=0;ch<plugin->type->num_outputs;ch++)
+  for(int ch=0;ch<plugin->type->num_outputs;ch++)
     if(inputs[ch] != outputs[ch])
       memcpy(outputs[ch],inputs[ch],sizeof(float)*num_frames);
 }

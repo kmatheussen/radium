@@ -515,11 +515,13 @@ void PLUGIN_delete(SoundPlugin *plugin){
 
   while(PLUGIN_remove_midi_learn(plugin, -1, false)==true);
        
-  if(!strcmp(plugin_type->type_name,"Bus")) // RT_process needs buses to always be alive.
-    return;
-
   plugin_type->cleanup_plugin_data(plugin);
 
+
+  //if(!strcmp(plugin_type->type_name,"Bus")) // RT_process needs buses to always be alive. No, not any more. Now, buses are just like other soundproducers in the mixer.
+  //  return;
+
+  
   V_free(plugin->do_random_change);
   V_free(plugin->initial_effect_values);
   V_free(plugin->savable_effect_values);
