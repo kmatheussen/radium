@@ -159,16 +159,18 @@ FULL_VERSION ?= 1
 #UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer
 UNDEFINED_SANITIZE_OPTS=
 
-# Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
-OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) #-Og -fsanitize=thread #-fsanitize=address #-DDISABLE_BDWGC # -fsanitize=address  -Og -fcheck-pointer-bounds -mmpx  # -DDISABLE_BDWGC -Og -
-DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
-# -Og -Og -fsanitize=address
-#-Og 
-#  -fsanitize=thread 
-# -Og -fsanitize=address 
+# -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
+# "-Og" very often destroys debugging (it's not supposed to, but it's a very new option), but without it things are too slow (well, it's already too slow, but -Og helps a lot).
+#THREAD_SANITIZE_OPTS=-Og -fsanitize=thread #-DDISABLE_BDWGC
+THREAD_SANITIZE_OPTS=
 
-# -fsanitize-thread sometimes require:
-#export __GL_THREADED_OPTIMIZATIONS=0
+ADDRESS_SANITIZE_OPTS=-fsanitize=address
+#ADDRESS_SANITIZE_OPTS=
+
+
+# Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
+OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS)
+DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 
 
 GCC_VERSION:=$(shell gcc -dumpversion)

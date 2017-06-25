@@ -576,8 +576,15 @@ void CHIP_kick_right(Chip *chip){
   remakeMixerStrips();
 }
 
-static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id){
+static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id, bool patch_is_always_supposed_to_be_here = true){
   struct Patch *patch = PATCH_get_from_id(patch_id);
+
+  if (patch==NULL){
+    if (patch_is_always_supposed_to_be_here)
+      RError("Could not find patch from id #%d", (int)patch_id);
+    
+    return NULL;
+  }
 
   return CHIP_get(scene, patch);
 }
@@ -2088,6 +2095,8 @@ struct Patch *CHIP_get_patch(const Chip *chip){
 }
 
 Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch){
+  R_ASSERT_RETURN_IF_FALSE2(patch != NULL, NULL);
+  
   const SoundPlugin *plugin = (const SoundPlugin*)patch->patchdata;
 
   const QList<QGraphicsItem *> &das_items = scene->items();
@@ -2140,7 +2149,8 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
 
 static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioGraph &changes, const hash_t *state,
                                           int64_t patch_id_old, int64_t patch_id_new,
-                                          int64_t patch_id_old2 = -1, int64_t patch_id_new2 = -1
+                                          int64_t patch_id_old2, int64_t patch_id_new2,
+                                          bool all_patches_are_always_supposed_to_be_here
                                           )
 {
   int64_t id_from = HASH_get_int(state, "from_patch");
@@ -2158,11 +2168,15 @@ static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioG
   if (id_to==patch_id_old2)
     id_to = patch_id_new2;
   
-  Chip *from_chip = get_chip_from_patch_id(scene, id_from);
-  Chip *to_chip   = get_chip_from_patch_id(scene, id_to);
+  Chip *from_chip = get_chip_from_patch_id(scene, id_from, all_patches_are_always_supposed_to_be_here);
+  Chip *to_chip   = get_chip_from_patch_id(scene, id_to, all_patches_are_always_supposed_to_be_here);
 
   if(from_chip==NULL || to_chip==NULL) {
-    RError("Could not find chip from patch id. %d: 0x%p, %d: 0x%p",HASH_get_int(state, "from_patch"),from_chip,HASH_get_int(state, "to_patch"),to_chip);
+
+    // (get_chip_from_patch_id shows error.)
+    //if (all_patches_are_always_supposed_to_be_here)
+    //  RError("Could not find chip from patch id. %d: 0x%p, %d: 0x%p",HASH_get_int(state, "from_patch"),from_chip,HASH_get_int(state, "to_patch"),to_chip);
+    
     return;
   }
 
@@ -2176,22 +2190,16 @@ static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioG
   }
 }
   
-void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new){
-  changes::AudioGraph changes;
-
-  CONNECTION_create_from_state2(scene, changes, state, patch_id_old, patch_id_new);
-  CONNECTIONS_apply_changes(scene, changes);
-}
-
-void CONNECTIONS_create_from_state2(QGraphicsScene *scene, changes::AudioGraph &changes, const hash_t *connections,
-                                    int patch_id_old = -1, int patch_id_new = -1,
-                                    int64_t patch_id_old2 = -1, int64_t patch_id_new2 = -1
-                                    )
+static void CONNECTIONS_create_from_state2(QGraphicsScene *scene, changes::AudioGraph &changes, const hash_t *connections,
+                                           int patch_id_old, int patch_id_new,
+                                           int64_t patch_id_old2, int64_t patch_id_new2,
+                                           bool all_patches_are_always_supposed_to_be_here
+                                           )
 {
   int num_connections = HASH_get_int32(connections, "num_connections");
   for(int i=0;i<num_connections;i++){
     const hash_t *state = HASH_get_hash_at(connections, "", i);
-    CONNECTION_create_from_state2(scene, changes, state, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2);
+    CONNECTION_create_from_state2(scene, changes, state, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2, all_patches_are_always_supposed_to_be_here);
   }
 }
 
@@ -2201,18 +2209,25 @@ void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connecti
                                    )
 {
   changes::AudioGraph changes;
-  CONNECTIONS_create_from_state2(scene, changes, connections, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2);
+  CONNECTIONS_create_from_state2(scene, changes, connections, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2, true);
   CONNECTIONS_apply_changes(scene, changes);
 }
 
-void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections)
+static void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new){
+  changes::AudioGraph changes;
+
+  CONNECTION_create_from_state2(scene, changes, state, patch_id_old, patch_id_new, -1, -1, true);
+  CONNECTIONS_apply_changes(scene, changes);
+}
+
+void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections, bool all_patches_are_always_supposed_to_be_here)
 {
   changes::AudioGraph changes;
 
   CONNECTIONS_remove_all2(scene, changes);
   
-  CONNECTIONS_create_from_state2(scene, changes, connections);
-
+  CONNECTIONS_create_from_state2(scene, changes, connections, -1, -1, -1, -1, all_patches_are_always_supposed_to_be_here);
+  
   CONNECTIONS_apply_changes(scene, changes);
 }
 
@@ -2243,7 +2258,8 @@ void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *
                                     changes,
                                     connection_state,
                                     index_from, id_from,
-                                    index_to, id_to
+                                    index_to, id_to,
+                                    true
                                     );
     }
   }

@@ -2520,7 +2520,7 @@ static void MW_position_chips_from_state(const hash_t *chips, const vector_t *pa
 
 // Called from undo_mixer_connections.c
 void MW_create_connections_from_state(const hash_t *connections){
-  CONNECTIONS_replace_all_with_state(&g_mixer_widget->scene, connections);
+  CONNECTIONS_replace_all_with_state(&g_mixer_widget->scene, connections, true);
 }
 
 static void add_undo_for_all_chip_positions(void){
@@ -2670,7 +2670,7 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   if (is_loading)
     GFX_ShowProgressMessage("Creating connections between sound objects");
 
-  CONNECTIONS_create_from_state(&g_mixer_widget->scene, HASH_get_hash(state, "connections"), -1, -1);
+  CONNECTIONS_create_from_state(&g_mixer_widget->scene, HASH_get_hash(state, "connections"), -1, -1, -1, -1);
 
   if (HASH_has_key(state, "ab_state"))
     MW_recreate_ab_from_state(HASH_get_hash(state, "ab_state"));
@@ -2814,7 +2814,7 @@ static bool in_patches(const vector_t *patches, int64_t id){
 static void apply_ab_connections_state(hash_t *connections){
 
   // All the stuff that was done below should now be handled in QM_chip.cpp / SoundProducer.cpp instead when applying graph changes, and in much better ways.
-  CONNECTIONS_replace_all_with_state(&g_mixer_widget->scene, connections);
+  CONNECTIONS_replace_all_with_state(&g_mixer_widget->scene, connections, false);
 
   
 #if 0
@@ -2840,7 +2840,8 @@ static void apply_ab_connections_state(hash_t *connections){
         /*
         CONNECTION_create_from_state(&g_mixer_widget->scene,
                                      connection_state,
-                                     -1, -1);
+                                     -1, -1,
+                                     false);
         connection = get_connection(id_from, id_to, is_event_connection);
         R_ASSERT_RETURN_IF_FALSE(connection!=NULL);
         */
@@ -2875,7 +2876,8 @@ static void apply_ab_connections_state(hash_t *connections){
     bool is_event_connection = HASH_get_bool(connection_state, "is_event_connection");
     CONNECTION_create_from_state(&g_mixer_widget->scene,
                                  connection_state,
-                                 -1, -1);
+                                 -1, -1,
+                                 false);
     R_ASSERT_RETURN_IF_FALSE(get_connection(id_from, id_to, is_event_connection) != NULL);
   }END_VECTOR_FOR_EACH;
 #endif
