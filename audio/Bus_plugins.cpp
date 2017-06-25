@@ -101,6 +101,18 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
+  const SoundPluginType *plugin_type = plugin->type;
+  
+  if(plugin_type==&bus_type1)
+    bus1 = NULL;
+  if(plugin_type==&bus_type2)
+    bus2 = NULL;
+  if(plugin_type==&bus_type3)
+    bus3 = NULL;
+  if(plugin_type==&bus_type4)
+    bus4 = NULL;
+  if(plugin_type==&bus_type5)
+    bus5 = NULL;
 }
 
 const char *BUS_get_bus_name(int bus_num){

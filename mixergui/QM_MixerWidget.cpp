@@ -2360,7 +2360,7 @@ static hash_t *MW_get_audio_patches_state(const vector_t *patches, bool put_in_a
         
         hash_t *state = AUDIO_get_audio_patch_state(patch);
 
-        if (state!=NULL){ // This should never happen.
+        if (state!=NULL){ // This should always happen.
           
           // dont need it
           if (patches != NULL)
@@ -2569,9 +2569,10 @@ static hash_t *get_chips_and_bus_chips(const hash_t *state){
     hash_t *plugin = HASH_get_hash(chip, "plugin");    
     const char *type_name = HASH_get_chars(plugin, "type_name");
     
-    if (!strcmp(type_name,"Bus"))
+    if (!strcmp(type_name,"Bus")) {
+      fprintf(stderr, "\n   Bus %d/%d. Id: %d\n", num_buses, i, HASH_get_int32(chip, "patch"));
       HASH_put_hash_at(buses, "", num_buses++, chip);
-    else
+    } else
       HASH_put_hash_at(new_chips, "", num_chips++, chip);
   }
 
