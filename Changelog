@@ -1,3 +1,37 @@
+Changes 4.9.1 -> 4.9.2:
+* Upgrade the S7 scheme interpreter.
+* Mixer strips: Minor graphical tweak.
+* Audio: Fix algorithm to check if trying to create recursive
+  audio graph. Bug introduced in 4.9.1.
+* Mixer: Twice as fast switching to a different a/b setting.
+  Earlier, the current a/b setting was applied (again) right
+  before applying the new a/b setting.
+* Jack: Don't freeze program when jack has shut down, and
+  don't freeze if saving or exiting. These bugs might have
+  been introduced around 4.8.7.
+* Load: Turn off undo when cleaning mixer. Might make loading
+  songs a little bit faster, especially if the song uses
+  plugins that is slow to create settings data
+  (VST chunks, etc).
+* Internal: Don't create undo when ignoring undo. Minor general
+  optimization.
+* Load: Release resources obtained by bus instruments when
+  loading song. MIDI learn was probably the only visible
+  resource not being released, but it also leaked memory.
+* Load: Fix rare crash when loading song with many instruments.
+* Mixer: Don't crash when changing to a different A/B setting
+  after deleting an instrument. Bug introduced in 4.9.1.
+* OSX: Fix modifier key not being registered as released after
+  pressing a mouse button while holding a modifier key.
+  Makes Ctrl+Z work after shift+right clicking an instrument
+  without having to click somewhere first, and other
+  situations.
+* Internal: Fixes leakage of internal object to keep track of
+  playing notes. The leak happened when deleting an instrument
+  while it was playing.
+
+
+
 Changes 4.9.0 -> 4.9.1:
 * Windows: Fix approximately 99.99% of the keyboard focus
   problems.
