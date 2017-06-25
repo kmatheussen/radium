@@ -2279,14 +2279,18 @@ static bool delete_a_chip(bool is_loading){
   return ret;
 }
 
-void MW_cleanup(bool is_loading){  
-  MW_reset_ab(-1);
+void MW_cleanup(bool is_loading){
+  Undo_start_ignoring_undo_operations();{
 
-  MW_cleanup_connections(is_loading); // Calling this function is not necessary since all connecting connections are deleted when deleting a chip (which happens in the next line), but it's a lot faster to delete all connections in one go than deleting them one by one since we only have to wait for the audio thread one time.
-
-  while(delete_a_chip(is_loading)); // remove all chips. All connections are removed as well when removing all chips.
-
-  MW_update_mixer_widget();
+    MW_reset_ab(-1);
+    
+    MW_cleanup_connections(is_loading); // Calling this function is not necessary since all connecting connections are deleted when deleting a chip (which happens in the next line), but it's a lot faster to delete all connections in one go than deleting them one by one since we only have to wait for the audio thread one time.
+    
+    while(delete_a_chip(is_loading)); // remove all chips. All connections are removed as well when removing all chips.
+    
+    MW_update_mixer_widget();
+    
+  }Undo_stop_ignoring_undo_operations();
 }
 
 static void get_patches_min_x_y(const vector_t *patches, float &min_x, float &min_y){
