@@ -249,43 +249,31 @@ struct SoundProducerLink {
 
   bool should_be_turned_off = false;
 
+  bool equals(const SoundProducerLink *b) const {
+    if (source!=b->source)
+      return false;
+    
+    if (target!=b->target)
+      return false;
+
+    if (is_event_link!=b->is_event_link)
+      return false;
+    
+    if (is_event_link)
+      return true;
+
+    if (source_ch!=b->source_ch)
+      return false;
+
+    if (target_ch!=b->target_ch)
+      return false;
+
+    return true;
+  }
+  
   // Why does gcc complain when the arguments are (const SoundProducerLink *a, const SoundProducerLink *b), and why doesn't it complain now?
   static bool equal(SoundProducerLink *a, SoundProducerLink *b){
-
-    if (a->source!=b->source)
-      return false;
-    
-    if (a->target!=b->target)
-      return false;
-
-    if (a->is_event_link!=b->is_event_link)
-      return false;
-    
-
-    if (a->is_event_link) {
-#if !defined(RELEASE)
-      fprintf(stderr, "EVENT: a: %p, b: %p\n", a, b);
-      abort();
-#else
-      R_ASSERT(false); // This function, as it is used so far, is only supposed to return false.
-#endif
-      return true;
-    }
-    
-    if (a->source_ch==b->source_ch && a->target_ch==b->target_ch){
-#if !defined(RELEASE)
-      fprintf(stderr, "AUDIO: a: %p, b: %p\n", a, b);
-      abort();
-#else
-      R_ASSERT(false); // This function, as it is used so far, is only supposed to return false.
-#endif
-      return true;
-      
-    } else {
-
-      return false;
-
-    }
+    return a->equals(b);
   }
   
   void request_turn_off(void){
@@ -942,66 +930,75 @@ public:
   }
 
 #if defined(RELEASE)
-#define P(n)
+#define D(n)
 #else
-#define P(n) printf("%d: this: %p. Size: %d. to_add[0]: %p\n", n, start_producer, to_add.size(), to_add.at(0));
+#define D(n) n
 #endif
 
-  bool is_still_recursive(const SoundProducerLink* recursive_link,
-                          radium::Vector<SoundProducerLink*> &to_remove,
-                          radium::Vector<SoundProducerLink*> &links_that_must_be_removed_first
-                          )
-  {
-    for(auto *to_remove_link : to_remove){
-      if (to_remove_link->source == recursive_link->source && to_remove_link->target == recursive_link->target){
-
-        // Transfer link 'to_remove' --> 'links_that_must_be_removed_first'
-        links_that_must_be_removed_first.push_back(to_remove_link);
-        to_remove.remove(to_remove_link);
-        
-        return false;
-      }
-    }
-
-    return true;
-  }
-                           
-  // Traverse graph backwards and see if we end up in the same position as we started.
-  bool is_recursive(const SoundProducer *start_producer, const SoundProducerLink *start_link,
-                    const radium::Vector<SoundProducerLink*> &to_add,
+#define P(n) D(printf("        %d: visited.size(): %d, link: %p, to_add.size(): %d, to_remove.size(): %d, remove_first.size(): %d\n", n, visited.size(), link, to_add.size(), to_remove.size(), links_that_must_be_removed_first.size()));
+  
+  // Traverse graph backwards and see if we end up a place we have been before.
+  bool is_recursive(const radium::Vector<SoundProducerLink*> &to_add,
                     radium::Vector<SoundProducerLink*> &to_remove,
-                    radium::Vector<SoundProducerLink*> &links_that_must_be_removed_first
+                    radium::Vector<SoundProducerLink*> &links_that_must_be_removed_first,
+                    QVector<const SoundProducer*> visited,
+                    QVector<const SoundProducer*> &already_checked
                     )
   {
                     
-    if(start_producer==this){      
+    if (already_checked.contains(this))
+      return false;
+
+    if(visited.contains(this)){
+      D(const SoundProducerLink *link = NULL;)
       P(0);
       return true;
     }
 
-    // Traverse input links that are already there.
-    for (SoundProducerLink *link : _input_links)
-      if (!link->is_bus_link)
-        if(link->source->is_recursive(start_producer, start_link, to_add, to_remove, links_that_must_be_removed_first)==true)
-          if (is_still_recursive(link, to_remove, links_that_must_be_removed_first)==false){
-            P(1);
-            return true;
-          }
+    visited.push_back(this);
     
-    // Traverse input links that we are going to add (we don't check is_still_recursive here since we assume to_add and to_remove don't overlap. We would probably cover a bug if doing so.)
-    for(auto *link : to_add)
-      if (link != start_link)
-        if (link->target == this)
-          if (!link->is_bus_link)
-            if (link->source->is_recursive(start_producer, start_link, to_add, to_remove, links_that_must_be_removed_first)==true){
-              P(2);
-              return true;
-            }
-      
+    int num_input_links = _input_links.size();
+    
+    for(int pos = 0 ; pos < num_input_links + to_add.size() ; pos++){
+      SoundProducerLink *link;
+
+      if (pos < num_input_links)
+        link = _input_links.at(pos);      
+      else
+        link = to_add.at(pos-num_input_links);
+
+      D(printf("     B. Check %s(%d) -> %s(%d)\n",
+               link->source->_plugin->patch->name, link->source_ch,
+               link->target->_plugin->patch->name, link->target_ch));
+
+      bool is_recursive = true
+        && link->target == this
+        && !link->is_bus_link
+        && !links_that_must_be_removed_first.contains(link)
+        && link->source->is_recursive(to_add, to_remove, links_that_must_be_removed_first, visited, already_checked);
+
+      if (is_recursive) {
+        
+        if (to_remove.contains(link)){
+                
+          // transfer link from to_remove -> links_that_must_be_removed_first
+          links_that_must_be_removed_first.push_back(link);
+          to_remove.remove(link);
+          
+        } else {
+          
+          P(2);
+          return true;
+          
+        }
+
+      }
+    }
+
+    already_checked.push_back(this);
+
     return false;
   }
-  
-#undef P
   
   // The actualy links to to_remove are not removed until after this function has returned.
   // In step 3 in 'add_and_remove_links', we are just requesting the engine to make it safe to remove the links, not actually remove the links.
@@ -1012,13 +1009,27 @@ public:
                            radium::Vector<SoundProducerLink*> &links_that_must_be_removed_first
                            )
   {
-    for(auto *link : to_add){
-      if (link->source->is_recursive(link->target, link, to_add, to_remove, links_that_must_be_removed_first)==true)
+    D(printf("\n\n IS_RECURSIVE. to_add.size(): %d, to_remove.size(): %d, remove_first.size(): %d\n", to_add.size(), to_remove.size(), links_that_must_be_removed_first.size()));
+
+    QVector<const SoundProducer*> already_checked; // Not strictly necessary. Only used to speed up.
+
+    for(const auto *link : to_add){
+      D(printf("   C. Check %s -> %s\n", link->source->_plugin->patch->name, link->target->_plugin->patch->name););
+
+      QVector<const SoundProducer*> visited;
+        
+      if (link->target->is_recursive(to_add, to_remove, links_that_must_be_removed_first, visited, already_checked)==true){
+        P(3);
         return true;
+      }          
     }
 
     return false;
   }
+  
+#undef P
+#undef D
+  
 
   // Note 1: Will delete all links in to_add if it succeeded.
   // Note 2: Might modify to_remove.
@@ -1041,8 +1052,10 @@ public:
     if (isrecursive_feedback != NULL)
       *isrecursive_feedback = isrecursive;
 
-    if (to_add.size()==0 && to_remove.size()==0 && volume_changes.size()==0)
+    if (to_add.size()==0 && to_remove.size()==0 && volume_changes.size()==0){
+      R_ASSERT(links_that_must_be_removed_first.size()==0);
       return false;
+    }
 
     R_ASSERT(!to_remove.intersects(links_that_must_be_removed_first, SoundProducerLink::equal));
         
@@ -2024,7 +2037,12 @@ void SP_print_tree(void){
     fprintf(stderr, "  outputs:\n");
     */
     for (SoundProducerLink *link : sp->_output_links){
-      fprintf(stderr, "  %s%s. Latency: %d\n",link->target->_plugin->patch->name,link->is_active?"":" (inactive)",link->_delay._delay.getSize());
+      fprintf(stderr, "  %s%s. Ch: %d->%d. Latency: %d\n",
+              link->target->_plugin->patch->name,
+              link->is_active?"":" (inactive)",
+              link->source_ch, link->target_ch,
+              link->_delay._delay.getSize()
+              );
     }    
   }
 }
