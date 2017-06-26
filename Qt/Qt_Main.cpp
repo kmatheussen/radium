@@ -520,11 +520,13 @@ protected:
         downcount = 40;
       }
       */
+      //printf("ret false 1\n");
       return false;
     }
 
     if (MIXER_is_saving()){
       //printf(" Got key -1\n");
+      //printf("ret false 2\n");
       return false;
     }
 
@@ -547,8 +549,10 @@ protected:
     if (type==TR_AUTOREPEAT)
       type = TR_KEYBOARD;
     
-    if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP)
+    if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP){
+      //printf("ret false 3\n");
       return false;
+    }
     
 #if 0 //FOR_LINUX
     return true;
@@ -682,7 +686,7 @@ protected:
       //printf(" Got key 2\n");
       
       if (modifier==EVENT_ALT_R || must_return_true){
-        //printf("  Returning true 1\n");
+        //printf("  Returning true 1. modifier: %d, must_return_true: %d\n", modifier==EVENT_ALT_R, must_return_true);
         return true; // If not, Qt starts to navigate the menues.
       }
 
@@ -717,7 +721,7 @@ protected:
     //printf("keynum1: %d. switch: %d\n",keynum,tevent.keyswitch);
 
 
-    //
+    //printf("  menu_should_be_active: %d\n", menu_should_be_active);
     if (GFX_MenuActive() || menu_should_be_active>0){
       
       if (GFX_MenuActive())
@@ -786,15 +790,16 @@ protected:
           
         default:{
           //printf("  Something else: %d (left alt: %d)\n", keynum, EVENT_ALT_L);
-          if (GFX_MenuActive())
+          if (GFX_MenuActive()){
+            //printf("  Returning false 3.3 %d\n", menu_should_be_active);
             return false; // Since the menus are active, we can assume that the user knew, or should know, that we are navigating the menues.
-          else
+          }else
             menu_should_be_active = 0; // There's a good chance the user doesn't know that we are navigating the menues now, so we stop navigating it to avoid further confusion.
         }
       }
 
     }
-
+    //printf("ret true 1\n");
 
     //printf("Setting lalt==false 2\n");
     last_key_was_lalt = false;
@@ -1616,6 +1621,20 @@ protected:
       updateWidgetRecursively(g_main_window);
     }
 
+    // Force full keyboard focus to the main window after startup. This seems to be the only reliable way. (if you think this is unnecessary, see if left alt works to start navigating menues after startup while using the fvwm window manager)
+    {
+      static MyQMessageBox *gakkbox = NULL;
+
+      if(g_main_timer_num_calls==1){
+        gakkbox = MyQMessageBox::create();
+        gakkbox->setText("Forcing focus");
+        safeShow(gakkbox);
+      }
+      if(g_main_timer_num_calls==2){
+        delete gakkbox;
+      }
+    }
+    
 #if 0
     // Does not work.
     {
@@ -3063,7 +3082,6 @@ int main(int argc, char **argv){
   }
 
   //GC_disable();
-  
   QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
   
   g_splashscreen = new QSplashScreen(pixmap);
