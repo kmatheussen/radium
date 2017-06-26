@@ -690,7 +690,9 @@ public:
 
     printf("init_vl\n");
 
-    glContext->initGLContext();
+    msleep(200); // Maybe this prevents opengl from crashing during startup on osx.
+    
+    glContext->initGLContext(); // Sometimes, the first gl* call crashes inside here on OSX.
 
     QThread::currentThread()->setPriority(QThread::HighPriority);
     
