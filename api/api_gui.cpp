@@ -751,6 +751,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         : event->key()==Qt::Key_End ? "END"
         : event->text();
 
+      //printf("  GOt key: %d. Auto: %d\n", event->key(), event->isAutoRepeat());
+      
       event->accept();
       
       return S7CALL(bool_int_charpointer,_key_callback, keytype, talloc_strdup(s.toUtf8().constData()));

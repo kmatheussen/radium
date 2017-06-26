@@ -690,6 +690,8 @@ public:
 
     printf("init_vl\n");
 
+    glContext->initGLContext();
+
     QThread::currentThread()->setPriority(QThread::HighPriority);
     
     _rendering = new vl::Rendering;
@@ -709,7 +711,6 @@ public:
     //_rendering->setCullingEnabled(true); // What does this method do? It seems to make no difference whether we use the OcclusionCullRenderer or not.
 
     
-    glContext->initGLContext();
     glContext->addEventListener(this);
 
 
