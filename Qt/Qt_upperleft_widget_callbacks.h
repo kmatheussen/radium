@@ -410,8 +410,10 @@ public slots:
     
     double highest = FindHighestTempoNodeVal(wblock->block) + 1.0f;
 
-    if(highest > new_value)
+    if(highest > new_value){
+      new_value = highest;
       reltempomax->setValue(highest);
+    }
     
     ADD_UNDO(RelTempoMax(window,wblock));
 
