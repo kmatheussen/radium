@@ -38,7 +38,11 @@ public:
     _mytimer_timer.stop();
   }
 
-  const QTimer &qtimer(void){
+  const QTimer &qtimer(void) const {
+    return _mytimer_timer;
+  }
+  
+  QTimer &qtimer(void) {
     return _mytimer_timer;
   }
   
