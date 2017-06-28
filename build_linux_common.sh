@@ -160,7 +160,7 @@ mkdir -p linux_objs
 
 if ! file bin/radium |grep Linux ; then
     rm -f bin/radium
-    rm -f bin/crashreporter
+    rm -f bin/radium_crashreporter
     rm -f bin/radium_error_message
 fi
 
