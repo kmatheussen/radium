@@ -449,7 +449,7 @@
 (define (radium-mouse-press $button $x $y)  
   (handling-nodes
    (lambda()
-     ;;(c-display "%%%%%%%%%%%%%%%%% mouse press" $button $x $y *current-mouse-cycle*)
+     ;;(c-display "%%%%%%%%%%%%%%%%% >> mouse press" $button $x $y *current-mouse-cycle*)
      ;;(cancel-current-stuff)
      (if (not *current-mouse-cycle*)
          (let ((new-mouse-cycle (get-mouse-cycle $button $x $y)))
@@ -477,7 +477,7 @@
 (define (radium-mouse-release $button $x $y)
   (handling-nodes
    (lambda()
-     ;;(c-display "mouse release" $button $x $y)
+     ;;(c-display "%%%%%%%%%%%%%%%%% << mouse release" $button $x $y)
      (if *current-mouse-cycle*
          (begin
            ((*current-mouse-cycle* :release-func) $button $x $y)
@@ -1043,6 +1043,9 @@
                                 (<ra> :set-reltempo Value))
                         :Publicize (lambda (_)
                                      (show-reltempo-in-statusbar))
+                        :Mouse-pointer-func (if (string=? (<ra> :get-os-name) "macosx")
+                                                ra:set-normal-mouse-pointer ;; QCursor::setPos doesn't quite work on osx.
+                                                #f)
                         )
 
 ;; reset slider value

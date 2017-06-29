@@ -2155,6 +2155,19 @@ bool releaseMode(void){
 }
 
 
+const_char *getOsName(void){
+#if defined(FOR_LINUX)
+  return "linux";
+#elif defined(FOR_MACOSX)
+  return "macosx";
+#elif defined(FOR_WINDOWS)
+  return "windows"
+#else
+#error "unknown"
+#endif
+}
+
+
 // Scheduler
 ////////////////////////////
 
