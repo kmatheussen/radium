@@ -1809,9 +1809,9 @@
                                                          ;;(and info
                                                          ;;     (c-display "        NUM " (info :pianonotenum) " type: " (info :move-type)))
                                                          (and info
-                                                              (let ((info (copy-pianonote-info info
-                                                                                               :note-id (create-play-pianonote (info :notenum)
-                                                                                                                               (info :pianonotenum)))))
+                                                              (let ((info (<copy-pianonote-info> info
+                                                                                                 :note-id (create-play-pianonote (info :notenum)
+                                                                                                                                 (info :pianonotenum)))))
                                                                 (call-get-existing-node-info-callbacks callback info))))))
                         :Get-min-value (lambda (_) 1)
                         :Get-max-value (lambda (_) 127)

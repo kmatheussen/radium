@@ -297,8 +297,8 @@
 ;;;;;;;;; TESTING ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (reverse-velocity velocity length)
-  (copy-velocity velocity
-                 :place (scale (velocity :place) 0 length length 0)))
+  (<copy-velocity> velocity
+                   :place (scale (velocity :place) 0 length length 0)))
 
 (define (reverse-velocities velocities length)
   (map (lambda (velocity)
@@ -306,8 +306,8 @@
        (reverse velocities)))
 
 (define (reverse-pitch pitch length)
-  (copy-pitch pitch
-              :place (scale (pitch :place) 0 length length 0)))
+  (<copy-pitch> pitch
+                :place (scale (pitch :place) 0 length length 0)))
 
 (define (reverse-pitches pitches length)
   (define first-pitch (reverse-pitch (first pitches) length))
@@ -317,8 +317,8 @@
   ;;(c-display "bef last-pitch:" last-pitch length)
 
   (when (= 0 (last-pitch :value))
-    (set! last-pitch  (copy-pitch last-pitch  :value (first-pitch :value)))
-    (set! first-pitch (copy-pitch first-pitch :value 0)))
+    (set! last-pitch  (<copy-pitch> last-pitch  :value (first-pitch :value)))
+    (set! first-pitch (<copy-pitch> first-pitch :value 0)))
 
   ;;(c-display "aft first-pitch:" first-pitch)
   ;;(c-display "aft last-pitch:" last-pitch)
@@ -331,11 +331,11 @@
 
 (define (reverse-note note length)
   (let ((duration (get-note-duration note)))
-    (copy-note note
-               :place (scale (get-note-end note) 0 length length 0)
-               :pitches (reverse-pitches (note :pitches) duration)
-               :velocities (reverse-velocities (note :velocities) duration)
-               )))
+    (<copy-note> note
+                 :place (scale (get-note-end note) 0 length length 0)
+                 :pitches (reverse-pitches (note :pitches) duration)
+                 :velocities (reverse-velocities (note :velocities) duration)
+                 )))
 
 (delafina (get-reversed-notes :blocknum -1
                               :starttracknum -1

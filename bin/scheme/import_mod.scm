@@ -323,8 +323,8 @@
                          (and (= (event :channel) channelnum)
                               (not (eq? (event :type) :break))))
                        pattern-events)
-                 (list (copy-event break-event  ;; add the break event to every channel.
-                                   :channel channelnum))))
+                 (list (<copy-event> break-event  ;; add the break event to every channel.
+                                     :channel channelnum))))
        (iota num-channels)))
 
 ;; Can be optimized a lot. Likely that this function is not needed though.
@@ -427,13 +427,13 @@
 (define (append-two-patterns pattern1 pattern2 patternnum)
   (define num-lines-in-pattern1 (get-num-lines-in-pattern pattern1))
   (append (map (lambda (event)
-                 (copy-event event
-                             :patternnum patternnum))
+                 (<copy-event> event
+                               :patternnum patternnum))
                (remove-break-events-and-everything-after pattern1))
           (map (lambda (event)
-                 (copy-event event
-                             :linenum (+ num-lines-in-pattern1 (event :linenum))
-                             :patternnum patternnum))
+                 (<copy-event> event
+                               :linenum (+ num-lines-in-pattern1 (event :linenum))
+                               :patternnum patternnum))
                pattern2)))
   
 (define (append-patterns events from-patternnum1 from-patternnum2)
@@ -494,8 +494,8 @@
     (if (pattern-has-correct-patternnum? pattern new-patternnum)
         pattern
         (map (lambda (event)
-               (copy-event event
-                           :patternnum new-patternnum))
+               (<copy-event> event
+                             :patternnum new-patternnum))
              pattern)))
   
   (define (remove-pattern patterns patternnum-to-remove)
@@ -711,9 +711,9 @@
                                           )
                                      )
                                (map (lambda (event)
-                                      (copy-event event
-                                                  :linenum (- (event :linenum) split-line)
-                                                  :patternnum patternnum2))
+                                      (<copy-event> event
+                                                    :linenum (- (event :linenum) split-line)
+                                                    :patternnum patternnum2))
                                     (cadr ba))))
              (new-patterns (vector-append (replace-pattern-in-patterns patterns patternnum1 pattern1)
                                           (vector pattern2)))
@@ -940,7 +940,7 @@
 
 (define (convert-c00-event-to-stop events c00-event)
   (cond ((eq? (car events) c00-event)
-         (cons (copy-event (car events)
+         (cons (<copy-event> (car events)
                            :type :stop)
                (cdr events)))
         (else
@@ -1066,9 +1066,9 @@ Done during input reading instead.
       '()
       (let ((event (car events)))
         (if (eq? (event :type) :cut-note)
-            (cons (copy-event
-                   (copy-event
-                    (copy-event
+            (cons (<copy-event>
+                   (<copy-event>
+                    (<copy-event>
                      event
                      :value 0)
                     :tick (event :value))
@@ -1240,7 +1240,7 @@ Done during input reading instead.
            (linenum (event :linenum)))
 
       (define (add-offset-event linenum)
-        (append (list (copy-event offset-event
+        (append (list (<copy-event> offset-event
                                   :linenum linenum)
                       event)
                 (loop (cdr events)
@@ -1258,7 +1258,7 @@ Done during input reading instead.
             
             ((> linenum ;; i.e there was a line without events
                 (1+ last-added-line))
-             (cons (copy-event offset-event
+             (cons (<copy-event> offset-event
                                :linenum (1+ last-added-line))
                    (loop events
                          (1+ last-added-line))))
@@ -1558,7 +1558,7 @@ The behavior for these three tests are not needed since break events are always 
                                      (loopstart :patternnum))
                                   (loopstart :linenum)
                                   0)))
-                  (cons (copy-event event :value2 value2)
+                  (cons (<copy-event> event :value2 value2)
                         (find-loop-events-0 (cdr events) loopstart))))
             (find-loop-events-0 (cdr events) loopstart)))))
 
@@ -1612,7 +1612,7 @@ The behavior for these three tests are not needed since break events are always 
   (if (= num 0)
       events
       (map (lambda (event)
-             (copy-event event :linenum (+ (event :linenum)
+             (<copy-event> event :linenum (+ (event :linenum)
                                            (* num (- endline startline)))))
            events)))
 
@@ -1627,7 +1627,7 @@ The behavior for these three tests are not needed since break events are always 
       '()
       (let ((event (car events)))
         (if (= (event :patternnum) patternnum)
-            (cons (copy-event event :linenum (+ (event :linenum)
+            (cons (<copy-event> event :linenum (+ (event :linenum)
                                                 (* num-repeats (- endline startline))))
                   (expand-loop-after-events (cdr events) patternnum startline endline num-repeats))
             events))))
@@ -1778,7 +1778,7 @@ The behavior for these three tests are not needed since break events are always 
               ((> (event :patternnum) patternnum)
                (erase-patterns events (cdr patterns)))
               ((eq? (event :type) :break)
-               (cons (copy-event event :linenum 64)
+               (cons (<copy-event> event :linenum 64)
                      (erase-patterns (cdr events) patterns)))
               (else
                (erase-patterns (cdr events) patterns))))))
@@ -1838,7 +1838,7 @@ The behavior for these three tests are not needed since break events are always 
                     (memq (event :type) '(:pitch-slide :slide-to-note :vibrato :tremolo :velocity-slide)))
                (append (cons event
                              (map (lambda (lines-to-add) ;; Note that the events are not ordered by channel anymore by doing this.
-                                    (copy-event event
+                                    (<copy-event> event
                                                 :linenum (+ 1 (event :linenum) lines-to-add)
                                                 :is-pattern-delay-line #t))
                                   (iota (pattern-delay-event :value))))
@@ -1849,7 +1849,7 @@ The behavior for these three tests are not needed since break events are always 
                      (apply-pattern-delay (cdr pattern-events) pattern-delay-event)))
 
               (else
-               (cons (copy-event event :linenum (+ (pattern-delay-event :value)
+               (cons (<copy-event> event :linenum (+ (pattern-delay-event :value)
                                                    (event :linenum)))
                      (apply-pattern-delay (cdr pattern-events) pattern-delay-event)))))))
 
@@ -2000,7 +2000,7 @@ The behavior for these three tests are not needed since break events are always 
         (let loop ((tick firsttick))
           (if (>= tick tpd)
               '()
-              (cons (copy-event note
+              (cons (<copy-event> note
                                 :linenum linenum
                                 :tick tick)                    
                     (loop (+ tick interval))))))))
@@ -2082,7 +2082,7 @@ The behavior for these three tests are not needed since break events are always 
                           (= (event1 :channel) (event2 :channel))
                           (= (event1 :linenum) (event2 :linenum))
                           (= (event1 :patternnum) (event2 :patternnum)))
-                     (cons (copy-event event1 :tick (event2 :value))
+                     (cons (<copy-event> event1 :tick (event2 :value))
                            (remove-note-delay-effects (cddr events)))
                      (cons event1
                            (remove-note-delay-effects (cdr events))))))))))
@@ -2195,7 +2195,7 @@ The behavior for these three tests are not needed since break events are always 
       (let ((event (car events)))
         (cond ((and (= (event :channel) channel)
                     (= (event :instrumentnum) old-instrumentnum))
-               (cons (copy-event event :instrumentnum new-instrumentnum)
+               (cons (<copy-event> event :instrumentnum new-instrumentnum)
                      (replace-clashed-events (cdr events)
                                              channel
                                              old-instrumentnum
@@ -2412,7 +2412,7 @@ The behavior for these three tests are not needed since break events are always 
        (hepp (get-cloned-instruments events *test-instruments*)))
   (***assert*** (cadr hepp)
                 (list (car events)
-                      (copy-event (cadr events) :instrumentnum 101)))
+                      (<copy-event> (cadr events) :instrumentnum 101)))
 
   (***assert*** (car hepp)
                 (list (make-cloned-instrument :old-instrumentnum 0
@@ -2424,7 +2424,7 @@ The behavior for these three tests are not needed since break events are always 
        (hepp (get-cloned-instruments events *test-instruments*)))
   (***assert*** (cadr hepp)
                 (list (car events)
-                      (copy-event (cadr events) :instrumentnum 101)))
+                      (<copy-event> (cadr events) :instrumentnum 101)))
 
   (***assert*** (car hepp)
                 (list (make-cloned-instrument :old-instrumentnum 0
@@ -2436,7 +2436,7 @@ The behavior for these three tests are not needed since break events are always 
        (hepp (get-cloned-instruments events *test-instruments*)))
   (***assert*** (cadr hepp)
                 (list (car events)
-                      (copy-event (cadr events) :instrumentnum 101)))
+                      (<copy-event> (cadr events) :instrumentnum 101)))
 
   (***assert*** (car hepp)
                 (list (make-cloned-instrument :old-instrumentnum 0
@@ -2462,7 +2462,7 @@ The behavior for these three tests are not needed since break events are always 
                  (map (lambda (event)
                         (if (and (= 3 (event :channel))
                                  (= 0 (event :instrumentnum)))
-                            (copy-event event :instrumentnum 101)
+                            (<copy-event> event :instrumentnum 101)
                             event))
                       (cadr hepp)))
 
@@ -2480,8 +2480,8 @@ The behavior for these three tests are not needed since break events are always 
   (c-display (car hepp))
   (***assert*** (cadr hepp)
                 (list (car events)
-                      (copy-event (cadr events)  :instrumentnum 101)
-                      (copy-event (caddr events) :instrumentnum 102)))
+                      (<copy-event> (cadr events)  :instrumentnum 101)
+                      (<copy-event> (caddr events) :instrumentnum 102)))
 
   (***assert*** (car hepp)
                  (list (make-cloned-instrument :old-instrumentnum 0
@@ -2501,9 +2501,9 @@ The behavior for these three tests are not needed since break events are always 
   (c-display (car hepp))
   (***assert*** (cadr hepp)
                 (list (car events)
-                      (copy-event (cadr events)  :instrumentnum 101)
+                      (<copy-event> (cadr events)  :instrumentnum 101)
                       (caddr events)
-                      (copy-event (cadddr events) :instrumentnum 102)))
+                      (<copy-event> (cadddr events) :instrumentnum 102)))
 
   (***assert*** (car hepp)
                  (list (make-cloned-instrument :old-instrumentnum 0
@@ -2523,7 +2523,7 @@ The behavior for these three tests are not needed since break events are always 
   (***assert*** (cadr hepp)
                  (map (lambda (event)
                         (if (= (event :channel) 1)
-                            (copy-event event :instrumentnum 101)
+                            (<copy-event> event :instrumentnum 101)
                             event))
                       (cadr hepp)))
 
@@ -2562,7 +2562,7 @@ The behavior for these three tests are not needed since break events are always 
                     ((= instrumentnum 0)                           
                      (let ((stored-instrumentnum (instrument-numbers channel)))
                        (if stored-instrumentnum
-                           (cons (copy-event event :instrumentnum stored-instrumentnum)
+                           (cons (<copy-event> event :instrumentnum stored-instrumentnum)
                                  (next))
                            (next)))) ;; throw away events without instrument number assigned (what are we supposed to do with them?)
                     (else
@@ -2587,7 +2587,7 @@ The behavior for these three tests are not needed since break events are always 
                     (m-e :vibrato :channel 0 :line 9 :pattern 1 :instrumentnum 0))))
   (***assert*** (assign-instrument-numbers events)
                 (list (car events)
-                      (copy-event (cadr events) :instrumentnum 1))))
+                      (<copy-event> (cadr events) :instrumentnum 1))))
   
  
 (let ((events (list (m-e :note    :channel 0 :line 9 :pattern 1 :instrumentnum 1)
@@ -2619,7 +2619,7 @@ The behavior for these three tests are not needed since break events are always 
         (cond ((or (eq? type :note))
                ;;(eq? type :break)) ;; Note that we put the :stop event at "line 64" here. That is not legal in Radium, so we need to handle this situation specifically when sending notes over. (no, simpler to interpret :break events as stops instead of checking if the :stop event is placed on the same line as the :break event.)
                (if last-note
-                   (append (list (copy-event last-note
+                   (append (list (<copy-event> last-note
                                              :linenum (event :linenum)
                                              :tick (event :tick)
                                              :type :stop)
@@ -2828,7 +2828,7 @@ The behavior for these three tests are not needed since break events are always 
         (if (= 0 instrumentnum)
             (let ((stored-instrumentnum (get-mem :instrumentnum)))
               (if stored-instrumentnum
-                  (set! event (copy-event event
+                  (set! event (<copy-event> event
                                           :instrumentnum stored-instrumentnum)))))
 
         ;; 4. Update event
@@ -2852,7 +2852,7 @@ The behavior for these three tests are not needed since break events are always 
                (if (or (= value1 0)
                        (= value2 0))
                    (next-event-is #f)
-                   (next-event-is (copy-event event
+                   (next-event-is (<copy-event> event
                                               :value value1
                                               :value2 value2))))
               
@@ -2871,10 +2871,10 @@ The behavior for these three tests are not needed since break events are always 
                      (cond ((and (not (= 0 old-instrumentnum))
                                  (not (= old-instrumentnum instrumentnum)))
                             (set! instrumentnum old-instrumentnum)
-                            (set! event (copy-event event
+                            (set! event (<copy-event> event
                                                     :instrumentnum old-instrumentnum))
                             (set! events (cons event
-                                               (cons (copy-event (get-next-event)
+                                               (cons (<copy-event> (get-next-event)
                                                                  :instrumentnum old-instrumentnum)
                                                      (cddr events)))))
                            ((not (= (instrument-volume (instruments (1- instrumentnum)))
@@ -2884,21 +2884,21 @@ The behavior for these three tests are not needed since break events are always 
                             (c-display "vol: " (instrument-volume (instruments (1- instrumentnum))))
                             (c-display "memvol: " (get-mem :volume))
                             (assert #f)))
-                     (next-event-is (copy-event event ;; If the removed note has a defined instrument, we need to add a velocity event here.
+                     (next-event-is (<copy-event> event ;; If the removed note has a defined instrument, we need to add a velocity event here.
                                                 :type :velocity
                                                 :value (get-mem :volume))))))
 
               ;; This one should work for both 4-mat's madness and hoffman's freerunner:
               ((and (eq? type :note)
                     (= 0 (event :value)))
-               (let* ((velocity-event (copy-event event
+               (let* ((velocity-event (<copy-event> event
                                                   :type :velocity
                                                   :value (get-mem :volume)))
                       (offset-value (get-mem :sample-offset))
                       (offset-event (if (or (= 0 offset-value)
                                             (have-sample-offset-event-in-this-cell? (event :linenum) (event :channel) (event :patternnum) events))
                                         #f
-                                        (copy-event event
+                                        (<copy-event> event
                                                     :type :sample-offset
                                                     :value offset-value)))
                       (extra-events (append (list velocity-event)
@@ -2911,14 +2911,14 @@ The behavior for these three tests are not needed since break events are always 
                      (let ((stored-value (get-mem :note)))
                        (if (and (= 0 offset-value)
                                 stored-value)
-                           (next-event-is (cons (copy-event event :value stored-value)
+                           (next-event-is (cons (<copy-event> event :value stored-value)
                                                 extra-events))
                            (next-event-is extra-events))))))
 
               ((eq? type :note)
                (set-mem! :note (event :value))
                (if (= 0 instrumentnum)
-                   (let* ((velocity-event (copy-event event
+                   (let* ((velocity-event (<copy-event> event
                                                       :type :velocity
                                                       :value (get-mem :volume)))
                           (offset-value (get-mem :sample-offset))
@@ -2926,7 +2926,7 @@ The behavior for these three tests are not needed since break events are always 
                                                 (= 0 offset-value)
                                                 (have-sample-offset-event-in-this-cell? (event :linenum) (event :channel) (event :patternnum) events))
                                             #f
-                                            (copy-event event
+                                            (<copy-event> event
                                                         :type :sample-offset
                                                         :value offset-value)))
                           (extra-events (append (list velocity-event)
@@ -2952,7 +2952,7 @@ The behavior for these three tests are not needed since break events are always 
                (if (or (not value1)
                        (not value2))
                    (next-event-is #f)
-                   (next-event-is (copy-event event
+                   (next-event-is (<copy-event> event
                                               :value value1
                                               :value2 (note->period value2)))))
 
@@ -2961,7 +2961,7 @@ The behavior for these three tests are not needed since break events are always 
                    (let ((stored-value (get-mem type)))
                      ;;(c-display "stored value: " stored-value)
                      (if stored-value
-                         (next-event-is (copy-event event :value stored-value))
+                         (next-event-is (<copy-event> event :value stored-value))
                          (next-event-is #f))) ;; No value. Just throw the event away
                    (begin
                      (set-mem! type (event :value))
@@ -3110,7 +3110,7 @@ The behavior for these three tests are not needed since break events are always 
   ;;(c-display " RESULT:" start-linenum ((car (reverse (car stuff))) :linenum))
   (list (if start-linenum
             (map (lambda (event)
-                   (copy-event event
+                   (<copy-event> event
                                :linenum (- (event :linenum) start-linenum)))
                  (car stuff))
             (car stuff))
@@ -3253,7 +3253,7 @@ The behavior for these three tests are not needed since break events are always 
                                                              :org-patternnum patternnum
                                                              :pattern-data new-pattern))
                             (new-pattern-with-new-patternnums (map (lambda (event)
-                                                                     (copy-event event
+                                                                     (<copy-event> event
                                                                                  :patternnum new-patternnum))
                                                                    new-pattern)))
                        ;;(c-display "CHANGES: " changes)
@@ -4328,7 +4328,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                (tpd (tpds line)))
           (if (>= tick tpd)
               (loop (cdr events)) ;; throw the event away (this might not be correct behavior for note cut, and possible other effects, since there has been a non-existing stop event during processing)
-              (cons (copy-event event :tick (+ (/ tick (tpds line))
+              (cons (<copy-event> event :tick (+ (/ tick (tpds line))
                                                line))
                     (loop cdr events)))))))
 
