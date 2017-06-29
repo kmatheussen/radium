@@ -2387,6 +2387,7 @@ int radium_main(char *arg){
 
   }
 
+ 
   qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).dark(110).name() + ";}" +
                       "QTabWidget::pane { border: 0; background: " + get_qcolor(LOW_BACKGROUND_COLOR_NUM).name() + "}" +
                       DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"))
@@ -3044,7 +3045,8 @@ int main(int argc, char **argv){
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);
   qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
-
+  qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt.
+  
   g_startup_rect = QApplication::desktop()->screenGeometry(); // Probably no point. Hoped that it would force radium to open on the same desktop that was current when program started.
 
   printf("********* Has set startup rect %d, %d**********\n", g_startup_rect.x(), g_startup_rect.y());
