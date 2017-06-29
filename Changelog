@@ -1,3 +1,35 @@
+Changes 4.9.2 -> 4.9.3:
+* Menus: Only navigate menus if pressing the left alt key alone.
+  I.e. Don't navigate menues after pressing left alt +
+  another key.
+* OSX: Workaround for a Qt bug that caused mouse press and
+  mouse release events to be generated artificially when we
+  set new mouse cursor position. This workaround should also
+  speeds up mouse operations in general. (Instead of calling
+  QCursor::setPos, we call the Core Graphics function
+  CGWarpMouseCursorPosition.)
+* OSX: Workaround for a Qt bug that caused splitter handlers not
+  to be working, and the mouse pointer not to change shape when
+  hovered above a splitter handler.
+* OSX: Fix some minor graphical artifacts in the editor.
+* Sampler/Fluidsynth: Don't warn more than once about
+  a bookmarked directory not existing anymore.
+* Crashreporter: Rename executable from "crashreporter" to
+  "radium_crashreporter".
+* GUI: Ensure we don't input a too small max tempo multiplier
+  value in the tempo automation track header.
+* Menus: Fix keyboard stopping navigating menues when going
+  back to previous sub menu. I.e. when pressing left arrow.
+* Keyboard: Workaround to force full focus to program after
+  starting program. On Linux, left alt didn't work to navigate
+  windows without this workaround, and on Windows the operating
+  system claimed the main window didn't have keybaord focus,
+  even though Qt for some reason received keyboard events.
+* OSX/OpenGL: A couple of changes that might prevent rare crash
+  during startup.
+* API: Only show a  normal message if calling addFx, and the
+  effect already existed. Don't start assertion reporter.
+
 Changes 4.9.1 -> 4.9.2:
 * Upgrade the S7 scheme interpreter.
 * Mixer strips: Minor graphical tweak.
