@@ -24,10 +24,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/gfx_proc.h"
 #include "../common/settings_proc.h"
 #include "EditorWidget.h"
+#include "Timer.hpp"
 
 #include "../api/api_requesters_proc.h"
 
 #include "Qt_Menues_proc.h"
+
 
 extern bool doquit;
 extern struct Root *root;
@@ -38,12 +40,39 @@ namespace{
 static QMenu *g_curr_menu = NULL;
 static int g_menu_is_open = 0;
   
-struct MyMenu : public QMenu{
+struct MyMenu : public QMenu, radium::Timer{
   Q_OBJECT;
 
+  bool _has_g_menu_is_open = false;
+
+  void setclosed(void){
+    if (_has_g_menu_is_open){
+      g_menu_is_open--;
+      _has_g_menu_is_open = false;
+    }
+  }
+
+  void setopen(void){
+    if (!_has_g_menu_is_open){
+      g_menu_is_open++;
+      _has_g_menu_is_open = true;
+      g_curr_menu = this;
+    }
+  }
+
+  // Workaround. Sometimes, aboutToHide and/or aboutToShow is not called.
+  void calledFromTimer(void){
+    if (isVisible())
+      setopen();
+    else
+      setclosed();
+  }
+  
 public:
   
-  MyMenu(){
+  MyMenu()
+    : radium::Timer(scale_int64(qrand(), 0, RAND_MAX, 200, 500), true)
+  {
     connect(this, SIGNAL(aboutToHide()), this, SLOT(aboutToHide()));
     connect(this, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
   }
@@ -51,11 +80,10 @@ public:
 public slots:
   
   void 	aboutToHide(){
-    g_menu_is_open--;
+    setclosed();
   }
   void 	aboutToShow(){
-    g_menu_is_open++;
-    g_curr_menu = this;
+    setopen();
   }
 };
   
