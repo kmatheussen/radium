@@ -853,9 +853,10 @@ private:
       _rendering->camera()->viewport()->setWidth(current_width);
       _rendering->camera()->viewport()->setHeight(current_height);
       _rendering->camera()->setProjectionOrtho(-0.5f);
-      
-      _rendering->camera()->viewport()->setClearColor(get_vec4(t2_data->background_color));
 
+      _rendering->camera()->viewport()->setClearColor(get_vec4(t2_data->background_color));
+      //glClear(GL_STENCIL_BUFFER_BIT|GL_ACCUM_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT); makes no difference.
+      
 #if TEST_TIME
       dur1 = TIME_get_ms();
 #endif

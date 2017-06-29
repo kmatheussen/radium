@@ -521,8 +521,14 @@ void SetupMainWindow(void){
 
   //editor->setAttribute(Qt::WA_PaintOnScreen);
 
-  editor->setAttribute(Qt::WA_OpaquePaintEvent);
-  editor->setAttribute(Qt::WA_NoSystemBackground);
+  // These two doesn't provide any optimization any more since most things are drawn using OpenGL.
+  // But the reason the two lines are commented away is because glClear()/glClearColor doesn't quite work on OSX unless the background is actually clear.
+  // We might experience less or more flicker though.
+  //
+  //editor->setAttribute(Qt::WA_OpaquePaintEvent);
+  //editor->setAttribute(Qt::WA_NoSystemBackground);
+
+  
 #endif
   editor->main_window = main_window;
 
