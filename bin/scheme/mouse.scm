@@ -1044,7 +1044,7 @@
                         :Publicize (lambda (_)
                                      (show-reltempo-in-statusbar))
                         :Mouse-pointer-func (if (string=? (<ra> :get-os-name) "macosx")
-                                                ra:set-normal-mouse-pointer ;; QCursor::setPos doesn't quite work on osx.
+                                                ra:set-normal-mouse-pointer ;; QCursor::setPos doesn't quite work on osx. https://bugreports.qt.io/browse/QTBUG-33959
                                                 #f)
                         )
 
