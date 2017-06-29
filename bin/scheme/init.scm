@@ -24,6 +24,12 @@
 
 (define *is-initializing* #t)
 
+(define (eq2? a b)
+  (when (not (<ra> :release-mode))
+    (assert (symbol? a))
+    (assert (symbol? b)))
+  (eq? a b))
+
 
 (define (get-as-displayable-string-as-possible info)
   (define (fallback)
@@ -105,6 +111,7 @@
              (define infostring (get-as-displayable-string-as-possible info))
              (display "infostring: ")
              (display infostring)
+             ;;(ow!) ;; to strip down some unnecessary history produced by history-ow!
              (newline)
              (ra:show-error infostring)
              )

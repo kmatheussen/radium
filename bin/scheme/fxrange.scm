@@ -22,25 +22,46 @@
   :nodes)
 
 
+(define-struct fxnode
+  :place
+  :value
+  :logtype)
+
+#||
 (define (create-fxnode place value logtype)
   (list place value logtype))
 
 (define fxnode-place car)
 (define fxnode-value cadr)
 (define fxnode-logtype caddr)
-(define (fxnode-is-holding? fxnode)
-  (logtype-holding? (fxnode-logtype fxnode)))
-  
+
 (define (fxnode-replace-place fxnode new-place)
-  (create-fxnode new-place
-                 (fxnode-value fxnode)
-                 (fxnode-logtype fxnode)))
+  (make-fxnode new-place
+               (fxnode-value fxnode)
+               (fxnode-logtype fxnode)))
   
 (define (fxnode-replace-logtype fxnode new-logtype)
-  (create-fxnode (fxnode-place fxnode)
+  (make-fxnode (fxnode-place fxnode)
                  (fxnode-value fxnode)
                  new-logtype))
   
+
+||#
+
+(define (fxnode-is-holding? fxnode)
+  (logtype-holding? (fxnode :logtype)))
+
+
+(define (lists->fxnodes lists)
+  (map (lambda (l)
+         (apply make-fxnode l))
+       lists))
+(define (fxnodes->lists fxnodes)
+  (map (lambda (fxnode)
+         (list (fxnode :place) (fxnode :value) (fxnode :logtype)))
+       fxnodes0))
+
+
 (define (find-fx fxs fxname)
   (let loop ((fxs fxs))
     (if (null? fxs)
@@ -76,10 +97,13 @@
     ;;(c-display)
     (if (null? fxnodes)
         '()
-        (let* ((fxnode (car fxnodes))
-               (place (fxnode-place fxnode))
+        (let* ((fxnode (let ((a (car fxnodes)))
+                         (if (list? a) ;; Happens in testing. Code is much clearer when we can write '((1 10 0)(2 11 0)...) instead of the alternative.
+                             (apply make-fxnode a)
+                             a)))
+               (place (fxnode :place))
                (last-place (and last-fxnode
-                                (fxnode-place last-fxnode))))
+                                (last-fxnode :place))))
           
           (if last-place
               (assert (< last-place place)))
@@ -90,25 +114,25 @@
                              fxnode)))
                 
                 ((= place startplace)
-                 (cons (fxnode-replace-logtype fxnode (<ra> :get-logtype-hold))
+                 (cons (<copy-fxnode> fxnode :logtype (<ra> :get-logtype-hold))
                        (loop (cdr fxnodes)
                              fxnode)))
 
                 ((and last-place
                       (> place endplace)
                       (< last-place startplace))
-                 (let ((first (create-fxnode startplace
-                                              (scale-logtype (fxnode-logtype last-fxnode)
-                                                             startplace
-                                                             last-place place
-                                                             (fxnode-value last-fxnode) (fxnode-value fxnode))
-                                              (<ra> :get-logtype-hold)))
-                       (second (create-fxnode endplace
-                                              (scale-logtype (fxnode-logtype last-fxnode)
-                                                             endplace
-                                                             last-place place
-                                                             (fxnode-value last-fxnode) (fxnode-value fxnode))
-                                              (fxnode-logtype last-fxnode))))
+                 (let ((first (make-fxnode startplace
+                                           (scale-logtype (last-fxnode :logtype)
+                                                          startplace
+                                                          last-place place
+                                                          (last-fxnode :value) (fxnode :value))
+                                           (<ra> :get-logtype-hold)))
+                       (second (make-fxnode endplace
+                                            (scale-logtype (last-fxnode :logtype)
+                                                           endplace
+                                                           last-place place
+                                                           (last-fxnode :value) (fxnode :value))
+                                            (last-fxnode :logtype))))
                    (append (list first second)
                            (loop fxnodes
                                  second))))
@@ -116,12 +140,12 @@
                 ((and last-place
                       (> place      startplace)
                       (< last-place startplace))
-                 (let ((startplace-fxnode (create-fxnode startplace
-                                                         (scale-logtype (fxnode-logtype last-fxnode)
-                                                                        startplace
-                                                                        last-place place
-                                                                        (fxnode-value last-fxnode) (fxnode-value fxnode))
-                                                         (<ra> :get-logtype-hold))))
+                 (let ((startplace-fxnode (make-fxnode startplace
+                                                       (scale-logtype (last-fxnode :logtype)
+                                                                      startplace
+                                                                      last-place place
+                                                                      (last-fxnode :value) (fxnode :value))
+                                                       (<ra> :get-logtype-hold))))
                    (cons startplace-fxnode
                          (loop fxnodes
                                startplace-fxnode))))
@@ -134,12 +158,12 @@
                 ((and last-place
                       (> place endplace)
                       (< last-place endplace))
-                 (let ((endplace-fxnode (create-fxnode endplace
-                                                       (scale-logtype (fxnode-logtype last-fxnode)
-                                                                      endplace
-                                                                      last-place place
-                                                                      (fxnode-value last-fxnode) (fxnode-value fxnode))
-                                                       (fxnode-logtype last-fxnode))))
+                 (let ((endplace-fxnode (make-fxnode endplace
+                                                     (scale-logtype (last-fxnode :logtype)
+                                                                    endplace
+                                                                    last-place place
+                                                                    (last-fxnode :value) (fxnode :value))
+                                                     (last-fxnode :logtype))))
                    (cons endplace-fxnode
                          (loop fxnodes
                                endplace-fxnode))))
@@ -149,162 +173,161 @@
                        (loop (cdr fxnodes)
                              fxnode))))))))
 
-
 ;; nothing
-(***assert*** (scissor-fxnodes-keep-outside '()
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '())
                                             5 8)
-              '())
+              (lists->fxnodes '()))
 
 ;; only before
-(***assert*** (scissor-fxnodes-keep-outside '((1 10 0)
-                                              (2 11 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((1 10 0)
+                                                              (2 11 0)))
                                             5 8)
-              '((1 10 0)
-                (2 11 0)))
+              (lists->fxnodes '((1 10 0)
+                                (2 11 0))))
 
 ;; only after
-(***assert*** (scissor-fxnodes-keep-outside '((10 10 0)
-                                              (20 11 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((10 10 0)
+                                                             (20 11 0)))
                                             5 8)
-              '((10 10 0)
-                (20 11 0)))
+              (lists->fxnodes '((10 10 0)
+                               (20 11 0))))
 
 ;; On first line
-(***assert*** (scissor-fxnodes-keep-outside '((1 10 0)
-                                              (2 11 0)
-                                              (5 12 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((1 10 0)
+                                                             (2 11 0)
+                                                             (5 12 0)))
                                             5 8)
-              `((1 10 0)
-                (2 11 0)
-                (5 12 ,(<ra> :get-logtype-hold))))
+              (lists->fxnodes `((1 10 0)
+                               (2 11 0)
+                               (5 12 ,(<ra> :get-logtype-hold)))))
 
 ;; On last line
-(***assert*** (scissor-fxnodes-keep-outside '((8 10 0)
-                                              (9 11 0)
-                                              (10 12 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((8 10 0)
+                                                             (9 11 0)
+                                                             (10 12 0)))
                                             5 8)
-              '((8 10 0)
-                (9 11 0)
-                (10 12 0)))
+              (lists->fxnodes '((8 10 0)
+                               (9 11 0)
+                               (10 12 0))))
 
 ;; Before and inside, and on first line
-(***assert*** (scissor-fxnodes-keep-outside '((1 10 0)
-                                              (2 11 0)
-                                              (5 12 0)
-                                              (6 13 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((1 10 0)
+                                                             (2 11 0)
+                                                             (5 12 0)
+                                                             (6 13 0)))
                                             5 8)
-              `((1 10 0)
-                (2 11 0)
-                (5 12 ,(<ra> :get-logtype-hold))))
+              (lists->fxnodes `((1 10 0)
+                               (2 11 0)
+                               (5 12 ,(<ra> :get-logtype-hold)))))
 
 
 ;; Before and inside
-(***assert*** (scissor-fxnodes-keep-outside '((1 10 0)
-                                              (2 11 0)
-                                              (6 13 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((1 10 0)
+                                                             (2 11 0)
+                                                             (6 13 0)))
                                             5 8)
-              `((1 10 0)
-                (2 11 0)
-                (5 ,(scale 5 2 6 11 13) ,(<ra> :get-logtype-hold))))
+              (lists->fxnodes `((1 10 0)
+                               (2 11 0)
+                               (5 ,(scale 5 2 6 11 13) ,(<ra> :get-logtype-hold)))))
 
 
 ;; Before(hold) and inside
-(***assert*** (scissor-fxnodes-keep-outside `((2 11 ,(<ra> :get-logtype-hold))
-                                              (6 13 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes `((2 11 ,(<ra> :get-logtype-hold))
+                                                             (6 13 0)))
                                             5 8)
-              `((2 11 ,(<ra> :get-logtype-hold))
-                (5 11 ,(<ra> :get-logtype-hold))))
+              (lists->fxnodes `((2 11 ,(<ra> :get-logtype-hold))
+                               (5 11 ,(<ra> :get-logtype-hold)))))
 
 ;; On first line and inside
-(***assert*** (scissor-fxnodes-keep-outside '((5 11 0)
-                                              (6 13 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((5 11 0)
+                                                             (6 13 0)))
                                             5 8)
-              `((5 11 ,(<ra> :get-logtype-hold))))
+              (lists->fxnodes `((5 11 ,(<ra> :get-logtype-hold)))))
 
 ;; Inside
-(***assert*** (scissor-fxnodes-keep-outside '((6 11 0)
-                                              (7 13 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((6 11 0)
+                                                             (7 13 0)))
                                             5 8)
               '())
 
 ;; Inside and last line
-(***assert*** (scissor-fxnodes-keep-outside '((6 11 0)
-                                              (8 13 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((6 11 0)
+                                                             (8 13 0)))
                                             5 8)
-              '((8 13 0)))
+              (lists->fxnodes '((8 13 0))))
 
 
 ;; Inside and last line and after
-(***assert*** (scissor-fxnodes-keep-outside '((6 11 0)
-                                              (8 13 0)
-                                              (9 14 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((6 11 0)
+                                                             (8 13 0)
+                                                             (9 14 0)))
                                             5 8)
-              '((8 13 0)
-                (9 14 0)))
+              (lists->fxnodes '((8 13 0)
+                               (9 14 0))))
 
 ;; Inside and after
-(***assert*** (scissor-fxnodes-keep-outside '((6 11 0)
-                                              (9 14 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((6 11 0)
+                                                             (9 14 0)))
                                             5 8)
-              `((8 ,(scale 8 6 9 11 14) 0)
-                (9 14 0)))
+              (lists->fxnodes `((8 ,(scale 8 6 9 11 14) 0)
+                               (9 14 0))))
 
 ;; Inside(hold) and after
-(***assert*** (scissor-fxnodes-keep-outside `((6 11 ,(<ra> :get-logtype-hold))
-                                              (9 14 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes `((6 11 ,(<ra> :get-logtype-hold))
+                                                             (9 14 0)))
                                             5 8)
-              `((8 11 ,(<ra> :get-logtype-hold))
-                (9 14 0)))
+              (lists->fxnodes `((8 11 ,(<ra> :get-logtype-hold))
+                               (9 14 0))))
 
 ;; Before, on first line, inside, on last line, after
-(***assert*** (scissor-fxnodes-keep-outside '((4 11 0)
-                                              (5 12 0)
-                                              (6 13 0)
-                                              (8 14 0)
-                                              (9 15 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((4 11 0)
+                                                             (5 12 0)
+                                                             (6 13 0)
+                                                             (8 14 0)
+                                                             (9 15 0)))
                                             5 8)
-              `((4 11 0)
-                (5 12 ,(<ra> :get-logtype-hold))
-                (8 14 0)
-                (9 15 0)))
+              (lists->fxnodes `((4 11 0)
+                               (5 12 ,(<ra> :get-logtype-hold))
+                               (8 14 0)
+                               (9 15 0))))
 
 
 ;; Before, inside, after
-(***assert*** (scissor-fxnodes-keep-outside '((4 11 0)
-                                              (6 13 0)
-                                              (9 15 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((4 11 0)
+                                                             (6 13 0)
+                                                             (9 15 0)))
                                             5 8)
-              `((4 11 0)
-                (5 ,(scale 5 4 6 11 13) ,(<ra> :get-logtype-hold))
-                (8 ,(scale 8 6 9 13 15) 0)
-                (9 15 0)))
+              (lists->fxnodes `((4 11 0)
+                               (5 ,(scale 5 4 6 11 13) ,(<ra> :get-logtype-hold))
+                               (8 ,(scale 8 6 9 13 15) 0)
+                               (9 15 0))))
 
 ;; Before and after
-(***assert*** (scissor-fxnodes-keep-outside '((4 11 0)
-                                              (9 15 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((4 11 0)
+                                                             (9 15 0)))
                                             5 8)
-              `((4 11 0)
-                (5 ,(scale 5 4 9 11 15) ,(<ra> :get-logtype-hold))
-                (8 ,(scale 8 4 9 11 15) 0)
-                (9 15 0)))
+              (lists->fxnodes `((4 11 0)
+                               (5 ,(scale 5 4 9 11 15) ,(<ra> :get-logtype-hold))
+                               (8 ,(scale 8 4 9 11 15) 0)
+                               (9 15 0))))
 
 
 ;; Before(hold) and after
-(***assert*** (scissor-fxnodes-keep-outside `((4 11 ,(<ra> :get-logtype-hold))
-                                              (9 15 0))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes `((4 11 ,(<ra> :get-logtype-hold))
+                                                             (9 15 0)))
                                             5 8)
-              `((4 11 ,(<ra> :get-logtype-hold))
-                (5 11 ,(<ra> :get-logtype-hold))
-                (8 11 ,(<ra> :get-logtype-hold))
-                (9 15 0)))
+              (lists->fxnodes `((4 11 ,(<ra> :get-logtype-hold))
+                               (5 11 ,(<ra> :get-logtype-hold))
+                               (8 11 ,(<ra> :get-logtype-hold))
+                               (9 15 0))))
 
 
 (define (scissor-fxs-keep-outside fxs startplace endplace)
   (map (lambda (fx)
-         (copy-fx fx
-                  :nodes (scissor-fxnodes-keep-outside (fx :nodes)
-                                                       startplace
-                                                       endplace)))
+         (<copy-fx> fx
+                    :nodes (scissor-fxnodes-keep-outside (fx :nodes)
+                                                         startplace
+                                                         endplace)))
        fxs))
 
 
@@ -320,9 +343,9 @@
     (if (null? fxnodes)
         '()
         (let* ((fxnode (car fxnodes))
-               (place (fxnode-place fxnode))
+               (place (fxnode :place))
                (last-place (and last-fxnode
-                                (fxnode-place last-fxnode))))
+                                (last-fxnode :place))))
           
           (if last-place
               (assert (< last-place place)))
@@ -339,12 +362,12 @@
                 ((and last-place
                       (> place      startplace)
                       (< last-place startplace))
-                 (let ((startplace-fxnode (create-fxnode startplace
-                                                         (scale-logtype (fxnode-logtype last-fxnode)
-                                                                        startplace
-                                                                        last-place place
-                                                                        (fxnode-value last-fxnode) (fxnode-value fxnode))
-                                                         (fxnode-logtype last-fxnode))))
+                 (let ((startplace-fxnode (make-fxnode startplace
+                                                       (scale-logtype (last-fxnode :logtype)
+                                                                      startplace
+                                                                      last-place place
+                                                                      (last-fxnode :value) (fxnode :value))
+                                                       (last-fxnode :logtype))))
                    (cons startplace-fxnode
                          (loop fxnodes
                                startplace-fxnode))))
@@ -358,12 +381,12 @@
                 ((and last-place
                       (> place endplace)
                       (< last-place endplace))
-                 (list (create-fxnode endplace
-                                      (scale-logtype (fxnode-logtype last-fxnode)
-                                                     endplace
-                                                     last-place place
-                                                     (fxnode-value last-fxnode) (fxnode-value fxnode))
-                                      (fxnode-logtype last-fxnode))))
+                 (list (make-fxnode endplace
+                                    (scale-logtype (last-fxnode :logtype)
+                                                   endplace
+                                                   last-place place
+                                                   (last-fxnode :value) (fxnode :value))
+                                    (last-fxnode :logtype))))
 
                 (else
                  '()))))))
@@ -374,145 +397,145 @@
               '())
 
 ;; only before
-(***assert*** (scissor-fxnodes-keep-inside '((1 10 0)
-                                             (2 11 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((1 10 0)
+                                                            (2 11 0)))
                                            5 8)
               '())
 
 ;; only after
-(***assert*** (scissor-fxnodes-keep-inside '((10 10 0)
-                                             (20 11 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((10 10 0)
+                                                            (20 11 0)))
                                            5 8)
               '())
 
 ;; On first line
-(***assert*** (scissor-fxnodes-keep-inside '((1 10 0)
-                                             (2 11 0)
-                                             (5 12 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((1 10 0)
+                                                            (2 11 0)
+                                                            (5 12 0)))
                                            5 8)
-              '((5 12 0)))
+              (lists->fxnodes '((5 12 0))))
 
 ;; On last line
-(***assert*** (scissor-fxnodes-keep-inside '((8 10 0)
-                                             (9 11 0)
-                                             (10 12 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((8 10 0)
+                                                            (9 11 0)
+                                                            (10 12 0)))
                                            5 8)
-              '((8 10 0)))
+              (lists->fxnodes '((8 10 0))))
 
 ;; Before and inside, and on first line
-(***assert*** (scissor-fxnodes-keep-inside '((1 10 0)
-                                             (2 11 0)
-                                             (5 12 0)
-                                             (6 13 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((1 10 0)
+                                                            (2 11 0)
+                                                            (5 12 0)
+                                                            (6 13 0)))
                                            5 8)
-              '((5 12 0)
-                (6 13 0)))
+              (lists->fxnodes '((5 12 0)
+                               (6 13 0))))
 
 
 ;; Before and inside
-(***assert*** (scissor-fxnodes-keep-inside '((1 10 0)
-                                             (2 11 0)
-                                             (6 13 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((1 10 0)
+                                                            (2 11 0)
+                                                            (6 13 0)))
                                            5 8)
-              `((5 ,(scale 5 2 6 11 13) 0)
-                (6 13 0)))
+              (lists->fxnodes `((5 ,(scale 5 2 6 11 13) 0)
+                               (6 13 0))))
 
 ;; Before(hold) and inside
-(***assert*** (scissor-fxnodes-keep-inside `((2 11 ,(<ra> :get-logtype-hold))
-                                             (6 13 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes `((2 11 ,(<ra> :get-logtype-hold))
+                                                            (6 13 0)))
                                            5 8)
-              `((5 11 ,(<ra> :get-logtype-hold))
-                (6 13 0)))
+              (lists->fxnodes `((5 11 ,(<ra> :get-logtype-hold))
+                               (6 13 0))))
 
 ;; On first line and inside
-(***assert*** (scissor-fxnodes-keep-inside '((5 11 0)
-                                             (6 13 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((5 11 0)
+                                                            (6 13 0)))
                                            5 8)
-              '((5 11 0)
-                (6 13 0)))
+              (lists->fxnodes '((5 11 0)
+                               (6 13 0))))
 
 ;; Inside
-(***assert*** (scissor-fxnodes-keep-inside '((6 11 0)
-                                             (7 13 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((6 11 0)
+                                                            (7 13 0)))
                                            5 8)
-              '((6 11 0)
-                (7 13 0)))
+              (lists->fxnodes '((6 11 0)
+                               (7 13 0))))
 
 ;; Inside and last line
-(***assert*** (scissor-fxnodes-keep-inside '((6 11 0)
-                                             (8 13 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((6 11 0)
+                                                            (8 13 0)))
                                            5 8)
-              '((6 11 0)
-                (8 13 0)))
+              (lists->fxnodes '((6 11 0)
+                               (8 13 0))))
 
 
 ;; Inside and last line and after
-(***assert*** (scissor-fxnodes-keep-inside '((6 11 0)
-                                             (8 13 0)
-                                             (9 14 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((6 11 0)
+                                                            (8 13 0)
+                                                            (9 14 0)))
                                            5 8)
-              '((6 11 0)
-                (8 13 0)))
+              (lists->fxnodes '((6 11 0)
+                               (8 13 0))))
 
 ;; Inside and after
-(***assert*** (scissor-fxnodes-keep-inside '((6 11 0)
-                                             (9 14 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((6 11 0)
+                                                            (9 14 0)))
                                            5 8)
-              `((6 11 0)
-                (8 ,(scale 8 6 9 11 14) 0)))
+              (lists->fxnodes `((6 11 0)
+                               (8 ,(scale 8 6 9 11 14) 0))))
 
 ;; Inside(hold and after
-(***assert*** (scissor-fxnodes-keep-inside `((6 11 ,(<ra> :get-logtype-hold))
-                                 (9 14 0))
-                               5 8)
-              `((6 11 ,(<ra> :get-logtype-hold))
-                (8 11 ,(<ra> :get-logtype-hold))))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes `((6 11 ,(<ra> :get-logtype-hold))
+                                                             (9 14 0)))
+                                           5 8)
+              (lists->fxnodes `((6 11 ,(<ra> :get-logtype-hold))
+                               (8 11 ,(<ra> :get-logtype-hold)))))
 
 ;; Before, on first line, inside, on last line, after
-(***assert*** (scissor-fxnodes-keep-inside '((4 11 0)
-                                             (5 12 0)
-                                             (6 13 0)
-                                             (8 14 0)
-                                             (9 15 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((4 11 0)
+                                                            (5 12 0)
+                                                            (6 13 0)
+                                                            (8 14 0)
+                                                            (9 15 0)))
                                            5 8)
-              `((5 12 0)
-                (6 13 0)
-                (8 14 0)))
+              (lists->fxnodes `((5 12 0)
+                               (6 13 0)
+                               (8 14 0))))
 
 
 ;; Before, inside, after
-(***assert*** (scissor-fxnodes-keep-inside '((4 11 0)
-                                             (6 13 0)
-                                             (9 15 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((4 11 0)
+                                                            (6 13 0)
+                                                            (9 15 0)))
                                            5 8)
-              `((5 ,(scale 5 4 6 11 13) 0)
-                (6 13 0)
-                (8 ,(scale 8 6 9 13 15) 0)))
+              (lists->fxnodes `((5 ,(scale 5 4 6 11 13) 0)
+                               (6 13 0)
+                               (8 ,(scale 8 6 9 13 15) 0))))
 
 ;; Before and after
-(***assert*** (scissor-fxnodes-keep-inside '((4 11 0)
-                                             (9 15 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((4 11 0)
+                                                            (9 15 0)))
                                            5 8)
-              `((5 ,(scale 5 4 9 11 15) 0)
-                (8 ,(scale 8 4 9 11 15) 0)))
+              (lists->fxnodes `((5 ,(scale 5 4 9 11 15) 0)
+                               (8 ,(scale 8 4 9 11 15) 0))))
 
 
 ;; Before(hold) and after
-(***assert*** (scissor-fxnodes-keep-inside `((4 11 ,(<ra> :get-logtype-hold))
-                                             (9 15 0))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes `((4 11 ,(<ra> :get-logtype-hold))
+                                                            (9 15 0)))
                                            5 8)
-              `((5 11 ,(<ra> :get-logtype-hold))
-                (8 11 ,(<ra> :get-logtype-hold))))
+              (lists->fxnodes `((5 11 ,(<ra> :get-logtype-hold))
+                               (8 11 ,(<ra> :get-logtype-hold)))))
 
 
 
                 
 (define (scissor-fxs-keep-inside fxs startplace endplace)
   (map (lambda (fx)
-         (copy-fx fx
-                  :nodes (scissor-fxnodes-keep-inside (fx :nodes)
-                                                      startplace
-                                                      endplace)))
+         (<copy-fx> fx
+                    :nodes (scissor-fxnodes-keep-inside (fx :nodes)
+                                                        startplace
+                                                        endplace)))
        fxs))
 
 
@@ -532,17 +555,17 @@
                                                   (<ra> :get-fxrangenode-place fxnodenum fxnum rangetracknum)))
                                  (define value (<ra> :get-fxrangenode-value fxnodenum fxnum rangetracknum))
                                  (define logtype (<ra> :get-fxrangenode-logtype fxnodenum fxnum rangetracknum))
-                                 (define fxnode (create-fxnode place
-                                                               value
-                                                               logtype))
+                                 (define fxnode (make-fxnode place
+                                                             value
+                                                             logtype))
                                  (if (>= place endplace)
                                      (if last-fxnode
-                                         (list (create-fxnode endplace
-                                                              (scale-logtype (fxnode-logtype last-fxnode)
-                                                                             endplace
-                                                                             (fxnode-place last-fxnode) (fxnode-place fxnode)
-                                                                             (fxnode-value last-fxnode) (fxnode-value fxnode))
-                                                              (fxnode-logtype last-fxnode)))
+                                         (list (make-fxnode endplace
+                                                            (scale-logtype (last-fxnode :logtype)
+                                                                           endplace
+                                                                           (last-fxnode :place) (fxnode :place)
+                                                                           (last-fxnode :value) (fxnode :value))
+                                                            (last-fxnode :logtype)))
                                          '())
                                      (cons fxnode
                                            (loop (1+ fxnodenum)
@@ -574,7 +597,7 @@
                                 (define place (<ra> :get-fxnode-place fxnodenum fxnum tracknum blocknum))
                                 (define value (<ra> :get-fxnode-value fxnodenum fxnum tracknum blocknum))
                                 (define logtype (<ra> :get-fxnode-logtype fxnodenum fxnum tracknum blocknum))
-                                (list place value logtype))
+                                (make-fxnode place value logtype))
                               (iota num-fxnodes)))
          (make-fx fxname
                   fxinstrument
@@ -597,22 +620,22 @@
          (assert (>= (length range-nodes) 2))
 
          (define first-track-node (car track-nodes))
-         (define first-track-place (fxnode-place first-track-node))
+         (define first-track-place (first-track-node :place))
          (define last-track-node (last track-nodes))
-         (define last-track-place (fxnode-place last-track-node))
+         (define last-track-place (last-track-node :place))
          
          (define first-range-node (car range-nodes))
-         (define first-range-place (fxnode-place first-range-node))
+         (define first-range-place (first-range-node :place))
          (define last-range-node (last range-nodes))
-         (define last-range-place (fxnode-place last-range-node))
+         (define last-range-place (last-range-node :place))
          
          (define before-track-nodes (take-while track-nodes
                                                 (lambda (track-node)
-                                                  (< (fxnode-place track-node)
+                                                  (< (track-node :place)
                                                      first-range-place))))
          (define after-track-nodes (remove-while track-nodes
                                                  (lambda (track-node)
-                                                   (< (fxnode-place track-node)
+                                                   (< (track-node :place)
                                                       last-range-place))))
 
          (cond ((and (<= first-range-place
@@ -623,22 +646,22 @@
 
                ((= last-track-place first-range-place)
                 (append (butlast track-nodes)
-                        (list (fxnode-replace-place last-track-node (-line last-track-place)))
+                        (list (<copy-fxnode> last-track-node :place (-line last-track-place)))
                         range-nodes))
 
                ((= last-range-place first-track-place)
                 (append (butlast range-nodes)
-                        (list (fxnode-replace-place last-range-node (-line last-range-place)))
+                        (list (<copy-fxnode> last-range-node :place (-line last-range-place)))
                         track-nodes))
 
                ((< last-track-place first-range-place)
                 (append (butlast track-nodes)
-                        (list (fxnode-replace-logtype last-track-node (<ra> :get-logtype-hold)))
+                        (list (<copy-fxnode> last-track-node :logtype (<ra> :get-logtype-hold)))
                         range-nodes))
 
                ((> first-track-place last-range-place)
                 (append (butlast range-nodes)
-                        (list (fxnode-replace-logtype last-range-node (<ra> :get-logtype-hold)))
+                        (list (<copy-fxnode> last-range-node :logtype (<ra> :get-logtype-hold)))
                         track-nodes))
 
                (else
@@ -649,12 +672,12 @@
                                            (define aft-node (list-ref track-nodes (length before-track-nodes)))
                                            (define interfere-place (-line first-range-place))
                                            (append before-track-nodes
-                                                   (list (create-fxnode interfere-place
-                                                                        (scale-logtype (fxnode-logtype bef-node)
-                                                                                       interfere-place
-                                                                                       (fxnode-place bef-node) (fxnode-place aft-node)
-                                                                                       (fxnode-value bef-node) (fxnode-value aft-node))
-                                                                        (fxnode-logtype bef-node)))))
+                                                   (list (make-fxnode interfere-place
+                                                                      (scale-logtype (bef-node :logtype)
+                                                                                     interfere-place
+                                                                                     (bef-node :place) (aft-node :place)
+                                                                                     (bef-node :value) (aft-node :value))
+                                                                      (bef-node :logtype)))))
                                          '()))
 
                 (if (> last-track-place last-range-place)
@@ -662,133 +685,133 @@
                             (begin
                               (define bef-node (find-last track-nodes
                                                           (lambda (track-node)
-                                                            (< (fxnode-place track-node) last-range-place))))
+                                                            (< (track-node :place) last-range-place))))
                               (define aft-node (car after-track-nodes))
                               (define interfere-place last-range-place)
                               (append (butlast range-nodes)
-                                      (list (fxnode-replace-place last-range-node (-line last-range-place)))
-                                      (if (= (fxnode-place (car after-track-nodes))
+                                      (list (<copy-fxnode> last-range-node :place (-line last-range-place)))
+                                      (if (= ((car after-track-nodes) :place)
                                              interfere-place)
                                           '()
-                                          (list (create-fxnode interfere-place
-                                                               (scale-logtype (fxnode-logtype bef-node)
-                                                                              interfere-place
-                                                                              (fxnode-place bef-node) (fxnode-place aft-node)
-                                                                              (fxnode-value bef-node) (fxnode-value aft-node))
-                                                               (fxnode-logtype bef-node))))
+                                          (list (make-fxnode interfere-place
+                                                             (scale-logtype (bef-node :logtype)
+                                                                            interfere-place
+                                                                            (bef-node :place) (aft-node :place)
+                                                                            (bef-node :value) (aft-node :value))
+                                                             (bef-node :logtype))))
                                       after-track-nodes)))
                     (append before-nodes
                             range-nodes)))))))
 
                
 
-(***assert*** (merge-fx-nodes '((2 11 0)
-                                (3 12 0))
-                              '((13 20 0)
-                                (16 22 0)))
-              `((2 11 0)
-                (3 12 ,(<ra> :get-logtype-hold))
-                (13 20 0)
-                (16 22 0)))
+(***assert*** (merge-fx-nodes (lists->fxnodes '((2 11 0)
+                                               (3 12 0)))
+                              (lists->fxnodes '((13 20 0)
+                                               (16 22 0))))
+              (lists->fxnodes `((2 11 0)
+                               (3 12 ,(<ra> :get-logtype-hold))
+                               (13 20 0)
+                               (16 22 0))))
 
-(***assert*** (merge-fx-nodes '((2 11 0)
-                                (3 12 0))
-                              '((3 20 0)
-                                (6 22 0)))
-              `((2 11 0)
-                (,(-line 3) 12 0)
-                (3 20 0)
-                (6 22 0)))
+(***assert*** (merge-fx-nodes (lists->fxnodes '((2 11 0)
+                                               (3 12 0)))
+                              (lists->fxnodes '((3 20 0)
+                                               (6 22 0))))
+              (lists->fxnodes `((2 11 0)
+                               (,(-line 3) 12 0)
+                               (3 20 0)
+                               (6 22 0))))
 
-(***assert*** (merge-fx-nodes '((2 11 0)
-                                (3 12 0))
-                              '((5 20 0)
-                                (6 22 0)))
-              `((2 11 0)
-                (3 12 ,(<ra> :get-logtype-hold))
-                (5 20 0)
-                (6 22 0)))
+(***assert*** (merge-fx-nodes (lists->fxnodes '((2 11 0)
+                                               (3 12 0)))
+                              (lists->fxnodes '((5 20 0)
+                                               (6 22 0))))
+              (lists->fxnodes `((2 11 0)
+                               (3 12 ,(<ra> :get-logtype-hold))
+                               (5 20 0)
+                               (6 22 0))))
 
-(***assert*** (merge-fx-nodes '((2 11 0)
-                                (3 12 0)
-                                (8 13 0))
-                              '((5 20 0)
-                                (6 22 0)))
-              `((2 11 0)
-                (3 12 0)
-                
-                (,(-line 5) ,(scale (-line 5) 3 8 12 13) 0)
-                    
-                (5 20 0)
-                (,(-line 6) 22 0)
-                
-                (6 ,(scale 6 3 8 12 13) 0)                
-                (8 13 0)))
+(***assert*** (merge-fx-nodes (lists->fxnodes '((2 11 0)
+                                               (3 12 0)
+                                               (8 13 0)))
+                              (lists->fxnodes '((5 20 0)
+                                               (6 22 0))))
+              (lists->fxnodes `((2 11 0)
+                               (3 12 0)
+                               
+                               (,(-line 5) ,(scale (-line 5) 3 8 12 13) 0)
+                               
+                               (5 20 0)
+                               (,(-line 6) 22 0)
+                               
+                               (6 ,(scale 6 3 8 12 13) 0)                
+                               (8 13 0))))
 
 
-(***assert*** (merge-fx-nodes '((6 12 0)
-                                (8 13 0))
-                              '((5 20 0)
-                                (7 22 0)))
-              `((5 20 0)
-                (,(-line 7) 22 0)
+(***assert*** (merge-fx-nodes (lists->fxnodes '((6 12 0)
+                                               (8 13 0)))
+                              (lists->fxnodes '((5 20 0)
+                                               (7 22 0))))
+              (lists->fxnodes `((5 20 0)
+                               (,(-line 7) 22 0)
+                               
+                               (7 ,(scale 7 6 8 12 13) 0)                
+                               (8 13 0))))
 
-                (7 ,(scale 7 6 8 12 13) 0)                
-                (8 13 0)))
+(***assert*** (merge-fx-nodes (lists->fxnodes '((2 11 0)
+                                               (3 12 0)))
+                              (lists->fxnodes '((5 20 0)
+                                               (6 22 0)
+                                               (7 24 0))))
+              (lists->fxnodes `((2 11 0)
+                               (3 12 ,(<ra> :get-logtype-hold))
+                               (5 20 0)
+                               (6 22 0)
+                               (7 24 0))))
 
-(***assert*** (merge-fx-nodes '((2 11 0)
-                                (3 12 0))
-                              '((5 20 0)
-                                (6 22 0)
-                                (7 24 0)))
-              `((2 11 0)
-                (3 12 ,(<ra> :get-logtype-hold))
-                (5 20 0)
-                (6 22 0)
-                (7 24 0)))
+(***assert*** (merge-fx-nodes (lists->fxnodes '((2 11 0)
+                                               (5 12 0)))
+                              (lists->fxnodes '((5 20 0)
+                                               (6 22 0)
+                                               (7 24 0))))
+              (lists->fxnodes `((2 11 0)
+                               (,(-line 5) 12 0)
+                               (5 20 0)
+                               (6 22 0)
+                               (7 24 0))))
 
-(***assert*** (merge-fx-nodes '((2 11 0)
-                                (5 12 0))
-                              '((5 20 0)
-                                (6 22 0)
-                                (7 24 0)))
-              `((2 11 0)
-                (,(-line 5) 12 0)
-                (5 20 0)
-                (6 22 0)
-                (7 24 0)))
+(***assert*** (merge-fx-nodes (lists->fxnodes '((2 11 0)
+                                               (3 12 0)))
+                              (lists->fxnodes '((1 20 0)
+                                               (2 22 0)
+                                               (3 24 0))))
+              (lists->fxnodes '((1 20 0)
+                               (2 22 0)
+                               (3 24 0))))
 
-(***assert*** (merge-fx-nodes '((2 11 0)
-                                (3 12 0))
-                              '((1 20 0)
-                                (2 22 0)
-                                (3 24 0)))
-              '((1 20 0)
-                (2 22 0)
-                (3 24 0)))
+(***assert*** (merge-fx-nodes (lists->fxnodes '((1 10 0)
+                                               (2 11 0)
+                                               (3 12 0)))
+                              (lists->fxnodes '((2 22 0)
+                                               (3 24 0))))
+              (lists->fxnodes `((1 10 0)
+                               (,(-line 2) ,(scale (-line 2) 2 3 11 12) 0)
+                               (2 22 0)
+                               (3 24 0))))
 
-(***assert*** (merge-fx-nodes '((1 10 0)
-                                (2 11 0)
-                                (3 12 0))
-                              '((2 22 0)
-                                (3 24 0)))
-              `((1 10 0)
-                (,(-line 2) ,(scale (-line 2) 2 3 11 12) 0)
-                (2 22 0)
-                (3 24 0)))
-
-(***assert*** (merge-fx-nodes '((1 10 0)
-                                (2 11 0)
-                                (3 12 0)
-                                (4 13 0))
-                              '((2 22 0)
-                                (3 24 0)))
-              `((1 10 0)
-                (,(-line 2) ,(scale (-line 2) 2 3 11 12) 0)
-                (2 22 0)
-                (,(-line 3) 24 0)
-                (3 12 0)
-                (4 13 0)))
+(***assert*** (merge-fx-nodes (lists->fxnodes '((1 10 0)
+                                               (2 11 0)
+                                               (3 12 0)
+                                               (4 13 0)))
+                              (lists->fxnodes '((2 22 0)
+                                               (3 24 0))))
+              (lists->fxnodes `((1 10 0)
+                               (,(-line 2) ,(scale (-line 2) 2 3 11 12) 0)
+                               (2 22 0)
+                               (,(-line 3) 24 0)
+                               (3 12 0)
+                               (4 13 0))))
 
   
 (define (merge-fxs track-fxs range-fxs)
@@ -801,8 +824,8 @@
                 (track-fx (find-fx track-fxs (range-fx :name))))
            ;;(c-display "track-fx" track-fx)
            (if track-fx
-               (cons (copy-fx range-fx
-                              :nodes (merge-fx-nodes (track-fx :nodes) (range-fx :nodes)))
+               (cons (<copy-fx> range-fx
+                                :nodes (merge-fx-nodes (track-fx :nodes) (range-fx :nodes)))
                      (merge-fxs (remove-fx track-fxs (range-fx :name))
                                 (cdr range-fxs)))
                (cons range-fx
@@ -811,7 +834,7 @@
 
 (define (skew-fxnodes fxnodes how-much)
   (map (lambda (fxnode)
-         (fxnode-replace-place fxnode (+ (fxnode-place fxnode)
+         (<copy-fxnode> fxnode :place (+ (fxnode :place)
                                          how-much)))
        fxnodes))
 
@@ -819,8 +842,8 @@
   (if (null? fxs)
       '()
       (let ((fx (car fxs)))
-        (cons (copy-fx fx
-                       :nodes (skew-fxnodes (fx :nodes) how-much))
+        (cons (<copy-fx> fx
+                         :nodes (skew-fxnodes (fx :nodes) how-much))
               (skew-fxs (cdr fxs)
                         how-much)))))
 
@@ -859,36 +882,36 @@
                                (>= (length fx-nodes) 2))
                           (define fx-node (car fx-nodes))
                           (define fxnum (<ra> :add-fx
-                                              (fxnode-value fx-node)
-                                              (legal-place (fxnode-place fx-node))
+                                              (fx-node :value)
+                                              (legal-place (fx-node :place))
                                               (<-> name)
                                               tracknum
                                               (fx :instrument)
                                               blocknum))
-                          ;;(c-display "fxnum" fxnum (fxnode-place fx-node))
+                          ;;(c-display "fxnum" fxnum (fx-node :place))
                           (when (>= fxnum 0)
-                                (<ra> :set-fxnode-logtype (fxnode-logtype fx-node) 0 fxnum tracknum blocknum)
+                                (<ra> :set-fxnode-logtype (fx-node :logtype) 0 fxnum tracknum blocknum)
                                 
                                 (define fx-node2 (cadr fx-nodes))
                                 (<ra> :set-fxnode  ;; Need a better API for creating fx
                                       1
-                                      (fxnode-value fx-node2)
-                                      (legal-place (fxnode-place fx-node2))
+                                      (fx-node2 :value)
+                                      (legal-place (fx-node2 :place))
                                       fxnum
                                       tracknum
                                       blocknum)
-                                (<ra> :set-fxnode-logtype (fxnode-logtype fx-node2) 1 fxnum tracknum blocknum)
+                                (<ra> :set-fxnode-logtype (fx-node2 :logtype) 1 fxnum tracknum blocknum)
                                 
                                 (for-each (lambda (fxnode)
                                             (define nodenum (<ra> :add-fxnode
-                                                                  (fxnode-value fxnode)
-                                                                  (legal-place (fxnode-place fxnode))
+                                                                  (fxnode :value)
+                                                                  (legal-place (fxnode :place))
                                                                   fxnum
                                                                   tracknum
                                                                   blocknum))
-                                            ;;(c-display "Creating node" nodenum " at place" (* 1.0 (fxnode-place fxnode)))
+                                            ;;(c-display "Creating node" nodenum " at place" (* 1.0 (fxnode :place)))
                                             (if (>= nodenum 0)
-                                                (<ra> :set-fxnode-logtype (fxnode-logtype fxnode) nodenum fxnum tracknum blocknum))
+                                                (<ra> :set-fxnode-logtype (fxnode :logtype) nodenum fxnum tracknum blocknum))
                                             )
                                           (cddr fx-nodes)))))
                   fxs))))
@@ -964,18 +987,18 @@
     (if (null? fxnodes)
         (if (not last-val)
             '()
-            (list (create-fxnode curr-place last-val last-logtype)))
+            (list (make-fxnode curr-place last-val last-logtype)))
         (let* ((fxnode (car fxnodes))
-               (place (quantitize-down-place (fxnode-place fxnode) quant))
+               (place (quantitize-down-place (fxnode :place) quant))
                (rest (loop (cdr fxnodes)
                            place
-                           (fxnode-value fxnode)
-                           (fxnode-logtype fxnode))))
+                           (fxnode :value)
+                           (fxnode :logtype))))
           (if (and (> place curr-place)
                    last-val)
-              (cons (create-fxnode curr-place
-                                   last-val
-                                   last-logtype)
+              (cons (make-fxnode curr-place
+                                 last-val
+                                 last-logtype)
                     rest)
               rest)))))
 
@@ -983,33 +1006,33 @@
               '())
 
 (***assert*** (simple-quantitize-fxnodes (list
-                                          (create-fxnode 8.2 9 'a))
+                                          (make-fxnode 8.2 9 'a))
                                          1)
-              (list (create-fxnode 8 9 'a)))
+              (list (make-fxnode 8 9 'a)))
 
 (***assert*** (simple-quantitize-fxnodes (list
-                                          (create-fxnode 5   1 'a)
-                                          (create-fxnode 5.2 2 'b)
-                                          (create-fxnode 6   3 'c)
-                                          (create-fxnode 7.6 4 'd)
-                                          (create-fxnode 8   5 'e))
+                                          (make-fxnode 5   1 'a)
+                                          (make-fxnode 5.2 2 'b)
+                                          (make-fxnode 6   3 'c)
+                                          (make-fxnode 7.6 4 'd)
+                                          (make-fxnode 8   5 'e))
                                          1)
-              (list (create-fxnode 5 2 'b)
-                    (create-fxnode 6 3 'c)
-                    (create-fxnode 7 4 'd)
-                    (create-fxnode 8 5 'e)))
+              (list (make-fxnode 5 2 'b)
+                    (make-fxnode 6 3 'c)
+                    (make-fxnode 7 4 'd)
+                    (make-fxnode 8 5 'e)))
                                            
 (***assert*** (simple-quantitize-fxnodes (list
-                                          (create-fxnode 5   1 'a)
-                                          (create-fxnode 5.2 2 'b)
-                                          (create-fxnode 6   3 'c)
-                                          (create-fxnode 7.6 4 'd)
-                                          (create-fxnode 8   5 'e))
+                                          (make-fxnode 5   1 'a)
+                                          (make-fxnode 5.2 2 'b)
+                                          (make-fxnode 6   3 'c)
+                                          (make-fxnode 7.6 4 'd)
+                                          (make-fxnode 8   5 'e))
                                          1/2)
-              (list (create-fxnode 5 2 'b)
-                    (create-fxnode 6 3 'c)
-                    (create-fxnode 7.5 4 'd)
-                    (create-fxnode 8 5 'e)))
+              (list (make-fxnode 5 2 'b)
+                    (make-fxnode 6 3 'c)
+                    (make-fxnode 7.5 4 'd)
+                    (make-fxnode 8 5 'e)))
                                            
 
 #||
@@ -1025,8 +1048,8 @@
   (define old-fxs (get-track-fxs blocknum tracknum))
   (define new-fxs (map (lambda (fx fxnum2)
                          (if (= fxnum fxnum2)
-                             (copy-fx fx
-                                      :nodes (simple-quantitize-fxnodes (fx :nodes) quant))
+                             (<copy-fx> fx
+                                        :nodes (simple-quantitize-fxnodes (fx :nodes) quant))
                              fx))
                        old-fxs
                        (iota (length old-fxs))))
