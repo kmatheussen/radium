@@ -62,6 +62,13 @@ static void clear_modifiers(void){
   OS_SYSTEM_ResetKeysUpDowns(); // Sync
 }
 
+void OS_OSX_set_cursorpos(int x, int y){
+  CGPoint pos;
+  pos.x = x;
+  pos.y = y;
+  CGWarpMouseCursorPosition(pos);
+}
+
 // Called from MyQApplication::applicationStateChanged
 void OS_OSX_clear_modifiers(void){
   //printf(" Clear mod 4\n");

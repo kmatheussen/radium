@@ -1950,10 +1950,17 @@ void SetVerticalResizePointer(struct Tracker_Windows *tvisual){
 }
 void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  QPoint pos;
   if (!g_editor->isVisible())
-    QCursor::setPos(x - 10000, y - 10000);
+    pos = QPoint(x - 10000, y - 10000);
   else
-    QCursor::setPos(editor->mapToGlobal(QPoint(x,y)));
+    pos = editor->mapToGlobal(QPoint(x,y));
+
+#if FOR_MACOSX
+  OS_OSX_set_cursorpos(pos.x(), pos.y()); // https://bugreports.qt.io/browse/QTBUG-33959
+#else
+  QCursor::setPos(pos);
+#endif
 }
 
 WPoint GetPointerPos(struct Tracker_Windows *tvisual){

@@ -8,6 +8,7 @@ extern LANGSPEC int OS_SYSTEM_get_event_type(void *event, bool ignore_autorepeat
 
 extern LANGSPEC int OS_SYSTEM_get_scancode(void *void_event);
 
+extern LANGSPEC void OS_OSX_set_cursorpos(int x, int y);
 extern LANGSPEC void OS_OSX_clear_modifiers(void);
 
 extern LANGSPEC int OS_SYSTEM_get_modifier(void *void_event);
