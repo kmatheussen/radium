@@ -401,7 +401,9 @@ static void AddNewTypeOfFxNodeLine(struct Tracker_Windows *window, const struct 
 }
 
 static struct FXs *get_fxs_for_fx(struct Tracks *track, struct FX *fx){
+  //printf("Calling get_fxs_for_fx for track %p. num_fxs: %d\n", track, track->fxs.num_elements);
   VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+    //printf("   Comp %d/%d, %p/%p\n", fxs->fx->effect_num, fx->effect_num, fxs->fx->patch, fx->patch);
     if (fxs->fx->effect_num == fx->effect_num && fxs->fx->patch == fx->patch)
       return fxs;
   }END_VECTOR_FOR_EACH;
@@ -418,6 +420,8 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
         if (fxs==NULL){
           Place p2;
 
+          //printf("    FXS 1: %p\n",fxs);
+          
           PlaceCopy(&p2, &p1);
 
           p2.line ++;
@@ -439,7 +443,8 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
           AddNewTypeOfFxNodeLine(window, wblock, wtrack, fx, &p2, val);
 
           fxs=get_fxs_for_fx(wtrack->track, fx);
-
+          //printf("    FXS 2: %p\n",fxs);
+          
           R_ASSERT_RETURN_IF_FALSE(fxs!=NULL);
         }
 

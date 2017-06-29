@@ -16,17 +16,11 @@
       y1
       (scale x x1 x2 y1 y2)))
 
-(define (create-fx fxname instrument fxnodes) ;; by default, instrument==-1. If instrument >=0 then the fx instrument was different from the track instrument.
-  (list fxname instrument fxnodes))
+(define-struct fx
+  :name
+  :instrument
+  :nodes)
 
-(define (fx-name fx)
-  (car fx))
-
-(define (fx-instrument fx)
-  (cadr fx))
-
-(define (fx-nodes fx)
-  (caddr fx))
 
 (define (create-fxnode place value logtype)
   (list place value logtype))
@@ -48,13 +42,21 @@
                  new-logtype))
   
 (define (find-fx fxs fxname)
-  (assq fxname fxs))
+  (let loop ((fxs fxs))
+    (if (null? fxs)
+        #f
+        (let ((fx (car fxs)))
+          (if (eq? fxname (fx :name))
+              fx
+              (loop (cdr fxs)))))))
+
+(assq 'b '((a 9)))
 
 (define (remove-fx fxs name)
   (if (null? fxs)
       '()
       (let ((fx (car fxs)))
-        (if (eq? (fx-name fx) name)
+        (if (eq? (fx :name) name)
             (cdr fxs)
             (cons fx
                   (remove-fx (cdr fxs) name))))))
@@ -69,9 +71,9 @@
   
   (let loop ((fxnodes fxnodes)
              (last-fxnode #f))
-    (c-display "fxnodes:" fxnodes)
-    (c-display "last:" last-fxnode)
-    (c-display)
+    ;;(c-display "fxnodes:" fxnodes)
+    ;;(c-display "last:" last-fxnode)
+    ;;(c-display)
     (if (null? fxnodes)
         '()
         (let* ((fxnode (car fxnodes))
@@ -299,11 +301,10 @@
 
 (define (scissor-fxs-keep-outside fxs startplace endplace)
   (map (lambda (fx)
-         (create-fx (fx-name fx)
-                    (fx-instrument fx)
-                    (scissor-fxnodes-keep-outside (fx-nodes fx)
-                                                  startplace
-                                                  endplace)))
+         (copy-fx fx
+                  :nodes (scissor-fxnodes-keep-outside (fx :nodes)
+                                                       startplace
+                                                       endplace)))
        fxs))
 
 
@@ -508,11 +509,10 @@
                 
 (define (scissor-fxs-keep-inside fxs startplace endplace)
   (map (lambda (fx)
-         (create-fx (fx-name fx)
-                    (fx-instrument fx)
-                    (scissor-fxnodes-keep-inside (fx-nodes fx)
-                                                 startplace
-                                                 endplace)))
+         (copy-fx fx
+                  :nodes (scissor-fxnodes-keep-inside (fx :nodes)
+                                                      startplace
+                                                      endplace)))
        fxs))
 
 
@@ -576,9 +576,9 @@
                                 (define logtype (<ra> :get-fxnode-logtype fxnodenum fxnum tracknum blocknum))
                                 (list place value logtype))
                               (iota num-fxnodes)))
-         (create-fx fxname
-                    fxinstrument
-                    fxnodes))
+         (make-fx fxname
+                  fxinstrument
+                  fxnodes))
        (iota (<ra> :get-num-fxs tracknum blocknum))))
 
 #||
@@ -798,15 +798,12 @@
          track-fxs)
         (else
          (let* ((range-fx (car range-fxs))
-                (fxname (fx-name range-fx))
-                (fxinstrument (fx-instrument range-fx))
-                (track-fx (find-fx track-fxs fxname)))
+                (track-fx (find-fx track-fxs (range-fx :name))))
            ;;(c-display "track-fx" track-fx)
            (if track-fx
-               (cons (create-fx fxname
-                                fxinstrument
-                                (merge-fx-nodes (fx-nodes track-fx) (fx-nodes range-fx)))
-                     (merge-fxs (remove-fx track-fxs fxname)
+               (cons (copy-fx range-fx
+                              :nodes (merge-fx-nodes (track-fx :nodes) (range-fx :nodes)))
+                     (merge-fxs (remove-fx track-fxs (range-fx :name))
                                 (cdr range-fxs)))
                (cons range-fx
                      (merge-fxs track-fxs
@@ -822,9 +819,8 @@
   (if (null? fxs)
       '()
       (let ((fx (car fxs)))
-        (cons (create-fx (fx-name fx)
-                         (fx-instrument fx)
-                         (skew-fxnodes (fx-nodes fx) how-much))
+        (cons (copy-fx fx
+                       :nodes (skew-fxnodes (fx :nodes) how-much))
               (skew-fxs (cdr fxs)
                         how-much)))))
 
@@ -836,12 +832,12 @@
   
 (define (paste-track-fxs! blocknum tracknum fxs)
   (define instrument (<ra> :get-instrument-for-track tracknum blocknum))
-  (c-display "blocknum/tracknum/fxs/instrument" blocknum tracknum fxs instrument)
+  ;;(c-display "blocknum/tracknum/fxs/instrument" blocknum tracknum fxs instrument)
   (if (< instrument 0)
       #t
       (let ((effect-names  (get-fxnames instrument)))  
         (<ra> :clear-track-fx tracknum blocknum)
-        (c-display "effect-names" effect-names)
+        ;;(c-display "effect-names" effect-names)
 
         (define num-lines (<ra> :get-num-lines blocknum))
         (define (legal-place pos)
@@ -851,11 +847,11 @@
                    pos)))
         
         (for-each (lambda (fx)
-                    (define name (fx-name fx))
-                    (define is-legal-effect (or (not (= (fx-instrument fx)
+                    (define name (fx :name))
+                    (define is-legal-effect (or (not (= (fx :instrument)
                                                         instrument))
                                                 (memq name effect-names)))
-                    (define fx-nodes (fx-nodes fx))
+                    (define fx-nodes (fx :nodes))
                     (c-display "got" name "? "
                                is-legal-effect
                                (>= (length fx-nodes) 2))
@@ -867,9 +863,9 @@
                                               (legal-place (fxnode-place fx-node))
                                               (<-> name)
                                               tracknum
-                                              (fx-instrument fx)
+                                              (fx :instrument)
                                               blocknum))
-                          (c-display "fxnum" fxnum (fxnode-place fx-node))
+                          ;;(c-display "fxnum" fxnum (fxnode-place fx-node))
                           (when (>= fxnum 0)
                                 (<ra> :set-fxnode-logtype (fxnode-logtype fx-node) 0 fxnum tracknum blocknum)
                                 
@@ -912,6 +908,7 @@
 (define (cut-fx-range! blocknum starttrack endtrack startplace endplace)
   ;; (copy-fx-range! blocknum starttrack endtrack startplace endplace) ;; copy-fx-range! is called manually before cut-fx-range!
   (for-each (lambda (tracknum)
+              ;;(c-display "   2. calling paste-track-fxs from cut-fx-range" tracknum)
               (paste-track-fxs! blocknum
                                 tracknum
                                 (scissor-fxs-keep-outside (get-track-fxs blocknum tracknum)
@@ -928,13 +925,17 @@
 
   (for-each (lambda (range-fxs tracknum)
               (when (< tracknum (<ra> :get-num-tracks blocknum))
-                    (let ((track-fxs (get-track-fxs blocknum tracknum))
-                          (scissored-range-fxs (scissor-fxs-keep-inside (skew-fxs range-fxs startplace)
-                                                                        0
-                                                                        endplace)))
-                      (paste-track-fxs! blocknum
-                                        tracknum
-                                        (merge-fxs track-fxs scissored-range-fxs)))))
+                (let ((track-fxs (get-track-fxs blocknum tracknum))
+                      (scissored-range-fxs (scissor-fxs-keep-inside (skew-fxs range-fxs startplace)
+                                                                    0
+                                                                    endplace)))
+                  ;;(c-display "   1. calling paste-track-fxs from paste-fx-range" tracknum)
+                  ;;(c-display "track-fx:\n" (pp track-fxs) "\n")
+                  ;;(c-display "scissored-fx:\n" (pp scissored-range-fxs) "\n")
+                  ;;(c-display "merged:\n" (pp (merge-fxs track-fxs scissored-range-fxs)) "\n")
+                  (paste-track-fxs! blocknum
+                                    tracknum
+                                    (merge-fxs track-fxs scissored-range-fxs)))))
             *clipboard-fxs*
             (map (lambda (tracknum)
                    (+ starttrack tracknum))
@@ -1014,7 +1015,7 @@
 #||
 (define (simple-quantitize-fxs-internal fxs)
   (map (lambda (fx)
-         (create-fx (fx-name fx)
+         (make-fx (fx-name fx)
                     (fx-instrument fx)
                     (simple-quantitize-fxnodes (fx-nodes fx))))
        fxs))
@@ -1024,9 +1025,8 @@
   (define old-fxs (get-track-fxs blocknum tracknum))
   (define new-fxs (map (lambda (fx fxnum2)
                          (if (= fxnum fxnum2)
-                             (create-fx (fx-name fx)
-                                        (fx-instrument fx)
-                                        (simple-quantitize-fxnodes (fx-nodes fx) quant))
+                             (copy-fx fx
+                                      :nodes (simple-quantitize-fxnodes (fx :nodes) quant))
                              fx))
                        old-fxs
                        (iota (length old-fxs))))

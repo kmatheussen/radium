@@ -2244,7 +2244,7 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
   
   struct Tracks *track = wtrack->track;
 
-  printf("\n\n    createFX: %s. num_fx: %d\n\n", fx_name, track->fxs.num_elements);
+  printf("\n\n    createFX track %d: %s. num_fx: %d\n\n", track->l.num, fx_name, track->fxs.num_elements);
   
   struct Patch *patch = track->patch;
 
