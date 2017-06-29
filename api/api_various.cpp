@@ -2161,7 +2161,7 @@ const_char *getOsName(void){
 #elif defined(FOR_MACOSX)
   return "macosx";
 #elif defined(FOR_WINDOWS)
-  return "windows"
+  return "windows";
 #else
 #error "unknown"
 #endif
