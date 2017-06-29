@@ -20,7 +20,7 @@ export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
 #export LD_PRELOAD=$HOME/jack_interposer/jack_interposer.so 
 
-BUILDTYPE=DEBUG ./build_linux.sh -j `expr $(nproc) - 1` && LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG=fatal-criticals gdb --args bin/radium_linux.bin $@; killall -9 radium_progress_window ; killall -9 crashreporter
+BUILDTYPE=DEBUG ./build_linux.sh -j `expr $(nproc) - 1` && LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG=fatal-criticals gdb --args bin/radium_linux.bin $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter
 # QT_FATAL_WARNINGS=1 causes lots of crashes in qt5
 
 
