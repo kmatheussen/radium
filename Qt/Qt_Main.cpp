@@ -631,11 +631,15 @@ protected:
             
             
           } else {
-
-            // Single-pressed left alt key.
             
-            //printf("    Making MENU active\n");
-            menu_should_be_active = 1;
+
+            if (last_pressed_key==EVENT_ALT_L) {
+              // Single-pressed left alt key.
+
+              //printf("    Making MENU active. Last pressed: %d\n", last_pressed_key);
+              menu_should_be_active = 1;
+            }
+          
             last_key_was_lalt = true;
 
           }
