@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMenuBar>
 #include <QApplication>
 #include <QMainWindow>
+#include <QStack>
 
 #include "../common/nsmtracker.h"
 #include "../common/gfx_proc.h"
@@ -37,7 +38,7 @@ extern QApplication *qapplication;
 
 namespace{
 
-static QMenu *g_curr_menu = NULL;
+static QStack<QMenu* >g_curr_menu;
 static int g_menu_is_open = 0;
   
 struct MyMenu : public QMenu, radium::Timer{
@@ -49,6 +50,8 @@ struct MyMenu : public QMenu, radium::Timer{
     if (_has_g_menu_is_open){
       g_menu_is_open--;
       _has_g_menu_is_open = false;
+      R_ASSERT_RETURN_IF_FALSE(!g_curr_menu.isEmpty());
+      g_curr_menu.pop();
     }
   }
 
@@ -56,7 +59,7 @@ struct MyMenu : public QMenu, radium::Timer{
     if (!_has_g_menu_is_open){
       g_menu_is_open++;
       _has_g_menu_is_open = true;
-      g_curr_menu = this;
+      g_curr_menu.push(this);
     }
   }
 
@@ -71,7 +74,7 @@ struct MyMenu : public QMenu, radium::Timer{
 public:
   
   MyMenu()
-    : radium::Timer(scale_int64(qrand(), 0, RAND_MAX, 200, 500), true)
+    : radium::Timer((int)scale_int64(qrand(), 0, RAND_MAX, 200, 500), true)
   {
     connect(this, SIGNAL(aboutToHide()), this, SLOT(aboutToHide()));
     connect(this, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
@@ -250,10 +253,17 @@ bool GFX_MenuActive(void){
 
 QMenu *GFX_GetActiveMenu(void){
   //return current_menu->base->activeAction() != NULL;
-  if (GFX_MenuActive())
-    return g_curr_menu;
-  else
+  if (GFX_MenuActive()){
+    if (g_curr_menu.isEmpty()){
+      R_ASSERT_NON_RELEASE(false);
+      return NULL;
+    } else {
+      return g_curr_menu.top();
+    }
+  } else { 
+    R_ASSERT_NON_RELEASE(g_curr_menu.isEmpty());
     return NULL;
+  }
 }
 
 bool GFX_MenuVisible(struct Tracker_Windows *tvisual){
