@@ -2240,11 +2240,12 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
   
   value = R_BOUNDARIES(0, value, 1);
 
-  printf("\n\n    createFX: %s\n\n", fx_name);
 
   
   struct Tracks *track = wtrack->track;
 
+  printf("\n\n    createFX: %s. num_fx: %d\n\n", fx_name, track->fxs.num_elements);
+  
   struct Patch *patch = track->patch;
 
   if(patch==NULL){
@@ -2269,6 +2270,14 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
     return -1;
   }
 
+  VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
+    if (fxs->fx->effect_num == effect_num && fxs->fx->patch==patch){
+      GFX_Message(NULL, "addFX: Effect \"%s\" has already been added to track %d", fx_name, track->l.num);
+      return -1;
+    }
+  }END_VECTOR_FOR_EACH;
+
+  
   {
     struct FX *fx = patch->instrument->createFX(track, patch, effect_num);
 
@@ -2292,7 +2301,11 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
       num++;
     }END_VECTOR_FOR_EACH;
 
+#if defined(RELEASE)
     RError("Internal error: Newly created FX not found, even though it was just created");
+#else
+    abort();
+#endif
     
     return -1;
   }
