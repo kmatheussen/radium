@@ -75,7 +75,7 @@ struct SmoothDelay {
     }
   }
 
-  int getSize(void){
+  int getSize(void) const {
     return safe_int_read(&iHslider0);
   }
 

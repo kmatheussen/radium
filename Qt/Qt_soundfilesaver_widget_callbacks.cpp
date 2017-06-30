@@ -313,8 +313,8 @@ public slots:
           
         }
         
-        const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
-        for (auto sp : *sp_all){
+        const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
+        for (auto sp : sp_all){
           if (!SP_has_input_links(sp)){
             plugins_to_save.push_back(SP_get_plugin(sp));
           }
