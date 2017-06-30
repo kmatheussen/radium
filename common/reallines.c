@@ -599,8 +599,6 @@ void LineZoomBlock_internal(struct Tracker_Windows *window, struct WBlocks *wblo
     num_lines = 1;
   }
 
-  ADD_UNDO(Reallines_CurrPos(window));
-
   window->must_redraw = true;
 
   if (num_lines<1) {
@@ -666,6 +664,7 @@ void LineZoomBlock_internal(struct Tracker_Windows *window, struct WBlocks *wblo
 }
 
 void LineZoomBlock(struct Tracker_Windows *window, struct WBlocks *wblock, int num_lines){
+  ADD_UNDO(Reallines_CurrPos(window));
   LineZoomBlock_internal(window, wblock, num_lines, true);
 }
 
