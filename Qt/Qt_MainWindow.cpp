@@ -371,6 +371,9 @@ static int get_track_from_x(float x){
 void handleDropEvent(QString filename, float x){
   struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
 
+  if(g_radium_runs_custom_exec)
+    return;
+
   int tracknum = get_track_from_x(x);
   int64_t instrument_id = -1;
 
@@ -453,15 +456,13 @@ public:
   */
   
   void dropEvent(QDropEvent *event) override {
-      printf("Got drop event\n");
-  if (event->mimeData()->hasUrls())
-    {
-      foreach (QUrl url, event->mimeData()->urls())
-        {
-          printf(" Filepath: -%s-\n",url.toLocalFile().toUtf8().constData());          
-          QString filename = url.toLocalFile();
-          handleDropEvent(filename, event->pos().x());
-        }
+    printf("Got drop event\n");
+    if (event->mimeData()->hasUrls()){
+      foreach (QUrl url, event->mimeData()->urls()){
+        printf(" Filepath: -%s-\n",url.toLocalFile().toUtf8().constData());          
+        QString filename = url.toLocalFile();
+        handleDropEvent(filename, event->pos().x());
+      }
     }
   }
 
