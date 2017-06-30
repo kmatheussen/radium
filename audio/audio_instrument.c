@@ -562,7 +562,7 @@ static void AUDIO_treat_FX(struct SeqTrack *seqtrack, struct FX *fx,int val,STim
 
   int effect_num = fx->effect_num;
 
-  if (effect_num >= plugin->type->num_effects){
+  if (effect_num >= plugin->type->num_effects + NUM_SYSTEM_EFFECTS){
 #if !defined(RELEASE)
     RWarning("DEBUG MODE: effect_num >= plugin->type->num_effects: ", effect_num, plugin->type->num_effects);
 #endif
