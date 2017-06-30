@@ -1125,8 +1125,9 @@ public:
       for(const auto &volume_change : volume_changes){
         volume_change.link->link_volume = volume_change.new_volume;
       }
-      
-      SoundProducer::RT_set_bus_descendant_types();
+
+      if (to_add.size() > 0)
+        SoundProducer::RT_set_bus_descendant_types();      
     }
 
 
@@ -1194,9 +1195,9 @@ public:
     }
     */
 
-    // 7. REMOVING: Remove the 'to_remove' links from the graph.
+    // 7. REMOVING: Remove the 'to_remove' links from the graph, and update bus descendant types.
     //
-    {
+    if (to_remove.size() > 0){
       radium::PlayerLock lock;
 
       int i = 0;
@@ -1205,12 +1206,16 @@ public:
         link->target->_input_links.remove(link);
         link->source->_output_links.remove(link);
       }
+
+      SoundProducer::RT_set_bus_descendant_types(); // We might call RT_set_bus_descendant_types two times now, but I'm not sure if it's safe not to let them be updated immediately after changing the graph.
     }
 
     // 8. REMOVING: Deallocate the 'to_remove' links.
     //
     for(auto *link : to_remove)
       delete link;
+
+    GFX_ScheduleInstrumentRedraw(g_currpatch);
 
     return true;
   }
