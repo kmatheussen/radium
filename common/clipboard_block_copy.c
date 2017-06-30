@@ -56,7 +56,7 @@ struct WBlocks *CB_CopyBlock(
 	towblock->l.next=NULL;
 
 	towblock->localzooms=CB_CopyLocalZooms(wblock);
-	towblock->reallines=NULL;
+	//towblock->reallines=NULL;
 
         // block
         

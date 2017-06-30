@@ -21,6 +21,8 @@ extern LANGSPEC void UpdateReallinesDependens(
 );
 extern LANGSPEC void UpdateRealLines(struct Tracker_Windows *window,struct WBlocks *wblock);
 //extern int FindHighestLocalzoomLevel(struct WBlocks *wblock);
+extern LANGSPEC void UpdateRealLines_dont_change_curr_realline(struct Tracker_Windows *window,struct WBlocks *wblock);
+
 #if 0
 extern LANGSPEC void SetZoomLevelAreaWidth(const struct Tracker_Windows *window,
                                            struct WBlocks *wblock);
