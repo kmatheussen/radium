@@ -142,7 +142,7 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
   void focusInEvent ( QFocusEvent *e ){                                 
     printf("Got focusInEvent\n");
     if(dontsniff==false)
-      obtain_keyboard_focus();
+      obtain_keyboard_focus_without_greying();
     GL_lock();
     QsciScintilla::focusInEvent(e);                                             
     GL_unlock();
