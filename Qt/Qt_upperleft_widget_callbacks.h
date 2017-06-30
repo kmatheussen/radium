@@ -139,7 +139,8 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
     
     _is_initing = false;
 
-    set_editor_focus();
+    // why was this line added? (removed since it caused various widgets to lose keyboard focus if they set must_redraw=true)
+    //    set_editor_focus();
   }
 
   void updateLayout(QWidget *w, int x1, int x2, int height){

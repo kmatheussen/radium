@@ -437,7 +437,7 @@ void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch){
             VECTOR_remove(&track->fxs, fxs);
           }PLAYER_unlock();
           
-          window->must_redraw = true;
+          window->must_redraw_editor = true;
           
         } else if (index != fx->effect_num) {
           if (has_added_undo==false){
