@@ -40,5 +40,29 @@ namespace{
     }
   };
 }
+
+struct PlayerPauseOnlyIfNeeded{
+  bool has_paused = false;
+
+  void need_it(void){
+    if (has_paused==false){
+      PC_Pause();
+      has_paused = true;
+    }
+  }
+
+  PlayerPauseOnlyIfNeeded(const PlayerLockOnlyIfNeeded&) = delete;
+  PlayerPauseOnlyIfNeeded& operator=(const PlayerLockOnlyIfNeeded&) = delete;
+
+  
+  PlayerPauseOnlyIfNeeded(){
+  }
+  
+  ~PlayerPauseOnlyIfNeeded(){
+    if (has_paused)
+      PC_StopPause(NULL);
+  }  
+};
+
 }
 #endif
