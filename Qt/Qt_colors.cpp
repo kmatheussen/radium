@@ -387,8 +387,6 @@ public:
 
       updateGeometry();
       moveWindowToCentre(this);
-
-      //installFocusEventFilters(this);
     }
     
     ~MyColorDialog(){
@@ -396,13 +394,28 @@ public:
       printf("  MyColorDialog deleted\n");
     }
 
+    bool event(QEvent *e) override{
+      if (e->type() == QEvent::WindowActivate) {
+        printf("Activated\n");
+        obtain_keyboard_focus_without_greying(); // don't want to gray editor when we configure a color that might be displayed in it.
+      } else if (e->type() == QEvent::WindowDeactivate) {
+        release_keyboard_focus(); // don't want to gray editor when we configure a color that might be displayed in it.
+        printf("Deactivate\n");
+      }
+      
+      return QColorDialog::event(e);        
+    }
+        
     void done(int result) override{
       if (result==QDialog::Rejected)
         S7CALL(void_charpointer, _callback, _initial_color.name().toUtf8().constData());
-      
+
+      release_keyboard_focus();
+
       QColorDialog::done(result);
     }
-     
+
+
   public slots:
     void color_changed(const QColor &col){
       printf("Color changed\n");
