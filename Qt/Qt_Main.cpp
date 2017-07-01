@@ -257,8 +257,6 @@ bool g_qtgui_has_stopped = false;
 
 //void gakk();
 
-extern void set_editor_focus(void);
-
 
 extern struct TEvent tevent;
 bool tevent_autorepeat = false;
@@ -1820,10 +1818,6 @@ protected:
       if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_remake, true, false)){ // 
         //printf("          (remake called from qt main)\n");
         evalScheme("(remake-mixer-strips)");
-      }
-      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){ // 
-        //printf("          (redraw called from qt main)\n");
-        evalScheme("(redraw-mixer-strips)");
       }
     }
 

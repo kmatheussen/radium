@@ -374,6 +374,7 @@ public:
       , _initial_color(initial_color)
     {
       setAttribute(Qt::WA_DeleteOnClose);
+      set_window_flags(this, false);
       
       setOption(QColorDialog::DontUseNativeDialog, true);
       setOption(QColorDialog::ShowAlphaChannel, true);
@@ -383,6 +384,11 @@ public:
       connect(this, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(color_changed(const QColor &)));
 
       s7extra_protect(_callback);
+
+      updateGeometry();
+      moveWindowToCentre(this);
+
+      //installFocusEventFilters(this);
     }
     
     ~MyColorDialog(){
