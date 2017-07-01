@@ -523,8 +523,7 @@ static void PlayHandleSequencerLoop(void){
     if (g_player_was_stopped_manually==false) {
       maybe_draw_lock(&got_lock);
 
-      if (useJackTransport()) // PlayStopReally (which calls StopAllInstruments()) isn't called directly by PlaySong when using jack transport. 
-        StopAllInstruments(); // This function was not called when the player state was set to PLAYER_STATE_STOPPED by the player.
+      StopAllInstruments(); // PlaySong calls PlayStopReally, but PlayStopReally doesn't call StoppAllInstruments if player_state==PLAYER_STATE_STOPPED (which it is now).
 
       g_player_was_stopped_manually = true; // When using jack transport, playstop is not called directly, and then PlaySong will be called several times.
             

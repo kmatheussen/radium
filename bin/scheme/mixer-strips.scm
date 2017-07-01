@@ -13,6 +13,7 @@
 
 (define-constant *text-color* "#cccccc")
 (define-constant *arrow-text* "↳")
+(define-constant *arrow-text2* "→")
 
 (define *current-mixer-strip-is-wide* #f)
 
@@ -1752,7 +1753,10 @@
   (define instrument-mixer-strips (add-strips (sort-instruments-by-mixer-position
                                                instruments)))
   (if (> mixer-strip-num 0)
-      (<gui> :add-layout-space horizontal-layout instruments/buses-separator-width 10 #f #f))
+      (let ((text (<gui> :text *arrow-text2*)))
+        ;;(<gui> :set-background-color text "blue") ;; doesn't work.
+        (<gui> :add horizontal-layout text)))
+  ;;(<gui> :add-layout-space horizontal-layout instruments/buses-separator-width 10 #f #f))
 
   (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections
                                         all-buses)))

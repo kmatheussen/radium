@@ -449,7 +449,7 @@ static void play_note2(Data *data, int time, note_t note){
   Voice *voice = data->voices_not_playing;
 
   if(voice==NULL){
-    printf("no more free voices\n");
+    RT_message("Instrument \"%s\" has no more free voices. (max polyphony is 32)", DSP_NAME);
     return;
   }
 

@@ -3999,6 +3999,7 @@ void gui_setBackgroundColor(int64_t guinum, const_char* color){
 
   if (gui->_is_pure_qwidget){
 
+    // FIX: There's more gui types than pure QWidget were Background doesn't work. "QLabel" for instance.
     gui->_background_color = c; // Setting Background/Base of a pure QWidget doesn't work. Must paint manually.
     
   } else {
