@@ -512,7 +512,6 @@ QString FAUST_get_svg_path(const struct SoundPlugin *plugin){
 
 
 static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &reply, bool is_initializing){
-  struct Patch *patch = (struct Patch*)plugin->patch;
   Devdata *devdata = (Devdata*)plugin->data;
   
   if (reply.data==NULL){    
@@ -548,9 +547,11 @@ static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &
   if (effects_state != NULL)
     PLUGIN_set_effects_from_state(plugin, effects_state);
 
-  if (old_reply.data != NULL)
-    PATCH_handle_fxs_when_fx_names_have_changed(patch);
-  
+  if (old_reply.data != NULL){
+    struct Patch *patch = (struct Patch*)plugin->patch;
+    PATCH_handle_fxs_when_fx_names_have_changed(patch, true);
+  }
+
   FFF_request_free(devdata->id, old_reply);
 
   return true;

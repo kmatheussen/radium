@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QHash>
 #include <QUuid>
+#include <QSet>
 
 #include "nsmtracker.h"
 #include "visual_proc.h"
@@ -397,7 +398,7 @@ static QList<QString> get_plugin_effect_names(SoundPlugin *plugin){
   return ret;
 }
 
-void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch){
+void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch, bool keep_unassigned_effects){
   R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
 
   if(patch->instrument != get_audio_instrument())
@@ -406,9 +407,11 @@ void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   QList<QString> effect_names = get_plugin_effect_names(plugin);
 
-  bool has_paused = false;
-
   struct Tracker_Windows *window = root->song->tracker_windows;
+
+  QSet<QString> warned_effect_names;
+
+  radium::PlayerPauseOnlyIfNeeded player_pause;
 
   FOR_EACH_TRACK(){
     
@@ -422,33 +425,36 @@ void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch){
         int index = effect_names.indexOf(fx->name);
         
         if (index==-1) {
-          
-          if (has_added_undo==false){
-            ADD_UNDO(Track_CurrPos(block->l.num, track->l.num));
-            has_added_undo = true;
+
+          if (!keep_unassigned_effects) {
+            
+            if (has_added_undo==false){
+              ADD_UNDO(Track_CurrPos(block->l.num, track->l.num));
+              has_added_undo = true;
+            }
+            
+            player_pause.need_it();
+
+            PLAYER_lock();{ // Why are we obtaining the player lock here? Player is stopped now.
+              VECTOR_remove(&track->fxs, fxs);
+            }PLAYER_unlock();
+            
+            window->must_redraw_editor = true;
+
+          } else {
+            if (!warned_effect_names.contains(fx->name)){
+              addMessage(talloc_format("Note: Effect \"%s\" doesn't exist. Automations for it will send out to effect number %d", fx->name, fx->effect_num));
+              warned_effect_names.insert(fx->name);
+            }
           }
-          
-          if (has_paused==false){
-            PC_Pause();
-            has_paused =true;
-          }
-          
-          PLAYER_lock();{
-            VECTOR_remove(&track->fxs, fxs);
-          }PLAYER_unlock();
-          
-          window->must_redraw = true;
-          
+
         } else if (index != fx->effect_num) {
           if (has_added_undo==false){
             ADD_UNDO(Track_CurrPos(block->l.num, track->l.num));
             has_added_undo = true;
           }
-          
-          if (has_paused==false){
-            PC_Pause();
-            has_paused =true;
-          }
+
+          player_pause.need_it();
           
           fx->effect_num = index;
           
@@ -459,9 +465,6 @@ void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch){
     }END_VECTOR_FOR_EACH;
       
   }END_FOR_EACH_TRACK;
-  
-  if (has_paused)
-    PC_StopPause(NULL);
 }
 
 

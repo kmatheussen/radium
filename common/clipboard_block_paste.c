@@ -98,8 +98,8 @@ void CB_PasteBlock(
 
 	towblock->localzooms=NULL;
 	CB_UnpackLocalZooms(&towblock->localzooms,wblock->localzooms,block->num_lines);
-	towblock->reallines=NULL;
-	UpdateRealLines(window,towblock);
+	//towblock->reallines=NULL;
+	UpdateRealLines_dont_change_curr_realline(window, towblock);
 
 	//towblock->wtempos=NULL;
 	//towblock->wlpbs=NULL;

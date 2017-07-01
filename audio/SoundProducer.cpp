@@ -895,14 +895,14 @@ public:
   static void RT_set_bus_descendant_types(void){
     radium::Time time;
     
-    const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
+    const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
   
     // First set all descendant types to MAYBE.
-    for (SoundProducer *sp : *sp_all)
+    for (SoundProducer *sp : sp_all)
       sp->_bus_descendant_type = MAYBE_A_BUS_DESCENDANT;
     
     // Then set one by one.
-    for (SoundProducer *sp : *sp_all)
+    for (SoundProducer *sp : sp_all)
       sp->RT_set_bus_descendant_type();
     
     g_rt_set_bus_descendant_types_duration = time.elapsed();    
@@ -1125,8 +1125,9 @@ public:
       for(const auto &volume_change : volume_changes){
         volume_change.link->link_volume = volume_change.new_volume;
       }
-      
-      SoundProducer::RT_set_bus_descendant_types();
+
+      if (to_add.size() > 0)
+        SoundProducer::RT_set_bus_descendant_types();      
     }
 
 
@@ -1194,9 +1195,9 @@ public:
     }
     */
 
-    // 7. REMOVING: Remove the 'to_remove' links from the graph.
+    // 7. REMOVING: Remove the 'to_remove' links from the graph, and update bus descendant types.
     //
-    {
+    if (to_remove.size() > 0){
       radium::PlayerLock lock;
 
       int i = 0;
@@ -1205,12 +1206,16 @@ public:
         link->target->_input_links.remove(link);
         link->source->_output_links.remove(link);
       }
+
+      SoundProducer::RT_set_bus_descendant_types(); // We might call RT_set_bus_descendant_types two times now, but I'm not sure if it's safe not to let them be updated immediately after changing the graph.
     }
 
     // 8. REMOVING: Deallocate the 'to_remove' links.
     //
     for(auto *link : to_remove)
       delete link;
+
+    GFX_ScheduleInstrumentRedraw(g_currpatch);
 
     return true;
   }
@@ -1990,13 +1995,11 @@ void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool p
 }
 
 void SP_write_mixer_tree_to_disk(QFile *file){
-  const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
-  if (sp_all==NULL)
-    return;
+  const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
   
   int num=0;
   
-  for (SoundProducer *sp : *sp_all){
+  for (const SoundProducer *sp : sp_all){
     SoundPlugin *plugin = sp->_plugin;
     volatile Patch *patch = plugin==NULL ? NULL : plugin->patch;
     const char *name = patch==NULL ? "<null>" : patch->name;
@@ -2015,9 +2018,9 @@ void SP_write_mixer_tree_to_disk(QFile *file){
 void SP_print_tree(void){
   int num=0;
 
-  const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
+  const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
   
-  for (SoundProducer *sp : *sp_all){
+  for (const SoundProducer *sp : sp_all){
     fprintf(stderr,"%d (%d): sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d, bus provider: %d.\n",
             num++,
             sp->_plugin->patch==NULL?-1:(int)sp->_plugin->patch->id,
@@ -2036,7 +2039,7 @@ void SP_print_tree(void){
     }
     fprintf(stderr, "  outputs:\n");
     */
-    for (SoundProducerLink *link : sp->_output_links){
+    for (const SoundProducerLink *link : sp->_output_links){
       fprintf(stderr, "  %s%s. Ch: %d->%d. Latency: %d\n",
               link->target->_plugin->patch->name,
               link->is_active?"":" (inactive)",
@@ -2074,7 +2077,9 @@ struct SoundPlugin *SP_get_plugin(const SoundProducer *producer){
 }
 
 struct SoundProducer *SP_get_sound_producer(struct SoundPlugin *plugin){
-  for(auto *sp : *MIXER_get_all_SoundProducers())
+  const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
+
+  for(auto *sp : sp_all)
     if (sp->_plugin==plugin)
       return sp;
 

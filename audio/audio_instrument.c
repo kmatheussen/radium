@@ -527,6 +527,8 @@ static void send_fx_to_plugin(struct SeqTrack *seqtrack, SoundPlugin *plugin, ST
 
   plugin->automation_values[effect_num] = effect_val;
 
+  //printf("send_fx_to_plugin %s. effect_num: %d, effect_value: %f\n",plugin->patch->name, effect_num, effect_val);
+
   PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(seqtrack, time),effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
 }
 
@@ -558,12 +560,21 @@ static void AUDIO_treat_FX(struct SeqTrack *seqtrack, struct FX *fx,int val,STim
   if (plugin==NULL) // i.e. plugin has been deleted and removed from the patch.
     return;
 
+  int effect_num = fx->effect_num;
+
+  if (effect_num >= plugin->type->num_effects + NUM_SYSTEM_EFFECTS){
+#if !defined(RELEASE)
+    RWarning("DEBUG MODE: effect_num >= plugin->type->num_effects: ", effect_num, plugin->type->num_effects);
+#endif
+    return;
+  }
+
   RT_PLUGIN_touch(plugin);
       
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
-    send_fx_to_plugin(seqtrack, plugin, time, when, val, fx->effect_num);
+    send_fx_to_plugin(seqtrack, plugin, time, when, val, effect_num);
     return;
   }
 
@@ -573,7 +584,7 @@ static void AUDIO_treat_FX(struct SeqTrack *seqtrack, struct FX *fx,int val,STim
   args[0].pointer = patch;
   args[1].int_num = when;
   args[2].int_num = val;
-  args[3].int_num = fx->effect_num;
+  args[3].int_num = effect_num;
 
   //printf("   Scheduling %d (latency: %d). block_reltempo: %f\n", (int)time, latency, get_note_reltempo(note));
   SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_fx_to_plugin, &args[0], 4, SCHEDULER_FX_PRIORITY);

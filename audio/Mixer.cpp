@@ -1455,8 +1455,8 @@ bool MIXER_is_saving(void){
 
 
 void MIXER_set_all_non_realtime(bool is_non_realtime){
-  const radium::Vector<SoundProducer*> *sp_all = MIXER_get_all_SoundProducers();
-  for (SoundProducer *sp : *sp_all) {
+  const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
+  for (SoundProducer *sp : sp_all) {
     SoundPlugin *plugin = SP_get_plugin(sp);
     if (plugin->type->set_non_realtime != NULL)
       plugin->type->set_non_realtime(plugin, is_non_realtime);
@@ -1643,12 +1643,22 @@ void MIXER_add_SoundProducer(SoundProducer *sound_producer){
 void MIXER_remove_SoundProducer(SoundProducer *sound_producer){
   g_mixer->remove_SoundProducer(sound_producer);
 }
-
+/*
 const radium::Vector<SoundProducer*> *MIXER_get_all_SoundProducers(void){
   if (g_mixer==NULL)
     return NULL;
   else
     return &g_mixer->_sound_producers;
+}
+*/
+
+static const radium::Vector<SoundProducer*> g_empty_sound_producers;
+
+const radium::Vector<SoundProducer*> &MIXER_get_all_SoundProducers(void){
+  if (g_mixer==NULL)
+    return g_empty_sound_producers;
+  else
+    return g_mixer->_sound_producers;
 }
 
 struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches){
