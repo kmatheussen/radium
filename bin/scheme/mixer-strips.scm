@@ -1596,11 +1596,13 @@
          (set-fixed-width parent width)
          (set-fixed-width das-mixer-strip-gui width)
          (<gui> :add parent das-mixer-strip-gui 0 0 width height)
-         (<gui> :show das-mixer-strip-gui))
+         )
        
        )))
 
+  
   (remake width height)
+  
 
   (define is-resizing #f)
   
@@ -1862,7 +1864,7 @@
 
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)
-  ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
+  ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " list-of-modified-instrument-ids (length *mixer-strips-objects*) "\n\n\n")
   (for-each (lambda (a-mixer-strips-object)
               ((a-mixer-strips-object :remake) list-of-modified-instrument-ids))
             *mixer-strips-objects*))

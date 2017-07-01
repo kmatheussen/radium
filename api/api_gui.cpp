@@ -3533,7 +3533,8 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
         //printf("      Adding to scroll child\n");
         child->_widget->setParent(scroll_area->contents);
         child->_widget->move(x1,y1);
-        child->_widget->show();
+        if (parent->_widget->isVisible())
+          child->_widget->show();
         
         int new_width = R_MAX(parent->_widget->width(), x2);
         int new_height = R_MAX(parent->_widget->height(), y2);
@@ -3544,6 +3545,8 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
       }else{
         child->_widget->setParent(parent->_widget);
         child->_widget->move(x1,y1);
+        if (parent->_widget->isVisible())
+          child->_widget->show();
       }
 
       if (x2>x1 && y2 > y1)
@@ -3639,6 +3642,7 @@ void gui_show(int64_t guinum){
   
   //pauseUpdates(w);
 
+  //if (w->isWindow())
   safeShow(w);
 }
 
