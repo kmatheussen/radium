@@ -1815,9 +1815,17 @@ protected:
     }
 
     if (is_called_every_ms(50)){
+
+      // Remake
       if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_remake, true, false)){ // 
         //printf("          (remake called from qt main)\n");
         evalScheme("(remake-mixer-strips)");
+      }
+
+      // Redraw
+      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){ // 
+        //printf("          (redraw called from qt main)\n");
+        evalScheme("(redraw-mixer-strips)");
       }
     }
 

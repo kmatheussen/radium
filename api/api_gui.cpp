@@ -159,7 +159,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
       QPainter p(this);                                                 \
       p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \
     }else{                                                              \
-      if (_paint_callback!=NULL)                                        \
+      if (_paint_callback!=NULL || _background_color.isValid())         \
         Gui::paintEvent(ev);                                            \
       else                                                              \
         classname::paintEvent(ev);                                      \
@@ -543,13 +543,18 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool _have_been_opened_before = false;
 
     QString _class_name;
+    bool _is_pure_qwidget;
+
+    QColor _background_color;
     
     Gui(QWidget *widget, bool created_from_existing_widget = false)
       : _widget_as_key(widget)
       , _widget(widget)
       , _created_from_existing_widget(created_from_existing_widget)
       , _class_name(widget->metaObject()->className())
-    {      
+    {
+      _is_pure_qwidget = _class_name=="QWidget";
+        
       g_gui_from_widgets[_widget] = this;
       
       _gui_num = g_highest_guinum++;
@@ -882,29 +887,52 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     QPainter *_current_painter = NULL;
     bool _paint_callback_failed = false;
     
-    void paintEvent(QPaintEvent *event) {
-      R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL);
+    bool maybePaintBackgroundColor(QPaintEvent *event, QPainter &p){
+      p.fillRect(_widget->rect(), _background_color);
 
-      if(g_radium_runs_custom_exec)
-        return;
-
-      if (_paint_callback_failed){
-        printf("paint_event failed last time. Won't try again to avoid a debug output bonanza (%s).\n", _class_name.toUtf8().constData());
-        return;
-      }
-        
       event->accept();
 
+      return true;
+    }
+
+    bool maybePaintBackgroundColor(QPaintEvent *event){
+      if (_background_color.isValid()==false)
+        return false;
+
       QPainter p(_widget);
-      p.setRenderHints(QPainter::Antialiasing,true);
+      return maybePaintBackgroundColor(event, p);
+    }
+    
+    void paintEvent(QPaintEvent *event) {
+      R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL || _background_color.isValid());
 
-      _current_painter = &p;
+      if(g_radium_runs_custom_exec){
+        maybePaintBackgroundColor(event);
+        return;
+      }
+          
+      if (_paint_callback_failed){
+        printf("paint_event failed last time. Won't try again to avoid a debug output bonanza (%s).\n", _class_name.toUtf8().constData());
+        maybePaintBackgroundColor(event);
+        return;
+      }
 
-      S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
-      if (g_scheme_failed==true)
-        _paint_callback_failed = true;
-      
-      _current_painter = NULL;
+      QPainter p(_widget);
+
+      if(maybePaintBackgroundColor(event, p)==false)
+        event->accept();
+
+      if (_paint_callback != NULL) {
+        p.setRenderHints(QPainter::Antialiasing,true);
+        
+        _current_painter = &p;
+        
+        S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
+        if (g_scheme_failed==true)
+          _paint_callback_failed = true;
+        
+        _current_painter = NULL;
+      }
     }
 
     void addPaintCallback(func_t* func){
@@ -1572,11 +1600,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     const float down_border = 2;
 
     float get_pos_y1(void) const {
-      return upper_border - 1;
+      return 0; //upper_border - 1;
     }
     
     float get_pos_y2(void) const {
-      return height() - down_border + 2;
+      return height() ; //- down_border + 2;
     }
     
     float get_pos_height(void) const {
@@ -3953,19 +3981,35 @@ bool gui_isFullScreen(int64_t guinum){
   //return gui->_widget->isFullScreen();
   return gui->is_full_screen();
 }
-  
+
 void gui_setBackgroundColor(int64_t guinum, const_char* color){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
   QColor c = getQColor(color);
+
+  QWidget *w;
   
-  QPalette pal = gui->_widget->palette();
-  pal.setColor(QPalette::Background, c);
-  pal.setColor(QPalette::Base, c);
-  //gui->_widget->setAutoFillBackground(true);
-  gui->_widget->setPalette(pal);
+  ScrollArea *scroll_area = dynamic_cast<ScrollArea*>(gui); // Think this one should be changed to parent->_widget.
+  if (scroll_area != NULL)
+    w = scroll_area->contents;
+  else
+    w = gui->_widget;
+
+  if (gui->_is_pure_qwidget){
+
+    gui->_background_color = c; // Setting Background/Base of a pure QWidget doesn't work. Must paint manually.
+    
+  } else {
+    
+    QPalette pal = w->palette();
+    pal.setColor(QPalette::Background, c);
+    pal.setColor(QPalette::Base, c);
+    //gui->_widget->setAutoFillBackground(true);
+    w->setPalette(pal);
+    
+  }
 }
 
 const_char* gui_getBackgroundColor(int64_t guinum){
