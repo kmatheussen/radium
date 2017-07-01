@@ -1135,9 +1135,8 @@
   (define fontheight (get-fontheight))
   (define voltext-height fontheight)
 
-  (define (get-border-size width)
-    (scale 0.05 0 1 0 width))
-
+  (define horizontal-spacing 4)
+  
   (define show-voltext (not is-minimized))
   (define show-peaktext #t)
 
@@ -1215,8 +1214,6 @@
     (define width (<gui> :width gui))
     (define height (<gui> :height gui))
     
-    (define border-size (get-border-size width))
-
     (define col1 (<gui> :mix-colors "#010101" background-color 0.7))
     
     ;; background
@@ -1224,8 +1221,8 @@
     
     ;; rounded
     (if is-minimized
-        (<gui> :filled-box gui col1 border-size 0 (- width border-size) height 2 2)
-        (<gui> :filled-box gui col1 border-size 0 (- width border-size) height 5 5))
+        (<gui> :filled-box gui col1 0 0 width height 2 2)
+        (<gui> :filled-box gui col1 0 0 width height 5 5))
     
     ;; text
     (<gui> :draw-text gui *text-color* text 2 2 (- width 2) (- height 2)))
@@ -1249,13 +1246,14 @@
     ;;(paint-peaktext)
     )
 
+  (define volslider-rounding 2)
+  
   (set! paint-slider
         (lambda ()
           (define width (<gui> :width volslider))
           (define height (<gui> :height volslider))
-          (define border-size (get-border-size width))
-          (define x1 border-size) ;;(scale 0.1 0 1 0 width))
-          (define x2 (- width border-size)) ;;(scale 0.9 0 1 0 width))
+          (define x1 0)
+          (define x2 width)
           (define middle_y (scale (db-to-slider (get-volume)) 0 1 height 0))
           
           ;; background
@@ -1267,8 +1265,8 @@
           (define col2 (<gui> :mix-colors "#010101" background-color 0.9)) ;; up
 
           ;; slider
-          (<gui> :filled-box volslider col2 x1 0 x2 height 5 5) ;; up (fill everything)
-          (<gui> :filled-box volslider col1 x1 middle_y x2 height 5 5) ;; down
+          (<gui> :filled-box volslider col2 x1 0 x2 height volslider-rounding volslider-rounding) ;; up (fill everything)
+          (<gui> :filled-box volslider col1 x1 middle_y x2 height volslider-rounding volslider-rounding) ;; down
 
           ;; slider border
           (<gui> :draw-box volslider "black" x1 0 x2 height 1.0)
@@ -1333,7 +1331,7 @@
   ;; horiz 1 (voltext and peaktext)
   ;;
   (define horizontal1 (<gui> :horizontal-layout))
-  (<gui> :set-layout-spacing horizontal1 0 0 0 0 0)
+  (<gui> :set-layout-spacing horizontal1 horizontal-spacing 0 0 0 0)
 
   (if (or show-voltext show-peaktext)
       (set-fixed-height horizontal1 voltext-height))
@@ -1348,7 +1346,7 @@
   ;; horiz 2 (volume slider and audio meter)
   ;;
   (define horizontal2 (<gui> :horizontal-layout))
-  (<gui> :set-layout-spacing horizontal2 0 0 0 0 0)
+  (<gui> :set-layout-spacing horizontal2 horizontal-spacing 0 0 0 0)
   (<gui> :set-size-policy horizontal2 #t #t)
   (<gui> :set-size-policy volslider #t #t)
   (<gui> :set-size-policy volmeter #t #t)
@@ -1383,12 +1381,15 @@
   (set-fixed-height comment-edit height)
   comment-edit)
 
+(define *mixer-strip-border-color* "#bb222222")
+
 (define (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip)
   ;;(c-display "    Draw mixer strips border called for " instrument-id)
   (if (= (<ra> :get-current-instrument) instrument-id)
       (if (not is-standalone-mixer-strip)
           (<gui> :draw-box gui "#bb111166" 0 0 width height 10 3 3))
-      (<gui> :draw-box gui "#bb222222" 0 0 width height 2 3 3)))
+      ))
+;;      (<gui> :draw-box gui *mixer-strip-border-color* 0 0 width height 2 3 3)))
 
 (define (create-current-instrument-border gui instrument-id)
   (define rubberband-resize (gui-rubberband gui 5 "#bb111144" (lambda ()
@@ -1690,20 +1691,18 @@
 (define (create-mixer-strips num-rows stored-mixer-strips list-of-modified-instrument-ids kont)
   ;;(set! num-rows 3)
   (define strip-separator-width 1)
-  (define instruments-buses-separator-width (* (get-fontheight) 2))
+  (define border-color *mixer-strip-border-color*)
+  (define instruments/buses-separator-width (max 2 (floor (* (get-fontheight) 0.2))))
 
   ;;(define mixer-strips (<gui> :widget 800 800))
   ;;(define mixer-strips-gui (<gui> :horizontal-scroll)) ;;widget 800 800))
   (define mixer-strips-gui (<gui> :scroll-area #t #t))
   (<gui> :set-layout-spacing mixer-strips-gui 0 0 0 0 0)
-
-  '(add-safe-paint-callback mixer-strips-gui
-                            (lambda (width height)
-                              (c-display "                              Repainting mixer-strips-gui")))
-
+  (<gui> :set-background-color mixer-strips-gui border-color)
+  
   (define vertical-layout (<gui> :vertical-layout))
   (<gui> :set-layout-spacing vertical-layout strip-separator-width 0 0 0 0)
-
+  
   (define mixer-strip-num 0)
   (define horizontal-layout #f)
 
@@ -1753,7 +1752,7 @@
   (define instrument-mixer-strips (add-strips (sort-instruments-by-mixer-position
                                                instruments)))
   (if (> mixer-strip-num 0)
-      (<gui> :add-layout-space horizontal-layout instruments-buses-separator-width 10 #f #f))
+      (<gui> :add-layout-space horizontal-layout instruments/buses-separator-width 10 #f #f))
 
   (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections
                                         all-buses)))
