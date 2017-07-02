@@ -64,6 +64,8 @@ public:
   //int _last_height;
 
   Auto_Suspend_Menu _auto_suspend_menu;
+
+  bool _is_initing;
   
 public:
 
@@ -80,14 +82,16 @@ public:
     , _size_type(SIZETYPE_NORMAL)
       //, _last_height(10)
     , _auto_suspend_menu(this, patch)
-    {
-      R_ASSERT(_patch!=NULL);
-        
-      setupUi(this);
-
-      set_cpu_usage_font_and_width(plugin_info, true, true);
-
-      ab_reset->hide(); // The exact same button is placed only a few hundred pixels to the left anyway.
+  {
+    R_ASSERT(_patch!=NULL);
+    
+    _is_initing = true;
+    
+    setupUi(this);
+    
+    set_cpu_usage_font_and_width(plugin_info, true, true);
+    
+    ab_reset->hide(); // The exact same button is placed only a few hundred pixels to the left anyway.
       
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
@@ -238,6 +242,8 @@ public:
     //_plugin_widget->set_automation_value_pointers(plugin);
 
     update_widget();
+
+    _is_initing = false;
   }
 
   QString small_number(int n){
@@ -759,6 +765,7 @@ public slots:
   }
 
   void on_half_checkbox_toggled(bool val){
+    //addMessage(talloc_format("Half %d\n", val));
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin==NULL)
       return;
@@ -773,6 +780,7 @@ public slots:
   }
     
   void on_max_checkbox_toggled(bool val){
+    //addMessage(talloc_format("Full %d\n", val));
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin==NULL)
       return;
@@ -787,28 +795,6 @@ public slots:
     }
   }
     
-#if 0
-  void on_large_checkbox_toggled(bool val){
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    if (plugin!=NULL){
-      if (val){
-        _is_large = true;
-        AUDIOWIDGET_change_height(_patch, SizeType type);
-#ifdef WITH_FAUST_DEV
-        if (_faust_plugin_widget != NULL)
-          _faust_plugin_widget->set_large(header->height());
-#endif        
-      }else{
-        _is_large = false;
-        AUDIOWIDGET_show_small(_patch);
-#ifdef WITH_FAUST_DEV
-        if (_faust_plugin_widget != NULL)
-          _faust_plugin_widget->set_small();
-#endif
-      }
-    }
-  }
-#endif
   
   // pd
   //

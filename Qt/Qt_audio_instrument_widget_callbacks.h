@@ -266,6 +266,9 @@ public:
   }
 
   ~Audio_instrument_widget(){
+    if(_size_type != SIZETYPE_NORMAL)
+      change_height(SIZETYPE_NORMAL);
+
     prepare_for_deletion();
   }
      
@@ -489,61 +492,11 @@ public:
     if (_comp_widget->isVisible())
       _comp_widget->calledRegularlyByParent();
 
-#ifdef USE_QT5
     bool is_visible = scrollArea->verticalScrollBar()->isVisible();
     if (is_visible)
       setMinimumHeight(height()+5);
-#else
-    adjustWidgetHeight();
-#endif
   }
 
-#ifndef USE_QT5
-  // horror
-  void adjustWidgetHeight(void){
-    static bool shrinking = false;
-    static int num_times_horizontal_is_not_visible;
-    static bool can_shrink = true;
-    static bool last_time_shrank = false;
-
-    if (_size_type != SIZETYPE_NORMAL)
-      return;
-          
-    bool is_visible = scrollArea->verticalScrollBar()->isVisible();
-    
-    if (scrollArea->horizontalScrollBar()->isVisible())
-      num_times_horizontal_is_not_visible=0;
-    else
-      num_times_horizontal_is_not_visible++;
-    
-    if (is_visible){
-      if (last_time_shrank)
-        can_shrink = false;
-      else
-        can_shrink = true;
-      setMinimumHeight(height()+1);
-      window->must_redraw = true;
-      //printf(" adjust 1\n");
-      shrinking = false;
-    } else if (is_visible==false && num_times_horizontal_is_not_visible>50 && can_shrink==true){
-      shrinking = true;
-    }
-    
-    if (shrinking){
-      int old_size = minimumHeight();
-      int new_size = old_size-1;
-      if(new_size > 50){
-        setMinimumHeight(new_size);
-        window->must_redraw = true;
-        //printf(" adjust 2\n");
-      }
-      last_time_shrank = true;
-    }else
-      last_time_shrank = false;
-    
-  }
-#endif
-  
   void callSystemSliderpainterUpdateCallbacks(void){
     
     for(int system_effect=0 ; system_effect<NUM_SYSTEM_EFFECTS ; system_effect++){
@@ -912,7 +865,8 @@ private:
 
   
 public:
-  
+
+  // Note: May be called from the destructor (new_size_type=SIZETYPE_NORMAL when called from the destructor)
   void change_height(SizeType new_size_type){
     if (new_size_type==_size_type)
       return;
@@ -934,7 +888,6 @@ public:
     else
       show_large(new_size_type);
   }
-
 
   void hideEvent(QHideEvent * event){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -1372,6 +1325,12 @@ Sample_requester_widget *AUDIOWIDGET_get_sample_requester_widget(struct Patch *p
 void AUDIOWIDGET_change_height(struct Patch *patch, SizeType type){
   get_audio_instrument_widget(patch)->change_height(type);
 }
+
+/*
+SizeType AUDIOWIDGET_get_size_type(struct Patch *patch){
+  return get_audio_instrument_widget(patch)->_size_type;
+}
+*/
 
 void AUDIOWIDGET_set_ab(struct Patch *patch, int ab_num){
   auto *w = get_audio_instrument_widget(patch);
