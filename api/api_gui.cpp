@@ -154,8 +154,8 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 #define PAINT_OVERRIDER(classname)                                      \
   void paintEvent(QPaintEvent *ev) override {                           \
-    TRACK_PAINT();                                      \
     if(_image!=NULL){                                                   \
+      TRACK_PAINT();                                                    \
       QPainter p(this);                                                 \
       p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \
     }else{                                                              \
@@ -904,6 +904,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     
     void paintEvent(QPaintEvent *event) {
+      TRACK_PAINT();
+      
       R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL || _background_color.isValid());
 
       if(g_radium_runs_custom_exec){

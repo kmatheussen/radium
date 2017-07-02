@@ -1815,7 +1815,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   void paintEvent (QPaintEvent *ev) override {
     TRACK_PAINT();
-    
+
     if(g_radium_runs_custom_exec) return;
     if(g_is_loading) return;
     

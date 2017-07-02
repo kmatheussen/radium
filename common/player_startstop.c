@@ -403,7 +403,7 @@ void PlayRangeCurrPos(struct Tracker_Windows *window){
   PlayRangeCurrPos2(window, NULL);
 }
 
-static int g_playing_realline = 0;
+static int g_playing_realline = 0; // none of this stuff is necessary now since Play_get_curr_playing_realline isn't called anymore.
 static int g_playing_blocknum = 0;
 void Play_set_curr_playing_realline(int realline, int blocknum){
   g_playing_realline = realline;

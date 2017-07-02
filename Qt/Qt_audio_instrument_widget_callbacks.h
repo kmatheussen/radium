@@ -913,8 +913,10 @@ public:
 
     if (new_size_type==SIZETYPE_NORMAL)
       SEQUENCER_show_because_instrument_widget_is_large();
-    else
-      SEQUENCER_hide_because_instrument_widget_is_large();
+    else {
+      if (instrumentGuiIsInLowerTab())
+        SEQUENCER_hide_because_instrument_widget_is_large();
+    }
     
     if (new_size_type==SIZETYPE_NORMAL)
       show_small();
