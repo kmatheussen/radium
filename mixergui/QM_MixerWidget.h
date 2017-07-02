@@ -115,6 +115,11 @@ extern LANGSPEC void MW_set_rotate(float rotate);
 extern LANGSPEC void MW_update_mixer_widget(void);
 extern LANGSPEC void MW_disable_include_instrument_checkbox(void);
 extern LANGSPEC void MW_enable_include_instrument_checkbox(void);
+#if USE_QT4
+#include "../Qt/Qt_instruments_proc.h"
+#include <QWidget>
+extern void MW_instrument_widget_set_size(QWidget *audio_widget, SizeType old_size_type, SizeType new_size_type);
+#endif
 extern LANGSPEC void MW_hide_non_instrument_widgets(void);
 extern LANGSPEC void MW_show_non_instrument_widgets(void);
 

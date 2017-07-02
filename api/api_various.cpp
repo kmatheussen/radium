@@ -160,21 +160,21 @@ void setShowMixerStripDuringStartup(bool val){
 }
 
 
-static bool g_positionInstrumentWidgetInMixer = false;
+static bool g_instrumentWidgetIsInMixer = false;
 
-bool positionInstrumentWidgetInMixer(void){
+bool instrumentWidgetIsInMixer(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_positionInstrumentWidgetInMixer = SETTINGS_read_bool("position_instrument_widget_in_mixer", false);
+    g_instrumentWidgetIsInMixer = SETTINGS_read_bool("position_instrument_widget_in_mixer", false);
     has_inited = true;
   }
 
-  return g_positionInstrumentWidgetInMixer;
+  return g_instrumentWidgetIsInMixer;
 }
 
-void setPositionInstrumentWidgetInMixer(bool val){
-  g_positionInstrumentWidgetInMixer = val;
+void setInstrumentWidgetInMixer(bool val){
+  g_instrumentWidgetIsInMixer = val;
   SETTINGS_write_bool("position_instrument_widget_in_mixer", val);
 }
 

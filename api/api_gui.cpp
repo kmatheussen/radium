@@ -4498,10 +4498,6 @@ QWidget *API_get_lowertabs(void){
   return API_gui_get_widget(gui);
 }
 
-bool instrumentGuiIsInLowerTab(void){
-  return !positionInstrumentWidgetInMixer();
-}
-    
 void API_setLowertabIncludesInstrument(bool includeit){
   S7CALL2(void_bool, "FROM-C-set-lowertab-includes-instrument", includeit);
 }
@@ -4514,6 +4510,7 @@ void API_hideInstrumentGui(void){
   S7CALL2(void_void, "FROM-C-hide-instrument-gui");
 }
 
+// Returns true if the instrument widget is the current tab in the lower tabs.
 bool API_instrumentGuiIsVisibleInLowerTab(void){
   return S7CALL2(bool_void, "FROM-C-instrument-gui-is-visible");
 }

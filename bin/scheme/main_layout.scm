@@ -95,7 +95,7 @@
   
   (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-gui)
   
-  (if (not (<ra> :position-instrument-widget-in-mixer))
+  (if (not (<ra> :instrument-widget-is-in-mixer))
       (<gui> :add-tab *lowertab-gui* *instrument-gui-tab-name* instrument-gui))
   
   (<gui> :add-tab *lowertab-gui* *edit-gui-tab-name* *notem-gui*)
@@ -160,7 +160,7 @@
 
 (define (FROM-C-instrument-gui-is-visible)
   (define instr (<gui> :get-instrument-gui))
-  (if (<ra> :position-instrument-widget-in-mixer)
+  (if (<ra> :instrument-widget-is-in-mixer)
       (<gui> :is-visible instr)
       (lowertab-gui-is-visible instr)))
                   

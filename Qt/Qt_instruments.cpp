@@ -522,7 +522,7 @@ static void set_widget_height(int height){
 
 
 bool GFX_InstrumentWindowIsVisible(void){
-  if (positionInstrumentWidgetInMixer())
+  if (instrumentWidgetIsInMixer())
     return g_instruments_widget->isVisible();
   else
     return API_instrumentGuiIsVisibleInLowerTab();
@@ -539,7 +539,7 @@ void GFX_InstrumentWindowToFront(void){
   g_instruments_widget->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum); // might not be needed
   set_widget_height(120);
 
-  if (!positionInstrumentWidgetInMixer()){
+  if (!instrumentWidgetIsInMixer()){
     //EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
     //g_instruments_widget->setParent(editor->ysplitter);
     //editor->ysplitter->handle(2)->setEnabled(false);
@@ -557,7 +557,7 @@ void GFX_InstrumentWindowToFront(void){
     
     GFX_update_current_instrument_widget();
     
-    if(positionInstrumentWidgetInMixer() && GFX_MixerIsVisible()==false){
+    if(instrumentWidgetIsInMixer() && GFX_MixerIsVisible()==false){
       GFX_ShowMixer();
     }
     
@@ -567,7 +567,7 @@ void GFX_InstrumentWindowToFront(void){
 }
 
 void GFX_InstrumentWindowToBack(void){
-  if (!positionInstrumentWidgetInMixer()) {
+  if (!instrumentWidgetIsInMixer()) {
     
     API_hideInstrumentGui();
     

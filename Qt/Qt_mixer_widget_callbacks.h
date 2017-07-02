@@ -145,9 +145,9 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     
     connections_visibility->setChecked(MW_get_connections_visibility());
 
-    if (positionInstrumentWidgetInMixer()){
+    if (instrumentWidgetIsInMixer()){
       verticalLayout->addWidget(getInstrumentsWidget(), 0);
-      include_instrument_widget->setChecked(positionInstrumentWidgetInMixer());
+      include_instrument_widget->setChecked(instrumentWidgetIsInMixer());
       //getInstrumentsWidget()->show();
     }
       
@@ -514,7 +514,7 @@ public slots:
       verticalLayout->insertWidget(verticalLayout->count()-1, getInstrumentsWidget(), 0);
     }
 
-    setPositionInstrumentWidgetInMixer(include_instrument_widget);
+    setInstrumentWidgetInMixer(include_instrument_widget);
       
     GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
     
@@ -636,7 +636,16 @@ void MW_disable_include_instrument_checkbox(void){
 void MW_enable_include_instrument_checkbox(void){
   g_mixer_widget2->include_instrument_widget->setEnabled(true);
 }
- 
+
+void MW_instrument_widget_set_size(QWidget *audio_widget, SizeType old_size_type, SizeType new_size_type){
+  R_ASSERT_RETURN_IF_FALSE(instrumentWidgetIsInMixer());
+
+  if (new_size_type==SIZETYPE_HALF){
+    g_mixer_widget2->verticalLayout->setStretchFactor(getInstrumentsWidget(),1);
+  } else {
+    g_mixer_widget2->verticalLayout->setStretchFactor(getInstrumentsWidget(),0);
+  }
+}
 
 void MW_hide_non_instrument_widgets(void){
   if (g_mixer_widget2->_mixer_strips_gui != -1){
