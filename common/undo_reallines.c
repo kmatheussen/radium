@@ -26,6 +26,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "undo_reallines_proc.h"
 
+struct Undo_Reallines{
+  struct LocalZooms *localzooms;
+  int line_zoom;
+};
+
 
 static void *Undo_Do_Reallines(
 	struct Tracker_Windows *window,
@@ -37,24 +42,28 @@ static void *Undo_Do_Reallines(
 
 
 void ADD_UNDO_FUNC(Reallines(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	NInt tracknum,
-	int realline
+                             struct Tracker_Windows *window,
+                             struct WBlocks *wblock,
+                             NInt tracknum,
+                             int realline
                              ))
 {
-	struct LocalZooms *tolocalzoom=NULL;
-	CB_CopyLocalZoomsRec(&tolocalzoom,wblock->localzooms);
+  struct Undo_Reallines *u_r = talloc(sizeof(struct Undo_Reallines));
 
-	Undo_Add_dont_stop_playing(
-                                   window->l.num,
-                                   wblock->l.num,
-                                   tracknum,
-                                   realline,
-                                   tolocalzoom,
-                                   Undo_Do_Reallines,
-                                   "Reallines (localzooms)"
-                                   );
+  u_r->localzooms=NULL;
+  CB_CopyLocalZoomsRec(&u_r->localzooms,wblock->localzooms);
+
+  u_r->line_zoom = GetLineZoomBlock(wblock);
+  
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             wblock->l.num,
+                             tracknum,
+                             realline,
+                             u_r,
+                             Undo_Do_Reallines,
+                             "Reallines (localzooms)"
+                             );
 }
 
 void ADD_UNDO_FUNC(Reallines_CurrPos(
@@ -72,18 +81,24 @@ static void *Undo_Do_Reallines(
 	int realline,
 	void *pointer
 ){
-	struct LocalZooms *undo_localzooms=(struct LocalZooms *)pointer;
-	struct LocalZooms *temp=wblock->localzooms;
+  struct Undo_Reallines *u_r = pointer;
 
-        {
-          wblock->localzooms=undo_localzooms;
-          
-          UpdateRealLines(window,wblock);
-          
-          UpdateReallinesDependens(window,wblock);
-        }
+  int old_line_zoom = GetLineZoomBlock(wblock);
+  struct LocalZooms *old_localzooms=wblock->localzooms;
 
-	return temp;
+  {
+    wblock->localzooms=u_r->localzooms;
+    wblock->num_expand_lines = u_r->line_zoom;
+    
+    UpdateRealLines(window,wblock);
+    
+    UpdateReallinesDependens(window,wblock);
+  }
+
+  u_r->line_zoom = old_line_zoom;
+  u_r->localzooms = old_localzooms;
+  
+  return u_r;
 }
 
 
