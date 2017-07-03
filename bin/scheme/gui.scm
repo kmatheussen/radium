@@ -270,11 +270,12 @@
                :finally (lambda ()
                           (<gui> :enable-updates gui))))
 
-(define (reopen-gui-at-curr-pos gui)
+(delafina (reopen-gui-at-curr-pos :gui
+                                  :parentgui -2)
   (disable-gui-updates-block
    gui
    (lambda ()
-     (let ((changed-parent (<gui> :set-parent gui -2)))
+     (let ((changed-parent (<gui> :set-parent gui parentgui)))
        (c-display "                  CHANGED-PARENT " changed-parent)
        (if (not (<gui> :is-visible gui))
            (<gui> :show gui))

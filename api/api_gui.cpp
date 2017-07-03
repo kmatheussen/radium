@@ -169,6 +169,8 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 #define SETVISIBLE_OVERRIDER(classname)                                 \
   void setVisible(bool visible) override {                              \
+    if (_has_been_opened_before == false)                               \
+      _has_been_opened_before = true;                                   \
     remember_geometry.setVisible_override<classname>(this, visible);    \
   }
 
@@ -540,7 +542,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     bool _is_modal = false; // We need to remember whether modality should be on or not, since modality is a parameter for set_window_parent.
     bool _have_set_size = false;
-    bool _have_been_opened_before = false;
+    bool _has_been_opened_before = false;
 
     QString _class_name;
     bool _is_pure_qwidget;
@@ -564,9 +566,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       g_valid_guis.push_back(this);
       
       if (!_created_from_existing_widget){
+#if 0
+        // screws up mixer. Don't know why. (Press "M" two times)
         auto policy = _widget->sizePolicy();
-        //policy.setRetainSizeWhenHidden(true); // screws up mixer. Don't know why. (Press "M" two times)
+        policy.setRetainSizeWhenHidden(true);
         _widget->setSizePolicy(policy);
+#endif
         _widget->setAttribute(Qt::WA_DeleteOnClose);
       }
       //_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -632,6 +637,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       _valid_guis_pos = new_pos;
       g_valid_guis[new_pos] = this;
+    }
+
+    bool size_is_valid(void){
+      if (_have_set_size==false && _has_been_opened_before==false)
+        return false;
+      else
+        return true;
     }
 
     template<typename T>
@@ -1079,12 +1091,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if(align_top)
         flags |= Qt::AlignTop;
       else
-        flags |= Qt::AlignHCenter;
+        flags |= Qt::AlignVCenter;
 
       if(align_left)
         flags |= Qt::AlignLeft;
       else
-        flags |= Qt::AlignVCenter;
+        flags |= Qt::AlignHCenter;
 
       if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
         painter->setFont(GFX_getFittingFont(text, flags, y2-y1, x2-x1));
@@ -2154,9 +2166,23 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   };
 
   struct Text : QLabel, Gui{
-    Text(QString text, const_char* colorname)
+    Text(QString text, const_char* colorname, bool align_top, bool align_left)
       : Gui(this)
     {
+      Qt::Alignment flags = Qt::AlignJustify;
+
+      if(align_top)
+        flags |= Qt::AlignTop;
+      else
+        flags |= Qt::AlignVCenter;
+
+      if(align_left)
+        flags |= Qt::AlignLeft;
+      else
+        flags |= Qt::AlignHCenter;
+
+      setAlignment(flags);
+
       if (!strcmp(colorname,""))
         setText(text);
       else {
@@ -2944,8 +2970,8 @@ int64_t gui_horizontalScroll(void){
   return (new HorizontalScroll())->get_gui_num();
 }
 
-int64_t gui_text(const_char* text, const_char* color){
-  return (new Text(text, color))->get_gui_num();
+int64_t gui_text(const_char* text, const_char* color, bool align_top, bool align_left){
+  return (new Text(text, color, align_top, align_left))->get_gui_num();
 }
 
 int64_t gui_textEdit(const_char* content, bool read_only){
@@ -3663,12 +3689,12 @@ void gui_show(int64_t guinum){
 
   QWidget *w = gui->_widget;
 
-  if (gui->_have_set_size==false && gui->_have_been_opened_before==false){
+  if (!gui->size_is_valid()){
     w->adjustSize();
     w->updateGeometry();
   }
   
-  gui->_have_been_opened_before = true;
+  gui->_has_been_opened_before = true;
   
   //pauseUpdates(w);
 
@@ -3823,6 +3849,9 @@ int gui_width(int64_t guinum){
   if (gui==NULL)
     return 0;
 
+  if (!gui->size_is_valid())
+    gui->_widget->adjustSize();
+
   return gui->_widget->width();
 }
 
@@ -3830,6 +3859,9 @@ int gui_height(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return 0;
+
+  if (!gui->size_is_valid())
+    gui->_widget->adjustSize();
 
   QScrollArea *area = dynamic_cast<QScrollArea*>(gui->_widget.data());
   if (area!=NULL){
@@ -3843,6 +3875,7 @@ int gui_height(int64_t guinum){
     }
   }else{
     //printf("   NOT A SCROLL AREA\n");
+
     return gui->_widget->height();
   }
 }

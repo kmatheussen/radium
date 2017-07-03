@@ -323,7 +323,7 @@
                            ,arguments))
                      
      (define (,(<_> 'make- name '-nokeywords) ,@(map car (keyvalues-to-define-args args)))
-       (let* ((,table (make-hash-table ,keys-length (cons eq2? ,struct-mapper)))
+       (let* ((,table (make-hash-table ,keys-length (cons eq? ,struct-mapper)))
               (,keysvar (quote ,keys)))
          ,@(map (lambda (key)
                   `(hash-table-set! ,table ,(symbol->keyword key) ,key))
@@ -335,7 +335,7 @@
                 `(if (eq? ,(car must-be-defined) 'must-be-defined)
                      (error 'missing-key-when-making-struct ,(<-> "key '" (car must-be-defined) "' not defined when making struct '" name "'"))))
               must-be-defined)
-       (let* ((,table (make-hash-table ,keys-length (cons eq2? ,struct-mapper)))
+       (let* ((,table (make-hash-table ,keys-length (cons eq? ,struct-mapper)))
               (,keysvar (quote ,keys)))
          ,@(map (lambda (key)
                   `(hash-table-set! ,table ,(symbol->keyword key) ,key))
