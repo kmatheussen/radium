@@ -283,6 +283,68 @@
                 (would-this-create-a-recursive-connection? from-id to-id)))
           (get-all-audio-instruments)))
 
+
+;; Finds the next plugin in a plugin path. 'instrument-id' is the plugin to start searching from.
+(define-instrument-memoized (find-next-plugin-instrument-in-path instrument-id)
+  (let loop ((out-instruments (reverse (sort-instruments-by-mixer-position
+                                        (get-instruments-connecting-from-instrument instrument-id)))))
+    (if (null? out-instruments)
+        #f
+        (let ((out-instrument (car out-instruments)))
+          (if (= 1 (<ra> :get-num-in-audio-connections out-instrument))
+              out-instrument
+              (loop (cdr out-instruments)))))))
+
+                                              
+(define-instrument-memoized (find-all-plugins-used-in-mixer-strip instrument-id)
+1  (define next (find-next-plugin-instrument-in-path instrument-id))
+  (if next
+      (cons next
+            (find-all-plugins-used-in-mixer-strip next))
+      '()))
+
+(define-struct cat-instruments
+  :no-input-or-outputs
+  :instruments
+  :instrument-plugins
+  :buses
+  :buses-plugins)
+
+(define-instrument-memoized (get-cat-instruments)
+  (define instruments '())
+  (define no-inputs-or-outputs '())
+  
+  (for-each (lambda (id)
+              (if (or (> (<ra> :get-num-input-channels id)
+                         0)
+                      (> (<ra> :get-num-output-channels id)
+                         0))
+                  (push! instruments id)
+                  (push! instruments-no-inputs-or-outputs id)))
+            (get-all-instruments-with-no-input-connections))
+  
+  (define instrument-plugin-buses (apply append (map (lambda (instrument-id)
+                                                       (get-returned-plugin-buses instrument-id))
+                                                     instruments)))
+  
+  (define buses (append (get-all-instruments-with-at-least-two-input-connections)
+                        (get-buses)))
+  
+  (define buses-plugin-buses (apply append (map (lambda (instrument-id)
+                                                  (get-returned-plugin-buses instrument-id))
+                                                (append buses
+                                                        instrument-plugin-buses))))
+  (define all-buses (append instrument-plugin-buses
+                            buses
+                            buses-plugin-buses))
+  
+  (make-cat-instruments :no-input-or-outputs no-inputs-or-outputs
+                        :instruments instruments
+                        :instrument-plugins (apply append (map find-all-plugins-used-in-mixer-strip instruments))
+                        :buses all-buses
+                        :buses-plugins (apply append (map find-all-plugins-used-in-mixer-strip all-buses))))
+
+
 (define (move-connections-to-new-instrument id-old-instrument id-new-instrument)
   (define changes '())
   

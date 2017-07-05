@@ -47,7 +47,7 @@ static QPoint getCentrePosition(QWidget *parent, int width, int height, QRect pa
       // Move to middle of screen instead.
       parentRect = QApplication::desktop()->availableGeometry();
     else
-      parentRect = parent->geometry();
+      parentRect = parent->window()->geometry();
     
   }
   

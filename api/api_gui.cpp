@@ -3909,7 +3909,7 @@ void gui_moveToCentreOf(int64_t guinum, int64_t window_to_move_in_centre_of){
 
   w->updateGeometry();
     
-  moveWindowToCentre(w, of->_widget->rect());
+  moveWindowToCentre(w, of->_widget->window()->geometry());
 }
 
 void gui_moveToParentCentre(int64_t guinum){
