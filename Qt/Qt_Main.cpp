@@ -2078,6 +2078,7 @@ void GFX_EditorWindowToFront(struct Tracker_Windows *tvisual){
   OS_SYSTEM_ResetKeysUpDowns();
 }
 
+#if 0
 void assertRadiumInHomeDirectory(void){
   
   QString program_path = QCoreApplication::applicationDirPath();
@@ -2118,6 +2119,7 @@ void assertRadiumInHomeDirectory(void){
                 );
 #endif
 }
+#endif
 
 
 
@@ -2525,9 +2527,9 @@ int radium_main(char *arg){
   
   show_nag_window("");
 
-
+#if 0
   assertRadiumInHomeDirectory();
-
+#endif
 
   UPDATECHECKER_doit();
   
