@@ -698,7 +698,7 @@ public:
   }
   
   void paint(const QRect &update_rect, QPainter &p) { // QPaintEvent * ev ) override {    
-    if(g_radium_runs_custom_exec) return;
+    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
     if(g_is_loading) return;
     
     //printf("  PAINTING %d %d -> %d %d\n",t_x1,t_y1,t_x2,t_y2);
@@ -1081,7 +1081,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
 
-    if(g_radium_runs_custom_exec) return;
+    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
     
     QPainter p(this);
 
@@ -1344,7 +1344,7 @@ public:
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
     
-    if(g_radium_runs_custom_exec) return;
+    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
     if(g_is_loading) return;
     
     QPainter p(this);
@@ -1527,7 +1527,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void resizeEvent( QResizeEvent *qresizeevent) override {
-    if(g_radium_runs_custom_exec) return;
+    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
     if(g_is_loading) return;
     
     //  set_end_time();
@@ -1626,7 +1626,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   void call_very_often(void){
 
-    if (g_radium_runs_custom_exec) // Avoids unpainted areas when showing sync widgets.
+    if (g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) // Avoids unpainted areas when showing sync widgets.
       return;
       
     if (_song_tempo_automation_was_visible != _songtempoautomation_widget.is_visible){
@@ -1816,7 +1816,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   void paintEvent (QPaintEvent *ev) override {
     TRACK_PAINT();
 
-    if(g_radium_runs_custom_exec) return;
+    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
     if(g_is_loading) return;
     
     QPainter p(this);

@@ -864,7 +864,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void resizeEvent(QResizeEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
 
-      if(g_radium_runs_custom_exec)
+      if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint)
         return;
 
       if (_resize_callback_failed){
@@ -920,7 +920,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       
       R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL || _background_color.isValid());
 
-      if(g_radium_runs_custom_exec){
+      if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint){
         maybePaintBackgroundColor(event);
         return;
       }

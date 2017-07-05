@@ -810,8 +810,10 @@ static int GFX_Message(vector_t *buttons, QString message){
 #if PUT_ON_TOP
   RememberGeometryQDialog::num_open_dialogs++;
 #endif
-  
-  safeExec(msgBox);
+
+  {
+    safeExec(msgBox);
+  }
   
 #if PUT_ON_TOP
   RememberGeometryQDialog::num_open_dialogs--;

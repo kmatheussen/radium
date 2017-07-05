@@ -26,6 +26,7 @@
 #define PUT_ON_TOP 0
 
 extern bool g_radium_runs_custom_exec;
+extern bool g_and_its_not_safe_to_paint;
 
 extern void set_editor_focus(void);
 

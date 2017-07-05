@@ -291,7 +291,10 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   //gotchar('b');
 
   {
+    g_and_its_not_safe_to_paint = false;
+    
     radium::ScopedExec scoped_exec;
+
     
     while(edit->gotit==false){
       // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
@@ -310,6 +313,8 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
       
       msleep(10);
     }
+
+    g_and_its_not_safe_to_paint = true;
   }
   
 #endif
