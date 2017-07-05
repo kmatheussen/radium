@@ -242,11 +242,11 @@ void GFX_ScheduleRedrawEditor(void){
 struct TEvent tevent={}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
 void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
-  if(ATOMIC_GET(is_starting_up)==true)
+    if(ATOMIC_GET(is_starting_up)==true)
       return;
-
-  if (MIXER_is_saving())
-    return;
+ 
+    if (MIXER_is_saving())
+      return;
 
        
     //struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);

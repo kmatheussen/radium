@@ -9,7 +9,7 @@
 enum GridType{
   NO_GRID = 0,
   BAR_GRID = 1,
-  BEAT_GRID = 1
+  BEAT_GRID = 2
 };
 
 

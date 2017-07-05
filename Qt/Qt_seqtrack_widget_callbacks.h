@@ -1456,7 +1456,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   double _end_time = 600; // abstime
   double _samples_per_pixel;
 
-  enum GridType _grid_type;
+  enum GridType _grid_type = NO_GRID;
 
   const int bottom_height = 30;
   SongTempoAutomation_widget _songtempoautomation_widget;

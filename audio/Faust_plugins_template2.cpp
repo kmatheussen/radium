@@ -771,8 +771,8 @@ static void set_effect_value2(Data *data, int effect_num, float value, enum Valu
     Voice *voice = &data->voices[i];
     if(voice->dsp_instance==NULL) // an effect
       break;
-      MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
-      safe_float_write(controller->control_port, scaled_value);
+    MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);
+    safe_float_write(controller->control_port, scaled_value);
   }
   
 }

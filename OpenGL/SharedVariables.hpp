@@ -56,7 +56,10 @@ SharedVariables::~SharedVariables(){
 
     bool is_main_thread = THREADING_is_main_thread();
     
-    if(!is_main_thread)Threadsafe_GC_disable();{ // Disable garbage collector since we modify gc memory from another thread. (I wouldn't be surprised if turning off the GC here would only be useful once in a million years, or never.)
+    if(!is_main_thread)
+      Threadsafe_GC_disable();
+
+    { // Disable garbage collector since we modify gc memory from another thread. (I wouldn't be surprised if turning off the GC here would only be useful once in a million years, or never.)
 
       VECTOR_remove(&g_shared_variables_gc_storage, this->root);
       VECTOR_remove(&g_shared_variables_gc_storage, this->times);
@@ -64,9 +67,11 @@ SharedVariables::~SharedVariables(){
       VECTOR_remove(&g_shared_variables_gc_storage, this->block);
       VECTOR_remove(&g_shared_variables_gc_storage, this->curr_playing_block);
 
-      VECTOR_remove(&g_shared_variables_gc_storage, this->reallines);
-      
-    }if(!is_main_thread)Threadsafe_GC_enable();
+      VECTOR_remove(&g_shared_variables_gc_storage, this->reallines);      
+    }
+
+    if(!is_main_thread)
+      Threadsafe_GC_enable();
   }
 }
 

@@ -360,12 +360,12 @@ public:
   SliderPainter *_input_slider;
   SliderPainter *_output_slider;
 
-  bool _last_updated_mute;
-  bool _last_updated_implicitly_mute;
-  bool _last_updated_solo;
-  bool _last_updated_bypass;
-  bool _last_updated_recording;
-  bool _last_updated_autosuspending;
+  bool _last_updated_mute = false;
+  bool _last_updated_implicitly_mute = false;
+  bool _last_updated_solo = false;
+  bool _last_updated_bypass = false;
+  bool _last_updated_recording = false;
+  bool _last_updated_autosuspending = false;
   int64_t _autosuspend_on_time = 0;
   
   float _slider_start_value;

@@ -81,7 +81,8 @@ strip:
 $(OBJDIR)/Juce_plugins_6c083ccb.o: ../../../audio/Juce_plugins.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling Juce_plugins.cpp"
-	@$(CXX) $(CXXFLAGS) -Wall -Werror -o "$@" -c "$<"
+	@$(CXX) $(CXXFLAGS) -Wall -o "$@" -c "$<"
+#-Werror
 
 $(OBJDIR)/juce_audio_basics_2442e4ea.o: ../../JuceLibraryCode/modules/juce_audio_basics/juce_audio_basics.cpp
 	-@mkdir -p $(OBJDIR)

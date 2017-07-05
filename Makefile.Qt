@@ -43,6 +43,13 @@ OPTIMIZE ?= -O2
 #----------------END USER SETTINGS---------------------------
 
 
+GCC_VERSION:=$(shell gcc -dumpversion)
+GCC_MAJOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f1)
+GCC_MINOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f2)
+GCC_SUB:=$(shell echo $(GCC_VERSION) | cut -d'.' -f3)
+
+
+
 
 #----------------DEFININTIONS----------------------
 
@@ -153,11 +160,16 @@ FULL_VERSION ?= 1
 
 #UNDEFINED_SANITIZE_OPTS= -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=object-size -fsanitize=vptr -fno-sanitize-recover
 #  -fsanitize=alignment
-#UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
+
+ifeq ($(GCC_MAJOR),7)
+	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
+else
+	UNDEFINED_SANITIZE_OPTS=
+endif
 
 # clang:
 #UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer
-UNDEFINED_SANITIZE_OPTS=
+#UNDEFINED_SANITIZE_OPTS=
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
 # "-Og" very often destroys debugging (it's not supposed to, but it's a very new option), but without it things are too slow (well, it's already too slow, but -Og helps a lot).
@@ -171,12 +183,6 @@ ADDRESS_SANITIZE_OPTS=-fsanitize=address
 # Note that "make clean" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
 OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS)
 DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
-
-
-GCC_VERSION:=$(shell gcc -dumpversion)
-GCC_MAJOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f1)
-GCC_MINOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f2)
-GCC_SUB:=$(shell echo $(GCC_VERSION) | cut -d'.' -f3)
 
 
 ifneq (,$(findstring clang,$(CC)))
@@ -1694,7 +1700,12 @@ Pd_plugin.o: audio/Pd_plugin.cpp
 	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture # -fno-sanitize=signed-integer-overflow 
+FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture
+
+ifeq ($(GCC_MAJOR),7)
+	FAUST_OPTS += -D_GLIBCXX_USE_CXX11_ABI=0 -fno-sanitize=signed-integer-overflow
+endif	
+
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
@@ -2145,10 +2156,18 @@ bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 scheme.o: embedded_scheme/scheme.cpp $(API)radium_proc.h
 	$(CCC) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
 
-QHTTPSERVERFLAGS = $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT #-fno-sanitize=undefined
+QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT #-fno-sanitize=undefined
+
+ifeq ($(GCC_MAJOR),7)
+	QHTTPCONNECTIONFLAGS= -fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
+	HTTPPARSERFLAGS=-Wno-implicit-fallthrough
+else
+	QHTTPCONNECTIONFLAGS=
+	HTTPPARSERFLAGS=
+endif
 
 qhttpconnection.o: bin/packages/qhttpserver-master/src/qhttpconnection.cpp
-	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS)
+	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS) #$(QHTTPCONNECTIONFLAGS)
 qhttprequest.o: bin/packages/qhttpserver-master/src/qhttprequest.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/src/qhttprequest.cpp $(QHTTPSERVERFLAGS)
 qhttpresponse.o: bin/packages/qhttpserver-master/src/qhttpresponse.cpp
@@ -2166,7 +2185,7 @@ moc_qhttpserver.o: bin/packages/qhttpserver-master/build/moc_qhttpserver.cpp
 #ar cqs libqhttpserver.a qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o
 
 http_parser.o: bin/packages/qhttpserver-master/http-parser/http_parser.c
-	$(CC) -c bin/packages/qhttpserver-master/http-parser/http_parser.c $(OPT)
+	$(CC) -c bin/packages/qhttpserver-master/http-parser/http_parser.c $(OPT) $(HTTPPARSERFLAGS)
 
 radium_s7_wrap.o: api/radium_s7_wrap.c $(API)radium_proc.h
 	$(CC) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7

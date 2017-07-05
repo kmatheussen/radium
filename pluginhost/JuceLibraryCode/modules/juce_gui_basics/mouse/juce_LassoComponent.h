@@ -25,6 +25,7 @@
 #ifndef JUCE_LASSOCOMPONENT_H_INCLUDED
 #define JUCE_LASSOCOMPONENT_H_INCLUDED
 
+//#include "../lookandfeel/juce_LookAndFeel.h"
 
 //==============================================================================
 /**

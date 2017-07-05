@@ -782,7 +782,7 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
     R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&seqtrack_here->seqblocks, seqblock), 0);
   }END_VECTOR_FOR_EACH;
 
-  int64_t abstimes[seqtrack->seqblocks.num_elements];
+  int64_t abstimes[R_MAX(1, seqtrack->seqblocks.num_elements)]; // arrays of size 0 causes ubsan hit
 
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     abstimes[iterator666] = get_abstime_from_seqtime(seqtrack, NULL, seqblock->time);
