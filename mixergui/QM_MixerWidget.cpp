@@ -1244,6 +1244,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int cut = -1;
   int delete_ = -1;
   int save = -1;
+  int show_mixer_strips = -1;
   int config_color = -1;
   int instrument_info = -1;
   int random = -1;
@@ -1277,6 +1278,8 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     delete_ = VECTOR_push_back(&v, "Delete"); // sound objects");
     VECTOR_push_back(&v, "--------");
     save = VECTOR_push_back(&v, "Save multi preset (.mrec)");
+    VECTOR_push_back(&v, "--------");
+    show_mixer_strips = VECTOR_push_back(&v, "Show mixer strips");
     VECTOR_push_back(&v, "--------");
     solo = VECTOR_push_back(&v, "Solo all selected");
     unsolo = VECTOR_push_back(&v, "Un-solo all selected");
@@ -1396,6 +1399,17 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
     PRESET_save(&patches, false, parentguinum);
 
+  } else if (sel==show_mixer_strips) {
+
+    int num_rows = R_BOUNDARIES(1, 1 + (patches.num_elements / 6), 3);
+    dynvec_t instruments = {};
+    
+    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+      DYNVEC_push_back(&instruments, DYN_create_int(patch->id));
+    }END_VECTOR_FOR_EACH;
+    
+    showMixerStrips2(num_rows, DYN_create_array(instruments));
+    
   } else if (sel==config_color) {
 
     QString command = QString("(show-instrument-color-dialog ") + QString::number(parentguinum) + " " + QString::number(CHIP_get_patch(chip_under)->id);

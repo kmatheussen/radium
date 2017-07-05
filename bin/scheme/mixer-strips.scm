@@ -309,10 +309,15 @@
                                                  is-instrument
                                                  is-bus)))                                                 
                         (is-enabled (get-bool (if first-time
-                                                  (or is-instrument
-                                                      is-bus)
-                                                  (or (not (confs id))
-                                                      (confs id :is-enabled))))))
+                                                  (if instrument-ids
+                                                      (memv id instrument-ids)
+                                                      (or is-instrument
+                                                          is-bus))
+                                                  (if instrument-ids
+                                                      (and (confs id)
+                                                           (confs id :is-enabled))
+                                                      (or (not (confs id))
+                                                          (confs id :is-enabled)))))))
                    (when is-enabled
                      (if is-instrument
                          (push! instruments id))
@@ -2045,10 +2050,9 @@
   ;;(c-display "...scan1")
   (strips-config :scan-instruments!)
 
-  (define instruments (strips-config :instruments))
-  (define all-buses (strips-config :buses))
-
-  (define num-visible-strips (length (append instruments all-buses)))
+  (define num-visible-strips (length (keep (lambda (id)
+                                             (strips-config :is-enabled id))
+                                           (get-all-audio-instruments))))
 
   (define min-mixer-strip-width (1+ (floor (max (<gui> :text-width " -14.2 -23.5 ")
                                                 (<gui> :text-width " Mute Solo ")))))
@@ -2113,6 +2117,12 @@
                                    :instrument-ids #f
                                    :is-full-screen #f
                                    :pos #f)
+  
+  (set! instrument-ids (to-list instrument-ids))
+  
+  (c-display "   IDS:" instrument-ids num-rows)
+  ;;(set! instrument-ids #f)
+  
   ;;(define parent (<gui> :horizontal-layout))
   ;;(define parent (<gui> :scroll-area #t #t))
   ;;(define parent (<gui> :widget))

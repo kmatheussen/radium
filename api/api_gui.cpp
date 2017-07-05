@@ -4318,19 +4318,22 @@ void informAboutGuiBeingAMixerStrips(int64_t guinum){
   g_mixerstrip_guinums.push_back(guinum);
 }
 
-int64_t createMixerStripsWindow(int num_rows){
-  return S7CALL2(int_int, "create-mixer-strips-gui", num_rows);
-}
-
-int64_t createCustomMixerStripsWindow(int num_rows, dyn_t instrument_ids){
+int64_t gui_createMixerStrips(int num_rows, dyn_t instrument_ids){
+  if (instrument_ids.type==UNINITIALIZED_TYPE)
+    instrument_ids = DYN_create_bool(false);
+  
   return S7CALL2(int_int_dyn, "create-mixer-strips-gui", num_rows, instrument_ids);
 }
 
-int64_t showMixerStrips(int num_rows){
-  int64_t gui = createMixerStripsWindow(num_rows);
+int64_t showMixerStrips2(int num_rows, dyn_t instrument_ids){
+  int64_t gui = gui_createMixerStrips(num_rows, instrument_ids);
   if (gui!=-1)
     gui_show(gui);
   return gui;
+}
+
+int64_t showMixerStrips(int num_rows){
+  return showMixerStrips2(num_rows, g_uninitialized_dyn);
 }
 
 QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void){ 

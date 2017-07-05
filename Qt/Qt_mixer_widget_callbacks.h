@@ -235,7 +235,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
       _num_rows = num_rows;
       int64_t old_gui = _mixer_strips_gui;
       if (old_gui != -1){
-        _mixer_strips_gui = createMixerStripsWindow(num_rows);
+        _mixer_strips_gui = gui_createMixerStrips(num_rows, g_uninitialized_dyn);
         QWidget *w = API_gui_get_widget(_mixer_strips_gui);
         auto *old_item = verticalLayout->replaceWidget(API_gui_get_widget(old_gui), w);
         verticalLayout->setStretchFactor(w,1);
@@ -474,7 +474,7 @@ public slots:
     } else {
 
       if (_mixer_strips_gui == -1){
-        _mixer_strips_gui = createMixerStripsWindow(_num_rows);
+        _mixer_strips_gui = gui_createMixerStrips(_num_rows, g_uninitialized_dyn);
         if (_mixer_strips_gui != -1){
           show_modular_mixer_widgets(false);
           QWidget *w = API_gui_get_widget(_mixer_strips_gui);
