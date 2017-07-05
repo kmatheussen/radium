@@ -455,12 +455,17 @@ static inline void pauseUpdates(QWidget *w, int ms = 50){
   new PauseUpdatesTimer(w, ms);
 }
 
-static inline void updateWidgetRecursively(QWidget *widget){
-  if (widget != NULL){
-    widget->update();
+static inline void updateWidgetRecursively(QObject *object){
+  if (object != NULL){
+
+    QWidget *w = dynamic_cast<QWidget*>(object);
+    if (w!=NULL){
+      //printf("Updating %p. (%s)\n", w, w->metaObject()->className());
+      w->update();
+    }
     
-    for(auto *c : widget->children())
-      updateWidgetRecursively(dynamic_cast<QWidget*>(c));
+    for(auto *c : object->children())
+      updateWidgetRecursively(c);
   }
 }
 
@@ -639,7 +644,6 @@ struct ScopedExec{
     : _lock(lock)
   {      
     obtain_keyboard_focus();
-    
     g_radium_runs_custom_exec = true;
     
     GFX_HideProgress();
@@ -651,11 +655,12 @@ struct ScopedExec{
   ~ScopedExec(){
     if (_lock)
       GL_unlock();
-    
     GFX_ShowProgress();
-    
     g_radium_runs_custom_exec = false;
-    
+
+    for(auto *window : QApplication::topLevelWidgets())
+      updateWidgetRecursively(window);
+
     release_keyboard_focus();
   }
 };
