@@ -297,11 +297,46 @@
 
                                               
 (define-instrument-memoized (find-all-plugins-used-in-mixer-strip instrument-id)
-1  (define next (find-next-plugin-instrument-in-path instrument-id))
+  (define next (find-next-plugin-instrument-in-path instrument-id))
   (if next
       (cons next
             (find-all-plugins-used-in-mixer-strip next))
       '()))
+
+(define-instrument-memoized (find-all-nonbus-plugins-used-in-mixer-strip instrument-id)
+  (define next (find-next-plugin-instrument-in-path instrument-id))
+  (if (and next
+           (not (memv next (get-buses))))
+      (cons next
+            (find-all-plugins-used-in-mixer-strip next))
+      '()))
+
+;; Returns a list of parallel plugins that needs their own mixer strip.
+(define-instrument-memoized (get-returned-plugin-buses instrument-id)
+  (define returned-plugin-buses '())
+
+  (define out-instruments (sort-instruments-by-mixer-position ;; Needs to be sorted.
+                           (get-instruments-connecting-from-instrument instrument-id)))
+
+  (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
+
+  (define ret (keep (lambda (out-instrument)
+                      (if (= 1 (<ra> :get-num-in-audio-connections out-instrument))
+                          (if (not next-plugin-instrument)
+                              #t
+                              (if (= next-plugin-instrument out-instrument)
+                                  #f
+                                  #t))
+                          #f))
+                               
+                    out-instruments))
+
+  (if next-plugin-instrument
+      (append ret 
+              (get-returned-plugin-buses next-plugin-instrument))
+      ret))
+
+
 
 (define-struct cat-instruments
   :no-input-or-outputs
@@ -313,7 +348,9 @@
 (define-instrument-memoized (get-cat-instruments)
   (define instruments '())
   (define no-inputs-or-outputs '())
-  
+
+  (define pure-buses (get-buses))
+
   (for-each (lambda (id)
               (if (or (> (<ra> :get-num-input-channels id)
                          0)
@@ -322,25 +359,26 @@
                   (push! instruments id)
                   (push! instruments-no-inputs-or-outputs id)))
             (get-all-instruments-with-no-input-connections))
-  
+
   (define instrument-plugin-buses (apply append (map (lambda (instrument-id)
                                                        (get-returned-plugin-buses instrument-id))
                                                      instruments)))
-  
+
   (define buses (append (get-all-instruments-with-at-least-two-input-connections)
-                        (get-buses)))
+                        pure-buses))
   
   (define buses-plugin-buses (apply append (map (lambda (instrument-id)
                                                   (get-returned-plugin-buses instrument-id))
                                                 (append buses
                                                         instrument-plugin-buses))))
-  (define all-buses (append instrument-plugin-buses
+  
+  (define all-buses (append instrument-plugin-buses ;; Not sure if there could be duplicates here.
                             buses
                             buses-plugin-buses))
   
   (make-cat-instruments :no-input-or-outputs no-inputs-or-outputs
                         :instruments instruments
-                        :instrument-plugins (apply append (map find-all-plugins-used-in-mixer-strip instruments))
+                        :instrument-plugins (apply append (map find-all-nonbus-plugins-used-in-mixer-strip instruments))
                         :buses all-buses
                         :buses-plugins (apply append (map find-all-plugins-used-in-mixer-strip all-buses))))
 

@@ -1153,32 +1153,6 @@
                            replace))
 
 
-;; Returns a list of parallel plugins that needs their own mixer strip.
-(define-instrument-memoized (get-returned-plugin-buses instrument-id)
-  (define returned-plugin-buses '())
-
-  (define out-instruments (sort-instruments-by-mixer-position ;; Needs to be sorted.
-                           (get-instruments-connecting-from-instrument instrument-id)))
-
-  (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
-
-  (define ret (keep (lambda (out-instrument)
-                      (if (= 1 (<ra> :get-num-in-audio-connections out-instrument))
-                          (if (not next-plugin-instrument)
-                              #t
-                              (if (= next-plugin-instrument out-instrument)
-                                  #f
-                                  #t))
-                          #f))
-                               
-                    out-instruments))
-
-  (if next-plugin-instrument
-      (append ret 
-              (get-returned-plugin-buses next-plugin-instrument))
-      ret))
-
-
 ;; Returns the last plugin.
 (define (find-meter-instrument-id instrument-id)
   (define next-plugin-instrument (find-next-plugin-instrument-in-path instrument-id))
