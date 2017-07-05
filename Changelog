@@ -1,3 +1,60 @@
+Changes 4.9.3 -> 4.9.5:
+* Modular mixer: Add "Show mixer strips" option for showing
+  mixer strips for the currently selected instruments.
+* Remove check during startup that we have write access to the
+  program path.
+* GUI: Make sure requester dialogs opens up in front of the
+  current window, not (necessarily) the main window.
+* GUI: Fix graphical updates of mixer strips and sequencer right
+  after running a requester that popped up in front of a
+  different window.
+* Mixer strips: All popup menues contains "Hide mixer strip",
+  "Configure mixer strips on/off" and "Set current instrument"
+  options.
+* Mixer strips: Always show a popup menu when right clicking.
+* Packages: Upgrade visualization library. Fix for a switch fall
+  through that could cause strange mouse behavior.
+* Packages: Update qhttpserver. Fixes a ubsan hit that looked
+  quite serious.
+* Mixer strips: Gui to enable/disable strips
+* Mixer strips: Popup-menu option to hide mixer strip.
+* LZ: Fix undo. The LZ value itself was not included in the undo
+  data.
+* GUI: Reset "Half" and "Full" mode when the instrument is
+  deleted.
+* GUI: Fix instrument widget size when the "Half" button is
+  selected and the instrument widget is inside the mixer.
+* GUI: Don't hide sequencer when the instrument widget is inside
+  the mixer and we are selecting "Half" or "Full" size.
+* Player: Automatically stop hanging notes when the player jumps
+  to the start of the sequencer loop. Avoids situations where more
+  and more notes are added until we run out of polyphony.
+* Mixer strips: Some graphical tweaks. Less borders and so forth.
+* Instrument color dialog: Fix keyboard focus.
+* GUI: Don't give keyboard focus to the editor when opening a new
+  window. Specifically, it avoid forcing keyboard focus to the
+  editor when changing current instrument. Perhaps other
+  situations as well.
+* GUI: Make sure the instrument configuration GUI is placed on top
+  of the main window.
+* Drag/drop: Don't treat dropped files if showing requesters.
+* Editor: When creating new lines, let them have correct LZ value,
+  not 1.
+* FaustDev: Never delete editor automation when recompiling code.
+* GUI: Don't force keyboard focus to editor focus when the widgets
+  in the upper left corner of the editor are updated.
+* FaustDev: Don't gray editor when editing source code.
+* Gui: Update current instrument widget immediately after
+  removing or adding a connection. Fixes bus sliders not changing
+  enabled/disabled status immediately.
+* API:
+   * New functions: instrumentGuiIsInLowerTab, gui_moveToCentreOf.
+   * gui_text: Options to align text.
+   * GUI: Make gui_width and gui_height work when gui hasn't been
+     shown yet.
+   * gui_drawText: Fix alignment arguments. Centering options
+     for vertical and horizontal were switched.
+
 Changes 4.9.2 -> 4.9.3:
 * Menus: Only navigate menus if pressing the left alt key alone.
   I.e. Don't navigate menues after pressing left alt +
