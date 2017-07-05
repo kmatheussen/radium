@@ -52,8 +52,11 @@
   (add-safe-callback gui ra:gui_add-resize-callback callback))
 
 
-(define (get-global-mixer-strips-popup-entries strips-config)
-  (list (list "Configure visibility" :enabled strips-config
+(define (get-global-mixer-strips-popup-entries instrument-id strips-config)
+  (list (list "Hide mixer strip" :enabled (and instrument-id strips-config)
+              (lambda ()
+                (set! (strips-config :is-enabled instrument-id) #f)))
+        (list "Configure mixer strips on/off" :enabled strips-config
               (lambda ()
                 (strips-config :show-config-gui)))
         "----------"
@@ -78,7 +81,7 @@
                                                  (= state *is-pressing*))
                                             (if (<ra> :shift-pressed)
                                                 (<ra> :delete-instrument instrument-id)
-                                                (popup-menu (get-global-mixer-strips-popup-entries strips-config))))
+                                                (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))))
                                         (when (and (= button *left-button*)
                                                    (= state *is-pressing*))
                                           (set! is-selected (not is-selected))
@@ -638,11 +641,8 @@
                       (lambda ()
                         (<ra> :show-instrument-gui instrument-id #f)))
                 "----------"
-                (list "Hide" :enabled strips-config
-                      (lambda ()
-                        (set! (strips-config :is-enabled parent-instrument-id) #f)))
                 ;;(remake-mixer-strips parent-instrument-id)))
-                (get-global-mixer-strips-popup-entries strips-config)
+                (get-global-mixer-strips-popup-entries first-instrument-id strips-config)
                 ))
 
 (define (create-default-mixer-path-popup instrument-id strips-config gui)
@@ -1329,7 +1329,7 @@
                                       (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
                                       (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0))))
                               "------------"
-                              (get-global-mixer-strips-popup-entries strips-config))
+                              (get-global-mixer-strips-popup-entries instrument-id strips-config))
                   #t)
                  (else
                   #f))))
@@ -1613,14 +1613,14 @@
                                         (<ra> :undo-instrument-effect instrument-id effect-name)
                                         (<ra> :set-instrument-effect instrument-id effect-name (scale 0 *min-db* *max-db* 0 1)))
                               "------------"
-                              (get-global-mixer-strips-popup-entries strips-config))))
+                              (get-global-mixer-strips-popup-entries instrument-id strips-config))))
            #f))
 
   (when show-voltext
     (<gui> :add-mouse-callback voltext (lambda (button state x y)
                                          (cond ((and (= button *right-button*)
                                                      (= state *is-pressing*))
-                                                (popup-menu (get-global-mixer-strips-popup-entries strips-config))
+                                                (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
                                                 #t)
                                                ((and (= button *left-button*)
                                                      (= state *is-pressing*))
@@ -1639,10 +1639,18 @@
                                                      (set! peaktexttext text)
                                                      (<gui> :update peaktext)))
 
+    (<gui> :add-mouse-callback volmeter (lambda (button state x y)
+                                          (cond ((and (= button *right-button*)
+                                                      (= state *is-pressing*))
+                                                 (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
+                                                 #t)
+                                                (else
+                                                 #f))))
+
     (<gui> :add-mouse-callback peaktext (lambda (button state x y)
                                           (cond ((and (= button *right-button*)
                                                       (= state *is-pressing*))
-                                                 (popup-menu (get-global-mixer-strips-popup-entries strips-config))
+                                                 (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
                                                  #t)
                                                 ((and (= button *left-button*)
                                                       (= state *is-pressing*))
@@ -1711,7 +1719,7 @@
                                                 (begin
                                                   (if (<ra> :shift-pressed)
                                                       (<ra> :delete-instrument instrument-id)
-                                                      (popup-menu (get-global-mixer-strips-popup-entries strips-config)))
+                                                      (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config)))
                                                   #t)
                                                 #f)))
   comment-edit)
@@ -2175,7 +2183,7 @@
            (cond ((and (= button *right-button*)
                        (= state *is-releasing*))
                   (popup-menu
-                   (get-global-mixer-strips-popup-entries strips-config))))
+                   (get-global-mixer-strips-popup-entries #f strips-config))))
            #f))
 
     
