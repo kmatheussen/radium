@@ -1149,6 +1149,29 @@ int64_t s7extra_callFunc2_int_int_int_int_bool(const char *funcname, int64_t arg
   return s7extra_callFunc_int_int_int_int_bool((func_t*)find_scheme_value(s7, funcname), arg1, arg2, arg3, arg4);
 }
 
+int64_t s7extra_callFunc_int_int_dyn(func_t *func, int64_t arg1, dyn_t arg2){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list(s7,
+                                      3,
+                                      (s7_pointer)func,
+                                      s7_make_integer(s7, arg1),
+                                      Protect(s7extra_make_dyn(s7, arg2)).v
+                                      )
+                              );
+  if(!s7_is_integer(ret)){
+    handleError("Callback did not return an integer");
+    return -1;
+  }else{
+    return s7_integer(ret);
+  }
+}
+
+int64_t s7extra_callFunc2_int_int_dyn(const char *funcname, int64_t arg1, dyn_t arg2){
+  return s7extra_callFunc_int_int_dyn((func_t*)find_scheme_value(s7, funcname), arg1, arg2);
+}
+
 void s7extra_protect(void *v){
   s7_gc_protect(s7, (s7_pointer)v);  
 }

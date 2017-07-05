@@ -3896,6 +3896,22 @@ int gui_getY(int64_t guinum){
   return gui->_widget->y();
 }
 
+void gui_moveToCentreOf(int64_t guinum, int64_t window_to_move_in_centre_of){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  Gui *of = get_gui(window_to_move_in_centre_of);
+  if (of==NULL)
+    return;
+
+  QWidget *w = gui->_widget;
+
+  w->updateGeometry();
+    
+  moveWindowToCentre(w, of->_widget->rect());
+}
+
 void gui_moveToParentCentre(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -4304,6 +4320,10 @@ void informAboutGuiBeingAMixerStrips(int64_t guinum){
 
 int64_t createMixerStripsWindow(int num_rows){
   return S7CALL2(int_int, "create-mixer-strips-gui", num_rows);
+}
+
+int64_t createCustomMixerStripsWindow(int num_rows, dyn_t instrument_ids){
+  return S7CALL2(int_int_dyn, "create-mixer-strips-gui", num_rows, instrument_ids);
 }
 
 int64_t showMixerStrips(int num_rows){

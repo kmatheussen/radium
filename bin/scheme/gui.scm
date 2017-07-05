@@ -271,7 +271,8 @@
                           (<gui> :enable-updates gui))))
 
 (delafina (reopen-gui-at-curr-pos :gui
-                                  :parentgui -2)
+                                  :parentgui -2
+                                  :parent-centre-gui #f)
   (disable-gui-updates-block
    gui
    (lambda ()

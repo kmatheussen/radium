@@ -243,7 +243,7 @@
 (define-instrument-memoized (get-all-instruments-with-at-least-two-input-connections)
   (define buses (get-buses))
   (keep (lambda (id-instrument)
-          (and (not (member id-instrument buses))
+          (and (not (memv id-instrument buses))
                (>= (<ra> :get-num-in-audio-connections id-instrument)
                    2)))
         (get-all-audio-instruments)))
