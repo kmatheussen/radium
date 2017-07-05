@@ -160,7 +160,7 @@
 
   (define (add-guis instruments)
     (for-each (lambda (instrument-id)
-                (define is-initing #t) ;; this is stupid
+                (define is-initing #t) ;; this is stupid. Should fix immediately after 5.0.
                 ;;(c-display "row-num for" (<ra> :get-instrument-name instrument-id) ": " (strips-config :row-num instrument-id))
                 (define name (get-mixer-strip-name instrument-id strips-config))
                 (define button (<gui> :checkbox name
@@ -171,7 +171,7 @@
                                             (set! (strips-config :is-enabled instrument-id) is-on)))))
                 (define background-color (<gui> :get-background-color vertical-layout))
                 (define instrument-color (<ra> :get-instrument-color instrument-id))
-                (define unselected-color (<gui> :mix-colors instrument-color background-color 0.7))
+                (define unselected-color (<gui> :mix-colors instrument-color background-color 0.1))
                 (add-safe-paint-callback button
                                          (lambda (width height)
                                            (define is-enabled (strips-config :is-enabled instrument-id))
@@ -186,11 +186,11 @@
                                                         button
                                                         background-color
                                                         0 0 width height)
-                                                 (let ((border 6))
-                                                   (set! x1 (floor (/ width border)))
-                                                   (set! y1 (floor (/ height border)))
-                                                   (set! x2 (floor (- width (/ width border))))
-                                                   (set! y2 (floor (- height (/ height border)))))))
+                                                 (let ((border 5))
+                                                   (set! x1 border) ;;(floor (/ width border)))
+                                                   (set! y1 border) ;;(floor (/ height border)))
+                                                   (set! x2 (max 1 (- width border))) ;;(floor (- width (/ width border))))
+                                                   (set! y2 (max 1 (- height border))))));;(floor (- height (/ height border)))))))
                                            
                                            (<gui> :filled-box
                                                   button
@@ -308,8 +308,9 @@
                         (is-unique (get-bool (or (memv id (cat-instruments :no-input-or-outputs))
                                                  is-instrument
                                                  is-bus)))                                                 
-                        (is-enabled (get-bool (or (and first-time (or is-instrument
-                                                                      is-bus))
+                        (is-enabled (get-bool (if first-time
+                                                  (or is-instrument
+                                                      is-bus)
                                                   (or (not (confs id))
                                                       (confs id :is-enabled))))))
                    (when is-enabled
@@ -317,11 +318,8 @@
                          (push! instruments id))
                      (if is-bus
                          (push! buses id)))
-                   (set! (confs id) (make-conf id is-bus 0 (and #t is-enabled) is-unique))))
+                   (set! (confs id) (make-conf id is-bus 0 is-enabled is-unique))))
               (get-all-audio-instruments))
-
-    (set! instruments (sort-instruments-by-mixer-position-and-connections instruments))
-    (set! buses (sort-instruments-by-mixer-position-and-connections buses))
     )
   
   
@@ -2060,32 +2058,39 @@
   (define (add-strips id-instruments)
     (map (lambda (instrument-id)
            (set! (strips-config :row-num instrument-id) row-num)
-           (when (strips-config :is-enabled instrument-id)
-             ;;(c-display "adding strips for" instrument-id)
-             (define stored-mixer-strip (get-stored-mixer-strip stored-mixer-strips instrument-id))
-             (define mixer-strip (if (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
-                                     (get-mixer-strip-from-stored-mixer-strip stored-mixer-strip)
-                                     (create-mixer-strip instrument-id min-mixer-strip-width :strips-config strips-config)))
-             '(c-display "   Creating" instrument-id ". Stored is valid?" (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
-                         "stored-mixer-strip:" stored-mixer-strip
-                         "list-of-modified:" list-of-modified-instrument-ids)
+           ;;(c-display "adding strips for" instrument-id)
+           (define stored-mixer-strip (get-stored-mixer-strip stored-mixer-strips instrument-id))
+           (define mixer-strip (if (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
+                                   (get-mixer-strip-from-stored-mixer-strip stored-mixer-strip)
+                                   (create-mixer-strip instrument-id min-mixer-strip-width :strips-config strips-config)))
+           '(c-display "   Creating" instrument-id ". Stored is valid?" (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
+                       "stored-mixer-strip:" stored-mixer-strip
+                       "list-of-modified:" list-of-modified-instrument-ids)
+           
+           (<gui> :add horizontal-layout mixer-strip)
+           
+           (set! column-num (1+ column-num))
+           (if (= num-strips-per-row column-num)
+               (add-new-horizontal-layout!))
+           (create-stored-mixer-strip instrument-id
+                                      mixer-strip))
+         (keep (lambda (id)
+                 (strips-config :is-enabled id))
+               id-instruments)))
 
-             (<gui> :add horizontal-layout mixer-strip)
-             
-             (set! column-num (1+ column-num))
-             (if (= num-strips-per-row column-num)
-                 (add-new-horizontal-layout!))
-             (create-stored-mixer-strip instrument-id
-                                        mixer-strip)))
-         id-instruments))
 
-  (define instrument-mixer-strips (add-strips instruments))
-
+  (define cat-instruments (get-cat-instruments))
+  
+  (define instrument-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections (append (cat-instruments :no-input-or-outputs)
+                                                                                                          (cat-instruments :instruments)
+                                                                                                          (cat-instruments :instrument-plugins)))))
   (let ((text (<gui> :text *arrow-text2* "" #f #f)))
     ;;(<gui> :set-background-color text "blue") ;; doesn't work.
     (<gui> :add horizontal-layout text))
   
-  (define bus-mixer-strips (add-strips all-buses))
+  (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections (append (cat-instruments :buses)
+                                                                                                   (cat-instruments :buses-plugins)))))
+  
   (kont (append instrument-mixer-strips
                 bus-mixer-strips)
         mixer-strips-gui)
