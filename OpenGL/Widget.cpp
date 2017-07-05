@@ -2156,7 +2156,7 @@ void GL_maybe_estimate_vblank(QWidget *qwidget){
   }
   
 
-  ScopedQPointer<MyQMessageBox> box(MyQMessageBox::create());
+  ScopedQPointer<MyQMessageBox> box(MyQMessageBox::create(false));
 
   bool have_earlier = have_earlier_estimated_value();
 

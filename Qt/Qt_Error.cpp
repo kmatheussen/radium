@@ -33,7 +33,7 @@
 static int show_message(const char *message){
 
   //QPointer<MyQMessageBox> msgBox = MyQMessageBox::create();
-  ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+  ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
   
   msgBox->setText(QString(message));
 

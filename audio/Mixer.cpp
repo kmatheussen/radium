@@ -189,7 +189,7 @@ static void check_jackd_arguments(void){
 
   if(found_jack==false){
 
-    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
     msgBox->setIcon(QMessageBox::Warning);
     msgBox->setText("Unable to find jack process command line arguments.");
     msgBox->setInformativeText("Please make sure the -S flag was added to the jackd argument line. If not, glitches in sound will occur.\n ");
@@ -199,7 +199,7 @@ static void check_jackd_arguments(void){
 
   } else if(found_sync_flag==false){
 
-    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
     msgBox->setIcon(QMessageBox::Critical);
     msgBox->setText("The -S parameter was not set for Jack.");
     msgBox->setInformativeText(mandatory);
@@ -696,7 +696,7 @@ struct Mixer{
 	fprintf (stderr, "Unable to connect to JACK server\n");
       }
 
-      ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+      ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
       msgBox->setIcon(QMessageBox::Critical);
       msgBox->setText("Unable to connect to Jack.");
       msgBox->setInformativeText("The Jack Audio Connection Kit server must be started before running Radium. "
@@ -741,7 +741,7 @@ struct Mixer{
     if (jack_activate (_rjack_client)){
       fprintf (stderr, "Error. Cannot activate jack client.\n");
 
-      ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+      ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
       msgBox->setIcon(QMessageBox::Critical);
       msgBox->setText("Unable to activate Jack client.");
       msgBox->setInformativeText("This is very unusual. Try restarting Jack.");

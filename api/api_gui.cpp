@@ -4503,7 +4503,7 @@ QWidget *API_gui_get_parentwidget(int64_t parentnum){
     // get_current_parent() can return anything, but I think the worst thing that could happen if the parent is deleted,
     // at least in this case, is that some warning messages would be displayed. The base case (and I hope only case) is
     // just that the window closes, and that closing the window was the natural thing to happen, since the parent was closed.
-    parent = get_current_parent();
+    parent = get_current_parent(false);
   
   else if (parentnum==-3)
     parent = NULL;

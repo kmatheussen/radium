@@ -1586,7 +1586,7 @@ protected:
       QString message(rt_message);
 
       if (dontshow.contains(message)==false){
-        set_window_parent(msgBox, get_current_parent(), false);
+        set_window_parent(msgBox, get_current_parent(false), false);
         
         msgBox->setText(message);
 
@@ -1628,7 +1628,7 @@ protected:
       static MyQMessageBox *gakkbox = NULL;
 
       if(g_main_timer_num_calls==1){
-        gakkbox = MyQMessageBox::create();
+        gakkbox = MyQMessageBox::create(false);
         gakkbox->setText("Forcing focus");
         safeShow(gakkbox);
       }

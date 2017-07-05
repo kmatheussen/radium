@@ -103,7 +103,7 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
   GL_lock(); {
     GL_pause_gl_thread_a_short_while();
 
-    reqtype->frame = new MyQFrame(get_current_parent());
+    reqtype->frame = new MyQFrame(get_current_parent(true));
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
     set_window_flags(reqtype->frame, true);
@@ -290,23 +290,28 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   //gotchar('a');
   //gotchar('b');
 
-  while(edit->gotit==false){
-    // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-    GL_lock();{
-      QCoreApplication::processEvents();
-    }GL_unlock();
-
-    //GTK_HandleEvents();
-    if(text!=edit->text()){
-      text = edit->text();
-      printf("text: \"%s\"\n",text.toUtf8().constData());
-    }
-
-    if(reqtype->frame->isVisible()==false)
-      break;
+  {
+    radium::ScopedExec scoped_exec;
     
-    msleep(1);
+    while(edit->gotit==false){
+      // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+      GL_lock();{
+        QCoreApplication::processEvents();
+      }GL_unlock();
+      
+      //GTK_HandleEvents();
+      if(text!=edit->text()){
+        text = edit->text();
+        printf("text: \"%s\"\n",text.toUtf8().constData());
+      }
+      
+      if(reqtype->frame->isVisible()==false)
+        break;
+      
+      msleep(10);
+    }
   }
+  
 #endif
 
   edit->setEnabled(false);

@@ -377,7 +377,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       
 #if 1
       {
-        ScopedQPointer<MyQMessageBox> box(MyQMessageBox::create());
+        ScopedQPointer<MyQMessageBox> box(MyQMessageBox::create(true));
         box->setText("Thanks for reporting the bug!");
         
         box->setInformativeText("The bug will hopefully be fixed in the next version of Radium.");

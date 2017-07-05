@@ -72,7 +72,7 @@ static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget, QRect parent
   moveWindowToCentre(widget, parentRect);
 }
 
-static bool can_widget_be_parent_questionmark(QWidget *w){
+static bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_to_run_custom_exec){
   if (w==NULL)
     return false;
   /*
@@ -83,14 +83,16 @@ static bool can_widget_be_parent_questionmark(QWidget *w){
   if (w->windowFlags() & Qt::ToolTip)
     return false;
   */
-  if (!g_static_toplevel_widgets.contains(w))
-    return false;
+
+  // Should be safe. When running custom exec, a widget can not be deleted until exec() is finished.
+  if(is_going_to_run_custom_exec==true)
+    return true;
   
   return true;
 }
 
 // Can only return a widget that is a member of g_static_toplevel_widgets.
-static inline QWidget *get_current_parent(bool may_return_current_parent_before_qmenu_opened = true){
+static inline QWidget *get_current_parent(bool is_going_to_run_custom_exec, bool may_return_current_parent_before_qmenu_opened = true){
 
   if (may_return_current_parent_before_qmenu_opened && !g_curr_popup_qmenu.isNull() && !g_current_parent_before_qmenu_opened.isNull()){
     //printf("1111 %p\n", g_current_parent_before_qmenu_opened.data());
@@ -99,25 +101,25 @@ static inline QWidget *get_current_parent(bool may_return_current_parent_before_
 
   QWidget *ret = QApplication::activeModalWidget();
   //printf("2222 %p\n", ret);
-  if (can_widget_be_parent_questionmark(ret)){
+  if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
     return ret;
   }
 
   ret = QApplication::focusWidget();
   //printf("333 %p\n", ret);
-  if (can_widget_be_parent_questionmark(ret)){
+  if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
     return ret;
   }
 
   ret = QApplication::activePopupWidget();
   //printf("333555 %p\n", ret);
-  if (can_widget_be_parent_questionmark(ret)){
+  if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
     return ret;
   }
 
   ret = QApplication::activeWindow();
   //printf("444 %p\n", ret);
-  if (can_widget_be_parent_questionmark(ret)){
+  if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
     return ret;
   }
 
@@ -355,14 +357,14 @@ struct MyQMessageBox : public QMessageBox {
   //
   // !!! parent must/should be g_main_window unless we use ScopedQPointer !!!
   //
-  static MyQMessageBox *create(QWidget *parent = NULL){
-    return new MyQMessageBox(parent);
+  static MyQMessageBox *create(bool is_going_to_run_custom_exec, QWidget *parent = NULL){
+    return new MyQMessageBox(is_going_to_run_custom_exec, parent);
   }
   
  private:  
     
-  MyQMessageBox(QWidget *parent_ = NULL)
-    : QMessageBox(parent_!=NULL ? parent_ : get_current_parent())
+  MyQMessageBox(bool is_going_to_run_custom_exec, QWidget *parent_ = NULL)
+    : QMessageBox(parent_!=NULL ? parent_ : get_current_parent(is_going_to_run_custom_exec))
   {
     //printf("            PAERENT: %p. visible: %d\n",parent(),dynamic_cast<QWidget*>(parent())==NULL ? 0 : dynamic_cast<QWidget*>(parent())->isVisible());
     if(dynamic_cast<QWidget*>(parent())==NULL || dynamic_cast<QWidget*>(parent())->isVisible()==false){
@@ -677,7 +679,7 @@ static inline void closePopup(void){
 
 static inline void set_those_menu_variables_when_starting_a_popup_menu(QMenu *menu_to_be_started){
   if (!g_curr_popup_qmenu.isNull()) // Don't set it if there's a menu open already.
-    g_current_parent_before_qmenu_opened = get_current_parent(false);
+    g_current_parent_before_qmenu_opened = get_current_parent(false, false);
 
   g_curr_popup_qmenu = menu_to_be_started;
 }

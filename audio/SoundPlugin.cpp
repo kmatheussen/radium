@@ -2212,7 +2212,7 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
     info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago\n";
   }
   
-  MyQMessageBox *infoBox = MyQMessageBox::create(API_gui_get_parentwidget(parentgui));
+  MyQMessageBox *infoBox = MyQMessageBox::create(false, API_gui_get_parentwidget(parentgui));
   infoBox->setAttribute(Qt::WA_DeleteOnClose);
   
   infoBox->setText(info);

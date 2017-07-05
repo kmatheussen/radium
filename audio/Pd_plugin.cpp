@@ -977,7 +977,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   snprintf(puredatapath,1023,"%s/packages/libpd-master/pure-data",OS_get_program_path());
   pd = libpds_create(true, puredatapath);
   if(pd==NULL) {
-    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
     msgBox->setText(QString(libpds_strerror()));
     msgBox->setStandardButtons(QMessageBox::Ok);
     safeExec(msgBox);

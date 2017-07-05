@@ -450,7 +450,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
   
     addMessage(message.toUtf8().constData());
     /*
-    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
     msgBox->setText(
     if(!strcmp(type_name,"Ladspa") && getenv("LADSPA_PATH")==NULL)
       msgBox->setInformativeText("(LADSPA_PATH is not set)");

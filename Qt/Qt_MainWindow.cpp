@@ -779,7 +779,7 @@ static int GFX_Message(vector_t *buttons, QString message){
   if (buttons==NULL && GFX_Message_ignore_questionmark())
     return 0;
 
-  ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+  ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
   
   msgBox->setText(message);
 

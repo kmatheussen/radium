@@ -1344,7 +1344,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
     //printf("hepp: %s. Suffix: %s\n",file_path.toUtf8().constData(),file_info.suffix().toUtf8().constData());
 
     if (time->elapsed() > 1000*30) {
-      ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create());
+      ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
       msgBox->setText("We have currently used more than 30 seconds searching for VST plugins. Continue for another 30 seconds?");
       msgBox->addButton(QMessageBox::Yes);
       msgBox->addButton(QMessageBox::No);
