@@ -188,7 +188,7 @@ namespace{
   };
 }
 
-MyQLineEdit *g_edit;
+static MyQLineEdit *g_edit;
 void gotchar(char c){
   if(c=='\n')
     g_edit->gotit=true;
@@ -241,6 +241,9 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   MyQLineEdit *edit = new MyQLineEdit(reqtype->frame);
   edit->insert(reqtype->default_value);
   edit->move(x + 5, reqtype->y);
+  edit->adjustSize();
+  edit->updateGeometry();
+
   reqtype->frame->_widget_to_get_focus_when_shown = edit;
   
   reqtype->frame->setMinimumWidth(R_MAX(reqtype->frame->width(), x + 5 + 5 + x_margin + R_MAX(20,edit->width()+10)));
