@@ -152,15 +152,16 @@
                                                 (string-append " while loading " *currently-loading-file*)
                                                 "."))))
                 (cond (*is-initializing*
-                       (display "Error during initializationg: ")
-                       (display message)
-                       (newline)
-                       (catch #t
-                              (lambda ()
-                                (ra:add-message message))
-                              (lambda args
-                                #t))
-                       (handle-assertion-failure-during-startup message))
+                       (when (not (eq? (hook 'name) 'define-class))
+                         (display "Error during initializationg: ")
+                         (display message)
+                         (newline)
+                         (catch #t
+                                (lambda ()
+                                  (ra:add-message message))
+                                (lambda args
+                                  #t))
+                         (handle-assertion-failure-during-startup message)))
                       ((and *currently-loading-file*
                             (not *currently-reloading-file*))
                        (ra:add-message message))

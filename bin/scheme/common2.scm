@@ -471,31 +471,6 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;; list-and-set ;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(delafina (list-and-set :alist
-                        :eq-func eq?)
-  
-  (define hash (make-hash-table (max 1 (length alist)) eq-func))
-  
-  (for-each (lambda (element)
-              (set! (hash element) #t))
-            alist)
-  
-  (lambda (keyword . rest)
-    (case keyword
-      ((:contains) (hash (car rest)))
-      ((:list) alist)
-      ((:set) hash)
-      (else
-       (error (<-> "Unknown keyword for list-and-set: " keyword))))))
-
-                                
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; Try - Catch - Finally ;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -1148,6 +1123,175 @@ for .emacs:
               '(0 1 2 3 4 5))
 (***assert*** (integer-range 5 5)
               '(5))
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; define-class ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (define-class-helper class-name methods)
+  (define this-method-names (map (lambda (method)
+                                   (c-display "METHOD" method)
+                                   (<_> 'this-> (keyword->symbol (car method))))
+                                 methods))
+
+  (define this-methods (map (lambda (this-method-name method)
+                              (define args (cadr method))
+                              (define body (cddr method))
+                              `(define (,this-method-name ,@args)
+                                 ,@body))
+                            this-method-names
+                            methods))
+
+  (define hash-method-content (map (lambda (this-method-name method)
+                                     (list (car method) this-method-name))
+                                   this-method-names
+                                   methods))
+
+  (define hash-table-name (<_> 'methods_of_ class-name))
+
+  `(,@this-methods
+    (define ,hash-table-name
+      (hash-table* ,@(apply append hash-method-content)))
+    (lambda (methodname . rest)
+      (let ((func (,hash-table-name methodname)))
+        (if func
+            (apply func rest)
+            (error (<-> "Method \"" methodname ,(<-> "\" not found in class " class-name))))))))
+
+(***assert*** (define-class-helper 'list-and-set
+                '((:contains (key)
+                             (hash key))
+                  
+                  (:list () 
+                         alist)
+                  
+                  (:set ()
+                        hash)))
+              '((define (this->contains key)
+                  (hash key))
+                (define (this->list)
+                  alist)
+                (define (this->set)
+                  hash)
+                
+                (define methods_of_list-and-set
+                  (hash-table* :contains this->contains
+                               :list this->list
+                               :set this->set))
+
+                (lambda (methodname . rest)
+                  (let ((func (methods_of_list-and-set methodname)))
+                    (if func
+                        (apply func rest)
+                        (error (<-> "Method \"" methodname "\" not found in class list-and-set")))))))
+
+
+(define-expansion (<define-class-with-custom-definer> definer signature . rest)
+  (define class-name (string->symbol (list->string (butlast (cdr (string->list (symbol->string (car signature))))))))
+  (define new-class-name (<_> 'new_instance_of_ class-name))
+  (define args (cdr signature))
+
+  (define body (butlast rest))
+  (define methods (last rest))
+
+  (append (cons definer (list (cons new-class-name args)))
+          body
+          (define-class-helper class-name methods)))
+
+(define-expansion (define-class signature . rest)
+  (append '(<define-class-with-custom-definer>) '(delafina) (list signature)
+          rest))
+
+(define-expansion (<new> class-name . args)
+  `(,(<_> 'new_instance_of_ (keyword->symbol class-name)) ,@args))
+
+
+#||
+(pretty-print
+ (macroexpand
+  (define-class (list-and-set :alist
+                              :eq-func eq?)
+    
+    (define hash (make-hash-table (max 1 (length alist)) eq-func))
+    
+    (for-each (lambda (element)
+                (set! (hash element) #t))
+              alist)
+    
+    ;;
+    ((:contains (key)
+                (hash key))
+     
+     (:list () 
+            alist)
+     
+     (:set ()
+           hash))
+    
+    
+    )
+  )
+ )
+||#
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; list-and-set ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-class (<list-and-set> :alist
+                              :eq-func eq?)
+  
+  (define hash (make-hash-table (max 1 (length alist)) eq-func))
+  
+  (for-each (lambda (element)
+              (set! (hash element) #t))
+            alist)
+  
+  ((:contains (key)
+              (hash key))
+   
+   (:list () 
+          alist)
+   
+   (:set ()
+         hash)))
+
+#||
+=>
+
+(delafina (new_instance_of_list-and-set :alist
+                                        :eq-func eq?)
+  (define hash (make-hash-table (max 1 (length alist)) eq-func))
+  
+  (for-each (lambda (element)
+              (set! (hash element) #t))
+            alist)
+
+  (define (this->contains key)
+    (hash key))
+  (define (this->list)
+    alist)
+  (define (this->set)
+    hash)
+
+  (define methods_of_list-and-set
+    (hash-table* :contains this->contains
+                 :list this->list
+                 :set this->set))
+
+  (lambda (methodname . rest)
+    (let ((func (methods_of_list-and-set methodname)))
+      (if func
+          (apply func rest)
+          (error (<-> "Method \"" methodname "\" not found in class list-and-set"))))))
+||#
+
 
 
 

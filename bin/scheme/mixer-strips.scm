@@ -220,7 +220,7 @@
 
               instruments))
 
-  (define cat-instruments (get-cat-instruments))
+  (define cat-instruments (<new> :get-cat-instruments))
   
   (add-guis (sort-instruments-by-mixer-position-and-connections (cat-instruments :instrument-instruments)))
                     
@@ -259,7 +259,7 @@
 
   (define (scan-instruments!)
 
-    (define cat-instruments (get-cat-instruments))
+    (define cat-instruments (<new> :get-cat-instruments))
 
     (for-each (lambda (id)
                  (let* ((is-instrument (cat-instruments :is-instrument? id))
@@ -2010,7 +2010,7 @@
                id-instruments)))
 
 
-  (define cat-instruments (get-cat-instruments))
+  (define cat-instruments (<new> :get-cat-instruments))
   
   (define instrument-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections (cat-instruments :instrument-instruments))))
   
