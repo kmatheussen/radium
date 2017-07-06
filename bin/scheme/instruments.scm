@@ -365,7 +365,7 @@
                                                 (append buses
                                                         instrument-plugin-buses))))
   
-  (define all-buses (<new> :list-and-set
+  (define all-buses (<new> :container
                            (append instrument-plugin-buses ;; Not sure if there could be duplicates here.
                                    buses
                                    buses-plugin-buses)
@@ -382,8 +382,8 @@
   (define all-bus-instruments (append (all-buses :list)
                                       buses-plugins))
   
-  (set! instruments (<new> :list-and-set instruments =))
-  (set! no-inputs-or-outputs (<new> :list-and-set no-inputs-or-outputs =))
+  (set! instruments (<new> :container instruments =))
+  (set! no-inputs-or-outputs (<new> :container no-inputs-or-outputs =))
   
   ((:no-input-or-outputs
     ()

@@ -159,6 +159,11 @@
       (vector->list A)
       A))
 
+(define (to-vector A)
+  (if (list? A)
+      (list->vector A)
+      A))
+
 (define (min-notfalse . Args)
   (match (list Args)
          ()          :> #f
@@ -1241,26 +1246,66 @@ for .emacs:
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;; list-and-set ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;; container ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-class (<list-and-set> :alist
-                              :eq-func eq?)
+(define-class (<container> :elements ;; <-- elements must be either a list or a vector
+                           :eq-func #f)
   
-  (define hash (make-hash-table (max 1 (length alist)) eq-func))
-  
-  (for-each (lambda (element)
-              (set! (hash element) #t))
-            alist)
-  
+  (define vector #f)
+  (define list #f)
+  (define hash #f)
+
+  (when (not eq-func)
+    (set! eq-func 
+          (if (null? elements)
+              eq?
+              (let ((el0 (elements 0)))
+                (cond ((symbol? el0)
+                       eq?)
+                      ((number? el0)
+                       =)
+                      ((string? el0)
+                       string=?)
+                      ((pair? el0)
+                       equal?)
+                      (else
+                       morally-equal?))))))
+
+  (define (get-vector)
+    (if (not vector)
+        (set! vector (to-vector elements)))
+    vector)
+
+  (define (get-list)
+    (if (not list)
+        (set! list (to-list elements)))
+    list)
+
+  (define num-elements (length elements))
+
+  (define (get-hash)
+    (when (not hash)
+      (set! hash (make-hash-table (max 1 num-elements) eq-func))
+      (for-each (lambda (element)
+                  (set! (hash element) #t))
+                elements))
+    hash)
+      
   ((:contains (key)
-              (hash key))
-   
-   (:list () 
-          alist)
-   
-   (:set ()
-         hash)))
+              ((get-hash) key))
+
+   (:num-elements ()
+                  num-elements)
+
+   (:vector ()
+            (get-vector))
+
+   (:list ()
+          (get-list))
+
+   (:get (pos)
+         ((get-vector) pos))))
 
 #||
 =>

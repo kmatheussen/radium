@@ -364,7 +364,7 @@
                    (error (<-> "Unknown keyword2 " keyword)))))))
 
   this)
-            
+
 
 ;; GUIS
 ;;;;;;;;
