@@ -222,9 +222,7 @@
 
   (define cat-instruments (get-cat-instruments))
   
-  (add-guis (sort-instruments-by-mixer-position-and-connections (append (cat-instruments :no-input-or-outputs)
-                                                                        (cat-instruments :instruments)
-                                                                        (cat-instruments :instrument-plugins))))
+  (add-guis (sort-instruments-by-mixer-position-and-connections (cat-instruments :instrument-instruments)))
                     
 
   (let ((text (<gui> :text *arrow-text2*)))
@@ -235,8 +233,7 @@
     (<gui> :set-background-color layout (<gui> :mix-colors (<gui> :get-background-color layout) "black" 0.5))
     (<gui> :add horizontal-layout layout))
 
-  (add-guis (sort-instruments-by-mixer-position-and-connections (append (cat-instruments :buses)
-                                                                        (cat-instruments :buses-plugins))))
+  (add-guis (sort-instruments-by-mixer-position-and-connections (cat-instruments :bus-instruments)))
 
   ;;(<gui> :show vertical-layout)
   ;;
@@ -249,7 +246,7 @@
   (create-is-enabled-gui strips-config))
 !!#
   
-(define (create-strips-config instrument-ids remake parentgui)
+(define (create-strips-config initial-instruments remake parentgui)
   (define-struct conf
     :instrument-id
     :is-bus
@@ -257,74 +254,32 @@
     :is-enabled
     :is-unique)
 
-  (define confs #f)
-
-  (define instruments '())
-  (define buses '())
+  (define first-time #t)
+  (define confs (make-hash-table 100 =))
 
   (define (scan-instruments!)
 
-    ;;(set! instruments (sort-instruments-by-mixer-position-and-connections (remove ra:instrument-is-bus-descendant
-    ;;                                                                              (get-all-audio-instruments))))
-    ;;(set! buses (sort-instruments-by-mixer-position-and-connections  (keep ra:instrument-is-bus-descendant
-;;                                                                           (get-all-audio-instruments))))
-
-    ;;(c-display "scan-instruments")
-
-    
-    ;;(set! instruments (sort-instruments-by-mixer-position
-    ;;                   (car mixer-strip-instrument-ids)))
-    ;;(set! buses (sort-instruments-by-mixer-position-and-connections
-    ;;             (cadr mixer-strip-instrument-ids)))
-
-    ;;(assert instruments)
-    ;;(assert buses)
-
-    (define first-time (not confs))
-    (if first-time
-        (set! confs (make-hash-table 100 =)))
-
     (define cat-instruments (get-cat-instruments))
 
-
-
-    ;;(define unique-instruments (apply append (get-mixer-strip-instrument-ids (and instrument-ids
-    ;;                                                                              (keep ra:instrument-is-open instrument-ids)))))
-
-    #||
-    For each instrument in instrument and buses, add all mixer path plugins to their respective lists. (unique=false for all of these)
-    (use "find-all-plugins-used-in-mixer-strip")
-         
-    Also, all non-input/non-output instruments must be put into instruments. (unique=false for all of these too)
-    (the result of "get-mixer-strip-instrument-ids" filters out all of these)
-    ||#
-
-    (set! instruments '())
-    (set! buses '())
-
     (for-each (lambda (id)
-                 (let* ((is-instrument (get-bool (memv id (cat-instruments :instruments))))
-                        (is-bus (get-bool (memv id (cat-instruments :buses))))
-                        (is-unique (get-bool (or (memv id (cat-instruments :no-input-or-outputs))
-                                                 is-instrument
-                                                 is-bus)))                                                 
-                        (is-enabled (get-bool (if first-time
-                                                  (if instrument-ids
-                                                      (memv id instrument-ids)
-                                                      (or is-instrument
-                                                          is-bus))
-                                                  (if instrument-ids
-                                                      (and (confs id)
-                                                           (confs id :is-enabled))
-                                                      (or (not (confs id))
-                                                          (confs id :is-enabled)))))))
-                   (when is-enabled
-                     (if is-instrument
-                         (push! instruments id))
-                     (if is-bus
-                         (push! buses id)))
+                 (let* ((is-instrument (cat-instruments :is-instrument? id))
+                        (is-bus (cat-instruments :is-bus? id))
+                        (is-strip (or is-instrument is-bus))
+                        (is-unique (or (cat-instruments :has-no-inputs-or-outputs? id)
+                                       is-strip))
+                        (has-conf (confs id))
+                        (is-enabled (get-bool (cond (has-conf
+                                                     (confs id :is-enabled))
+                                                    (initial-instruments
+                                                     (and first-time
+                                                          (memv id initial-instruments)))
+                                                    (else
+                                                     is-strip)))))
                    (set! (confs id) (make-conf id is-bus 0 is-enabled is-unique))))
               (get-all-audio-instruments))
+
+    (if first-time
+        (set! first-time #f))
     )
   
   
@@ -391,8 +346,6 @@
                   ((:row-num) (confs (car rest) :row-num))
                   ((:is-enabled) (confs (car rest) :is-enabled))
                   ((:is-unique) (confs (car rest) :is-unique))
-                  ((:instruments) instruments)
-                  ((:buses) buses)
                   ((:scan-instruments!) (scan-instruments!))
                   ((:show-config-gui) (show-config-gui))
                   ((:recreate-config-gui-content) (recreate-config-gui-content))
@@ -2059,15 +2012,13 @@
 
   (define cat-instruments (get-cat-instruments))
   
-  (define instrument-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections (append (cat-instruments :no-input-or-outputs)
-                                                                                                          (cat-instruments :instruments)
-                                                                                                          (cat-instruments :instrument-plugins)))))
+  (define instrument-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections (cat-instruments :instrument-instruments))))
+  
   (let ((text (<gui> :text *arrow-text2* "" #f #f)))
     ;;(<gui> :set-background-color text "blue") ;; doesn't work.
     (<gui> :add horizontal-layout text))
   
-  (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections (append (cat-instruments :buses)
-                                                                                                   (cat-instruments :buses-plugins)))))
+  (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections (cat-instruments :bus-instruments))))
   
   (kont (append instrument-mixer-strips
                 bus-mixer-strips)

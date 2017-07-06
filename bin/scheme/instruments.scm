@@ -337,14 +337,6 @@
       ret))
 
 
-
-(define-struct cat-instruments
-  :no-input-or-outputs
-  :instruments
-  :instrument-plugins
-  :buses
-  :buses-plugins)
-
 (define-instrument-memoized (get-cat-instruments)
   (define instruments '())
   (define no-inputs-or-outputs '())
@@ -372,15 +364,40 @@
                                                 (append buses
                                                         instrument-plugin-buses))))
   
-  (define all-buses (append instrument-plugin-buses ;; Not sure if there could be duplicates here.
-                            buses
-                            buses-plugin-buses))
+  (define all-buses (list-and-set (append instrument-plugin-buses ;; Not sure if there could be duplicates here.
+                                          buses
+                                          buses-plugin-buses)
+                                  =))
+
+  (define instrument-plugins (apply append (map find-all-nonbus-plugins-used-in-mixer-strip instruments)))
+
+  (define buses-plugins (apply append (map find-all-plugins-used-in-mixer-strip (all-buses :list))))
+
+  (define all-instrument-instruments (append no-inputs-or-outputs
+                                             instruments
+                                             instrument-plugins))
+
+  (define all-bus-instruments (append (all-buses :list)
+                                      buses-plugins))
   
-  (make-cat-instruments :no-input-or-outputs no-inputs-or-outputs
-                        :instruments instruments
-                        :instrument-plugins (apply append (map find-all-nonbus-plugins-used-in-mixer-strip instruments))
-                        :buses all-buses
-                        :buses-plugins (apply append (map find-all-plugins-used-in-mixer-strip all-buses))))
+  (set! instruments (list-and-set instruments =))
+  (set! no-inputs-or-outputs (list-and-set no-inputs-or-outputs =))
+  
+  (lambda (keyword . rest)
+    ;;(c-display "THIS called. keyword:" keyword)
+    (case keyword
+      ((:no-input-or-outputs) (no-inputs-or-outputs :list))
+      ((:instruments) (instruments :list))
+      ((:instrument-plugins) instrument-plugins)
+      ((:buses) (all-buses :list))
+      ((:buses-plugins) buses-plugins)
+      ((:instrument-instruments) all-instrument-instruments)
+      ((:bus-instruments) all-bus-instruments)
+      ((:is-bus?) (all-buses :contains (car rest)))
+      ((:is-instrument?) (instruments :contains (car rest)))
+      ((:has-no-inputs-or-outputs?) (no-inputs-or-outputs :contains (car rest)))
+      (else
+       (error (<-> "Unknown keyword for cat-instrument: " keyword))))))
 
 
 (define (move-connections-to-new-instrument id-old-instrument id-new-instrument)

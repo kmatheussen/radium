@@ -468,21 +468,30 @@
 ||#
 
 
-(define-constant *try-finally-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
 
-(define (FROM-C-catch-all-errors-and-display-backtrace-automatically func . args)
-  (catch #t
-         (lambda ()
-           (apply func args))
-         (lambda args
-           (catch #t
-                  safe-display-ow!
-                  (lambda args
-                    (display "safe-display-ow! failed:")
-                    (display args)
-                    (newline)))
-           *try-finally-failed-return-value*)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;; list-and-set ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(delafina (list-and-set :alist
+                        :eq-func eq?)
   
+  (define hash (make-hash-table (max 1 (length alist)) eq-func))
+  
+  (for-each (lambda (element)
+              (set! (hash element) #t))
+            alist)
+  
+  (lambda (keyword . rest)
+    (case keyword
+      ((:contains) (hash (car rest)))
+      ((:list) alist)
+      ((:set) hash)
+      (else
+       (error (<-> "Unknown keyword for list-and-set: " keyword))))))
+
+                                
 
 
 
@@ -516,10 +525,29 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 
 [1] At least in the normal situations, not too sure about what happens if there is creative use of call/cc.
 ||#
+
+
+(define-constant *try-finally-failed-return-value* (gensym "catch-all-errors-and-display-backtrace-automatically-failed-value"))
+
+(define (FROM-C-catch-all-errors-and-display-backtrace-automatically func . args)
+  (catch #t
+         (lambda ()
+           (apply func args))
+         (lambda args
+           (catch #t
+                  safe-display-ow!
+                  (lambda args
+                    (display "safe-display-ow! failed:")
+                    (display args)
+                    (newline)))
+           *try-finally-failed-return-value*)))
+  
+
+
 ;;
 ;;
 ;;
-;; First a helper function:
+;; A helper function:
 
 (define (catch-all-errors-and-display-backtrace-automatically thunk)
   (catch #t
