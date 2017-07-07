@@ -33,6 +33,8 @@ extern LANGSPEC void SETTINGS_write_int(const char *key, int64_t val);
 extern LANGSPEC void SETTINGS_write_double(const char *key, double val);
 extern LANGSPEC void SETTINGS_write_string(const char *key, const char *val);
 
+extern LANGSPEC bool SETTINGS_remove(const char* key);
+
 extern LANGSPEC void SETTINGS_init(void);
 
 #ifdef USE_QT4
