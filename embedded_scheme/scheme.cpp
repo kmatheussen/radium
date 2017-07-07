@@ -94,8 +94,8 @@ namespace{
     int pos;
     
     ProtectedS7Pointer(s7_pointer val)
-      :v(val)
-      ,pos(s7_gc_protect(s7, v))
+      : v(val)
+      , pos(s7_gc_protect(s7, v))
     {      
     }
     
