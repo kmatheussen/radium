@@ -33,7 +33,7 @@ float FindReallineForF(
 
         int realline = reallineF;
 
-        if (place->line >= wblock->num_reallines || realline >= wblock->num_reallines)
+        if (place->line >= wblock->block->num_lines || realline >= wblock->num_reallines)
           return wblock->num_reallines;
 
 	const struct LocalZooms **reallines=wblock->reallines;

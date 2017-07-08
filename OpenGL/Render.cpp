@@ -2491,6 +2491,8 @@ static void create_range(const struct Tracker_Windows *window, const struct WBlo
   int y1 = get_realline_y(window, realline1);
   int y2 = get_realline_y(window, realline2)-1;
 
+  //printf("realline1: %f, realline2: %f, y1: %d, y2: %d\n", realline1, realline2, y1, y2);
+  
   GE_Rgb rgb = GE_get_rgb(RANGE_COLOR_NUM);
   if (rgb.a==0xff)
     rgb.a = 0x80;
