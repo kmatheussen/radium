@@ -253,11 +253,10 @@ Place getRangeStartPlace(int blocknum, int windownum){
   if(wblock==NULL)
     return place(0,0,1);
 
-  int realline = wblock->rangey1;
-  if (realline < 0 || realline >= wblock->num_reallines)
-    return place(0,0,1);
+  if (p_Greater_Than(wblock->rangey1, p_Last_Pos(wblock->block)))
+    return p_Last_Pos(wblock->block);
 
-  return wblock->reallines[realline]->l.p;
+  return wblock->rangey1;
 }
 
 Place getRangeEndPlace(int blocknum, int windownum){
@@ -273,11 +272,10 @@ Place getRangeEndPlace(int blocknum, int windownum){
   if(wblock==NULL)
     return place(1,0,1);
 
-  int realline = wblock->rangey2;
-  if (realline < 0 || realline >= wblock->num_reallines)
-    return place(wblock->block->num_lines,0,1);
+  if (p_Greater_Than(wblock->rangey1, p_Create(wblock->block->num_lines, 0, 1)))
+    return p_Create(wblock->block->num_lines, 0, 1);
 
-  return wblock->reallines[realline]->l.p;
+  return wblock->rangey2;
 }
 
 

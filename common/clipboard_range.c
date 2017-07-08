@@ -27,19 +27,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 struct Range *range=NULL;
 
 
-void SetRange(
+static void SetRange(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt starttrack,
 	NInt endtrack,
-	int startrealline,
-	int endrealline
+	Place startplace,
+	Place endplace
 ){
+
+        R_ASSERT_RETURN_IF_FALSE(p_Less_Than(startplace, endplace));
+        R_ASSERT_RETURN_IF_FALSE(p_Greater_Or_Equal(startplace, p_Create(0,0,1)));
+        R_ASSERT_RETURN_IF_FALSE(p_Less_Or_Equal(endplace, p_Create(wblock->block->num_lines, 0, 1)));
+
 	wblock->isranged=true;
 	wblock->rangex1=starttrack;
 	wblock->rangex2=endtrack;
-	wblock->rangey1=startrealline;
-	wblock->rangey2=endrealline;
+
+	wblock->rangey1=startplace;
+	wblock->rangey2=endplace;
 }
 
 
@@ -51,9 +57,13 @@ void MarkRange(
 	int realline
 ){
 	NInt starttrack,endtrack;
-	int startrealline,endrealline;
+	Place startplace, endplace;
+
+        R_ASSERT_RETURN_IF_FALSE(realline>=0);
+        R_ASSERT_RETURN_IF_FALSE(realline<wblock->num_reallines);
 
 	if(wblock->isranged){
+
 		starttrack=wblock->rangex1;
 		endtrack=track;
 		if(starttrack>endtrack){
@@ -61,20 +71,58 @@ void MarkRange(
 			endtrack=wblock->rangex2;
 		}
 		
-		startrealline=wblock->rangey1;
-		endrealline=realline+1;
-		if(startrealline>=endrealline){
-			startrealline=realline;
-			endrealline=wblock->rangey2;
+		startplace=wblock->rangey1;
+
+                if (realline+1 >= wblock->num_reallines)
+                  endplace = p_Create(wblock->block->num_lines, 0, 1);
+                else
+                  endplace = wblock->reallines[realline+1]->l.p;
+
+		if(p_Greater_Or_Equal(startplace, endplace)){
+                  startplace = wblock->reallines[realline]->l.p;
+                  endplace = wblock->rangey2;
 		}
 
+		while(p_Greater_Or_Equal(startplace, endplace)){
+                  realline--;
+                  R_ASSERT_RETURN_IF_FALSE(realline>=0);
+                  startplace = wblock->reallines[realline]->l.p;
+                }
+
 	}else{
+
 		endtrack=starttrack=track;
-		startrealline=realline;
-		endrealline=realline+1;
+
+		int startrealline=realline;
+		int endrealline=realline+1;
+
+                if (startrealline < 0){
+                  R_ASSERT_NON_RELEASE(false);
+                  startrealline = 0;
+                  endrealline = 1;
+                }
+
+                if (startrealline>=wblock->num_reallines){
+                  R_ASSERT_NON_RELEASE(false);
+                  startrealline = wblock->num_reallines -1 ;
+                  endrealline = startrealline+1;
+                }
+
+                if (endrealline > wblock->num_reallines){
+                  R_ASSERT_NON_RELEASE(false);
+                  startrealline = wblock->num_reallines -1 ;
+                  endrealline = startrealline+1;
+                }
+                
+                startplace = wblock->reallines[startrealline]->l.p;
+
+                if (endrealline >= wblock->num_reallines)
+                  endplace = p_Create(wblock->block->num_lines, 0, 1);
+                else
+                  endplace = wblock->reallines[endrealline]->l.p;
 	}
 
-	SetRange(window,wblock,starttrack,endtrack,startrealline,endrealline);
+	SetRange(window,wblock,starttrack,endtrack,startplace,endplace);
 }
 
 
@@ -137,11 +185,13 @@ void MakeRangeLegal(
 ){
 	if(wblock->isranged==false) return;
 
-	wblock->rangey2=R_MIN(wblock->rangey2,wblock->num_reallines-1);
-	if(wblock->rangey2>=wblock->rangey1){
-		wblock->isranged=false;
-		return;
-	};
+        if (p_Greater_Than(wblock->rangey2, p_Create(wblock->block->num_lines, 0, 1)))
+          wblock->rangey2=p_Create(wblock->block->num_lines, 0, 1);
+
+	if(p_Greater_Or_Equal(wblock->rangey2, wblock->rangey1)){
+            wblock->isranged=false;
+            return;
+        };
 
 	wblock->rangex2=R_MIN(wblock->rangex2,wblock->block->num_tracks-1);
 	wblock->rangex1=R_MIN(wblock->rangex1,wblock->rangex2);

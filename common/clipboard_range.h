@@ -25,7 +25,6 @@ struct Range{
   //struct Instruments **instruments;
         vector_t *fxs;
 	Place length;
-        int num_lines;
 };
 
 #endif

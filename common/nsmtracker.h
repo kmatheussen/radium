@@ -1884,7 +1884,7 @@ struct Blocks{
 
 	struct Tracks *tracks;
 
-        const struct Beats        *beats; // Calculated from signatures and lpbs.
+        const struct Beats        *beats; // Calculated from signatures and lpbs. Set in time.c.
         dyn_t  filledout_swings; // Used both to calculate timing, and for rendering. Calculated from beats and swings.
   
 	struct Signatures   *signatures;  // Used by player. Player must be stopped when modifying.
@@ -1892,7 +1892,7 @@ struct Blocks{
 	struct Tempos *tempos;
 	struct TempoNodes *temponodes;
 	struct TempoNodes *lasttemponode;
-        struct Swing *swings; // Array of swings. num_lines elements.
+        struct Swing *swings;
         bool swing_enabled;
   
         int num_time_lines; // Contains number of lines in 'times' minus one (same as num_lines, normally). Only for validation.
@@ -2021,8 +2021,8 @@ struct WBlocks{
 	bool isranged;
 	NInt rangex1;
 	NInt rangex2;
-	NInt rangey1;
-	NInt rangey2;
+	Place rangey1;
+	Place rangey2;
 
 	bool isgfxdatahere;
 

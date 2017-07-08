@@ -84,8 +84,8 @@ void TransposeRange(
 
 	if( ! wblock->isranged) return;
 
-	const Place *p1=GetRangeStartPlace(wblock);
-	const Place *p2=GetRangeEndPlace(wblock);
+	const Place *p1=&wblock->rangey1;
+	const Place *p2=&wblock->rangey2;
 
 	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 

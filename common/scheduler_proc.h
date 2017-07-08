@@ -98,7 +98,7 @@ static inline int64_t get_seqblock_place_time(const struct SeqBlock *seqblock, c
                                  
 static inline int64_t get_seqblock_place_time2(const struct SeqBlock *seqblock, const struct Tracks *track, const Place p){
   R_ASSERT_NON_RELEASE(track->times!=NULL);
-  return seqblock->time + Place2STime_from_times(track->times, &p);
+  return seqblock->time + Place2STime_from_times(seqblock->block->num_lines, track->times, &p);
 }
                                  
 

@@ -219,7 +219,6 @@ void PasteRange_CurrPos(
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
 	NInt curr_track=window->curr_track;
-	const struct LocalZooms **realline=wblock->reallines;
 	int curr_realline=wblock->curr_realline;
 
 	if(curr_track<0 || range==NULL) return;
@@ -235,7 +234,7 @@ void PasteRange_CurrPos(
 
         Undo_start_ignoring_undo_operations();{
           PC_Pause();{
-            PasteRange(block,curr_track,&realline[curr_realline]->l.p);
+            PasteRange(block,curr_track,&wblock->reallines[curr_realline]->l.p);
           }PC_StopPause(window);
         }Undo_stop_ignoring_undo_operations();
 
@@ -246,8 +245,13 @@ void PasteRange_CurrPos(
 		curr_track+range->num_tracks-1
 	);
 
-        if (doRangePasteScrollDown())
-          ScrollEditorDown(window, range->num_lines);
+        if (doRangePasteScrollDown()){
+          int next_realline = curr_realline + 1;
+          Place next_place = p_Add(wblock->reallines[curr_realline]->l.p, range->length);
+          while(next_realline < wblock->num_reallines && p_Less_Than(wblock->reallines[next_realline]->l.p, next_place))
+            next_realline++;
+          ScrollEditorDown(window, next_realline - curr_realline);
+        }
         
         window->must_redraw = true;
 }

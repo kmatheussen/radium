@@ -51,6 +51,54 @@ void NewLocalZoom(
 }
 
 
+
+// Normally, it should be fine, but you never now. Specifically, though, expand needs since things got messy when changing type from int to Place for the start/end/new_end variables.
+void LegalizeLocalZooms(struct WBlocks *wblock){
+
+ again:
+  {
+    struct Blocks *block = wblock->block;
+    int last_line = -1;
+    int next_line_must_be = 0;
+    
+    struct LocalZooms *localzoom = wblock->localzooms;
+    
+    while(localzoom != NULL){
+      int line = localzoom->l.p.line;
+      
+      if (line >= block->num_lines || line < last_line) {
+        ListRemoveElement3(&wblock->localzooms, &localzoom->l);
+        goto again;
+      }
+
+      if (line > next_line_must_be){
+        localzoom=talloc(sizeof(struct LocalZooms));
+        localzoom->Tline=next_line_must_be;
+        localzoom->Tdividor=1;
+        localzoom->zoomline=next_line_must_be;
+        ListAddElement3(&wblock->localzooms,&localzoom->l);
+        goto again;
+      }
+
+      last_line = line;
+      next_line_must_be = line + 1;
+      
+      localzoom = NextLocalZoom(localzoom);
+    }
+
+    for(int line = next_line_must_be ; line < block->num_lines ; line++){
+      localzoom=talloc(sizeof(struct LocalZooms));
+      localzoom->Tline=line;
+      localzoom->Tdividor=1;
+      localzoom->zoomline=line;
+      ListAddElement3(&wblock->localzooms,&localzoom->l);      
+    }
+  }
+
+}
+
+
+
 /* When making a new block. */
 void NewLocalZooms(struct Tracker_Windows *window,struct WBlocks *wblock){
 	int lokke;

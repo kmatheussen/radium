@@ -50,7 +50,10 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
   //
   
   realline++;
+
   if(pc->playtype==PLAYRANGE){ // This never happens. Instead playtype is PLAYBLOCK, and pc->is_playing_range is true;
+    R_ASSERT(false);
+    /*
     if(realline>=wblock->rangey2){
       realline=wblock->rangey1;
     }
@@ -61,14 +64,13 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
 
     if (realline>=wblock->num_reallines) // that didnt work, set realline to 0
       realline = 0;
-
+    */
   } else if (pc->playtype==PLAYBLOCK && pc->is_playing_range == true){
 
-    int end_range = wblock->rangey2;
-    if (realline > end_range || realline>=wblock->num_reallines){
+    if (realline>=wblock->num_reallines || p_Greater_Than(wblock->reallines[realline]->l.p, wblock->rangey2)){
 
       ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
-
+      
       //PC_ReturnElements();
 
       return DONT_RESCHEDULE;
@@ -89,10 +91,9 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
 
   {
     args[2].int32_num = realline;
+    Place next_place = wblock->reallines[realline]->l.p;
     
-    Place place = wblock->reallines[realline]->l.p;
-
-    return get_seqblock_place_time(seqblock, place);
+    return get_seqblock_place_time(seqblock, next_place);
   }
 }
 

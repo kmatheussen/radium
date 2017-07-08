@@ -18,6 +18,8 @@ struct SharedVariables{
   int curr_realline;
   int fontheight;
 
+  int num_lines;
+
   double reltempo;
   STime block_duration;
 
@@ -89,6 +91,8 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   sv->num_reallines = wblock->num_reallines;
   sv->reallines     = wblock->reallines;  
+
+  sv->num_lines     = block->num_lines;
 
   sv->reltempo       = ATOMIC_DOUBLE_GET(block->reltempo);
   sv->block_duration = getBlockSTimeLength(block);

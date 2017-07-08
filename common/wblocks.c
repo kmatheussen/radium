@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 
 #include "nsmtracker.h"
+#include "placement_proc.h"
 #include "list_proc.h"
 #include "localzooms_proc.h"
 #include "reallines_proc.h"
@@ -358,6 +359,9 @@ void NewWBlock(
         wblock->num_expand_lines = 1;
 
 	wblock->tempotrackonoff=1;
+
+        wblock->rangey1 = p_Create(0,0,1);
+        wblock->rangey2 = p_Create(0,0,1);
 
 	//wblock->zoomlinearea.width = 0;
 	UpdateWBlockWidths(window,wblock);

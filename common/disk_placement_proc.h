@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TRACKER_INCLUDE
 
 
-extern void SavePlace(Place *p);
+extern void SavePlace(const Place *p);
 extern void LoadPlace(Place *p);
 
 

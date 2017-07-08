@@ -25,7 +25,7 @@ if ! env |grep BUILDTYPE ; then
 fi
 
 
-# Don't include faustdev and pddev (by default) in debug builds since it increases linker time and increases startup time when running under gdb.
+# Don't include faustdev (by default) in debug builds since it increases linker time and increases startup time when running under gdb.
 #
 if [[ $BUILDTYPE == RELEASE ]]
 then
