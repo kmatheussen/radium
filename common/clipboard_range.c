@@ -183,15 +183,22 @@ void CancelRange_CurrPos(struct Tracker_Windows *window){
 void MakeRangeLegal(
 	struct WBlocks *wblock
 ){
-	if(wblock->isranged==false) return;
+
+	if(p_Greater_Or_Equal(wblock->rangey1, wblock->rangey2)){
+          if (wblock->rangey1.line==0)
+            wblock->rangey2 = p_Add(wblock->rangey1, p_Create(1,0,1));
+          else
+            wblock->rangey1 = p_Sub(wblock->rangey2, p_Create(1,0,1));
+        };
 
         if (p_Greater_Than(wblock->rangey2, p_Create(wblock->block->num_lines, 0, 1)))
           wblock->rangey2=p_Create(wblock->block->num_lines, 0, 1);
 
-	if(p_Greater_Or_Equal(wblock->rangey2, wblock->rangey1)){
-            wblock->isranged=false;
-            return;
-        };
+        if(p_Greater_Or_Equal(wblock->rangey1, wblock->rangey2)){
+          R_ASSERT_NON_RELEASE(false);
+          wblock->rangey1 = p_Create(0,0,1);
+          wblock->rangey1 = p_Create(1,0,1);
+        }
 
 	wblock->rangex2=R_MIN(wblock->rangex2,wblock->block->num_tracks-1);
 	wblock->rangex1=R_MIN(wblock->rangex1,wblock->rangex2);
