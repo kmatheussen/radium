@@ -33,7 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern bool doquit;
-extern struct Root *root;
 extern QApplication *qapplication;
 
 namespace{
@@ -98,6 +97,8 @@ struct Menues{
 
 static QMenu *g_first_menu = NULL;
 
+static QVector<QMenu*> g_all_menus;
+ 
 static struct Menues *current_menu = NULL;
 
 class MenuItem : public QObject
@@ -223,6 +224,9 @@ void GFX_AddMenuMenu(struct Tracker_Windows *tvisual, const char *name, const ch
   //sansFont.setBold(true);
 
   menu->menu->setFont(sansFont);
+
+  g_all_menus.push_back(menu->menu);
+  
   new MenuItem(name, command, menu->menu);
   current_menu = menu;
 }
@@ -284,6 +288,20 @@ void GFX_HideMenu(struct Tracker_Windows *tvisual){
   editor->main_window->menuBar()->hide();  
 }
 
+void GFX_SetMenuFontsAgain(void){
+  // another stupid osx workaround hack. (this is actually a stupid osx workaround hack for another stupid osx workaround hack)
+
+  QFont sansFont;
+  
+  sansFont.setFamily("Bitstream Vera Sans Mono");
+  sansFont.setStyleName("Bold");
+  sansFont.setPointSize(QApplication::font().pointSize());
+  //sansFont.setBold(true);
+
+  for(auto *menu : g_all_menus)
+    menu->setFont(sansFont);
+}
+                  
 void initMenues(QMenuBar *base_menu){
   current_menu = (struct Menues*)V_calloc(1, sizeof(struct Menues));
   //g_base_menues = current_menu;

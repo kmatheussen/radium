@@ -1635,6 +1635,7 @@ protected:
       }
       if(g_main_timer_num_calls==2){
         delete gakkbox;
+        GFX_SetMenuFontsAgain();
       }
     }
     
@@ -3286,6 +3287,7 @@ int main(int argc, char **argv){
     if (custom_config_set==true){
       SETTINGS_unset_custom_configfile();
     }
+
 
   }
 

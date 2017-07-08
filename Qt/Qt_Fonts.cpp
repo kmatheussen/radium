@@ -105,19 +105,22 @@ void setFontValues(struct Tracker_Windows *tvisual){
   tvisual->fontheight     = tvisual->org_fontheight;
 }
 
-void updateAllFonts(QWidget *widget, QFont font){
+void updateAllFonts(QWidget *widget, const QFont &old_font, QFont font){
   if(widget!=NULL){
-    widget->setFont(font);//QApplication::font());
+    if (widget->font()==old_font)
+      widget->setFont(font);//QApplication::font());
 
     const QList<QObject*> list = widget->children();
     for (int i = 0; i < list.size(); ++i) {
       QWidget *child = dynamic_cast<QWidget*>(list.at(i));
-      updateAllFonts(child, font);
+      updateAllFonts(child, old_font, font);
     }
   }
 }
 
 void GFX_SetSystemFont(QFont font){
+  QFont old_font = QApplication::font();
+  
   QApplication::setFont(font);
   qApp->setFont(font);
 
@@ -141,7 +144,7 @@ void GFX_SetSystemFont(QFont font){
   }
 
   foreach (QWidget *widget, QApplication::allWidgets()) {
-    updateAllFonts(widget, font);
+    updateAllFonts(widget, old_font, font);
     widget->update();
   }
 }
