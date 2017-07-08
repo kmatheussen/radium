@@ -265,8 +265,6 @@
                  (let* ((is-instrument (cat-instruments :is-instrument? id))
                         (is-bus (cat-instruments :is-bus? id))
                         (is-strip (or is-instrument is-bus))
-                        (is-unique (or (cat-instruments :has-no-inputs-or-outputs? id)
-                                       is-strip))
                         (has-conf (confs id))
                         (is-enabled (get-bool (cond (has-conf
                                                      (confs id :is-enabled))
@@ -274,8 +272,14 @@
                                                      (and first-time
                                                           (memv id initial-instruments)))
                                                     (else
-                                                     is-strip)))))
-                   (set! (confs id) (make-conf id is-bus 0 is-enabled is-unique))))
+                                                     is-strip))))
+                        (is-unique (or (cat-instruments :has-no-inputs-or-outputs? id)
+                                       is-strip)))
+                   (set! (confs id) (make-conf :instrument-id id
+                                               :is-bus is-bus
+                                               :row-num 0
+                                               :is-enabled is-enabled
+                                               :is-unique is-unique))))
               (get-all-audio-instruments))
 
     (if first-time
