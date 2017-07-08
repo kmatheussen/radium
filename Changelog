@@ -1,3 +1,29 @@
+Changes 4.9.5 -> 4.9.6:
+* OSX: Fix menu fonts.
+* GUI: When changing system font, don't change customly set
+  fonts.
+* Editor: Don't cancel range when changing LZ.
+* Editor: Also expand/shrink swing when expanding/shrinking.
+* Editor: Make it possible to expand/shrink by a fractional
+  factor, for instance to shrink 4 lines into the space
+  of 2.5 lines.
+* Editor: Range can span any area. It is not limited to
+  start and stop at line anymore.
+* Sampler/Fluidsynth: Option to remove bookmark when informed
+  about a non-existing bookmark directory.
+* Help: Add info about copy/cut/paste to fxtext.html (it's a
+  nice feature that is not too obvious to find just be trying
+  and failing.)
+* Editor: Fix copy/paste/cut first fx track. Before this commit,
+  and after swing-per-track was implemented, we
+  copied/pasted/cut the swing track when trying to
+  cut/copy/paste the first fx track.
+* GUI: Make sure requester dialogs are wide enough.
+* Mixer strips: Don't create a separate mixer strip for plugins
+  that has been added after a mixer strip window has opened.
+  Bug introduced in 4.9.5.
+
+
 Changes 4.9.3 -> 4.9.5:
 * Modular mixer: Add "Show mixer strips" option for showing
   mixer strips for the currently selected instruments.
