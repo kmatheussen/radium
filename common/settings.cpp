@@ -22,7 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 #include <unistd.h>
 
-#include <QVector>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+#include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
+#pragma clang diagnostic pop
+
 #include <QString>
 #include <QFile>
 #include <QDir>

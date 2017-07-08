@@ -2166,6 +2166,11 @@ else
 	HTTPPARSERFLAGS=
 endif
 
+ifneq (,$(findstring clang,$(CC)))
+	QHTTPSERVERFLAGS += -Wno-shorten-64-to-32
+endif
+
+
 qhttpconnection.o: bin/packages/qhttpserver-master/src/qhttpconnection.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS) #$(QHTTPCONNECTIONFLAGS)
 qhttprequest.o: bin/packages/qhttpserver-master/src/qhttprequest.cpp
