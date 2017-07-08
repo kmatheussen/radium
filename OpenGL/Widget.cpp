@@ -421,7 +421,7 @@ static double get_realline_stime(SharedVariables *sv, int realline){
   if(realline==sv->num_reallines)
     return sv->block_duration;
   else
-    return Place2STime_from_times(sv->times, &sv->reallines[realline]->l.p);
+    return Place2STime_from_times(sv->num_lines, sv->times, &sv->reallines[realline]->l.p);
 }
 
 

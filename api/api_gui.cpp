@@ -860,11 +860,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     func_t *_resize_callback = NULL;
     bool _resize_callback_failed = false;
-    
+
     void resizeEvent(QResizeEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
 
-      if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint)
+      if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint)  // FIX! We need to recall resize_callbacks later.
         return;
 
       if (_resize_callback_failed){

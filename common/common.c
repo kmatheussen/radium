@@ -261,9 +261,8 @@ int GetReallineAndPlaceFromY(
                 else
                   y2 = p_Create(wblock->block->num_lines, 0, MAX_UINT32);
 
-                Place *p = PlaceScale(&x, &x1, &x2, &y1, &y2);
+                temp = p_Scale(x, x1, x2, y1, y2);
 
-                PlaceCopy(&temp, p);
                 /*
                 temp.counter = scale(dy, 
                                      

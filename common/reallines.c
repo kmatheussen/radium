@@ -307,6 +307,9 @@ static const struct LocalZooms **GenerateReallines(const struct Tracker_Windows 
 static void UpdateRealLines_internal(struct Tracker_Windows *window,struct WBlocks *wblock, bool update_curr_realline){
   const Place *curr_place = NULL;
 
+  // To be sure it's fine.
+  LegalizeLocalZooms(wblock);
+    
   if (update_curr_realline && wblock->reallines!=NULL && wblock->curr_realline<wblock->num_reallines)
     curr_place = &wblock->reallines[wblock->curr_realline]->l.p;
 

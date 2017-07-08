@@ -23,58 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-/********************************************************
-  FUNCTION
-    Returns the place where the range starts.
-********************************************************/
-const Place *GetRangeStartPlace(
-                                const struct WBlocks *wblock
-){
-        const struct LocalZooms **reallines=wblock->reallines;
-	if(
-		wblock->rangey1>=wblock->num_reallines ||
-		wblock->rangey1<0
-	){
-          /*
-		RError(
-			"Error. First rangeline is not legal.\n"
-			"wblock->raggey1: %d, wblock->num_reallines: %d\n",
-			wblock->rangey1,wblock->num_reallines
-		);
-          */
-          ((struct WBlocks*)wblock)->rangey1=0;
-	}
-	return &reallines[wblock->rangey1]->l.p;
-}
-
-/********************************************************
-  FUNCTION
-    Returns the place where the range ends.
-********************************************************/
-const Place *GetRangeEndPlace(
-                              const struct WBlocks *wblock
-){
-	const struct LocalZooms **reallines=wblock->reallines;
-	if(
-		wblock->rangey2>wblock->num_reallines ||
-		wblock->rangey2<0
-	){
-          /*
-		RError(
-			"Error. Last rangeline is not legal.\n"
-			"wblock->rangey2: %d, block->num_reallines: %d\n",
-			wblock->rangey2,wblock->num_reallines
-		);
-          */
-          ((struct WBlocks*)wblock)->rangey2=wblock->num_reallines;
-	}
-	if(wblock->rangey2==wblock->num_reallines){
-		Place *place=talloc_atomic(sizeof(Place));
-		PlaceSetLastPos(wblock->block,place);
-		return place;
-	}
-	return &reallines[wblock->rangey2]->l.p;
-}
 
 /********************************************************
   FUNCTION
@@ -85,11 +33,8 @@ bool IsPlaceRanged(
                    const struct WBlocks *wblock,
                    const Place *p
 ){
-  const Place *p1= GetRangeStartPlace(wblock);
-  const Place *p2= GetRangeEndPlace(wblock);
-
-  if(PlaceLessThan(p,p1)) return false;
-  if(PlaceGreaterOrEqual(p,p2)) return false;
+  if(PlaceLessThan(p,&wblock->rangey1)) return false;
+  if(PlaceGreaterOrEqual(p,&wblock->rangey2)) return false;
   
   return true;
 
@@ -105,12 +50,5 @@ void GetRangePlaceLength(
                          Place *place,
                          const struct WBlocks *wblock
 ){
-  const Place *p1= GetRangeStartPlace(wblock);
-  const Place *p2= GetRangeEndPlace(wblock);
-  
-  PlaceCopy(place,p2);
-  PlaceSub(place,p1);
+  *place = p_Sub(wblock->rangey2, wblock->rangey1);
 }
-
-
-

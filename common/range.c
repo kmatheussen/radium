@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "placement_proc.h"
 #include "vector_proc.h"
 #include "windows_proc.h"
 #include "clipboard_range_calc_proc.h"
@@ -28,7 +29,12 @@ bool is_track_ranged(struct WBlocks *wblock, struct WTracks *wtrack){
 }
 
 bool is_realline_ranged(struct WBlocks *wblock, int realline){
-  return wblock->isranged && realline>=wblock->rangey1 && realline<=wblock->rangey2;
+  if (realline < 0 || realline >= wblock->num_reallines){
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+  Place p = wblock->reallines[realline]->l.p;
+  return wblock->isranged && p_Greater_Or_Equal(p, wblock->rangey1) && p_Less_Or_Equal(p, wblock->rangey2);
 }
 
 vector_t *get_all_ranged_notes(struct WBlocks *wblock){

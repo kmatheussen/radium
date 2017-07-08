@@ -137,10 +137,7 @@ void CutRangedRange(
 
 	if(!wblock->isranged) return;
 
-	const Place *p1=GetRangeStartPlace(wblock);
-	const Place *p2=GetRangeEndPlace(wblock);
-
-	CutRange(wblock->block,wblock->rangex1,wblock->rangex2,p1,p2);
+	CutRange(wblock->block,wblock->rangex1,wblock->rangex2, &wblock->rangey1, &wblock->rangey2);
         
 	wblock->isranged=false;
 }

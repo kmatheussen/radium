@@ -127,10 +127,6 @@ static void Quantitize_range(
 
 	if( ! wblock->isranged) return;
 
-
-	const struct LocalZooms *realline1 = wblock->reallines[wblock->rangey1];
-	const struct LocalZooms *realline2 = wblock->reallines[wblock->rangey2];
-
         struct Tracks *track = ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 
         int tracknum;
@@ -143,7 +139,7 @@ static void Quantitize_range(
           while(note != NULL) {
             struct Notes *next=NextNote(note);
                         
-            if( p_Greater_Or_Equal(note->l.p, realline1->l.p) && p_Less_Than(note->l.p, realline2->l.p))
+            if( p_Greater_Or_Equal(note->l.p, wblock->rangey1) && p_Less_Than(note->l.p, wblock->rangey2))
               Quantitize_Note(wblock->block,&new_notes,note);
             else
               ListAddElement3_a(&new_notes,&note->l);

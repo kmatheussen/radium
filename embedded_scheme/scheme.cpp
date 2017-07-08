@@ -94,8 +94,8 @@ namespace{
     int pos;
     
     ProtectedS7Pointer(s7_pointer val)
-      :v(val)
-      ,pos(s7_gc_protect(s7, v))
+      : v(val)
+      , pos(s7_gc_protect(s7, v))
     {      
     }
     
@@ -139,7 +139,10 @@ static s7_pointer place_to_ratio(const Place *p){
   return ratio;
 }
 
-                           
+static s7_pointer place_to_ratio(const Place &p){
+  return place_to_ratio(&p);
+}
+
 static Place *ratio_to_place(s7_pointer ratio){
   s7_Int num = s7_numerator(ratio);
   s7_Int den = s7_denominator(ratio);
@@ -147,6 +150,13 @@ static Place *ratio_to_place(s7_pointer ratio){
   Place ret = place_from_64b(num, den);
 
   return PlaceCreate(ret.line, ret.counter, ret.dividor);
+}
+
+static Place p_ratio_to_place(s7_pointer ratio){
+  s7_Int num = s7_numerator(ratio);
+  s7_Int den = s7_denominator(ratio);
+
+  return place_from_64b(num, den);
 }
 
 static Place number_to_place(s7_scheme *s7, s7_pointer number, const char **error){
@@ -1195,7 +1205,7 @@ Place placetest2(int a, int b, int c){
 
 
 // Warning: No protection against scheme throwing an error. The function MUST not throw an error.
-Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2) {
+Place p_Scale(const Place x, const Place x1, const Place x2, const Place y1, const Place y2) {
   ScopedEvalTracker eval_tracker;
   
   static s7_pointer scheme_func = find_and_protect_scheme_value("safe-scale");
@@ -1213,17 +1223,15 @@ Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place 
                               );
 
   if (s7_is_ratio(result))
-    return ratio_to_place(result);
+    return p_ratio_to_place(result);
   else if (s7_is_integer(result))
-    return PlaceCreate((int)s7_integer(result), 0, 1);
+    return p_Create((int)s7_integer(result), 0, 1);
   else if (s7_is_real(result)) {
-    RError("PlaceScale: result was a real (strange): %f (%s %s %s %s %s)",s7_real(result),PlaceToString(x),PlaceToString(x1),PlaceToString(x2),PlaceToString(y1),PlaceToString(y2));
-    Place *ret = (Place*)talloc_atomic(sizeof(Place));
-    Double2Placement(s7_real(result), ret);
-    return ret;
+    RError("p_Scale: result was a real (strange): %f (%s %s %s %s %s)",s7_real(result),p_ToString(x),p_ToString(x1),p_ToString(x2),p_ToString(y1),p_ToString(y2));
+    return p_FromDouble(s7_real(result));
   } else {
-    RError("result was not ratio or integer. Returning 0 (%s %s %s %s %s)",PlaceToString(x),PlaceToString(x1),PlaceToString(x2),PlaceToString(y1),PlaceToString(y2));
-    return PlaceCreate(0,0,1);
+    RError("result was not ratio or integer. Returning 0 (%s %s %s %s %s)",p_ToString(x),p_ToString(x1),p_ToString(x2),p_ToString(y1),p_ToString(y2));
+    return p_Create(0,0,1);
   }
 }
 

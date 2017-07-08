@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void SavePlace(Place *p){
+void SavePlace(const Place *p){
 	DC_SaveI(p->line);
 	DC_SaveP(p->counter);
 	DC_SaveP(p->dividor);

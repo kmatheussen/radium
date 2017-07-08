@@ -30,15 +30,13 @@ float FindReallineForF(
 {
   if (wblock->num_expand_lines<0)
     reallineF=0;
-  
-        int realline = reallineF;
-	const struct LocalZooms **reallines=wblock->reallines;
 
-	if(realline>=wblock->num_reallines){
-		RError("\n\nError In the function \"FindReallineForF\" in the file \"realline_calc.c\"\n"
-                       "Input parameter 'realline' is below last realline.\n\n");
-		return wblock->num_reallines-0.001f;
-	}
+        int realline = reallineF;
+
+        if (place->line >= wblock->block->num_lines || realline >= wblock->num_reallines)
+          return wblock->num_reallines;
+
+	const struct LocalZooms **reallines=wblock->reallines;
 
         if (wblock->num_expand_lines>0)
           if(place->line > realline)
@@ -59,7 +57,7 @@ float FindReallineForF(
 
         if (realline>wblock->num_reallines){
           RError("realline>wblock->num_reallines: %d > %d. place: %s",realline,wblock->num_reallines,PlaceToString(place));
-          return wblock->block->num_lines;
+          return wblock->num_reallines;
         }
         
         const Place *p1 = &reallines[realline-1]->l.p;

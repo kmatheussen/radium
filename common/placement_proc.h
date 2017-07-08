@@ -148,6 +148,12 @@ static inline Place p_FromFloat(float f){
   return place;
 }
 
+static inline Place p_FromDouble(double d){
+  Place place;
+  Double2Placement(d, &place);
+  return place;
+}
+
 /*************************************************************
   FUNCTION
     Returns 0 if placement1 is the same as placement2,
@@ -217,7 +223,8 @@ static inline const Place *PlaceMin(  const Place *p1,  const Place *p2){
 extern LANGSPEC void PlaceHandleOverflow(Place *p);
 
 // These functions are implmentented in embedded_scheme/scheme.cpp (rationals are much simpler to programme in scheme (it's just like any other number))
-extern LANGSPEC Place *PlaceScale(const Place *x, const Place *x1, const Place *x2, const Place *y1, const Place *y2); // TODO: Create p_Scale
+extern LANGSPEC Place p_Scale(const Place x, const Place x1, const Place x2, const Place y1, const Place y2);
+
 extern LANGSPEC void PlaceAdd(Place *p1,  const Place *p2);
 extern LANGSPEC void PlaceSub(Place *p1,  const Place *p2);
 extern LANGSPEC void PlaceMul(Place *p1,  const Place *p2);
@@ -314,7 +321,7 @@ extern void PlaceFromLimit(Place *p,  const Place *tp);
 #define p_Equal(a,b) (((a).line==(b).line) && ((a).counter*(b).dividor==(b).counter*(a).dividor))
 #define p_NOT_Equal(a,b) (((a).line!=(b).line) || ((a).counter*(b).dividor!=(b).counter*(a).dividor))
 
-#define p_Greather_Than(a,b) (							\
+#define p_Greater_Than(a,b) (							\
 ((a).line>(b).line)									\
 || 											\
 (((a).line == (b).line) && ((a).counter*(b).dividor > (b).counter*(a).dividor)) \
@@ -424,6 +431,11 @@ static inline Place p_Absolute_Last_Pos(const struct Blocks *block){
 static inline const char* PlaceToString(const Place *a){
   return talloc_format("%d + %d/%d",(a)->line,(a)->counter,(a)->dividor);
 }
+
+static inline const char* p_ToString(const Place a){
+  return PlaceToString(&a);
+}
+
 
 #define PrintPlace(title,a) printf(title ": %d + %d/%d\n",(a)->line,(a)->counter,(a)->dividor);
 

@@ -264,27 +264,24 @@ void CopyRange(
 	//range->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
 	range->fxs=talloc((int)sizeof(vector_t)*num_tracks);
 
-	const Place *p1=GetRangeStartPlace(wblock);
-	const Place *p2=GetRangeEndPlace(wblock);
 	GetRangePlaceLength(&range->length,wblock);
-        range->num_lines = wblock->rangey2 - wblock->rangey1;
         
 	const struct Tracks *track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 
 	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){
           //range->instruments[lokke]=track->instrument;
-		CopyRange_notes(&range->notes[lokke],track->notes,p1,p2);
-		CopyRange_stops(&range->stops[lokke],track->stops,p1,p2);
-		CopyRange_fxs(&range->fxs[lokke],&track->fxs,p1,p2);
+          CopyRange_notes(&range->notes[lokke], track->notes, &wblock->rangey1, &wblock->rangey2);
+          CopyRange_stops(&range->stops[lokke], track->stops, &wblock->rangey1, &wblock->rangey2);
+          CopyRange_fxs(&range->fxs[lokke], &track->fxs,      &wblock->rangey1, &wblock->rangey2);
 
-		track=NextTrack(track);
-                if (track==NULL)
-                  break;
+          track=NextTrack(track);
+          if (track==NULL)
+            break;
 	}
 
         
-        const Place *startplace = p1;
-        const Place *endplace = p2;
+        const Place *startplace = &wblock->rangey1;
+        const Place *endplace = &wblock->rangey2;
         
         SCHEME_eval(
                     talloc_format("(copy-fx-range! %d %d %d (+ %d (/ %d %d)) (+ %d (/ %d %d)))",

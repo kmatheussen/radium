@@ -32,73 +32,111 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "expand_proc.h"
 
 
-static void expand_place(Place *place, int start, int end, int num_lines){
-  if (place->line < start)
-    return;
+static Place expand_place(const Place place, const Place start, const Place end, const Place new_end, const Place last_place){
+  if (p_Less_Or_Equal(place, start))
+    return place;
 
-  if (place->line >= end){
-    int num_new_lines = num_lines-(end-start);
-    place->line += num_new_lines;
-    return;
+  Place ret;
+
+  if (p_Greater_Or_Equal(place, end)){
+
+    if (p_Less_Than(new_end, end))
+      ret = p_Sub(place, p_Sub(end, new_end));
+    else
+      ret = p_Add(place, p_Sub(new_end, end));
+
+  } else {
+
+    ret = p_Scale(place, start, end, start, new_end);
+
   }
 
-  const Place place_start   = {start,             0, 1};
-  const Place place_end     = {end,               0, 1};
-  const Place place_new_end = {start + num_lines, 0, 1};
+  if (p_Greater_Than(ret, last_place)){
+    R_ASSERT_NON_RELEASE(false);
+    ret = last_place;
+  }
 
-  Place *new_place = PlaceScale(place, &place_start, &place_end, &place_start, &place_new_end);
-
-  memcpy(place, new_place, sizeof(Place));
+  return ret;
 }
 
-static void expand_list3(struct ListHeader3 *l, int start, int end, int num_lines){
+static void expand_list3(struct ListHeader3 *l, const Place start, const Place end, const Place new_end, const Place last_place){
   while(l!=NULL){
-    expand_place(&l->p, start, end, num_lines);
+    if (p_Greater_Or_Equal(l->p, start)) {
+      l->p = expand_place(l->p, start, end, new_end, last_place);
+    }
     l=l->next;
   }
 }
 
-static void expand_note(struct Notes *note, int start, int end, int num_lines){
-  expand_place(&note->l.p, start, end, num_lines);
-  expand_place(&note->end, start, end, num_lines);
-  expand_list3(&note->velocities->l, start, end, num_lines);
-  expand_list3(&note->pitches->l, start, end, num_lines);
+static void expand_note(struct Notes *note, const Place start, const Place end, const Place new_end, const Place last_place){
+  note->l.p = expand_place(note->l.p, start, end, new_end, last_place);
+  note->end = expand_place(note->end, start, end, new_end, last_place);
+  expand_list3(&note->velocities->l, start, end, new_end, last_place);
+  expand_list3(&note->pitches->l, start, end, new_end, last_place);
 }
 
-static void expand_track(struct Tracks *track, int start, int end, int num_lines){
+static void expand_track(struct Tracks *track, const Place start, const Place end, const Place new_end, const Place last_place){
 
   struct Notes *note = track->notes;
   while(note!=NULL){
-    expand_note(note, start, end, num_lines);
+    expand_note(note, start, end, new_end, last_place);
     note = NextNote(note);
   }
   
-  expand_list3(&track->stops->l, start, end, num_lines);
+  expand_list3(&track->swings->l, start, end, new_end, last_place);
+  expand_list3(&track->stops->l, start, end, new_end, last_place);
 
   VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
-    expand_list3(&fxs->fxnodelines->l, start, end, num_lines);
+    expand_list3(&fxs->fxnodelines->l, start, end, new_end, last_place);
   }END_VECTOR_FOR_EACH;
 }
 
-static void expand_block(struct Blocks *block, int start, int end, int num_lines){
+static void expand_block(struct WBlocks *wblock, struct Blocks *block, const Place start, const Place end, const Place new_end){
 
-  expand_list3(&block->signatures->l, start, end, num_lines);
-  expand_list3(&block->lpbs->l, start, end, num_lines);
-  expand_list3(&block->tempos->l, start, end, num_lines);
-  expand_list3(&block->temponodes->l, start, end, num_lines);
+  if (p_Equal(end, new_end))
+    return;
+
+  // Set new block->num_lines value.
+  {
+    Place last_place = p_Create(block->num_lines, 0, 1);
+    if (p_Less_Than(new_end, end))
+      last_place = p_Sub(last_place, p_Sub(end, new_end));
+    else
+      last_place = p_Add(last_place, p_Sub(new_end, end));
+    
+    if (last_place.counter==0)
+      block->num_lines = last_place.line;
+    else
+      block->num_lines = last_place.line + 1;
+  }
+
+  const Place last_place = p_Last_Pos(block);
+
+  if (p_Greater_Than(start, last_place)){
+    R_ASSERT(false);
+    return;
+  }
+
+  expand_list3(&block->swings->l, start, end, new_end, last_place);
+  expand_list3(&block->signatures->l, start, end, new_end, last_place);
+  expand_list3(&block->lpbs->l, start, end, new_end, last_place);
+  expand_list3(&block->tempos->l, start, end, new_end, last_place);
+  expand_list3(&block->temponodes->l, start, end, new_end, last_place);
+
+  wblock->rangey1 = expand_place(wblock->rangey1, start, end, new_end, last_place);
+  wblock->rangey2 = expand_place(wblock->rangey2, start, end, new_end, p_Create(wblock->block->num_lines, 0, 1));
 
   struct Tracks *track = block->tracks;
   while(track!=NULL){
-    expand_track(track, start, end, num_lines);
+    expand_track(track, start, end, new_end, last_place);
     track=NextTrack(track);
   }
-
-  block->num_lines = block->num_lines - (end-start) + num_lines;
 
   LegalizeTempoNodes(block);
 
   TIME_everything_in_block_has_changed(block);
 }
+
 
 static void incLocalZoomLine(struct LocalZooms *localzoom, int num_lines){
   if (localzoom!=NULL){
@@ -146,20 +184,21 @@ static void expand_localzooms(struct WBlocks *wblock, int start, int end, int nu
     localzoom->zoomline=lokke;
     ListAddElement3(&wblock->localzooms,&localzoom->l);
   }
-
 }
 
-void EXPAND_Block(struct Tracker_Windows *window, struct WBlocks *wblock, int start, int end, int num_lines){
-  expand_block(wblock->block, start, end, num_lines);
-  expand_localzooms(wblock, start, end, num_lines);
+void EXPAND_Block(struct Tracker_Windows *window, struct WBlocks *wblock, const Place start, const Place end, const Place new_end){
+  expand_block(wblock, wblock->block, start, end, new_end);
+
+  expand_localzooms(wblock, start.line, end.line, p_Sub(new_end, start).line);
+
   UpdateRealLines(window,wblock);
 }
 
-void EXPAND_Block_full_control_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, int start_line, int end_line, int num_lines){
+void EXPAND_Block_full_control_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, const Place start, const Place end, const Place new_end){
 
   PC_Pause();{
     ADD_UNDO(Block_CurrPos(window));
-    EXPAND_Block(window, wblock, start_line, end_line, num_lines);
+    EXPAND_Block(window, wblock, start, end, new_end);
   }PC_StopPause(NULL);
   
   window->must_redraw = true;
@@ -167,47 +206,28 @@ void EXPAND_Block_full_control_CurrPos(struct Tracker_Windows *window, struct WB
 }
 
 void EXPAND_Block_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, int num_lines){
-  EXPAND_Block_full_control_CurrPos(window, wblock, 0, wblock->block->num_lines, num_lines);
+  const Place start = p_Create(0,0,1);
+  const Place end = p_Create(wblock->block->num_lines, 0, 1);
+  const Place new_end = p_Create(num_lines, 0, 1);
+  EXPAND_Block_full_control_CurrPos(window, wblock, start, end, new_end);
 }
 
-void EXPAND_Block_from_range_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, int num_lines_after){
-  if(num_lines_after==0){
-    GFX_Message(NULL, "Can not expand down to 0 lines");
-    return;
-  }
-    
+void EXPAND_Block_from_range_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, const Place range_duration_after){
   if (wblock->isranged==false){
     GFX_Message(NULL, "No range in block");
     return;
   }
 
-  int realline1 = wblock->rangey1;
-  int realline2 = wblock->rangey2;
-
-  int line1 = wblock->reallines[realline1]->l.p.line;
-  int line2 = wblock->reallines[realline2]->l.p.line;
-
-  int num_lines_before = line2 - line1 + 1;
-
-  if(num_lines_before==0)
-    num_lines_before++;
-
-  printf("line1: %d, line2: %d, num_lines_before: %d\n",line1,line2,num_lines_before);
-
-  EXPAND_Block_full_control_CurrPos(window, wblock, line1, line2, num_lines_after);
-
-  int realline = 0;
-
-  // set new rangey1
-  while(wblock->reallines[realline]->l.p.line<line1)
-    realline++;
-  wblock->rangey1=realline;
-
-  // set new rangey2
-  while(wblock->reallines[realline]->l.p.line <= line1+num_lines_after){
-    wblock->rangey2=realline;
-    realline++;
+  if(p_Less_Or_Equal(range_duration_after, p_Create(0,0,1))){
+    GFX_Message(NULL, "Can not expand down to 0 lines");
+    return;
   }
-    
 
+  Place start = wblock->rangey1;
+  Place end = wblock->rangey2;
+  Place new_end = p_Add(start, range_duration_after);
+
+  //printf("line1: %d, line2: %d, num_lines_before: %d\n",line1,line2,num_lines_before);
+
+  EXPAND_Block_full_control_CurrPos(window, wblock, start, end, new_end);
 }

@@ -290,23 +290,42 @@ class Sample_requester_widget : public QWidget
   }
   
   void read_bookmark_and_set_dir(void){
-    QString path = SETTINGS_read_qstring(
-                                         QString("sample_bookmarks")+QString::number(_bookmark),
-                                         SETTINGS_read_qstring(
-                                                               "samples_dir", // "samples_dir" contains last used sample.
-                                                               _dir.dirName()
-                                                               )
-                                         );
+    QString settings_key = QString("sample_bookmarks")+QString::number(_bookmark);
+    QString default_dir = SETTINGS_read_qstring(
+                                                "samples_dir", // "samples_dir" contains last used sample.
+                                                _dir.dirName()
+                                                );
+
+    QString path = SETTINGS_read_qstring(settings_key, default_dir);
     _dir = QDir(path);
-    
+
     if(_dir.exists()==false) {
       static QSet<QString> already_warned_about;
       QString name = _dir.absolutePath();
       if (already_warned_about.contains(name)==false){
-        GFX_addMessage("Bookmarked sample directory \"%s\" doesn't exist anymore",name.toUtf8().constData());
-        already_warned_about.insert(name);
+        vector_t v = {};
+        int remove = -1;
+        
+        if (path != default_dir)
+          remove = VECTOR_push_back(&v, "Remove bookmark");
+
+        int ok = VECTOR_push_back(&v, "Ok");
+        (void)ok;
+
+        int ret = GFX_Message(&v, "Bookmarked sample directory \"%s\" doesn't exist anymore",name.toUtf8().constData());
+
+        if (ret==remove){
+          SETTINGS_remove(settings_key.toUtf8().constData());
+        } else {
+          already_warned_about.insert(name);
+        }
       }
-      _dir = QDir(QDir::currentPath());
+      
+      if (path != default_dir)
+        _dir = QDir(default_dir);
+
+      if(_dir.exists()==false)
+        _dir = QDir(QDir::currentPath());
     }
   }
 

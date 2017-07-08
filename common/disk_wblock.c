@@ -20,10 +20,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "placement_proc.h"
 #include "disk.h"
 #include "disk_localzooms_proc.h"
 #include "disk_wtrack_proc.h"
 #include "disk_warea_proc.h"
+#include "disk_placement_proc.h"
 #include "wblocks_proc.h"
 
 #include "disk_wblock_proc.h"
@@ -64,8 +66,12 @@ DC_start("WBLOCK");
 	DC_SSB("isranged",wblock->isranged);
 	DC_SSL("rangex1",wblock->rangex1);
 	DC_SSL("rangex2",wblock->rangex2);
-	DC_SSL("rangey1",wblock->rangey1);
-	DC_SSL("rangey2",wblock->rangey2);
+        DC_start("RANGE_START");{
+          SavePlace(&wblock->rangey1);
+        }DC_end();
+        DC_start("RANGE_END");{
+          SavePlace(&wblock->rangey2);
+        }DC_end();
 
 	SaveLocalZooms(wblock->localzooms,wblock->block->num_lines);
 	SaveWTrack(wblock->wtracks, true);
@@ -77,9 +83,11 @@ if(save_all)
 
 
 struct WBlocks *LoadWBlock(void){
-	static char *objs[2]={
+	static char *objs[4]={
 		"LOCALZOOMS",
-		"WTRACK"
+		"WTRACK",
+		"RANGE_START",
+		"RANGE_END"
 	};
 
 	static char *vars[19]={
@@ -107,10 +115,12 @@ struct WBlocks *LoadWBlock(void){
 	wblock->l.num=DC_LoadN();
 	wblock->tempocolorarea.width=22;
         wblock->num_expand_lines=1;
+        wblock->rangey1 = p_Create(0,0,1);
+        wblock->rangey2 = p_Create(1,0,1);
 
         WArea dummy;
 
-	GENERAL_LOAD(2,19)
+	GENERAL_LOAD(4,19)
 
 
 
@@ -172,10 +182,10 @@ var16:
 	wblock->rangex2=DC_LoadN();
 	goto start;
 var17:
-	wblock->rangey1=DC_LoadN();
+	wblock->rangey1=p_Create(DC_LoadN(), 0, 0);
 	goto start;
 var18:
-	wblock->rangey2=DC_LoadN();
+	wblock->rangey2=p_Create(DC_LoadN(), 0, 0);
 	goto start;
 
 obj0:
@@ -184,12 +194,18 @@ obj0:
 obj1:
 	DC_ListAdd1(&wblock->wtracks,LoadWTrack());
 	goto start;
+obj2:
+	LoadPlace(&wblock->rangey1);
+        DC_Next();
+	goto start;
+obj3:
+	LoadPlace(&wblock->rangey2);
+        DC_Next();
+	goto start;
 
         
 var19:
- var20:
-obj2:
-obj3:
+var20:
 obj4:
 obj5:
 obj6:
@@ -223,6 +239,35 @@ if(wblock==NULL) return;
         UpdateWBlockCoordinates(window,wblock);	//Also updates wtrack coordinates
 
 	DLoadLocalZooms(newroot,window,wblock);
+
+        // Range
+        if (wblock->rangey1.dividor==0){ // I.e. old type
+          int realline = wblock->rangey1.line;
+          if (realline<0)
+            realline = 0;
+
+          if (realline >= wblock->num_reallines)
+            wblock->rangey1 = p_Create(wblock->block->num_lines, 0, 1);
+          else
+            wblock->rangey1 = wblock->reallines[realline]->l.p;
+        }
+
+        if (wblock->rangey2.dividor==0){ // I.e. old type.
+          int realline = wblock->rangey2.line;
+          if (realline<0)
+            realline = 0;
+
+          if (realline >= wblock->num_reallines)
+            wblock->rangey2 = p_Create(wblock->block->num_lines, 0, 1);
+          else
+            wblock->rangey2 = wblock->reallines[realline]->l.p;
+        }
+
+        if (p_Greater_Or_Equal(wblock->rangey1, wblock->rangey2)){ // General sanitizer.
+          wblock->rangey1 = p_Create(0,0,1);
+          wblock->rangey2 = p_Create(1,0,1);
+          wblock->isranged = false;
+        }
 
 if(dload_all)        
   DLoadWBlocks(newroot,window,NextWBlock(wblock), true);

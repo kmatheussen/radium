@@ -230,6 +230,24 @@ static void append_line(const char** lines, const char* line){
 #endif
 
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
+bool SETTINGS_remove(const char* key){
+  QVector<QString> lines = get_lines(key);
+  if(lines.size()==0)
+    return false;
+  
+  int linenum = find_linenum(key,lines);
+
+  if (linenum == -1)
+    return false;
+
+  lines.remove(linenum);
+
+  write_lines(key, lines);
+
+  return true;
+}
+
+// Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static void SETTINGS_put(const char* key, QString val){
   QVector<QString> lines = get_lines(key);
   if(lines.size()==0)

@@ -77,11 +77,11 @@ struct Blocks *InsertBlock(
         
         while(window!=NULL){
           wblock=talloc(sizeof(struct WBlocks));
-            wblock->l.num=blockpos;
+          wblock->l.num=blockpos;
             
-            NewWBlock(window,wblock,block);
+          NewWBlock(window,wblock,block);
             
-            window=NextWindow(window);
+          window=NextWindow(window);
         }
 
         return block;

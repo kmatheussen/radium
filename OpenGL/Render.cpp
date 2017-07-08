@@ -702,7 +702,7 @@ struct TempoGraph create_TempoGraph(const struct Tracker_Windows *window, const 
     for(int n = 0 ; n<TEMPOGRAPH_POINTS_PER_REALLINE ; n++){
       Place p;
       Float2Placement(scale(n,0,TEMPOGRAPH_POINTS_PER_REALLINE,fp1,fp2), &p);
-      STime time = Place2STime_from_times(wblock->block->times_with_global_swings,&p);
+      STime time = Place2STime_from_times(wblock->block->num_lines, wblock->block->times_with_global_swings, &p);
       if(realline>0 || n>0){
         STime val = time-last_time;
         if(tg.min<val || pos==0)
@@ -2477,9 +2477,6 @@ static void create_range(const struct Tracker_Windows *window, const struct WBlo
   int tracknum1 = R_MIN(wblock->block->num_tracks-1, wblock->rangex1);
   int tracknum2 = R_MIN(wblock->block->num_tracks-1, wblock->rangex2);
 
-  int realline1 = R_MIN(wblock->block->num_lines, wblock->rangey1);
-  int realline2 = R_MIN(wblock->block->num_lines, wblock->rangey2);
-
   struct WTracks *wtrack1=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,tracknum1);
   struct WTracks *wtrack2=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,tracknum2);
 
@@ -2489,9 +2486,13 @@ static void create_range(const struct Tracker_Windows *window, const struct WBlo
   float x1 = wtrack1->x;
   float x2 = wtrack2->x2;
 
-  int y1 = get_realline_y1(window, realline1);
-  int y2 = get_realline_y2(window, realline2-1);
+  float realline1 = FindReallineForF(wblock, 0, &wblock->rangey1);
+  float realline2 = FindReallineForF(wblock, realline1, &wblock->rangey2);
+  int y1 = get_realline_y(window, realline1);
+  int y2 = get_realline_y(window, realline2)-1;
 
+  //printf("realline1: %f, realline2: %f, y1: %d, y2: %d\n", realline1, realline2, y1, y2);
+  
   GE_Rgb rgb = GE_get_rgb(RANGE_COLOR_NUM);
   if (rgb.a==0xff)
     rgb.a = 0x80;

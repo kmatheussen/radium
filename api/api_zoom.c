@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Python.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/placement_proc.h"
 #include "../common/reallines_proc.h"
 #include "../common/font_proc.h"
 #include "../common/expand_proc.h"
@@ -55,27 +56,25 @@ void expandRange(int blocknum, int windownum){
     return;
   }
 
-  int realline1 = wblock->rangey1;
-  int realline2 = wblock->rangey2;
+  float num_lines_before = 0.0f;
 
-  int line1 = wblock->reallines[realline1]->l.p.line;
-  int line2 = wblock->reallines[realline2]->l.p.line;
+  if (p_Greater_Or_Equal(wblock->rangey2, wblock->rangey1)){
+    Place duration = p_Sub(wblock->rangey2, wblock->rangey1);
+    num_lines_before = p_float(duration);
+  }
 
-  int num_lines_before = line2-line1;
-
-  if(num_lines_before==0)
-    num_lines_before++;
-
-  printf("********* realline1: %d, realline2: %d\n",realline1,realline2);
-  printf("line1: %d, line2: %d, num_lines_before: %d\n",line1,line2,num_lines_before);
+  //printf("********* realline1: %d, realline2: %d\n",realline1,realline2);
+  //printf("line1: %d, line2: %d, num_lines_before: %d\n",line1,line2,num_lines_before);
 
   char temp[1024];
-  sprintf(temp, "Num lines in range (now %d) >",num_lines_before);
-  int num_lines_after = GFX_GetInteger(window,NULL,temp, 1, 100000);
-  if (num_lines_after<1)
+  sprintf(temp, "Num lines in range (now %f) >",num_lines_before);
+  float num_lines_after = GFX_GetFloat(window,NULL,temp, 0.1, 100000);
+  if (num_lines_after<=0)
     return;
+  
+  Place new_duration = p_FromFloat(num_lines_after);
 
-  EXPAND_Block_from_range_CurrPos(window, wblock, num_lines_after);
+  EXPAND_Block_from_range_CurrPos(window, wblock, new_duration);
 }
 
 void lineZoomBlock(int numlines, int blocknum, int windownum){

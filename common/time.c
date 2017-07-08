@@ -879,9 +879,14 @@ static double Place2STime_from_times2(
   return time_change->t1 + get_stime_from_stimechange(time_change, y, true);
 }
 
-STime Place2STime_from_times(const struct STimes *times, const Place *p){
+STime Place2STime_from_times(int num_lines, const struct STimes *times, const Place *p){
   if(0==p->counter)
     return times[p->line].time; // Most common situation. Should probably inline this function.
+
+  if (p->line >= num_lines){
+    R_ASSERT_NON_RELEASE(false);
+    return times[num_lines].time;
+  }
 
   double y = GetDoubleFromPlace(p);
   return Place2STime_from_times2(times, y);
@@ -891,7 +896,7 @@ STime Place2STime(
 	const struct Blocks *block,
 	const Place *p
 ){
-  return Place2STime_from_times(block->times, p);
+  return Place2STime_from_times(block->num_lines, block->times, p);
 }
 
 // Returns an array of STimeChange elements

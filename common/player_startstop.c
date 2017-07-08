@@ -361,7 +361,7 @@ static void PlayRange(struct Tracker_Windows *window, const Place *place){
   struct WBlocks *wblock = window->wblock;
   
   //Place *place_start = GetRangeStartPlace(wblock);
-  const Place *place_end   = GetRangeEndPlace(wblock);
+  const Place *place_end   = &wblock->rangey2;
   pc->range_duration = Place2STime(wblock->block, place_end) - Place2STime(wblock->block, place);
   
   pc->is_playing_range = true;
@@ -376,7 +376,7 @@ void PlayRangeFromStart(struct Tracker_Windows *window){
 
 	if( ! wblock->isranged) return;
 
-        const Place *place = GetRangeStartPlace(wblock);
+        const Place *place = &wblock->rangey1;
           
         PlayRange(window, place);
 }
