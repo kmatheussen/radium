@@ -1403,7 +1403,8 @@
   (define fontheight (get-fontheight))
   (define voltext-height fontheight)
 
-  (define horizontal-spacing 4)
+  (define horizontal-spacing 4) ;; must be an even number.
+  (define horizontal-spacing/2 (/ horizontal-spacing 2))
   
   (define show-voltext (not is-minimized))
   (define show-peaktext #t)
@@ -1438,22 +1439,20 @@
   (define paint-slider #f)
 
   (define last-vol-slider (get-volume))
-  (define volslider #f)
-  (set! volslider (<gui> :vertical-slider
-                         ""
-                         0 (db-to-slider (get-volume)) 1
-                         (lambda (val)
-                           (define db (slider-to-db val))
-                           (when (and doit (not (= last-vol-slider db)))
-                             (set! last-vol-slider db)
-                             ;;(c-display "             hepp hepp")
-                             (<ra> :set-instrument-effect instrument-id effect-name (scale db *min-db* *max-db* 0 1))
-                             (if paint-voltext
-                                 (<gui> :update voltext)))
-                           (if volslider
-                               (<gui> :update volslider)))))
+  (define volslider (<gui> :vertical-slider
+                           ""
+                           0 (db-to-slider (get-volume)) 1
+                           (lambda (val)
+                             (define db (slider-to-db val))
+                             (when (and doit (not (= last-vol-slider db)))
+                               (set! last-vol-slider db)
+                               ;;(c-display "             hepp hepp")
+                               (<ra> :set-instrument-effect instrument-id effect-name (scale db *min-db* *max-db* 0 1))
+                               (if paint-voltext
+                                   (<gui> :update voltext))))))
 
-  (<gui> :set-min-width volslider 1) ;; ?? Why is this necessary?
+  (<gui> :set-size-policy volslider #t #t)
+  ;;(<gui> :set-min-width volslider 1) ;; ?? Why is this necessary?
   
   (define (paint-text gui text)
     (define width (<gui> :width gui))
@@ -1466,7 +1465,7 @@
     
     ;; rounded
     (if is-minimized
-        (<gui> :filled-box gui col1 0 0 width height 2 2)
+        (<gui> :filled-box gui col1 0 0 width height 0 0)
         (<gui> :filled-box gui col1 0 0 width height 5 5))
     
     ;; text
@@ -1491,18 +1490,23 @@
     ;;(paint-peaktext)
     )
 
-  (define volslider-rounding 2)
+  (define volslider-rounding (if is-minimized 0 2))
   
   (set! paint-slider
         (lambda ()
-          (define width (<gui> :width volslider))
+          (define volslider-width (<gui> :width volslider))
+          (define mid (floor (/ volslider-width 2)))
+          (define spacing (if is-minimized
+                              0
+                              horizontal-spacing/2))
+          (define width (- mid spacing))
           (define height (<gui> :height volslider))
           (define x1 0)
           (define x2 width)
           (define middle_y (scale (db-to-slider (get-volume)) 0 1 height 0))
           
           ;; background
-          (<gui> :filled-box volslider background-color 0 0 width height)
+          (<gui> :filled-box volslider background-color 0 0 volslider-width height)
           
           (define col1 (<gui> :mix-colors
                               (if is-sink? "#f0f0f0" "#010101")
@@ -1514,7 +1518,8 @@
           (<gui> :filled-box volslider col1 x1 middle_y x2 height volslider-rounding volslider-rounding) ;; down
 
           ;; slider border
-          (<gui> :draw-box volslider "black" x1 0 x2 height 1.0)
+          (<gui> :draw-box volslider "#222222" (+ 0.5 x1) 0.5 (- x2 0.5) (- height 0.5) 1.0 volslider-rounding volslider-rounding)
+          ;;(<gui> :filled-box volslider "black" 0 0 (1+ x2) height)
 
           ;; slider 0db, white line
           (define middle_0db (scale (db-to-slider 0) 0 1 height 0))
@@ -1549,6 +1554,18 @@
                               "------------"
                               (get-global-mixer-strips-popup-entries instrument-id strips-config))))
            #f))
+
+
+  (<gui> :add volslider volmeter 0 0 5 5) ;; Set parent of volmeter to volslider (gui_setParent should be renamed to something else, this is awkward)
+  
+  (add-safe-resize-callback volslider (lambda (width height) 
+                                        (define mid (floor (/ width 2)))
+                                        (define spacing (if is-minimized
+                                                            0
+                                                            horizontal-spacing/2))
+                                        (define volmeter-x1 (+ mid spacing))
+                                        (<gui> :set-pos volmeter volmeter-x1 0)
+                                        (<gui> :set-size volmeter (- width volmeter-x1) height)))
 
   (when show-voltext
     (<gui> :add-mouse-callback voltext (lambda (button state x y)
@@ -1610,22 +1627,12 @@
     (<gui> :add horizontal1 peaktext 1))
 
 
-  ;; horiz 2 (volume slider and audio meter)
-  ;;
-  (define horizontal2 (<gui> :horizontal-layout))
-  (<gui> :set-layout-spacing horizontal2 horizontal-spacing 0 0 0 0)
-  (<gui> :set-size-policy horizontal2 #t #t)
-  (<gui> :set-size-policy volslider #t #t)
-  (<gui> :set-size-policy volmeter #t #t)
-  (<gui> :add horizontal2 volslider 1)
-  (<gui> :add horizontal2 volmeter 1)
-
   ;; vertical
   (define vertical (<gui> :vertical-layout))
   (<gui> :set-layout-spacing vertical 5 0 0 0 0)
 
   (<gui> :add vertical horizontal1)
-  (<gui> :add vertical horizontal2)
+  (<gui> :add vertical volslider)
 
   (set! doit #t)
 
