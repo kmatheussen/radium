@@ -385,45 +385,36 @@
   (set! instruments (<new> :container instruments =))
   (set! no-inputs-or-outputs (<new> :container no-inputs-or-outputs =))
   
-  ((:no-input-or-outputs
-    ()
-    (no-inputs-or-outputs :list))
+  :no-input-or-outputs ()
+  (no-inputs-or-outputs :list)
 
-   (:instruments
-    ()
-    (instruments :list))
+  :instruments ()
+  (instruments :list)
 
-   (:instrument-plugins
-    ()
-    instrument-plugins)
+  :instrument-plugins ()
+  instrument-plugins
 
-   (:buses
-    ()
-    (all-buses :list))
+  :buses ()
+  (all-buses :list)
 
-   (:buses-plugins
-    ()
-    buses-plugins)
+  :buses-plugins
+  ()
+  buses-plugins
 
-   (:instrument-instruments
-    ()
-    all-instrument-instruments)
+  :instrument-instruments ()
+  all-instrument-instruments
 
-   (:bus-instruments
-    ()
-    all-bus-instruments)
+  :bus-instruments ()
+  all-bus-instruments
 
-   (:is-bus?
-    (id)
-    (all-buses :contains id))
+  :is-bus? (id)
+  (all-buses :contains id)
 
-   (:is-instrument?
-    (id)
-    (instruments :contains id))
+  :is-instrument? (id)
+  (instruments :contains id)
 
-   (:has-no-inputs-or-outputs?
-    (id)
-    (no-inputs-or-outputs :contains id))))
+  :has-no-inputs-or-outputs? (id)
+  (no-inputs-or-outputs :contains id))
 
 
 (define (move-connections-to-new-instrument id-old-instrument id-new-instrument)

@@ -1199,9 +1199,20 @@ for .emacs:
   (define new-class-name (<_> 'new_instance_of_ class-name))
   (define args (cdr signature))
 
-  (define body (butlast rest))
-  (define methods (last rest))
-
+  (define body '())
+  (define methods '())
+  
+  (let loop ((rest rest)
+             (has-methods #f))
+    (when (not (null? rest))
+      (cond ((keyword? (car rest))
+             (push-back! methods (list (car rest) (cadr rest) (caddr rest)))
+             (loop (cdddr rest) #t))
+            (else
+             (assert (not has-methods))
+             (push-back! body (car rest))
+             (loop (cdr rest) #f)))))
+  
   (append (cons definer (list (cons new-class-name args)))
           body
           (define-class-helper class-name methods)))
@@ -1292,20 +1303,20 @@ for .emacs:
                 elements))
     hash)
       
-  ((:contains (key)
-              ((get-hash) key))
+  :contains (key)
+  ((get-hash) key)
 
-   (:num-elements ()
-                  num-elements)
+  :num-elements ()
+  num-elements
 
-   (:vector ()
-            (get-vector))
+  :vector ()
+  (get-vector)
 
-   (:list ()
-          (get-list))
+  :list ()
+  (get-list)
 
-   (:get (pos)
-         ((get-vector) pos))))
+  :get (pos)
+  ((get-vector) pos))
 
 #||
 =>

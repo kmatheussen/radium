@@ -321,8 +321,8 @@
 (define-expansion (push! list el)
   `(set! ,list (cons ,el ,list)))
 
-(define-expansion (push-back! list el)
-  `(set! ,list (append ,list (list ,el))))
+(define-expansion (push-back! list . elements)
+  `(set! ,list (append ,list (list ,@elements))))
 
 
 (define (delete-from das-list element)
