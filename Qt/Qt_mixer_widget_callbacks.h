@@ -129,7 +129,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     
     setupUi(this);
     g_zoom_slider = zoom_slider;
-
+    zoom_slider->hide();
+    
     // Tro to find default zoom level based on system font
     QFont font = g_editor->main_window->font();
     _middle_zoom = 230 - (font.pointSize()-12) * 4.0;
