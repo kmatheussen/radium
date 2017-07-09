@@ -2355,7 +2355,8 @@ int radium_main(char *arg){
       
       XSplitter *xsplitter = new XSplitter(showMixerStripOnLeftSide());
       xsplitter->setChildrenCollapsible(false);
-      
+      xsplitter->setHandleWidth(0);
+                                
       editor->xsplitter = xsplitter;
 
       xsplitter->setOpaqueResize(true);
@@ -2377,7 +2378,8 @@ int radium_main(char *arg){
       }
 
       QSplitter *ysplitter = dynamic_cast<QSplitter*>(API_get_main_ysplitter()); //new QSplitter(Qt::Vertical, main_window);
-
+      ysplitter->setHandleWidth(0);
+      
       main_window->setCentralWidget(ysplitter);
 
       ysplitter->handle(1)->setEnabled(true);
