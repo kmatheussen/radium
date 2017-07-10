@@ -4340,7 +4340,7 @@
                                           (list "Configure block color"
                                                 :enabled seqblock-info
                                                 (lambda ()
-                                                  (<ra> :color-dialog -1 (<ra> :get-block-color blocknum)
+                                                  (<ra> :color-dialog (<ra> :get-block-color blocknum) -1
                                                         (lambda (color)
                                                           (<ra> :set-block-color color blocknum)))))
                                           ;;
