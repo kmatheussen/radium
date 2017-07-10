@@ -60,6 +60,23 @@
               (lambda ()
                 (strips-config :show-config-gui)))
         "----------"
+        (if strips-config
+            (list "Set number of rows"
+                  (lambda ()
+                    (popup-menu "1" (lambda ()
+                                      (strips-config :set-num-rows! 1))
+                                "2" (lambda ()
+                                      (strips-config :set-num-rows! 2))
+                                "3" (lambda ()
+                                      (strips-config :set-num-rows! 3))
+                                "4" (lambda ()
+                                      (strips-config :set-num-rows! 4))
+                                "5" (lambda ()
+                                      (strips-config :set-num-rows! 5))
+                                "6" (lambda ()
+                                      (strips-config :set-num-rows! 6)))))
+            '())
+        "----------"
         "Set current instrument" (lambda ()
                                    (popup-menu (map (lambda (instrument-id)
                                                       (list (<ra> :get-instrument-name instrument-id)
@@ -363,6 +380,7 @@
                   ((:reset!) (reset!))
                   ((:show-config-gui) (show-config-gui))
                   ((:recreate-config-gui-content) (recreate-config-gui-content))
+                  ((:set-num-rows!) (mixer-strips-change-num-rows parentgui (car rest)))
                   (else
                    (error (<-> "Unknown keyword1 " keyword)))))
               (lambda (keyword instrument-id new-value)
