@@ -152,31 +152,36 @@
   (set! g-total-time (+ g-total-time (- (time) start)))
   ret)
 
+(define g-total-sort-time 0)
 
 (define-instrument-memoized (sort-instruments-by-mixer-position-and-connections instruments)
+  (define start (time))
+  
   (define container (<new> :container instruments))
   (define done (make-hash-table (container :length) =))
   
   ;; topological sort, plus keep as much as possible of the order
   ;; from 'sort-instruments-by-mixer-position'.
-  (let loop ((ids (sort-instruments-by-mixer-position instruments)))
-    ;;(c-display "...ids: " ids ", done:" done)
-    (if (null? ids)
-        '()
-        (let ((id (car ids)))
-          (if (done id)
-              (loop (cdr ids))
-              (let ((ids-positioned-before (keep (lambda (id)
-                                                   (and (container :contains id)
-                                                        (not (done id))))
-                                                 (get-instruments-connecting-to-instrument id))))
-                ;;(c-display "id:" id ", pos-before:" ids-positioned-before)
-                (if (null? ids-positioned-before)
-                    (begin
-                      (set! (done id) #t)
-                      (cons id (loop (cdr ids))))
-                    (loop (append (sort-instruments-by-mixer-position ids-positioned-before)
-                                  ids)))))))))
+  (define ret (let loop ((ids (sort-instruments-by-mixer-position instruments)))
+                ;;(c-display "...ids: " ids ", done:" done)
+                (if (null? ids)
+                    '()
+                    (let ((id (car ids)))
+                      (if (done id)
+                          (loop (cdr ids))
+                          (let ((ids-positioned-before (keep (lambda (id)
+                                                               (and (container :contains id)
+                                                                    (not (done id))))
+                                                             (get-instruments-connecting-to-instrument id))))
+                            ;;(c-display "id:" id ", pos-before:" ids-positioned-before)
+                            (if (null? ids-positioned-before)
+                                (begin
+                                  (set! (done id) #t)
+                                  (cons id (loop (cdr ids))))
+                                (loop (append (sort-instruments-by-mixer-position ids-positioned-before)
+                                              ids)))))))))
+  (set! g-total-sort-time (+ g-total-sort-time (- (time) start)))
+  ret)
 
 #!!
 ;; blowfish.rad. 29 must be placed before 30.
