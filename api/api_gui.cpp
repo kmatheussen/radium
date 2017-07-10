@@ -4333,6 +4333,12 @@ void gui_setNumRowsInMixerStrips(int64_t guinum, int num_rows){
   return S7CALL2(void_int_int, "mixer-strips-change-num-rows", guinum, num_rows);
 }
 
+// Called after loading.
+void gui_resetAllMixerStrips(void){
+  for(int64_t guinum : g_mixerstrip_guinums)
+    S7CALL2(void_int, "mixer-strips-reset-configuration!", guinum);
+}
+
 int64_t showMixerStrips2(int num_rows, dyn_t instrument_ids){
   int64_t gui = gui_createMixerStrips(num_rows, instrument_ids);
   if (gui!=-1)

@@ -289,6 +289,12 @@
         (set! first-time #f))
     )
   
+
+  (define (reset!)
+    (set! first-time #t)
+    (set! confs (make-hash-table 100 =))
+    (set! initial-instruments #f)
+    (scan-instruments!))
   
   (define is-enabled-content (<gui> :widget))
 
@@ -354,6 +360,7 @@
                   ((:is-enabled) (confs (car rest) :is-enabled))
                   ((:is-unique) (confs (car rest) :is-unique))
                   ((:scan-instruments!) (scan-instruments!))
+                  ((:reset!) (reset!))
                   ((:show-config-gui) (show-config-gui))
                   ((:recreate-config-gui-content) (recreate-config-gui-content))
                   (else
@@ -2203,10 +2210,20 @@
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
     ((object :set-num-rows!) num-rows)))
 
-#!
+#!!
 (mixer-strips-change-num-rows ((car *mixer-strips-objects*) :gui) 6)
-!#
-         
+!!#
+
+
+(define (mixer-strips-reset-configuration! mixer-strips-gui)
+  (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
+    ((object :strips-config) :reset!)
+    ((object :remake) '())))
+
+#!!
+(mixer-strips-reset-configuration! ((car *mixer-strips-objects*) :gui))
+!!#
+
 (define (toggle-all-mixer-strips-fullscreen)
   (define set-to 0)
   (for-each (lambda (a-mixer-strips-object)

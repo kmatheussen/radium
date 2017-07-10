@@ -40,7 +40,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_instruments_proc.h"
 #include "../audio/audio_instrument_proc.h"
 
+#include "../api/api_proc.h"
+
+
 #include "disk_song_proc.h"
+
+
 
 extern hash_t *COMMENT_get_state(void);
 extern void COMMENT_reset(void);
@@ -262,6 +267,8 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         BS_UpdateBlockList();
         BS_UpdatePlayList();
 
+        gui_resetAllMixerStrips();
+          
         // Audio plugins are created after creating trackreallines.
         //TRACKREALLINES_update_peak_tracks(song->tracker_windows);
 
