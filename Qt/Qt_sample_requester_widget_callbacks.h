@@ -214,6 +214,9 @@ class Sample_requester_widget : public QWidget
 
   QLabel *_sample_name_label;
 
+  bool _is_fluid_synth = false;
+  bool _is_sample_player = false;
+  
   enum{
     IN_SF2_BANK,
     IN_SF2,
@@ -241,25 +244,29 @@ class Sample_requester_widget : public QWidget
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
       if (plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Click")) {
-        
+
+        _is_sample_player = true;
+                
         bool is_default_sound;
         QString filename = STRING_get_qstring(SAMPLER_get_filename(plugin, &is_default_sound));
         if (!is_default_sound) {
           _dir = QFileInfo(filename).absoluteDir();
           use_saved_path = false;
         }
-        
+
         printf("   default: %d. Filename: -%s-\n",is_default_sound, filename.toUtf8().constData());
         
       } else if (plugin->type==PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth")){
-        
+
+        _is_fluid_synth = true;
+
         bool is_default_sound;
         QString filename = STRING_get_qstring(FLUIDSYNTH_get_filename(plugin, &is_default_sound));
         if (!is_default_sound) {
           _dir = QFileInfo(filename).absoluteDir();
           use_saved_path = false;
         }
-        
+
       }
 
       
@@ -344,9 +351,9 @@ class Sample_requester_widget : public QWidget
   void updateWidgets(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-    if(QString("Sample Player") == plugin->type->type_name){
+    if(_is_sample_player){
       update_sample_name_label(STRING_get_qstring(SAMPLER_get_filename_display(plugin)));
-    }else{
+    }else if (_is_fluid_synth){
       update_sample_name_label(STRING_get_qstring(FLUIDSYNTH_get_filename_display(plugin)));
     }
 
@@ -452,12 +459,9 @@ class Sample_requester_widget : public QWidget
         }else if(filename.endsWith(".sf2",Qt::CaseInsensitive)){
           entry.is_sf2 = true;
           entry.display = filename+"/";
-        }else{
-          SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-          if(QString("Sample Player") == plugin->type->type_name){
-            if(file_could_be_a_sample(filename))
-              entry.display = get_sample_filename_display_string(file_info);
-          }
+        }else if(_is_sample_player){
+          if(file_could_be_a_sample(filename))
+            entry.display = get_sample_filename_display_string(file_info);
         }
         
         content.push_back(entry);
@@ -472,7 +476,7 @@ class Sample_requester_widget : public QWidget
         item->setForeground(sf2_brush);
         item->setFont(sf2_font);
         file_list->addItem(item);
-      }else if(entry.display != ""){
+      }else if(_is_sample_player && entry.display != ""){
         QListWidgetItem *item = new QListWidgetItem(entry.display);
         item->setForeground(soundfile_brush);
         item->setFont(soundfile_font);
@@ -552,11 +556,11 @@ class Sample_requester_widget : public QWidget
 
     ADD_UNDO(PluginState_CurrPos(_patch));
 
-    bool successfully_selected;
+    bool successfully_selected = false;
 
-    if(QString("Sample Player") == plugin->type->type_name)
+    if(_is_sample_player)
       successfully_selected = SAMPLER_set_new_sample(plugin, STRING_create(_sf2_file), preset_bag);
-    else
+    else if (_is_fluid_synth)
       successfully_selected = FLUIDSYNTH_set_new_preset(plugin, STRING_create(_sf2_file), bank_num, preset_num);
 
     if(successfully_selected){
@@ -616,6 +620,8 @@ class Sample_requester_widget : public QWidget
   }
 
   void handle_file_pressed(QString item_text){
+    R_ASSERT_RETURN_IF_FALSE(_is_sample_player);
+    
     printf("file: Pressed \"%s\"\n",item_text.toUtf8().constData());
 
     if(g_filenames_hash.contains(item_text)==false)
@@ -692,7 +698,7 @@ class Sample_requester_widget : public QWidget
     case IN_DIRECTORY:
       if(is_directory_pressed(item_text)==true)
         handle_directory_pressed(item_text);
-      else if(is_file_pressed(item_text)==true)
+      else if(_is_sample_player && is_file_pressed(item_text)==true)
         handle_file_pressed(item_text);
       else if(is_sf2_file_pressed(item_text)==true)
         handle_sf2_file_pressed(item_text);
