@@ -139,7 +139,11 @@
             #f
             (begin
               (hash-table-set! visited i1 #t)
-              ;;(c-display "  instrument-eventually" (<ra> :get-instrument-name i1) "->" (<ra> :get-instrument-name i2))
+              ;;(c-display "  instrument-eventually" (<ra> :get-instrument-name i1) "->" (<ra> :get-instrument-name i2) ":" (any? (lambda (to)
+              ;;                                                                                                                    (if (= to i2)
+              ;;                                                                                                                        #t
+              ;;                                                                                                                        (loop to)))
+              ;;                                                                                                                  (get-instruments-and-buses-connecting-from-instrument i1)))
               (any? (lambda (to)
                       (if (= to i2)
                           #t
@@ -148,34 +152,43 @@
   (set! g-total-time (+ g-total-time (- (time) start)))
   ret)
 
-(define g-total-sort-time 0)
-(define-instrument-memoized (sort-instruments-by-mixer-position-and-connections instruments)
-  (define start (time))
-  (define num-comp 0)
-  (define ret
-    (sort instruments
-          (lambda (i1 i2)
-            ;;(c-display "comparing" i1 i2 (length instruments) (inc! num-comp 1))
-            (cond ((instrument-eventually-connects-to i1 i2)
-                   #t)
-                  ((instrument-eventually-connects-to i2 i1)
-                   #f)
-                  (else
-                   (define y1 (<ra> :get-instrument-y i1))
-                   (define y2 (<ra> :get-instrument-y i2))
-                   (cond ((< y1 y2)
-                          #t)
-                         ((> y1 y2)
-                          #f)
-                         (else
-                          (define x1 (<ra> :get-instrument-x i1))
-                          (define x2 (<ra> :get-instrument-x i2))
-                          (if (< x1 x2)
-                              #t
-                              #f))))))))
-  (set! g-total-sort-time (+ g-total-sort-time (- (time) start)))
-  ret)
 
+(define-instrument-memoized (sort-instruments-by-mixer-position-and-connections instruments)
+  (define container (<new> :container instruments))
+  (define done (make-hash-table (container :length) =))
+  
+  ;; topological sort, plus keep as much as possible of the order
+  ;; from 'sort-instruments-by-mixer-position'.
+  (let loop ((ids (sort-instruments-by-mixer-position instruments)))
+    ;;(c-display "...ids: " ids ", done:" done)
+    (if (null? ids)
+        '()
+        (let ((id (car ids)))
+          (if (done id)
+              (loop (cdr ids))
+              (let ((ids-positioned-before (keep (lambda (id)
+                                                   (and (container :contains id)
+                                                        (not (done id))))
+                                                 (get-instruments-connecting-to-instrument id))))
+                ;;(c-display "id:" id ", pos-before:" ids-positioned-before)
+                (if (null? ids-positioned-before)
+                    (begin
+                      (set! (done id) #t)
+                      (cons id (loop (cdr ids))))
+                    (loop (append (sort-instruments-by-mixer-position ids-positioned-before)
+                                  ids)))))))))
+
+#!!
+;; blowfish.rad. 29 must be placed before 30.
+(let* ((cat-instruments (<new> :get-cat-instruments))
+       (insts (cat-instruments :instrument-instruments)));;(list (car (cat-instruments :instrument-instruments)) (last (cat-instruments :instrument-instruments)))))
+  (for-each (lambda (inst)              
+              (c-display (ra:get-instrument-name inst) ":" inst))
+            insts)
+  (c-display "bef:" insts)
+  (c-display "aft:" (sort-instruments-by-mixer-position-and-connections insts)))
+(instrument-eventually-connects-to 29 30)
+!!#
 
 
 (define g-total-time2 0)
@@ -236,7 +249,7 @@
 (define-instrument-memoized (get-all-instruments-with-no-input-connections)
   (define buses (get-buses))
   (keep (lambda (id-instrument)
-          (and (not (member id-instrument buses))
+          (and (not (memv id-instrument buses))
                (= 0 (<ra> :get-num-in-audio-connections id-instrument))))
         (get-all-audio-instruments)))
 
@@ -911,8 +924,8 @@
   (define instruments-before (get-all-audio-instruments))
   
   (define (is-new-instrument? id-instrument)
-    (and (not (member id-instrument instruments-before))
-         (member id-instrument (get-all-audio-instruments))))
+    (and (not (memv id-instrument instruments-before))
+         (memv id-instrument (get-all-audio-instruments))))
   
   (define (num-new-instruments)
     (- (length (get-all-audio-instruments))

@@ -223,7 +223,9 @@
   (define cat-instruments (<new> :get-cat-instruments))
   
   (add-guis (sort-instruments-by-mixer-position-and-connections (cat-instruments :instrument-instruments)))
-                    
+
+  ;;(c-display "bef:" (map ra:get-instrument-name (cat-instruments :instrument-instruments)))
+  ;;(c-display "aft:" (map ra:get-instrument-name (sort-instruments-by-mixer-position-and-connections (cat-instruments :instrument-instruments))))
 
   (let ((text (<gui> :text *arrow-text2*)))
     (define w1 (<gui> :widget))
@@ -239,6 +241,7 @@
   ;;
   vertical-layout
   )
+
 
 #!!
 (let ((strips-config (create-strips-config -2)))

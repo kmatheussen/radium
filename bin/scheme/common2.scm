@@ -1266,7 +1266,15 @@ for .emacs:
   (define vector #f)
   (define list #f)
   (define hash #f)
+  (define num-elements (length elements))
 
+  (define (clear! elements)
+    (set! elements elements)
+    (set! vector #f)
+    (set! list #f)
+    (set! hash #f)
+    (set! num-elements (lengh elements)))
+    
   (when (not eq-func)
     (set! eq-func 
           (if (null? elements)
@@ -1293,8 +1301,6 @@ for .emacs:
         (set! list (to-list elements)))
     list)
 
-  (define num-elements (length elements))
-
   (define (get-hash)
     (when (not hash)
       (set! hash (make-hash-table (max 1 num-elements) eq-func))
@@ -1309,6 +1315,12 @@ for .emacs:
   :num-elements ()
   num-elements
 
+  :size ()
+  num-elements
+
+  :length ()
+  num-elements
+
   :vector ()
   (get-vector)
 
@@ -1316,7 +1328,13 @@ for .emacs:
   (get-list)
 
   :get (pos)
-  ((get-vector) pos))
+  ((get-vector) pos)
+
+  :add! (elememnt)
+  (clear! (cons element (get-list)))
+
+  :cons (element)
+  (<new> :container (cons element (get-list))))
 
 #||
 =>
