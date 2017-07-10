@@ -234,15 +234,18 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
   void change_num_mixerstrips_rows(int num_rows){
     if(!initing && _mixer_strips_gui!=-1 && num_rows!=_num_rows){
       _num_rows = num_rows;
+
+      gui_setNumRowsInMixerStrips(_mixer_strips_gui, num_rows);
+      /*
       int64_t old_gui = _mixer_strips_gui;
-      if (old_gui != -1){
-        _mixer_strips_gui = gui_createMixerStrips(num_rows, g_uninitialized_dyn);
-        QWidget *w = API_gui_get_widget(_mixer_strips_gui);
-        auto *old_item = verticalLayout->replaceWidget(API_gui_get_widget(old_gui), w);
-        verticalLayout->setStretchFactor(w,1);
-        delete old_item;
-        gui_close(old_gui);
-      }
+      int64_t guinum, int num_rows){
+      _mixer_strips_gui = gui_createMixerStrips(num_rows, g_uninitialized_dyn);
+      QWidget *w = API_gui_get_widget(_mixer_strips_gui);
+      auto *old_item = verticalLayout->replaceWidget(API_gui_get_widget(old_gui), w);
+      verticalLayout->setStretchFactor(w,1);
+      delete old_item;
+      gui_close(old_gui);
+      */
     }
   }
     

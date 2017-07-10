@@ -4325,6 +4325,14 @@ int64_t gui_createMixerStrips(int num_rows, dyn_t instrument_ids){
   return S7CALL2(int_int_dyn, "create-mixer-strips-gui", num_rows, instrument_ids);
 }
 
+void gui_setNumRowsInMixerStrips(int64_t guinum, int num_rows){
+  if (num_rows < 1){
+    handleError("gui_setNumRowsInMixerStrips: num_rows < 1: %d < 1", num_rows);
+    return;
+  }
+  return S7CALL2(void_int_int, "mixer-strips-change-num-rows", guinum, num_rows);
+}
+
 int64_t showMixerStrips2(int num_rows, dyn_t instrument_ids){
   int64_t gui = gui_createMixerStrips(num_rows, instrument_ids);
   if (gui!=-1)
