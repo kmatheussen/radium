@@ -1,3 +1,21 @@
+Changes 4.9.6 -> 4.9.7:
+* Mixer strips: Add option to set number of rows in the popup
+  menu.
+* Mixer strips: Reset configuration after loading song.
+* Mixer: Faster to change number of rows.
+* Fluidsynth: Don't show non-sf2 files in the sample browser
+  when starting up.
+* Sequencer: Fix "Configure block color".
+* Mixer strips: Fix mixer strip order.
+* Modular mixer: Remove the zoom slider. No one probably uses
+  it.
+* GUI: Set width of the main window splitter handlers to 0
+* Mixer strips: Also make the volume slider work when dragging
+  the volume meter.
+* Mixer strips: Some gfx tweaks.
+* API: gui_setNumRowsInMixerStrips, gui_resetAllMixerStrips
+
+
 Changes 4.9.5 -> 4.9.6:
 * OSX: Fix menu fonts.
 * GUI: When changing system font, don't change customly set
