@@ -416,7 +416,7 @@
                              (for-each (lambda (conf)
                                          (set-conf-var! (conf :instrument-id) :is-enabled (conf :is-enabled)))
                                        (to-list (settings :instrument-settings)))
-                             (remake :all-are-valid)))
+                             (remake :non-are-valid)))
                   (else
                    (error (<-> "Unknown keyword1 " keyword)))))
               (lambda (keyword first-arg . rest-args)
