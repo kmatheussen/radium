@@ -266,6 +266,24 @@
 (let ((strips-config (create-strips-config -2)))
   (strips-config :scan-instruments!)
   (create-is-enabled-gui strips-config))
+
+(map (lambda (key . rest)
+       (c-display "key" key ", rest" rest)) 
+     (hash-table->alist (hash-table* :a 1 :b 2)))
+
+(let ((h (make-hash-table)))
+  (set! (h :a) 5)
+  (set! (h :b) 2)
+  (c-display "alist" (hash-table->alist h))
+  (map (lambda (key)
+         (display "key:")(display key)(newline))
+       h))
+
+       (hash-table->alist h)))
+
+(c-display "hepp" (hash-table->alist (hash-table '(a . 5) '(b . 2))))
+(c-display "hepp" (hash-table->alist (hash-table* 'a 5 'b 2)))
+
 !!#
   
 (define (create-strips-config initial-instruments num-rows remake parentgui)
@@ -313,8 +331,7 @@
     (set! first-time #t)
     (set! confs (make-hash-table 100 =))
     (set! initial-instruments #f)
-    (scan-instruments!)
-    (remake :non-are-valid))
+    (scan-instruments!))
   
   (define is-enabled-content (<gui> :widget))
 
@@ -380,10 +397,26 @@
                   ((:is-enabled) (confs (car rest) :is-enabled))
                   ((:is-unique) (confs (car rest) :is-unique))
                   ((:scan-instruments!) (scan-instruments!))
-                  ((:reset!) (reset!))
+                  ((:reset!) (begin
+                               (reset!)
+                               (remake :non-are-valid)))
                   ((:show-config-gui) (show-config-gui))
                   ((:recreate-config-gui-content) (recreate-config-gui-content))
                   ((:num-rows) num-rows)
+                  ((:get) (hash-table* :num-rows num-rows
+                                       :instrument-settings (map (lambda (entry)
+                                                                   (define instrument-id (car entry))
+                                                                   (define conf (cdr entry))
+                                                                   (hash-table* :instrument-id instrument-id
+                                                                                :is-enabled (conf :is-enabled)))
+                                                                 confs)))
+                  ((:set!) (let ((settings (car rest)))
+                             (reset!)
+                             (set! num-rows (settings :num-rows))
+                             (for-each (lambda (conf)
+                                         (set-conf-var! (conf :instrument-id) :is-enabled (conf :is-enabled)))
+                                       (to-list (settings :instrument-settings)))
+                             (remake :all-are-valid)))
                   (else
                    (error (<-> "Unknown keyword1 " keyword)))))
               (lambda (keyword first-arg . rest-args)
@@ -2265,9 +2298,13 @@
         (loop (cdr objects)))))
                    
 
+(define (mixer-strips-get-num-rows mixer-strips-gui)
+  (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
+    (object :strips-config :num-rows)))
+
 (define (mixer-strips-change-num-rows mixer-strips-gui num-rows)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
-    (set! ((object :strips-config) :num-rows) num-rows)))
+    (set! (object :strips-config :num-rows) num-rows)))
 
 #!!
 (mixer-strips-change-num-rows ((car *mixer-strips-objects*) :gui) 6)
@@ -2276,11 +2313,20 @@
 
 (define (mixer-strips-reset-configuration! mixer-strips-gui)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
-    ((object :strips-config) :reset!)))
+    (object :strips-config :reset!)))
 
 #!!
 (mixer-strips-reset-configuration! ((car *mixer-strips-objects*) :gui))
 !!#
+
+(define (mixer-strips-get-configuration mixer-strips-gui)
+  (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
+    (object :strips-config :get)))
+  
+(define (mixer-strips-set-configuration! mixer-strips-gui configuration)
+  (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
+    (object :strips-config :set! configuration)))
+  
 
 (define (toggle-all-mixer-strips-fullscreen)
   (define set-to 0)

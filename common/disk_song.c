@@ -243,8 +243,10 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         
         if(song->mixerwidget_state!=NULL)
           MW_create_full_from_state(song->mixerwidget_state, true); // In addition, all audio plugins are created here and put into the patch->patchdata field.
-        else
+        else{
           MW_create_plain(); // older song.
+          gui_resetAllMixerStrips();
+        }
 
         song->mixerwidget_state=NULL; // release memory.
 
@@ -264,8 +266,6 @@ void DLoadSong(struct Root *newroot,struct Song *song){
 
         BS_UpdateBlockList();
         BS_UpdatePlayList();
-
-        gui_resetAllMixerStrips();
           
         // Audio plugins are created after creating trackreallines.
         //TRACKREALLINES_update_peak_tracks(song->tracker_windows);

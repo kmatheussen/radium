@@ -2490,7 +2490,9 @@ hash_t *MW_get_state(const vector_t *patches, bool include_ab){
   
   if (include_ab)
     HASH_put_hash(state, "ab_state", MW_get_ab_state());
-                  
+
+  HASH_put_dyn(state, "mixer_strips_configuration", MW_get_mixer_strips_state());
+
   return state;
 }
 
@@ -2700,12 +2702,18 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   MW_update_mixer_widget();
   
   autoposition_missing_bus_chips(bus_chips_state);
+
+  if (HASH_has_key(state, "mixer_strips_configuration"))
+    MW_apply_mixer_strips_state(HASH_get_dyn(state, "mixer_strips_configuration"));
+  else
+    gui_resetAllMixerStrips();
 }
 
 // This function is called when loading a song saved with a version of radium made before the audio system was added.
 void MW_create_plain(void){
   //MW_cleanup();
   g_mixer_widget->populateScene();
+  gui_resetAllMixerStrips();        
 }
 
 

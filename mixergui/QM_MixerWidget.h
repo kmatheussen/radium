@@ -123,6 +123,9 @@ extern void MW_instrument_widget_set_size(QWidget *audio_widget, SizeType old_si
 extern LANGSPEC void MW_hide_non_instrument_widgets(void);
 extern LANGSPEC void MW_show_non_instrument_widgets(void);
 
+extern LANGSPEC dyn_t MW_get_mixer_strips_state(void);
+extern LANGSPEC void MW_apply_mixer_strips_state(dyn_t state);
+
 extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
 extern LANGSPEC const char *MW_popup_plugin_selector2(bool must_have_inputs, bool must_have_outputs);
 extern LANGSPEC SoundPluginType *MW_popup_plugin_type_selector(bool must_have_inputs, bool must_have_outputs);

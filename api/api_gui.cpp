@@ -4325,18 +4325,30 @@ int64_t gui_createMixerStrips(int num_rows, dyn_t instrument_ids){
   return S7CALL2(int_int_dyn, "create-mixer-strips-gui", num_rows, instrument_ids);
 }
 
+int gui_getNumRowsInMixerStrips(int64_t guinum){
+  return (int)S7CALL2(int_int, "mixer-strips-get-num-rows", guinum);
+}
+
 void gui_setNumRowsInMixerStrips(int64_t guinum, int num_rows){
   if (num_rows < 1){
     handleError("gui_setNumRowsInMixerStrips: num_rows < 1: %d < 1", num_rows);
     return;
   }
-  return S7CALL2(void_int_int, "mixer-strips-change-num-rows", guinum, num_rows);
+  S7CALL2(void_int_int, "mixer-strips-change-num-rows", guinum, num_rows);
 }
 
 // Called after loading.
 void gui_resetAllMixerStrips(void){
   for(int64_t guinum : g_mixerstrip_guinums)
     S7CALL2(void_int, "mixer-strips-reset-configuration!", guinum);
+}
+
+dyn_t gui_getMixerStripsConfiguration(int64_t guinum){
+  return S7CALL2(dyn_int, "mixer-strips-get-configuration", guinum);
+}
+
+void gui_setMixerStripsConfiguration(int64_t guinum, dyn_t configuration){
+  return S7CALL2(void_int_dyn, "mixer-strips-set-configuration!", guinum, configuration);
 }
 
 int64_t showMixerStrips2(int num_rows, dyn_t instrument_ids){

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QSplitter>
 
 #include "Qt_bottom_bar_widget_proc.h"
+#include "Timer.hpp"
 
 
 
@@ -101,7 +102,7 @@ extern EditorWidget *g_editor;
 class Mixer_widget;
 static Mixer_widget *g_mixer_widget2;
 
-class Mixer_widget : public QWidget, public Ui::Mixer_widget{
+class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
   Q_OBJECT
 
  public:
@@ -113,6 +114,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
 
   Mixer_Direction_Menu _mixer_direction_menu;
 
+  dyn_t *_mixer_strip_configuration = NULL;
   int64_t _mixer_strips_gui = -1;
   int _num_rows = 2;
 
@@ -120,6 +122,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
 
  Mixer_widget(QWidget *parent=NULL)
     : QWidget(parent)
+    , radium::Timer(100, true)
     , _rotate(0)
     , _middle_zoom(1.0)
     , _mixer_direction_menu(this)
@@ -233,8 +236,6 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
 
   void change_num_mixerstrips_rows(int num_rows){
     if(!initing && _mixer_strips_gui!=-1 && num_rows!=_num_rows){
-      _num_rows = num_rows;
-
       gui_setNumRowsInMixerStrips(_mixer_strips_gui, num_rows);
       /*
       int64_t old_gui = _mixer_strips_gui;
@@ -247,6 +248,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
       gui_close(old_gui);
       */
     }
+
+    _num_rows = num_rows;
   }
     
 
@@ -320,6 +323,29 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget{
     //Mixer_widget->update();
   }
   */
+
+  void calledFromTimer(void){
+    if (_mixer_strips_gui >= 0){
+
+      int new_num_rows = gui_getNumRowsInMixerStrips(_mixer_strips_gui);
+      if (new_num_rows != _num_rows){        
+
+        initing = true;{
+
+          if(new_num_rows==1)
+            rows1->setChecked(true);
+          else if (new_num_rows==2)
+            rows2->setChecked(true);
+          else if (new_num_rows==3)
+            rows3->setChecked(true);
+          else if (new_num_rows==4)
+            rows4->setChecked(true);
+
+        }initing = false;
+
+      }
+    }
+  }
 
 public slots:
 
@@ -478,7 +504,9 @@ public slots:
     } else {
 
       if (_mixer_strips_gui == -1){
+
         _mixer_strips_gui = gui_createMixerStrips(_num_rows, g_uninitialized_dyn);
+
         if (_mixer_strips_gui != -1){
           show_modular_mixer_widgets(false);
           QWidget *w = API_gui_get_widget(_mixer_strips_gui);
@@ -492,15 +520,23 @@ public slots:
             updateGeometry();
           */
         }
+
       } else {
+
         QWidget *w = API_gui_get_widget(_mixer_strips_gui);
         w->setUpdatesEnabled(false);
         show_modular_mixer_widgets(false);        
         modular_widget->hide();
         w->show();
         w->setUpdatesEnabled(true);
+
       }
-      
+
+      if (_mixer_strip_configuration != NULL){
+        gui_setMixerStripsConfiguration(_mixer_strips_gui, *_mixer_strip_configuration);
+        remove_gc_root(_mixer_strip_configuration);
+        _mixer_strip_configuration = NULL;
+      }
     }
     
     //setUpdatesEnabled(true); // It's a flaw in Qt that we need to call this function. And it doesn't even work very well.
@@ -669,6 +705,31 @@ void MW_show_non_instrument_widgets(void){
     g_mixer_widget2->modular_widget->show();
   
   g_mixer_widget2->bar_widget->show();
+}
+
+dyn_t MW_get_mixer_strips_state(void){
+  if (g_mixer_widget2->_mixer_strips_gui==-1)
+    return DYN_create_bool(false);
+  else
+    return gui_getMixerStripsConfiguration(g_mixer_widget2->_mixer_strips_gui);
+}
+
+void MW_apply_mixer_strips_state(dyn_t state){
+  if (state.type==BOOL_TYPE){
+    R_ASSERT(state.bool_number==false);
+    return;
+  }
+
+  if (g_mixer_widget2->show_modular->isChecked()==false){
+    
+    R_ASSERT_RETURN_IF_FALSE(g_mixer_widget2->_mixer_strips_gui >= 0);
+    gui_setMixerStripsConfiguration(g_mixer_widget2->_mixer_strips_gui, state);
+
+  } else {
+
+    g_mixer_widget2->_mixer_strip_configuration =  (dyn_t*)add_gc_root(tcopy(&state, sizeof(dyn_t)));
+
+  }
 }
 
 #if 0
