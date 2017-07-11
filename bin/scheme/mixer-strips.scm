@@ -745,7 +745,7 @@
                                                                    reset-func
                                                                    widget)))
                                       #f))
-
+  
   (<gui> :add-double-click-callback widget (lambda (button x y)
                                              (when (= button *left-button*)
                                                ;;(c-display " Double clicking" button)
@@ -1020,7 +1020,8 @@
                        (<gui> :set-value slider new-value)
                        (set! doit #t)))))
   
-  (<gui> :add horiz slider))
+  (<gui> :add horiz slider)
+  horiz)
 
 
 (define (create-mixer-strip-bus-send gui first-instrument-id instrument-id strips-config bus-num)
@@ -1032,7 +1033,10 @@
   (define (make-undo)
     (<ra> :undo-instrument-effect instrument-id effect-name))
 
+  (define send-gui #f)
+  
   (define (delete)
+    (<gui> :hide send-gui)
     (<ra> :undo-instrument-effect instrument-id on-off-effect-name)
     (<ra> :set-instrument-effect instrument-id on-off-effect-name 0))
 
@@ -1053,21 +1057,22 @@
 
   (define (set-db-value db)
     (<ra> :set-instrument-effect instrument-id effect-name (scale db *min-db* *max-db* 0 1)))
-
+  
   (define (add-monitor slider callback)
     (add-gui-effect-monitor slider instrument-id effect-name callback))
-
-  (create-mixer-strip-send gui
-                           first-instrument-id
-                           instrument-id
-                           bus-id
-                           strips-config
-                           make-undo
-                           get-db-value
-                           set-db-value
-                           add-monitor
-                           delete
-                           replace))
+  
+  (set! send-gui (create-mixer-strip-send gui
+                                          first-instrument-id
+                                          instrument-id
+                                          bus-id
+                                          strips-config
+                                          make-undo
+                                          get-db-value
+                                          set-db-value
+                                          add-monitor
+                                          delete
+                                          replace))
+  send-gui)
 
 
 (define *send-callbacks* '())
