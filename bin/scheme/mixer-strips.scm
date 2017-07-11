@@ -63,18 +63,19 @@
         (if strips-config
             (list "Set number of rows"
                   (lambda ()
-                    (popup-menu "1" (lambda ()
-                                      (strips-config :set-num-rows! 1))
-                                "2" (lambda ()
-                                      (strips-config :set-num-rows! 2))
-                                "3" (lambda ()
-                                      (strips-config :set-num-rows! 3))
-                                "4" (lambda ()
-                                      (strips-config :set-num-rows! 4))
-                                "5" (lambda ()
-                                      (strips-config :set-num-rows! 5))
-                                "6" (lambda ()
-                                      (strips-config :set-num-rows! 6)))))
+                    (define num-rows (strips-config :num-rows))
+                    (popup-menu "1" :enabled (not (= 1 num-rows)) (lambda ()
+                                                                    (set! (strips-config :num-rows) 1))
+                                "2" :enabled (not (= 2 num-rows)) (lambda ()
+                                                                    (set! (strips-config :num-rows) 2))
+                                "3" :enabled (not (= 3 num-rows)) (lambda ()
+                                                                    (set! (strips-config :num-rows) 3))
+                                "4" :enabled (not (= 4 num-rows)) (lambda ()
+                                                                    (set! (strips-config :num-rows) 4))
+                                "5" :enabled (not (= 5 num-rows)) (lambda ()
+                                                                    (set! (strips-config :num-rows) 5))
+                                "6" :enabled (not (= 6 num-rows)) (lambda ()
+                                                                    (set! (strips-config :num-rows) 6)))))
             '())
         "----------"
         "Set current instrument" (lambda ()
@@ -266,7 +267,7 @@
   (create-is-enabled-gui strips-config))
 !!#
   
-(define (create-strips-config initial-instruments remake parentgui)
+(define (create-strips-config initial-instruments num-rows remake parentgui)
   (define-struct conf
     :instrument-id
     :is-bus
@@ -311,7 +312,8 @@
     (set! first-time #t)
     (set! confs (make-hash-table 100 =))
     (set! initial-instruments #f)
-    (scan-instruments!))
+    (scan-instruments!)
+    (remake :non-are-valid))
   
   (define is-enabled-content (<gui> :widget))
 
@@ -380,20 +382,29 @@
                   ((:reset!) (reset!))
                   ((:show-config-gui) (show-config-gui))
                   ((:recreate-config-gui-content) (recreate-config-gui-content))
-                  ((:set-num-rows!) (mixer-strips-change-num-rows parentgui (car rest)))
+                  ((:num-rows) num-rows)
                   (else
                    (error (<-> "Unknown keyword1 " keyword)))))
-              (lambda (keyword instrument-id new-value)
-                (case keyword
-                  ((:row-num) (set-conf-var! instrument-id :row-num new-value))
-                  ((:is-enabled) (begin
-                                   (set-conf-var! instrument-id :is-enabled new-value)
-                                   ;;(c-display "..........calling remake from is-enabled")
-                                   (remake #t)
-                                   ;;(recreate-config-gui-content) ;; <- Not necessary since remake (called above) calls that function.
-                                   ))
-                  (else
-                   (error (<-> "Unknown keyword2 " keyword)))))))
+              (lambda (keyword first-arg . rest-args)
+                (if (null? rest-args)
+                    (case keyword
+                      ((:num-rows) (begin
+                                     (set! num-rows first-arg)
+                                     (remake :all-are-valid)))
+                      (else
+                       (error (<-> "Unknown keyword3 " keyword))))                      
+                    (let ((instrument-id first-arg)
+                          (new-value (car rest-args)))
+                      (case keyword
+                        ((:row-num) (set-conf-var! instrument-id :row-num new-value))
+                        ((:is-enabled) (begin
+                                         (set-conf-var! instrument-id :is-enabled new-value)
+                                         ;;(c-display "..........calling remake from is-enabled")
+                                         (remake :all-are-valid)
+                                         ;;(recreate-config-gui-content) ;; <- Not necessary since remake (called above) calls that function.
+                                         ))
+                        (else
+                         (error (<-> "Unknown keyword2 " keyword)))))))))
 
   this)
 
@@ -1871,9 +1882,9 @@
 (define (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
   (cond ((not stored-mixer-strip)
          #f)
-        ((eq? #t list-of-modified-instrument-ids)
+        ((eq? :all-are-valid list-of-modified-instrument-ids)
          #t)
-        ((null? list-of-modified-instrument-ids)
+        ((eq? :non-are-valid list-of-modified-instrument-ids)
          #f)
         (else
          (let ((instrument-id (get-instrument-id-from-stored-mixer-strip stored-mixer-strip)))
@@ -2072,7 +2083,6 @@
 (define-struct mixer-strips-object
   :gui
   :remake
-  :set-num-rows! #f
   :strips-config #f
   :is-full-screen #f
   :pos #f)
@@ -2129,7 +2139,7 @@
      (lambda()
        (<gui> :disable-updates gui)
        ;;(c-display "   Size of das-stored:" (length das-stored-mixer-strips))
-       (create-mixer-strips num-rows das-stored-mixer-strips strips-config list-of-modified-instrument-ids
+       (create-mixer-strips (strips-config :num-rows) das-stored-mixer-strips strips-config list-of-modified-instrument-ids
                             (lambda (new-mixer-strips new-mixer-strips-gui)
                               (if das-mixer-strips-gui
                                   (begin
@@ -2157,7 +2167,7 @@
     )
 
 
-  (define strips-config (create-strips-config instrument-ids remake gui))
+  (define strips-config (create-strips-config instrument-ids num-rows remake gui))
 
   (<gui> :add-mouse-callback gui
          (lambda (button state x y)
@@ -2171,13 +2181,10 @@
   (define mixer-strips-object (make-mixer-strips-object :gui gui
                                                         :is-full-screen is-full-screen
                                                         :remake remake
-                                                        :set-num-rows! (lambda (new-num-rows)
-                                                                         (set! num-rows new-num-rows)
-                                                                         (remake '()))
                                                         :strips-config strips-config
                                                         :pos pos))
   
-  (remake '())
+  (remake :non-are-valid)
   
   (<ra> :inform-about-gui-being-a-mixer-strips gui)
   (push-back! *mixer-strips-objects* mixer-strips-object)
@@ -2205,7 +2212,9 @@
 (define (remake-mixer-strips . list-of-modified-instrument-ids)
   ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " list-of-modified-instrument-ids (length *mixer-strips-objects*) "\n\n\n")
   (for-each (lambda (a-mixer-strips-object)
-              ((a-mixer-strips-object :remake) list-of-modified-instrument-ids))
+              ((a-mixer-strips-object :remake) (if (null? list-of-modified-instrument-ids)
+                                                   :non-are-valid
+                                                   list-of-modified-instrument-ids)))
             *mixer-strips-objects*))
 
 (define (redraw-mixer-strips . list-of-modified-instrument-ids)
@@ -2226,7 +2235,7 @@
 
 (define (mixer-strips-change-num-rows mixer-strips-gui num-rows)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
-    ((object :set-num-rows!) num-rows)))
+    (set! (object :strips-config) num-rows)))
 
 #!!
 (mixer-strips-change-num-rows ((car *mixer-strips-objects*) :gui) 6)
@@ -2235,8 +2244,7 @@
 
 (define (mixer-strips-reset-configuration! mixer-strips-gui)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
-    ((object :strips-config) :reset!)
-    ((object :remake) '())))
+    ((object :strips-config) :reset!)))
 
 #!!
 (mixer-strips-reset-configuration! ((car *mixer-strips-objects*) :gui))

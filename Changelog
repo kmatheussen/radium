@@ -6,13 +6,13 @@ Changes 4.9.6 -> 4.9.7:
 * Fluidsynth: Don't show non-sf2 files in the sample browser
   when starting up.
 * Sequencer: Fix "Configure block color".
-* Mixer strips: Fix mixer strip order.
+* Mixer strips: Fix strip order.
 * Modular mixer: Remove the zoom slider. No one probably uses
   it.
 * GUI: Set width of the main window splitter handlers to 0
 * Mixer strips: Also make the volume slider work when dragging
   the volume meter.
-* Mixer strips: Some gfx tweaks.
+* Mixer strips: Some GFX tweaks.
 * API: gui_setNumRowsInMixerStrips, gui_resetAllMixerStrips
 
 
