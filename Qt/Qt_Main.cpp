@@ -1535,7 +1535,7 @@ int g_main_timer_num_calls = 0;
 
 class CalledPeriodically : public QTimer {
 
-  QMessageBox *msgBox;
+  QPointer<QMessageBox> msgBox;
   QAbstractButton *msgBox_ok;
   QAbstractButton *msgBox_stop_playing;
   QAbstractButton *msgBox_dontshowagain;
@@ -1547,6 +1547,16 @@ public:
   CalledPeriodically()
     : interval(MAIN_TIMER_INTERVAL) // is set to either 1, 2, 5, 10, 25, or 50.
   {
+    //R_ASSERT( (50 % interval) == 0);
+    
+    setInterval(interval);
+    start();
+  }
+protected:
+
+  void createMsgBox(void){
+    R_ASSERT(msgBox==NULL);
+    
     msgBox = new QMessageBox(g_main_window);
     set_window_flags(msgBox, false);
     
@@ -1555,14 +1565,8 @@ public:
     msgBox_ok = (QAbstractButton*)msgBox->addButton("Ok",QMessageBox::AcceptRole);
     msgBox->open();
     msgBox->hide();
-
-    //R_ASSERT( (50 % interval) == 0);
-    
-    setInterval(interval);
-    start();
   }
-protected:
-
+  
   void 	timerEvent ( QTimerEvent * e ) override {
 #ifdef TEST_GC
     printf("triggering full collect\n");
@@ -1586,6 +1590,9 @@ protected:
 
       QString message(rt_message);
 
+      if (msgBox==NULL)
+        createMsgBox();
+      
       if (dontshow.contains(message)==false){
         set_window_parent(msgBox, get_current_parent(false), false);
         
@@ -1603,13 +1610,15 @@ protected:
 
       ATOMIC_SET(rt_message_status, RT_MESSAGE_SHOWING);
       
-    } else if (ATOMIC_GET(rt_message_status) == RT_MESSAGE_SHOWING && msgBox->isHidden()) {
+    } else if (ATOMIC_GET(rt_message_status) == RT_MESSAGE_SHOWING && (msgBox==NULL || msgBox->isHidden())) {
 
-      if (msgBox->clickedButton() == msgBox_dontshowagain){
-        //printf("Dontshowagain\n");
-        dontshow.insert(rt_message);
-      } else if (msgBox->clickedButton() == msgBox_stop_playing){
-        PlayStop();
+      if (msgBox != NULL) {
+        if (msgBox->clickedButton() == msgBox_dontshowagain){
+          //printf("Dontshowagain\n");
+          dontshow.insert(rt_message);
+        } else if (msgBox->clickedButton() == msgBox_stop_playing){
+          PlayStop();
+        }
       }
       
       ATOMIC_SET(rt_message_status, RT_MESSAGE_READY);
