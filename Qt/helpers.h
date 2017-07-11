@@ -89,6 +89,8 @@ static bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_to_run_c
     return false;
   if (w->windowFlags() & Qt::ToolTip)
     return false;
+  if (dynamic_cast<QMenu*>(w) != NULL)
+    return false;
 
   // Should be safe. When running custom exec, a widget can not be deleted until exec() is finished.
   if(is_going_to_run_custom_exec==true)

@@ -41,15 +41,22 @@
 (define (add-safe-callback gui add-func callback)
   (define deletion-generation (<ra> :get-audio-instrument-deletion-generation))
   (add-func gui
-            (lambda (width height)
+            (lambda args
               (if (= deletion-generation (<ra> :get-audio-instrument-deletion-generation))
-                  (callback width height)))))
+                  (apply callback args)
+                  #t))))
            
 (define (add-safe-paint-callback gui callback)
   (add-safe-callback gui ra:gui_add-paint-callback callback))
-           
+
 (define (add-safe-resize-callback gui callback)
   (add-safe-callback gui ra:gui_add-resize-callback callback))
+
+(define (add-safe-mouse-callback gui callback)
+  (add-safe-callback gui ra:gui_add-mouse-callback callback))
+
+(define (add-safe-double-click-callback gui callback)
+  (add-safe-callback gui ra:gui_add-double-click-callback callback))
 
 
 (define (get-global-mixer-strips-popup-entries instrument-id strips-config)
@@ -63,19 +70,13 @@
         (if strips-config
             (list "Set number of rows"
                   (lambda ()
-                    (define num-rows (strips-config :num-rows))
-                    (popup-menu "1" :enabled (not (= 1 num-rows)) (lambda ()
-                                                                    (set! (strips-config :num-rows) 1))
-                                "2" :enabled (not (= 2 num-rows)) (lambda ()
-                                                                    (set! (strips-config :num-rows) 2))
-                                "3" :enabled (not (= 3 num-rows)) (lambda ()
-                                                                    (set! (strips-config :num-rows) 3))
-                                "4" :enabled (not (= 4 num-rows)) (lambda ()
-                                                                    (set! (strips-config :num-rows) 4))
-                                "5" :enabled (not (= 5 num-rows)) (lambda ()
-                                                                    (set! (strips-config :num-rows) 5))
-                                "6" :enabled (not (= 6 num-rows)) (lambda ()
-                                                                    (set! (strips-config :num-rows) 6)))))
+                    (define num-rows-now (strips-config :num-rows))
+                    (popup-menu (map (lambda (num-rows)
+                                       (list (number->string num-rows)
+                                             :enabled (not (= num-rows num-rows-now))
+                                             (lambda ()
+                                               (set! (strips-config :num-rows) num-rows))))
+                                     (map 1+ (iota 6))))))
             '())
         "----------"
         "Set current instrument" (lambda ()
@@ -93,7 +94,7 @@
   (define checkbox (<gui> :widget))
   (<gui> :set-min-height checkbox min-height)
 
-  (<gui> :add-mouse-callback checkbox (lambda (button state x y)
+  (add-safe-mouse-callback checkbox (lambda (button state x y)
                                         ;;(c-display "state" state)
                                         (if (and (= button *right-button*)
                                                  (= state *is-pressing*))
@@ -140,7 +141,7 @@
 ;              all-buses))))
 
 
-(delafina (create-is-enabled-gui :strips-config)
+(define (create-is-enabled-gui strips-config)
 
   (define vertical-layout (<gui> :vertical-layout))
 
@@ -419,13 +420,15 @@
                                                                             (<ra> :set-instrument-name edited instrument-id)))))
   (<gui> :set-background-color name (<ra> :get-instrument-color instrument-id))
 
-  (<gui> :add-mouse-callback name (lambda (button state x y)
+  (add-safe-mouse-callback name (lambda (button state x y)
                                     (if (and (= button *right-button*)
                                              (= state *is-pressing*))
-                                        (if (<ra> :shift-pressed)
-                                            (<ra> :delete-instrument instrument-id)
-                                            (create-default-mixer-path-popup instrument-id strips-config name)))
-                                    #f))
+                                        (begin
+                                          (if (<ra> :shift-pressed)
+                                              (<ra> :delete-instrument instrument-id)
+                                              (create-default-mixer-path-popup instrument-id strips-config name))
+                                          #t)
+                                        #f)))
 
   (set-fixed-height name height)
 
@@ -449,7 +452,7 @@
                (<gui> :draw-text label *text-color* name 5 0 width height #f #f #f))
            (<gui> :draw-box label "#202020" 0 0 width height 1.0 2 2)))
   
-  (<gui> :add-mouse-callback label (lambda (button state x y)
+  (add-safe-mouse-callback label (lambda (button state x y)
                                      (if (= state *is-pressing*)
                                          (if (= button *right-button*)
                                              (if (<ra> :shift-pressed)
@@ -719,39 +722,39 @@
 
   (add-safe-paint-callback widget paintit)
 
-  (<gui> :add-mouse-callback widget (lambda (button state x y)
-                                      (when (and (= button *left-button*)
-                                                 (= state *is-pressing*))
-                                        (set! is-changing-value #t)
-                                        (make-undo))
-                                      (when (= state *is-releasing*)
-                                        (set! is-changing-value #f)
-                                        (<gui> :tool-tip "")
-                                        ;;(c-display "finished")
-                                        )
-                                      (when (and (= button *right-button*)
-                                                 (= state *is-pressing*))
-                                        (if (<ra> :shift-pressed)
-                                            (delete-func)
-                                            (show-mixer-path-popup first-instrument-id
-                                                                   parent-instrument-id
-                                                                   instrument-id
-                                                                   strips-config
-                                                                   is-send?
-                                                                   is-sink?
-                                                                   (< y (/ (<gui> :height widget) 2))
-                                                                   delete-func
-                                                                   replace-func
-                                                                   reset-func
-                                                                   widget)))
-                                      #f))
+  (add-safe-mouse-callback widget (lambda (button state x y)
+                                    (when (and (= button *left-button*)
+                                               (= state *is-pressing*))
+                                      (set! is-changing-value #t)
+                                      (make-undo))
+                                    (when (= state *is-releasing*)
+                                      (set! is-changing-value #f)
+                                      (<gui> :tool-tip "")
+                                      ;;(c-display "finished")
+                                      )
+                                    (when (and (= button *right-button*)
+                                               (= state *is-pressing*))
+                                      (if (<ra> :shift-pressed)
+                                          (delete-func)
+                                          (show-mixer-path-popup first-instrument-id
+                                                                 parent-instrument-id
+                                                                 instrument-id
+                                                                 strips-config
+                                                                 is-send?
+                                                                 is-sink?
+                                                                 (< y (/ (<gui> :height widget) 2))
+                                                                 delete-func
+                                                                 replace-func
+                                                                 reset-func
+                                                                 widget)))
+                                    #f))
   
-  (<gui> :add-double-click-callback widget (lambda (button x y)
-                                             (when (= button *left-button*)
-                                               ;;(c-display " Double clicking" button)
-                                               (<ra> :cancel-last-undo) ;; Undo the added undo made at th mouse callback above.
-                                               (<ra> :show-instrument-gui instrument-id (<ra> :show-instrument-widget-when-double-clicking-sound-object))
-                                               )))
+  (add-safe-double-click-callback widget (lambda (button x y)
+                                           (when (= button *left-button*)
+                                             ;;(c-display " Double clicking" button)
+                                             (<ra> :cancel-last-undo) ;; Undo the added undo made at th mouse callback above.
+                                             (<ra> :show-instrument-gui instrument-id (<ra> :show-instrument-widget-when-double-clicking-sound-object))
+                                             )))
 
   ;;(paintit (<gui> :width widget)
   ;;         (<gui> :height widget))
@@ -767,37 +770,45 @@
     (<ra> :get-instrument-effect instrument-id "System Dry/Wet"))
   
   (define (delete-instrument)
-    (define child-ids (get-instruments-connecting-from-instrument instrument-id))
-    (define child-gains (map (lambda (to)
-                               (<ra> :get-audio-connection-gain instrument-id to))
-                             child-ids))
-    (undo-block
-     (lambda ()
-       (define changes '())
-       
-       ;; Disconnect parent -> me
-       (push-audio-connection-change! changes (list :type "disconnect"
-                                                    :source parent-instrument-id
-                                                    :target instrument-id))
-       
-       (for-each (lambda (child-id child-gain)
-                   ;; Disconnect me -> child
-                   (push-audio-connection-change! changes (list :type "disconnect"
-                                                                :source instrument-id
-                                                                :target child-id))
-                   ;; Connect parent -> child
-                   (push-audio-connection-change! changes (list :type "connect"
-                                                                :source parent-instrument-id
-                                                                :target child-id
-                                                                :gain child-gain)))
-                 child-ids
-                 child-gains)
-       (<ra> :undo-mixer-connections)
-       (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
-       (<ra> :delete-instrument instrument-id)))
-       ;;(remake-mixer-strips) ;; (makes very little difference in snappiness, and it also causes mixer strips to be remade twice)
-    )
 
+    (c-display "HIDING" slider)
+    (<gui> :hide slider)
+
+    (<ra> :schedule 10 ;; Wait for slider to be removed, and (for some reason) it also prevents some flickering. Looks much better if the slider disappears immediately.
+          (lambda ()
+            
+            (define child-ids (get-instruments-connecting-from-instrument instrument-id))
+            (define child-gains (map (lambda (to)
+                                       (<ra> :get-audio-connection-gain instrument-id to))
+                                     child-ids))
+            (undo-block
+             (lambda ()
+               (define changes '())
+               
+               ;; Disconnect parent -> me
+               (push-audio-connection-change! changes (list :type "disconnect"
+                                                            :source parent-instrument-id
+                                                            :target instrument-id))
+               
+               (for-each (lambda (child-id child-gain)
+                           ;; Disconnect me -> child
+                           (push-audio-connection-change! changes (list :type "disconnect"
+                                                                        :source instrument-id
+                                                                        :target child-id))
+                           ;; Connect parent -> child
+                           (push-audio-connection-change! changes (list :type "connect"
+                                                                        :source parent-instrument-id
+                                                                        :target child-id
+                                                                        :gain child-gain)))
+                         child-ids
+                         child-gains)
+               (<ra> :undo-mixer-connections)
+               (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
+               (<ra> :delete-instrument instrument-id)
+               ;;(remake-mixer-strips) ;; (makes very little difference in snappiness, and it also causes mixer strips to be remade twice)
+               ))
+            
+            #f)))
 
   (define (das-replace-instrument)
     (async-replace-instrument instrument-id "" (make-instrument-conf :must-have-inputs #t :must-have-outputs #t :parentgui gui)))
@@ -1081,7 +1092,10 @@
   (define (make-undo)
     (<ra> :undo-audio-connection-gain source-id target-id))
 
+  (define send-gui #f)
+
   (define (delete)
+    (<gui> :hide send-gui)
     (<ra> :undo-mixer-connections)
     (<ra> :delete-audio-connection source-id target-id))
 
@@ -1141,17 +1155,18 @@
 
   ;;(set! add-monitor #f)
 
-  (create-mixer-strip-send gui
-                           first-instrument-id
-                           source-id
-                           target-id
-                           strips-config
-                           make-undo 
-                           get-db-value
-                           set-db-value
-                           add-monitor
-                           delete
-                           replace))
+  (set! send-gui (create-mixer-strip-send gui
+                                          first-instrument-id
+                                          source-id
+                                          target-id
+                                          strips-config
+                                          make-undo 
+                                          get-db-value
+                                          set-db-value
+                                          add-monitor
+                                          delete
+                                          replace))
+  send-gui)
 
 
 ;; Returns the last plugin.
@@ -1285,7 +1300,7 @@
   (add-gui-effect-monitor slider instrument-id "System Pan On/Off" (lambda ()
                                                                      (<gui> :update slider)))
 
-  (<gui> :add-mouse-callback slider
+  (add-safe-mouse-callback slider
          (lambda (button state x y)
            (cond ((and (= button *left-button*)
                        (= state *is-pressing*))
@@ -1585,7 +1600,7 @@
                             (<gui> :update volslider)
                             (set! doit #t)))
 
-  (<gui> :add-mouse-callback volslider
+  (add-safe-mouse-callback volslider
          (lambda (button state x y)
            (cond ((and (= button *left-button*)
                        (= state *is-pressing*))
@@ -1612,7 +1627,7 @@
                                         (<gui> :set-size volmeter (- width volmeter-x1) height)))
 
   (when show-voltext
-    (<gui> :add-mouse-callback voltext (lambda (button state x y)
+    (add-safe-mouse-callback voltext (lambda (button state x y)
                                          (cond ((and (= button *right-button*)
                                                      (= state *is-pressing*))
                                                 (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
@@ -1634,7 +1649,7 @@
                                                      (set! peaktexttext text)
                                                      (<gui> :update peaktext)))
 
-    (<gui> :add-mouse-callback volmeter (lambda (button state x y)
+    (add-safe-mouse-callback volmeter (lambda (button state x y)
                                           (cond ((and (= button *right-button*)
                                                       (= state *is-pressing*))
                                                  (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
@@ -1642,7 +1657,7 @@
                                                 (else
                                                  #f))))
 
-    (<gui> :add-mouse-callback peaktext (lambda (button state x y)
+    (add-safe-mouse-callback peaktext (lambda (button state x y)
                                           (cond ((and (= button *right-button*)
                                                       (= state *is-pressing*))
                                                  (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
@@ -1698,7 +1713,7 @@
   (<gui> :set-background-color comment-edit (<ra> :get-instrument-color instrument-id))
   (set-fixed-height comment-edit height)
 
-  (<gui> :add-mouse-callback comment-edit (lambda (button state x y)
+  (add-safe-mouse-callback comment-edit (lambda (button state x y)
                                             (if (and (= button *right-button*)
                                                      (= state *is-pressing*))
                                                 (begin
@@ -1830,7 +1845,7 @@
            (set-fixed-width mixer-strip-path-gui (- width 26))))
 
   
-  (<gui> :add-mouse-callback mixer-strip-path-gui (lambda (button state x y)
+  (add-safe-mouse-callback mixer-strip-path-gui (lambda (button state x y)
                                                     (if (and (= button *right-button*)
                                                              (= state *is-pressing*))
                                                         (begin (if (<ra> :shift-pressed)
@@ -1959,7 +1974,7 @@
   ;;(<ra> :inform-about-gui-being-a-mixer-strips parent) // Must only be called for standalone windows.
 
   (push-back! *mixer-strips-objects* mixer-strips-object)
-  
+
   (<gui> :add-deleted-callback parent
          (lambda (radium-runs-custom-exec)
            (set! *mixer-strips-objects*
@@ -2174,7 +2189,7 @@
 
   (define strips-config (create-strips-config instrument-ids num-rows remake gui))
 
-  (<gui> :add-mouse-callback gui
+  (add-safe-mouse-callback gui
          (lambda (button state x y)
            (cond ((and (= button *right-button*)
                        (= state *is-releasing*))
@@ -2188,12 +2203,12 @@
                                                         :remake remake
                                                         :strips-config strips-config
                                                         :pos pos))
-  
   (remake :non-are-valid)
   
   (<ra> :inform-about-gui-being-a-mixer-strips gui)
+
   (push-back! *mixer-strips-objects* mixer-strips-object)
-  
+
   (<gui> :add-deleted-callback gui
          (lambda (radium-runs-custom-exec)
            (set! *mixer-strips-objects*
@@ -2201,7 +2216,7 @@
                            (= (a-mixer-strips-object :gui)
                               gui))
                          *mixer-strips-objects*))))
-  
+
   ;;mixer-strips-object
   
   gui
@@ -2215,12 +2230,24 @@
 !!#
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)
-  ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " list-of-modified-instrument-ids (length *mixer-strips-objects*) "\n\n\n")
-  (for-each (lambda (a-mixer-strips-object)
-              ((a-mixer-strips-object :remake) (if (null? list-of-modified-instrument-ids)
-                                                   :non-are-valid
-                                                   list-of-modified-instrument-ids)))
-            *mixer-strips-objects*))
+  ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " (sort list-of-modified-instrument-ids <) (length *mixer-strips-objects*) "\n\n\n")
+  ;;(c-display "all:" (sort (get-all-audio-instruments) <))
+  (let ((list-of-modified-instrument-ids (cond ((or (null? list-of-modified-instrument-ids)
+                                                    (not (null? ((<new> :container (get-all-audio-instruments)) ;;i.e. if a modified instrument is deleted.
+                                                                 :set-difference
+                                                                 list-of-modified-instrument-ids))))
+                                                :non-are-valid)
+                                               ((true-for-all? (lambda (id)
+                                                                 (= id -2))
+                                                               list-of-modified-instrument-ids)
+                                                :all-are-valid)
+                                               (else
+                                                (remove (lambda (id)
+                                                          (= id -2))
+                                                        list-of-modified-instrument-ids)))))
+    (for-each (lambda (a-mixer-strips-object)
+                ((a-mixer-strips-object :remake) list-of-modified-instrument-ids))
+              *mixer-strips-objects*)))
 
 (define (redraw-mixer-strips . list-of-modified-instrument-ids)
   ;;(c-display "\n\n\n             REDRAW MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
@@ -2240,7 +2267,7 @@
 
 (define (mixer-strips-change-num-rows mixer-strips-gui num-rows)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
-    (set! (object :strips-config) num-rows)))
+    (set! ((object :strips-config) :num-rows) num-rows)))
 
 #!!
 (mixer-strips-change-num-rows ((car *mixer-strips-objects*) :gui) 6)

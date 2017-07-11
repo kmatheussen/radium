@@ -533,7 +533,7 @@ static bool move_chip_to_slot(Chip *chip, float from_x, float from_y){
   chip->setPos(x,y);
 
   printf("       Remake: move_chip_to_slot\n");
-  remakeMixerStrips();
+  remakeMixerStrips(-2);
   
   return chip->_moving_start_pos!=chip->pos();
 }
@@ -1634,7 +1634,7 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
   if(_moving_chips.size()>0 && stop_moving_chips(this, pos)) {
 
     printf("       Remake: mousereleaseevent\n");
-    remakeMixerStrips();
+    remakeMixerStrips(-2);
     
     must_accept = true;
   }

@@ -923,7 +923,11 @@ static void set_bus_onoff(struct SoundPlugin *plugin, float value, int busnum){
   bool newval = value > 0.5f;
   bool oldval = ATOMIC_SET_RETURN_OLD_ARRAY(plugin->bus_volume_is_on, busnum, newval);
   if (oldval != newval){
-    RT_schedule_mixer_strips_remake();
+    volatile struct Patch *patch = plugin->patch;
+    if (patch==NULL)
+      RT_schedule_mixer_strips_remake(-1);
+    else
+      RT_schedule_mixer_strips_remake(patch->id);
 #if !defined(RELEASE)
     printf("       Remake: BUS_ONOFF %d. On: %d\n", busnum, newval);
 #endif

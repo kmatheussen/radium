@@ -648,7 +648,9 @@ void setInstrumentColor(const_char *colorname, int64_t instrument_id){
   }
 
   printf("       Remake: setInstrumentColor\n");
-  remakeMixerStrips();
+  evalScheme(talloc_format("(for-each ra:remake-mixer-strips (get-instruments-connecting-to-instrument %" PRId64 "))", patch->id));
+  remakeMixerStrips(patch->id);
+  //remakeMixerStrips();
 
   root->song->tracker_windows->must_redraw=true;
 }
@@ -1235,7 +1237,7 @@ void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool
   else
     if (changed && remake_mixer_strips){
       printf("       Remake: setAudioConnectionGain\n");
-      remakeMixerStrips();
+      remakeMixerStrips(source_id);
     }
 }
 
@@ -1724,8 +1726,8 @@ void redrawMixerStrips(void){
   RT_schedule_mixer_strips_redraw(); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
 }
 
-void remakeMixerStrips(void){
-  RT_schedule_mixer_strips_remake(); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
+void remakeMixerStrips(int64_t id){
+  RT_schedule_mixer_strips_remake(id); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
 }
 
 bool hasWideInstrumentStrip(int64_t instrument_id){

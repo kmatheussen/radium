@@ -1312,6 +1312,16 @@ for .emacs:
   :contains (key)
   ((get-hash) key)
 
+  :intersection (elements2)
+  (map (lambda (el2)
+         (this->contains el2))
+        elements2)
+
+  :set-difference (elements2) ;; returns all elements in 'elements2' that are not in 'this'.
+  (map (lambda (el2)
+         (not (this->contains el2)))
+       elements2)
+
   :num-elements ()
   num-elements
 

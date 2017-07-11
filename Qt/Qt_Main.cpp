@@ -16,6 +16,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/includepython.h"
 
+#include <boost/version.hpp>
+#if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 63)
+  #error "Boost too old. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.bz2 ; tar xvjf boost_1_63_0.tar.bz2 (that's it!)"
+#endif
+#include <boost/lockfree/queue.hpp>
+
+
+
 #include <signal.h>
 #include <unistd.h>
 
@@ -177,9 +185,12 @@ QWidget *g_mixerstripparent = NULL;
 QHBoxLayout *g_mixerstriplayout = NULL;
 
 
-DEFINE_ATOMIC(bool, g_mixer_strips_needs_remake) = false;
-void RT_schedule_mixer_strips_remake(void){
-  ATOMIC_SET(g_mixer_strips_needs_remake, true);
+static boost::lockfree::queue<int64_t, boost::lockfree::capacity<64> > g_mixer_strips_needing_remake;
+
+DEFINE_ATOMIC(bool, g_all_mixer_strips_needs_remake) = false;
+void RT_schedule_mixer_strips_remake(int64_t id){
+  if (id==-1 || g_mixer_strips_needing_remake.bounded_push(id)==false)
+    ATOMIC_SET(g_all_mixer_strips_needs_remake, true);
 }
 
 DEFINE_ATOMIC(bool, g_mixer_strips_needs_redraw) = false;
@@ -1825,12 +1836,37 @@ protected:
       g_pausing_level = 0;
     }
 
-    if (is_called_every_ms(50)){
+    if (is_called_every_ms(15)){
 
       // Remake
-      if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_remake, true, false)){ // 
+      if(ATOMIC_COMPARE_AND_SET_BOOL(g_all_mixer_strips_needs_remake, true, false)){ // 
+
+        {  // clear queue. (boost should add a clear/reset function. Maybe initialize() does that? 'initialize' is not documented though.)
+          int64_t id;
+          while(g_mixer_strips_needing_remake.pop(id)==true);
+        }
+
         //printf("          (remake called from qt main)\n");
         evalScheme("(remake-mixer-strips)");
+
+      } else if (g_mixer_strips_needing_remake.empty()==false) {
+        
+        QSet<int64_t> remake_ids;
+
+        while(true){
+          int64_t id;
+          if (g_mixer_strips_needing_remake.pop(id)==false)
+            break;
+          remake_ids.insert(id);
+        }
+
+        QString code = "(remake-mixer-strips";
+        for(const auto id : remake_ids)
+          code += " " + QString::number(id);
+        
+        code += ")";
+
+        evalScheme(code.toUtf8().constData());
       }
 
       // Redraw

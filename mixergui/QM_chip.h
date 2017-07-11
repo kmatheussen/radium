@@ -162,7 +162,7 @@ public:
 
   ~SuperConnection(){
     printf("       Remake: ~SuperConnectin\n");
-    remakeMixerStrips();
+    //remakeMixerStrips(-1);
   }
       
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,

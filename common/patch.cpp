@@ -221,7 +221,7 @@ void PATCH_set_name(struct Patch *patch, const char *name){
     set_symbol_name(patch->midi_learn_port_name, new_name);
 
   printf("       PATCH set name\n");
-  remakeMixerStrips();
+  remakeMixerStrips(-1);
 }
 
 static struct Patch *create_new_patch(const char *name){
@@ -375,7 +375,7 @@ struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name,
     return NULL;
 
   printf("       PATCH create audio\n");
-  remakeMixerStrips();
+  remakeMixerStrips(patch->id);
   
   return patch;
 }
@@ -552,7 +552,6 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   PATCH_remove_from_instrument(patch);
 
   printf("       PATCH make inactive\n");
-  remakeMixerStrips();
 }
 
 void PATCH_make_inactive(struct Patch *patch){

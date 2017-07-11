@@ -478,7 +478,7 @@ float CHIP_get_pos_y(const struct Patch *patch){
 void CHIP_set_pos(Chip *chip, float x, float y){
   chip->setPos(x,y);
   printf("       Remake: CHIP_set_pos\n");
-  remakeMixerStrips();
+  remakeMixerStrips(-2);
 }
 
 void CHIP_set_pos(struct Patch *patch,float x,float y){
@@ -528,7 +528,7 @@ void CHIP_kick_left(Chip *chip){
   }
 
   printf("       Remake: CHIP_kick_left\n");
-  remakeMixerStrips();
+  remakeMixerStrips(-2);
 }
 
 static void CHIP_kick_right_rec(Chip *chip, std::set<Chip*> &kicks){
@@ -573,7 +573,7 @@ void CHIP_kick_right(Chip *chip){
   }
 
   printf("       Remake: CHIP_kick_right\n");
-  remakeMixerStrips();
+  remakeMixerStrips(-2);
 }
 
 static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id, bool patch_is_always_supposed_to_be_here = true){
@@ -747,14 +747,13 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
   radium::LinkParameters add_linkparameters;
   radium::LinkParameters remove_linkparameters;
 
-  
   // ADD: Create parameters
   for(const auto &parm : changes.to_add){
     if (parm.can_be_connected()){
       
       Chip *from = parm._from;
       Chip *to = parm._to;
-    
+
       bool from_is_mono = from->_num_outputs==1;
       bool to_is_mono   = to->_num_inputs==1;
     
@@ -814,12 +813,17 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
     
   }
 
+  QSet<const struct Patch *> affected_patches;
+  
   
   // ADD: Create mixergui connections
   for(const auto &parm : changes.to_add){
     R_ASSERT(scene != NULL);
     
     if (parm.can_be_connected()){
+
+      affected_patches.insert(CHIP_get_patch(parm._from));
+      affected_patches.insert(CHIP_get_patch(parm._to));
       
       AudioConnection *connection = new AudioConnection(scene);
       connection->from = parm._from;
@@ -842,14 +846,23 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
       AudioConnection *connection = CONNECTION_find_audio_connection(parm._from, parm._to);
       if (connection==NULL)
         R_ASSERT(false);
-      else
+      else {
+        affected_patches.insert(CHIP_get_patch(parm._from));
+        affected_patches.insert(CHIP_get_patch(parm._to));
+
         CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(connection);
+      }
     }
   }
 
   
   //printf("       Remake: CONNECTIONS_apply_changes\n");
-  remakeMixerStrips();
+  for(const auto *patch : affected_patches){
+    if (patch==NULL){
+      R_ASSERT_NON_RELEASE(false);
+    }else
+      remakeMixerStrips(patch->id);
+  }
 
   return true;
 }
@@ -1379,6 +1392,8 @@ void CHIP_create(SoundProducer *sound_producer, float x, float y){
 }
 
 Chip::~Chip(){
+
+  remakeMixerStrips(CHIP_get_patch(this)->id);
     
   while(audio_connections.size()>0){
     fprintf(stderr,"Deleting connection. Connections left: %d\n",(int)audio_connections.size());
@@ -1996,7 +2011,7 @@ QVariant Chip::itemChange(GraphicsItemChange change, const QVariant &value) {
 
   /*
   if (QGraphicsItem::ItemSelectedHasChanged==change){
-    remakeMixerStrips();
+    remakeMixerStrips(-1);
   }
   */
 
