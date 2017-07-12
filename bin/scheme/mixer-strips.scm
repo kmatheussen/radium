@@ -1667,7 +1667,7 @@
                                                 #t)
                                                ((and (= button *left-button*)
                                                      (= state *is-pressing*))
-                                                (let ((maybe (<ra> :request-float "" *min-db* *max-db* #t)))
+                                                (let ((maybe (<ra> :request-float (<-> "New volume for \"" (<ra> :get-instrument-name instrument-id) "\" (now " (db-to-text (get-volume) #t) "):") *min-db* *max-db* #t)))
                                                   (when (>= maybe *min-db*)
                                                     (<ra> :undo-instrument-effect instrument-id effect-name)
                                                     (<ra> :set-instrument-effect instrument-id effect-name (scale maybe *min-db* *max-db* 0 1))))
@@ -2375,14 +2375,15 @@
 
 
 
-;; main
+;; main (practical, but if it fails, we must restart radium, so not always very practical)
+#||
 (when (not *is-initializing*)
   (let ((start (time)))
     (set! *mixer-strips-objects* '())
     (define gui (create-mixer-strips-gui 2))
     (<gui> :show gui)
     (c-display "   Time used to open mixer:" (- (time) start))))
-
+||#
 
 
 
