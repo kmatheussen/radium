@@ -1648,12 +1648,16 @@ protected:
     {
       static MyQMessageBox *gakkbox = NULL;
 
-      if(g_main_timer_num_calls==1){
-        gakkbox = MyQMessageBox::create(false);
+      if(g_main_timer_num_calls==100/interval){
+        gakkbox = MyQMessageBox::create(false, NULL);
         gakkbox->setText("Forcing focus");
         safeShow(gakkbox);
+        gakkbox->lower(); // doesn't work, at least on linux. Normally I struggle to keep window on top, now it's the opposite. Should probably change Radium to use QMdiArea. It should solve all of the window manager problems.
       }
-      if(g_main_timer_num_calls==2){
+      if(g_main_timer_num_calls==105/interval){
+        gakkbox->hide();
+      }
+      if(g_main_timer_num_calls==150/interval){
         delete gakkbox;
         GFX_SetMenuFontsAgain();
       }

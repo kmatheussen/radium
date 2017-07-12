@@ -941,8 +941,8 @@ public:
   bool is_recursive(const radium::Vector<SoundProducerLink*> &to_add,
                     radium::Vector<SoundProducerLink*> &to_remove,
                     radium::Vector<SoundProducerLink*> &links_that_must_be_removed_first,
-                    QVector<const SoundProducer*> visited,
-                    QVector<const SoundProducer*> &already_checked
+                    QSet<const SoundProducer*> visited,
+                    QSet<const SoundProducer*> &already_checked
                     )
   {
                     
@@ -955,7 +955,7 @@ public:
       return true;
     }
 
-    visited.push_back(this);
+    visited.insert(this);
     
     int num_input_links = _input_links.size();
     
@@ -995,7 +995,7 @@ public:
       }
     }
 
-    already_checked.push_back(this);
+    already_checked.insert(this);
 
     return false;
   }
@@ -1011,12 +1011,12 @@ public:
   {
     D(printf("\n\n IS_RECURSIVE. to_add.size(): %d, to_remove.size(): %d, remove_first.size(): %d\n", to_add.size(), to_remove.size(), links_that_must_be_removed_first.size()));
 
-    QVector<const SoundProducer*> already_checked; // Not strictly necessary. Only used to speed up.
+    QSet<const SoundProducer*> already_checked; // Not strictly necessary. Only used to speed up.
 
     for(const auto *link : to_add){
       D(printf("   C. Check %s -> %s\n", link->source->_plugin->patch->name, link->target->_plugin->patch->name););
 
-      QVector<const SoundProducer*> visited;
+      QSet<const SoundProducer*> visited;
         
       if (link->target->is_recursive(to_add, to_remove, links_that_must_be_removed_first, visited, already_checked)==true){
         P(3);
