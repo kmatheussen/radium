@@ -1,3 +1,19 @@
+Changes 4.9.7 -> 4.9.8:
+* Mixer strips: Save configuration of the main mixer strips
+  to disk.
+* Mixer strips: Don't show error messages if deleting things
+  too fast.
+* Gui: Never allow a menu or a tooltip window to be the
+  parent of another window.
+* Mixer strip: Hide sliders immediately when deleting.
+* Fix crash if the realtime error message window pops up on
+  top of a window, and we delete that window before closing
+  the message window.
+* API: gui_getNumRowsInMixerStrips,
+  gui_getMixerStripsConfiguration,
+  gui_setMixerStripsConfiguration
+ 
+
 Changes 4.9.6 -> 4.9.7:
 * Mixer strips: Add option to set number of rows in the popup
   menu.
