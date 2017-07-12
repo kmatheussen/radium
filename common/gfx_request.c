@@ -30,9 +30,9 @@ int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,const char *t
 	int ret=min-1;
 
 	if(reqtype==NULL){
-          file=GFX_OpenReq(tvisual,(int)strlen(text)+10,4,"title");
+          file=GFX_OpenReq(tvisual,(int)strlen(text)+10,4,"");
 	}else{
-		file=reqtype;
+          file=reqtype;
 	}
 
 	if(file==0){
@@ -62,7 +62,7 @@ float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,const char *t
 	float ret=min-1.0f;
 
 	if(reqtype==NULL){
-          file=GFX_OpenReq(tvisual,(int)strlen(text)+10,4,"title");
+          file=GFX_OpenReq(tvisual,(int)strlen(text)+10,4,"");
 	}else{
 		file=reqtype;
 	}
@@ -104,7 +104,7 @@ char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *
 	char *rettext=NULL;
 
 	if(reqtype==NULL){
-          file=GFX_OpenReq(tvisual,(int)strlen(text)+10,4,"title");
+          file=GFX_OpenReq(tvisual,(int)strlen(text)+10,4,"");
 	}else{
 		file=reqtype;
 	}
@@ -115,8 +115,8 @@ char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *
 
 	GFX_WriteString(file,text);
 	GFX_ReadString(file,temp,49);
-	if(temp[0]=='\0'){
-	}else{
+        
+	if(temp[0] !='\0' ){
           rettext=talloc_atomic((int)strlen(temp)+2);
 		sprintf(rettext,"%s",temp);
 	}
@@ -141,7 +141,7 @@ int GFX_ReqTypeMenu(
   bool created_reqtype = false;
 
   if(reqtype==NULL){
-    reqtype=GFX_OpenReq(tvisual,(int)strlen(seltext)+10,v.num_elements+5,"title");
+    reqtype=GFX_OpenReq(tvisual,(int)strlen(seltext)+10,v.num_elements+5,"");
     created_reqtype = true;
   }
 
@@ -157,7 +157,7 @@ int GFX_ReqTypeMenu(
     sprintf(temp,"%d. %s\n",lokke+1,(char*)v.elements[lokke]);
     GFX_WriteString(reqtype,temp);
   }
-  GFX_WriteString(reqtype,"\n");
+  //  GFX_WriteString(reqtype,"\n");
 
   if(v.num_elements==1){
     // TODO: What?

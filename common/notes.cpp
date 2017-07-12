@@ -1038,8 +1038,8 @@ char *notetext_from_notenum(float notenumf){
 
 static float request_notenum(struct Tracker_Windows *window, const char *title, float old_notenum){
   float notenum = -1;
-  
-  ReqType reqtype=GFX_OpenReq(window,30,12,"Set Pitch");
+
+  ReqType reqtype=GFX_OpenReq(window,30,12,"");
 
   if (old_notenum>0.0f)
     GFX_SetString(reqtype, notetext_from_notenum(old_notenum));
@@ -1079,7 +1079,7 @@ static void r_add_last_pitch(struct Tracker_Windows *window, struct Notes *note)
 }
 
 static void r_add_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const Place *p){
-  float notenum = request_notenum(window, "Add note", -1);
+  float notenum = request_notenum(window, "New note", -1);
   
   if(notenum > 0.0f)
     InsertNote(wblock, wtrack, p, NULL, notenum, NOTE_get_velocity(wtrack->track), false);

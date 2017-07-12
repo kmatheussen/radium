@@ -120,6 +120,9 @@
         ((eq? command :add-audio-meter-peak-callback)
          (<ra> :gui_add-audio-meter-peak-callback (car args) (cadr args)))
         
+        ((eq? command :requester-operations)
+         (ra:gui_requester-operations (car args) (cadr args)))
+        
         (else
          (let* ((func (eval (<_> 'ra:gui_ (keyword->symbol command))))
                 (last-arg (and (not (null? args)) (last args)))

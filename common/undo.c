@@ -175,7 +175,7 @@ bool Undo_are_you_sure_questionmark(void){
 
     sprintf(
             temp,
-            "%d change%s been made to file since song was saved.\n\nAre you sure? (yes/no) >",
+            "%d change%s been made to file since song was saved.\nAre you sure? (yes/no) > ",
             num_undos,
             num_undos>1 ? "s have" : " has"
             );

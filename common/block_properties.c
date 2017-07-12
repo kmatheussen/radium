@@ -254,7 +254,7 @@ void Block_Properties_CurrPos(
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
 
-	reqtype=GFX_OpenReq(window,33,5,"Block Properties");
+	reqtype=GFX_OpenReq(window,33,5,"Edit block properties. Press return to keep old value.");
 
 	sprintf(seltext,"Number of tracks (now %d): ",wblock->block->num_tracks);
 	num_tracks=GFX_GetInteger(window,reqtype,seltext,2,200);

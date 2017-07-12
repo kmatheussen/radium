@@ -104,47 +104,47 @@ const char *getSaveFilename(const_char *text, const_char *filetypes, const_char 
 }
 
 
-static ReqType requester = NULL;
+static ReqType g_requester = NULL;
 
 void openRequester(const_char *text, int width, int height){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
-  requester = GFX_OpenReq(window,width,height,text);
+  g_requester = GFX_OpenReq(window,width,height,text);
 }
 
 void closeRequester(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
-  if(requester!=NULL){
-    GFX_CloseReq(window, requester);
-    requester = NULL;
+  if(g_requester!=NULL){
+    GFX_CloseReq(window, g_requester);
+    g_requester = NULL;
   }
 }
 
 int requestInteger(const_char *text, int min, int max, bool standalone){
   if (standalone)
-    return GFX_GetInteger(NULL, requester, text, min, max);
+    return GFX_GetInteger(NULL, g_requester, text, min, max);
 
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return min-1;
-  return GFX_GetInteger(window, requester, text, min, max);
+  return GFX_GetInteger(window, g_requester, text, min, max);
 }
 
 float requestFloat(const_char *text, float min, float max, bool standalone){
   if (standalone)
-    return GFX_GetFloat(NULL, requester, text, min, max);
+    return GFX_GetFloat(NULL, g_requester, text, min, max);
 
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return min-1.0f;
-  return GFX_GetFloat(window, requester, text, min, max);
+  return GFX_GetFloat(window, g_requester, text, min, max);
 }
 
 const_char* requestString(const_char *text, bool standalone){
   char *ret;
 
   if (standalone)
-    ret = GFX_GetString(NULL, requester, text);
+    ret = GFX_GetString(NULL, g_requester, text);
   else {
     struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-    ret = GFX_GetString(window, requester, text);
+    ret = GFX_GetString(window, g_requester, text);
   }
 
   if(ret==NULL)
@@ -194,7 +194,7 @@ void colorDialog(const char *initial_color, int64_t parentguinum, func_t* callba
 
 const_char* requestMidiPort(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  char *ret = MIDIrequestPortName(window, requester, false);
+  char *ret = MIDIrequestPortName(window, g_requester, false);
   if(ret==NULL)
     ret="";
   return ret;

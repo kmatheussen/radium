@@ -193,10 +193,9 @@ void SetLineOpacity(
           return;
 
         line_opacity = new_opacity;
-
-        window->wblock->block->is_dirty = true;
-
         SETTINGS_write_int("line_opacity", new_opacity);
+
+        window->must_redraw = true;
 }
 
 #if 0
@@ -233,46 +232,43 @@ void SelectMinNodeSize(
 void Window_config(
 	struct Tracker_Windows *window
 ){
-	ReqType reqtype=GFX_OpenReq(window,30,12,"Window Config");
+	ReqType reqtype=GFX_OpenReq(window,30,12,"Select which variable to modify:");
 
         vector_t v={0};
-        VECTOR_push_back(&v,"Left Slider width");
-        VECTOR_push_back(&v,"Bottom Slider height");
-        VECTOR_push_back(&v, "First Beat Line color opacity");
-        VECTOR_push_back(&v, "Beat Line color opacity");
-        VECTOR_push_back(&v, "Line separate color opacity");
+        int leftsliderwidth    = VECTOR_push_back(&v,"Left Slider width");
+        int bottomsliderheight = VECTOR_push_back(&v,"Bottom Slider height");
+        int firstbeat          = VECTOR_push_back(&v, "First Beat Line color opacity");
+        int beatlineopacity    = VECTOR_push_back(&v, "Beat Line color opacity");
+        int linecoloropacity   = VECTOR_push_back(&v, "Line separate color opacity");
         //VECTOR_push_back(&v,"Minimum node-size");
 
-	int sel=GFX_Menu(window,reqtype,"Select operation",v);
+	int sel=GFX_Menu(window,reqtype,"",v);
+        
+#if 0
+        // case 0:
+        SelectEditFont(window);
+        break;
+#endif
+        if (sel==leftsliderwidth)
+          SelectLeftSliderWidth(window,reqtype);
 
-	switch(sel){
-		case -1: break;
+        else if (sel==bottomsliderheight)
+          SelectBottomSliderHeight(window,reqtype);
+
+        else if (sel==firstbeat)
+          SetFirstBeatOpacity(window, reqtype);
+
+        else if (sel==beatlineopacity)
+          SetBeatOpacity(window, reqtype);
+
+        else if (sel==linecoloropacity)
+          SetLineOpacity(window, reqtype);
+        
 #if 0
-		case 0:
-			SelectEditFont(window);
-			break;
+        else if (sel==selminnodesize)
+          SelectMinNodeSize(window,reqtype);
 #endif
-		case 0:
-			SelectLeftSliderWidth(window,reqtype);
-			break;
-		case 1:
-			SelectBottomSliderHeight(window,reqtype);
-			break;
-                case 2:
-                        SetFirstBeatOpacity(window, reqtype);
-                        break;
-                case 3:
-                        SetBeatOpacity(window, reqtype);
-                        break;
-                case 4:
-                        SetLineOpacity(window, reqtype);
-                        break;
-#if 0
-		case 5:
-			SelectMinNodeSize(window,reqtype);
-			break;
-#endif
-	}
+
 
 	GFX_CloseReq(window,reqtype);
 

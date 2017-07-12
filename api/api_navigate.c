@@ -273,7 +273,7 @@ void requestCursorMove(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);
   struct WBlocks *wblock = window->wblock;
 
-  ReqType reqtype = GFX_OpenReq(window, 50, 4, "title");
+  ReqType reqtype = GFX_OpenReq(window, 50, 4, "");
   
   char *line = GFX_GetString(window,reqtype,"Move cursor (write \"h\" to get examples): >");
   //char *line = GFX_GetString(window,NULL,"'2' jumps to bar 2. '2/3' jumps to bar 2, beat 3. '2/3,4' jumps to bar 2, beat 3, track 4: >");
@@ -289,7 +289,6 @@ void requestCursorMove(void){
     GFX_WriteString(reqtype, "\n");
     GFX_WriteString(reqtype, " To move cursor to line 5, write \"l5\"\n");
     GFX_WriteString(reqtype, " To move cursor to line 5, track 6, write \"l5,6\"\n");
-    GFX_WriteString(reqtype, "\n");
     line = GFX_GetString(window,reqtype,">");
     if (line==NULL)
       goto exit;

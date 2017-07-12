@@ -169,14 +169,7 @@ void PExpandBlock(
 
 
 static float GetScaleFactor(struct Tracker_Windows *window){
-  ReqType reqtype;
-  float ret;
-
-  reqtype=GFX_OpenReq(window,33,5,"Pitch scale factor");
-  ret=GFX_GetFloat(window,reqtype,"Pitch scale factor: ",0.0f,10.0f);
-  GFX_CloseReq(window,reqtype);
-  
-  return ret;
+  return GFX_GetFloat(window,NULL,"Pitch expand factor (0-10): ",0.0f,10.0f);
 }
 
 
@@ -186,8 +179,9 @@ void PExpandRange_CurrPos(
 ){
 	if(!window->wblock->isranged) return;
 
-	while(scalefactor<0)
-	  scalefactor=GetScaleFactor(window);
+        scalefactor=GetScaleFactor(window);
+        if (scalefactor<0)
+          return;	
 
         PC_Pause();{
           ADD_UNDO(Range(
@@ -216,9 +210,10 @@ void PExpandTrack_CurrPos(
 			  float scalefactor
 ){
 
-	while(scalefactor<0)
-	  scalefactor=GetScaleFactor(window);
-
+        scalefactor=GetScaleFactor(window);
+	if(scalefactor<0)
+          return;
+        
         PC_Pause();{
           ADD_UNDO(Notes_CurrPos(window));
           
@@ -241,9 +236,10 @@ void PExpandBlock_CurrPos(
 			  float scalefactor
 ){
 
-	while(scalefactor<0)
-	  scalefactor=GetScaleFactor(window);
-
+	scalefactor=GetScaleFactor(window);
+        if (scalefactor < 0)
+          return;
+        
         PC_Pause();{
           
           ADD_UNDO(Range(

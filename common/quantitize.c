@@ -266,7 +266,7 @@ void SetQuantitize_CurrPos(
         Ratio before = root->quantitize_options.quant;
         Ratio after;
                   
-        ReqType reqtype = GFX_OpenReq(window, 100, 100, "Quantitize");
+        ReqType reqtype = GFX_OpenReq(window, 100, 100, "");
 
         do{
           GFX_WriteString(reqtype, "Quantitize Value : ");
