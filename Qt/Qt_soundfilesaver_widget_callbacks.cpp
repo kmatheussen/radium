@@ -151,7 +151,8 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
     void timerEvent(QTimerEvent * e){
       printf("clicked: %p\n", parent->msgBox->clickedButton());
 
-      if(g_radium_runs_custom_exec) return;
+      // Could seem like this one returns sometimes. We should never exit from here. Think it happens when the player calls rt_message.
+      //RETURN_IF_DATA_IS_INACCESSIBLE();
 
       if (parent->msgBox->clickedButton()!=NULL){
         SOUNDFILESAVER_request_stop();

@@ -1755,8 +1755,7 @@ bool Chip::positionedAtSlider(QPointF pos){
 
 void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (g_radium_runs_custom_exec==true)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
     
@@ -2020,8 +2019,7 @@ QVariant Chip::itemChange(GraphicsItemChange change, const QVariant &value) {
 
 void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (g_radium_runs_custom_exec==true)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
   if(_slider_being_edited>0){
     QPointF pos = event->pos();
@@ -2102,8 +2100,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void Chip::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (g_radium_runs_custom_exec==true)
-    return;
+  //RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
   if(_slider_being_edited>0)
     _slider_being_edited=0;

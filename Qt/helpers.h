@@ -27,6 +27,19 @@
 
 extern bool g_radium_runs_custom_exec;
 extern bool g_and_its_not_safe_to_paint;
+static inline bool can_internal_data_be_accessed_questionmark(void){
+  if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return false;
+  if(g_is_loading) return false;
+  return true;
+}
+static inline bool can_internal_data_be_accessed_questionmark_safer(void){
+  if(g_radium_runs_custom_exec) return false;
+  if(g_is_loading) return false;
+  return true;
+}
+#define RETURN_IF_DATA_IS_INACCESSIBLE(...) if(can_internal_data_be_accessed_questionmark()==false) return __VA_ARGS__;
+#define RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2(...) if(can_internal_data_be_accessed_questionmark_safer()==false) return __VA_ARGS__;
+
 
 extern void set_editor_focus(void);
 

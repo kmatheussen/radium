@@ -262,6 +262,7 @@ void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_event
 
 
 DEFINE_ATOMIC(bool, is_starting_up) = true;
+bool g_is_starting_up = true;
 bool g_qt_is_running = false;
 bool g_qtgui_has_started = false;
 bool g_qtgui_exec_has_started = false;
@@ -309,7 +310,7 @@ uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch){
 }
 
 static void set_mouse_keyswitches(void){
-  if(ATOMIC_GET(is_starting_up)==true)
+  if(g_is_starting_up==true)
     return;
   
   tevent.keyswitch = OS_SYSTEM_add_mouse_keyswitches(tevent.keyswitch);
@@ -505,7 +506,7 @@ protected:
   
    bool SystemEventFilter(void *event){
 
-     if(ATOMIC_GET(is_starting_up)==true){
+     if(g_is_starting_up==true){
       return false;
      }
      
@@ -715,11 +716,8 @@ protected:
 #endif
 
     //printf(" Got key 3\n");
-    
-    if (g_radium_runs_custom_exec) {
-      //printf("  Returning false 2.1\n");
-      return false;
-    }
+
+    RETURN_IF_DATA_IS_INACCESSIBLE(false);
       
     if (editor_has_keyboard_focus()==false){
       //printf("  Returning false 2.2\n");
@@ -1366,7 +1364,7 @@ MyApplication::MyApplication(int &argc,char **argv)
 
 
 void *OS_GFX_get_native_main_window(void){
-  R_ASSERT_RETURN_IF_FALSE2(ATOMIC_GET(is_starting_up)==false, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(g_is_starting_up==false, NULL);
       
   QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
   return (void*)main_window->winId();
@@ -1403,7 +1401,7 @@ bool OS_GFX_main_window_has_focus(void){
 
 // Warning: Does not always work on windows.
 bool a_radium_window_has_focus(void){
-  if(ATOMIC_GET(is_starting_up)==true)
+  if(g_is_starting_up==true)
     return false;
 
 #if FOR_LINUX
@@ -1586,14 +1584,15 @@ protected:
     
     if (g_is_loading==true)
       return;
+
+    g_main_timer_num_calls++; // Must be placed here since 'is_called_every_ms' depends on it.
     
     if (is_called_every_ms(15)){
       AUDIOMETERPEAKS_call_very_often(15);
       API_gui_call_regularly();
     }
 
-    if (g_radium_runs_custom_exec==true)
-      return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
 
     //static int hepp=0; printf("hepp %d\n",hepp++);
     
@@ -1635,12 +1634,13 @@ protected:
       ATOMIC_SET(rt_message_status, RT_MESSAGE_READY);
     }
 
-    g_main_timer_num_calls++;
-
+    static int num_calls_at_this_point = 0;
+    num_calls_at_this_point++;
+    
     struct Tracker_Windows *window=root->song->tracker_windows;
 
     // No, we still need to do this. At least in qt 5.5.1. Seems like it's not necessary in 5.7 or 5.8 though, but that could be coincidental.
-    if(g_main_timer_num_calls<250/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
+    if(num_calls_at_this_point<250/interval){ // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
       updateWidgetRecursively(g_main_window);
     }
 
@@ -1648,16 +1648,16 @@ protected:
     {
       static MyQMessageBox *gakkbox = NULL;
 
-      if(g_main_timer_num_calls==100/interval){
+      if(num_calls_at_this_point==100/interval){
         gakkbox = MyQMessageBox::create(false, NULL);
         gakkbox->setText("Forcing focus");
         safeShow(gakkbox);
         gakkbox->lower(); // doesn't work, at least on linux. Normally I struggle to keep window on top, now it's the opposite. Should probably change Radium to use QMdiArea. It should solve all of the window manager problems.
       }
-      if(g_main_timer_num_calls==105/interval){
+      if(num_calls_at_this_point==105/interval){
         gakkbox->hide();
       }
-      if(g_main_timer_num_calls==150/interval){
+      if(num_calls_at_this_point==150/interval){
         delete gakkbox;
         GFX_SetMenuFontsAgain();
       }
@@ -1667,7 +1667,7 @@ protected:
     // Does not work.
     {
       static bool has_raised = false;
-      if (has_raised==false && g_main_timer_num_calls > 300/interval){
+      if (has_raised==false && gnum_calls_at_this_point > 300/interval){
         g_main_window->raise();
         g_main_window->activateWindow();
         //BringWindowToTop((HWND)g_main_window->winId());
@@ -1683,12 +1683,12 @@ protected:
     // Does not work.
     
     static bool has_focused = false;
-    if(has_focused==false && g_main_timer_num_calls>400/interval){ // Set focus constantly between 0.4 and 1.0 seconds after startup.
+    if(has_focused==false && num_calls_at_this_point>400/interval){ // Set focus constantly between 0.4 and 1.0 seconds after startup.
       
       // We started to lose keyboard focus at startup between 4.8.8 and 4.9.0 (but only if no message windows showed up, and only in RELEASE mode). Clicking the window did not help. I don't know wny.
       OS_WINDOWS_set_key_window((void*)g_main_window->winId());
 
-      if (g_main_timer_num_calls>5000/interval){
+      if (num_calls_at_this_point>5000/interval){
         has_focused=true;
       }
     }
@@ -2532,6 +2532,7 @@ int radium_main(char *arg){
   INIT_Pianoroll_headers();
 
   ATOMIC_SET(is_starting_up, false);
+  g_is_starting_up = false;
 
   window->must_redraw = true;
   editor->update();
@@ -2656,7 +2657,8 @@ int radium_main(char *arg){
 #endif
 
   ATOMIC_SET(is_starting_up, true); // Tell the mixer that program is not running
-
+  g_is_starting_up = true;
+  
   Undo_start_ignoring_undo_operations();{
     MW_cleanup(false); // Stop all sound properly. Don't want clicks when exiting.
   }Undo_stop_ignoring_undo_operations();

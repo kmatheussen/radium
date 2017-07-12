@@ -128,8 +128,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     
     void timerEvent(QTimerEvent * e){
 
-      if (g_radium_runs_custom_exec==true)
-        return;
+      RETURN_IF_DATA_IS_INACCESSIBLE();
 
       if (g_system_out_patch==NULL && g_system_out_plugin != NULL)
         g_system_out_patch = (struct Patch*)g_system_out_plugin->patch;
@@ -479,13 +478,13 @@ extern "C"{
   }
 
   void GFX_OS_UpdateKeyOctave(void){
-    if(ATOMIC_GET(is_starting_up)==false)
+    if(g_is_starting_up==false)
       for(auto *bottom_bar_widget : g_bottom_bars)
         bottom_bar_widget->octave_label->setText(QString("Oct.: ")+QString::number(root->keyoct/12,16));
   }
 
   void GFX_OS_update_bottombar(void){
-    if(ATOMIC_GET(is_starting_up)==false)
+    if(g_is_starting_up==false)
       for(auto *bottom_bar_widget : g_bottom_bars)
         bottom_bar_widget->updateWidgets();
   } 

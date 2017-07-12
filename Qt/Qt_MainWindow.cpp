@@ -179,7 +179,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #endif
 
   setAttribute(Qt::WA_StaticContents, true);
-  
+
   upperleft_widget = new Upperleft_widget(this);
   upperleft_widget->move(0,0);
 
@@ -371,8 +371,7 @@ static int get_track_from_x(float x){
 void handleDropEvent(QString filename, float x){
   struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
 
-  if(g_radium_runs_custom_exec)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE();
 
   int tracknum = get_track_from_x(x);
   int64_t instrument_id = -1;
@@ -434,7 +433,7 @@ public:
 #if 0
   // Want the wheel to work from everywhere. (actually we don't want that)
   void wheelEvent(QWheelEvent *qwheelevent) override {
-    if(ATOMIC_GET(is_starting_up)==true)
+    if(g_is_starting_up==true)
       return;
     printf("Got wheel event\n");
     g_editor->wheelEvent(qwheelevent);

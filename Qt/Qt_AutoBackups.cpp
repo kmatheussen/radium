@@ -35,6 +35,8 @@ static int64_t get_backup_interval_ms(void){
 }
 
 static void make_backup(void){
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
+  
   if (Undo_num_undos() == 0)
     return;
 
@@ -44,9 +46,6 @@ static void make_backup(void){
   if (!editor_has_keyboard_focus()) // If showing popup menu, editing text widgets, etc. we don't want to disturb the user.
     return;
 
-  if (g_radium_runs_custom_exec==true) // Same here.
-    return;
-  
   if (g_undo_generation_for_last_backup == g_curr_undo_generation)
     return;
 

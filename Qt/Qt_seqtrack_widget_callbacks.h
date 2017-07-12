@@ -697,9 +697,8 @@ public:
     }
   }
   
-  void paint(const QRect &update_rect, QPainter &p) { // QPaintEvent * ev ) override {    
-    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
-    if(g_is_loading) return;
+  void paint(const QRect &update_rect, QPainter &p) { // QPaintEvent * ev ) override {
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     //printf("  PAINTING %d %d -> %d %d\n",t_x1,t_y1,t_x2,t_y2);
 
@@ -1081,7 +1080,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
 
-    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     QPainter p(this);
 
@@ -1343,9 +1342,8 @@ public:
   
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
-    
-    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
-    if(g_is_loading) return;
+
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     QPainter p(this);
 
@@ -1527,8 +1525,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void resizeEvent( QResizeEvent *qresizeevent) override {
-    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
-    if(g_is_loading) return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     //  set_end_time();
     // _samples_per_pixel = (_end_time-_start_time) / width();
@@ -1626,8 +1623,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   void call_very_often(void){
 
-    if (g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) // Avoids unpainted areas when showing sync widgets.
-      return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
       
     if (_song_tempo_automation_was_visible != _songtempoautomation_widget.is_visible){
       _song_tempo_automation_was_visible = _songtempoautomation_widget.is_visible;
@@ -1814,10 +1810,10 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void paintEvent (QPaintEvent *ev) override {
+    //printf("   SEQ paintEvent called %d, %d -> %d, %d\n", ev->rect().x(), ev->rect().y(), ev->rect().width(), ev->rect().height());
     TRACK_PAINT();
 
-    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
-    if(g_is_loading) return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     QPainter p(this);
 

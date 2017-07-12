@@ -2414,7 +2414,11 @@ struct Root{
 };
 
 extern struct Root *root;
+
+// these two contains the same value, but g_is_starting_up can only be accessed from the main thread.
 extern DEFINE_ATOMIC(bool, is_starting_up);
+extern bool g_is_starting_up;
+
 extern bool g_embed_samples;
 
 static inline struct SeqTrack *SEQUENCER_get_curr_seqtrack(void){

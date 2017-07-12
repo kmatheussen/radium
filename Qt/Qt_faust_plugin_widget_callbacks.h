@@ -527,11 +527,10 @@ public:
   // todo: Move web by dragging.
   
   void calledRegularlyByParent(void){
+
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     if (Undo_num_undos()==0) // I don't think this can happen, but in case it does, we return since the call to Undo_ReopenLast() below would fail (badly).
-      return;
-
-    if (g_radium_runs_custom_exec==true)
       return;
 
     //R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open()==false);
@@ -771,7 +770,7 @@ public:
   }
 
   void hideEvent(QHideEvent * event) override {
-    if(g_radium_runs_custom_exec) return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     _size_type_before_hidden = _size_type;
     
@@ -780,7 +779,7 @@ public:
   }
 
   void showEvent(QShowEvent * event) override {
-    if(g_radium_runs_custom_exec) return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     if (_size_type_before_hidden != SIZETYPE_NORMAL)
       set_large(_size_type_before_hidden);

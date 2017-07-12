@@ -677,8 +677,7 @@ static bool stop_moving_chips(MyScene *myscene, const QPointF &mouse_pos){
 
 void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
 
-  if (g_radium_runs_custom_exec==true)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
   QPointF pos=event->scenePos();
 
@@ -1456,8 +1455,7 @@ void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
   QPointF pos=event->scenePos();
   printf("Scene is double-clicked\n");
 
-  if (g_radium_runs_custom_exec==true)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
   
   Chip *chip = MW_get_chip_at(pos.x(), pos.y(), NULL);
   if(chip!=NULL){
@@ -1495,8 +1493,7 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   //printf("mousepress: %p\n",_current_connection);
   EVENTLOG_add_event(talloc_format(">>>>  MyScene::mousePressEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size()));
 
-  if (g_radium_runs_custom_exec==true)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
   
   QPointF pos=event->scenePos();
   float mouse_x = pos.x();
@@ -1607,7 +1604,7 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
 
     R_ASSERT(_moving_chips.size()==0);
         
-    if(chip!=NULL){ // TODO: Must check if the connection is already made.
+    if(can_internal_data_be_accessed_questionmark_safer()==true && chip!=NULL){ // TODO: Must check if the connection is already made.
 
       if(_ecurrent_from_chip != NULL && chip != _ecurrent_from_chip){
 
@@ -1644,9 +1641,8 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     return;
   }
 
-  
-  if (g_radium_runs_custom_exec==true)
-    return;
+
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
   
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
@@ -1695,7 +1691,7 @@ namespace{
     void 	timerEvent ( QTimerEvent * e ){
       counter++;
 
-      if(g_radium_runs_custom_exec) return;
+      RETURN_IF_DATA_IS_INACCESSIBLE();
 
       if (g_mixer_widget->isVisible()){
 
