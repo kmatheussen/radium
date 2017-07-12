@@ -187,6 +187,9 @@
         ((eq? command :add-callback)
          `(<ra> :gui_add-callback ,(car args) ,(cadr args)))
         
+        ((eq? command :requester-operations)
+         `(ra:gui_requester-operations ,(car args) ,(cadr args)))
+        
         ((let ((stringcommand (symbol->string (keyword->symbol command))))
            (and (string-starts-with? stringcommand "add-")
                 (string-ends-with? stringcommand "-callback")))
