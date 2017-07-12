@@ -647,10 +647,11 @@ void setInstrumentColor(const_char *colorname, int64_t instrument_id){
     CHIP_update(plugin);
   }
 
-  printf("       Remake: setInstrumentColor\n");
-  evalScheme(talloc_format("(for-each ra:remake-mixer-strips (get-instruments-connecting-to-instrument %" PRId64 "))", patch->id));
+  int num_connections = getNumInAudioConnections(patch->id);
+  for(int i = 0 ; i < num_connections ; i++)
+    remakeMixerStrips(getAudioConnectionSourceInstrument(i, patch->id));
+  
   remakeMixerStrips(patch->id);
-  //remakeMixerStrips();
 
   root->song->tracker_windows->must_redraw=true;
 }
