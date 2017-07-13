@@ -396,10 +396,11 @@ void setCurrSeqAutomation(int automationnum, int seqtracknum){
 
   VALIDATE_AUTOMATIONNUM();
 
-  SEQTRACK_AUTOMATION_set_curr_automation(seqtrack->seqtrackautomation, automationnum);
+  SEQTRACK_AUTOMATION_set_curr_automation(seqtrack, automationnum);
 }
 
 void cancelCurrSeqAutomation(void){
+  //printf("   cancelCurrSeqAutomation called\n");
   SEQTRACK_AUTOMATION_cancel_curr_automation();
 }
 

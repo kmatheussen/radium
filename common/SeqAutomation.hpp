@@ -84,8 +84,10 @@ public:
     return _paint_nodes;
   }
 
+  // called very often.
   void set_do_paint_nodes(bool do_paint_nodes){
-    _paint_nodes = do_paint_nodes;
+    if (do_paint_nodes != _paint_nodes)
+      _paint_nodes = do_paint_nodes;
   }
 
   int size(void) const {
