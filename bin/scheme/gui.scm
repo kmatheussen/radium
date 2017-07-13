@@ -270,6 +270,14 @@
           layout)
 
 
+(define (ra:gui_requester-operations text block)
+  (c-display "OPEN REQ")
+  (<ra> :open-requester text)
+  (try-finally :try block
+               :finally (lambda ()
+                          (c-display "CLOSE REQ")
+                          (<ra> :close-requester))))
+
 (define (disable-gui-updates-block gui block)
   (<gui> :disable-updates gui)
   (try-finally :try block
