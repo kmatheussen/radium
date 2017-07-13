@@ -75,13 +75,13 @@ void SaveBlockToDisk(const char *filename_c, const struct WBlocks *wblock){
   
   R_ASSERT_RETURN_IF_FALSE(wblock!=NULL);
 
-  const wchar_t *filename = NULL;
-  
+  const wchar_t *filename;
+
   if (filename_c==NULL || !strcmp(filename_c, ""))
-    filename=GFX_GetSaveFileName(window,NULL,"Select filename for block to save", NULL, "*.rad_block", "Block files");
+    filename=GFX_GetSaveFileName(window,NULL,"Select filename for block to save", NULL, "*.rad_block", "Block files", true);
   else
     filename = STRING_create(filename_c);
-  
+
   if (filename==NULL)
     return;
 
@@ -117,13 +117,13 @@ void LoadBlockFromDisk(const char *filename_c){
   bool success = false;
   bool have_made_undo = false;
 
-  const wchar_t *filename = NULL;
-  
+  const wchar_t *filename;
+
   if (filename_c==NULL || !strcmp(filename_c, ""))
-    filename=GFX_GetLoadFileName(window,NULL,"Select block to load", NULL, "*.rad_block", "Block files");
+    filename=GFX_GetLoadFileName(window,NULL,"Select block to load", NULL, "*.rad_block", "Block files", true);
   else
     filename = STRING_create(filename_c);
-  
+
   if (filename==NULL){
     goto exit;
     return;
@@ -241,7 +241,7 @@ void SaveTrackToDisk(const char *filename_c, const struct WTracks *wtrack){
   const wchar_t *filename = NULL;
   
   if (filename_c==NULL || !strcmp(filename_c, ""))
-    filename=GFX_GetSaveFileName(window,NULL,"Select filename for track to save", NULL, "*.rad_track", "Track files");
+    filename=GFX_GetSaveFileName(window,NULL,"Select filename for track to save", NULL, "*.rad_track", "Track files", true);
   else
     filename = STRING_create(filename_c);
   
@@ -272,7 +272,7 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
   const wchar_t *filename = NULL;
   
   if (filename_c==NULL || !strcmp(filename_c, ""))
-    filename=GFX_GetLoadFileName(window,NULL,"Select track to load", NULL, "*.rad_track", "Track files");
+    filename=GFX_GetLoadFileName(window,NULL,"Select track to load", NULL, "*.rad_track", "Track files", true);
   else
     filename = STRING_create(filename_c);
   

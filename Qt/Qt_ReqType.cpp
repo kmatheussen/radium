@@ -65,9 +65,9 @@ static const int y_margin = 10;
 
 namespace{
 
-struct MyQFrame : public QFrame{
+struct MyQFrame : public QDialog{
   MyQFrame(QWidget *parent)
-    : QFrame(parent)
+    : QDialog(parent)
   {}
 
   QPointer<QWidget> _widget_to_get_focus_when_shown;
@@ -79,7 +79,7 @@ struct MyQFrame : public QFrame{
         _widget_to_get_focus_when_shown->setFocus();
       }GL_unlock();
     }
-    QFrame::showEvent(e);
+    QDialog::showEvent(e);
   }
 };
   
@@ -102,7 +102,7 @@ static void init_reqtype(MyReqType *reqtype){
     reqtype->frame = new MyQFrame(get_current_parent(true));
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
-    set_window_flags(reqtype->frame, true);
+    set_window_flags(reqtype->frame, true); // 'true' means modal window.
     
     if (reqtype->frame->layout() != NULL){
       reqtype->frame->layout()->setSpacing(10);
@@ -172,7 +172,7 @@ void GFX_SetString(ReqType das_reqtype,const char *text){
 namespace{
   class MyQLineEdit : public FocusSnifferQLineEdit {
   public:
-    MyQLineEdit(QFrame *parent)
+    MyQLineEdit(QWidget *parent)
       : FocusSnifferQLineEdit(parent)
       , gotit(false)
     {
@@ -221,7 +221,7 @@ static void legalize_pos(MyReqType *reqtype){
       
       
 
-void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
+void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool program_state_is_valid){
 
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
 
@@ -284,7 +284,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
       moveWindowToCentre(reqtype->frame);
     }
     
-    reqtype->frame->show();
+    safeShow(reqtype->frame);
     
   } else {
 
@@ -312,26 +312,24 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
   int edit_height = edit->height();
     
   {
-    g_and_its_not_safe_to_paint = false;
-    
-    radium::ScopedExec scoped_exec;
+    radium::ScopedExec scoped_exec(program_state_is_valid);
     
     while(edit->gotit==false){
       // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
       GL_lock();{
-        QApplication::processEvents();
+        QApplication::processEvents(QEventLoop::ExcludeSocketNotifiers);
       }GL_unlock();
 
 
-      // Frame is deleted if the parent is deleted. Shouldn't happen though, but just in case.
+      // Frame is deleted if the parent is deleted. Shouldn't happen though, but we check just in case.
       //
       if (reqtype->frame==NULL){
 #if !defined(RELEASE)
-        fprintf(stderr, "  REQTYPE->FRAM == NULL\n");
+        fprintf(stderr, "\n\n\n  REQTYPE->FRAM == NULL (press return to continue)\n\n\n");
         getchar();
 #endif
-        init_reqtype(reqtype); // recreate the frame.
-        break;
+        init_reqtype(reqtype); // recreate the frame, for next time.
+        break; // return;
       }
       
       //GTK_HandleEvents();
@@ -347,8 +345,6 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
       
       msleep(10);
     }
-
-    g_and_its_not_safe_to_paint = true;
   }
   
 #endif

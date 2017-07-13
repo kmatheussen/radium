@@ -1259,7 +1259,7 @@ struct Instruments{
         struct FX *(*createFX)(const struct Tracks *track, struct Patch *patch, int effect_num);
   
 	int (*getFX)(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx);
-	int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,const struct Tracks *track,struct Patch *patch);
+        //int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,const struct Tracks *track,struct Patch *patch);
 	//void (*treatSpecialCommand)(char *command,struct Tracks *track);
 	void (*CloseInstrument)(struct Instruments *instrument);
 	void (*StopPlaying)(struct Instruments *instrument);
@@ -1276,7 +1276,7 @@ struct Instruments{
   
         void (*remove_patchdata)(struct Patch *patch);
 
-	void (*setPatchData)(struct Patch *patch, const char *key, const char *value);
+	void (*setPatchData)(struct Patch *patch, const char *key, const char *value, bool program_state_is_valid);
 	char *(*getPatchData)(struct Patch *patch, const char *key);
 };
 #define INSTRUMENT_FAILED 0

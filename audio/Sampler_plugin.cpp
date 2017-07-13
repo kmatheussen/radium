@@ -2252,7 +2252,7 @@ static bool set_new_sample(struct SoundPlugin *plugin,
   Data *data = NULL;
   Data *old_data = (Data*)plugin->data;
 
-  filename = OS_loading_get_resolved_file_path(filename);
+  filename = OS_loading_get_resolved_file_path(filename, false); // set program_state_is_valid=false. Might not be necessary, but I'm not sure.
   if (filename==NULL)
     goto exit;
 

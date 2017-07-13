@@ -169,7 +169,7 @@ void PExpandBlock(
 
 
 static float GetScaleFactor(struct Tracker_Windows *window){
-  return GFX_GetFloat(window,NULL,"Pitch expand factor (0-10): ",0.0f,10.0f);
+  return GFX_GetFloat(window,NULL,"Pitch expand factor (0-10): ",0.0f,10.0f,true);
 }
 
 

@@ -409,7 +409,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
         {
           R_ASSERT(g_radium_runs_custom_exec==false);
 
-          radium::ScopedExec scopedExec;
+          radium::ScopedExec scopedExec(false);
           filename = QFileDialog::getOpenFileName(NULL,
                                                   plugin_name,
                                                   QString(),
@@ -459,7 +459,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
 
     /*
     msgBox->setDefaultButton(QMessageBox::Ok);
-    safeExec(msgBox);
+    safeExec(msgBox, false);
     */
   }
 

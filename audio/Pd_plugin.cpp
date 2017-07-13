@@ -980,7 +980,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
     ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
     msgBox->setText(QString(libpds_strerror()));
     msgBox->setStandardButtons(QMessageBox::Ok);
-    safeExec(msgBox);
+    safeExec(msgBox, false); // set program_state_is_valid to false. Not sure if it's safe to set it to true.
     V_free(data);
     return NULL;
   }

@@ -92,7 +92,7 @@ static void request_load_preset_filename_from_requester(int64_t parentgui, func_
   QString filename;
 
   {
-    radium::ScopedExec scopedExec;
+    radium::ScopedExec scopedExec(true);
 
     filename = QFileDialog::getOpenFileName(
                                             API_gui_get_parentwidget(parentgui),
@@ -133,7 +133,7 @@ void request_load_preset_filename(func_t *callback){
   for(QString filename : existing_presets)
     VECTOR_push_back(&v, talloc_strdup(filename.toUtf8().constData()));
 
-  int sel = GFX_Menu(NULL, NULL, "", &v);
+  int sel = GFX_Menu(NULL, NULL, "", &v, true);
 
   if (sel==-1)
     return "";
@@ -175,7 +175,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
     msgBox->setText("Could not open file.");
     msgBox->setStandardButtons(QMessageBox::Ok);
     msgBox->setDefaultButton(QMessageBox::Ok);
-    safeExec(msgBox);
+    safeExec(msgBox, true);
     return NULL;
   }
 
@@ -188,7 +188,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
     msgBox->setText("File does not appear to be a valid effects settings file");
     msgBox->setStandardButtons(QMessageBox::Ok);
     msgBox->setDefaultButton(QMessageBox::Ok);
-    safeExec(msgBox);
+    safeExec(msgBox, true);
     return NULL;
   }
 
@@ -364,11 +364,12 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
   
   bool is_multipreset = patches->num_elements > 1;
 
-  obtain_keyboard_focus();
-
   QString filename;
   
-  GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  { // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+
+    radium::ScopedExec scopedExec(true);
+        
     filename = QFileDialog::getSaveFileName(
                                             API_gui_get_parentwidget(parentgui),
                                             "Save Effect configuration",
@@ -385,10 +386,8 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
                                             0,
                                             QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                             );
-  }GL_unlock();
+  }
 
-  release_keyboard_focus();
-  
   if(filename=="")
     return;
 
@@ -399,7 +398,7 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
     msgBox->setText("Could not save file.");
     msgBox->setStandardButtons(QMessageBox::Ok);
     msgBox->setDefaultButton(QMessageBox::Ok);
-    safeExec(msgBox);
+    safeExec(msgBox, true);
     return;
   }
 

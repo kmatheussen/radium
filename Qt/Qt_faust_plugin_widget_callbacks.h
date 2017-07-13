@@ -309,7 +309,7 @@ class Editor : public FocusSnifferQsciScintilla{
     
     else if (event->key()==Qt::Key_F3 || (event->key()==Qt::Key_F && (event->modifiers() & Qt::ControlModifier))) {
       printf("Ctrl+F\n");
-      char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ");
+      char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ", true);
       if (s!=NULL && strlen(s)>0)
         search(s);
       setFocus(Qt::OtherFocusReason);
@@ -686,14 +686,14 @@ public:
     disk_t *disk = DISK_open_for_reading(filename);
 
     if (disk==NULL){
-      GFX_Message(NULL, "File not found (%s)", filename.toUtf8().constData());
+      GFX_Message2(NULL, true, "File not found (%s)", filename.toUtf8().constData());
       return;
     }
 
     QString new_code = DISK_read_qstring_file(disk);
       
     if (DISK_close_and_delete(disk)==false) {
-      GFX_Message(NULL, "Unable to read from %s", filename.toUtf8().constData());
+      GFX_Message2(NULL, true, "Unable to read from %s", filename.toUtf8().constData());
       return;
     }
     
@@ -705,7 +705,7 @@ public:
 
     //GFX_Message(NULL, "   fff filename: -%s-, %p",filename.toUtf8().constData(), disk);
     if (disk==NULL){
-      GFX_Message(NULL, "Unable to open %s for writing", filename.toUtf8().constData());
+      GFX_Message2(NULL, true, "Unable to open %s for writing", filename.toUtf8().constData());
       return;
     }
 
@@ -720,7 +720,7 @@ public:
       return;
 
     if (show_warning)
-      GFX_Message(NULL, "Warning: Wrote %d bytes. Expected %d", n, code.size());
+      GFX_Message2(NULL, true, "Warning: Wrote %d bytes. Expected %d", n, code.size());
   }
 
   void show_cpp_source(void){

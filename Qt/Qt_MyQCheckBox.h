@@ -223,7 +223,7 @@ struct MyQCheckBox : public QCheckBox{
           add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
       }
       
-      int command = GFX_Menu(root->song->tracker_windows, NULL, "", options);
+      int command = GFX_Menu(root->song->tracker_windows, NULL, "", options, true);
 
       //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
 

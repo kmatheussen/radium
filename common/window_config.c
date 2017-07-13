@@ -72,8 +72,9 @@ void SelectLeftSliderWidth(
 		reqtype,
 		temp,
 		4,
-		window->wblock->temponodearea.x2
-	);
+		window->wblock->temponodearea.x2,
+                true
+                                );
 	if(newwidth<4) return;
 
 	window->leftslider.width=newwidth;
@@ -100,7 +101,8 @@ void SelectBottomSliderHeight(
 		reqtype,
 		temp,
 		2,
-		window->height-(window->wblock->t.y1+(window->fontheight*6))
+		window->height-(window->wblock->t.y1+(window->fontheight*6)),
+                true
 	);
 	if(newwidth<2) return;
 
@@ -131,7 +133,8 @@ void SetBeatOpacity(
 		reqtype,
 		temp,
 		0,
-		1000
+		1000,
+                true
 	);
 	if(new_opacity<0 || new_opacity>1000)
           return;
@@ -159,7 +162,8 @@ void SetFirstBeatOpacity(
 		reqtype,
 		temp,
 		0,
-		1000
+		1000,
+                true
 	);
 	if(new_opacity<0 || new_opacity>1000)
           return;
@@ -187,7 +191,8 @@ void SetLineOpacity(
 		reqtype,
 		temp,
 		0,
-		1000
+		1000,
+                true
 	);
 	if(new_opacity<0 || new_opacity>1000)
           return;
@@ -215,7 +220,8 @@ void SelectMinNodeSize(
 		reqtype,
 		temp,
 		1,
-		40
+		40,
+                true
 	);
 	if(newwidth<1) return;
 
@@ -242,7 +248,7 @@ void Window_config(
         int linecoloropacity   = VECTOR_push_back(&v, "Line separate color opacity");
         //VECTOR_push_back(&v,"Minimum node-size");
 
-	int sel=GFX_Menu(window,reqtype,"",v);
+	int sel=GFX_Menu(window,reqtype,"",v,true);
         
 #if 0
         // case 0:

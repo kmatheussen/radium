@@ -60,25 +60,27 @@ extern LANGSPEC void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType reqtyp
 
 extern LANGSPEC void GFX_WriteString(ReqType reqtype,const char *text);
 extern LANGSPEC void GFX_SetString(ReqType das_reqtype,const char *text);
-extern LANGSPEC void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength);
+extern LANGSPEC void GFX_ReadString(ReqType reqtype,char *buffer,int bufferlength,bool program_state_is_valid);
 extern LANGSPEC int GFX_ReqTypeMenu(
                                     struct Tracker_Windows *tvisual,
                                     ReqType reqtype,
                                     const char *seltext,
-                                    const vector_t v
+                                    const vector_t v,
+                                    bool program_state_is_valid
                                     );
 
-extern LANGSPEC int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,int min,int max);
+extern LANGSPEC int GFX_GetInteger(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,int min,int max,bool program_state_is_valid);
 
-extern LANGSPEC float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,float min,float max);
+extern LANGSPEC float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,float min,float max,bool program_state_is_valid);
 
-extern LANGSPEC char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text);
+extern LANGSPEC char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,bool program_state_is_valid);
 
 #ifdef __cplusplus
 #include <functional>
 void GFX_Menu3(
                const vector_t &v,
-               std::function<void(int,bool)> callback
+               std::function<void(int,bool)> callback,
+               bool program_state_is_valid
                );
 #endif
 
@@ -88,14 +90,16 @@ extern LANGSPEC int GFX_Menu2(
                               const char *seltext,
                               const vector_t v,
                               func_t *callback,
-                              bool is_async
+                              bool is_async,
+                              bool program_state_is_valid
                               );
 
 extern LANGSPEC int GFX_Menu(
                              struct Tracker_Windows *tvisual,
                              ReqType reqtype,
                              const char *seltext,
-                             const vector_t v
+                             const vector_t v,
+                             bool program_state_is_valid
                              );
 
 extern LANGSPEC vector_t GFX_MenuParser(const char *texts, const char *separator);
@@ -106,7 +110,8 @@ extern LANGSPEC const wchar_t *GFX_GetLoadFileName(
                                                    const char *seltext,
                                                    wchar_t *dir,
                                                    const char *postfixes,
-                                                   const char *type
+                                                   const char *type,
+                                                   bool program_state_is_valid
                                                    );
 
 extern LANGSPEC const wchar_t *GFX_GetSaveFileName(
@@ -115,7 +120,8 @@ extern LANGSPEC const wchar_t *GFX_GetSaveFileName(
                                                    const char *seltext,
                                                    wchar_t *dir,
                                                    const char *postfixes,
-                                                   const char *type
+                                                   const char *type,
+                                                   bool program_state_is_valid
                                                    );
 
 extern LANGSPEC void GFX_OS_update_bottombar(void);

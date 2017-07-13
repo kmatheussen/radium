@@ -1051,7 +1051,8 @@ static float request_notenum(struct Tracker_Windows *window, const char *title, 
     char *notetext = GFX_GetString(
                                    window,
                                    reqtype,
-                                   temp
+                                   temp,
+                                   true
                                    );
     if(notetext==NULL)
       break;

@@ -21,7 +21,7 @@ extern "C"{
   void COMMENTDIALOG_open(void){
     ensure_widget_is_created();
 
-    safeShowOrExec(widget);
+    safeShowOrExec(widget, true);
   }
 
   bool COMMENT_show_after_loading(void){

@@ -199,7 +199,7 @@ void InsertLines_CurrPos(
 	int num_lines=wblock->block->num_lines;
 
         if(toinsert==0)
-	  toinsert=GFX_GetInteger(window,NULL,"Number of lines to insert\n(number can be negative): ",-(num_lines-curr_line),10000);
+	  toinsert=GFX_GetInteger(window,NULL,"Number of lines to insert\n(number can be negative): ",-(num_lines-curr_line),10000,true);
 
 	if(toinsert==-(num_lines-curr_line)-1) return;
 

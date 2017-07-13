@@ -390,7 +390,7 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
 
 dependencies_ok: check_dependencies.sh #Makefile
@@ -1212,7 +1212,7 @@ Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cp
 $(P)mQt_PopupMenu.cpp: $(P)Qt_PopupMenu.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_PopupMenu.cpp -DUSE_QT_MENU >$(P)mQt_PopupMenu.cpp
 
-Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)Qt_bottom_bar_widget.h $(P)Qt_bottom_bar_widget_callbacks.h $(P)Qt_upperleft_widget.h $(P)Qt_upperleft_widget_callbacks.h $(P)Qt_audio_instrument_widget.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h
+Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)Qt_bottom_bar_widget.h $(P)mQt_bottom_bar_widget_callbacks.h $(P)Qt_upperleft_widget.h $(P)mQt_upperleft_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h
 	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
 
 Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
@@ -1228,7 +1228,7 @@ $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
 
-INSTRUMENTS_DEPENDENCIES = $(P)Qt_instruments_widget.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)Qt_control_change_widget.h $(P)Qt_plugin_widget.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)Qt_compressor_widget.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp
+INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp
 
 
 
@@ -1245,25 +1245,25 @@ Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS_DEP
 # clang++ $(P)Qt_instruments.cpp $(QTOPT)
 
 
-$(P)Qt_instruments_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_instruments_widget.ui $(P)create_source_from_ui.sh $(P)Qt_instruments_widget_callbacks.h
+$(P)mQt_instruments_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_instruments_widget.ui $(P)create_source_from_ui.sh $(P)Qt_instruments_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) instruments_widget
 
-$(P)Qt_midi_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_midi_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_midi_instrument_widget_callbacks.h
+$(P)mQt_midi_instrument_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_midi_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_midi_instrument_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) midi_instrument_widget
 
-$(P)Qt_audio_instrument_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_audio_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_audio_instrument_widget_callbacks.h $(P)Qt_patch_widget.h
+$(P)mQt_audio_instrument_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_audio_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_audio_instrument_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)mQt_patch_widget.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) audio_instrument_widget
 
-$(P)Qt_patch_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_patch_widget.ui $(P)create_source_from_ui.sh $(P)Qt_patch_widget_callbacks.h
+$(P)mQt_patch_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_patch_widget.ui $(P)create_source_from_ui.sh $(P)Qt_patch_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) patch_widget
 
-$(P)Qt_sample_requester_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_sample_requester_widget.ui $(P)create_source_from_ui.sh $(P)Qt_sample_requester_widget_callbacks.h
+$(P)mQt_sample_requester_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_sample_requester_widget.ui $(P)create_source_from_ui.sh $(P)Qt_sample_requester_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) sample_requester_widget
 
-$(P)Qt_control_change_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_control_change_widget.ui $(P)create_source_from_ui.sh $(P)Qt_control_change_widget_callbacks.h
+$(P)mQt_control_change_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_control_change_widget.ui $(P)create_source_from_ui.sh $(P)Qt_control_change_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) control_change_widget
 
-$(P)Qt_plugin_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_plugin_widget.ui $(P)create_source_from_ui.sh $(P)Qt_plugin_widget_callbacks.h
+$(P)mQt_plugin_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_plugin_widget.ui $(P)create_source_from_ui.sh $(P)Qt_plugin_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) plugin_widget
 
 $(P)Qt_auto_suspend_menu.h:  $(BUILD_DEPENDENCIES) $(P)qt4_auto_suspend_menu.ui $(P)create_source_from_ui.sh  $(P)Qt_auto_suspend_menu_callbacks.h
@@ -1284,13 +1284,13 @@ $(P)Qt_pd_controller_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_pd_controller_widg
 $(P)Qt_pd_controller_config_dialog.h:  $(BUILD_DEPENDENCIES) $(P)qt4_pd_controller_config_dialog.ui $(P)create_source_from_ui.sh $(P)Qt_pd_controller_config_dialog_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pd_controller_config_dialog
 
-$(P)Qt_compressor_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_compressor_widget.ui $(P)create_source_from_ui.sh $(P)Qt_compressor_widget_callbacks.h
+$(P)mQt_compressor_widget_callbacks.h:  $(BUILD_DEPENDENCIES) $(P)qt4_compressor_widget.ui $(P)create_source_from_ui.sh $(P)Qt_compressor_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) compressor_widget
 
-$(P)Qt_bottom_bar_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_bottom_bar_widget.ui $(P)create_source_from_ui.sh $(P)Qt_bottom_bar_widget_callbacks.h $(P)Qt_MyQButton.h
+$(P)mQt_bottom_bar_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_bottom_bar_widget.ui $(P)create_source_from_ui.sh $(P)Qt_bottom_bar_widget_callbacks.h $(P)Qt_MyQButton.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) bottom_bar_widget
 
-$(P)Qt_upperleft_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_upperleft_widget.ui $(P)create_source_from_ui.sh $(P)Qt_upperleft_widget_callbacks.h $(P)Qt_MyQButton.h
+$(P)mQt_upperleft_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_upperleft_widget.ui $(P)create_source_from_ui.sh $(P)Qt_upperleft_widget_callbacks.h $(P)Qt_MyQButton.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) upperleft_widget
 
 $(P)Qt_seqtrack_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_seqtrack_widget.ui $(P)create_source_from_ui.sh $(P)Qt_seqtrack_widget_callbacks.h $(P)Qt_MyQButton.h
@@ -1368,7 +1368,7 @@ Qt_pianorollheader_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_pianorollheader_cal
 $(P)Qt_pianorollheader.h: $(BUILD_DEPENDENCIES) $(P)qt4_pianorollheader.ui $(P)Qt_pianorollheader_callbacks.h $(P)lzqlineedit.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pianorollheader
 
-Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)Qt_audio_instrument_widget.h $(P)Qt_sample_requester_widget.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h
+Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)Qt_sample_requester_widget.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h
 	$(CCC) $(P)Qt_PluginWidget.cpp $(QTOPT)
 
 $(P)mQt_PluginWidget.cpp: $(P)Qt_PluginWidget.h

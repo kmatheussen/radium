@@ -1099,7 +1099,7 @@ public slots:
   // MIDI
 
   void on_set_input_port_clicked(){
-    MIDISetInputPort();
+    MIDISetInputPort(true);
   }
 
   void on_use0x90_toggled(bool val){
@@ -1176,7 +1176,7 @@ void PREFERENCES_open(void){
     g_static_toplevel_widgets.push_back(g_preferences_widget);
   }
 
-  safeShowOrExec(g_preferences_widget);
+  safeShowOrExec(g_preferences_widget, true);
 }
 
 void PREFERENCES_open_MIDI(void){

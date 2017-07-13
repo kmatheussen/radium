@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC void OS_set_loading_path(const wchar_t *filename);
 extern LANGSPEC void OS_unset_loading_path(void);
-extern LANGSPEC const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *path);
+extern LANGSPEC const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *path, bool program_state_is_valid);
 
 extern LANGSPEC const wchar_t *OS_saving_get_relative_path_if_possible(const wchar_t *filepath);  
 extern LANGSPEC void OS_set_saving_path(const wchar_t *filename);

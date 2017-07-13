@@ -60,7 +60,7 @@ class Auto_Suspend_Menu : public QDialog, public Ui::Auto_Suspend_Menu{
     qApp->setActiveWindow(enable_suspend);
     
     _timer.start();
-    safeExec(this);
+    safeExec(this, true);
     _timer.stop();
   }
 

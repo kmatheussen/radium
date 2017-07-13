@@ -52,7 +52,10 @@ extern LANGSPEC bool GFX_Message_ignore_questionmark(void);
 extern LANGSPEC bool GFX_Message_ask_ignore_question_questionmark(void);
 extern LANGSPEC void GFX_Message_call_after_showing(bool clicked_ignore);
 
-extern LANGSPEC int GFX_Message(vector_t *buttons,const char *fmt,...);
+extern LANGSPEC int GFX_Message2(vector_t *buttons, bool program_state_is_valid, const char *fmt,...);
+#define GFX_Message(buttons, ...) GFX_Message2(buttons, false,  __VA_ARGS__)
+#define GFX_SafeMessage(buttons, ...) GFX_Message2(buttons, true, __VA_ARGS__)
+
 extern LANGSPEC void GFX_addMessage(const char *fmt,...);
 extern LANGSPEC const char *GFX_qVersion(void);
 

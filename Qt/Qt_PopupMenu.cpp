@@ -293,24 +293,27 @@ static int GFX_QtMenu(
                 const vector_t &v,
                 func_t *callback2,
                 std::function<void(int,bool)> callback3,
-                bool is_async
+                bool is_async,
+                bool program_state_is_valid
                 )
 {
 
-  if(is_async)
+  if(is_async){
     R_ASSERT(callback2!=NULL || callback3);
-
+    R_ASSERT_RETURN_IF_FALSE2(program_state_is_valid, -1);
+  }
+  
   QMenu *menu = create_qmenu(v, is_async,  callback2, callback3);
   //printf("                CREATED menu %p", menu);
   
   if (is_async){
-    
+
     safeMenuPopup(menu);
     return -1;
     
   } else {
     
-    QAction *action = safeMenuExec(menu);
+    QAction *action = safeMenuExec(menu, program_state_is_valid);
     (void)action;
     //printf("    ACTION: %p\n", action);
 
@@ -340,7 +343,7 @@ void GFX_Menu3(
               std::function<void(int,bool)> callback3
               )
 {
-  GFX_QtMenu(v, NULL, callback3, true);
+  GFX_QtMenu(v, NULL, callback3, true, true);
 }
 
 int GFX_Menu2(
@@ -349,17 +352,20 @@ int GFX_Menu2(
               const char *seltext,
               const vector_t v,
               func_t *callback,
-              bool is_async
+              bool is_async,
+              bool program_state_is_valid
               )
 {
-  if(is_async)
-    R_ASSERT(callback!=NULL);
-
+  if(is_async){
+    R_ASSERT_RETURN_IF_FALSE2(callback!=NULL, -1);
+    R_ASSERT_RETURN_IF_FALSE2(program_state_is_valid, 1);
+  }
+  
   if(reqtype==NULL || v.num_elements>20 || is_async || callback!=NULL){
     std::function<void(int,bool)> empty_callback3;
-    return GFX_QtMenu(v, callback, empty_callback3, is_async);
+    return GFX_QtMenu(v, callback, empty_callback3, is_async, program_state_is_valid);
   }else
-    return GFX_ReqTypeMenu(tvisual,reqtype,seltext,v);
+    return GFX_ReqTypeMenu(tvisual,reqtype,seltext,v, program_state_is_valid);
 }
 
 
@@ -367,10 +373,11 @@ int GFX_Menu(
              struct Tracker_Windows *tvisual,
              ReqType reqtype,
              const char *seltext,
-             const vector_t v
+             const vector_t v,
+             bool program_state_is_valid
              )
 {
-  return GFX_Menu2(tvisual, reqtype, seltext, v, NULL, false);
+  return GFX_Menu2(tvisual, reqtype, seltext, v, NULL, false, program_state_is_valid);
 }
 
 // The returned vector can be used as argument for GFX_Menu.

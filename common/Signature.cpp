@@ -148,7 +148,7 @@ void SetSignatureCurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	int curr_realline=wblock->curr_realline;
 	const Place *place= &wblock->reallines[curr_realline]->l.p;
-	char *signaturestring = GFX_GetString(window,NULL,"New Time Signature: >");
+	char *signaturestring = GFX_GetString(window,NULL,"New Time Signature: >",true);
 	if(signaturestring==NULL) return;
 
         Rational rational(signaturestring);

@@ -73,7 +73,7 @@ void LoadMIDIPatchData(struct PatchData *patchdata){
 
 var0:
 	clustername=DC_LoadS();
-        patchdata->midi_port = MIDIgetPort(NULL,NULL,clustername);
+        patchdata->midi_port = MIDIgetPort(NULL,NULL,clustername,false);
 #if 0
 	if(patchdata->mymidilink==NULL){
 		fprintf(stderr,"Can't find midicluster '%s', using standard midi outlink instead\n",clustername);

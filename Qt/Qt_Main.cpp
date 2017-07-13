@@ -175,7 +175,7 @@ bool g_do_grey_editor = false;
 static bool editor_has_keyboard = true;
 static int someone_else_has_keyboard_counting = 0;
 bool g_radium_runs_custom_exec = false;
-bool g_and_its_not_safe_to_paint = false;
+bool g_and_its_not_safe_to_paint = true;
 bool g_qt_is_painting = false;
 const char *g_qt_is_painting_where = "nowhere";
 

@@ -781,7 +781,7 @@ void setInstrumentData(int64_t instrument_id, const_char *key, const_char *value
   if(patch==NULL)
     return;
 
-  patch->instrument->setPatchData(patch, key, value);
+  patch->instrument->setPatchData(patch, key, value, true);
 
   (*patch->instrument->PP_Update)(patch->instrument,patch,false);
 }
@@ -1339,7 +1339,7 @@ void midi_alwaysRecordVelocity(bool doit){
 }
 
 void midi_setInputPort(void){
-  MIDISetInputPort();
+  MIDISetInputPort(true);
 }
 
 #define NUM_IDS 2048

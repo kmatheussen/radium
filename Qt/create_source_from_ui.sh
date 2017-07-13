@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+#set -x
+
 UIC=$1
 MOC=$2
 V=$3

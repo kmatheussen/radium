@@ -431,7 +431,7 @@ void GFX_color_dialog(const char *initial_color, int64_t parentguinum, func_t *c
   safeShow(color_dialog);
   
   #if 0
-  int ret = safeExec(&color_dialog);  
+  int ret = safeExec(&color_dialog, true);  
 
   if (ret==QDialog::Rejected){
     

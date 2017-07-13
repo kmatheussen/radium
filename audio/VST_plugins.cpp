@@ -1348,7 +1348,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
       msgBox->setText("We have currently used more than 30 seconds searching for VST plugins. Continue for another 30 seconds?");
       msgBox->addButton(QMessageBox::Yes);
       msgBox->addButton(QMessageBox::No);
-      int ret = safeExec(msgBox);
+      int ret = safeExec(msgBox, false);
       if(ret==QMessageBox::Yes){
         time->restart();
       } else

@@ -85,7 +85,11 @@ const char *getLoadFilename(const_char *text, const_char *filetypes, const_char 
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
   if (!strcmp(type,""))
     type = NULL;
-  const wchar_t *ret = GFX_GetLoadFileName(window, NULL, text, STRING_create(dir), filetypes, type);
+
+  const wchar_t *ret;
+  
+  ret = GFX_GetLoadFileName(window, NULL, text, STRING_create(dir), filetypes, type, true);
+  
   if(ret==NULL)
     return "";
   else
@@ -96,7 +100,10 @@ const char *getSaveFilename(const_char *text, const_char *filetypes, const_char 
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
   if (!strcmp(type,""))
     type = NULL;
-  const wchar_t *ret = GFX_GetSaveFileName(window, NULL, text, STRING_create(dir), filetypes, type);
+  const wchar_t *ret;
+
+  ret = GFX_GetSaveFileName(window, NULL, text, STRING_create(dir), filetypes, type, true);
+    
   if(ret==NULL)
     return "";
   else
@@ -123,28 +130,28 @@ void closeRequester(void){
 
 int requestInteger(const_char *text, int min, int max, bool standalone){
   if (standalone)
-    return GFX_GetInteger(NULL, g_requester, text, min, max);
+    return GFX_GetInteger(NULL, g_requester, text, min, max, true);
 
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return min-1;
-  return GFX_GetInteger(window, g_requester, text, min, max);
+  return GFX_GetInteger(window, g_requester, text, min, max, true);
 }
 
 float requestFloat(const_char *text, float min, float max, bool standalone){
   if (standalone)
-    return GFX_GetFloat(NULL, g_requester, text, min, max);
+    return GFX_GetFloat(NULL, g_requester, text, min, max, true);
 
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return min-1.0f;
-  return GFX_GetFloat(window, g_requester, text, min, max);
+  return GFX_GetFloat(window, g_requester, text, min, max, true);
 }
 
 const_char* requestString(const_char *text, bool standalone){
   char *ret;
 
   if (standalone)
-    ret = GFX_GetString(NULL, g_requester, text);
+    ret = GFX_GetString(NULL, g_requester, text, true);
   else {
     struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-    ret = GFX_GetString(window, g_requester, text);
+    ret = GFX_GetString(window, g_requester, text, true);
   }
 
   if(ret==NULL)
@@ -160,7 +167,7 @@ int requestMenu(const_char *text, PyObject* arguments){
 int simplePopupMenu(const char *texts){
   struct Tracker_Windows *window=getWindowFromNum(-1);
   const vector_t vec = GFX_MenuParser(texts, "%");
-  return GFX_Menu(window, NULL,"",vec);
+  return GFX_Menu(window, NULL,"",vec,true);
 }
 
 void popupMenu(dyn_t strings, func_t* callback){
@@ -184,7 +191,7 @@ void popupMenu(dyn_t strings, func_t* callback){
 
   //printf("   NUM_elements: %d\n", vec.num_elements);
   
-  GFX_Menu2(window, NULL, "", vec, callback, true);
+  GFX_Menu2(window, NULL, "", vec, callback, true, true);
 }
 
 
@@ -194,7 +201,7 @@ void colorDialog(const char *initial_color, int64_t parentguinum, func_t* callba
 
 const_char* requestMidiPort(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  char *ret = MIDIrequestPortName(window, g_requester, false);
+  char *ret = MIDIrequestPortName(window, g_requester, false, true);
   if(ret==NULL)
     ret="";
   return ret;
@@ -202,7 +209,7 @@ const_char* requestMidiPort(void){
 
 const_char* showMessage(const char *text, dyn_t buttons){
   if (buttons.type==UNINITIALIZED_TYPE){
-    GFX_Message(NULL, text);
+    GFX_Message2(NULL, true, text);
     return "Ok";
   }
 
@@ -221,7 +228,7 @@ const_char* showMessage(const char *text, dyn_t buttons){
     VECTOR_push_back(&v, STRING_get_chars(button.string));
   }
 
-  int ret = GFX_Message(&v, text);
+  int ret = GFX_SafeMessage(&v, text);
   if (ret<0 || ret>= buttons.array->num_elements) // don't think this can happen though.
     return "";
 

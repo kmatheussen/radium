@@ -1342,7 +1342,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
   int64_t parentguinum = API_get_gui_from_existing_widget(g_mixer_widget->window());
       
-  int sel = GFX_Menu(NULL, NULL, NULL, v);
+  int sel = GFX_Menu(NULL, NULL, NULL, v, true);
 
   if (sel==-1) {
     
@@ -2093,7 +2093,7 @@ static const char *popup_plugin_selector(SoundPluginType **type, bool must_have_
   
   MyQAction *action;
 
-  action = dynamic_cast<MyQAction*>(safeExec(&menu));
+  action = dynamic_cast<MyQAction*>(safeExec(&menu, true));
   printf("action: %p\n",action);
   
   if (action==NULL)
@@ -2124,7 +2124,7 @@ static const char *popup_plugin_selector(SoundPluginType **type, bool must_have_
 
     char temp[1024];
     sprintf(temp,"Select plugin contained in %s", plugin_type_container->name);
-    int selection=GFX_Menu(NULL,NULL,temp,names);
+    int selection=GFX_Menu(NULL,NULL,temp,names,true);
     
     if (selection==-1)
       return NULL;

@@ -442,7 +442,7 @@ static void *create_data(const wchar_t *filename, float samplerate){
     return NULL;
   }
 
-  const wchar_t *something = OS_loading_get_resolved_file_path(filename);
+  const wchar_t *something = OS_loading_get_resolved_file_path(filename, false); // program_state_is_valid=false, might probably be.
   if (something==NULL){
     delete_data(data);
     return NULL;

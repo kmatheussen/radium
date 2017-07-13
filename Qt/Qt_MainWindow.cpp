@@ -704,13 +704,14 @@ const wchar_t *GFX_GetLoadFileName(
                                    const char *seltext,
                                    wchar_t *wdir,
                                    const char *postfixes,
-                                   const char *type
+                                   const char *type,
+                                   bool program_state_is_valid
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
 
-  radium::ScopedExec scopedExec;
+  radium::ScopedExec scopedExec(program_state_is_valid);
 
   QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
   QString filename = QFileDialog::getOpenFileName(editor,
@@ -732,13 +733,14 @@ const wchar_t *GFX_GetSaveFileName(
                                    const char *seltext,
                                    wchar_t *wdir,
                                    const char *postfixes,
-                                   const char *type
+                                   const char *type,
+                                   bool program_state_is_valid
                                    ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
 
-  radium::ScopedExec scopedExec;
+  radium::ScopedExec scopedExec(program_state_is_valid);
 
   QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
   QString filename = QFileDialog::getSaveFileName(editor,
@@ -772,7 +774,7 @@ void GFX_Message_call_after_showing(bool clicked_ignore){
     g_ignore_until = g_last_time + 2000;
 }
 
-static int GFX_Message(vector_t *buttons, QString message){
+static int show_gfx_message(vector_t *buttons, bool program_state_is_valid, QString message){
   R_ASSERT(THREADING_is_main_thread());
 
   if (buttons==NULL && GFX_Message_ignore_questionmark())
@@ -811,7 +813,7 @@ static int GFX_Message(vector_t *buttons, QString message){
 #endif
 
   {
-    safeExec(msgBox);
+    safeExec(msgBox, program_state_is_valid);
   }
   
 #if PUT_ON_TOP
@@ -843,7 +845,7 @@ static int GFX_Message(vector_t *buttons, QString message){
   return 0;
 }
 
-int GFX_Message(vector_t *buttons, const char *fmt,...){
+int GFX_Message2(vector_t *buttons, bool program_state_is_valid, const char *fmt,...){
   if (buttons!=NULL)
     R_ASSERT(THREADING_is_main_thread());
 
@@ -862,7 +864,7 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
 
   } else {
  
-    return GFX_Message(buttons,QString(message));
+    return show_gfx_message(buttons, false, QString(message));
 
   }
 }

@@ -136,7 +136,7 @@ int SYSTEM_show_message(const char *message){
     return 0;
   }
 
-  radium::ScopedExec scopedExec;
+  radium::ScopedExec scopedExec(false);
     
 
 #if FOR_WINDOWS

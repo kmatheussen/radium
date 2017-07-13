@@ -154,8 +154,8 @@ extern struct Root *root;
 
 const char *g_input_port_name = NULL;
 
-int MIDISetInputPort(void){
-  char *portname = MIDIrequestPortName(root->song->tracker_windows,NULL,true);
+int MIDISetInputPort(bool program_state_is_valid){
+  char *portname = MIDIrequestPortName(root->song->tracker_windows,NULL,true,program_state_is_valid);
   if(portname!=NULL){
     MIDI_OS_AddInputPortIfNotAlreadyAdded(portname);
     SETTINGS_write_string("midi_input_port",portname);

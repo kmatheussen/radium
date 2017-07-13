@@ -96,7 +96,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
       msgBox->setInformativeText(error_string);
       msgBox->setStandardButtons(QMessageBox::Ok);
       
-      //safeExec(msgBox);
+      //safeExec(msgBox, true);
       return;
       
     } else {
@@ -183,7 +183,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
         //msgBox->setInformativeText(message);
         msgBox->setStandardButtons(QMessageBox::Ok);
 
-        safeExec(msgBox);
+        safeExec(msgBox, true);
 #endif
 
         bool was_cancelled = !strcmp(message, "Cancelled");
@@ -358,7 +358,7 @@ public slots:
       dialog.setFileMode(QFileDialog::Directory);
       //dialog.setFileMode(QFileDialog::AnyFile);
 
-      auto state = safeExec(&dialog);
+      auto state = safeExec(&dialog, true);
 
       if(state == QDialog::Accepted){
         QString dirname = dialog.directory().absolutePath();
@@ -372,7 +372,7 @@ public slots:
 
       R_ASSERT_RETURN_IF_FALSE(g_radium_runs_custom_exec==false);
 
-      radium::ScopedExec scopedExec;
+      radium::ScopedExec scopedExec(true);
       
       QString filename = QFileDialog::getSaveFileName(this, 
                                                       QString("Select file"),
@@ -399,7 +399,7 @@ extern "C"{
 #if 1
     safeShow(widget);
 #else
-    safeExec(widget);
+    safeExec(widget, true);
 #endif
   }
 
