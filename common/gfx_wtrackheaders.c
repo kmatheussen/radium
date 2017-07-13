@@ -100,7 +100,7 @@ void DrawWTrackNames(
                wtrack1->x+window->fontwidth/2,
                wtrack1->y+WTRACKS_SPACE,
                wtrack1->x2-wtrack1->x-1,
-               TEXT_CLIPRECT|TEXT_BOLD,
+               TEXT_CLIPRECT|TEXT_BOLD|TEXT_NOTEXT,
                PAINT_BUFFER
                );
     
@@ -116,7 +116,7 @@ void DrawWTrackNames(
                name_x,
                wtrack1->y+WTRACKS_SPACE,
                wtrack2->x2 - name_x, //(wtrack2->x2-window->fontwidth/2) - name_x,
-               TEXT_SCALE, //|TEXT_CENTER,
+               TEXT_SCALE|TEXT_NOTEXT, //|TEXT_CENTER,
                PAINT_BUFFER
                );
   }
