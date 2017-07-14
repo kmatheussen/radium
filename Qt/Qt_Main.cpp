@@ -818,9 +818,14 @@ protected:
 
 
     //printf(" Got key 5\n");
-        
-    window->must_redraw = true;
 
+    
+    // Eventually we will not set window->must_redraw=true here.
+#if 1 //defined(RELEASE)
+    if (AnyModifierKeyPressed(tevent.keyswitch) || (keynum!=EVENT_UPARROW && keynum!=EVENT_DOWNARROW))
+      window->must_redraw = true;
+#endif
+    
     if (is_key_press)
       tevent.ID=TR_KEYBOARD;
     else
