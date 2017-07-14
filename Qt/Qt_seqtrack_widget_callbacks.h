@@ -331,7 +331,6 @@ public:
   
   const double &_start_time;
   const double &_end_time;
-  QTime _time;
   QRectF _rect;
 
   float t_x1,t_y1,t_x2,t_y2,width,height;
@@ -345,7 +344,6 @@ public:
     position_widgets(0,0,100,100);
     
     //create_seqblock_widgets();
-    _time.start();
   }
   
   ~Seqblocks_widget(){
@@ -759,6 +757,11 @@ public:
     
   }
 
+#define UPDATE_EVERY_5_SECONDS 0
+#define UPDATE_EVERY_5_SECONDS 0
+#if UPDATE_EVERY_5_SECONDS
+  QTime _time;
+#endif
   int _last_num_seqblocks = 0;
   
   void call_very_often(void){
@@ -768,12 +771,14 @@ public:
       _last_num_seqblocks = _seqtrack->seqblocks.num_elements;
     }
 
+#if UPDATE_EVERY_5_SECONDS
     {
       if (_time.elapsed() > 5000) { // Update at least every five seconds.
         _sequencer_widget->update();
         _time.restart();
       }
     }
+#endif
   }
     
 #if 0
