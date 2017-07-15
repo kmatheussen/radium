@@ -61,7 +61,7 @@ GCDIR ?= bin/packages/gc-7.2
 #MIDIINC=-Imidi/rtmidi
 #MIDIINC=-Imidi/alsaseq
 
-
+RADIUM_BIN ?= bin/radium
 
 P=Qt/
 API=api/
@@ -163,6 +163,7 @@ FULL_VERSION ?= 1
 
 ifeq ($(GCC_MAJOR),7)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
+#	UNDEFINED_SANITIZE_OPTS=
 else
 	UNDEFINED_SANITIZE_OPTS=
 endif
@@ -369,7 +370,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 BUILD_DEPENDENCIES = $(API)radium_proc.h buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
-PROGRAM_MODULES = bin/radium bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/X11_Qtstuff.py bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
+PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/X11_Qtstuff.py bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 all:
@@ -390,7 +391,7 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
 
 dependencies_ok: check_dependencies.sh #Makefile
@@ -455,7 +456,7 @@ run-valgrind:
 
 profile:
 	perf top -p `pidof radium_linux.bin` -K #--sort comm,dso
-#	operf bin/radium && opreport -ca |more
+#	operf $(RADIUM_BIN) && opreport -ca |more
 
 
 check: test
@@ -518,14 +519,18 @@ start_bin.sh:
 	echo "LD_LIBRARY_PATH=../lib $(PYTHONEXE) start.py keybindings.conf $@" >>start_bin.sh
 	chmod a+rx start_bin.sh
 
-bin/radium: $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a $(OS_DEPS)
-	$(LINKER) `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o bin/radium -g -lm $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
+$(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a $(OS_DEPS)
+	@echo
+	@echo "Changed ($(RADIUM_BIN)):"
+	@echo $?
+	@echo
+	$(LINKER) `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g -lm $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
 #libqhttpserver.a
 # -lX11 -ldl -lpthread -lfreetype -lXext
 #$(LDFLAGS)
 
 # `$(PKG) --libs fluidsynth`
-#	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radium -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(LDFLAGS) $(FPIC)
+#	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o $(RADIUM_BIN) -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(LDFLAGS) $(FPIC)
 
 #	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -lasound -L/home/kjetil/site/lib `pkg-config --libs Qt3Support` -lprofiler
 # -pg 
@@ -1212,7 +1217,7 @@ Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cp
 $(P)mQt_PopupMenu.cpp: $(P)Qt_PopupMenu.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_PopupMenu.cpp -DUSE_QT_MENU >$(P)mQt_PopupMenu.cpp
 
-Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)Qt_bottom_bar_widget.h $(P)mQt_bottom_bar_widget_callbacks.h $(P)Qt_upperleft_widget.h $(P)mQt_upperleft_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h
+Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)Qt_bottom_bar_widget.h $(P)mQt_bottom_bar_widget_callbacks.h $(P)Qt_upperleft_widget.h $(P)mQt_upperleft_widget_callbacks.h $(P)Rational.h $(P)lzqlineedit.h $(P)helpers.h
 	$(CCC) $(P)Qt_MainWindow.cpp $(QTOPT)
 
 Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
@@ -1228,12 +1233,16 @@ $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
 
-INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp
+INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp
 
 
 
 # $(P)midi_instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
 Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS_DEPENDENCIES)
+	@echo
+	@echo "Changed (Qt_instruments.o):"
+	@echo $?
+	@echo
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
 		$(CCC) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -O0 ; \
 	else \
@@ -1251,7 +1260,11 @@ $(P)mQt_instruments_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_instrument
 $(P)mQt_midi_instrument_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_midi_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_midi_instrument_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) midi_instrument_widget
 
-$(P)mQt_audio_instrument_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_audio_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_audio_instrument_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)mQt_patch_widget.h
+$(P)mQt_audio_instrument_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_audio_instrument_widget.ui $(P)create_source_from_ui.sh $(P)Qt_audio_instrument_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)mQt_patch_widget_callbacks.h
+	@echo
+	@echo "Changed (mQt_audio_instrument_widget_callbacks.h):"
+	@echo $?
+	@echo
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) audio_instrument_widget
 
 $(P)mQt_patch_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_patch_widget.ui $(P)create_source_from_ui.sh $(P)Qt_patch_widget_callbacks.h
@@ -1260,7 +1273,7 @@ $(P)mQt_patch_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_patch_widget.ui $(P)creat
 $(P)mQt_sample_requester_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_sample_requester_widget.ui $(P)create_source_from_ui.sh $(P)Qt_sample_requester_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) sample_requester_widget
 
-$(P)mQt_control_change_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_control_change_widget.ui $(P)create_source_from_ui.sh $(P)Qt_control_change_widget_callbacks.h
+$(P)mQt_control_change_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_control_change_widget.ui $(P)create_source_from_ui.sh $(P)Qt_control_change_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) control_change_widget
 
 $(P)mQt_plugin_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_plugin_widget.ui $(P)create_source_from_ui.sh $(P)Qt_plugin_widget_callbacks.h
@@ -1390,9 +1403,17 @@ Qt_disk.o: $(BUILD_DEPENDENCIES) $(P)Qt_disk.cpp
 	$(CCC) $(P)Qt_disk.cpp $(QTOPT)
 
 Qt_Error.o: $(BUILD_DEPENDENCIES) $(P)Qt_Error.cpp
+	@echo
+	@echo "Changed (Qt_Error.o):"
+	@echo $?
+	@echo
 	$(CCC) $(P)Qt_Error.cpp $(QTOPT)
 
 bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
+	@echo
+	@echo "Changed (bin/radium_error_message):"
+	@echo $?
+	@echo
 	$(CCC) -Wall -Werror $(P)Qt_Error.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DCOMPILE_EXECUTABLE $(QT_GUI_CFLAGS) -o errormessagebin.o
 	$(LINKER) `cat buildtype.opt` errormessagebin.o -o bin/radium_error_message $(QT_GUI_LDFLAGS)
 	rm errormessagebin.o
@@ -2086,6 +2107,10 @@ audio/system_compressor.cpp: audio/system_compressor.dsp
 	$(FAUST) -I `pwd`/audio -vec -cn Faust_system_compressor audio/system_compressor.dsp -o audio/system_compressor.cpp
 
 bin/radium_crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
+	@echo
+	@echo "Changed (bin/radium_crashreporter):"
+	@echo $?
+	@echo
 	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) -o crashbin.o
 	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm crashbin.o
@@ -2094,6 +2119,10 @@ bin/radium_addr2line: crashreporter/radium_addr2line.c
 	$(CC_STATIC) crashreporter/radium_addr2line.c -Wall $(ADDR2LINEOPTS) -DPACKAGE -o bin/radium_addr2line -mwindows
 
 crashreporter.o: crashreporter/crashreporter.cpp
+	@echo
+	@echo "Changed (crashreporter.o):"
+	@echo $?
+	@echo
 	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DVERSION=\"$(VERSION)\"
 
 crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
