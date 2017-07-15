@@ -188,6 +188,8 @@ static void DrawAllWTrackSliders(
     
     wtrack=NextWTrack(wtrack);
   }
+
+  GFX_CancelMixColor(window); // in case track is not visible and the above filledbox call is not executed, the mixcolor will be set for the next paint operation instead. Bad stuff, caused by radium originally being written for amigaos, where painting outside the visible area would cause memory corruption (instead of being ignored). Unfortunately, the cliprect system was wrongly put into common/ instead of amiga/.
 }
 
 static void DrawAllWTrackOnOffs(
@@ -364,7 +366,6 @@ void DrawAllWTrackHeaders(
         //UpdateAllPianoRollHeaders(window, wblock);
 
         DrawAllWTrackOnOffs(window, wblock);
-
 }
 
 

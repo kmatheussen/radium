@@ -1381,7 +1381,7 @@ Qt_pianorollheader_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_pianorollheader_cal
 $(P)Qt_pianorollheader.h: $(BUILD_DEPENDENCIES) $(P)qt4_pianorollheader.ui $(P)Qt_pianorollheader_callbacks.h $(P)lzqlineedit.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pianorollheader
 
-Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)Qt_sample_requester_widget.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h
+Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h
 	$(CCC) $(P)Qt_PluginWidget.cpp $(QTOPT)
 
 $(P)mQt_PluginWidget.cpp: $(P)Qt_PluginWidget.h

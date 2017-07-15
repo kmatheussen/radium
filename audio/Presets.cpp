@@ -366,7 +366,7 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
 
   QString filename;
   
-  { // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  {
 
     radium::ScopedExec scopedExec(true);
         
