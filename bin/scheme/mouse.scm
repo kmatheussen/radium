@@ -547,7 +547,8 @@
 ;; Set current track and mouse track
 (add-mouse-move-handler
  :move (lambda (Button X Y)
-         (set-current-track-num! X Y)))
+         (if (< Y (<ra> :get-editor-y2))
+             (set-current-track-num! X Y))))
 
 (define2 *current-subtrack-num* (curry-or not integer?) #f)
 
