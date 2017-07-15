@@ -1267,7 +1267,7 @@ $(P)mQt_audio_instrument_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_audio
 	@echo
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) audio_instrument_widget
 
-$(P)mQt_patch_widget.h:  $(BUILD_DEPENDENCIES) $(P)qt4_patch_widget.ui $(P)create_source_from_ui.sh $(P)Qt_patch_widget_callbacks.h
+$(P)mQt_patch_widget_callbacks.h:  $(BUILD_DEPENDENCIES) $(P)qt4_patch_widget.ui $(P)create_source_from_ui.sh $(P)Qt_patch_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) patch_widget
 
 $(P)mQt_sample_requester_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_sample_requester_widget.ui $(P)create_source_from_ui.sh $(P)Qt_sample_requester_widget_callbacks.h
