@@ -37,11 +37,13 @@ void DrawSlider(
 
   int y1=box->y1;
   int y2=box->y2;
-  
+
   int x = scale(f_val, f_min,f_max, box->x1, box->x2);
 
   if (!onoff)
     GFX_SetMixColor(window,EDITOR_SLIDERS_COLOR_NUM,LOW_EDITOR_BACKGROUND_COLOR_NUM,300);
+  
+  //printf("   slider x: %d -> %d -> %d\n", box->x1+2, x, box->x2-2);
   
   GFX_FilledBox(
                 window,EDITOR_SLIDERS_COLOR_NUM,
