@@ -1085,7 +1085,7 @@ vector_t MW_get_selected_patches(void){
 void MW_solo(const vector_t patches, bool set_on){
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
@@ -1102,7 +1102,7 @@ void MW_solo(const vector_t patches, bool set_on){
 void MW_mute(const vector_t patches, bool do_mute){
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
@@ -1122,7 +1122,7 @@ void MW_mute(const vector_t patches, bool do_mute){
 void MW_bypass(const vector_t patches, bool do_bypass){
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
@@ -1141,7 +1141,7 @@ void MW_copy(void){
   vector_t patches = get_selected_patches();
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
@@ -1166,13 +1166,12 @@ static void MW_cut2(float mouse_x, float mouse_y, bool has_mouse_coordinates){
   vector_t patches = get_selected_patches();
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
   
-  PRESET_copy(&patches);
-
-  MW_delete2(mouse_x, mouse_y, has_mouse_coordinates);
+  if (PRESET_copy(&patches)==true)
+    MW_delete2(mouse_x, mouse_y, has_mouse_coordinates);
 }
 
 void MW_cut(void){

@@ -528,12 +528,12 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   }
 
   if(patch->instrument!=get_audio_instrument()){
-    GFX_Message(NULL, "Not possible to delete MIDI instrument");
+    GFX_Message2(NULL, !force_removal, "Not possible to delete MIDI instrument");
     return;
   }
 
   if(force_removal==false && AUDIO_is_permanent_patch(patch)==true){
-    GFX_Message(NULL,"Can not be deleted");
+    GFX_Message2(NULL, !force_removal, "Can not be deleted");
     return;
   }
 

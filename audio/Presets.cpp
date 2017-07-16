@@ -330,12 +330,12 @@ static bool valid_patches(const vector_t *patches){
   VECTOR_FOR_EACH(struct Patch*, patch, patches){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     if (!strcmp(plugin->type->type_name,"Bus")){
-      GFX_Message(NULL, "Can not copy or save Bus preset");
+      GFX_Message2(NULL, true, "Can not cut, copy, delete, or save a Bus preset");
       return false;
     }
     
     if (AUDIO_is_permanent_patch(patch)){
-      GFX_Message(NULL, "Can not copy or save Main Pipe preset");
+      GFX_Message2(NULL, true, "Can not cut, copy, delete, or save the Main Pipe preset");
       return false;
     }
   }END_VECTOR_FOR_EACH;
@@ -343,19 +343,20 @@ static bool valid_patches(const vector_t *patches){
   return true;
 }
 
-void PRESET_copy(const vector_t *patches){
-  R_ASSERT_RETURN_IF_FALSE(patches->num_elements > 0);
+bool PRESET_copy(const vector_t *patches){
+  R_ASSERT_RETURN_IF_FALSE2(patches->num_elements > 0, false);
 
   if (!valid_patches(patches))
-    return;
+    return false;
 
   g_preset_clipboard = get_preset_state(patches);
+  return true;
 }
   
 void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t parentgui){  // "save_button_pressed is the "Save" button in the instrument window.
 
   if(patches->num_elements==0){
-    GFX_Message(NULL, "No instruments selected");
+    GFX_Message2(NULL, true, "No instruments selected");
     return;
   }
 

@@ -214,12 +214,12 @@ void EXPAND_Block_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 
 void EXPAND_Block_from_range_CurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, const Place range_duration_after){
   if (wblock->isranged==false){
-    GFX_Message(NULL, "No range in block");
+    GFX_Message2(NULL, true,"No range in block");
     return;
   }
 
   if(p_Less_Or_Equal(range_duration_after, p_Create(0,0,1))){
-    GFX_Message(NULL, "Can not expand down to 0 lines");
+    GFX_Message2(NULL, true,"Can not expand down to 0 lines");
     return;
   }
 

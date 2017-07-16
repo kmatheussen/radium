@@ -2335,14 +2335,14 @@ bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, const wchar_t *path){
   
   if (dir.exists()==false){
     fprintf(stderr, "SAMPLER_set_random_sample: Directory %s does not exist", dir.absolutePath().toUtf8().constData());
-    GFX_Message(NULL, "Directory %s does not exist", dir.absolutePath().toUtf8().constData());
+    GFX_Message2(NULL, true, "Directory %s does not exist", dir.absolutePath().toUtf8().constData());
     return false;
   }
   
   QStringList list = dir.entryList(get_sample_name_filters(), QDir::Files|QDir::NoDotAndDotDot|QDir::Readable);
 
   if(list.size()==0){
-    GFX_Message(NULL, "No samples found in %s", dir.absolutePath().toUtf8().constData());
+    GFX_Message2(NULL, true, "No samples found in %s", dir.absolutePath().toUtf8().constData());
     return false;
   }
   
@@ -2442,7 +2442,7 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir,
                                                                        "_backslash_")));
   QDir dir = QFileInfo(STRING_get_qstring(recording_path)).dir();
   if (dir.exists()==false){
-    GFX_Message(NULL, "Error. Could not find the directory \"%s\".\n", dir.absolutePath().toUtf8().constData());
+    GFX_Message2(NULL, true, "Error. Could not find the directory \"%s\".\n", dir.absolutePath().toUtf8().constData());
     return;
   }
   

@@ -2045,7 +2045,7 @@ WPoint GetPointerPos(struct Tracker_Windows *tvisual){
 
 void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
 #if defined(FOR_MACOSX) && !defined(USE_QT5)
-  GFX_Message(NULL, "Full screen not supported in OSX");
+  GFX_Message2(NULL, false, "Full screen not supported in OSX");
 #else
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
 

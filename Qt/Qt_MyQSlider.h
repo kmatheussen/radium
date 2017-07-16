@@ -328,7 +328,7 @@ struct MyQSlider : public QSlider {
         
         if (!instrumentIsAudio(current_instrument_id)){
           
-          GFX_Message(NULL, "The instrument for the current track is not an audio instrument");
+          GFX_addMessage("The instrument for the current track is not an audio instrument");
           
         } else {
 

@@ -1993,13 +1993,13 @@ void PLUGINHOST_load_fxbp(SoundPlugin *plugin, wchar_t *wfilename){
   
   bool success = file.loadFileAsData(memoryBlock);
   if (success==false){
-    GFX_Message(NULL, "Unable to load %s", STRING_get_chars(wfilename));
+    GFX_Message2(NULL, true, "Unable to load %s", STRING_get_chars(wfilename));
     return;
   }
       
   success = VSTPluginFormat::loadFromFXBFile(instance, memoryBlock.getData(), memoryBlock.getSize());
   if (success==false){
-    GFX_Message(NULL, "Could not use %s for this plugin", STRING_get_chars(wfilename));
+    GFX_Message2(NULL, true, "Could not use %s for this plugin", STRING_get_chars(wfilename));
     return;
   }
   
@@ -2013,7 +2013,7 @@ static void save_fxbp(SoundPlugin *plugin, wchar_t *wfilename, bool is_fxb){
   MemoryBlock memoryBlock;
   bool result = VSTPluginFormat::saveToFXBFile(instance, memoryBlock, is_fxb);
   if (result==false){
-    GFX_Message(NULL, "Unable to create FXB/FXP data for this plugin");
+    GFX_Message2(NULL, true, "Unable to create FXB/FXP data for this plugin");
     return;
   }
   
@@ -2024,13 +2024,13 @@ static void save_fxbp(SoundPlugin *plugin, wchar_t *wfilename, bool is_fxb){
   Result result2 = file.create();
 
   if (result2.failed()){
-    GFX_Message(NULL, "Unable to create file %s (%s)", STRING_get_chars(wfilename), result2.getErrorMessage().toRawUTF8());
+    GFX_Message2(NULL, true, "Unable to create file %s (%s)", STRING_get_chars(wfilename), result2.getErrorMessage().toRawUTF8());
     return;
   }
   
   bool result3 = file.replaceWithData(memoryBlock.getData(), memoryBlock.getSize());
   if (result3==false){
-    GFX_Message(NULL, "Unable to write data to file %s (disk full?)", STRING_get_chars(wfilename));
+    GFX_Message2(NULL, true, "Unable to write data to file %s (disk full?)", STRING_get_chars(wfilename));
     return;
   }
   

@@ -869,7 +869,7 @@ int GFX_Message2(vector_t *buttons, bool program_state_is_valid, const char *fmt
 
   } else {
  
-    return show_gfx_message(buttons, false, QString(message));
+    return show_gfx_message(buttons, program_state_is_valid, QString(message));
 
   }
 }
