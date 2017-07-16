@@ -1508,16 +1508,18 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
   
-  if(event_can_delete(event))
+  if(event_can_delete(event)) {
+    
     if(mousepress_delete_chip(this,item,mouse_x,mouse_y)==true) {
       event->accept();
       return;
     }
 
-  if(event_can_delete(event))
     if(mousepress_delete_connection(this,event,item,mouse_x,mouse_y)==true)
       return;
 
+  }
+  
   if(event->button()==Qt::LeftButton) {
     if(ctrl_pressed==false && mousepress_start_connection(this,event,item,mouse_x,mouse_y)==true)
       return;

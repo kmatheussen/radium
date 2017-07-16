@@ -34,6 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/seqtrack_proc.h"
 
+#define D(n)
+//#define D(n) n
+
 
 static bool g_need_update = false;
 
@@ -1504,6 +1507,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
   
   void my_update(void){
+    D(printf("SEQ: my_update called\n"));
     int64_t visible_song_length = MIXER_get_sample_rate() * SONG_get_gfx_length();
     if (_end_time > visible_song_length) {
       _end_time = visible_song_length;
@@ -1815,7 +1819,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void paintEvent (QPaintEvent *ev) override {
-    //printf("   SEQ paintEvent called %d, %d -> %d, %d\n", ev->rect().x(), ev->rect().y(), ev->rect().width(), ev->rect().height());
+    D(static int num_calls = 0;
+      printf("   SEQ paintEvent called %d, %d -> %d, %d (%d)\n", ev->rect().x(), ev->rect().y(), ev->rect().width(), ev->rect().height(),num_calls++)
+      );
     TRACK_PAINT();
 
     RETURN_IF_DATA_IS_INACCESSIBLE();
@@ -2171,7 +2177,9 @@ void SEQTRACK_update(struct SeqTrack *seqtrack){
   Seqtrack_widget *w = g_sequencer_widget->get_seqtrack_widget(seqtrack);
   if (w==NULL)
     return;
-  
+
+  D(printf("SEQTRACK_update called\n"));
+
   g_sequencer_widget->update(0, w->t_y1,
                              g_sequencer_widget->width(), w->t_height);
 }
@@ -2179,6 +2187,8 @@ void SEQTRACK_update(struct SeqTrack *seqtrack){
 void SEQUENCER_update(void){
   if (g_sequencer_widget != NULL){
     //g_sequencer_widget->position_widgets();
+    //printf("SEQUENCER_update called\n%s\n",JUCE_get_backtrace());
+    D(printf("SEQUENCER_update called\n%s\n",""));
     g_sequencer_widget->update();
   }
 }
@@ -2193,6 +2203,7 @@ void RT_SEQUENCER_update_sequencer_and_playlist(void){
     
   } else {
 
+    D(printf("RT_SEQUENDER_update_and_playlist called\n"));
     SEQUENCER_update();
     BS_UpdatePlayList();
     

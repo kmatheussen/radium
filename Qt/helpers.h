@@ -757,7 +757,17 @@ static inline int safeExec(QMessageBox *widget, bool program_state_is_valid){
 
   radium::ScopedExec scopedExec(program_state_is_valid);
 
-  return widget->exec();
+  //QPointer<QWidget> prev_widget = QApplication::focusWidget();
+  
+  int ret = widget->exec();
+
+  /*
+  if (prev_widget != NULL)
+    prev_widget->setFocus();
+  */
+  
+  return ret;
+  
 }
 
 /*

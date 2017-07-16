@@ -533,7 +533,10 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   }
 
   if(force_removal==false && AUDIO_is_permanent_patch(patch)==true){
-    GFX_Message2(NULL, !force_removal, "Can not be deleted");
+    if (force_removal)
+      GFX_Message(NULL, "Instrument \"%s\" can not be deleted", patch->name);
+    else
+      GFX_addMessage(talloc_format("Instrument \"%s\" can not be deleted", patch->name));  // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
     return;
   }
 

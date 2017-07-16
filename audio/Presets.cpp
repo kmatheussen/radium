@@ -330,12 +330,12 @@ static bool valid_patches(const vector_t *patches){
   VECTOR_FOR_EACH(struct Patch*, patch, patches){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     if (!strcmp(plugin->type->type_name,"Bus")){
-      GFX_Message2(NULL, true, "Can not cut, copy, delete, or save a Bus preset");
+      GFX_addMessage("Can not cut, copy, delete, or save a Bus preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
       return false;
     }
     
     if (AUDIO_is_permanent_patch(patch)){
-      GFX_Message2(NULL, true, "Can not cut, copy, delete, or save the Main Pipe preset");
+      GFX_addMessage("Can not cut, copy, delete, or save the Main Pipe preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
       return false;
     }
   }END_VECTOR_FOR_EACH;
