@@ -1400,17 +1400,19 @@
            b b)
     )
 
+  (define volume_on_off_name (get-instrument-volume-on/off-effect-name instrument-id))
+
   (define (get-muted)
-    (< (<ra> :get-instrument-effect instrument-id "System Volume On/Off") 0.5))
+    (< (<ra> :get-instrument-effect instrument-id volume_on_off_name) 0.5))
   (define (get-soloed)
     (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
            
   (define (turn-off-all-mute except)
     (for-each (lambda (instrument-id)
                 (when (and (not (= instrument-id except))
-                           (< (<ra> :get-instrument-effect instrument-id "System Volume On/Off") 0.5))
-                  (<ra> :undo-instrument-effect instrument-id "System Volume On/Off")
-                  (<ra> :set-instrument-effect instrument-id "System Volume On/Off" 1)
+                           (< (<ra> :get-instrument-effect instrument-id (get-volume-on-off-name instrument-id)) 0.5))
+                  (<ra> :undo-instrument-effect instrument-id (get-volume-on-off-name instrument-id))
+                  (<ra> :set-instrument-effect instrument-id (get-volume-on-off-name instrument-id) 1)
                   ))
               (get-all-audio-instruments)))
   
@@ -1433,8 +1435,8 @@
                                        (lambda (is-muted)
                                          (undo-block
                                           (lambda ()
-                                            (<ra> :undo-instrument-effect instrument-id "System Volume On/Off")
-                                            (<ra> :set-instrument-effect instrument-id "System Volume On/Off" (if is-muted 0.0 1.0))
+                                            (<ra> :undo-instrument-effect instrument-id volume_on_off_name)
+                                            (<ra> :set-instrument-effect instrument-id volume_on_off_name (if is-muted 0.0 1.0))
                                             ;;(c-display "mute: " is-muted)
                                             (if (<ra> :control-pressed)
                                                 (turn-off-all-mute instrument-id))
@@ -1467,7 +1469,7 @@
                                        (get-soloed)
                                        height))
   
-  (add-gui-effect-monitor (cadr mute) instrument-id "System Volume On/Off"
+  (add-gui-effect-monitor (cadr mute) instrument-id volume_on_off_name
                           (lambda ()
                             ((car mute) (get-muted))))
   

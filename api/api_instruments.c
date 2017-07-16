@@ -719,6 +719,7 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
       !strcmp(effect_name, "System In") ||
       !strcmp(effect_name, "System Solo On/Off") ||
       !strcmp(effect_name, "System Volume On/Off") ||
+      !strcmp(effect_name, "System In On/Off") ||
       !strcmp(effect_name, "System Effects On/Off"))
     CHIP_update(plugin);
       

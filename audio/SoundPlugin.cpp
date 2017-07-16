@@ -979,6 +979,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
       break;
     case EFFNUM_INPUT_VOLUME_ONOFF:
       SET_SMOOTH_ON_OFF(&plugin->input_volume, plugin->input_volume_is_on, store_value, plugin->savable_effect_values[num_effects+EFFNUM_INPUT_VOLUME]);
+      update_instrument_gui(plugin);
       break;
 
     case EFFNUM_SOLO_ONOFF:
@@ -1004,7 +1005,7 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
         ATOMIC_SET(plugin->volume_is_on, false);
         plugin->volume = 0.0f;
       }
-      //update_instrument_gui(plugin);
+      update_instrument_gui(plugin);
       break;
 
     case EFFNUM_OUTPUT_VOLUME:
