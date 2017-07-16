@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_control_change_widget.h"
 
+
 class Control_change_widget : public QWidget, public Ui::Control_change_widget{
   Q_OBJECT;
 

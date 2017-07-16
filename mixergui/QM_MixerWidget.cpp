@@ -1490,6 +1490,7 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   g_is_pressed = true;
 
   //printf("mousepress: %p\n",_current_connection);
+  
   EVENTLOG_add_event(talloc_format(">>>>  MyScene::mousePressEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size()));
 
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
