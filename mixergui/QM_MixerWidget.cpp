@@ -1109,11 +1109,11 @@ void MW_mute(const vector_t patches, bool do_mute){
   UNDO_OPEN_REC();{
     VECTOR_FOR_EACH(struct Patch *,patch,&patches){
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-      int num_effects = plugin->type->num_effects;
-      if (do_mute != !ATOMIC_GET(plugin->volume_is_on)){
-        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF));
+      if (do_mute != is_muted(plugin)){
+        int effect_num = get_mute_effectnum(plugin->type);
+        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
         float new_val = do_mute ? 0.0 : 1.0;
-        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+        PLUGIN_set_effect_value(plugin, -1, effect_num, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
       }
     }END_VECTOR_FOR_EACH;
   }UNDO_CLOSE();
