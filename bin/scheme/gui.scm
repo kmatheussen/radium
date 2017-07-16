@@ -313,6 +313,7 @@
   (<gui> :add-layout-space textlayout 0 0 #t #f)
   
   (define gui (<gui> :vertical-layout textlayout buttonlayout))
+  (<gui> :set-layout-spacing gui 8 8 8 8 8 )
   (for-each (lambda (button-text)
               (define button (<gui> :button button-text))
               (<gui> :add-callback button (lambda ()
@@ -337,7 +338,7 @@
 #!!
 (<ra> :show-async-message)
 (<ra> :show-async-message :buttons '())
-(<ra> :show-async-message "hello2")
+(<ra> :show-async-message :text "hello Gakk gakk\nHmm.2")
 (<ra> :show-async-message "hello2" :callback c-display)
 (<ra> :show-async-message "hello1" (list "BBBb1" "AAAb2") #f c-display)
 (<ra> :show-message "gakk")
