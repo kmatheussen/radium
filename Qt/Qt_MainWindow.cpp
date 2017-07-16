@@ -102,14 +102,20 @@ static QVector<Bottom_bar_widget*> g_bottom_bars; // need to be defined here sin
 
 QVector<QWidget*> g_static_toplevel_widgets;
 
+/*
+struct MyQMenuBar : QMenuBar {
+  void hideEvent (QHideEvent * event_){
+    QMenuBar::hideEvent(event_);
+    set_editor_focus();
+  }                                    
+};
+*/
 
 #if USE_GTK_VISUAL
 
 #if FOR_WINDOWS
 static bool sat=false;
 #endif
-
-
 
 class MyEditorWidgetParent : public EditorWidgetParent{
   //Q_OBJECT;
@@ -609,7 +615,9 @@ void SetupMainWindow(void){
   main_window->setMenuBar(menubar);
   
 #else
+  //QMenuBar *menubar = new MyQMenuBar();
   initMenues(main_window->menuBar());
+  //main_window->setMenuBar(menubar);
   main_window->menuBar()->show();
   main_window->menuBar()->setNativeMenuBar(false);
 #endif

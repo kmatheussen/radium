@@ -487,6 +487,10 @@ static void send_key_down(QObject *where, int how_many){
   }
 }
 
+static void schedule_set_editor_focus(int ms){
+  QTimer::singleShot(ms, set_editor_focus);
+}
+
 class MyApplication
   : public QApplication
 #if USE_QT5
@@ -585,7 +589,7 @@ protected:
     static int last_pressed_key = EVENT_NO;
 
     //printf(" Got key 1. modifier: %d. Left ctrl: %d, Press: %d\n", modifier, EVENT_CTRL_L, is_key_press);
-    
+
     if (modifier != EVENT_NO) {
 
       bool must_return_true = false;
@@ -771,8 +775,11 @@ protected:
 
         case EVENT_ESC:
         case EVENT_RETURN:{
+          //printf("Pressed esc or return\n");
           menu_should_be_active = 0; // In case we press esc or return right after pressing left alt.
           //printf("  Returning false 3.1\n");
+          if (keynum==EVENT_ESC)
+            schedule_set_editor_focus(20);
           return false;
           break;
         }
