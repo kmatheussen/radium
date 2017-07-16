@@ -79,6 +79,14 @@ public:
     connect(this, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
   }
 
+  /*
+  void hideEvent(QHideEvent *event) override {
+    printf("   HIDE EVENT\n");
+    QMenu::hideEvent(event);
+    set_editor_focus();
+  }
+  */
+
 public slots:
   
   void 	aboutToHide(){
@@ -87,6 +95,8 @@ public slots:
   void 	aboutToShow(){
     setopen();
   }
+
+  
 };
   
 struct Menues{

@@ -248,24 +248,26 @@ public slots:
 
 #if FULL_VERSION==0
 
-      GFX_Message(NULL,
-                  "Soundfile export is only available to subscribers.<p>"
-                  "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>."
-                  );
+      GFX_Message2(NULL,
+                   true,
+                   "Soundfile export is only available to subscribers.<p>"
+                   "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>."
+                   );
 
 #else // FULL_VERSION==0
 
       if (MIXER_get_soundplugin("Jack", "System Out")==NULL) {
-        GFX_Message(NULL, "No \"System Out\" instrument found in the mixer.");
+        GFX_Message2(NULL, true, "No \"System Out\" instrument found in the mixer.");
         return;
       }
 
       bool save_multi = many_soundfiles->isChecked();
 
       if(filename_edit->text()==QString("")){
-        GFX_Message(NULL,
-                    "%s was not specified.",
-                    save_multi ? "Directory" : "Filename"
+        GFX_Message2(NULL,
+                     true,
+                     "%s was not specified.",
+                     save_multi ? "Directory" : "Filename"
                     );
         return;
       }
@@ -285,9 +287,10 @@ public slots:
         QFileInfo info(filename_edit->text());
 
         if (info.isFile()){
-          GFX_Message(NULL,
-                      "Can not save. \"%s\" is a file, and not a directory", filename_edit->text().toUtf8().constData()
-                      );
+          GFX_Message2(NULL,
+                       true,
+                       "Can not save. \"%s\" is a file, and not a directory", filename_edit->text().toUtf8().constData()
+                       );
           return;
         }
 
@@ -299,16 +302,17 @@ public slots:
           VECTOR_push_back(&options, "Yes");
           VECTOR_push_back(&options, "No");
           
-          if (GFX_Message(&options,
-                          "Directory \%s\" already exists. Overwrite files in that directory?",
-                          dirname.toUtf8().constData()
-                          )
+          if (GFX_Message2(&options,
+                           true,
+                           "Directory \%s\" already exists. Overwrite files in that directory?",
+                           dirname.toUtf8().constData()
+                           )
               ==1)
             return;
         } else {
 
           if(QDir::root().mkpath(dirname)==false){ // why on earth isn't mkpath a static function?
-            GFX_Message(NULL, "Unable to create directory \"%s\".", dirname.toUtf8().constData());
+            GFX_Message2(NULL, true, "Unable to create directory \"%s\".", dirname.toUtf8().constData());
             return;
           }
           

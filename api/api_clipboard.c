@@ -357,7 +357,7 @@ void saveTrack(const char *filename, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   
   if (window->curr_track < 0){
-    GFX_Message(NULL, "Saving a %s track is not supported", get_track_name(window->curr_track));
+    GFX_Message2(NULL, true, "Saving a %s track is not supported", get_track_name(window->curr_track));
     return;
   }
 
@@ -374,7 +374,7 @@ void loadTrack(const char *filename_c, int tracknum, int blocknum, int windownum
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   
   if (window->curr_track < 0){
-    GFX_Message(NULL, "Loading a %s track is not supported", get_track_name(window->curr_track));
+    GFX_Message2(NULL, true, "Loading a %s track is not supported", get_track_name(window->curr_track));
     return;
   }
 

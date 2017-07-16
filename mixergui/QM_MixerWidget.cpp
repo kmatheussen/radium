@@ -1085,7 +1085,7 @@ vector_t MW_get_selected_patches(void){
 void MW_solo(const vector_t patches, bool set_on){
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
@@ -1102,7 +1102,7 @@ void MW_solo(const vector_t patches, bool set_on){
 void MW_mute(const vector_t patches, bool do_mute){
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
@@ -1122,7 +1122,7 @@ void MW_mute(const vector_t patches, bool do_mute){
 void MW_bypass(const vector_t patches, bool do_bypass){
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
@@ -1141,7 +1141,7 @@ void MW_copy(void){
   vector_t patches = get_selected_patches();
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
@@ -1166,13 +1166,12 @@ static void MW_cut2(float mouse_x, float mouse_y, bool has_mouse_coordinates){
   vector_t patches = get_selected_patches();
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
   
-  PRESET_copy(&patches);
-
-  MW_delete2(mouse_x, mouse_y, has_mouse_coordinates);
+  if (PRESET_copy(&patches)==true)
+    MW_delete2(mouse_x, mouse_y, has_mouse_coordinates);
 }
 
 void MW_cut(void){
@@ -1491,6 +1490,7 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   g_is_pressed = true;
 
   //printf("mousepress: %p\n",_current_connection);
+  
   EVENTLOG_add_event(talloc_format(">>>>  MyScene::mousePressEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size()));
 
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
@@ -1509,16 +1509,18 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
   
-  if(event_can_delete(event))
+  if(event_can_delete(event)) {
+    
     if(mousepress_delete_chip(this,item,mouse_x,mouse_y)==true) {
       event->accept();
       return;
     }
 
-  if(event_can_delete(event))
     if(mousepress_delete_connection(this,event,item,mouse_x,mouse_y)==true)
       return;
 
+  }
+  
   if(event->button()==Qt::LeftButton) {
     if(ctrl_pressed==false && mousepress_start_connection(this,event,item,mouse_x,mouse_y)==true)
       return;

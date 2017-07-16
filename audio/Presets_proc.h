@@ -15,6 +15,6 @@ extern LANGSPEC void PRESET_save(const vector_t *patches, bool is_single_preset,
 
 extern LANGSPEC int64_t PRESET_paste(float x, float y);
 extern LANGSPEC bool PRESET_has_copy(void);
-extern LANGSPEC void PRESET_copy(const vector_t *patches);
+extern LANGSPEC bool PRESET_copy(const vector_t *patches); // returns false if it failed to copy.
 
 #endif

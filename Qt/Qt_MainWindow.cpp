@@ -102,14 +102,20 @@ static QVector<Bottom_bar_widget*> g_bottom_bars; // need to be defined here sin
 
 QVector<QWidget*> g_static_toplevel_widgets;
 
+/*
+struct MyQMenuBar : QMenuBar {
+  void hideEvent (QHideEvent * event_){
+    QMenuBar::hideEvent(event_);
+    set_editor_focus();
+  }                                    
+};
+*/
 
 #if USE_GTK_VISUAL
 
 #if FOR_WINDOWS
 static bool sat=false;
 #endif
-
-
 
 class MyEditorWidgetParent : public EditorWidgetParent{
   //Q_OBJECT;
@@ -609,7 +615,9 @@ void SetupMainWindow(void){
   main_window->setMenuBar(menubar);
   
 #else
+  //QMenuBar *menubar = new MyQMenuBar();
   initMenues(main_window->menuBar());
+  //main_window->setMenuBar(menubar);
   main_window->menuBar()->show();
   main_window->menuBar()->setNativeMenuBar(false);
 #endif
@@ -860,14 +868,16 @@ int GFX_Message2(vector_t *buttons, bool program_state_is_valid, const char *fmt
   vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
-  if (g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || !THREADING_is_main_thread()){
+  R_ASSERT_NON_RELEASE(g_radium_runs_custom_exec==false);
+    
+  if (g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || !THREADING_is_main_thread() || g_radium_runs_custom_exec){
     
     SYSTEM_show_message(message);
     return -1;
 
   } else {
  
-    return show_gfx_message(buttons, false, QString(message));
+    return show_gfx_message(buttons, program_state_is_valid, QString(message));
 
   }
 }

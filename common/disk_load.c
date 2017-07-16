@@ -72,25 +72,25 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
 
 	dc.file=DISK_open_for_reading(filename);
 	if(dc.file==NULL){
-          GFX_Message(NULL,"Could not open \"%s\" for loading\n",STRING_get_chars(filename));
+          GFX_Message2(NULL,true,"Could not open \"%s\" for loading\n",STRING_get_chars(filename));
           return false;
 	}
 
 	DC_fgets();
         if (dc.success==false) {
-          GFX_Message(NULL,"Loading failed. File too short. (1)\n");
+          GFX_Message2(NULL,true,"Loading failed. File too short. (1)\n");
           return false;
         }
         
 	if(strcmp(type,dc.ls)){
-          GFX_Message(NULL,"First line in song was not '%s', but '%s'. Last: %d\n",type,dc.ls,dc.ls[strlen(dc.ls)-1]);
+          GFX_Message2(NULL,true,"First line in song was not '%s', but '%s'. Last: %d\n",type,dc.ls,dc.ls[strlen(dc.ls)-1]);
           DISK_close_and_delete(dc.file);
           return false;
 	}
 
 	disk_load_version=DC_LoadF();
         if (dc.success==false){
-          GFX_Message(NULL,"Loading failed. File too short. (2)\n");
+          GFX_Message2(NULL,true,"Loading failed. File too short. (2)\n");
           return false;
         }
 
@@ -119,7 +119,7 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
 #endif
 
         if(disk_load_version>DISKVERSION+0.0001){
-          GFX_Message(NULL,"Need a newer version of Radium to load this file. The file version is %f, while this program only supports %f.\n",disk_load_version,DISKVERSION);
+          GFX_Message2(NULL,true,"Need a newer version of Radium to load this file. The file version is %f, while this program only supports %f.\n",disk_load_version,DISKVERSION);
           return false;
         }else{
           printf("Song diskVersion: %f\n",disk_load_version);
@@ -131,7 +131,7 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
 
 	DC_Next();
         if (dc.success==false){
-          GFX_Message(NULL,"Loading failed. File too short. (3)\n");
+          GFX_Message2(NULL,true,"Loading failed. File too short. (3)\n");
           return false;
         }
         
@@ -145,7 +145,7 @@ static bool Load(const wchar_t *filename){
           return false;
         
 	if(strcmp(dc.ls,"OSSTUFF")){
-          GFX_Message(NULL, "OSSTUFF not found, but: '%s'. File: '%s'\n",dc.ls,STRING_get_chars(filename));
+          GFX_Message2(NULL, true,"OSSTUFF not found, but: '%s'. File: '%s'\n",dc.ls,STRING_get_chars(filename));
           DISK_close_and_delete(dc.file);
           //EndProgram();
           //exit(4);
@@ -157,7 +157,7 @@ static bool Load(const wchar_t *filename){
         
 	printf("dc.ls: -%s-\n",dc.ls);
 	if(strcmp(dc.ls,"ROOT")){
-          GFX_Message(NULL, "ROOT not found. Found '%s' instead.\n", dc.ls);
+          GFX_Message2(NULL, true, "ROOT not found. Found '%s' instead.\n", dc.ls);
           DISK_close_and_delete(dc.file);
           //EndProgram();
           //exit(5);

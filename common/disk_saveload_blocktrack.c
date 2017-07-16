@@ -95,7 +95,7 @@ void SaveBlockToDisk(const char *filename_c, const struct WBlocks *wblock){
   SaveBlock(wblock->block, false);
 
   if( ! dc.success){
-    GFX_Message(NULL, "Problems writing to file.\n");
+    GFX_Message2(NULL, true, "Problems writing to file.\n");
   }
   
   DISK_close_and_delete(dc.file);
@@ -145,7 +145,7 @@ void LoadBlockFromDisk(const char *filename_c){
 
   float block_version = DC_LoadF();
   if (block_version>BLOCKDISKVERSION+0.05){
-    GFX_Message(NULL,"Need a newer version of Radium to load this file. The file version is %f, while this program only supports %f.\n",block_version,BLOCKDISKVERSION);
+    GFX_Message2(NULL,true,"Need a newer version of Radium to load this file. The file version is %f, while this program only supports %f.\n",block_version,BLOCKDISKVERSION);
     goto exit;
     return;
   }
@@ -154,7 +154,7 @@ void LoadBlockFromDisk(const char *filename_c){
 
   DC_Next();  
   if (dc.success==false){
-    GFX_Message(NULL,"Loading failed. File too short. (3)\n");
+    GFX_Message2(NULL,true,"Loading failed. File too short. (3)\n");
     goto exit;
     return;
   }
@@ -184,7 +184,7 @@ void LoadBlockFromDisk(const char *filename_c){
   DISK_close_and_delete(dc.file);
 
   if(!dc.success){
-    GFX_Message(NULL, "Loading failed.\n");
+    GFX_Message2(NULL, true, "Loading failed.\n");
     goto exit;
   }
   
@@ -258,7 +258,7 @@ void SaveTrackToDisk(const char *filename_c, const struct WTracks *wtrack){
   SaveTrack(wtrack->track, false);
 
   if( ! dc.success){
-    GFX_Message(NULL, "Problems writing to file.\n");
+    GFX_Message2(NULL, true, "Problems writing to file.\n");
   }
   
   DISK_close_and_delete(dc.file);
@@ -295,7 +295,7 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
 
   float track_version = DC_LoadF();
   if (track_version>TRACKDISKVERSION+0.05){
-    GFX_Message(NULL,"Need a newer version of Radium to load this file. The file version is %f, while this program only supports %f.\n",track_version,TRACKDISKVERSION);
+    GFX_Message2(NULL,true,"Need a newer version of Radium to load this file. The file version is %f, while this program only supports %f.\n",track_version,TRACKDISKVERSION);
     goto exit;
     return;
   }
@@ -304,13 +304,13 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
 
   DC_Next();  
   if (dc.success==false){
-    GFX_Message(NULL,"Loading failed. File too short. (3)\n");
+    GFX_Message2(NULL,true,"Loading failed. File too short. (3)\n");
     goto exit;
     return;
   }
 
   if(strcmp(dc.ls,"WTRACK")){
-    GFX_Message(NULL, "Loading failed.\nExpected \"WTRACK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
+    GFX_Message2(NULL, true,"Loading failed.\nExpected \"WTRACK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
     DISK_close_and_delete(dc.file);
     goto exit;
     return;
@@ -339,7 +339,7 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
   wtrack->track = track; // DLoadWTracks overrides wtrack->track.
 
   if(!dc.success){
-    GFX_Message(NULL, "Loading failed.\n");
+    GFX_Message2(NULL, true,"Loading failed.\n");
     goto exit;
   }
   

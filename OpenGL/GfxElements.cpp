@@ -193,7 +193,7 @@ private:
     // These two lines probably takes a lot of time.
     glsl = shader->gocGLSLProgram();    
     if (glsl->attachShader(get_gradient_fragment_shader(type)) == false){
-      GFX_Message(NULL, "Unable to create OpenGL Shader. It might help to disable \"Draw in separate process\".");
+      GFX_Message2(NULL, true, "Unable to create OpenGL Shader. It might help to disable \"Draw in separate process\".");
       glsl_is_valid = false;
       return;
     }
@@ -202,7 +202,7 @@ private:
     glsl->linkProgram();
     
     if (glsl->linked()==false){
-      GFX_Message(NULL, "Linking OpenGL Shader failed. It might help to disable \"Draw in separate process\".");
+      GFX_Message2(NULL, true, "Linking OpenGL Shader failed. It might help to disable \"Draw in separate process\".");
       glsl_is_valid = false;
       return;
     }

@@ -665,32 +665,51 @@ struct GL_PauseCaller{
 namespace radium{
 struct ScopedExec{
   bool _do_tell_program_state_is_valid;
+  bool _has_obtained_custom_exec;
+  bool _has_obtained_safe_to_paint;
   
-  ScopedExec(bool program_state_is_valid)
+  ScopedExec(bool program_state_is_valid, bool assert_running_custom_exec = true)
     : _do_tell_program_state_is_valid(program_state_is_valid)
   {
     obtain_keyboard_focus();
 
-    R_ASSERT_NON_RELEASE(g_radium_runs_custom_exec==false);
-
+    if (assert_running_custom_exec){
+      R_ASSERT_NON_RELEASE(g_radium_runs_custom_exec==false);
+    }
+    
     if (_do_tell_program_state_is_valid){
       R_ASSERT_NON_RELEASE(g_and_its_not_safe_to_paint==true);
-      g_and_its_not_safe_to_paint = false;
+      if (g_and_its_not_safe_to_paint==true){
+        g_and_its_not_safe_to_paint = false;
+        _has_obtained_safe_to_paint = true;
+      } else
+        _has_obtained_safe_to_paint = false;
+    }else{
+      _has_obtained_safe_to_paint = false;
     }
 
-    g_radium_runs_custom_exec = true;
+    if (g_radium_runs_custom_exec) {
+      _has_obtained_custom_exec = false;
+    } else {
+      g_radium_runs_custom_exec = true;
+      _has_obtained_custom_exec = true;
+    }
     
     GFX_HideProgress();
   }
   
   ~ScopedExec(){
     GFX_ShowProgress();
-    R_ASSERT_NON_RELEASE(g_radium_runs_custom_exec==true);
-    g_radium_runs_custom_exec = false;
 
+    R_ASSERT_NON_RELEASE(g_radium_runs_custom_exec==true);
+
+    if (_has_obtained_custom_exec)
+      g_radium_runs_custom_exec = false;
+    
     if (_do_tell_program_state_is_valid){
       R_ASSERT_NON_RELEASE(g_and_its_not_safe_to_paint==false);
-      g_and_its_not_safe_to_paint = true;
+      if (_has_obtained_safe_to_paint)
+        g_and_its_not_safe_to_paint = true;
     }
 
     for(auto *window : QApplication::topLevelWidgets())
@@ -738,7 +757,17 @@ static inline int safeExec(QMessageBox *widget, bool program_state_is_valid){
 
   radium::ScopedExec scopedExec(program_state_is_valid);
 
-  return widget->exec();
+  //QPointer<QWidget> prev_widget = QApplication::focusWidget();
+  
+  int ret = widget->exec();
+
+  /*
+  if (prev_widget != NULL)
+    prev_widget->setFocus();
+  */
+  
+  return ret;
+  
 }
 
 /*

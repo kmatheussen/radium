@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDir>
 #include <QFileDialog>
 #include <QTabWidget>
+#include <QTextBrowser>
 #include <QTextDocumentFragment>
 #include <QSplitter>
 
@@ -2213,6 +2214,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }GL_unlock();
     }
   };
+
+  MakeFocusSnifferClass(QTextBrowser);
   
   struct Line : MyFocusSnifferQLineEdit, Gui{
     Q_OBJECT;
@@ -2253,19 +2256,32 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
   };
   
+  //  struct TextEdit : FocusSnifferQTextEdit, Gui{
+  struct TextBrowser : FocusSnifferQTextBrowser, Gui{
+    Q_OBJECT;
+
+  public:
+    
+    TextBrowser(QString content)
+      : Gui(this)
+    {
+      setText(content);
+      setOpenExternalLinks(true);
+    }
+
+    OVERRIDERS(FocusSnifferQTextBrowser);
+  };
+
+
   struct TextEdit : FocusSnifferQTextEdit, Gui{
     Q_OBJECT;
 
   public:
     
-    TextEdit(QString content, bool read_only)
+    TextEdit(QString content)
       : Gui(this)
     {
-      if (read_only)
-        setText(content);
-      else
-        setPlainText(content);
-      setReadOnly(read_only);
+      setPlainText(content);
       setLineWrapMode(QTextEdit::NoWrap);
     }
 
@@ -2976,7 +2992,10 @@ int64_t gui_text(const_char* text, const_char* color, bool align_top, bool align
 
 int64_t gui_textEdit(const_char* content, bool read_only){
   //return -1;
-  return (new TextEdit(content, read_only))->get_gui_num();
+  if (read_only)
+    return (new TextBrowser(content))->get_gui_num();
+  else
+    return (new TextEdit(content))->get_gui_num();
 }
 
 int64_t gui_ratio(dyn_t ratio, bool wheelMainlyChangesNumerator, bool wheelDecrasesDenominatorIfNumeratorIsOne){

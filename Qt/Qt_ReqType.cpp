@@ -223,6 +223,15 @@ static void legalize_pos(MyReqType *reqtype){
 
 void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool program_state_is_valid){
 
+  /*
+    // Can not do this since the caller may require an answer, and then just ask again and again until it gets one. (it's also very unlikely that g_radium_runs_custom_exec==true
+  if (g_radium_runs_custom_exec==true){
+    R_ASSERT_NON_RELEASE(false);
+    snprintf(buffer, bufferlength-1, "");
+    return;
+  }
+  */
+  
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
 
   int x = x_margin;
@@ -329,7 +338,7 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
         getchar();
 #endif
         init_reqtype(reqtype); // recreate the frame, for next time.
-        break; // return;
+        break;
       }
       
       //GTK_HandleEvents();

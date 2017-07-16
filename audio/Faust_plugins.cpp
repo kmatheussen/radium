@@ -92,13 +92,13 @@ void FAUST_change_qtguistyle(const char *style_name){
   disk_t *disk = DISK_open_for_reading(filename);
   if (disk==NULL){
       
-    GFX_Message(NULL, "File not found (%s)", filename.toUtf8().constData());
+    GFX_Message2(NULL, true, "File not found (%s)", filename.toUtf8().constData());
     
   } else {
     
     QString stylesheet = DISK_read_qstring_file(disk);
     if (DISK_close_and_delete(disk)==false) {
-      GFX_Message(NULL, "Unable to read from %s", filename.toUtf8().constData());
+      GFX_Message2(NULL, true, "Unable to read from %s", filename.toUtf8().constData());
       stylesheet = "";
     }
 

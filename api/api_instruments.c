@@ -1462,7 +1462,7 @@ bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not
       //printf("was: %d, is: %d. show: %d\n", instrument_window_was_visible, instrument_window_is_visible, show_message);
 
       if (show_message)
-        GFX_Message(NULL, "Instrument %s of type %s / %s does not have a native GUI", patch->name, plugin->type->type_name, plugin->type->name);
+        GFX_Message2(NULL, true, "Instrument %s of type %s / %s does not have a native GUI", patch->name, plugin->type->type_name, plugin->type->name);
       
     }
     

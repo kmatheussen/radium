@@ -2272,7 +2272,7 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
 
   VECTOR_FOR_EACH(struct FXs *fxs, &wtrack->track->fxs){
     if (fxs->fx->effect_num == effect_num && fxs->fx->patch==patch){
-      GFX_Message(NULL, "addFX: Effect \"%s\" has already been added to track %d", fx_name, track->l.num);
+      GFX_Message2(NULL, true, "addFX: Effect \"%s\" has already been added to track %d", fx_name, track->l.num);
       return -1;
     }
   }END_VECTOR_FOR_EACH;

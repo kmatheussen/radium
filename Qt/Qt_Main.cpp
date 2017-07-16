@@ -487,6 +487,10 @@ static void send_key_down(QObject *where, int how_many){
   }
 }
 
+static void schedule_set_editor_focus(int ms){
+  QTimer::singleShot(ms, set_editor_focus);
+}
+
 class MyApplication
   : public QApplication
 #if USE_QT5
@@ -585,7 +589,7 @@ protected:
     static int last_pressed_key = EVENT_NO;
 
     //printf(" Got key 1. modifier: %d. Left ctrl: %d, Press: %d\n", modifier, EVENT_CTRL_L, is_key_press);
-    
+
     if (modifier != EVENT_NO) {
 
       bool must_return_true = false;
@@ -649,8 +653,9 @@ protected:
 
               //printf("    Making MENU active. Last pressed: %d\n", last_pressed_key);
               menu_should_be_active = 1;
-            }
-          
+            }else
+              menu_should_be_active = 0;
+            
             last_key_was_lalt = true;
 
           }
@@ -771,8 +776,11 @@ protected:
 
         case EVENT_ESC:
         case EVENT_RETURN:{
+          //printf("Pressed esc or return\n");
           menu_should_be_active = 0; // In case we press esc or return right after pressing left alt.
           //printf("  Returning false 3.1\n");
+          if (keynum==EVENT_ESC)
+            schedule_set_editor_focus(20);
           return false;
           break;
         }
@@ -881,6 +889,13 @@ protected:
     if(ret==true)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
 
+    /*
+    if (keynum==EVENT_ALT_L){
+      printf("Last key was left alt. Set keyboard focus, to be sure\n");
+      set_editor_focus();
+    }
+    */
+    
     //printf(" Got key 7\n");
 
     //printf("  Returning true 4\n");
@@ -2045,7 +2060,7 @@ WPoint GetPointerPos(struct Tracker_Windows *tvisual){
 
 void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
 #if defined(FOR_MACOSX) && !defined(USE_QT5)
-  GFX_Message(NULL, "Full screen not supported in OSX");
+  GFX_Message2(NULL, false, "Full screen not supported in OSX");
 #else
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
 

@@ -160,6 +160,7 @@ static SliderData get_sliderdata(struct Tracker_Windows *window){
     Do only call when screen is blank.
 ********************************************************/
 
+// Note that this is the track selector slider, not the block tempo slider.
 void DrawBottomSlider(struct Tracker_Windows *window){
   window->bottomslider.x = window->wblock->t.x1;
   

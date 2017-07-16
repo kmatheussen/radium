@@ -1690,7 +1690,7 @@ static void store_estimated_value(double period){
 void GL_erase_estimated_vblank(void){
   SETTINGS_write_double("vblank", -1.0);
   store_use_estimated_vblank(false);
-  GFX_Message(NULL, "Stored vblank value erased. Restart Radium to estimate a new vblank value.");
+  GFX_Message2(NULL, true, "Stored vblank value erased. Restart Radium to estimate a new vblank value.");
 }
 
 #endif

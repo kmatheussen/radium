@@ -136,7 +136,8 @@ int SYSTEM_show_message(const char *message){
     return 0;
   }
 
-  radium::ScopedExec scopedExec(false);
+  //if (THREADING_is_main_thread()) // Don't work with scoped variables.
+  //radium::ScopedExec scopedExec(false, false); // We could run from another thread here.
     
 
 #if FOR_WINDOWS
