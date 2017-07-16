@@ -653,8 +653,9 @@ protected:
 
               //printf("    Making MENU active. Last pressed: %d\n", last_pressed_key);
               menu_should_be_active = 1;
-            }
-          
+            }else
+              menu_should_be_active = 0;
+            
             last_key_was_lalt = true;
 
           }
@@ -888,6 +889,13 @@ protected:
     if(ret==true)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor();
 
+    /*
+    if (keynum==EVENT_ALT_L){
+      printf("Last key was left alt. Set keyboard focus, to be sure\n");
+      set_editor_focus();
+    }
+    */
+    
     //printf(" Got key 7\n");
 
     //printf("  Returning true 4\n");
