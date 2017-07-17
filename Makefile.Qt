@@ -537,7 +537,7 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 #  -lasound
 
 # Adding "TARGET_ARCH=-g" to prevent juce from compiling with -march=native
-PLUGINHOSTOPTS = CXX="$(CCC) -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH=-g  
+PLUGINHOSTOPTS = CXX="$(CCC) -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing"
 
 pluginhost/Builds/Linux/build/libMyPluginHost.a: audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h
 # dryrun

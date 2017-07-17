@@ -9,9 +9,9 @@ unset CPPFLAGS
 unset LDFLAGS
 unset CXXFLAGS
 
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -Wno-misleading-indentation -fPIC"
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC"
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC"
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -Wno-misleading-indentation -fPIC -fno-strict-aliasing"
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing"
 
 
 if ! env |grep RADIUM_QT_VERSION ; then
