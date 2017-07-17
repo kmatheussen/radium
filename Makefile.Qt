@@ -177,7 +177,7 @@ endif
 #THREAD_SANITIZE_OPTS=-Og -fsanitize=thread #-DDISABLE_BDWGC
 THREAD_SANITIZE_OPTS=
 
-ADDRESS_SANITIZE_OPTS=-fsanitize=address
+ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common
 #ADDRESS_SANITIZE_OPTS=
 
 
@@ -223,7 +223,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_63_0 -I ~/SDKs/VST3\ SDK -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-omit-frame-pointer -Wno-unknown-pragmas
+COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_63_0 -I ~/SDKs/VST3\ SDK -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-omit-frame-pointer -Wno-unknown-pragmas -fno-strict-aliasing
 
 ifeq ($(RADIUM_QT_VERSION),5)
 	COMMONOPT += -DUSE_QT5
