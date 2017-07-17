@@ -909,7 +909,7 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
 
   plugin_type->num_effects = aeffect->numParams;
 
-  plugin_type->plugin_takes_care_of_savable_values = true;
+  //plugin_type->plugin_takes_care_of_savable_values = true;
     
   plugin_type->num_inputs = aeffect->numInputs;
   plugin_type->num_outputs = aeffect->numOutputs;

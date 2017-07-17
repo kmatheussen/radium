@@ -523,13 +523,20 @@ static void AUDIO_close_FX(struct FX *fx,const struct Tracks *track){
 }
 
 static void send_fx_to_plugin(struct SeqTrack *seqtrack, SoundPlugin *plugin, STime time, FX_when when, int val, int effect_num){
+  R_ASSERT_NON_RELEASE(FX_when_is_automation(when));
+  
   float effect_val = val / (float)MAX_FX_VAL;
 
-  plugin->automation_values[effect_num] = effect_val;
-
   //printf("send_fx_to_plugin %s. effect_num: %d, effect_value: %f\n",plugin->patch->name, effect_num, effect_val);
-
-  PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(seqtrack, time),effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
+  
+  PLUGIN_set_effect_value(plugin,
+                          PLAYER_get_block_delta_time(seqtrack, time),
+                          effect_num,
+                          effect_val,
+                          DONT_STORE_VALUE,
+                          when,
+                          EFFECT_FORMAT_SCALED
+                          );
 }
 
 static int64_t RT_scheduled_send_fx_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){

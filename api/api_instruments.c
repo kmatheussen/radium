@@ -1711,7 +1711,7 @@ void API_instruments_call_regularly(void){
     struct Patch *patch = effect_monitor->patch;
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     if(plugin!=NULL){
-      float now = plugin->savable_effect_values[effect_monitor->effect_num];
+      float now = plugin->stored_effect_values_scaled[effect_monitor->effect_num];
       if (now != effect_monitor->last_value){
         effect_monitor->last_value = now;
         S7CALL(void_void,effect_monitor->func);

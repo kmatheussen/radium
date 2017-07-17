@@ -1188,6 +1188,10 @@ typedef enum {
   //FX_no_fx = 4; // No effect must be sent out. Used by seqtrack automation.
 } FX_when;
 
+static inline bool FX_when_is_automation(FX_when when){
+  return (when != FX_single);
+}
+
 struct FX{
 	const char *name;
 	enum ColorNums color;

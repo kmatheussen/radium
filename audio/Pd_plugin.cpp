@@ -524,7 +524,7 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time
   Pd_Controller *controller = &data->controllers[effect_num];
   float real_value;
 
-  if(value_format==PLUGIN_FORMAT_SCALED && controller->type!=EFFECT_FORMAT_BOOL)
+  if(value_format==EFFECT_FORMAT_SCALED && controller->type!=EFFECT_FORMAT_BOOL)
     real_value = scale(value, 0.0, 1.0, 
                        controller->min_value, controller->max_value);
   else
@@ -565,7 +565,7 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time
 static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format) {
   Data *data = (Data*)plugin->data;
   float raw = data->controllers[effect_num].value;
-  if(value_format==PLUGIN_FORMAT_SCALED && data->controllers[effect_num].type!=EFFECT_FORMAT_BOOL)
+  if(value_format==EFFECT_FORMAT_SCALED && data->controllers[effect_num].type!=EFFECT_FORMAT_BOOL)
     return scale(raw,
                  data->controllers[effect_num].min_value, data->controllers[effect_num].max_value,
                  0.0f, 1.0f);
@@ -625,7 +625,7 @@ static void RT_pdfloathook(void *d, const char *sym, float val){
     
     controller->calling_from_pd = true; {
       RT_PLAYER_runner_lock();{
-        PLUGIN_set_effect_value(controller->plugin, -1, controller->num, scaled_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single); // PLUGIN_set_effect_value only works with NONSTORED_TYPE for system effects. (should be fixed)
+        PLUGIN_set_effect_value(controller->plugin, -1, controller->num, scaled_value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED); // PLUGIN_set_effect_value only works with NONSTORED_TYPE for system effects. (should be fixed)
       }RT_PLAYER_runner_unlock();
     } controller->calling_from_pd = false;
   }

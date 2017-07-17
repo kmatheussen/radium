@@ -700,16 +700,14 @@ void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack){
 
           RT_PLUGIN_touch(plugin);
 
-          plugin->automation_values[effect_num] = value;
-
-          PLUGIN_set_effect_value(plugin,0,effect_num,value, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
+          PLUGIN_set_effect_value(plugin,0,effect_num,value, DONT_STORE_VALUE, when, EFFECT_FORMAT_SCALED);
           automation->last_value = value;
         }
       } else {
         if (automation->last_value != -1.0) {
           RT_PLUGIN_touch(plugin);
 
-          PLUGIN_set_effect_value(plugin,0,effect_num, automation->last_value, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, FX_end); // Send out the same value again, but with a different FX_when value. Slightly inefficient, but trying to predict when we need FX_end above is too complicated to be worth the effort.
+          PLUGIN_set_effect_value(plugin,0,effect_num, automation->last_value, DONT_STORE_VALUE, FX_end, EFFECT_FORMAT_SCALED); // Send out the same value again, but with a different FX_when value. Slightly inefficient, but trying to predict when we need FX_end above is too complicated to be worth the effort.
           automation->last_value = -1.0;
         }
       }

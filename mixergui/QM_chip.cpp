@@ -1795,7 +1795,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               if (thispatch != patch && plugin!=NULL && ATOMIC_GET(plugin->solo_is_on)) {
                 int num_effects = plugin->type->num_effects;
                 //ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
-                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, 0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, 0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
                 //CHIP_update(plugin);
               }
             }
@@ -1846,7 +1846,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               if (thispatch != patch && plugin!=NULL && is_muted(plugin)){
                 int effect_num = get_mute_effectnum(plugin->type);
                 ADD_UNDO(AudioEffect_CurrPos(thispatch, effect_num));
-                PLUGIN_set_effect_value(plugin, -1, effect_num, 1, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+                PLUGIN_set_effect_value(plugin, -1, effect_num, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
                 //CHIP_update(plugin);
               }
             }
@@ -1894,7 +1894,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               if (thispatch != patch && plugin!=NULL && !ATOMIC_GET(plugin->effects_are_on)) {
                 int num_effects = plugin->type->num_effects;
                 ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_EFFECTS_ONOFF));
-                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, 1, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
                 CHIP_update(plugin);
               }
             }
@@ -2076,7 +2076,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
       if (_has_made_volume_effect_undo==false)
         ADD_UNDO(AudioEffect_CurrPos(patch, effect_num));
       
-      PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_effect_value(plugin, -1, effect_num, value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
       
       CHIP_update(plugin);
       

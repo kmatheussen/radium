@@ -1094,7 +1094,7 @@ void MW_solo(const vector_t patches, bool set_on){
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       int num_effects = plugin->type->num_effects;     
       //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
-      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, set_on ? 1.0 : 0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, set_on ? 1.0 : 0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     }END_VECTOR_FOR_EACH;
     //}UNDO_CLOSE();
 }
@@ -1113,7 +1113,7 @@ void MW_mute(const vector_t patches, bool do_mute){
         int effect_num = get_mute_effectnum(plugin->type);
         ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
         float new_val = do_mute ? 0.0 : 1.0;
-        PLUGIN_set_effect_value(plugin, -1, effect_num, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+        PLUGIN_set_effect_value(plugin, -1, effect_num, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
       }
     }END_VECTOR_FOR_EACH;
   }UNDO_CLOSE();
@@ -1132,7 +1132,7 @@ void MW_bypass(const vector_t patches, bool do_bypass){
       int num_effects = plugin->type->num_effects;
       ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
       float new_val = do_bypass ? 0.0 : 1.0;
-      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     }END_VECTOR_FOR_EACH;
   }UNDO_CLOSE();
 }

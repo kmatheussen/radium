@@ -256,7 +256,7 @@ class ParamWidget : public QWidget {
 
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-      PLUGIN_set_effect_value(plugin, -1, _effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_effect_value(plugin, -1, _effect_num, value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     }
   }
 
