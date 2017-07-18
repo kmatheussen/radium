@@ -647,14 +647,18 @@ protected:
             
           } else {
             
-
             if (last_pressed_key==EVENT_ALT_L) {
               // Single-pressed left alt key.
 
               //printf("    Making MENU active. Last pressed: %d\n", last_pressed_key);
               menu_should_be_active = 1;
-            }else
+              
+            }else {
+              
               menu_should_be_active = 0;
+              must_return_true = true; // Another key was pressed as well when releasing left alt. Must return true to prevent Qt from opening the menues.
+              
+            }
             
             last_key_was_lalt = true;
 
