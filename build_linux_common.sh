@@ -163,6 +163,7 @@ mkdir -p linux_objs
 if ! file $RADIUM_BIN |grep Linux ; then
     echo "  Non-linux build detected. Deleting binaries."
     rm -f bin/radium
+    rm -f $RADIUM_BIN
     rm -f bin/radium_crashreporter
     rm -f bin/radium_error_message
 fi
@@ -172,7 +173,7 @@ make flagopts.opt --stop
 make radium $@ --stop
 #make pluginhost/Builds/Linux/build/libMyPluginHost.a
 
-cp $RADIUM_BIN bin/radium
+cp -f bin/run_radium_linux.sh bin/radium
 
 #cp -p *.o linux_objs/ 2>/dev/null | true
 
