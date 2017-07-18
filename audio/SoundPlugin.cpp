@@ -1020,9 +1020,10 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
 
   safe_float_write(&plugin->last_written_effect_values[effect_num], native_value);
   
-  if (FX_when_is_automation(when))
-    safe_float_write(&plugin->slider_automation_values[effect_num], scaled_value);
-
+  safe_float_write(&plugin->slider_automation_values[effect_num],
+                   FX_when_is_automation(when) ? scaled_value : -10
+                   );
+  
   if(storeit_type==STORE_VALUE){
 #if !defined(RELEASE)
     printf("   SETTING Savable effect %d (%s). Native: %f. Scaled: %f\n", effect_num, PLUGIN_get_effect_name(plugin, effect_num), native_value, scaled_value);
