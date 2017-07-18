@@ -600,7 +600,7 @@ protected:
         
         if (GFX_MenuActive()) {
 
-          printf("   MENU ACTIVE while pressing left alt. Hiding\n");
+          //printf("   MENU ACTIVE while pressing left alt. Hiding\n");
           last_key_was_lalt = false;
           menu_should_be_active = 0;
 
@@ -877,8 +877,8 @@ protected:
         //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
         
         if (keynum==EVENT_NO){
-          //printf("Unknown key for n%p\n",event);//virtual_key);
-          return false;
+          //printf("Return true. Unknown key for event type %d. Key: %d\n",type, tevent.SubID);//virtual_key);
+          return true;
         }
         
         tevent.SubID=keynum;
