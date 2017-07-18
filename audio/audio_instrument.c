@@ -523,13 +523,20 @@ static void AUDIO_close_FX(struct FX *fx,const struct Tracks *track){
 }
 
 static void send_fx_to_plugin(struct SeqTrack *seqtrack, SoundPlugin *plugin, STime time, FX_when when, int val, int effect_num){
+  R_ASSERT_NON_RELEASE(FX_when_is_automation(when));
+  
   float effect_val = val / (float)MAX_FX_VAL;
 
-  plugin->automation_values[effect_num] = effect_val;
-
   //printf("send_fx_to_plugin %s. effect_num: %d, effect_value: %f\n",plugin->patch->name, effect_num, effect_val);
-
-  PLUGIN_set_effect_value(plugin,PLAYER_get_block_delta_time(seqtrack, time),effect_num,effect_val, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
+  
+  PLUGIN_set_effect_value(plugin,
+                          PLAYER_get_block_delta_time(seqtrack, time),
+                          effect_num,
+                          effect_val,
+                          DONT_STORE_VALUE,
+                          when,
+                          EFFECT_FORMAT_SCALED
+                          );
 }
 
 static int64_t RT_scheduled_send_fx_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
@@ -759,7 +766,7 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
       
     if(num_effects==0){
       VECTOR_push_back(&v,"No effects available");
-      GFX_Menu(window,NULL,"No FX available",v);
+      GFX_Menu(window,NULL,"No FX available",v,true);
       return FX_FAILED;
     }
   }
@@ -768,7 +775,7 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
   
   add_patch_effects_to_menu(&v, &patch_effects, track->patch);
   
-  int selection=GFX_Menu(window,NULL,menutitle,v);
+  int selection=GFX_Menu(window,NULL,menutitle,v,true);
   if(-1==selection)
     return FX_FAILED;
 
@@ -885,9 +892,11 @@ void DLoadAudioInstrument(void){
   }
 }
 
+/*
 static int AUDIO_getPatch(struct Tracker_Windows *window,ReqType reqtype,const struct Tracks *track,struct Patch *patch){
   return PATCH_SUCCESS;
 }
+*/
 
 static void AUDIO_CloseInstrument(struct Instruments *instrument){}
 //static void AUDIO_InitTrack(struct Instruments *instrument,const struct Tracks *track){}
@@ -917,6 +926,23 @@ static void *AUDIO_CopyInstrumentData(const struct Tracks *track){
 }
 
 static void AUDIO_PlayFromStartHook(struct Instruments *instrument){
+  VECTOR_FOR_EACH(struct Patch *patch,&instrument->patches){
+
+    struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+    
+    if (plugin==NULL) {
+      
+      R_ASSERT_NON_RELEASE(false);
+      
+    } else {
+
+      PLUGIN_call_me_when_playing_from_start(plugin);
+      
+    }
+    
+  }END_VECTOR_FOR_EACH;
+  
+
 }
 
 static void handle_fx_when_patch_is_replaced(struct Blocks *block,
@@ -1066,7 +1092,7 @@ static void AUDIO_remove_patchdata(struct Patch *patch){
   MW_update_all_chips();
 }
 
-static void AUDIO_setPatchData(struct Patch *patch, const char *key, const char *value){}
+static void AUDIO_setPatchData(struct Patch *patch, const char *key, const char *value, bool program_state_is_valid){}
 static char *AUDIO_getPatchData(struct Patch *patch, const char *key){
   return NULL;
 }
@@ -1129,7 +1155,7 @@ int AUDIO_initInstrumentPlugIn(struct Instruments *instrument){
   instrument->getFxNames          = AUDIO_getFxNames;
   instrument->createFX            = AUDIO_createFX;
   instrument->getFX               = AUDIO_getFX;
-  instrument->getPatch            = AUDIO_getPatch;
+  //instrument->getPatch            = AUDIO_getPatch;
   instrument->CloseInstrument     = AUDIO_CloseInstrument;
   //instrument->InitTrack           = AUDIO_InitTrack;
   instrument->StopPlaying         = AUDIO_StopPlaying;

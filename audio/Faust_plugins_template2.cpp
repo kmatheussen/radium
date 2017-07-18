@@ -551,7 +551,7 @@ static void faust_gui_zone_callback(float val, void* arg){
 
   // We are now pretty certain that this update was caused by a user interaction in the faust gui, and not a roundtrip from radium.
   
-  PLUGIN_set_native_effect_value(plugin, -1, effect_num, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  PLUGIN_set_effect_value(plugin, -1, effect_num, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
   
   volatile struct Patch *patch = plugin->patch;
   ATOMIC_SET(patch->widget_needs_to_be_updated, true);
@@ -748,7 +748,7 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
 static void set_effect_value2(Data *data, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   float scaled_value;
 
-  if(value_format==PLUGIN_FORMAT_SCALED){
+  if(value_format==EFFECT_FORMAT_SCALED){
 #ifdef FAUST_SYSTEM_EFFECT
     scaled_value = value;
 #else
@@ -788,7 +788,7 @@ static float get_effect_value2(Data *data, int effect_num, enum ValueFormat valu
 
   //printf("   Getting effect from controller %p\n", controller);
   
-  if(value_format==PLUGIN_FORMAT_SCALED){
+  if(value_format==EFFECT_FORMAT_SCALED){
 #ifdef FAUST_SYSTEM_EFFECT
     return safe_float_read(controller->control_port);
 #else

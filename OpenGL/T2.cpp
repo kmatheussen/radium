@@ -171,14 +171,14 @@ T2_data::~T2_data(){
 static void T2_thread_func(QOffscreenSurface *offscreen, QOpenGLContext *offscreen_context){
   
   if (offscreen->isValid()==false){
-    GFX_Message(NULL, "Invalid offscreen surface. Unable to paint.\n");
+    GFX_Message2(NULL, true, "Invalid offscreen surface. Unable to paint.\n");
     return;
   }
 
   QSurface *qsurface = offscreen;
 
   if (offscreen_context->isValid()==false){
-    GFX_Message(NULL, "Invalid offscreen OpenGL Context. Unable to paint.\n");
+    GFX_Message2(NULL, true, "Invalid offscreen OpenGL Context. Unable to paint.\n");
     return;
   }
 

@@ -33,7 +33,7 @@ static void ensure_open(void){
 
 void MIDILEARN_PREFS_open(void){
   ensure_open();
-  safeShowOrExec(midilearn_prefs_widget);
+  safeShowOrExec(midilearn_prefs_widget, true);
 }
 
 void MIDILEARN_PREFS_add(MidiLearn *midi_learn){
@@ -54,7 +54,7 @@ void TOOLS_open(void){
     g_static_toplevel_widgets.push_back(widget);
   }
 
-  safeShowOrExec(widget);
+  safeShowOrExec(widget, true);
 }
 
 

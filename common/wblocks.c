@@ -285,12 +285,12 @@ void UpdateWBlockCoordinates(
 
 
         wblock->bottombar.x1 = wblock->t.x1;
-        wblock->bottombar.y1 = wblock->a.y2;
-        wblock->bottombar.x2 = wblock->a.y2;
+        wblock->bottombar.y1 = wblock->a.y2-1;
+        wblock->bottombar.x2 = wblock->a.y2-1;
         wblock->bottombar.y2 = window->height;
 
 	wblock->reltempo.x1=0;
-	wblock->reltempo.y1=wblock->bottombar.y1+3;
+	wblock->reltempo.y1=wblock->bottombar.y1+2;
 	wblock->reltempo.x2=wblock->t.x1 - 3;
 	wblock->reltempo.y2=wblock->bottombar.y2-1;
 

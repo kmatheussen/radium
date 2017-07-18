@@ -120,6 +120,9 @@
         ((eq? command :add-audio-meter-peak-callback)
          (<ra> :gui_add-audio-meter-peak-callback (car args) (cadr args)))
         
+        ((eq? command :requester-operations)
+         (ra:gui_requester-operations (car args) (cadr args)))
+        
         (else
          (let* ((func (eval (<_> 'ra:gui_ (keyword->symbol command))))
                 (last-arg (and (not (null? args)) (last args)))
@@ -183,6 +186,9 @@
 
         ((eq? command :add-callback)
          `(<ra> :gui_add-callback ,(car args) ,(cadr args)))
+        
+        ((eq? command :requester-operations)
+         `(ra:gui_requester-operations ,(car args) ,(cadr args)))
         
         ((let ((stringcommand (symbol->string (keyword->symbol command))))
            (and (string-starts-with? stringcommand "add-")
@@ -264,6 +270,14 @@
           layout)
 
 
+(define (ra:gui_requester-operations text block)
+  (c-display "OPEN REQ")
+  (<ra> :open-requester text)
+  (try-finally :try block
+               :finally (lambda ()
+                          (c-display "CLOSE REQ")
+                          (<ra> :close-requester))))
+
 (define (disable-gui-updates-block gui block)
   (<gui> :disable-updates gui)
   (try-finally :try block
@@ -299,6 +313,7 @@
   (<gui> :add-layout-space textlayout 0 0 #t #f)
   
   (define gui (<gui> :vertical-layout textlayout buttonlayout))
+  (<gui> :set-layout-spacing gui 8 8 8 8 8 )
   (for-each (lambda (button-text)
               (define button (<gui> :button button-text))
               (<gui> :add-callback button (lambda ()
@@ -323,7 +338,7 @@
 #!!
 (<ra> :show-async-message)
 (<ra> :show-async-message :buttons '())
-(<ra> :show-async-message "hello2")
+(<ra> :show-async-message :text "hello Gakk gakk\nHmm.2")
 (<ra> :show-async-message "hello2" :callback c-display)
 (<ra> :show-async-message "hello1" (list "BBBb1" "AAAb2") #f c-display)
 (<ra> :show-message "gakk")

@@ -2462,7 +2462,8 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
 static void create_tracks(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   struct WTracks *wtrack=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
 
-  while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
+  while(wtrack!=NULL && wtrack->x <= wblock->a.x2){// && wtrack->l.num<=wblock->right_track){ <- Using right_track isn't quite correct since piano-roll is to the left of the cursor.
+    //printf("drawing track %d\n", wtrack->l.num);
     int left_subtrack = wtrack->l.num==wblock->left_track ? wblock->left_subtrack : -1;
     create_track(window, wblock, wtrack, left_subtrack);
     wtrack=NextWTrack(wtrack);

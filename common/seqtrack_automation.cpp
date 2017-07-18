@@ -45,6 +45,31 @@ static double get_seqtrack_song_length(struct SeqTrack *seqtrack){
   return get_seqtime_from_abstime(seqtrack, NULL, SONG_get_gfx_length()*MIXER_get_sample_rate());
 }
 
+
+// g_curr_seqtrack_automation_seqtrack is set to NULL by ~SeqtrackAutomation or SEQTRACK_AUTOMATION_cancel_curr_automation.
+// Note that it not possible for a seqtrack to be valid, and its seqtrack->seqtrackautomation value to be invalid, or
+// vice versa, so it's fine using the SeqtrackAutomation destructor for setting this value to NULL when the seqtrack is deleted.
+static struct SeqTrack *g_curr_seqtrack_automation_seqtrack = NULL;
+static int g_curr_seqtrack_automation_num = -1;
+
+static void assert_no_curr_seqtrack(void){
+  if (g_curr_seqtrack_automation_seqtrack != NULL){
+    R_ASSERT_NON_RELEASE(false);
+    g_curr_seqtrack_automation_seqtrack = NULL;
+  }
+
+  if (g_curr_seqtrack_automation_num != -1){
+    R_ASSERT_NON_RELEASE(false);
+    g_curr_seqtrack_automation_num = -1;
+  }
+}
+
+static void set_no_curr_seqtrack(void){
+  g_curr_seqtrack_automation_seqtrack = NULL;
+  g_curr_seqtrack_automation_num = -1;
+}
+
+
 namespace{
 
 struct AutomationNode{
@@ -105,6 +130,8 @@ struct Automation{
     : patch(patch)
     , effect_num(effect_num)
   {
+    SEQTRACK_AUTOMATION_cancel_curr_automation();
+    
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
 
@@ -135,10 +162,13 @@ struct Automation{
       color = get_qcolor(get_effect_color(plugin, effect_num));
     }
   }
+
+  ~Automation(){
+    assert_no_curr_seqtrack();
+  }
 };
 
 }
-
 
 struct SeqtrackAutomation {
   
@@ -153,11 +183,14 @@ private:
   
 public:
 
+  struct SeqTrack *_seqtrack;
   radium::Vector<Automation*> _automations;
   
   SeqtrackAutomation(struct SeqTrack *seqtrack, const hash_t *state = NULL)
-  //:_seqtrack(seqtrack)
+    :_seqtrack(seqtrack)
   {
+    SEQTRACK_AUTOMATION_cancel_curr_automation();
+          
     if (state != NULL) {
       int size = HASH_get_array_size(state, "automation");
       
@@ -174,8 +207,17 @@ public:
     if (magic != 918345)
       abort();
 #endif
+
+    if (g_curr_seqtrack_automation_seqtrack!=NULL && g_curr_seqtrack_automation_seqtrack->seqtrackautomation==this){
+      set_no_curr_seqtrack(); // It's a little bit unclear what data is available and not right now. We can think through the situation, and probably conclude that it's fine to call SEQTRACK_AUTOMATION_cancel_curr_automation() no matter what, but this is also fine, probably clearer, and much simpler since we don't have to worry whether it's safe to call SEQTRACK_AUTOMATION_cancel_curr_automation.
+    } else {
+      SEQTRACK_AUTOMATION_cancel_curr_automation();
+    }
+
     for(auto *automation : _automations)
       delete automation;
+
+    assert_no_curr_seqtrack();
   }
   
   hash_t *get_state(void) const {
@@ -215,10 +257,13 @@ public:
   */
   
   int add_automation(struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2){
-    bool already_here = true;
     Automation *automation = find_automation(patch, effect_num, true);
 
-    if (automation == NULL){
+    bool already_here;
+    
+    if (automation != NULL){
+      already_here = true;
+    } else {
       already_here = false;
       automation = new Automation(patch, effect_num);
     }
@@ -235,7 +280,13 @@ public:
       _automations.post_add();
     }
 
-    SEQUENCER_update();
+    /*
+    automation->automation.set_curr_nodenum(ret);
+    
+    SEQTRACK_AUTOMATION_set_curr_automation(seqtrack, );
+    */
+    
+    SEQTRACK_update(_seqtrack);
     
     return ret;
   }
@@ -252,7 +303,8 @@ private:
 
     return NULL;    
   }
-  
+
+
 public:
   
   bool islegalautomation(int automationnum){
@@ -260,6 +312,8 @@ public:
   }
 
   void remove_automation(Automation *automation){
+    SEQTRACK_AUTOMATION_cancel_curr_automation();
+    
     {
       radium::PlayerLock lock;    
       _automations.remove(automation);
@@ -277,6 +331,8 @@ public:
   }
 
   void remove_all_automations(struct Patch *patch){
+    SEQTRACK_AUTOMATION_cancel_curr_automation();
+    
     QVector<Automation*> to_remove;
 
     for(auto *automation : _automations)
@@ -295,6 +351,8 @@ public:
   }
 
   void replace_all_automations(struct Patch *old_patch, struct Patch *new_patch){
+    SEQTRACK_AUTOMATION_cancel_curr_automation();
+    
     R_ASSERT(old_patch!=NULL);
     R_ASSERT(new_patch!=NULL);
 
@@ -453,7 +511,7 @@ int SEQTRACK_AUTOMATION_add_node(struct SeqtrackAutomation *seqtrackautomation, 
 
   int ret = automation->automation.add_node(create_node(seqtime, value, logtype));
   
-  SEQUENCER_update();
+  SEQTRACK_update(seqtrackautomation->_seqtrack);
   
   return ret;
 }
@@ -470,7 +528,7 @@ void SEQTRACK_AUTOMATION_delete_node(struct SeqtrackAutomation *seqtrackautomati
     automation->automation.delete_node(nodenum);
   }
 
-  SEQUENCER_update();
+  SEQTRACK_update(seqtrackautomation->_seqtrack);
 }
 
 void SEQTRACK_AUTOMATION_set_curr_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum){
@@ -481,7 +539,7 @@ void SEQTRACK_AUTOMATION_set_curr_node(struct SeqtrackAutomation *seqtrackautoma
 
   if (automation->automation.get_curr_nodenum() != nodenum){
     automation->automation.set_curr_nodenum(nodenum);
-    SEQUENCER_update();
+    SEQTRACK_update(seqtrackautomation->_seqtrack);
   }
 }
 
@@ -491,38 +549,68 @@ void SEQTRACK_AUTOMATION_cancel_curr_node(struct SeqtrackAutomation *seqtrackaut
   struct Automation *automation = seqtrackautomation->_automations[automationnum];
 
   automation->automation.set_curr_nodenum(-1);
-  SEQUENCER_update();
+  SEQTRACK_update(seqtrackautomation->_seqtrack);
 }
 
-void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
+// Legal to call even if there is already a current automation.
+void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, int automationnum){
+  SEQTRACK_AUTOMATION_cancel_curr_automation();
+  
+  struct SeqtrackAutomation *seqtrackautomation = seqtrack->seqtrackautomation;
+  
   R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
 
-  struct Automation *curr_automation = seqtrackautomation->_automations[automationnum];
-  if (curr_automation->automation.do_paint_nodes())
-    return;
+  struct Automation *curr_automation = seqtrackautomation->_automations.at(automationnum);
+  if (curr_automation->automation.do_paint_nodes()){
+    
+    R_ASSERT_NON_RELEASE(seqtrack==g_curr_seqtrack_automation_seqtrack);
+    R_ASSERT_NON_RELEASE(automationnum==g_curr_seqtrack_automation_num);
+    
+  } else {
 
-  curr_automation->automation.set_do_paint_nodes(true);
+    curr_automation->automation.set_do_paint_nodes(true);
+    SEQTRACK_update(seqtrack);
 
-  ALL_SEQTRACKS_FOR_EACH(){
-    for(auto *automation : seqtrack->seqtrackautomation->_automations){
-      if (automation != curr_automation)
-        automation->automation.set_do_paint_nodes(false);
-    }
-  }END_ALL_SEQTRACKS_FOR_EACH;
-
-  SEQUENCER_update();
+  }
+  
+  g_curr_seqtrack_automation_seqtrack=seqtrack;
+  g_curr_seqtrack_automation_num=automationnum;
 }
 
+// May be called if it there is no current automation.
 void SEQTRACK_AUTOMATION_cancel_curr_automation(void){
-  ALL_SEQTRACKS_FOR_EACH(){
-    R_ASSERT_RETURN_IF_FALSE(seqtrack->seqtrackautomation != NULL);
-    for(auto *automation : seqtrack->seqtrackautomation->_automations){
-      R_ASSERT_RETURN_IF_FALSE(automation!=NULL);
-      automation->automation.set_do_paint_nodes(false);
-    }
-  }END_ALL_SEQTRACKS_FOR_EACH;
+  
+  struct SeqTrack *seqtrack = g_curr_seqtrack_automation_seqtrack;
+  int automation_num = g_curr_seqtrack_automation_num;
+  
+  if (seqtrack==NULL){
 
-  SEQUENCER_update();
+    R_ASSERT_NON_RELEASE(automation_num==-1);
+    
+  } else {
+
+    SeqtrackAutomation *seqtrackautomation = seqtrack->seqtrackautomation;
+    
+    if (automation_num < 0 || automation_num >= seqtrackautomation->_automations.size()){
+      
+      R_ASSERT_NON_RELEASE(false);
+      
+    } else {
+    
+      Automation *automation = seqtrackautomation->_automations.at(automation_num);
+      R_ASSERT_RETURN_IF_FALSE(automation!=NULL);
+      
+      if (automation->automation.do_paint_nodes()){
+        automation->automation.set_do_paint_nodes(false);
+        SEQTRACK_update(seqtrack);
+      }else{
+        R_ASSERT_NON_RELEASE(false);
+      }
+      
+    }
+  }
+
+  set_no_curr_seqtrack();
 }
 
 
@@ -567,7 +655,7 @@ void SEQTRACK_AUTOMATION_set(struct SeqTrack *seqtrack, int automationnum, int n
 
   automation->automation.replace_node(nodenum, node);
 
-  SEQUENCER_update();
+  SEQTRACK_update(seqtrack);
 }
 
 
@@ -612,16 +700,14 @@ void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack){
 
           RT_PLUGIN_touch(plugin);
 
-          plugin->automation_values[effect_num] = value;
-
-          PLUGIN_set_effect_value(plugin,0,effect_num,value, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, when);
+          PLUGIN_set_effect_value(plugin,0,effect_num,value, DONT_STORE_VALUE, when, EFFECT_FORMAT_SCALED);
           automation->last_value = value;
         }
       } else {
         if (automation->last_value != -1.0) {
           RT_PLUGIN_touch(plugin);
 
-          PLUGIN_set_effect_value(plugin,0,effect_num, automation->last_value, PLUGIN_NONSTORED_TYPE, PLUGIN_DONT_STORE_VALUE, FX_end); // Send out the same value again, but with a different FX_when value. Slightly inefficient, but trying to predict when we need FX_end above is too complicated to be worth the effort.
+          PLUGIN_set_effect_value(plugin,0,effect_num, automation->last_value, DONT_STORE_VALUE, FX_end, EFFECT_FORMAT_SCALED); // Send out the same value again, but with a different FX_when value. Slightly inefficient, but trying to predict when we need FX_end above is too complicated to be worth the effort.
           automation->last_value = -1.0;
         }
       }

@@ -145,6 +145,11 @@ struct PlayerLockOnlyIfNeeded{
       PLAYER_maybe_pause_lock_a_little_bit(i);
   }
 
+  void maybe_pause_or_lock(int i){
+    maybe_pause(i);
+    lock();
+  }
+  
   PlayerLockOnlyIfNeeded(const PlayerLockOnlyIfNeeded&) = delete;
   PlayerLockOnlyIfNeeded& operator=(const PlayerLockOnlyIfNeeded&) = delete;
 

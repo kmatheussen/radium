@@ -266,14 +266,14 @@ void SetQuantitize_CurrPos(
         Ratio before = root->quantitize_options.quant;
         Ratio after;
                   
-        ReqType reqtype = GFX_OpenReq(window, 100, 100, "Quantitize");
+        ReqType reqtype = GFX_OpenReq(window, 100, 100, "");
 
         do{
           GFX_WriteString(reqtype, "Quantitize Value : ");
           GFX_SetString(reqtype, STRING_get_chars(RATIO_as_string(before)));
           
           char temp[1024];
-          GFX_ReadString(reqtype, temp, 1010);
+          GFX_ReadString(reqtype, temp, 1010, true);
 
           if (temp[0]==0){
             printf("no new value\n");

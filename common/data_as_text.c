@@ -216,7 +216,7 @@ extern struct TEvent tevent;
 // We circumvent the normal keyboard configuration system here.
 bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
 
-  if (tevent.keyswitch != 0 && tevent.keyswitch!=EVENT_MOUSE_SEQUENCER2 && tevent.keyswitch!=EVENT_MOUSE_MIXER2 && tevent.keyswitch!=EVENT_MOUSE_EDITOR2 && tevent.keyswitch!=EVENT_MOUSE_MIXERSTRIPS2)
+  if (AnyModifierKeyPressed(tevent.keyswitch))
     return false;
   
   struct WBlocks *wblock = window->wblock;

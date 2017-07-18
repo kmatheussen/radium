@@ -27,6 +27,19 @@
 
 extern bool g_radium_runs_custom_exec;
 extern bool g_and_its_not_safe_to_paint;
+static inline bool can_internal_data_be_accessed_questionmark(void){
+  if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return false;
+  if(g_is_loading) return false;
+  return true;
+}
+static inline bool can_internal_data_be_accessed_questionmark_safer(void){
+  if(g_radium_runs_custom_exec) return false;
+  if(g_is_loading) return false;
+  return true;
+}
+#define RETURN_IF_DATA_IS_INACCESSIBLE(...) if(can_internal_data_be_accessed_questionmark()==false) return __VA_ARGS__;
+#define RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2(...) if(can_internal_data_be_accessed_questionmark_safer()==false) return __VA_ARGS__;
+
 
 extern void set_editor_focus(void);
 
@@ -651,25 +664,53 @@ struct GL_PauseCaller{
 
 namespace radium{
 struct ScopedExec{
-  bool _lock;
+  bool _do_tell_program_state_is_valid;
+  bool _has_obtained_custom_exec;
+  bool _has_obtained_safe_to_paint;
   
-  ScopedExec(bool lock=true)
-    : _lock(lock)
-  {      
+  ScopedExec(bool program_state_is_valid, bool assert_running_custom_exec = true)
+    : _do_tell_program_state_is_valid(program_state_is_valid)
+  {
     obtain_keyboard_focus();
-    g_radium_runs_custom_exec = true;
+
+    if (assert_running_custom_exec){
+      R_ASSERT_NON_RELEASE(g_radium_runs_custom_exec==false);
+    }
+    
+    if (_do_tell_program_state_is_valid){
+      R_ASSERT_NON_RELEASE(g_and_its_not_safe_to_paint==true);
+      if (g_and_its_not_safe_to_paint==true){
+        g_and_its_not_safe_to_paint = false;
+        _has_obtained_safe_to_paint = true;
+      } else
+        _has_obtained_safe_to_paint = false;
+    }else{
+      _has_obtained_safe_to_paint = false;
+    }
+
+    if (g_radium_runs_custom_exec) {
+      _has_obtained_custom_exec = false;
+    } else {
+      g_radium_runs_custom_exec = true;
+      _has_obtained_custom_exec = true;
+    }
     
     GFX_HideProgress();
-    
-    if (_lock)  // GL_lock <strike>is</strike> was needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
-      GL_lock();
   }
   
   ~ScopedExec(){
-    if (_lock)
-      GL_unlock();
     GFX_ShowProgress();
-    g_radium_runs_custom_exec = false;
+
+    R_ASSERT_NON_RELEASE(g_radium_runs_custom_exec==true);
+
+    if (_has_obtained_custom_exec)
+      g_radium_runs_custom_exec = false;
+    
+    if (_do_tell_program_state_is_valid){
+      R_ASSERT_NON_RELEASE(g_and_its_not_safe_to_paint==false);
+      if (_has_obtained_safe_to_paint)
+        g_and_its_not_safe_to_paint = true;
+    }
 
     for(auto *window : QApplication::topLevelWidgets())
       updateWidgetRecursively(window);
@@ -695,7 +736,7 @@ static inline void set_those_menu_variables_when_starting_a_popup_menu(QMenu *me
   g_curr_popup_qmenu = menu_to_be_started;
 }
 
-static inline int safeExec(QMessageBox *widget){
+static inline int safeExec(QMessageBox *widget, bool program_state_is_valid){
   R_ASSERT_RETURN_IF_FALSE2(g_qt_is_painting==false, -1);
     
   closePopup();
@@ -714,36 +755,46 @@ static inline int safeExec(QMessageBox *widget){
     return ret;
   }
 
-  radium::ScopedExec scopedExec;
+  radium::ScopedExec scopedExec(program_state_is_valid);
 
-  return widget->exec();
+  //QPointer<QWidget> prev_widget = QApplication::focusWidget();
+  
+  int ret = widget->exec();
+
+  /*
+  if (prev_widget != NULL)
+    prev_widget->setFocus();
+  */
+  
+  return ret;
+  
 }
 
 /*
-static inline int safeExec(QMessageBox &widget){
+static inline int safeExec(QMessageBox &widget, bool program_state_is_valid){
   closePopup();
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
 
-  radium::ScopedExec scopedExec;
+  radium::ScopedExec scopedExec(program_state_is_valid);
 
   return widget.exec();
 }
 */
 
-static inline int safeExec(QDialog *widget){
+static inline int safeExec(QDialog *widget, bool program_state_is_valid){
   R_ASSERT_RETURN_IF_FALSE2(g_qt_is_painting==false, -1);
   
   closePopup();
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, 0);
 
-  radium::ScopedExec scopedExec;
+  radium::ScopedExec scopedExec(program_state_is_valid);
 
   return widget->exec();
 }
 
-static inline QAction *safeMenuExec(QMenu *widget){
+static inline QAction *safeMenuExec(QMenu *widget, bool program_state_is_valid){
   R_ASSERT(g_qt_is_painting==false);
   
   // safeExec might be called recursively if you double click right mouse button to open a pop up menu. Seems like a bug or design flaw in Qt.
@@ -756,10 +807,10 @@ static inline QAction *safeMenuExec(QMenu *widget){
   set_those_menu_variables_when_starting_a_popup_menu(widget);
       
   if (doModalWindows()) {
-    radium::ScopedExec scopedExec;
+    radium::ScopedExec scopedExec(program_state_is_valid);
     return widget->exec(QCursor::pos());
   }else{
-    radium::ScopedExec scopedExec(false);
+    radium::ScopedExec scopedExec(program_state_is_valid);
     GL_lock();{
       GL_pause_gl_thread_a_short_while();
     }GL_unlock();    
@@ -794,9 +845,9 @@ static inline void safeShow(QWidget *widget){
   }GL_unlock();
 }
 
-static inline void safeShowOrExec(QDialog *widget){
+static inline void safeShowOrExec(QDialog *widget, bool program_state_is_valid){
   if (doModalWindows())
-    safeExec(widget);
+    safeExec(widget,program_state_is_valid);
   else
     safeShow(widget);
 }

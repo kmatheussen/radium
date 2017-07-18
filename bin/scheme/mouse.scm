@@ -340,10 +340,13 @@
 (define2 mouse-track-has-been-set boolean? #f)
 (define (set-mouse-track tracknum)
   (set! mouse-track-has-been-set #t)
+  ;;(c-display "set mouse track to" tracknum)
   (<ra> :set-mouse-track tracknum))
 (define (set-mouse-track-to-reltempo)
   (set! mouse-track-has-been-set #t)
-  (<ra> :set-mouse-track-to-reltempo))
+  ;;(c-display "set mouse track to reltempo")
+  (<ra> :set-mouse-track-to-reltempo)
+  )
 
 (define2 mouse-note-has-been-set boolean? #f)
 (define (set-mouse-note notenum tracknum)
@@ -367,7 +370,8 @@
 (define2 current-node-has-been-set boolean? #f)
 (define (set-current-temponode num)
   (set! current-node-has-been-set #t)
-  (<ra> :set-current-temponode num))
+  (<ra> :set-current-temponode num)
+  )
 (define (set-current-velocity-node velnum notenum tracknum)
   (set! current-node-has-been-set #t)
   (set-velocity-statusbar-text (<ra> :get-velocity-value velnum notenum tracknum))
@@ -547,7 +551,8 @@
 ;; Set current track and mouse track
 (add-mouse-move-handler
  :move (lambda (Button X Y)
-         (set-current-track-num! X Y)))
+         (if (< Y (<ra> :get-editor-y2))
+             (set-current-track-num! X Y))))
 
 (define2 *current-subtrack-num* (curry-or not integer?) #f)
 

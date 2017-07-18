@@ -104,31 +104,41 @@ namespace{
     Listener(SoundPlugin *plugin) : _plugin(plugin) {}
     
     // Receives a callback when a parameter is changed.
-    virtual void 	audioProcessorParameterChanged (AudioProcessor *processor, int parameterIndex, float newValue) {
-      //printf("parm %d changed to %f\n",parameterIndex,newValue);
-
-      volatile struct Patch *patch = _plugin->patch;
-      if (patch != NULL)
-        ATOMIC_SET(patch->widget_needs_to_be_updated, true);
-
-      ATOMIC_SET(_plugin->effect_num_to_show_because_it_was_used_externally, parameterIndex);
+    void 	audioProcessorParameterChanged (AudioProcessor *processor, int parameterIndex, float newValue) override {
+#if !defined(RELEASE)
+      printf("   JUCE listener: parm %d changed to %f\n",parameterIndex,newValue);
+#endif
+      PLUGIN_call_me_when_an_effect_value_has_changed(_plugin,
+                                                      parameterIndex,
+                                                      newValue, // native
+                                                      newValue // scaled
+                                                      );
     }
  
     // Called to indicate that something else in the plugin has changed, like its program, number of parameters, etc.
-    virtual void 	audioProcessorChanged (AudioProcessor *processor) {
-      //printf("audioProcessorChanged...\n");
+    void 	audioProcessorChanged (AudioProcessor *processor) override {
+#if !defined(RELEASE)
+      printf("    JUCE listener: audioProcessorChanged...\n");
+#endif
+      volatile struct Patch *patch = _plugin->patch;
+      if (patch != NULL)
+        ATOMIC_SET(patch->widget_needs_to_be_updated, true);
     }
  
 
     //Indicates that a parameter change gesture has started.
-    virtual void 	audioProcessorParameterChangeGestureBegin (AudioProcessor *processor, int parameterIndex) {
-      //printf("gesture starts for %d\n",parameterIndex);
+    void 	audioProcessorParameterChangeGestureBegin (AudioProcessor *processor, int parameterIndex) override {
+#if !defined(RELEASE)
+      printf("    JUCE listener: gesture starts for %d\n",parameterIndex);
+#endif
     }
 
     
     //Indicates that a parameter change gesture has finished. 
-    virtual void 	audioProcessorParameterChangeGestureEnd (AudioProcessor *processor, int parameterIndex) {
-      //printf("gesture ends for %d\n",parameterIndex);
+    void 	audioProcessorParameterChangeGestureEnd (AudioProcessor *processor, int parameterIndex) override {
+#if !defined(RELEASE)
+      printf("    JUCE listener: gesture ends for %d\n",parameterIndex);
+#endif
     }
   };
 
@@ -461,7 +471,7 @@ namespace{
         
         if (new_state != is_bypass) {
           int num_effects = plugin->type->num_effects;
-          PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, !new_state, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+          PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_state ? 0.0 : 1.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
           GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
         }
         
@@ -1198,7 +1208,6 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
   plugin_type->num_inputs = audio_instance->getTotalNumInputChannels();
   plugin_type->num_outputs = audio_instance->getTotalNumOutputChannels();
     
-  plugin_type->plugin_takes_care_of_savable_values = true;
   plugin_type->dont_send_effect_values_from_state_into_plugin = true; // Don't need to. Juce takes care of saving and loading all effect parameters (General optimization plus crash fix for buggy CM 505 plugin)
 
 #if 0
@@ -1993,13 +2002,13 @@ void PLUGINHOST_load_fxbp(SoundPlugin *plugin, wchar_t *wfilename){
   
   bool success = file.loadFileAsData(memoryBlock);
   if (success==false){
-    GFX_Message(NULL, "Unable to load %s", STRING_get_chars(wfilename));
+    GFX_Message2(NULL, true, "Unable to load %s", STRING_get_chars(wfilename));
     return;
   }
       
   success = VSTPluginFormat::loadFromFXBFile(instance, memoryBlock.getData(), memoryBlock.getSize());
   if (success==false){
-    GFX_Message(NULL, "Could not use %s for this plugin", STRING_get_chars(wfilename));
+    GFX_Message2(NULL, true, "Could not use %s for this plugin", STRING_get_chars(wfilename));
     return;
   }
   
@@ -2013,7 +2022,7 @@ static void save_fxbp(SoundPlugin *plugin, wchar_t *wfilename, bool is_fxb){
   MemoryBlock memoryBlock;
   bool result = VSTPluginFormat::saveToFXBFile(instance, memoryBlock, is_fxb);
   if (result==false){
-    GFX_Message(NULL, "Unable to create FXB/FXP data for this plugin");
+    GFX_Message2(NULL, true, "Unable to create FXB/FXP data for this plugin");
     return;
   }
   
@@ -2024,13 +2033,13 @@ static void save_fxbp(SoundPlugin *plugin, wchar_t *wfilename, bool is_fxb){
   Result result2 = file.create();
 
   if (result2.failed()){
-    GFX_Message(NULL, "Unable to create file %s (%s)", STRING_get_chars(wfilename), result2.getErrorMessage().toRawUTF8());
+    GFX_Message2(NULL, true, "Unable to create file %s (%s)", STRING_get_chars(wfilename), result2.getErrorMessage().toRawUTF8());
     return;
   }
   
   bool result3 = file.replaceWithData(memoryBlock.getData(), memoryBlock.getSize());
   if (result3==false){
-    GFX_Message(NULL, "Unable to write data to file %s (disk full?)", STRING_get_chars(wfilename));
+    GFX_Message2(NULL, true, "Unable to write data to file %s (disk full?)", STRING_get_chars(wfilename));
     return;
   }
   

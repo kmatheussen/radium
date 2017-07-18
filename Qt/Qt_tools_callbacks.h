@@ -99,7 +99,7 @@ class MidiLearnPrefs : public RememberGeometryQDialog {
     }
 
     void timerEvent(QTimerEvent * e){
-      if(g_radium_runs_custom_exec) return;
+      RETURN_IF_DATA_IS_INACCESSIBLE();
 
       if (parent->isVisible()){
         for(auto *item : parent->items)

@@ -22,7 +22,7 @@ int MIDILocalKeyboardOn( void );
 int MIDILocalKeyboardOff( void );
 int MIDIAllNotesOff( void );
 int MIDIAllSoundsOff( void );
-extern LANGSPEC int MIDISetInputPort( void );
+extern LANGSPEC int MIDISetInputPort(bool program_state_is_valid);
 
 #endif
 

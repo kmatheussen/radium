@@ -102,14 +102,20 @@ static QVector<Bottom_bar_widget*> g_bottom_bars; // need to be defined here sin
 
 QVector<QWidget*> g_static_toplevel_widgets;
 
+/*
+struct MyQMenuBar : QMenuBar {
+  void hideEvent (QHideEvent * event_){
+    QMenuBar::hideEvent(event_);
+    set_editor_focus();
+  }                                    
+};
+*/
 
 #if USE_GTK_VISUAL
 
 #if FOR_WINDOWS
 static bool sat=false;
 #endif
-
-
 
 class MyEditorWidgetParent : public EditorWidgetParent{
   //Q_OBJECT;
@@ -179,7 +185,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #endif
 
   setAttribute(Qt::WA_StaticContents, true);
-  
+
   upperleft_widget = new Upperleft_widget(this);
   upperleft_widget->move(0,0);
 
@@ -371,8 +377,7 @@ static int get_track_from_x(float x){
 void handleDropEvent(QString filename, float x){
   struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
 
-  if(g_radium_runs_custom_exec)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE();
 
   int tracknum = get_track_from_x(x);
   int64_t instrument_id = -1;
@@ -434,7 +439,7 @@ public:
 #if 0
   // Want the wheel to work from everywhere. (actually we don't want that)
   void wheelEvent(QWheelEvent *qwheelevent) override {
-    if(ATOMIC_GET(is_starting_up)==true)
+    if(g_is_starting_up==true)
       return;
     printf("Got wheel event\n");
     g_editor->wheelEvent(qwheelevent);
@@ -526,9 +531,12 @@ void SetupMainWindow(void){
   // But the reason the two lines are commented away is because glClear()/glClearColor doesn't quite work on OSX unless the background is actually clear.
   // We might experience less or more flicker though.
   //
-  //editor->setAttribute(Qt::WA_OpaquePaintEvent);
-  //editor->setAttribute(Qt::WA_NoSystemBackground);
-
+#if !defined(FOR_MACOSX) // Yes, we definitely experienced more flicker. Turn ON unless running OSX.
+  editor->setAttribute(Qt::WA_OpaquePaintEvent);
+  //  editor->setAttribute(Qt::WA_NoSystemBackground); // This one doesn't seem to make a difference though.
+#else
+  #error "Check if colors work if enabling \"editor->setAttribute(Qt::WA_OpaquePaintEvent);\" above."
+#endif
   
 #endif
   editor->main_window = main_window;
@@ -607,7 +615,9 @@ void SetupMainWindow(void){
   main_window->setMenuBar(menubar);
   
 #else
+  //QMenuBar *menubar = new MyQMenuBar();
   initMenues(main_window->menuBar());
+  //main_window->setMenuBar(menubar);
   main_window->menuBar()->show();
   main_window->menuBar()->setNativeMenuBar(false);
 #endif
@@ -705,13 +715,14 @@ const wchar_t *GFX_GetLoadFileName(
                                    const char *seltext,
                                    wchar_t *wdir,
                                    const char *postfixes,
-                                   const char *type
+                                   const char *type,
+                                   bool program_state_is_valid
 ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
 
-  radium::ScopedExec scopedExec;
+  radium::ScopedExec scopedExec(program_state_is_valid);
 
   QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
   QString filename = QFileDialog::getOpenFileName(editor,
@@ -733,13 +744,14 @@ const wchar_t *GFX_GetSaveFileName(
                                    const char *seltext,
                                    wchar_t *wdir,
                                    const char *postfixes,
-                                   const char *type
+                                   const char *type,
+                                   bool program_state_is_valid
                                    ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, NULL);
 
-  radium::ScopedExec scopedExec;
+  radium::ScopedExec scopedExec(program_state_is_valid);
 
   QString dir = wdir==NULL ? "" : QString::fromWCharArray(wdir);
   QString filename = QFileDialog::getSaveFileName(editor,
@@ -773,7 +785,7 @@ void GFX_Message_call_after_showing(bool clicked_ignore){
     g_ignore_until = g_last_time + 2000;
 }
 
-static int GFX_Message(vector_t *buttons, QString message){
+static int show_gfx_message(vector_t *buttons, bool program_state_is_valid, QString message){
   R_ASSERT(THREADING_is_main_thread());
 
   if (buttons==NULL && GFX_Message_ignore_questionmark())
@@ -812,7 +824,7 @@ static int GFX_Message(vector_t *buttons, QString message){
 #endif
 
   {
-    safeExec(msgBox);
+    safeExec(msgBox, program_state_is_valid);
   }
   
 #if PUT_ON_TOP
@@ -844,7 +856,7 @@ static int GFX_Message(vector_t *buttons, QString message){
   return 0;
 }
 
-int GFX_Message(vector_t *buttons, const char *fmt,...){
+int GFX_Message2(vector_t *buttons, bool program_state_is_valid, const char *fmt,...){
   if (buttons!=NULL)
     R_ASSERT(THREADING_is_main_thread());
 
@@ -856,14 +868,16 @@ int GFX_Message(vector_t *buttons, const char *fmt,...){
   vsnprintf(message,998,fmt,argp);
   va_end(argp);
 
-  if (g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || !THREADING_is_main_thread()){
+  R_ASSERT_NON_RELEASE(g_radium_runs_custom_exec==false);
+    
+  if (g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || !THREADING_is_main_thread() || g_radium_runs_custom_exec){
     
     SYSTEM_show_message(message);
     return -1;
 
   } else {
  
-    return GFX_Message(buttons,QString(message));
+    return show_gfx_message(buttons, program_state_is_valid, QString(message));
 
   }
 }

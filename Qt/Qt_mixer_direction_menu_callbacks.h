@@ -60,7 +60,7 @@ class Mixer_Direction_Menu : public QDialog, public Ui::Mixer_Direction_Menu{
     qApp->setActiveWindow(up_button);
     
     _timer.start();
-    safeExec(this);
+    safeExec(this, true);
     _timer.stop();
 
     set_editor_focus();

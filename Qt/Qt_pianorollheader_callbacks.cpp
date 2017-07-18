@@ -52,7 +52,7 @@ void PIANOROLLHEADER_show(void *pianorollheader, int x, int y, int x2, int y2){
     //widget->resize(100,100);
     
     //printf("A: x: %d, y: %d, width: %d, height: %d. Visible: %d\n", widget->pos().x(), widget->pos().y(), widget->size().width(), widget->size().height(),widget->isVisible());
-    if (ATOMIC_GET(is_starting_up)==false)
+    if (g_is_starting_up==false)
       widget->updateWidgets();
     
     widget->show();

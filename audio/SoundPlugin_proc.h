@@ -20,14 +20,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Mixer_proc.h"
 
+/*
 enum ValueType{
   PLUGIN_STORED_TYPE,
   PLUGIN_NONSTORED_TYPE
 };
+*/
 
-enum SetValueType{
-  PLUGIN_STORE_VALUE,
-  PLUGIN_DONT_STORE_VALUE
+enum StoreitType{
+  STORE_VALUE,
+  DONT_STORE_VALUE
 };
 
 enum WhereToGetValue{
@@ -47,12 +49,49 @@ extern LANGSPEC int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char
 extern LANGSPEC const char *PLUGIN_get_effect_name(SoundPlugin *plugin, int effect_num);
 extern LANGSPEC const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_type, int effect_num);
 extern LANGSPEC void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
-extern LANGSPEC void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum ValueFormat value_format, bool sent_from_midi_learn);
-#define PLUGIN_set_effect_value(a,b,c,d,e,f,g) \
-       PLUGIN_set_effect_value2(a,b,c,d,e,f,g,PLUGIN_FORMAT_SCALED, false)
-#define PLUGIN_set_native_effect_value(a,b,c,d,e,f,g) \
-       PLUGIN_set_effect_value2(a,b,c,d,e,f,g,PLUGIN_FORMAT_NATIVE, false)
-extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum WhereToGetValue where);
+
+extern LANGSPEC void PLUGIN_call_me_when_playing_from_start(struct SoundPlugin *plugin);
+  
+#ifdef __cplusplus
+// Must/should be called from the plugin if it changes value by itself. After initialization that is.
+//
+// The function must be called even if storeit_type==DONT_STORE_VALUE
+//
+// Both 'native_value' and 'scaled_value' must be valid.
+//
+// The function should not be called if it was triggered by a call to plugin->set_effect_value(). (it's not the end of the world, but at least automation recording can be screwed up a little bit)
+// (It should be simple to remove this limiations though, in a way that should provide a much better solution than hacking around with timers, comparing values, and so forth.)
+//
+// Thread-safe.
+//
+extern void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
+                                                            int effect_num,
+                                                            float native_value,
+                                                            float scaled_value,
+                                                            enum StoreitType storeit_type = STORE_VALUE,
+                                                            FX_when when = FX_single,
+                                                            bool update_instrument_widget = true,
+                                                            bool is_sent_from_midi_learn = false
+                                                            );
+#endif
+
+extern LANGSPEC void PLUGIN_set_effect_value(struct SoundPlugin *plugin,
+                                             int time,
+                                             int effect_num,
+                                             float value,
+                                             enum StoreitType storeit_type,
+                                             FX_when when,
+                                             enum ValueFormat value_format);
+
+extern LANGSPEC float PLUGIN_get_effect_value2(struct SoundPlugin *plugin,
+                                               int effect_num,
+                                               enum WhereToGetValue where,
+                                               enum ValueFormat value_format);
+
+// Returns scaled value.
+extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin,
+                                              int effect_num,
+                                              enum WhereToGetValue where);
 
 extern LANGSPEC void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state);
 extern LANGSPEC hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin);
@@ -62,7 +101,7 @@ extern LANGSPEC hash_t *PLUGIN_get_state(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects);
 extern LANGSPEC float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name);
-extern LANGSPEC void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value);
+extern LANGSPEC void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value); // scaled format
 extern LANGSPEC SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading);
 extern LANGSPEC void PLUGIN_change_ab(SoundPlugin *plugin, int ab);
 extern LANGSPEC void PLUGIN_reset_ab(SoundPlugin *plugin, int ab);

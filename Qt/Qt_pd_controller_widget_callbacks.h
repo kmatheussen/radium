@@ -50,7 +50,7 @@ public:
     QString _name;
 
     void timerEvent(QTimerEvent * e){
-      if(g_radium_runs_custom_exec) return;
+      RETURN_IF_DATA_IS_INACCESSIBLE();
       
       if(_pd_controller_widget->isVisible()==false)
         return;
@@ -205,7 +205,7 @@ public slots:
 
   void on_value_slider_valueChanged( int val) {
     if (_calling_from_timer==false) {
-      PLUGIN_set_effect_value(_plugin, -1, _controller->num, val/10000.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_effect_value(_plugin, -1, _controller->num, val/10000.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     }
 
     paint_slider_text();
@@ -221,7 +221,7 @@ public slots:
 
     //printf("Setting to %f\n",effect_value);
 
-    PLUGIN_set_effect_value(_plugin, -1, _controller->num, effect_value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    PLUGIN_set_effect_value(_plugin, -1, _controller->num, effect_value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 
     paint_onoff_text();
   }

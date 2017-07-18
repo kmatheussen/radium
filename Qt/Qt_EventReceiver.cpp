@@ -108,10 +108,12 @@ bool g_allowed_to_grow_queue = false;
 #if USE_QT_VISUAL
 void EditorWidget::paintEvent( QPaintEvent *e ){
   TRACK_PAINT();
-  
-  if(ATOMIC_GET(is_starting_up)==true)
-    return;
 
+  RETURN_IF_DATA_IS_INACCESSIBLE();
+
+  if(g_is_starting_up==true)
+    return;
+  
   //static int n=0;  printf("** Drawing up everything! %d\n",n++);
   
   GFX_clear_op_queue(this->window);
@@ -119,7 +121,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
   g_allowed_to_grow_queue = true;
   DO_GFX(DrawUpTrackerWindow(this->window));
   g_allowed_to_grow_queue = false;
-  
+
   if(GFX_get_op_queue_size(this->window) > 0){
     QPainter paint(this);
 
@@ -139,7 +141,7 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 #endif
 
 void EditorWidget::updateEditor(){
-  if(ATOMIC_GET(is_starting_up)==true)
+  if(g_is_starting_up==true)
     return;
 
   {
@@ -193,7 +195,7 @@ void EditorWidget::updateEditor(){
 
   /*
 void GFX_ScheduleRedraw(void){
-  if(is_starting_up==true)
+  if(g_is_starting_up==true)
     return;
   
   if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL) {
@@ -216,7 +218,7 @@ void GFX_ScheduleRedraw(void){
 }
 
 void GFX_ScheduleRedrawEditor(void){
-  if(is_starting_up==true)
+  if(g_is_starting_up==true)
     return;
   
   if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL) {
@@ -242,7 +244,7 @@ void GFX_ScheduleRedrawEditor(void){
 struct TEvent tevent={}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
 void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
-    if(ATOMIC_GET(is_starting_up)==true)
+    if(g_is_starting_up==true)
       return;
  
     if (MIXER_is_saving())
@@ -306,7 +308,7 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
 #if 0
 
 void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
-  if(ATOMIC_GET(is_starting_up)==true)
+  if(g_is_starting_up==true)
     return;
 
   //printf("ascii    : %d\n",qkeyevent->toUtf8().constData());
@@ -365,7 +367,7 @@ const unsigned int Qt2SubId[0x2000]={
 void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
   RWarning("keyPressEvent should not be called.\n");
 
-  if(ATOMIC_GET(is_starting_up)==true)
+  if(g_is_starting_up==true)
     return;
 
   printf("ascii    : %d\n",qkeyevent->toUtf8().constData());
@@ -463,7 +465,7 @@ static int getMouseButtonEventID( QMouseEvent *qmouseevent){
 }
 
 void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent) {
-  if(ATOMIC_GET(is_starting_up)==true)
+  if(g_is_starting_up==true)
     return;
 
   tevent.ID = getMouseButtonEventID(qmouseevent);
@@ -500,7 +502,7 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent) {
 
 
 void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent) {
-  if(ATOMIC_GET(is_starting_up)==true)
+  if(g_is_starting_up==true)
     return;
 
   tevent.ID=TR_MOUSEMOVE;
@@ -530,7 +532,7 @@ void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent) {
 
 
 void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent) {
-  if(ATOMIC_GET(is_starting_up)==true)
+  if(g_is_starting_up==true)
     return;
 
   if(qmouseevent->button()==Qt::LeftButton){
@@ -568,7 +570,7 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent) {
 
 #if USE_GTK_VISUAL
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
-  if(ATOMIC_GET(is_starting_up)==true)
+  if(g_is_starting_up==true)
     return;
 
   printf("got resize event\n");
@@ -589,11 +591,13 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
 #if !USE_OPENGL
   this->init_buffers();
 #endif
-  
-  this->window->width=qresizeevent->size().width(); //this->get_editor_width();
-  this->window->height=qresizeevent->size().height(); //this->get_editor_height();
 
-  if(ATOMIC_GET(is_starting_up)==true)
+  if (this->window != NULL){
+    this->window->width=qresizeevent->size().width(); //this->get_editor_width();
+    this->window->height=qresizeevent->size().height(); //this->get_editor_height();
+  }
+  
+  if(g_is_starting_up==true)
     return;
 
   //UpdateWBlockCoordinates(window, window->wblock);

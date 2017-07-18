@@ -118,7 +118,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
       for(effect_num = PROGRAM_CHANGE ; effect_num < NUM_EFFECTS ; effect_num++) {
         int value = data->values[effect_num];
         if (value != -1)
-          RT_set_effect_value(plugin, 0, effect_num, value, PLUGIN_FORMAT_NATIVE, FX_single);
+          RT_set_effect_value(plugin, 0, effect_num, value, EFFECT_FORMAT_NATIVE, FX_single);
       }
     }RT_PLAYER_runner_unlock();
     
@@ -209,7 +209,7 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time
   
   int value;
   
-  if(value_format==PLUGIN_FORMAT_SCALED)
+  if(value_format==EFFECT_FORMAT_SCALED)
     value = scale(floatvalue, 0, 1, minval-1, maxval+1);
   else
     value = floatvalue;
@@ -293,7 +293,7 @@ float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum Value
 
   int value = data->values[effect_num];
   
-  if(value_format==PLUGIN_FORMAT_SCALED) {
+  if(value_format==EFFECT_FORMAT_SCALED) {
     
     int minval;
     int maxval;
@@ -377,7 +377,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
       snprintf(buffer,buffersize-1,"%d",value+1);
       break;
     case PITCH_BEND:
-      snprintf(buffer,buffersize-1,"%d",(int)RT_get_effect_value(plugin, effect_num, PLUGIN_FORMAT_NATIVE));
+      snprintf(buffer,buffersize-1,"%d",(int)RT_get_effect_value(plugin, effect_num, EFFECT_FORMAT_NATIVE));
       break;
     case DAMPER_ONOFF:
     case PORTAMENTO_ONOFF:
@@ -396,7 +396,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
         snprintf(buffer,buffersize-1,"Legato");
       break;
     default:   
-      snprintf(buffer,buffersize-1,"%d",(int)RT_get_effect_value(plugin, effect_num, PLUGIN_FORMAT_NATIVE));
+      snprintf(buffer,buffersize-1,"%d",(int)RT_get_effect_value(plugin, effect_num, EFFECT_FORMAT_NATIVE));
       break;
   }
 }

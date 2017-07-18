@@ -250,7 +250,7 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
   }
 
   if (have_made_undo==false)
-    GFX_Message(NULL, "Track is already monophonic");
+    GFX_Message2(NULL, true, "Track is already monophonic");
   else
     window->must_redraw = true;
 }

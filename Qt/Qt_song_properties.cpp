@@ -21,7 +21,7 @@ extern "C"{
   void SONGPROPERTIES_open(void){
     ensure_widget_is_created();
 
-    safeShowOrExec(widget);
+    safeShowOrExec(widget, true);
   }
 
   void SONGPROPERTIES_update(struct Song *song){

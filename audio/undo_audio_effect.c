@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPlugin_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
-#include "../mixergui/QM_chip.h"
 
 #include "undo_audio_effect_proc.h"
 
@@ -67,9 +66,9 @@ static void Undo_AudioEffect(
   int num_effects = plugin->type->num_effects+NUM_SYSTEM_EFFECTS;
     
   if (effect_num==-1)
-    undo_ae->values = tcopy_atomic(plugin->savable_effect_values, sizeof(float)*num_effects);
+    undo_ae->values = tcopy_atomic(plugin->stored_effect_values_native, sizeof(float)*num_effects);
   else
-    undo_ae->value = plugin->savable_effect_values[effect_num];
+    undo_ae->value = plugin->stored_effect_values_native[effect_num];
 
 
   //printf("********* Storing eff undo. value: %f %d\n",undo_ae->value,plugin->comp.is_on);
@@ -106,7 +105,7 @@ static void *Undo_Do_AudioEffect(
   int num_effects = plugin->type->num_effects+NUM_SYSTEM_EFFECTS;
 
   if (undo_ae->effect_num >= 0 && undo_ae->effect_num < num_effects) {
-    float new_value = plugin->savable_effect_values[undo_ae->effect_num];
+    float new_value = plugin->stored_effect_values_native[undo_ae->effect_num];
 
     printf("Calling Undo_do for %d. Current value: %f. Now setting it back to %f\n",undo_ae->effect_num,new_value,undo_ae->value);
 
@@ -114,41 +113,46 @@ static void *Undo_Do_AudioEffect(
                             0,
                             undo_ae->effect_num, 
                             undo_ae->value, 
-                            PLUGIN_STORED_TYPE,
-                            PLUGIN_STORE_VALUE,
-                            FX_single
+                            STORE_VALUE,
+                            FX_single,
+                            EFFECT_FORMAT_NATIVE
                             );
 
     undo_ae->value = new_value;
-
-    if (undo_ae->effect_num==plugin->type->num_effects+EFFNUM_INPUT_VOLUME)
-      CHIP_update(plugin);
-
-    if (undo_ae->effect_num==plugin->type->num_effects+EFFNUM_VOLUME)
-      CHIP_update(plugin);
 
   } else {
 
     R_ASSERT_RETURN_IF_FALSE2(undo_ae->effect_num==-1, undo_ae);
 
-    float *new_values = tcopy_atomic(plugin->savable_effect_values, sizeof(float)*num_effects);
-        
-    PLAYER_lock();{
-      for(int i=0;i<num_effects;i++)
+    float *new_values = tcopy_atomic(plugin->stored_effect_values_native, sizeof(float)*num_effects);
+
+    // system effects
+    for(int i=plugin->type->num_effects;i<plugin->type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+      PLUGIN_set_effect_value(plugin,
+                              0,
+                              i,
+                              undo_ae->values[i],
+                              STORE_VALUE,
+                              FX_single,
+                              EFFECT_FORMAT_NATIVE);
+    
+    // plugin effects
+    PLAYER_lock();{ // Not necessary, but we don't want to frequently lock/unlock since PLUGIN_set_effect_value locks.
+      for(int i=0 ; i<plugin->type->num_effects ; i++){
+        PLAYER_maybe_pause_lock_a_little_bit(i);
         PLUGIN_set_effect_value(plugin,
                                 0,
                                 i,
                                 undo_ae->values[i],
-                                PLUGIN_STORED_TYPE,
-                                PLUGIN_STORE_VALUE,
-                                FX_single);
+                                STORE_VALUE,
+                                FX_single,
+                                EFFECT_FORMAT_NATIVE);
+      }
     }PLAYER_unlock();
 
     undo_ae->values = new_values;
-
-    CHIP_update(plugin);
   }
-    
+
 
   GFX_update_instrument_widget(undo_ae->patch);
 

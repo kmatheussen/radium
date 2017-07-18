@@ -175,7 +175,7 @@ bool Undo_are_you_sure_questionmark(void){
 
     sprintf(
             temp,
-            "%d change%s been made to file since song was saved.\n\nAre you sure? (yes/no) >",
+            "%d change%s been made to file since song was saved.\nAre you sure? (yes/no) > ",
             num_undos,
             num_undos>1 ? "s have" : " has"
             );
@@ -188,7 +188,8 @@ bool Undo_are_you_sure_questionmark(void){
       ret=GFX_GetString(
                         root->song->tracker_windows,
                         NULL,
-                        temp
+                        temp,
+                        true
 			);
       
     }
@@ -639,12 +640,12 @@ void SetMaxUndos(struct Tracker_Windows *window){
 
 	sprintf(seltext,"Max Undos (0=unlimited) (now: %d): ",max_num_undos);
 	while(newmax==1 || newmax==2)
-		newmax=GFX_GetInteger(window,NULL,seltext,0,2000000);
+          newmax=GFX_GetInteger(window,NULL,seltext,0,2000000,true);
 	if(newmax==-1) return;
 
 	max_num_undos=newmax;
 
-        GFX_Message(NULL, "The max number of undoes variables is ignored. Undo is unlimited.");
+        GFX_Message2(NULL, true, "The max number of undoes variables is ignored. Undo is unlimited.");
 }
 
 

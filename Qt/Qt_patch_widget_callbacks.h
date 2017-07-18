@@ -88,7 +88,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     
     if (have_failed == false){
       if (style==NULL){
-        GFX_Message(NULL, "Unable to load cleanlooks style");
+        GFX_addMessage("Unable to load cleanlooks style");
         have_failed = true;
       }else
         setStyle(style);

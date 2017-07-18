@@ -97,7 +97,7 @@ static void set_timeskew_effect_value(struct SoundPlugin *plugin, int time, int 
     return;
   }
 
-  if(value_format==PLUGIN_FORMAT_SCALED)
+  if(value_format==EFFECT_FORMAT_SCALED)
     data->timeskew = scale(value, 0, 1, TIMESKEW_MIN, TIMESKEW_MAX);
   else
     data->timeskew = value;
@@ -117,7 +117,7 @@ static float get_timeskew_effect_value(struct SoundPlugin *plugin, int effect_nu
   if (effect_num==1)
     return data->compensate_positive_delay ? 1.0 : 0.0;
   
-  if(value_format==PLUGIN_FORMAT_SCALED)
+  if(value_format==EFFECT_FORMAT_SCALED)
     return scale(data->timeskew, TIMESKEW_MIN, TIMESKEW_MAX, 0, 1);
   else
     return data->timeskew;

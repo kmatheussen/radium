@@ -27,12 +27,15 @@ extern LANGSPEC int MIDI_initInstrumentPlugIn(struct Instruments *instrument);
 
 extern LANGSPEC int MIDIgetStandardVelocity(struct Patch *patch);
 //extern LANGSPEC int MIDIgetMaxVelocity(struct Patch *patch);
+/*
 extern LANGSPEC int MIDIgetPatch(
                                  struct Tracker_Windows *window,
                                  ReqType reqtype,
                                  const struct Tracks *track,
-                                 struct Patch *patch
+                                 struct Patch *patch,
+                                 bool program_state_is_valid
                                  );
+*/
 extern LANGSPEC void MIDICloseInstrument(struct Instruments *instrument);
 //extern LANGSPEC void MIDISelectTrackInstrument(const struct Tracks *track,struct Instruments *instrument);
 //extern LANGSPEC void MIDIStopPlaying(struct Instruments *instrument);
@@ -48,9 +51,9 @@ extern LANGSPEC void MIDI_init_track(struct Tracks *track);
 
 extern LANGSPEC char **MIDI_getPortNames(int *retsize, bool is_input);
 
-extern LANGSPEC char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype, bool is_input);
-extern LANGSPEC struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,const char *name);
-extern LANGSPEC void MIDISetPatchData(struct Patch *patch, const char *key, const char *value);
+extern LANGSPEC char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype, bool is_input, bool program_state_is_valid);
+extern LANGSPEC struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,const char *name,bool program_state_is_valid);
+extern LANGSPEC void MIDISetPatchData(struct Patch *patch, const char *key, const char *value,bool program_state_is_valid);
 
 extern LANGSPEC void MyGoodPutMidi(
 	struct MidiPort *midi_port,

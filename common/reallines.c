@@ -406,7 +406,7 @@ static void ExpandLineInternal(
 
 static bool ensure_positive_expand_lines(struct WBlocks *wblock){
   if (wblock->num_expand_lines < 0) {
-    GFX_Message(NULL, "Currently not possible to zoom in on single line when LZ (Line zoom) is less than 1/1");
+    GFX_Message2(NULL, true, "Currently not possible to zoom in on single line when LZ (Line zoom) is less than 1/1");
     return false;
   }
     

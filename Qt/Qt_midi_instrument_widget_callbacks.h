@@ -213,13 +213,13 @@ public slots:
       struct Tracker_Windows *window=root->song->tracker_windows;
       ReqType reqtype=GFX_OpenReq(window,70,50,(char*)"Create port");
 
-      char *name = GFX_GetString(window,reqtype,(char*)"Name: ");
+      char *name = GFX_GetString(window,reqtype,(char*)"Name: ", true);
       if(name!=NULL)
-        patchdata->midi_port = MIDIgetPort(window,reqtype,name);
+        patchdata->midi_port = MIDIgetPort(window,reqtype,name,true);
 
       GFX_CloseReq(window,reqtype);
     }else
-      MIDISetPatchData(patch, (char*)"port", (char*)portname.toUtf8().constData());
+      MIDISetPatchData(patch, (char*)"port", (char*)portname.toUtf8().constData(), true);
 
     fprintf(stderr, "Setting new port: \"%s\"\n",(char*)portname.toUtf8().constData());
 

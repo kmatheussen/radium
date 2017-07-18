@@ -92,7 +92,7 @@ static void request_load_preset_filename_from_requester(int64_t parentgui, func_
   QString filename;
 
   {
-    radium::ScopedExec scopedExec;
+    radium::ScopedExec scopedExec(true);
 
     filename = QFileDialog::getOpenFileName(
                                             API_gui_get_parentwidget(parentgui),
@@ -133,7 +133,7 @@ void request_load_preset_filename(func_t *callback){
   for(QString filename : existing_presets)
     VECTOR_push_back(&v, talloc_strdup(filename.toUtf8().constData()));
 
-  int sel = GFX_Menu(NULL, NULL, "", &v);
+  int sel = GFX_Menu(NULL, NULL, "", &v, true);
 
   if (sel==-1)
     return "";
@@ -175,7 +175,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
     msgBox->setText("Could not open file.");
     msgBox->setStandardButtons(QMessageBox::Ok);
     msgBox->setDefaultButton(QMessageBox::Ok);
-    safeExec(msgBox);
+    safeExec(msgBox, true);
     return NULL;
   }
 
@@ -188,7 +188,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
     msgBox->setText("File does not appear to be a valid effects settings file");
     msgBox->setStandardButtons(QMessageBox::Ok);
     msgBox->setDefaultButton(QMessageBox::Ok);
-    safeExec(msgBox);
+    safeExec(msgBox, true);
     return NULL;
   }
 
@@ -330,12 +330,12 @@ static bool valid_patches(const vector_t *patches){
   VECTOR_FOR_EACH(struct Patch*, patch, patches){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     if (!strcmp(plugin->type->type_name,"Bus")){
-      GFX_Message(NULL, "Can not copy or save Bus preset");
+      GFX_addMessage("Can not cut, copy, delete, or save a Bus preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
       return false;
     }
     
     if (AUDIO_is_permanent_patch(patch)){
-      GFX_Message(NULL, "Can not copy or save Main Pipe preset");
+      GFX_addMessage("Can not cut, copy, delete, or save the Main Pipe preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
       return false;
     }
   }END_VECTOR_FOR_EACH;
@@ -343,19 +343,20 @@ static bool valid_patches(const vector_t *patches){
   return true;
 }
 
-void PRESET_copy(const vector_t *patches){
-  R_ASSERT_RETURN_IF_FALSE(patches->num_elements > 0);
+bool PRESET_copy(const vector_t *patches){
+  R_ASSERT_RETURN_IF_FALSE2(patches->num_elements > 0, false);
 
   if (!valid_patches(patches))
-    return;
+    return false;
 
   g_preset_clipboard = get_preset_state(patches);
+  return true;
 }
   
 void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t parentgui){  // "save_button_pressed is the "Save" button in the instrument window.
 
   if(patches->num_elements==0){
-    GFX_Message(NULL, "No instruments selected");
+    GFX_Message2(NULL, true, "No instruments selected");
     return;
   }
 
@@ -364,11 +365,12 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
   
   bool is_multipreset = patches->num_elements > 1;
 
-  obtain_keyboard_focus();
-
   QString filename;
   
-  GL_lock();{ // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
+  {
+
+    radium::ScopedExec scopedExec(true);
+        
     filename = QFileDialog::getSaveFileName(
                                             API_gui_get_parentwidget(parentgui),
                                             "Save Effect configuration",
@@ -385,10 +387,8 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
                                             0,
                                             QFileDialog::DontUseCustomDirectoryIcons | (useNativeFileRequesters() ? (QFileDialog::Option)0 : QFileDialog::DontUseNativeDialog)
                                             );
-  }GL_unlock();
+  }
 
-  release_keyboard_focus();
-  
   if(filename=="")
     return;
 
@@ -399,7 +399,7 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
     msgBox->setText("Could not save file.");
     msgBox->setStandardButtons(QMessageBox::Ok);
     msgBox->setDefaultButton(QMessageBox::Ok);
-    safeExec(msgBox);
+    safeExec(msgBox, true);
     return;
   }
 

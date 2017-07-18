@@ -1188,6 +1188,10 @@ typedef enum {
   //FX_no_fx = 4; // No effect must be sent out. Used by seqtrack automation.
 } FX_when;
 
+static inline bool FX_when_is_automation(FX_when when){
+  return (when != FX_single);
+}
+
 struct FX{
 	const char *name;
 	enum ColorNums color;
@@ -1259,7 +1263,7 @@ struct Instruments{
         struct FX *(*createFX)(const struct Tracks *track, struct Patch *patch, int effect_num);
   
 	int (*getFX)(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx);
-	int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,const struct Tracks *track,struct Patch *patch);
+        //int (*getPatch)(struct Tracker_Windows *window,ReqType reqtype,const struct Tracks *track,struct Patch *patch);
 	//void (*treatSpecialCommand)(char *command,struct Tracks *track);
 	void (*CloseInstrument)(struct Instruments *instrument);
 	void (*StopPlaying)(struct Instruments *instrument);
@@ -1276,7 +1280,7 @@ struct Instruments{
   
         void (*remove_patchdata)(struct Patch *patch);
 
-	void (*setPatchData)(struct Patch *patch, const char *key, const char *value);
+	void (*setPatchData)(struct Patch *patch, const char *key, const char *value, bool program_state_is_valid);
 	char *(*getPatchData)(struct Patch *patch, const char *key);
 };
 #define INSTRUMENT_FAILED 0
@@ -2414,7 +2418,11 @@ struct Root{
 };
 
 extern struct Root *root;
+
+// these two contains the same value, but g_is_starting_up can only be accessed from the main thread.
 extern DEFINE_ATOMIC(bool, is_starting_up);
+extern bool g_is_starting_up;
+
 extern bool g_embed_samples;
 
 static inline struct SeqTrack *SEQUENCER_get_curr_seqtrack(void){

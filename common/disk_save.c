@@ -40,7 +40,7 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
 
         dc.file=DISK_open_for_writing(filename);
 	if(dc.file==NULL){
-          GFX_Message(NULL, "Could not open file for writing.\n");
+          GFX_Message2(NULL, true,"Could not open file for writing.\n");
           return false;
 	}
 
@@ -51,7 +51,7 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
 	int length3=DISK_printf(dc.file,"%s\n",OS_get_string_from_double(DISKVERSION));
 
 	if(length1<0 || length2<0 || length3<0){
-          GFX_Message(NULL, "Could not write to file.\n");
+          GFX_Message2(NULL, true,"Could not write to file.\n");
           DISK_close_and_delete(dc.file);
           return false;
 	}
@@ -71,7 +71,7 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
 	SaveRoot(theroot);
 
 	if( ! dc.success){
-          GFX_Message(NULL, "Problems writing to file.\n");
+          GFX_Message2(NULL, true,"Problems writing to file.\n");
 	}
 
         bool success=DISK_close_and_delete(dc.file);
@@ -85,12 +85,11 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
 }
 
 void SaveAs(struct Root *theroot){
-	const wchar_t *filename;
 
         if (doStopPlayingWhenSavingSong())
           PlayStop();
-        
-	filename=GFX_GetSaveFileName(theroot->song->tracker_windows, NULL," Select file to save", NULL, "*.rad", NULL);
+
+        const wchar_t *filename=GFX_GetSaveFileName(theroot->song->tracker_windows, NULL," Select file to save", NULL, "*.rad", NULL, true);
 
 	if(filename==NULL) return;
 

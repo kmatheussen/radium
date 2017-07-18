@@ -684,7 +684,7 @@ def get_tracks(filename):
     
 def get_parameters(lpb, midi_port, polyphonic):
     try:
-        radium.openRequester("Please define Midi File Properties")
+        radium.openRequester("") #"Please set Midi File Properties")
 
         if lpb==0:
             lpb = radium.requestInteger("Lines per beat? (4) ",1,100000)

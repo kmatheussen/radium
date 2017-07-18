@@ -195,7 +195,7 @@ static void check_jackd_arguments(void){
     msgBox->setInformativeText("Please make sure the -S flag was added to the jackd argument line. If not, glitches in sound will occur.\n ");
     msgBox->setInformativeText(mandatory);
     msgBox->setStandardButtons(QMessageBox::Ok);
-    safeExec(msgBox);
+    safeExec(msgBox, false);
 
   } else if(found_sync_flag==false){
 
@@ -205,7 +205,7 @@ static void check_jackd_arguments(void){
     msgBox->setInformativeText(mandatory);
     
     msgBox->setStandardButtons(QMessageBox::Ok);
-    safeExec(msgBox);
+    safeExec(msgBox, false);
   }
 
 
@@ -705,7 +705,7 @@ struct Mixer{
 				);
       
       msgBox->setStandardButtons(QMessageBox::Ok);
-      safeExec(msgBox);
+      safeExec(msgBox, false);
 
       return false;
 
@@ -744,10 +744,10 @@ struct Mixer{
       ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
       msgBox->setIcon(QMessageBox::Critical);
       msgBox->setText("Unable to activate Jack client.");
-      msgBox->setInformativeText("This is very unusual. Try restarting Jack.");
+      msgBox->setInformativeText("This is very unusual. You might want to run \"Kill Jack\", and then start jack again.");
 
       msgBox->setStandardButtons(QMessageBox::Ok);
-      safeExec(msgBox);
+      safeExec(msgBox, false);
 
       return false;
     }

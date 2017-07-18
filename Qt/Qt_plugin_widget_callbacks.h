@@ -489,7 +489,7 @@ private:
     QString filename;
 
     {
-      radium::ScopedExec scopedExec;
+      radium::ScopedExec scopedExec(true);
 
       
       filename = QFileDialog::getSaveFileName(
@@ -525,7 +525,7 @@ private:
     QString filename;
 
     {
-      radium::ScopedExec scopedExec;
+      radium::ScopedExec scopedExec(true);
     
       filename = QFileDialog::getOpenFileName(
                                               this,
@@ -698,7 +698,7 @@ public slots:
       R_ASSERT(g_radium_runs_custom_exec==false);
 
       {
-        radium::ScopedExec scopedExec;
+        radium::ScopedExec scopedExec(true);
 
         filename = QFileDialog::getOpenFileName(this,
                                                 "Load Faust source code",
@@ -724,7 +724,7 @@ public slots:
       R_ASSERT(g_radium_runs_custom_exec==false);
 
       {
-        radium::ScopedExec scopedExec;
+        radium::ScopedExec scopedExec(true);
 
         filename = QFileDialog::getSaveFileName(this,
                                                 "Save Faust source code",
@@ -819,7 +819,7 @@ public slots:
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       int effect_num = PLUGIN_get_effect_num(plugin, "Limiter Bypass");
 
-      PLUGIN_set_effect_value(plugin, -1, effect_num, val==true ? 1.0 : 0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_effect_value(plugin, -1, effect_num, val==true ? 1.0 : 0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 
       //update_limiter_sliders();
     }
@@ -836,7 +836,7 @@ public slots:
     VECTOR_push_back(&v, "Save FXB (standard VST bank format)");
     VECTOR_push_back(&v, "Save FXP (standard VST preset format)");
     
-    switch(GFX_Menu(root->song->tracker_windows, NULL, "", v)){
+    switch(GFX_Menu(root->song->tracker_windows, NULL, "", v, true)){
     case 0: LoadFXBP(); break;
     case 1: SaveFXBP(true); break;
     case 2: SaveFXBP(false); break;
@@ -886,7 +886,7 @@ public slots:
 
     }
 
-    int sel = GFX_Menu(root->song->tracker_windows, NULL, "", v);
+    int sel = GFX_Menu(root->song->tracker_windows, NULL, "", v, true);
     
     if (sel==mono_main)
       SAMPLER_start_recording(plugin, pathdir, 1, true);
@@ -954,9 +954,15 @@ public slots:
     VECTOR_push_back(&v, "--------------");
     VECTOR_push_back(&v, "<set new name>");
 
-#if FOR_MACOSX
+#if 1 //FOR_MACOSX Although we don't have to run this code in linux and windows, we do it anyway. If not, this code path won't be tested that much. There isn't a painting problem anymore either.
+#define DOSYNC 1
+#else
+#define DOSYNC 0
+#endif
+    
+#if DOSYNC
     // clang didn't like the lambda stuff below.
-    int num = GFX_Menu(root->song->tracker_windows, NULL, "", v);
+    int num = GFX_Menu(root->song->tracker_windows, NULL, "", v, true);
 #else
     IsAlive is_alive(this);
 
@@ -971,7 +977,7 @@ public slots:
 #endif
                 
                 if (num == num_presets+1) {
-                  char *new_name = GFX_GetString(NULL, NULL, "new name: ");
+                  char *new_name = GFX_GetString(NULL, NULL, "new name: ", true);
                   if (new_name != NULL){
                     type->set_preset_name(plugin, type->get_current_preset(plugin), new_name);
                     update_widget();
@@ -980,11 +986,13 @@ public slots:
                   type->set_current_preset(plugin, num);
                   update_widget();
                 }
-#if !defined(FOR_MACOSX)
+#if !DOSYNC
               });
 #endif
   }
-    
+  
+#undef DOSYNC
+  
   void on_preset_selector_editingFinished(){
     int num = preset_selector->value() - 1;
     printf("num: %d\n",num);
@@ -1003,7 +1011,7 @@ public slots:
     if (plugin != NULL){
       int num_effects = plugin->type->num_effects;
       //ADD_UNDO(AudioEffect_CurrPos(_patch, num_effects+EFFNUM_SOLO_ONOFF));
-      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, val ? 1 : 0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, val ? 1 : 0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
       //}
       //ATOMIC_SET(plugin->solo_is_on, val);
       //CHIP_update(plugin);

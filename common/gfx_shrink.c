@@ -77,11 +77,13 @@ void GFXS_LineType(
   int maxx=window->wblock->t.x2;
 
   if(GFXS_EnsureBoundaries(window,"GFXS_LineType",x,y,x2,y2)==false){
+    OS_GFX_CancelMixColor(window);
     return;
   }
 
   if(x2>maxx){
     if(x>maxx){
+      OS_GFX_CancelMixColor(window);
       return;
     }
 
@@ -98,6 +100,7 @@ void GFXS_LineType(
 
 
   if(GFXS_EnsureBoundaries(window,"GFXS_LineType2",x,y,x2,y2)==false){
+    OS_GFX_CancelMixColor(window);
     return;
   }
 
@@ -122,14 +125,16 @@ void GFXS_BoxType(
 {
   int maxx=window->wblock->t.x2;
 
-  if(x>=maxx) return;
 
-	if(x>x2) return;
-	if(y>y2) return;
-
-  if(GFXS_EnsureBoundaries(window,"GFXS_BoxType",x,y,x2,y2)==false){
-    return;
-  }
+  if(x>=maxx ||  
+     x>x2 ||
+     y>y2 ||
+     GFXS_EnsureBoundaries(window,"GFXS_BoxType",x,y,x2,y2)==false
+     )
+    {
+      OS_GFX_CancelMixColor(window);
+      return;
+    }
 
   (*GFX_OSFunc)(window,color,x,y,R_MIN(x2,maxx),y2,where);
 
@@ -162,9 +167,13 @@ void GFXS_TextType(
     int maxx=window->wblock->t.x2;
     int glen=len*window->fontwidth;
 
-    if(x>=maxx) return;
-
+    if(x>=maxx){
+      OS_GFX_CancelMixColor(window);
+      return;
+    }
+    
     if(GFXS_EnsureBoundaries(window,"GFXS_TextType NOTEXT",x,y,x,y)==false){
+      OS_GFX_CancelMixColor(window);
       return;
     }
 
@@ -173,6 +182,7 @@ void GFXS_TextType(
     }
 
     if(GFXS_EnsureBoundaries(window,"GFXS_TextType NOTEXT2",x,y,x,y)==false){
+      OS_GFX_CancelMixColor(window);
       return;
     }
     
@@ -186,9 +196,13 @@ void GFXS_TextType(
     char *to;
     int newlen;
     
-    if(x>=maxx) return;
+    if(x>=maxx){
+      OS_GFX_CancelMixColor(window);
+      return;
+    }
     
     if(GFXS_EnsureBoundaries(window,"GFXS_TextType",x,y,x,y)==false){
+      OS_GFX_CancelMixColor(window);
       return;
     }
 
@@ -200,6 +214,7 @@ void GFXS_TextType(
     }
 
     if(GFXS_EnsureBoundaries(window,"GFXS_TextType",x,y,x,y)==false){
+      OS_GFX_CancelMixColor(window);
       return;
     }
 
@@ -221,9 +236,13 @@ void GFXS_BorderType(
 {
   int maxx=window->wblock->t.x2;
 
-  if(x>maxx) return;
-
+  if(x>maxx){
+    OS_GFX_CancelMixColor(window);
+    return;
+  }
+  
   if(GFXS_EnsureBoundaries(window,"GFXS_BorderType",x,y,x,y2)==false){
+    OS_GFX_CancelMixColor(window);
     return;
   }
   (*GFX_P_OSFunc)(window,x,y,y2,where);
@@ -243,9 +262,13 @@ void GFXS_BorderType2(
 
   int maxx=window->wblock->t.x2;
 
-  if(x-1>maxx) return;
+  if(x-1>maxx){
+    OS_GFX_CancelMixColor(window);
+    return;
+  }
 
   if(GFXS_EnsureBoundaries(window,"GFXS_BorderType",x,y,x+1,y2)==false){
+    OS_GFX_CancelMixColor(window);
     return;
   }
   (*GFX_P_OSFunc)(window,x,y,y2,where);
@@ -268,6 +291,7 @@ void GFXS_BitBltType(
   struct WBlocks *wblock=window->wblock;
 
   if(GFXS_EnsureBoundaries(window,"GFXS_BitBltType",x,y,x2,y2)==false){
+    OS_GFX_CancelMixColor(window);
     return;
   }
 
@@ -290,6 +314,7 @@ void GFXS_BitBltType(
 
 
   if(GFXS_EnsureBoundaries(window,"GFXS_BitBltType2",x,y,x2,y2)==false){
+    OS_GFX_CancelMixColor(window);
     return;
   }
   

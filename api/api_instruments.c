@@ -720,6 +720,7 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
       !strcmp(effect_name, "System In") ||
       !strcmp(effect_name, "System Solo On/Off") ||
       !strcmp(effect_name, "System Volume On/Off") ||
+      !strcmp(effect_name, "System In On/Off") ||
       !strcmp(effect_name, "System Effects On/Off"))
     CHIP_update(plugin);
       
@@ -782,7 +783,7 @@ void setInstrumentData(int64_t instrument_id, const_char *key, const_char *value
   if(patch==NULL)
     return;
 
-  patch->instrument->setPatchData(patch, key, value);
+  patch->instrument->setPatchData(patch, key, value, true);
 
   (*patch->instrument->PP_Update)(patch->instrument,patch,false);
 }
@@ -1340,7 +1341,7 @@ void midi_alwaysRecordVelocity(bool doit){
 }
 
 void midi_setInputPort(void){
-  MIDISetInputPort();
+  MIDISetInputPort(true);
 }
 
 #define NUM_IDS 2048
@@ -1463,7 +1464,7 @@ bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not
       //printf("was: %d, is: %d. show: %d\n", instrument_window_was_visible, instrument_window_is_visible, show_message);
 
       if (show_message)
-        GFX_Message(NULL, "Instrument %s of type %s / %s does not have a native GUI", patch->name, plugin->type->type_name, plugin->type->name);
+        GFX_Message2(NULL, true, "Instrument %s of type %s / %s does not have a native GUI", patch->name, plugin->type->type_name, plugin->type->name);
       
     }
     
@@ -1711,7 +1712,7 @@ void API_instruments_call_regularly(void){
     struct Patch *patch = effect_monitor->patch;
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     if(plugin!=NULL){
-      float now = plugin->savable_effect_values[effect_monitor->effect_num];
+      float now = plugin->stored_effect_values_scaled[effect_monitor->effect_num];
       if (now != effect_monitor->last_value){
         effect_monitor->last_value = now;
         S7CALL(void_void,effect_monitor->func);

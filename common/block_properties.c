@@ -254,18 +254,18 @@ void Block_Properties_CurrPos(
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
 
-	reqtype=GFX_OpenReq(window,33,5,"Block Properties");
+	reqtype=GFX_OpenReq(window,33,5,"Edit block properties. Press return to keep old value.");
 
 	sprintf(seltext,"Number of tracks (now %d): ",wblock->block->num_tracks);
-	num_tracks=GFX_GetInteger(window,reqtype,seltext,2,200);
+	num_tracks=GFX_GetInteger(window,reqtype,seltext,2,200,true);
 	if(num_tracks==1) num_tracks=wblock->block->num_tracks;
 
 	sprintf(seltext,"Number of lines (now %d): ",wblock->block->num_lines);
-	num_lines=GFX_GetInteger(window,reqtype,seltext,2,2000);
+	num_lines=GFX_GetInteger(window,reqtype,seltext,2,2000,true);
 	if(num_lines==1) num_lines=wblock->block->num_lines;
 
 	sprintf(seltext,"Name (now: '%s'): ",wblock->block->name);
-	blockname=GFX_GetString(window,reqtype,seltext);
+	blockname=GFX_GetString(window,reqtype,seltext,true);
 	if(blockname!=NULL){
 		wblock->block->name=blockname;
 		BS_UpdateBlockList();

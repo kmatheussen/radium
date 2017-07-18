@@ -996,7 +996,7 @@ void SEQUENCER_init(struct Song *song){
   song->block_seqtrack = SEQTRACK_create(NULL);
   song->looping.start = 0;
 
-  if (ATOMIC_GET(is_starting_up))
+  if (g_is_starting_up)
     ATOMIC_SET(song->looping.end, 30 * 48000.0);
   else
     ATOMIC_SET(song->looping.end, 30 * MIXER_get_sample_rate());

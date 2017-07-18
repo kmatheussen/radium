@@ -89,6 +89,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define OnlyLeftShift(a) (a==EVENT_LEFTSHIFT)
 #define OnlyLeftAlt(a) (a==EVENT_LEFTALT)
 
+#define AnyModifierKeyPressed(a) (a!=0 && a!=EVENT_MOUSE_SEQUENCER2 && a!=EVENT_MOUSE_MIXER2 && a!=EVENT_MOUSE_EDITOR2 && a!=EVENT_MOUSE_MIXERSTRIPS2)
+
 
 
 struct TEvent{

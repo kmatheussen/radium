@@ -474,7 +474,7 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
           VECTOR_push_back(&v,midi_fxs_fullnames[lokke]);
 
 	for(;;){
-                selection=GFX_Menu(window,NULL,menutitle,v);
+                selection=GFX_Menu(window,NULL,menutitle,v,true);
 		if(-1==selection){
 			return FX_FAILED;
 		}
@@ -487,9 +487,9 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
 		if(midi_fx->effect_num==OTHER_CC){
 			midi_fx=talloc(sizeof(struct MIDI_FX));
 
-			reqtype=GFX_OpenReq(window,30,10,"Other CC select");
+			reqtype=GFX_OpenReq(window,30,10,"");
 
-			midi_fx->effect_num=GFX_GetInteger(window,reqtype,"CC >",0,127);
+			midi_fx->effect_num=GFX_GetInteger(window,reqtype,"CC >",0,127,true);
 			if(midi_fx->effect_num==-1){
 				GFX_CloseReq(window,reqtype);
 				return FX_FAILED;
@@ -503,7 +503,7 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
                                   vector_t v={0};
                                   VECTOR_push_back(&v,"7");
                                   VECTOR_push_back(&v,"14");
-                                  onlymsb=GFX_Menu(window,reqtype,"Resolution?",v);
+                                  onlymsb=GFX_Menu(window,reqtype,"Resolution?",v,true);
 				}
 				if(onlymsb==1){
 					midi_fx->effect_num+=128;
@@ -513,20 +513,17 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
 
 			if(isFXUsed(tid,midi_fx)) continue;
 
-			for(;;){
-				midi_fx->name=GFX_GetString(window,reqtype,"Name >");
-				if(midi_fx->name==NULL) continue;
-				for(lokke=0;lokke<(int)strlen(midi_fx->name);lokke++){
-					if(midi_fx->name[lokke]==':' || midi_fx->name[lokke]=='/'){
-						break;
-					}
-				}
-				if(lokke<(int)strlen(midi_fx->name)){
-					midi_fx->name=GFX_GetString(window,reqtype,"(Name can not contain ':' or '/'. Press return.)");
-				}else{
-					break;
-				}
-			}
+                      again:
+                        while(midi_fx->name==NULL)
+                          midi_fx->name=GFX_GetString(window,reqtype,"Name >",true);
+                                
+                        for(lokke=0;lokke<(int)strlen(midi_fx->name);lokke++){
+                          if(midi_fx->name[lokke]==':' || midi_fx->name[lokke]=='/'){
+                            midi_fx->name=GFX_GetString(window,reqtype,"(Name can not contain ':' or '/') >",true);
+                            goto again;
+                          }
+                        }
+
 			GFX_CloseReq(window,reqtype);
 			break;
 		}

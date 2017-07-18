@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDir>
 #include <QFileDialog>
 #include <QTabWidget>
+#include <QTextBrowser>
 #include <QTextDocumentFragment>
 #include <QSplitter>
 
@@ -91,27 +92,27 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 #define MOUSE_OVERRIDERS(classname)                                     \
   void mousePressEvent(QMouseEvent *event) override{                    \
     g_last_pressed_widget = this;                                       \
-    if(g_radium_runs_custom_exec) return;                               \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     if (_mouse_callback==NULL || !Gui::mousePressEvent(event))          \
       classname::mousePressEvent(event);                                \
   }                                                                     \
                                                                         \
   void mouseReleaseEvent(QMouseEvent *event) override {                 \
     g_last_released_widget = this;                                      \
-    if(g_radium_runs_custom_exec) return;                               \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     if (_mouse_callback==NULL || !Gui::mouseReleaseEvent(event))        \
       classname::mouseReleaseEvent(event);                              \
   }                                                                     \
                                                                         \
   void mouseMoveEvent(QMouseEvent *event) override{                     \
-    if(g_radium_runs_custom_exec) return;                               \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     if (_mouse_callback==NULL || !Gui::mouseMoveEvent(event))           \
       classname::mouseMoveEvent(event);                                 \
   }
 
 #define DOUBLECLICK_OVERRIDER(classname)                                \
   void mouseDoubleClickEvent(QMouseEvent *event) override{              \
-    if(g_radium_runs_custom_exec) return;                               \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     if (_doubleclick_callback==NULL)                                    \
       classname::mouseDoubleClickEvent(event);                          \
     else if(this==g_last_pressed_widget && this==g_last_released_widget) \
@@ -121,13 +122,13 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 #define KEY_OVERRIDERS(classname)                                       \
   void keyPressEvent(QKeyEvent *event) override{                        \
-    if(g_radium_runs_custom_exec) return;                               \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     if (_key_callback==NULL || !Gui::keyPressEvent(event))              \
       classname::keyPressEvent(event);                                  \
   }                                                                     \
                                                                         \
   void keyReleaseEvent(QKeyEvent *event) override{                      \
-    if(g_radium_runs_custom_exec) return;                               \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     if (_key_callback==NULL || !Gui::keyReleaseEvent(event))            \
       classname::keyReleaseEvent(event);                                \
   }
@@ -582,7 +583,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       R_ASSERT(g_guis.contains(_gui_num));
       R_ASSERT(g_guis.value(_gui_num) != NULL);
 
-      R_ASSERT(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
+      R_ASSERT_NON_RELEASE(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
 
       //printf("Deleting Gui %p (%d) (classname: %s)\n",this,(int)get_gui_num(), _class_name.toUtf8().constData());
 
@@ -920,7 +921,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       
       R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL || _background_color.isValid());
 
-      if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint){
+      if(!can_internal_data_be_accessed_questionmark()){
         maybePaintBackgroundColor(event);
         return;
       }
@@ -2213,6 +2214,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }GL_unlock();
     }
   };
+
+  MakeFocusSnifferClass(QTextBrowser);
   
   struct Line : MyFocusSnifferQLineEdit, Gui{
     Q_OBJECT;
@@ -2253,19 +2256,32 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
   };
   
+  //  struct TextEdit : FocusSnifferQTextEdit, Gui{
+  struct TextBrowser : FocusSnifferQTextBrowser, Gui{
+    Q_OBJECT;
+
+  public:
+    
+    TextBrowser(QString content)
+      : Gui(this)
+    {
+      setText(content);
+      setOpenExternalLinks(true);
+    }
+
+    OVERRIDERS(FocusSnifferQTextBrowser);
+  };
+
+
   struct TextEdit : FocusSnifferQTextEdit, Gui{
     Q_OBJECT;
 
   public:
     
-    TextEdit(QString content, bool read_only)
+    TextEdit(QString content)
       : Gui(this)
     {
-      if (read_only)
-        setText(content);
-      else
-        setPlainText(content);
-      setReadOnly(read_only);
+      setPlainText(content);
       setLineWrapMode(QTextEdit::NoWrap);
     }
 
@@ -2976,7 +2992,10 @@ int64_t gui_text(const_char* text, const_char* color, bool align_top, bool align
 
 int64_t gui_textEdit(const_char* content, bool read_only){
   //return -1;
-  return (new TextEdit(content, read_only))->get_gui_num();
+  if (read_only)
+    return (new TextBrowser(content))->get_gui_num();
+  else
+    return (new TextEdit(content))->get_gui_num();
 }
 
 int64_t gui_ratio(dyn_t ratio, bool wheelMainlyChangesNumerator, bool wheelDecrasesDenominatorIfNumeratorIsOne){

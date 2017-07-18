@@ -209,7 +209,7 @@ void UpdateTrackerWindow(struct Tracker_Windows *window){
     Redraw without flickering.
 ***************************************************************************/
 void DrawUpTrackerWindow(struct Tracker_Windows *window){
-  //printf("Draw up tracker. width: %d, height: %d\n",window->width,window->height);
+  //printf("  Draw up tracker 1. width: %d, height: %d\n",window->width,window->height);
 
   if(window->must_redraw==true)
     return;
@@ -260,7 +260,7 @@ void DrawUpTrackerWindow(struct Tracker_Windows *window){
 #endif
 
 	DrawWBlock(window,window->wblock);
-
+        
 	window->wblock->isgfxdatahere=true;
 
 #if !USE_OPENGL

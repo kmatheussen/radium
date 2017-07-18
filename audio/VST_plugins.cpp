@@ -909,7 +909,7 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
 
   plugin_type->num_effects = aeffect->numParams;
 
-  plugin_type->plugin_takes_care_of_savable_values = true;
+  //plugin_type->plugin_takes_care_of_savable_values = true;
     
   plugin_type->num_inputs = aeffect->numInputs;
   plugin_type->num_outputs = aeffect->numOutputs;
@@ -1348,7 +1348,7 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
       msgBox->setText("We have currently used more than 30 seconds searching for VST plugins. Continue for another 30 seconds?");
       msgBox->addButton(QMessageBox::Yes);
       msgBox->addButton(QMessageBox::No);
-      int ret = safeExec(msgBox);
+      int ret = safeExec(msgBox, false);
       if(ret==QMessageBox::Yes){
         time->restart();
       } else

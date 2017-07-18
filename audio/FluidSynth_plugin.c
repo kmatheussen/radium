@@ -230,7 +230,7 @@ static void send_raw_midi_message(struct SoundPlugin *plugin, int block_delta_ti
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
-  if(value_format==PLUGIN_FORMAT_SCALED){
+  if(value_format==EFFECT_FORMAT_SCALED){
     switch(effect_num){
     case EFF_PITCH:
       data->pitch = scale(value,0.0f,1.0f,0,16383);
@@ -280,7 +280,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
   Data *data = (Data*)plugin->data;
   //int val;
 
-  if(value_format==PLUGIN_FORMAT_SCALED){
+  if(value_format==EFFECT_FORMAT_SCALED){
     switch(effect_num){
     case EFF_PITCH:
       //fluid_synth_get_pitch_bend(data->synth,0,&val);
@@ -442,7 +442,7 @@ static void *create_data(const wchar_t *filename, float samplerate){
     return NULL;
   }
 
-  const wchar_t *something = OS_loading_get_resolved_file_path(filename);
+  const wchar_t *something = OS_loading_get_resolved_file_path(filename, false); // program_state_is_valid=false, might probably be.
   if (something==NULL){
     delete_data(data);
     return NULL;

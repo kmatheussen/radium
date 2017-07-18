@@ -263,8 +263,8 @@ namespace cvs{
       }
       void paintEvent ( QPaintEvent * ev ) override {
         TRACK_PAINT();
-        
-        if(g_radium_runs_custom_exec) return;
+
+        RETURN_IF_DATA_IS_INACCESSIBLE();
         
         QPainter qp(this);
         MyPainter p(&qp);
@@ -274,7 +274,7 @@ namespace cvs{
         mywidget->repaint(&p);
       }
       virtual void resizeEvent ( QResizeEvent * event ){
-        if(g_radium_runs_custom_exec) return;
+        RETURN_IF_DATA_IS_INACCESSIBLE();
         mywidget->resized();
       }
     };
@@ -330,7 +330,7 @@ namespace cvs{
       MyQTimer(MyTimer *mytimer) : mytimer(mytimer) {}
 
       void timerEvent(QTimerEvent * e){ // virtual method from QTimer
-        if(g_radium_runs_custom_exec) return;
+        RETURN_IF_DATA_IS_INACCESSIBLE();
         mytimer->timer();
       }
     };

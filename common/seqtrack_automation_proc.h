@@ -17,7 +17,7 @@ extern LANGSPEC int SEQTRACK_AUTOMATION_add_node(struct SeqtrackAutomation *seqt
 extern LANGSPEC void SEQTRACK_AUTOMATION_delete_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum);
 extern LANGSPEC void SEQTRACK_AUTOMATION_set_curr_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum);
 extern LANGSPEC void SEQTRACK_AUTOMATION_cancel_curr_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum);
-extern LANGSPEC void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqtrackAutomation *seqtrackautomation, int automationnum);
+extern LANGSPEC void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, int automationnum);
 extern LANGSPEC void SEQTRACK_AUTOMATION_cancel_curr_automation(void);
 extern LANGSPEC int SEQTRACK_AUTOMATION_get_curr_automation(struct SeqtrackAutomation *seqtrackautomation);
 extern LANGSPEC void SEQTRACK_AUTOMATION_set(struct SeqTrack *seqtrack, int automationnum, int nodenum, double seqtime, double value, int logtype);

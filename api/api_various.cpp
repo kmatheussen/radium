@@ -491,7 +491,7 @@ void splitTrackIntoMonophonicTracks(int tracknum, int blocknum, int windownum){
   if(wtrack==NULL) return;
 
   if (TRACK_split_into_monophonic_tracks(window, wblock, wtrack)==false)
-    GFX_Message(NULL, "Track #%d is already monophonic", tracknum);
+    GFX_Message2(NULL, true, "Track #%d is already monophonic", tracknum);
 }
   
 void splitBlock(int windownum){
@@ -1927,7 +1927,7 @@ bool doLockJuceWhenSwappingOpenGL(void){
         VECTOR_push_back(&v,"OK");
         int dont_show = VECTOR_push_back(&v,"Don't show this message again.");
 
-        int result = GFX_Message(&v, "Warning: the \"Don't run plugin GUI code when swapping OpenGL\" option is probably not necessary anymore.\n\nIt might also reduce graphical performance.");
+        int result = GFX_Message2(&v, true, "Warning: the \"Don't run plugin GUI code when swapping OpenGL\" option is probably not necessary anymore.\n\nIt might also reduce graphical performance.");
 
         if (result==dont_show)
           SETTINGS_write_bool("show_lock_juce_when_swapping_opengl_warning", false);

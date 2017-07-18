@@ -431,7 +431,7 @@ void GFX_color_dialog(const char *initial_color, int64_t parentguinum, func_t *c
   safeShow(color_dialog);
   
   #if 0
-  int ret = safeExec(&color_dialog);  
+  int ret = safeExec(&color_dialog, true);  
 
   if (ret==QDialog::Rejected){
     
@@ -976,7 +976,7 @@ static void setColor(enum ColorNums num, const QRgb &rgb){
 
 void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
   EditorWidget *editorwidget=(EditorWidget *)tvisual->os_visual.widget;
-  if(ATOMIC_GET(is_starting_up))
+  if(g_is_starting_up)
     return;
   return;
 #if 0

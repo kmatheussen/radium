@@ -44,24 +44,46 @@ static int xi_get_bytes_per_frame(disk_t *file, int sample_num){
 }
 
 static int xi_get_num_frames(disk_t *file, int sample_num){
+  /*
+  char size_chars[4] = {0};
+  
   DISK_set_pos(file,0x12a + (0x28*sample_num));
-  return read_le32int(file) / xi_get_bytes_per_frame(file, sample_num);
+
+  if(DISK_read_binary(file, size_chars, 4) != 4)
+    fprintf(stderr,"Reading file failed\n");
+  */
+  
+  DISK_set_pos(file,0x12a + (0x28*sample_num));
+    
+  int numbytes = read_le32int(file);
+  int bytes_per_frame = xi_get_bytes_per_frame(file, sample_num);
+  int num_frames = numbytes / bytes_per_frame;
+
+  /*
+  printf("%x %x %x %x: %d\n",(unsigned int)size_chars[0],(unsigned int)size_chars[1],(unsigned int)size_chars[2],(unsigned int)size_chars[3], get_le_32(size_chars));
+  printf("numbytes: %d, bytes_per_frame: %d, num_frames: %d\n", numbytes, bytes_per_frame, num_frames);
+  //getchar();
+  */
+  
+  return num_frames;
 }
 
 static int xi_get_loop_start(disk_t *file, int sample_num){
   DISK_set_pos(file,0x12a + (0x28*sample_num) + 4);
-  return read_le32int(file) / xi_get_bytes_per_frame(file, sample_num);
+  int num_bytes = read_le32int(file);
+  return num_bytes / xi_get_bytes_per_frame(file, sample_num);
 }
 
 static int xi_get_loop_end(disk_t *file, int sample_num){
   int start = xi_get_loop_start(file,sample_num);
   DISK_set_pos(file,0x12a + (0x28*sample_num) + 8);
-  return start + (read_le32int(file) / xi_get_bytes_per_frame(file, sample_num));
+  int num_bytes = read_le32int(file);
+  return start + (num_bytes / xi_get_bytes_per_frame(file, sample_num));
 }
 
 static float xi_get_sample_volume(disk_t *file, int sample_num){
   DISK_set_pos(file,0x12a + (0x28*sample_num) + 12);
-  return read_8int(file) / (float)0x40;
+  return (float)read_8int(file) / (float)0x40;
 }
 
 
@@ -87,15 +109,16 @@ static int xi_get_relnote(disk_t *file, int sample_num){
 static void xi_seek_to_sample(disk_t *file, int sample_num){
   int num_samples=xi_get_num_samples(file);
 
-  DISK_set_pos(file,0x12a + (0x28*num_samples));
+  int64_t pos = 0x12a + (0x28*num_samples);
 
   int i;
   for(i=0;i<sample_num;i++){
-    long pos = DISK_pos(file);
     int num_frames = xi_get_num_frames(file,i);
     int bytes_per_frame = xi_get_bytes_per_frame(file,i);
-    DISK_set_pos(file,pos + (num_frames*bytes_per_frame));
+    pos += (num_frames*bytes_per_frame);
   }
+
+  DISK_set_pos(file, pos);
 }
 
 #if 0
@@ -136,15 +159,19 @@ static float *xi_get_sample(disk_t *file, int sample_num){
   xi_seek_to_sample(file, sample_num);
 
   if(bits_per_frame==16){
-    int16_t *s16=(int16_t*)V_calloc(sizeof(int16_t),num_frames);
+    int num_bytes = sizeof(int16_t) * num_frames;
+    int16_t *s16=(int16_t*)V_calloc(1, num_bytes);
     if(s16==NULL){
-      GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*2);
+      GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_bytes);
       return sample;
     }
-    if(DISK_read_binary(file, s16, 2*num_frames) != 2*num_frames)
-      fprintf(stderr,"Reading file failed\n");
+    int64_t num_bytes_read = DISK_read_binary(file, s16, num_bytes);
+    if(num_bytes_read != num_bytes){
+      GFX_addMessage(talloc_format("Reading file failed. Expected %d bytes, read %d bytes.\n", num_bytes, (int)num_bytes_read));
+    }
+    
     convert_16_bit_little_endian_to_native(s16,num_frames);
-
+    
     int16_t value=0; // must be same type as data since it wraps around
     int i;
     for(i=0;i<num_frames;i++){
@@ -200,6 +227,7 @@ static double xi_get_frequency(disk_t *file, int note, int sample_num){
 // Also, the interface for loading xi intruments with libsndfile is currently too limited, so we have to parse the files manually anyway.
 
 bool load_xi_instrument(Data *data,const wchar_t *filename, bool set_loop_on_off){
+  
   EVENTLOG_add_event(talloc_format("load_xi_instrument -%s-", STRING_get_chars(filename)));
   bool ret=false;
 
@@ -250,16 +278,17 @@ bool load_xi_instrument(Data *data,const wchar_t *filename, bool set_loop_on_off
       }
 
       sample->sound = xi_get_sample(file, sample_num);
+      
       if(sample->sound==NULL)
         goto exit;
 
       int note;
       for(note=0;note<128;note++){
         sample->frequency_table[note] = xi_get_frequency(file, note, sample_num);
-      }
+      }      
     }
   }
-
+  
   {
     int note_num;
     for(note_num=0;note_num<128;note_num++){

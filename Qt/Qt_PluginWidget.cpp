@@ -223,7 +223,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
     
     MyQSlider *slider = paramWidget->_slider;
     if (slider != NULL){
-      SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->automation_values[effect_num]);
+      SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->slider_automation_values[effect_num]);
     }
   }
 

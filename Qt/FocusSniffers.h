@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QListWidget>
 #include <QTableWidgetItem>
 #include <QKeyEvent>
+#include <QComboBox>
 //#include <QFileDialog>
 
 #include "helpers.h"
@@ -75,6 +76,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //MakeFocusSnifferClass(QSpinBox);
 //MakeFocusSnifferClass(QDoubleSpinBox);
 MakeFocusSnifferClass(QLineEdit);
+//MakeFocusSnifferClass(QComboBox);
 //MakeFocusSnifferClass(QFileDialog);
 //MakeFocusSnifferClass(QTextEdit);
 //MakeFocusSnifferClass(QListWidget);
@@ -342,6 +344,51 @@ class FocusSnifferQListWidget : public GL_PauseCaller, public QListWidget{
       GL_unlock();                                                      
     }                                                                   
     QListWidget::keyPressEvent(event_);                                        
+  }                                                                     
+};
+
+
+class FocusSnifferQComboBox : public GL_PauseCaller, public QComboBox{
+ public:                                                               
+  bool dontsniff;                                                       
+ FocusSnifferQComboBox(QWidget *parent_, const char *name = "gakk")  
+   : QComboBox(parent_),dontsniff(true)                                     
+    {                                                                   
+    }                                                                   
+  void focusInEvent ( QFocusEvent *e ){                                 
+    printf("combo Got focusInEvent\n");
+    if(dontsniff==false)
+      obtain_keyboard_focus();
+    GL_lock();
+    QComboBox::focusInEvent(e);                                             
+    GL_unlock();
+  }                                                                     
+  void focusOutEvent ( QFocusEvent *e ){                                
+    printf("combo Got focusOutEvent\n");
+    if(dontsniff==false) {
+      release_keyboard_focus();
+    }                                                                   
+    GL_lock();
+    QComboBox::focusOutEvent(e);                                            
+    GL_unlock();
+    set_editor_focus();
+  }                                                                     
+  void hideEvent ( QHideEvent *e ){                                
+    //printf("Got hideEvent\n");
+    if(dontsniff==false) {
+      release_keyboard_focus();
+    }                                                                   
+    QComboBox::hideEvent(e);
+    set_editor_focus();
+  }                                                                     
+  void keyPressEvent ( QKeyEvent * event_ ){                             
+    if(event_->key()==Qt::Key_Escape){                                   
+      GL_lock();                                                        
+      clearFocus();
+      set_editor_focus();
+      GL_unlock();                                                      
+    }                                                                   
+    QComboBox::keyPressEvent(event_);                                        
   }                                                                     
 };
 

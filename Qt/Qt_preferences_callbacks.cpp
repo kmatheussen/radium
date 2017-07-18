@@ -1099,7 +1099,7 @@ public slots:
   // MIDI
 
   void on_set_input_port_clicked(){
-    MIDISetInputPort();
+    MIDISetInputPort(true);
   }
 
   void on_use0x90_toggled(bool val){
@@ -1176,7 +1176,7 @@ void PREFERENCES_open(void){
     g_static_toplevel_widgets.push_back(g_preferences_widget);
   }
 
-  safeShowOrExec(g_preferences_widget);
+  safeShowOrExec(g_preferences_widget, true);
 }
 
 void PREFERENCES_open_MIDI(void){
@@ -1196,7 +1196,7 @@ void PREFERENCES_update(void){
 
 void OS_VST_config(struct Tracker_Windows *window){
 #if defined(FOR_MACOSX)
-  GFX_Message(NULL,"No VST options to edit on OSX");
+  GFX_addMessage("No VST options to edit on OSX");
 #else
   //EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
   Vst_paths_widget *vst_paths_widget=new Vst_paths_widget(g_main_window); // I'm not quite sure i it's safe to make this one static. It seems to work, but shouldn't the dialog be deleted when destroying the window? Not having it static is at least safe, although it might leak some memory.

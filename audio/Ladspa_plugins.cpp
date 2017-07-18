@@ -406,7 +406,7 @@ static void set_effect_value(SoundPlugin *plugin, int time, int effect_num, floa
   TypeData *type_data = (TypeData*)type->data;
   Data *data = (Data*)plugin->data;
 
-  if(value_format==PLUGIN_FORMAT_SCALED){
+  if(value_format==EFFECT_FORMAT_SCALED){
 
     LADSPA_PortRangeHintDescriptor hints = type_data->hint_descriptors[effect_num];
 
@@ -449,7 +449,7 @@ static float get_effect_value(SoundPlugin *plugin, int effect_num, enum ValueFor
          type_data->max_values[effect_num]);
 #endif
 
-  if(value_format==PLUGIN_FORMAT_SCALED){
+  if(value_format==EFFECT_FORMAT_SCALED){
     const LADSPA_PortRangeHintDescriptor hints = type_data->hint_descriptors[effect_num];
 
     if(LADSPA_IS_HINT_LOGARITHMIC(hints)){

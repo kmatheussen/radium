@@ -12,11 +12,10 @@ public:
     // horror
     void timerEvent(QTimerEvent * e){
 
-      if (ATOMIC_GET(is_starting_up))
+      if (g_is_starting_up)
         return;
 
-      if (g_radium_runs_custom_exec==true)
-        return;
+      RETURN_IF_DATA_IS_INACCESSIBLE();
 
       //printf("instrwi: %p\n",instruments_widget);
       

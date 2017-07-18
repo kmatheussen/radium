@@ -343,11 +343,11 @@ static struct PatchData *getPatchData(struct Patch *patch){
   return patch->patchdata;
 }
 
-void MIDISetPatchData(struct Patch *patch, const char *key, const char *value){
+void MIDISetPatchData(struct Patch *patch, const char *key, const char *value, bool program_state_is_valid){
   if(false){
 
   }else if(!strcasecmp(key,"port")){
-    getPatchData(patch)->midi_port = MIDIgetPort(NULL, NULL, value==NULL ? NULL : !strcmp("",value) ? NULL : value);
+    getPatchData(patch)->midi_port = MIDIgetPort(NULL, NULL, value==NULL ? NULL : !strcmp("",value) ? NULL : value, program_state_is_valid);
     printf("Sat patchdata(%s)->midi_port to %s\n",patch->name,value);
 
   }else if(!strcasecmp(key,"channel")){
@@ -363,7 +363,7 @@ void MIDISetPatchData(struct Patch *patch, const char *key, const char *value){
     getPatchData(patch)->preset = atoi(value);
 
   } else
-    GFX_Message(NULL, "MIDISetPatchData: Unknown key \"%s\" for midi instrument", key);
+    GFX_Message2(NULL, program_state_is_valid, "MIDISetPatchData: Unknown key \"%s\" for midi instrument", key);
 }
 
 static char *MIDIGetPatchData(struct Patch *patch, const char *key){
@@ -436,7 +436,7 @@ static struct PatchData *createPatchData(void) {
     char *portname = MIDI_getDefaultOutputPort();
     if (portname==NULL)
       portname = "default";
-    patchdata->midi_port = MIDIgetPort(NULL,NULL,portname);
+    patchdata->midi_port = MIDIgetPort(NULL,NULL,portname,false);
   }
 
   return patchdata;
@@ -487,7 +487,7 @@ char **MIDI_getPortNames(int *retsize, bool is_input){
 
 extern struct Root *root;
 
-char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool is_input){
+char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool is_input, bool program_state_is_valid){
   int num_ports;
 
   char **portnames=MIDI_getPortNames(&num_ports, is_input);
@@ -506,23 +506,23 @@ char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool 
   VECTOR_push_back(&v,"Create new port");
 #endif
 
-  int sel=GFX_Menu(window,reqtype,"Select port",v);
+  int sel=GFX_Menu(window,reqtype,"Select port",v,program_state_is_valid);
   if(sel==-1)
     return NULL;
 
   if(sel==num_ports)
-    return GFX_GetString(NULL,reqtype,"Name: ");
+    return GFX_GetString(NULL,reqtype,"Name: ",program_state_is_valid);
 
   return portnames[sel];
 }
 
 // This function must never return NULL.
-struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,const char *name){
+struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,const char *name,bool program_state_is_valid){
   //printf("    Calling MIDIgetPort -%s-\n", name);
   bool created_new_port = false;
 
   while(name==NULL){
-    name = MIDIrequestPortName(window,reqtype,false);
+    name = MIDIrequestPortName(window,reqtype,false,program_state_is_valid);
   }
 
   struct MidiPort *midi_port = g_midi_ports;
@@ -556,10 +556,10 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,cons
       int yes = VECTOR_push_back(&v, "Yes");
       int no = VECTOR_push_back(&v, "No");
 
-      int result = GFX_Message(&v, "Are you sure? Port \"%s\" is an input port. If you send MIDI data to this port, you risk starting a recursive connection that's impossible to stop.", midi_port->name);
+      int result = GFX_Message2(&v, program_state_is_valid, "Are you sure? Port \"%s\" is an input port. If you send MIDI data to this port, you risk starting a recursive connection that's impossible to stop.", midi_port->name);
 
       if (result!=yes)
-        return MIDIgetPort(window, reqtype, NULL);
+        return MIDIgetPort(window, reqtype, NULL, program_state_is_valid);
 
       (void)no;
     }
@@ -589,29 +589,31 @@ void MIDI_InitPatch(struct Patch *patch) {
   patch->is_usable = true;
 }
 
-int MIDIgetPatch(
+/*
+static int MIDIgetPatch(
 	struct Tracker_Windows *window,
 	ReqType reqtype,
 	const struct Tracks *track,
-	struct Patch *patch
+	struct Patch *patch,
+        bool program_state_is_valid
 ){
         MIDI_InitPatch(patch);
 
-	struct MidiPort *midi_port = MIDIgetPort(window,reqtype,NULL);
+	struct MidiPort *midi_port = MIDIgetPort(window,reqtype,NULL,program_state_is_valid);
 
 	struct PatchData *patchdata=getPatchData(patch);
         patchdata->midi_port = midi_port;
 
-        patchdata->channel=GFX_GetInteger(window,reqtype,"Channel: (1-16) ",1,16);
+        patchdata->channel=GFX_GetInteger(window,reqtype,"Channel: (1-16) ",1,16,program_state_is_valid);
         if(patchdata->channel>0)
           patchdata->channel--;
 
-	patchdata->preset=GFX_GetInteger(window,reqtype,"Preset: (1-128) ",1,128);
+	patchdata->preset=GFX_GetInteger(window,reqtype,"Preset: (1-128) ",1,128,program_state_is_valid);
         patchdata->preset--;
 
 	return PATCH_SUCCESS;
 }
-
+*/
 
 
 /******************* instrument ***********************/
@@ -724,7 +726,7 @@ int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
   instrument->getFxNames       = MIDI_getFxNames;
   instrument->createFX         = MIDI_createFX;
   instrument->getFX            = &MIDIgetFX;
-  instrument->getPatch         = &MIDIgetPatch;
+  //instrument->getPatch         = &MIDIgetPatch;
   instrument->CloseInstrument  = MIDICloseInstrument;
   instrument->StopPlaying      = MIDIStopPlaying;
 

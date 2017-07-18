@@ -125,7 +125,7 @@ void SetLPBCurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	int curr_realline=wblock->curr_realline;
 	const Place *place= &wblock->reallines[curr_realline]->l.p;
-	int newlpb=GFX_GetInteger(window,NULL,"New LPB: >",1,99);
+	int newlpb=GFX_GetInteger(window,NULL,"New LPB: >",1,99,true);
 	if(newlpb<=0) return;
 
 	ADD_UNDO(LPBs_CurrPos(window));

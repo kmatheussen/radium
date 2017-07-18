@@ -61,13 +61,13 @@ extern struct Root *root;
 #endif //  TEST_MAIN
 
 static const int x_margin = 25;
-static const int y_margin = 15;
+static const int y_margin = 10;
 
 namespace{
 
-struct MyQFrame : public QFrame{
+struct MyQFrame : public QDialog{
   MyQFrame(QWidget *parent)
-    : QFrame(parent)
+    : QDialog(parent)
   {}
 
   QPointer<QWidget> _widget_to_get_focus_when_shown;
@@ -79,12 +79,12 @@ struct MyQFrame : public QFrame{
         _widget_to_get_focus_when_shown->setFocus();
       }GL_unlock();
     }
-    QFrame::showEvent(e);
+    QDialog::showEvent(e);
   }
 };
   
 struct MyReqType{
-  MyQFrame *frame;
+  QPointer<MyQFrame> frame;
   QString label_text;
   QString default_value;
   int y;
@@ -93,12 +93,8 @@ struct MyReqType{
 
 }
 
-
-// tvisual might be NULL
-ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title){
-  obtain_keyboard_focus_counting(); // disable X11 keyboard sniffer
-
-  MyReqType *reqtype = new MyReqType();
+static void init_reqtype(MyReqType *reqtype){
+  R_ASSERT(reqtype->frame==NULL);
   
   GL_lock(); {
     GL_pause_gl_thread_a_short_while();
@@ -106,7 +102,7 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
     reqtype->frame = new MyQFrame(get_current_parent(true));
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
-    set_window_flags(reqtype->frame, true);
+    set_window_flags(reqtype->frame, true); // 'true' means modal window.
     
     if (reqtype->frame->layout() != NULL){
       reqtype->frame->layout()->setSpacing(10);
@@ -120,11 +116,25 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
     reqtype->widgets_disabled = false;
   
   }GL_unlock();
+}
 
+// tvisual might be NULL (tvisual is not used, it should be replaced by "int64_t parentguinum")
+ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title){
+  obtain_keyboard_focus_counting(); // disable X11 keyboard sniffer
+  
+  MyReqType *reqtype = new MyReqType();
+
+  init_reqtype(reqtype);
+
+  if (strcmp(title,"")){
+    GFX_WriteString(reqtype, title);
+    GFX_WriteString(reqtype, "\n");
+  }
+    
   return reqtype;
 }
 
-// tvisual might be NULL
+// tvisual might be NULL  (tvisual is not used, it should be replaced by "int64_t parentguinum")
 void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
   //EditorWidget *editor = static_cast<EditorWidget*>(tvisual->os_visual.widget);
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
@@ -162,7 +172,7 @@ void GFX_SetString(ReqType das_reqtype,const char *text){
 namespace{
   class MyQLineEdit : public FocusSnifferQLineEdit {
   public:
-    MyQLineEdit(QFrame *parent)
+    MyQLineEdit(QWidget *parent)
       : FocusSnifferQLineEdit(parent)
       , gotit(false)
     {
@@ -188,13 +198,6 @@ namespace{
   };
 }
 
-static MyQLineEdit *g_edit;
-void gotchar(char c){
-  if(c=='\n')
-    g_edit->gotit=true;
-  else
-    g_edit->insert(QString(c));
-}
 
 static void legalize_pos(MyReqType *reqtype){
   QWidget *w = reqtype->frame;
@@ -218,31 +221,58 @@ static void legalize_pos(MyReqType *reqtype){
       
       
 
-void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
+void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool program_state_is_valid){
 
+  /*
+    // Can not do this since the caller may require an answer, and then just ask again and again until it gets one. (it's also very unlikely that g_radium_runs_custom_exec==true
+  if (g_radium_runs_custom_exec==true){
+    R_ASSERT_NON_RELEASE(false);
+    snprintf(buffer, bufferlength-1, "");
+    return;
+  }
+  */
+  
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
 
   int x = x_margin;
 
-  int last_height = 0;
-  QStringList lines = reqtype->label_text.split('\n');
-  Q_FOREACH (QString line, lines) {
-    reqtype->y += last_height;
-    GL_lock(); {
-      QLabel *label = new QLabel(line,reqtype->frame);
-      label->move(x_margin,reqtype->y + 3);    
-      label->show();
-      legalize_pos(reqtype);
-      x = x_margin + label->width();
-      last_height = label->height();
-    }GL_unlock();
-  }
-
-  MyQLineEdit *edit = new MyQLineEdit(reqtype->frame);
+  QPointer<MyQLineEdit> edit = new MyQLineEdit(reqtype->frame);
   edit->insert(reqtype->default_value);
-  edit->move(x + 5, reqtype->y);
   edit->adjustSize();
   edit->updateGeometry();
+
+  float spacing = 1.5;
+  
+  QStringList lines = reqtype->label_text.split('\n', QString::KeepEmptyParts);
+  
+  if (lines.size() > 0 ){
+    for(int i = 0 ; i < lines.size() ; i++){
+      QString line = lines[i];
+      printf("line: -%s-\n", line.toUtf8().constData());
+
+      QLabel *label;
+      
+      GL_lock(); {
+        label = new QLabel(line,reqtype->frame);
+        label->move(x_margin,reqtype->y + 3);
+        label->show();
+        label->adjustSize();
+        legalize_pos(reqtype);
+      }GL_unlock();
+
+      x = x_margin + label->width() + 5;
+
+      if(lines.size() > 1 && i==lines.size()-2)
+        reqtype->y += edit->height() * spacing; // i.e. i == second last line.
+      else if (i < lines.size() - 1)
+        reqtype->y += label->height() * spacing;
+    
+    }
+  } else {
+    
+  }
+
+  edit->move(x, reqtype->y);
 
   reqtype->frame->_widget_to_get_focus_when_shown = edit;
   
@@ -263,7 +293,7 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
       moveWindowToCentre(reqtype->frame);
     }
     
-    reqtype->frame->show();
+    safeShow(reqtype->frame);
     
   } else {
 
@@ -288,26 +318,34 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
 
 #if USE_QT_VISUAL
   QString text = edit->text();
-
-  g_edit = edit;
-  //gotchar('a');
-  //gotchar('b');
-
-  {
-    g_and_its_not_safe_to_paint = false;
+  int edit_height = edit->height();
     
-    radium::ScopedExec scoped_exec;
-
+  {
+    radium::ScopedExec scoped_exec(program_state_is_valid);
     
     while(edit->gotit==false){
       // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
       GL_lock();{
-        QCoreApplication::processEvents();
+        QApplication::processEvents(QEventLoop::ExcludeSocketNotifiers);
       }GL_unlock();
+
+
+      // Frame is deleted if the parent is deleted. Shouldn't happen though, but we check just in case.
+      //
+      if (reqtype->frame==NULL){
+#if !defined(RELEASE)
+        fprintf(stderr, "\n\n\n  REQTYPE->FRAM == NULL (press return to continue)\n\n\n");
+        getchar();
+#endif
+        init_reqtype(reqtype); // recreate the frame, for next time.
+        break;
+      }
       
       //GTK_HandleEvents();
-      if(text!=edit->text()){
-        text = edit->text();
+      QString new_text = edit->text();
+      
+      if(text!=new_text){
+        text = new_text;
         printf("text: \"%s\"\n",text.toUtf8().constData());
       }
       
@@ -316,18 +354,19 @@ void GFX_ReadString(ReqType das_reqtype,char *buffer,int bufferlength){
       
       msleep(10);
     }
-
-    g_and_its_not_safe_to_paint = true;
   }
   
 #endif
 
-  edit->setEnabled(false);
-
+  if (edit != NULL)
+    edit->setEnabled(false);
+  
   reqtype->label_text = "";
-  reqtype->y = reqtype->y + edit->height() + 10;
+  
+  //if (lines.size()==0)
+  reqtype->y = reqtype->y + edit_height + 5;
 
-  snprintf(buffer,bufferlength-1,"%s",edit->text().toUtf8().constData());
+  snprintf(buffer,bufferlength-1,"%s",text.toUtf8().constData());
   printf("Got: \"%s\"\n",buffer);
 }
 

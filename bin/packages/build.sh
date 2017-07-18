@@ -9,9 +9,9 @@ unset CPPFLAGS
 unset LDFLAGS
 unset CXXFLAGS
 
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -Wno-misleading-indentation -fPIC"
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC"
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC"
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -Wno-misleading-indentation -fPIC -fno-strict-aliasing"
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing"
 
 
 if ! env |grep RADIUM_QT_VERSION ; then
@@ -133,7 +133,7 @@ rm -fr fluidsynth-1.1.6
 tar xvzf fluidsynth-1.1.6.tar.gz
 cd fluidsynth-1.1.6
 make clean
-CFLAGS="-O3" CPPFLAGS="-O3" CXXFLAGS="-O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
+CFLAGS="-fno-strict-aliasing -O3 -DDEFAULT_SOUNDFONT=\\\"\\\"" CPPFLAGS="-fno-strict-aliasing -O3" CXXFLAGS="-fno-strict-aliasing -O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
 # --enable-debug
 make -j3
 cd ..
@@ -142,31 +142,10 @@ rm -fr libgig
 tar xvzf libgig.tar.gz
 cd libgig
 make clean
-CFLAGS="-O3" CPPFLAGS="-O3" CXXFLAGS="-O3" ./configure
-make -j3
+CFLAGS="-O3 -fno-strict-aliasing" CPPFLAGS="-O3 -fno-strict-aliasing" CXXFLAGS="-O3 -fno-strict-aliasing" ./configure
+CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j3
 cd ..
 
-
-# faust, debug
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -Wno-misleading-indentation -fPIC -D_GLIBCXX_USE_CXX11_ABI=0"
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC -D_GLIBCXX_USE_CXX11_ABI=0"
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC -D_GLIBCXX_USE_CXX11_ABI=0"
-export LDFLAGS="-fsanitize=address"
-cd faust2
-make -j `nproc`
-mv compiler/libfaust.a libfaust_debug.a
-make clean
-cd ..
-
-#faust, release
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -Wno-misleading-indentation -fPIC  -D_GLIBCXX_USE_CXX11_ABI=0"
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC  -D_GLIBCXX_USE_CXX11_ABI=0"
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC  -D_GLIBCXX_USE_CXX11_ABI=0"
-export LDFLAGS=""
-cd faust2
-make -j `nproc`
-mv libfaust_debug.a compiler/
-cd ..
 
 # QScintilla
 rm -fr QScintilla_gpl-2.9.2
@@ -185,7 +164,7 @@ then
     tar xvzf qtstyleplugins-src-5.0.0.tar.gz
     cd qtstyleplugins-src-5.0.0/
     `../../../find_moc_and_uic_paths.sh qmake`
-    make -j3
+    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j3
     cd ../
 fi
 
@@ -206,11 +185,36 @@ then
     cd libxcb-1.12
     patch -p1 <../libxcb-1.12.patch
     export PKG_CONFIG_PATH=`pwd`/../xcb-proto-1.12/install/lib/pkgconfig:$PKG_CONFIG_PATH
-    ./configure PYTHON=`which python2`
-    make
+    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" ./configure PYTHON=`which python2`
+    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make
     cd ..
     
 fi
+
+
+# Build faust last since we reset the build flags.
+
+# faust, debug
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -Wno-misleading-indentation -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
+export LDFLAGS="-fsanitize=address"
+cd faust2
+make -j `nproc`
+mv compiler/libfaust.a libfaust_debug.a
+make clean
+cd ..
+
+#faust, release
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -Wno-misleading-indentation -fPIC  -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC  -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC  -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
+export LDFLAGS=""
+cd faust2
+make -j `nproc`
+mv libfaust_debug.a compiler/
+cd ..
+
 
 
 touch deletemetorebuild

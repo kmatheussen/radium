@@ -1038,8 +1038,8 @@ char *notetext_from_notenum(float notenumf){
 
 static float request_notenum(struct Tracker_Windows *window, const char *title, float old_notenum){
   float notenum = -1;
-  
-  ReqType reqtype=GFX_OpenReq(window,30,12,"Set Pitch");
+
+  ReqType reqtype=GFX_OpenReq(window,30,12,"");
 
   if (old_notenum>0.0f)
     GFX_SetString(reqtype, notetext_from_notenum(old_notenum));
@@ -1051,7 +1051,8 @@ static float request_notenum(struct Tracker_Windows *window, const char *title, 
     char *notetext = GFX_GetString(
                                    window,
                                    reqtype,
-                                   temp
+                                   temp,
+                                   true
                                    );
     if(notetext==NULL)
       break;
@@ -1068,42 +1069,55 @@ static float request_notenum(struct Tracker_Windows *window, const char *title, 
 
 static void r_add_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, const Place *p){
   float notenum = request_notenum(window, "Add pitch", -1);
-  if(notenum > 0.0f)
-    AddPitch(window, wblock, wtrack, note, p, notenum);
+  if(notenum > 0.0f){
+    ADD_UNDO(Notes_CurrPos(window));
+    if (AddPitch(window, wblock, wtrack, note, p, notenum)==NULL)
+      UNDO_CANCEL_LAST_UNDO();
+  }
 }
 
 static void r_add_last_pitch(struct Tracker_Windows *window, struct Notes *note){
   float notenum = request_notenum(window, "Add last pitch", -1);
-  if(notenum > 0.0f)
+  if(notenum > 0.0f){
+    ADD_UNDO(Notes_CurrPos(window));
     note->pitch_end = notenum;
+  }
 }
 
 static void r_add_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const Place *p){
-  float notenum = request_notenum(window, "Add note", -1);
+  float notenum = request_notenum(window, "New note", -1);
   
-  if(notenum > 0.0f)
+  if(notenum > 0.0f){
+    ADD_UNDO(Notes_CurrPos(window));
     InsertNote(wblock, wtrack, p, NULL, notenum, NOTE_get_velocity(wtrack->track), false);
+  }
 }
 
 static void r_edit_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Pitches *pitch){
   float notenum = request_notenum(window, "Edit pitch", pitch->note);
   
-  if(notenum > 0.0f)
+  if(notenum > 0.0f){
+    ADD_UNDO(Notes_CurrPos(window));
     pitch->note = notenum; // lock not necessary
+  }
 }
 
 static void r_edit_end_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note){
   float notenum = request_notenum(window, "Edit last pitch", note->pitch_end);
   
-  if(notenum > 0.0f)
+  if(notenum > 0.0f){
+    ADD_UNDO(Notes_CurrPos(window));
     note->pitch_end = notenum; // lock not necessary
+  }
 }
 
 static void r_edit_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note){
   float notenum = request_notenum(window, "Edit note", note->note);
   
-  if(notenum > 0.0f)
+  if(notenum > 0.0f){
+    ADD_UNDO(Notes_CurrPos(window));
     note->note = notenum; // lock not necessary
+  }
 }
 
 

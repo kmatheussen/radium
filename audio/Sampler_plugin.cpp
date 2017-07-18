@@ -1380,7 +1380,7 @@ static bool can_crossfade(Data *data){
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
-  if(value_format==PLUGIN_FORMAT_SCALED){
+  if(value_format==EFFECT_FORMAT_SCALED){
     switch(effect_num){
     case EFF_STARTPOS:
       //printf("    Samp: start pos to %f at %d\n", value , time);
@@ -1453,13 +1453,13 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       data->p.tremolo_speed = scale(value,
                                   0.0,1.0,
                                   0,MAX_TREMOLO_SPEED);
-      data->tremolo->type->set_effect_value(data->tremolo, time, 0, data->p.tremolo_speed, PLUGIN_FORMAT_NATIVE, when);
+      data->tremolo->type->set_effect_value(data->tremolo, time, 0, data->p.tremolo_speed, EFFECT_FORMAT_NATIVE, when);
       break;
     case EFF_TREMOLO_DEPTH:
       data->p.tremolo_depth = scale(value,
                                   0.0,1.0,
                                   0,MAX_TREMOLO_DEPTH);
-      data->tremolo->type->set_effect_value(data->tremolo, time, 1, data->p.tremolo_depth, PLUGIN_FORMAT_NATIVE, when);
+      data->tremolo->type->set_effect_value(data->tremolo, time, 1, data->p.tremolo_depth, EFFECT_FORMAT_NATIVE, when);
       break;
     case EFF_NOTE_ADJUST:
       data->p.note_adjust = scale(value,
@@ -1493,11 +1493,10 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
     case EFF_REVERSE:      
       ATOMIC_SET(data->p.reverse, value>=0.5f);
       if (!can_crossfade(data)){
+        
         //printf("Doing it %p\n",plugin->patch);
-        if (when==FX_single)
-          PLUGIN_set_effect_value(plugin, time, EFF_CROSSFADE_LENGTH, 0, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, when); // i.e. not automation
-        else
-          data->p.crossfade_length = 0; // i.e. automation
+        PLUGIN_set_effect_value(plugin, time, EFF_CROSSFADE_LENGTH, 0, STORE_VALUE, when, EFFECT_FORMAT_NATIVE);
+        
         if (plugin->patch != NULL)
           GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
       }
@@ -1507,10 +1506,9 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
     case EFF_PINGPONG:
       ATOMIC_SET(data->p.pingpong, value>=0.5f);
       if (!can_crossfade(data)){
-        if (when==FX_single)
-          PLUGIN_set_effect_value(plugin, time, EFF_CROSSFADE_LENGTH, 0, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, when); // i.e. not automation
-        else
-          data->p.crossfade_length = 0; // i.e. automation
+
+        PLUGIN_set_effect_value(plugin, time, EFF_CROSSFADE_LENGTH, 0, STORE_VALUE, when, EFFECT_FORMAT_NATIVE);
+        
         if (plugin->patch != NULL)
           GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
       }
@@ -1562,11 +1560,11 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       break;
     case EFF_TREMOLO_SPEED:
       data->p.tremolo_speed = value;
-      data->tremolo->type->set_effect_value(data->tremolo, time, 0, data->p.tremolo_speed, PLUGIN_FORMAT_NATIVE, when);
+      data->tremolo->type->set_effect_value(data->tremolo, time, 0, data->p.tremolo_speed, EFFECT_FORMAT_NATIVE, when);
       break;
     case EFF_TREMOLO_DEPTH:
       data->p.tremolo_depth = value;
-      data->tremolo->type->set_effect_value(data->tremolo, time, 1, data->p.tremolo_depth, PLUGIN_FORMAT_NATIVE, when);
+      data->tremolo->type->set_effect_value(data->tremolo, time, 1, data->p.tremolo_depth, EFFECT_FORMAT_NATIVE, when);
       break;
     case EFF_NOTE_ADJUST:
       data->p.note_adjust = value;
@@ -1603,7 +1601,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
 
-  if(value_format==PLUGIN_FORMAT_SCALED){
+  if(value_format==EFFECT_FORMAT_SCALED){
     switch(effect_num){
     case EFF_STARTPOS:
       return data->p.startpos;
@@ -1996,12 +1994,14 @@ static void generate_peaks(Data *data){
 
 
 static bool load_sample(Data *data, const wchar_t *filename, int instrument_number, bool set_loop_on_off){
-  if(load_xi_instrument(data,filename, set_loop_on_off)==false)
-    if(load_sample_with_libsndfile(data,filename, set_loop_on_off)==false)
-      if(load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false){
+  if(load_xi_instrument(data,filename, set_loop_on_off)==false){
+    if(load_sample_with_libsndfile(data,filename, set_loop_on_off)==false){
+      if(load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false){        
         GFX_Message(NULL,"Unable to load %s as soundfile.", STRING_get_chars(filename));
         return false;
       }
+    }
+  }
   
   //data->num_channels = data->samples[0].num_channels; // All samples must contain the same number of channels.
 
@@ -2060,8 +2060,8 @@ static Data *create_data(float samplerate, Data *old_data, const wchar_t *filena
     data->p.vibrato_value = 0.0;
     data->p.vibrato_phase = 4.71239;
     
-    data->tremolo->type->set_effect_value(data->tremolo, 0, 0, data->p.tremolo_speed, PLUGIN_FORMAT_NATIVE, FX_single);
-    data->tremolo->type->set_effect_value(data->tremolo, 0, 1, data->p.tremolo_depth, PLUGIN_FORMAT_NATIVE, FX_single);
+    data->tremolo->type->set_effect_value(data->tremolo, 0, 0, data->p.tremolo_speed, EFFECT_FORMAT_NATIVE, FX_single);
+    data->tremolo->type->set_effect_value(data->tremolo, 0, 1, data->p.tremolo_depth, EFFECT_FORMAT_NATIVE, FX_single);
     
   }
 
@@ -2184,7 +2184,7 @@ static void set_loop_data(Data *data, int64_t start, int64_t length, bool set_lo
         if (start < sample->num_frames)
           sample->loop_start = start;
         else
-            sample->loop_start = sample->num_frames - 1;
+          sample->loop_start = sample->num_frames - 1;
         
         int64_t loop_end = sample->loop_start + length;
         if (loop_end <= sample->num_frames)
@@ -2201,9 +2201,9 @@ void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
   
   Data *data=(Data*)plugin->data;
 
-  PLAYER_lock();{  
+  PLAYER_lock();{  // Altough we don't need lock for PLUGIN_set_effect_value, it's possible that set_loop_data, or a combination of set_loop_data and PLUGIN_set_effect_value needs the lock.
     set_loop_data(data, start, length, true);
-    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
   }PLAYER_unlock();
 }
 
@@ -2252,7 +2252,7 @@ static bool set_new_sample(struct SoundPlugin *plugin,
   Data *data = NULL;
   Data *old_data = (Data*)plugin->data;
 
-  filename = OS_loading_get_resolved_file_path(filename);
+  filename = OS_loading_get_resolved_file_path(filename, false); // set program_state_is_valid=false. Might not be necessary, but I'm not sure.
   if (filename==NULL)
     goto exit;
 
@@ -2264,7 +2264,7 @@ static bool set_new_sample(struct SoundPlugin *plugin,
   set_loop_data(data, loop_start, loop_end, false);
   
   // Put loop_onoff into storage.
-  PLUGIN_set_effect_value2(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLUGIN_FORMAT_SCALED, false);
+  PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 
   if(SP_is_plugin_running(plugin)){
 
@@ -2335,14 +2335,14 @@ bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, const wchar_t *path){
   
   if (dir.exists()==false){
     fprintf(stderr, "SAMPLER_set_random_sample: Directory %s does not exist", dir.absolutePath().toUtf8().constData());
-    GFX_Message(NULL, "Directory %s does not exist", dir.absolutePath().toUtf8().constData());
+    GFX_Message2(NULL, true, "Directory %s does not exist", dir.absolutePath().toUtf8().constData());
     return false;
   }
   
   QStringList list = dir.entryList(get_sample_name_filters(), QDir::Files|QDir::NoDotAndDotDot|QDir::Readable);
 
   if(list.size()==0){
-    GFX_Message(NULL, "No samples found in %s", dir.absolutePath().toUtf8().constData());
+    GFX_Message2(NULL, true, "No samples found in %s", dir.absolutePath().toUtf8().constData());
     return false;
   }
   
@@ -2442,7 +2442,7 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir,
                                                                        "_backslash_")));
   QDir dir = QFileInfo(STRING_get_qstring(recording_path)).dir();
   if (dir.exists()==false){
-    GFX_Message(NULL, "Error. Could not find the directory \"%s\".\n", dir.absolutePath().toUtf8().constData());
+    GFX_Message2(NULL, true, "Error. Could not find the directory \"%s\".\n", dir.absolutePath().toUtf8().constData());
     return;
   }
   

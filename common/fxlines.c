@@ -340,7 +340,7 @@ static struct FX *selectFX(
 #endif
 
           VECTOR_push_back(&v,"New FX");
-          int selection=GFX_Menu(window,NULL,"Select FX",v);
+          int selection=GFX_Menu(window,NULL,"Select FX",v,true);
           if(selection==-1) return NULL;
           if(selection<num_usedFX) return getTrackFX(track,selection);
 	}

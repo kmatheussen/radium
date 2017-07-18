@@ -677,8 +677,7 @@ static bool stop_moving_chips(MyScene *myscene, const QPointF &mouse_pos){
 
 void MyScene::mouseMoveEvent ( QGraphicsSceneMouseEvent * event ){
 
-  if (g_radium_runs_custom_exec==true)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
   QPointF pos=event->scenePos();
 
@@ -1086,7 +1085,7 @@ vector_t MW_get_selected_patches(void){
 void MW_solo(const vector_t patches, bool set_on){
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
@@ -1095,7 +1094,7 @@ void MW_solo(const vector_t patches, bool set_on){
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       int num_effects = plugin->type->num_effects;     
       //ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_SOLO_ONOFF));
-      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, set_on ? 1.0 : 0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, set_on ? 1.0 : 0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     }END_VECTOR_FOR_EACH;
     //}UNDO_CLOSE();
 }
@@ -1103,18 +1102,18 @@ void MW_solo(const vector_t patches, bool set_on){
 void MW_mute(const vector_t patches, bool do_mute){
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
   UNDO_OPEN_REC();{
     VECTOR_FOR_EACH(struct Patch *,patch,&patches){
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-      int num_effects = plugin->type->num_effects;
-      if (do_mute != !ATOMIC_GET(plugin->volume_is_on)){
-        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_VOLUME_ONOFF));
+      if (do_mute != is_muted(plugin)){
+        int effect_num = get_mute_effectnum(plugin->type);
+        ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
         float new_val = do_mute ? 0.0 : 1.0;
-        PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+        PLUGIN_set_effect_value(plugin, -1, effect_num, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
       }
     }END_VECTOR_FOR_EACH;
   }UNDO_CLOSE();
@@ -1123,7 +1122,7 @@ void MW_mute(const vector_t patches, bool do_mute){
 void MW_bypass(const vector_t patches, bool do_bypass){
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
@@ -1133,7 +1132,7 @@ void MW_bypass(const vector_t patches, bool do_bypass){
       int num_effects = plugin->type->num_effects;
       ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
       float new_val = do_bypass ? 0.0 : 1.0;
-      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     }END_VECTOR_FOR_EACH;
   }UNDO_CLOSE();
 }
@@ -1142,7 +1141,7 @@ void MW_copy(void){
   vector_t patches = get_selected_patches();
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
 
@@ -1167,13 +1166,12 @@ static void MW_cut2(float mouse_x, float mouse_y, bool has_mouse_coordinates){
   vector_t patches = get_selected_patches();
 
   if (patches.num_elements==0){
-    GFX_Message(NULL, "No sound object selected");
+    GFX_Message2(NULL, true, "No sound object selected");
     return;
   }
   
-  PRESET_copy(&patches);
-
-  MW_delete2(mouse_x, mouse_y, has_mouse_coordinates);
+  if (PRESET_copy(&patches)==true)
+    MW_delete2(mouse_x, mouse_y, has_mouse_coordinates);
 }
 
 void MW_cut(void){
@@ -1343,7 +1341,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
   int64_t parentguinum = API_get_gui_from_existing_widget(g_mixer_widget->window());
       
-  int sel = GFX_Menu(NULL, NULL, NULL, v);
+  int sel = GFX_Menu(NULL, NULL, NULL, v, true);
 
   if (sel==-1) {
     
@@ -1456,8 +1454,7 @@ void MyScene::mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ){
   QPointF pos=event->scenePos();
   printf("Scene is double-clicked\n");
 
-  if (g_radium_runs_custom_exec==true)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
   
   Chip *chip = MW_get_chip_at(pos.x(), pos.y(), NULL);
   if(chip!=NULL){
@@ -1493,10 +1490,10 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
   g_is_pressed = true;
 
   //printf("mousepress: %p\n",_current_connection);
+  
   EVENTLOG_add_event(talloc_format(">>>>  MyScene::mousePressEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size()));
 
-  if (g_radium_runs_custom_exec==true)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
   
   QPointF pos=event->scenePos();
   float mouse_x = pos.x();
@@ -1512,16 +1509,18 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
   
-  if(event_can_delete(event))
+  if(event_can_delete(event)) {
+    
     if(mousepress_delete_chip(this,item,mouse_x,mouse_y)==true) {
       event->accept();
       return;
     }
 
-  if(event_can_delete(event))
     if(mousepress_delete_connection(this,event,item,mouse_x,mouse_y)==true)
       return;
 
+  }
+  
   if(event->button()==Qt::LeftButton) {
     if(ctrl_pressed==false && mousepress_start_connection(this,event,item,mouse_x,mouse_y)==true)
       return;
@@ -1607,7 +1606,7 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
 
     R_ASSERT(_moving_chips.size()==0);
         
-    if(chip!=NULL){ // TODO: Must check if the connection is already made.
+    if(can_internal_data_be_accessed_questionmark_safer()==true && chip!=NULL){ // TODO: Must check if the connection is already made.
 
       if(_ecurrent_from_chip != NULL && chip != _ecurrent_from_chip){
 
@@ -1644,9 +1643,8 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
     return;
   }
 
-  
-  if (g_radium_runs_custom_exec==true)
-    return;
+
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
   
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
@@ -1695,7 +1693,7 @@ namespace{
     void 	timerEvent ( QTimerEvent * e ){
       counter++;
 
-      if(g_radium_runs_custom_exec) return;
+      RETURN_IF_DATA_IS_INACCESSIBLE();
 
       if (g_mixer_widget->isVisible()){
 
@@ -2097,7 +2095,7 @@ static const char *popup_plugin_selector(SoundPluginType **type, bool must_have_
   
   MyQAction *action;
 
-  action = dynamic_cast<MyQAction*>(safeExec(&menu));
+  action = dynamic_cast<MyQAction*>(safeExec(&menu, true));
   printf("action: %p\n",action);
   
   if (action==NULL)
@@ -2128,7 +2126,7 @@ static const char *popup_plugin_selector(SoundPluginType **type, bool must_have_
 
     char temp[1024];
     sprintf(temp,"Select plugin contained in %s", plugin_type_container->name);
-    int selection=GFX_Menu(NULL,NULL,temp,names);
+    int selection=GFX_Menu(NULL,NULL,temp,names,true);
     
     if (selection==-1)
       return NULL;

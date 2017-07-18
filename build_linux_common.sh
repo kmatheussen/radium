@@ -4,6 +4,8 @@ set -e
 
 export PYTHONEXE=`./find_python_path.sh`
 
+export RADIUM_BIN="bin/radium_linux.bin"
+
 # find_moc_and_uic_path.sh has been tested on fedora 11, fedora 17, ubuntu 12, and mint 13.
 #export MOC="`./find_moc_and_uic_paths.sh moc`"
 #export UIC="`./find_moc_and_uic_paths.sh uic`"
@@ -158,7 +160,8 @@ mkdir -p linux_objs
 #    cp -p linux_objs/*.o . 2>/dev/null | true
 #fi
 
-if ! file bin/radium |grep Linux ; then
+if ! file $RADIUM_BIN |grep Linux ; then
+    echo "  Non-linux build detected. Deleting binaries."
     rm -f bin/radium
     rm -f bin/radium_crashreporter
     rm -f bin/radium_error_message
@@ -169,9 +172,8 @@ make flagopts.opt --stop
 make radium $@ --stop
 #make pluginhost/Builds/Linux/build/libMyPluginHost.a
 
-mv bin/radium bin/radium_linux.bin
-cp bin/run_radium_linux.sh bin/radium
+cp $RADIUM_BIN bin/radium
 
-cp -p *.o linux_objs/ 2>/dev/null | true
+#cp -p *.o linux_objs/ 2>/dev/null | true
 
 

@@ -309,7 +309,7 @@ class Editor : public FocusSnifferQsciScintilla{
     
     else if (event->key()==Qt::Key_F3 || (event->key()==Qt::Key_F && (event->modifiers() & Qt::ControlModifier))) {
       printf("Ctrl+F\n");
-      char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ");
+      char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ", true);
       if (s!=NULL && strlen(s)>0)
         search(s);
       setFocus(Qt::OtherFocusReason);
@@ -527,11 +527,10 @@ public:
   // todo: Move web by dragging.
   
   void calledRegularlyByParent(void){
+
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     if (Undo_num_undos()==0) // I don't think this can happen, but in case it does, we return since the call to Undo_ReopenLast() below would fail (badly).
-      return;
-
-    if (g_radium_runs_custom_exec==true)
       return;
 
     //R_ASSERT_RETURN_IF_FALSE(Undo_Is_Open()==false);
@@ -687,14 +686,14 @@ public:
     disk_t *disk = DISK_open_for_reading(filename);
 
     if (disk==NULL){
-      GFX_Message(NULL, "File not found (%s)", filename.toUtf8().constData());
+      GFX_Message2(NULL, true, "File not found (%s)", filename.toUtf8().constData());
       return;
     }
 
     QString new_code = DISK_read_qstring_file(disk);
       
     if (DISK_close_and_delete(disk)==false) {
-      GFX_Message(NULL, "Unable to read from %s", filename.toUtf8().constData());
+      GFX_Message2(NULL, true, "Unable to read from %s", filename.toUtf8().constData());
       return;
     }
     
@@ -706,7 +705,7 @@ public:
 
     //GFX_Message(NULL, "   fff filename: -%s-, %p",filename.toUtf8().constData(), disk);
     if (disk==NULL){
-      GFX_Message(NULL, "Unable to open %s for writing", filename.toUtf8().constData());
+      GFX_Message2(NULL, true, "Unable to open %s for writing", filename.toUtf8().constData());
       return;
     }
 
@@ -721,7 +720,7 @@ public:
       return;
 
     if (show_warning)
-      GFX_Message(NULL, "Warning: Wrote %d bytes. Expected %d", n, code.size());
+      GFX_Message2(NULL, true, "Warning: Wrote %d bytes. Expected %d", n, code.size());
   }
 
   void show_cpp_source(void){
@@ -771,7 +770,7 @@ public:
   }
 
   void hideEvent(QHideEvent * event) override {
-    if(g_radium_runs_custom_exec) return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     _size_type_before_hidden = _size_type;
     
@@ -780,7 +779,7 @@ public:
   }
 
   void showEvent(QShowEvent * event) override {
-    if(g_radium_runs_custom_exec) return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     if (_size_type_before_hidden != SIZETYPE_NORMAL)
       set_large(_size_type_before_hidden);

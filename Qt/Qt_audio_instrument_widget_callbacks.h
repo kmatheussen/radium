@@ -542,7 +542,7 @@ public:
       
       MyQSlider *slider = get_system_slider(system_effect);
       if (slider != NULL) // effect can be a checkbox.
-        SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->automation_values[effect_num]);
+        SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->slider_automation_values[effect_num]);
     }
 
 #if 0
@@ -568,7 +568,7 @@ public:
         MyQSlider *slider = c->value_slider;
         if (slider != NULL){
           int effect_num = slider->_effect_num;
-          SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->automation_values[effect_num]);
+          SLIDERPAINTER_set_automation_value_pointer(slider->_painter, get_effect_color(plugin, effect_num), &plugin->slider_automation_values[effect_num]);
         }
       }
     }
@@ -754,7 +754,7 @@ public:
     int effect_num = type->num_effects + system_effect;
 
     if (is_starting==false)
-      PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_effect_value(plugin, -1, effect_num, sliderval/10000.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 
     updateSliderString(system_effect);
   }
@@ -1046,7 +1046,7 @@ public slots:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_BROWSER_SHOW_GUI;
-    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     if(_sample_requester_widget!=NULL)
       _sample_requester_widget->setVisible(val);
   }
@@ -1055,7 +1055,7 @@ public slots:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_CONTROLS_SHOW_GUI;
-    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     _plugin_widget->setVisible(val);
     spacer_holder->setVisible(!val);
   }
@@ -1064,7 +1064,7 @@ public slots:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_EQ_SHOW_GUI;
-    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     filters_widget->setVisible(val);
   }
 
@@ -1072,7 +1072,7 @@ public slots:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
     int effect_num = type->num_effects + EFFNUM_COMP_SHOW_GUI;
-    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     _comp_widget->setVisible(val);
   }
 

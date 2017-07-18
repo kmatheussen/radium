@@ -72,7 +72,7 @@ void PC_Pause(void){
   
   if (is_playing()){
 
-    if(ATOMIC_GET(is_starting_up)==false){
+    if(g_is_starting_up==false){
       struct Tracker_Windows *window = root->song->tracker_windows;
       //g_pause_realline = ATOMIC_GET(window->wblock->till_curr_realline);
       window->message = "Temporarily stopping player";

@@ -53,7 +53,7 @@ public:
     bool _last_sent_gui_is_visible;
 
     void timerEvent(QTimerEvent * e){
-      if(g_radium_runs_custom_exec) return;
+      RETURN_IF_DATA_IS_INACCESSIBLE();
 
       SoundPlugin *plugin = (SoundPlugin*)_pd_plugin_widget->_patch->patchdata;
       if(plugin!=NULL) { // dont think plugin can be NULL here though.

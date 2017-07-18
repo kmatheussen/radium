@@ -22,19 +22,20 @@
   (if (<= db *min-db*)
       0
       (let ((scaled (scale db *min-db* *max-mixer-db* 0 1)))
-        (* scaled scaled))))
+        (* scaled scaled)))) ;; Seems to work okay
 
 (define (slider-to-db slider)
-  (define scaled (sqrt slider))
+  (define scaled (sqrt slider)) ;; Seems to work okay
   (scale scaled 0 1 *min-db* *max-mixer-db*))
 
 (define (db-to-text db add-dB-string)
-  (cond ((<= db *min-db*)
-         "~inf")
-        (add-dB-string
-         (<-> (one-decimal-string db) "dB"))
-        (else
-         (one-decimal-string db))))
+  (if  (<= db *min-db*)
+       "~inf"
+       (let* ((val1 (one-decimal-string db))
+              (val (if (string=? val1 "-0.0") "0.0" val1)))
+         (if add-dB-string
+             (<-> val "dB")
+             val))))
 
 
 ;; callback is not called after an instrument (any instrument) has been deleted.
@@ -1399,17 +1400,19 @@
            b b)
     )
 
+  (define volume_on_off_name (get-instrument-volume-on/off-effect-name instrument-id))
+
   (define (get-muted)
-    (< (<ra> :get-instrument-effect instrument-id "System Volume On/Off") 0.5))
+    (< (<ra> :get-instrument-effect instrument-id volume_on_off_name) 0.5))
   (define (get-soloed)
     (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
            
   (define (turn-off-all-mute except)
     (for-each (lambda (instrument-id)
                 (when (and (not (= instrument-id except))
-                           (< (<ra> :get-instrument-effect instrument-id "System Volume On/Off") 0.5))
-                  (<ra> :undo-instrument-effect instrument-id "System Volume On/Off")
-                  (<ra> :set-instrument-effect instrument-id "System Volume On/Off" 1)
+                           (< (<ra> :get-instrument-effect instrument-id (get-volume-on-off-name instrument-id)) 0.5))
+                  (<ra> :undo-instrument-effect instrument-id (get-volume-on-off-name instrument-id))
+                  (<ra> :set-instrument-effect instrument-id (get-volume-on-off-name instrument-id) 1)
                   ))
               (get-all-audio-instruments)))
   
@@ -1432,8 +1435,8 @@
                                        (lambda (is-muted)
                                          (undo-block
                                           (lambda ()
-                                            (<ra> :undo-instrument-effect instrument-id "System Volume On/Off")
-                                            (<ra> :set-instrument-effect instrument-id "System Volume On/Off" (if is-muted 0.0 1.0))
+                                            (<ra> :undo-instrument-effect instrument-id volume_on_off_name)
+                                            (<ra> :set-instrument-effect instrument-id volume_on_off_name (if is-muted 0.0 1.0))
                                             ;;(c-display "mute: " is-muted)
                                             (if (<ra> :control-pressed)
                                                 (turn-off-all-mute instrument-id))
@@ -1466,7 +1469,7 @@
                                        (get-soloed)
                                        height))
   
-  (add-gui-effect-monitor (cadr mute) instrument-id "System Volume On/Off"
+  (add-gui-effect-monitor (cadr mute) instrument-id volume_on_off_name
                           (lambda ()
                             ((car mute) (get-muted))))
   
@@ -1660,14 +1663,17 @@
                                         (<gui> :set-size volmeter (- width volmeter-x1) height)))
 
   (when show-voltext
-    (add-safe-mouse-callback voltext (lambda (button state x y)
+    (add-safe-mouse-callback voltext (lambda (button state x y)                                       
                                          (cond ((and (= button *right-button*)
-                                                     (= state *is-pressing*))
+                                                     (= state *is-pressing*))                                                
                                                 (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
                                                 #t)
                                                ((and (= button *left-button*)
                                                      (= state *is-pressing*))
-                                                (let ((maybe (<ra> :request-float "" *min-db* *max-db* #t)))
+                                                (let ((maybe (<gui> :requester-operations
+                                                                    (<-> "Set new volume (dB) for " (<ra> :get-instrument-name instrument-id) ". Current volume: " (db-to-text (get-volume) #f) "")
+                                                                    (lambda ()
+                                                                      (<ra> :request-float "New volume: " *min-db* *max-db*)))))
                                                   (when (>= maybe *min-db*)
                                                     (<ra> :undo-instrument-effect instrument-id effect-name)
                                                     (<ra> :set-instrument-effect instrument-id effect-name (scale maybe *min-db* *max-db* 0 1))))
@@ -1730,7 +1736,6 @@
 
   vertical
   )
-
 
 (define (get-mixer-strip-background-color gui instrument-id)
   (<gui> :mix-colors
@@ -2375,14 +2380,15 @@
 
 
 
-;; main
+;; main (practical, but if it fails, we must restart radium, so not always very practical)
+#||
 (when (not *is-initializing*)
   (let ((start (time)))
     (set! *mixer-strips-objects* '())
     (define gui (create-mixer-strips-gui 2))
     (<gui> :show gui)
     (c-display "   Time used to open mixer:" (- (time) start))))
-
+||#
 
 
 

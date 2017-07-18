@@ -34,7 +34,7 @@ extern struct Root *root;
 
 static QHash<QString, QDir> resolved_paths;
 
-static void ask_to_add_resolved_path(QDir key, QDir value){
+static void ask_to_add_resolved_path(QDir key, QDir value, bool program_state_is_valid){
   ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
 
   msgBox->setText("A different path was selected");
@@ -42,7 +42,7 @@ static void ask_to_add_resolved_path(QDir key, QDir value){
   msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
   msgBox->setDefaultButton(QMessageBox::Yes);
 
-  int ret = safeExec(msgBox);
+  int ret = safeExec(msgBox, false);
 
   if(ret==QMessageBox::Yes)
     resolved_paths[key.path()] = value;
@@ -116,7 +116,7 @@ static QHash<QString, QDir> resolved_paths;
 
 #ifndef TEST_PATH_RESOLVER
 
-const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
+const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool program_state_is_valid){
   QString path = QString::fromWCharArray(wpath);
   QFileInfo info(path);
 
@@ -177,13 +177,13 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
         //msgBox->setInformativeText("Could not find "+info.fileName()+" in"+dir.path()+". Please select new file."
         msgBox->setStandardButtons(QMessageBox::Ok);
         
-        safeExec(msgBox);
+        safeExec(msgBox, program_state_is_valid);
       }
 
       {
         R_ASSERT(g_radium_runs_custom_exec==false);
 
-        radium::ScopedExec scopedExec;
+        radium::ScopedExec scopedExec(program_state_is_valid);
 
 
 #if 0
@@ -211,7 +211,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath){
     }while(info3.exists()==false);
 
     if(info3.fileName() == info.fileName())
-      ask_to_add_resolved_path(dir, info3.dir());
+      ask_to_add_resolved_path(dir, info3.dir(), program_state_is_valid);
     
     return STRING_create(info3.filePath());
   }

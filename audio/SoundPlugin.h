@@ -149,8 +149,8 @@ enum{
 };
 
 enum ValueFormat{
-  PLUGIN_FORMAT_NATIVE,
-  PLUGIN_FORMAT_SCALED // scaled between 0 and 1
+  EFFECT_FORMAT_NATIVE,
+  EFFECT_FORMAT_SCALED // scaled between 0 and 1
 };
 
 struct SoundPlugin;
@@ -202,12 +202,12 @@ typedef struct SoundPluginType{
 
   int num_effects;
 
-  bool plugin_takes_care_of_savable_values; // For instance, if a VST plugin has it's own editor, we ask the plugin for values instead of using savable_effect_values (which contains the last set value). Then this value is true.
+  //bool plugin_takes_care_of_stored_values; // For instance, if a VST plugin has it's own editor, we ask the plugin for values instead of using stored_effect_values (which contains the last set value). Then this value is true.
   
-  bool dont_send_effect_values_from_state_into_plugin; // Can be set to true if all effects are stored in type->create_state. type->effect_value will not be called for all effects then. All effect values are still stored in the state though.
+  bool dont_send_effect_values_from_state_into_plugin; // Can be set to true if all effects are stored in type->create_state. type->effect_value will not be called for all effects then. All effect values are still stored in the state though. In an ideal world, this variable would only have served as an optimization, but it is also a crash fix for buggy plugins ("CM 505").
 
-  bool will_always_autosuspend; // obviously, it doesn't make sense
-  bool will_never_autosuspend;  // if both of these are true
+  bool will_always_autosuspend; // obviously, it doesn't make sense ...
+  bool will_never_autosuspend;  // ... if both of these are true
 
   const char *category;
   const char *creator;
@@ -274,7 +274,7 @@ typedef struct SoundPluginType{
   void (*show_gui)(struct SoundPlugin *plugin); // If NULL, the "GUI" button will not show.
   void (*hide_gui)(struct SoundPlugin *plugin);
 
-  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state, bool is_loading); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called AFTER the effect values have been set.
+  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state, bool is_loading); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called AFTER the effect values have been set. It makes sense to to set dont_send_effect_values_from_state_into_plugin==true if 'recreate_from_state' creates and recreates all effects.
   void (*create_state)(struct SoundPlugin *plugin, hash_t *state);
 
   // Presets (optional)
@@ -364,8 +364,12 @@ typedef struct SoundPlugin{
   volatile struct Patch *patch; // The patch points to the plugin and the plugin points to the patch. However, the patch outlives the plugin. Plugin comes and goes, while the patch stays.
                                 // Beware that this value might be NULL.
 
-  float *savable_effect_values; // When dragging a slider, we want to save that value. But we don't want to save the last sent out automation value. (saving to disk, that is)
-  float *initial_effect_values; // Used when resetting.
+  // When dragging a slider, we want to save that value. But we don't want to save the last sent out automation value. (saving to disk, that is)
+  float *stored_effect_values_native; // native format values
+  float *stored_effect_values_scaled; // scaled (0->1) format values
+  float *last_written_effect_values; // native format. Is set regardless of StoreitType.
+  
+  float *initial_effect_values; // Used when resetting. Native format.
   bool *do_random_change;       // Used when selecting "Random".
   
   linked_note_t *playing_voices; // To keep track of voices scheduled into the future because of latency compensation
@@ -431,7 +435,7 @@ typedef struct SoundPlugin{
 
   bool show_compressor_gui;
 
-  float *automation_values; // todo: add comment what the difference between this one and savable_effect_values is.
+  float *slider_automation_values; // Only used for visualization. This array holds the automation values shown in the sliders. Scaled format. If value is less than 0, sliders don't show the value.
   
   // peaks
   //
@@ -482,7 +486,7 @@ typedef struct SoundPlugin{
   DEFINE_ATOMIC(int64_t, time_of_last_activity); // used when determining whether to auto-bypass
 
   int curr_ab_num;
-  float *ab_values[NUM_AB]; // each element points to an array of floats
+  float *ab_values[NUM_AB]; // each element points to an array of floats. native format.
   hash_t *ab_states[NUM_AB];
   bool ab_is_valid[NUM_AB];
 
@@ -502,6 +506,20 @@ static inline enum ColorNums get_effect_color(const SoundPlugin *plugin, int eff
     return (enum ColorNums)(start + ((effect_num - plugin->type->num_effects) % len));
   else
     return (enum ColorNums)(start + (effect_num % len));
+}
+
+static inline int get_mute_effectnum(const SoundPluginType *type){
+  if (type->num_outputs==0)
+    return type->num_effects + EFFNUM_INPUT_VOLUME_ONOFF;
+  else
+    return type->num_effects + EFFNUM_VOLUME_ONOFF;
+}
+
+static inline bool is_muted(const SoundPlugin *plugin){
+  if (plugin->type->num_outputs==0)
+    return !ATOMIC_GET(plugin->input_volume_is_on);
+  else
+    return !ATOMIC_GET(plugin->volume_is_on);
 }
 
 // Call this function to get effects from the realtime process.

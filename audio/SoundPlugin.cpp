@@ -406,9 +406,9 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   plugin->bus3_volume_peaks = AUDIOMETERPEAKS_create(2);
   plugin->bus4_volume_peaks = AUDIOMETERPEAKS_create(2);
 
-  plugin->automation_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+  plugin->slider_automation_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
   for(int e = 0 ; e<plugin_type->num_effects+NUM_SYSTEM_EFFECTS ; e++)
-    plugin->automation_values[e] = -10;
+    plugin->slider_automation_values[e] = -10;
 
   
   SMOOTH_init(&plugin->input_volume  , 1.0f, buffer_size);
@@ -469,29 +469,38 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   plugin->show_equalizer_gui = true;
   plugin->show_compressor_gui = false;
 
+  // Set up stored_effect_values, last_written_effect_values, and initial_effect_values
   {
     int i;
-    plugin->savable_effect_values=(float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
-
+    plugin->stored_effect_values_native = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->stored_effect_values_scaled = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->last_written_effect_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->initial_effect_values=(float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    
 #if 0
     for(i=0;i<plugin_type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-      plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
+      plugin->stored_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
 #else
-    for(i=0;i<plugin_type->num_effects;i++)
-      plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
+    for(i=0;i<plugin_type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+      plugin->stored_effect_values_native[i] = PLUGIN_get_effect_value2(plugin, i, VALUE_FROM_PLUGIN, EFFECT_FORMAT_NATIVE);
+      plugin->stored_effect_values_scaled[i] = PLUGIN_get_effect_value2(plugin, i, VALUE_FROM_PLUGIN, EFFECT_FORMAT_SCALED);
+      
+      plugin->last_written_effect_values[i]  = plugin->stored_effect_values_native[i];
+      plugin->initial_effect_values[i]       = plugin->stored_effect_values_native[i];
+    }
 
-    plugin->savable_effect_values[plugin_type->num_effects+EFFNUM_OUTPUT_VOLUME] = 1.0f;
+    // ??
+    //plugin->stored_effect_values[plugin_type->num_effects+EFFNUM_OUTPUT_VOLUME] = 1.0f;
 
+    // Set system effects. (why?)
+    /*
     for(i=plugin_type->num_effects;i<plugin_type->num_effects+NUM_SYSTEM_EFFECTS;i++){
       float value = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
-      PLUGIN_set_native_effect_value(plugin, 0, i, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_native_effect_value(plugin, 0, i, value, PLUGIN_NONSTORED_TYPE, STORE_VALUE, FX_single);
     }
+    */
+    
 #endif
-  }
-
-  {
-    plugin->initial_effect_values=(float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
-    memcpy(plugin->initial_effect_values, plugin->savable_effect_values, sizeof(float) * (plugin_type->num_effects+NUM_SYSTEM_EFFECTS));
   }
 
   {
@@ -524,7 +533,9 @@ void PLUGIN_delete(SoundPlugin *plugin){
   
   V_free(plugin->do_random_change);
   V_free(plugin->initial_effect_values);
-  V_free(plugin->savable_effect_values);
+  V_free(plugin->last_written_effect_values);
+  V_free(plugin->stored_effect_values_native);
+  V_free(plugin->stored_effect_values_scaled);
 
   
   SMOOTH_release(&plugin->input_volume);
@@ -551,7 +562,7 @@ void PLUGIN_delete(SoundPlugin *plugin){
   COMPRESSOR_delete(plugin->compressor);
   
   // peak and automation pointers (for displaying in the sliders)
-  V_free(plugin->automation_values);
+  V_free(plugin->slider_automation_values);
 
   AUDIOMETERPEAKS_delete(plugin->volume_peaks);
 
@@ -773,9 +784,9 @@ static void set_freq_display(char *buffer, int buffersize, float freq){
 //void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, bool use_stored_value, float value, char *buffer, int buffersize){
 void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   if(effect_num<plugin->type->num_effects)
-    return plugin->type->get_display_value_string(plugin, effect_num, buffer, buffersize);
+    return plugin->type->get_display_value_string(plugin, effect_num, buffer, buffersize); // TODO: Fix this. We want to display slider value, not automation value. (actually, we probably want to display both though.)
 
-  float store_value = safe_float_read(&plugin->savable_effect_values[effect_num]);
+  float store_value = safe_float_read(&plugin->stored_effect_values_native[effect_num]);
     
   int system_effect = effect_num - plugin->type->num_effects;
 
@@ -836,29 +847,70 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
   }
 }
 
-static float get_general_gain_store_value(float value, enum ValueType value_type, bool is_filter){
-  if(value_type==PLUGIN_STORED_TYPE)
-    return value; // When saving to disk, we store the gain, not the slider value. We do this to avoid having to do conversions if we later change the slider scale.
-  else if(is_filter==true)
-    return scale(value, 0, 1, FILTER_MIN_DB, FILTER_MAX_DB);
+
+// For the four set_* functions below, we sometimes do unncessary calculations if storeit_type==DONT_STORE_VALUE
+// (unless the C++ compiler is smart enough to figure out things, which could be).
+//
+// However, we only need to care about CPU when set_effect_value is called when doing automation.
+// And for automation, value_format==EFFECT_FORMAT_SCALED, and therefore we need to calculate the native format anyway,
+// hence there is no point optimizing these functions.
+//
+static void set_gain_store_value(float &native_value, float &scaled_value, enum ValueFormat value_format){
+  if(value_format==EFFECT_FORMAT_NATIVE)
+    scaled_value = gain_2_slider(native_value, MIN_DB, MAX_DB);
   else
-    return slider_2_gain(value, MIN_DB, MAX_DB);
+    native_value = slider_2_gain(scaled_value, MIN_DB, MAX_DB);
 }
 
-static float get_gain_store_value(float value, enum ValueType value_type){
-  return get_general_gain_store_value(value,value_type,false);
-}
-
-static float get_filter_gain_store_value(float value, enum ValueType value_type){
-  return get_general_gain_store_value(value,value_type,true);
-}
-
-static float get_freq_store_value(float value, enum ValueType value_type){
-  if(value_type==PLUGIN_STORED_TYPE)
-    return value; // For the same reason here. We store Hz, not slider value.
+static float get_gain_value(float native_value, enum ValueFormat value_format){
+  if(value_format==EFFECT_FORMAT_NATIVE)
+    return native_value;
   else
-    return slider_2_frequency(value,MIN_FREQ,MAX_FREQ);
+    return gain_2_slider(native_value, MIN_DB, MAX_DB);
 }
+
+static void set_filter_gain_store_value(float &native_value, float &scaled_value, enum ValueFormat value_format){
+  if(value_format==EFFECT_FORMAT_NATIVE)  
+    scaled_value = scale(native_value, FILTER_MIN_DB, FILTER_MAX_DB, 0, 1);
+  else
+    native_value = scale(scaled_value, 0, 1, FILTER_MIN_DB, FILTER_MAX_DB);
+}
+
+static float get_filter_gain_value(float native_value, enum ValueFormat value_format){
+  if(value_format==EFFECT_FORMAT_NATIVE)
+    return native_value;
+  else
+    return scale(native_value, FILTER_MIN_DB, FILTER_MAX_DB, 0, 1);
+}
+
+static void set_freq_store_value(float &native_value, float &scaled_value, enum ValueFormat value_format){
+  if(value_format==EFFECT_FORMAT_NATIVE)
+    scaled_value = frequency_2_slider(native_value,MIN_FREQ,MAX_FREQ);
+  else
+    native_value = slider_2_frequency(scaled_value,MIN_FREQ,MAX_FREQ);
+}
+
+static float get_freq_value(float native_value, enum ValueFormat value_format){
+  if (value_format==EFFECT_FORMAT_NATIVE)
+    return native_value;
+  else
+    return frequency_2_slider(native_value, MIN_FREQ, MAX_FREQ);
+}
+
+static void set_delay_store_value(float &native_value, float &scaled_value, enum ValueFormat value_format){
+  if(value_format==EFFECT_FORMAT_NATIVE)
+    scaled_value = scale(native_value, DELAY_MIN, DELAY_MAX, 0, 1);
+  else
+    native_value = scale(scaled_value, 0, 1, DELAY_MIN, DELAY_MAX);
+}
+
+static float get_delay_value(float native_value, enum ValueFormat value_format){
+  if(value_format==EFFECT_FORMAT_NATIVE)
+    return native_value;
+  else
+    return scale(native_value, DELAY_MIN, DELAY_MAX, 0, 1);
+}
+
 
 static void update_instrument_gui(struct SoundPlugin *plugin){
   if (plugin->patch != NULL) {
@@ -879,11 +931,11 @@ static void set_voice_onoff(struct SoundPlugin *plugin, int num, float value){
   }
 }
                       
-static bool get_voice_onoff(struct SoundPlugin *plugin, int num){
+static float get_voice_onoff(struct SoundPlugin *plugin, int num){
   if (plugin->patch != NULL) {
-    return plugin->patch->voices[num].is_on;
+    return plugin->patch->voices[num].is_on ? 1.0 : 0.0;
   } else
-    return num==0;
+    return num==0 ? 1.0 : 0.0;
 }
                       
 static void set_chance(struct SoundPlugin *plugin, int num, float value){
@@ -915,9 +967,12 @@ static float get_chance(struct SoundPlugin *plugin, int num){
   }
 
 #define SET_BUS_VOLUME(busnum)                                          \
-  store_value = get_gain_store_value(value,value_type);                 \
-  safe_float_write(&plugin->bus_volume[busnum], store_value);           \
+  set_gain_store_value(store_value_native, store_value_scaled, value_format);        \
+  safe_float_write(&plugin->bus_volume[busnum], store_value_native);    \
   break;
+
+#define GET_BUS_VOLUME(busnum, value_format)    \
+  get_gain_value(safe_float_read(&plugin->bus_volume[busnum]), value_format)
 
 static void set_bus_onoff(struct SoundPlugin *plugin, float value, int busnum){
   bool newval = value > 0.5f;
@@ -934,13 +989,121 @@ static void set_bus_onoff(struct SoundPlugin *plugin, float value, int busnum){
   }
 }
 
-void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueType value_type, enum SetValueType set_type, FX_when when, enum ValueFormat value_format, bool sent_from_midi_learn){
-  float store_value = value;
+static void maybe_init_effect_when_playing_from_start(struct SoundPlugin *plugin, int effect_num, radium::PlayerLockOnlyIfNeeded &lock, bool use_lock, bool &has_set_effect_value){
+  float automation_value = safe_float_read(&plugin->slider_automation_values[effect_num]);
+
+  if (automation_value >= 0) { // Check if last set value came from automation.
+    
+    if (use_lock)
+      lock.maybe_pause_or_lock(effect_num);
+    
+    float stored_value = safe_float_read(&plugin->stored_effect_values_native[effect_num]);
+    
+    PLUGIN_set_effect_value(plugin, 0, effect_num, stored_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+
+    has_set_effect_value = true;
+  }
+}
+
+void PLUGIN_call_me_when_playing_from_start(struct SoundPlugin *plugin){
+
+  bool has_set_effect_value = false;
+  
+  radium::PlayerLockOnlyIfNeeded lock;
+  
+  for(int i=0;i<plugin->type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+    maybe_init_effect_when_playing_from_start(plugin,
+                                              i,
+                                              lock,
+                                              i < plugin->type->num_effects, // don't use lock for system effects
+                                              has_set_effect_value
+                                              );
+  if (has_set_effect_value)
+    update_instrument_gui(plugin);
+}
+
+// Must/should be called from the plugin if it changes value by itself. After initialization that is.
+//
+// The function must be called even if storeit_type==DONT_STORE_VALUE
+//
+// Both 'native_value' and 'scaled_value' must be valid.
+//
+// The function must NOT be called if it was triggered by a call to plugin->set_effect_value().
+// (It should be simple to remove this limiations though, in a way that should provide a much better solution than hacking around with timers, comparing values, and so forth.)
+//
+// Thread-safe.
+//
+void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
+                                                     int effect_num,
+                                                     float native_value,
+                                                     float scaled_value,
+                                                     enum StoreitType storeit_type,
+                                                     FX_when when,
+                                                     bool update_instrument_widget,
+                                                     bool is_sent_from_midi_learn
+                                                     )
+{
+  R_ASSERT_NON_RELEASE(storeit_type==STORE_VALUE || storeit_type==DONT_STORE_VALUE);
+
+  // TODO: Create Undo.
+
+  if (is_sent_from_midi_learn==false && !FX_when_is_automation(when) && PLUGIN_is_recording_automation(plugin, effect_num)){
+    MIDI_add_automation_recording_event(plugin, effect_num, scaled_value);
+  }
+
+  safe_float_write(&plugin->last_written_effect_values[effect_num], native_value);
+  
+  safe_float_write(&plugin->slider_automation_values[effect_num],
+                   FX_when_is_automation(when) ? scaled_value : -10
+                   );
+  
+  if(storeit_type==STORE_VALUE){
+#if !defined(RELEASE)
+    printf("   SETTING Savable effect %d (%s). Native: %f. Scaled: %f\n", effect_num, PLUGIN_get_effect_name(plugin, effect_num), native_value, scaled_value);
+#endif
+    safe_float_write(&plugin->stored_effect_values_native[effect_num], native_value);
+    safe_float_write(&plugin->stored_effect_values_scaled[effect_num], scaled_value);
+  }
+
+
+  if (update_instrument_widget){
+    ATOMIC_SET(plugin->effect_num_to_show_because_it_was_used_externally, effect_num); // Used by the plugin widget to know current tab num.
+
+    volatile struct Patch *patch = plugin->patch;
+    if (patch != NULL)
+      ATOMIC_SET(patch->widget_needs_to_be_updated, true);
+  }
+}
+
+                               
+static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_num, float value, enum StoreitType storeit_type, FX_when when, enum ValueFormat value_format, bool sent_from_midi_learn){
+  float store_value_native = value;
+  float store_value_scaled = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
   RT_PLUGIN_touch(plugin);
-        
-  if(value_format==PLUGIN_FORMAT_SCALED && value_type != PLUGIN_STORED_TYPE) { // Messy. I think the thing is that PLUGIN_STORED_TYPE trumps PLUGIN_FORMAT_SCALED. I.e. value_format doesn't matter if value_type is PLUGIN_STORED_TYPE.
+
+#if !defined(RELEASE)
+  R_ASSERT(storeit_type==STORE_VALUE || storeit_type==DONT_STORE_VALUE);
+
+  if (storeit_type==STORE_VALUE)
+    if (THREADING_is_player_thread())
+      abort(); // This is most likely an error.
+  
+  if (storeit_type==DONT_STORE_VALUE)
+    if (THREADING_is_main_thread())
+      abort(); // Not an error, but I'm courious if it happens.
+  
+  if (FX_when_is_automation(when))
+    if (storeit_type==STORE_VALUE)
+      abort(); // This is definitely an error though. We don't want to store automation values.
+
+  if (!FX_when_is_automation(when))
+    if (storeit_type==DONT_STORE_VALUE)
+      abort(); // abort() should be called during the program. If this line is still here after commit, something might be wrong with the code (plus that I forgot about this line).
+#endif
+  
+  if(value_format==EFFECT_FORMAT_SCALED) {
 #if !defined(RELEASE)
     if (value < -0.01f || value > 1.01f)// don't report floating point rounding errors
       RWarning("value: %f", value);
@@ -951,36 +1114,42 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
   if(effect_num < plugin->type->num_effects){
 
     {
-      radium::PlayerRecursiveLock lock;
-    
-      plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
-
-      if (value_format==PLUGIN_FORMAT_NATIVE)
-        store_value = plugin->type->get_effect_value(plugin, effect_num, PLUGIN_FORMAT_SCALED);
+      {
+        radium::PlayerRecursiveLock lock; // TODO: Let the plugins take care of locking, similar to get_effect_value. Usually it's not necessary to lock.
+        plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
+      }
+      
+      if(storeit_type==STORE_VALUE) {
+        R_ASSERT_NON_RELEASE(!FX_when_is_automation(when));
+        
+        // Reload both native and scaled values, just to be sure. The native effect we get out might not be the same as we put in.
+        // We are not doing automation here either, so performance shouldn't matter (it probably wouldn't have mattered even if we did automation though).
+        store_value_native = plugin->type->get_effect_value(plugin, effect_num, EFFECT_FORMAT_NATIVE);
+        store_value_scaled = plugin->type->get_effect_value(plugin, effect_num, EFFECT_FORMAT_SCALED);
+      }
     }
     
-    if (PLUGIN_is_recording_automation(plugin, effect_num) && sent_from_midi_learn==false && when==FX_single)
-      MIDI_add_automation_recording_event(plugin, effect_num, store_value);
-    
   }else{
-
-    if (PLUGIN_is_recording_automation(plugin, effect_num) && sent_from_midi_learn==false && when==FX_single)
-      MIDI_add_automation_recording_event(plugin, effect_num, value);
 
     int num_effects = plugin->type->num_effects;
     int system_effect = effect_num - num_effects;
     int ch;
 
     switch(system_effect){
+      
     case EFFNUM_INPUT_VOLUME:
-      store_value = get_gain_store_value(value,value_type);
+      set_gain_store_value(store_value_native, store_value_scaled, value_format);
       if(ATOMIC_GET(plugin->input_volume_is_on)==true)
-        SMOOTH_set_target_value(&plugin->input_volume, store_value);
+        SMOOTH_set_target_value(&plugin->input_volume, store_value_native);
       break;
+      
     case EFFNUM_INPUT_VOLUME_ONOFF:
-      SET_SMOOTH_ON_OFF(&plugin->input_volume, plugin->input_volume_is_on, store_value, plugin->savable_effect_values[num_effects+EFFNUM_INPUT_VOLUME]);
+      SET_SMOOTH_ON_OFF(&plugin->input_volume, plugin->input_volume_is_on, value, plugin->last_written_effect_values[effect_num]);
+      update_instrument_gui(plugin);
       break;
 
+
+      
     case EFFNUM_SOLO_ONOFF:
       if(value>0.5f) {
         ATOMIC_SET(plugin->solo_is_on, true);
@@ -991,26 +1160,31 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
       //RT_schedule_mixer_strips_remake();
       break;
 
+
+      
     case EFFNUM_VOLUME:
-      store_value = get_gain_store_value(value,value_type);
+      set_gain_store_value(store_value_native, store_value_scaled, value_format);
       if (ATOMIC_GET(plugin->volume_is_on))
-        plugin->volume = store_value;
+        plugin->volume = store_value_native;
       break;
+      
     case EFFNUM_VOLUME_ONOFF:
       if(value>0.5f) {
-        plugin->volume = plugin->savable_effect_values[num_effects+EFFNUM_VOLUME];
+        plugin->volume = plugin->last_written_effect_values[effect_num];
         ATOMIC_SET(plugin->volume_is_on, true);
       }else {
         ATOMIC_SET(plugin->volume_is_on, false);
         plugin->volume = 0.0f;
       }
-      //update_instrument_gui(plugin);
+      update_instrument_gui(plugin);
       break;
 
+
+      
     case EFFNUM_OUTPUT_VOLUME:
-      store_value = get_gain_store_value(value,value_type);
+      set_gain_store_value(store_value_native, store_value_scaled, value_format);
       //printf("***PLUGIN_SET_EFFE_CT_FALUE. ****** store_value: %f\n",store_value);
-      plugin->output_volume = store_value;
+      plugin->output_volume = store_value_native;
       break;
       
     case EFFNUM_OUTPUT_VOLUME_ONOFF:
@@ -1020,14 +1194,20 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
         ATOMIC_SET(plugin->output_volume_is_on, false);
       break;
 
+
+      
     case EFFNUM_BUS1:
       SET_BUS_VOLUME(0);
+      
     case EFFNUM_BUS2:
       SET_BUS_VOLUME(1);
+      
     case EFFNUM_BUS3:
       SET_BUS_VOLUME(2);
+      
     case EFFNUM_BUS4:
       SET_BUS_VOLUME(3);
+      
     case EFFNUM_BUS5:
       SET_BUS_VOLUME(4);
       
@@ -1047,13 +1227,16 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
     case EFFNUM_BUS5_ONOFF:
       set_bus_onoff(plugin, value, 4);
       break;
+
+      
     case EFFNUM_PAN:
       if(ATOMIC_GET(plugin->pan_is_on)==true)
-        SMOOTH_set_target_value(&plugin->pan, value);
+        SMOOTH_set_target_value(&plugin->pan, value); // pan value is 0->1 for both scaled and native
       break;
+      
     case EFFNUM_PAN_ONOFF:
       if(value>0.5f){
-        SMOOTH_set_target_value(&plugin->pan, plugin->savable_effect_values[plugin->type->num_effects+EFFNUM_PAN]);
+        SMOOTH_set_target_value(&plugin->pan, plugin->last_written_effect_values[effect_num]);
         ATOMIC_SET(plugin->pan_is_on, true);
       }else{
         ATOMIC_SET(plugin->pan_is_on, false);
@@ -1074,13 +1257,17 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
       break;
 #endif
 
+
+      
     case EFFNUM_DRYWET:
       if(ATOMIC_GET(plugin->effects_are_on)==true)
         SMOOTH_set_target_value(&plugin->drywet, value);
       break;
+
+      
     case EFFNUM_EFFECTS_ONOFF:
       if(value>0.5f){
-        SMOOTH_set_target_value(&plugin->drywet, plugin->savable_effect_values[plugin->type->num_effects+EFFNUM_DRYWET]);
+        SMOOTH_set_target_value(&plugin->drywet, plugin->last_written_effect_values[effect_num]);
         ATOMIC_SET(plugin->effects_are_on, true);
       }else{
         ATOMIC_SET(plugin->effects_are_on, false);
@@ -1088,196 +1275,251 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
       }
       //update_instrument_gui(plugin);
       break;
+
+
       
     case EFFNUM_LOWPASS_FREQ:
-      store_value = get_freq_store_value(value, value_type);
-      plugin->lowpass_freq = store_value;
+      set_freq_store_value(store_value_native, store_value_scaled, value_format);
+      plugin->lowpass_freq = store_value_native;
       for(ch=0;ch<plugin->type->num_outputs;ch++)
-        plugin->lowpass.plugins[ch]->type->set_effect_value(plugin->lowpass.plugins[ch], time, 0, store_value, PLUGIN_FORMAT_NATIVE, when);
+        plugin->lowpass.plugins[ch]->type->set_effect_value(plugin->lowpass.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
+      
     case EFFNUM_LOWPASS_ONOFF:
       ATOMIC_SET(plugin->lowpass.is_on, value > 0.5f);
       break;
 
+
+      
     case EFFNUM_HIGHPASS_FREQ:
-      store_value = get_freq_store_value(value, value_type);
-      plugin->highpass_freq = store_value;
+      set_freq_store_value(store_value_native, store_value_scaled, value_format);
+      plugin->highpass_freq = store_value_native;
       for(ch=0;ch<plugin->type->num_outputs;ch++)
-        plugin->highpass.plugins[ch]->type->set_effect_value(plugin->highpass.plugins[ch], time, 0, store_value, PLUGIN_FORMAT_NATIVE, when);
+        plugin->highpass.plugins[ch]->type->set_effect_value(plugin->highpass.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
+      
     case EFFNUM_HIGHPASS_ONOFF:
       ATOMIC_SET(plugin->highpass.is_on, value > 0.5f);
       break;
 
+
+      
     case EFFNUM_EQ1_FREQ:
-      store_value = get_freq_store_value(value, value_type);
-      plugin->eq1_freq = store_value;
+      set_freq_store_value(store_value_native, store_value_scaled, value_format);
+      plugin->eq1_freq = store_value_native;
       for(ch=0;ch<plugin->type->num_outputs;ch++)
-        plugin->eq1.plugins[ch]->type->set_effect_value(plugin->eq1.plugins[ch], time, 0, store_value, PLUGIN_FORMAT_NATIVE, when);
+        plugin->eq1.plugins[ch]->type->set_effect_value(plugin->eq1.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
+      
     case EFFNUM_EQ1_GAIN:
-      store_value = get_filter_gain_store_value(value, value_type);
-      plugin->eq1_db = store_value;
+      set_filter_gain_store_value(store_value_native, store_value_scaled, value_format);
+      plugin->eq1_db = store_value_native;
       for(ch=0;ch<plugin->type->num_outputs;ch++)
-        plugin->eq1.plugins[ch]->type->set_effect_value(plugin->eq1.plugins[ch], time, 1, store_value, PLUGIN_FORMAT_NATIVE, when);
+        plugin->eq1.plugins[ch]->type->set_effect_value(plugin->eq1.plugins[ch], time, 1, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
+      
     case EFFNUM_EQ1_ONOFF:
-      ATOMIC_SET(plugin->eq1.is_on, store_value > 0.5f);
+      ATOMIC_SET(plugin->eq1.is_on, value > 0.5f);
       break;
+
+
       
     case EFFNUM_EQ2_FREQ:
-      store_value = get_freq_store_value(value,value_type);
-      plugin->eq2_freq = store_value;
+      set_freq_store_value(store_value_native, store_value_scaled, value_format);
+      plugin->eq2_freq = store_value_native;
       for(ch=0;ch<plugin->type->num_outputs;ch++)
-        plugin->eq2.plugins[ch]->type->set_effect_value(plugin->eq2.plugins[ch], time, 0, store_value, PLUGIN_FORMAT_NATIVE, when);
+        plugin->eq2.plugins[ch]->type->set_effect_value(plugin->eq2.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
+      
     case EFFNUM_EQ2_GAIN:
-      store_value = get_filter_gain_store_value(value,value_type);
-      plugin->eq2_db = store_value;
+      set_filter_gain_store_value(store_value_native, store_value_scaled, value_format);
+      plugin->eq2_db = store_value_native;
       for(ch=0;ch<plugin->type->num_outputs;ch++)
-        plugin->eq2.plugins[ch]->type->set_effect_value(plugin->eq2.plugins[ch], time, 1, store_value, PLUGIN_FORMAT_NATIVE, when);
+        plugin->eq2.plugins[ch]->type->set_effect_value(plugin->eq2.plugins[ch], time, 1, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
+      
     case EFFNUM_EQ2_ONOFF:
-      ATOMIC_SET(plugin->eq2.is_on, store_value > 0.5f);
+      ATOMIC_SET(plugin->eq2.is_on, value > 0.5f);
       break;
+
+
       
     case EFFNUM_LOWSHELF_FREQ:
-      store_value = get_freq_store_value(value,value_type);
-      plugin->lowshelf_freq = store_value;
+      set_freq_store_value(store_value_native, store_value_scaled, value_format);
+      plugin->lowshelf_freq = store_value_native;
       for(ch=0;ch<plugin->type->num_outputs;ch++)
-        plugin->lowshelf.plugins[ch]->type->set_effect_value(plugin->lowshelf.plugins[ch], time, 0, store_value, PLUGIN_FORMAT_NATIVE, when);
+        plugin->lowshelf.plugins[ch]->type->set_effect_value(plugin->lowshelf.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
+      
     case EFFNUM_LOWSHELF_GAIN:
-      store_value = get_filter_gain_store_value(value,value_type);
-      plugin->lowshelf_db = store_value;
+      set_filter_gain_store_value(store_value_native, store_value_scaled, value_format);
+      plugin->lowshelf_db = store_value_native;
       for(ch=0;ch<plugin->type->num_outputs;ch++)
-        plugin->lowshelf.plugins[ch]->type->set_effect_value(plugin->lowshelf.plugins[ch], time, 1, store_value, PLUGIN_FORMAT_NATIVE, when);
+        plugin->lowshelf.plugins[ch]->type->set_effect_value(plugin->lowshelf.plugins[ch], time, 1, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
+      
     case EFFNUM_LOWSHELF_ONOFF:
-      ATOMIC_SET(plugin->lowshelf.is_on, store_value > 0.5f);
+      ATOMIC_SET(plugin->lowshelf.is_on, value > 0.5f);
       break;
+
+
       
     case EFFNUM_HIGHSHELF_FREQ:
-      store_value = get_freq_store_value(value,value_type);
-      plugin->highshelf_freq = store_value;
+      set_freq_store_value(store_value_native, store_value_scaled, value_format);
+      plugin->highshelf_freq = store_value_native;
       for(ch=0;ch<plugin->type->num_outputs;ch++)
-        plugin->highshelf.plugins[ch]->type->set_effect_value(plugin->highshelf.plugins[ch], time, 0, store_value, PLUGIN_FORMAT_NATIVE, when);
+        plugin->highshelf.plugins[ch]->type->set_effect_value(plugin->highshelf.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
+      
     case EFFNUM_HIGHSHELF_GAIN:
-      store_value = get_filter_gain_store_value(value,value_type);
-      plugin->highshelf_db = store_value;
+      set_filter_gain_store_value(store_value_native, store_value_scaled, value_format);
+      plugin->highshelf_db = store_value_native;
       for(ch=0;ch<plugin->type->num_outputs;ch++)
-        plugin->highshelf.plugins[ch]->type->set_effect_value(plugin->highshelf.plugins[ch], time, 1, store_value, PLUGIN_FORMAT_NATIVE, when);
+        plugin->highshelf.plugins[ch]->type->set_effect_value(plugin->highshelf.plugins[ch], time, 1, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
+      
     case EFFNUM_HIGHSHELF_ONOFF:
-      ATOMIC_SET(plugin->highshelf.is_on, store_value > 0.5f);
+      ATOMIC_SET(plugin->highshelf.is_on, value > 0.5f);
       break;
 
+      
     case EFFNUM_EQ_SHOW_GUI:
-      plugin->show_equalizer_gui = store_value > 0.5f;
+      plugin->show_equalizer_gui = value > 0.5f;
       update_instrument_gui(plugin);
       break;
 
+
+      
     case EFFNUM_BROWSER_SHOW_GUI:
-      plugin->show_browser_gui = store_value > 0.5f;
+      plugin->show_browser_gui = value > 0.5f;
       update_instrument_gui(plugin);
       break;
 
+
+      
     case EFFNUM_CONTROLS_SHOW_GUI:
-      plugin->show_controls_gui = store_value > 0.5f;
+      plugin->show_controls_gui = value > 0.5f;
       update_instrument_gui(plugin);
       break;
+
+
       
     case EFFNUM_VOICE1_ONOFF:
-      set_voice_onoff(plugin, 0, store_value);
-      break;
-    case EFFNUM_VOICE2_ONOFF:
-      set_voice_onoff(plugin, 1, store_value);
-      break;
-    case EFFNUM_VOICE3_ONOFF:
-      set_voice_onoff(plugin, 2, store_value);
-      break;
-    case EFFNUM_VOICE4_ONOFF:
-      set_voice_onoff(plugin, 3, store_value);
-      break;
-    case EFFNUM_VOICE5_ONOFF:
-      set_voice_onoff(plugin, 4, store_value);
-      break;
-    case EFFNUM_VOICE6_ONOFF:
-      set_voice_onoff(plugin, 5, store_value);
-      break;
-    case EFFNUM_VOICE7_ONOFF:
-      set_voice_onoff(plugin, 6, store_value);
+      set_voice_onoff(plugin, 0, value);
       break;
       
+    case EFFNUM_VOICE2_ONOFF:
+      set_voice_onoff(plugin, 1, value);
+      break;
+      
+    case EFFNUM_VOICE3_ONOFF:
+      set_voice_onoff(plugin, 2, value);
+      break;
+      
+    case EFFNUM_VOICE4_ONOFF:
+      set_voice_onoff(plugin, 3, value);
+      break;
+      
+    case EFFNUM_VOICE5_ONOFF:
+      set_voice_onoff(plugin, 4, value);
+      break;
+      
+    case EFFNUM_VOICE6_ONOFF:
+      set_voice_onoff(plugin, 5, value);
+      break;
+      
+    case EFFNUM_VOICE7_ONOFF:
+      set_voice_onoff(plugin, 6, value);
+      break;
+
+
+      
     case EFFNUM_CHANCE1:
-      set_chance(plugin, 0, store_value);
+      set_chance(plugin, 0, value);
       break;
+      
     case EFFNUM_CHANCE2:
-      set_chance(plugin, 1, store_value);
+      set_chance(plugin, 1, value);
       break;
+      
     case EFFNUM_CHANCE3:
-      set_chance(plugin, 2, store_value);
+      set_chance(plugin, 2, value);
       break;
+      
     case EFFNUM_CHANCE4:
-      set_chance(plugin, 3, store_value);
+      set_chance(plugin, 3, value);
       break;
+      
     case EFFNUM_CHANCE5:
-      set_chance(plugin, 4, store_value);
+      set_chance(plugin, 4, value);
       break;
+      
     case EFFNUM_CHANCE6:
-      set_chance(plugin, 5, store_value);
+      set_chance(plugin, 5, value);
       break;
+      
     case EFFNUM_CHANCE7:
-      set_chance(plugin, 6, store_value);
+      set_chance(plugin, 6, value);
       break;
+
+
       
       // fix. Must call GUI function, and then the GUI function calls COMPRESSOR_set_parameter.
     case EFFNUM_COMP_RATIO:
-      //printf("Setting ratio to %f\n",store_value);
-      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_RATIO, store_value);
+      //printf("Setting ratio to %f\n",value);
+      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_RATIO, value);
       break;
+      
     case EFFNUM_COMP_THRESHOLD:
-      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_THRESHOLD, store_value);
+      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_THRESHOLD, value);
       break;
+      
     case EFFNUM_COMP_ATTACK:
-      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_ATTACK, store_value);
+      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_ATTACK, value);
       break;
+      
     case EFFNUM_COMP_RELEASE:
-      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_RELEASE, store_value);
+      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_RELEASE, value);
       break;
+      
     case EFFNUM_COMP_OUTPUT_VOLUME:
-      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_OUTPUT_VOLUME, store_value);
+      COMPRESSOR_set_parameter(plugin->compressor, COMP_EFF_OUTPUT_VOLUME, value);
       break;
+      
     case EFFNUM_COMP_ONOFF:
-      ATOMIC_SET(plugin->comp.is_on, store_value > 0.5f);
-      //printf("storing comp. %d %f %f\n",plugin->comp.is_on,store_value,value);
+      ATOMIC_SET(plugin->comp.is_on, value > 0.5f);
+      //printf("storing comp. %d %f %f\n",plugin->comp.is_on,value,value);
       break;
 
     case EFFNUM_COMP_SHOW_GUI:
-      plugin->show_compressor_gui = store_value > 0.5f;
+      plugin->show_compressor_gui = value > 0.5f;
       update_instrument_gui(plugin);
       break;
 
+
+      
     case EFFNUM_DELAY_TIME:
       {
-        radium::PlayerRecursiveLock lock;
-        
-        store_value = value_type==PLUGIN_STORED_TYPE ? value : scale(value, 0, 1, DELAY_MIN, DELAY_MAX);
-        plugin->delay_time = store_value;
-        if (plugin->delay != NULL){
-          int val = 0;
-          if (ATOMIC_GET(plugin->delay_is_on))
+        set_delay_store_value(store_value_native, store_value_scaled, value_format);
+        {
+          radium::PlayerRecursiveLock lock;
+          
+          plugin->delay_time = store_value_native;
+          if (plugin->delay != NULL){
+            int val = 0;
+            if (ATOMIC_GET(plugin->delay_is_on))
             val = plugin->delay_time*MIXER_get_sample_rate()/1000;
-          static_cast<radium::SmoothDelay*>(plugin->delay)->setSize(val);
+            static_cast<radium::SmoothDelay*>(plugin->delay)->setSize(val);
+          }
         }
         break;
       }
+      
     case EFFNUM_DELAY_ONOFF:
       {
         radium::PlayerRecursiveLock lock;
         
-        ATOMIC_SET(plugin->delay_is_on, store_value > 0.5f);
+        ATOMIC_SET(plugin->delay_is_on, value > 0.5f);
         if (plugin->delay != NULL){
           int val = 0;
           if (ATOMIC_GET(plugin->delay_is_on))
@@ -1286,17 +1528,27 @@ void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_n
         }
         break;
       }
-      
+
     default:
       RError("2. Unknown effect number: %d (%d). %s / %s",effect_num,system_effect,plugin->type->type_name,plugin->type->name);
     }  
   }
 
-  if(set_type==PLUGIN_STORE_VALUE)
-    plugin->savable_effect_values[effect_num] = store_value;
+  PLUGIN_call_me_when_an_effect_value_has_changed(plugin,
+                                                  effect_num,
+                                                  store_value_native,
+                                                  store_value_scaled,
+                                                  storeit_type,
+                                                  when,
+                                                  false,
+                                                  sent_from_midi_learn);
 }
 
-float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum WhereToGetValue where){
+void PLUGIN_set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum StoreitType storeit_type, FX_when when, enum ValueFormat value_format){
+  PLUGIN_set_effect_value2(plugin, time, effect_num, value, storeit_type, when, value_format, false);
+}
+
+float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum WhereToGetValue where, enum ValueFormat value_format){
 
   //RT_PLUGIN_touch(plugin);
     
@@ -1310,63 +1562,30 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
   //  R_ASSERT(PLAYER_current_thread_has_lock());
 #endif
 
-  if(effect_num >= plugin->type->num_effects + NUM_SYSTEM_EFFECTS){
+  if(effect_num >= plugin->type->num_effects + NUM_SYSTEM_EFFECTS || effect_num<0){
     RError("Illegal effect_num %d",effect_num);
     return 0.0f;
   }
 
-  float store_value = safe_float_read(&plugin->savable_effect_values[effect_num]);
-  
-  if(effect_num < plugin->type->num_effects) {
 
-    if(where==VALUE_FROM_PLUGIN || plugin->type->plugin_takes_care_of_savable_values==true)
-      return plugin->type->get_effect_value(plugin,effect_num,PLUGIN_FORMAT_SCALED);
+  if (where==VALUE_FROM_STORAGE) {
+    if (value_format==EFFECT_FORMAT_SCALED)
+      return safe_float_read(&plugin->stored_effect_values_scaled[effect_num]);
     else
-      return store_value;
+      return safe_float_read(&plugin->stored_effect_values_native[effect_num]);
   }
 
-  int system_effect = effect_num - plugin->type->num_effects;
+  
+  if(effect_num < plugin->type->num_effects) // || plugin->type->plugin_takes_care_of_stored_values==true)
+    return plugin->type->get_effect_value(plugin, effect_num, value_format);
 
-  if (where == VALUE_FROM_STORAGE) {
-    switch(system_effect){
-    case EFFNUM_INPUT_VOLUME:
-    case EFFNUM_VOLUME:
-    case EFFNUM_OUTPUT_VOLUME:
-      
-    case EFFNUM_BUS1:
-    case EFFNUM_BUS2:
-    case EFFNUM_BUS3:
-    case EFFNUM_BUS4:
-    case EFFNUM_BUS5:
-      return gain_2_slider(store_value,
-                           MIN_DB, MAX_DB);
-      
-    case EFFNUM_LOWPASS_FREQ:
-    case EFFNUM_HIGHPASS_FREQ:
-    case EFFNUM_EQ1_FREQ:
-    case EFFNUM_EQ2_FREQ:
-    case EFFNUM_LOWSHELF_FREQ:
-    case EFFNUM_HIGHSHELF_FREQ:
-      return frequency_2_slider(store_value,MIN_FREQ,MAX_FREQ);
-      
-    case EFFNUM_EQ1_GAIN:
-    case EFFNUM_EQ2_GAIN:
-    case EFFNUM_LOWSHELF_GAIN:
-    case EFFNUM_HIGHSHELF_GAIN:
-      return scale(store_value,FILTER_MIN_DB,FILTER_MAX_DB,0,1);
-      
-    case EFFNUM_DELAY_TIME:
-      return scale(store_value,DELAY_MIN,DELAY_MAX,0,1);
 
-    default:
-      return store_value;
-    }
-  }
+  int system_effect_num = effect_num - plugin->type->num_effects;
 
-  switch(system_effect){
+  switch(system_effect_num){
+    
   case EFFNUM_INPUT_VOLUME:
-    return gain_2_slider(SMOOTH_get_target_value(&plugin->input_volume),
-                         MIN_DB, MAX_DB);
+    return get_gain_value(SMOOTH_get_target_value(&plugin->input_volume), value_format);    
   case EFFNUM_INPUT_VOLUME_ONOFF:
     return ATOMIC_GET(plugin->input_volume_is_on)==true ? 1.0 : 0.0f;
 
@@ -1374,31 +1593,30 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     return ATOMIC_GET(plugin->solo_is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_VOLUME:
-    return gain_2_slider(plugin->volume, MIN_DB, MAX_DB);
+    return get_gain_value(plugin->volume, value_format);
   case EFFNUM_VOLUME_ONOFF:
     return ATOMIC_GET(plugin->volume_is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_OUTPUT_VOLUME:
     {
-      float val = gain_2_slider(plugin->output_volume, MIN_DB, MAX_DB);
+      float val = get_gain_value(plugin->output_volume, value_format);
       //printf(">>>>>>>>>>>>>>>>>>>>>>>>> Get output volume. return val: %f. Target value: %f\n",val, plugin->output_volume.target_value);
       return val;
     }
-    
   case EFFNUM_OUTPUT_VOLUME_ONOFF:
     return ATOMIC_GET(plugin->output_volume_is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_BUS1:
-    return gain_2_slider(plugin->bus_volume[0], MIN_DB, MAX_DB);
+    return GET_BUS_VOLUME(0, value_format);
   case EFFNUM_BUS2:
-    return gain_2_slider(plugin->bus_volume[1], MIN_DB, MAX_DB);
+    return GET_BUS_VOLUME(1, value_format);
   case EFFNUM_BUS3:
-    return gain_2_slider(plugin->bus_volume[2], MIN_DB, MAX_DB);
+    return GET_BUS_VOLUME(2, value_format);
   case EFFNUM_BUS4:
-    return gain_2_slider(plugin->bus_volume[3], MIN_DB, MAX_DB);
+    return GET_BUS_VOLUME(3, value_format);
   case EFFNUM_BUS5:
-    return gain_2_slider(plugin->bus_volume[4], MIN_DB, MAX_DB);
-    
+    return GET_BUS_VOLUME(4, value_format);
+      
   case EFFNUM_BUS1_ONOFF:
     return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 0)==true ? 1.0 : 0.0f;
   case EFFNUM_BUS2_ONOFF:
@@ -1411,50 +1629,50 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     return ATOMIC_GET_ARRAY(plugin->bus_volume_is_on, 4)==true ? 1.0 : 0.0f;
 
   case EFFNUM_PAN:
-    return SMOOTH_get_target_value(&plugin->pan);
+    return SMOOTH_get_target_value(&plugin->pan); // pan is 0-1 both for native and scaled. TODO: Native format should definitely be -90 -> 90. (not efficient though. Ideally, there should be a STORAGE_FORMAT as well.)
   case EFFNUM_PAN_ONOFF:
     return ATOMIC_GET(plugin->pan_is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_DRYWET:
-    return SMOOTH_get_target_value(&plugin->drywet);
+    return SMOOTH_get_target_value(&plugin->drywet); // drywet is 0-1 both for native and scaled
   case EFFNUM_EFFECTS_ONOFF:
     return ATOMIC_GET(plugin->effects_are_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_LOWPASS_FREQ:
-    return frequency_2_slider(plugin->lowpass_freq,MIN_FREQ,MAX_FREQ);
+    return get_freq_value(plugin->lowpass_freq, value_format);
   case EFFNUM_LOWPASS_ONOFF:
     return ATOMIC_GET(plugin->lowpass.is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_HIGHPASS_FREQ:
-    return frequency_2_slider(plugin->highpass_freq,MIN_FREQ,MAX_FREQ);
+    return get_freq_value(plugin->highpass_freq, value_format);
   case EFFNUM_HIGHPASS_ONOFF:
     return ATOMIC_GET(plugin->highpass.is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_EQ1_FREQ:
-    return frequency_2_slider(plugin->eq1_freq,MIN_FREQ,MAX_FREQ);
+    return get_freq_value(plugin->eq1_freq, value_format);
   case EFFNUM_EQ1_GAIN:
     return scale(plugin->eq1_db,FILTER_MIN_DB,FILTER_MAX_DB,0,1);
   case EFFNUM_EQ1_ONOFF:
     return ATOMIC_GET(plugin->eq1.is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_EQ2_FREQ:
-    return frequency_2_slider(plugin->eq2_freq,MIN_FREQ,MAX_FREQ);
+    return get_freq_value(plugin->eq2_freq, value_format);
   case EFFNUM_EQ2_GAIN:
     return scale(plugin->eq2_db,FILTER_MIN_DB,FILTER_MAX_DB,0,1);
   case EFFNUM_EQ2_ONOFF:
     return ATOMIC_GET(plugin->eq2.is_on)==true ? 1.0 : 0.0f;
     
   case EFFNUM_LOWSHELF_FREQ:
-    return frequency_2_slider(plugin->lowshelf_freq,MIN_FREQ,MAX_FREQ);
+    return get_freq_value(plugin->lowshelf_freq, value_format);
   case EFFNUM_LOWSHELF_GAIN:
-    return scale(plugin->lowshelf_db,FILTER_MIN_DB,FILTER_MAX_DB,0,1);
+    return get_filter_gain_value(plugin->lowshelf_db, value_format);
   case EFFNUM_LOWSHELF_ONOFF:
     return ATOMIC_GET(plugin->lowshelf.is_on)==true ? 1.0 : 0.0f;
     
   case EFFNUM_HIGHSHELF_FREQ:
-    return frequency_2_slider(plugin->highshelf_freq,MIN_FREQ,MAX_FREQ);
+    return get_freq_value(plugin->highshelf_freq, value_format);
   case EFFNUM_HIGHSHELF_GAIN:
-    return scale(plugin->highshelf_db,FILTER_MIN_DB,FILTER_MAX_DB,0,1);
+    return get_filter_gain_value(plugin->highshelf_db, value_format);
   case EFFNUM_HIGHSHELF_ONOFF:
     return ATOMIC_GET(plugin->highshelf.is_on)==true ? 1.0 : 0.0f;
 
@@ -1512,7 +1730,8 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
     return plugin->show_compressor_gui==true ? 1.0 : 0.0f;
     
   case EFFNUM_DELAY_TIME:
-    return scale(plugin->highshelf_db,DELAY_MIN,DELAY_MAX,0,1);
+    return get_delay_value(plugin->highshelf_db, value_format);
+    
   case EFFNUM_DELAY_ONOFF:
     return ATOMIC_GET(plugin->delay_is_on)==true ? 1.0 : 0.0f;
 #if 0    
@@ -1521,26 +1740,39 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum W
 #endif
 
   default:
-    RError("3. Unknown effect number: %d (%d). %s / %s",effect_num,system_effect,plugin->type->type_name,plugin->type->name);
+    RError("3. Unknown effect number: %d (%d). %s / %s",effect_num,system_effect_num,plugin->type->type_name,plugin->type->name);
     return 0.0f;
   }  
-
 }
+
+float PLUGIN_get_effect_value(struct SoundPlugin *plugin,
+                              int effect_num,
+                              enum WhereToGetValue where)
+{
+  return PLUGIN_get_effect_value2(plugin, effect_num, where, EFFECT_FORMAT_SCALED);
+}
+
 
 hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
   const SoundPluginType *type=plugin->type;
   hash_t *effects=HASH_create(type->num_effects);
 
-  int i;
+#if 0
+  for(int i=0;i<type->num_effects;i++)
+    HASH_put_float(effects, PLUGIN_get_effect_name(plugin,i), type->get_effect_value(plugin, i, EFFECT_FORMAT_NATIVE)); // Do this so that the plugin can change min/max values between sessions.
+
+  for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+    HASH_put_float(effects, PLUGIN_get_effect_name(plugin,i), plugin->stored_effect_values[i]);
+#else
+  for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+    HASH_put_float(effects, PLUGIN_get_effect_name(plugin,i), plugin->stored_effect_values_native[i]);
+#endif
   
-  for(i=0;i<type->num_effects;i++)
-    HASH_put_float(effects, PLUGIN_get_effect_name(plugin,i), type->get_effect_value(plugin, i, PLUGIN_FORMAT_NATIVE)); // Do this so that the plugin can change min/max values between sessions.
-
-  for(i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-    HASH_put_float(effects, PLUGIN_get_effect_name(plugin,i), plugin->savable_effect_values[i]);
-
   return effects;
 }
+
+
+
 
 void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state){
   SoundPluginType *type = plugin->type;
@@ -1549,24 +1781,41 @@ void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state){
   
   ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1));
 
-  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
-      
   hash_t *values_state = HASH_get_hash(state, "values");
 
-  float values[num_effects];
-  
-  for(int i=0;i<num_effects;i++)
-    values[i] = HASH_get_float_at(values_state,"value",i);
-  
-  PLAYER_lock();{
-    for(int i=0;i<num_effects;i++)
-      PLUGIN_set_effect_value(plugin, 0, i, values[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-  }PLAYER_unlock();
+  // system effects
+  for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+    float value = HASH_get_float_at(values_state,"value",i);
+    PLUGIN_set_effect_value(plugin, 0, i, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+  }
 
+  // plugin effects
+  if (type->dont_send_effect_values_from_state_into_plugin == false) {
+    
+    float values[type->num_effects];
+    
+    for(int i=0;i<type->num_effects;i++)
+      values[i] = HASH_get_float_at(values_state,"value",i);
+
+    {
+      radium::PlayerLock lock;
+      
+      for(int i=0;i<type->num_effects;i++){
+        PLAYER_maybe_pause_lock_a_little_bit(i);
+        PLUGIN_set_effect_value(plugin, 0, i, values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+      }
+    }
+    
+  } else {
+    
+    R_ASSERT_NON_RELEASE(type->recreate_from_state!=NULL);
+    
+  }
+  
   if(type->recreate_from_state!=NULL)
     type->recreate_from_state(plugin, HASH_get_hash(state, "plugin_state"), false);
-
 }
+
 
 hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin){
   hash_t *state = HASH_create(2);
@@ -1577,7 +1826,7 @@ hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin){
     
   hash_t *values_state = HASH_create(num_effects);
   for(int n=0;n<num_effects;n++)
-    HASH_put_float_at(values_state,"value",n,plugin->savable_effect_values[n]);
+    HASH_put_float_at(values_state, "value", n, plugin->stored_effect_values_native[n]);
   
   HASH_put_hash(state, "values", values_state);
     
@@ -1698,28 +1947,11 @@ void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, f
   }
 
   //printf("      Going to set %s to %f\n",effect_name,value);
-  PLUGIN_set_native_effect_value(plugin, -1, i, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  PLUGIN_set_effect_value(plugin, -1, i, value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 }
 
 void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   const SoundPluginType *type=plugin->type;
-
-#if 0
-  // original code:
-  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
-    const char *effect_name = PLUGIN_get_effect_name(plugin,i);
-    if(HASH_has_key(effects, effect_name)){
-      float val = HASH_get_float(effects, effect_name);
-      if(i<type->num_effects){
-        radium::PlayerLock lock;
-        type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
-        plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
-      }else
-        PLUGIN_set_effect_value(plugin, -1, i, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-    }else
-      plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN); // state didn't have it. Store default value.
-  }
-#endif
 
   hash_t *copy = HASH_copy(effects);
       
@@ -1762,29 +1994,34 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   
   // 2. Store system effects
   for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
-    if(has_value[i]){
-      float val = values[i];
-      PLUGIN_set_native_effect_value(plugin, -1, i, val, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-    }else if (i-type->num_effects==EFFNUM_HIGHPASS_FREQ)
-      plugin->savable_effect_values[i] = 200; // Old songs didn't have this slider
-    else
-      plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
+    float val = has_value[i] ? values[i] : plugin->initial_effect_values[i];
+    PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+    
+    /*
+      ?? (old code)
+
+      }else if (i-type->num_effects==EFFNUM_HIGHPASS_FREQ)
+        plugin->stored_effect_values_native[i] = 200; // Old songs didn't have this slider
+      else
+        plugin->stored_effect_values_native[i] = PLUGIN_get_effect_value(plugin, i, VALUE_FROM_PLUGIN, EFFECT_FORMAT_NATIVE);
+    */
   }
 
   // 3. Store custom effects (need lock here)
-  if (type->dont_send_effect_values_from_state_into_plugin ==false) {
+  if (type->dont_send_effect_values_from_state_into_plugin == false) {
     radium::PlayerLock lock;
 
     for(int i=0 ; i<type->num_effects ; i++){
       PLAYER_maybe_pause_lock_a_little_bit(i);
-      
-      if(has_value[i]){
-        float val = values[i];
-        type->set_effect_value(plugin, -1, i, val, PLUGIN_FORMAT_NATIVE, FX_single);
-        plugin->savable_effect_values[i] = type->get_effect_value(plugin, i, PLUGIN_FORMAT_SCALED);
-      }else
-        plugin->savable_effect_values[i] = PLUGIN_get_effect_value(plugin,i,VALUE_FROM_PLUGIN);
+
+      float val = has_value[i] ? values[i] : plugin->initial_effect_values[i];
+      PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
     }
+  }else{
+#if !defined(RELEASE)
+    if (type->recreate_from_state==NULL) // Not necessarily wrong. Just want to know if it ever happens.
+      abort();
+#endif
   }
 }
 
@@ -1897,12 +2134,19 @@ void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
 
   // Save old data
   {
-    memcpy(plugin->ab_values[old_ab_num], plugin->savable_effect_values, sizeof(float)*num_effects);
+    memcpy(plugin->ab_values[old_ab_num], plugin->stored_effect_values_native, sizeof(float)*num_effects);
 
     if(type->create_state!=NULL) {
       HASH_clear(plugin->ab_states[old_ab_num]);
       type->create_state(plugin, plugin->ab_states[old_ab_num]);
     }
+
+    /*
+    printf("\nSetting ab values:\n");
+    for(int i=0;i<num_effects;i++)
+      printf("  %d (%s): %f / %f, ", i, PLUGIN_get_effect_name(plugin, i), plugin->stored_effect_values_native[i], plugin->stored_effect_values_scaled[i]);
+    printf("\n");
+    */
     
     plugin->ab_is_valid[old_ab_num] = true;
   }
@@ -1915,11 +2159,26 @@ void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
 
     ADD_UNDO(AudioEffect_CurrPos((struct Patch*)plugin->patch, -1));
 
-    PLAYER_lock();{
-      for(int i=0;i<num_effects;i++)
-        PLUGIN_set_effect_value(plugin, 0, i, new_ab_values[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-    }PLAYER_unlock();
+    // Set system effects
+    for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+      PLUGIN_set_effect_value(plugin, 0, i, new_ab_values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 
+    // set custom effects, if necessary
+    if (type->dont_send_effect_values_from_state_into_plugin == false){
+      
+      radium::PlayerLock lock;
+
+      for(int i=0 ; i < type->num_effects ; i++){
+        PLAYER_maybe_pause_lock_a_little_bit(i);
+        PLUGIN_set_effect_value(plugin, 0, i, new_ab_values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+      }
+      
+    }else{
+      
+      R_ASSERT_NON_RELEASE(type->recreate_from_state!=NULL);
+      
+    }
+    
     if(type->recreate_from_state!=NULL)
       type->recreate_from_state(plugin, plugin->ab_states[new_ab_num], false);
   }
@@ -1959,10 +2218,10 @@ void SoundPluginEffectMidiLearn::RT_callback(float val) {
   //printf("effect_num: %d. system_effect: %d, comp_eff_attack: %d\n", effect_num, effect_num - num_effects, COMP_EFF_ATTACK);
 
   if(system_effect==EFFNUM_COMP_ATTACK || system_effect==EFFNUM_COMP_RELEASE) {
-    val = scale(val, 0, 1, 0, 500);
-    PLUGIN_set_effect_value2(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLUGIN_FORMAT_NATIVE, true);
+    val = scale(val, 0, 1, 0, 500); // Need to clean up the compressor things.
+    PLUGIN_set_effect_value2(plugin, -1, effect_num, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE, true);
   } else
-    PLUGIN_set_effect_value2(plugin, -1, effect_num, val, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single, PLUGIN_FORMAT_SCALED, true);
+    PLUGIN_set_effect_value2(plugin, -1, effect_num, val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED, true);
   
   volatile struct Patch *patch = plugin->patch;
   if (patch != NULL)
@@ -2129,9 +2388,29 @@ void PLUGIN_reset(SoundPlugin *plugin){
   
   ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1));
 
+  // system effects (no, we don't reset those, only plugin effects)
+  /*
+  for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+    PLUGIN_set_effect_value(plugin,
+                            0,
+                            i,
+                            plugin->initial_effect_values[i],
+                            STORE_VALUE,
+                            FX_single,
+                            EFFECT_FORMAT_NATIVE);
+  */
+  
   PLAYER_lock();{
-    for(int i=0;i<type->num_effects;i++)
-      PLUGIN_set_effect_value(plugin, 0, i, plugin->initial_effect_values[i], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+    for(int i=0 ; i<type->num_effects ; i++){
+      PLAYER_maybe_pause_lock_a_little_bit(i);
+      PLUGIN_set_effect_value(plugin,
+                              0,
+                              i,
+                              plugin->initial_effect_values[i],
+                              STORE_VALUE,
+                              FX_single,
+                              EFFECT_FORMAT_NATIVE);
+    }
   }PLAYER_unlock();
 }
 
@@ -2140,7 +2419,7 @@ void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
   
   ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
-  PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+  PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 }
 
 static float get_rand(void){
@@ -2169,11 +2448,15 @@ void PLUGIN_random(SoundPlugin *plugin){
     if (plugin->do_random_change[i])
       values[i]=get_rand();
   
-  PLAYER_lock();{
-    for(i=0;i<type->num_effects;i++)
-      if (plugin->do_random_change[i])
-        PLUGIN_set_effect_value(plugin, 0, i, values[i], PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-  };PLAYER_unlock();
+  {
+    radium::PlayerLockOnlyIfNeeded lock;
+    for(i=0;i<type->num_effects;i++){
+      if (plugin->do_random_change[i]){
+        lock.maybe_pause_or_lock(i);
+        PLUGIN_set_effect_value(plugin, 0, i, values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+      }
+    }
+  }
 }
 
 // plugin can be NULL here.

@@ -1593,7 +1593,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
       int x1,y1,x2,y2;
       get_volume_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "M", text_color, Qt::green, x1,y1,x2,y2, !ATOMIC_GET(plugin->volume_is_on), SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(_sound_producer));
+      paint_checkbutton(painter, "M", text_color, Qt::green, x1,y1,x2,y2, is_muted(plugin), SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(_sound_producer));
 
       get_solo_onoff_coordinates(x1,y1,x2,y2);
       paint_checkbutton(painter, "S", text_color, Qt::yellow, x1,y1,x2,y2, ATOMIC_GET(plugin->solo_is_on), false);
@@ -1755,8 +1755,7 @@ bool Chip::positionedAtSlider(QPointF pos){
 
 void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (g_radium_runs_custom_exec==true)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
   bool ctrl_pressed = (event->modifiers() & Qt::ControlModifier);
     
@@ -1796,7 +1795,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               if (thispatch != patch && plugin!=NULL && ATOMIC_GET(plugin->solo_is_on)) {
                 int num_effects = plugin->type->num_effects;
                 //ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_SOLO_ONOFF));
-                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, 0, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_SOLO_ONOFF, 0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
                 //CHIP_update(plugin);
               }
             }
@@ -1831,7 +1830,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
       get_volume_onoff_coordinates(x1,y1,x2,y2);
       if(pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2){
 
-        bool is_on = ATOMIC_GET(plugin->volume_is_on);
+        bool is_on = !is_muted(plugin);
 
         //printf("Setting volume_is_on. Before: %d. After: %d\n",plugin->volume_is_on, !plugin->volume_is_on);
         //float new_value = is_on?0.0f:1.0f;
@@ -1844,10 +1843,10 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
             for(int i=0;i<patches->num_elements;i++){
               struct Patch *thispatch = (struct Patch*)patches->elements[i];
               SoundPlugin *plugin = (SoundPlugin*)thispatch->patchdata;
-              if (thispatch != patch && plugin!=NULL && !ATOMIC_GET(plugin->volume_is_on)) {
-                int num_effects = plugin->type->num_effects;
-                ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_VOLUME_ONOFF));
-                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_VOLUME_ONOFF, 1, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+              if (thispatch != patch && plugin!=NULL && is_muted(plugin)){
+                int effect_num = get_mute_effectnum(plugin->type);
+                ADD_UNDO(AudioEffect_CurrPos(thispatch, effect_num));
+                PLUGIN_set_effect_value(plugin, -1, effect_num, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
                 //CHIP_update(plugin);
               }
             }
@@ -1895,7 +1894,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
               if (thispatch != patch && plugin!=NULL && !ATOMIC_GET(plugin->effects_are_on)) {
                 int num_effects = plugin->type->num_effects;
                 ADD_UNDO(AudioEffect_CurrPos(thispatch, num_effects+EFFNUM_EFFECTS_ONOFF));
-                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, 1, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+                PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
                 CHIP_update(plugin);
               }
             }
@@ -2020,8 +2019,7 @@ QVariant Chip::itemChange(GraphicsItemChange change, const QVariant &value) {
 
 void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (g_radium_runs_custom_exec==true)
-    return;
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
   if(_slider_being_edited>0){
     QPointF pos = event->pos();
@@ -2078,7 +2076,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
       if (_has_made_volume_effect_undo==false)
         ADD_UNDO(AudioEffect_CurrPos(patch, effect_num));
       
-      PLUGIN_set_effect_value(plugin, -1, effect_num, value, PLUGIN_NONSTORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+      PLUGIN_set_effect_value(plugin, -1, effect_num, value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
       
       CHIP_update(plugin);
       
@@ -2102,8 +2100,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
 void Chip::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (g_radium_runs_custom_exec==true)
-    return;
+  //RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
   if(_slider_being_edited>0)
     _slider_being_edited=0;

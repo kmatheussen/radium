@@ -285,7 +285,7 @@ struct MyQSlider : public QSlider {
       
       //VECTOR_push_back(&options, "Set Value");
 
-      int command = GFX_Menu(root->song->tracker_windows, NULL, "", options);
+      int command = GFX_Menu(root->song->tracker_windows, NULL, "", options,true);
 
       //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
 
@@ -328,7 +328,7 @@ struct MyQSlider : public QSlider {
         
         if (!instrumentIsAudio(current_instrument_id)){
           
-          GFX_Message(NULL, "The instrument for the current track is not an audio instrument");
+          GFX_addMessage("The instrument for the current track is not an audio instrument");
           
         } else {
 

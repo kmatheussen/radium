@@ -528,12 +528,15 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   }
 
   if(patch->instrument!=get_audio_instrument()){
-    GFX_Message(NULL, "Not possible to delete MIDI instrument");
+    GFX_Message2(NULL, !force_removal, "Not possible to delete MIDI instrument");
     return;
   }
 
   if(force_removal==false && AUDIO_is_permanent_patch(patch)==true){
-    GFX_Message(NULL,"Can not be deleted");
+    if (force_removal)
+      GFX_Message(NULL, "Instrument \"%s\" can not be deleted", patch->name);
+    else
+      GFX_addMessage(talloc_format("Instrument \"%s\" can not be deleted", patch->name));  // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
     return;
   }
 
@@ -1308,7 +1311,9 @@ void PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg){
 void RT_FX_treat_fx(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,int skip, FX_when when){
   struct Patch *patch = fx->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
-
+  
+  R_ASSERT_NON_RELEASE(FX_when_is_automation(when));
+  
   //printf("RT_FX_treat_fx %d %d\n",(int)time,val);
   fx->treatFX(seqtrack,fx,val,time,skip,when,get_seqtrack_reltempo(seqtrack));
 }
@@ -1365,7 +1370,7 @@ static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patc
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       if (plugin != NULL){
         SoundPluginType *type = plugin->type;
-        PLUGIN_set_effect_value(plugin, 0, type->num_effects+voice_on_off_effs[voicenum], 1, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+        PLUGIN_set_effect_value(plugin, 0, type->num_effects+voice_on_off_effs[voicenum], 1, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
       }
 
     }else{
@@ -1406,7 +1411,7 @@ static void RT_PATCH_turn_voice_off(struct SeqTrack *seqtrack, struct Patch *pat
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       if (plugin != NULL){
         SoundPluginType *type = plugin->type;
-        PLUGIN_set_effect_value(plugin, 0, type->num_effects+voice_on_off_effs[voicenum], 0, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+        PLUGIN_set_effect_value(plugin, 0, type->num_effects+voice_on_off_effs[voicenum], 0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
       }
 
     }else{

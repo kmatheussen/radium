@@ -34,6 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/seqtrack_proc.h"
 
+#define D(n)
+//#define D(n) n
+
 
 static bool g_need_update = false;
 
@@ -331,7 +334,6 @@ public:
   
   const double &_start_time;
   const double &_end_time;
-  QTime _time;
   QRectF _rect;
 
   float t_x1,t_y1,t_x2,t_y2,width,height;
@@ -345,7 +347,6 @@ public:
     position_widgets(0,0,100,100);
     
     //create_seqblock_widgets();
-    _time.start();
   }
   
   ~Seqblocks_widget(){
@@ -697,9 +698,8 @@ public:
     }
   }
   
-  void paint(const QRect &update_rect, QPainter &p) { // QPaintEvent * ev ) override {    
-    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
-    if(g_is_loading) return;
+  void paint(const QRect &update_rect, QPainter &p) { // QPaintEvent * ev ) override {
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     //printf("  PAINTING %d %d -> %d %d\n",t_x1,t_y1,t_x2,t_y2);
 
@@ -760,6 +760,11 @@ public:
     
   }
 
+#define UPDATE_EVERY_5_SECONDS 0
+#define UPDATE_EVERY_5_SECONDS 0
+#if UPDATE_EVERY_5_SECONDS
+  QTime _time;
+#endif
   int _last_num_seqblocks = 0;
   
   void call_very_often(void){
@@ -769,12 +774,14 @@ public:
       _last_num_seqblocks = _seqtrack->seqblocks.num_elements;
     }
 
+#if UPDATE_EVERY_5_SECONDS
     {
       if (_time.elapsed() > 5000) { // Update at least every five seconds.
         _sequencer_widget->update();
         _time.restart();
       }
     }
+#endif
   }
     
 #if 0
@@ -1081,7 +1088,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
 
-    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     QPainter p(this);
 
@@ -1343,9 +1350,8 @@ public:
   
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
-    
-    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
-    if(g_is_loading) return;
+
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     QPainter p(this);
 
@@ -1501,6 +1507,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
   
   void my_update(void){
+    D(printf("SEQ: my_update called\n"));
     int64_t visible_song_length = MIXER_get_sample_rate() * SONG_get_gfx_length();
     if (_end_time > visible_song_length) {
       _end_time = visible_song_length;
@@ -1527,8 +1534,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void resizeEvent( QResizeEvent *qresizeevent) override {
-    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
-    if(g_is_loading) return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     //  set_end_time();
     // _samples_per_pixel = (_end_time-_start_time) / width();
@@ -1626,8 +1632,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   void call_very_often(void){
 
-    if (g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) // Avoids unpainted areas when showing sync widgets.
-      return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
       
     if (_song_tempo_automation_was_visible != _songtempoautomation_widget.is_visible){
       _song_tempo_automation_was_visible = _songtempoautomation_widget.is_visible;
@@ -1814,10 +1819,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void paintEvent (QPaintEvent *ev) override {
+    D(static int num_calls = 0;
+      printf("   SEQ paintEvent called %d, %d -> %d, %d (%d)\n", ev->rect().x(), ev->rect().y(), ev->rect().width(), ev->rect().height(),num_calls++)
+      );
     TRACK_PAINT();
 
-    if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint) return;
-    if(g_is_loading) return;
+    RETURN_IF_DATA_IS_INACCESSIBLE();
     
     QPainter p(this);
 
@@ -2170,7 +2177,9 @@ void SEQTRACK_update(struct SeqTrack *seqtrack){
   Seqtrack_widget *w = g_sequencer_widget->get_seqtrack_widget(seqtrack);
   if (w==NULL)
     return;
-  
+
+  D(printf("SEQTRACK_update called\n"));
+
   g_sequencer_widget->update(0, w->t_y1,
                              g_sequencer_widget->width(), w->t_height);
 }
@@ -2178,6 +2187,8 @@ void SEQTRACK_update(struct SeqTrack *seqtrack){
 void SEQUENCER_update(void){
   if (g_sequencer_widget != NULL){
     //g_sequencer_widget->position_widgets();
+    //printf("SEQUENCER_update called\n%s\n",JUCE_get_backtrace());
+    D(printf("SEQUENCER_update called\n%s\n",""));
     g_sequencer_widget->update();
   }
 }
@@ -2192,6 +2203,7 @@ void RT_SEQUENCER_update_sequencer_and_playlist(void){
     
   } else {
 
+    D(printf("RT_SEQUENDER_update_and_playlist called\n"));
     SEQUENCER_update();
     BS_UpdatePlayList();
     
