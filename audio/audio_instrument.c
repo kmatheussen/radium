@@ -926,6 +926,23 @@ static void *AUDIO_CopyInstrumentData(const struct Tracks *track){
 }
 
 static void AUDIO_PlayFromStartHook(struct Instruments *instrument){
+  VECTOR_FOR_EACH(struct Patch *patch,&instrument->patches){
+
+    struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+    
+    if (plugin==NULL) {
+      
+      R_ASSERT_NON_RELEASE(false);
+      
+    } else {
+
+      PLUGIN_call_me_when_playing_from_start(plugin);
+      
+    }
+    
+  }END_VECTOR_FOR_EACH;
+  
+
 }
 
 static void handle_fx_when_patch_is_replaced(struct Blocks *block,

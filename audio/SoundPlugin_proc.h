@@ -50,6 +50,8 @@ extern LANGSPEC const char *PLUGIN_get_effect_name(SoundPlugin *plugin, int effe
 extern LANGSPEC const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_type, int effect_num);
 extern LANGSPEC void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
 
+extern LANGSPEC void PLUGIN_call_me_when_playing_from_start(struct SoundPlugin *plugin);
+  
 #ifdef __cplusplus
 // Must/should be called from the plugin if it changes value by itself. After initialization that is.
 //

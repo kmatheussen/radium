@@ -989,6 +989,39 @@ static void set_bus_onoff(struct SoundPlugin *plugin, float value, int busnum){
   }
 }
 
+static void maybe_init_effect_when_playing_from_start(struct SoundPlugin *plugin, int effect_num, radium::PlayerLockOnlyIfNeeded &lock, bool use_lock, bool &has_set_effect_value){
+  float automation_value = safe_float_read(&plugin->slider_automation_values[effect_num]);
+
+  if (automation_value >= 0) { // Check if last set value came from automation.
+    
+    if (use_lock)
+      lock.maybe_pause_or_lock(effect_num);
+    
+    float stored_value = safe_float_read(&plugin->stored_effect_values_native[effect_num]);
+    
+    PLUGIN_set_effect_value(plugin, 0, effect_num, stored_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+
+    has_set_effect_value = true;
+  }
+}
+
+void PLUGIN_call_me_when_playing_from_start(struct SoundPlugin *plugin){
+
+  bool has_set_effect_value = false;
+  
+  radium::PlayerLockOnlyIfNeeded lock;
+  
+  for(int i=0;i<plugin->type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+    maybe_init_effect_when_playing_from_start(plugin,
+                                              i,
+                                              lock,
+                                              i < plugin->type->num_effects, // don't use lock for system effects
+                                              has_set_effect_value
+                                              );
+  if (has_set_effect_value)
+    update_instrument_gui(plugin);
+}
+
 // Must/should be called from the plugin if it changes value by itself. After initialization that is.
 //
 // The function must be called even if storeit_type==DONT_STORE_VALUE
@@ -2415,14 +2448,15 @@ void PLUGIN_random(SoundPlugin *plugin){
     if (plugin->do_random_change[i])
       values[i]=get_rand();
   
-  PLAYER_lock();{
+  {
+    radium::PlayerLockOnlyIfNeeded lock;
     for(i=0;i<type->num_effects;i++){
       if (plugin->do_random_change[i]){
-        PLAYER_maybe_pause_lock_a_little_bit(i);
+        lock.maybe_pause_or_lock(i);
         PLUGIN_set_effect_value(plugin, 0, i, values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
       }
     }
-  }PLAYER_unlock();
+  }
 }
 
 // plugin can be NULL here.
