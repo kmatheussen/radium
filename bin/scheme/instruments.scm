@@ -1,6 +1,12 @@
 (provide 'instruments.scm)
 
 
+(define (get-instrument-volume-on/off-effect-name instrument-id)
+  (if (= 0 (<ra> :get-num-output-channels instrument-id))
+      "System In On/Off"
+      "System Volume On/Off"))
+  
+
 (define-constant *bus-effect-names* (list "System Reverb"
                                           "System Chorus"
                                           "System Aux 1"
