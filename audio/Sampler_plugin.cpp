@@ -1994,12 +1994,14 @@ static void generate_peaks(Data *data){
 
 
 static bool load_sample(Data *data, const wchar_t *filename, int instrument_number, bool set_loop_on_off){
-  if(load_xi_instrument(data,filename, set_loop_on_off)==false)
-    if(load_sample_with_libsndfile(data,filename, set_loop_on_off)==false)
-      if(load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false){
+  if(load_xi_instrument(data,filename, set_loop_on_off)==false){
+    if(load_sample_with_libsndfile(data,filename, set_loop_on_off)==false){
+      if(load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false){        
         GFX_Message(NULL,"Unable to load %s as soundfile.", STRING_get_chars(filename));
         return false;
       }
+    }
+  }
   
   //data->num_channels = data->samples[0].num_channels; // All samples must contain the same number of channels.
 

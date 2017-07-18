@@ -364,7 +364,7 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
   reqtype->label_text = "";
   
   //if (lines.size()==0)
-  reqtype->y = reqtype->y + edit_height + 10;
+  reqtype->y = reqtype->y + edit_height + 5;
 
   snprintf(buffer,bufferlength-1,"%s",text.toUtf8().constData());
   printf("Got: \"%s\"\n",buffer);

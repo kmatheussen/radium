@@ -58,6 +58,8 @@ public:
   bool is_binary;
   QTextStream *stream;  
 
+  bool has_set_pos_without_reading = false;
+  
   _radium_os_disk(QString filename, enum Type type, bool is_binary=false)
     : filename(filename)
     , read_file(NULL)
@@ -368,6 +370,8 @@ char *DISK_read_trimmed_line(disk_t *disk){
 }
 
 bool DISK_set_pos(disk_t *disk, int64_t pos){
+  R_ASSERT(disk->has_set_pos_without_reading==false);
+  disk->has_set_pos_without_reading = true;
   return disk->set_pos(pos);
 }
 
@@ -382,7 +386,15 @@ int64_t DISK_pos(disk_t *disk){
 int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes){
   R_ASSERT(disk->is_binary==true);
   R_ASSERT(disk->type==disk_t::READ);
-  return disk->file()->read((char*)destination, num_bytes);
+
+  disk->has_set_pos_without_reading = false;
+  
+  int64_t ret = disk->file()->read((char*)destination, num_bytes);
+  
+  if (ret==-1)
+    GFX_addMessage(talloc_format("Failed reading from %s. Error code: %s.\n(The error codes are listed at http://doc.qt.io/qt-5/qfiledevice.html#error)", disk->filename.toUtf8().constData(), (int)disk->file()->error()));
+  
+  return ret;
 }
 
 bool DISK_close_and_delete(disk_t *disk){
