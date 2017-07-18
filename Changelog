@@ -1,3 +1,92 @@
+Changes 4.9.8 -> 4.9.9:
+* Gui: Fix strange behaviors caused by keyboard events
+  not used by Radium being sent back to Qt.
+* Audio: Fix the XI instrument loader, which could have
+  failed now and then, depending on the mood of the C
+  compiler. This might, or might not, have been a problem
+  in some past releases. In technical fairness, it should
+  have failed in 50% of the releases, but I can't recollect
+  that it has ever happened. It fails in gcc 7 though.
+* Audio: When playing a song from the beginning, all
+  effects in all audio instrument are reset to the state it
+  had before new values were set by automation.
+  (MIDI instruments have always done this. I've forgotten
+  to implement it for audio instruments, until now.)
+* GUI: Stop drawing the automation values in the sliders
+  when setting a new value manualy. This way we always
+  know the current value of an effect by looking at the
+  slider: If the automation value is painted, the
+  automation value is the current value, and if not, the
+  slider value is the current value.
+* Editor: Tweak bottom bar and reltempo positions.
+* Build: Compile with "-no-strict-aliasing" since there is
+  lots of code that I think could break without it.
+* Audio: Fix bug that caused values set by automation to be
+  saved to disk.
+* Audio: Always set correct volume when enabling any of the
+  following effects: Volume In, Volume, Pan, Dry/Wet.
+  Earlier, wrong effect was set if automation had changed
+  the values while the effect was disabled.
+* Audio: Change mute into muting "Volume In" instead of
+  "Volume" when the sound object doesn't have any output
+  channels.
+* Editor: Create undo when pressing return to add or edit
+  notes and pitches.
+* Menus: Don't start to navigate the main menus after
+  pressing e.g. Left Alt + X. (The main menus should only
+  pop up if pressing the Left Alt key alone.)
+* GUI: Fix strange focus behavior when using combo boxes.
+  (There are lots of combo boxes in the MIDI instrument
+  widget)
+* Menus: Fix keyboard focus after pressing the Escape key to
+  close the main menus.
+* Mixer: Workaround for a Qt bug causing mouse click not to
+  work right after a custom exec have been triggered by
+  pressing the mouse button, for instance after trying to
+  delete a bus.
+* GUI: More fixes to make sure things are repainted when
+  running a custom exec, at least when it's safe to do so.
+* Log window: Make it possible to click html links.
+* Sequencer: Only repaint the sequencer track the node
+  belongs to, not all tracks.
+* GUI: Wider borders and wider space between widgets in the
+  async message dialog.
+* Internal: Reorganize code to better handle synchronized
+  windows popping up at inconvenient times.
+* Editor: Render pianoroll of the rightmost visible track even
+  when the note lane isn't visible.
+* Editor: Fix block tempo multiplier slider sometimes drawn
+  with the wrong colors.
+* Editor: Don't change current track when mouse pointer is
+  outside the editor.
+* Editor: Fix general flickering in the non-opengl parts. (Bug
+  introduced a couple of releases ago.)
+* GUI: Don't repaint everything when pressing the up or down
+  key. (One of many situations where it is not necessary to
+  repaint.)
+* Sequencer: Turn off repainting-every-5-seconds-just-in-case
+  hack. Not necessary anymore.
+* GUI: More work to avoid widgets not being repainted when
+  running a custom exec.
+* Editor: Fix instrument names not always being displayed
+  completely in the track headers when the text is getting
+  closer to the right edge of the editor.
+* Sequencer: Only repaint when necesessary when moving the
+  mouse cursor in the editor or the sequencer.
+* Mixer strips: Tweak volume requester gfx.
+* Mixer strips: Display "0.0" instead of "-.0.0" in the volume
+  display.
+* GUI: Don't hide tracker headers, block tempo slider, and so
+  forth, when running custom exec.
+* Mixer strips: Write "New volume for ... (now ...dB):" in the
+  requester when clicking the volume text. Earlier, the
+  requester could have been confusing, especially if opened
+  because the user clicked randomly in the mixer.
+* GUI: More work to ensure program has keyboard focus when
+  starting up.
+
+
+
 Changes 4.9.7 -> 4.9.8:
 * Mixer strips: Save configuration of the main mixer strips
   to disk.
