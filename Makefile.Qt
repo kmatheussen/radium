@@ -249,7 +249,7 @@ endif
 CPPOPT = $(COMMONOPT) -Wno-unused-function -std=gnu++11 -DNDEBUG # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
 
 ifeq ($(BUILDTYPE), DEBUG)
-	CPPOPT += -Wsuggest-override
+	CPPOPT += -Wsuggest-override -Woverloaded-virtual
 endif
 
 # Can't be enabled because of 3rd party header files:
@@ -1725,7 +1725,7 @@ Pd_plugin.o: audio/Pd_plugin.cpp
 	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture -Wno-suggest-override
+FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture -Wno-suggest-override -Wno-overloaded-virtual
 
 ifeq ($(GCC_MAJOR),7)
 	FAUST_OPTS += -D_GLIBCXX_USE_CXX11_ABI=0 -fno-sanitize=signed-integer-overflow
