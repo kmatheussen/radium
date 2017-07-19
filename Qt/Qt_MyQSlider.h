@@ -133,11 +133,11 @@ struct MyQSlider : public QSlider {
     SLIDERPAINTER_call_regularly(_painter);
   }
   
-  void hideEvent ( QHideEvent * event_ ) {
+  void hideEvent ( QHideEvent * event_ ) override {
     SLIDERPAINTER_became_invisible(_painter);
   }
 
-  void showEvent ( QShowEvent * event_ ) {
+  void showEvent ( QShowEvent * event_ ) override {
     SLIDERPAINTER_became_visible(_painter);
   }
 

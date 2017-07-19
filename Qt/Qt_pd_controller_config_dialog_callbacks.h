@@ -44,7 +44,7 @@ public:
   
   struct Timer : QTimer{
     Pd_Controller_Config_dialog *my;
-    void timerEvent(QTimerEvent * e){
+    void timerEvent(QTimerEvent * e) override {
       RETURN_IF_DATA_IS_INACCESSIBLE();
       my->timerCallback();
     }
@@ -163,7 +163,7 @@ public:
     _is_updating_gui = false;
   }
 
-  void closeEvent(QCloseEvent *event) {
+  void closeEvent(QCloseEvent *event) override {
     Pd_Controller *controller = get_controller();
     if(controller!=NULL)
       controller->config_dialog_visible = false;

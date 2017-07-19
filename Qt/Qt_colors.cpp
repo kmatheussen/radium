@@ -26,12 +26,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qtimer.h>
 #include <qfile.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 #include <Qsci/qsciscintilla.h>
+#pragma GCC diagnostic pop
 
 #include "../common/nsmtracker.h"
 #include "FocusSniffers.h"
-#include <faust/gui/faustqt.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#include <faust/gui/faustqt.h>
+#pragma GCC diagnostic pop
 
 #ifdef USE_QT3
 #include <qobjectlist.h>

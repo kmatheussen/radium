@@ -157,7 +157,7 @@ public:
     }
 #endif
     
-    void wheelEvent(QWheelEvent *qwheelevent);
+    void wheelEvent(QWheelEvent *qwheelevent) override;
 
 #if USE_QT_VISUAL && USE_QIMAGE_BUFFER
 #if !USE_OPENGL
@@ -235,7 +235,7 @@ public:
 protected:
     //    bool        event(QEvent *);
 #if 1 //USE_QT_VISUAL
-    void	paintEvent( QPaintEvent * );
+    void	paintEvent( QPaintEvent * ) override;
     //void showEvent ( QShowEvent * event ){printf("showevent\n");}
     //void changeEvent ( QEvent * event ) { printf("changeEvent\n"); }
 
@@ -263,8 +263,8 @@ protected:
     void	mouseReleaseEvent( QMouseEvent *) override;
     void	mouseMoveEvent( QMouseEvent *) override;
 #endif
-    void        resizeEvent( QResizeEvent *);
-    void        closeEvent(QCloseEvent *);
+    void        resizeEvent( QResizeEvent *) override ;
+    void        closeEvent(QCloseEvent *) override ;
 #if 0
     void        customEvent(QEvent *);
 #endif

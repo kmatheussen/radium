@@ -94,18 +94,18 @@ struct SoundPluginEffectMidiLearn final : public MidiLearn {
     }
   */
     
-  hash_t *create_state(void){
+  hash_t *create_state(void) override {
     hash_t *state = MidiLearn::create_state();
     HASH_put_int(state, "SoundPluginEffectMidiLearn::effect_num", effect_num);
     return state;
   }
 
-  void init_from_state(hash_t *state){
+  void init_from_state(hash_t *state) override {
     MidiLearn::init_from_state(state);
     effect_num = HASH_get_int32(state, "SoundPluginEffectMidiLearn::effect_num");
   }
 
-  virtual int64_t RT_get_instrument_id(void) override {
+  int64_t RT_get_instrument_id(void) override {
     volatile struct Patch *patch = plugin->patch;
     if (patch==NULL)
       return -2;
@@ -113,11 +113,11 @@ struct SoundPluginEffectMidiLearn final : public MidiLearn {
       return patch->id;
   }
   
-  virtual QString get_dest_info(void) override;
-  virtual void delete_me(void) override;
-  virtual void RT_callback(float val) override;
+  QString get_dest_info(void) override;
+  void delete_me(void) override;
+  void RT_callback(float val) override;
   
-  virtual bool RT_get_automation_recording_data(SoundPlugin **plugin, int *effect_num) override{
+  bool RT_get_automation_recording_data(SoundPlugin **plugin, int *effect_num) override {
 
     if (PLUGIN_is_recording_automation(this->plugin, this->effect_num)==false)
       return false;

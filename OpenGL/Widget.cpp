@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <vlGraphics/OcclusionCullRenderer.hpp>
 #include <vlGraphics/Actor.hpp>
 
+
 #include <QGLWidget>
 #include <QTextEdit>
 #include <QMessageBox>

@@ -179,7 +179,7 @@ namespace{
       setContextMenuPolicy(Qt::NoContextMenu); // Only way I've found to avoid it from popping up on windows.
     }
         
-    void keyPressEvent ( QKeyEvent * event ){
+    void keyPressEvent ( QKeyEvent * event ) override {
       printf("oh yeah baby %d, scancode: %x\n",event->key(),event->nativeScanCode()-8);
       //event->ignore();
       if(event->key()>0){

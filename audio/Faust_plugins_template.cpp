@@ -11,6 +11,9 @@ struct Meta
     void declare (const char* key, const char* value) { }
 };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+
 
 #include <faust/dsp/dsp.h>
 
@@ -27,9 +30,10 @@ struct Meta
 
 #endif
 
-
+#pragma GCC diagnostic pop
 
 #include "Faust_plugins_template1.cpp"
+
 
 /******************************************************************************
 *******************************************************************************

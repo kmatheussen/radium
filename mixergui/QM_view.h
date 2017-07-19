@@ -87,7 +87,7 @@ public:
   }
 
 protected:
-    void wheelEvent(QWheelEvent *);
+    void wheelEvent(QWheelEvent *) override;
 
 private:
     View *view;

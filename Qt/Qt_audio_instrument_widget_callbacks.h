@@ -889,7 +889,7 @@ public:
       show_large(new_size_type);
   }
 
-  void hideEvent(QHideEvent * event){
+  void hideEvent(QHideEvent * event) override {
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin != NULL)
       ATOMIC_SET(plugin->is_visible, false);
@@ -901,7 +901,7 @@ public:
       //show_small();  // If not, all instrument widgets will have large height.
   }
   
-  void showEvent(QShowEvent * event){
+  void showEvent(QShowEvent * event) override {
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin != NULL)
       ATOMIC_SET(plugin->is_visible, true);

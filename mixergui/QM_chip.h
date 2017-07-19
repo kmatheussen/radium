@@ -302,7 +302,7 @@ public:
    : SuperConnection(parent, false, MIXER_AUDIO_CONNECTION_COLOR_NUM)
   {}
 
-  virtual void update_position(void);
+  void update_position(void) override;
 };
 
 class EventConnection : public SuperConnection {
@@ -313,7 +313,7 @@ public:
     : SuperConnection(parent, true, MIXER_EVENT_CONNECTION_COLOR_NUM)
   {}
   
-  virtual void update_position(void);
+  void update_position(void) override;
 };
 
 class Chip : public QGraphicsItem
@@ -325,9 +325,9 @@ public:
   Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float y);
   ~Chip();
 
-  QRectF boundingRect() const;
-  QPainterPath shape() const;
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *item, QWidget *widget);
+  QRectF boundingRect() const override;
+  QPainterPath shape() const override;
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *item, QWidget *widget) override;
 
   bool positionedAtSlider(QPointF pos);
 
@@ -336,14 +336,14 @@ public:
   QString _name_text;
   
 protected:
-    void mousePressEvent(QGraphicsSceneMouseEvent *event);
-    void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
 #if 0
-  void hoverMoveEvent ( QGraphicsSceneHoverEvent * event ){
+  void hoverMoveEvent ( QGraphicsSceneHoverEvent * event ) override{
     printf("got hovermove event\n");
   }
 #endif

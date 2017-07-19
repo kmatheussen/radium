@@ -492,7 +492,7 @@ struct Comp
     updateBackgroundImage();
   }
 
-  void resized(){
+  void resized() override {
     if(width()>0 && height()>0)
       createBackgroundImage();
   }
@@ -761,7 +761,7 @@ struct Comp
     p_startpos = new_val;
   }
 
-  bool mousePress(int x, int y){
+  bool mousePress(int x, int y) override {
     Box in_box = get_slider1_parms();
     Box out_box = get_slider2_parms();
     Box vol_box = get_slider3_parms();
@@ -820,7 +820,7 @@ struct Comp
     return true;
   }
 
-  bool mouseMove (int x, int y)
+  bool mouseMove (int x, int y) override
   {
     if(curr_slider==0)
       return false;
@@ -829,7 +829,7 @@ struct Comp
     return true;
   }
 
-  bool mouseRelease (int x, int y)
+  bool mouseRelease (int x, int y) override
   {
     if(curr_slider==0)
       return false;
@@ -1273,7 +1273,7 @@ struct Comp
     paintBackgroundImage(&p);
   }
 
-  void repaint(MyPainter *p){
+  void repaint(MyPainter *p) override {
 
     if(background_image_must_be_updated==true)
       updateBackgroundImage();

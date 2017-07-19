@@ -25,8 +25,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <unistd.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 #include <vlCore/VisualizationLibrary.hpp>
 #include <vlVG/VectorGraphics.hpp>
+#pragma GCC diagnostic pop
 
 #include <QThread>
 #include <QGLContext>

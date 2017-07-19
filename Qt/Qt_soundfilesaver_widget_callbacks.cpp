@@ -148,7 +148,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
     
     DEFINE_ATOMIC(const char *, async_message);
 
-    void timerEvent(QTimerEvent * e){
+    void timerEvent(QTimerEvent * e) override {
       printf("clicked: %p\n", parent->msgBox->clickedButton());
 
       // Could seem like this one returns sometimes. We should never exit from here. Think it happens when the player calls rt_message.
@@ -230,7 +230,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
   }
 
   // Don't want return to close the dialog
-  void keyPressEvent(QKeyEvent *evt)
+  void keyPressEvent(QKeyEvent *evt) override
   {
     if(evt->key() == Qt::Key_Enter || evt->key() == Qt::Key_Return)
       evt->accept();

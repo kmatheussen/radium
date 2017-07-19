@@ -44,33 +44,33 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
 
   MyQSpinBox ( QWidget * parent = 0 ) : QSpinBox(parent) {init();}
 
-  void focusInEvent ( QFocusEvent *e ){                                 
+  void focusInEvent ( QFocusEvent *e ) override {                                 
     printf("Got focusInEvent\n");
     obtain_keyboard_focus();
     GL_lock();
     QSpinBox::focusInEvent(e);                                             
     GL_unlock();
   }                                                                     
-  void focusOutEvent ( QFocusEvent *e ){                                
+  void focusOutEvent ( QFocusEvent *e ) override {                                
     printf("Got focusOutEvent\n");
     release_keyboard_focus();
     GL_lock();
     QSpinBox::focusOutEvent(e);                                            
     GL_unlock();
   }                                                                     
-  void hideEvent ( QHideEvent *e ){                                
+  void hideEvent ( QHideEvent *e ) override {                                
     //printf("Got hideEvent\n");
     release_keyboard_focus();
     QSpinBox::hideEvent(e);                                            
   }                                                                     
-  void 	wheelEvent ( QWheelEvent * event ){
+  void 	wheelEvent ( QWheelEvent * event ) override {
     printf("Got wheel event\n");
     QSpinBox::wheelEvent(event);
     set_editor_focus();
   }
 
 
-  void mousePressEvent ( QMouseEvent * event )
+  void mousePressEvent ( QMouseEvent * event ) override
   {
     if (event->button() == Qt::LeftButton){      
       //setSliderDown(true);    
@@ -85,7 +85,7 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
   }
 
 #if 0
-  void paintEvent ( QPaintEvent * ev ){
+  void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
     
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);

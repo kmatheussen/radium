@@ -23,8 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QFile>
 
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 #include "../bin/packages/libgig/src/SF.h"
+#pragma GCC diagnostic pop
 
 #define DEBUG_ALLOWED 1 // <- SF.h sets DEBUG to 0
 #include "../common/nsmtracker.h"

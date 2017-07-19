@@ -10,7 +10,7 @@ public:
     Instruments_widget *instruments_widget;
 
     // horror
-    void timerEvent(QTimerEvent * e){
+    void timerEvent(QTimerEvent * e) override {
 
       if (g_is_starting_up)
         return;

@@ -437,7 +437,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     bool _someone_else_has_become_parent = false;
     
-    void calledFromTimer(void){
+    void calledFromTimer(void) override {
 
       if (_child==NULL){
         // 4.

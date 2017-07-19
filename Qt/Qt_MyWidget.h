@@ -249,15 +249,15 @@ namespace cvs{
       MyQWidget2(QWidget *parent, MyWidget *mywidget) : QWidget(parent),mywidget(mywidget){
       }
 
-      void mousePressEvent ( QMouseEvent * event ){
+      void mousePressEvent ( QMouseEvent * event ) override {
         if(mywidget->mousePress(event->x(),event->y()))
           event->accept();
       }
-      void mouseMoveEvent ( QMouseEvent * event ){
+      void mouseMoveEvent ( QMouseEvent * event ) override {
         if(mywidget->mouseMove(event->x(),event->y()))
           event->accept();
       }
-      void mouseReleaseEvent ( QMouseEvent * event ){
+      void mouseReleaseEvent ( QMouseEvent * event ) override {
         if(mywidget->mouseRelease(event->x(),event->y()))
           event->accept();
       }
@@ -273,7 +273,7 @@ namespace cvs{
 
         mywidget->repaint(&p);
       }
-      virtual void resizeEvent ( QResizeEvent * event ){
+      void resizeEvent ( QResizeEvent * event ) override {
         RETURN_IF_DATA_IS_INACCESSIBLE();
         mywidget->resized();
       }
@@ -329,7 +329,7 @@ namespace cvs{
 
       MyQTimer(MyTimer *mytimer) : mytimer(mytimer) {}
 
-      void timerEvent(QTimerEvent * e){ // virtual method from QTimer
+      void timerEvent(QTimerEvent * e) override { // virtual method from QTimer
         RETURN_IF_DATA_IS_INACCESSIBLE();
         mytimer->timer();
       }

@@ -132,7 +132,7 @@ private:
     
 public:
   
-  int read(double ratio, int num_out_frames_left, float *out) {
+  int read(double ratio, int num_out_frames_left, float *out) override {
     return read_internal(
                          1.0 / ratio,
                          num_out_frames_left,
@@ -140,7 +140,7 @@ public:
                          0);
   }
   
-  void reset() {
+  void reset() override {
     m_interpolator.reset();
     m_num_in_frames_left = 0;
   }
@@ -176,7 +176,7 @@ struct SincResampler : public Resampler{
     src_delete(_src_state);
   }
 
-  int read(double ratio,int num_frames, float *out){
+  int read(double ratio,int num_frames, float *out) override {
     if(_last_ratio != ratio){
       if(_last_ratio >= 0.0)
         src_set_ratio(_src_state, ratio);
@@ -196,7 +196,7 @@ struct SincResampler : public Resampler{
       return ret;
   }
 
-  void reset(){
+  void reset() override {
     src_reset(_src_state);
   }
 };

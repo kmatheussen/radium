@@ -40,8 +40,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #endif
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 #include <Qsci/qscilexerjava.h>
 #include <Qsci/qscilexercpp.h>
+#pragma GCC diagnostic pop
 
 #include "../audio/SoundPlugin_proc.h"
 
@@ -62,7 +65,7 @@ public:
   {
   }
 
-  void wheelEvent(QWheelEvent *qwheelevent) {
+  void wheelEvent(QWheelEvent *qwheelevent) override {
     if (qwheelevent->modifiers() & Qt::ShiftModifier)
       horizontalScrollBar()->setValue(horizontalScrollBar()->value() - qwheelevent->delta()/5);
     else
@@ -303,7 +306,7 @@ class Editor : public FocusSnifferQsciScintilla{
     last_search = s;
   }
   
-  void keyPressEvent ( QKeyEvent * event ){
+  void keyPressEvent ( QKeyEvent * event ) override {
     if (event->key()==Qt::Key_F3 && last_search != "")
       search(last_search);
     

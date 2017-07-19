@@ -51,7 +51,7 @@ public:
     return QRectF( A, B );
   }
 
-  void enterEvent(QEvent *event) override{
+  void enterEvent(QEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
 
@@ -264,7 +264,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
       setInterval(50);
     }
 
-    void timerEvent(QTimerEvent *e) override{
+    void timerEvent(QTimerEvent *e) override {
       if (time.elapsed() > 30){ // singleshot is messy since we might get deleted at any time.
         printf("TEIMERERINE EVENT\n");
         // _parent->adjustSize();
@@ -324,7 +324,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
   }
   */
 
-  void calledFromTimer(void){
+  void calledFromTimer(void) override {
     if (_mixer_strips_gui >= 0){
 
       int new_num_rows = gui_getNumRowsInMixerStrips(_mixer_strips_gui);

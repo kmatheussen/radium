@@ -52,7 +52,7 @@ public:
     volatile int _clearing_generation;
     bool _last_sent_gui_is_visible;
 
-    void timerEvent(QTimerEvent * e){
+    void timerEvent(QTimerEvent * e) override {
       RETURN_IF_DATA_IS_INACCESSIBLE();
 
       SoundPlugin *plugin = (SoundPlugin*)_pd_plugin_widget->_patch->patchdata;
@@ -118,14 +118,14 @@ public:
       delete _conf_dialogs[i];
   }
 
-  void hideEvent ( QHideEvent * event ) {
+  void hideEvent ( QHideEvent * event ) override {
     for(int i=0;i<NUM_PD_CONTROLLERS;i++)
       _conf_dialogs[i]->parent_is_hiding();
 
     _timer.stop();
   }
 
-  void showEvent ( QShowEvent * event ) {
+  void showEvent ( QShowEvent * event ) override {
     for(int i=0;i<NUM_PD_CONTROLLERS;i++)
       _conf_dialogs[i]->parent_is_showing();
 

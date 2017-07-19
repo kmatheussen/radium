@@ -63,7 +63,7 @@ struct MyMenu : public QMenu, radium::Timer{
   }
 
   // Workaround. Sometimes, aboutToHide and/or aboutToShow is not called.
-  void calledFromTimer(void){
+  void calledFromTimer(void) override {
     if (isVisible())
       setopen();
     else

@@ -79,8 +79,8 @@ public:
 
   virtual ~MidiLearn() = default; // Crazy c++ stuff. https://www.securecoding.cert.org/confluence/display/cplusplus/OOP52-CPP.+Do+not+delete+a+polymorphic+object+without+a+virtual+destructor
 
-  hash_t *create_state(void);
-  void init_from_state(hash_t *hash);
+  virtual hash_t *create_state(void);
+  virtual void init_from_state(hash_t *hash);
 
   bool RT_matching(const symbol_t *port_name, uint32_t msg);
   bool RT_maybe_use(const symbol_t *port_name, uint32_t msg);

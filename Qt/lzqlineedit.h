@@ -41,7 +41,7 @@ public:
     return rational._numerator;
   }
                                     
-  virtual void wheelEvent(QWheelEvent *qwheelevent) {
+  void wheelEvent(QWheelEvent *qwheelevent) override {
     printf("Got lz wheel event\n");
 
     struct Tracker_Windows *window = root->song->tracker_windows;
@@ -86,7 +86,7 @@ public:
     return RATIO_from_string(text());
   }
     
-  virtual void wheelEvent(QWheelEvent *qwheelevent) {
+  void wheelEvent(QWheelEvent *qwheelevent) override {
 
     Rational ratio(text());
     //printf("  text: %s, ratio: %s\n", text().toUtf8().constData(), ratio.toString().toUtf8().constData());
@@ -146,7 +146,7 @@ public:
     }
   }
   
-  virtual void wheelEvent(QWheelEvent *qwheelevent) {
+  void wheelEvent(QWheelEvent *qwheelevent) override {
     printf("Got grid wheel event\n");
     
     Rational ratio(root->grid_numerator, root->grid_denominator);
@@ -181,7 +181,7 @@ public:
     }
   }
   
-  virtual void wheelEvent(QWheelEvent *qwheelevent) {
+  void wheelEvent(QWheelEvent *qwheelevent) override {
     printf("Got quantization wheel event\n");
     
     Rational ratio((int)root->quantitize_options.quant.numerator, (int)root->quantitize_options.quant.denominator);
@@ -209,7 +209,7 @@ public:
   {
   }
 
-  virtual void wheelEvent(QWheelEvent *qwheelevent) {
+  void wheelEvent(QWheelEvent *qwheelevent) override {
     //printf("Got note name wheel event\n");
 
     int keynum = getNoteNameValue((char*)text().toUtf8().constData());
@@ -244,7 +244,7 @@ public:
     }
   }
   
-  virtual void wheelEvent(QWheelEvent *qwheelevent) {
+  void wheelEvent(QWheelEvent *qwheelevent) override {
     printf("Got signature wheel event\n");
     
     Rational ratio((int)root->signature.numerator, (int)root->signature.denominator);

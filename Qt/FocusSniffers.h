@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   : Class(parent_),dontsniff(false)                                     \
     {                                                                   \
     }                                                                   \
-  void focusInEvent ( QFocusEvent *e ){                                 \
+  void focusInEvent ( QFocusEvent *e ) override {                       \
     printf("got in\n");                                                 \
     if(dontsniff==false)                                                \
       obtain_keyboard_focus();                                          \
@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     Class::focusInEvent(e);                                             \
     GL_unlock();                                                        \
   }                                                                     \
-  void focusOutEvent ( QFocusEvent *e ){                                \
+  void focusOutEvent ( QFocusEvent *e ) override {                      \
     if(dontsniff==false) {                                              \
       release_keyboard_focus();                                         \
     }                                                                   \
@@ -56,13 +56,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     Class::focusOutEvent(e);                                            \
     GL_unlock();                                                        \
   }                                                                     \
-  void hideEvent (QHideEvent * event_){                                  \
+  void hideEvent (QHideEvent * event_) override {                       \
     if(dontsniff==false) {                                              \
       release_keyboard_focus();                                         \
     }                                                                   \
     Class::hideEvent(event_);                                            \
   }                                                                     \
-  void keyPressEvent ( QKeyEvent * event_ ){                             \
+  void keyPressEvent ( QKeyEvent * event_ ) override {                  \
     if(event_->key()==Qt::Key_Escape){                                   \
       GL_lock();                                                        \
       clearFocus();                                                     \
@@ -81,8 +81,12 @@ MakeFocusSnifferClass(QLineEdit);
 //MakeFocusSnifferClass(QTextEdit);
 //MakeFocusSnifferClass(QListWidget);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 #include <Qsci/qscilexer.h>
 #include <Qsci/qsciscintilla.h>  // <--- Much trouble. Any qt4 alternatives?
+#pragma GCC diagnostic pop
+
 
 class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
   public:                                                               
@@ -115,7 +119,7 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
     setMarginWidth(1, ceil(width));
   }
       
-  void wheelEvent(QWheelEvent *event_){                  
+  void wheelEvent(QWheelEvent *event_) override {                  
     if (event_->modifiers() & Qt::ControlModifier){                
       if (event_->delta() > 0){                                     
         zoomIn(1);
@@ -135,13 +139,13 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
       //set_editor_focus();
     }
   }
-  void keyPressEvent ( QKeyEvent * event_ ){
+  void keyPressEvent ( QKeyEvent * event_ ) override {
     if(event_->key()==Qt::Key_Escape)
       set_editor_focus();
     else
       QsciScintilla::keyPressEvent(event_);
   }
-  void focusInEvent ( QFocusEvent *e ){                                 
+  void focusInEvent ( QFocusEvent *e ) override {                                 
     printf("Got focusInEvent\n");
     if(dontsniff==false)
       obtain_keyboard_focus_without_greying();
@@ -149,7 +153,7 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
     QsciScintilla::focusInEvent(e);                                             
     GL_unlock();
   }                                                                     
-  void focusOutEvent ( QFocusEvent *e ){                                
+  void focusOutEvent ( QFocusEvent *e ) override {                                
     printf("Got focusOutEvent\n");
     if(dontsniff==false) {
       release_keyboard_focus();
@@ -158,7 +162,7 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
     QsciScintilla::focusOutEvent(e);                                            
     GL_unlock();
   }                                                                     
-  void hideEvent (QHideEvent * event_){
+  void hideEvent (QHideEvent * event_) override {
     if(dontsniff==false) {
       release_keyboard_focus();
     }                                 
@@ -222,7 +226,7 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
    : QSpinBox(parent_),dontsniff(false)                                     
     {                                                                   
     }                                                                   
-  void focusInEvent ( QFocusEvent *e ){                                 
+  void focusInEvent ( QFocusEvent *e ) override {                                 
     printf("Got focusInEvent\n");
     if(dontsniff==false)
       obtain_keyboard_focus();
@@ -230,7 +234,7 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
     QSpinBox::focusInEvent(e);                                             
     GL_unlock();
   }                                                                     
-  void focusOutEvent ( QFocusEvent *e ){                                
+  void focusOutEvent ( QFocusEvent *e ) override {                                
     printf("Got focusOutEvent\n");
     if(dontsniff==false) {
       release_keyboard_focus();
@@ -239,13 +243,13 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
     QSpinBox::focusOutEvent(e);                                            
     GL_unlock();
   }                                                                     
-  void hideEvent (QHideEvent * event_){
+  void hideEvent (QHideEvent * event_) override {
     if(dontsniff==false) {
       release_keyboard_focus();
     }                                 
     QSpinBox::hideEvent(event_);          
   }                                   
-  void keyPressEvent ( QKeyEvent * event_ ){                             
+  void keyPressEvent ( QKeyEvent * event_ ) override {                             
     if(event_->key()==Qt::Key_Escape){                                   
       GL_lock();                                                        
       clearFocus();                                                     
@@ -253,7 +257,7 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
     }                                                                   
     QSpinBox::keyPressEvent(event_);                                        
   }                                                                     
-  void 	wheelEvent ( QWheelEvent * event_ ){
+  void 	wheelEvent ( QWheelEvent * event_ ) override {
     printf("Got wheel event\n");
     QSpinBox::wheelEvent(event_);
     set_editor_focus(); 
@@ -267,7 +271,7 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
    : QDoubleSpinBox(parent_),dontsniff(false)                                     
   {                                                                   
   }                                                                   
-  void focusInEvent ( QFocusEvent *e ){                                 
+  void focusInEvent ( QFocusEvent *e ) override {                                 
     printf("Got focusInEvent\n");
     if(dontsniff==false)
       obtain_keyboard_focus();
@@ -275,7 +279,7 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
     QDoubleSpinBox::focusInEvent(e);                                             
     GL_unlock();
   }                                                                     
-  void focusOutEvent ( QFocusEvent *e ){                                
+  void focusOutEvent ( QFocusEvent *e ) override {                                
     printf("Got focusOutEvent\n");
     if(dontsniff==false) {
       release_keyboard_focus();
@@ -284,14 +288,14 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
     QDoubleSpinBox::focusOutEvent(e);                                            
     GL_unlock();
   }                                                                     
-  void hideEvent ( QHideEvent *e ){                                
+  void hideEvent ( QHideEvent *e ) override {                                
     //printf("Got hideEvent\n");
     if(dontsniff==false) {
       release_keyboard_focus();
     }                                                                   
     QDoubleSpinBox::hideEvent(e);                                            
   }                                                                     
-  void keyPressEvent ( QKeyEvent * event_ ){                             
+  void keyPressEvent ( QKeyEvent * event_ ) override {                             
     if(event_->key()==Qt::Key_Escape){                                   
       GL_lock();                                                        
       clearFocus();                                                     
@@ -299,7 +303,7 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
     }                                                                   
     QDoubleSpinBox::keyPressEvent(event_);                                        
   }                                                                     
-  void 	wheelEvent ( QWheelEvent * event_ ){
+  void 	wheelEvent ( QWheelEvent * event_ ) override {
     printf("Got wheel event\n");
     QDoubleSpinBox::wheelEvent(event_);
     set_editor_focus(); 
@@ -313,7 +317,7 @@ class FocusSnifferQListWidget : public GL_PauseCaller, public QListWidget{
    : QListWidget(parent_),dontsniff(false)                                     
     {                                                                   
     }                                                                   
-  void focusInEvent ( QFocusEvent *e ){                                 
+  void focusInEvent ( QFocusEvent *e ) override {                                 
     printf("Got focusInEvent\n");
     if(dontsniff==false)
       obtain_keyboard_focus();
@@ -321,7 +325,7 @@ class FocusSnifferQListWidget : public GL_PauseCaller, public QListWidget{
     QListWidget::focusInEvent(e);                                             
     GL_unlock();
   }                                                                     
-  void focusOutEvent ( QFocusEvent *e ){                                
+  void focusOutEvent ( QFocusEvent *e ) override {                                
     printf("Got focusOutEvent\n");
     if(dontsniff==false) {
       release_keyboard_focus();
@@ -330,14 +334,14 @@ class FocusSnifferQListWidget : public GL_PauseCaller, public QListWidget{
     QListWidget::focusOutEvent(e);                                            
     GL_unlock();
   }                                                                     
-  void hideEvent ( QHideEvent *e ){                                
+  void hideEvent ( QHideEvent *e ) override {                                
     //printf("Got hideEvent\n");
     if(dontsniff==false) {
       release_keyboard_focus();
     }                                                                   
     QListWidget::hideEvent(e);                                            
   }                                                                     
-  void keyPressEvent ( QKeyEvent * event_ ){                             
+  void keyPressEvent ( QKeyEvent * event_ ) override {                             
     if(event_->key()==Qt::Key_Escape){                                   
       GL_lock();                                                        
       clearFocus();                                                     
@@ -355,7 +359,7 @@ class FocusSnifferQComboBox : public GL_PauseCaller, public QComboBox{
    : QComboBox(parent_),dontsniff(true)                                     
     {                                                                   
     }                                                                   
-  void focusInEvent ( QFocusEvent *e ){                                 
+  void focusInEvent ( QFocusEvent *e ) override {                                 
     printf("combo Got focusInEvent\n");
     if(dontsniff==false)
       obtain_keyboard_focus();
@@ -363,7 +367,7 @@ class FocusSnifferQComboBox : public GL_PauseCaller, public QComboBox{
     QComboBox::focusInEvent(e);                                             
     GL_unlock();
   }                                                                     
-  void focusOutEvent ( QFocusEvent *e ){                                
+  void focusOutEvent ( QFocusEvent *e ) override {                                
     printf("combo Got focusOutEvent\n");
     if(dontsniff==false) {
       release_keyboard_focus();
@@ -373,7 +377,7 @@ class FocusSnifferQComboBox : public GL_PauseCaller, public QComboBox{
     GL_unlock();
     set_editor_focus();
   }                                                                     
-  void hideEvent ( QHideEvent *e ){                                
+  void hideEvent ( QHideEvent *e ) override {                                
     //printf("Got hideEvent\n");
     if(dontsniff==false) {
       release_keyboard_focus();
@@ -381,7 +385,7 @@ class FocusSnifferQComboBox : public GL_PauseCaller, public QComboBox{
     QComboBox::hideEvent(e);
     set_editor_focus();
   }                                                                     
-  void keyPressEvent ( QKeyEvent * event_ ){                             
+  void keyPressEvent ( QKeyEvent * event_ ) override {                             
     if(event_->key()==Qt::Key_Escape){                                   
       GL_lock();                                                        
       clearFocus();
@@ -401,7 +405,7 @@ class FocusSnifferQTableWidget : public QTableWidget{
    : QTableWidget(parent_),dontsniff(false)                                     
     {                                                                   
     }                                                                   
-  void focusInEvent ( QFocusEvent *e ){                                 
+  void focusInEvent ( QFocusEvent *e ) override {                                 
     printf("Got focusInEvent\n");
     if(dontsniff==false)
       obtain_keyboard_focus();
@@ -409,7 +413,7 @@ class FocusSnifferQTableWidget : public QTableWidget{
     QTableWidget::focusInEvent(e);                                             
     GL_unlock();
   }                                                                     
-  void focusOutEvent ( QFocusEvent *e ){                                
+  void focusOutEvent ( QFocusEvent *e ) override {                                
     printf("Got focusOutEvent\n");
     if(dontsniff==false) {
       release_keyboard_focus();

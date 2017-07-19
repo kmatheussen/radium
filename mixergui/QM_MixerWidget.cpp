@@ -114,10 +114,10 @@ class MyScene : public QGraphicsScene{
   MyScene(QWidget *parent);
 
  protected:
-  void 	mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event );
-  void 	mouseMoveEvent ( QGraphicsSceneMouseEvent * event );
-  void 	mousePressEvent ( QGraphicsSceneMouseEvent * event );
-  void 	mouseReleaseEvent ( QGraphicsSceneMouseEvent * event );
+  void 	mouseDoubleClickEvent ( QGraphicsSceneMouseEvent * event ) override;
+  void 	mouseMoveEvent ( QGraphicsSceneMouseEvent * event ) override;
+  void 	mousePressEvent ( QGraphicsSceneMouseEvent * event ) override;
+  void 	mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ) override;
 
 
   /*
@@ -127,12 +127,12 @@ class MyScene : public QGraphicsScene{
   }
   */
   
-  void dragMoveEvent(QGraphicsSceneDragDropEvent *e){
+  void dragMoveEvent(QGraphicsSceneDragDropEvent *e) override {
     printf("               GOT MOVE\n");
     e->acceptProposedAction();
   }
   
-  void dropEvent(QGraphicsSceneDragDropEvent *event){
+  void dropEvent(QGraphicsSceneDragDropEvent *event) override {
     printf("               GOT DOP\n");
     if (event->mimeData()->hasUrls())
       {
@@ -250,13 +250,14 @@ struct HelpText : public QTimer{
 class SlotIndicatorItem : public QGraphicsItem
  {
  public:
-     QRectF boundingRect() const
+     QRectF boundingRect() const override
      {
          return QRectF(0,0,grid_width,grid_height);
      }
 
      void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
                 QWidget *widget)
+       override
      {
        QColor color(59,68,155,40);
        painter->setPen(color);
@@ -1690,7 +1691,7 @@ namespace{
 
     int64_t counter = 0;
     
-    void 	timerEvent ( QTimerEvent * e ){
+    void 	timerEvent ( QTimerEvent * e ) override {
       counter++;
 
       RETURN_IF_DATA_IS_INACCESSIBLE();

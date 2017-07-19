@@ -63,7 +63,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
   struct Timer : public QTimer{
     
-    void timerEvent(QTimerEvent * e){
+    void timerEvent(QTimerEvent * e) override {
       QString usage;
 
       float mincpu = g_cpu_usage.min();
@@ -126,7 +126,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   
   struct Timer2 : public QTimer{
     
-    void timerEvent(QTimerEvent * e){
+    void timerEvent(QTimerEvent * e) override {
 
       RETURN_IF_DATA_IS_INACCESSIBLE();
 
@@ -262,7 +262,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
   }
 
-  void enterEvent(QEvent *event) override{
+  void enterEvent(QEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
 

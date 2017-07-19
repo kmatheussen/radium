@@ -49,7 +49,7 @@ public:
     int _type;
     QString _name;
 
-    void timerEvent(QTimerEvent * e){
+    void timerEvent(QTimerEvent * e) override {
       RETURN_IF_DATA_IS_INACCESSIBLE();
       
       if(_pd_controller_widget->isVisible()==false)
@@ -132,11 +132,11 @@ public:
     _timer.start();
   }
 
-  void hideEvent ( QHideEvent * event ) {
+  void hideEvent ( QHideEvent * event ) override {
     _timer.stop();
   }
 
-  void showEvent ( QShowEvent * event ) {
+  void showEvent ( QShowEvent * event ) override {
     _timer.start();
   }
 

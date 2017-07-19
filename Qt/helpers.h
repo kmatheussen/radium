@@ -248,7 +248,7 @@ namespace radium{
       setInterval(10);
     }
 
-    void timerEvent ( QTimerEvent * e ){
+    void timerEvent ( QTimerEvent * e ) override {
       if (QGuiApplication::mouseButtons()==Qt::LeftButton)
         left_mouse_is_down = true;
       else if (left_mouse_is_down){
@@ -410,7 +410,7 @@ struct MyQMessageBox : public QMessageBox {
     printf("MyQMessageBox %p deleted\n", this);
   }
   
-  void showEvent(QShowEvent *event_){
+  void showEvent(QShowEvent *event_) override {
     _splashscreen_visible = g_splashscreen!=NULL && g_splashscreen->isVisible();
 
     if (_splashscreen_visible)
@@ -419,7 +419,7 @@ struct MyQMessageBox : public QMessageBox {
     QMessageBox::showEvent(event_);
   }
   
-  void hideEvent(QHideEvent *event_) {
+  void hideEvent(QHideEvent *event_) override {
     if (_splashscreen_visible && g_splashscreen!=NULL)
       g_splashscreen->show();
 

@@ -98,7 +98,7 @@ class MidiLearnPrefs : public RememberGeometryQDialog {
     {      
     }
 
-    void timerEvent(QTimerEvent * e){
+    void timerEvent(QTimerEvent * e) override {
       RETURN_IF_DATA_IS_INACCESSIBLE();
 
       if (parent->isVisible()){
@@ -194,7 +194,7 @@ class Tools : public RememberGeometryQDialog, public Ui::Tools {
     adjustSize();
   }
 
-  virtual void showEvent(QShowEvent *event_) override {
+  void showEvent(QShowEvent *event_) override {
     updateWidgets(); // background color is set back to high_background_color when changing colors in the preferences. This way at least the lighter colors come back when reopening the window.
     RememberGeometryQDialog::showEvent(event_);
   }
