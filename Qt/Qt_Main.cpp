@@ -134,6 +134,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MainWindow_proc.h"
 #include "Qt_Menues_proc.h"
 
+/*
+  Some day I wish gcc or clang would warn about this code:
+
+namespace{
+class Hepp{
+  int gakk(void){
+    return 5;
+  }
+};
+class Hepp2 : public Hepp{
+  int gakk(void){
+    return 6;
+  }
+};
+}
+*/
+
 
 extern EditorWidget *g_editor;
 

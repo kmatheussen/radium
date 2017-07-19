@@ -223,7 +223,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_63_0 -I ~/SDKs/VST3\ SDK -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-omit-frame-pointer -Wno-unknown-pragmas -fno-strict-aliasing
+COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_63_0 -I ~/SDKs/VST3\ SDK -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-omit-frame-pointer -Wno-unknown-pragmas -fno-strict-aliasing -fstrong-eval-order
 
 ifeq ($(RADIUM_QT_VERSION),5)
 	COMMONOPT += -DUSE_QT5
@@ -246,10 +246,12 @@ endif
 # -pg
 
 # CPPOPT is CPP flags
-CPPOPT = $(COMMONOPT) -Wno-unused-function -std=gnu++11 -DNDEBUG # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
+CPPOPT = $(COMMONOPT) -Wno-unused-function -DNDEBUG # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
 
 ifeq ($(BUILDTYPE), DEBUG)
-	CPPOPT += -Wsuggest-override -Woverloaded-virtual
+	CPPOPT += -Wsuggest-override -Woverloaded-virtual -std=gnu++11
+else
+	CPPOPT += -std=gnu++11
 endif
 
 # Can't be enabled because of 3rd party header files:
@@ -1170,7 +1172,7 @@ $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
 Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h $(P)Qt_seqtrack_widget.h $(P)Qt_seqtrack_widget_callbacks.h Qt/helpers.h
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
-	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(IS_LINUX_BINARY) -Wno-deprecated-declarations -Wno-shadow
+	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(IS_LINUX_BINARY) # -Wno-deprecated-declarations -Wno-shadow 
 
 Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT)

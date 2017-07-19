@@ -76,7 +76,7 @@ extern LANGSPEC struct Patch *get_current_instruments_gui_patch(void);
 
 namespace Ui{
   class Audio_instrument_widget;
-};
+}
 
 Ui::Audio_instrument_widget *InstrumentWidget_get_audio_instrument_widget(struct Patch *patch);
 

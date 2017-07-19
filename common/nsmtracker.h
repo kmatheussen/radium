@@ -650,7 +650,7 @@ static inline enum DynType DYN_get_type_from_name(const char* type_name){
     if(!strcmp(type_name, DYN_type_name((enum DynType)i)))
       return (enum DynType)i;
 
-  RError("Unknown dyn type name: \"\%s\"",type_name);
+  RError("Unknown dyn type name: \"%s\"",type_name);
   return INT_TYPE;
 }
 
