@@ -20,6 +20,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 #include <ctype.h>
 
+#include <boost/version.hpp>
+#if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 58)
+  #error "Boost too old. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.bz2 ; tar xvjf boost_1_63_0.tar.bz2 (that's it!)"
+#endif
+#include <boost/lockfree/queue.hpp>
+
+
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
 #include "../common/vector_proc.h"
@@ -1022,6 +1029,48 @@ void PLUGIN_call_me_when_playing_from_start(struct SoundPlugin *plugin){
     update_instrument_gui(plugin);
 }
 
+namespace{
+  struct EffectUndoData{
+    int64_t patch_id;
+    //int undo_generation; // Used for corner cases. Probably not important. We have patch_id, which we use to determine if the plugin still exists, and that's most important.
+    int effect_num;
+    float effect_value;
+  };
+}
+
+static boost::lockfree::queue<EffectUndoData, boost::lockfree::capacity<8000> > g_effect_undo_data_buffer;
+
+void PLUGIN_call_me_very_often_from_main_thread(void){
+
+  static double last_time = -1;
+  static int64_t last_patch_id = -1;
+  static int64_t last_effect_num = -1;
+
+  double curr_time = TIME_get_ms();
+
+  EffectUndoData eud;
+
+  while(g_effect_undo_data_buffer.pop(eud)==true){
+    
+    if (eud.patch_id != last_patch_id || eud.effect_num != last_effect_num || curr_time > last_time+1000) {
+
+      struct Patch *patch = PATCH_get_from_id(eud.patch_id);
+
+      if (patch != NULL) {
+      
+        ADD_UNDO(AudioEffect_CurrPos2(patch, eud.effect_num, eud.effect_value));
+
+      }
+      
+      last_patch_id = eud.patch_id;
+      last_effect_num = eud.effect_num;
+      last_time = curr_time;
+    }
+    
+  }
+}
+
+                                                     
 // Must/should be called from the plugin if it changes value by itself. After initialization that is.
 //
 // The function must be called even if storeit_type==DONT_STORE_VALUE
@@ -1037,6 +1086,7 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
                                                      int effect_num,
                                                      float native_value,
                                                      float scaled_value,
+                                                     bool make_undo,
                                                      enum StoreitType storeit_type,
                                                      FX_when when,
                                                      bool update_instrument_widget,
@@ -1047,8 +1097,29 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
 
   // TODO: Create Undo.
 
-  if (is_sent_from_midi_learn==false && !FX_when_is_automation(when) && PLUGIN_is_recording_automation(plugin, effect_num)){
-    MIDI_add_automation_recording_event(plugin, effect_num, scaled_value);
+  
+  if (is_sent_from_midi_learn==false && !FX_when_is_automation(when)) {
+
+    if (PLUGIN_is_recording_automation(plugin, effect_num))
+      MIDI_add_automation_recording_event(plugin, effect_num, scaled_value);
+    
+    if (make_undo) {
+      volatile struct Patch *patch = plugin->patch;
+      if (patch != NULL){
+        EffectUndoData eud;
+        eud.patch_id = patch->id;
+        //eud.undo_generation = ...;
+        eud.effect_num = effect_num;
+        eud.effect_value = safe_float_read(&plugin->stored_effect_values_native[effect_num]);
+        
+        if (!g_effect_undo_data_buffer.bounded_push(eud)){
+#if !defined(RELEASE)
+          RT_message("g_effect_undo_data buffer full\n");
+#endif
+        }
+      }
+    }
+
   }
 
   safe_float_write(&plugin->last_written_effect_values[effect_num], native_value);
@@ -1538,6 +1609,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
                                                   effect_num,
                                                   store_value_native,
                                                   store_value_scaled,
+                                                  false,
                                                   storeit_type,
                                                   when,
                                                   false,

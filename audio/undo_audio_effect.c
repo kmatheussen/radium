@@ -54,9 +54,14 @@ static void Undo_AudioEffect(
                              struct Tracker_Windows *window,
                              struct WBlocks *wblock,
                              struct Patch *patch,
-                             int effect_num // if -1, all values are stored.
+                             int effect_num, // if -1, all values are stored.
+                             bool has_value,
+                             float value
                              )
 {
+  if (has_value)
+    R_ASSERT(effect_num!=-1);
+
   struct Undo_AudioEffect *undo_ae=talloc(sizeof(struct Undo_AudioEffect));
   SoundPlugin *plugin = patch->patchdata;
   
@@ -68,8 +73,7 @@ static void Undo_AudioEffect(
   if (effect_num==-1)
     undo_ae->values = tcopy_atomic(plugin->stored_effect_values_native, sizeof(float)*num_effects);
   else
-    undo_ae->value = plugin->stored_effect_values_native[effect_num];
-
+    undo_ae->value = has_value ? value : plugin->stored_effect_values_native[effect_num];
 
   //printf("********* Storing eff undo. value: %f %d\n",undo_ae->value,plugin->comp.is_on);
 
@@ -88,7 +92,13 @@ static void Undo_AudioEffect(
 void ADD_UNDO_FUNC(AudioEffect_CurrPos(struct Patch *patch, int effect_num)){
   struct Tracker_Windows *window = root->song->tracker_windows;
   //printf("Undo_AudioEffect_CurrPos\n");
-  Undo_AudioEffect(window,window->wblock, patch, effect_num);
+  Undo_AudioEffect(window,window->wblock, patch, effect_num, false, 0);
+}
+
+void ADD_UNDO_FUNC(AudioEffect_CurrPos2(struct Patch *patch, int effect_num, float value)){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  //printf("Undo_AudioEffect_CurrPos\n");
+  Undo_AudioEffect(window,window->wblock, patch, effect_num, true, value);
 }
 
 static void *Undo_Do_AudioEffect(

@@ -1753,6 +1753,8 @@ protected:
 
     MIXER_call_very_often();
     
+    PLUGIN_call_me_very_often_from_main_thread();
+        
     {
       int64_t absabstime = ATOMIC_GET(g_request_from_jack_transport_to_start_playing);
       if(absabstime >= 0){

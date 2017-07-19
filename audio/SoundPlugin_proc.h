@@ -51,7 +51,9 @@ extern LANGSPEC const char *PLUGIN_get_effect_description(const struct SoundPlug
 extern LANGSPEC void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
 
 extern LANGSPEC void PLUGIN_call_me_when_playing_from_start(struct SoundPlugin *plugin);
-  
+
+extern LANGSPEC void PLUGIN_call_me_very_often_from_main_thread(void);
+
 #ifdef __cplusplus
 // Must/should be called from the plugin if it changes value by itself. After initialization that is.
 //
@@ -68,6 +70,7 @@ extern void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *
                                                             int effect_num,
                                                             float native_value,
                                                             float scaled_value,
+                                                            bool make_undo,
                                                             enum StoreitType storeit_type = STORE_VALUE,
                                                             FX_when when = FX_single,
                                                             bool update_instrument_widget = true,

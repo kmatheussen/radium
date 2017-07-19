@@ -111,7 +111,8 @@ namespace{
       PLUGIN_call_me_when_an_effect_value_has_changed(_plugin,
                                                       parameterIndex,
                                                       newValue, // native
-                                                      newValue // scaled
+                                                      newValue, // scaled
+                                                      true // make undo
                                                       );
     }
  
