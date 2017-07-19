@@ -374,7 +374,7 @@
                       (> (<ra> :get-num-output-channels id)
                          0))
                   (push! instruments id)
-                  (push! instruments-no-inputs-or-outputs id)))
+                  (push! no-inputs-or-outputs id)))
             (get-all-instruments-with-no-input-connections))
 
   (define instrument-plugin-buses (apply append (map (lambda (instrument-id)
