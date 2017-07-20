@@ -1735,12 +1735,19 @@ namespace{
                   chip->update(x1,y1,x2-x1,y2-y1);
                 }
 
+                float volume = chip->get_slider_volume();
                 bool is_muted = !ATOMIC_GET(plugin->volume_is_on);
                 bool is_implicitly_muted = SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
                 bool is_solo = ATOMIC_GET(plugin->solo_is_on);
                 bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
                 bool is_recording = ATOMIC_GET(patch->is_recording);
                 bool is_autosuspending = SP_is_autosuspending(plugin->sp);
+
+                //printf("last: %f. vol: %f. Equal? %d\n", chip->_last_updated_volume, volume, chip->_last_updated_volume == volume);
+                if (chip->_last_updated_volume != volume){
+                  CHIP_update(chip, plugin);
+                  chip->_last_updated_volume = volume;
+                }
                   
                 if (chip->_last_updated_mute != is_muted){
                   chip->update();

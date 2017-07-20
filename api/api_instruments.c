@@ -723,7 +723,7 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
       !strcmp(effect_name, "System In On/Off") ||
       !strcmp(effect_name, "System Effects On/Off"))
     CHIP_update(plugin);
-      
+  
   GFX_update_instrument_widget(patch);
 }
 
@@ -1196,7 +1196,7 @@ float getAudioConnectionGain(int64_t source_id, int64_t dest_id){
   struct SoundProducer *source_sp = SP_get_sound_producer(source_plugin);
   struct SoundProducer *dest_sp = SP_get_sound_producer(dest_plugin);
 
-  char *error = NULL;
+  const char *error = NULL;
 
   float ret = SP_get_link_gain(dest_sp, source_sp, &error);
 
@@ -1230,7 +1230,7 @@ void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool
   struct SoundProducer *source_sp = SP_get_sound_producer(source_plugin);
   struct SoundProducer *dest_sp = SP_get_sound_producer(dest_plugin);
 
-  char *error = NULL;
+  const char *error = NULL;
 
   bool changed = SP_set_link_gain(dest_sp, source_sp, gain, &error);
 

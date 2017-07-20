@@ -1916,7 +1916,7 @@ void SP_remove_all_elinks(const radium::Vector<SoundProducer*> &soundproducers){
   SoundProducer::remove_links(links_to_delete);
 }
 
-float SP_get_link_gain(SoundProducer *target, SoundProducer *source, char **error){
+float SP_get_link_gain(const SoundProducer *target, const SoundProducer *source, const char **error){
   for (SoundProducerLink *link : target->_input_links) {
     if(link->is_bus_link==false && link->is_event_link==false && link->source==source){
       //printf("   Found %f (%p)\n", safe_float_read(&link->link_volume), link);
@@ -1928,7 +1928,7 @@ float SP_get_link_gain(SoundProducer *target, SoundProducer *source, char **erro
   return 0.0;
 }
 
-bool SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume, char **error){
+bool SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume, const char **error){
   bool ret = false;
   bool found = false;
 
@@ -2076,7 +2076,7 @@ struct SoundPlugin *SP_get_plugin(const SoundProducer *producer){
   return producer->_plugin;
 }
 
-struct SoundProducer *SP_get_sound_producer(struct SoundPlugin *plugin){
+struct SoundProducer *SP_get_sound_producer(const struct SoundPlugin *plugin){
   const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
 
   for(auto *sp : sp_all)

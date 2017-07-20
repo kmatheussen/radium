@@ -425,9 +425,7 @@ Chip *find_chip_for_plugin(QGraphicsScene *scene, SoundPlugin *plugin){
   return NULL;
 }
 
-void CHIP_update(SoundPlugin *plugin){
-  Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), plugin);
-
+void CHIP_update(Chip *chip, SoundPlugin *plugin){
   int eff1 = plugin->type->num_effects+EFFNUM_INPUT_VOLUME;
   int eff2 = plugin->type->num_effects+EFFNUM_VOLUME;
 
@@ -452,6 +450,11 @@ void CHIP_update(SoundPlugin *plugin){
 #endif
 
   chip->update();
+}
+
+void CHIP_update(SoundPlugin *plugin){
+  Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), plugin);
+  CHIP_update(chip, plugin);
 }
 
 /*
@@ -1951,15 +1954,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         }
 
         VECTOR_FOR_EACH(Chip*,chip, &chips){
-          struct Patch *patch = CHIP_get_patch(chip);
-          SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-          int num_effects = plugin->type->num_effects;
-          int effect_num;
-          if(chip->has_input_slider())
-            effect_num = num_effects+EFFNUM_INPUT_VOLUME;
-          else
-            effect_num = num_effects+EFFNUM_VOLUME;
-          chip->_slider_start_value = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_PLUGIN);
+          chip->_slider_start_value = chip->get_slider_volume();
         }END_VECTOR_FOR_EACH;
 
         _slider_start_pos = pos.x();
@@ -2056,10 +2051,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
       struct Patch *patch = CHIP_get_patch(chip);
 
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-      int num_effects = plugin->type->num_effects;
       
-      int effect_num;
-
       float value = chip->_slider_start_value + ::scale(delta,0,x2-x1,0,1.0);
       if(value>1.0)
         value=1.0;
@@ -2068,10 +2060,7 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
       
       chip->_slider_start_value = value;
 
-      if(chip->has_input_slider())
-        effect_num = num_effects+EFFNUM_INPUT_VOLUME;
-      else
-        effect_num = num_effects+EFFNUM_VOLUME;
+      int effect_num = get_volume_effect_num();
       
       if (_has_made_volume_effect_undo==false)
         ADD_UNDO(AudioEffect_CurrPos(patch, effect_num));

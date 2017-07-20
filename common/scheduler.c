@@ -291,7 +291,7 @@ int SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
   scheduler->current_time = end_time_f;
 
 #if !defined(RELEASE)
-  g_RT_curr_scheduling_seqtrack = NULL;
+  //  g_RT_curr_scheduling_seqtrack = NULL;
 #endif
   
   return scheduler->queue_size;

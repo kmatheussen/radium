@@ -74,6 +74,7 @@ struct SoundPlugin;
 #include <QStyleOptionGraphicsItem>
 
 #include "../audio/SoundProducer_proc.h"
+#include "../audio/SoundPlugin_proc.h"
 #include "../Qt/Qt_SliderPainter_proc.h"
 #include "../Qt/Qt_colors_proc.h"
 
@@ -360,6 +361,7 @@ public:
   SliderPainter *_input_slider;
   SliderPainter *_output_slider;
 
+  float _last_updated_volume = -1;
   bool _last_updated_mute = false;
   bool _last_updated_implicitly_mute = false;
   bool _last_updated_solo = false;
@@ -395,6 +397,21 @@ public:
     return !has_output_slider() && plugin->type->num_inputs>0;
   }
 
+  int get_volume_effect_num(void){
+    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    int num_effects = plugin->type->num_effects;
+    if(has_input_slider())
+      return num_effects+EFFNUM_INPUT_VOLUME;
+    else
+      return num_effects+EFFNUM_VOLUME;
+  }
+  
+  float get_slider_volume(void){
+    SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+    int effect_num = get_volume_effect_num();
+    return PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
+  }
+  
   void mySetSelected(bool selected) {
     for(auto audio_connection : audio_connections)
       audio_connection->mySetSelected(selected);
@@ -452,6 +469,8 @@ bool CHIP_is_at_output_eport(Chip *chip, int x, int y);
 
 void CHIP_autopos(Chip *chip);
 Chip *CHIP_get(const QGraphicsScene *scene, const Patch *patch);
+
+void CHIP_update(Chip *chip, SoundPlugin *plugin);
 
 struct Patch *CHIP_get_patch(const Chip *chip);
 

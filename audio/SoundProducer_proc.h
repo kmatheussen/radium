@@ -112,8 +112,8 @@ void SP_RT_clean_output(SoundProducer *producer, int num_frames);
 void SP_RT_process_bus(float **outputs, int64_t time, int num_frames, int bus_num, bool process_plugins);
 void SP_RT_set_bus_descendant_type_for_plugin(SoundProducer *producer);
 int SP_get_bus_num(const SoundProducer *sp);
-float SP_get_input_peak(SoundProducer *producer, int ch);
-float SP_get_output_peak(SoundProducer *producer, int ch);
+//float SP_get_input_peak(SoundProducer *producer, int ch);
+//float SP_get_output_peak(SoundProducer *producer, int ch);
 void SP_set_buffer_size(SoundProducer *producer,int buffer_size);
 
 // Functions below used in multicore processing
@@ -128,11 +128,11 @@ void SP_write_mixer_tree_to_disk(QFile *file);
 struct SoundPlugin;
 #endif
 
-extern LANGSPEC float SP_get_link_gain(struct SoundProducer *target, struct SoundProducer *source, char **error); // Don't use this one. Use getAudioConnectionGain instead.
-extern LANGSPEC bool SP_set_link_gain(struct SoundProducer *target, struct SoundProducer *source, float volume, char **error); // Don't use this one. Use setAudioConnectionGain instead. Returns true if gain was changed.
+extern LANGSPEC float SP_get_link_gain(const struct SoundProducer *target, const struct SoundProducer *source, const char **error); // Don't use this one. Use getAudioConnectionGain instead.
+extern LANGSPEC bool SP_set_link_gain(struct SoundProducer *target, struct SoundProducer *source, float volume, const char **error); // Don't use this one. Use setAudioConnectionGain instead. Returns true if gain was changed.
 
 extern LANGSPEC struct SoundPlugin *SP_get_plugin(const struct SoundProducer *producer);
-extern LANGSPEC struct SoundProducer *SP_get_sound_producer(struct SoundPlugin *plugin);
+extern LANGSPEC struct SoundProducer *SP_get_sound_producer(const struct SoundPlugin *plugin);
 
 extern LANGSPEC enum BusDescendantType SP_get_bus_descendant_type(const struct SoundProducer *sp);
 
