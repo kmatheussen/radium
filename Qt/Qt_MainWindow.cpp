@@ -535,7 +535,7 @@ void SetupMainWindow(void){
   editor->setAttribute(Qt::WA_OpaquePaintEvent);
   //  editor->setAttribute(Qt::WA_NoSystemBackground); // This one doesn't seem to make a difference though.
 #else
-  #error "Check if colors work if enabling \"editor->setAttribute(Qt::WA_OpaquePaintEvent);\" above."
+  //  #error "Check if colors work if enabling \"editor->setAttribute(Qt::WA_OpaquePaintEvent);\" above."
 #endif
   
 #endif
