@@ -1,3 +1,11 @@
+Changes 4.9.9 -> 4.9.10:
+* Mixer: Update volume slider in modular mixer when
+  volume was changed via MIDI learn.
+* Mixer: Fix error message showing up when using an
+  instrument without inputs or outputs.
+* Audio: Add undo when editing plugin from a native GUI.
+
+
 Changes 4.9.8 -> 4.9.9:
 * Gui: Fix strange behaviors caused by keyboard events
   not used by Radium being sent back to Qt.
