@@ -1963,6 +1963,10 @@ bool RT_jack_transport_play_request_is_finished(void){
 
 
 void RT_request_from_jack_transport_to_play(int64_t absabstime){
+  /*
+  if(absabstime > 0)
+    printf("****** RT_request_from_jack_transport_to_play. absabstime: %d\n",(int)absabstime);
+  */
   ATOMIC_SET(g_request_from_jack_transport_to_start_playing, absabstime);
 }
 

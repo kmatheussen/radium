@@ -1133,10 +1133,10 @@ struct Mixer{
     Mixer *mixer = static_cast<Mixer*>(arg);
     
     if(state==JackTransportStopped){
-      //printf("    trans: Stopped\n");
+      //printf("=================== trans: Stopped\n");
     
     } else if (state==JackTransportStarting){
-
+      
       if (useJackTransport()==false)
         return 1;
 
@@ -1147,6 +1147,7 @@ struct Mixer{
       if(state==PLAYER_STATE_STARTING_TO_PLAY && pc->absabstime==absabstime) {
         //printf(" ************************   trans: Starting. frame: %d, abstime: %f, is playing: %d.\n", (int)absabstime, TEMPOAUTOMATION_get_abstime_from_absabstime(absabstime), is_playing());
         mixer->_radium_transport_state = RadiumTransportState::PLAYER_IS_READY;
+        //printf("=================== trans: Starting %f. State: IS_READY. Return 1.\n", (double)pos->frame/44100.0);
         return 1;
       }
       
@@ -1160,6 +1161,7 @@ struct Mixer{
         }
         
         mixer->_radium_transport_state = RadiumTransportState::WAITING_FOR_PLAYER_TO_BE_READY;
+        //printf("=================== trans: Starting %f. State: Waiting. Return 0\n", (double)pos->frame/44100.0);
         return 0;
       }
 
@@ -1175,19 +1177,22 @@ struct Mixer{
         // If _radium_transport_state != WAITING_FOR_PLAYER_TO_BE_READY, we could start playing before returning 1 from this function,
         // i.e. that we start playing before all other clients. (we could work around this by adding another state, and so forth, but it's proabably not worth it)
         
-        //printf(" ************************   trans: Failed start. Waiting. frame: %d, is playing: %d.\n", (int)absabstime, is_playing());              
+        //printf(" ************************   trans: Failed start. Waiting. frame: %d, is playing: %d.\n", (int)absabstime, is_playing());
         mixer->_radium_transport_state = RadiumTransportState::PLAY_REQUEST_FAILED;
+        //printf("=================== trans: Starting %f. State: Failed. Return 0\n", (double)pos->frame/44100.0);
         return 0;
       }
 
       //printf(" ************************   trans: Waiting... frame: %d, is playing: %d.\n", (int)absabstime, is_playing());
-
+      //printf("=================== trans: Starting %f. State: ??? (%d). Return 0\n", (double)pos->frame/44100.0, (int)mixer->_radium_transport_state);
       return 0;
       
     }else if (state==JackTransportRolling) {
+      //printf("=================== trans: Rolling %f\n", (double)pos->frame/44100.0);
       //printf("    trans: Rolling\n");
     
     } else {
+      //printf("=================== trans: ???\n");
       //printf("    trans: ?? %d\n", (int)state);
     }
     
@@ -1382,19 +1387,46 @@ void OS_InitAudioTiming(void){
 void MIXER_TRANSPORT_set_pos(double abstime){
   if (g_jack_client==NULL)
     return;
+  
+  //printf("    MIXER_TRANSPORT_set_pos: %f\n", abstime/44100.0);
+  
   int64_t absabstime = TEMPOAUTOMATION_get_absabstime(abstime);
   if (absabstime >= UINT32_MAX)
     RT_message("Can not seek that far when using Jack Transport. Jack time format is 32 bit only.");
-  else
-    jack_transport_locate(g_jack_client, (jack_nframes_t)absabstime);
+  else {
+    int ret = jack_transport_locate(g_jack_client, (jack_nframes_t)absabstime);
+    if (ret!=0){
+      printf("   jack_transport_locate failed: %d\n",(int)absabstime);
+    }
+  }
 }
 
 void MIXER_TRANSPORT_play(double abstime){
   if (g_jack_client==NULL)
     return;
+  
+  int64_t pos_before = jack_get_current_transport_frame(g_jack_client);
+  
   MIXER_TRANSPORT_set_pos(abstime);
-  if(jack_transport_query(g_jack_client,NULL) == JackTransportStopped)
+  
+  if(jack_transport_query(g_jack_client,NULL) == JackTransportStopped){
+    
+    //printf("  Starting jack transport. Curr pos: %d\n", jack_get_current_transport_frame(g_jack_client));
+
+    const int64_t max_time = 1000; // won't wait more than this (ms).
+    int64_t ms_waited = 0;
+    
+    // Wait until the the jack transport location has changed or we time out. (the transport frame is not updated immediately when claling jack_transport_query)
+    while(ms_waited < max_time && jack_get_current_transport_frame(g_jack_client)==pos_before){
+      msleep(5);
+      ms_waited+=5;
+    }
+    
     jack_transport_start(g_jack_client);
+    
+  }else{
+    //printf("  We weren't in stopped. So not starting jack transport\n");
+  }
 }
 
 void MIXER_TRANSPORT_stop(void){
