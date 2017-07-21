@@ -1360,7 +1360,10 @@ void FX_call_me_before_starting_to_play_song(struct SeqTrack *seqtrack, const st
         }
 
         if (start_time > time1 && start_time < time2){
-          value = scale_double(start_time, time1, time2, fxnodeline1->val, fxnodeline2->val);
+          if (fxnodeline1->logtype==LOGTYPE_HOLD)
+            value = fxnodeline1->val;
+          else
+            value = scale_double(start_time, time1, time2, fxnodeline1->val, fxnodeline2->val);
           break;
         }
         
