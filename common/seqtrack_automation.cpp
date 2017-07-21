@@ -701,7 +701,7 @@ void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqT
         const AutomationNode &node1 = automation->automation.at(i);
         const AutomationNode &node2 = automation->automation.at(i+1);
         
-        if (seqtime >= node1.time && seqtime <= node2.time){
+        if (seqtime >= node1.time && seqtime < node2.time){
           value = automation->automation.RT_get_value(seqtime, &node1, &node2); // RT_get_value scales properly and takes logtype into account.
           break;
         }
