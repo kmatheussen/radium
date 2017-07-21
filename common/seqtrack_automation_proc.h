@@ -21,6 +21,7 @@ extern LANGSPEC void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqTrack *se
 extern LANGSPEC void SEQTRACK_AUTOMATION_cancel_curr_automation(void);
 extern LANGSPEC int SEQTRACK_AUTOMATION_get_curr_automation(struct SeqtrackAutomation *seqtrackautomation);
 extern LANGSPEC void SEQTRACK_AUTOMATION_set(struct SeqTrack *seqtrack, int automationnum, int nodenum, double seqtime, double value, int logtype);
+extern LANGSPEC void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqTrack *seqtrack, int64_t abstime);
 extern LANGSPEC void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack);
 extern LANGSPEC void RT_SEQTRACK_AUTOMATION_called_when_player_stopped(void);
 extern LANGSPEC hash_t *SEQTRACK_AUTOMATION_get_state(struct SeqtrackAutomation *seqtrackautomation);

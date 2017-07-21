@@ -161,12 +161,24 @@ void SONG_call_me_before_starting_to_play_song_MIDDLE(int64_t abstime){
   if (abstime==0)
     return;
   
+  // Sequencer automation
+  //
+  // We init sequencer automation before editor automation since sequencer automation is called before editor automation in the player.
+  //
+  ALL_SEQTRACKS_FOR_EACH(){
+    
+    SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(seqtrack, abstime);
+    
+  }END_ALL_SEQTRACKS_FOR_EACH;
+    
+
+  
+  // Editor automation
+  //    
   ALL_SEQTRACKS_FOR_EACH(){
 
-    SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
-
     int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, abstime);
-      
+
     for(int i=0 ; i < seqtrack->seqblocks.num_elements ; i++){
 
       const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[i];
@@ -186,9 +198,6 @@ void SONG_call_me_before_starting_to_play_song_MIDDLE(int64_t abstime){
     }
     
   }END_ALL_SEQTRACKS_FOR_EACH;
-
-  
-  // TODO here: Seq automation.
 
 }
 

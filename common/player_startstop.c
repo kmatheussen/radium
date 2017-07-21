@@ -280,9 +280,8 @@ static void start_player(int playtype, double abstime, int64_t absabstime, const
     
     g_initing_starting_to_play_song = true;
     {
-      
-      InitAllInstrumentsWhenPlayingSong(abstime * MIXER_get_sample_rate());
-    
+      //printf("...............INiting song playing. abstime: %d. absabstime: %d\n", (int)abstime, (int)absabstime);
+      InitAllInstrumentsWhenPlayingSong(abstime);
     }
     g_initing_starting_to_play_song = false;
 

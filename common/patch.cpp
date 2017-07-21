@@ -1344,6 +1344,9 @@ void FX_call_me_before_starting_to_play_song(struct SeqTrack *seqtrack, const st
       int64_t time1 = Place2STime(block, &fxnodeline1->l.p);
       int64_t time2 = Place2STime(block, &fxnodeline2->l.p);
 
+      if (time1 > start_time)
+        continue;
+      
       int value = fx->min-1;
       FX_when when = FX_middle;
       STime time = start_time;

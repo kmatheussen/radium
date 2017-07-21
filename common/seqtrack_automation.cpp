@@ -659,6 +659,75 @@ void SEQTRACK_AUTOMATION_set(struct SeqTrack *seqtrack, int automationnum, int n
 }
 
 
+void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqTrack *seqtrack, int64_t abstime){
+
+  double seqtime = get_seqtime_from_abstime(seqtrack, NULL, abstime);// / MIXER_get_sample_rate();
+
+  for(auto *automation : seqtrack->seqtrackautomation->_automations){
+
+    /*
+    printf("    Init automation patch \"%s\". Abstime: %d (%d), Start: %f, [0]: %f. [2]: %f, Cont: %d\n",           
+           automation->patch->name,
+           (int)abstime,(int)MIXER_get_sample_rate(),
+           seqtime,
+           automation->automation.at(0).time,
+           automation->automation.at(1).time,
+           seqtime < automation->automation.at(0).time
+           );
+    */
+    
+    if (seqtime < automation->automation.at(0).time)
+      continue;
+        
+    struct Patch *patch = automation->patch;
+
+    R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
+    
+    SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+    if (plugin==NULL) {
+      
+      R_ASSERT_RETURN_IF_FALSE(false);
+
+    } else {
+
+      int size = automation->automation.size();
+
+      float value = -1;
+      FX_when when = FX_middle;
+      int64_t abstime_to_send_to_plugin = abstime;
+      
+      for(int i = 0 ; i < size-1 ; i++){
+        
+        const AutomationNode &node1 = automation->automation.at(i);
+        const AutomationNode &node2 = automation->automation.at(i+1);
+        
+        if (seqtime >= node1.time && seqtime <= node2.time){
+          value = automation->automation.RT_get_value(seqtime, &node1, &node2); // RT_get_value scales properly and takes logtype into account.
+          break;
+        }
+        
+        if (i+1 == size-1){ // last node
+          when = FX_end;
+          value = node2.value;
+          abstime_to_send_to_plugin = get_abstime_from_seqtime(seqtrack, NULL, node2.time);
+          break;
+        }
+      }
+
+      R_ASSERT(value != -1);
+      
+      PLUGIN_call_me_before_starting_to_play_song_MIDDLE(plugin,
+                                                         abstime_to_send_to_plugin,
+                                                         automation->effect_num,
+                                                         value,
+                                                         when,
+                                                         EFFECT_FORMAT_SCALED);
+      
+    }
+  }
+}
+  
+
 // Called from scheduler.c
 void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack){
 
@@ -676,9 +745,11 @@ void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack){
     R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
     
     SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
-    R_ASSERT_NON_RELEASE(plugin!=NULL);
+    if (plugin==NULL) {
+      
+      R_ASSERT_RETURN_IF_FALSE(false);
 
-    if (plugin!=NULL){
+    } else {
       
       double latency = RT_SP_get_input_latency(plugin->sp);
       if (latency!=0){

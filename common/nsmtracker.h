@@ -2310,7 +2310,7 @@ struct SeqTrack{
 
   struct SeqBlock *curr_seqblock; // curr_seqblock->block and curr_seqblock->time contains the same values as pc->block and pc->seqtime did before introducing seqtrack/seqblock.
   
-  double start_time; // Current seqtime. Can only be accessed from the player thread
+  double start_time; // Current seqtime. Can only be accessed from the player thread.
   double end_time;   // Same here.
 
   // These two variables are here only for convenience so that we don't have to do atomic operations on start_time and end_time in the player thread.
