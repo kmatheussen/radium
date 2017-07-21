@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/scheduler_proc.h"
 #include "../common/player_pause_proc.h"
 #include "../common/undo_tracks_proc.h"
+#include "../common/seqtrack_proc.h"
 
 #include "SoundPlugin.h"
 #include "Mixer_proc.h"
@@ -522,17 +523,19 @@ static void AUDIO_close_FX(struct FX *fx,const struct Tracks *track){
   //OS_SLIDER_release_automation_pointers(patch,fx->effect_num);
 }
 
+static float get_effect_val_from_fx_val(int fxval){
+  return (double)fxval / (double)MAX_FX_VAL;
+}
+                                    
 static void send_fx_to_plugin(struct SeqTrack *seqtrack, SoundPlugin *plugin, STime time, FX_when when, int val, int effect_num){
   R_ASSERT_NON_RELEASE(FX_when_is_automation(when));
   
-  float effect_val = val / (float)MAX_FX_VAL;
-
   //printf("send_fx_to_plugin %s. effect_num: %d, effect_value: %f\n",plugin->patch->name, effect_num, effect_val);
   
   PLUGIN_set_effect_value(plugin,
                           PLAYER_get_block_delta_time(seqtrack, time),
                           effect_num,
-                          effect_val,
+                          get_effect_val_from_fx_val(val),
                           DONT_STORE_VALUE,
                           when,
                           EFFECT_FORMAT_SCALED
@@ -577,7 +580,10 @@ static void AUDIO_treat_FX(struct SeqTrack *seqtrack, struct FX *fx,int val,STim
   }
 
   RT_PLUGIN_touch(plugin);
-      
+
+  //bool is_initing_song = THREADING_is_main_thread() && g_initing_starting_to_play_song; // never happens. we call 'AUDIO_FX_call_me_before_starting_to_play_song' instead.
+  //const int latency = is_initing_song==true ? 0 : RT_SP_get_input_latency(plugin->sp);
+  
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
@@ -595,6 +601,30 @@ static void AUDIO_treat_FX(struct SeqTrack *seqtrack, struct FX *fx,int val,STim
 
   //printf("   Scheduling %d (latency: %d). block_reltempo: %f\n", (int)time, latency, get_note_reltempo(note));
   SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_fx_to_plugin, &args[0], 4, SCHEDULER_FX_PRIORITY);
+}
+
+static void AUDIO_FX_call_me_before_starting_to_play_song_MIDDLE(struct FX *fx, int val, int64_t abstime, FX_when when){
+  struct Patch *patch = fx->patch;
+  
+  R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
+          
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+  //AUDIO_FX_data_t *fxdata = (AUDIO_FX_data_t*)fx->fxdata;
+  if (plugin==NULL){ // i.e. plugin has been deleted and removed from the patch.
+    R_ASSERT_NON_RELEASE(false); // probably not supposed to happen here though.
+    return;
+  }
+
+  int effect_num = fx->effect_num;
+
+  if (effect_num >= plugin->type->num_effects + NUM_SYSTEM_EFFECTS){
+#if !defined(RELEASE)
+    RWarning("DEBUG MODE: effect_num >= plugin->type->num_effects: ", effect_num, plugin->type->num_effects);
+#endif
+    return;
+  }
+
+  PLUGIN_call_me_before_starting_to_play_song_MIDDLE(plugin, abstime, effect_num, get_effect_val_from_fx_val(val), when, EFFECT_FORMAT_SCALED);
 }
 
 // NOT called from RT thread
@@ -639,6 +669,7 @@ static void init_fx(struct FX *fx, int effect_num, const char *name, struct Soun
   fx->closeFX = AUDIO_close_FX;
   fx->SaveFX  = AUDIO_save_FX;
   fx->treatFX = AUDIO_treat_FX;
+  fx->call_me_before_starting_to_play_song_MIDDLE = AUDIO_FX_call_me_before_starting_to_play_song_MIDDLE;
   fx->defaultFXValue = AUDIO_default_FX_value;
   //fx->setFXstring = AUDIO_set_FX_string;
 
@@ -925,7 +956,7 @@ static void *AUDIO_CopyInstrumentData(const struct Tracks *track){
   return NULL;
 }
 
-static void AUDIO_PlayFromStartHook(struct Instruments *instrument){
+static void AUDIO_PlaySongHook(struct Instruments *instrument, int64_t abstime){
   VECTOR_FOR_EACH(struct Patch *patch,&instrument->patches){
 
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
@@ -936,12 +967,22 @@ static void AUDIO_PlayFromStartHook(struct Instruments *instrument){
       
     } else {
 
-      PLUGIN_call_me_when_playing_from_start(plugin);
+      PLUGIN_call_me_before_starting_to_play_song_START(plugin);
       
     }
     
   }END_VECTOR_FOR_EACH;
+
   
+  SONG_call_me_before_starting_to_play_song_MIDDLE(abstime); // calls PLUGIN_call_me_before_starting_to_play_song_MIDDLE
+
+  
+  VECTOR_FOR_EACH(struct Patch *patch,&instrument->patches){
+
+    struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+    PLUGIN_call_me_before_starting_to_play_song_END(plugin);
+    
+  }END_VECTOR_FOR_EACH;
 
 }
 
@@ -1161,7 +1202,7 @@ int AUDIO_initInstrumentPlugIn(struct Instruments *instrument){
   instrument->StopPlaying         = AUDIO_StopPlaying;
 
   instrument->CopyInstrumentData = AUDIO_CopyInstrumentData;
-  instrument->PlayFromStartHook  = AUDIO_PlayFromStartHook;
+  instrument->PlaySongHook       = AUDIO_PlaySongHook;
   instrument->LoadFX             = AUDIO_LoadFX;
 
   instrument->PP_Update = AUDIO_PP_Update;

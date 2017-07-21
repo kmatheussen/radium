@@ -344,6 +344,13 @@ typedef struct {
   float *peaks;          // Db format. Contains max peaks. Read by the gui. Is set to -100 by the user when clicking on the peak text in the mixer.
 } AudioMeterPeaks;
 
+struct SongInitAutomationHelper{
+  int64_t abstime;
+  enum ValueFormat value_format;
+  float value;
+  FX_when when;
+};
+  
 typedef struct SoundPlugin{
 
 #ifdef __cplusplus
@@ -371,6 +378,8 @@ typedef struct SoundPlugin{
   
   float *initial_effect_values; // Used when resetting. Native format.
   bool *do_random_change;       // Used when selecting "Random".
+
+  struct SongInitAutomationHelper *songinit_automation_helper; // Used when starting to play in the middle of a song.
   
   linked_note_t *playing_voices; // To keep track of voices scheduled into the future because of latency compensation
 

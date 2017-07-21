@@ -57,7 +57,7 @@ static int64_t RT_scheduled_fx(struct SeqTrack *seqtrack, int64_t time, union Su
   } else {
     
     when = FX_middle;
-    x = scale(time, time1, time2, val1, val2);
+    x = scale_double(time, time1, time2, val1, val2);
     
   }
 
@@ -69,7 +69,7 @@ static int64_t RT_scheduled_fx(struct SeqTrack *seqtrack, int64_t time, union Su
 
     float *slider_automation_value = ATOMIC_GET(fx->slider_automation_value);
     if(slider_automation_value!=NULL)
-      safe_float_write(slider_automation_value, scale(x,fx->min,fx->max,0.0f,1.0f));
+      safe_float_write(slider_automation_value, scale_double(x,fx->min,fx->max,0.0f,1.0f));
     
     enum ColorNums *slider_automation_color = ATOMIC_GET(fx->slider_automation_color);    
     if(slider_automation_color!=NULL)

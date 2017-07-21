@@ -32,16 +32,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Bs_edit_proc.h"
 #include "song_tempo_automation_proc.h"
 #include "seqtrack_automation_proc.h"
+#include "patch_proc.h"
+
 
 #include "seqtrack_proc.h"
 
-// The API for this function is a little bit stupid:
-// 1. If seqblock_where_time_is==NULL, then block_seqtime is actually a seqtime, i.e. starts counting from the beginning of the song.
-// 2. If seqblock_where_time_is!=NULL, then block_seqtime is what it says, seqtime within seqblock_where_time_is.
-int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_where_time_is, int64_t block_seqtime){
+
+// 'seqblock_where_time_is' can be NULL, but it works faster if it is not null. (Not quite sure if that is the whole difference)
+int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_where_time_is, int64_t seqtime){
   int64_t last_seq_end_time = 0;
   double last_abs_end_time = 0; // Is double because of reltempo multiplication.
 
+  int64_t block_stime = seqblock_where_time_is == NULL ? -1 : seqtime-seqblock_where_time_is->time;
+    
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     
     struct Blocks *block            = seqblock->block;
@@ -53,12 +56,12 @@ int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct S
     double  abs_start_time  = last_abs_end_time + pause_duration;
 
     if (seqblock_where_time_is == NULL) {
-      if (block_seqtime < seq_start_time)
-        return last_abs_end_time + (block_seqtime - last_seq_end_time);
+      if (seqtime < seq_start_time)
+        return last_abs_end_time + (seqtime - last_seq_end_time);
     }
     
     if (seqblock == seqblock_where_time_is)
-      return abs_start_time + ((double)block_seqtime / ATOMIC_DOUBLE_GET(seqblock->block->reltempo)); // Important that we round down.
+      return abs_start_time + ((double)block_stime / ATOMIC_DOUBLE_GET(seqblock->block->reltempo)); // Important that we round down.
       
     int64_t seq_block_duration = getBlockSTimeLength(seqblock->block);
     int64_t abs_block_duration = ((double)seq_block_duration / tempo_multiplier);
@@ -67,8 +70,8 @@ int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct S
     double  abs_end_time = abs_start_time + abs_block_duration;
 
     if (seqblock_where_time_is == NULL){
-      if (block_seqtime >= seq_start_time && block_seqtime < seq_end_time)
-        return abs_start_time + ((double) (block_seqtime-seq_start_time) / ATOMIC_DOUBLE_GET(seqblock->block->reltempo)); // Important that we round down.
+      if (seqtime >= seq_start_time && seqtime < seq_end_time)
+        return abs_start_time + ((double) (seqtime-seq_start_time) / ATOMIC_DOUBLE_GET(seqblock->block->reltempo)); // Important that we round down.
     }
     
     //last_abs_start_time = abs_start_time;
@@ -79,13 +82,13 @@ int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct S
   }END_VECTOR_FOR_EACH;
 
   if (seqblock_where_time_is == NULL)
-    return last_abs_end_time + (block_seqtime - last_seq_end_time);
+    return last_abs_end_time + (seqtime - last_seq_end_time);
 
   // !!!
   R_ASSERT(false);
   // !!!
   
-  return seqblock_where_time_is->time + ((double)block_seqtime / ATOMIC_DOUBLE_GET(seqblock_where_time_is->block->reltempo)); // fallback.
+  return seqblock_where_time_is->time + ((double)block_stime / ATOMIC_DOUBLE_GET(seqblock_where_time_is->block->reltempo)); // fallback.
 }
 
 // Returns in frame format, not in seconds. (int64_t is always in frames, double is always in seconds)
@@ -130,6 +133,65 @@ int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct S
 
   return last_seq_end_time + (abstime - last_abs_end_time); // We lose the decimals here. Wonder if this inaccuracy could build up. Maybe using double/seconds everywhere instead would be better...
 }
+
+
+static bool plays_same_seqblock_completely_later_in_seqtrack(struct SeqTrack *seqtrack, int pos, int64_t before_seqtime){
+  const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[pos];
+  const struct Blocks *block = seqblock->block;
+  
+  for(int i=pos+1 ; i < seqtrack->seqblocks.num_elements ; i++){
+
+    const struct SeqBlock *seqblock2 = (struct SeqBlock *)seqtrack->seqblocks.elements[pos];
+    const struct Blocks *block2 = seqblock2->block;
+    int64_t start_seqblock2_seqtime = seqblock2->time;
+    int64_t end_seqblock2_seqtime = start_seqblock2_seqtime + getBlockSTimeLength(block2);
+    
+    if (end_seqblock2_seqtime > before_seqtime)
+      return false;
+    
+    if (block==block2)
+      return true;
+  }
+
+  return false;
+}
+
+void SONG_call_me_before_starting_to_play_song_MIDDLE(int64_t abstime){
+
+  if (abstime==0)
+    return;
+  
+  ALL_SEQTRACKS_FOR_EACH(){
+
+    SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
+
+    int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, abstime);
+      
+    for(int i=0 ; i < seqtrack->seqblocks.num_elements ; i++){
+
+      const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[i];
+      const struct Blocks *block = seqblock->block;
+
+      if (seqblock->time >= seqtime)
+        break;
+                  
+      if (!plays_same_seqblock_completely_later_in_seqtrack(seqtrack, i, seqtime)){
+
+        STime block_stime = R_MIN(getBlockSTimeLength(block), seqtime - seqblock->time);
+
+        FX_call_me_before_starting_to_play_song(seqtrack, seqblock, block_stime);
+        
+      }
+                                           
+    }
+    
+  }END_ALL_SEQTRACKS_FOR_EACH;
+
+  
+  // TODO here: Seq automation.
+
+}
+
 
 static int64_t convert_seqtime(struct SeqTrack *from_seqtrack, struct SeqTrack *to_seqtrack, int64_t from_seqtime){
   int64_t abstime = get_abstime_from_seqtime(from_seqtrack, NULL, from_seqtime);

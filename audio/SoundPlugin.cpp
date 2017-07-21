@@ -996,38 +996,79 @@ static void set_bus_onoff(struct SoundPlugin *plugin, float value, int busnum){
   }
 }
 
-static void maybe_init_effect_when_playing_from_start(struct SoundPlugin *plugin, int effect_num, radium::PlayerLockOnlyIfNeeded &lock, bool use_lock, bool &has_set_effect_value){
+// Only called once (when starting to play)
+void PLUGIN_call_me_before_starting_to_play_song_END(SoundPlugin *plugin){
+
+  bool has_set_effect_value = false;
+
+  {
+    radium::PlayerLockOnlyIfNeeded lock;
+    
+    for(int i=0;i<plugin->type->num_effects+NUM_SYSTEM_EFFECTS;i++) {
+      const auto &helper = plugin->songinit_automation_helper[i];
+      
+      if (helper.abstime >= 0){
+        
+        if (i < plugin->type->num_effects)
+          lock.maybe_pause_or_lock(i);
+        
+        //enum StoreitType storeit_type = helper.FX_when==FX_single ? STORE_VALUE : DONT_STORE_VALUE;
+        
+        PLUGIN_set_effect_value(plugin, 0, i, helper.value, DONT_STORE_VALUE, helper.when, helper.value_format);
+        has_set_effect_value = true;
+      }
+    }
+  }
+  
+  if (has_set_effect_value)
+    update_instrument_gui(plugin);
+
+  free(plugin->songinit_automation_helper);
+}
+
+
+// May be called many times (when starting to play), even for the same effect_num
+void PLUGIN_call_me_before_starting_to_play_song_MIDDLE(SoundPlugin *plugin, int64_t abstime, int effect_num, float value, FX_when when, enum ValueFormat value_format){
+  struct SongInitAutomationHelper *helper = &plugin->songinit_automation_helper[effect_num];
+  if (helper->abstime < abstime){
+    helper->abstime = abstime;
+    helper->value_format = value_format;
+    helper->value = value;
+    helper->when = when;
+  }
+}
+
+
+static void maybe_init_effect_when_playing_from_start(struct SoundPlugin *plugin, int effect_num){
   float automation_value = safe_float_read(&plugin->slider_automation_values[effect_num]);
 
   if (automation_value >= 0) { // Check if last set value came from automation.
     
-    if (use_lock)
-      lock.maybe_pause_or_lock(effect_num);
-    
     float stored_value = safe_float_read(&plugin->stored_effect_values_native[effect_num]);
-    
-    PLUGIN_set_effect_value(plugin, 0, effect_num, stored_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 
-    has_set_effect_value = true;
+    PLUGIN_call_me_before_starting_to_play_song_MIDDLE(plugin, 0, effect_num, stored_value, FX_single, EFFECT_FORMAT_NATIVE);
   }
 }
 
-void PLUGIN_call_me_when_playing_from_start(struct SoundPlugin *plugin){
 
-  bool has_set_effect_value = false;
+// Only called once (when starting to play)
+void PLUGIN_call_me_before_starting_to_play_song_START(SoundPlugin *plugin){
+
+  // 1. Allocate helper data;
+  plugin->songinit_automation_helper = (typeof(plugin->songinit_automation_helper))calloc(plugin->type->num_effects+NUM_SYSTEM_EFFECTS, sizeof(struct SongInitAutomationHelper));
+
   
-  radium::PlayerLockOnlyIfNeeded lock;
-  
+  // 2. Set abstime of the helper objects to -1.
+  for(int i = 0 ; i < plugin->type->num_effects+NUM_SYSTEM_EFFECTS ; i++)
+    plugin->songinit_automation_helper[i].abstime = -1;
+
+
+  // 3. Add effects that have been set by automation since last time.
   for(int i=0;i<plugin->type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-    maybe_init_effect_when_playing_from_start(plugin,
-                                              i,
-                                              lock,
-                                              i < plugin->type->num_effects, // don't use lock for system effects
-                                              has_set_effect_value
-                                              );
-  if (has_set_effect_value)
-    update_instrument_gui(plugin);
+    maybe_init_effect_when_playing_from_start(plugin, i);
 }
+
+
 
 namespace{
   struct EffectUndoData{
@@ -1160,10 +1201,11 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
   if (storeit_type==STORE_VALUE)
     if (THREADING_is_player_thread())
       abort(); // This is most likely an error.
-  
+
   if (storeit_type==DONT_STORE_VALUE)
     if (THREADING_is_main_thread())
-      abort(); // Not an error, but I'm courious if it happens.
+      if (g_initing_starting_to_play_song==false)
+        abort(); // Not an error, but I'm courious if it happens.
   
   if (FX_when_is_automation(when))
     if (storeit_type==STORE_VALUE)
@@ -1171,7 +1213,8 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
 
   if (!FX_when_is_automation(when))
     if (storeit_type==DONT_STORE_VALUE)
-      abort(); // abort() should be called during the program. If this line is still here after commit, something might be wrong with the code (plus that I forgot about this line).
+      if (g_initing_starting_to_play_song==false)
+        abort(); // Not an error, but I'm courious if it happens.
 #endif
   
   if(value_format==EFFECT_FORMAT_SCALED) {

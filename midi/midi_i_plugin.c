@@ -731,7 +731,7 @@ int MIDI_initInstrumentPlugIn(struct Instruments *instrument){
   instrument->StopPlaying      = MIDIStopPlaying;
 
   instrument->CopyInstrumentData = MIDI_CopyInstrumentData;
-  instrument->PlayFromStartHook  = MIDIPlayFromStartHook;
+  instrument->PlaySongHook       = MIDIPlaySongHook;
   instrument->LoadFX             = MIDILoadFX;
 
   instrument->PP_Update = MIDI_PP_Update;

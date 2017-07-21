@@ -124,12 +124,12 @@ void StopAllInstruments(void){
 }
 
 
-void InitAllInstrumentsForPlaySongFromStart(void){
+void InitAllInstrumentsWhenPlayingSong(int64_t abstime){
 	struct Instruments *instrument=g_instruments;
 
 	while(instrument!=NULL){
-		(*instrument->PlayFromStartHook)(instrument);
-		instrument=NextInstrument(instrument);
+          (*instrument->PlaySongHook)(instrument, abstime);
+          instrument=NextInstrument(instrument);
 	}
 }
 

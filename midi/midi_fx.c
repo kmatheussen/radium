@@ -304,6 +304,10 @@ static void MIDI_treatFX_Pitch14(struct SeqTrack *seqtrack,struct FX *fx,int val
 	PutMidi3_FX(midi_port,0xe0|channel,val&127,val>>7,time,10,skip);
 }
 
+static void MIDI_FX_call_me_before_starting_to_play_song_MIDDLE(struct FX *fx, int val, int64_t abstime, FX_when when){
+  // The MIDI instrument will eventually be removed, and replaced by an audio instrument sending out midi. So we don't spend time implementing this.
+}
+  
 static bool isFXUsed(struct TrackInstrumentData *tid,struct MIDI_FX *midi_fx){
 	struct UsedTrackMidiCCs *usmf=tid->usmf;
 
@@ -410,6 +414,9 @@ static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *mid
 	if( ! MIDISetTreatFX(fx,midi_fx)){
 		return FX_FAILED;
 	}
+
+        fx->call_me_before_starting_to_play_song_MIDDLE = MIDI_FX_call_me_before_starting_to_play_song_MIDDLE;
+        
         fx->defaultFXValue = MIDI_default_FX_value;
   
 	usmf          = talloc(sizeof(struct UsedTrackMidiCCs));

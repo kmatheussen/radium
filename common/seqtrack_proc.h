@@ -13,8 +13,10 @@ enum GridType{
 };
 
 
-extern LANGSPEC int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int64_t block_seqtime); // Result is rounded down to nearest integer.
+extern LANGSPEC int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int64_t seqtime); // Result is rounded down to nearest integer. 'seqblock' may be NULL.
 extern LANGSPEC int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime); // Result is rounded down to nearest integer.
+
+extern LANGSPEC void SONG_call_me_before_starting_to_play_song_MIDDLE(int64_t abstime);
   
 // sequencer gfx
 #ifdef USE_QT4

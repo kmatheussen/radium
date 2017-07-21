@@ -50,7 +50,9 @@ extern LANGSPEC const char *PLUGIN_get_effect_name(SoundPlugin *plugin, int effe
 extern LANGSPEC const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_type, int effect_num);
 extern LANGSPEC void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
 
-extern LANGSPEC void PLUGIN_call_me_when_playing_from_start(struct SoundPlugin *plugin);
+extern LANGSPEC void PLUGIN_call_me_before_starting_to_play_song_END(SoundPlugin *plugin);
+extern LANGSPEC void PLUGIN_call_me_before_starting_to_play_song_MIDDLE(SoundPlugin *plugin, int64_t abstime, int effect_num, float value, FX_when when, enum ValueFormat value_format);
+extern LANGSPEC void PLUGIN_call_me_before_starting_to_play_song_START(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_call_me_very_often_from_main_thread(void);
 

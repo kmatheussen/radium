@@ -265,7 +265,7 @@ static void start_player(int playtype, double abstime, int64_t absabstime, const
     else
       abstime = TEMPOAUTOMATION_get_abstime_from_absabstime(absabstime);
   }
-
+  
   if (absabstime < 0){
     if (playtype==PLAYBLOCK)
       absabstime = abstime;
@@ -276,7 +276,16 @@ static void start_player(int playtype, double abstime, int64_t absabstime, const
   if (playtype==PLAYSONG) {
 
     R_ASSERT(block==NULL);
+
     
+    g_initing_starting_to_play_song = true;
+    {
+      
+      InitAllInstrumentsWhenPlayingSong(abstime * MIXER_get_sample_rate());
+    
+    }
+    g_initing_starting_to_play_song = false;
+
     player_start_data_t startdata = {0}; 
     startdata.playtype = playtype;
     startdata.abstime = abstime;
@@ -548,6 +557,8 @@ void PlayCallVeryOften(void){
   PlayHandleSequencerLoop();
 }
 
+bool g_initing_starting_to_play_song = false;
+
 // All calls to 'start_player', where the first argument is PLAYSONG, MUST go through here.
 static void play_song(double abstime, int64_t absabstime, bool called_from_jack_transport){
   //printf("Play song. abstime: %f, absabstime: %f\n", abstime, (double)absabstime/44100.0);
@@ -560,9 +571,6 @@ static void play_song(double abstime, int64_t absabstime, bool called_from_jack_
   }
 
   PlayStopReally(false, false);
-  
-  if (abstime==0.0 || absabstime==0)
-    InitAllInstrumentsForPlaySongFromStart();
 
   pc->is_playing_range = false;
 
@@ -603,7 +611,8 @@ void PlaySongCurrPos(void){
     place=&wblock->reallines[wblock->curr_realline]->l.p;
   }
 
-  int64_t abstime = get_abstime_from_seqtime(seqtrack, seqblock, Place2STime(seqblock->block, place));
+  int64_t stime = Place2STime(seqblock->block, place);
+  int64_t abstime = get_abstime_from_seqtime(seqtrack, seqblock, seqblock->time + stime);
   
   PlaySong(abstime);
 }

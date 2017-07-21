@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_pause_proc.h"
 #include "scheduler_proc.h"
 #include "seqtrack_automation_proc.h"
+#include "seqtrack_proc.h"
 #include "undo_sequencer_proc.h"
 
 #include "undo.h"
@@ -1325,6 +1326,70 @@ void FX_treat_fx(struct FX *fx,int val,int skip){
   }PLAYER_unlock();
 }
 */
+
+
+// Send out FX values for what they would have been at time 'time' if playing block from the beginning.
+void FX_call_me_before_starting_to_play_song(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, STime start_time){
+  const struct Blocks *block = seqblock->block;
+  
+  struct Tracks *track = block->tracks;
+  while(track != NULL){
+
+    VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
+      struct FX *fx = fxs->fx;
+            
+      struct FXNodeLines *fxnodeline1 = fxs->fxnodelines;
+      struct FXNodeLines *fxnodeline2 = NextFXNodeLine(fxnodeline1);
+
+      int64_t time1 = Place2STime(block, &fxnodeline1->l.p);
+      int64_t time2 = Place2STime(block, &fxnodeline2->l.p);
+
+      int value = fx->min-1;
+      FX_when when = FX_middle;
+      STime time = start_time;
+      
+      while(true){
+
+        if (start_time==time1){
+          value = fxnodeline1->val;
+          when = FX_start;
+          break;
+        }
+
+        if (start_time > time1 && start_time < time2){
+          value = scale_double(start_time, time1, time2, fxnodeline1->val, fxnodeline2->val);
+          break;
+        }
+        
+        struct FXNodeLines *next_fxnodeline = NextFXNodeLine(fxnodeline2);
+        
+        if (next_fxnodeline==NULL || start_time==time2){
+          value = fxnodeline2->val;
+          time = time2;
+          when = next_fxnodeline==NULL ? FX_end : FX_middle;
+          break;
+        }
+
+        fxnodeline1 = fxnodeline2;
+        fxnodeline2 = next_fxnodeline;
+        time1 = time2;
+        time2 = Place2STime(block, &fxnodeline2->l.p);
+      }
+
+      R_ASSERT_RETURN_IF_FALSE(value != fx->min-1);
+      R_ASSERT_RETURN_IF_FALSE(value >= fx->min);
+      R_ASSERT_RETURN_IF_FALSE(value < fx->max);
+
+      int64_t abstime = get_abstime_from_seqtime(seqtrack, seqblock, seqblock->time + time);
+                               
+      fx->call_me_before_starting_to_play_song_MIDDLE(fxs->fx, value, abstime, when);
+      
+    }END_VECTOR_FOR_EACH;
+    
+    track = NextTrack(track);
+  }
+}
+
 
 
 ////////////////////////////////////

@@ -192,7 +192,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
   }
   
   
-  int64_t block_seq_time = 0;
+  int64_t seqtime = 0;
   int64_t abs_start_time;
   
   if (startdata->seqtrack == NULL) {
@@ -200,15 +200,16 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
   } else {
     R_ASSERT_RETURN_IF_FALSE(startdata->seqblock!=NULL);
     R_ASSERT_RETURN_IF_FALSE(startdata->seqblock->block!=NULL);
-    block_seq_time = Place2STime(startdata->seqblock->block, &startdata->place);
-    abs_start_time = get_abstime_from_seqtime(startdata->seqtrack, startdata->seqblock, block_seq_time);
+    STime block_stime = Place2STime(startdata->seqblock->block, &startdata->place);
+    seqtime = startdata->seqblock->time + block_stime;
+    abs_start_time = get_abstime_from_seqtime(startdata->seqtrack, startdata->seqblock, seqtime);
   }
 
   
   int64_t seq_start_times[root->song->seqtracks.num_elements];
   VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
     if (seqtrack==startdata->seqtrack)
-      seq_start_times[iterator666] = startdata->seqblock->time + block_seq_time;
+      seq_start_times[iterator666] = seqtime;
     else
       seq_start_times[iterator666] = get_seqtime_from_abstime(seqtrack, NULL, abs_start_time); // Ab ab ab. Not quite working if starting to play in the middle of a block, I think.      
   }END_VECTOR_FOR_EACH;

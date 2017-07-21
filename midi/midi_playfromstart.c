@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "midi_playfromstart_proc.h"
 
-void MIDIPlayFromStartHook(struct Instruments *instrument){
+void MIDIPlaySongHook(struct Instruments *instrument, int64_t abstime){
   VECTOR_FOR_EACH(struct Patch *patch,&instrument->patches){
 
     struct PatchData *patchdata=(struct PatchData *)patch->patchdata;

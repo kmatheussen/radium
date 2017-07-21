@@ -173,6 +173,7 @@ enum{
 #endif
 
 extern bool g_is_loading;
+extern bool g_initing_starting_to_play_song;
 
 #include "../crashreporter/crashreporter_proc.h"
 
@@ -955,7 +956,7 @@ struct Velocities{
 #define NextVelocity(a) ((struct Velocities *)((a)->l.next))
 
 static inline float VELOCITY_get(int velocity){
-  return scale(velocity,0,MAX_VELOCITY,0,1);
+  return scale_double(velocity,0,MAX_VELOCITY,0,1);
 }
 
 /*********************************************************************
@@ -1211,7 +1212,9 @@ struct FX{
         DEFINE_ATOMIC(float *, slider_automation_value); // Pointer to the float value showing automation in slider. Value is scaled between 0-1. May be NULL.
         DEFINE_ATOMIC(enum ColorNums   *, slider_automation_color); // Pointer to the integer holding color number for showing automation in slider. May be NULL.
 
-       void (*treatFX)(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,int skip, FX_when when, double block_reltempo);
+        void (*treatFX)(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,int skip, FX_when when, double block_reltempo);
+
+        void (*call_me_before_starting_to_play_song_MIDDLE)(struct FX *fx, int val, int64_t abstime, FX_when when);
 
 	void (*closeFX)(struct FX *fx,const struct Tracks *track);
 	void *fxdata;	//Free use for the instrument plug-in.
@@ -1270,7 +1273,7 @@ struct Instruments{
         void (*PP_Update)(struct Instruments *instrument,struct Patch *patch, bool is_loading);
 	void *(*CopyInstrumentData)(const struct Tracks *track);		//Necesarry for undo.
 
-	void (*PlayFromStartHook)(struct Instruments *instrument);
+        void (*PlaySongHook)(struct Instruments *instrument, int64_t abstime);
 
 	void *(*LoadFX)(struct FX *fx,const struct Tracks *track);
 
