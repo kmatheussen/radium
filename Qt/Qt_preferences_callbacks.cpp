@@ -518,7 +518,10 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     // Sequencer
     {
 
-      smooth_sequencer_scrolling->setChecked(smoothSequencerScrollingEnabled());
+      if (smoothSequencerScrollingEnabled())
+        button_everything_else_moving->setChecked(true);
+      else
+        button_cursor_moving->setChecked(true);
 
       if (showBarsInTimeline())
         show_bars_in_timeline->setChecked(true);
@@ -924,7 +927,7 @@ public slots:
 
   // sequencer
   //
-  void on_smooth_sequencer_scrolling_toggled(bool val){
+  void on_button_everything_else_moving_toggled(bool val){
     if (_initing==false)
       setSmoothSequencerScrollingEnabled(val);
   }
