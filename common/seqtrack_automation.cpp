@@ -778,7 +778,9 @@ void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack){
         if (automation->last_value != -1.0) {
           RT_PLUGIN_touch(plugin);
 
-          PLUGIN_set_effect_value(plugin,0,effect_num, automation->last_value, DONT_STORE_VALUE, FX_end, EFFECT_FORMAT_SCALED); // Send out the same value again, but with a different FX_when value. Slightly inefficient, but trying to predict when we need FX_end above is too complicated to be worth the effort.
+          const AutomationNode &last_node = automation->automation.at(automation->automation.size()-1);
+                  
+          PLUGIN_set_effect_value(plugin,0,effect_num, last_node.value, DONT_STORE_VALUE, FX_end, EFFECT_FORMAT_SCALED); // Make sure last value is sent out with FX_end. This also ensures last value is sent when the second last node is LOGTYPE_HOLD.
           automation->last_value = -1.0;
         }
       }

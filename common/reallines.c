@@ -696,8 +696,9 @@ static void UpdateRealLines_internal2(struct Tracker_Windows *window,struct WBlo
   if (wblock->reallines==NULL) {
 
 #if !defined(RELEASE)
-    if (g_is_loading==false && root->song->tracker_windows!=NULL && wblock->l.num < ListFindNumElements1(&root->song->tracker_windows->wblocks->l))
-      abort();
+    // We always end up here after creating a new wblock.
+    //if (g_is_loading==false && root->song->tracker_windows!=NULL && wblock->l.num < ListFindNumElements1(&root->song->tracker_windows->wblocks->l))
+    //  abort();
 #endif
     UpdateRealLines_internal(window, wblock, update_curr_realline);
 
