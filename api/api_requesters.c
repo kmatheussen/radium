@@ -235,6 +235,10 @@ const_char* showMessage(const char *text, dyn_t buttons){
   return STRING_get_chars(buttons.array->elements[ret].string);
 }
 
+const_char* showMessage2(const char *text){
+  return showMessage(text, g_uninitialized_dyn);
+}
+  
 extern bool g_qtgui_has_stopped;
 
 void addMessage(const char *text){

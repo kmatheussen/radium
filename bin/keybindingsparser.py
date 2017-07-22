@@ -329,7 +329,7 @@ class Parser:
                     if key==-1:
                         message = "Unknown key \""+keys[lokke] +"\" in line %d in keyconfig file." % self.linenum
                         print message
-                        radium.showMessage(message)
+                        radium.showMessage2(message)
                         del keys[lokke]
                         self.linetype="ERROR"
                         return "OK"
@@ -410,7 +410,7 @@ def putCode(keyhandles,parser,codestring,added_qualifiers):
         # Note. This doesn't happen anymore. Redefining a keybinding is allowed.
         message = "Keybindings for command \"%s\" in line %d is already used" % (codestring , parser.getCurrLineNum())
         print message
-        radium.showMessage(message)
+        radium.showMessage2(message)
         return False
     else:
         print "%s compiled." % codestring
@@ -443,14 +443,14 @@ def addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand
         if not success:
             message = "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())+"\n"+command+"\n"+str(intercommands2[0])
             print message
-            radium.showMessage(message)
+            radium.showMessage2(message)
             return False
         else:
             retstring=radium.ER_keyAdd(firstkey,commandname,keys+added_qualifiers,intercommands2);
             if retstring!="OK":
                 message = "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())+"\n"+str(intercommands2[0])
                 print message
-                radium.showMessage(message)
+                radium.showMessage2(message)
                 return False
 
 def start(keyhandles,filehandle,filehandle2,outfilehandle):
@@ -549,7 +549,7 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
         radium._keybindingsdict = keybindingsdict
     except:
         print sys.exc_info()
-        radium.showMessage("Couldn't create keybindings dict. ("+str(sys.exc_info())+")")
+        radium.showMessage2("Couldn't create keybindings dict. ("+str(sys.exc_info())+")")
 
     #sys.exit(1)
     

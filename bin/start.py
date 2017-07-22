@@ -98,7 +98,7 @@ try:
     infilehandle=open(sys.argv[1],'r')
 except:
     print "Cant open %s" % sys.argv[1]
-    radium.showMessage("Cant open %s" % sys.argv[1])
+    radium.showMessage2("Cant open %s" % sys.argv[1])
     sys.exit(1)
 
 try:
@@ -126,11 +126,11 @@ try:
         sys.exit(5)
 except:
     print sys.exc_info()
-    #radium.showMessage("Couldn't create keybindings dict. ("+str(sys.exc_info())+")")
+    #radium.showMessage2("Couldn't create keybindings dict. ("+str(sys.exc_info())+")")
     message = traceback.format_exc()
-    #radium.showMessage("Loading "+filename+" failed.") # If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
+    #radium.showMessage2("Loading "+filename+" failed.") # If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
     #        for m in message.split("\n"):
-    radium.showMessage("Couldn't parse keybindings file.\n\nBacktrace:"+message)
+    radium.showMessage2("Couldn't parse keybindings file.\n\nBacktrace:"+message)
     sys.exit(6)
 
 try:

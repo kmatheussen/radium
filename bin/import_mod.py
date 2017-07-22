@@ -843,7 +843,7 @@ class Sample:
                 radium.setInstrumentLoopData(self.instrument_num, self.loop_start, self.loop_length)
             if self.finetune!=0:
                 print "setInstrumentEffect, orgval: ",self.finetune
-                #radium.showMessage("setInstrumentEffect, orgval: "+str(self.finetune)+", instrument num: "+str(self.instrument_num))
+                #radium.showMessage2("setInstrumentEffect, orgval: "+str(self.finetune)+", instrument num: "+str(self.instrument_num))
                 radium.setInstrumentEffect(self.instrument_num, "Finetune", scale(self.finetune,-8,7,0.25,0.75))
                 radium.setInstrumentEffect(self.instrument_num, "Release", 2); # We don't hear clicks that well in modules.
 
@@ -1671,9 +1671,9 @@ def import_xm(filename=""):
     except:
         e = sys.exc_info()[0]
         message = traceback.format_exc()
-        radium.showMessage("Loading "+filename+" failed.") # If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
+        radium.showMessage2("Loading "+filename+" failed.") # If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
         #        for m in message.split("\n"):
-        radium.showMessage(message)
+        radium.showMessage2(message)
 
 def import_mod(filename=""):
     #import_xm(filename)
@@ -1714,12 +1714,12 @@ def import_mod(filename=""):
         e = sys.exc_info()[0]
         message = traceback.format_exc()
         print message
-        radium.showMessage("Loading "+filename+" failed. If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
+        radium.showMessage2("Loading "+filename+" failed. If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
         if platform.system() == "Linux":
-            radium.showMessage(message)
+            radium.showMessage2(message)
         else:
             for m in message.split("\n"):
-                radium.showMessage(m)
+                radium.showMessage2(m)
 
 
 if __name__ == "__main__":

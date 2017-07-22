@@ -97,13 +97,13 @@ def get_key_name(code):
 class LineParser:
   def __init__(self,filename):
     if not '_keybindingsdict' in dir(ra):
-      radium.showMessage("Error. Unable to generate menues.");
+      radium.showMessage2("Error. Unable to generate menues.");
       
     try:
       keybindingsdict = ra._keybindingsdict
     except:
       print sys.exc_info()
-      radium.showMessage("Unable to generate menues. ("+str(sys.exc_info())+")")
+      radium.showMessage2("Unable to generate menues. ("+str(sys.exc_info())+")")
 
     #print "AAAAAAAAAAAA",keybindingsdict
     
