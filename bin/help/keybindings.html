@@ -2,12 +2,23 @@
 <body bgcolor="#ffffff">
 <h1>Custom keybindings</h1>
  
-By editing $HOME/.radium/keybindings.conf, you can add custom keybindings.
+By editing the text file "$HOME/.radium/keybindings.conf", you can add custom keybindings.
+
+<p>
+"$HOME" is the home area on your computer.
+
+<p>
+
+Radium needs to be restarted for new keybindings to take effect.
+
+
 <p>
 
 
-Example:
+<h3>Example</h3>
 
+<UL>
+  
 <blockquote>
 <pre>
 *
@@ -18,29 +29,55 @@ Z CTRL_L : ra.openAboutWindow
 </pre>
 </blockquote>
 
-...will change left ctrl + z into open the about window instead of undoing.
-<b>Z</b> was the name of the key, while <b>CTRL_L</b> was the qualifier key.
+...will change the key binding left ctrl + z into opening the about window instead of undoing.
+
+<p>
+  
+In the example, "<b>Z</b>" was the name of the key, while "<b>CTRL_L</b>" was the qualifier key.
 
 <p>
 
-  A key binding definition must start with the name of a key, followed by 0 or more qualifiers.
-<p>
-  The qualifiers are <b>CTRL_L</b>, <b>CTRL_R</b>, <b>SHIFT_L</b>, <b>SHIFT_R</b>, <b>EXTRA_L</b>, <b>ALT_L</b>, <b>ALT_R</b>, <b>MOUSE_EDITOR</b>, <b>MOUSE_MIXER</b>, <b>MOUSE_SEQUENCER</b>, <b>MOUSE_MIXERSTRIPS</b>, and <b>UP</b>.
-<p>
-  The <b>MOUSE_EDITOR</b> qualifier is true if the mouse pointer is placed in the editor, and so forth.
-<p>
-  The <b>UP</b> qualifier is true when releasing the key instead of pressing it.
+  A key binding normally starts with the name of a <b>key</b>, followed by 0 or more <b>qualifiers</b>.
 
 <p>
-
-Radium needs to be restarted for the new keybindings to take effect.
-
+  If a key binding lacks a <b>key</b>, it will use the key from the last binding that had a key. Example:
+<blockquote>
+<pre>
+F12          : ra.showMixerHelpWindow
+     CTRL_R  : ra.showKeybindingHelpWindow
+     SHIFT_R : ra.showFXHelpWindow
+</pre>
+</blockquote>
+  
 <p>
   
   For more examples, look at <A href="https://raw.githubusercontent.com/kmatheussen/radium/master/bin/keybindings.conf">the default keybindings.conf file</A>,
   and look at <A href="https://raw.githubusercontent.com/kmatheussen/radium/master/api/protos.conf">protos.conf</A> for a complete list of available functions.
 
 <p>
+  
+</UL>
+  
+  <h3>Qualifiers</h3>
+  
+  <UL>
+    The qualifiers are <b>CTRL_L</b>, <b>CTRL_R</b>, <b>SHIFT_L</b>, <b>SHIFT_R</b>, <b>EXTRA_L</b>, <b>ALT_L</b>, <b>ALT_R</b>, <b>MOUSE_EDITOR</b>, <b>MOUSE_MIXER</b>, <b>MOUSE_SEQUENCER</b>, <b>MOUSE_MIXERSTRIPS</b>, and <b>UP</b>.
+    <p>
+      Qualifiers are AND-ed together and not OR-ed. "A CTRL_L SHIFT_L" means that you have to press "a", "left ctrl", and "left shift" at the same time.
+  <p>
+    <UL>
+    <LI>"<b>MOUSE_EDITOR</b>" is true if the mouse pointer is placed in the editor.
+    <LI>"<b>UP</b>" is true when releasing the key instead of pressing it.
+    <LI>"<b>ALT_L"</b> is mapped to the Left Alt key. On a Mac, this key is sometimes called the "option" key.
+    <LI>"<b>ALT_R"</b> is mapped to AltGr on a PC. On a Mac, this key is either marked "Alt" or "option", and is placed on the right side of the space bar.
+    <LI>"<b>EXTRA_L</b>" is mapped to the left "windows" key on a PC. On a Mac, the key is mapped to the left "command" or "cmd" key.
+    <LI>"<b>EXTRA_R</b>" is mapped to the "menu" key on a PC. On a Mac, it is mapped to the right "command" key. However, in Radium, EXTRA_R is a normal key and can not be used as a qualifier. (MS Windows limitation.)
+    </UL>
+  </UL>
+  
+<p>
+  <h3>Bind Scheme code or Python code</h3>
+  <UL>
   If you want to run <A href="https://ccrma.stanford.edu/software/snd/snd/s7.html">S7 Scheme</A> code, or <A href="http://www.python.org">Python</A> code, use the functions ra.evalScheme or ra.evalPython:
   
 
@@ -56,7 +93,8 @@ C CTRL_L : ra.evalScheme "(ra:open-about-window)"
 </blockquote>
 
 <p>
-  Note that any code between the asterisks are executed as python code when Radium starts up. ("import radium as ra" is pure python code). This makes it posssible to add custom functions and classes in a convenient way.
+  Note that any code between the asterisks are executed as python code when Radium starts up. ("import radium as ra" is pure python code). This makes it posssible to add custom functions and classes in a convenient way. You can also load scheme files here by calling <i>ra.evalScheme("load mystuff.scm")</i>.
+  </UL>
   
 </body>
  </html>
