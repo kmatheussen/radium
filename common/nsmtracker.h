@@ -2490,7 +2490,7 @@ static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
   R_ASSERT(note_id >= -1);
   
   //R_ASSERT(pitch < 150); // approx. This assert might give false positives.
-
+  
   R_ASSERT(pitch >= 0);
   //R_ASSERT(pan >= -1); // Pans have different range in midi
   //R_ASSERT(pan <= 1);

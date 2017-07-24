@@ -682,7 +682,7 @@
                  (loop (cdr events)
                        bpm
                        tpd)))))))
-  
+
 (define (split-pattern playlist patterns pattern patternnum1 num-channels)
 
   (define split-line (find-splittable-line pattern num-channels))

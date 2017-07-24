@@ -2376,7 +2376,7 @@ int radium_main(char *arg){
 
   // ProfilerStart("hepps");
 
-  SCHEME_init1();
+  //SCHEME_init1();
 
   printf("starting\n");
   if(InitProgram()==false)
@@ -3111,7 +3111,7 @@ int main(int argc, char **argv){
 #ifdef FOR_MACOSX
   OS_OSX_show_icon_in_dock();
 #endif
-  
+
   THREADING_init_main_thread_type();
 
 #ifdef USE_QT5
@@ -3199,6 +3199,9 @@ int main(int argc, char **argv){
     
     g_gc_is_incremental = true;
   }
+
+  SCHEME_init1();
+
 
   //GC_disable();
   QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
@@ -3405,7 +3408,6 @@ int main(int argc, char **argv){
   printf("2\n");
 
   initradium();
-
 
   OS_get_full_program_file_path("start.py"); // just ensure file is there
 

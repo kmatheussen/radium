@@ -138,8 +138,8 @@ class Argument:
         elif self.type_string=="dyn_t":
             return "s7extra_get_dyn"
         else:
-            sys.stderr.write("Unknown type '"+type_string+"'")
-            raise Exception("Unknown type '"+type_string+"'")
+            sys.stderr.write("Unknown type '"+self.type_string+"' for "+self.varname)
+            raise Exception("Unknown type '"+self.type_string+"' for "+self.varname)
 
     def get_s7_variable_check_function(self):
         if self.type_string=="int":

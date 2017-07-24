@@ -252,7 +252,11 @@ void addMessage(const char *text){
     showMessage(text, g_uninitialized_dyn);
   }
 }
-  
+
+void showAsyncMessage(const_char* text){
+  evalScheme(talloc_format("(show-async-message :text \"%s\")", text));
+}
+
 void showWarning(const_char *text){
   RWarning(text);
 }

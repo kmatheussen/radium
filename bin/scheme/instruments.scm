@@ -520,7 +520,7 @@
              )))))
     
   (if (<ra> :instrument-is-permanent id-old-instrument)
-      (<ra> :show-async-message (instrconf :parentgui) "Can not be replaced")
+      (show-async-message (instrconf :parentgui) "Can not be replaced")
       (if (or (not description)
               (string=? description ""))
           (start-instrument-popup-menu instrconf replace)
@@ -559,7 +559,7 @@
 ;; Async. Returns immediately.
 (define (async-load-instrument-preset id-instrument instrument-description parentgui)
   (if (<ra> :instrument-is-permanent id-instrument)
-      (<ra> :show-async-message parentgui "Can not load preset for this instrument")
+      (show-async-message parentgui "Can not load preset for this instrument")
       (let ((gotit (lambda (instrument-description)
                      (if (not (string=? instrument-description ""))
                          (async-replace-instrument id-instrument instrument-description (make-instrument-conf :must-have-inputs #f :must-have-outputs #f :parentgui parentgui))))))
@@ -657,13 +657,13 @@
                 
                 (cond ((and instrument-id1
                             (= 0 num-inputs))
-                       (<ra> :show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no input channels"))
+                       (show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no input channels"))
                        (set! do-undo #t)
                        #f)
                       
                       ((and (= 0 num-outputs)
                             has-instrument2)
-                       (<ra> :show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no output channels"))
+                       (show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no output channels"))
                        (set! do-undo #t)
                        #f)
                       
@@ -1011,4 +1011,4 @@
           (if (ra:instrument-gui-is-visible id)
               (ra:hide-instrument-gui id)
               (ra:show-instrument-gui id))
-          (<ra> :show-async-message -2 (<-> "Instrument #" id " (" (<ra> :get-instrument-name id) ") doesn't have a GUI"))))))
+          (show-async-message -2 (<-> "Instrument #" id " (" (<ra> :get-instrument-name id) ") doesn't have a GUI"))))))

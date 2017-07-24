@@ -64,7 +64,7 @@ class RadiumMock:
     def setInstrumentEffect(self, instrument_num, effect_name, value):
         print "setInstrumentEffect ",instrument_num,effect_name,value
 
-    def showMessage2(self, message):
+    def addMessage(self, message):
         print "MESSAGE: "+message
 
     def getNumVelocities(self, *args):
@@ -676,7 +676,7 @@ def get_tracks(filename):
     try:
         tracks = midi.read_midifile(filename)
     except:
-        radium.showMessage2("Could not read "+filename+". Either file doesn't exist, or it could not be read as a standard midi file.");
+        radium.addMessage("Could not read "+filename+". Either file doesn't exist, or it could not be read as a standard midi file.");
         return False
     
     return tracks

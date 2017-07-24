@@ -828,7 +828,7 @@ class Sample:
                 radium.setInstrumentLoopData(self.instrument_num, self.loop_start, self.loop_length)
             if self.finetune!=0:
                 print "setInstrumentEffect, orgval: ",self.finetune
-                #radium.showMessage2("setInstrumentEffect, orgval: "+str(self.finetune)+", instrument num: "+str(self.instrument_num))
+                #radium.addMessage("setInstrumentEffect, orgval: "+str(self.finetune)+", instrument num: "+str(self.instrument_num))
                 radium.setInstrumentEffect(self.instrument_num, "Finetune", scale(self.finetune,-8,7,0.25,0.75))
 
                 # We don't hear clicks when modules are played in protracker (is the hardware resampling on amigas doing sample-and-hold?). However, in Radium the clicks are very noticable.
@@ -1670,9 +1670,9 @@ def import_xm(filename=""):
     except:
         e = sys.exc_info()[0]
         message = traceback.format_exc()
-        radium.showMessage2("Loading "+filename+" failed.") # If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
+        radium.addMessage("Loading "+filename+" failed.") # If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
         #        for m in message.split("\n"):
-        radium.showMessage2(message)
+        radium.addMessage(message)
 
 def import_mod(filename_base64):
     filename = radium.fromBase64(filename_base64)
@@ -1739,12 +1739,12 @@ def import_mod(filename_base64):
         e = sys.exc_info()[0]
         message = traceback.format_exc()
         print message
-        radium.showMessage2("Loading "+filename+" failed. If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
+        radium.addMessage("Loading "+filename+" failed. If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
         if platform.system() == "Linux":
-            radium.showMessage2(message)
+            radium.addMessage(message)
         else:
             for m in message.split("\n"):
-                radium.showMessage2(m)
+                radium.addMessage(m)
 
     finally:
         if platform.system() != "Linux":

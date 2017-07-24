@@ -24,10 +24,14 @@ if __name__!="__main__":
   import radium as ra
 else:
   class Mock:
+    def __init__(self):
+      self._keybindingsdict={}
     def getConfPath(self, key):
       return os.path.join(os.getenv("HOME"),".radium",key)
     def hasConfPath(self, key):
       return True
+    def addMessage(self, message):
+      print "ra.addMessage: "+message    
   ra = Mock()
   sys.g_program_path = ""
 
@@ -40,6 +44,7 @@ def get_command(menutext):
   else:
     return ""
 
+# This should be documented. There's not even an example in the repository.
 def parse_user_keys():
   import codecs
 
@@ -53,14 +58,18 @@ def parse_user_keys():
     filecontent = f.read()
     f.close()
   except:
-    filecontent = codecs.open(user_key_file, "r", "latin-1" ).read()
-
+    try:
+      filecontent = codecs.open(user_key_file, "r", "latin-1" ).read()
+    except:
+      return
+    
   for line in filecontent.split('\n'):
     line = line.split('#')[0].strip()
     if len(line) == 0:
       continue
     elif '=' not in line:
       print '"Error: Malformed line in "'+user_key_file+'": '+"'"+line+"'"
+      ra.addMessage('"Error: Malformed line in "'+user_key_file+'": '+"'"+line+"'")
       sys.exit(-1)
     else:
       key, value = line.split("=")
@@ -80,30 +89,34 @@ code2read={"CTRL_L":"Left Ctrl",
            "ALT_R":"Alt Gr",
            "EXTRA_L": "Left "+g_meta_name,
            "EXTRA_R":"Right "+g_meta_name}
-
+"""
 
            #import platform
            #if platform.system() != "Linux" and platform.system() != "mingw":
            #  code2read["BACKSPACE"] = "Delete"
 
 
-def get_key_name(code):    
-  if code in code2read:
-    return code2read[code]
+def get_key_name(keyorqualifier):
+  if keyorqualifier in code2read:
+    return code2read[keyorqualifier]
   else:
-    return code
+    qualifier = ra.getQualifierName(keyorqualifier)
+    if qualifier != "":
+      return qualifier
+    else:
+      return keyorqualifier
 
 
 class LineParser:
   def __init__(self,filename):
     if not '_keybindingsdict' in dir(ra):
-      radium.showMessage2("Error. Unable to generate menues.");
+      ra.addMessage("Error. Unable to generate menues.");
       
     try:
       keybindingsdict = ra._keybindingsdict
     except:
       print sys.exc_info()
-      radium.showMessage2("Unable to generate menues. ("+str(sys.exc_info())+")")
+      ra.addMessage("Unable to generate menues. ("+str(sys.exc_info())+")")
 
     #print "AAAAAAAAAAAA",keybindingsdict
     

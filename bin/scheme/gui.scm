@@ -298,11 +298,11 @@
            (<gui> :move-to-parent-centre gui))))))
 
 
-(delafina (ra:show-async-message :parentgui -2
-                                 :text ""
-                                 :buttons '("OK")
-                                 :is-modal #t
-                                 :callback #f)
+(delafina (show-async-message :parentgui -2
+                              :text ""
+                              :buttons '("OK")
+                              :is-modal #t
+                              :callback #f)
   (define can-be-closed (null? buttons))
   (define buttonlayout (<gui> :horizontal-layout))
   (<gui> :add-layout-space buttonlayout 0 0 #t #f)
@@ -336,12 +336,12 @@
 
   
 #!!
-(<ra> :show-async-message)
-(<ra> :show-async-message :buttons '())
-(<ra> :show-async-message :text "hello Gakk gakk\nHmm.2")
-(<ra> :show-async-message "hello2" :callback c-display)
-(<ra> :show-async-message "hello1" (list "BBBb1" "AAAb2") #f c-display)
-(<ra> :show-message "gakk")
+(show-async-message)
+(show-async-message :buttons '())
+(show-async-message :text "hello Gakk gakk\nHmm.2")
+(show-async-message "hello2" :callback c-display)
+(show-async-message "hello1" (list "BBBb1" "AAAb2") #f c-display)
+(show-message "gakk")
 !!#
 
 (when (and (defined? '*message-gui*)

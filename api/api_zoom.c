@@ -52,7 +52,7 @@ void expandRange(int blocknum, int windownum){
     return;
 
   if (wblock->isranged==false){
-    handleError("No range in block. Select range by pressing Left Meta + b");
+    showAsyncMessage("No range in block. Select range by using Left Meta + b");
     return;
   }
 

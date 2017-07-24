@@ -122,7 +122,7 @@
 ;; Set up button and search field callbacks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (pmg-ask-are-you-sure yes-callback)
-  (<ra> :show-async-message *pluginmanager-gui* "Make sure you haved saved all your work.\n\nThe program can crash now.\n\nPlugins that crash will be blacklisted. Already blacklisted plugins will not be scanned.\n\nAre you ready?" (list "Yes" "No") #t
+  (show-async-message *pluginmanager-gui* "Make sure you haved saved all your work.\n\nThe program can crash now.\n\nPlugins that crash will be blacklisted. Already blacklisted plugins will not be scanned.\n\nAre you ready?" (list "Yes" "No") #t
         (lambda (res)
           (if (string=? "Yes" res)
               (yes-callback)))))
