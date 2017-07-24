@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/Signature_proc.h"
 #include "../common/LPB_proc.h"
 #include "../common/tempos_proc.h"
+#include "../common/notestext_proc.h"
 #include "../Qt/Qt_instruments_proc.h"
 
 #include "GfxElements.h"
@@ -84,9 +85,6 @@ static void init_g_colored_tracks_if_necessary(void){
 }
 
 
-extern char *NotesTexts3[];
-extern char *NotesTexts2[];
-
 static float get_pitchline_width(void){
   static float width = -1;
 
@@ -117,7 +115,7 @@ static float get_nodeline_width(bool is_selected){
 static void draw_bordered_text(
                                const struct Tracker_Windows *window,
                                GE_Context *c,
-                               char *text,
+                               const char *text,
                                int x,
                                int y
                                )
@@ -1334,14 +1332,14 @@ static void paint_halfsize_note(GE_Context *c, int num, const char *notetext, in
 #endif
 }
 
-static void paint_tr2(const TrackRealline2 &tr2, char **NotesTexts, int num, int x, int y){
+static void paint_tr2(const TrackRealline2 &tr2, const char **NotesTexts, int num, int x, int y){
   GE_Context *c = GE_textcolor(get_colnum(tr2), y);
   float notenum = get_notenum(tr2);
-  paint_halfsize_note(c, num, NotesTexts[(int)notenum], x, y);
+  paint_halfsize_note(c, num, get_notename(NotesTexts, notenum), x, y);
   //GE_text_halfsize(foreground, NotesTexts[(int)notenum1], x, y);
 }
 
-static void paint_multinotes(const struct WTracks *wtrack, const Trs &trs, char **NotesTexts, int y1, int y2){
+static void paint_multinotes(const struct WTracks *wtrack, const Trs &trs, const char **NotesTexts, int y1, int y2){
   int num_elements = trs.size();
 
   int x1 = wtrack->notearea.x;
@@ -1373,7 +1371,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 
   R_ASSERT_RETURN_IF_FALSE(!trs.empty());
   
-  char **NotesTexts = wtrack->notelength==3?NotesTexts3:NotesTexts2;
+  const char **NotesTexts = wtrack->notelength==3?NotesTexts3:NotesTexts2;
   float  notenum    = get_notenum(trs); //trackrealline->note;
   
   int y1 = get_realline_y1(window, realline);
@@ -1413,8 +1411,9 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     //printf("current_node: %p\n\n",current_node);
       
 
-    if(notenum>0 && notenum<128)
-      GE_filledBox(get_note_background(notenum, highlight, y1), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
+    GE_filledBox(get_note_background(notenum, highlight, y1), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
+
+    const char* notestext = get_notename(NotesTexts, notenum);
       
     if (trs.size() > 1)
       paint_multinotes(wtrack, trs, NotesTexts, y1, y2);
@@ -1424,22 +1423,22 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
              || wtrack->is_wide==true
              ){
       GE_Context *foreground = GE_textcolor_z(colnum,Z_ABOVE(Z_ZERO), y1);
-        
+
       if (cents==0 || wtrack->centtext_on==true)
-        GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1); 
-      else{
+        GE_text(foreground, notestext, wtrack->notearea.x, y1); 
+      else {
         char temp[32];
         if (wtrack->is_wide)
-          sprintf(temp,"%s.%d",NotesTexts[(int)notenum],cents);
+          sprintf(temp,"%s.%d",notestext,cents);
         else
-          sprintf(temp,"%s %d",NotesTexts[(int)notenum],cents);
+          sprintf(temp,"%s %d",notestext,cents);
         GE_text(foreground, temp, wtrack->notearea.x, y1); 
       }
       
       //GE_text(foreground, NotesTexts[(int)notenum], wtrack->notearea.x, y1);
         
     }else
-      draw_bordered_text(window, GE_textcolor_z(colnum, Z_ZERO, y1), NotesTexts[(int)notenum], wtrack->notearea.x, y1);
+      draw_bordered_text(window, GE_textcolor_z(colnum, Z_ZERO, y1), notestext, wtrack->notearea.x, y1);
   }
 
   if (wtrack->centtext_on) {
@@ -1603,11 +1602,11 @@ static void draw_pianonote_text(const struct Tracker_Windows *window, float note
   
   int cents = R_BOUNDARIES(0,round((notenum - (int)notenum)*100.0),99);
   
-  char *text = NotesTexts3[(int)notenum];
+  const char *text = get_notename(NotesTexts3, notenum);
   char temp[32];
   
   if (cents!=0){
-    sprintf(temp,"%s.%d",NotesTexts3[(int)notenum],cents);
+    sprintf(temp,"%s.%d",get_notename(NotesTexts3, notenum),cents);
     text = &temp[0];
   }
   

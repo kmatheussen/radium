@@ -144,7 +144,7 @@ static const QString qfont_key(const QFont &font){ // From the qt documentation,
 }
 
 static inline QHash<char,ImageHolder> *add_new_font(const QFont &font){
-  const char *chars="CDEFGABcdefgabhlo0123456789.,-MULR# m/|xPlsWtSvkupwinry()T:q"; // Prerender characters we know could be used.
+  const char *chars="CDEFGABcdefgabhlo0123456789.,-MULR# m/|xPlsWtSvkupwinry()T:qH"; // Prerender characters we know could be used.
   //const char *chars="";
 
   const QString key = qfont_key(font);

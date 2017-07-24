@@ -15,10 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#include "notestext_proc.h"
 
 
-
-const char *NotesTexts2[131]={
+const char *NotesTexts2[NUM_NOTESTEXTS]={
 
 "c0",
 "C0",
@@ -165,7 +165,7 @@ const char *NotesTexts2[131]={
 };
 
 
-const char *NotesTexts3[131]={
+const char *NotesTexts3[NUM_NOTESTEXTS]={
 
 "C-0",
 "C#0",
