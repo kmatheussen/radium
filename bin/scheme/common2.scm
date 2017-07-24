@@ -133,6 +133,9 @@
         (else
          Try-it)))     
 
+(define (myrand low high)
+  (scale (random 100000) 0 100000 low high))
+
 ;; (round 2.5) -> 2
 ;; (roundup 2.5) -> 3
 (define (roundup A)
@@ -1379,95 +1382,11 @@ for .emacs:
 
 
 
+
+
 ;;;;;;;;;; popup menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; a 50 b 90 c 100 -> '((a 50)(b 90)(c 100))
-(define-match make-assoc-from-flat-list
-  ()           :> '()
-  (A B . Rest) :> (cons (list A B)
-                        (make-assoc-from-flat-list Rest)))
-
-#||
-(make-assoc-from-flat-list (list "a" 50 "b" 90 "c" 100))
-||#
-
-(define (string-starts-with? string startswith)
-  (define (loop string startswith)
-    (cond ((null? startswith)
-           #t)
-          ((null? string)
-           #f)
-          ((char=? (car string) (car startswith))
-           (loop (cdr string) (cdr startswith)))
-          (else
-           #f)))
-  (loop (string->list string)
-        (string->list startswith)))
-
-(***assert*** (string-starts-with? "" "") #t)
-(***assert*** (string-starts-with? "asdf" "as") #t)
-(***assert*** (string-starts-with? "asdf" "") #t)
-(***assert*** (string-starts-with? "" "a") #f)
-(***assert*** (string-starts-with? "a" "a") #t)
-(***assert*** (string-starts-with? "a" "b") #f)
-(***assert*** (string-starts-with? "ab" "a") #t)
-
-(define (string-ends-with? string endswith)
-  (define (loop string startswith)
-    (cond ((null? startswith)
-           #t)
-          ((null? string)
-           #f)
-          ((char=? (car string) (car startswith))
-           (loop (cdr string) (cdr startswith)))
-          (else
-           #f)))
-  (loop (reverse (string->list string))
-        (reverse (string->list endswith))))
-
-(***assert*** (string-ends-with? "" "") #t)
-(***assert*** (string-ends-with? "asdf" "df") #t)
-(***assert*** (string-ends-with? "asdf" "") #t)
-(***assert*** (string-ends-with? "" "a") #f)
-(***assert*** (string-ends-with? "a" "a") #t)
-(***assert*** (string-ends-with? "a" "b") #f)
-(***assert*** (string-ends-with? "ab" "b") #t)
-
-;; Returns true if bb is placed inside aa.
-(define (string-contains? aa bb)
-  (if (or (string=? bb "")
-          (string-position bb aa))
-      #t
-      #f))
-#||
-  (if (string=? bb "")
-      #t
-      (begin
-        (define b (bb 0))
-        (let loop ((aa (string->list aa)))
-          (cond ((null? aa)
-                 #f)
-                ((and (char=? b (car aa))
-                      (string-starts-with? (list->string aa) bb))
-                 #t)
-                (else
-                 (loop (cdr aa))))))))
-  ||#
-  
-(***assert*** (string-contains? "" "") #t)
-(***assert*** (string-contains? "asdf" "df") #t)
-(***assert*** (string-contains? "asdf" "") #t)
-(***assert*** (string-contains? "" "a") #f)
-(***assert*** (string-contains? "a" "a") #t)
-(***assert*** (string-contains? "a" "b") #f)
-(***assert*** (string-contains? "ab" "b") #t)
-(***assert*** (string-contains? "abcd" "bc") #t)
-(***assert*** (string-contains? "abccb" "bcd") #f)
-(***assert*** (string-contains? "abbcd" "bcd") #t)
-
-(define (string-case-insensitive-contains? aa bb)
-  (string-contains? (string-upcase aa) (string-upcase bb)))
 
 (define (parse-popup-menu-options args)
   (if (null? args)

@@ -135,6 +135,8 @@
          (<-> "'" (symbol->string a)))
         ((string? a)
          a)
+        ((char? a)
+         a)
         ((number? a)
          (number->string a))
         ((equal? #t a)
@@ -385,4 +387,163 @@
          (remove-while (cdr das-list) func))
         (else
          das-list)))
+
+
+;; a 50 b 90 c 100 -> '((a 50)(b 90)(c 100))
+(define (make-assoc-from-flat-list rest)  
+  (if (null? rest)
+      '()
+      (let ((A (car rest))
+            (B (cadr rest))
+            (Rest (cddr rest)))
+        (cons (list A B)
+              (make-assoc-from-flat-list Rest)))))
+
+#||
+(make-assoc-from-flat-list (list "a" 50 "b" 90 "c" 100))
+||#
+
+
+;; string
+
+(define (string-split string ch)
+  (if (string=? string "")
+      '()
+      (let ((splitted (split-list (string->list string)
+                                  (lambda (ch2)
+                                    (char=? ch ch2)))))
+        (cond ((null? (cadr splitted))
+               (list string))
+              ((null? (car splitted))
+               (string-split (list->string (cdr (cadr splitted))) ch))
+              (else
+               (cons (list->string (car splitted))
+                     (string-split (list->string (cdr (cadr splitted))) ch)))))))
+
+;; Other variants (not implemented): string-take, string-drop-right, string-take-right
+(define (string-drop string pos)
+  (substring string pos))
+
+(***assert*** (string-drop "abcd" 1)
+              "bcd")
+
+(define (string-starts-with? string startswith)
+  (define (loop string startswith)
+    (cond ((null? startswith)
+           #t)
+          ((null? string)
+           #f)
+          ((char=? (car string) (car startswith))
+           (loop (cdr string) (cdr startswith)))
+          (else
+           #f)))
+  (loop (string->list string)
+        (string->list startswith)))
+
+(***assert*** (string-starts-with? "" "") #t)
+(***assert*** (string-starts-with? "asdf" "as") #t)
+(***assert*** (string-starts-with? "asdf" "") #t)
+(***assert*** (string-starts-with? "" "a") #f)
+(***assert*** (string-starts-with? "a" "a") #t)
+(***assert*** (string-starts-with? "a" "b") #f)
+(***assert*** (string-starts-with? "ab" "a") #t)
+
+(define (string-ends-with? string endswith)
+  (define (loop string startswith)
+    (cond ((null? startswith)
+           #t)
+          ((null? string)
+           #f)
+          ((char=? (car string) (car startswith))
+           (loop (cdr string) (cdr startswith)))
+          (else
+           #f)))
+  (loop (reverse (string->list string))
+        (reverse (string->list endswith))))
+
+(***assert*** (string-ends-with? "" "") #t)
+(***assert*** (string-ends-with? "asdf" "df") #t)
+(***assert*** (string-ends-with? "asdf" "") #t)
+(***assert*** (string-ends-with? "" "a") #f)
+(***assert*** (string-ends-with? "a" "a") #t)
+(***assert*** (string-ends-with? "a" "b") #f)
+(***assert*** (string-ends-with? "ab" "b") #t)
+
+;; Returns true if bb is placed inside aa.
+(define (string-contains? aa bb)
+  (if (or (string=? bb "")
+          (string-position bb aa))
+      #t
+      #f))
+#||
+  (if (string=? bb "")
+      #t
+      (begin
+        (define b (bb 0))
+        (let loop ((aa (string->list aa)))
+          (cond ((null? aa)
+                 #f)
+                ((and (char=? b (car aa))
+                      (string-starts-with? (list->string aa) bb))
+                 #t)
+                (else
+                 (loop (cdr aa))))))))
+  ||#
+  
+(***assert*** (string-contains? "" "") #t)
+(***assert*** (string-contains? "asdf" "df") #t)
+(***assert*** (string-contains? "asdf" "") #t)
+(***assert*** (string-contains? "" "a") #f)
+(***assert*** (string-contains? "a" "a") #t)
+(***assert*** (string-contains? "a" "b") #f)
+(***assert*** (string-contains? "ab" "b") #t)
+(***assert*** (string-contains? "abcd" "bc") #t)
+(***assert*** (string-contains? "abccb" "bcd") #f)
+(***assert*** (string-contains? "abbcd" "bcd") #t)
+
+(define (string-case-insensitive-contains? aa bb)
+  (string-contains? (string-upcase aa) (string-upcase bb)))
+
+(define (capitalize-first-char-in-stringlist l)
+  (cons (char-upcase (car l))
+        (cdr l)))
+
+(define (capitalize-first-char-in-string str)
+  (list->string (capitalize-first-char-in-stringlist (string->list str))))
+
+
+(define (string-join strings separator)
+  (if (null? strings)
+      ""
+      (<-> (car strings)
+           (let loop ((strings (cdr strings)))
+             (if (null? strings)
+                 ""
+                 (<-> separator
+                      (car strings)
+                      (loop (cdr strings))))))))
+
+(***assert*** (string-join (list "a" "bb" "ccc") " + ")
+              "a + bb + ccc")
+
+(define (get-python-ra-funcname funcname)
+  (let ((parts (string-split (string-drop funcname 3) #\-)))
+    (<-> "ra."
+         (car parts)
+         (apply <->
+                (map capitalize-first-char-in-string
+                     (cdr parts))))))
+
+(***assert*** (get-python-ra-funcname "ra:transpose-block")
+              "ra.transposeBlock")
+
+(define (get-python-ra-funccall rafuncname . args)
+  (<-> (get-python-ra-funcname rafuncname)
+       "("
+       (string-join (map to-displayable-string args) ",")
+       ")"))
+              
+(***assert*** (get-python-ra-funccall "ra:transpose-block" 1)
+              "ra.transposeBlock(1)")
+
 

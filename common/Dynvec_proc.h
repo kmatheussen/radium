@@ -46,5 +46,13 @@ static inline int DYNVEC_push_back(dynvec_t *v, const dyn_t element){
   return num_elements;
 }
 
+#ifdef __cplusplus
+
+static inline int DYNVEC_push_back(dynvec_t &v, const dyn_t element){
+  return DYNVEC_push_back(&v, element);
+}
+
+#endif
+
 
 #endif

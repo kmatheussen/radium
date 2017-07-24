@@ -78,22 +78,7 @@ def parse_user_keys():
 
 g_meta_name = "Meta" if platform.system()=="Linux" else ("Cmd" if platform.system()=="Darwin" else "Win")
 
-code2read={"CTRL_L":"Left Ctrl",
-           "CTRL_R":"Right Ctrl",
-           "CTRL":"Ctrl",
-           "CAPS":"Caps Lock",
-           "SHIFT_L":"Left Shift",
-           "SHIFT_R":"Right Shift",
-           "SHIFT":"Shift",
-           "ALT_L":"Left Alt",
-           "ALT_R":"Alt Gr",
-           "EXTRA_L": "Left "+g_meta_name,
-           "EXTRA_R":"Right "+g_meta_name}
-"""
-
-           #import platform
-           #if platform.system() != "Linux" and platform.system() != "mingw":
-           #  code2read["BACKSPACE"] = "Delete"
+code2read={}
 
 
 def get_key_name(keyorqualifier):

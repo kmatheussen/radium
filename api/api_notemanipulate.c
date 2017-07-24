@@ -77,6 +77,7 @@ void invertTrack(int windownum){
   if(window==NULL) return;
 
   InvertTrack_CurrPos(window);
+  window->must_redraw_editor = true;
 }
 
 void invertBlock(int windownum){
@@ -84,6 +85,7 @@ void invertBlock(int windownum){
   if(window==NULL) return;
 
   InvertBlock_CurrPos(window);
+  window->must_redraw_editor = true;
 }
 
 void invertRange(int windownum){
@@ -91,6 +93,7 @@ void invertRange(int windownum){
   if(window==NULL) return;
 
   InvertRange_CurrPos(window);
+  window->must_redraw_editor = true;
 }
 
 
@@ -110,8 +113,15 @@ void pexpandBlock(int f,int windownum){
 }
 
 void pexpandRange(int f,int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);
-  if(window==NULL) return;
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, -1);
+  if (wblock==NULL)
+    return;
+
+  if (wblock->isranged==false){
+    showAsyncMessage("No range in block. Select range by using Left Meta + b");
+    return;
+  }
 
   PExpandRange_CurrPos(window,(float)((float)f/1000.0f));
 }
@@ -124,6 +134,7 @@ void backwardsTrack(int windownum){
   if(window==NULL) return;
 
   BackWardsTrack_CurrPos(window);
+  window->must_redraw = true;
 }
 
 void backwardsBlock(int windownum){
@@ -131,6 +142,7 @@ void backwardsBlock(int windownum){
   if(window==NULL) return;
 
   BackWardsBlock_CurrPos(window);
+  window->must_redraw = true;
 }
 
 void backwardsRange(int windownum){
@@ -138,6 +150,7 @@ void backwardsRange(int windownum){
   if(window==NULL) return;
 
   BackWardsRange_CurrPos(window);
+  window->must_redraw = true;
 }
 
 
@@ -234,5 +247,6 @@ void glissando(int windownum){
   if(window==NULL) return;
 
   Glissando_CurrPos(window);
+  window->must_redraw = true;
 }
 

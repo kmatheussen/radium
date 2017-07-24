@@ -185,6 +185,9 @@ int setPitch(float value, Place place, int pitchnum, int notenum, int tracknum, 
     return -1;
   }
 
+  if (value > 127)
+    value = 127;
+  
   const vector_t *nodes = GetPitchNodes(window, wblock, wtrack, note);
   if (pitchnum < 0 || pitchnum>=nodes->num_elements) {
     handleError("There is no pitch %d in note %d in track %d in block %d",pitchnum, notenum, tracknum, blocknum);
