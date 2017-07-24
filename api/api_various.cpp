@@ -1941,7 +1941,7 @@ const_char* getQualifierName(const_char *qualifier){
 
 #define C(a,b) if (!strcmp(a,qualifier)) return b;
 
-    C("CTRL_L","Right Ctrl");
+    C("CTRL_L","Left Ctrl");
     C("CTRL_R","Right Ctrl");
     C("CTRL","Ctrl");
     
@@ -1955,7 +1955,7 @@ const_char* getQualifierName(const_char *qualifier){
 #if FOR_MACOSX
     C("ALT_R","Right Alt");
 #else
-    C("ALT_R","Alt Gr");
+    C("ALT_R","AltGr");
 #endif
     C("ALT", "Alt");
     

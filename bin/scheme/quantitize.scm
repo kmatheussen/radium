@@ -116,7 +116,6 @@
   (define (set-me-as-current!)
     (set! *curr-quantitize-gui* quant-gui))
 
-  
   ;; Quantitize Options
   ;;
   (define quant-type-range (integer-range 1 5))
@@ -168,8 +167,16 @@
            (set-me-as-current!)
            (set-global-quantitize-value!)
            (<ra> :quantitize-range)))
+  (<gui> :set-tool-tip (<gui> :child quant-gui "quantitize_range") (get-displayable-keybinding "ra:quantitize-range"))
   
   (<gui> :add-callback (<gui> :child quant-gui "quantitize_track")
+         (lambda ()
+           (set-me-as-current!)
+           (set-global-quantitize-value!)
+           (<ra> :general-track-quantitize)))
+  (<gui> :set-tool-tip (<gui> :child quant-gui "quantitize_track") (get-displayable-keybinding "ra:general-track-quantitize"))
+  
+  '(<gui> :add-callback (<gui> :child quant-gui "quantitize_fx")
          (lambda ()
            (set-me-as-current!)
            (set-global-quantitize-value!)
@@ -180,7 +187,7 @@
            (set-me-as-current!)
            (set-global-quantitize-value!)
            (<ra> :quantitize-block)))
-  
+  (<gui> :set-tool-tip (<gui> :child quant-gui "quantitize_block") (get-displayable-keybinding "ra:quantitize-block"))
   
   ;; Set me as current quantitize gui, and return me
   ;;

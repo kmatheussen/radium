@@ -16,18 +16,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(define (get-displayable-qualifier qualifier)
-  (cond ((string=? qualifier "CTRL_L") "Left Ctrl")
-        ((string=? qualifier "CTRL_R") "Right Ctrl")
-        ((string=? qualifier "ALT_L") "Left Alt")
-        ((string=? qualifier "ALT_R") "AltGr")
-        ((string=? qualifier "EXTRA_L") "Left Meta")
-        ((string=? qualifier "SHIFT_L") "Left Shift")
-        ((string=? qualifier "SHFIT_R") "Right Shift")
-        (else
-         qualifier)))
-        
-
 (define (get-displayable-keybinding rafuncname . args)
   (let ((keybinding (<ra> :get-keybinding (apply get-python-ra-funccall (cons rafuncname args)))))
     (c-display "keybinding" (hash-table? keybinding) "name:" (apply get-python-ra-funccall (cons rafuncname args)))
@@ -35,7 +23,11 @@
     ;           (to-list (keybinding :keys)))
     (if (not (hash-table? keybinding))
         ""
-        (string-join (map get-displayable-qualifier
+        (string-join (map (lambda (key)
+                            (let ((a (ra:get-qualifier-name key)))
+                              (if (string=? "" a)
+                                  key
+                                  a)))
                           (append (to-list (keybinding :qualifiers))
                                   (to-list (keybinding :keys))))
                      " + "))))
