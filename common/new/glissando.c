@@ -47,18 +47,36 @@ void Glissando(
 	f1=GetfloatFromPlacement(&note1->l.p);
 	f2=GetfloatFromPlacement(&note2->l.p);
 
+        bool up = note2->note > note1->note;
+
 	for(notenote=note1->note;;){
-		notenote+=note2->note<note1->note?-1:1;
-		if(notenote==note2->note) break;
+
+          if (up)
+            notenote++;
+          else
+            notenote--;
+          
+                if (up){
+                  if (notenote>=note2->note)
+                    break;
+                } else {
+                  if (notenote<=note2->note)
+                    break;
+                }
 
 		f=f1+(
 				R_ABS(note1->note-notenote)*(f2-f1)
 				/
 				notediff
 				);
-
-		Float2Placement(f,&p);
-
+                if (f<0)
+                  f=0;
+                  
+                if (f>=wblock->block->num_lines)
+                  break;
+                
+                Float2Placement(f,&p);                  
+                  
 		InsertNote(
                            wblock,
                            wtrack,
