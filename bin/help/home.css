@@ -1,0 +1,21 @@
+
+.image-and-text{
+    clear:both;
+}
+.image{
+    float:left;
+}
+.text{
+    float:left;
+}
+
+#content {
+    position: relative;
+}
+#content img {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 100%;
+    height: 100%;
+}
