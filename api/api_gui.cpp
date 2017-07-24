@@ -1951,13 +1951,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       , Gui(this)        
     {
       QVBoxLayout *mainLayout = new QVBoxLayout;
-      setDefaultSpacing(mainLayout);
+      //setDefaultSpacing(mainLayout); // Doesn't make sense to remove spacing from group boxes. Without spacking, they will just look like a vertical layout with a header.
       setLayout(mainLayout);
     }
 
     OVERRIDERS(QGroupBox);
   };
-
+  
   struct ScrollArea : radium::ScrollArea, Gui{
     QWidget *contents;
     const char *magic = "magic";
