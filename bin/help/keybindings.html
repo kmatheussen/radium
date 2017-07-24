@@ -5,8 +5,12 @@
 By editing the text file "$HOME/.radium/keybindings.conf", you can add custom keybindings.
 
 <p>
-"$HOME" is the home area on your computer.
-
+  "$HOME" is the home area on your computer.
+  <UL>
+    <LI> On Windows, your home area is usually "C\:Users\Username'".
+    <LI> On macOS, your home area is "/Users/Username/"
+    <LI> On Linux, your home area is "/home/Username/"
+  </UL>
 <p>
 
 Radium needs to be restarted for new keybindings to take effect.
@@ -15,10 +19,11 @@ Radium needs to be restarted for new keybindings to take effect.
 <p>
 
 
-<h3>Example</h3>
+<h3>Examples (this is all you need to know to get started)</h3>
 
-<UL>
-  
+<OL>
+
+  <LI> Change "Left Ctrl + z" to open the "about window":
 <blockquote>
 <pre>
 *
@@ -29,51 +34,154 @@ Z CTRL_L : ra.openAboutWindow
 </pre>
 </blockquote>
 
-...will change the key binding left ctrl + z into opening the about window instead of undoing.
-
-<p>
-  
-In the example, "<b>Z</b>" was the name of the key, while "<b>CTRL_L</b>" was the qualifier key.
-
 <p>
 
-  A key binding normally starts with the name of a <b>key</b>, followed by 0 or more <b>qualifiers</b>.
+  A key binding normally starts with the name of a <b>key</b> ("Z"), followed by 0 or more <b>qualifiers</b> ("CTRL_L").<br>
 
+<LI>
 <p>
-  If a key binding lacks a <b>key</b>, it will use the key from the last binding that had a key. Example:
+  If a key binding lacks a <b>key</b>, it will use the key from the last defined keybinding that had a key. Example:
 <blockquote>
 <pre>
+*
+import radium as ra
+*
+
 F12          : ra.showMixerHelpWindow
      CTRL_R  : ra.showKeybindingHelpWindow
      SHIFT_R : ra.showFXHelpWindow
 </pre>
 </blockquote>
-  
-<p>
-  
-  For more examples, look at <A href="https://raw.githubusercontent.com/kmatheussen/radium/master/bin/keybindings.conf">the default keybindings.conf file</A>,
-  and look at <A href="https://raw.githubusercontent.com/kmatheussen/radium/master/api/protos.conf">protos.conf</A> for a complete list of available functions.
 
 <p>
   
-</UL>
+<LI>  For more examples, look at <A href="https://raw.githubusercontent.com/kmatheussen/radium/master/bin/keybindings.conf">the default keybindings.conf file</A>,
+  and look at <A href="https://raw.githubusercontent.com/kmatheussen/radium/master/api/protos.conf">protos.conf</A> for a complete list of available functions.
   
-  <h3>Qualifiers</h3>
+<p>
+  
+</OL>
+  
+  <h3>Qualifier names</h3>
   
   <UL>
     The qualifiers are <b>CTRL_L</b>, <b>CTRL_R</b>, <b>SHIFT_L</b>, <b>SHIFT_R</b>, <b>EXTRA_L</b>, <b>ALT_L</b>, <b>ALT_R</b>, <b>MOUSE_EDITOR</b>, <b>MOUSE_MIXER</b>, <b>MOUSE_SEQUENCER</b>, <b>MOUSE_MIXERSTRIPS</b>, and <b>UP</b>.
     <p>
-      Qualifiers are AND-ed together and not OR-ed. "A CTRL_L SHIFT_L" means that you have to press "a", "left ctrl", and "left shift" at the same time.
+      Qualifiers are AND-ed together and not OR-ed. For instance, "A CTRL_L SHIFT_L" means that you have to press all the keys "a", "left ctrl", and "left shift" at the same time.
   <p>
     <UL>
-    <LI>"<b>MOUSE_EDITOR</b>" is true if the mouse pointer is placed in the editor.
-    <LI>"<b>UP</b>" is true when releasing the key instead of pressing it.
-    <LI>"<b>ALT_L"</b> is mapped to the Left Alt key. On a Mac, this key is sometimes called the "option" key.
-    <LI>"<b>ALT_R"</b> is mapped to AltGr on a PC. On a Mac, this key is either marked "Alt" or "option", and is placed on the right side of the space bar.
-    <LI>"<b>EXTRA_L</b>" is mapped to the left "windows" key on a PC. On a Mac, the key is mapped to the left "command" or "cmd" key.
-    <LI>"<b>EXTRA_R</b>" is mapped to the "menu" key on a PC. On a Mac, it is mapped to the right "command" key. However, in Radium, EXTRA_R is a normal key and can not be used as a qualifier. (MS Windows limitation.)
+      <LI><b>MOUSE_EDITOR</b> is true if the mouse pointer is placed in the editor. (Same for <b>MOUSE_MIXER</b>, <b>MOUSE_SEQUENCER</b>, and <b>MOUSE_MIXERSTRIPS</b>.)
+      <p>
+      <LI><b>UP</b> is true when releasing the key instead of pressing it.
+      <p>
+      <LI><b>ALT_L</b> is mapped to the Left Alt key. On a Mac, this key is sometimes called the "option" key.
+      <p>
+      <LI><b>ALT_R</b> is mapped to "Alt Gr" on a PC. On a Mac, this key is either marked "Alt" or "option", and is placed on the right side of the space bar.
+      <p>
+      <LI><b>EXTRA_L</b> is mapped to the left "windows" key on a PC. On a Mac, the key is mapped to the left "command" or "cmd" key.
+      <p>
+      <LI><b>EXTRA_R</b> is mapped to the "menu" key on a PC. On a Mac, it is mapped to the right "command" key. However, in Radium, EXTRA_R is a normal key and can not be used as a qualifier. (MS Windows limitation.)
     </UL>
   </UL>
+
+  <h3>Key names</h3>
+  <OL>
+  
+    <LI> Alphanumeric keys: <b>0</b>, ..., <b>9</b>, and <b>A</b>, ..., <b>Z</b>.
+    <p> 
+    <LI> Locale-independent alphanumeric keys (<A href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/KB_Danish.svg/900px-KB_Danish.svg.png">QWERTY</A>): <b>QWERTY_0</b>, ...<b>QWERTY_0</b>, and <b>QWERTY_A</b>, ..., <b>QWERTY_Z</b>.
+      <p>
+   <LI> Name of common non-alphanumeric keys: <b>SPACE</b>, <b>INSERT</b>,
+          <b>HOME</b>,
+          <b>PAGE_UP</b>,
+          <b>DEL</b>,
+          <b>END</b>,
+          <b>PAGE_DOWN</b>,
+          
+          <b>DOWNARROW</b>,
+          <b>UPARROW</b>,
+          <b>RIGHTARROW</b>,
+          <b>LEFTARROW</b>,
+          <b>RETURN</b>,
+          <b>TAB</b>,
+          <b>BACKSPACE</b>,
+          <b>ESC</b>,
+          <b>F1</b>,
+<b>F2</b>,
+<b>F3</b>,
+<b>F4</b>,
+<b>F5</b>,
+<b>F6</b>,
+<b>F7</b>,
+<b>F8</b>,
+<b>F9</b>,
+<b>F10</b>,
+<b>F11</b>,
+<b>F12</b>,
+<b>F13</b>,
+<b>F14</b>,
+<b>F15</b>,
+<b>F16</b>,
+<b>F20</b>.
+<p>
+    <LI> Keypad: <b>KP_DIV</b>,
+<b>KP_MUL</b>,
+<b>KP_SUB</b>,
+<b>KP_ADD</b>,
+
+<b>KP_0</b>,
+<b>KP_DOT</b>,
+<b>KP_ENTER</b>,
+
+<b>KP_1</b>,
+<b>KP_2</b>,
+<b>KP_3</b>,
+
+<b>KP_4</b>,
+<b>KP_5</b>,
+<b>KP_6</b>,
+
+<b>KP_7</b>,
+<b>KP_8</b>,
+<b>KP_9</b>,
+<p>
+    <LI> Multimedia keys (not always available):
+          <b>VOLUME_DOWN</b>,
+          <b>VOLUME_UP</b>,
+          <b>MUTE</b>,
+          <b>PLAY</b>,
+          <b>STOP</b>.
+      <p>
+        <LI> Special keys (not always available): <b>CALCULATOR</b>, <b>MAIL</b>, <b>HOMEPAGE</b>.
+      <p>
+        <LI><b>MENU</b> key: Placed between SPACE and CTRL_R on a PC (the "Windows Menu" key). Mapped to the left "command" key on an Apple keyboard, but not always available.
+     <p>
+  <LI> xLx and xRx Keys (<A href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/KB_Danish.svg/900px-KB_Danish.svg.png">QWERTY</A>):
+  <UL>
+    <LI><b>1L1</b>: The key <b>1</b> step to <b>L</b>eft of the key <b>1</b>. (The key below the <b>Esc</b>)
+      <p>
+    <LI><b>OR1</b>: The key <b>1</b> step to <b>R</b>ight of the key <b>0</b> (zero). (I.e. between <b>0</b> and <b>Backspace</b>)
+    <LI><b>OR2</b>: The key <b>2</b> steps to <b>R</b>ight of the key <b>0</b> (zero). (I.e. between <b>0</b> and <b>Backspace</b>)
+    <LI><b>OR3</b>: The key <b>3</b> steps to <b>R</b>ight of the key <b>0</b> (zero). (I.e. between <b>0</b> and <b>Backspace</b>)
+      <p>
+    <LI><b>PR1</b>: The key <b>1</b> step to <b>R</b>ight of the key <b>P</b>.
+    <LI><b>PR2</b>: The key <b>2</b> steps to <b>R</b>ight of the key <b>P</b>.
+      <p>
+    <LI><b>LR1</b>: The key <b>1</b> step to <b>R</b>ight of the key <b>L</b>.
+    <LI><b>LR2</b>: The key <b>2</b> steps to <b>R</b>ight of the key <b>L</b>.
+    <LI><b>LR3</b>: The key <b>3</b> steps to <b>R</b>ight of the key <b>L</b>.
+      <p>
+    <LI><b>ZL1</b>: The key <b>1</b> step to <b>L</b>eft of the key <b>Z</b>.
+      <p>
+    <LI><b>MR1</b>: The key <b>1</b> step to <b>R</b>ight of the key <b>M</b>.
+    <LI><b>MR2</b>: The key <b>2</b> steps to <b>R</b>ight of the key <b>M</b>.
+    <LI><b>MR3</b>: The key <b>3</b> steps to <b>R</b>ight of the key <b>M</b>.
+      <p>
+  </UL>
+
+
+  </OL>
+
   
 <p>
   <h3>Bind Scheme code or Python code</h3>
@@ -93,7 +201,7 @@ C CTRL_L : ra.evalScheme "(ra:open-about-window)"
 </blockquote>
 
 <p>
-  Note that any code between the asterisks are executed as python code when Radium starts up. ("import radium as ra" is pure python code). This makes it posssible to add custom functions and classes in a convenient way. You can also load scheme files here by calling <i>ra.evalScheme("load mystuff.scm")</i>.
+  Note that any code between the asterisks are executed as python code when Radium starts up. ("import radium as ra" is pure python code). This makes it posssible to add custom functions and classes in a convenient way. You can also load scheme files in this area, for instance by calling <i>ra.evalScheme('(load "C:\Users\Username\.radium\mystuff.scm")')</i>.
   </UL>
   
 </body>
