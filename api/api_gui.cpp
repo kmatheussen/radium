@@ -2366,7 +2366,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   };
 
 
-  struct Web : QWebView, Gui{
+  MakeFocusSnifferClass(QWebView);
+  
+  struct Web : FocusSnifferQWebView, Gui{
     Q_OBJECT;
     
   public:
@@ -3541,6 +3543,14 @@ const_char* gui_className(int64_t guinum){
   return talloc_strdup(gui->_class_name.toUtf8().constData()); //widget->metaObject()->className(); // ->metaObject()->className() is always supposed to work though.
 }
 
+void gui_setToolTip(int64_t guinum, const_char *value){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setToolTip(value);
+}
+  
 void gui_setText(int64_t guinum, const_char *value){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -3719,6 +3729,12 @@ void gui_show(int64_t guinum){
 
   //if (w->isWindow())
   safeShow(w);
+
+  if (w->isWindow()){
+    w->setFocusPolicy(Qt::StrongFocus);
+    w->setFocus();
+  }
+
 }
 
 void gui_hide(int64_t guinum){

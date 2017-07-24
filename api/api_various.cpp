@@ -1845,6 +1845,131 @@ void evalPython(const_char *code){
   PyRun_SimpleString(code);
 }
 
+// Fun fact: This function takes a python hash table and converts it into a radium hash table which is further converted into an s7 hash table.
+dyn_t getKeybindings(void){
+
+  static dyn_t ret = g_uninitialized_dyn;
+
+  if (ret.type!=UNINITIALIZED_TYPE)
+    return ret;
+
+  PyObject *radium = PyImport_ImportModule("radium");
+  R_ASSERT_RETURN_IF_FALSE2(radium!=NULL, ret);
+  
+  PyObject *keybindings = PyObject_GetAttrString(radium, "_keybindingsdict");
+  R_ASSERT_RETURN_IF_FALSE2(keybindings!=NULL, ret);
+  
+
+  hash_t *r_keybindings = HASH_create(512);
+  
+
+  PyObject *key=NULL, *value=NULL;
+  Py_ssize_t pos = 0;
+  
+  while (PyDict_Next(keybindings, &pos, &key, &value)) { // I assume PyDict_Next takes care of decrefs-ing all key and value objects.
+    PyObject *keys = PySequence_GetItem(value,0);
+    PyObject *qualifiers = PySequence_GetItem(value,1);
+    //printf("\n%s:\n", PyString_AsString(key));
+
+    int num_keys = PyList_Size(keys);
+    int num_qualifiers = PyList_Size(qualifiers);
+
+    dynvec_t r_keys = {};
+    dynvec_t r_qualifiers = {};
+      
+    //printf("  keys: ");
+    for(int i = 0 ; i < num_keys ; i++){
+      PyObject *key = PySequence_GetItem(keys, i);
+      //printf("%s, ", PyString_AsString(key));
+      DYNVEC_push_back(r_keys, DYN_create_string_from_chars(PyString_AsString(key)));
+      Py_DECREF(key);
+    }
+
+    //printf("\n  qualifiers: ");
+    for(int i = 0 ; i < num_qualifiers ; i++){
+      PyObject *qualifier = PySequence_GetItem(qualifiers, i);
+      //printf("%s, ", PyString_AsString(qualifier));
+      DYNVEC_push_back(r_qualifiers, DYN_create_string_from_chars(PyString_AsString(qualifier)));
+      Py_DECREF(qualifier);
+    }
+
+    hash_t *element = HASH_create(2);
+    HASH_put_dyn(element, ":keys", DYN_create_array(r_keys));
+    HASH_put_dyn(element, ":qualifiers", DYN_create_array(r_qualifiers));
+
+    HASH_put_hash(r_keybindings, PyString_AsString(key), element);
+                 
+    Py_DECREF(keys);
+    Py_DECREF(qualifiers);
+  }
+
+ 
+  Py_DECREF(keybindings);
+  Py_DECREF(radium);
+
+  
+  ret = DYN_create_hash(r_keybindings);
+  
+  return ret;
+}
+
+
+dyn_t getKeybinding(const_char *pyfunccall){
+  hash_t *keybindings = getKeybindings().hash;
+  if (HASH_has_key(keybindings,pyfunccall))
+    return HASH_get_dyn(keybindings, pyfunccall);
+  else
+    return g_uninitialized_dyn;
+}
+
+const_char* getQualifierName(const_char *qualifier){
+#if FOR_LINUX
+  const char *g_left_meta = "Left Meta";
+  const char *g_right_meta = "Menu";
+#elif FOR_WINDOWS
+  const char *g_left_meta = "Left Win";
+  const char *g_right_meta = "Menu";
+#elif FOR_MACOSX
+  const char *g_left_meta = "Left Cmd";
+  const char *g_right_meta = "Right Cmd";
+#endif
+
+#ifdef C
+#  define _RADIUM_OLD_C C
+#  undef C
+#endif
+
+#define C(a,b) if (!strcmp(a,qualifier)) return b;
+
+    C("CTRL_L","Right Ctrl");
+    C("CTRL_R","Right Ctrl");
+    C("CTRL","Ctrl");
+    
+    C("CAPS","Caps Lock");
+    
+    C("SHIFT_L","Left Shift");
+    C("SHIFT_R","Right Shift");
+    C("SHIFT","Shift");
+    
+    C("ALT_L","Left Alt");
+#if FOR_MACOSX
+    C("ALT_R","Right Alt");
+#else
+    C("ALT_R","Alt Gr");
+#endif
+    C("ALT", "Alt");
+    
+    C("EXTRA_L", g_left_meta);
+    C("EXTRA_R", g_right_meta);
+
+#undef C
+#ifdef _RADIUM_OLD_C
+#  define C _RADIUM_OLD_C
+#endif
+    
+    return "";
+}
+  
 bool isFullVersion(void){
   return FULL_VERSION==1;
 }

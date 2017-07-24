@@ -1411,7 +1411,9 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     //printf("current_node: %p\n\n",current_node);
       
 
-    GE_filledBox(get_note_background(notenum, highlight, y1), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
+    // Only paint background for real notes. (129-131=mur/---/mul)
+    if(notenum>0 && notenum<128)
+      GE_filledBox(get_note_background(notenum, highlight, y1), wtrack->notearea.x, y1, wtrack->notearea.x2, y2);
 
     const char* notestext = get_notename(NotesTexts, notenum);
       
