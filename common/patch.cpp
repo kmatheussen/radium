@@ -928,26 +928,28 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
     if(voice->is_on==true && (voice->chance==256 || voice->chance > rnd(256))){
 
       float voice_notenum = note.pitch + voice->transpose;
-      float voice_velocity = note.velocity * get_voice_velocity(voice);
-      int64_t voice_id = note.id + i;
-
-      args[1].float_num = voice_notenum;
-      args[2].int_num = voice_id;
-      args[3].float_num = voice_velocity;
-
-      // voicenum
-      args[5].int_num &= ~(0xff);
-      args[5].int_num |= i;
+      if (voice_notenum > 0) {
+        float voice_velocity = note.velocity * get_voice_velocity(voice);
+        int64_t voice_id = note.id + i;
         
-      // voice ON
-      //printf("___RT_PATCH_play_note. time: %d (%d)\n", (int)time, (int)(time + voice->start*sample_rate/1000));
-
-      //printf("  add %d at %d\n", (int)voice_id, (int)((int64_t)time + voice->start*sample_rate/1000));
-      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 8, SCHEDULER_NOTE_ON_PRIORITY);
-
-      // voice OFF
-      if(voice->length>0.001) // The voice decides when to stop by itself.
-        SCHEDULER_add_event(seqtrack, time + (voice->start+voice->length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 7, SCHEDULER_NOTE_OFF_PRIORITY);
+        args[1].float_num = voice_notenum;
+        args[2].int_num = voice_id;
+        args[3].float_num = voice_velocity;
+        
+        // voicenum
+        args[5].int_num &= ~(0xff);
+        args[5].int_num |= i;
+        
+        // voice ON
+        //printf("___RT_PATCH_play_note. time: %d (%d)\n", (int)time, (int)(time + voice->start*sample_rate/1000));
+        
+        //printf("  add %d at %d\n", (int)voice_id, (int)((int64_t)time + voice->start*sample_rate/1000));
+        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 8, SCHEDULER_NOTE_ON_PRIORITY);
+        
+        // voice OFF
+        if(voice->length>0.001) // The voice decides when to stop by itself.
+          SCHEDULER_add_event(seqtrack, time + (voice->start+voice->length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
+      }
     }
   }
 
@@ -1040,20 +1042,23 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
       if(voice->length<=0.001) { // i.e. this voice does not use a stopping time defined in the editor.
 
         float voice_notenum = note.pitch + voice->transpose;
-        int64_t voice_id = note.id + i;
 
-        //printf("RT_PATCH_stop_note. voice_id: %d. voice_is_playing: %d\n",(int)voice_id,(int)voice_is_playing);
-        
-        args[1].float_num = voice_notenum;
-        args[2].int_num = voice_id;
-
-        // voicenum
-        args[5].int_num &= ~(0xff);
-        args[5].int_num |= i;
-        
-
-        //printf("    remove %d at %d\n", (int)voice_id, (int)((int64_t)time + voice->start*sample_rate/1000));
-        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
+        if (voice_notenum > 0) {
+          int64_t voice_id = note.id + i;
+          
+          //printf("RT_PATCH_stop_note. voice_id: %d. voice_is_playing: %d\n",(int)voice_id,(int)voice_is_playing);
+          
+          args[1].float_num = voice_notenum;
+          args[2].int_num = voice_id;
+          
+          // voicenum
+          args[5].int_num &= ~(0xff);
+          args[5].int_num |= i;
+          
+          
+          //printf("    remove %d at %d\n", (int)voice_id, (int)((int64_t)time + voice->start*sample_rate/1000));
+          SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
+        }
       }
     }
   }
@@ -1136,19 +1141,22 @@ void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, co
     if(voice->is_on==true){
 
       float voice_notenum = note.pitch + voice->transpose;
-      int64_t voice_id = note.id + i;
-      float voice_velocity = note.velocity * get_voice_velocity(voice);
 
-      args[1].float_num = voice_notenum;
-      args[2].int_num = voice_id;
-      args[3].float_num = voice_velocity;
-
-      // voicenum
-      args[5].int_num &= ~(0xff);
-      args[5].int_num |= i;
+      if (voice_notenum > 0) {
+        int64_t voice_id = note.id + i;
+        float voice_velocity = note.velocity * get_voice_velocity(voice);
+        
+        args[1].float_num = voice_notenum;
+        args[2].int_num = voice_id;
+        args[3].float_num = voice_velocity;
+        
+        // voicenum
+        args[5].int_num &= ~(0xff);
+        args[5].int_num |= i;
       
-
-      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 8, SCHEDULER_VELOCITY_PRIORITY);
+        
+        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 8, SCHEDULER_VELOCITY_PRIORITY);
+      }
     }
   }
 }
@@ -1215,16 +1223,18 @@ void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const
     if(voice->is_on==true){
 
       float voice_notenum = note.pitch + voice->transpose;
-      int64_t voice_id = note.id + i;
+      if (voice_notenum > 0){
+        int64_t voice_id = note.id + i;
+        
+        args[1].float_num = voice_notenum;
+        args[2].int_num = voice_id;
+        
+        // voicenum
+        args[5].int_num &= ~(0xff);
+        args[5].int_num |= i;
 
-      args[1].float_num = voice_notenum;
-      args[2].int_num = voice_id;
-
-      // voicenum
-      args[5].int_num &= ~(0xff);
-      args[5].int_num |= i;
-
-      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 8, SCHEDULER_PITCH_PRIORITY);
+        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 8, SCHEDULER_PITCH_PRIORITY);
+      }
     }
   }
 }
@@ -1421,19 +1431,23 @@ static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patc
       
       const note_t &note = linked_note->note;
 
-      RT_play_voice(seqtrack,
-                    patch,
-                    create_note_t(note.seqblock,
-                                  note.id + voicenum,
-                                  note.pitch + voice->transpose,
-                                  voice_velocity,
-                                  note.pan,
-                                  note.midi_channel,
-                                  note.voicenum,
-                                  0
-                                  ),
-                    seqtrack->start_time
-                    );
+      float voice_notenum = note.pitch + voice->transpose;
+
+      if (voice_notenum > 0){
+        RT_play_voice(seqtrack,
+                      patch,
+                      create_note_t(note.seqblock,
+                                    note.id + voicenum,
+                                    voice_notenum,
+                                    voice_velocity,
+                                    note.pan,
+                                    note.midi_channel,
+                                    note.voicenum,
+                                    0
+                                    ),
+                      seqtrack->start_time
+                      );
+      }
     }    
 
     if (patch->instrument==get_audio_instrument()){
@@ -1463,18 +1477,21 @@ static void RT_PATCH_turn_voice_off(struct SeqTrack *seqtrack, struct Patch *pat
       
       const note_t &note = linked_note->note;
 
-      RT_stop_voice(seqtrack,
-                    patch,
-                    create_note_t(note.seqblock, note.id + voicenum,
-                                  note.pitch + voice->transpose,
-                                  note.velocity,
-                                  note.pan,
-                                  note.midi_channel,
-                                  note.voicenum,
-                                  0
+      float voice_notenum = note.pitch + voice->transpose;
+
+      if (voice_notenum > 0)
+        RT_stop_voice(seqtrack,
+                      patch,
+                      create_note_t(note.seqblock, note.id + voicenum,
+                                    voice_notenum,
+                                    note.velocity,
+                                    note.pan,
+                                    note.midi_channel,
+                                    note.voicenum,
+                                    0
                                   ),
-                    seqtrack->start_time
-                    );
+                      seqtrack->start_time
+                      );
     }
 
     if (patch->instrument==get_audio_instrument()){
