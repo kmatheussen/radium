@@ -275,6 +275,9 @@ void closeProgressWindow(void){
   GFX_CloseProgress();
 }
 
+void showHomeHelpWindow(void){
+  evalScheme("(FROM-C-show-help-window \"help/home.html\")");
+}
 void showMixerHelpWindow(void){
   evalScheme("(FROM-C-show-help-window \"help/mixer.html\")");
 }

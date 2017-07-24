@@ -453,7 +453,10 @@
                     web)))
   (reopen-gui-at-curr-pos web))
 
-
+#!!
+(FROM-C-show-help-window "help/home.html")
+!!#
+  
 ;; ra:gui_tabs with simpler gfx. (no borders, etc.)
 ;;
 (delafina (my-tabs :horizontal
