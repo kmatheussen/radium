@@ -194,18 +194,18 @@ static QPointer<QWidget> g_last_released_widget = NULL;
     Gui::changeEvent(event);                     \
   }
 
-#define OVERRIDERS_WITHOUT_SETVISIBLE_AND_HIDE(classname)               \
+#define OVERRIDERS_WITHOUT_KEY(classname)                               \
   MOUSE_OVERRIDERS(classname)                                           \
-  KEY_OVERRIDERS(classname)                                             \
+  SETVISIBLE_OVERRIDER(classname)                                       \
+  HIDE_OVERRIDER(classname)                                             \
   DOUBLECLICK_OVERRIDER(classname)                                      \
   CLOSE_OVERRIDER(classname)                                            \
   RESIZE_OVERRIDER(classname)                                           \
   PAINT_OVERRIDER(classname)
   
 #define OVERRIDERS(classname)                           \
-  OVERRIDERS_WITHOUT_SETVISIBLE_AND_HIDE(classname)     \
-  SETVISIBLE_OVERRIDER(classname)                       \
-  HIDE_OVERRIDER(classname)                                             
+  OVERRIDERS_WITHOUT_KEY(classname)                     \
+  KEY_OVERRIDERS(classname)
   
 
 //CHANGE_OVERRIDER(classname)                                             
@@ -2389,8 +2389,35 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return QSize(-1,-1);
     }
     */
-    
-    OVERRIDERS(QWebView);
+
+    void keyPressEvent(QKeyEvent *event) override{
+      RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
+      if (event->modifiers() & Qt::AltModifier){
+        printf("a\n");
+        if (event->key()==Qt::Key_Left){
+          printf("b\n");
+          back();
+          event->accept();
+          return;
+        }
+        if (event->key()==Qt::Key_Right){
+          printf("c\n");
+          forward();
+          event->accept();
+          return;
+        }
+      }
+      if (event->key()==Qt::Key_F5 || (event->key()==Qt::Key_R && event->modifiers()&Qt::ControlModifier)){
+        printf("d\n");
+        reload();
+        event->accept();
+        return;
+      }
+      if (_key_callback==NULL || !Gui::keyPressEvent(event))
+        FocusSnifferQWebView::keyPressEvent(event);
+    }
+
+    OVERRIDERS_WITHOUT_KEY(FocusSnifferQWebView);
   };
 
 
