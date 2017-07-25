@@ -5,9 +5,14 @@
 
     <IMG SRC="overview.svg" ALT="overview" style="border:10px solid transparent" width="50%" align="right">
 
-    
+    GUI parts:
     <OL align="left" width="50%">
-        <LI> Menus
+        <LI> <a onclick="showHide('menu')" href="#">Menus</A>
+          <div id="menu" style="display: none">
+            Use the left alt key to show/hide the menus, and start/stop navigitation.
+            You can also stop navigating the menus by pressing the Esc key.
+            Hold shift to quicker navigate up and down when using the up and down arrow keys.
+          </div>
         <LI> Editor
           <UL>
             <LI> <A href="fxtext.html">FX text</A>
@@ -30,6 +35,24 @@
             <LI> Edit
           </UL>
     </OL>
+
+    Other topics:
+    <UL>
+      <LI><A href="keybindings.html">How to create custom keybindings</A>
+    </UL>
+
+
+
+<script>
+function showHide(name) {
+    var x = document.getElementById(name);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+    } else {
+        x.style.display = 'none';
+    }
+}
+</script>
 
 </body>
  </html>
