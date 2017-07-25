@@ -1083,6 +1083,12 @@ for .emacs:
 (***assert*** (butlast '(2)) '())
 (***assert*** (butlast '(2 3)) '(2))
 
+(define (map-butlast elements func)
+  (if (null? elements)
+      elements
+      (append (map func
+                   (butlast elements))
+              (list (last elements)))))
 
 (define (second-last elements)
   (cadr (reverse elements)))

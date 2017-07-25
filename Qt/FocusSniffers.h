@@ -41,7 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     {                                                                   \
     }                                                                   \
   void focusInEvent ( QFocusEvent *e ) override {                       \
-    printf("got in\n");                                                 \
     if(dontsniff==false)                                                \
       obtain_keyboard_focus();                                          \
     GL_lock();                                                          \

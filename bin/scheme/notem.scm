@@ -1,6 +1,8 @@
 
 (provide 'notem.scm)
 
+(my-require 'notes.scm)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Edit tab in the lower tabs ;;
@@ -48,8 +50,14 @@
   (mid-horizontal-layout (<gui> :text "Under construction.")))
 
 (define (create-notem-button groupname ra-funcname)
-  (define func (eval-string ra-funcname))
-
+  (define funcname-contains-range (string-contains? ra-funcname "range"))
+  (define ra-func (eval-string ra-funcname))
+  (define (func)
+    (if (and funcname-contains-range
+             (not (<ra> :has-range)))
+        (show-async-message :text "No range in block. Select range by using Left Meta + b")
+        (ra-func)))
+  
   (let ((keybinding (get-displayable-keybinding ra-funcname)))
     (if (string=? keybinding "")
         (<gui> :button groupname func)
@@ -178,25 +186,37 @@
 
 (define *various-tab* #f)
 
-(delafina (replace-with-random-notes-in-track :tracknum -1)
-  (<ra> :undo-notes tracknum)
-  (for-each (lambda (notenum)              
-              (for-each (lambda (pitchnum)
-                          ;;(c-display :set-pitch (1+ (random 127)) 'same-place pitchnum notenum)
-                          (define pitchvalue (<ra> :get-pitch-value pitchnum notenum tracknum))
-                          (define range (* 12 (- 1 (sqrt (/ (random 9999) 9999.0))))) ;; A number between 0 and 12, but on average closer to 0.
-                          (define max-pitch (min 127 (+ pitchvalue range)))
-                          (define min-pitch (max 1 (- pitchvalue range)))
-                          (<ra> :set-pitch (myrand min-pitch max-pitch) 'same-place pitchnum notenum tracknum)
-                          )
-                        (iota (1- (<ra> :get-num-pitches notenum tracknum))))) ;; Use 1- to avoid setting end note pitch.
-            (iota (<ra> :get-num-notes tracknum))))
+(define (replace-with-random-pitches! area)  
+  (undo-editor-area area)  
+  (replace-notes! (map-area-notes (get-area-notes area)
+                                  (lambda (note)
+                                    (define (changepitch pitch)
+                                      (if (in-editor-area (+ (area :start-place)
+                                                             (note :place)
+                                                             (pitch :place))
+                                                          :area area)
+                                          (begin
+                                            (define pitchvalue (pitch :value))
+                                            (define range (* 12 (- 1 (sqrt (myrand 0 1))))) ;; A number between 0 and 12, but on average closer to 0.
+                                            (define max-pitch (min 127 (+ pitchvalue range)))
+                                            (define min-pitch (max 1 (- pitchvalue range)))
+                                            (copy-pitch pitch :value (myrand min-pitch max-pitch)))
+                                          pitch))                                    
+                                    (copy-note note
+                                               :pitches (if (= 0 ((last (note :pitches)) :value))
+                                                            (map-butlast (note :pitches)
+                                                                         changepitch)
+                                                            (map changepitch (note :pitches))))))
+                  area))
+
+(delafina (replace-with-random-notes-in-range :blocknum -1)
+  (replace-with-random-pitches! (get-ranged-editor-area blocknum)))
+
+(delafina (replace-with-random-notes-in-track :tracknum -1 :blocknum -1)
+  (replace-with-random-pitches! (get-track-editor-area tracknum blocknum)))
 
 (define (replace-with-random-notes-in-block)
-  (undo-block
-   (lambda ()
-     (for-each replace-with-random-notes-in-track
-               (iota (<ra> :get-num-tracks))))))
+  (replace-with-random-pitches! (get-block-editor-area)))
 
 #!!
 (* 5 0.5)
@@ -205,25 +225,34 @@
 (<ra> :get-num-notes)
 !!#
 
-(delafina (replace-with-random-velocities-in-track :tracknum -1)
-  (<ra> :undo-notes tracknum)
-  (for-each (lambda (notenum)
-              (for-each (lambda (velocitynum)
-                          ;;(c-display :set-velocity (1+ (random 127)) 'same-place velocitynum notenum)
-                          (define velocityvalue (<ra> :get-velocity-value velocitynum notenum tracknum))
-                          (define range (* 1.0 (- 1 (sqrt (/ (random 9999) 9999.0))))) ;; A number between 0 and 0.5, but on average closer to 0.
-                          (define max-velocity (min 1.0 (+ velocityvalue range)))
-                          (define min-velocity (max 0.0 (- velocityvalue range)))
-                          (<ra> :set-velocity (myrand min-velocity max-velocity) 'same-place velocitynum notenum tracknum)
-                          )
-                        (iota (<ra> :get-num-velocities notenum tracknum))))
-            (iota (<ra> :get-num-notes tracknum))))
+(define (replace-with-random-velocities! area)  
+  (undo-editor-area area)  
+  (replace-notes! (map-area-notes (get-area-notes area)
+                                  (lambda (note)
+                                    (define (changevelocity velocity)
+                                      (if (in-editor-area (+ (area :start-place)
+                                                             (note :place)
+                                                             (velocity :place))
+                                                          :area area)
+                                          (begin
+                                            (define velocityvalue (velocity :value))
+                                            (define range (* 1.0 (- 1 (sqrt (myrand 0 1))))) ;; A number between 0 and 1.0, but on average closer to 0.
+                                            (define max-velocity (min 1.0 (+ velocityvalue range)))
+                                            (define min-velocity (max 0.0 (- velocityvalue range)))
+                                            (copy-velocity velocity :value (myrand min-velocity max-velocity)))
+                                          velocity))                                    
+                                    (copy-note note
+                                               :velocities (map changevelocity (note :velocities)))))
+                  area))
+
+(delafina (replace-with-random-velocities-in-range :blocknum -1)
+  (replace-with-random-velocities! (get-ranged-editor-area blocknum)))
+
+(delafina (replace-with-random-velocities-in-track :tracknum -1 :blocknum -1)
+  (replace-with-random-velocities! (get-track-editor-area tracknum blocknum)))
 
 (define (replace-with-random-velocities-in-block)
-  (undo-block
-   (lambda ()
-     (for-each replace-with-random-velocities-in-track
-               (iota (<ra> :get-num-tracks))))))
+  (replace-with-random-velocities! (get-block-editor-area)))
 
 
 (define (create-various-notem)
@@ -251,10 +280,12 @@
   (define monophonic-layout (create-notem-layout (create-notem-button "Make track monophonic" "ra:make-track-monophonic")
                                            (create-notem-button "Split track into several monophonic tracks" "ra:split-track-into-monophonic-tracks")))
 
-  (define random-layout (create-notem-layout (create-notem-button "Track" "replace-with-random-notes-in-track")
+  (define random-layout (create-notem-layout (create-notem-button "Range" "replace-with-random-notes-in-range")
+                                             (create-notem-button "Track" "replace-with-random-notes-in-track")
                                              (create-notem-button "Block" "replace-with-random-notes-in-block")))
 
-  (define random-velocities-layout (create-notem-layout (create-notem-button "Track" "replace-with-random-velocities-in-track")
+  (define random-velocities-layout (create-notem-layout (create-notem-button "Range" "replace-with-random-velocities-in-range")
+                                                        (create-notem-button "Track" "replace-with-random-velocities-in-track")
                                                         (create-notem-button "Block" "replace-with-random-velocities-in-block")))
 
   (define ret (create-notem-flow-layout (<gui> :group "Expand/shrink Pitch" pitches-layout)

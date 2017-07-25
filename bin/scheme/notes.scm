@@ -29,7 +29,62 @@
   (+ (note :place)
      (get-note-duration note)))
 
+(define-struct editor-area
+  :start-place
+  :end-place
+  :start-track
+  :end-track
+  :blocknum)
 
+(delafina (in-editor-area :start-place
+                          :end-place #f
+                          :area)
+  (if (not end-place)
+      (and (>= start-place (area :start-place))
+           (< start-place (area :end-place)))
+      (begin
+        (assert (> end-place start-place))
+        (and (< start-place (area :end-place))
+             (>= end-place (area :start-place))))))
+          
+(delafina (get-block-editor-area :blocknum -1)
+  (make-editor-area :start-place 0
+                  :end-place (<ra> :get-num-lines blocknum)
+                  :start-track 0
+                  :end-track (<ra> :get-num-tracks blocknum)
+                  :blocknum blocknum))
+
+(delafina (get-track-editor-area :tracknum -1
+                               :blocknum -1)
+  (define start-track (if (= -1 tracknum)
+                          (<ra> :current-track blocknum)
+                          tracknum))
+  (assert (< start-track (<ra> :get-num-tracks)))
+  (assert (>= start-track 0))
+          
+  (make-editor-area :start-place 0
+                  :end-place (<ra> :get-num-lines blocknum)
+                  :start-track start-track
+                  :end-track (1+ start-track)
+                  :blocknum blocknum))
+
+(delafina (get-ranged-editor-area :blocknum -1)
+  (assert (<ra> :has-range blocknum))
+  (make-editor-area :start-place (<ra> :get-range-start-place blocknum)
+                  :end-place (<ra> :get-range-end-place blocknum)
+                  :start-track (<ra> :get-range-start-track blocknum)
+                  :end-track (<ra> :get-range-end-track blocknum)
+                  :blocknum blocknum))
+
+(define (undo-editor-area area)
+  (undo-block
+   (lambda ()
+     (let loop ((tracknum (area :start-track)))
+       (when (< tracknum (area :end-track))
+         (c-display "Creating undo for track " tracknum)
+         (<ra> :undo-notes tracknum (area :blocknum))
+         (loop (1+ tracknum)))))))
+             
 ;;;;;;;;; GET NOTES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (get-note-velocities blocknum tracknum notenum notestart)
@@ -56,21 +111,12 @@
                :pitches pitches
                :velocities velocities
                :continues-next-block (<ra> :note-continues-next-block notenum tracknum blocknum))))
-                   
-(delafina (get-notes :startplace 0
-                     :endplace (<ra> :get-num-lines blocknum)
-                     :starttracknum -1
-                     :endtracknum -1
-                     :blocknum -1
-                     )
-  (if (= -1 starttracknum)
-      (set! starttracknum (<ra> :current-track blocknum)))
-  
-  (if (<= endtracknum starttracknum)
-      (set! endtracknum (1+ starttracknum)))
 
-  (c-display "start/end" starttracknum endtracknum)
-  
+(delafina (get-area-notes :area
+                          :include-all #t) ;; if include-all is #t, we also include all notes starting to play before the area and either ends inside the area or after.
+  (define blocknum (area :blocknum))
+  (define startplace (area :start-place))
+  (define endplace (area :end-place))
   (map (lambda (tracknum)
          (if (>= tracknum (<ra> :get-num-tracks blocknum))
              '()
@@ -79,15 +125,32 @@
                  (if (>= notenum num-notes)
                      '()
                      (let ((note-start (<ra> :get-note-start notenum tracknum blocknum)))
-                       (cond ((< note-start startplace)
-                              (loop (1+ notenum)))
-                             ((>= note-start endplace)
+                       (cond ((>= note-start endplace)
                               '())
-                             (else
+                             ((in-editor-area note-start
+                                              (and include-all (<ra> :get-note-end notenum tracknum blocknum))
+                                              area)
                               (cons (get-note blocknum tracknum notenum startplace)
-                                    (loop (1+ notenum)))))))))))
-       (map (lambda (i) (+ i starttracknum))
-            (iota (- endtracknum starttracknum)))))
+                                    (loop (1+ notenum))))
+                             (else
+                              (loop (1+ notenum))))))))))
+       (integer-range (area :start-track)
+                      (1- (area :end-track)))))
+
+(delafina (get-ranged-notes :blocknum -1)
+  (get-area-notes (get-ranged-editor-area blocknum)))
+
+
+(define (map-area-notes area-notes func)
+  (map (lambda (track-notes)
+         (map func track-notes))
+       area-notes))
+
+(define (for-each-area-note area-notes func)
+  (for-each (lambda (track-notes)
+              (for-each func track-notes))
+            area-notes))
+  
 
 #||
 (pp (map (lambda (track)
@@ -117,35 +180,6 @@
 
 ||#
 
-
-(delafina (delete-notes! :startplace 0
-                         :endplace (<ra> :get-num-lines blocknum)
-                         :starttracknum -1
-                         :endtracknum -1
-                         :blocknum -1)
-  (let loop ((tracknum starttracknum)
-             (notenum 0))
-    (when (and (< tracknum endtracknum)
-               (< tracknum (<ra> :get-num-tracks blocknum)))
-      (let ((num-notes (<ra> :get-num-notes tracknum blocknum)))
-        (if (>= notenum num-notes)
-            (loop (1+ tracknum)
-                  0)
-            (let ((note-start (<ra> :get-note-start notenum tracknum blocknum)))
-              (cond ((<= note-start startplace)
-                     (loop tracknum
-                           (1+ notenum)))
-                    ((>= note-start endplace)
-                     (loop (1+ tracknum)
-                           0))
-                    (else
-                     (<ra> :delete-note notenum tracknum blocknum)
-                     (loop tracknum
-                           notenum)))))))))
-#||
-(delete-notes! 7 9 0 1)
-
-||#
 
 (define (cut-note note place)
   (assert (> place (note :place)))
@@ -228,68 +262,137 @@
 ;;;;;;;;; SET NOTES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (add-note! note tracknum blocknum)
-  
+
+  (c-display "note:")
+  (pretty-print note)
+
+  (define num-lines (<ra> :get-num-lines blocknum))
+  (assert (< (note :place) num-lines))
+           
   ;; add note
   (define notenum (<ra> :add-note
                         (note :pitches 0 :value)
                         (note :velocities 0 :value)
                         (note :place)
+                        (min num-lines (get-note-end note))
                         tracknum
                         blocknum))
-  
+
   ;; add pitches
   ;;
+  ;; logtype of first pitch
   (<ra> :set-pitch-logtype ((car (note :pitches)) :logtype) 0 notenum tracknum blocknum)
-  
+
+  ;; end-pitch. TODO: end-pitch is not correct if end-place is >= num_lines.
   (let ((pitch (last (note :pitches))))
     (if (not (= 0 (pitch :value)))
-        (<ra> :set-pitch (pitch :value) -1 1 notenum tracknum blocknum)))
+        (<ra> :set-pitch
+              (pitch :value)
+              'same-place
+              1  ;; (1==current end-pitch num)
+              notenum tracknum blocknum)))
 
   (for-each (lambda (pitch)
-              (define pitchnum (<ra> :add-pitch (pitch :value) (+ (pitch :place) (note :place)) notenum tracknum blocknum))
-              (<ra> :set-pitch-logtype (pitch :logtype) pitchnum notenum tracknum blocknum))
+              (define place (+ (pitch :place)
+                               (note :place)))
+              (if (< place num-lines)
+                  (let ((pitchnum (<ra> :add-pitch
+                                        (pitch :value)
+                                        place
+                                        notenum tracknum blocknum)))
+                    (<ra> :set-pitch-logtype (pitch :logtype) pitchnum notenum tracknum blocknum))))
             (cdr (butlast (note :pitches))))
 
   
   ;; add velocities
   ;;
+  ;; logtype of first velocity.
   (<ra> :set-velocity-logtype ((car (note :velocities)) :logtype) 0 notenum tracknum blocknum)
 
+  ;; end-velocity. TODO: end-velocity is not correct if end-place is >= num_lines.
   (let ((velocity (last (note :velocities))))
     (<ra> :set-velocity
           (velocity :value)
-          -1
-          1 notenum tracknum blocknum))
+          'same-place
+          1 ;; (1==current end-velocity num)
+          notenum tracknum blocknum))
 
   (for-each (lambda (velocity)
-              (define velocitynum (<ra> :add-velocity (velocity :value) (+ (velocity :place) (note :place)) notenum tracknum blocknum))
-              (<ra> :set-velocity-logtype (velocity :logtype) velocitynum notenum tracknum blocknum))
+              (define place (+ (velocity :place)
+                               (note :place)))
+              (if (< place num-lines)
+                  (let ((velocitynum (<ra> :add-velocity
+                                           (velocity :value)
+                                           place
+                                           notenum tracknum blocknum)))
+                    (<ra> :set-velocity-logtype (velocity :logtype) velocitynum notenum tracknum blocknum))))
             (cdr (butlast (note :velocities))))
   
   notenum)
+  
 
-(delafina (set-notes! :notes
-                      :startplace 0
-                      :starttrack -1
-                      :blocknum -1)
-  (if (= -1 starttrack)
-      (set! starttrack (<ra> :get-cursor-track)))
-  (for-each (lambda (addtracknum notes)
+(define (add-notes! area-notes area)
+  (define blocknum (area :blocknum))
+  (define startplace (area :start-place))
+  (define endplace (area :end-place))
+  (define starttrack (area :start-track))
+  (for-each (lambda (addtracknum track-notes)
               (let ((tracknum (+ starttrack addtracknum)))
-                (when (< tracknum (<ra> :get-num-tracks blocknum))
-                  (<ra> :delete-all-notes-in-track tracknum blocknum)
-                  (for-each (lambda (note)
-                              (add-note! note tracknum blocknum))
-                            notes))))
-            (iota (length notes))
-            notes)
-  )
+                (if (< tracknum (<ra> :get-num-tracks blocknum)) ;; Need this test since the 'area-notes' doesn't have to be created from 'area'.
+                    (for-each (lambda (note)
+                                (let ((place (+ startplace (note :place))))
+                                  (if (< place endplace)
+                                      (add-note! (copy-note note
+                                                            :place place)
+                                                 tracknum
+                                                 blocknum))))
+                              track-notes))))
+            (iota (length area-notes))
+            area-notes))
+
+(delafina (remove-notes! :area
+                         :include-all #t) ;; if include-all is #t, we also include all notes starting to play before the area and either ends inside the area or after.
+  (define blocknum (area :blocknum))
+  (define startplace (area :start-place))
+  (define endplace (area :end-place))
+  (assert (<= (area :end-track)
+              (<ra> :get-num-tracks blocknum)))
+  
+  (let loop ((tracknum (area :start-track))
+             (notenum 0))
+    (if (< tracknum (area :end-track))
+        (let ((num-notes (<ra> :get-num-notes tracknum blocknum)))
+          (if (>= notenum num-notes)
+              (loop (1+ tracknum)
+                    0)
+              (let ((note-start (<ra> :get-note-start notenum tracknum blocknum)))
+                (cond ((>= note-start endplace)
+                       (loop (1+ tracknum)
+                             0))
+                      ((in-editor-area note-start
+                                       (and include-all (<ra> :get-note-end notenum tracknum blocknum))
+                                       area)
+                       (<ra> :delete-note notenum tracknum blocknum)
+                       (loop tracknum
+                             notenum))
+                      (else
+                       (loop tracknum
+                             (1+ notenum))))))))))
+#||
+(remove-notes! 7 9 0 1)
+
+||#
+
+
+(define (replace-notes! area-notes area)
+  (remove-notes! area)
+  (add-notes! area-notes area))
 
 #||
 (let ((notes (get-notes :starttracknum 0)))
   (c-display (length ((caar notes) :pitches)))
   (for-each c-display ((caar notes) :pitches))
-  (set-notes! notes :starttrack 1))
+  (replace-notes! notes :starttrack 1))
 
 ||#
 
@@ -337,61 +440,34 @@
                  :velocities (reverse-velocities (note :velocities) duration)
                  )))
 
-(delafina (get-reversed-notes :blocknum -1
-                              :starttracknum -1
-                              :endtracknum (1+ starttracknum)
-                              :startplace 0
-                              :endplace (<ra> :get-num-lines blocknum)
-                              )
+(define (get-reversed-notes area)
+  (define area-length (- (area :end-place)
+                         (area :start-place)))
   (map (lambda (tracknotes)
          (map (lambda (note)
-                (reverse-note note (- endplace startplace)))
+                (reverse-note note area-length))
               (reverse tracknotes)))
-       (get-notes :blocknum blocknum
-                  :starttracknum starttracknum
-                  :endtracknum endtracknum
-                  :startplace startplace
-                  :endplace endplace)))
+       (get-area-notes area)))
               
 
-(delafina (get-reversed-block :blocknum -1)
-  (get-reversed-notes :blocknum blocknum
-                      :starttracknum 0
-                      :endtracknum (<ra> :get-num-tracks blocknum)))
-                      
 (delafina (reverse-block! :blocknum -1)
-  (set-notes! :notes (get-reversed-notes :blocknum blocknum)
-              :startplace 0
-              :starttrack 0
-              :blocknum blocknum))
+  (define area (get-block-editor-area blocknum))
+  (replace-notes! (get-reversed-notes area)
+                  area))
               
-(delafina (get-reversed-track :tracknum -1
-                              :blocknum -1)
-  (get-reversed-notes blocknum tracknum))
-
 (delafina (reverse-track! :tracknum -1
                           :blocknum -1)
-  (set-notes! :notes (get-reversed-track :tracknum -1
-                                         :blocknum blocknum)
-              :startplace 0
-              :starttrack tracknum
-              :blocknum blocknum))
+  (define area (get-track-editor-area tracknum blocknum))
+  (replace-notes! (get-reversed-notes area)
+                  area))
               
-(delafina (get-reversed-range :blocknum -1)
-  (get-reversed-notes :blocknum blocknum
-                      :starttracknum (<ra> :get-range-start-track)
-                      :endtracknum (<ra> :get-range-end-track)
-                      :startplace (<ra> :get-range-start-place)
-                      :endplace (<ra> :get-range-end-place)))
-       
 (delafina (reverse-range! :blocknum -1)
-  (set-notes! :notes (get-reversed-range :blocknum blocknum)
-              :startplace (<ra> :get-range-start-place)
-              :starttrack (<ra> :get-range-start-track)
-              :blocknum blocknum))
-              
-  
+  (define area (get-ranged-editor-area blocknum))
+  (replace-notes! (get-reversed-notes area)
+                  area))
+
 #||
+
 (reverse-range!)
 
 (reverse-track!)
