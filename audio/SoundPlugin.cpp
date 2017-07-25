@@ -163,24 +163,27 @@ static void add_midi_learn(SoundPluginEffectMidiLearn *midi_learn){
         gain)))
 */
 
-static const float threshold_val = 0.05f;
+#define threshold_val 0.05f
 
 static float slider_2_gain(float val, const float db_min, const float db_max){
   if(val<=0.0f)
     return 0.0f;
 
   if(val <= threshold_val){ // Below threshold, we do a linear conversion. If not there will be a jump between 0 and almost 0.
-      const float threshold_db  = powf(10,
-                                       scale(threshold_val, 0.0f, 1.0f, db_min, db_max) / 20.0f);
-      
-      return scale(val, 
-                   0.0f, threshold_val,
-                   0.0f, threshold_db);
+    // threshold_db one should normally be precalculated, I hope, since db_min and db_max are constants from the caller.
+    const float threshold_db  = powf(10,
+                                     scale(threshold_val, 0.0f, 1.0f, db_min, db_max) / 20.0f);
+    
+    return scale(val, 
+                 0.0f, threshold_val,
+                 0.0f, threshold_db);
   }else{
     return powf(10,
                 scale(val, 0.0f, 1.0f, db_min, db_max) / 20.0f);
   }
 }
+
+
 
 /*
 (define (gain_2_slider gain db_min db_max)
@@ -200,10 +203,11 @@ static float slider_2_gain(float val, const float db_min, const float db_max){
                0 1))))
 */
 
-static float gain_2_slider(float gain, float db_min, float db_max){
+static float gain_2_slider(float gain, const float db_min, const float db_max){
   if(gain==0.0f)
     return 0.0f;
 
+  // This one should normally be precalculated, I hope, since db_min and db_max are constants from the caller.
   const float threshold_gain = powf(10,
                                     scale(threshold_val, 0.0f, 1.0f, db_min, db_max) / 20.0f);
 
@@ -220,6 +224,9 @@ static float gain_2_slider(float gain, float db_min, float db_max){
 
   return R_BOUNDARIES(0.0f, ret, 1.0f);
 }
+
+#undef threshold_val
+
 
 static float gain_2_db(float val, const float db_min, const float db_max){
   float slider = gain_2_slider(val,

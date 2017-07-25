@@ -37,6 +37,7 @@ static void Invert_notes(
 	const Place *p1,
 	const Place *p2,
 	bool firsttime,
+        int last_org,
 	int last
 ){
 	int next=0;
@@ -49,13 +50,13 @@ static void Invert_notes(
 
 		next=note->note;
 
-		if(firsttime==false){
-			note->note=R_MAX(1,R_MIN(127,2*last-note->note));
+     		if(firsttime==false){
+                        note->note=R_MAX(1,R_MIN(127,last - (note->note - last_org)));
 		}else{
 			firsttime=false;
 		}
 	}
-	Invert_notes(NextNote(note),p1,p2,firsttime,next);
+	Invert_notes(NextNote(note),p1,p2,firsttime,next,note->note);
 }
 
 
@@ -73,7 +74,7 @@ void InvertRange(
 	track=ListFindElement1(&wblock->block->tracks->l,wblock->rangex1);
 
 	for(lokke=0;lokke<=wblock->rangex2-wblock->rangex1;lokke++){
-		Invert_notes(track->notes,p1,p2,true,0);
+                Invert_notes(track->notes,p1,p2,true,0,0);
 		track=NextTrack(track);
 	}
 
@@ -88,7 +89,7 @@ void InvertTrack(
 	PlaceSetFirstPos(&p1);
 	PlaceSetLastPos(block,&p2);
 
-	Invert_notes(track->notes,&p1,&p2,true,0);
+	Invert_notes(track->notes,&p1,&p2,true,0,0);
 }
 
 void InvertBlock(
