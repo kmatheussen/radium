@@ -52,11 +52,15 @@ extern LANGSPEC bool GFX_Message_ignore_questionmark(void);
 extern LANGSPEC bool GFX_Message_ask_ignore_question_questionmark(void);
 extern LANGSPEC void GFX_Message_call_after_showing(bool clicked_ignore);
 
-extern LANGSPEC int GFX_Message2(vector_t *buttons, bool program_state_is_valid, const char *fmt,...);
+extern LANGSPEC int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const char *fmt,...);
+#define GFX_Message2(Buttons, PSIV, ...) ((void)labs(0 && printf(__VA_ARGS__)), GFX_Message2_internal(Buttons, PSIV, __VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
+
 #define GFX_Message(buttons, ...) GFX_Message2(buttons, false,  __VA_ARGS__)
 #define GFX_SafeMessage(buttons, ...) GFX_Message2(buttons, true, __VA_ARGS__)
 
-extern LANGSPEC void GFX_addMessage(const char *fmt,...);
+extern LANGSPEC void GFX_addMessage_internal(const char *fmt,...);
+#define GFX_addMessage(...) do{(void)labs(0 && printf(__VA_ARGS__)); GFX_addMessage_internal(__VA_ARGS__);}while(0) // Add a "printf" call to make the C compiler show warning/error,
+
 extern LANGSPEC const char *GFX_qVersion(void);
 
 extern LANGSPEC void GFX_AddMenuItem(struct Tracker_Windows *tvisual, const char *name, const char *python_command);

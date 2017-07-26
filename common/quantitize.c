@@ -82,7 +82,7 @@ void Quantitize_fxs(struct Tracker_Windows *window, struct WBlocks *wblock, stru
                               wblock->block->l.num,
                               wtrack->track->l.num,
                               fxnum,
-                              quant.numerator, quant.denominator
+                              (int)quant.numerator, (int)quant.denominator
                               )
                 );
 

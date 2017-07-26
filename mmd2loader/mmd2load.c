@@ -549,7 +549,7 @@ bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename){
         ID = read_be32uint(file);
 	//fread(&ID,4,1,file);
 	if(ID!=0x4d4d4432 && ID!=0x4d4d4433){
-          GFX_Message(NULL, "This is not an MMD2 or MMD3 octamed module: %p\n",ID);
+          GFX_Message(NULL, "This is not an MMD2 or MMD3 octamed module: 0x%x\n",ID);
           return false;
 	}
 

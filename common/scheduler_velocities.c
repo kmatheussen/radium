@@ -88,7 +88,7 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
   
 #if !defined(RELEASE)
   if (time < time1) // || time>time2) Note that time>time2 can happen since the scheduler ensures that the time is not in the past.
-    RError("RT_scheduled_glide_velocity: time: %d, time1: %d, time2: %d", time, time1, time2);
+    RError("RT_scheduled_glide_velocity: time: %d, time1: %d, time2: %d", (int)time, (int)time1, (int)time2);
 #endif
   
   if (time < time1)

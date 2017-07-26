@@ -564,7 +564,7 @@ void MIDI_insert_recorded_midi_events(void){
 
         // UNDO
         //
-        char *key = (char*)talloc_format("%x",track); // store pointer
+        char *key = talloc_format("%p",track); // store pointer
         if (HASH_has_key(track_set, key)==false){
 
           if (do_split){

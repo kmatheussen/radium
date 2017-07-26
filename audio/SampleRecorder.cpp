@@ -256,7 +256,7 @@ struct RecordingFile{
     f.close();
 
     if(!s)
-      RT_message("Unable to write smpl chunk properly to \"%s\". That is strange.",filename.toUtf8().constData(), sf_error_number(close_result));
+      RT_message("Unable to write smpl chunk properly to \"%s\": %s.",filename.toUtf8().constData(), sf_error_number(close_result));
     
     return true;
   }

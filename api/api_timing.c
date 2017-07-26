@@ -82,10 +82,8 @@ int addSignature(int numerator, int denominator,
 {
   struct Tracker_Windows *window;
   struct WBlocks *wblock=getWBlockFromNumA(-1,&window,blocknum);
-  if(wblock==NULL) {
-    handleError("unknown block(%p)",blocknum);
+  if(wblock==NULL)
     return -1;
-  }
 
   if (!PlaceLegal(wblock->block, &place)) {
     handleError("Place %s is not legal", PlaceToString(&place));
@@ -351,10 +349,8 @@ dyn_t getAllBPM(int blocknum, int windownum){
 Place getTemponodePlace(int num, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL) {
-    handleError("getTemponodeValue: No block %d in window %d",blocknum,windownum);
+  if (wblock==NULL)
     return place(0,0,1);
-  }
 
   struct Blocks *block = wblock->block;
   struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
@@ -372,10 +368,8 @@ Place getTemponodePlace(int num, int blocknum, int windownum){
 float getTemponodeValue(int num, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL) {
-    handleError("getTemponodeValue: No block %d in window %d",blocknum,windownum);
+  if (wblock==NULL)
     return 0.0;
-  }
 
   struct Blocks *block = wblock->block;
   struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
@@ -396,10 +390,8 @@ void setTemponode(int num, float value, Place place, int blocknum, int windownum
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL) {
-    handleError("setTemponode: No block %d in window %d",blocknum,windownum);
+  if (wblock==NULL)
     return;
-  }
 
   //printf("Set temponode. value: %f. Place: %f\n",value,floatplace);
   
@@ -480,10 +472,8 @@ void deleteTemponode(int num, int blocknum){
 int addTemponode(float value, Place place, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL) {
+  if (wblock==NULL)
     handleError("addTemponode: No block %d in window %d",blocknum,windownum);
-    return -1;
-  }
 
   struct Blocks *block = wblock->block;
   

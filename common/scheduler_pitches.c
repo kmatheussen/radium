@@ -114,7 +114,7 @@ static int64_t RT_scheduled_glide_pitch(struct SeqTrack *seqtrack, int64_t time,
 
 #if !defined(RELEASE)
   if (time < time1 || time>time2)
-    RError("RT_scheduled_glide_pitch: time: %d, time1: %d, time2: %d", time, time1, time2);
+    RError("RT_scheduled_glide_pitch: time: %d, time1: %d, time2: %d", (int)time, (int)time1, (int)time2);
 #endif
   
   if (time < time1)

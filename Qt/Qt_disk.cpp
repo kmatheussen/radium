@@ -392,7 +392,10 @@ int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes){
   int64_t ret = disk->file()->read((char*)destination, num_bytes);
   
   if (ret==-1)
-    GFX_addMessage(talloc_format("Failed reading from %s. Error code: %s.\n(The error codes are listed at http://doc.qt.io/qt-5/qfiledevice.html#error)", disk->filename.toUtf8().constData(), (int)disk->file()->error()));
+    GFX_addMessage("Failed reading from %s. Error code: %d.\n(The error codes are listed at http://doc.qt.io/qt-5/qfiledevice.html#error)",
+                   disk->filename.toUtf8().constData(),
+                   (int)disk->file()->error()
+                   );
   
   return ret;
 }

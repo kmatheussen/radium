@@ -318,7 +318,7 @@ static void put_ratio(hash_t *hash, const char *key, int i, Ratio val){
 
 static void put_hash(hash_t *hash, const char *key, int i, hash_t *val){
   if (val==NULL){
-    RError("put_hash: val==NULL. key: %d, i: %d\n", key, i);
+    RError("put_hash: val==NULL. key: %s, i: %d\n", key, i);
     return;
   }
 
@@ -737,7 +737,7 @@ hash_t *HASH_load(disk_t *file){
     if (res==ok)
       return NULL;
   } else {
-    GFX_Message(NULL, "Trying to load something which is not a hash map. First line: \"%s\"",line);
+    GFX_Message(NULL, "Trying to load something which is not a hash map. First line: \"%s\"",STRING_get_chars(line));
     return NULL;
   }
 

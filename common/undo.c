@@ -417,7 +417,7 @@ static void Undo_Add_internal(
   if (ignore()) return;
 
   if(currently_undoing){
-    RError("Can not call Undo_Add from Undo()\n",info);
+    RError("Can not call Undo_Add from Undo(). (%s)\n", info);
     return;
   }
 

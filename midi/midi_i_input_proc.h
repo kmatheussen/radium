@@ -92,7 +92,7 @@ public:
 
   QString get_source_info(void){
     if (ATOMIC_GET(is_learning))
-      return talloc_format("Learning...", ATOMIC_GET(byte1), ATOMIC_GET(byte2));
+      return "Learning...";
     else if (ATOMIC_GET(byte1)>=0xe0)
       return talloc_format("%s: %2X", ATOMIC_GET(port_name)->name, ATOMIC_GET(byte1));
     else

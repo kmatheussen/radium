@@ -383,7 +383,7 @@ static LADSPA_PortRangeHintDescriptor get_hintdescriptor(const LADSPA_Descriptor
     }
   }
 
-  RWarning("Unknown effect %d for Ladspa plugin \"%s\"\n", effect_num);
+  RWarning("Unknown effect %d for Ladspa plugin \"%s\"\n", effect_num, descriptor->Name);
   return 0;
 }
 

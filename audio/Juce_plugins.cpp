@@ -1547,7 +1547,12 @@ static SoundPluginType *create_plugin_type(const PluginDescription &description,
     = description.pluginFormatName=="VST" ? "VST"
     : description.pluginFormatName=="VST3" ? "VST3"
     : description.pluginFormatName=="AudioUnit" ? "AU"
-    : (RError("Unknown type %s", description.pluginFormatName.toRawUTF8()), "Unknown");
+    : NULL;
+
+  if (plugin_type->type_name==NULL){
+    RError("Unknown type %s", description.pluginFormatName.toRawUTF8());
+    plugin_type->type_name = "Unknown";
+  }
 
   plugin_type->name      = V_strdup(description.name.toRawUTF8());
 
