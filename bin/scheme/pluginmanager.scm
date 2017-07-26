@@ -329,21 +329,22 @@
   (disable-gui-updates-block ;; The "scan" buttons sometimes pop up temporarily in a position where they are not supposed to be, unless we turn off updates.
    table
    (lambda ()
-  
+
      (let ((n (entry :num-uses)))
        (if (> n 0)
            (<gui> :add-table-int-cell table n *pmg-use-x* y enabled)
-           (<gui> :add-table-string-cell table "" *pmg-use-x* y enabled)))
+           (<gui> :add-table-string-cell table "" *pmg-use-x* y enabled)))     
      (define name-gui (<gui> :add-table-string-cell table (entry :name) *pmg-name-x* y enabled))
      (<gui> :add-table-string-cell table (entry :type-name) *pmg-type-x* y enabled)
      (<gui> :add-table-string-cell table (entry :path) *pmg-path-x* y enabled)
      
      (cond (is-normal
-            
+
             (<gui> :add-table-string-cell table (<-> (entry :category)) *pmg-category-x* y enabled)
             (<gui> :add-table-string-cell table (<-> (entry :creator)) *pmg-creator-x* y enabled)
             (<gui> :add-table-int-cell table (entry :num-inputs) *pmg-inputs-x* y enabled)
-            (<gui> :add-table-int-cell table (entry :num-outputs) *pmg-outputs-x* y) enabled)
+            (<gui> :add-table-int-cell table (entry :num-outputs) *pmg-outputs-x* y enabled)
+            )
            
            (is-container
             
@@ -355,16 +356,15 @@
             (define (populate)
               (<gui> :set-value *pmg-progress-label* (<-> "Scanning (" (length *pmg-populate-funcs*) "): " (entry :name)))
               (<gui> :update *pmg-progress-label*)
-              ;;(<gui> :enable-table-sorting table #f)
-              (let ((new-entries (<ra> :populate-plugin-container entry))
-                    (y (<gui> :get-table-row-num table pop1)))
-                (assert (>= y 0))
+              (<gui> :enable-table-sorting table #f) ;; Must disable sorting when modifying table (QTableWidget sorts immediately when changing the content of a cell).
+              (let* ((new-entries (<ra> :populate-plugin-container entry))
+                     (y (<gui> :get-table-row-num table pop1)))
                 (<gui> :add-table-rows table y (1- (length new-entries)))
                 ;;(c-display (pp new-entries))
                 (pmg-add-entries-to-table! table (to-list new-entries) instrconf y)
                 (<gui> :set-value *pmg-progress-label* (<-> "Finished Scanning (" (length *pmg-populate-funcs*) "): " (entry :name)))
                 )
-              ;;(<gui> :enable-table-sorting table #t)
+              (<gui> :enable-table-sorting table #t)
               (if (not is-blacklisted)
                   (set! *pmg-populate-funcs* (delete-from2 *pmg-populate-funcs* populate)))
               (set! *pmg-populate-buttons* (delete-from2 *pmg-populate-buttons* pop1))
