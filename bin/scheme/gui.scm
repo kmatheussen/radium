@@ -352,12 +352,13 @@
 
 
 (define *message-gui* #f)
-(define *message-gui-text-edit* (<gui> :text-edit "" #t))
+(define *message-gui-text-edit* #f)
 
-(define (show-message-gui)
+(define (show-message-gui message)
   (<ra> :schedule 0 ;; In case we are called from a paint callback. Not only isn't the message displayed if we call directly, we also end up in an infinite loop since this function is called from various error handlers.
         (lambda ()
-          (when (not *message-gui*)
+          (when (or (not *message-gui*)
+                    (not (<gui> :is-open *message-gui*)))
             (define buttonlayout (<gui> :horizontal-layout))
             (<gui> :set-layout-spacing buttonlayout 2 0 2 0 2)
             
@@ -367,15 +368,17 @@
             (<gui> :add-callback hide-button (lambda ()                                       
                                                (<gui> :hide *message-gui*)))
             (<gui> :add buttonlayout hide-button)
-            
+
+            (set! *message-gui-text-edit* (<gui> :text-edit "" #t))
             (define gui2 (<gui> :vertical-layout *message-gui-text-edit* buttonlayout))
             (<gui> :set-layout-spacing gui2 2 2 2 2 2)
             
             (<gui> :set-size gui2
                    (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 oiwaefoajefoijaowepijaeporgijpoaghjto#$#$% 2q3e4tERTQERT paerjgoijaerpoiporegi"))
                    (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345")))
-            
-            (<gui> :set-static-toplevel-widget gui2 #t)
+
+            ;; definitely not.
+            ;;(<gui> :set-static-toplevel-widget gui2 #t)
             
             ;; Just hide window when closing it.
             (<gui> :add-close-callback gui2
@@ -390,26 +393,37 @@
           ;;(c-display gui2)
           
           (reopen-gui-at-curr-pos *message-gui*)
-          
+
+          (<gui> :set-value *message-gui-text-edit* message)
+                 
           #f)))
 
-  
+#||
+;; for debugging. The message gui can open at any time.
+(define *has-started-it* #f)
+(define (maybe-start-it)
+  (when (not *has-started-it*)
+    (set! *has-started-it* #t)
+    (<ra> :schedule 1000
+          (lambda ()
+            (add-message-window-message "pulse")
+            3000))))
+||#
 
 (define *g-complete-message* #f)
 (define (add-message-window-message message)
+  ;;(maybe-start-it)
   (set! *g-complete-message* (<-> (if (not (string? *g-complete-message*))
                                       ""
                                       (<-> *g-complete-message* "<p><br>\n"))
                                   "<h4>" (<ra> :get-date-string) " " (<ra> :get-time-string) ":</h4>"
                                   "<blockquote>" message "</blockquote>"))
-  (define old-message (<gui> :get-value *message-gui-text-edit*))
-  (<gui> :set-value *message-gui-text-edit* (<-> "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd\">"
-                                                 "<html><head>" 
-                                                 "</head><body>"                                                 
-                                                 *g-complete-message*                                                 
-                                                 "<br>"                                                 
-                                                 "</body></html>\n"))
-  (show-message-gui))
+  (show-message-gui (<-> "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd\">"
+                         "<html><head>" 
+                         "</head><body>"                                                 
+                         *g-complete-message*                                                 
+                         "<br>"                                                 
+                         "</body></html>\n")))
 
 #!!
 (add-message-window-message "hello")
