@@ -92,44 +92,54 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 #define MOUSE_OVERRIDERS(classname)                                     \
   void mousePressEvent(QMouseEvent *event) override{                    \
     g_last_pressed_widget = this;                                       \
+    if (_mouse_callback==NULL){                                         \
+      classname::mousePressEvent(event); return;}                       \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_mouse_callback==NULL || !Gui::mousePressEvent(event))          \
+    if (!Gui::mousePressEvent(event))                                   \
       classname::mousePressEvent(event);                                \
   }                                                                     \
                                                                         \
   void mouseReleaseEvent(QMouseEvent *event) override {                 \
     g_last_released_widget = this;                                      \
+    if (_mouse_callback==NULL){                                         \
+      classname::mouseReleaseEvent(event); return;}                     \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_mouse_callback==NULL || !Gui::mouseReleaseEvent(event))        \
+    if (!Gui::mouseReleaseEvent(event))                                 \
       classname::mouseReleaseEvent(event);                              \
   }                                                                     \
                                                                         \
   void mouseMoveEvent(QMouseEvent *event) override{                     \
+    if (_mouse_callback==NULL){                                         \
+      classname::mouseMoveEvent(event); return;}                        \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_mouse_callback==NULL || !Gui::mouseMoveEvent(event))           \
+    if (!Gui::mouseMoveEvent(event))                                    \
       classname::mouseMoveEvent(event);                                 \
   }
 
 #define DOUBLECLICK_OVERRIDER(classname)                                \
   void mouseDoubleClickEvent(QMouseEvent *event) override{              \
+    if (_doubleclick_callback==NULL){                                   \
+      classname::mouseDoubleClickEvent(event);return;}                  \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_doubleclick_callback==NULL)                                    \
-      classname::mouseDoubleClickEvent(event);                          \
-    else if(this==g_last_pressed_widget && this==g_last_released_widget) \
+    if(this==g_last_pressed_widget && this==g_last_released_widget)     \
       Gui::mouseDoubleClickEvent(event);                                \
   }                                                                     
 
 
 #define KEY_OVERRIDERS(classname)                                       \
   void keyPressEvent(QKeyEvent *event) override{                        \
+    if (_key_callback==NULL){                                           \
+      classname::keyPressEvent(event); return;}                         \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_key_callback==NULL || !Gui::keyPressEvent(event))              \
+    if (!Gui::keyPressEvent(event))                                     \
       classname::keyPressEvent(event);                                  \
   }                                                                     \
                                                                         \
   void keyReleaseEvent(QKeyEvent *event) override{                      \
+    if (_key_callback==NULL){                                           \
+      classname::keyReleaseEvent(event); return;}                       \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_key_callback==NULL || !Gui::keyReleaseEvent(event))            \
+    if (!Gui::keyReleaseEvent(event))                                   \
       classname::keyReleaseEvent(event);                                \
   }
 
