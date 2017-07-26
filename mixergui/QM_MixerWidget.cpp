@@ -2520,7 +2520,7 @@ static void MW_create_chips_from_full_state(hash_t *chips, Buses buses, bool is_
     }
     
     if (is_loading)
-      GFX_ShowProgressMessage(talloc_format("Creating instrument %d / %d: %s", i, num_chips, patch->name));
+      GFX_ShowProgressMessage(talloc_format("Creating instrument %d / %d: %s", i, (int)num_chips, patch->name));
 
     PATCH_init_audio_when_loading_song(patch, state);
   }
