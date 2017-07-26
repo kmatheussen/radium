@@ -384,7 +384,9 @@
 ||#
 
 
-(define (replace-notes! area-notes area)
+(delafina (replace-notes! :area-notes
+                          :area
+                          :include-all #t)
   (remove-notes! area)
   (add-notes! area-notes area))
 
