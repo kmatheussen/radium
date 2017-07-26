@@ -2393,22 +2393,18 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void keyPressEvent(QKeyEvent *event) override{
       RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
       if (event->modifiers() & Qt::AltModifier){
-        printf("a\n");
         if (event->key()==Qt::Key_Left){
-          printf("b\n");
           back();
           event->accept();
           return;
         }
         if (event->key()==Qt::Key_Right){
-          printf("c\n");
           forward();
           event->accept();
           return;
         }
       }
       if (event->key()==Qt::Key_F5 || (event->key()==Qt::Key_R && event->modifiers()&Qt::ControlModifier)){
-        printf("d\n");
         reload();
         event->accept();
         return;

@@ -122,10 +122,12 @@
 ;; Set up button and search field callbacks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (pmg-ask-are-you-sure yes-callback)
-  (show-async-message *pluginmanager-gui* "Make sure you haved saved all your work.\n\nThe program can crash now.\n\nPlugins that crash will be blacklisted. Already blacklisted plugins will not be scanned.\n\nAre you ready?" (list "Yes" "No") #t
-        (lambda (res)
-          (if (string=? "Yes" res)
-              (yes-callback)))))
+  (if #t ;; we scan in separate process now
+      (yes-callback)     
+      (show-async-message *pluginmanager-gui* "Make sure you haved saved all your work.\n\nThe program can crash now.\n\nPlugins that crash will be blacklisted. Already blacklisted plugins will not be scanned.\n\nAre you ready?" (list "Yes" "No") #t
+                          (lambda (res)
+                            (if (string=? "Yes" res)
+                                (yes-callback))))))
 
 
 (define (pmg-scan-all-remaining)
@@ -134,8 +136,8 @@
     
     (define (all-plugins-are-scanned)
       (<gui> :set-value *pmg-progress-label* "")
-      (<ra> :add-message "Finished.\nWe have now opened all plugins. If any of those plugins were unstable,\nthey could have done subtle damage (not just crash the host), so <b>you should restart Radium now</b>.")
-      (<gui> :set-enabled *pmg-scan-all-button* #f)
+      (<ra> :add-message "Finished.")
+      (<gui> :set-enabled *pmg-scan-all-remaining-button* #f)
       (define org-search-string *pmg-curr-search-string*)
       (pmg-search "" ;; Make sure all entries are updated. Even though entries are filled in during update, entries that share the same container are not updated.
                   #f
@@ -154,10 +156,13 @@
                            (list 50)))))))
         
 
-(define *pmg-scan-all-button* (<gui> :child *pluginmanager-gui* "scan_all_button"))
-(<gui> :add-callback *pmg-scan-all-button* (lambda ()
-                                             (when (pmg-finished-scanning?)
-                                               (pmg-ask-are-you-sure pmg-scan-all-remaining))))
+(define *pmg-scan-all-remaining-button* (<gui> :child *pluginmanager-gui* "scan_all_remaining_button"))
+(if #f
+    (<gui> :hide *pmg-scan-all-remaining-button*)    
+    (<gui> :add-callback *pmg-scan-all-remaining-button* (lambda ()
+                                                 (when (pmg-finished-scanning?)
+                                                   (pmg-ask-are-you-sure pmg-scan-all-remaining)))))
+
 
 
 (define *pmg-rescan-all-button* (<gui> :child *pluginmanager-gui* "rescan_all_button"))
@@ -311,16 +316,15 @@
   (set! *pmg-populate-buttons* '())
   (set! *pmg-curr-entries* '())
 
-  (<gui> :set-enabled *pmg-scan-all-button* #f))
+  (<gui> :set-enabled *pmg-scan-all-remaining-button* #f))
 
-  
 
 (define (pmg-add-entry-to-table! table entry instrconf y)
   (define is-normal (string=? (entry :type) "NORMAL"))
   (define is-container (string=? (entry :type) "CONTAINER"))
   ;;(define is-favourite (string=? (entry :type) "NUM_USED_PLUGIN"))
   ;;(c-display "entry:" entry)
-  
+
   (define enabled (or (not is-normal)
                       (can-spr-entry-be-used? entry instrconf)))
   
@@ -411,7 +415,7 @@
   (define (finalize-search)
     (<gui> :set-value *pmg-progress-label* (<-> "Num plugins: " (<gui> :get-num-table-rows *pmg-table*)))
     (<gui> :enable-table-sorting table #t)
-    (<gui> :set-enabled *pmg-scan-all-button* (not (null? *pmg-populate-funcs*)))
+    (<gui> :set-enabled *pmg-scan-all-remaining-button* (not (null? *pmg-populate-funcs*)))
     (for-each (lambda (populate-button)
                 (<gui> :set-enabled populate-button #t))
               *pmg-populate-buttons*)

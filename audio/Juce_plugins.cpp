@@ -8,6 +8,10 @@
   New songs will use this system instead for vst plugins.
 */
 
+#if defined(COMPILING_JUCE_PLUGINS_O)
+
+
+
 #include <math.h>
 #include <string.h>
 
@@ -47,6 +51,7 @@
 #include "../common/player_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_system_proc.h"
+#include "../common/OS_settings_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
@@ -536,7 +541,7 @@ namespace{
       // grab keyboard button
       {
 #if FOR_LINUX
-        grab_keyboard_button.setButtonText("Grab keyboard (not functional)");
+        grab_keyboard_button.setButtonText("Grab keyboard (not functional on Linux)");
 #else
         grab_keyboard_button.setButtonText("Grab keyboard");
 #endif
@@ -1525,7 +1530,7 @@ static void set_non_realtime(struct SoundPlugin *plugin, bool is_non_realtime){
   instance->setNonRealtime(is_non_realtime);
 }
 
-static SoundPluginType *create_plugin_type(const PluginDescription description, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
+static SoundPluginType *create_plugin_type(const PluginDescription &description, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
   printf("b02 %s\n",STRING_get_chars(file_or_identifier));
   fflush(stdout);
   //  return;
@@ -1605,43 +1610,153 @@ static SoundPluginType *create_plugin_type(const PluginDescription description, 
   return plugin_type;
 }
 
-static void add_plugins(OwnedArray<PluginDescription> &descriptions, String filename){
-  CRASHREPORTER_dont_report();{
-    
-    VSTPluginFormat vst2_format;
-    vst2_format.findAllTypesForFile(descriptions, filename);
-    
-#if !defined(FOR_LINUX)
-    VST3PluginFormat vst3_format;
-    vst3_format.findAllTypesForFile(descriptions, filename);
-#endif
-    
-#if FOR_MACOSX
-    AudioUnitPluginFormat au_format;
-    au_format.findAllTypesForFile(descriptions, filename);
-#endif
 
-  }CRASHREPORTER_do_report();
+
+static String get_container_descriptions_filename(const wchar_t *container_filename){
+  String encoded(STRING_get_sha1(container_filename));
+  return String(OS_get_dot_radium_path(true)) + OS_get_directory_separator() + SCANNED_PLUGINS_DIRNAME + OS_get_directory_separator() + "v2_PluginDescription_" + encoded;
 }
-                        
-static void populate(SoundPluginTypeContainer *container){
-  if (container->is_populated)
-    return;
+
+
+static enum PopulateContainerResult launch_program_calling_write_container_descriptions_to_cache_on_disk(const wchar_t *container_filename){
+  String executable = String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner")));
+  
+  StringArray args;
+  args.add(executable);
+  args.add(Base64::toBase64(String(container_filename)));
+  args.add(Base64::toBase64(get_container_descriptions_filename(container_filename)));
+
+  ChildProcess process;
+
+  if (process.start(args)==false){
+    GFX_Message2(NULL, true, "Error: Unable to launch %s", executable.toRawUTF8());
+    return POPULATE_RESULT_OTHER_ERROR;
+  }
+
+  int s = 3;
+  
+  while(process.waitForProcessToFinish(s*1000)==false){
+    vector_t v = {};
+    int w3 = VECTOR_push_back(&v, "Wait 3 seconds more");
+    int w20 = VECTOR_push_back(&v, "Wait 20 seconds more");
+    VECTOR_push_back(&v, "Cancel");
+    int blacklist = VECTOR_push_back(&v, "Cancel, and add to blacklist");
+    
+    int ret = GFX_Message2(&v, true, "Waited more than %d seconds for \"%s\" to load\n", s, STRING_get_chars(container_filename));
+    if (ret==w3)
+      s = 3;
+    else if (ret==w20)
+      s = 20;
+    else {
+      process.kill();
+      if(ret==blacklist)
+        return POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED;
+      else
+        return POPULATE_RESULT_OTHER_ERROR;
+    }
+  }
+
+  return POPULATE_RESULT_IS_OKAY; // as far as we know. (ChildProcess doesn't have an hasCrashed() function).
+}
+
+static enum PopulateContainerResult get_container_descriptions_from_disk(const SoundPluginTypeContainer *container, OwnedArray<PluginDescription> &descriptions){
+  String filename = get_container_descriptions_filename(container->filename);
+  
+  fprintf(stderr, "   READING.  %s: Reading from description file \"%s\".\n", String(container->filename).toRawUTF8(), filename.toRawUTF8());
+    
+  File file(filename);
+  if (file.existsAsFile()==false){
+    //GFX_Message2(NULL, true, "Error. Could not find file \"%s\"\n", filename.toRawUTF8());
+    //return POPULATE_RESULT_OTHER_ERROR;
+    return POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED; // Likely to have been caused by the plugin crashing
+  }
+
+  XmlElement *xml = XmlDocument::parse(file);
+  if (xml==NULL){
+    //GFX_Message2(NULL, true, "Error. Unable to parse xml file \"%s\". You might want to delete this file and try again.\n", filename.toRawUTF8());
+    //return POPULATE_RESULT_OTHER_ERROR;
+    return POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED; // Likely to have been caused by the plugin crashing
+  }
+
+  int size = xml->getNumChildElements();
+    
+  for(int i = 0 ; i < size ; i++){
+    XmlElement *xml_description = xml->getChildElement(i);
+    PluginDescription description;
+    if (description.loadFromXml(*xml_description)==false){
+      /*
+      GFX_Message2(NULL, true, "Error: Unable to create description %d for %s from xml file \"%s\". You might want to delete this file and try again.\n",
+                   i,
+                   String(container->filename).toRawUTF8(),
+                   filename.toRawUTF8());
+      return POPULATE_RESULT_OTHER_ERROR;
+      */
+      return POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED; // Likely to have been caused by the plugin crashing
+    }
+    descriptions.add(new PluginDescription(description));
+  }
+
+  return POPULATE_RESULT_IS_OKAY;
+}
+
+static enum PopulateContainerResult get_container_descriptions(SoundPluginTypeContainer *container, OwnedArray<PluginDescription> &descriptions){
+#if 0
+  if (!container_descriptions_are_cached_on_disk(container))
+    if (write_container_descriptions_to_cache_on_disk(container)==false){
+      fprintf(stderr, "Couldn't cache container descriptions\n");
+      return true;
+    }
+
+  R_ASSERT_RETURN_IF_FALSE2(container_descriptions_are_cached_on_disk(container), false);
+#else
+
+  String filename = get_container_descriptions_filename(container->filename);
+  File file(filename);
+  if (file.exists()==true){
+    if (file.deleteFile()==false){
+      GFX_Message2(NULL, true, "Error. Unable to delete file \"%s\"\n", filename.toRawUTF8());
+      return POPULATE_RESULT_OTHER_ERROR;
+    }
+  }
+
+  enum PopulateContainerResult result = launch_program_calling_write_container_descriptions_to_cache_on_disk(container->filename);
+  if (result != POPULATE_RESULT_IS_OKAY)
+    return result;
+  
+#endif
+  
+  return get_container_descriptions_from_disk(container, descriptions);
+}
+
+static enum PopulateContainerResult populate(SoundPluginTypeContainer *container){
+  R_ASSERT_RETURN_IF_FALSE2(container->is_populated==false, POPULATE_RESULT_OTHER_ERROR);
 
   container->is_populated = true;
+  container->num_types = 0;
 
   ContainerData *data = (ContainerData*)container->data;
 
   OwnedArray<PluginDescription> descriptions;
 
+  
+#if 0
+  
 #if 0 //FOR_MACOSX
   DirectoryIterator iter(File(data->library_file_full_path), false, "*", File::findFiles);
   while (iter.next()) {
     printf("Checking -%s- (%s)\n",iter.getFile().getFullPathName().toRawUTF8(), STRING_get_chars(data->library_file_full_path));
-    add_plugins(descriptions, iter.getFile().getFullPathName());
+    add_descriptions_from_plugin_file(descriptions, iter.getFile().getFullPathName());
   }
 #else
-  add_plugins(descriptions, container->filename);
+  add_descriptions_from_plugin_file(descriptions, container->filename);
+#endif
+
+#else
+  
+  enum PopulateContainerResult populate_result = get_container_descriptions(container, descriptions);
+  if (populate_result != POPULATE_RESULT_IS_OKAY)
+    return populate_result;
+  
 #endif
   
   int size = descriptions.size();
@@ -1655,11 +1770,10 @@ static void populate(SoundPluginTypeContainer *container){
     i++;
   }
 
-  if (size==0) {
-    GFX_addMessage("No plugins found in %s", STRING_get_chars(container->filename));
-    return;
-  }
-  
+  if (size==0)
+    GFX_addMessage("No valid plugins found in %s", STRING_get_chars(container->filename));
+
+  return POPULATE_RESULT_IS_OKAY;
 }
 
 #if 0
@@ -2091,3 +2205,5 @@ void PLUGINHOST_init(void){
 
 #endif
 }
+
+#endif // defined(COMPILING_JUCE_PLUGINS_O)

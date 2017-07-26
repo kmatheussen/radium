@@ -213,6 +213,7 @@ RELEASE_BUILD_OPTS = $(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG) -DNDEBUG
 
 
 OS_OPTS ?= 
+OS_JUCE_LDFLAGS ?=
 OS_LDFLAGS ?=
 OS_LDFLAGS2 ?=
 OS_DEPS ?=
@@ -390,7 +391,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 BUILD_DEPENDENCIES = $(API)radium_proc.h buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
-PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/X11_Qtstuff.py bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
+PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/X11_Qtstuff.py bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 all:
@@ -557,9 +558,13 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 #  -lasound
 
 # Adding "TARGET_ARCH=-g" to prevent juce from compiling with -march=native
-PLUGINHOSTOPTS = CXX="$(CCC) -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing"
+PLUGINHOSTOPTS = CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing"
 
-pluginhost/Builds/Linux/build/libMyPluginHost.a: audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h
+PLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
+
+
+pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h
+	rm -f pluginhost/Builds/Linux/build/*/*/Juce_plugins_*.o pluginhost/Builds/Linux/build/*/*/Juce_plugin_scanner.o
 # dryrun
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
 		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)  -n ; \
@@ -571,6 +576,26 @@ pluginhost/Builds/Linux/build/libMyPluginHost.a: audio/Juce_plugins.cpp midi/mid
 		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)   -j 4; \
 	else \
 		cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGINHOSTOPTS) $(MAKE)  -j 4 ; \
+	fi
+
+
+bin/radium_plugin_scanner: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a
+	$(LINKER) pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a -o bin/radium_plugin_scanner $(OS_JUCE_LDFLAGS) `$(PKG) --libs freetype2`
+
+
+pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a: audio/Juce_plugin_scanner.cpp flagopts.opt pluginhost/MyPluginHost.jucer
+	rm -f pluginhost/Builds/Linux/build/*/*/Juce_plugins_*.o pluginhost/Builds/Linux/build/*/*/Juce_plugin_scanner.o
+# dryrun
+	if [ $(BUILDTYPE) = DEBUG ] ; then \
+		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGIN_SCANNER_OPTS)  $(MAKE)  -n ; \
+	else \
+		cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGIN_SCANNER_OPTS) $(MAKE)  -n ; \
+	fi
+# real thing
+	if [ $(BUILDTYPE) = DEBUG ] ; then \
+		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGIN_SCANNER_OPTS)  $(MAKE)   -j 4; \
+	else \
+		cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGIN_SCANNER_OPTS) $(MAKE)  -j 4 ; \
 	fi
 
 

@@ -31,6 +31,7 @@ static inline void DYNVEC_ensure_space_for_one_more_element(dynvec_t *v){
   
 }
 
+// 'v' is a pointer since a) it's called from C, and b) changing v.num_elements wouldn't have any effect.
 static inline int DYNVEC_push_back(dynvec_t *v, const dyn_t element){
 #if 0 //ifndef RELEASE
   R_ASSERT(element!=NULL);

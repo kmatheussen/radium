@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileInfo>
 #include <QLocale>
 #include <QCoreApplication>
+#include <QCryptographicHash>
+
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
@@ -126,6 +128,11 @@ wchar_t *STRING_copy(const wchar_t *string){
   return STRING_create(STRING_get_qstring(string));
 }
 
+const wchar_t *STRING_get_sha1(const wchar_t *string){
+  QString encrypted = QCryptographicHash::hash(STRING_get_qstring(string).toUtf8(), QCryptographicHash::Sha1).toHex();
+  return STRING_create(encrypted);
+}
+
 // TODO: Rename to STRING_create_chars. It doesn't return a constant string which is available somewhere.
 char* STRING_get_chars(const wchar_t *string){
   QString s = STRING_get_qstring(string);
@@ -214,6 +221,11 @@ const QString g_dot_radium_dirname(".radium");
 QString OS_get_dot_radium_path(void){
   return OS_get_home_path() + QDir::separator() + g_dot_radium_dirname;
 }
+
+const wchar_t *OS_get_dot_radium_path(bool use_gc_alloc){
+  return STRING_create(OS_get_dot_radium_path(), use_gc_alloc);
+}
+
 
 
 QString OS_get_home_path(void){

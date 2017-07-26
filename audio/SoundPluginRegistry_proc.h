@@ -146,7 +146,7 @@ extern LANGSPEC void PR_add_plugin_type(SoundPluginType *plugin_type);
 extern LANGSPEC void PR_add_plugin_container(SoundPluginTypeContainer *container);
 extern LANGSPEC int PR_get_num_plugin_types(void);
 extern LANGSPEC void PR_inc_plugin_usage_number(SoundPluginType *type);
-extern LANGSPEC SoundPluginTypeContainer *PR_get_container(const char *container_name, const char *type_name);
+extern LANGSPEC SoundPluginTypeContainer *PR_get_populated_container(const char *container_name, const char *type_name); // Will populate container if it isn't already populated
 extern LANGSPEC bool PR_ensure_container_is_populated(const char *container_name, const char *type_name);
 extern LANGSPEC SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const char *type_name, const char *plugin_name);
 extern LANGSPEC SoundPluginType *PR_get_plugin_type(int num);

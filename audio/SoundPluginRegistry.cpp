@@ -233,8 +233,8 @@ static enum PopulateResult populate(SoundPluginTypeContainer* container){
     API_blacklist_container(container);
     
   }
-  
-  container->populate(container);
+
+  enum PopulateContainerResult populate_container_result = container->populate(container);
   
   recreate_favourites(false);
   
@@ -242,9 +242,10 @@ static enum PopulateResult populate(SoundPluginTypeContainer* container){
   
   API_incSoundPluginRegistryGeneration();
   //API_add_disk_entries_from_populated_container(container);
-  
-  API_unblacklist_container(container); // Wait as long as possible to unblacklist.
-  
+
+  if (populate_container_result != POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED)
+    API_unblacklist_container(container); // Wait as long as possible to unblacklist.
+
   return PR_POPULATED;
 }
 
@@ -269,7 +270,8 @@ static QVector<SoundPluginTypeContainer*> PR_get_all_containers_matching(const c
   return ret;
 }
 
-SoundPluginTypeContainer *PR_get_container(const char *container_name, const char *type_name){
+// Will populate container if it isn't already populated
+SoundPluginTypeContainer *PR_get_populated_container(const char *container_name, const char *type_name){
 
   QVector<SoundPluginTypeContainer*> containers = PR_get_all_containers_matching(container_name, type_name);
 
@@ -349,7 +351,7 @@ SoundPluginTypeContainer *PR_get_container(const char *container_name, const cha
 }
 
 bool PR_ensure_container_is_populated(const char *container_name, const char *type_name){
-  SoundPluginTypeContainer *container = PR_get_container(container_name, type_name);
+  SoundPluginTypeContainer *container = PR_get_populated_container(container_name, type_name);
   if (container==NULL)
     return false;
   

@@ -295,6 +295,12 @@ typedef struct SoundPluginType{
   int instance_num; // Only used to autocreate a name
 } SoundPluginType;
 
+enum PopulateContainerResult{
+  POPULATE_RESULT_IS_OKAY = 0,
+  POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED = 1,
+  POPULATE_RESULT_OTHER_ERROR = 2
+};
+    
 typedef struct SoundPluginTypeContainer{
   const char *type_name;
 
@@ -305,7 +311,7 @@ typedef struct SoundPluginTypeContainer{
   SoundPluginType **plugin_types;
 
   bool is_populated;
-  void (*populate)(struct SoundPluginTypeContainer *container); // Note: populate might be called even if 'is_populated' is true. (If that happens, just do nothing.)
+  enum PopulateContainerResult (*populate)(struct SoundPluginTypeContainer *container);
 
   wchar_t *filename; // full path to plugin file.
   bool has_saved_disk_entry;

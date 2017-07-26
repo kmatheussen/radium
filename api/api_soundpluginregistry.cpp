@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#include <QCryptographicHash>
 #include <QFileInfo>
 #include <QFile>
 #include <QDateTime>
@@ -120,8 +119,7 @@ static void update_blacklist_cache(const SoundPluginTypeContainer *container, bo
 }
   
 static QString get_blacklist_filename(const SoundPluginTypeContainer *plugin_type_container){
-  QString s = STRING_get_qstring(plugin_type_container->filename);
-  QString encoded = QCryptographicHash::hash(s.toUtf8(), QCryptographicHash::Sha1).toHex();
+  QString encoded = STRING_get_qstring(STRING_get_sha1(plugin_type_container->filename));
 
   return OS_get_dot_radium_path() + QDir::separator() + SCANNED_PLUGINS_DIRNAME + QDir::separator() + "blacklisted_" + encoded;
 }
@@ -152,9 +150,12 @@ void API_unblacklist_container(const SoundPluginTypeContainer *container){
 bool API_container_is_blacklisted(const SoundPluginTypeContainer *container){
   const enum BlacklistCached cached = g_blacklisted_cache[STRING_get_qstring(container->filename)];
 
-#if !defined(RELEASE)
-  QString disk_blacklist_filename = get_blacklist_filename(container);
+#define Vars()                                                          \
+  QString disk_blacklist_filename = get_blacklist_filename(container);  \
   bool is_blacklisted = QFile::exists(disk_blacklist_filename);
+  
+#if !defined(RELEASE)
+  Vars();
   if (cached != NOT_IN_CACHE){
     if (is_blacklisted)
       R_ASSERT(cached==BLACKLISTED);
@@ -170,9 +171,10 @@ bool API_container_is_blacklisted(const SoundPluginTypeContainer *container){
     return true;
   
 #if defined(RELEASE)
-  QString disk_blacklist_filename = get_blacklist_filename(container);
-  bool is_blacklisted = QFile::exists(disk_blacklist_filename);
+  Vars();
 #endif
+
+#undef Vars
   
   update_blacklist_cache(container, is_blacklisted);
   
@@ -194,9 +196,7 @@ static QSet<QString> g_known_noncached_entries;
 
 
 static QString get_disk_entries_filename(const SoundPluginTypeContainer *plugin_type_container){
-  QString s = STRING_get_qstring(plugin_type_container->filename);
-  QString encoded = QCryptographicHash::hash(s.toUtf8(), QCryptographicHash::Sha1).toHex();
-
+  QString encoded = STRING_get_qstring(STRING_get_sha1(plugin_type_container->filename));
   return get_disk_entries_dir() + "v2_" + encoded;
 }
 
@@ -219,9 +219,8 @@ static void cleanup_old_disk_files(void){
       }
     }
     if (has_deleted==true){
-      GFX_addMessage("Because the file format has changed, the previously stored information<br>"
-                      "from scanning plugins has been deleted. You might want to scan all<br>"
-                     "plugins again. Really sorry for the inconvenience");
+      GFX_addMessage("Plugin registry data has been deleted. You might want to rescan all "
+                     "plugins. This was necessary since the file format has changed. Really sorry for the inconvenience");
     }
   }
 
@@ -304,7 +303,7 @@ static DiskOpReturn save_entries_to_disk(const QVector<hash_t*> &entries, const 
   dynvec_t dynvec = {0};
     
   for(hash_t *hash : entries)
-    DYNVEC_push_back(&dynvec, DYN_create_hash(hash));
+    DYNVEC_push_back(dynvec, DYN_create_hash(hash));
     
   HASH_put_array(hash, "entries", dynvec);
   
@@ -312,7 +311,8 @@ static DiskOpReturn save_entries_to_disk(const QVector<hash_t*> &entries, const 
 }
 
 
-static bool load_entries_from_disk(dynvec_t &ret, const SoundPluginTypeContainer *container, const QString path){
+// Returns true if entries was found in diskcache (i.e. cache stored on disk) and put into 'ret'.
+static bool load_entries_from_diskcache(dynvec_t &ret, const SoundPluginTypeContainer *container, const QString path){
 
   QString disk_entries_filename = get_disk_entries_filename(container);
 
@@ -385,9 +385,9 @@ static bool load_entries_from_disk(dynvec_t &ret, const SoundPluginTypeContainer
     if (disk_path != correct_path){
       HASH_remove(hash, ":path");
       HASH_put_string(hash, ":path", correct_path);
-      DYNVEC_push_back(&ret, DYN_create_hash(hash));
+      DYNVEC_push_back(ret, DYN_create_hash(hash));
     } else {
-      DYNVEC_push_back(&ret, entries.elements[i]);
+      DYNVEC_push_back(ret, entries.elements[i]);
     }
   }
   
@@ -396,7 +396,7 @@ static bool load_entries_from_disk(dynvec_t &ret, const SoundPluginTypeContainer
 
 int API_get_num_entries_in_disk_container(SoundPluginTypeContainer *container){
   dynvec_t ret = {0};
-  if (load_entries_from_disk(ret, container, "")==false)
+  if (load_entries_from_diskcache(ret, container, "")==false)
     return -1;
   return ret.num_elements;
 }
@@ -415,11 +415,11 @@ static void get_entries_from_populated_container(dynvec_t &ret, SoundPluginTypeC
 
   if (container->has_saved_disk_entry==false) {
     save_entries_to_disk(entries, container, path);
-    container->has_saved_disk_entry=true; // We might not have succeded writing disk entry, but we don't want to try again.
+    container->has_saved_disk_entry=true; // We might not have succeded writing disk entry, but we don't want to try again later.
   }
   
   for (hash_t *hash : entries)
-    DYNVEC_push_back(&ret, DYN_create_hash(hash));
+    DYNVEC_push_back(ret, DYN_create_hash(hash));
 }
 
 
@@ -438,7 +438,7 @@ static void get_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString
 
     bool is_blacklisted = API_container_is_blacklisted(entry.plugin_type_container);
     
-    if (is_blacklisted || load_entries_from_disk(ret, entry.plugin_type_container, new_path) == false)
+    if (is_blacklisted || load_entries_from_diskcache(ret, entry.plugin_type_container, new_path) == false)
       hash = get_container_entry(entry.plugin_type_container, new_path, is_blacklisted);
     
   } else if (entry.type==PluginMenuEntry::IS_LEVEL_UP){
@@ -457,7 +457,7 @@ static void get_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString
   } else if (entry.type==PluginMenuEntry::IS_NORMAL){
         
     if (entry.plugin_type!=NULL)
-      DYNVEC_push_back(&ret, DYN_create_hash(get_entry_from_type(entry.plugin_type, extend_path(path, entry.plugin_type->name))));
+      DYNVEC_push_back(ret, DYN_create_hash(get_entry_from_type(entry.plugin_type, extend_path(path, entry.plugin_type->name))));
     else
       R_ASSERT(false);
         
@@ -467,7 +467,7 @@ static void get_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString
 
   if (hash!=NULL){
     HASH_put_string(hash, ":type", PluginMenuEntry::type_to_string(entry));
-    DYNVEC_push_back(&ret, DYN_create_hash(hash));
+    DYNVEC_push_back(ret, DYN_create_hash(hash));
     //printf("Pushing back %p\n", hash);
   }
 }
@@ -481,6 +481,7 @@ int getSoundPluginRegistryGeneration(void){
   return g_spr_generation;
 }
 
+// Note, NOT the same as clearSoundPluginRegistry.
 void API_clearSoundPluginRegistryCache(void){
   g_disk_entries_cache=HASH_create(1000);
   g_known_noncached_entries.clear();
@@ -549,7 +550,7 @@ dyn_t populatePluginContainer(dyn_t entry){
     }
 
     {
-      SoundPluginTypeContainer *container = PR_get_container(name, type_name);
+      SoundPluginTypeContainer *container = PR_get_populated_container(name, type_name); // PR_get_populated_container will populate the container if it isn't already populated
       if (container==NULL){
         //handleError("Could not find container %s / %s", name, type_name); // Screws up scanning since handleError casts an exception. Besides, we already get error messages from PR_get_container.
         goto exit;
@@ -563,6 +564,7 @@ dyn_t populatePluginContainer(dyn_t entry){
   return DYN_create_array(ret);
 }
 
+// Note, NOT the same as API_clearSoundPluginRegistryCache.
 void clearSoundPluginRegistry(void){
   QDir dir(get_disk_entries_dir());
   QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);

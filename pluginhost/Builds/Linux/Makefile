@@ -23,7 +23,7 @@ ifeq ($(CONFIG),Debug)
   CXXFLAGS += $(CFLAGS) -std=c++11
   LDFLAGS += $(TARGET_ARCH) -L$(BINDIR) -L$(LIBDIR) -L/usr/X11R6/lib/ -lX11 -lXext -lXinerama -lasound -ldl -lfreetype -lpthread -lrt 
 
-  TARGET := libMyPluginHost.a
+  TARGET ?= libMyPluginHost.a
   BLDCMD = ar -rcs $(OUTDIR)/$(TARGET) $(OBJECTS)
   CLEANCMD = rm -rf $(OUTDIR)/$(TARGET) $(OBJDIR)
 endif
@@ -43,13 +43,14 @@ ifeq ($(CONFIG),Release)
   CXXFLAGS += $(CFLAGS) -std=c++11
   LDFLAGS += $(TARGET_ARCH) -L$(BINDIR) -L$(LIBDIR) -L/usr/X11R6/lib/ -lX11 -lXext -lXinerama -lasound -ldl -lfreetype -lpthread -lrt 
 
-  TARGET := libMyPluginHost.a
+  TARGET ?= libMyPluginHost.a
   BLDCMD = ar -rcs $(OUTDIR)/$(TARGET) $(OBJECTS)
   CLEANCMD = rm -rf $(OUTDIR)/$(TARGET) $(OBJDIR)
 endif
 
 OBJECTS := \
   $(OBJDIR)/Juce_plugins_6c083ccb.o \
+  $(OBJDIR)/Juce_plugin_scanner.o \
   $(OBJDIR)/juce_audio_basics_2442e4ea.o \
   $(OBJDIR)/juce_audio_devices_a4c8a728.o \
   $(OBJDIR)/juce_audio_formats_d349f0c8.o \
@@ -64,7 +65,7 @@ OBJECTS := \
 .PHONY: clean
 
 $(OUTDIR)/$(TARGET): $(OBJECTS) $(RESOURCES)
-	@echo Linking MyPluginHost
+	@echo Linking $(OUTDIR)/$(TARGET)
 	-@mkdir -p $(BINDIR)
 	-@mkdir -p $(LIBDIR)
 	-@mkdir -p $(OUTDIR)
@@ -79,6 +80,11 @@ strip:
 	-@strip --strip-unneeded $(OUTDIR)/$(TARGET)
 
 $(OBJDIR)/Juce_plugins_6c083ccb.o: ../../../audio/Juce_plugins.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling Juce_plugins.cpp"
+	@$(CXX) $(CXXFLAGS) -Wall -o "$@" -c "$<"
+
+$(OBJDIR)/Juce_plugin_scanner.o: ../../../audio/Juce_plugin_scanner.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling Juce_plugins.cpp"
 	@$(CXX) $(CXXFLAGS) -Wall -o "$@" -c "$<"
