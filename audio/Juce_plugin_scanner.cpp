@@ -37,6 +37,13 @@ static bool container_descriptions_are_cached_on_disk(const wchar_t *container_f
 }
 */
 
+static void show_alert(String message){
+  fprintf(stderr," show_alert: -%s-\n", message.toRawUTF8());
+  initialiseJuce_GUI();
+  AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon,
+                              "Radium plugin scanner",
+                              message);
+}
 
 // This function calls functions in JUCE that loads the plugins in order to create PluginDescription objects.
 // The function might crash for buggy plugins.
@@ -74,19 +81,21 @@ static void write_container_descriptions_to_cache_on_disk(String container_filen
   //testing
   //Thread::sleep(10000);
   
-  fprintf(stderr, "===...===...   %s: GOING TO Write Plugin description file \"%s\".\n", String(container_filename).toRawUTF8(), filename.toRawUTF8());
+  //fprintf(stderr, "===...===...   %s: GOING TO Write Plugin description file \"%s\".\n", String(container_filename).toRawUTF8(), filename.toRawUTF8());
     
   File file(filename);
   
-  if (xml_descriptions.writeToFile(file, "")==false)
+  if (xml_descriptions.writeToFile(file, "")==false){
     //GFX_Message2(NULL, true, "Error: Unable to write to file \"%s\".\n", filename.toRawUTF8());
     fprintf(stdout, "Error: Unable to write to file \"%s\".\n", filename.toRawUTF8());
+    show_alert(String("Unable to write to file \"") + filename + "\"");
+  }
 }
 
 int main(int argc, char **argv){
 
-  printf("Launched 1 -%s- (%s)\n",argv[1], Base64::toBase64(argv[1]).toRawUTF8());
-  fprintf(stderr,"Launched 2 -%s-\n",argv[2]);
+  //printf("Launched 1 -%s- (%s)\n",argv[1], Base64::toBase64(argv[1]).toRawUTF8());
+  //fprintf(stderr,"Launched 2 -%s-\n",argv[2]);
 
   char container_filename[1024] = {0};
   char filename[1024] = {0};
@@ -94,13 +103,20 @@ int main(int argc, char **argv){
   MemoryOutputStream a(container_filename, 1000);
   MemoryOutputStream b(filename, 1000);
 
+  if (argc != 3){
+    show_alert(String("Wrong number of arguments. Expected 2, not ") + String::formatted("%d.", argc-1));
+    return -3;
+  }
+  
   if (Base64::convertFromBase64(a, argv[1])==false){
     printf("1: Unable to convert base64 -%s-\n",argv[1]);
+    show_alert(String("Erroneous input arguments: \"") + argv[1] + "\", \""+argv[2]+"\"");
     return -1;
   }
      
   if (Base64::convertFromBase64(b, argv[2])==false){
     printf("2: Unable to convert base64 -%s-\n",argv[2]);
+    show_alert(String("Erroneous input arguments: \"") + argv[1] + "\", \""+argv[2]+"\"");
     return -2;
   }
      
