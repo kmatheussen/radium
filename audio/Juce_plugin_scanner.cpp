@@ -110,13 +110,13 @@ int main(int argc, char **argv){
   
   if (Base64::convertFromBase64(a, argv[1])==false){
     printf("1: Unable to convert base64 -%s-\n",argv[1]);
-    show_alert(String("Erroneous input arguments: \"") + argv[1] + "\", \""+argv[2]+"\"");
+    show_alert(String("Erroneous input arguments: \"") + String(argv[1]) + "\", \"" + String(argv[2]) + "\"");
     return -1;
   }
      
   if (Base64::convertFromBase64(b, argv[2])==false){
     printf("2: Unable to convert base64 -%s-\n",argv[2]);
-    show_alert(String("Erroneous input arguments: \"") + argv[1] + "\", \""+argv[2]+"\"");
+    show_alert(String("Erroneous input arguments: \"") + String(argv[1]) + "\", \"" + String(argv[2]) + "\"");
     return -2;
   }
      

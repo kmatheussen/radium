@@ -432,7 +432,7 @@ public:
 
 
 void GFX_color_dialog(const char *initial_color, int64_t parentguinum, func_t *callback){
-  MyColorDialog *color_dialog = new MyColorDialog(API_gui_get_parentwidget(parentguinum), callback, initial_color);
+  MyColorDialog *color_dialog = new MyColorDialog(API_gui_get_parentwidget(NULL, parentguinum), callback, initial_color);
 
   safeShow(color_dialog);
   

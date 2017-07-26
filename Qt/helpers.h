@@ -116,7 +116,15 @@ static bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_to_run_c
 }
 
 // Can only return a widget that is a member of g_static_toplevel_widgets.
-static inline QWidget *get_current_parent(bool is_going_to_run_custom_exec, bool may_return_current_parent_before_qmenu_opened = true){
+static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_custom_exec, bool may_return_current_parent_before_qmenu_opened = true){
+
+  if (child != NULL){
+    if (g_static_toplevel_widgets.contains(child)){
+      R_ASSERT_NON_RELEASE(false);
+      R_ASSERT(child!=g_main_window);
+      return g_main_window;
+    }
+  }
 
   if (may_return_current_parent_before_qmenu_opened && !g_curr_popup_qmenu.isNull() && !g_current_parent_before_qmenu_opened.isNull()){
     //printf("1111 %p\n", g_current_parent_before_qmenu_opened.data());
@@ -388,7 +396,7 @@ struct MyQMessageBox : public QMessageBox {
  private:  
     
   MyQMessageBox(bool is_going_to_run_custom_exec, QWidget *parent_ = NULL)
-    : QMessageBox(parent_!=NULL ? parent_ : get_current_parent(is_going_to_run_custom_exec))
+    : QMessageBox(parent_!=NULL ? parent_ : get_current_parent(NULL, is_going_to_run_custom_exec))
   {
     //printf("            PAERENT: %p. visible: %d\n",parent(),dynamic_cast<QWidget*>(parent())==NULL ? 0 : dynamic_cast<QWidget*>(parent())->isVisible());
     if(dynamic_cast<QWidget*>(parent())==NULL || dynamic_cast<QWidget*>(parent())->isVisible()==false){
@@ -731,7 +739,7 @@ static inline void closePopup(void){
 
 static inline void set_those_menu_variables_when_starting_a_popup_menu(QMenu *menu_to_be_started){
   if (!g_curr_popup_qmenu.isNull()) // Don't set it if there's a menu open already.
-    g_current_parent_before_qmenu_opened = get_current_parent(false, false);
+    g_current_parent_before_qmenu_opened = get_current_parent(menu_to_be_started, false, false);
 
   g_curr_popup_qmenu = menu_to_be_started;
 }

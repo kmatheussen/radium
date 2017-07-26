@@ -104,10 +104,11 @@ String SystemStats::getStackBacktrace()
 {
     String result;
 
-   #if JUCE_ANDROID || JUCE_MINGW
-    jassertfalse; // sorry, not implemented yet!
+#if JUCE_ANDROID || JUCE_MINGW
+    return "(not implemented)"; //@#A!#$%!#$%: jassertfalse; // sorry, not implemented yet!
 
-   #elif JUCE_WINDOWS
+#elif JUCE_WINDOWS
+
     HANDLE process = GetCurrentProcess();
     SymInitialize (process, nullptr, TRUE);
 

@@ -1619,7 +1619,11 @@ static String get_container_descriptions_filename(const wchar_t *container_filen
 
 
 static enum PopulateContainerResult launch_program_calling_write_container_descriptions_to_cache_on_disk(const wchar_t *container_filename){
+#if FOR_WINDOWS
+  String executable = String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner.exe")));
+#else
   String executable = String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner")));
+#endif
   
   StringArray args;
   args.add(executable);
@@ -1641,8 +1645,9 @@ static enum PopulateContainerResult launch_program_calling_write_container_descr
     int w20 = VECTOR_push_back(&v, "Wait 20 seconds more");
     VECTOR_push_back(&v, "Cancel");
     int blacklist = VECTOR_push_back(&v, "Cancel, and add to blacklist");
-    
+    fprintf(stderr, "Openinig requester\n");
     int ret = GFX_Message2(&v, true, "Waited more than %d seconds for \"%s\" to load\n", s, STRING_get_chars(container_filename));
+    fprintf(stderr, "Got answer from requester\n");
     if (ret==w3)
       s = 3;
     else if (ret==w20)

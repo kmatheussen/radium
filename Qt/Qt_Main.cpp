@@ -1645,7 +1645,7 @@ protected:
         createMsgBox();
       
       if (dontshow.contains(message)==false){
-        set_window_parent(msgBox, get_current_parent(false), false);
+        set_window_parent(msgBox, get_current_parent(msgBox, false), false);
         
         msgBox->setText(message);
 

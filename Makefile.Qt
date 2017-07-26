@@ -92,6 +92,8 @@ FAUST = $(WHICHFAUST) -I $(shell pwd)/bin/packages/faust2/architecture  #`which 
 
 LLVM_OPTS ?=
 
+PLUGINHOSTSCANNERLIB ?= pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a
+
 JACKOPT ?=
 LRDFOPT ?= `$(PKG) --cflags lrdf`
 SNDFILEOPT ?= `$(PKG) --cflags sndfile`
@@ -579,8 +581,8 @@ pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/l
 	fi
 
 
-bin/radium_plugin_scanner: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a
-	$(LINKER) pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a -o bin/radium_plugin_scanner $(OS_JUCE_LDFLAGS) `$(PKG) --libs freetype2`
+bin/radium_plugin_scanner: $(PLUGINHOSTSCANNERLIB)
+	$(LINKER) $(PLUGINHOSTSCANNERLIB) -o bin/radium_plugin_scanner $(OS_JUCE_LDFLAGS) `$(PKG) --libs freetype2`
 
 
 pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a: audio/Juce_plugin_scanner.cpp flagopts.opt pluginhost/MyPluginHost.jucer

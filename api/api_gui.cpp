@@ -2668,7 +2668,7 @@ static Gui *get_gui_maybeclosed(int64_t guinum){
 static Gui *get_gui(int64_t guinum){
 
   if (guinum==-1 || guinum==-2){
-    QWidget *parent = API_gui_get_parentwidget(guinum);
+    QWidget *parent = API_gui_get_parentwidget(NULL, guinum);
     if (parent != NULL)
       guinum = API_get_gui_from_existing_widget(parent);
   }
@@ -3825,7 +3825,7 @@ int64_t gui_getParentWindow(int64_t guinum){
   if (guinum < 0)
     return guinum;
   
-  QWidget *w = API_gui_get_parentwidget(guinum);
+  QWidget *w = API_gui_get_parentwidget(NULL, guinum);
 
   if (w==NULL)
     return -3;
@@ -3846,7 +3846,7 @@ bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
     }
   }
   
-  QWidget *parent = API_gui_get_parentwidget(parentgui);
+  QWidget *parent = API_gui_get_parentwidget(gui->_widget, parentgui);
   printf("**parent is main_window: %d\n", parent==g_main_window);
   
   if (parent==gui->_widget){
@@ -4590,7 +4590,7 @@ QWidget *API_gui_get_widget(int64_t guinum){
   return gui->_widget;
 }
 
-QWidget *API_gui_get_parentwidget(int64_t parentnum){
+QWidget *API_gui_get_parentwidget(QWidget *child, int64_t parentnum){
   QWidget *parent;
   
   if (parentnum==-1)
@@ -4600,7 +4600,7 @@ QWidget *API_gui_get_parentwidget(int64_t parentnum){
     // get_current_parent() can return anything, but I think the worst thing that could happen if the parent is deleted,
     // at least in this case, is that some warning messages would be displayed. The base case (and I hope only case) is
     // just that the window closes, and that closing the window was the natural thing to happen, since the parent was closed.
-    parent = get_current_parent(false);
+    parent = get_current_parent(child, false);
   
   else if (parentnum==-3)
     parent = NULL;
