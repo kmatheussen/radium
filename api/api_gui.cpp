@@ -3252,7 +3252,7 @@ int64_t gui_table(dyn_t header_names){
   for(int i=0;i<header_names.array->num_elements;i++){
     dyn_t el = header_names.array->elements[i];
     if(el.type != STRING_TYPE){
-      handleError(talloc_format("gui_table: Element %d in header_names is not a string", i));
+      handleError("gui_table: Element %d in header_names is not a string", i);
       return -1;
     }
     

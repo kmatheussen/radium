@@ -120,8 +120,13 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
 
   if (child != NULL){
     if (g_static_toplevel_widgets.contains(child)){
-      R_ASSERT_NON_RELEASE(false);
-      R_ASSERT(child!=g_main_window);
+#if !defined(RELEASE)
+      abort();
+#endif
+      if (child==g_main_window){
+        int *ai=NULL;
+        ai[0] = 51; // Workaround. We can't use R_ASSERT in this function since get_current_parent is used by some of the bin/radium_* programs.
+      }
       return g_main_window;
     }
   }

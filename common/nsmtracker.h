@@ -242,8 +242,13 @@ static inline bool is_playing(void);
 #include "OS_Semaphores.h"
 #include "keyboard_focus_proc.h"
 
+static inline int donothing(int input){
+  return input;
+}
+
+
 extern LANGSPEC void handleError_internal(const char *fmt,...);
-#define handleError(...) ((void)labs(0 && printf(__VA_ARGS__)), handleError_internal(__VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
+#define handleError(...) ((void)donothing(0 && printf(__VA_ARGS__)), handleError_internal(__VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
 
 
 #include "validatemem_proc.h"

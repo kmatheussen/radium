@@ -559,10 +559,16 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 # -pg 
 #  -lasound
 
+
+bin/radium_plugin_scanner: $(PLUGINHOSTSCANNERLIB)
+	$(LINKER) $(OS_JUCE_LDFLAGS) `$(PKG) --libs freetype2` $(PLUGINHOSTSCANNERLIB) -o bin/radium_plugin_scanner
+
+
+
 # Adding "TARGET_ARCH=-g" to prevent juce from compiling with -march=native
 PLUGINHOSTOPTS = CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing"
 
-PLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
+LIBPLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
 
 
 pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h
@@ -581,23 +587,19 @@ pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/l
 	fi
 
 
-bin/radium_plugin_scanner: $(PLUGINHOSTSCANNERLIB)
-	$(LINKER) $(PLUGINHOSTSCANNERLIB) -o bin/radium_plugin_scanner $(OS_JUCE_LDFLAGS) `$(PKG) --libs freetype2`
-
-
 pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a: audio/Juce_plugin_scanner.cpp flagopts.opt pluginhost/MyPluginHost.jucer
 	rm -f pluginhost/Builds/Linux/build/*/*/Juce_plugins_*.o pluginhost/Builds/Linux/build/*/*/Juce_plugin_scanner.o
 # dryrun
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGIN_SCANNER_OPTS)  $(MAKE)  -n ; \
+		cd pluginhost/Builds/Linux && CONFIG=Debug $(LIBPLUGIN_SCANNER_OPTS)  $(MAKE)  -n ; \
 	else \
-		cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGIN_SCANNER_OPTS) $(MAKE)  -n ; \
+		cd pluginhost/Builds/Linux && CONFIG=Release  $(LIBPLUGIN_SCANNER_OPTS) $(MAKE)  -n ; \
 	fi
 # real thing
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGIN_SCANNER_OPTS)  $(MAKE)   -j 4; \
+		cd pluginhost/Builds/Linux && CONFIG=Debug $(LIBPLUGIN_SCANNER_OPTS)  $(MAKE)   -j 4; \
 	else \
-		cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGIN_SCANNER_OPTS) $(MAKE)  -j 4 ; \
+		cd pluginhost/Builds/Linux && CONFIG=Release  $(LIBPLUGIN_SCANNER_OPTS) $(MAKE)  -j 4 ; \
 	fi
 
 
@@ -1767,8 +1769,14 @@ FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 Pd_plugin.o: audio/Pd_plugin.cpp
 	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
+ifneq (,$(findstring clang,$(CC)))
+	WNO_SUGGEST_OVERRIDE=-Wno-suggest-override
+else
+	WNO_SUGGEST_OVERRIDE=
+endif
+
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture -Wno-suggest-override -Wno-overloaded-virtual
+FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual
 
 ifeq ($(GCC_MAJOR),7)
 	FAUST_OPTS += -D_GLIBCXX_USE_CXX11_ABI=0 -fno-sanitize=signed-integer-overflow
@@ -2183,7 +2191,7 @@ crashreporter_windows.o: crashreporter/crashreporter_windows.c
 #	$(CC) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
 GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
-	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)  -Wno-suggest-override #-Wno-error=unused-variable
+	$(CCC) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS)  $(WNO_SUGGEST_OVERRIDE) #-Wno-error=unused-variable
 
 T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/Queue.hpp OpenGL/GfxElements.h 
 	$(CCC) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) #-Wno-error=unused-variable
@@ -2192,7 +2200,7 @@ Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/S
 	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT)
 
 Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp
-	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  -Wno-suggest-override #-Wno-error=unused-variable
+	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) #-Wno-error=unused-variable
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)

@@ -83,7 +83,7 @@ extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, i
 
 extern LANGSPEC char *talloc_format_internal(const char *fmt,...);
 
-#define talloc_format(FMT, ...) ((void)labs(0 && printf(FMT,  __VA_ARGS__)), talloc_format_internal(FMT,   __VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT. (the printf call will never be called, or even compiled into the program, but the error runs on it)
+#define talloc_format(FMT, ...) ((void)donothing(0 && printf(FMT,  __VA_ARGS__)), talloc_format_internal(FMT,   __VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT. (the printf call will never be called, or even compiled into the program, but the error runs on it)
 
 #endif
 

@@ -133,7 +133,7 @@ void handleError_internal(const char *fmt,...){
   (void)ok;
   int continue_ = VECTOR_push_back(&v, "Continue");
 
-  int ret = GFX_Message(&v, message);
+  int ret = GFX_Message(&v, "%s", message);
 
   // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above, which is called when exiting an api call.
   if (ret!=continue_)

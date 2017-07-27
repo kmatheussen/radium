@@ -39,10 +39,16 @@ static bool container_descriptions_are_cached_on_disk(const wchar_t *container_f
 
 static void show_alert(String message){
   fprintf(stderr," show_alert: -%s-\n", message.toRawUTF8());
+#if FOR_MACOSX
+  // AlertWindow::showMessageBox didn't work right out of the box on OSX. But this workaround is better anyway since it doesn't block the execution, and still there will only be maximum one message window open at the same time.
+  String command = "osascript -e 'tell application \"Finder\"' -e 'activate' -e 'display dialog \"Radium plugin scanner: " + message + "\" buttons {\"OK\"}' -e 'end tell'&"; // https://stackoverflow.com/questions/13484482/no-user-interaction-allowed-when-running-applescript-in-python
+  system(command.toRawUTF8());
+#else
   initialiseJuce_GUI();
   AlertWindow::showMessageBox(AlertWindow::AlertIconType::WarningIcon,
                               "Radium plugin scanner",
                               message);
+#endif
 }
 
 // This function calls functions in JUCE that loads the plugins in order to create PluginDescription objects.
@@ -103,8 +109,10 @@ int main(int argc, char **argv){
   MemoryOutputStream a(container_filename, 1000);
   MemoryOutputStream b(filename, 1000);
 
+  //show_alert("testing alerting");
+  
   if (argc != 3){
-    show_alert(String("Wrong number of arguments. Expected 2, not ") + String::formatted("%d.", argc-1));
+    show_alert(String("Wrong number of arguments. Expected 2, found ") + String::formatted("%d.", argc-1));
     return -3;
   }
   

@@ -209,7 +209,7 @@ const_char* requestMidiPort(void){
 
 const_char* showMessage(const char *text, dyn_t buttons){
   if (buttons.type==UNINITIALIZED_TYPE){
-    GFX_Message2(NULL, true, text);
+    GFX_Message2(NULL, true, "%s", text);
     return "Ok";
   }
 
@@ -228,7 +228,7 @@ const_char* showMessage(const char *text, dyn_t buttons){
     VECTOR_push_back(&v, STRING_get_chars(button.string));
   }
 
-  int ret = GFX_SafeMessage(&v, text);
+  int ret = GFX_SafeMessage(&v, "%s", text);
   if (ret<0 || ret>= buttons.array->num_elements) // don't think this can happen though.
     return "";
 
@@ -258,11 +258,11 @@ void showAsyncMessage(const_char* text){
 }
 
 void showWarning(const_char *text){
-  RWarning(text);
+  RWarning("%s", text);
 }
 
 void showError(const_char *text){
-  RError(text);
+  RError("%s", text);
 }
 
 void openProgressWindow(const char *message){

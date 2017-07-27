@@ -152,7 +152,7 @@ static float *xi_get_sample(disk_t *file, int sample_num){
   int    bits_per_frame = xi_get_bits_per_frame(file,sample_num);
 
   if(sample==NULL){
-    GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*sizeof(float));
+    GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*(int)sizeof(float));
     return NULL;
   }
 
@@ -167,7 +167,7 @@ static float *xi_get_sample(disk_t *file, int sample_num){
     }
     int64_t num_bytes_read = DISK_read_binary(file, s16, num_bytes);
     if(num_bytes_read != num_bytes){
-      GFX_addMessage(talloc_format("Reading file failed. Expected %d bytes, read %d bytes.\n", num_bytes, (int)num_bytes_read));
+      GFX_addMessage("Reading file failed. Expected %d bytes, read %d bytes.\n", num_bytes, (int)num_bytes_read);
     }
     
     convert_16_bit_little_endian_to_native(s16,num_frames);

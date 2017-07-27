@@ -26,7 +26,7 @@ extern LANGSPEC void RWarning_not_prod_internal(const char *fmt,...);
 extern LANGSPEC void Error_uninit(void);
 
 // Add "printf" calls to make the C compiler show warning/error if using wrong arguments for FMT.
-#define RError(...) do{labs(0 && printf(__VA_ARGS__)); RError_internal(__VA_ARGS__);}while(0)
-#define RWarning(...) do{labs(0 && printf(__VA_ARGS__)); RWarning_internal(__VA_ARGS__);}while(0)
-#define RWarning_not_prod(...) do{labs(0 && printf(__VA_ARGS__)); RWarning_not_prodinternal(__VA_ARGS__);}while(0)
+#define RError(...) do{donothing(0 && printf(__VA_ARGS__)); RError_internal(__VA_ARGS__);}while(0)
+#define RWarning(...) do{donothing(0 && printf(__VA_ARGS__)); RWarning_internal(__VA_ARGS__);}while(0)
+#define RWarning_not_prod(...) do{donothing(0 && printf(__VA_ARGS__)); RWarning_not_prodinternal(__VA_ARGS__);}while(0)
 
