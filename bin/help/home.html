@@ -5,7 +5,7 @@
 
     <IMG SRC="overview.svg" ALT="overview" style="border:10px solid transparent" width="50%" align="right">
 
-    GUI parts:
+    <h3>GUI parts</h3>
     <OL align="left" width="50%">
         <LI> <a onclick="showHide('menu')" href="#">Menus</A>
           <div id="menu" style="display: none">
@@ -13,36 +13,41 @@
             You can also stop navigating the menus by pressing the Esc key.
             Hold shift to quicker navigate up and down when using the up and down arrow keys.
           </div>
-        <LI> Editor
+        <LI> <A href="editor.html">Editor</a>
           <UL>
             <LI> <A href="fxtext.html">FX text</A>
             <LI> <A href="chancetext.html">Chance text</A>
             <LI> <A href="swingtext.html">Swing text</A>
             <LI> <A href="velocitytext.html">Velocity text</A>
           </UL>
-        <LI> Playlist
+        <LI> <a onclick="showHide('playlist')" href="#">Playlist</A>
+          <div id="playlist" style="display: none">
+            The playlist is textually representation of the current track in the <A href="sequencer.html">sequencer</a>.
+            (under construction)
+          </div>
         <LI> <A href="mixer.html">Mixer</A>
-        <LI> Mixer strip for current instrument
-        <LI> Main window lower tabs
+        <LI> <a onclick="showHide('mixerstripforcurrentinstrument')" href="#">Mixer strip for current instrument</A>
+          <div id="mixerstripforcurrentinstrument" style="display: none">
+            Shows a <a href="mixer.html">mixer strip</a> for the current instrument. The current instrument is shown in the <a href="instrument.html">instrument widget</a>.
+            Input MIDI signals are also sent to this instrument.
+          </div>
+        <LI> <A href="lowertabs.html">Main window lower tabs</a>
           <UL>
-            <LI> Sequencer
-            <LI> Instrument
+            <LI> <a href="sequencer.html">Sequencer</a>
+            <LI> <a href="instrument.html">Instrument widget</a>
               <UL>
-                <LI> Sampler
-                <LI> FaustDev
-                <LI> Pure Data
+                <LI> <a href="sampler.html">Sampler</a>
+                <LI> <a href="faustdev.html">FaustDev</a>
+                <LI> <a href="puredata.html">Pure Data</a>
               </UL>
-            <LI> Edit
+            <LI> <a onclick="showHide('edit')" href="#">Edit</A>
+              <div id="edit" style="display: none">
+                (under construction)
+              </div>
           </UL>
     </OL>
 
-    Terms:
-    <UL>
-      <LI><i>Block</i> - What is known as "pattern" in trackers.
-      <LI><i>Velocity</i> - The volume of a single note.
-    </UL>
-
-    Mouse:
+    <h3>Mouse</h3>
     <UL>
       <LI>To <b>finetune</b> movement on Linux and Windows: Press the <b>Ctrl</b> key.
       <LI>To finetune movement on macOS: Press the <b>Cmd</b> key.
@@ -61,8 +66,15 @@
       <LI> To <b>scroll vertically</b>: Use the <b>Mouse scroll wheel</b>.
       <LI> To <b>scroll horizontally</b>: Press the <b>Shift</b> key and use the <b>Mouse scroll wheel</b>.
     </UL>
-    
-    Other topics:
+
+    <h3>Terms</h3>
+    <UL>
+      <LI><i>Block</i> - What is known as a "pattern" in trackers.
+      <LI><i>Velocity</i> - The volume of a single note.
+    </UL>
+
+
+    <h3>Other topics</h3>
     <UL>
       <LI><A href="keybindings.html">How to create custom keybindings</A>
     </UL>
