@@ -1,9 +1,82 @@
+Changes 4.9.10 -> 4.9.12:
+* Documenation: Move things from the help menu into the
+  documentation portal.
+* Gui: More work to improve issues related to window hierarchy.
+* Windows32: Fix instrument name displayed as "(null)" in
+  the progress window during loading. Lots of related bugs
+  fixed as well that could have caused bugs on all platforms.
+* GUI: Fix the "hide" button not always working in the message
+  log window when running a modal dialog.
+* GUI: Fix a possible crash when parent of message gui is closed.
+* Audio: Scan plugin in separate process. A buggy plugin won't
+  crash radium anymore when scanning a buggy plugin (at least
+  not normally).
+* Plugin Manager: Fix bug that made scanning not always work
+  quite correctly plus that it caused a "Gui #xxx closed and
+  can not be used" error message.
+* Editor: Fix the "invert pitch" function.
+* Html viewer: Let Alt+left open previous page, Alt+right open
+  next page, F5 reload, and Ctrl+R reload
+* Documentation: Created a "help portal" with some inital
+  content.
+* Documentation: Updated keybindings.help.
+* Edit: Add keybinding tool tips to the quantization buttons
+  (range/track/block).
+* Edit: Show message about missing range when trying to run
+  a function that operate on ranges.
+* Keybindings: Use Right Shift instead of Left Shift to
+  transpose note one octave up or down.
+* Keybindings: Use the 7 key to expand range and block.
+* Edit: Removed "Under construction" and the "More" tab from
+  the main window tabs. Although it's still under construction,
+  it doesn"t look so frail anymore.
+* Edit: Add new functions to randomize pitches and velocities.
+* Edit: Add buttons for expand/shrink pitch, expand/shrink
+  lines, invert pitch intervals, reverse notes, glissando,
+  and creating polyphonic track.
+* Edit: Brushed up the "Transpose" tab (GUI tweaks + write
+  keybindings on the buttons).
+* API/GUI: Let WebView get keyboard focus.
+* API/GUI: Let standalone windows get keyboard focus when
+  opened.
+* Editor: Fix crash/freeze when using the glissando function
+  on microtonal notes.
+* Player: Don't schedule notes that have negative pitch values.
+  (Negative pitch values can happen when using the note
+  duplicator.)
+* Render: Don't crash if trying to render a note value outside
+  legal range.
+* Fix error messages not showing when keybinding or menu
+  configuration files couldn't be parsed..
+* Fix error messages not showing when import XM failed, import
+  MOD failed, and when import MIDI file failed.
+* Preferences: Made the play cursor type options clearer.
+* Jack Transport: Fix starting to play from a new position.
+  Earlier the program started to play at the current position
+  instead since we didn't wait for Jack to finish moving the
+  cursor.
+* Audio: Make sure last value in a sequencer automation
+  is sent out. This bug was especially notable if the
+  second-last node was non-gliding.
+* Audio: Send correct init-song effect values when a node
+  is non-glide.
+* Audio: Send correct automation values when starting to
+  play in the middle of a song. I.e. the effect values that
+  the instruments would have had if starting to play from
+  the beginning.
+* API/setPitch: Dont allow higher pitch values than 127.
+* API: gui_setToolTip, getKeyboardBindings,
+  getKeyboardBinding, getQualifierName.
+
+
+
 Changes 4.9.9 -> 4.9.10:
 * Mixer: Update volume slider in modular mixer when
   volume was changed via MIDI learn.
 * Mixer: Fix error message showing up when using an
   instrument without inputs or outputs.
 * Audio: Add undo when editing plugin from a native GUI.
+
 
 
 Changes 4.9.8 -> 4.9.9:

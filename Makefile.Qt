@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 4.9.10
+VERSION = 4.9.12
 
 
 #----------------USER SETTINGS-------------------------------
@@ -561,7 +561,7 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 
 
 bin/radium_plugin_scanner: $(PLUGINHOSTSCANNERLIB)
-	$(LINKER) $(OS_JUCE_LDFLAGS) `$(PKG) --libs freetype2` $(PLUGINHOSTSCANNERLIB) -o bin/radium_plugin_scanner
+	$(LINKER) $(PLUGINHOSTSCANNERLIB) -o bin/radium_plugin_scanner $(OS_JUCE_LDFLAGS) `$(PKG) --libs freetype2`
 
 
 
