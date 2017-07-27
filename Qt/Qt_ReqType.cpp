@@ -102,7 +102,7 @@ static void init_reqtype(MyReqType *reqtype){
     reqtype->frame = new MyQFrame(get_current_parent(NULL, true));
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
-    set_window_flags(reqtype->frame, true); // 'true' means modal window.
+    set_window_flags(reqtype->frame, radium::IS_MODAL);
     
     if (reqtype->frame->layout() != NULL){
       reqtype->frame->layout()->setSpacing(10);

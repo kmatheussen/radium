@@ -7,12 +7,15 @@
 
 extern struct Root *root;
 
-static comment_dialog *widget=NULL;
+static bool has_been_made = false;
+static QPointer<comment_dialog> widget=NULL;
 
 static void ensure_widget_is_created(void){
   if(widget==NULL){
-    widget = new comment_dialog(NULL);
-    g_static_toplevel_widgets.push_back(widget);
+    R_ASSERT(has_been_made==false);
+    widget = new comment_dialog(g_main_window);
+    g_static_toplevel_widgets.push_back(widget.data());
+    has_been_made = true;
   }
 }
 

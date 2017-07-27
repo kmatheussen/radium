@@ -7,12 +7,15 @@
 
 extern struct Root *root;
 
-static song_properties *widget=NULL;
+static bool g_has_been_made = false;
+static QPointer<song_properties> widget=NULL;
 
 static void ensure_widget_is_created(void){
   if(widget==NULL){
-    widget = new song_properties(NULL);
+    R_ASSERT(g_has_been_made==false);
+    widget = new song_properties(g_main_window);
     g_static_toplevel_widgets.push_back(widget);
+    g_has_been_made = true;
   }
 }
 

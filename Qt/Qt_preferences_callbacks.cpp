@@ -261,7 +261,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
   Vst_paths_widget *vst_widget = new Vst_paths_widget;
   
  Preferences(QWidget *parent=NULL)
-   : RememberGeometryQDialog(parent, false)
+   : RememberGeometryQDialog(parent, radium::MAY_BE_MODAL)
    , _is_updating_widgets(false)
   {
     R_ASSERT(parent!=NULL);
@@ -1170,13 +1170,13 @@ public slots:
 static void ensure_widget_is_created(void){
 }
 
-static Preferences *g_preferences_widget=NULL;
+static QPointer<Preferences> g_preferences_widget=NULL;
 
 void PREFERENCES_open(void){
   if(g_preferences_widget==NULL){
     g_preferences_widget = new Preferences(g_main_window);
     
-    g_static_toplevel_widgets.push_back(g_preferences_widget);
+    g_static_toplevel_widgets.push_back(g_preferences_widget.data());
   }
 
   safeShowOrExec(g_preferences_widget, true);

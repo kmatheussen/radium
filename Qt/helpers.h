@@ -189,8 +189,16 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
 
 #define DEFAULT_WINDOW_FLAGS (Qt::CustomizeWindowHint | Qt::WindowFullscreenButtonHint | Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint | Qt::WindowStaysOnTopHint)
 
+namespace radium{
+  enum Modality{
+    IS_MODAL,
+    MAY_BE_MODAL, // i.e. becomes modal if it is a decendant of a child of a toplevel window. On OSX (and probably some linux window managers), modality fixes always-on-top for crandchildren of toplevel windows.
+    NOT_MODAL // But if modality has this value, we wont use that trick to fix always-on-top.
+  };
+}
+
 // Returns true if modality is turned on when 'is_modal'==false.
-static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *parent, bool is_modal, bool only_set_flags){
+static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *parent, radium::Modality modality, bool only_set_flags){ //bool is_modal, bool only_set_flags){
 
 //  #if defined(FOR_MACOSX)
 #if 1
@@ -213,7 +221,7 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
       // Qt::Tool windows dissapear on OSX if the application is not active. (At least according to Qt documentation. I haven't tested it.)
       window->setAttribute(Qt::WA_MacAlwaysShowToolWindow, true);
       
-    } else
+    } else if (modality != radium::NOT_MODAL)
       force_modal=true; // Qt::Tool doesn't work for levels larger than 1 (it doesn't work if the parent is a Qt::Tool window), so we work around it by using modal windows. Modal windows seems to always be on top of parent window.
   }
   
@@ -222,16 +230,16 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
   else
     window->setParent(parent, f);
  
-  if (force_modal || is_modal) {
+  if (force_modal || modality==radium::IS_MODAL) {
 
     if (window->windowModality()!=Qt::ApplicationModal)
       window->setWindowModality(Qt::ApplicationModal);
 
-    return !is_modal;
+    return !(modality==radium::IS_MODAL);
 
   } else {
 
-    if (!is_modal && window->windowModality()!=Qt::NonModal) // We may have forcefully turned on modality in a previous call. Turn it off now.
+    if (modality!=radium::IS_MODAL && window->windowModality()!=Qt::NonModal) // We may have forcefully turned on modality in a previous call. Turn it off now.
       window->setWindowModality(Qt::NonModal);
 
     return false;
@@ -240,13 +248,13 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
 }
 
 // Returns true if modality is turned on when 'is_modal'==false.
-static inline bool set_window_parent(QWidget *window, QWidget *parent, bool is_modal){
-  return set_window_parent_andor_flags(window, parent, is_modal, false);
+static inline bool set_window_parent(QWidget *window, QWidget *parent, radium::Modality modality){
+  return set_window_parent_andor_flags(window, parent, modality, false);
 }
 
 // Returns true if modality is turned on when 'is_modal'==false.
-static inline bool set_window_flags(QWidget *window, bool is_modal){
-  return set_window_parent_andor_flags(window, window->parentWidget(), is_modal, true);
+static inline bool set_window_flags(QWidget *window, radium::Modality modality){
+  return set_window_parent_andor_flags(window, window->parentWidget(), modality, true);
 }
 
 namespace radium{
@@ -412,7 +420,7 @@ struct MyQMessageBox : public QMessageBox {
       raise();
       activateWindow();
     } else {
-      set_window_flags(this, true);
+      set_window_flags(this, radium::IS_MODAL);
     }
     adjustSizeAndMoveWindowToCentre(this);
   }
@@ -641,13 +649,13 @@ struct RememberGeometryQDialog : public QDialog {
 #endif
   
 public:
-   RememberGeometryQDialog(QWidget *parent_, bool is_modal)
+   RememberGeometryQDialog(QWidget *parent_, radium::Modality modality)
     : QDialog(parent_!=NULL ? parent_ : g_main_window, Qt::Window) // | Qt::Tool)
 #if PUT_ON_TOP
     , timer(this)
 #endif
   {
-    set_window_flags(this, is_modal);
+    set_window_flags(this, modality);
     //QDialog::setWindowModality(Qt::ApplicationModal);
     //setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
   }

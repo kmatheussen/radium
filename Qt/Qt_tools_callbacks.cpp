@@ -23,11 +23,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 struct Root;
 extern struct Root *root;
 
-static MidiLearnPrefs *midilearn_prefs_widget = NULL;
+static QPointer<MidiLearnPrefs> midilearn_prefs_widget;
 
 static void ensure_open(void){
   if (midilearn_prefs_widget == NULL){
-    midilearn_prefs_widget = new MidiLearnPrefs(NULL);
+    midilearn_prefs_widget = new MidiLearnPrefs(g_main_window);
+    g_static_toplevel_widgets.push_back(midilearn_prefs_widget.data());
   }
 }
 
@@ -47,11 +48,11 @@ void MIDILEARN_PREFS_remove(MidiLearn *midi_learn){
 }
 
 void TOOLS_open(void){
-  static Tools *widget=NULL;
+  static QPointer<Tools> widget=NULL;
   if(widget==NULL){
-    widget = new Tools(NULL);
+    widget = new Tools(g_main_window);
     //widget->setWindowModality(Qt::ApplicationModal);
-    g_static_toplevel_widgets.push_back(widget);
+    g_static_toplevel_widgets.push_back(widget.data());
   }
 
   safeShowOrExec(widget, true);

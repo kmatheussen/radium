@@ -110,6 +110,7 @@ const int kVstMaxParamStrLen = 8;
 
 #include "VST_plugins_proc.h"
 
+#if 0
 
 #if defined(Q_WS_X11)
 #include <X11/Xlib.h>
@@ -118,8 +119,6 @@ const int kVstMaxParamStrLen = 8;
 typedef void (*XEventProc)(XEvent *);
 #endif
 
-
-extern PlayerClass *pc;
 
 
 extern "C"{
@@ -1025,6 +1024,8 @@ static bool name_is_in_list(QString name, const char *names[]){
   return false;
 }
 
+#endif // #if 0 (at the top of this file)
+
 namespace{
 struct MyQLibrary : public QLibrary {
   
@@ -1212,6 +1213,12 @@ vector_t VST_get_uids(const wchar_t *w_filename){
 }
 */
 
+
+extern "C" {
+  typedef AEffect* (*VST_GetPluginInstance) (audioMasterCallback);
+}
+
+
 bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool is_juce_plugin, const char *container_type_name){
   QString filename = file_info.absoluteFilePath();
 
@@ -1288,46 +1295,7 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
   }
 
   R_ASSERT(false);
-
-  //fprintf(stderr,"Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
-
-  {
-    SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
-
-    TypeData *type_data = (TypeData*)V_calloc(1,sizeof(TypeData));
-    plugin_type->data = type_data;
-    //#if DO_RESOLVE_IT
-    //    type_data->get_plugin_instance = get_plugin_instance;
-    //#endif
-    plugin_type->type_name = "VST";
-    plugin_type->name      = strdup(basename.toUtf8().constData());
-
-    plugin_type->is_instrument = true; // we don't know yet, so we set it to true.
-
-    plugin_type->buffer_size_is_changed = buffer_size_is_changed;
-
-    plugin_type->RT_process = RT_process;
-    plugin_type->create_plugin_data = create_plugin_data;
-    plugin_type->cleanup_plugin_data = cleanup_plugin_data;
-
-    plugin_type->show_gui = show_gui;
-    plugin_type->hide_gui = hide_gui;
-
-    plugin_type->play_note       = play_note;
-    plugin_type->set_note_volume = set_note_volume;
-    plugin_type->stop_note       = stop_note;
-
-    plugin_type->get_effect_value = get_effect_value;
-    plugin_type->set_effect_value = set_effect_value;
-
-    plugin_type->get_display_value_string=get_display_value_string;
-    plugin_type->get_effect_name=get_effect_name;
-    //plugin_type->get_effect_description=get_effect_description;
-
-    PR_add_plugin_type(plugin_type);
-  }
-
-  return true;
+  return false;
 }
 
 static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, bool is_juce_plugin, const char *container_type_name)

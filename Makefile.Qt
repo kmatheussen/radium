@@ -1769,10 +1769,10 @@ FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 Pd_plugin.o: audio/Pd_plugin.cpp
 	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
-ifneq (,$(findstring clang,$(CC)))
-	WNO_SUGGEST_OVERRIDE=-Wno-suggest-override
-else
-	WNO_SUGGEST_OVERRIDE=
+WNO_SUGGEST_OVERRIDE=
+
+ifneq (,$(findstring g++,$(CCC)))
+	WNO_SUGGEST_OVERRIDE += -Wno-suggest-override
 endif
 
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
@@ -1781,7 +1781,6 @@ FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST
 ifeq ($(GCC_MAJOR),7)
 	FAUST_OPTS += -D_GLIBCXX_USE_CXX11_ABI=0 -fno-sanitize=signed-integer-overflow
 endif	
-
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp

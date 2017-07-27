@@ -380,7 +380,7 @@ public:
       , _initial_color(initial_color)
     {
       setAttribute(Qt::WA_DeleteOnClose);
-      set_window_flags(this, false);
+      set_window_flags(this, radium::NOT_MODAL);
       
       setOption(QColorDialog::DontUseNativeDialog, true);
       setOption(QColorDialog::ShowAlphaChannel, true);

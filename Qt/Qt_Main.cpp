@@ -1608,7 +1608,7 @@ protected:
     R_ASSERT(msgBox==NULL);
     
     msgBox = new QMessageBox(g_main_window);
-    set_window_flags(msgBox, false);
+    set_window_flags(msgBox, radium::NOT_MODAL);
     
     msgBox_dontshowagain = (QAbstractButton*)msgBox->addButton("Dont show this message again",QMessageBox::ApplyRole);
     msgBox_stop_playing = (QAbstractButton*)msgBox->addButton("Stop playing!",QMessageBox::ApplyRole);
@@ -1645,7 +1645,7 @@ protected:
         createMsgBox();
       
       if (dontshow.contains(message)==false){
-        set_window_parent(msgBox, get_current_parent(msgBox, false), false);
+        set_window_parent(msgBox, get_current_parent(msgBox, false), radium::NOT_MODAL);
         
         msgBox->setText(message);
 

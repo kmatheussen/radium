@@ -206,7 +206,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
   Timer _timer;
 
  Soundfilesaver_widget(QWidget *parent=NULL)
-   : RememberGeometryQDialog(parent, false)
+   : RememberGeometryQDialog(parent, radium::NOT_MODAL)
     , currently_saving_plugin(NULL)
     , msgBox(NULL)
   {
@@ -392,14 +392,15 @@ public slots:
 };
 
 
-static Soundfilesaver_widget *widget=NULL;
+static QPointer<Soundfilesaver_widget> widget=NULL;
 
 extern "C"{
   void SOUNDFILESAVERGUI_open(void){
 
-    if(widget==NULL)
-      widget = new Soundfilesaver_widget(NULL);
-
+    if(widget==NULL){
+      widget = new Soundfilesaver_widget(g_main_window);
+    }
+    
 #if 1
     safeShow(widget);
 #else

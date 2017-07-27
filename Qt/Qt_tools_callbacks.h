@@ -112,7 +112,7 @@ class MidiLearnPrefs : public RememberGeometryQDialog {
   
 public:
   MidiLearnPrefs(QWidget *parent=NULL)
-    : RememberGeometryQDialog(parent, false)
+    : RememberGeometryQDialog(parent, radium::NOT_MODAL)
     , timer(this)
   {
     main_layout = new QGridLayout(this);
@@ -167,7 +167,7 @@ class Tools : public RememberGeometryQDialog, public Ui::Tools {
   bool _initing;
 
   Tools(QWidget *parent=NULL)
-    : RememberGeometryQDialog(parent, false)
+    : RememberGeometryQDialog(parent, radium::NOT_MODAL)
   {
     _initing = true;
 

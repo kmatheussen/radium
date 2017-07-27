@@ -285,17 +285,25 @@
                           (<gui> :enable-updates gui))))
 
 (delafina (reopen-gui-at-curr-pos :gui
-                                  :parentgui -2
+                                  :parentgui -1
                                   :parent-centre-gui #f)
   (disable-gui-updates-block
    gui
-   (lambda ()
-     (let ((changed-parent (<gui> :set-parent gui parentgui)))
+   (lambda ()       
+     (let ((parent-window (if (< parentgui 0)
+                              (<gui> :get-parent-window parentgui)
+                              parentgui))
+           (changed-parent (<gui> :set-parent gui parentgui)))
        (c-display "                  CHANGED-PARENT " changed-parent)
        (if (not (<gui> :is-visible gui))
            (<gui> :show gui))
        (if changed-parent
-           (<gui> :move-to-parent-centre gui))))))
+           (<gui> :move-to-parent-centre gui)
+           (<gui> :raise gui))))))
+;;(curr-window (<gui> :get-parent-window -2)))
+;           (if (not (= parent-window curr-window))
+ ;              (<gui> :move-to-centre-of gui curr-window)))))))
+           
 
 
 (delafina (show-async-message :parentgui -2

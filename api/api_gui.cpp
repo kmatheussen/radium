@@ -551,7 +551,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     bool _has_been_closed = false;
 
-    bool _is_modal = false; // We need to remember whether modality should be on or not, since modality is a parameter for set_window_parent.
+    radium::Modality _modality = radium::MAY_BE_MODAL; // We need to remember whether modality should be on or not, since modality is a parameter for set_window_parent.
     bool _have_set_size = false;
     bool _has_been_opened_before = false;
 
@@ -3868,7 +3868,7 @@ bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
     //if (gui->_widget->parent() != NULL)
     //   gui->_widget->setParent(NULL); // Don't remember why I did this. Should have added a comment. Seems unnecessary. And if it is necessary, it should probably be handled in set_window_parent() and not here.
 
-    set_window_parent(gui->_widget, parent, gui->_is_modal);
+    set_window_parent(gui->_widget, parent, gui->_modality);
 
     if (isvisible)
       gui->_widget->show();
@@ -3891,7 +3891,7 @@ void gui_setModal(int64_t guinum, bool set_modal){
   if (gui==NULL)
     return;
 
-  gui->_is_modal = set_modal;
+  gui->_modality = set_modal ? radium::IS_MODAL : radium::NOT_MODAL;
 
   gui->_widget->setWindowModality(set_modal ? Qt::ApplicationModal : Qt::NonModal);
 }
@@ -3990,6 +3990,17 @@ void gui_moveToParentCentre(int64_t guinum){
   w->updateGeometry();
 
   moveWindowToCentre(w);
+}
+
+void gui_raise(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  QWidget *w = gui->_widget;
+
+  w->raise();
+  //w->activateWindow();
 }
 
 void gui_setPos(int64_t guinum, int x, int y){

@@ -436,7 +436,7 @@ public slots:
             
       w->hide();
       _bottom_bar->show();
-      set_window_parent(w, g_main_window, false);
+      set_window_parent(w, g_main_window, radium::NOT_MODAL);
 
       w->adjustSize();
 
