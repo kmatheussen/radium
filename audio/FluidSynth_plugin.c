@@ -202,7 +202,7 @@ static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
   // fluidsynth doesn't seem to support polyphonic aftertouch.
 #if 0
   Data *data = (Data*)plugin->data;
-  fluid_synth_channel_pressure(data->synth,0,volume*127); // Nah.
+  fluid_synth_key_pressure(data->synth,0,(int)note.pitch,scale(note.velocity,1,0,0,1)*127); // Nah.
 #endif
 }
 
