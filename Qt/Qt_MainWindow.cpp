@@ -856,7 +856,7 @@ static int show_gfx_message(vector_t *buttons, bool program_state_is_valid, QStr
   return 0;
 }
 
-int GFX_Message2(vector_t *buttons, bool program_state_is_valid, const char *fmt,...){
+int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const char *fmt,...){
   if (buttons!=NULL)
     R_ASSERT(THREADING_is_main_thread());
 
@@ -882,7 +882,7 @@ int GFX_Message2(vector_t *buttons, bool program_state_is_valid, const char *fmt
   }
 }
 
-void GFX_addMessage(const char *fmt,...){
+void GFX_addMessage_internal(const char *fmt,...){
 
   char message[1000];
   va_list argp;

@@ -95,7 +95,7 @@ static void request_load_preset_filename_from_requester(int64_t parentgui, func_
     radium::ScopedExec scopedExec(true);
 
     filename = QFileDialog::getOpenFileName(
-                                            API_gui_get_parentwidget(parentgui),
+                                            API_gui_get_parentwidget(NULL, parentgui),
                                             "Load Effect configuration",
                                             g_last_preset_path,
 #if FOR_WINDOWS
@@ -372,7 +372,7 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
     radium::ScopedExec scopedExec(true);
         
     filename = QFileDialog::getSaveFileName(
-                                            API_gui_get_parentwidget(parentgui),
+                                            API_gui_get_parentwidget(NULL, parentgui),
                                             "Save Effect configuration",
                                             g_last_preset_path,
 #if FOR_WINDOWS
@@ -395,7 +395,7 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
   disk_t *file = DISK_open_for_writing(filename);
   
   if(file==NULL){
-    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true, API_gui_get_parentwidget(parentgui)));
+    ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true, API_gui_get_parentwidget(NULL, parentgui)));
     msgBox->setText("Could not save file.");
     msgBox->setStandardButtons(QMessageBox::Ok);
     msgBox->setDefaultButton(QMessageBox::Ok);

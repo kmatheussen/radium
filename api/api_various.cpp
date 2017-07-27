@@ -1871,8 +1871,8 @@ dyn_t getKeybindings(void){
     PyObject *qualifiers = PySequence_GetItem(value,1);
     //printf("\n%s:\n", PyString_AsString(key));
 
-    int num_keys = PyList_Size(keys);
-    int num_qualifiers = PyList_Size(qualifiers);
+    int num_keys = (int)PyList_Size(keys);
+    int num_qualifiers = (int)PyList_Size(qualifiers);
 
     dynvec_t r_keys = {};
     dynvec_t r_qualifiers = {};

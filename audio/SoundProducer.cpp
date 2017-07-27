@@ -518,19 +518,21 @@ static void show_high_peak_message(const SoundPlugin *plugin, const char *what_d
   volatile struct Patch *patch = plugin->patch;
   RT_message("Warning!\n"
              "\n"
-             "The instrument named \"%s\" of type %s/%s has %s a signal of at least 50dB in channel %d. Numch: %d\n"
+             "The instrument named \"%s\" of type %s/%s has %s a signal of at least 50dB in channel %d. (total number of channels: %d)\n"
              "\n"
              "Raw peak value: %f.\n"
              "\n"
              "10 first frames: %f %f %f %f %f %f %f %f %f %f."
              "\n"
              "This warning will pop up as long as the instrument does so.\n",
+             
              patch==NULL?"<no name>":patch->name,
-             plugin->type->type_name, plugin->type->name,
+             plugin->type->type_name, plugin->type->name,             
              what_did_it_do_questionmark,
              ch,plugin->type->num_outputs,
+             
              peak,
-             out[0], out[1],out[2],out[2],out[3],out[4],out[5],out[6],out[7],out[8],out[9]
+             out[0],out[1],out[2],out[3],out[4],out[5],out[6],out[7],out[8],out[9]
              );
 }
 

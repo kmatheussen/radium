@@ -522,7 +522,7 @@ void setInstrumentSample(int64_t instrument_id, const_char *filename){
   }
 
   if (strcmp(plugin->type->type_name, "Sample Player")) {
-    handleError("instrument %d is not a Sample Player", instrument_id);
+    handleError("instrument %d is not a Sample Player", (int)instrument_id);
     return;
   }
 
@@ -543,7 +543,7 @@ void setRandomInstrumentSample(int64_t instrument_id, const_char *path){
   }
 
   if (strcmp(plugin->type->type_name, "Sample Player")) {
-    handleError("instrument %d is not a Sample Player", instrument_id);
+    handleError("instrument %d is not a Sample Player", (int)instrument_id);
     return;
   }
 
@@ -571,7 +571,7 @@ void setInstrumentLoopData(int64_t instrument_id, int start, int length){
   }
 
   if (strcmp(plugin->type->type_name, "Sample Player")) {
-    handleError("instrument %d is not a Sample Player", instrument_id);
+    handleError("instrument %d is not a Sample Player", (int)instrument_id);
     return;
   }
 
@@ -709,7 +709,7 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
 
   /*
   if (strcmp(plugin->type->type_name, "Sample Player")) {
-    handleError("instrument %d is not a Sample Player plugin", instrument_id);
+    handleError("instrument %d is not a Sample Player plugin", (int)instrument_id);
     return;
   }
   */
@@ -741,7 +741,7 @@ void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
   int effect_num = PLUGIN_get_effect_num(plugin, effect_name);
 
   if (effect_num==-1){
-    handleError("");
+    handleError(" ");
     return;
   }
   
@@ -803,7 +803,7 @@ int getNumMIDIInstruments(void){
 
 int64_t getMIDIInstrumentId(int instrument_num){
   if (instrument_num>=getNumMIDIInstruments()){
-    handleError("No instrument #%d",instrument_num);
+    handleError("No instrument #%d", (int)instrument_num);
     return -1;
   }
   struct Patch *patch = get_MIDI_instrument()->patches.elements[instrument_num];
@@ -816,7 +816,7 @@ int getNumAudioInstruments(void){
 
 int64_t getAudioInstrumentId(int instrument_num){
   if (instrument_num>=getNumAudioInstruments()){
-    handleError("No instrument #%d",instrument_num);
+    handleError("No instrument #%d", (int)instrument_num);
     return -1;
   }
   struct Patch *patch = get_audio_instrument()->patches.elements[instrument_num];
@@ -1201,7 +1201,7 @@ float getAudioConnectionGain(int64_t source_id, int64_t dest_id){
   float ret = SP_get_link_gain(dest_sp, source_sp, &error);
 
   if (error!=NULL)
-    handleError("Could not find audio connection between instrument %d and instrument %d", source_id, dest_id);
+    handleError("Could not find audio connection between instrument %d and instrument %d", (int)source_id, (int)dest_id);
   
   return ret;
 }
@@ -1235,7 +1235,7 @@ void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool
   bool changed = SP_set_link_gain(dest_sp, source_sp, gain, &error);
 
   if (error!=NULL)
-    handleError("Could not find audio connection between instrument %d and instrument %d", source_id, dest_id);
+    handleError("Could not find audio connection between instrument %d and instrument %d", (int)source_id, (int)dest_id);
   else
     if (changed && remake_mixer_strips){
       printf("       Remake: setAudioConnectionGain\n");
@@ -1647,7 +1647,7 @@ static struct EffectMonitor *find_effect_monitor(int effect_num, int64_t instrum
 int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, func_t *func){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL){
-    handleError("There is no instrument #%d", instrument_id);
+    handleError("There is no instrument #%d", (int)instrument_id);
     return -1;
   }
 
@@ -1665,7 +1665,7 @@ int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, func_t 
   int effect_num = PLUGIN_get_effect_num(plugin, effect_name);
 
   if (effect_num==-1){
-    handleError("");
+    handleError(" ");
     return -1;
   }
   

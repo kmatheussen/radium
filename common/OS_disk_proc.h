@@ -23,7 +23,7 @@ extern LANGSPEC wchar_t *DISK_get_filename(disk_t *disk);
 extern LANGSPEC int DISK_write_wchar(disk_t *disk, const wchar_t *data);
 extern LANGSPEC int DISK_write(disk_t *disk, const char *data);
 
-#define DISK_printf(disk, fmt, ...) DISK_write(disk, talloc_format(fmt, __VA_ARGS__))
+#define DISK_printf(disk, ...) DISK_write(disk, talloc_format(__VA_ARGS__))
 
 
 // READ TEXT

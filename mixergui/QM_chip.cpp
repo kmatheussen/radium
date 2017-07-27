@@ -903,12 +903,12 @@ bool CONNECTIONS_apply_changes(const dyn_t dynchanges){
     Chip *target = get_chip_from_patch_id(scene, target_id);
 
     if (source==NULL){
-      handleError("Source instrument #%d not found", source_id);
+      handleError("Source instrument #%d not found", (int)source_id);
       return false;
     }
 
     if (target==NULL){
-      handleError("Target instrument #%d not found", target_id);
+      handleError("Target instrument #%d not found", (int)target_id);
       return false;
     }
 

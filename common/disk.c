@@ -150,7 +150,10 @@ static void DC_fgetsNoMatterWhat(void){
 	char *ret = dc.ls = DISK_read_trimmed_line(dc.file);
 
 	if(ret==NULL){
-          GFX_Message(NULL, "Unable to read string from file \"%s\". Line: %d.",curr_disk_line,STRING_get_chars(DISK_get_filename(dc.file)));
+          GFX_Message(NULL, "Unable to read string from file \"%s\". Line: %d.",
+                      STRING_get_chars(DISK_get_filename(dc.file)),
+                      curr_disk_line
+                      );
           dc.success=false;
           return;
 	}

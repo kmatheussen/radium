@@ -574,7 +574,7 @@ static void AUDIO_treat_FX(struct SeqTrack *seqtrack, struct FX *fx,int val,STim
 
   if (effect_num >= plugin->type->num_effects + NUM_SYSTEM_EFFECTS){
 #if !defined(RELEASE)
-    RWarning("DEBUG MODE: effect_num >= plugin->type->num_effects: ", effect_num, plugin->type->num_effects);
+    RWarning("DEBUG MODE: effect_num >= plugin->type->num_effects: %d >= %d", effect_num, plugin->type->num_effects);
 #endif
     return;
   }
@@ -619,7 +619,7 @@ static void AUDIO_FX_call_me_before_starting_to_play_song_MIDDLE(struct FX *fx, 
 
   if (effect_num >= plugin->type->num_effects + NUM_SYSTEM_EFFECTS){
 #if !defined(RELEASE)
-    RWarning("DEBUG MODE: effect_num >= plugin->type->num_effects: ", effect_num, plugin->type->num_effects);
+    RWarning("DEBUG MODE: effect_num >= plugin->type->num_effects: %d >= %d", effect_num, plugin->type->num_effects + NUM_SYSTEM_EFFECTS);
 #endif
     return;
   }

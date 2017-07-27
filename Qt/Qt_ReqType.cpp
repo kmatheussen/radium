@@ -99,7 +99,7 @@ static void init_reqtype(MyReqType *reqtype){
   GL_lock(); {
     GL_pause_gl_thread_a_short_while();
 
-    reqtype->frame = new MyQFrame(get_current_parent(true));
+    reqtype->frame = new MyQFrame(get_current_parent(NULL, true));
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
     //reqtype->frame->setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
     set_window_flags(reqtype->frame, true); // 'true' means modal window.

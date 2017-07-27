@@ -1178,7 +1178,7 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
   
   if(storeit_type==STORE_VALUE){
 #if !defined(RELEASE)
-    printf("   SETTING Savable effect %d (%s). Native: %f. Scaled: %f\n", effect_num, PLUGIN_get_effect_name(plugin, effect_num), native_value, scaled_value);
+    //printf("   SETTING Savable effect %d (%s). Native: %f. Scaled: %f\n", effect_num, PLUGIN_get_effect_name(plugin, effect_num), native_value, scaled_value);
 #endif
     safe_float_write(&plugin->stored_effect_values_native[effect_num], native_value);
     safe_float_write(&plugin->stored_effect_values_scaled[effect_num], scaled_value);
@@ -2621,7 +2621,7 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
     info += "Last activity: " + QString::number(time_since_last_activity*1000.0/MIXER_get_sample_rate()) + "ms ago\n";
   }
   
-  MyQMessageBox *infoBox = MyQMessageBox::create(false, API_gui_get_parentwidget(parentgui));
+  MyQMessageBox *infoBox = MyQMessageBox::create(false, API_gui_get_parentwidget(NULL, parentgui));
   infoBox->setAttribute(Qt::WA_DeleteOnClose);
   
   infoBox->setText(info);

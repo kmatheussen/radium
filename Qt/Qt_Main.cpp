@@ -1645,7 +1645,7 @@ protected:
         createMsgBox();
       
       if (dontshow.contains(message)==false){
-        set_window_parent(msgBox, get_current_parent(false), false);
+        set_window_parent(msgBox, get_current_parent(msgBox, false), false);
         
         msgBox->setText(message);
 
@@ -1942,7 +1942,7 @@ bool RT_message_will_be_sent(void){
   return ATOMIC_GET(rt_message_status)==RT_MESSAGE_READY;
 }
 
-void RT_message(const char *fmt,...){
+void RT_message_internal(const char *fmt,...){
   va_list argp;
 
   if (!atomic_compare_and_set_int(&ATOMIC_NAME(rt_message_status), RT_MESSAGE_READY, RT_MESSAGE_FILLING_UP))

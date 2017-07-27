@@ -310,7 +310,7 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
     int kill = VECTOR_push_back(&v, "Stop the jack process! (Strongly recommended)");
     
     message = "There is a problem with the jack server: " + message;
-    int hmmm = GFX_Message(&v, message.toUtf8().constData());
+    int hmmm = GFX_Message(&v, "%s", message.toUtf8().constData());
     (void)ignore;
     
     if (hmmm==kill){

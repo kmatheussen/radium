@@ -20,8 +20,13 @@ extern LANGSPEC int SYSTEM_show_message(const char *message); // Used before and
 
 extern LANGSPEC bool Error_init(void);
 
-extern LANGSPEC void RError(const char *fmt,...);
-extern LANGSPEC void RWarning(const char *fmt,...);
-extern LANGSPEC void RWarning_not_prod(const char *fmt,...);
+extern LANGSPEC void RError_internal(const char *fmt,...);
+extern LANGSPEC void RWarning_internal(const char *fmt,...);
+extern LANGSPEC void RWarning_not_prod_internal(const char *fmt,...);
 extern LANGSPEC void Error_uninit(void);
+
+// Add "printf" calls to make the C compiler show warning/error if using wrong arguments for FMT.
+#define RError(...) do{donothing(0 && printf(__VA_ARGS__)); RError_internal(__VA_ARGS__);}while(0)
+#define RWarning(...) do{donothing(0 && printf(__VA_ARGS__)); RWarning_internal(__VA_ARGS__);}while(0)
+#define RWarning_not_prod(...) do{donothing(0 && printf(__VA_ARGS__)); RWarning_not_prodinternal(__VA_ARGS__);}while(0)
 

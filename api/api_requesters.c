@@ -183,7 +183,7 @@ void popupMenu(dyn_t strings, func_t* callback){
 
   for(int i=0;i<dynvec->num_elements;i++){
     if (dynvec->elements[i].type != STRING_TYPE){
-      handleError("popupMenu: Element #%d is not a string. Found: %s", DYN_type_name(dynvec->elements[i].type));
+      handleError("popupMenu: Element #%d is not a string. Found: %s", i, DYN_type_name(dynvec->elements[i].type));
       return;
     }
     vec.elements[i] = STRING_get_chars(dynvec->elements[i].string);
@@ -209,7 +209,7 @@ const_char* requestMidiPort(void){
 
 const_char* showMessage(const char *text, dyn_t buttons){
   if (buttons.type==UNINITIALIZED_TYPE){
-    GFX_Message2(NULL, true, text);
+    GFX_Message2(NULL, true, "%s", text);
     return "Ok";
   }
 
@@ -222,13 +222,13 @@ const_char* showMessage(const char *text, dyn_t buttons){
   for(int i=0;i<buttons.array->num_elements;i++){
     dyn_t button = buttons.array->elements[i];
     if (button.type!=STRING_TYPE){
-      handleError("showMessage: Button #%d: Expected STRING_TYPE, found %s", DYN_type_name(button.type));
+      handleError("showMessage: Button #%d: Expected STRING_TYPE, found %s", i, DYN_type_name(button.type));
       return "";
     }
     VECTOR_push_back(&v, STRING_get_chars(button.string));
   }
 
-  int ret = GFX_SafeMessage(&v, text);
+  int ret = GFX_SafeMessage(&v, "%s", text);
   if (ret<0 || ret>= buttons.array->num_elements) // don't think this can happen though.
     return "";
 
@@ -258,11 +258,11 @@ void showAsyncMessage(const_char* text){
 }
 
 void showWarning(const_char *text){
-  RWarning(text);
+  RWarning("%s", text);
 }
 
 void showError(const_char *text){
-  RError(text);
+  RError("%s", text);
 }
 
 void openProgressWindow(const char *message){

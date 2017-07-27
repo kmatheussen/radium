@@ -44,6 +44,17 @@ extern "C"{
   void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, enum Crash_Type crash_type, double time);
   void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type, double time);
   void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...);
+
+  // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
+  /*
+  // got strange compilation error. Not important anyway.
+#define CRASHREPORTER_send_assert_message(CrashType, FMT, ...)          \
+  do{                                                                   \
+    if(0)printf(FMT,  __VA_ARGS__ );                                    \
+    CRASHREPORTER_send_assert_message_internal(CrashType, FMT, __VA_ARGS__); \
+  }while(0)
+  */
+  
   void CRASHREPORTER_dont_report_more(void);
   void CRASHREPORTER_do_report(void);
   void CRASHREPORTER_dont_report(void);

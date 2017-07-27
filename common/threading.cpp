@@ -75,7 +75,7 @@ priority_t THREADING_get_priority(void){
   priority.priority = GetThreadPriority(GetCurrentThread());
   
   if (priority.priority==THREAD_PRIORITY_ERROR_RETURN){
-    GFX_Message(NULL, "GetThreadPriority failed: %d",GetLastError());
+    GFX_Message(NULL, "GetThreadPriority failed: %u", (unsigned int)GetLastError());
     priority.priority = THREAD_PRIORITY_NORMAL;
   }
   

@@ -111,7 +111,7 @@ void clearErrorMessage(void){
   }
 }
 
-void handleError(const char *fmt,...){
+void handleError_internal(const char *fmt,...){
   if (g_error_message != NULL)
     return;
 
@@ -133,7 +133,7 @@ void handleError(const char *fmt,...){
   (void)ok;
   int continue_ = VECTOR_push_back(&v, "Continue");
 
-  int ret = GFX_Message(&v, message);
+  int ret = GFX_Message(&v, "%s", message);
 
   // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above, which is called when exiting an api call.
   if (ret!=continue_)
@@ -409,7 +409,7 @@ struct FXs *getFXsFromNum(int windownum,int blocknum,int tracknum,int fxnum){
 struct Patch *getPatchFromNum(int64_t instrument_id){
   struct Patch *patch = PATCH_get_from_id(instrument_id);
   if(patch==NULL)
-    handleError("instrument %d not found", instrument_id);
+    handleError("instrument %d not found", (int)instrument_id);
   
   return patch;
 }
@@ -417,12 +417,12 @@ struct Patch *getPatchFromNum(int64_t instrument_id){
 struct Patch *getAudioPatchFromNum(int64_t instrument_id){ // TODO: Rename to getAudioPatchFromId
   struct Patch *patch = PATCH_get_from_id(instrument_id);
   if(patch==NULL) {
-    handleError("instrument %d not found", instrument_id);
+    handleError("instrument %d not found", (int)instrument_id);
     return NULL;
   }
   
   if (patch->instrument != get_audio_instrument()) {
-    handleError("instrument %d is not an audio instrument", instrument_id);
+    handleError("instrument %d is not an audio instrument", (int)instrument_id);
     return NULL;
   }
 

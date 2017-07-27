@@ -113,7 +113,7 @@ double lineDuration(int line, int tracknum, int blocknum, int windownum){
   }
 
   if (line >= block->num_lines){
-    handleError("lineDuration: Line must be less than the number of lines: %d >= %d or larger: %d",line, block->num_lines);
+    handleError("lineDuration: Line can not be bigger than the number of lines in block. Line: %d. (number of lines in block: %d)", line, block->num_lines);
     return 1.0;
   }
   

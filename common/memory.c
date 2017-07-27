@@ -301,7 +301,7 @@ char *talloc_floatstring__(float number, const char *filename, int linenumber){
 }
 
 
-char *talloc_format(const char *fmt,...){
+char *talloc_format_internal(const char *fmt,...){
   int size = 16;
   char *ret = talloc_atomic__(size,__FILE__,__LINE__);
 

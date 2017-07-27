@@ -92,44 +92,54 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 #define MOUSE_OVERRIDERS(classname)                                     \
   void mousePressEvent(QMouseEvent *event) override{                    \
     g_last_pressed_widget = this;                                       \
+    if (_mouse_callback==NULL){                                         \
+      classname::mousePressEvent(event); return;}                       \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_mouse_callback==NULL || !Gui::mousePressEvent(event))          \
+    if (!Gui::mousePressEvent(event))                                   \
       classname::mousePressEvent(event);                                \
   }                                                                     \
                                                                         \
   void mouseReleaseEvent(QMouseEvent *event) override {                 \
     g_last_released_widget = this;                                      \
+    if (_mouse_callback==NULL){                                         \
+      classname::mouseReleaseEvent(event); return;}                     \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_mouse_callback==NULL || !Gui::mouseReleaseEvent(event))        \
+    if (!Gui::mouseReleaseEvent(event))                                 \
       classname::mouseReleaseEvent(event);                              \
   }                                                                     \
                                                                         \
   void mouseMoveEvent(QMouseEvent *event) override{                     \
+    if (_mouse_callback==NULL){                                         \
+      classname::mouseMoveEvent(event); return;}                        \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_mouse_callback==NULL || !Gui::mouseMoveEvent(event))           \
+    if (!Gui::mouseMoveEvent(event))                                    \
       classname::mouseMoveEvent(event);                                 \
   }
 
 #define DOUBLECLICK_OVERRIDER(classname)                                \
   void mouseDoubleClickEvent(QMouseEvent *event) override{              \
+    if (_doubleclick_callback==NULL){                                   \
+      classname::mouseDoubleClickEvent(event);return;}                  \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_doubleclick_callback==NULL)                                    \
-      classname::mouseDoubleClickEvent(event);                          \
-    else if(this==g_last_pressed_widget && this==g_last_released_widget) \
+    if(this==g_last_pressed_widget && this==g_last_released_widget)     \
       Gui::mouseDoubleClickEvent(event);                                \
   }                                                                     
 
 
 #define KEY_OVERRIDERS(classname)                                       \
   void keyPressEvent(QKeyEvent *event) override{                        \
+    if (_key_callback==NULL){                                           \
+      classname::keyPressEvent(event); return;}                         \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_key_callback==NULL || !Gui::keyPressEvent(event))              \
+    if (!Gui::keyPressEvent(event))                                     \
       classname::keyPressEvent(event);                                  \
   }                                                                     \
                                                                         \
   void keyReleaseEvent(QKeyEvent *event) override{                      \
+    if (_key_callback==NULL){                                           \
+      classname::keyReleaseEvent(event); return;}                       \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
-    if (_key_callback==NULL || !Gui::keyReleaseEvent(event))            \
+    if (!Gui::keyReleaseEvent(event))                                   \
       classname::keyReleaseEvent(event);                                \
   }
 
@@ -2647,7 +2657,7 @@ float gui_textWidth(const_char* text){
 
 static Gui *get_gui_maybeclosed(int64_t guinum){
   if (guinum < 0 || guinum > g_highest_guinum){
-    handleError("There has never been a Gui #%d", guinum);
+    handleError("There has never been a Gui #%d", (int)guinum);
     return NULL;
   }
 
@@ -2658,7 +2668,7 @@ static Gui *get_gui_maybeclosed(int64_t guinum){
 static Gui *get_gui(int64_t guinum){
 
   if (guinum==-1 || guinum==-2){
-    QWidget *parent = API_gui_get_parentwidget(guinum);
+    QWidget *parent = API_gui_get_parentwidget(NULL, guinum);
     if (parent != NULL)
       guinum = API_get_gui_from_existing_widget(parent);
   }
@@ -2667,13 +2677,13 @@ static Gui *get_gui(int64_t guinum){
 
   if (gui==NULL){
     if (guinum>=0 && guinum<g_highest_guinum)
-      handleError("Gui #%d has been closed and can not be used.", guinum);
+      handleError("Gui #%d has been closed and can not be used.", (int)guinum);
     return NULL;
   }
   
   if (gui->_widget==NULL) {
     R_ASSERT(gui->_created_from_existing_widget); // GUI's that are not created from an existing widget are (i.e. should be) automatically removed when the QWidget is deleted.
-    handleError("Gui #%d (class %s), created from an existing widget, has been closed and can not be used.", gui->get_gui_num(), gui->_class_name.toUtf8().constData());
+    handleError("Gui #%d (class %s), created from an existing widget, has been closed and can not be used.", (int)gui->get_gui_num(), gui->_class_name.toUtf8().constData());
     delete gui;
     return NULL;
   }
@@ -2716,7 +2726,7 @@ int64_t gui_child(int64_t guinum, const_char* childname){
   QWidget *child = gui->_widget->findChild<QWidget*>(childname);
 
   if (child==NULL){
-    handleError("Could not find child \"%s\" in gui #%d.", childname, guinum);
+    handleError("Could not find child \"%s\" in gui #%d.", childname, (int)guinum);
     return -1;
   }
 
@@ -3242,7 +3252,7 @@ int64_t gui_table(dyn_t header_names){
   for(int i=0;i<header_names.array->num_elements;i++){
     dyn_t el = header_names.array->elements[i];
     if(el.type != STRING_TYPE){
-      handleError(talloc_format("gui_table: Element %d in header_names is not a string", i));
+      handleError("gui_table: Element %d in header_names is not a string", i);
       return -1;
     }
     
@@ -3435,7 +3445,7 @@ void gui_addTableRows(int64_t table_guinum, int pos, int how_many){
   }else if(how_many<0 && pos>=num_rows+how_many){
     if (pos>num_rows+how_many)
       handleError("gui_addTableRows: Illegal 'pos' argument for Gui #%d. pos: %d, how_many: %d, number of rows: %d. Last legal position: %d",
-                  table_guinum, pos, how_many, num_rows, num_rows+how_many);
+                  (int)table_guinum, pos, how_many, num_rows, num_rows+how_many);
     table->setRowCount(num_rows+how_many);
     
   }else if (how_many > 0){
@@ -3614,7 +3624,7 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
   if(splitter!=NULL || layout==NULL || y1!=-1) {
 
     if (splitter==NULL && layout==NULL && (y1==-1 || x2==-1 || y2==-1)){
-      handleError("Warning: Parent gui #%d does not have a layout", parentnum);
+      handleError("Warning: Parent gui #%d does not have a layout", (int)parentnum);
       x1_or_stretch = 0;
       y1 = 0;
     }
@@ -3682,7 +3692,7 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
     } else {
 
       if (x1_or_stretch != -1)
-        handleError("Warning: Parent gui #%d does not have a box layout", parentnum);
+        handleError("Warning: Parent gui #%d does not have a box layout", (int)parentnum);
 
       layout->addWidget(child->_widget);
 
@@ -3707,14 +3717,14 @@ void gui_replace(int64_t parentnum, int64_t oldchildnum, int64_t newchildnum){
 
   QLayout *layout = parent->getLayout();
   if(layout==NULL){
-    handleError("Gui #%d does not have a layout", parentnum);
+    handleError("Gui #%d does not have a layout", (int)parentnum);
     return;
   }
   
   QLayoutItem *old_item = layout->replaceWidget(oldchild->_widget, newchild->_widget);
 
   if(old_item==NULL){
-    handleError("Gui #%d not found in #%d", oldchildnum, parentnum);
+    handleError("Gui #%d not found in #%d", (int)oldchildnum, (int)parentnum);
     return;
   }
 
@@ -3790,7 +3800,7 @@ void gui_close(int64_t guinum){
 
   const char *can_not_be_closed_reason = g_guis_can_not_be_closed.value(guinum);
   if (can_not_be_closed_reason != NULL){
-    handleError("Gui #%d can not be closed.\nReason: %s", guinum, can_not_be_closed_reason);
+    handleError("Gui #%d can not be closed.\nReason: %s", (int)guinum, can_not_be_closed_reason);
     return;
   }
   
@@ -3815,7 +3825,7 @@ int64_t gui_getParentWindow(int64_t guinum){
   if (guinum < 0)
     return guinum;
   
-  QWidget *w = API_gui_get_parentwidget(guinum);
+  QWidget *w = API_gui_get_parentwidget(NULL, guinum);
 
   if (w==NULL)
     return -3;
@@ -3831,12 +3841,12 @@ bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
   if (mustBeWindow){
     bool is_window = gui->_widget->isWindow() || gui->_widget->parent()==NULL;
     if(!is_window){
-      handleError("gui_setParent: Gui #%d is not a window. (className: %s)", guinum, gui_className(guinum));
+      handleError("gui_setParent: Gui #%d is not a window. (className: %s)", (int)guinum, gui_className(guinum));
       return false;
     }
   }
   
-  QWidget *parent = API_gui_get_parentwidget(parentgui);
+  QWidget *parent = API_gui_get_parentwidget(gui->_widget, parentgui);
   printf("**parent is main_window: %d\n", parent==g_main_window);
   
   if (parent==gui->_widget){
@@ -4162,7 +4172,7 @@ void gui_setLayoutSpacing(int64_t guinum, int spacing, int left, int top, int ri
 
   QLayout *layout = gui->getLayout();
   if (layout==NULL){
-    handleError("Gui #%d doesn't have a layout", guinum);
+    handleError("Gui #%d doesn't have a layout", (int)guinum);
     return;
   }
 
@@ -4181,7 +4191,7 @@ void gui_addLayoutSpace(int64_t guinum, int width, int height, bool grow_horizon
 
   QLayout *layout = gui->getLayout();
   if (layout==NULL){
-    handleError("Gui #%d doesn't have a layout", guinum);
+    handleError("Gui #%d doesn't have a layout", (int)guinum);
     return;
   }
 
@@ -4276,11 +4286,11 @@ void gui_setStaticToplevelWidget(int64_t guinum, bool add){
   if (add){
     
     if (is_included){
-      handleError("Gui #%d is already set as static toplevel widget", guinum);
+      handleError("Gui #%d is already set as static toplevel widget", (int)guinum);
       return;
     }
     if (gui->_widget->window() != gui->_widget){
-      handleError("Gui #%d is not a toplevel widget. (class name: %s)", guinum, gui_className(guinum));
+      handleError("Gui #%d is not a toplevel widget. (class name: %s)", (int)guinum, gui_className(guinum));
       return;
     }
     g_static_toplevel_widgets.push_back(gui->_widget);
@@ -4291,7 +4301,7 @@ void gui_setStaticToplevelWidget(int64_t guinum, bool add){
 #endif
 
     if (false==is_included){
-      handleError("Gui #%d has not been added as a static toplevel widget", guinum);
+      handleError("Gui #%d has not been added as a static toplevel widget", (int)guinum);
       return;
     }
     g_static_toplevel_widgets.remove(g_static_toplevel_widgets.indexOf(gui->_widget));
@@ -4580,7 +4590,7 @@ QWidget *API_gui_get_widget(int64_t guinum){
   return gui->_widget;
 }
 
-QWidget *API_gui_get_parentwidget(int64_t parentnum){
+QWidget *API_gui_get_parentwidget(QWidget *child, int64_t parentnum){
   QWidget *parent;
   
   if (parentnum==-1)
@@ -4590,7 +4600,7 @@ QWidget *API_gui_get_parentwidget(int64_t parentnum){
     // get_current_parent() can return anything, but I think the worst thing that could happen if the parent is deleted,
     // at least in this case, is that some warning messages would be displayed. The base case (and I hope only case) is
     // just that the window closes, and that closing the window was the natural thing to happen, since the parent was closed.
-    parent = get_current_parent(false);
+    parent = get_current_parent(child, false);
   
   else if (parentnum==-3)
     parent = NULL;

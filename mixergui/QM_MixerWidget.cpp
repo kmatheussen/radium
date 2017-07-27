@@ -1492,7 +1492,7 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
 
   //printf("mousepress: %p\n",_current_connection);
   
-  EVENTLOG_add_event(talloc_format(">>>>  MyScene::mousePressEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size()));
+  EVENTLOG_add_event(talloc_format(">>>>  MyScene::mousePressEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, (int)_moving_chips.size()));
 
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
   
@@ -1562,7 +1562,7 @@ void MyScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ){
 
   printf("mouse release: %p\n",_current_connection);
 
-  EVENTLOG_add_event(talloc_format("<<<< MyScene::mouseReleaseEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, _moving_chips.size()));
+  EVENTLOG_add_event(talloc_format("<<<< MyScene::mouseReleaseEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, (int)_moving_chips.size()));
 
   root->song->tracker_windows->must_redraw = true; // why?
 
@@ -2520,7 +2520,7 @@ static void MW_create_chips_from_full_state(hash_t *chips, Buses buses, bool is_
     }
     
     if (is_loading)
-      GFX_ShowProgressMessage(talloc_format("Creating instrument %d / %d: %s", i, num_chips, patch->name));
+      GFX_ShowProgressMessage(talloc_format("Creating instrument %d / %d: %s", i, (int)num_chips, patch->name));
 
     PATCH_init_audio_when_loading_song(patch, state);
   }

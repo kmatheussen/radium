@@ -214,7 +214,7 @@ dynvec_t DYNVEC_load(disk_t *file, bool *success){
   line = READ_LINE(file);
   
   if(!STRING_equals(line,"<< DYNVEC END")){
-    GFX_Message(NULL, "Something went wrong when loading array of size %d from disk. Expected \"%s\", but found \"%s\".", "<< DYNVEC END", STRING_get_chars(line));
+    GFX_Message(NULL, "Something went wrong when loading array of size %d from disk. Expected \"%s\", but found \"%s\".", elements_size, "<< DYNVEC END", STRING_get_chars(line));
     return ret;
   }
   

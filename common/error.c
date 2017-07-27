@@ -77,7 +77,7 @@ static void show_message(int type, char *message){
 }
 #endif
 
-void RError(const char *fmt,...){
+void RError_internal(const char *fmt,...){
   char message[1000];
   va_list argp;
   
@@ -90,7 +90,7 @@ void RError(const char *fmt,...){
   //show_message(IS_ERROR,message);
 }
 
-void RWarning(const char *fmt,...){
+void RWarning_internal(const char *fmt,...){
   char message[1000];
   va_list argp;
   
@@ -103,7 +103,7 @@ void RWarning(const char *fmt,...){
   //show_message(IS_WARNING,message);
 }
 
-void RWarning_not_prod(const char *fmt,...){
+void RWarning_not_prod_internal(const char *fmt,...){
 #ifndef RELEASE
   char message[1000];
   va_list argp;

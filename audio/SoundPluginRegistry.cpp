@@ -344,7 +344,7 @@ SoundPluginTypeContainer *PR_get_populated_container(const char *container_name,
 
     x += "</UL>";
 
-    GFX_addMessage(x.toUtf8().constData());
+    GFX_addMessage("%s", x.toUtf8().constData());
   }
 
   return usable_containers[0];
@@ -402,7 +402,7 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
       int replace_with_pipe = VECTOR_push_back(&v, "Replace with pipe");
       (void)replace_with_pipe; // default
       
-      int ret = GFX_Message(&v, ("VST Plugin " + QString(plugin_name) + " not found.").toUtf8().constData());
+      int ret = GFX_Message(&v, "%s", ("VST Plugin " + QString(plugin_name) + " not found.").toUtf8().constData());
 
       if (ret==select_plugin_file) {
 
