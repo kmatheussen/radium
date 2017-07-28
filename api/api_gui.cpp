@@ -567,7 +567,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       , _class_name(widget->metaObject()->className())
     {
       _is_pure_qwidget = _class_name=="QWidget";
-        
+
+      update_modality_attribute();
+      
       g_gui_from_widgets[_widget] = this;
       
       _gui_num = g_highest_guinum++;
@@ -667,7 +669,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return ret;
     }
 
-
+    void update_modality_attribute(void) {
+      if (_widget->isModal())
+        _modality = radium::IS_MODAL;
+      else
+        _modality = radium::NOT_MODAL;
+    }
+    
     /************ MOUSE *******************/
     
     func_t *_mouse_callback = NULL;
@@ -3894,6 +3902,25 @@ void gui_setModal(int64_t guinum, bool set_modal){
   gui->_modality = set_modal ? radium::IS_MODAL : radium::NOT_MODAL;
 
   gui->_widget->setWindowModality(set_modal ? Qt::ApplicationModal : Qt::NonModal);
+}
+
+bool gui_isModal(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return false;
+
+  gui->update_modality_attribute();
+  
+  if (gui->_modality==radium::NOT_MODAL)
+    return false;
+  else if (gui->_modality==radium::MAY_BE_MODAL)  // MAY_BE_MODAL is just a hack to make sure grandchild windows stays on top of child windows. (will be removed when moving over to MDI)
+    return false;
+  else if (gui->_modality==radium::IS_MODAL)
+    return true;
+  else
+    R_ASSERT_NON_RELEASE(false);
+
+  return false;
 }
 
 void gui_disableUpdates(int64_t guinum){

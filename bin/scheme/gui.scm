@@ -290,16 +290,24 @@
   (disable-gui-updates-block
    gui
    (lambda ()       
-     (let ((parent-window (if (< parentgui 0)
-                              (<gui> :get-parent-window parentgui)
-                              parentgui))
-           (changed-parent (<gui> :set-parent gui parentgui)))
+     (let ((changed-parent (<gui> :set-parent gui parentgui)))
        (c-display "                  CHANGED-PARENT " changed-parent)
        (if (not (<gui> :is-visible gui))
            (<gui> :show gui))
        (if changed-parent
-           (<gui> :move-to-parent-centre gui)
+           (begin
+             (if #f ;; definitely not do this. If we try to set two siblings modal at the same time, we lose mouse and keyboard access to the whole program after closing the second sibling. This HAS to be a Qt bug... Tried under Qt 5.9.0 in Linux (using FVWM). Could be Ticket #1 or #3 in QTBUG-27206. TODO: Try again after converting to MDI, it might be related to window manager.
+                 (begin
+                   (let ((mymodality (<gui> :is-modal gui))
+                         (parentmodality (<gui> :is-modal parentgui)))
+                     (c-display "  my-modality: " mymodality ", parentmodality:" parentmodality)
+                     (if (not (eq? mymodality parentmodality))
+                         (begin
+                           (c-display "   Setting modal: " parentmodality)
+                           (<gui> :set-modal gui parentmodality))))))
+             (<gui> :move-to-parent-centre gui))
            (<gui> :raise gui))))))
+
 ;;(curr-window (<gui> :get-parent-window -2)))
 ;           (if (not (= parent-window curr-window))
  ;              (<gui> :move-to-centre-of gui curr-window)))))))
@@ -400,27 +408,37 @@
           
           ;;(c-display gui2)
           
-          (reopen-gui-at-curr-pos *message-gui*)
+          (reopen-gui-at-curr-pos :gui *message-gui*
+                                  :parentgui -2) ;; -1 is the main window. We could use -2 (current window), but then the message gui automatically becomes modal if current window is modal, and we risk locking the program if the message window pops up again immediately after closing it. In addition, it's annoying having to click "hide" while doing something in a modal window. With that said, the alternative is not working so well either (although it"s much better this way since we avoid locking up the program). If the message window pops up while a modal window is active, the "hide" button doesn't work at all while the modal window is open (which is quite annoying since it seems like the program has locked up), plus that we get graphical flickering because Qt forcefully lowers the message gui at non-obvious times (we call "raise" on the message gui whenever it shows a new message), and then it is put on top of the currrent modal window. I don't know how to solve this problem. It doesn't seem like Qt has support for "modal group"s of several widgets, which would have been THE solution to this problem. (simply setting two sibling widgets modal locks up the whole program, see comment above in the 'reopen-gui-at-curr-pos' function.)
 
           (<gui> :set-value *message-gui-text-edit* message)
                  
           #f)))
 
-#||
-;; for debugging. The message gui can open at any time.
-(define *has-started-it* #f)
-(define (maybe-start-it)
-  (when (not *has-started-it*)
-    (set! *has-started-it* #t)
+;;#||
+;; For debugging. The message gui can open at any time, and
+;; this function opens the message window every 3 seconds.
+;; Evaluate "(set! *is-running-debug-pulse* #f)" to stop it.
+(define *is-running-debug-pulse* #f)
+(define (maybe-start-debug-pulse)
+  (when (not *is-running-debug-pulse*)
+    (set! *is-running-debug-pulse* #t)
     (<ra> :schedule 1000
           (lambda ()
-            (add-message-window-message "pulse")
-            3000))))
-||#
+            (if *is-running-debug-pulse*
+                (begin
+                  (add-message-window-message "pulse ")
+                  3000)
+                #f)))))
+#!!
+(maybe-start-debug-pulse)
+(set! *is-running-debug-pulse* #f)
+!!#
+;;||#
 
 (define *g-complete-message* #f)
 (define (add-message-window-message message)
-  ;;(maybe-start-it)
+  ;;(maybe-start-debug-pulse)
   (set! *g-complete-message* (<-> (if (not (string? *g-complete-message*))
                                       ""
                                       (<-> *g-complete-message* "<p><br>\n"))

@@ -260,11 +260,15 @@ QT_MAJOR:=$(shell echo $(QT_VERSION) | cut -d'.' -f1)
 QT_MINOR:=$(shell echo $(QT_VERSION) | cut -d'.' -f2)
 QT_SUB:=$(shell echo $(QT_VERSION) | cut -d'.' -f3)
 
+WNO_SUGGEST_OVERRIDE=
 
 ifeq ($(BUILDTYPE), DEBUG)
 	CPPOPT += -std=gnu++11 -Woverloaded-virtual
-	ifeq ($(QT_MINOR),9)
-		CPPOPT += -Wsuggest-override
+	ifneq (,$(findstring g++,$(CCC)))
+		ifeq ($(shell test $(QT_MINOR) -gt 8; echo $$?),0)  # Turn off suggest-override if using Qt before 5.9. Almost all c++ files uses qt now.
+			CPPOPT += -Wsuggest-override
+			WNO_SUGGEST_OVERRIDE += -Wno-suggest-override
+		endif
 	endif
 else
 	CPPOPT += -std=gnu++11
@@ -1769,11 +1773,6 @@ FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 Pd_plugin.o: audio/Pd_plugin.cpp
 	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
-WNO_SUGGEST_OVERRIDE=
-
-ifneq (,$(findstring g++,$(CC)))
-	WNO_SUGGEST_OVERRIDE += -Wno-suggest-override
-endif
 
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
 FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual
