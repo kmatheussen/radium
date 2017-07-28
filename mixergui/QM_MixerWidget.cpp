@@ -1302,13 +1302,13 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     }
 
     insert = VECTOR_push_back(&v, "Insert"); // sound object");
-    replace = VECTOR_push_back(&v, "Replace"); // sound object");
+    replace = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Replace" : "Replace"); // sound object");
     
     VECTOR_push_back(&v, "--------");
     
-    copy = VECTOR_push_back(&v, "Copy"); // sound object");
-    cut = VECTOR_push_back(&v, "Cut"); // sound object");
-    delete_ = VECTOR_push_back(&v, "Delete"); // sound object");
+    copy = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Copy" : "Copy"); // sound object");
+    cut = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Cut" : "Cut"); // sound object");
+    delete_ = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Delete" : "Delete"); // sound object");
 
     VECTOR_push_back(&v, "--------");
 
@@ -1320,6 +1320,8 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       unsolo = VECTOR_push_back(&v, "[disabled]Un-solo");
     }
 
+    VECTOR_push_back(&v, "--------");
+        
     if (!ATOMIC_GET(plugin->volume_is_on)){
       mute = VECTOR_push_back(&v, "[disabled]Mute");
       unmute = VECTOR_push_back(&v, "Un-mute");
@@ -1335,7 +1337,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
     VECTOR_push_back(&v, "--------");
     
-    save = VECTOR_push_back(&v, "Save preset (.rec)");
+    save = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Save preset" : "Save preset (.rec)");
     config_color = VECTOR_push_back(&v, "Configure color");
     instrument_info = VECTOR_push_back(&v, "Show info");
   }
