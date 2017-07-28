@@ -80,6 +80,8 @@
                                      (map 1+ (iota 6))))))
             '())
         "----------"
+        "Help" (lambda ()
+                 (<ra> :show-mixer-help-window))
         "Set current instrument" (lambda ()
                                    (popup-menu (map (lambda (instrument-id)
                                                       (list (<ra> :get-instrument-name instrument-id)
@@ -655,29 +657,31 @@
               ;;                                #t)
 
                 "----------"
-                "Rename instrument" (lambda ()
-                                      (define old-name (<ra> :get-instrument-name instrument-id))
-                                      (define new-name (<ra> :request-string "New name:" #t))
-                                      (if (and (not (string=? new-name ""))
-                                               (not (string=? new-name old-name)))
-                                          (<ra> :set-instrument-name new-name instrument-id)))
-                "Instrument information" (lambda ()
-                                           (<ra> :show-instrument-info instrument-id parentgui))
-                "----------"
-                "Configure instrument color" (lambda ()
-                                               (show-instrument-color-dialog parentgui instrument-id))
-                (list "Wide"
-                      :check (<ra> :has-wide-instrument-strip parent-instrument-id)
-                      (lambda (enabled)
-                        (<ra> :set-wide-instrument-strip parent-instrument-id enabled)
-                        (remake-mixer-strips parent-instrument-id)))
+                (list "Set as current instrument"
+                      :enabled (not (= (<ra> :get-current-instrument)
+                                       instrument-id))
+                      (lambda ()
+                        (<ra> :set-current-instrument instrument-id #f)))
+                "Rename" (lambda ()
+                           (define old-name (<ra> :get-instrument-name instrument-id))
+                           (define new-name (<ra> :request-string "New name:" #t))
+                           (if (and (not (string=? new-name ""))
+                                    (not (string=? new-name old-name)))
+                               (<ra> :set-instrument-name new-name instrument-id)))
                 "Show Info" (lambda ()
                               (<ra> :show-instrument-info instrument-id parentgui))
+                "Configure color" (lambda ()
+                                    (show-instrument-color-dialog parentgui instrument-id))
                 (list "Show GUI"
                       :enabled (<ra> :has-native-instrument-gui instrument-id)
                       (lambda ()
                         (<ra> :show-instrument-gui instrument-id #f)))
                 "----------"
+                (list "Wide mode"
+                      :check (<ra> :has-wide-instrument-strip parent-instrument-id)
+                      (lambda (enabled)
+                        (<ra> :set-wide-instrument-strip parent-instrument-id enabled)
+                        (remake-mixer-strips parent-instrument-id)))
                 ;;(remake-mixer-strips parent-instrument-id)))
                 (get-global-mixer-strips-popup-entries first-instrument-id strips-config)
                 ))
@@ -732,10 +736,14 @@
     (<gui> :filled-box widget "black" 1 1 (1- width) (1- height) 5 5)
     (<gui> :filled-box widget color 0 0 pos height 5 5)
 
-    (if (= (<ra> :get-current-instrument) instrument-id)
-        (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
+    ;;(if (= (<ra> :get-current-instrument) instrument-id)
+    ;;    (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
 
-    (<gui> :draw-box widget "gray" 0 0 width height 0.8 5 5)
+    (if (= (<ra> :get-current-instrument) instrument-id)
+        (let* ((w 1.2)
+               (w*2 (* w 3)))
+          (<gui> :draw-box widget "#aa111144" w w (- width 2) (- height 2) w*2 5 5))
+        (<gui> :draw-box widget "gray"      0 0 width height 0.8 5 5))
   
     (define text (<-> instrument-name ": " (get-value-text value)))
     (when is-changing-value
