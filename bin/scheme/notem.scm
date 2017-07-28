@@ -129,7 +129,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (create-transpose-buttons groupname ra-funcname)
-  (define func (eval-string ra-funcname))
+  (define funcname-contains-range (string-contains? ra-funcname "range"))
+  (define ra-func (eval-string ra-funcname))
+  (define (func . args)
+    (if (and funcname-contains-range
+             (not (<ra> :has-range)))
+        (show-async-message :text "No range in block. Select range by using Left Meta + b")
+        (apply ra-func args)))
   
   (define (create-button how-much)
     (define arrow (if (> how-much 0) "Up" "Down")) ;; "↑" "↓"))
