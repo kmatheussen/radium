@@ -201,6 +201,7 @@ namespace{
 
 static void legalize_pos(MyReqType *reqtype){
   QWidget *w = reqtype->frame;
+  R_ASSERT_RETURN_IF_FALSE(w!=NULL);
   
   if (w->parent()!=NULL)
     return;
@@ -233,6 +234,14 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
   */
   
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
+
+  if (reqtype->frame==NULL){
+#if !defined(RELEASE)
+    fprintf(stderr, "\n\n\n  1. REQTYPE->FRAME == NULL (press return to continue)\n\n\n");
+    getchar();
+#endif
+    init_reqtype(reqtype); // Something is wrong. Try to make the program running by recreating the frame.
+  }
 
   int x = x_margin;
 
@@ -334,7 +343,7 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
       //
       if (reqtype->frame==NULL){
 #if !defined(RELEASE)
-        fprintf(stderr, "\n\n\n  REQTYPE->FRAME == NULL (press return to continue)\n\n\n");
+        fprintf(stderr, "\n\n\n  2. REQTYPE->FRAME == NULL (press return to continue)\n\n\n");
         getchar();
 #endif
         init_reqtype(reqtype); // recreate the frame, for next time.

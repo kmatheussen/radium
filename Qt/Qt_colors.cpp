@@ -157,10 +157,12 @@ static const ColorConfig g_colorconfig[] = {
   {NOTE_EVENT_INDICATOR_COLOR_NUM, "note_event_indicator",  "Note event indicator"},
   {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, "note_event_indicator_border",  "Note event indicator border"},
 
-  {MIXER_EVENT_CONNECTION_COLOR_NUM, "mixer_event_connection_color", "Event connection color"},
-  {MIXER_AUDIO_CONNECTION_COLOR_NUM, "mixer_audio_connection_color", "Audio connection color"},
-  {MIXER_AUTOSUSPENSION_COLOR_NUM, "mixer_autosuspension_color", "Auto-suspension sound object color"},
-  {MIXER_SELECTED_OBJECT_COLOR_NUM, "mixer_selected_object_color_num", "Selected sound object color"},
+  {MIXER_EVENT_CONNECTION_COLOR_NUM, "mixer_event_connection_color", "Mixer: Event connection color"},
+  {MIXER_AUDIO_CONNECTION_COLOR_NUM, "mixer_audio_connection_color", "Mixer: Audio connection color"},
+  {MIXER_AUTOSUSPENSION_COLOR_NUM, "mixer_autosuspension_color", "Mixer: Auto-suspension sound object color"},
+  {MIXER_SELECTED_OBJECT_COLOR_NUM, "mixer_selected_object_color_num", "Mixer: Selected sound object color"},
+  {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, "mixer_selected_object_border_color_num", "Mixer: Selected sound object border color"},
+  {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, "mixerstrips_selected_object_color_num", "Mixer strips: Current instrument border color"},
   
   {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, "sequencer_currtrack_border_color", "Sequencer current track border color"},
   {SEQUENCER_BACKGROUND_COLOR_NUM, "sequencer_background_color", "Sequencer background color"},
@@ -265,6 +267,8 @@ static ReplacementColor g_replacement_color[] = {
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor(50,25,70,140)},
   {MIXER_AUTOSUSPENSION_COLOR_NUM, QColor("#28a6a6a6")},
   {MIXER_SELECTED_OBJECT_COLOR_NUM, QColor("#54071780")},
+  {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, QColor("#ff080a81")},
+  {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, QColor("#ff337755")},
   
   {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, QColor("#ffc8c8c8")},
   {SEQUENCER_BACKGROUND_COLOR_NUM, QColor("#ff323232")},

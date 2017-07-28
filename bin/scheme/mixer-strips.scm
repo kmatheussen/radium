@@ -1786,15 +1786,24 @@
   comment-edit)
 
 (define-constant *mixer-strip-border-color* "#bb222222")
-(define-constant *current-mixer-strip-border-color* "#bb111166")
+(define *current-mixer-strip-border-color* "mixerstrips_selected_object_color_num")
 
-(define (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip)
+(define (mydrawbox gui color x1 y1 x2 y2 line-width rounding)
+  (define w (/ line-width 2))
+  (define w*3 (* w 3))
+  (<gui> :draw-box
+         gui color
+         (+ x1 w) (+ y1 w)
+         (- x2 w) (- y2 w)
+         line-width
+         rounding rounding))
+
+(define (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip border-width)
   ;;(c-display "    Draw mixer strips border called for " instrument-id)
   (if (= (<ra> :get-current-instrument) instrument-id)
       (if (not is-standalone-mixer-strip)
-          (<gui> :draw-box gui *current-mixer-strip-border-color* 0 0 width height 10 3 3))
-      ))
-;;      (<gui> :draw-box gui *mixer-strip-border-color* 0 0 width height 2 3 3)))
+          (mydrawbox gui *current-mixer-strip-border-color* 0 0 width height border-width 0)
+          )))
 
 (define (create-current-instrument-border gui instrument-id)
   (define rubberband-resize (gui-rubberband gui 5 "#bb111144" (lambda ()
@@ -1814,7 +1823,9 @@
   ;(<gui> :set-background-color gui (<ra> :get-instrument-color instrument-id))
   ;;(set-fixed-width gui (get-fontheight))
 
-  (define bsize (if is-standalone-mixer-strip 0 5))
+  (define border-width 2)
+  
+  (define bsize (if is-standalone-mixer-strip 0 border-width))
   
   (define gui (<gui> :vertical-layout)) ;; min-width height))
   (<gui> :set-layout-spacing gui 5 bsize bsize bsize bsize)
@@ -1845,7 +1856,7 @@
          (lambda (width height)
            ;;(set-fixed-height volume-gui (floor (/ height 2)))
            (<gui> :filled-box gui background-color 0 0 width height 0 0)
-           (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip)
+           (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip bsize)
            #t
            )
          )
@@ -1912,7 +1923,7 @@
                                                              (= state *is-pressing*))
                                                         (begin (if (<ra> :shift-pressed)
                                                                    (<ra> :delete-instrument instrument-id)
-                                                                   (create-default-mixer-path-popup instrument-id strips-config mixer-strip-path-gui))
+                                                                   (create-default-mixer-path-popup instrument-id strips-config mixer-strip-path-gui bsize))
                                                                #t)
                                                         #f)))
 
@@ -1930,7 +1941,7 @@
   (add-safe-paint-callback gui
                            (lambda (width height)
                              (<gui> :filled-box gui background-color 0 0 width height 0 0)
-                             (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip)))
+                             (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip bsize)))
   
   gui)
 

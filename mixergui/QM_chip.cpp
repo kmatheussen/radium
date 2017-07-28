@@ -1642,7 +1642,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     //    if(is_current_patch==true){
       //}
     if (is_current_patch) { ///is_current_patch) {
-      QColor c = get_qcolor(CURSOR_EDIT_ON_COLOR_NUM);
+      QColor c = get_qcolor(MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM);
       c.setAlpha(150);
       painter->setPen(QPen(c, 3));
       painter->drawRoundedRect(x1-1,y1-1,x2-x1+1,y2-y1+1,7,7);

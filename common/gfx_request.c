@@ -106,7 +106,7 @@ char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *
 	if(reqtype==NULL){
           file=GFX_OpenReq(tvisual,(int)strlen(text)+10,4,"");
 	}else{
-		file=reqtype;
+          file=reqtype;
 	}
 
 	if(file==0){
