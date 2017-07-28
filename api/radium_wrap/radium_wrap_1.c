@@ -14,8 +14,6 @@
 
 #include "Python.h"
 
-#include <float.h>
-
 #define SWIGPYTHON
 /***********************************************************************
  * common.swg

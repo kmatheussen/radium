@@ -288,7 +288,7 @@ class Proto:
             return
         if self.uses_func:
             return
-        
+
         oh.write("static PyObject *_wrap_"+self.proc.varname)
         if self.defaults==true:
             oh.write("(PyObject *self,PyObject *args,PyObject *keywds){\n")

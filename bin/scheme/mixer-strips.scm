@@ -664,7 +664,8 @@
                         (<ra> :set-current-instrument instrument-id #f)))
                 "Rename" (lambda ()
                            (define old-name (<ra> :get-instrument-name instrument-id))
-                           (define new-name (<ra> :request-string "New name:" #t))
+                           (define new-name (<ra> :request-string "New name:" #t old-name))
+                           (c-display "NEWNAME" (<-> "-" new-name "-"))
                            (if (and (not (string=? new-name ""))
                                     (not (string=? new-name old-name)))
                                (<ra> :set-instrument-name new-name instrument-id)))
@@ -742,7 +743,7 @@
     (if (= (<ra> :get-current-instrument) instrument-id)
         (let* ((w 1.2)
                (w*2 (* w 3)))
-          (<gui> :draw-box widget "#aa111144" w w (- width 2) (- height 2) w*2 5 5))
+          (<gui> :draw-box widget *current-mixer-strip-border-color* w w (- width 2) (- height 2) w*2 5 5)) ;; "#aa111144"
         (<gui> :draw-box widget "gray"      0 0 width height 0.8 5 5))
   
     (define text (<-> instrument-name ": " (get-value-text value)))
@@ -750,7 +751,7 @@
       (<ra> :set-statusbar-text text)
       (<gui> :tool-tip text))
     (<gui> :draw-text widget *text-color* text
-           4 2 width height))
+           4 0 (- width 4) height))
 
   (set! widget (<gui> :horizontal-slider "" 0 (get-scaled-value) 1.0
                       (lambda (val)
@@ -1687,10 +1688,15 @@
                                                 #t)
                                                ((and (= button *left-button*)
                                                      (= state *is-pressing*))
+                                                (define old-volume (let ((v (two-decimal-string (get-volume))))
+                                                                     (if (or (string=? v "-0.0")
+                                                                             (string=? v "-0.00"))
+                                                                         "0.00"
+                                                                         v)))
                                                 (let ((maybe (<gui> :requester-operations
-                                                                    (<-> "Set new volume (dB) for " (<ra> :get-instrument-name instrument-id) ". Current volume: " (db-to-text (get-volume) #f) "")
+                                                                    (<-> "Set new volume for " (<ra> :get-instrument-name instrument-id))
                                                                     (lambda ()
-                                                                      (<ra> :request-float "New volume: " *min-db* *max-db*)))))
+                                                                      (<ra> :request-float "dB: " *min-db* *max-db* #f old-volume)))))
                                                   (when (>= maybe *min-db*)
                                                     (<ra> :undo-instrument-effect instrument-id effect-name)
                                                     (<ra> :set-instrument-effect instrument-id effect-name (scale maybe *min-db* *max-db* 0 1))))
@@ -1779,13 +1785,14 @@
                                                 #f)))
   comment-edit)
 
-(define *mixer-strip-border-color* "#bb222222")
+(define-constant *mixer-strip-border-color* "#bb222222")
+(define-constant *current-mixer-strip-border-color* "#bb111166")
 
 (define (draw-mixer-strips-border gui width height instrument-id is-standalone-mixer-strip)
   ;;(c-display "    Draw mixer strips border called for " instrument-id)
   (if (= (<ra> :get-current-instrument) instrument-id)
       (if (not is-standalone-mixer-strip)
-          (<gui> :draw-box gui "#bb111166" 0 0 width height 10 3 3))
+          (<gui> :draw-box gui *current-mixer-strip-border-color* 0 0 width height 10 3 3))
       ))
 ;;      (<gui> :draw-box gui *mixer-strip-border-color* 0 0 width height 2 3 3)))
 

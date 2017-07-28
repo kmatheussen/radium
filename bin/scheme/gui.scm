@@ -275,8 +275,10 @@
   (<ra> :open-requester text)
   (try-finally :try block
                :finally (lambda ()
-                          (c-display "CLOSE REQ")
-                          (<ra> :close-requester))))
+                          (let ((safe-to-close (<ra> :safe-to-call-close-requester)))
+                            (c-display "CLOSING REQ. Safe: " safe-to-close)
+                            (if safe-to-close
+                                (<ra> :close-requester))))))
 
 (define (disable-gui-updates-block gui block)
   (<gui> :disable-updates gui)

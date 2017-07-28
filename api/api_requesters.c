@@ -144,15 +144,24 @@ void closeRequester(void){
         GFX_CloseReq(window, g_requester);
         g_requester = NULL;
       }else
-        handleError("closeRequester: calling closeRequester while still doing request. Tip: Use isDoingRequest() to find out whether you are currently doing a request");
+        handleError("closeRequester: calling closeRequester while still doing request. Tip: Use safeToCallCloseRequester()");
     }else{
       R_ASSERT(false);
     }
   }
 }
 
-bool isDoingRequest(void){
-  return g_num_req_requests > 0;
+bool safeToCallCloseRequester(void){
+  if (g_req_counter==1)
+    return g_num_req_requests==0;
+
+  else if (g_req_counter > 1)
+    return true;
+
+  else{
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
 }
 
 #define PREREQ(Retval)                                                  \
@@ -172,7 +181,11 @@ bool isDoingRequest(void){
   } else                                                                \
     requester = g_requester;                                            \
                                                                         \
-  g_num_req_requests++
+  g_num_req_requests++;                                                 \
+                                                                        \
+  if (strcmp(default_value, ""))                                        \
+    GFX_SetString(requester, default_value);
+
 
 #define POSTREQ(ret)                            \
   g_num_req_requests--;                         \
@@ -180,12 +193,9 @@ bool isDoingRequest(void){
     GFX_CloseReq(window, requester);
 
 
-int requestInteger(const_char *text, int min, int max, bool standalone, int default_value){
+int requestInteger(const_char *text, int min, int max, bool standalone, const char *default_value){
   PREREQ(min-1);
   
-  if (default_value > INT_MIN)
-    GFX_SetString(requester, talloc_format("%d", default_value));
-
   int ret = GFX_GetInteger(NULL, g_requester, text, min, max, true);
 
   POSTREQ();
@@ -193,11 +203,8 @@ int requestInteger(const_char *text, int min, int max, bool standalone, int defa
   return ret;
 }
 
-float requestFloat(const_char *text, float min, float max, bool standalone, float default_value){
+float requestFloat(const_char *text, float min, float max, bool standalone, const_char *default_value){
   PREREQ(min-1);
-
-  if (default_value > FLT_MIN)
-    GFX_SetString(requester, OS_get_string_from_double(default_value));
 
   float ret = GFX_GetFloat(NULL, g_requester, text, min, max, true);
   
@@ -208,9 +215,6 @@ float requestFloat(const_char *text, float min, float max, bool standalone, floa
 
 const_char* requestString(const_char *text, bool standalone, const_char* default_value){
   PREREQ("");
-
-  if (strcmp(default_value, ""))
-    GFX_SetString(requester, default_value);
 
   char *ret = GFX_GetString(window, requester, text, true);
     

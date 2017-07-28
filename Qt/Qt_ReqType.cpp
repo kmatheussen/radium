@@ -326,7 +326,7 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
     while(edit->gotit==false){
       // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
       GL_lock();{
-        QApplication::processEvents(QEventLoop::ExcludeSocketNotifiers);
+        QApplication::processEvents(QEventLoop::ExcludeSocketNotifiers); // ExcludeSocketNotifiers doesn't seem to work.
       }GL_unlock();
 
 
@@ -334,7 +334,7 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
       //
       if (reqtype->frame==NULL){
 #if !defined(RELEASE)
-        fprintf(stderr, "\n\n\n  REQTYPE->FRAM == NULL (press return to continue)\n\n\n");
+        fprintf(stderr, "\n\n\n  REQTYPE->FRAME == NULL (press return to continue)\n\n\n");
         getchar();
 #endif
         init_reqtype(reqtype); // recreate the frame, for next time.
