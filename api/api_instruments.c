@@ -59,6 +59,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_instruments_proc.h"
 
 #include "../common/patch_proc.h"
+#include "../common/undo_patchname_proc.h"
 #include "../common/instruments_proc.h"
 #include "../common/settings_proc.h"
 
@@ -596,6 +597,9 @@ void setInstrumentName(const_char *name, int64_t instrument_id) {
     return;
 
   if (strcmp(name, patch->name)){
+
+    ADD_UNDO(PatchName_CurrPos(patch));
+    
     PATCH_set_name(patch, name);
     patch->name_is_edited = true;
     
