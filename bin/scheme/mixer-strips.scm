@@ -879,14 +879,58 @@
   (<gui> :add gui slider))
 
 
+(define (get-mixer-strip-send-horiz gui)
+  (define horiz (<gui> :horizontal-layout))
+  (<gui> :set-layout-spacing horiz 1 1 0 1 0)
+
+  (define text-gui #f)
+
+  (define background-color (<gui> :get-background-color gui))
+  
+  (define text-gui (<gui> :text *arrow-text*))
+  (define width (floor (* 1.5 (<gui> :text-width *arrow-text*))))
+  
+  #||
+  (define text-checkbox (create-custom-checkbox (lambda (gui is-selected with height)
+                                                  (<gui> :filled-box
+                                                         gui
+                                                         background-color
+                                                         0 0 width height)
+                                                  (<gui> :draw-text gui *text-color* *arrow-text* 0 0 width height #f))
+                                                (lambda (is-selected)
+                                                  #t)
+                                                (lambda ()
+                                                  #t)))
+  
+  (define width (floor (* 2 (<gui> :text-width *arrow-text*))))
+  
+  (set! text-gui (cadr text-checkbox))
+  (define set-text-func (car text-checkbox)) 
+
+ ||#
+  
+  (<gui> :set-min-width text-gui width)
+  (<gui> :set-max-width text-gui width)
+  
+  (<gui> :set-size-policy text-gui #f #t)
+  (<gui> :add horiz text-gui)
+
+  (<gui> :add gui horiz)
+
+  horiz)
+
+
+
 ;; A sink plugin. For instance "System Out".
 (define (create-mixer-strip-sink-plugin gui first-instrument-id parent-instrument-id instrument-id strips-config)
 
+  (define horiz (get-mixer-strip-send-horiz gui))
+  
   (define (make-undo)
     (<ra> :undo-instrument-effect instrument-id "System In"))
     
   (define (delete)
-    (<gui> :hide slider)
+    (<gui> :hide horiz)
     (<ra> :undo-mixer-connections)
     (<ra> :delete-audio-connection parent-instrument-id instrument-id)
     #f)
@@ -928,7 +972,7 @@
                                parent-instrument-id
                                instrument-id
                                strips-config
-                               #f #t
+                               #t #t
 
                                make-undo
 
@@ -962,49 +1006,10 @@
                               (<gui> :set-value slider new-value)
                               (set! doit #t))))
 
-  (<gui> :add gui slider))
-
-
-
-(define (get-mixer-strip-send-horiz gui)
-  (define horiz (<gui> :horizontal-layout))
-  (<gui> :set-layout-spacing horiz 1 1 0 1 0)
-
-  (define text-gui #f)
-
-  (define background-color (<gui> :get-background-color gui))
-  
-  (define text-gui (<gui> :text *arrow-text*))
-  (define width (floor (* 1.5 (<gui> :text-width *arrow-text*))))
-  
-  #||
-  (define text-checkbox (create-custom-checkbox (lambda (gui is-selected with height)
-                                                  (<gui> :filled-box
-                                                         gui
-                                                         background-color
-                                                         0 0 width height)
-                                                  (<gui> :draw-text gui *text-color* *arrow-text* 0 0 width height #f))
-                                                (lambda (is-selected)
-                                                  #t)
-                                                (lambda ()
-                                                  #t)))
-  
-  (define width (floor (* 2 (<gui> :text-width *arrow-text*))))
-  
-  (set! text-gui (cadr text-checkbox))
-  (define set-text-func (car text-checkbox)) 
-
- ||#
-  
-  (<gui> :set-min-width text-gui width)
-  (<gui> :set-max-width text-gui width)
-  
-  (<gui> :set-size-policy text-gui #f #t)
-  (<gui> :add horiz text-gui)
-
-  (<gui> :add gui horiz)
-
+  (<gui> :add horiz slider)
   horiz)
+
+
 
 (define (create-mixer-strip-send gui
                                  first-instrument-id
