@@ -36,26 +36,6 @@ static int scale_int(int x, int x1, int x2, int y1, int y2){
   return (int)scale((float)x,(float)x1,(float)x2,(float)y1,(float)y2);
 }
 
-/*
-static float gain2db(float val){
-  if(val<=0.0f)
-    return -100.0f;
-
-  return 20*log10(val);
-}
-*/
-
-/*
-static float db2linear(float db){
-  if(db<MIN_DB)
-    return 0.0f;
-  else if(db>MAX_DB)
-    return 1.0f;
-  else
-    return scale(db,MIN_DB,MAX_DB,0.0f,1.0f);
-}
-*/
-
 #if 0
 // Function iec_scale picked from meterbridge by Steve Harris.
 // db is a value between 0 and 1.

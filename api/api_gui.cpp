@@ -226,15 +226,6 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 
 
-/*
-static float gain2db(float val){
-  if(val<=0.0f)
-    return -100.0f;
-
-  return 20*log10(val);
-}
-*/
-
 static QColor getQColor(int64_t color){
 #if QT_VERSION >= 0x056000
   return QColor(QRgba64::fromRgba64(color));

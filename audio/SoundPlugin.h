@@ -19,14 +19,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef AUDIO_SOUNDPLUGIN_H
 #define AUDIO_SOUNDPLUGIN_H
 
+#include <math.h>
+
 #include "../common/hashmap_proc.h"
 #include "Smooth_proc.h"
 
-/*
-  get_effect_value / set_effect value is screwed up.
-  All the horrible code and hacks stems from the bad decision of scaling values between 0 and 1.
-  This must be fixed.
- */
 
 
 #ifdef __cplusplus
@@ -44,10 +41,54 @@ extern "C"{
 #define NOTUSED_EFFECT_NAME "NOTUSED"
 
 // Used by the volume sliders and peak meters.
-#define MIN_DB -40
-#define MAX_DB 35
+#define MIN_DB -40           // "gain value" = 0.0. "scaled effect value" = 0.0.
+#define MIN_DB_THRESHOLD -35 // "gain_value" = 0.01778279410038923. Between MIN_DB and MIN_DB_THRESHOLD, we do linear gain<->db conversion. "scaled effect value" = 0.06666666666666667.
+#define MAX_DB 35            // "gain value" = 56.23413251903491. "scaled effect value" = 1.0.
+  
 
+static inline float gain2db(float gain){
+  if(gain<=0.0f)
+    return MIN_DB;
 
+  const float threshold_gain  = powf(10,
+                                     MIN_DB_THRESHOLD / 20.0f);
+
+  if (gain <= threshold_gain) {
+
+    // We need to do linear conversion below MIN_DB_THRESHOLD here in order to convert back and forth between gain2db and db2gain correctly. (that's probably the only reason)
+    
+    return scale(gain, 0, threshold_gain, MIN_DB, MIN_DB_THRESHOLD);
+    
+  } else {
+    
+    return 20*log10(gain);
+    
+  }
+}
+
+static inline float db2gain(float db){
+  if (db <= MIN_DB_THRESHOLD){
+
+    // do linear scale down to zero when db is less than -35 (if not, we won't get 0 gain)
+    
+    if (db <= MIN_DB)
+      return 0.0f;
+    
+    const float threshold_gain  = powf(10,
+                                       MIN_DB_THRESHOLD / 20.0f);
+    
+    return scale(db, MIN_DB, MIN_DB_THRESHOLD, 0, threshold_gain);
+    
+  }else{
+    
+    if (db > MAX_DB)
+      db = MAX_DB;
+    
+    return powf(10, db / 20.0f);
+  }
+}
+
+  
 #define NUM_AB 8
   
 enum{

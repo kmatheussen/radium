@@ -1,47 +1,4 @@
 
-#define MIN_DB_THRESHOLD -35
-
-static inline float gain2db(float gain){
-  if(gain<=0.0f)
-    return -100.0f;
-
-  const float threshold_gain  = powf(10,
-                                     MIN_DB_THRESHOLD / 20.0f);
-
-  if (gain <= threshold_gain) {
-
-    // We need to do linear conversion below MIN_DB_THRESHOLD here in order to convert back and forth between gain2db and db2gain correctly. (that's probably the only reason)
-    
-    return scale(gain, 0, threshold_gain, MIN_DB, MIN_DB_THRESHOLD);
-    
-  } else {
-    
-    return 20*log10(gain);
-    
-  }
-}
-
-static inline float db2gain(float db){
-  if (db <= MIN_DB_THRESHOLD){
-
-    // do linear scale down to zero when db is less than -35 (if not, we will never get 0 gain)
-    
-    if (db <= MIN_DB)
-      return 0.0f;
-    
-    const float threshold_gain  = powf(10,
-                                       MIN_DB_THRESHOLD / 20.0f);
-    
-    return scale(db, MIN_DB, MIN_DB_THRESHOLD, 0, threshold_gain);
-    
-  }else{
-    
-    if (db > MAX_DB)
-      db = MAX_DB;
-    
-    return powf(10, db / 20.0f);
-  }
-}
 
 
 static inline float db2linear(float db, float y1, float y2){

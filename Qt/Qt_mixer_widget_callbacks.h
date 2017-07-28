@@ -328,7 +328,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     if (_mixer_strips_gui >= 0){
 
       int new_num_rows = gui_getNumRowsInMixerStrips(_mixer_strips_gui);
-      if (new_num_rows != _num_rows){        
+      if (new_num_rows != _num_rows){
 
         initing = true;{
 
