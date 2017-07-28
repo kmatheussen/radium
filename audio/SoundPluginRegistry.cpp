@@ -489,6 +489,8 @@ const QVector<PluginMenuEntry> PR_get_menu_entries(void){
     for (const auto &hepp : favourites->hepps){
       
       if (hepp.type_name == "VST" ||
+          hepp.type_name == "VST3" ||
+          hepp.type_name == "AU" ||
           hepp.type_name == "Ladspa" ||
           hepp.type_name == "Pd" ||
           hepp.name.startsWith("STK ")
