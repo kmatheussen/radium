@@ -311,7 +311,9 @@
 ;; Finds the next plugin in a plugin path. 'instrument-id' is the plugin to start searching from.
 (define-instrument-memoized (find-next-plugin-instrument-in-path instrument-id)
   (let loop ((out-instruments (reverse (sort-instruments-by-mixer-position
-                                        (get-instruments-connecting-from-instrument instrument-id)))))
+                                        (remove (lambda (id)
+                                                  (<ra> :instrument-is-permanent id))
+                                                (get-instruments-connecting-from-instrument instrument-id))))))
     (if (null? out-instruments)
         #f
         (let ((out-instrument (car out-instruments)))
