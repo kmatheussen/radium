@@ -2014,52 +2014,43 @@ bool MetaPressed(void){
   return QApplication::keyboardModifiers() & Qt::MetaModifier;
 }
 
-void SetNormalPointer(struct Tracker_Windows *tvisual){
-  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  main_window->setCursor(Qt::ArrowCursor);
+static void setCursor(int64_t guinum, const QCursor &cursor){
+  R_ASSERT_RETURN_IF_FALSE(guinum>=0);
+  
+  QWidget *widget = API_gui_get_widget(guinum);
+
+  R_ASSERT(!widget->isWindow(); // Can have this assertion since we currently have no such calls. If it happens, it will cause the mouse cursor to be stuck in this mode.
+    
+  if (widget != NULL)
+    widget->setCursor(cursor);
 }
-void SetPointingPointer(struct Tracker_Windows *tvisual){
-  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  main_window->setCursor(Qt::PointingHandCursor);
+
+void SetNormalPointer(int64_t guinum){
+  setCursor(guinum, Qt::ArrowCursor);
 }
-void SetOpenHandPointer(struct Tracker_Windows *tvisual){
-  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  main_window->setCursor(Qt::OpenHandCursor);
+void SetPointingPointer(int64_t guinum){
+  setCursor(guinum, Qt::PointingHandCursor);
 }
-void SetClosedHandPointer(struct Tracker_Windows *tvisual){
-  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  main_window->setCursor(Qt::ClosedHandCursor);
+void SetOpenHandPointer(int64_t guinum){
+  setCursor(guinum, Qt::OpenHandCursor);
 }
-void SetBlankPointer(struct Tracker_Windows *tvisual){
-  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  main_window->setCursor(Qt::BlankCursor);
+void SetClosedHandPointer(int64_t guinum){
+  setCursor(guinum, Qt::ClosedHandCursor);
 }
-void SetDiagResizePointer(struct Tracker_Windows *tvisual){
-  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  main_window->setCursor(Qt::SizeFDiagCursor);
+void SetBlankPointer(int64_t guinum){
+  setCursor(guinum, Qt::BlankCursor);
 }
-void SetHorizResizePointer(struct Tracker_Windows *tvisual){
-  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  //printf("      1. Setting HorizResizeCursor\n");
-  main_window->setCursor(Qt::SizeHorCursor);
+void SetDiagResizePointer(int64_t guinum){
+  setCursor(guinum, Qt::SizeFDiagCursor);
 }
-void SetHorizSplitPointer(struct Tracker_Windows *tvisual){
-  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  //printf("      2. Setting SplitHCursor\n");
-  main_window->setCursor(Qt::SplitHCursor);
+void SetHorizResizePointer(int64_t guinum){
+  setCursor(guinum, Qt::SizeHorCursor);
 }
-void SetVerticalResizePointer(struct Tracker_Windows *tvisual){
-  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
-  main_window->setCursor(Qt::SizeVerCursor);
+void SetHorizSplitPointer(int64_t guinum){
+  setCursor(guinum, Qt::SplitHCursor);
+}
+void SetVerticalResizePointer(int64_t guinum){
+  setCursor(guinum, Qt::SizeVerCursor);
 }
 void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;

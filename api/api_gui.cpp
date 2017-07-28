@@ -2666,10 +2666,18 @@ static Gui *get_gui_maybeclosed(int64_t guinum){
 
 static Gui *get_gui(int64_t guinum){
 
-  if (guinum==-1 || guinum==-2){
+  if (guinum==-4) {
+    
+    QWidget *parent = QApplication::widgetAt(QCursor::pos());
+    if (parent != NULL)
+      guinum = API_get_gui_from_widget(parent);
+    
+  } else if (guinum < 0) {
+    
     QWidget *parent = API_gui_get_parentwidget(NULL, guinum);
     if (parent != NULL)
       guinum = API_get_gui_from_existing_widget(parent);
+    
   }
 
   Gui *gui = get_gui_maybeclosed(guinum);
@@ -2796,6 +2804,17 @@ int64_t API_get_gui_from_existing_widget(QWidget *widget){
 int64_t gui_getMainXSplitter(void){
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   return API_get_gui_from_existing_widget(editor->xsplitter);
+}
+
+int64_t gui_getEditorGui(void){
+  static int64_t guinum = -100;
+
+  if (guinum==-100){
+    EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+    guinum = API_get_gui_from_existing_widget(editor);
+  }
+
+  return guinum;
 }
 
 int64_t gui_getSequencerGui(void){
@@ -4633,6 +4652,9 @@ QWidget *API_gui_get_parentwidget(QWidget *child, int64_t parentnum){
   
   else if (parentnum==-3)
     parent = NULL;
+
+  else if (parentnum==-4)
+    parent = QApplication::widgetAt(QCursor::pos());
   
   else {    
     Gui *parentgui = get_gui(parentnum);

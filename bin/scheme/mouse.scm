@@ -392,10 +392,12 @@
 ;;  (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pianonotenum tracknum)))))
 
 (define2 mouse-pointer-has-been-set boolean? #f)
-(define (set-mouse-pointer func)
+(define2 mouse-pointer-guinum number? -4)
+(define (set-mouse-pointer func guinum)
   ;;(c-display "setting to" func)
   (set! mouse-pointer-has-been-set #t)
-  (func)
+  (set! mouse-pointer-guinum guinum)
+  (func guinum)
   )
 
 ;; TODO: block->is_dirty is set unnecessarily often to true this way.
@@ -488,7 +490,7 @@
            (set! *current-mouse-cycle* #f)
            (run-mouse-move-handlers $button $x $y)
            (cancel-current-stuff)
-           (<ra> :set-normal-mouse-pointer)
+           ;;(<ra> :set-normal-mouse-pointer)
            #t)
          #f))))
 
@@ -715,6 +717,7 @@
                                   :Create-button #f
                                   :Use-Place #t
                                   :Mouse-pointer-func #f
+                                  :Get-guinum (lambda () (<gui> :get-editor-gui))
                                   )
   
   (define-struct node
@@ -736,7 +739,7 @@
                                    (if Mouse-pointer-func
                                        (set! *mouse-pointer-is-currently-hidden* #f)
                                        (set! *mouse-pointer-is-currently-hidden* #t))
-                                   (set-mouse-pointer (or Mouse-pointer-func ra:set-blank-mouse-pointer))
+                                   (set-mouse-pointer (or Mouse-pointer-func ra:set-blank-mouse-pointer) (Get-guinum))
                                    (make-node :node-info Node-info
                                               :value Value
                                               :y Node-y
@@ -760,7 +763,7 @@
                             (if Mouse-pointer-func
                                 (set! *mouse-pointer-is-currently-hidden* #f)
                                 (set! *mouse-pointer-is-currently-hidden* #t))
-                            (set-mouse-pointer (or Mouse-pointer-func ra:set-blank-mouse-pointer))
+                            (set-mouse-pointer (or Mouse-pointer-func ra:set-blank-mouse-pointer) (Get-guinum))
                             (make-node :node-info Node-info
                                        :value Value
                                        :y Y)))))
@@ -850,7 +853,8 @@
                                   :Release #f
                                   :Move
                                   :Publicize
-                                  :Mouse-pointer-func #f)
+                                  :Mouse-pointer-func #f
+                                  :Get-guinum (lambda () (<gui> :get-editor-gui)))
  
   (define-struct info
     :handler-data
@@ -907,49 +911,49 @@
          ;;(c-display X Y (box-to-string (get-seqnav-move-box)))
          (cond ((and *current-track-num*
                      (inside-box (<ra> :get-box track-pan-slider *current-track-num*) X Y))
-                (set-mouse-pointer ra:set-horizontal-split-mouse-pointer)
+                (set-mouse-pointer ra:set-horizontal-split-mouse-pointer (<gui> :get-editor-gui))
                 (show-track-pan-in-statusbar *current-track-num*))
                
                ((and *current-track-num*
                      (inside-box (<ra> :get-box track-volume-slider *current-track-num*) X Y))
-                (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
+                (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer (<gui> :get-editor-gui))
                 (show-track-volume-in-statusbar *current-track-num*))
                
                ((inside-box (<ra> :get-box reltempo-slider) X Y)
-                (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer)
+                (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer (<gui> :get-editor-gui))
                 (show-reltempo-in-statusbar))
                
                ((and *current-track-num*
                      (inside-box (<ra> :get-box track-pan-on-off *current-track-num*) X Y))
-                (set-mouse-pointer ra:set-pointing-mouse-pointer)
+                (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
                 (<ra> :set-statusbar-text (<-> "Track panning slider " (if (<ra> :get-track-pan-on-off *current-track-num*) "on" "off"))))
                
                ((and *current-track-num*
                      (inside-box (<ra> :get-box track-volume-on-off *current-track-num*) X Y))
-                (set-mouse-pointer ra:set-pointing-mouse-pointer)
+                (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
                 (<ra> :set-statusbar-text (<-> "Track volume slider " (if (<ra> :get-track-volume-on-off *current-track-num*) "on" "off"))))
 
                ((and *current-track-num*
                      (< Y (<ra> :get-track-pan-on-off-y1)))
-                (set-mouse-pointer ra:set-pointing-mouse-pointer)
+                (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
                 (<ra> :set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
 
                ((inside-box (<ra> :get-box sequencer) X Y)
                 (cond ((get-seqblock-info X Y)
-                       (set-mouse-pointer ra:set-open-hand-mouse-pointer)
+                       (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))
                        )
                       ((inside-box (get-seqnav-move-box) X Y)
-                       (set-mouse-pointer ra:set-open-hand-mouse-pointer)
+                       (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))
                        )
                       ((inside-box (<ra> :get-box seqnav-left-size-handle) X Y)
-                       (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer))
+                       (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                       ((inside-box (<ra> :get-box seqnav-right-size-handle) X Y)
-                       (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer))
+                       (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                       (else
-                       (<ra> :set-normal-mouse-pointer))))
+                       (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui)))))
                
                ((not *current-track-num*)
-                (set-mouse-pointer ra:set-pointing-mouse-pointer))
+                (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui)))
                
                (else
                 ;;(<ra> :set-normal-mouse-pointer)
@@ -1946,8 +1950,8 @@
                                        *pianonote-move-all*)
                                   #f)))
                          )
-                    (set-mouse-pointer ra:set-vertical-resize-mouse-pointer)
-                    (set-mouse-pointer ra:set-pointing-mouse-pointer))))))
+                    (set-mouse-pointer ra:set-vertical-resize-mouse-pointer (<gui> :get-editor-gui))
+                    (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui)))))))
 
 ;; Delete pianonote (shift + right mouse)
 (add-mouse-cycle
@@ -2878,7 +2882,7 @@
                         
                         (trackwidth-info
                          (set! resize-mouse-pointer-is-set #t)
-                         (set-mouse-pointer ra:set-horizontal-split-mouse-pointer))
+                         (set-mouse-pointer ra:set-horizontal-split-mouse-pointer (<gui> :get-editor-gui)))
                         
                         ((and is-in-fx-area velocity-dist-is-shortest)
                          (set-mouse-note *current-note-num* *current-track-num*))
@@ -2898,7 +2902,7 @@
                       *current-track-num*
                       (or (not (<ra> :pianoroll-visible *current-track-num*))
                           (not (inside-box (<ra> :get-box track-pianoroll *current-track-num*) X Y))))
-                 (<ra> :set-normal-mouse-pointer)))
+                 (<ra> :set-normal-mouse-pointer (<gui> :get-editor-gui))))
          result))
 
 
@@ -3045,6 +3049,7 @@
                         
                         :Use-Place #f
                         :Mouse-pointer-func ra:set-normal-mouse-pointer
+                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         :Get-pixels-per-value-unit #f
                         )                        
 
@@ -3583,6 +3588,7 @@
                         :Use-Place #f
 
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
+                        :Get-guinum (lambda() (<gui> :get-sequencer-gui))
                         ;;:Mouse-pointer-func ra:set-blank-mouse-pointer
                         
                         :Get-pixels-per-value-unit (lambda (seqblock-info)
@@ -3716,6 +3722,7 @@
                         :Use-Place #f
 
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
+                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         ;;:Mouse-pointer-func ra:set-blank-mouse-pointer
                         
                         :Get-pixels-per-value-unit (lambda (seqblock-infos)
@@ -3859,7 +3866,7 @@
                       (instrument-name (<ra> :get-instrument-name instrument-id))
                       (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
                       (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
-                 (<ra> :set-normal-mouse-pointer)
+                 (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
                  (<ra> :set-statusbar-text (<-> instrument-name "/" effect-name))
                  (<ra> :set-curr-seq-automation (*current-seqautomation/distance* :seqautomation)
                                                 (*current-seqautomation/distance* :seqtrack)))
@@ -3936,6 +3943,7 @@
                         
                         :Use-Place #f
                         :Mouse-pointer-func ra:set-normal-mouse-pointer
+                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         :Get-pixels-per-value-unit #f
                         )         
 

@@ -773,7 +773,7 @@ public:
     
   virtual void leaveEvent(QEvent * event){
     //fprintf(stderr, "LEAVING\n");
-    setNormalMousePointer(-1);
+    //setNormalMousePointer(-1); // This should not be necessary anymore.
   }
   
   /** Event generated right before the bound OpenGLContext is destroyed. */

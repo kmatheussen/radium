@@ -3004,50 +3004,68 @@ enum MousePointerType {
 };
 */
 
-void setNormalMousePointer(int windownum){
-  struct Tracker_Windows *window = getWindowFromNum(windownum);
-  if (window!=NULL)
-    SetNormalPointer(window);
+void setNormalMousePointer(int64_t guinum){
+  if (guinum<0){
+    handleError("guinum for cursor must be 0 or larger");
+    return;
+  }
+    SetNormalPointer(guinum);
 }
-void setPointingMousePointer(int windownum){
-  struct Tracker_Windows *window = getWindowFromNum(windownum);
-  if (window!=NULL)
-    SetPointingPointer(window);
+void setPointingMousePointer(int64_t guinum){
+  if (guinum<0){
+    handleError("guinum for cursor must be 0 or larger");
+    return;
+  }
+    SetPointingPointer(guinum);
 }
-void setOpenHandMousePointer(int windownum){
-  struct Tracker_Windows *window = getWindowFromNum(windownum);
-  if (window!=NULL)
-    SetOpenHandPointer(window);
+void setOpenHandMousePointer(int64_t guinum){
+  if (guinum<0){
+    handleError("guinum for cursor must be 0 or larger");
+    return;
+  }
+    SetOpenHandPointer(guinum);
 }
-void setClosedHandMousePointer(int windownum){
-  struct Tracker_Windows *window = getWindowFromNum(windownum);
-  if (window!=NULL)
-    SetClosedHandPointer(window);
+void setClosedHandMousePointer(int64_t guinum){
+  if (guinum<0){
+    handleError("guinum for cursor must be 0 or larger");
+    return;
+  }
+    SetClosedHandPointer(guinum);
 }
-void setBlankMousePointer(int windownum){
-  struct Tracker_Windows *window = getWindowFromNum(windownum);
-  if (window!=NULL)
-    SetBlankPointer(window);
+void setBlankMousePointer(int64_t guinum){
+  if (guinum<0){
+    handleError("guinum for cursor must be 0 or larger");
+    return;
+  }
+    SetBlankPointer(guinum);
 }
-void setDiagonalResizeMousePointer(int windownum){
-  struct Tracker_Windows *window = getWindowFromNum(windownum);
-  if (window!=NULL)
-    SetDiagResizePointer(window);
+void setDiagonalResizeMousePointer(int64_t guinum){
+  if (guinum<0){
+    handleError("guinum for cursor must be 0 or larger");
+    return;
+  }
+    SetDiagResizePointer(guinum);
 }
-void setHorizontalResizeMousePointer(int windownum){
-  struct Tracker_Windows *window = getWindowFromNum(windownum);
-  if (window!=NULL)
-    SetHorizResizePointer(window);
+void setHorizontalResizeMousePointer(int64_t guinum){
+  if (guinum<0){
+    handleError("guinum for cursor must be 0 or larger");
+    return;
+  }
+    SetHorizResizePointer(guinum);
 }
-void setHorizontalSplitMousePointer(int windownum){
-  struct Tracker_Windows *window = getWindowFromNum(windownum);
-  if (window!=NULL)
-    SetHorizSplitPointer(window);
+void setHorizontalSplitMousePointer(int64_t guinum){
+  if (guinum<0){
+    handleError("guinum for cursor must be 0 or larger");
+    return;
+  }
+    SetHorizSplitPointer(guinum);
 }
-void setVerticalResizeMousePointer(int windownum){
-  struct Tracker_Windows *window = getWindowFromNum(windownum);
-  if (window!=NULL)
-    SetVerticalResizePointer(window);
+void setVerticalResizeMousePointer(int64_t guinum){
+  if (guinum<0){
+    handleError("guinum for cursor must be 0 or larger");
+    return;
+  }
+    SetVerticalResizePointer(guinum);
 }
 
 void moveMousePointer(float x, float y, int windownum){
@@ -3055,6 +3073,7 @@ void moveMousePointer(float x, float y, int windownum){
   if (window!=NULL)
     MovePointer(window, x, y);
 }
+
 float getMousePointerX(int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if (window==NULL)

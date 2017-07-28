@@ -43,15 +43,15 @@ class QDropEvent;
 void handleDropEvent(QString filename, float x);
 #endif
 
-extern LANGSPEC void SetNormalPointer(struct Tracker_Windows *tvisual);
-extern LANGSPEC void SetPointingPointer(struct Tracker_Windows *tvisual);
-extern LANGSPEC void SetOpenHandPointer(struct Tracker_Windows *tvisual);
-extern LANGSPEC void SetClosedHandPointer(struct Tracker_Windows *tvisual);
-extern LANGSPEC void SetBlankPointer(struct Tracker_Windows *tvisual);
-extern LANGSPEC void SetDiagResizePointer(struct Tracker_Windows *tvisual);
-extern LANGSPEC void SetHorizResizePointer(struct Tracker_Windows *tvisual);
-extern LANGSPEC void SetHorizSplitPointer(struct Tracker_Windows *tvisual);
-extern LANGSPEC void SetVerticalResizePointer(struct Tracker_Windows *tvisual);
+extern LANGSPEC void SetNormalPointer(int64_t guinum);
+extern LANGSPEC void SetPointingPointer(int64_t guinum);
+extern LANGSPEC void SetOpenHandPointer(int64_t guinum);
+extern LANGSPEC void SetClosedHandPointer(int64_t guinum);
+extern LANGSPEC void SetBlankPointer(int64_t guinum);
+extern LANGSPEC void SetDiagResizePointer(int64_t guinum);
+extern LANGSPEC void SetHorizResizePointer(int64_t guinum);
+extern LANGSPEC void SetHorizSplitPointer(int64_t guinum);
+extern LANGSPEC void SetVerticalResizePointer(int64_t guinum);
 extern LANGSPEC void MovePointer(struct Tracker_Windows *tvisual, float x, float y);
 extern LANGSPEC WPoint GetPointerPos(struct Tracker_Windows *tvisual);
 
