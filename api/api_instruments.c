@@ -150,6 +150,36 @@ void requestLoadInstrumentPreset(int64_t instrument_id, const_char* instrument_d
   S7CALL2(void_int_charpointer_int,"async-load-instrument-preset", instrument_id, instrument_description, parentgui);
 }
 
+void saveInstrumentPreset(dyn_t instrument_ids, int64_t parentgui){
+  if (instrument_ids.type != ARRAY_TYPE){
+    handleError("saveInstrumentPreset: Excpected array as first argument, found %s", DYN_type_name(instrument_ids.type));
+    return;
+  }
+  dynvec_t *dynvec = instrument_ids.array;
+
+  if (dynvec->num_elements<1){
+    handleError("saveInstrumentPreset: \"instrument_ids\" is an empty array");
+    return;
+  }
+
+  vector_t patches = {};
+
+  for(int i=0;i<dynvec->num_elements;i++){
+    
+    if (dynvec->elements[i].type != INT_TYPE){
+      handleError("saveInstrumentPreset: Element #%d is not an instrument id. Found: %s", i, DYN_type_name(dynvec->elements[i].type));
+      return;
+    }
+    
+    struct Patch *patch = getPatchFromNum(dynvec->elements[i].int_number);
+    if(patch==NULL)
+      return;
+    
+    VECTOR_push_back(&patches, patch);
+  }
+
+  PRESET_save(&patches, false, parentgui);
+}
 
 int64_t getInstrumentForTrack(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;

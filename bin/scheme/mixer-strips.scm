@@ -61,35 +61,41 @@
 
 
 (define (get-global-mixer-strips-popup-entries instrument-id strips-config)
-  (list (list "Hide mixer strip" :enabled (and instrument-id strips-config)
-              (lambda ()
-                (set! (strips-config :is-enabled instrument-id) #f)))
-        (list "Configure mixer strips on/off" :enabled strips-config
+  (list
+
+   (list "Hide mixer strip" :enabled (and instrument-id strips-config)
+         (lambda ()
+           (set! (strips-config :is-enabled instrument-id) #f)))
+   (list "Configure mixer strips on/off" :enabled strips-config
               (lambda ()
                 (strips-config :show-config-gui)))
-        "----------"
-        (if strips-config
-            (list "Set number of rows"
-                  (lambda ()
-                    (define num-rows-now (strips-config :num-rows))
-                    (popup-menu (map (lambda (num-rows)
-                                       (list (number->string num-rows)
-                                             :enabled (not (= num-rows num-rows-now))
-                                             (lambda ()
-                                               (set! (strips-config :num-rows) num-rows))))
-                                     (map 1+ (iota 6))))))
-            '())
-        "----------"
-        "Help" (lambda ()
-                 (<ra> :show-mixer-help-window))
-        "Set current instrument" (lambda ()
-                                   (popup-menu (map (lambda (instrument-id)
-                                                      (list (<ra> :get-instrument-name instrument-id)
-                                                            (lambda ()
-                                                              (<ra> :set-current-instrument instrument-id #f)
-                                                              )))
-                                                    (sort-instruments-by-mixer-position-and-connections 
-                                                     (get-all-audio-instruments)))))))
+   
+   "----------"
+   
+   (if strips-config
+       (list "Set number of rows"
+             (lambda ()
+               (define num-rows-now (strips-config :num-rows))
+               (popup-menu (map (lambda (num-rows)
+                                  (list (number->string num-rows)
+                                        :enabled (not (= num-rows num-rows-now))
+                                        (lambda ()
+                                          (set! (strips-config :num-rows) num-rows))))
+                                (map 1+ (iota 6))))))
+       '())
+   
+   "----------"
+   
+   "Help" (lambda ()
+            (<ra> :show-mixer-help-window))
+   "Set current instrument" (lambda ()
+                              (popup-menu (map (lambda (instrument-id)
+                                                 (list (<ra> :get-instrument-name instrument-id)
+                                                       (lambda ()
+                                                         (<ra> :set-current-instrument instrument-id #f)
+                                                         )))
+                                               (sort-instruments-by-mixer-position-and-connections 
+                                                (get-all-audio-instruments)))))))
 
 
 
@@ -396,6 +402,7 @@
     (dilambda (lambda (keyword . rest)
                 ;;(c-display "THIS called. keyword:" keyword)
                 (case keyword
+                  ((:parent-gui) parentgui)
                   ((:row-num) (confs (car rest) :row-num))
                   ((:is-enabled) (confs (car rest) :is-enabled))
                   ((:is-unique) (confs (car rest) :is-unique))
@@ -601,7 +608,16 @@
               (list "Replace"
                     :enabled replace-func
                     (lambda ()
-                      (replace-func)))
+                      (replace-func)))              
+              "-----------"
+              (list "Load Preset" :enabled instrument-id
+                    :enabled (not (<ra> :instrument-is-permanent instrument-id))
+                    (lambda ()
+                      (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
+              (list "Save Preset" :enabled instrument-id
+                    :enabled (not (<ra> :instrument-is-permanent instrument-id))
+                    (lambda ()
+                      (<ra> :save-instrument-preset (list instrument-id) parentgui)))
               "-----------"
               (list "Insert Plugin"
                     :enabled (or upper-half?

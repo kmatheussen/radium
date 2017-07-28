@@ -972,15 +972,7 @@ static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mous
       Patch *patch = (struct Patch*)plugin->patch;
       R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
 
-      requestReplaceInstrument(patch->id,
-                               "",
-                               createNewInstrumentConf(0,0,false,false,
-                                                       true,
-                                                       CHIP_get_num_in_connections(patch)>0,
-                                                       CHIP_get_num_out_connections(patch)>0,
-                                                       API_get_gui_from_existing_widget(g_mixer_widget->window())
-                                                       )
-                               );
+      requestReplaceInstrument(patch->id, "", API_get_gui_from_existing_widget(g_mixer_widget->window()));
         
       return true;
     }

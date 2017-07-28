@@ -909,15 +909,7 @@ public slots:
   }
 
   void on_replace_button_clicked(){
-    requestReplaceInstrument(_patch->id,
-                             "",
-                             createNewInstrumentConf(0,0,false,false,
-                                                     true,
-                                                     CHIP_get_num_in_connections(_patch)>0,
-                                                     CHIP_get_num_out_connections(_patch)>0,
-                                                     API_get_gui_from_existing_widget(this->window())
-                                                     )
-                             );
+    requestReplaceInstrument(_patch->id, "", API_get_gui_from_existing_widget(this->window()));
   }
     
   void on_reset_button_clicked(){
