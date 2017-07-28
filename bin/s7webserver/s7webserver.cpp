@@ -141,6 +141,10 @@ static void set_s7webserver_current_responder(s7_scheme *sc, S7WebServerResponde
   s7_symbol_set_value(sc, s7_make_symbol(sc, "s7webserver-current-responder"), current_responder);
 }
 
+
+extern s7_pointer RADIUM_SCHEME_eval2(const char *code);
+
+
 void S7WebServerResponder::reply()
 {
   if (s7webserver->very_verbose)
@@ -177,7 +181,8 @@ void S7WebServerResponder::reply()
       // call eval
       set_s7webserver_current_responder(s7, this);
 
-      s7_pointer result = s7_eval_c_string(s7, s7webserver->input_code_so_far.c_str());
+      //s7_pointer result = s7_eval_c_string(s7, s7webserver->input_code_so_far.c_str());
+      s7_pointer result = RADIUM_SCHEME_eval2(s7webserver->input_code_so_far.c_str());
 
       set_s7webserver_current_responder(s7, NULL);
 
