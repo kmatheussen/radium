@@ -1771,7 +1771,7 @@ Pd_plugin.o: audio/Pd_plugin.cpp
 
 WNO_SUGGEST_OVERRIDE=
 
-ifneq (,$(findstring g++,$(CCC)))
+ifneq (,$(findstring g++,$(CC)))
 	WNO_SUGGEST_OVERRIDE += -Wno-suggest-override
 endif
 

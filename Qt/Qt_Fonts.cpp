@@ -147,6 +147,8 @@ void GFX_SetSystemFont(QFont font){
     updateAllFonts(widget, old_font, font);
     widget->update();
   }
+
+  evalScheme("(minimize-lowertab)");
 }
 
 void GFX_ConfigSystemFont(void){
