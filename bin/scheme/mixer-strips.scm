@@ -535,6 +535,7 @@
                      (lambda ()
                        (callback (lambda (gain changes)
                                    (undo-block (lambda ()
+                                                 ;;(c-display "GAIN: " gain ", db: " *min-db* (<ra> :gain-to-db gain) *max-db*)
                                                  (<ra> :undo-instrument-effect instrument-id bus-onoff-effect-name)
                                                  (if gain
                                                      (<ra> :undo-instrument-effect instrument-id bus-effect-name))
@@ -885,8 +886,11 @@
     (<ra> :undo-instrument-effect instrument-id "System In"))
     
   (define (delete)
-    (<ra> :delete-instrument instrument-id))
-
+    (<gui> :hide slider)
+    (<ra> :undo-mixer-connections)
+    (<ra> :delete-audio-connection parent-instrument-id instrument-id)
+    #f)
+  
   (define (replace)
     ;;(c-display "   name: " (<ra> :get-instrument-name parent-instrument-id))
     ;;(for-each (lambda (id)
@@ -2145,7 +2149,9 @@
   :is-full-screen #f
   :pos #f)
 
-(define *mixer-strips-objects* '())
+(define *mixer-strips-objects* (if *is-initializing*
+                                   '()
+                                   *mixer-strips-objects*))
 
 (delafina (create-mixer-strips-gui :num-rows 1
                                    :instrument-ids #f
