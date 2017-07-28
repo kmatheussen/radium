@@ -110,58 +110,116 @@ const char *getSaveFilename(const_char *text, const_char *filetypes, const_char 
     return STRING_get_chars(ret);
 }
 
+static int g_req_counter = 0;       // these two variables shouldn't be necessary, but it's to avoid crash
+static int g_num_req_requests = 0;  // if opening several requesters at the same time or closing the requester while waiting for the result of a request. (need to make the requesters async)
 
 static ReqType g_requester = NULL;
 
 void openRequester(const_char *text, int width, int height){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
-  g_requester = GFX_OpenReq(window,width,height,text);
+  g_req_counter++;
+
+  if(g_requester == NULL) {
+    R_ASSERT(g_req_counter==1);
+    g_requester = GFX_OpenReq(window,width,height,text);    
+  }else
+    R_ASSERT(g_req_counter!=1);
 }
 
 void closeRequester(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
 
-  if(g_requester!=NULL){
-    GFX_CloseReq(window, g_requester);
-    g_requester = NULL;
+  if (g_req_counter <= 0){
+    R_ASSERT_NON_RELEASE(g_req_counter==0);
+    handleError("closeRequester: The requester is not open");
+    return;
+  }
+  
+  g_req_counter--;
+
+  if (g_req_counter==0){    
+    if(g_requester!=NULL){
+      if (g_num_req_requests==0){
+        GFX_CloseReq(window, g_requester);
+        g_requester = NULL;
+      }else
+        handleError("closeRequester: calling closeRequester while still doing request. Tip: Use isDoingRequest() to find out whether you are currently doing a request");
+    }else{
+      R_ASSERT(false);
+    }
   }
 }
 
-int requestInteger(const_char *text, int min, int max, bool standalone){
-  if (standalone)
-    return GFX_GetInteger(NULL, g_requester, text, min, max, true);
-
-  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return min-1;
-  return GFX_GetInteger(window, g_requester, text, min, max, true);
+bool isDoingRequest(void){
+  return g_num_req_requests > 0;
 }
 
-float requestFloat(const_char *text, float min, float max, bool standalone){
-  if (standalone)
-    return GFX_GetFloat(NULL, g_requester, text, min, max, true);
+#define PREREQ(Retval)                                                  \
+  struct Tracker_Windows *window=NULL;                                  \
+  if (!standalone){                                                     \
+    window = getWindowFromNum(-1);                                      \
+    if(window==NULL)                                                    \
+      return Retval;                                                    \
+  }                                                                     \
+                                                                        \
+  bool custom_requester = false;                                        \
+  ReqType requester;                                                    \
+                                                                        \
+  if (g_requester==NULL){                                               \
+    requester = GFX_OpenReq(window,100, 100, "");                       \
+    custom_requester = true;                                            \
+  } else                                                                \
+    requester = g_requester;                                            \
+                                                                        \
+  g_num_req_requests++
 
-  struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return min-1.0f;
-  return GFX_GetFloat(window, g_requester, text, min, max, true);
-}
+#define POSTREQ(ret)                            \
+  g_num_req_requests--;                         \
+  if (custom_requester)                         \
+    GFX_CloseReq(window, requester);
 
-const_char* requestString(const_char *text, bool standalone){
-  char *ret;
 
-  if (standalone)
-    ret = GFX_GetString(NULL, g_requester, text, true);
-  else {
-    struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-    ret = GFX_GetString(window, g_requester, text, true);
-  }
+int requestInteger(const_char *text, int min, int max, bool standalone, int default_value){
+  PREREQ(min-1);
+  
+  if (default_value > INT_MIN)
+    GFX_SetString(requester, talloc_format("%d", default_value));
 
-  if(ret==NULL)
-    ret="";
+  int ret = GFX_GetInteger(NULL, g_requester, text, min, max, true);
+
+  POSTREQ();
+  
   return ret;
 }
 
-int requestMenu(const_char *text, PyObject* arguments){
-  handleError("requestMenu not implemented");
-  return 0;
+float requestFloat(const_char *text, float min, float max, bool standalone, float default_value){
+  PREREQ(min-1);
+
+  if (default_value > FLT_MIN)
+    GFX_SetString(requester, OS_get_string_from_double(default_value));
+
+  float ret = GFX_GetFloat(NULL, g_requester, text, min, max, true);
+  
+  POSTREQ();
+  
+  return ret;
+}
+
+const_char* requestString(const_char *text, bool standalone, const_char* default_value){
+  PREREQ("");
+
+  if (strcmp(default_value, ""))
+    GFX_SetString(requester, default_value);
+
+  char *ret = GFX_GetString(window, requester, text, true);
+    
+  if(ret==NULL)
+    ret="";
+
+  POSTREQ();
+  
+  return ret;
 }
 
 int simplePopupMenu(const char *texts){
