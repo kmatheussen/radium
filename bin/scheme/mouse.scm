@@ -952,9 +952,15 @@
                       (else
                        (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui)))))
                
+               ((inside-box (<ra> :get-box track-slider) X Y)
+                (<ra> :set-open-hand-mouse-pointer (<gui> :get-editor-gui)))
+               
+               ((inside-box (<ra> :get-box editor-scrollbar) X Y)
+                (<ra> :set-open-hand-mouse-pointer (<gui> :get-editor-gui)))
+               
                ((not *current-track-num*)
                 (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui)))
-               
+
                (else
                 ;;(<ra> :set-normal-mouse-pointer)
                 ))))
@@ -1106,6 +1112,8 @@
                                 Value)
                         :Publicize (lambda (_)
                                      60)
+
+                        :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
                         )
 
 
@@ -1146,7 +1154,7 @@
                         :Publicize (lambda (Num)
                                      #f)
                         :Use-Place #f
-                        :Mouse-pointer-func ra:set-normal-mouse-pointer
+                        :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
                         :Get-pixels-per-value-unit #f ;;(lambda (_)
                                                      ;;1)
                         )                        
