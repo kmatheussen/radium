@@ -2015,41 +2015,50 @@ bool MetaPressed(void){
 }
 
 void SetNormalPointer(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::ArrowCursor);
 }
 void SetPointingPointer(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::PointingHandCursor);
 }
 void SetOpenHandPointer(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::OpenHandCursor);
 }
 void SetClosedHandPointer(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::ClosedHandCursor);
 }
 void SetBlankPointer(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::BlankCursor);
 }
 void SetDiagResizePointer(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::SizeFDiagCursor);
 }
 void SetHorizResizePointer(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
   //printf("      1. Setting HorizResizeCursor\n");
   main_window->setCursor(Qt::SizeHorCursor);
 }
 void SetHorizSplitPointer(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
   //printf("      2. Setting SplitHCursor\n");
   main_window->setCursor(Qt::SplitHCursor);
 }
 void SetVerticalResizePointer(struct Tracker_Windows *tvisual){
-  QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
+  QWidget *main_window = QApplication::widgetAt(QCursor::pos()); if (main_window==NULL) main_window = (QMainWindow *)tvisual->os_visual.main_window;
   main_window->setCursor(Qt::SizeVerCursor);
 }
 void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
