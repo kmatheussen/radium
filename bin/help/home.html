@@ -1,4 +1,27 @@
 <html>
+<head>
+<style>
+table {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+td, th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+}
+
+tr:nth-child(odd) {
+    background-color: #e8e8e8;
+}
+tr:nth-child(even) {
+    background-color: #eeeeee;
+}
+</style>
+</head>
+
   <link rel="stylesheet" type="text/css" href="home.css" media="screen" />
 
   <body bgcolor="#ffffff">
@@ -94,7 +117,7 @@
       <LI> To <b>zoom</b> in or out: Press the <b>Ctrl</b> key and use the <b>Mouse scroll wheel</b>.
         <p></p>
       <LI> To <b>scroll vertically</b>: Use the <b>Mouse scroll wheel</b>.
-      <LI> To <b>scroll horizontally</b>: Press the <b>Shift</b> key and use the <b>Mouse scroll wheel</b>.
+      <LI> To <b>scroll horizontally</b>: Press the <b>Shift</b> key and use the <b>Mouse scroll wheel</b>. (Note: Not in the editor.)
     </UL>
 
     <h3>Terms</h3>
@@ -103,6 +126,83 @@
       <LI><i>Velocity</i> - The volume of a single note.
     </UL>
 
+    <h3>Some common keybindings</h3>
+    <table>
+      <tr>
+        <td>F6</td> <td>Show/hide Editor</td>
+      </tr><tr>
+        <td>F7</td> <td>Show/hide Mixer</td>
+      </tr><tr>
+        <td>F8</td> <td>Show/hide the "Sequencer" tab</td>
+      </tr><tr>
+        <td>F9</td> <td>Show/hide the "Instrument" tab</td>
+      </tr><tr>
+        <td>F10</td> <td>Show/hide the "Edit" tab</td>
+      </tr><tr>
+        <td>F11</td> <td>Switch full screen mode (works for most windows)</td>
+      </tr><tr>
+        <td>F12</td> <td>Select instrument for the current editor track</td>
+      </tr><tr>
+        <td>Left Alt</td><td>Show/hide the menus, and navigate the menus using the keyboard</td>
+      </tr>
+      </tr><tr>
+        <td>Left Ctrl + Z</td><td>Undo</td>
+      </tr>
+
+      <tr>
+      <th>Player</th><th></th>
+      </tr>
+      <tr>
+        <td>Right shift</td><td>Play current block</td>
+      </tr><tr>
+        <td>Right shift + Space</td><td>Play current block from current position</td>
+      </tr><tr>
+        <td>AltGr + Space</td><td>Play song from the beginning</td>
+      </tr><tr>
+        <td>Right Shift + AltGr + Space</td><td>Play song from current position</td>
+      </tr><tr>
+        <td>Space</td><td>Stop player, and tell all instruments to stop playing</td>
+      </tr>
+
+      <tr>
+      <th>Editor</th><th></th>
+      </tr>
+      </tr><tr>
+        <td>Left Ctrl + M</td><td>Fit all content of the editor tracks to the visible area</td>
+      </tr><tr>
+        <td>Left Shift + Up arrow</td><td>Decrease Line Zoom</td>
+      </tr><tr>
+        <td>Left Shift + Down arrow</td><td>Increase Line Zoom</td>
+      </tr><tr>
+        <td>Right Shift + Right Arrow</td><td>Move cursor to the next track</td>
+      </tr><tr>
+        <td>Right Shift + Left Arrow</td><td>Move cursor to the previous track</td>
+      </tr><tr>
+        <td>Left Ctrl + J</td><td>Versatile cursor move</td>
+      </tr><tr>
+        <td>Keypad Enter</td><td>Turn editor track on/off</td>
+      </tr><tr>
+        <td>Left Ctrl + Keypad Enter</td><td>Turn all editor tracks on</td>
+      </tr><tr>
+        <td>Left Alt + Keypad 0,1,2,3,4,5,6,7,8,9</td><td>Solo editor track on/off</td>
+      </tr><tr>
+        <td>Left Shift + Keypad Enter</td><td>Solo current editor track on/off</td>
+      </tr><tr>
+        <td>Keypad 0,1,2,3,4,5,6,7,8,9</td><td>Move cursor to editor track (Holding Left Ctrl selects track 10,11,12,13,14,15,16,17,18,19)</td>
+      </tr><tr>
+        <td>Left Alt + X/C/V</td><td>Cut/Copy/Paste track</td>
+      </tr><tr>
+        <td>Left Ctrl + X/C/V</td><td>Cut/Copy/Paste block</td>
+      </tr><tr>
+        <td>Left Alt + Up Arrow</td><td>Delete line</td>
+      </tr><tr>
+        <td>Left Alt + Down Arrow</td><td>Insert line</td>
+      </tr><tr>
+        <td>Backspace</td><td>Delete line in current track</td>
+      </tr><tr>
+        <td>Left Alt + Backspace</td><td>Insert line in current track</td>
+      </tr>
+    </table>
 
     <h3>Other topics</h3>
     <UL>
