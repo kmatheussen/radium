@@ -88,7 +88,10 @@ F12          : ra.showMixerHelpWindow
   
     <LI> Alphanumeric keys: <b>0</b>, ..., <b>9</b>, and <b>A</b>, ..., <b>Z</b>.
     <p> 
-    <LI> Locale-independent alphanumeric keys (<A href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/KB_Danish.svg/900px-KB_Danish.svg.png">QWERTY</A>): <b>QWERTY_0</b>, ...<b>QWERTY_0</b>, and <b>QWERTY_A</b>, ..., <b>QWERTY_Z</b>.
+    <LI> Locale-independent alphanumeric keys (<A onclick="showHide('qwerty3')" href="#!">QWERTY</A>): <b>QWERTY_0</b>, ...<b>QWERTY_0</b>, and <b>QWERTY_A</b>, ..., <b>QWERTY_Z</b>.
+      <div id="qwerty3" style="display: none">
+        <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
+      </div>
       <p>
    <LI> Name of common non-alphanumeric keys: <b>SPACE</b>, <b>INSERT</b>,
           <b>HOME</b>,
@@ -155,7 +158,10 @@ F12          : ra.showMixerHelpWindow
       <p>
         <LI><b>MENU</b> key: Placed between SPACE and CTRL_R on a PC (the "Windows Menu" key). Mapped to the left "command" key on an Apple keyboard, but not always available.
      <p>
-  <LI> xLx and xRx Keys (<A href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/KB_Danish.svg/900px-KB_Danish.svg.png">QWERTY</A>):
+  <LI> xLx and xRx Keys (<A  onclick="showHide('qwerty4')" href="#!">QWERTY</A>):
+      <div id="qwerty4" style="display: none">
+        <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
+      </div>
   <UL>
     <LI><b>1L1</b>: The key <b>1</b> step to <b>L</b>eft of the key <b>1</b>. (The key below the <b>Esc</b>)
       <p>
@@ -202,6 +208,18 @@ C CTRL_L : ra.evalScheme "(ra:open-about-window)"
 <p>
   Note that any code between the asterisks are executed as python code when Radium starts up. ("import radium as ra" is pure python code). This makes it posssible to add custom functions and classes in a convenient way. You can also load scheme files in this area, for instance by calling <i>ra.evalScheme('(load "C:\Users\Username\.radium\mystuff.scm")')</i>.
   </UL>
+
   
+<script>
+  function showHide(name) {
+    var x = document.getElementById(name);
+    if (x.style.display === 'none') {
+        x.style.display = 'block';
+    } else {
+        x.style.display = 'none';
+    }
+}
+</script>
+
 </body>
  </html>

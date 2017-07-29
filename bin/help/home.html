@@ -30,7 +30,7 @@ tr:nth-child(even) {
 
     <h3>Main GUI</h3>
     <OL align="left" width="50%">
-        <LI> <a onclick="showHide('menu')" href="#">Menus</A>
+        <LI> <a onclick="showHide('menu')" href="#!">Menus</A>
           <div id="menu" style="display: none">
             Use the left alt key to show/hide menus and start/stop navigitating the menus.
             You can also stop navigating the menus by pressing Esc.
@@ -43,7 +43,7 @@ tr:nth-child(even) {
             <LI> <A href="swingtext.html">Swing text</A>
             <LI> <A href="velocitytext.html">Velocity text</A>
           </UL>
-        <LI> <a onclick="showHide('blocklist')" href="#">Blocklist</A>
+        <LI> <a onclick="showHide('blocklist')" href="#!">Blocklist</A>
           <div id="blocklist" style="display: none">
             The <b>blocklist</b> shows a list of all available blocks.
             <UL>
@@ -52,49 +52,49 @@ tr:nth-child(even) {
               <LI>Shift + rightclick a block to delete it.
             </UL>
           </div>
-        <LI><a onclick="showHide('playlist')" href="#">Playlist</A>
+        <LI><a onclick="showHide('playlist')" href="#!">Playlist</A>
           <div id="playlist" style="display: none">
-            The <b>playlist</b> is a textual representation of the current track in the <a onclick="showHide('sequencer')" href="#">sequencer</a>. The playlist does not display more information than the sequencer, but it can be more convenient to use, especially if there is only one track in the sequencer.
+            The <b>playlist</b> is a textual representation of the current track in the <a onclick="showHide('sequencer')" href="#!">sequencer</a>. The playlist does not display more information than the sequencer, but it can be more convenient to use, especially if there is only one track in the sequencer.
           </div>
         <LI> <A href="mixer.html">Mixer</A>
-        <LI> <a onclick="showHide('mixerstripforcurrentinstrument')" href="#">Mixer strip for current instrument</A>
+        <LI> <a onclick="showHide('mixerstripforcurrentinstrument')" href="#!">Mixer strip for current instrument</A>
           <div id="mixerstripforcurrentinstrument" style="display: none">
-            Shows a <a href="mixer.html">mixer strip</a> for the current instrument. The current instrument is shown in the <a onclick="showHide('instrument')" href="#">instrument widget</a>.
+            Shows a <a href="mixer.html">mixer strip</a> for the current instrument. The current instrument is shown in the <a onclick="showHide('instrument')" href="#!">instrument widget</a>.
             Input MIDI signals are also sent to this instrument.
           </div>
-        <LI> <A onclick="showHide('lowertabs')" href="#">Main window lower tabs</a>
+        <LI> <A onclick="showHide('lowertabs')" href="#!">Main window lower tabs</a>
           <div id="lowertabs" style="display: none">
             (under construction)
           </div>
           <UL>
-            <LI> <a onclick="showHide('sequencer')" href="#">Sequencer</a>
+            <LI> <a onclick="showHide('sequencer')" href="#!">Sequencer</a>
               <div id="sequencer" style="display: none">
                 (under construction)
               </div>
-            <LI> <a onclick="showHide('instrument')" href="#">Instrument widget</a>
+            <LI> <a onclick="showHide('instrument')" href="#!">Instrument widget</a>
               <div id="instrument" style="display: none">
                 (under construction)
               </div>
               <UL>
-                <LI> <a onclick="showHide('sampler')" href="#">Sampler</a>
+                <LI> <a onclick="showHide('sampler')" href="#!">Sampler</a>
                   <div id="sampler" style="display: none">
                     (under construction)
                   </div>
-                <LI> <a onclick="showHide('faustdev')" href="#">FaustDev</a>
+                <LI> <a onclick="showHide('faustdev')" href="#!">FaustDev</a>
                   <div id="faustdev" style="display: none">
                     (under construction)
                   </div>
-                <LI> <a onclick="showHide('puredata')" href="#">Pure Data</a>
+                <LI> <a onclick="showHide('puredata')" href="#!">Pure Data</a>
                   <div id="puredata" style="display: none">
                     (under construction)
                   </div>
               </UL>
-            <LI> <a onclick="showHide('edit')" href="#">Edit</A>
+            <LI> <a onclick="showHide('edit')" href="#!">Edit</A>
               <div id="edit" style="display: none">
                 (under construction)
               </div>
           </UL>
-        <LI> <a onclick="showHide('bottombar')" href="#">Bottom bar</A>
+        <LI> <a onclick="showHide('bottombar')" href="#!">Bottom bar</A>
           <div id="bottombar" style="display: none">
             (under construction)
           </div>
@@ -103,7 +103,7 @@ tr:nth-child(even) {
     <h3>Mouse</h3>
     <UL>
       <LI>To <b>finetune</b> movement on Linux and Windows: Press the <b>Ctrl</b> key.
-      <LI>To finetune movement on macOS: Press the <b>Cmd</b> key.
+      <LI>To <b>finetune</b> movement on macOS: Press the <b>Cmd</b> key.
         <p></p>
       <LI>Limit movement to the <b>vertical</b> direction: Press <b>Shift</b> key.
       <LI>Limit movement to the <b>horizontal</b> direction on Linux and Windows: Press the <b>Left windows (Meta)</b> key.
@@ -117,7 +117,8 @@ tr:nth-child(even) {
       <LI> To <b>zoom</b> in or out: Press the <b>Ctrl</b> key and use the <b>Mouse scroll wheel</b>.
         <p></p>
       <LI> To <b>scroll vertically</b>: Use the <b>Mouse scroll wheel</b>.
-      <LI> To <b>scroll horizontally</b>: Press the <b>Shift</b> key and use the <b>Mouse scroll wheel</b>. (Note: Not in the editor.)
+      <LI> To <b>scroll horizontally</b>: Press the <b>Shift</b> key and use the <b>Mouse scroll wheel</b>.<br>
+        <small>(Note that the editor works differently. In the editor, the mouse scroll does the same as Arrow Down and Arrow Up. Those keys will zoom lines in/out, or move the cursor 8 steps up/down, depending on which Shift key is pressed.)</small>
     </UL>
 
     <h3>Terms</h3>
@@ -128,8 +129,22 @@ tr:nth-child(even) {
 
     <h3>Some common keybindings</h3>
     <table>
+      
       <tr>
-        <td>F6</td> <td>Show/hide Editor</td>
+        <th>Function keys</th><th></th>
+        
+      </tr><tr>
+        <td>F1</td> <td>Decrease keyboard octave</td>
+      </tr><tr>
+        <td>F2</td> <td>Increase keyboard octave</td>
+      </tr><tr>
+        <td>F3</td> <td>Switch current editor track on/off</td>
+      </tr><tr>
+        <td>F4</td> <td>Switch solo for current editor track on/off</td>
+      </tr><tr>
+        <td>F5</td> <td>Show/hide Editor</td>
+      </tr><tr>
+        <td>F6</td> <td>Show/hide Blocklist/Playlist</td>
       </tr><tr>
         <td>F7</td> <td>Show/hide Mixer</td>
       </tr><tr>
@@ -139,20 +154,26 @@ tr:nth-child(even) {
       </tr><tr>
         <td>F10</td> <td>Show/hide the "Edit" tab</td>
       </tr><tr>
-        <td>F11</td> <td>Switch full screen mode (works for most windows)</td>
+        <td>F11</td> <td>Switch full screen mode.<br> (Works for most windows, including this one.)</td>
       </tr><tr>
         <td>F12</td> <td>Select instrument for the current editor track</td>
+
       </tr><tr>
-        <td>Left Alt</td><td>Show/hide the menus, and navigate the menus using the keyboard</td>
-      </tr>
+        <th>Misc</th><th></th>
+        
+      </tr><tr>
+        <td>Left Alt</td><td>Show/hide the menus, and start/stop navigating the menus using the keyboard</td>
+      </tr><tr>
+        <td>Tab</td><td>Switch window configuration</td>
       </tr><tr>
         <td>Left Ctrl + Z</td><td>Undo</td>
-      </tr>
+      </tr><tr>
+        <td>Left Ctrl + Left Shift + Z</td><td>Redo</td>
 
-      <tr>
-      <th>Player</th><th></th>
-      </tr>
-      <tr>
+      </tr><tr>
+        <th>Player</th><th></th>
+        
+      </tr><tr>
         <td>Right shift</td><td>Play current block</td>
       </tr><tr>
         <td>Right shift + Space</td><td>Play current block from current position</td>
@@ -161,48 +182,124 @@ tr:nth-child(even) {
       </tr><tr>
         <td>Right Shift + AltGr + Space</td><td>Play song from current position</td>
       </tr><tr>
-        <td>Space</td><td>Stop player, and tell all instruments to stop playing</td>
-      </tr>
-
-      <tr>
-      <th>Editor</th><th></th>
-      </tr>
+        <td>Left Meta (Win) + Space</td><td>Play range</td>
       </tr><tr>
-        <td>Left Ctrl + M</td><td>Fit all content of the editor tracks to the visible area</td>
+        <td>Space</td><td>Stop player, and tell all instruments to stop playing</td>
+
+      </tr><tr>
+        <th>Editor - View</th><th></th>
+        
+      </tr><tr>
+        <td>Left Ctrl + M</td><td>Fit all content of the current block into the visible area</td>
       </tr><tr>
         <td>Left Shift + Up arrow</td><td>Decrease Line Zoom</td>
       </tr><tr>
         <td>Left Shift + Down arrow</td><td>Increase Line Zoom</td>
+
+      </tr><tr>
+        <th>Editor - Navigation</th><th></th>
+
+      </tr><tr>
+        <td>Left Ctrl + J</td><td>Versatile cursor move</td>
       </tr><tr>
         <td>Right Shift + Right Arrow</td><td>Move cursor to the next track</td>
       </tr><tr>
         <td>Right Shift + Left Arrow</td><td>Move cursor to the previous track</td>
       </tr><tr>
-        <td>Left Ctrl + J</td><td>Versatile cursor move</td>
+        <td>Keypad 0/1/2/3/4/5/6/7/8/9</td><td>Move cursor to track 0/1/2/3/4/5/6/7/8/9</td>
       </tr><tr>
-        <td>Keypad Enter</td><td>Turn editor track on/off</td>
+        <td>Left Ctrl + Keypad 0/1/2/3/4/5/6/7/8/9</td><td>Move cursor to track 10/11/12/13/14/15/16/17/18/19</td>
       </tr><tr>
-        <td>Left Ctrl + Keypad Enter</td><td>Turn all editor tracks on</td>
+        <td>Left Ctrl + A</td><td>Select previous block (Note: <a onclick="showHide('qwerty1')" href="#!">QWERTY</A> keyboard A!)
+          <div id="qwerty1" style="display: none">
+            <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
+          </div>
+        </td>
       </tr><tr>
-        <td>Left Alt + Keypad 0,1,2,3,4,5,6,7,8,9</td><td>Solo editor track on/off</td>
+        <td>Left Ctrl + F</td><td>Select previous block (Note: <a onclick="showHide('qwerty2')" href="#!">QWERTY</A> keyboard F!)
+          <div id="qwerty2" style="display: none">
+            <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
+          </div>
+        </td>
+          
       </tr><tr>
-        <td>Left Shift + Keypad Enter</td><td>Solo current editor track on/off</td>
+        <th>Editor - Track on/off</th><th></th>
+
       </tr><tr>
-        <td>Keypad 0,1,2,3,4,5,6,7,8,9</td><td>Move cursor to editor track (Holding Left Ctrl selects track 10,11,12,13,14,15,16,17,18,19)</td>
+        <td>Keypad Enter</td><td>Switch track on/off</td>
+      </tr><tr>
+        <td>Left Shift + Keypad 0/1/2/3/4/5/6/7/8/9</td><td>Switch track 0/1/2/3/4/5/6/7/8/9 on/off</td>
+      </tr><tr>
+        <td>Left Ctrl + Left Shift + Keypad 0/1/2/3/4/5/6/7/8/9</td><td>Switch track 10/11/12/13/14/15/16/17/18/19 on/off</td>
+      </tr><tr>
+        <td>Left Ctrl + Keypad Enter</td><td>Turn all tracks on</td>
+      </tr><tr>
+        <td>Left Shift + Keypad Enter</td><td>Switch solo for current track on/off</td>
+      </tr><tr>
+        <td>Left Alt + Keypad 0/1/2/3/4/5/6/7/8/9</td><td>Switch solo for track 0/1/2/3/4/5/6/7/8/9 on/off</td>
+      </tr><tr>
+        <td>Left Ctrl + Left Alt + Keypad 0/1/2/3/4/5/6/7/8/9</td><td>Switch solo for track 10/11/12/13/14/15/16/17/18/19 on/off</td>
+
+      </tr><tr>
+        <th>Editor - Clipboard</th><th></th>
+        
+      </tr><tr>
+        <td>Left Meta (Win) + X/C/V</td><td>Cut/Copy/Paste range</td>
       </tr><tr>
         <td>Left Alt + X/C/V</td><td>Cut/Copy/Paste track</td>
       </tr><tr>
         <td>Left Ctrl + X/C/V</td><td>Cut/Copy/Paste block</td>
+        
+      </tr><tr>
+        <th>Editor - Editing</th><th></th>
+        
       </tr><tr>
         <td>Left Alt + Up Arrow</td><td>Delete line</td>
       </tr><tr>
         <td>Left Alt + Down Arrow</td><td>Insert line</td>
       </tr><tr>
-        <td>Backspace</td><td>Delete line in current track</td>
+        <td>Backspace</td><td>Delete line, but only in the current track</td>
       </tr><tr>
-        <td>Left Alt + Backspace</td><td>Insert line in current track</td>
+        <td>Left Alt + Backspace</td><td>Insert line, but only in the current track</td>
+      
+      </tr><tr>
+        <th>Editor - General roles of the Qualifier keys</th><th></th>
+        
+      </tr><tr>
+        <td>Alt Gr</td><td>Operates on the current note</td>
+      </tr><tr>
+        <td>Left Meta (Win)</td><td>Operates on the current range</td>
+      </tr><tr>
+        <td>Left Alt</td><td>Operates on the current track</td>
+      </tr><tr>
+        <td>Left Ctrl</td><td>Operates on the current blocks</td>
+      </tr><tr>
+        <td>Left Shift</td><td>Operates on lines</td>
+      </tr><tr>
+        <td>Right Shift</td><td>Operates on line navigation</td>
+        
+      </tr><tr>
+        <th>Help Navigation</th><th></th>
+
+      </tr><tr>
+        <td>Left Alt + Left Arrow</td><td>Go to previous page</td>
+      </tr><tr>
+        <td>Left Alt + Right Arrow</td><td>Go to next page</td>
+      </tr><tr>
+        <td>F5</td><td>Reload page</td>
+      </tr><tr>
+        <td>Ctrl + R</td><td>Reload page</td>
+      </tr><tr>
+        <td>Ctrl + F</td><td>Search</td>
+      </tr><tr>
+        <td>F3</td><td>Repeat search</td>
+        
+        
+
       </tr>
     </table>
+    Note that on an Apple keyboard, the "Meta (win)" keys are mapped to the "command"/"cmd" keys. In addition, the "Alt" key is sometimes called "option" on an Apple keyboard.
+    
 
     <h3>Other topics</h3>
     <UL>
@@ -213,7 +310,7 @@ tr:nth-child(even) {
 
 
 <script>
-function showHide(name) {
+  function showHide(name) {
     var x = document.getElementById(name);
     if (x.style.display === 'none') {
         x.style.display = 'block';
