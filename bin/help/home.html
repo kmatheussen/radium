@@ -5,12 +5,12 @@
 
     <IMG SRC="overview.svg" ALT="overview" style="border:10px solid transparent" width="50%" align="right">
 
-    <h3>GUI parts</h3>
+    <h3>Main GUI</h3>
     <OL align="left" width="50%">
         <LI> <a onclick="showHide('menu')" href="#">Menus</A>
           <div id="menu" style="display: none">
-            Use the left alt key to show/hide the menus, and start/stop navigitation.
-            You can also stop navigating the menus by pressing the Esc key.
+            Use the left alt key to show/hide menus and start/stop navigitating the menus.
+            You can also stop navigating the menus by pressing Esc.
             Hold shift to quicker navigate up and down when using the up and down arrow keys.
           </div>
         <LI> <A href="editor.html">Editor</a>
@@ -20,10 +20,18 @@
             <LI> <A href="swingtext.html">Swing text</A>
             <LI> <A href="velocitytext.html">Velocity text</A>
           </UL>
-        <LI> <a onclick="showHide('playlist')" href="#">Playlist</A>
+        <LI> <a onclick="showHide('blocklist')" href="#">Blocklist</A>
+          <div id="blocklist" style="display: none">
+            The <b>blocklist</b> shows a list of all available blocks.
+            <UL>
+              <LI>Click a block to change current block in the editor.
+              <LI>Doubleclick a block to add it to the playlist.
+              <LI>Shift + rightclick a block to delete it.
+            </UL>
+          </div>
+        <LI><a onclick="showHide('playlist')" href="#">Playlist</A>
           <div id="playlist" style="display: none">
-            The playlist is a textual representation of the current track in the <A href="sequencer.html">sequencer</a>.
-            (under construction)
+            The <b>playlist</b> is a textual representation of the current track in the <a onclick="showHide('sequencer')" href="#">sequencer</a>. The playlist does not display more information than the sequencer, but it can be more convenient to use, especially if there is only one track in the sequencer.
           </div>
         <LI> <A href="mixer.html">Mixer</A>
         <LI> <a onclick="showHide('mixerstripforcurrentinstrument')" href="#">Mixer strip for current instrument</A>
@@ -63,6 +71,10 @@
                 (under construction)
               </div>
           </UL>
+        <LI> <a onclick="showHide('bottombar')" href="#">Bottom bar</A>
+          <div id="bottombar" style="display: none">
+            (under construction)
+          </div>
     </OL>
 
     <h3>Mouse</h3>
