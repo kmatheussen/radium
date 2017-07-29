@@ -139,11 +139,11 @@ void GFX_CloseReq(struct Tracker_Windows *tvisual,ReqType das_reqtype){
   //EditorWidget *editor = static_cast<EditorWidget*>(tvisual->os_visual.widget);
   MyReqType *reqtype = static_cast<MyReqType*>(das_reqtype);
 
-  delete reqtype->frame;
-
   release_keyboard_focus_counting();
 
-  OS_SYSTEM_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
+  delete reqtype->frame;
+
+  //OS_SYSTEM_ResetKeysUpDowns(); // Since we disabled X11 events, the X11 event sniffer didn't notice that we changed focus.
 
   if(reqtype->widgets_disabled==true){
     //Qt_EnableAllWidgets();

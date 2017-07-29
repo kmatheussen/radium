@@ -219,18 +219,29 @@ bool editor_has_keyboard_focus(void){
   return editor_has_keyboard && someone_else_has_keyboard_counting==0;
 }
 
+static void set_grey_editor(bool new_value){
+  if (g_do_grey_editor != new_value){
+    g_do_grey_editor = new_value;
+    root->song->tracker_windows->must_redraw_editor = true;
+  }
+}
+
 void obtain_keyboard_focus_without_greying(void){
   if (g_radium_runs_custom_exec==false){
     editor_has_keyboard = false;
-    g_do_grey_editor = false;
+    set_grey_editor(false);
   }
   //root->song->tracker_windows->must_redraw_editor = true;
 }
 
 void obtain_keyboard_focus(void){
+  printf("OBTAIN_KEYBOARD_FOCUS called.... ");
   if (g_radium_runs_custom_exec==false){
+    printf("... Got it\n");
     editor_has_keyboard = false;
-    g_do_grey_editor = !editor_has_keyboard_focus();
+    set_grey_editor(!editor_has_keyboard_focus());
+  }else{
+    printf("... Failed\n");
   }
   //root->song->tracker_windows->must_redraw_editor = true;
 }
@@ -238,7 +249,7 @@ void obtain_keyboard_focus(void){
 void release_keyboard_focus(void){
   if (g_radium_runs_custom_exec==false){
     editor_has_keyboard = true;
-    g_do_grey_editor = !editor_has_keyboard_focus();
+    set_grey_editor(!editor_has_keyboard_focus());
   }
   //root->song->tracker_windows->must_redraw_editor = true;
 }
@@ -246,7 +257,7 @@ void release_keyboard_focus(void){
 void obtain_keyboard_focus_counting(void){
   if (g_radium_runs_custom_exec==false){
     someone_else_has_keyboard_counting++;
-    g_do_grey_editor = !editor_has_keyboard_focus();
+    set_grey_editor(!editor_has_keyboard_focus());
   }
   //root->song->tracker_windows->must_redraw_editor = true;
 }
@@ -257,7 +268,7 @@ void release_keyboard_focus_counting(void){
       RError("release_keyboard_focus_counting called without first calling obtain_keyboard_focus_counting");
     else
       someone_else_has_keyboard_counting--;
-    g_do_grey_editor = !editor_has_keyboard_focus();
+    set_grey_editor(!editor_has_keyboard_focus());
   }
   //root->song->tracker_windows->must_redraw_editor = true;
 }

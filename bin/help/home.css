@@ -1,3 +1,7 @@
+/* Remove that grotesque stippled line around links. */
+a {
+   outline: 0;
+}
 
 .image-and-text{
     clear:both;

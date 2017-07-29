@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     {                                                                   \
     }                                                                   \
   void focusInEvent ( QFocusEvent *e ) override {                       \
+    printf("  FOCUS IN\n");                                             \
     if(dontsniff==false)                                                \
       obtain_keyboard_focus();                                          \
     GL_lock();                                                          \
@@ -48,6 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     GL_unlock();                                                        \
   }                                                                     \
   void focusOutEvent ( QFocusEvent *e ) override {                      \
+    printf("  FOCUS OUT\n");                                             \
     if(dontsniff==false) {                                              \
       release_keyboard_focus();                                         \
     }                                                                   \

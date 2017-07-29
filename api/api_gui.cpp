@@ -2438,8 +2438,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
         // Some hacking required to get focus since FocusSniffer calls obtain_keyboard_focus/release_keyboard_focus instead of obtain_keyboard_focus_counting/release_keyboard_focus_counting. At least I think it got something to do with that.
         set_editor_focus();
+        activateWindow();
         QTimer::singleShot(50, this, SLOT(setFocus()));
         QTimer::singleShot(100, obtain_keyboard_focus);
+        QTimer::singleShot(250, set_editor_focus);
         QTimer::singleShot(500, this, SLOT(setFocus()));
         QTimer::singleShot(1000, obtain_keyboard_focus);
 
