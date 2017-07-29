@@ -2403,6 +2403,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     */
 
+    QString _last_search_text;
+
+    void searchForward(void){
+      if(_last_search_text != "")
+        findText(_last_search_text, QWebPage::FindWrapsAroundDocument);
+    }
+
     void keyPressEvent(QKeyEvent *event) override{
       if (event->modifiers() & Qt::AltModifier){
         if (event->key()==Qt::Key_Left){
@@ -2422,6 +2429,37 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         return;
       }
 
+      if (event->key()==Qt::Key_F && event->modifiers()&Qt::ControlModifier){
+        char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ", true);
+        if (s!=NULL && strlen(s)>0){
+          _last_search_text = s;
+          searchForward();
+        }
+
+        // Some hacking required to get focus since FocusSniffer calls obtain_keyboard_focus/release_keyboard_focus instead of obtain_keyboard_focus_counting/release_keyboard_focus_counting. At least I think it got something to do with that.
+        set_editor_focus();
+        QTimer::singleShot(50, this, SLOT(setFocus()));
+        QTimer::singleShot(100, obtain_keyboard_focus);
+        QTimer::singleShot(500, this, SLOT(setFocus()));
+        QTimer::singleShot(1000, obtain_keyboard_focus);
+
+        event->accept();
+        return;
+      }
+
+      if (event->key()==Qt::Key_F3){
+        searchForward();
+        event->accept();
+        return;
+      }
+
+      // Must catch Key_Escape since the focussniffer gives up focus when receiving escape.
+      if (event->key()==Qt::Key_Escape){
+        findText(""); // Cancel search highlightning
+        event->accept();
+        return;
+      }
+      
       if (!Gui::keyPressEvent(event)){
         FocusSnifferQWebView::keyPressEvent(event);
         return;
