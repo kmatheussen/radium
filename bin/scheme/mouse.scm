@@ -899,6 +899,7 @@
                                                           (- (Get-max-value (Info :handler-data))
                                                              (Get-min-value (Info :handler-data)))))
                           :Mouse-pointer-func Mouse-pointer-func
+                          :Get-guinum Get-guinum
                           ))
                                   
 
@@ -3195,6 +3196,7 @@
                                        (set-statusbar-loop-info Type))
                           
                           :Mouse-pointer-func ra:set-normal-mouse-pointer
+                          :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                           ))
 
 (create-seqloop-handler 'start)
@@ -4438,6 +4440,7 @@
                                                                     " -> "
                                                                     (two-decimal-string (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate))))))
                         :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
+                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         )
 
 ;; right size handle in navigator
@@ -4477,6 +4480,7 @@
                                                                     " -> "
                                                                     (two-decimal-string (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate))))))
                         :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
+                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         )
 
 ;; seqtrack select
@@ -4551,6 +4555,7 @@
                                                                     (two-decimal-string (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate))))))
                         
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
+                        :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         )
 
 
