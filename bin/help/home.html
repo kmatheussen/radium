@@ -28,17 +28,35 @@
         <LI> <A href="mixer.html">Mixer</A>
         <LI> <a onclick="showHide('mixerstripforcurrentinstrument')" href="#">Mixer strip for current instrument</A>
           <div id="mixerstripforcurrentinstrument" style="display: none">
-            Shows a <a href="mixer.html">mixer strip</a> for the current instrument. The current instrument is shown in the <a href="instrument.html">instrument widget</a>.
+            Shows a <a href="mixer.html">mixer strip</a> for the current instrument. The current instrument is shown in the <a onclick="showHide('instrument')" href="#">instrument widget</a>.
             Input MIDI signals are also sent to this instrument.
           </div>
-        <LI> <A href="lowertabs.html">Main window lower tabs</a>
+        <LI> <A onclick="showHide('lowertabs')" href="#">Main window lower tabs</a>
+          <div id="lowertabs" style="display: none">
+            (under construction)
+          </div>
           <UL>
-            <LI> <a href="sequencer.html">Sequencer</a>
-            <LI> <a href="instrument.html">Instrument widget</a>
+            <LI> <a onclick="showHide('sequencer')" href="#">Sequencer</a>
+              <div id="sequencer" style="display: none">
+                (under construction)
+              </div>
+            <LI> <a onclick="showHide('instrument')" href="#">Instrument widget</a>
+              <div id="instrument" style="display: none">
+                (under construction)
+              </div>
               <UL>
-                <LI> <a href="sampler.html">Sampler</a>
-                <LI> <a href="faustdev.html">FaustDev</a>
-                <LI> <a href="puredata.html">Pure Data</a>
+                <LI> <a onclick="showHide('sampler')" href="#">Sampler</a>
+                  <div id="sampler" style="display: none">
+                    (under construction)
+                  </div>
+                <LI> <a onclick="showHide('faustdev')" href="#">FaustDev</a>
+                  <div id="faustdev" style="display: none">
+                    (under construction)
+                  </div>
+                <LI> <a onclick="showHide('puredata')" href="#">Pure Data</a>
+                  <div id="puredata" style="display: none">
+                    (under construction)
+                  </div>
               </UL>
             <LI> <a onclick="showHide('edit')" href="#">Edit</A>
               <div id="edit" style="display: none">
