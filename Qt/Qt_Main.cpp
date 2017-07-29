@@ -2130,7 +2130,7 @@ void GFX_toggleCurrWindowFullScreen(void){
           toplevel = w; // Think this was necessary on windows. Don't remember why. Not entirely sure what the releationship is between Mixer_widget and MixerWidget.
         
         // Setting full screen is a little bit complicated for other windows than g_main_window. gui_setFullScreen takes care of all that.
-        int64_t guinum = API_get_gui_from_existing_widget(toplevel);
+        int64_t guinum = API_get_gui_from_widget(toplevel);
         gui_setFullScreen(guinum, !gui_isFullScreen(guinum));
         
       } else {

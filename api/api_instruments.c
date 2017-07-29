@@ -142,7 +142,18 @@ void selectInstrumentForTrack(int tracknum){
   S7CALL2(void_int,"select-track-instrument", tracknum);
 }
 
-void requestReplaceInstrument(int64_t instrument_id, const_char* instrument_description, dyn_t instrconf){
+void requestReplaceInstrument(int64_t instrument_id, const_char* instrument_description, int64_t parentgui){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  dyn_t instrconf = createNewInstrumentConf(0,0,false,false,
+                                            true,
+                                            CHIP_get_num_in_connections(patch)>0,
+                                            CHIP_get_num_out_connections(patch)>0,
+                                            parentgui
+                                            );
+
   S7CALL2(void_int_charpointer_dyn,"async-replace-instrument", instrument_id, instrument_description, instrconf);
 }
 

@@ -128,17 +128,11 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 #define KEY_OVERRIDERS(classname)                                       \
   void keyPressEvent(QKeyEvent *event) override{                        \
-    if (_key_callback==NULL){                                           \
-      classname::keyPressEvent(event); return;}                         \
-    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     if (!Gui::keyPressEvent(event))                                     \
       classname::keyPressEvent(event);                                  \
   }                                                                     \
                                                                         \
   void keyReleaseEvent(QKeyEvent *event) override{                      \
-    if (_key_callback==NULL){                                           \
-      classname::keyReleaseEvent(event); return;}                       \
-    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     if (!Gui::keyReleaseEvent(event))                                   \
       classname::keyReleaseEvent(event);                                \
   }
@@ -380,13 +374,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     Qt::WindowFlags _original_flags;
     QRect _original_geometry;
     
-    
     FullScreenParent(QWidget *child, Gui *gui)
       : radium::Timer(15, true)
       , _child(child)
     {
       R_ASSERT(_child->isWindow());
-      
+
       _original_parent = _child->parent();
       
       _had_original_parent = _original_parent != NULL;
@@ -768,7 +761,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     func_t *_key_callback = NULL;
 
     bool keyEvent(QKeyEvent *event, int keytype){
-      R_ASSERT_RETURN_IF_FALSE2(_key_callback!=NULL, false);
+      if(can_internal_data_be_accessed_questionmark_safer()==false)
+        return false;
+
+      if (_key_callback==NULL)
+        return false;
 
       QString s = false ? ""
         : event->key()==Qt::Key_Enter ? "\n"
@@ -786,6 +783,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     
     bool keyPressEvent(QKeyEvent *event){
+      if (event->key()==Qt::Key_F11){
+        event->accept();
+        int64_t window_gui = gui_getParentWindow(get_gui_num());
+        gui_setFullScreen(window_gui, !gui_isFullScreen(window_gui));
+        return true;
+      }
+      
       return keyEvent(event, 0);
     }
     
@@ -2400,7 +2404,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     */
 
     void keyPressEvent(QKeyEvent *event) override{
-      RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
       if (event->modifiers() & Qt::AltModifier){
         if (event->key()==Qt::Key_Left){
           back();
@@ -2418,8 +2421,18 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         event->accept();
         return;
       }
-      if (_key_callback==NULL || !Gui::keyPressEvent(event))
+
+      if (!Gui::keyPressEvent(event)){
         FocusSnifferQWebView::keyPressEvent(event);
+        return;
+      }
+    }
+
+    void keyReleaseEvent(QKeyEvent *event) override{
+      if (!Gui::keyReleaseEvent(event)){
+        FocusSnifferQWebView::keyReleaseEvent(event);
+        return;
+      }
     }
 
     OVERRIDERS_WITHOUT_KEY(FocusSnifferQWebView);
@@ -4109,6 +4122,8 @@ void gui_setFullScreen(int64_t guinum, bool enable){
   if (gui==NULL)
     return;
 
+  QPointer<QWidget> focusWidget = gui->_widget->focusWidget(); // Seems like focus is always lost when we change parent of the widget
+
   if(enable){
 
     if(gui->is_full_screen())
@@ -4122,7 +4137,7 @@ void gui_setFullScreen(int64_t guinum, bool enable){
 
     // I've spent xx hours trying to show full screen work by calling showFullScreen() directly on the widget, but it's not working very well.
     // Creating a new full screen parent works much better.
-    
+
     gui->_full_screen_parent = new FullScreenParent(gui->_widget, gui);
     
   }else{
@@ -4136,8 +4151,11 @@ void gui_setFullScreen(int64_t guinum, bool enable){
     delete gui->_full_screen_parent;
 
     gui->_widget->show();
+    gui->_widget->setFocus();
   }
-  
+
+  if (focusWidget.data() != NULL)
+    focusWidget->setFocus();
 }
   
 bool gui_isFullScreen(int64_t guinum){
