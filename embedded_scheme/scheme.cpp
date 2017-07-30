@@ -1501,9 +1501,10 @@ s7_pointer RADIUM_SCHEME_eval2(const char *code){
   s7extra_add_history(__func__, CR_FORMATEVENT("========== RADIUM_SCHEME_eval2 (Code from s7webserver.)\n\n"));
   return catch_call(s7,
                     s7_list(s7,
-                            2,
+                            3,
                             find_scheme_value(s7, "eval-string"),
-                            s7_make_string(s7, code)
+                            s7_make_string(s7, code),
+                            s7_rootlet(s7) // Eval in global environment
                             )
                     );
 }
