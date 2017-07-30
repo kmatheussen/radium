@@ -706,9 +706,34 @@
      (if result
          (callback result)))))
 
-     
 
+(define (set-instrument-solo! id is-on)
+  ;;(c-display "     Setting" (<ra> :get-instrument-name id) "solo to" is-on)
+  (<ra> :set-instrument-effect id "System Solo On/Off" (if is-on 1.0 0.0)))
 
+(define (set-solo-for-connected-output-instruments! instrument-id is-on)
+  (define output-instruments (get-instruments-connecting-from-instrument instrument-id))
+  (if (= 1 (length output-instruments))
+      (let ((id (car output-instruments)))
+        (set-instrument-solo! id is-on)
+        (set-solo-for-connected-output-instruments! id is-on))))
+             
+(define (set-solo-for-connected-input-instruments! instrument-id is-on)  
+  (define input-instruments (get-instruments-connecting-to-instrument instrument-id))      
+  (if (= 1 (length input-instruments))
+      (let ((id (car input-instruments)))
+        (define output-instruments (get-instruments-connecting-from-instrument id))
+        (if (= 1 (length output-instruments))
+            (set-instrument-solo! id is-on))
+        (set-solo-for-connected-input-instruments! id is-on))))
+         
+  
+(define (FROM-C-set-solo! instrument-id is-on)
+  (set-instrument-solo! instrument-id is-on)
+  (set-solo-for-connected-output-instruments! instrument-id is-on)
+  (set-solo-for-connected-input-instruments! instrument-id is-on))
+
+              
 
 (define (set-random-sample-for-all-selected-sampler-instruments)
   (undo-block (lambda ()

@@ -281,7 +281,7 @@ tr:nth-child(even) {
           <td>Right Shift</td><td>Operates on line navigation</td>
           
         </tr><tr>
-          <th>Help Navigation</th><th></th>
+          <th>Help windows</th><th></th>
 
         </tr><tr>
           <td>Left Alt + Left Arrow</td><td>Go to previous page</td>
@@ -326,10 +326,10 @@ function showHide2(divname,linkname) {
     var x = document.getElementById(divname);
     if (x.style.display === 'none') {
         x.style.display = 'block';
-        document.getElementById(linkname).innerHTML="Show";
+        document.getElementById(linkname).innerHTML="Hide";
     } else {
         x.style.display = 'none';
-        document.getElementById(linkname).innerHTML="Hide";
+        document.getElementById(linkname).innerHTML="Show";
     }
 }
 

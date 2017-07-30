@@ -525,8 +525,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
                     (newline)))
            *try-finally-failed-return-value*)))
   
-
-
+  
 ;;
 ;;
 ;;
@@ -1114,7 +1113,7 @@ for .emacs:
 (***assert*** (list-remove '(0 1 2) 1) '(0 2))
 (***assert*** (list-remove '(0 1 2) 2) '(0 1))
 
-
+;; Comparer must return #t if its two arguments are equal and false if not.
 (define (remove-duplicates-in-sorted-list comparer das-list)
   (if (null? das-list)
       '()
@@ -1127,6 +1126,20 @@ for .emacs:
                   (cons a
                         (remove-duplicates-in-sorted-list comparer (cdr das-list)))))))))
                    
+(define (remove-duplicates less-than equal das-list)
+  (remove-duplicates-in-sorted-list equal
+                                    (sort das-list less-than)))
+
+#!!
+(remove-duplicates < = '(8 2 2 5 7))
+
+(< 1 2)
+
+(procedure-source remove-duplicates3)
+(gakk)
+
+!!#
+
 
 (define (integer-range start-inclusive end-inclusive)
   (map (lambda (i)
