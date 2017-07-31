@@ -372,7 +372,7 @@ OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfro
 OBJ_FAUST=zita_rev.o stk_flute.o stk_bowed.o stk_blow_bottle.o stk_bass.o stk_blow_hole.o stk_brass.o stk_clarinet.o stk_flute_stk.o stk_glass_harmonica.o stk_harpsi.o stk_modal_bar.o stk_NLF_eks.o stk_NLF_fm.o stk_piano.o stk_saxophony.o stk_sitar.o stk_tibetan_bowl.o stk_tuned_bar.o stk_uni_bar.o stk_voice_form.o faust_tapiir.o faust_system_eq.o faust_system_tremolo.o faust_system_lowpass.o faust_system_highpass.o faust_system_lowshelf.o faust_system_highshelf.o faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o Faust_plugins.o Bus_plugins.o Timeskew_plugin.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o SampleRecorder.o FluidSynth_plugin.o Pd_plugin.o SoundPluginRegistry.o SoundPlugin.o AudioMeterPeaks.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o Presets.o undo_audio_effect.o undo_audio_connection_gain.o undo_pd_controllers.o undo_plugin_state.o SoundfileSaver.o system_compressor_wrapper.o KillJackd.o 
+OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o Faust_plugins.o Bus_plugins.o Timeskew_plugin.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o SampleRecorder.o FluidSynth_plugin.o Pd_plugin.o SoundPluginRegistry.o SoundPlugin.o AudioMeterPeaks.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o Presets.o undo_audio_effect.o undo_audio_connection_enabled.o undo_audio_connection_gain.o undo_pd_controllers.o undo_plugin_state.o SoundfileSaver.o system_compressor_wrapper.o KillJackd.o 
  
 #MultiCore.o
 
@@ -2140,6 +2140,9 @@ Presets.o: audio/Presets.cpp audio/Presets_proc.h
 
 undo_audio_effect.o: audio/undo_audio_effect.c
 	$(CC) audio/undo_audio_effect.c $(OPT)
+
+undo_audio_connection_enabled.o: audio/undo_audio_connection_enabled.c
+	$(CC) audio/undo_audio_connection_enabled.c $(OPT)
 
 undo_audio_connection_gain.o: audio/undo_audio_connection_gain.c
 	$(CC) audio/undo_audio_connection_gain.c $(OPT)

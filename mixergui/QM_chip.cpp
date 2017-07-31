@@ -634,8 +634,8 @@ bool CHIPS_are_econnected(const Chip *from, const Chip *to){
 }
 
 namespace radium{
-  void LinkParameters::add(::Chip *source, int source_ch, ::Chip *target, int target_ch, float volume){
-    add(source->_sound_producer, source_ch, target->_sound_producer, target_ch, volume);
+  void LinkParameters::add(::Chip *source, int source_ch, ::Chip *target, int target_ch, float volume, bool must_set_enabled, bool enabled){
+    add(source->_sound_producer, source_ch, target->_sound_producer, target_ch, volume, must_set_enabled, enabled);
   }
 }
 
@@ -645,18 +645,28 @@ namespace{
   struct Parm{
     Chip *_from;
     Chip *_to;
-    float _volume = 1.0;
+
     bool _must_set_volume = false;
-    
-    Parm(Chip *from, Chip *to, float volume = -1.0)
+    float _volume = 1.0;
+
+    bool _must_set_enabled = false;
+    bool _is_enabled = true;
+
+    Parm(Chip *from, Chip *to, float volume, bool must_set_enabled, bool is_enabled)
       : _from(from)
       , _to(to)
+      , _must_set_enabled(must_set_enabled)
+      , _is_enabled(is_enabled)
     {
       if(volume >= 0){
         _volume = volume;
         _must_set_volume = true;
       }
     }
+
+    Parm(Chip *from, Chip *to)
+      : Parm(from, to, -1.0, false, true)
+    {}
 
     // QVector requires an empty constructor in Parms::add
     Parm()
@@ -696,12 +706,12 @@ namespace{
       return -1;
     }
     
-    void add(Chip *from, Chip *to, float volume = -1.0){
+    void add(Chip *from, Chip *to, float volume, bool must_set_enabled, bool is_enabled){
       int pos = find_pos(to_remove, from, to);
       if (pos >= 0)
         to_remove.remove(pos); // This way we don't need to implement an AudioGraph 'diff' function. Instead we just remove all existing connections and add all connections in a state.
       else
-        to_add.push_back(Parm(from, to, volume));
+        to_add.push_back(Parm(from, to, volume, must_set_enabled, is_enabled));
     }
     
     void remove(Chip *from, Chip *to){
@@ -721,8 +731,8 @@ namespace{
     Connect(){
     }
     
-    Connect(Chip *from, Chip *to, float volume = -1.0){
-      add(from, to, volume);
+    Connect(Chip *from, Chip *to, float volume = -1.0, bool must_set_enabled = false, bool is_enabled = true){
+      add(from, to, volume, must_set_enabled, is_enabled);
     }
   };
   
@@ -762,13 +772,13 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
     
       if(from_is_mono==true){
         for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++)
-          add_linkparameters.add(from, 0, to, to_portnum, parm._volume);
+          add_linkparameters.add(from, 0, to, to_portnum, parm._volume, parm._must_set_enabled, parm._is_enabled);
       }else if(to_is_mono==true){
         for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++)
-          add_linkparameters.add(from, from_portnum, to, 0, parm._volume);
+          add_linkparameters.add(from, from_portnum, to, 0, parm._volume, parm._must_set_enabled, parm._is_enabled);
       }else{
         for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++)
-          add_linkparameters.add(from, portnum, to, portnum, parm._volume);
+          add_linkparameters.add(from, portnum, to, portnum, parm._volume, parm._must_set_enabled, parm._is_enabled);
       }
     }
   }
@@ -915,7 +925,11 @@ bool CONNECTIONS_apply_changes(const dyn_t dynchanges){
     //bool are_connected = CHIPS_are_connected(source, target); // No, it's legal to disconnect/connect simultaneously.
           
     const wchar_t *type_name = HASH_get_string(element.hash, ":type");
-    
+
+    float gain = -1.0;
+    bool must_set_enabled = false;
+    bool is_enabled = true;
+
     if (STRING_equals(type_name, "connect")){
       
       if (HASH_has_key(element.hash, ":gain")){
@@ -926,14 +940,23 @@ bool CONNECTIONS_apply_changes(const dyn_t dynchanges){
           return false;
         }
 
-        changes.add(source, target, DYN_get_double_from_number(dyngain));
-        
-      } else {
-
-        changes.add(source, target);
-        
+        gain = DYN_get_double_from_number(dyngain);        
       }
 
+      if (HASH_has_key(element.hash, ":enabled")){
+
+        const dyn_t dynenabled = HASH_get_dyn(element.hash, ":enabled");
+        if (!dynenabled.type==BOOL_TYPE){
+          handleError("Element %d[\"enabled\"]: Expected bool, found \"%s\"", i, DYN_type_name(dynenabled));
+          return false;
+        }
+
+        must_set_enabled = true;
+        is_enabled = dynenabled.bool_number;
+      }
+
+
+      changes.add(source, target, gain, must_set_enabled, is_enabled);
       
     } else if (STRING_equals(type_name, "disconnect")){
 
@@ -1033,15 +1056,15 @@ void CHIP_remove_chip_from_connection_sequence(QGraphicsScene *scene, Chip *befo
   changes::AudioGraph changes;
   changes.remove(before, middle);
   changes.remove(middle, after);
-  changes.add(before, after);
+  changes.add(before, after, -1.0, false, true);
   CONNECTIONS_apply_changes(scene, changes);
 }
 
 // Opposite of remove_chip_from_connection_sequence
 void CHIP_add_chip_to_connection_sequence(QGraphicsScene *scene, Chip *before, Chip *middle, Chip *after){
   changes::AudioGraph changes;
-  changes.add(before, middle);
-  changes.add(middle, after);
+  changes.add(before, middle, -1.0, false, true);
+  changes.add(middle, after, -1.0, false, true);
   changes.remove(before, after);
   CONNECTIONS_apply_changes(scene, changes);
 }
@@ -1280,10 +1303,10 @@ void CHIP_connect_left(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip)
   for (AudioConnection *connection : left_chip->audio_connections)
     if(connection->from==left_chip){
       changes.remove(connection);
-      changes.add(right_chip, connection->to);
+      changes.add(right_chip, connection->to, -1.0, false, true);
     }
 
-  changes.add(left_chip, right_chip);
+  changes.add(left_chip, right_chip, -1.0, false, true);
 
   CONNECTIONS_apply_changes(scene, changes);
 }
@@ -1295,10 +1318,10 @@ void CHIP_connect_right(QGraphicsScene *scene, Chip *left_chip, Chip *right_chip
   for (AudioConnection *connection : right_chip->audio_connections)
     if(connection->to==right_chip){
       changes.remove(connection);
-      changes.add(connection->from, left_chip);
+      changes.add(connection->from, left_chip, -1.0, false, true);
     }
 
-  changes.add(left_chip, right_chip);
+  changes.add(left_chip, right_chip, -1.0, false, true);
 
   CONNECTIONS_apply_changes(scene, changes);
 }
@@ -2153,6 +2176,7 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
   HASH_put_bool(state, "is_event_connection", connection->is_event_connection);
   if (!connection->is_event_connection)
     HASH_put_float(state, "gain", getAudioConnectionGain(from->id, to->id));
+  HASH_put_bool(state, "enabled", getAudioConnectionEnabled(from->id, to->id));
 
   return state;
 }
@@ -2193,10 +2217,16 @@ static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioG
   if(HASH_has_key(state, "is_event_connection") && HASH_get_bool(state, "is_event_connection")) // .rad files before 1.9.31 did not have event connections.
     CHIP_econnect_chips(scene, from_chip, to_chip);
   else {
+    bool must_set_enabled = false;
+    bool is_enabled = true;
     float gain = -1.0;
     if (HASH_has_key(state, "gain"))
       gain = HASH_get_float(state, "gain");
-    changes.add(from_chip, to_chip, gain);
+    if (HASH_has_key(state, "enabled")){
+      must_set_enabled = true;
+      is_enabled = HASH_get_bool(state, "enabled");
+    }
+    changes.add(from_chip, to_chip, gain, must_set_enabled, is_enabled);
   }
 }
   

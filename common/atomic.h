@@ -202,6 +202,14 @@ static inline int safe_int_read(const int *pos){
   return *pos;
 }
 
+static inline void safe_bool_write(bool *pos, bool value){
+  *pos = value;
+}
+
+static inline bool safe_bool_read(const bool *pos){
+  return *pos;
+}
+
 //#define ATOMIC_RELAXED_WRITE(var, value) __atomic_store_n (&var,value,  __ATOMIC_RELAXED) // careful. Probably never any point using.
 //#define ATOMIC_RELAXED_READ(var) __atomic_load_n (&var, __ATOMIC_RELAXED) // careful. Probably never any point using.
 

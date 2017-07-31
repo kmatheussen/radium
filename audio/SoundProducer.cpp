@@ -242,10 +242,11 @@ struct SoundProducerLink {
   int source_ch;
   int target_ch;
 
-  float link_volume; 
+  bool link_enabled; // Set by the user. "is_active" (below) is an internal variable set by the sound engine.
+  float link_volume;  // Set by the user.
   Smooth volume; // volume.target_value = link_volume * source->output_volume * source->volume
 
-  bool is_active;
+  bool is_active; // this is an internal variable used for whether the link should run or not. It's not the same as "link_enabled" above (naturally).
 
   bool should_be_turned_off = false;
 
@@ -306,7 +307,7 @@ struct SoundProducerLink {
       
     } else {
     
-      if (ATOMIC_GET(source_plugin->output_volume_is_on))
+      if (link_enabled && ATOMIC_GET(source_plugin->output_volume_is_on))
         return source_plugin->output_volume * plugin_volume * link_volume;
       else
         return 0.0f;
@@ -368,6 +369,7 @@ struct SoundProducerLink {
     , is_bus_link(false)
     , source_ch(0)
     , target_ch(0)
+    , link_enabled(true)
     , link_volume(1.0)
     , is_active(is_event_link)
   {
@@ -630,6 +632,21 @@ namespace{
   };
   
   const VolumeChanges g_empty_volume_changes;
+
+  struct LinkEnabledChange{
+    SoundProducerLink *link;
+    bool link_enabled;
+    LinkEnabledChange(SoundProducerLink *link, bool link_enabled)
+      : link(link)
+      , link_enabled(link_enabled)
+    {}
+  };
+  struct LinkEnabledChanges : public radium::Vector<LinkEnabledChange> {
+    LinkEnabledChanges(){
+    }
+  };
+  
+  const LinkEnabledChanges g_empty_link_enabled_changes;
 }
 
 //struct Owner *owner;
@@ -1036,7 +1053,13 @@ public:
   // Note 1: Will delete all links in to_add if it succeeded.
   // Note 2: Might modify to_remove.
   //
-  static bool add_and_remove_links(const radium::Vector<SoundProducerLink*> &to_add, radium::Vector<SoundProducerLink*> &to_remove, bool *isrecursive_feedback = NULL, const VolumeChanges &volume_changes = g_empty_volume_changes) {
+  static bool add_and_remove_links(const radium::Vector<SoundProducerLink*> &to_add,
+                                   radium::Vector<SoundProducerLink*> &to_remove,
+                                   bool *isrecursive_feedback = NULL,
+                                   const VolumeChanges &volume_changes = g_empty_volume_changes,
+                                   const LinkEnabledChanges &link_enabled_changes = g_empty_link_enabled_changes
+                                   )
+  {
     
     R_ASSERT(THREADING_is_main_thread());
 
@@ -1054,7 +1077,7 @@ public:
     if (isrecursive_feedback != NULL)
       *isrecursive_feedback = isrecursive;
 
-    if (to_add.size()==0 && to_remove.size()==0 && volume_changes.size()==0){
+    if (to_add.size()==0 && to_remove.size()==0 && volume_changes.size()==0 && link_enabled_changes.size()==0){
       R_ASSERT(links_that_must_be_removed_first.size()==0);
       return false;
     }
@@ -1121,6 +1144,11 @@ public:
       for(auto *link : to_add){
         link->source->_output_links.push_back(link);
         link->target->_input_links.push_back(link);
+      }
+
+      // Enable/disable
+      for(const auto &link_enabled_change : link_enabled_changes){
+        link_enabled_change.link->link_enabled = link_enabled_change.link_enabled;
       }
 
       // Change volume
@@ -1841,6 +1869,7 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
   
   radium::Vector<SoundProducerLink*> to_add;
   radium::Vector<SoundProducerLink*> to_remove;
+  LinkEnabledChanges link_enable_changes;
   VolumeChanges volume_changes;
 
   for(auto &parm : parm_to_add){
@@ -1848,8 +1877,11 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
 
     if (existing_link != NULL) {
 
-      R_ASSERT(parm.must_set_volume);
-      volume_changes.push_back(VolumeChange(existing_link, parm.volume));
+      if (parm.must_set_enabled)
+        link_enable_changes.push_back(LinkEnabledChange(existing_link, parm.is_enabled));
+
+      if (parm.must_set_volume)
+        volume_changes.push_back(VolumeChange(existing_link, parm.volume));
       
     } else {
       
@@ -1858,6 +1890,8 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
       link->target_ch = parm.target_ch;
       if (parm.must_set_volume)
         link->link_volume = parm.volume;
+      if (parm.must_set_enabled)
+        link->link_enabled = parm.is_enabled;
       to_add.push_back(link);
       
     }
@@ -1870,7 +1904,7 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
   }
 
   bool isrecursive;
-  return SoundProducer::add_and_remove_links(to_add, to_remove, &isrecursive, volume_changes);
+  return SoundProducer::add_and_remove_links(to_add, to_remove, &isrecursive, volume_changes, link_enable_changes);
 }
 
 bool SP_add_and_remove_links(const dyn_t changes){
@@ -1940,6 +1974,37 @@ bool SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume
       //printf("   Setting to %f (%p)\n", volume, link);
       if (safe_float_read(&link->link_volume) != volume){
         safe_float_write(&link->link_volume, volume);
+        ret = true;
+      }
+    }
+  }
+
+  if (!found)
+    *error = talloc_strdup("Could not find link");
+
+  return ret;
+}
+
+bool SP_get_link_enabled(const SoundProducer *target, const SoundProducer *source, const char **error){
+  for (SoundProducerLink *link : target->_input_links) {
+    if(link->is_event_link==false && link->source==source){ // link->is_bus_link==false && 
+      //printf("   Found %d (%p)\n", safe_bool_read(&link->link_enabled), link);
+      return safe_bool_read(&link->link_enabled);
+    }
+  }
+  *error = talloc_strdup("Could not find link");
+  return false;
+}
+
+bool SP_set_link_enabled(SoundProducer *target, SoundProducer *source, bool is_enabled, const char **error){
+  bool ret = false;
+  bool found = false;
+
+  for (SoundProducerLink *link : target->_input_links) {
+    if(link->is_event_link==false && link->source==source){ // link->is_bus_link==false && 
+      found=true;
+      if (safe_bool_read(&link->link_enabled) != is_enabled){
+        safe_bool_write(&link->link_enabled, is_enabled);
         ret = true;
       }
     }

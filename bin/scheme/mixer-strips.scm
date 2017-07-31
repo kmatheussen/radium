@@ -744,31 +744,105 @@
   (define widget #f)
   (define is-changing-value #f)
 
-  (define (paintit width height)
+  (define (is-enabled?)
+    (if is-send?
+        (<ra> :get-audio-connection-enabled parent-instrument-id instrument-id)
+        (>= (<ra> :get-instrument-effect instrument-id "System Effects On/Off") 0.5)))
+  
+  (define (is-grayed?)
+    (if (not (is-enabled?))
+        #t
+        (if is-send?
+            (< (<ra> :get-instrument-effect parent-instrument-id "System Effects On/Off") 0.5)
+            #f)))
+        
+
+  (define (toggle-enabled)
+    (define is-enabled (is-enabled?))
+    (if is-send?
+        (begin
+          (<ra> :undo-audio-connection-enabled parent-instrument-id instrument-id)
+          (<ra> :set-audio-connection-enabled parent-instrument-id instrument-id (not is-enabled)))
+        (begin
+          (<ra> :set-instrument-bypass instrument-id (not (not is-enabled)))
+          (<gui> :update (<gui> :get-parent-gui widget)))))
+
+  (define (paint-slider x1-on/off width height)
     (define color (<ra> :get-instrument-color instrument-id))
     (define value (get-scaled-value))
     ;;(c-display "value: " value)
+    
     (define pos (scale value 0 1 0 width))
     (<gui> :filled-box widget (<gui> :get-background-color widget) 0 0 width height)
     (<gui> :filled-box widget "black" 1 1 (1- width) (1- height) 5 5)
     (<gui> :filled-box widget color 0 0 pos height 5 5)
-
+    
     ;;(if (= (<ra> :get-current-instrument) instrument-id)
     ;;    (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
-
+    
+    ;; border
     (if (= (<ra> :get-current-instrument) instrument-id)
         (let* ((w 1.2)
                (w*2 (* w 3)))
           (<gui> :draw-box widget *current-mixer-strip-border-color* w w (- width 2) (- height 2) w*2 5 5)) ;; "#aa111144"
         (<gui> :draw-box widget "gray"      0 0 width height 0.8 5 5))
-  
+    
     (define text (<-> instrument-name ": " (get-value-text value)))
     (when is-changing-value
       (<ra> :set-statusbar-text text)
       (<gui> :tool-tip text))
-    (<gui> :draw-text widget *text-color* text
-           4 0 (- width 4) height))
+    (define text-color (if (is-grayed?)
+                           (<gui> :mix-colors *text-color* "#ff000000" 0.5)
+                           *text-color*))
 
+    (<gui> :draw-text widget text-color text
+           (+ 1 x1-on/off) 0 (- width 4) height
+           #t ;; wrap-lines
+           #f ;; align top
+           #t)) ;; align left
+  
+  (define fontheight (get-fontheight))
+  
+  (define (get-on/off-box x1-on/off width height kont)
+    ;;(define b1 10)
+    (define b1 (scale 1 0 3 0 x1-on/off))
+    (define y (/ height 2))
+    (define x (/ x1-on/off 2))
+    (kont (- x b1)
+          (- y b1)
+          (+ x b1)
+          (+ y b1)))
+
+  (define (paint-on/off x1-on/off width height)
+    (get-on/off-box x1-on/off width height
+                    (lambda (x1 y1 x2 y2)    
+                      (define b2 (scale 1 0 6 0 x1-on/off))
+                      (define x1_i (+ x1 b2))
+                      (define y1_i (+ y1 b2))
+                      (define x2_i (- x2 b2))
+                      (define y2_i (- y2 b2))
+    
+                      ;;(c-display x1-on/off b1 height "-" (* 1.0 x1) (* 1.0 y1) (* 1.0 x2) (* 1.0 y2))
+                      ;;(c-display x1_i y2_i x2_i y2_i "\n\n")
+                      
+                      (cond ((is-enabled?)
+                             (<gui> :filled-ellipse widget "black" x1 y1 x2 y2)
+                             (<gui> :filled-ellipse widget "#22aa22" x1_i y1_i x2_i y2_i))
+                            (else
+                             (<gui> :filled-ellipse widget "#000000" x1 y1 x2 y2)
+                             (<gui> :filled-ellipse widget "#003f00" x1_i y1_i x2_i y2_i)))
+                      
+                      ;; border
+                      (<gui> :draw-ellipse widget "#88111111" x1 y1 x2 y2 2.0))))
+
+  (define (get-x1-on/off)
+    fontheight)
+  
+  (define (paintit width height)
+    (define x1 (get-x1-on/off))
+    (paint-slider x1 width height)
+    (paint-on/off x1 width height))
+  
   (set! widget (<gui> :horizontal-slider "" 0 (get-scaled-value) 1.0
                       (lambda (val)
                         ;;(<ra> :set-instrument-effect instrument-id effect-name val)
@@ -779,35 +853,49 @@
                           ))))
 
   (<gui> :set-min-height widget (get-fontheight))
-
+  
   (add-safe-paint-callback widget paintit)
-
+  
   (add-safe-mouse-callback widget (lambda (button state x y)
-                                    (when (and (= button *left-button*)
-                                               (= state *is-pressing*))
-                                      (set! is-changing-value #t)
-                                      (make-undo))
-                                    (when (= state *is-releasing*)
-                                      (set! is-changing-value #f)
-                                      (<gui> :tool-tip "")
-                                      ;;(c-display "finished")
-                                      )
-                                    (when (and (= button *right-button*)
-                                               (= state *is-pressing*))
-                                      (if (<ra> :shift-pressed)
-                                          (delete-func)
-                                          (show-mixer-path-popup first-instrument-id
-                                                                 parent-instrument-id
-                                                                 instrument-id
-                                                                 strips-config
-                                                                 is-send?
-                                                                 is-sink?
-                                                                 (< y (/ (<gui> :height widget) 2))
-                                                                 delete-func
-                                                                 replace-func
-                                                                 reset-func
-                                                                 widget)))
-                                    #f))
+                                    (define is-left-pressing (and (= button *left-button*)
+                                                                  (= state *is-pressing*)))
+                                    (define (in-box?)
+                                      (get-on/off-box (get-x1-on/off) (<gui> :width widget) (<gui> :height widget)
+                                                      (lambda (x1 y1 x2 y2)    
+                                                        (and (>= x x1)
+                                                             (>= y y1)
+                                                             (< x x2)
+                                                             (< y y2)))))
+                                    (if (and is-left-pressing
+                                             (in-box?))
+                                        (begin
+                                          (toggle-enabled)
+                                          #t)
+                                        (begin
+                                          (when is-left-pressing
+                                            (set! is-changing-value #t)
+                                            (make-undo))
+                                          (when (= state *is-releasing*)
+                                            (set! is-changing-value #f)
+                                            (<gui> :tool-tip "")
+                                            ;;(c-display "finished")
+                                            )
+                                          (when (and (= button *right-button*)
+                                                     (= state *is-pressing*))
+                                            (if (<ra> :shift-pressed)
+                                                (delete-func)
+                                                (show-mixer-path-popup first-instrument-id
+                                                                       parent-instrument-id
+                                                                       instrument-id
+                                                                       strips-config
+                                                                       is-send?
+                                                                       is-sink?
+                                                                       (< y (/ (<gui> :height widget) 2))
+                                                                       delete-func
+                                                                       replace-func
+                                                                       reset-func
+                                                                       widget)))
+                                          #f))))
   
   (add-safe-double-click-callback widget (lambda (button x y)
                                            (when (= button *left-button*)
@@ -820,7 +908,12 @@
   ;;         (<gui> :height widget))
 
   (<gui> :set-size-policy widget #t #t)
-
+  
+  (if (not is-send?)
+      (add-gui-effect-monitor widget instrument-id "System Effects On/Off"
+                              (lambda ()
+                                (<gui> :update widget))))
+  
   widget)
 
 

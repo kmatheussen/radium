@@ -1093,6 +1093,38 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       myupdate(x1, y1, x2, y2);
     }
 
+    void filledEllipse(const_char* color, float x1, float y1, float x2, float y2) {
+      QPainter *painter = get_painter();
+
+      QRectF rect(x1, y1, x2-x1, y2-y1);
+
+      QColor qcolor = getQColor(color);
+
+      //QPen pen = _image_rect.pen();
+
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(qcolor);
+      painter->drawEllipse(rect);
+      painter->setBrush(Qt::NoBrush);
+      //_image_painter->setPen(pen);
+
+      myupdate(x1, y1, x2, y2);
+    }
+
+    void drawEllipse(const_char* color, float x1, float y1, float x2, float y2, float width) {
+      QPainter *painter = get_painter();
+
+      QRectF rect(x1, y1, x2-x1, y2-y1);
+
+      QPen pen = getPen(color);
+
+      pen.setWidthF(width);
+      painter->setPen(pen);
+      painter->drawEllipse(rect);
+
+      myupdate(x1, y1, x2, y2);
+    }
+
     void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate) {
       QPainter *painter = get_painter();
 
@@ -3904,6 +3936,21 @@ int64_t gui_getParentWindow(int64_t guinum){
   return API_get_gui_from_widget(w);
 }
 
+int64_t gui_getParentGui(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return false;
+
+  QWidget *w = gui->_widget->parentWidget();
+
+  if (w == NULL){
+    handleError("Gui #%d has no parent gui\n", (int)guinum);
+    return -1;
+  }
+
+  return API_get_gui_from_widget(w);
+}
+
 bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -4634,6 +4681,22 @@ void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float 
   gui->filledBox(color, x1, y1, x2, y2, round_x, round_y);
 }
 
+void gui_filledEllipse(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->filledEllipse(color, x1, y1, x2, y2);
+}
+
+void gui_drawEllipse(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float width) {
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->drawEllipse(color, x1, y1, x2, y2, width);
+}
+
 void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate) {
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -4696,7 +4759,7 @@ QWidget *API_gui_get_widget(int64_t guinum){
   return gui->_widget;
 }
 
-QWidget *API_gui_get_parentwidget(QWidget *child, int64_t parentnum){
+static QWidget *get_parentwidget(QWidget *child, int64_t parentnum, bool must_be_window){
   QWidget *parent;
   
   if (parentnum==-1)
@@ -4722,7 +4785,7 @@ QWidget *API_gui_get_parentwidget(QWidget *child, int64_t parentnum){
     parent = parentgui->_widget;
   }
 
-  if (parent != NULL) {
+  if (parent != NULL && must_be_window) {
     QWidget *window = parent->window();
     if (parent != window){
       printf("API_gui_get_parentwidget: #%d is not a window gui. (automatically fixed)\n", (int)parentnum);
@@ -4731,6 +4794,10 @@ QWidget *API_gui_get_parentwidget(QWidget *child, int64_t parentnum){
   }
 
   return parent;
+}
+
+QWidget *API_gui_get_parentwidget(QWidget *child, int64_t parentnum){
+  return get_parentwidget(child, parentnum, true);
 }
 
 /*

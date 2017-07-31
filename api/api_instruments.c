@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/Presets_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
+#include "../audio/undo_audio_connection_enabled_proc.h"
 #include "../audio/undo_audio_connection_gain_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
@@ -1253,25 +1254,25 @@ bool hasEventConnection(int64_t source_id, int64_t dest_id){
   return MW_are_econnected(source, dest);
 }
 
-float getAudioConnectionGain(int64_t source_id, int64_t dest_id){
+bool get_audio_connection_gain_enabled(int64_t source_id, int64_t dest_id, float *gain, bool *is_enabled){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
-    return 0.0;
+    return false;
 
   struct Patch *dest = getAudioPatchFromNum(dest_id);
   if(dest==NULL)
-    return 0.0;
+    return false;
 
   struct SoundPlugin *source_plugin = (struct SoundPlugin*)source->patchdata;
   if (source_plugin==NULL){
     handleError("Instrument #%d has been closed", (int)source_id);
-    return 0.0;
+    return false;
   }
 
   struct SoundPlugin *dest_plugin = (struct SoundPlugin*)dest->patchdata;
   if (dest_plugin==NULL){
     handleError("Instrument #%d has been closed", (int)dest_id);
-    return 0.0;
+    return false;
   }
 
   struct SoundProducer *source_sp = SP_get_sound_producer(source_plugin);
@@ -1279,15 +1280,37 @@ float getAudioConnectionGain(int64_t source_id, int64_t dest_id){
 
   const char *error = NULL;
 
-  float ret = SP_get_link_gain(dest_sp, source_sp, &error);
+  if (gain != NULL)
+    *gain = SP_get_link_gain(dest_sp, source_sp, &error);
 
-  if (error!=NULL)
+  if (error==NULL && is_enabled!=NULL)
+    *is_enabled = SP_get_link_enabled(dest_sp, source_sp, &error);
+
+  if (error!=NULL){
     handleError("Could not find audio connection between instrument %d and instrument %d", (int)source_id, (int)dest_id);
-  
-  return ret;
+    return false;
+  }
+
+  return true;
 }
 
-void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool remake_mixer_strips){
+float getAudioConnectionGain(int64_t source_id, int64_t dest_id){
+  float ret;
+  if (get_audio_connection_gain_enabled(source_id, dest_id, &ret, NULL))
+    return ret;
+  else
+    return 0.0;
+}
+
+bool getAudioConnectionEnabled(int64_t source_id, int64_t dest_id){
+  bool ret;
+  if (get_audio_connection_gain_enabled(source_id, dest_id, NULL, &ret))
+    return ret;
+  else
+    return false;
+}
+
+static void set_audio_connection_gain_enabled(int64_t source_id, int64_t dest_id, const float *gain, const bool *is_enabled, bool remake_mixer_strips){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -1312,16 +1335,42 @@ void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool
   struct SoundProducer *dest_sp = SP_get_sound_producer(dest_plugin);
 
   const char *error = NULL;
+  bool changed1 = false;
+  bool changed2 = false;
 
-  bool changed = SP_set_link_gain(dest_sp, source_sp, gain, &error);
+  if (gain != NULL)
+    changed1 = SP_set_link_gain(dest_sp, source_sp, *gain, &error);
+
+  if (is_enabled != NULL && error==NULL)
+    changed2 = SP_set_link_enabled(dest_sp, source_sp, *is_enabled, &error);
 
   if (error!=NULL)
     handleError("Could not find audio connection between instrument %d and instrument %d", (int)source_id, (int)dest_id);
   else
-    if (changed && remake_mixer_strips){
+    if ((changed1||changed2) && remake_mixer_strips){
       printf("       Remake: setAudioConnectionGain\n");
       remakeMixerStrips(source_id);
     }
+}
+
+void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool remake_mixer_strips){
+  set_audio_connection_gain_enabled(source_id, dest_id, &gain, NULL, remake_mixer_strips);
+}
+
+void setAudioConnectionEnabled(int64_t source_id, int64_t dest_id, bool is_enabled, bool remake_mixer_strips){
+  set_audio_connection_gain_enabled(source_id, dest_id, NULL, &is_enabled, remake_mixer_strips);
+}
+
+void undoAudioConnectionEnabled(int64_t source_id, int64_t dest_id){
+  struct Patch *source = getAudioPatchFromNum(source_id);
+  if(source==NULL)
+    return;
+
+  struct Patch *dest = getAudioPatchFromNum(dest_id);
+  if(dest==NULL)
+    return;
+
+  ADD_UNDO(AudioConnectionEnabled_CurrPos(source, dest));
 }
 
 

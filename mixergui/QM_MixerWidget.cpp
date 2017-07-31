@@ -2859,6 +2859,11 @@ static void apply_ab_connections_state(hash_t *connections){
         */
       } else {
 
+        if (HASH_has_key(connection_state, "enabled")){
+          bool is_enabled = HASH_get_bool(connection_state, "enabled");
+          setAudioConnectionEnabled(id_from, id_to, is_enabled, true);
+        }
+
         if (HASH_has_key(connection_state, "gain")){
           float gain = HASH_get_float(connection_state, "gain");
           setAudioConnectionGain(id_from, id_to, gain, true);
