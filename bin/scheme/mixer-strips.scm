@@ -1455,7 +1455,7 @@
                 (when (and (not (= instrument-id except))
                            (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
                   ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
-                  (<ra> :set-instrument-effect instrument-id "System Solo On/Off" 0)
+                  (set-instrument-solo! instrument-id #f)
                   ))
               (get-all-audio-instruments)))
 
@@ -1469,8 +1469,7 @@
                                        (lambda (is-muted)
                                          (undo-block
                                           (lambda ()
-                                            (<ra> :undo-instrument-effect instrument-id volume_on_off_name)
-                                            (<ra> :set-instrument-effect instrument-id volume_on_off_name (if is-muted 0.0 1.0))
+                                            (<ra> :set-instrument-mute instrument-id is-muted)
                                             ;;(c-display "mute: " is-muted)
                                             (if (<ra> :control-pressed)
                                                 (turn-off-all-mute instrument-id))
@@ -1497,9 +1496,11 @@
                                          (undo-block
                                           (lambda ()
                                             ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
-                                            (<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
+                                        ;(<ra> :set-instrument-effect instrument-id "System Solo On/Off" (if is-selected 1.0 0.0))
+                                            (<ra> :set-instrument-solo instrument-id is-selected)
                                             (if (<ra> :control-pressed)
-                                                (turn-off-all-solo instrument-id)))))
+                                                (turn-off-all-solo instrument-id))
+                                            )))
                                        (get-soloed)
                                        height))
   
@@ -1939,7 +1940,7 @@
                                                              (= state *is-pressing*))
                                                         (begin (if (<ra> :shift-pressed)
                                                                    (<ra> :delete-instrument instrument-id)
-                                                                   (create-default-mixer-path-popup instrument-id strips-config mixer-strip-path-gui bsize))
+                                                                   (create-default-mixer-path-popup instrument-id strips-config mixer-strip-path-gui))
                                                                #t)
                                                         #f)))
 

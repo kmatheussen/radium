@@ -777,6 +777,37 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
   GFX_update_instrument_widget(patch);
 }
 
+void setInstrumentSolo(int64_t instrument_id, bool do_solo){
+  S7CALL2(void_int_bool,"FROM-C-set-solo!", instrument_id, do_solo);
+}
+
+void setInstrumentMute(int64_t instrument_id, bool do_mute){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  int effect_num = get_mute_effectnum(plugin->type);
+
+  float new_val = do_mute ? 0.0 : 1.0;
+  
+  ADD_UNDO(AudioEffect_CurrPos(patch, effect_num));
+
+  PLUGIN_set_effect_value(plugin, -1, effect_num, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+}
+
+void setInstrumentBypass(int64_t instrument_id, bool do_bypass){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  int num_effects = plugin->type->num_effects;
+  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, num_effects+EFFNUM_EFFECTS_ONOFF));
+  float new_val = do_bypass ? 0.0 : 1.0;
+  PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_val, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+}
+
 void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -1695,17 +1726,10 @@ static struct EffectMonitor *find_effect_monitor(int effect_num, int64_t instrum
 */
 
 int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, func_t *func){
-  struct Patch *patch = getPatchFromNum(instrument_id);
-  if(patch==NULL){
-    handleError("There is no instrument #%d", (int)instrument_id);
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
     return -1;
-  }
 
-  if (patch->instrument!=get_audio_instrument()){
-    handleError("Can only call addEffectMonitor for audio instruments");
-    return -1;
-  }
-      
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
     handleError("Instrument #%d has been closed", (int)instrument_id);

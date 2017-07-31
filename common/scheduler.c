@@ -103,6 +103,7 @@ static int64_t scheduler_to_seq_time(int64_t scheduler_time){
 #endif
 
 // Warning: It's quite complicated to get the same value back as you started with when convert between seq time and scheduler time.
+// Warning: It might return a negative number (and that's not an error).
 static int64_t seq_to_scheduler_time(struct SeqTrack *seqtrack, scheduler_t *scheduler, int64_t seq_time){
 
 #if 0
@@ -121,7 +122,7 @@ static bool schedule_event(struct SeqTrack *seqtrack, event_t *event, int64_t se
   scheduler_t *scheduler = seqtrack->scheduler;
 
   //  if (seq_time < (int64_t)seqtrack->start_time)
-  //    seq_time = (int64_t)seqtrack->start_time; // TODO/FIX: This is probably not a good thing. Why was this code added again?
+  //    seq_time = (int64_t)seqtrack->start_time; // TODO/FIX: This is probably not a good thing. Why was this code added again? A: Perhaps because "<<" shouldn't be run on negative numbers, but we might need several events with negative time to be sorted properly, so this doesn't seem like a good workaround.
   
   int64_t time = seq_to_scheduler_time(seqtrack, scheduler, seq_time);
 
@@ -139,7 +140,7 @@ static bool schedule_event(struct SeqTrack *seqtrack, event_t *event, int64_t se
   }
   
   // Add priority bit.
-  time = time << SCHEDULER_NUM_PRIORITY_BITS;
+  time = time *  (1 << SCHEDULER_NUM_PRIORITY_BITS); // Can not write (time << SCHEDULER_NUM_PRIORITY_BITS) since time can be negative, and it seems like that would be undefined behavior.)
   time = time + priority;
 
   
@@ -261,7 +262,7 @@ int SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
   while(scheduler->queue_size>0){
     
     event_t *event = get_first_event(scheduler);
-    int64_t event_time = event->time >> SCHEDULER_NUM_PRIORITY_BITS;  // remove priority bits.
+    int64_t event_time = event->time / (1 << SCHEDULER_NUM_PRIORITY_BITS);  // remove priority bits. (event->time might be negative)
     //printf("  SCHEDULER: sched: %d - seq: %d.  First event: %d. seqtrack->start_time: %d, seqtrack->end_time: %d\n",(int)end_time, (int)scheduler_to_seq_time(end_time), (int)scheduler_to_seq_time(event_time),(int)seqtrack->start_time, (int)seqtrack->end_time);
 
     //printf("   Sched. Now: %d,  first event: %d. Seqtrack: %p\n", (int)end_time, (int)event_time, seqtrack);
