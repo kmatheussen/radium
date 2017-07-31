@@ -74,6 +74,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   }                                                    
 
 
+
 //MakeFocusSnifferClass(QSpinBox);
 //MakeFocusSnifferClass(QDoubleSpinBox);
 MakeFocusSnifferClass(QLineEdit);
@@ -82,11 +83,16 @@ MakeFocusSnifferClass(QLineEdit);
 //MakeFocusSnifferClass(QTextEdit);
 //MakeFocusSnifferClass(QListWidget);
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsuggest-override"
+
+#if __GNUC__ >= 5
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
 #include <Qsci/qscilexer.h>
 #include <Qsci/qsciscintilla.h>  // <--- Much trouble. Any qt4 alternatives?
-#pragma GCC diagnostic pop
+#if __GNUC__ >= 5
+#  pragma GCC diagnostic pop
+#endif
 
 
 class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{

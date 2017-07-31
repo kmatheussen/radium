@@ -17,14 +17,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <math.h>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsuggest-override"
+#if __GNUC__ >= 5
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
 
 #include <vlCore/VisualizationLibrary.hpp>
 #include <vlGraphics/OpenGLContext.hpp>
 
-#pragma GCC diagnostic pop
-
+#if __GNUC__ >= 5
+#  pragma GCC diagnostic pop
+#endif
 
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"

@@ -8,24 +8,33 @@
 //#define QTGUI FAUST2_QTGUI
 
 #include "../bin/packages/faust2/compiler/generator/llvm/llvm-dsp.h"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsuggest-override"
+
+#if __GNUC__ >= 5
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
 #include "../bin/packages/faust2/compiler/libfaust.h"
 
 #include "../bin/packages/faust2/architecture/faust/dsp/dsp.h"
 #include "../bin/packages/faust2/architecture/faust/gui/UI.h"
 #include "../bin/packages/faust2/architecture/faust/gui/GUI.h"
-#pragma GCC diagnostic pop
+#if __GNUC__ >= 5
+#  pragma GCC diagnostic pop
+#endif
 
 #include "../common/nsmtracker.h"
 
 #include "../Qt/FocusSniffers.h"
 //}
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsuggest-override"
+#if __GNUC__ >= 5
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
 #include "../bin/packages/faust2/architecture/faust/gui/faustqt.h"
-#pragma GCC diagnostic pop
+#if __GNUC__ >= 5
+#  pragma GCC diagnostic pop
+#endif
 
 #include "mfaustqt2.cpp"
 

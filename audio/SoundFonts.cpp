@@ -23,10 +23,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QFile>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsuggest-override"
+#if __GNUC__ >= 5
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
 #include "../bin/packages/libgig/src/SF.h"
-#pragma GCC diagnostic pop
+#if __GNUC__ >= 5
+#  pragma GCC diagnostic pop
+#endif
 
 #define DEBUG_ALLOWED 1 // <- SF.h sets DEBUG to 0
 #include "../common/nsmtracker.h"
