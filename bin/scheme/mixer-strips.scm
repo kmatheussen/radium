@@ -743,29 +743,33 @@
   ;;(define widget (<gui> :widget 100 (get-fontheight)))
   (define widget #f)
   (define is-changing-value #f)
-
+  
   (define (is-enabled?)
     (if is-send?
         (<ra> :get-audio-connection-enabled parent-instrument-id instrument-id)
         (>= (<ra> :get-instrument-effect instrument-id "System Effects On/Off") 0.5)))
   
   (define (is-grayed?)
-    (if (not (is-enabled?))
-        #t
-        (if is-send?
-            (< (<ra> :get-instrument-effect parent-instrument-id "System Effects On/Off") 0.5)
-            #f)))
-        
-
+    (not (is-enabled?)))
+    ;;(if (not (is-enabled?))
+    ;;    #t
+    ;;    (if is-send? ;; Wrong. We don't gray out a plugins sends. The sends are still working.
+    ;;        (< (<ra> :get-instrument-effect parent-instrument-id "System Effects On/Off") 0.5)
+    ;;        #f)))
+    
+    
   (define (toggle-enabled)
     (define is-enabled (is-enabled?))
     (if is-send?
         (begin
           (<ra> :undo-audio-connection-enabled parent-instrument-id instrument-id)
-          (<ra> :set-audio-connection-enabled parent-instrument-id instrument-id (not is-enabled)))
+          (<ra> :set-audio-connection-enabled parent-instrument-id instrument-id (not is-enabled) #t)
+          (<gui> :update widget)
+          )
         (begin
           (<ra> :set-instrument-bypass instrument-id (not (not is-enabled)))
-          (<gui> :update (<gui> :get-parent-gui widget)))))
+          (<gui> :update widget))))
+  ;;(<gui> :update (<gui> :get-parent-gui widget)))))
 
   (define (paint-slider x1-on/off width height)
     (define color (<ra> :get-instrument-color instrument-id))
@@ -855,21 +859,23 @@
   (<gui> :set-min-height widget (get-fontheight))
   
   (add-safe-paint-callback widget paintit)
-  
+
+  (define (in-enabled-box? x y)
+    (get-on/off-box (get-x1-on/off) (<gui> :width widget) (<gui> :height widget)
+                    (lambda (x1 y1 x2 y2)    
+                      (and (>= x x1)
+                           (>= y y1)
+                           (< x x2)
+                           (< y y2)))))
+
   (add-safe-mouse-callback widget (lambda (button state x y)
                                     (define is-left-pressing (and (= button *left-button*)
                                                                   (= state *is-pressing*)))
-                                    (define (in-box?)
-                                      (get-on/off-box (get-x1-on/off) (<gui> :width widget) (<gui> :height widget)
-                                                      (lambda (x1 y1 x2 y2)    
-                                                        (and (>= x x1)
-                                                             (>= y y1)
-                                                             (< x x2)
-                                                             (< y y2)))))
-                                    (if (and is-left-pressing
-                                             (in-box?))
+
+                                    (if (in-enabled-box? x y)
                                         (begin
-                                          (toggle-enabled)
+                                          (if is-left-pressing
+                                              (toggle-enabled))
                                           #t)
                                         (begin
                                           (when is-left-pressing
@@ -899,10 +905,13 @@
   
   (add-safe-double-click-callback widget (lambda (button x y)
                                            (when (= button *left-button*)
-                                             ;;(c-display " Double clicking" button)
-                                             (<ra> :cancel-last-undo) ;; Undo the added undo made at th mouse callback above.
-                                             (<ra> :show-instrument-gui instrument-id (<ra> :show-instrument-widget-when-double-clicking-sound-object))
-                                             )))
+                                             (if (in-enabled-box? x y)
+                                                 (toggle-enabled)
+                                                 (begin
+                                                   (c-display " Double clicking" button)
+                                                   (<ra> :cancel-last-undo) ;; Undo the added undo made at th mouse callback above.
+                                                   (<ra> :show-instrument-gui instrument-id (<ra> :show-instrument-widget-when-double-clicking-sound-object))
+                                                   )))))
 
   ;;(paintit (<gui> :width widget)
   ;;         (<gui> :height widget))
@@ -1278,7 +1287,7 @@
 
   (define (set-db-value db)
     ;;(c-display "setting db to" db)
-    (<ra> :set-audio-connection-gain source-id target-id (<ra> :db-to-gain db) #f)
+    (<ra> :set-audio-connection-gain source-id target-id (<ra> :db-to-gain db) #t)
     (for-each (lambda (send-callback)
                 (send-callback gui source-id target-id))
               *send-callbacks*))
@@ -2437,8 +2446,9 @@
 (define (redraw-mixer-strips . list-of-modified-instrument-ids)
   ;;(c-display "\n\n\n             REDRAW MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
   (for-each (lambda (a-mixer-strips-object)
-              ;;(c-display "       updating " (a-mixer-strips-object :gui))
-              (<gui> :update-recursively (a-mixer-strips-object :gui)))
+              ;;(<gui> :update-recursively (a-mixer-strips-object :gui))  ;; When is this necessary?
+              (<gui> :update (a-mixer-strips-object :gui))
+              )
             *mixer-strips-objects*))
 
 

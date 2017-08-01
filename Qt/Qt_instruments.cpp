@@ -794,7 +794,7 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
     }
 
     g_currpatch = patch;
-    redrawMixerStrips();
+    redrawMixerStrips(false);
 
   }
   //exit:

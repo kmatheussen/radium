@@ -242,8 +242,11 @@ struct SoundProducerLink {
   int source_ch;
   int target_ch;
 
-  bool link_enabled; // Set by the user. "is_active" (below) is an internal variable set by the sound engine.
-  float link_volume;  // Set by the user.
+  bool link_enabled; // Set by the user.  Only accessed by the main thread. ("is_active" (below) is an internal variable set by the sound engine, not the same)
+  float link_volume;  // Set by the user. Only accessed by the main thread.
+
+  bool RT_link_enabled;  // Contains the same value as "link_enabled", but can only be accessed if holding the player lock.
+  float RT_link_volume;  // Contains the same value as "link_volume", but can only be accessed if holding the player lock.
   Smooth volume; // volume.target_value = link_volume * source->output_volume * source->volume
 
   bool is_active; // this is an internal variable used for whether the link should run or not. It's not the same as "link_enabled" above (naturally).
@@ -295,20 +298,23 @@ struct SoundProducerLink {
 
     if (should_be_turned_off)
       return 0.0f;
+
+    else if (!RT_link_enabled)
+      return 0.0f;
     
     else if (is_bus_link){
       
       int bus_num = SP_get_bus_num(target);
       
       if (ATOMIC_GET_ARRAY(source_plugin->bus_volume_is_on, bus_num))
-        return source_plugin->bus_volume[bus_num] * plugin_volume; // The links are invisible here, so it doesn't make sense multiplying with link_volume
+        return source_plugin->bus_volume[bus_num] * plugin_volume; // The links are invisible here, so it doesn't make sense multiplying with link_volume (don't need two bus volumes)
       else
         return 0.0f;
       
     } else {
     
-      if (link_enabled && ATOMIC_GET(source_plugin->output_volume_is_on))
-        return source_plugin->output_volume * plugin_volume * link_volume;
+      if (ATOMIC_GET(source_plugin->output_volume_is_on))
+        return source_plugin->output_volume * plugin_volume * RT_link_volume;
       else
         return 0.0f;
 
@@ -371,6 +377,8 @@ struct SoundProducerLink {
     , target_ch(0)
     , link_enabled(true)
     , link_volume(1.0)
+    , RT_link_enabled(true)
+    , RT_link_volume(1.0)
     , is_active(is_event_link)
   {
     //SMOOTH_init(&volume, get_total_link_volume(), MIXER_get_buffer_size());
@@ -1149,11 +1157,13 @@ public:
       // Enable/disable
       for(const auto &link_enabled_change : link_enabled_changes){
         link_enabled_change.link->link_enabled = link_enabled_change.link_enabled;
+        link_enabled_change.link->RT_link_enabled = link_enabled_change.link_enabled;
       }
 
       // Change volume
       for(const auto &volume_change : volume_changes){
         volume_change.link->link_volume = volume_change.new_volume;
+        volume_change.link->RT_link_volume = volume_change.new_volume;
       }
 
       if (to_add.size() > 0)
@@ -1889,10 +1899,14 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
       SoundProducerLink *link = new SoundProducerLink(parm.source, parm.target, false);
       link->source_ch = parm.source_ch;
       link->target_ch = parm.target_ch;
-      if (parm.must_set_volume)
+      if (parm.must_set_volume){
         link->link_volume = parm.volume;
-      if (parm.must_set_enabled)
+        link->RT_link_volume = parm.volume;
+      }
+      if (parm.must_set_enabled){
         link->link_enabled = parm.is_enabled;
+        link->RT_link_enabled = parm.is_enabled;
+      }
       to_add.push_back(link);
       
     }
@@ -1957,7 +1971,7 @@ float SP_get_link_gain(const SoundProducer *target, const SoundProducer *source,
   for (SoundProducerLink *link : target->_input_links) {
     if(link->is_bus_link==false && link->is_event_link==false && link->source==source){
       //printf("   Found %f (%p)\n", safe_float_read(&link->link_volume), link);
-      return safe_float_read(&link->link_volume);
+      return link->link_volume;
     }
   }
 
@@ -1973,8 +1987,9 @@ bool SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume
     if(link->is_bus_link==false && link->is_event_link==false && link->source==source){
       found=true;
       //printf("   Setting to %f (%p)\n", volume, link);
-      if (safe_float_read(&link->link_volume) != volume){
-        safe_float_write(&link->link_volume, volume);
+      if (link->link_volume != volume){
+        link->link_volume = volume;
+        safe_float_write(&link->RT_link_volume, volume);
         ret = true;
       }
     }
@@ -1990,7 +2005,7 @@ bool SP_get_link_enabled(const SoundProducer *target, const SoundProducer *sourc
   for (SoundProducerLink *link : target->_input_links) {
     if(link->is_event_link==false && link->source==source){ // link->is_bus_link==false && 
       //printf("   Found %d (%p)\n", safe_bool_read(&link->link_enabled), link);
-      return safe_bool_read(&link->link_enabled);
+      return link->link_enabled;
     }
   }
   *error = talloc_strdup("Could not find link");
@@ -2004,8 +2019,12 @@ bool SP_set_link_enabled(SoundProducer *target, SoundProducer *source, bool is_e
   for (SoundProducerLink *link : target->_input_links) {
     if(link->is_event_link==false && link->source==source){ // link->is_bus_link==false && 
       found=true;
-      if (safe_bool_read(&link->link_enabled) != is_enabled){
-        safe_bool_write(&link->link_enabled, is_enabled);
+      if (link->link_enabled != is_enabled){
+        link->link_enabled = is_enabled;
+        {
+          radium::PlayerLock lock;
+          link->RT_link_enabled = is_enabled;
+        }
         ret = true;
       }
     }

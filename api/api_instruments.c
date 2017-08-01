@@ -1310,7 +1310,7 @@ bool getAudioConnectionEnabled(int64_t source_id, int64_t dest_id){
     return false;
 }
 
-static void set_audio_connection_gain_enabled(int64_t source_id, int64_t dest_id, const float *gain, const bool *is_enabled, bool remake_mixer_strips){
+static void set_audio_connection_gain_enabled(int64_t source_id, int64_t dest_id, const float *gain, const bool *is_enabled, bool redraw_mixer_strips){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -1347,18 +1347,18 @@ static void set_audio_connection_gain_enabled(int64_t source_id, int64_t dest_id
   if (error!=NULL)
     handleError("Could not find audio connection between instrument %d and instrument %d", (int)source_id, (int)dest_id);
   else
-    if ((changed1||changed2) && remake_mixer_strips){
-      printf("       Remake: setAudioConnectionGain\n");
-      remakeMixerStrips(source_id);
+    if ((changed1||changed2) && redraw_mixer_strips){
+      //printf("       Remake: setAudioConnectionGain\n");
+      redrawMixerStrips(false);
     }
 }
 
-void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool remake_mixer_strips){
-  set_audio_connection_gain_enabled(source_id, dest_id, &gain, NULL, remake_mixer_strips);
+void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool redraw_mixer_strips){
+  set_audio_connection_gain_enabled(source_id, dest_id, &gain, NULL, redraw_mixer_strips);
 }
 
-void setAudioConnectionEnabled(int64_t source_id, int64_t dest_id, bool is_enabled, bool remake_mixer_strips){
-  set_audio_connection_gain_enabled(source_id, dest_id, NULL, &is_enabled, remake_mixer_strips);
+void setAudioConnectionEnabled(int64_t source_id, int64_t dest_id, bool is_enabled, bool redraw_mixer_strips){
+  set_audio_connection_gain_enabled(source_id, dest_id, NULL, &is_enabled, redraw_mixer_strips);
 }
 
 void undoAudioConnectionEnabled(int64_t source_id, int64_t dest_id){
@@ -1847,8 +1847,11 @@ void API_instruments_call_regularly(void){
 
 // Mixer strips
 
-void redrawMixerStrips(void){
-  RT_schedule_mixer_strips_redraw(); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
+void redrawMixerStrips(bool immediately){
+  if (immediately)
+    evalScheme("(redraw-mixer-strips)");
+  else
+    RT_schedule_mixer_strips_redraw(); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
 }
 
 void remakeMixerStrips(int64_t id){

@@ -881,7 +881,7 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
       R_ASSERT_NON_RELEASE(false);
     }else{
       if(mixerstrips_to_remake.contains(patch)==false){
-        redrawMixerStrips(); // We might redraw mixer strips unnecessarily if volume and/or enabled wasn't changed, but redrawMixerStrips should be a light operation.
+        redrawMixerStrips(false); // We might redraw mixer strips unnecessarily if volume and/or enabled wasn't changed, but redrawMixerStrips should be a light operation.
         break;
       }
     }
