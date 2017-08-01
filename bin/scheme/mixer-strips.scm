@@ -345,7 +345,7 @@
   (define is-enabled-content (<gui> :widget))
 
   (define config-gui (<gui> :vertical-layout))
-  (<gui> :set-parent config-gui -2)
+  (<gui> :set-parent config-gui parentgui)
 
   (<gui> :add config-gui is-enabled-content 3) ;; stretch 3
   (<gui> :add config-gui
@@ -2243,8 +2243,8 @@
                                              (strips-config :is-enabled id))
                                            (get-all-audio-instruments))))
 
-  (define min-mixer-strip-width (1+ (floor (max (<gui> :text-width " -14.2 -23.5 ")
-                                                (<gui> :text-width " Mute Solo ")))))
+  (define min-mixer-strip-width (1+ (floor (max (* 2 (<gui> :text-width " -14.2 -23.5 "))
+                                                (* 2 (<gui> :text-width " Mute Solo "))))))
 
   (define num-strips-per-row (ceiling (/ num-visible-strips num-rows)))
 

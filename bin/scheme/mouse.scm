@@ -537,24 +537,28 @@
 (define2 *current-track-num* (curry-or not integer?) #f)
 
 (define (set-current-track-num! X Y)
-  (define track-num (get-track-num X Y))
-  (set! *current-track-num-all-tracks* track-num)
-  (if (and track-num
-           (>= track-num 0))
-      (set! *current-track-num* track-num)
-      (set! *current-track-num* #f))
-  (cond (*current-track-num*
-         (set-mouse-track *current-track-num*))
-        ((and (<ra> :reltempo-track-visible)
-              *current-track-num-all-tracks*
-              (= *current-track-num-all-tracks* (<ra> :get-rel-tempo-track-num)))
-         (set-mouse-track-to-reltempo))))
+  (if (>= Y (<ra> :get-editor-y2))
+      (begin
+        (set! *current-track-num* #f)
+        (set! *current-track-num-all-tracks* #f))
+      (begin
+        (define track-num (get-track-num X Y))
+        (set! *current-track-num-all-tracks* track-num)
+        (if (and track-num
+                 (>= track-num 0))
+            (set! *current-track-num* track-num)
+            (set! *current-track-num* #f))
+        (cond (*current-track-num*
+               (set-mouse-track *current-track-num*))
+              ((and (<ra> :reltempo-track-visible)
+                    *current-track-num-all-tracks*
+                    (= *current-track-num-all-tracks* (<ra> :get-rel-tempo-track-num)))
+               (set-mouse-track-to-reltempo))))))
 
 ;; Set current track and mouse track
 (add-mouse-move-handler
  :move (lambda (Button X Y)
-         (if (< Y (<ra> :get-editor-y2))
-             (set-current-track-num! X Y))))
+         (set-current-track-num! X Y)))
 
 (define2 *current-subtrack-num* (curry-or not integer?) #f)
 
