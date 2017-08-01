@@ -85,6 +85,8 @@ extern LANGSPEC bool MW_get_connections_visibility(void);
 
 class Chip;
 
+static inline struct SoundProducer *CHIP_get_soundproducer(Chip *chip);
+
 class SuperConnection  : public QGraphicsLineItem {
 
 public:
@@ -111,8 +113,15 @@ public:
     pen.setJoinStyle(Qt::RoundJoin);
     pen.setCapStyle(Qt::RoundCap);
     //pen.setColor(QColor(30,25,70,6));
+
+    const char *error = NULL;
+    bool is_enabled = from==NULL||to==NULL ? true : SP_get_link_enabled(CHIP_get_soundproducer(to), CHIP_get_soundproducer(from), &error);
+    //R_ASSERT_NON_RELEASE(error==NULL); // link doesn't exist during startup.
+    
     QColor c = getColor();
-    if(is_selected)
+    if (!is_enabled)
+      c.setAlpha(40);
+    else if(is_selected)
       c.setAlpha(250);
     else
       c.setAlpha(140);
@@ -429,6 +438,10 @@ public:
   }
 };
 
+static inline struct SoundProducer *CHIP_get_soundproducer(Chip *chip){
+  return chip->_sound_producer;
+}
+
 extern void CHIP_get_name_coordinates(int &x1, int &y1, int &x2, int &y2);
 extern void CHIP_get_note_indicator_coordinates(int &x1, int &y1, int &x2, int &y2);
 
@@ -447,6 +460,7 @@ extern void CONNECTION_delete_an_event_connection_where_all_links_have_been_remo
 extern void CONNECTION_delete_audio_connection(AudioConnection *connection);
 extern void CONNECTION_delete_event_connection(EventConnection *connection);
 extern void CONNECTION_delete_connection(SuperConnection *connection);
+extern void CONNECTION_update(struct Patch *source, struct Patch *target);
   
 extern void CHIP_econnect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
 extern void CHIP_econnect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to);

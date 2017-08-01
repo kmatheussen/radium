@@ -2025,6 +2025,7 @@ bool SP_set_link_enabled(SoundProducer *target, SoundProducer *source, bool is_e
           radium::PlayerLock lock;
           link->RT_link_enabled = is_enabled;
         }
+        CONNECTION_update((struct Patch*)link->source->_plugin->patch, (struct Patch*)link->target->_plugin->patch);
         ret = true;
       }
     }

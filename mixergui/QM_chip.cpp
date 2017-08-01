@@ -1285,6 +1285,23 @@ void CONNECTION_delete_connection(SuperConnection *connection){
   }
 }
 
+void CONNECTION_update(struct Patch *source, struct Patch *target){
+  Chip *from = CHIP_get(get_scene(g_mixer_widget), source);
+  Chip *to = CHIP_get(get_scene(g_mixer_widget), target);
+
+  for(AudioConnection *connection : from->audio_connections)
+    if(connection->from==from && connection->to==to){
+      connection->update();
+      return;
+    }
+
+  for(auto *connection : from->event_connections)
+    if(connection->from==from && connection->to==to){
+      connection->update();
+      return;
+    }
+}
+
 void AudioConnection::update_position(void){
   int x1 = to->pos().x()+port_width/2;
   int x2 = from->pos().x()+grid_width-port_width/2;
