@@ -746,7 +746,7 @@
   
   (define (is-enabled?)
     (if is-send?
-        (<ra> :get-audio-connection-enabled parent-instrument-id instrument-id)
+        (<ra> :get-connection-enabled parent-instrument-id instrument-id)
         (>= (<ra> :get-instrument-effect instrument-id "System Effects On/Off") 0.5)))
   
   (define (is-grayed?)
@@ -762,8 +762,8 @@
     (define is-enabled (is-enabled?))
     (if is-send?
         (begin
-          (<ra> :undo-audio-connection-enabled parent-instrument-id instrument-id)
-          (<ra> :set-audio-connection-enabled parent-instrument-id instrument-id (not is-enabled) #t)
+          (<ra> :undo-connection-enabled parent-instrument-id instrument-id)
+          (<ra> :set-connection-enabled parent-instrument-id instrument-id (not is-enabled) #t)
           (<gui> :update widget)
           )
         (begin

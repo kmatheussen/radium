@@ -25,12 +25,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_proc.h"
 
-#include "undo_audio_connection_enabled_proc.h"
+#include "undo_connection_enabled_proc.h"
 
 
 extern struct Root *root;
 
-struct Undo_AudioConnectionEnabled{
+struct Undo_ConnectionEnabled{
   struct Patch *source;
   struct Patch *target;
 
@@ -38,7 +38,7 @@ struct Undo_AudioConnectionEnabled{
 };
 
 
-static void *Undo_Do_AudioConnectionEnabled(
+static void *Undo_Do_ConnectionEnabled(
                                  struct Tracker_Windows *window,
                                  struct WBlocks *wblock,
                                  struct WTracks *wtrack,
@@ -46,19 +46,19 @@ static void *Undo_Do_AudioConnectionEnabled(
                                  void *pointer
                                  );
 
-static void Undo_AudioConnectionEnabled(
+static void Undo_ConnectionEnabled(
                                        struct Tracker_Windows *window,
                                        struct WBlocks *wblock,
                                        struct Patch *source,
                                        struct Patch *target
                                        )
 {
-  struct Undo_AudioConnectionEnabled *undo_ae=talloc(sizeof(struct Undo_AudioConnectionEnabled));
+  struct Undo_ConnectionEnabled *undo_ae=talloc(sizeof(struct Undo_ConnectionEnabled));
   
   undo_ae->source = source;
   undo_ae->target = target;
 
-  undo_ae->enabled = getAudioConnectionEnabled(source->id, target->id);
+  undo_ae->enabled = getConnectionEnabled(source->id, target->id);
 
 
   //printf("********* Storing eff undo. value: %f %d\n",undo_ae->value,plugin->comp.is_on);
@@ -69,19 +69,19 @@ static void Undo_AudioConnectionEnabled(
                              wblock->wtrack->l.num,
                              wblock->curr_realline,
                              undo_ae,
-                             Undo_Do_AudioConnectionEnabled,
-                             talloc_format("Undo audio connection enabled %s -> %s",source->name, target->name)
+                             Undo_Do_ConnectionEnabled,
+                             talloc_format("Undo connection enabled %s -> %s",source->name, target->name)
                              );
 
 }
 
-void ADD_UNDO_FUNC(AudioConnectionEnabled_CurrPos(struct Patch *source, struct Patch *target)){
+void ADD_UNDO_FUNC(ConnectionEnabled_CurrPos(struct Patch *source, struct Patch *target)){
   struct Tracker_Windows *window = root->song->tracker_windows;
-  //printf("Undo_AudioConnectionEnabled_CurrPos\n");
-  Undo_AudioConnectionEnabled(window,window->wblock, source, target);
+  //printf("Undo_ConnectionEnabled_CurrPos\n");
+  Undo_ConnectionEnabled(window,window->wblock, source, target);
 }
 
-static void *Undo_Do_AudioConnectionEnabled(
+static void *Undo_Do_ConnectionEnabled(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -89,11 +89,11 @@ static void *Undo_Do_AudioConnectionEnabled(
 	void *pointer
 ){
 
-  struct Undo_AudioConnectionEnabled *undo_ae=pointer;
+  struct Undo_ConnectionEnabled *undo_ae=pointer;
 
-  bool now_enabled = getAudioConnectionEnabled(undo_ae->source->id, undo_ae->target->id);
+  bool now_enabled = getConnectionEnabled(undo_ae->source->id, undo_ae->target->id);
 
-  setAudioConnectionEnabled(undo_ae->source->id, undo_ae->target->id, undo_ae->enabled, true);
+  setConnectionEnabled(undo_ae->source->id, undo_ae->target->id, undo_ae->enabled, true);
 
   undo_ae->enabled = now_enabled;
 

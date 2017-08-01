@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/Presets_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
-#include "../audio/undo_audio_connection_enabled_proc.h"
+#include "../audio/undo_connection_enabled_proc.h"
 #include "../audio/undo_audio_connection_gain_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
@@ -1254,7 +1254,7 @@ bool hasEventConnection(int64_t source_id, int64_t dest_id){
   return MW_are_econnected(source, dest);
 }
 
-bool get_audio_connection_gain_enabled(int64_t source_id, int64_t dest_id, float *gain, bool *is_enabled){
+bool get_connection_gain_enabled(int64_t source_id, int64_t dest_id, float *gain, bool *is_enabled){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return false;
@@ -1296,21 +1296,21 @@ bool get_audio_connection_gain_enabled(int64_t source_id, int64_t dest_id, float
 
 float getAudioConnectionGain(int64_t source_id, int64_t dest_id){
   float ret;
-  if (get_audio_connection_gain_enabled(source_id, dest_id, &ret, NULL))
+  if (get_connection_gain_enabled(source_id, dest_id, &ret, NULL))
     return ret;
   else
     return 0.0;
 }
 
-bool getAudioConnectionEnabled(int64_t source_id, int64_t dest_id){
+bool getConnectionEnabled(int64_t source_id, int64_t dest_id){
   bool ret;
-  if (get_audio_connection_gain_enabled(source_id, dest_id, NULL, &ret))
+  if (get_connection_gain_enabled(source_id, dest_id, NULL, &ret))
     return ret;
   else
     return false;
 }
 
-static void set_audio_connection_gain_enabled(int64_t source_id, int64_t dest_id, const float *gain, const bool *is_enabled, bool redraw_mixer_strips){
+static void set_connection_gain_enabled(int64_t source_id, int64_t dest_id, const float *gain, const bool *is_enabled, bool redraw_mixer_strips){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -1354,14 +1354,14 @@ static void set_audio_connection_gain_enabled(int64_t source_id, int64_t dest_id
 }
 
 void setAudioConnectionGain(int64_t source_id, int64_t dest_id, float gain, bool redraw_mixer_strips){
-  set_audio_connection_gain_enabled(source_id, dest_id, &gain, NULL, redraw_mixer_strips);
+  set_connection_gain_enabled(source_id, dest_id, &gain, NULL, redraw_mixer_strips);
 }
 
-void setAudioConnectionEnabled(int64_t source_id, int64_t dest_id, bool is_enabled, bool redraw_mixer_strips){
-  set_audio_connection_gain_enabled(source_id, dest_id, NULL, &is_enabled, redraw_mixer_strips);
+void setConnectionEnabled(int64_t source_id, int64_t dest_id, bool is_enabled, bool redraw_mixer_strips){
+  set_connection_gain_enabled(source_id, dest_id, NULL, &is_enabled, redraw_mixer_strips);
 }
 
-void undoAudioConnectionEnabled(int64_t source_id, int64_t dest_id){
+void undoConnectionEnabled(int64_t source_id, int64_t dest_id){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return;
@@ -1370,7 +1370,7 @@ void undoAudioConnectionEnabled(int64_t source_id, int64_t dest_id){
   if(dest==NULL)
     return;
 
-  ADD_UNDO(AudioConnectionEnabled_CurrPos(source, dest));
+  ADD_UNDO(ConnectionEnabled_CurrPos(source, dest));
 }
 
 

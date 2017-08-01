@@ -2210,7 +2210,7 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
   HASH_put_bool(state, "is_event_connection", connection->is_event_connection);
   if (!connection->is_event_connection)
     HASH_put_float(state, "gain", getAudioConnectionGain(from->id, to->id));
-  HASH_put_bool(state, "enabled", getAudioConnectionEnabled(from->id, to->id));
+  HASH_put_bool(state, "enabled", getConnectionEnabled(from->id, to->id));
 
   return state;
 }

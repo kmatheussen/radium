@@ -2003,7 +2003,7 @@ bool SP_set_link_gain(SoundProducer *target, SoundProducer *source, float volume
 
 bool SP_get_link_enabled(const SoundProducer *target, const SoundProducer *source, const char **error){
   for (SoundProducerLink *link : target->_input_links) {
-    if(link->is_event_link==false && link->source==source){ // link->is_bus_link==false && 
+    if(link->source==source){
       //printf("   Found %d (%p)\n", safe_bool_read(&link->link_enabled), link);
       return link->link_enabled;
     }
