@@ -677,9 +677,6 @@ namespace{
       if(_from->_num_outputs==0 || _to->_num_inputs==0)
         return false;
     
-      if(CHIPS_are_connected(_from,_to)==true)
-        return false;
-
       return true;
     }
 
@@ -705,13 +702,13 @@ namespace{
       
       return -1;
     }
-    
+
     void add(Chip *from, Chip *to, float volume, bool must_set_enabled, bool is_enabled){
       int pos = find_pos(to_remove, from, to);
       if (pos >= 0)
         to_remove.remove(pos); // This way we don't need to implement an AudioGraph 'diff' function. Instead we just remove all existing connections and add all connections in a state.
-      else
-        to_add.push_back(Parm(from, to, volume, must_set_enabled, is_enabled));
+      
+      to_add.push_back(Parm(from, to, volume, must_set_enabled, is_enabled)); // Although the link might already be there, volume and enabled might have different values.
     }
     
     void remove(Chip *from, Chip *to){
@@ -826,29 +823,38 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
     
   }
 
-  QSet<const struct Patch *> affected_patches;
+  QSet<const struct Patch *> mixerstrips_to_remake;
+  QSet<const struct Patch *> mixerstrips_to_redraw;
   
   
   // ADD: Create mixergui connections
   for(const auto &parm : changes.to_add){
     R_ASSERT(scene != NULL);
     
-    if (parm.can_be_connected()){
+    if (parm.can_be_connected()) {
 
-      affected_patches.insert(CHIP_get_patch(parm._from));
-      affected_patches.insert(CHIP_get_patch(parm._to));
+      if (CHIPS_are_connected(parm._from, parm._to)) {
+
+        // We have only set link gain and enabled/disabled.
+        mixerstrips_to_redraw.insert(CHIP_get_patch(parm._from));
+        
+      } else {
+
+        mixerstrips_to_remake.insert(CHIP_get_patch(parm._from));
+        mixerstrips_to_remake.insert(CHIP_get_patch(parm._to));
+        
+        AudioConnection *connection = new AudioConnection(scene);
+        connection->from = parm._from;
+        connection->to = parm._to;
+        
+        parm._from->audio_connections.push_back(connection);
+        parm._to->audio_connections.push_back(connection);
+        
+        connection->setVisibility(MW_get_connections_visibility());
       
-      AudioConnection *connection = new AudioConnection(scene);
-      connection->from = parm._from;
-      connection->to = parm._to;
-      
-      parm._from->audio_connections.push_back(connection);
-      parm._to->audio_connections.push_back(connection);
-      
-      connection->setVisibility(MW_get_connections_visibility());
-      
-      connection->update_position();
-      scene->addItem(connection);
+        connection->update_position();
+        scene->addItem(connection);
+      }
     }
   }
 
@@ -860,8 +866,8 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
       if (connection==NULL)
         R_ASSERT(false);
       else {
-        affected_patches.insert(CHIP_get_patch(parm._from));
-        affected_patches.insert(CHIP_get_patch(parm._to));
+        mixerstrips_to_remake.insert(CHIP_get_patch(parm._from));
+        mixerstrips_to_remake.insert(CHIP_get_patch(parm._to));
 
         CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(connection);
       }
@@ -870,7 +876,18 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
 
   
   //printf("       Remake: CONNECTIONS_apply_changes\n");
-  for(const auto *patch : affected_patches){
+  for(const auto *patch : mixerstrips_to_redraw){
+    if (patch==NULL){
+      R_ASSERT_NON_RELEASE(false);
+    }else{
+      if(mixerstrips_to_remake.contains(patch)==false){
+        redrawMixerStrips(); // We might redraw mixer strips unnecessarily if volume and/or enabled wasn't changed, but redrawMixerStrips should be a light operation.
+        break;
+      }
+    }
+  }
+  
+  for(const auto *patch : mixerstrips_to_remake){
     if (patch==NULL){
       R_ASSERT_NON_RELEASE(false);
     }else

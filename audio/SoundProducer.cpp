@@ -1873,14 +1873,15 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const ra
   VolumeChanges volume_changes;
 
   for(auto &parm : parm_to_add){
+    
     SoundProducerLink *existing_link = parm.target->find_input_audio_link(parm.source, parm.source_ch, parm.target_ch, true);
 
     if (existing_link != NULL) {
 
-      if (parm.must_set_enabled)
+      if (parm.must_set_enabled && existing_link->link_enabled != parm.is_enabled)
         link_enable_changes.push_back(LinkEnabledChange(existing_link, parm.is_enabled));
 
-      if (parm.must_set_volume)
+      if (parm.must_set_volume && existing_link->link_volume != parm.volume)
         volume_changes.push_back(VolumeChange(existing_link, parm.volume));
       
     } else {
