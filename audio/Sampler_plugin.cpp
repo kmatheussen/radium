@@ -290,7 +290,8 @@ static double get_ratio(int sample_note_num, int play_note_num){
 }
 #endif
 
-static int get_portamento_channel(int midi_channel, int voicenum){
+static int get_portamento_channel(int midi_channel, int voicenum) __attribute__ ((pure));
+static int get_portamento_channel(int midi_channel, int voicenum) {
   R_ASSERT_NON_RELEASE(NUM_PATCH_VOICES < 16);
   return (voicenum << 4) | midi_channel;
 }

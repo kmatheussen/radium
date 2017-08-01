@@ -262,6 +262,7 @@ int SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
   while(scheduler->queue_size>0){
     
     event_t *event = get_first_event(scheduler);
+    
     int64_t event_time = event->time / (1 << SCHEDULER_NUM_PRIORITY_BITS);  // remove priority bits. (event->time might be negative)
     //printf("  SCHEDULER: sched: %d - seq: %d.  First event: %d. seqtrack->start_time: %d, seqtrack->end_time: %d\n",(int)end_time, (int)scheduler_to_seq_time(end_time), (int)scheduler_to_seq_time(event_time),(int)seqtrack->start_time, (int)seqtrack->end_time);
 

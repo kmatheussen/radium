@@ -122,8 +122,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdbool.h>
 
 #if USE_QT4
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsuggest-attribute=const"
 #include <QList>
 #include <QMap>
+#  pragma GCC diagnostic pop
 #endif
 
 
@@ -247,7 +250,7 @@ static inline int donothing(int input){
 }
 
 
-extern LANGSPEC void handleError_internal(const char *fmt,...);
+extern LANGSPEC void handleError_internal(const char *fmt,...) __attribute__((format(printf, 1, 2)));;
 #define handleError(...) ((void)donothing(0 && printf(__VA_ARGS__)), handleError_internal(__VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
 
 

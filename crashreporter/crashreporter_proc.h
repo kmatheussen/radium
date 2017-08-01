@@ -43,6 +43,8 @@ extern "C"{
   void CRASHREPORTER_unset_plugin_name(int pos);
   void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, enum Crash_Type crash_type, double time);
   void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type, double time);
+
+
   void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...);
 
   // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.

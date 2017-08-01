@@ -91,7 +91,7 @@ void tfree(void *element){
 
 
 
-void ShutDownYepp(void){
+static void ShutDownYepp(void) {
 
 	EndProgram();
 

@@ -946,7 +946,7 @@ bool CONNECTIONS_apply_changes(const dyn_t dynchanges){
       if (HASH_has_key(element.hash, ":enabled")){
 
         const dyn_t dynenabled = HASH_get_dyn(element.hash, ":enabled");
-        if (!dynenabled.type==BOOL_TYPE){
+        if (dynenabled.type!=BOOL_TYPE){
           handleError("Element %d[\"enabled\"]: Expected bool, found \"%s\"", i, DYN_type_name(dynenabled));
           return false;
         }

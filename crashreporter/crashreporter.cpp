@@ -791,12 +791,18 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
 
   char message[1000];
   va_list argp;
-  
+
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsuggest-attribute=format"
+
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
   vsnprintf(message,998,fmt,argp);
   va_end(argp);
+
+#  pragma GCC diagnostic pop
   
+
   if (g_crashreporter_file!=NULL) {
 
     if (!g_crashreporter_file->open()){
