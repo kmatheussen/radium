@@ -201,6 +201,13 @@ bool g_gc_is_incremental = false;
 QWidget *g_mixerstripparent = NULL;
 QHBoxLayout *g_mixerstriplayout = NULL;
 
+DEFINE_ATOMIC(bool, is_starting_up) = true;
+bool g_is_starting_up = true;
+bool g_qt_is_running = false;
+bool g_qtgui_has_started = false;
+bool g_qtgui_exec_has_started = false;
+bool g_qtgui_has_stopped = false;
+
 
 static boost::lockfree::queue<int64_t, boost::lockfree::capacity<64> > g_mixer_strips_needing_remake;
 
@@ -222,7 +229,8 @@ bool editor_has_keyboard_focus(void){
 static void set_grey_editor(bool new_value){
   if (g_do_grey_editor != new_value){
     g_do_grey_editor = new_value;
-    root->song->tracker_windows->must_redraw_editor = true;
+    if (g_is_starting_up==false)
+      root->song->tracker_windows->must_redraw_editor = true;
   }
 }
 
@@ -288,15 +296,6 @@ void call_me_if_another_window_may_have_taken_focus_but_still_need_our_key_event
   //printf("main_window_has_focus(): %d\n", main_window_has_focus());
 }
 
-
-DEFINE_ATOMIC(bool, is_starting_up) = true;
-bool g_is_starting_up = true;
-bool g_qt_is_running = false;
-bool g_qtgui_has_started = false;
-bool g_qtgui_exec_has_started = false;
-bool g_qtgui_has_stopped = false;
-
-//void gakk();
 
 
 extern struct TEvent tevent;
