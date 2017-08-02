@@ -2507,6 +2507,35 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
     }
 
+    void wheelEvent(QWheelEvent *qwheelevent) override {
+      if (qwheelevent->modifiers() & Qt::ControlModifier){
+        float zoom = zoomFactor();      
+        float newzoom;
+        if (qwheelevent->delta() > 0)
+          newzoom = zoom * 1.2;
+        else
+          newzoom = zoom * 0.8;
+        
+        if (newzoom > 0.85 && newzoom < 1.15)
+          newzoom = 1.0;
+        
+        if (newzoom > 0.05) {
+          page()->mainFrame()->setZoomFactor(newzoom);
+        }
+      } else {
+
+        Qt::Orientation orientation;
+          
+        if (qwheelevent->modifiers() & Qt::ShiftModifier) {
+          orientation = Qt::Horizontal;
+          page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) - qwheelevent->delta()/2);
+        } else {
+          //orientation = Qt::Vertical;
+          QWebView::wheelEvent(qwheelevent);
+        }
+      }
+    }
+
     OVERRIDERS_WITHOUT_KEY(FocusSnifferQWebView);
   };
 
