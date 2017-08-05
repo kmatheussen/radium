@@ -592,6 +592,11 @@ void GFX_showHideInstrumentWidget(struct Tracker_Windows *window){
   set_editor_focus();
 }
 
+
+
+//////////////////////////////////
+
+
 // These functions (MIDIGFX_*) seems to be only used by the GTK1 instrument window when the wrong value
 // was received from the GUI, and the original value must be sent back.
 // It would make sense to use them though, to make it simpler to implement new GUI backends.

@@ -1536,19 +1536,19 @@
            b b)
     )
 
-  (define volume_on_off_name (get-instrument-volume-on/off-effect-name instrument-id))
+  (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
 
   (define (get-muted)
-    (< (<ra> :get-instrument-effect instrument-id volume_on_off_name) 0.5))
+    (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
   (define (get-soloed)
     (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
            
   (define (turn-off-all-mute except)
     (for-each (lambda (instrument-id)
                 (when (and (not (= instrument-id except))
-                           (< (<ra> :get-instrument-effect instrument-id (get-volume-on-off-name instrument-id)) 0.5))
-                  (<ra> :undo-instrument-effect instrument-id (get-volume-on-off-name instrument-id))
-                  (<ra> :set-instrument-effect instrument-id (get-volume-on-off-name instrument-id) 1)
+                           (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
+                  (<ra> :undo-instrument-effect instrument-id volume-on-off-name)
+                  (<ra> :set-instrument-effect instrument-id volume-on-off-name 1)
                   ))
               (get-all-audio-instruments)))
   
@@ -1606,7 +1606,7 @@
                                        (get-soloed)
                                        height))
   
-  (add-gui-effect-monitor (cadr mute) instrument-id volume_on_off_name
+  (add-gui-effect-monitor (cadr mute) instrument-id volume-on-off-name
                           (lambda ()
                             ((car mute) (get-muted))))
   
@@ -2243,8 +2243,8 @@
                                              (strips-config :is-enabled id))
                                            (get-all-audio-instruments))))
 
-  (define min-mixer-strip-width (1+ (floor (max (* 2 (<gui> :text-width " -14.2 -23.5 "))
-                                                (* 2 (<gui> :text-width " Mute Solo "))))))
+  (define min-mixer-strip-width (1+ (floor (max (* 1.7 (<gui> :text-width " -14.2 -23.5 "))
+                                                (* 1.7 (<gui> :text-width " Mute Solo "))))))
 
   (define num-strips-per-row (ceiling (/ num-visible-strips num-rows)))
 

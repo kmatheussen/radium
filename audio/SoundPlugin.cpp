@@ -927,8 +927,9 @@ static float get_delay_value(float native_value, enum ValueFormat value_format){
 
 
 static void update_instrument_gui(struct SoundPlugin *plugin){
-  if (plugin->patch != NULL) {
-    GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
+  struct Patch *patch = (struct Patch*)plugin->patch;
+  if (patch != NULL) {
+    GFX_ScheduleInstrumentRedraw(patch);
   }
 }
 
@@ -1394,7 +1395,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
         ATOMIC_SET(plugin->effects_are_on, false);
         SMOOTH_set_target_value(&plugin->drywet, 0.0f);
       }
-      //update_instrument_gui(plugin);
+      update_instrument_gui(plugin); // This line was uncommented, but there was no comment why it was commented out... Instrument gui needs to be updated though. Especially when turning off bypass.
       break;
 
 

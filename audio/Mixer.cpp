@@ -1035,7 +1035,8 @@ struct Mixer{
       float new_cpu_usage = (double)(end_time-start_time) * 0.0001 *_sample_rate / num_frames;
 
       g_cpu_usage.addUsage(new_cpu_usage);
-      
+
+      // Uncomment these two lines to continually test realtime message.
       if (new_cpu_usage < 98)
         excessive_time.restart();
 
