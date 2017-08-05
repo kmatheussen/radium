@@ -431,9 +431,14 @@ def printsak(file,keyhandles,parser,codestring):
     print
 
 
-def addIt(keyhandles, parser, reader, command, firstkey, keys, added_qualifiers):
-    if putCode(keyhandles,parser,command, added_qualifiers)==False:
-        return False
+def addIt(keyhandles, parser, command):
+    if not parser.mouseInQualifiers():
+        putCode(keyhandles, parser, command, [parser.mouseEditorKey])
+        putCode(keyhandles, parser, command, [parser.mouseMixerKey])
+        putCode(keyhandles, parser, command, [parser.mouseMixerStripsKey])
+        putCode(keyhandles, parser, command, [parser.mouseSequencerKey])
+    else:
+        putCode(keyhandles, parser, command, [])
 
 def start(keyhandles,filehandle,filehandle2,outfilehandle):
     keybindingsdict={} # Note: Latest E-radium version has just removed everything related to keybindingsdict from this function. Could be unnecessary.
@@ -446,13 +451,13 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
 
         if outfilehandle:
             if parser.getLineType()=="GOINGTOINSERTCODE":
-                outfilehandle.write("def keycodedef%d():\n" % defnum)
+                outfilehandle.write("def radium_generated_keycodedef%d():\n" % defnum)
             if parser.getLineType()=="INSERTCODE":
                 outfilehandle.write(parser.getCurrLine()+"\n")
             if parser.getLineType()=="INSERTCODELAST":
-                outfilehandle.write("\treturn\n")
-                if putCode(keyhandles,parser,"eventreceiverparser_generated.keycodedef%d()" % defnum, [])==false:
-                    return False
+                #outfilehandle.write("\treturn\n")
+                outfilehandle.write("\n")
+                addIt(keyhandles,parser,"keybinding.radium_generated_keycodedef%d()" % defnum)
                 defnum+=1
             if parser.getLineType()=="INSERTCLEANCODE":
                 outfilehandle.write(parser.getCurrLine()+"\n")
@@ -494,14 +499,7 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
             keybindingsdict[command]=[map(lambda x:keysub[x],parser.getKeys()),map(lambda x:keysub[x],parser.getQualifiers())]
             #printsak(0,keyhandles,parser,command)
             
-            if not parser.mouseInQualifiers():
-                addIt(keyhandles, parser, reader, command, firstkey, keys, [parser.mouseEditorKey])
-                addIt(keyhandles, parser, reader, command, firstkey, keys, [parser.mouseMixerKey])
-                addIt(keyhandles, parser, reader, command, firstkey, keys, [parser.mouseMixerStripsKey])
-                addIt(keyhandles, parser, reader, command, firstkey, keys, [parser.mouseSequencerKey])
-            else:
-                addIt(keyhandles, parser, reader, command, firstkey, keys, [])
-
+            addIt(keyhandles, parser, command)
 
     try:
         radium._keybindingsdict = keybindingsdict

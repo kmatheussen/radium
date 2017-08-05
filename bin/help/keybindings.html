@@ -25,27 +25,19 @@ Radium needs to be restarted for new keybindings to take effect.
   <LI> Change "Left Ctrl + z" to open the "about window":
 <blockquote>
 <pre>
-*
-import radium as ra
-*
-
 Z CTRL_L : ra.openAboutWindow
 </pre>
 </blockquote>
 
 <p>
 
-  A key binding normally starts with the name of a <b>key</b> ("Z"), followed by 0 or more <b>qualifiers</b> ("CTRL_L").<br>
+  A key binding normally starts with the name of a <b>key</b> (e.g. "Z"), followed by 0 or more <b>qualifiers</b> (e.g. "CTRL_L").<br>
 
 <LI>
 <p>
   If a key binding lacks a <b>key</b>, it will use the key from the last defined keybinding that had a key. Example:
 <blockquote>
 <pre>
-*
-import radium as ra
-*
-
 F12          : ra.showMixerHelpWindow
      CTRL_R  : ra.showKeybindingHelpWindow
      SHIFT_R : ra.showFXHelpWindow
@@ -196,17 +188,44 @@ F12          : ra.showMixerHelpWindow
 
 <blockquote>
 <pre>
-*
-import radium as ra
-*
-
 X CTRL_L : ra.evalPython "ra.openAboutWindow()"
 C CTRL_L : ra.evalScheme "(ra:open-about-window)"
 </pre>
 </blockquote>
 
 <p>
-  Note that any code between the asterisks are executed as python code when Radium starts up. ("import radium as ra" is pure python code). This makes it posssible to add custom functions and classes in a convenient way. You can also load scheme files in this area, for instance by calling <i>ra.evalScheme('(load "C:\Users\Username\.radium\mystuff.scm")')</i>.
+  Note that any code between the asterisks are executed as Python code when Radium starts up. This makes it posssible to add custom functions and classes in a convenient way:
+
+  <blockquote>
+    <pre>
+*
+def hello(what):
+  print "hello "+what
+*
+
+ESC: keybinding.hello "world"
+    </pre>
+  </blockquote>
+
+  "*" can also be used to bind Python code directly to a key:
+  <blockquote>
+    <pre>
+ESC: *
+  print "hello world"
+*
+    </pre>
+  </blockquote>
+  
+
+To load custom Scheme code during startup, you can call <i>ra.evalScheme</i> inside the asterisks:
+  <blockquote>
+    <pre>
+*
+ra.evalScheme('(load "C:\Users\Username\.radium\mystuff.scm")')
+*
+    </pre>
+  </blockquote>
+
   </UL>
 
   
