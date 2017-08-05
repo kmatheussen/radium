@@ -478,7 +478,6 @@ namespace{
         if (new_state != is_bypass) {
           int num_effects = plugin->type->num_effects;
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_state ? 0.0 : 1.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
-          GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
         }
         
       }
