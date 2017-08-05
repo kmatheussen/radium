@@ -2243,8 +2243,8 @@
                                              (strips-config :is-enabled id))
                                            (get-all-audio-instruments))))
 
-  (define min-mixer-strip-width (1+ (floor (max (* 2 (<gui> :text-width " -14.2 -23.5 "))
-                                                (* 2 (<gui> :text-width " Mute Solo "))))))
+  (define min-mixer-strip-width (1+ (floor (max (* 1.7 (<gui> :text-width " -14.2 -23.5 "))
+                                                (* 1.7 (<gui> :text-width " Mute Solo "))))))
 
   (define num-strips-per-row (ceiling (/ num-visible-strips num-rows)))
 
