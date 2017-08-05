@@ -1785,7 +1785,7 @@ endif
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
-	$(CCC) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(FAUST_PLUGINS_O_FLAGS) # Qt 5.5 (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
+	$(CCC) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp -Wno-shorten-64-to-32 # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
 
 audio/mfaustqt2.cpp: bin/packages/faust2/architecture/faust/gui/faustqt.h
 	cd audio && $(MOC) ../bin/packages/faust2/architecture/faust/gui/faustqt.h >mfaustqt2.cpp

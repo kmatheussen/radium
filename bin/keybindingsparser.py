@@ -412,9 +412,7 @@ def putCode(keyhandles,parser,codestring,added_qualifiers):
         print message
         radium.addMessage(message)
         return False
-    else:
-        print "%s compiled." % codestring
-
+        
     return True
 
 
