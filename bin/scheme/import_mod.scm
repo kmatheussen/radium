@@ -5522,8 +5522,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                 
                 ;; We don't hear clicks when modules are played in protracker, for some reason.
                 ;; But in Radium the clicks are quite noticable.
-                (<ra> :set-instrument-effect radium-instrument-num "Attack" 1)
-                (<ra> :set-instrument-effect radium-instrument-num "Release" 1)
+                (<ra> :set-instrument-effect radium-instrument-num "Attack" (scale 1 0 1000 0 1.0)) ;; TODO: Implement set-normalized-instrument-effect
+                (<ra> :set-instrument-effect radium-instrument-num "Release" (scale 1 0 2000 0 1.0))
                 ))
             
             (vector->list instruments)))
