@@ -1,3 +1,4 @@
+Changes 4.9.12 -> 4.9.14:
 * Import MOD: Fix attack and release values for the instruments.
   Bug introduced in 4.9.9.
 * Fix program freeze on OSX when scanning plugins and a realtime
