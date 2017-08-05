@@ -103,12 +103,14 @@ int main(int argc, char **argv){
   //printf("Launched 1 -%s- (%s)\n",argv[1], Base64::toBase64(argv[1]).toRawUTF8());
   //fprintf(stderr,"Launched 2 -%s-\n",argv[2]);
 
-  char container_filename[1024] = {0};
-  char filename[1024] = {0};
+  /*
+  char container_filename_data[1024] = {0};
+  char filename_data[1024] = {0};
+  */
   
-  MemoryOutputStream a(container_filename, 1000);
-  MemoryOutputStream b(filename, 1000);
-
+  MemoryOutputStream a(1024);
+  MemoryOutputStream b(1024);
+  
   //show_alert("testing alerting");
   
   if (argc != 3){
@@ -127,8 +129,11 @@ int main(int argc, char **argv){
     show_alert(String("Erroneous input arguments: \"") + String(argv[1]) + "\", \"" + String(argv[2]) + "\"");
     return -2;
   }
-     
-  printf("Launched: -%s- -%s-\n", container_filename, filename);
+
+  String container_filename = a.toUTF8();
+  String filename = b.toUTF8();
+  
+  printf("Launched: -%s- -%s-\n", container_filename.toRawUTF8(), filename.toRawUTF8());
   write_container_descriptions_to_cache_on_disk(container_filename, filename);
   return 0;
 }
