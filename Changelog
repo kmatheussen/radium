@@ -1,3 +1,108 @@
+* Import MOD: Fix attack and release values for the instruments.
+  Bug introduced in 4.9.9.
+* Fix program freeze on OSX when scanning plugins and a realtime
+  message pops up.
+* Windows: Make sure splash window is on top when starting up.
+* Preferences: Changed "rescan directories for potential
+  plugins" to "Look through directories for potential plugins".
+* Keybindings:
+  * F5: show/hide editor
+  * F6: show/hide playlist/blocklist
+  * F7: show/hide mixer
+  * F8: show/hide sequencer
+  * F9: show/hide instrument
+  * F10: show/hide edit
+* Mixer: Update instrument GUI when turning on/off bypass. Fixes
+  instrument gui sometimes being grayed out even after bypass
+  was turned off.
+* Keybindings: Make python code inside asterisks work when not
+  having write access to the binary directory, plus fixed other
+  related issues.
+* Keybindings: Fix overriding keybindings. It was a little bit
+  buggy.
+* Audio: Fix plugin scanner when home area path or plugin
+  filename path has non-ascii characters
+* GUI: Various work to make message windows functional when a
+  modal window is open.
+* GUI: Fix various crashes when a parent window is deleted.
+* Scheme: Upgrade s7 interpreter.
+* Help: Set font to "arial, sans-serif". Looks better on OSX
+  than the default web fonts.
+* Help: Make Ctrl + scroll wheel zoom in/out and Shift + scroll
+  wheel scroll left/right.
+* Build: Remove a couple of non-existant dependencies from the
+  makefile.
+* Editor: Fix message about "Track #x not existing" when doing
+  mouse operations.
+* Mixer strips: Fix mixer strips configuration window sometimes
+  showing up on top of the wrong window.
+* Mixer strips: Adjust minimum width of mixer strip.
+* Mixer: Make a/b include connection gains and connection
+  on/off.
+* Build: gcc4 compilation fixes
+* Mixer strips: Buttons to enable/disable plugins and sends.
+* Add support for LLVM 4.0.1 in faust2. From
+  https://github.com/grame-cncm/faust/commit/63d1d8f06f3c6ae22674f4dc8b16a64232432779
+  (Teteros)
+* Event scheduler: Fix code doing undefined behavior.
+* Audio: Improve solo situation a little bit (it's not perfect
+  yet). Now it also solos input-connected and output-connected
+  instruments within a non-branching graph. TODO: Turn on/off
+  connections appropriately when solo-ing.
+* Scheme: Eval code from s7webserver in the global environment
+* Editor: Immediately gray/ungray the editor when it gets/loses
+  keyboard focus
+* Web: Make Ctrl+F search and F3 repeat search.
+* GUI: Make F11 work on all windows.
+* Editor: Show open/closed hand mouse pointer types when moving
+  the scroll bars.
+* GUI: General fix for the mouse cursor sometimes being stuck
+  in the wrong shape.
+* Mixer strips: Some gfx tweaks.
+* Made it possible to configure the border color around current
+  instrument in the modular mixer and the mixer strips.
+* GUI: Fixed rare crash in the requester.
+* Scheme: Run code received by the s7webserver through the
+  "FROM-C-catch-all-errors-and-display-backtrace-automatically"
+  function. Necessary to avoid crash if s7 runs in a custom
+  exec and we hit an exception.
+* Mixer strips: Add undo when renaming instrument.
+* Mixer strips: Reorganize popup menu a little bit
+* Mixer strips: Add "Set as current instrument" and "Help"
+  options.
+* Mixer strips: Removed a superfluous "info" option (there were
+  two of them).
+* Mixer strips: Paint a green border around the current
+  plugin/send instead of paint everything with a bluish
+  transparent color.
+* Mixer: Disable replace/copy/cut/delete/save options in the
+  popup menu for permanent instruments since we aren't allowed
+  to do these operations on permanent instruments anyway.
+* Mixer strips: Paint sink sends as a send, and not a plugin.
+  I.e. show the arrow on the left side.
+* Mixer strips: When deleting a sink send (for instance a send
+  to "System out"), only delete the connection, not the
+  instrument itself.
+* Mixer strips: Always show "Main pipe" in the bus area.
+* Edit: Show message about missing range when trying to
+  transpose range without a range.
+* Fonts: Update main window lower tab size after changing
+  system font.
+* Plugins: Add VST3 and AU plugins to favourites.
+* GUI: Reset mouse pointer type when it is moved to a different
+  widget. Fixes open hand mouse pointer stuck over the Edit tab
+  and other situations.
+* API:
+  * Add optional "default_value" argument to the requester
+    functions and added some code to prevent someone from
+    closing a requester while it's being used (which causes
+    crash).
+  * New functions: isDoingRequest, gui_getEditorGui,
+    getAudioConnectionEnabled, setAudioConnectionEnabled,
+    undoAudioConnectionEnabled, gui_getParentGui,
+    gui_drawEllipse, gui_filledEllipse, openExternalWebBrowser,
+    gui_activate
+
 Changes 4.9.10 -> 4.9.12:
 * Documenation: Move things from the help menu into the
   documentation portal.
