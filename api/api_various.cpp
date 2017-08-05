@@ -278,6 +278,16 @@ void showHideInstrumentWidget(int windownum){
   }
 }
 
+void showHideEditWidget(void){
+  //struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
+  //GFX_showHideInstrumentWidget(window);
+  if(editGuiIsVisible())
+    hideEditGui();
+  else{
+    showEditGui();
+  }
+}
+
 static int g_max_submenues = 200;
 
 int getMaxSubmenuEntries(void){

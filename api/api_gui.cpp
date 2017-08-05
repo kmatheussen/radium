@@ -4880,6 +4880,23 @@ bool API_instrumentGuiIsVisibleInLowerTab(void){
   return S7CALL2(bool_void, "FROM-C-instrument-gui-is-visible");
 }
 
+///////////////////////////////////////////////
+
+void showEditGui(void){
+  S7CALL2(void_void, "FROM-C-show-edit-gui");
+}
+
+void hideEditGui(void){
+  S7CALL2(void_void, "FROM-C-hide-edit-gui");
+}
+
+// Returns true if the instrument widget is the current tab in the lower tabs.
+bool editGuiIsVisible(void){
+  return S7CALL2(bool_void, "FROM-C-edit-gui-is-visible");
+}
+
+
+///////////////////////////////////////////////
 
 void API_showSequencerGui(void){
   S7CALL2(void_void, "FROM-C-show-sequencer-gui");

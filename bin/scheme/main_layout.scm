@@ -181,6 +181,16 @@
 (define (FROM-C-hide-sequencer-gui)
   (hide-lowertab-gui (<gui> :get-sequencer-gui)))
 
+
+(define (FROM-C-edit-gui-is-visible)
+  (lowertab-gui-is-visible *notem-gui*))
+    
+(define (FROM-C-show-edit-gui)
+  (show-lowertab-gui *notem-gui*))
+
+(define (FROM-C-hide-edit-gui)
+  (hide-lowertab-gui *notem-gui*))
+
     
 
 #!!
