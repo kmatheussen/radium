@@ -1635,7 +1635,7 @@ protected:
   void createRtMsgBox(void){
     R_ASSERT(rt_msgBox==NULL);
     
-    rt_msgBox = new NoKeyboardEventsQMessageBox(g_main_window);
+    rt_msgBox = new NoKeyboardEventsQMessageBox(NULL); //g_main_window  // Sometimes freezes the program on OSX if parent is not NULL.
     set_window_flags(rt_msgBox, radium::NOT_MODAL);
     
     rt_msgBox_dontshowagain = (QAbstractButton*)rt_msgBox->addButton("Dont show this message again",QMessageBox::ApplyRole);
@@ -3253,6 +3253,12 @@ int main(int argc, char **argv){
   g_splashscreen->show();
   g_splashscreen->raise();
   QApplication::processEvents();
+#endif
+
+#ifdef FOR_WINDOWS
+  HWND wnd=(HWND)g_splashscreen->winId();
+  //SetFocus(rt_msgBox);
+  SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE); // The splash screen window doesn't always show at top.
 #endif
   
   printf("1: argv[0]: \"%s\"\n",argv[0]);

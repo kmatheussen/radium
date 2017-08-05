@@ -249,18 +249,19 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
   if (true &&
       //(parent==NULL || !parent->isModal()) && // Uncomment this line to prevent a modal window to be parent of another modal window. Should be fine though. It's modal siblings that can lock up the program (most likely a qt bug)
       (force_modal || modality==radium::IS_MODAL)
-      ) {
+      )
+  {
 
     if (window->windowModality()!=Qt::ApplicationModal)
       window->setWindowModality(Qt::ApplicationModal);
-
+    
     return !(modality==radium::IS_MODAL);
-
+    
   } else {
-
+    
     if (modality!=radium::IS_MODAL && window->windowModality()!=Qt::NonModal) // We may have forcefully turned on modality in a previous call. Turn it off now.
       window->setWindowModality(Qt::NonModal);
-
+    
     return false;
     
   }
