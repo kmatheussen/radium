@@ -1593,12 +1593,30 @@ static DEFINE_ATOMIC(bool, g_request_to_stop_playing) = false;
 
 int g_main_timer_num_calls = 0;
 
+namespace{
+  struct NoKeyboardEventsQMessageBox : public QMessageBox {
+    NoKeyboardEventsQMessageBox(QWidget *parent)
+      : QMessageBox(parent)
+    {
+      setFocusPolicy( Qt::NoFocus );
+    }
+    
+    void keyPressEvent(QKeyEvent * event) override {
+      event->ignore();
+    }
+    void keyReleaseEvent(QKeyEvent * event) override {
+      event->ignore();
+    }
+  };
+}
+
+namespace{
 class CalledPeriodically : public QTimer {
 
-  QPointer<QMessageBox> msgBox;
-  QAbstractButton *msgBox_ok;
-  QAbstractButton *msgBox_stop_playing;
-  QAbstractButton *msgBox_dontshowagain;
+  QPointer<NoKeyboardEventsQMessageBox> rt_msgBox;
+  QAbstractButton *rt_msgBox_ok;
+  QAbstractButton *rt_msgBox_stop_playing;
+  QAbstractButton *rt_msgBox_dontshowagain;
   QSet<QString> dontshow;
 
   const int interval;
@@ -1614,17 +1632,17 @@ public:
   }
 protected:
 
-  void createMsgBox(void){
-    R_ASSERT(msgBox==NULL);
+  void createRtMsgBox(void){
+    R_ASSERT(rt_msgBox==NULL);
     
-    msgBox = new QMessageBox(g_main_window);
-    set_window_flags(msgBox, radium::NOT_MODAL);
+    rt_msgBox = new NoKeyboardEventsQMessageBox(NULL); //g_main_window  // Sometimes freezes the program on OSX if parent is not NULL.
+    set_window_flags(rt_msgBox, radium::NOT_MODAL);
     
-    msgBox_dontshowagain = (QAbstractButton*)msgBox->addButton("Dont show this message again",QMessageBox::ApplyRole);
-    msgBox_stop_playing = (QAbstractButton*)msgBox->addButton("Stop playing!",QMessageBox::ApplyRole);
-    msgBox_ok = (QAbstractButton*)msgBox->addButton("Ok",QMessageBox::AcceptRole);
-    msgBox->open();
-    msgBox->hide();
+    rt_msgBox_dontshowagain = (QAbstractButton*)rt_msgBox->addButton("Dont show this message again",QMessageBox::ApplyRole);
+    rt_msgBox_stop_playing = (QAbstractButton*)rt_msgBox->addButton("Stop playing!",QMessageBox::ApplyRole);
+    rt_msgBox_ok = (QAbstractButton*)rt_msgBox->addButton("Ok",QMessageBox::AcceptRole);
+    rt_msgBox->open();
+    rt_msgBox->hide();
   }
   
   void 	timerEvent ( QTimerEvent * e ) override {
@@ -1651,33 +1669,44 @@ protected:
 
       QString message(rt_message);
 
-      if (msgBox==NULL)
-        createMsgBox();
-      
-      if (dontshow.contains(message)==false){
-        set_window_parent(msgBox, get_current_parent(msgBox, false), radium::NOT_MODAL);
-        
-        msgBox->setText(message);
+      if (rt_msgBox==NULL)
+        createRtMsgBox();
 
-        safeShow(msgBox);
+      if (dontshow.contains(message)==false){
+
+        QWidget *parent = get_current_parent(rt_msgBox, false);
+        R_ASSERT_NON_RELEASE(parent!=NULL);
+        if (parent!=NULL){
+          R_ASSERT_NON_RELEASE(parent==parent->window());
+          parent = parent->window();
+        }
+        
+        if (parent != rt_msgBox->window() && parent != rt_msgBox->parent()){
+          //printf(" 3. Setting window parent\n");
+          set_window_parent(rt_msgBox, parent, radium::NOT_MODAL);
+        }
+
+        rt_msgBox->setText(message);
+
+        safeShow(rt_msgBox);
 
                                         
 #if 0 //def FOR_WINDOWS
-        HWND wnd=(HWND)msgBox->winId();
-        SetFocus(msgBox);
-        SetWindowPos(msgBox, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
+        HWND wnd=(HWND)rt_msgBox->winId();
+        SetFocus(rt_msgBox);
+        SetWindowPos(rt_msgBox, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE);
 #endif
       }
 
       ATOMIC_SET(rt_message_status, RT_MESSAGE_SHOWING);
       
-    } else if (ATOMIC_GET(rt_message_status) == RT_MESSAGE_SHOWING && (msgBox==NULL || msgBox->isHidden())) {
+    } else if (ATOMIC_GET(rt_message_status) == RT_MESSAGE_SHOWING && (rt_msgBox==NULL || rt_msgBox->isHidden())) {
 
-      if (msgBox != NULL) {
-        if (msgBox->clickedButton() == msgBox_dontshowagain){
+      if (rt_msgBox != NULL) { // If rt_msgBox was opened on top of another window, and that other window was closed, rt_msgBox will be NULL. (QPointers are quite nice).
+        if (rt_msgBox->clickedButton() == rt_msgBox_dontshowagain){
           //printf("Dontshowagain\n");
           dontshow.insert(rt_message);
-        } else if (msgBox->clickedButton() == msgBox_stop_playing){
+        } else if (rt_msgBox->clickedButton() == rt_msgBox_stop_playing){
           PlayStop();
         }
       }
@@ -1947,6 +1976,7 @@ protected:
 #endif
   }
 };
+}
 
 bool RT_message_will_be_sent(void){
   return ATOMIC_GET(rt_message_status)==RT_MESSAGE_READY;
@@ -3223,6 +3253,12 @@ int main(int argc, char **argv){
   g_splashscreen->show();
   g_splashscreen->raise();
   QApplication::processEvents();
+#endif
+
+#ifdef FOR_WINDOWS
+  HWND wnd=(HWND)g_splashscreen->winId();
+  //SetFocus(rt_msgBox);
+  SetWindowPos(wnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE); // The splash screen window doesn't always show at top.
 #endif
   
   printf("1: argv[0]: \"%s\"\n",argv[0]);

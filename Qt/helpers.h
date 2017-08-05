@@ -115,6 +115,12 @@ static bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_to_run_c
   return true;
 }
 
+#if 0
+  #define D(A) A
+#else
+  #define D(A)
+#endif
+
 // Can only return a widget that is a member of g_static_toplevel_widgets.
 static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_custom_exec, bool may_return_current_parent_before_qmenu_opened = true){
 
@@ -132,30 +138,30 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
   }
 
   if (may_return_current_parent_before_qmenu_opened && !g_curr_popup_qmenu.isNull() && !g_current_parent_before_qmenu_opened.isNull()){
-    //printf("1111 %p\n", g_current_parent_before_qmenu_opened.data());
+    D(printf("1111 %p\n", g_current_parent_before_qmenu_opened.data()));
     return g_current_parent_before_qmenu_opened;
   }
 
   QWidget *ret = QApplication::activeModalWidget();
-  //printf("2222 %p\n", ret);
+  D(printf("2222 %p\n", ret));
   if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
     return ret;
   }
 
   ret = QApplication::focusWidget();
-  //printf("333 %p\n", ret);
+  D(printf("333 %p\n", ret));
   if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
-    return ret;
+    return ret->window();
   }
 
   ret = QApplication::activePopupWidget();
-  //printf("333555 %p\n", ret);
+  D(printf("333555 %p\n", ret));
   if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
-    return ret;
+    return ret->window();
   }
 
   ret = QApplication::activeWindow();
-  //printf("444 %p\n", ret);
+  D(printf("444 %p\n", ret));
   if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
     return ret;
   }
@@ -169,12 +175,12 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
   */
   
   ret = QApplication::widgetAt(QCursor::pos());
-  //printf("666 %p\n", ret);
+  D(printf("666 %p\n", ret));
   if (g_static_toplevel_widgets.contains(ret)){
-    return ret;
+    return ret->window();;
   }
 
-  //printf("777\n");
+  D(printf("777\n"));
   return g_main_window;
     
     /*
@@ -186,6 +192,9 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
       return g_main_window;
     */
 }
+
+#undef D
+
 
 #define DEFAULT_WINDOW_FLAGS (Qt::CustomizeWindowHint | Qt::WindowFullscreenButtonHint | Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint | Qt::WindowStaysOnTopHint)
 
@@ -224,24 +233,35 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
     } else if (modality != radium::NOT_MODAL)
       force_modal=true; // Qt::Tool doesn't work for levels larger than 1 (it doesn't work if the parent is a Qt::Tool window), so we work around it by using modal windows. Modal windows seems to always be on top of parent window.
   }
+
+
+#if !defined(RELEASE)
+  if (parent==window)
+    abort();
+#endif
   
-  if (only_set_flags)
+
+  if (parent==window || only_set_flags)
     window->setWindowFlags(f);
   else
     window->setParent(parent, f);
  
-  if (force_modal || modality==radium::IS_MODAL) {
+  if (true &&
+      //(parent==NULL || !parent->isModal()) && // Uncomment this line to prevent a modal window to be parent of another modal window. Should be fine though. It's modal siblings that can lock up the program (most likely a qt bug)
+      (force_modal || modality==radium::IS_MODAL)
+      )
+  {
 
     if (window->windowModality()!=Qt::ApplicationModal)
       window->setWindowModality(Qt::ApplicationModal);
-
+    
     return !(modality==radium::IS_MODAL);
-
+    
   } else {
-
+    
     if (modality!=radium::IS_MODAL && window->windowModality()!=Qt::NonModal) // We may have forcefully turned on modality in a previous call. Turn it off now.
       window->setWindowModality(Qt::NonModal);
-
+    
     return false;
     
   }
@@ -850,7 +870,6 @@ static inline void safeMenuPopup(QMenu *menu){
 
 static inline void safeShow(QWidget *widget){
   R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
-  
   closePopup();
 
   GL_lock(); {

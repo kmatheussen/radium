@@ -138,7 +138,7 @@ OpenGL.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         <item>
          <widget class="QToolButton" name="rescan_button">
           <property name="text">
-           <string>Rescan directories for potential plugins</string>
+           <string>Look through directories for potential plugins</string>
           </property>
          </widget>
         </item>

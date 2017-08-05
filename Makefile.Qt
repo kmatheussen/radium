@@ -1785,7 +1785,7 @@ endif
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
-	$(CCC) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp
+	$(CCC) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp -Wno-shorten-64-to-32 # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
 
 audio/mfaustqt2.cpp: bin/packages/faust2/architecture/faust/gui/faustqt.h
 	cd audio && $(MOC) ../bin/packages/faust2/architecture/faust/gui/faustqt.h >mfaustqt2.cpp
@@ -2225,11 +2225,11 @@ S7AlignmentSanitize=
 endif
 
 ifeq ($(BUILDTYPE), DEBUG)
-	S7OPTS += -DDEBUGGING=1 -DWITH_PROFILE=1 -DWITH_MULTITHREAD_CHECKS=1 #-DWITH_GMP
+	S7OPTS += -DDEBUGGING=1 -DWITH_PROFILE=1 -DWITH_MULTITHREAD_CHECKS=1 -DS7_ALIGNED #-DWITH_GMP
 endif
 
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
-	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1 
+	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
 
 # -Wno-absolute-value
 #-DDEBUGGING=1

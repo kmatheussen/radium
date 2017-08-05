@@ -54,26 +54,26 @@ static void show_alert(String message){
 // This function calls functions in JUCE that loads the plugins in order to create PluginDescription objects.
 // The function might crash for buggy plugins.
 //
-static void add_descriptions_from_plugin_file(OwnedArray<PluginDescription> &descriptions, String filename){
+static void add_descriptions_from_plugin_file(OwnedArray<PluginDescription> &descriptions, String description_filename){
   //  CRASHREPORTER_dont_report();{ // If findAllTypesForFile crashes, it's the plugin that crashes and not Radium (and we don't want to show a message about "Radium crashing" when it actually didn't). If we crash here, the plugin is blacklisted, and that's the important thing.
     
     VSTPluginFormat vst2_format;
-    vst2_format.findAllTypesForFile(descriptions, filename);
+    vst2_format.findAllTypesForFile(descriptions, description_filename);
     
 #if !defined(FOR_LINUX)
     VST3PluginFormat vst3_format;
-    vst3_format.findAllTypesForFile(descriptions, filename);
+    vst3_format.findAllTypesForFile(descriptions, description_filename);
 #endif
     
 #if FOR_MACOSX
     AudioUnitPluginFormat au_format;
-    au_format.findAllTypesForFile(descriptions, filename);
+    au_format.findAllTypesForFile(descriptions, description_filename);
 #endif
 
   //}CRASHREPORTER_do_report();
 }
 
-static void write_container_descriptions_to_cache_on_disk(String container_filename, String filename){
+static void write_container_descriptions_to_cache_on_disk(String container_filename, String description_filename){
   OwnedArray<PluginDescription> descriptions;
   add_descriptions_from_plugin_file(descriptions, container_filename); // BANG!
 
@@ -87,14 +87,14 @@ static void write_container_descriptions_to_cache_on_disk(String container_filen
   //testing
   //Thread::sleep(10000);
   
-  //fprintf(stderr, "===...===...   %s: GOING TO Write Plugin description file \"%s\".\n", String(container_filename).toRawUTF8(), filename.toRawUTF8());
+  //fprintf(stderr, "===...===...   %s: GOING TO Write Plugin description file \"%s\".\n", String(container_filename).toRawUTF8(), description_filename.toRawUTF8());
     
-  File file(filename);
+  File file(description_filename);
   
   if (xml_descriptions.writeToFile(file, "")==false){
-    //GFX_Message2(NULL, true, "Error: Unable to write to file \"%s\".\n", filename.toRawUTF8());
-    fprintf(stdout, "Error: Unable to write to file \"%s\".\n", filename.toRawUTF8());
-    show_alert(String("Unable to write to file \"") + filename + "\"");
+    //GFX_Message2(NULL, true, "Error: Unable to write to file \"%s\".\n", description_filename.toRawUTF8());
+    fprintf(stdout, "Error: Unable to write to file \"%s\".\n", description_filename.toRawUTF8());
+    show_alert(String("Unable to write to file \"") + description_filename + "\"");
   }
 }
 
@@ -103,12 +103,14 @@ int main(int argc, char **argv){
   //printf("Launched 1 -%s- (%s)\n",argv[1], Base64::toBase64(argv[1]).toRawUTF8());
   //fprintf(stderr,"Launched 2 -%s-\n",argv[2]);
 
-  char container_filename[1024] = {0};
-  char filename[1024] = {0};
+  /*
+  char container_filename_data[1024] = {0};
+  char filename_data[1024] = {0};
+  */
   
-  MemoryOutputStream a(container_filename, 1000);
-  MemoryOutputStream b(filename, 1000);
-
+  MemoryOutputStream a(1024);
+  MemoryOutputStream b(1024);
+  
   //show_alert("testing alerting");
   
   if (argc != 3){
@@ -127,9 +129,12 @@ int main(int argc, char **argv){
     show_alert(String("Erroneous input arguments: \"") + String(argv[1]) + "\", \"" + String(argv[2]) + "\"");
     return -2;
   }
-     
-  printf("Launched: -%s- -%s-\n", container_filename, filename);
-  write_container_descriptions_to_cache_on_disk(container_filename, filename);
+
+  String container_filename = a.toUTF8();
+  String description_filename = b.toUTF8();
+  
+  printf("Launched: -%s- -%s-\n", container_filename.toRawUTF8(), description_filename.toRawUTF8());
+  write_container_descriptions_to_cache_on_disk(container_filename, description_filename);
   return 0;
 }
 

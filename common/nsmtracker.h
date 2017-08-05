@@ -129,6 +129,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  pragma GCC diagnostic pop
 #endif
 
+#if defined(__clang__)
+  #define FORMAT_ATTRIBUTE(A,B)
+#else
+  #define FORMAT_ATTRIBUTE(A,B) __attribute__((format(gnu_printf, A, B)));;
+#endif
+
+
 
 /* Unfortunately, AmigaOS has one absolute address that is legal to
    read from; 4, which often makes MuForce not to report reading
@@ -250,7 +257,7 @@ static inline int donothing(int input){
 }
 
 
-extern LANGSPEC void handleError_internal(const char *fmt,...) __attribute__((format(printf, 1, 2)));;
+extern LANGSPEC void handleError_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2);
 #define handleError(...) ((void)donothing(0 && printf(__VA_ARGS__)), handleError_internal(__VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
 
 

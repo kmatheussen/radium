@@ -294,8 +294,9 @@
    (lambda ()       
      (let ((changed-parent (<gui> :set-parent gui parentgui)))
        (c-display "                  CHANGED-PARENT " changed-parent)
-       (if (not (<gui> :is-visible gui))
-           (<gui> :show gui))
+       (when (not (<gui> :is-visible gui))
+         (<gui> :show gui)
+         (<gui> :move-to-parent-centre gui))
        (if changed-parent
            (begin
              (if #f ;; definitely not do this. If we try to set two siblings modal at the same time, we lose mouse and keyboard access to the whole program after closing the second sibling. This HAS to be a Qt bug... Tried under Qt 5.9.0 in Linux (using FVWM). Could be Ticket #1 or #3 in QTBUG-27206. TODO: Try again after converting to MDI, it might be related to window manager.
@@ -306,9 +307,8 @@
                      (if (not (eq? mymodality parentmodality))
                          (begin
                            (c-display "   Setting modal: " parentmodality)
-                           (<gui> :set-modal gui parentmodality))))))
-             (<gui> :move-to-parent-centre gui))
-           (<gui> :raise gui))))))
+                           (<gui> :set-modal gui parentmodality))))))))
+       (<gui> :raise gui)))))
 
 ;;(curr-window (<gui> :get-parent-window -2)))
 ;           (if (not (= parent-window curr-window))
@@ -411,8 +411,15 @@
           ;;(c-display gui2)
           
           (reopen-gui-at-curr-pos :gui *message-gui*
-                                  :parentgui -2) ;; -1 is the main window. We could use -2 (current window), but then the message gui automatically becomes modal if current window is modal, and we risk locking the program if the message window pops up again immediately after closing it. In addition, it's annoying having to click "hide" while doing something in a modal window. With that said, the alternative is not working so well either (although it"s much better this way since we avoid locking up the program). If the message window pops up while a modal window is active, the "hide" button doesn't work at all while the modal window is open (which is quite annoying since it seems like the program has locked up), plus that we get graphical flickering because Qt forcefully lowers the message gui at non-obvious times (we call "raise" on the message gui whenever it shows a new message), and then it is put on top of the currrent modal window. I don't know how to solve this problem. It doesn't seem like Qt has support for "modal group"s of several widgets, which would have been THE solution to this problem. (simply setting two sibling widgets modal locks up the whole program, see comment above in the 'reopen-gui-at-curr-pos' function.)
-
+                                  :parentgui -2)
+          ;;
+          ;; In the call above, -1 is the main window. We could use -2 (current window), but then the message gui automatically becomes modal if current window is modal, and we risk locking the program if the message window pops up again immediately after closing it. In addition, it's annoying having to click "hide" while doing something in a modal window. With that said, the alternative is not working so well either (although it"s much better this way since we avoid locking up the program). If the message window pops up while a modal window is active, the "hide" button doesn't work at all while the modal window is open (which is quite annoying since it seems like the program has locked up), plus that we get graphical flickering because Qt forcefully lowers the message gui at non-obvious times (we call "raise" on the message gui whenever it shows a new message), and then it is put on top of the currrent modal window. I don't know how to solve this problem. It doesn't seem like Qt has support for "modal group"s of several widgets, which would have been THE solution to this problem. (simply setting two sibling widgets modal locks up the whole program, see comment above in the 'reopen-gui-at-curr-pos' function.)
+          ;;
+          ;; Update: Realized (by accident) that it was just the call to "(<gui> :move-to-parent-centre gui)" every time that could lock up the computer.
+          ;; By using -2 as parentgui, and only calling :move-to-parent-centre when the message gui is invisible, Qt actually does the right thing:
+          ;;   Letting both the current modal window, plus the message window, react to mouse and keyboard. Need to test this on Windows and OSX too though.
+          ;;
+          
           (<gui> :set-value *message-gui-text-edit* message)
                  
           #f)))

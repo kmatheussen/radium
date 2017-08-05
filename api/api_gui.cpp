@@ -647,7 +647,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     template<typename T>
     T *mycast(const_char* funcname, int argnum = 1) const {
-      T *ret = dynamic_cast<T*>(_widget.data());
+      T *ret = qobject_cast<T*>(_widget.data());
       
       if (ret==NULL)
         handleError("%s: argument #%d (gui #%d) is wrong type. Expected %s, got %s.", funcname, argnum, (int)get_gui_num(), T::staticMetaObject.className(), _widget.data()==NULL ? "(deleted)" : _widget->metaObject()->className());
@@ -4880,6 +4880,23 @@ bool API_instrumentGuiIsVisibleInLowerTab(void){
   return S7CALL2(bool_void, "FROM-C-instrument-gui-is-visible");
 }
 
+///////////////////////////////////////////////
+
+void showEditGui(void){
+  S7CALL2(void_void, "FROM-C-show-edit-gui");
+}
+
+void hideEditGui(void){
+  S7CALL2(void_void, "FROM-C-hide-edit-gui");
+}
+
+// Returns true if the instrument widget is the current tab in the lower tabs.
+bool editGuiIsVisible(void){
+  return S7CALL2(bool_void, "FROM-C-edit-gui-is-visible");
+}
+
+
+///////////////////////////////////////////////
 
 void API_showSequencerGui(void){
   S7CALL2(void_void, "FROM-C-show-sequencer-gui");
