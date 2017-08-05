@@ -418,11 +418,11 @@ def putCode(keyhandles,parser,codestring,added_qualifiers):
     return True
 
 
-def printsak(file,keyhandles,parser,codestring,ccommand):
+def printsak(file,keyhandles,parser,codestring):
     if 1:
         keys=parser.getKeys()+parser.getQualifiers()
         firstkey=keys.pop(0)
-        print "Putting code for '"+codestring+"', with key "+keysub[firstkey]+", is it c command?",ccommand
+        print "Putting code for '"+codestring+"', with key "+keysub[firstkey]
         if len(keys)>0:
             print " And qualifiers: "+keysub[keys[0]]
     print codestring
@@ -431,27 +431,9 @@ def printsak(file,keyhandles,parser,codestring,ccommand):
     print
 
 
-def addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, added_qualifiers):
-
-    if ccommand==False:
-        radium.ER_keyAdd(firstkey,"",keys+added_qualifiers,[]) # First remove old c command for the same key binding, if previously added.
-        if putCode(keyhandles,parser,command, added_qualifiers)==False:
-            return False
-    else:
-         # Optimization. It always works to call putCode instead. (that's what originally happened).
-        success,intercommands2=reader.getUnfoldedCall(commandname,ercommands)
-        if not success:
-            message = "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())+"\n"+command+"\n"+str(intercommands2[0])
-            print message
-            radium.addMessage(message)
-            return False
-        else:
-            retstring=radium.ER_keyAdd(firstkey,commandname,keys+added_qualifiers,intercommands2);
-            if retstring!="OK":
-                message = "Error at line %d: \"%s\"" % (parser.getCurrLineNum(),parser.getCurrLine())+"\n"+str(intercommands2[0])
-                print message
-                radium.addMessage(message)
-                return False
+def addIt(keyhandles, parser, reader, command, firstkey, keys, added_qualifiers):
+    if putCode(keyhandles,parser,command, added_qualifiers)==False:
+        return False
 
 def start(keyhandles,filehandle,filehandle2,outfilehandle):
     keybindingsdict={} # Note: Latest E-radium version has just removed everything related to keybindingsdict from this function. Could be unnecessary.
@@ -499,10 +481,6 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
                 lokke+=1
 
             #print "commands", commands
-            ercommands=commands[:]
-                      
-            intercommands=range(len(ercommands))
-            dascommand=ercommands.pop(0)
             command=commands.pop(0)
             command+="("
             while len(commands)>1:
@@ -512,37 +490,17 @@ def start(keyhandles,filehandle,filehandle2,outfilehandle):
             command+=")"
             keys=parser.getKeys()+parser.getQualifiers() 
             firstkey=keys.pop(0)
-            ccommand=False
-            if dascommand[:3]=="ra.":
-                ccommand=True
-                for lokke in range(len(ercommands)):
-                    if ercommands[lokke][0]!="\"":
-                        intercommands[lokke]=ercommands[lokke]
-                    else:
-                        ccommand=False
-                        break
-
-                commandname = dascommand[3:] # Cut ".ra" from beginning of function name
-            else:
-                commandname = dascommand
                 
-            # Check that all arguments are integers. If not we can't go through C. (probably no point going through C anymore though, but it made a significant difference when using a 50MHz amiga).
-            if ccommand:
-                for arg in reader.protos.getProto(commandname).args:
-                    if arg.type_string != "int":
-                        ccommand=False
-                        break
-
             keybindingsdict[command]=[map(lambda x:keysub[x],parser.getKeys()),map(lambda x:keysub[x],parser.getQualifiers())]
-            #printsak(0,keyhandles,parser,command,ccommand)
+            #printsak(0,keyhandles,parser,command)
             
             if not parser.mouseInQualifiers():
-                addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseEditorKey])
-                addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseMixerKey])
-                addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseMixerStripsKey])
-                addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [parser.mouseSequencerKey])
+                addIt(keyhandles, parser, reader, command, firstkey, keys, [parser.mouseEditorKey])
+                addIt(keyhandles, parser, reader, command, firstkey, keys, [parser.mouseMixerKey])
+                addIt(keyhandles, parser, reader, command, firstkey, keys, [parser.mouseMixerStripsKey])
+                addIt(keyhandles, parser, reader, command, firstkey, keys, [parser.mouseSequencerKey])
             else:
-                addIt(keyhandles, parser, reader, command, commandname, ercommands, ccommand, firstkey, keys, [])
+                addIt(keyhandles, parser, reader, command, firstkey, keys, [])
 
 
     try:
