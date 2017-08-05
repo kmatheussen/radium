@@ -51,8 +51,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextDocumentFragment>
 #include <QSplitter>
 
+#include <QDesktopServices>
 #include <QtWebKitWidgets/QWebView>
 #include <QtWebKitWidgets/QWebFrame>
+
 
 #include "../common/nsmtracker.h"
 
@@ -2412,6 +2414,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
 
   MakeFocusSnifferClass(QWebView);
+
+  static QUrl getUrl(QString stringurl){
+    if (stringurl.startsWith("http"))
+      return stringurl;
+    else if (QFileInfo(stringurl).isAbsolute())
+      return QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
+    else
+      return QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path(stringurl)));
+  }
   
   struct Web : FocusSnifferQWebView, Gui{
     Q_OBJECT;
@@ -2421,12 +2432,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     Web(QString url)
       : Gui(this)
     {
-      if (url.startsWith("http"))
-        setUrl(url);
-      else if (QFileInfo(url).isAbsolute())
-        setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(url)));
-      else
-        setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path(url))));
+      setUrl(getUrl(url));
     }
 
     /*
@@ -2504,6 +2510,35 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (!Gui::keyReleaseEvent(event)){
         FocusSnifferQWebView::keyReleaseEvent(event);
         return;
+      }
+    }
+
+    void wheelEvent(QWheelEvent *qwheelevent) override {
+      if (qwheelevent->modifiers() & Qt::ControlModifier){
+        float zoom = zoomFactor();      
+        float newzoom;
+        if (qwheelevent->delta() > 0)
+          newzoom = zoom * 1.2;
+        else
+          newzoom = zoom * 0.8;
+        
+        if (newzoom > 0.85 && newzoom < 1.15)
+          newzoom = 1.0;
+        
+        if (newzoom > 0.05) {
+          page()->mainFrame()->setZoomFactor(newzoom);
+        }
+      } else {
+
+        Qt::Orientation orientation;
+          
+        if (qwheelevent->modifiers() & Qt::ShiftModifier) {
+          orientation = Qt::Horizontal;
+          page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) - qwheelevent->delta()/2);
+        } else {
+          //orientation = Qt::Vertical;
+          FocusSnifferQWebView::wheelEvent(qwheelevent);
+        }
       }
     }
 
@@ -3160,8 +3195,12 @@ int64_t gui_floatText(double min, double curr, double max, int num_decimals, dou
   return (new FloatText(min, curr, max, num_decimals, step_interval))->get_gui_num();
 }
 
-int64_t gui_web(const_char* url){
-  return (new Web(url))->get_gui_num();
+int64_t gui_web(const_char* stringurl){
+  return (new Web(stringurl))->get_gui_num();
+}
+
+void openExternalWebBrowser(const_char *stringurl){
+  QDesktopServices::openUrl(getUrl(stringurl));
 }
 
 int64_t gui_fileRequester(const_char* header_text, const_char* dir, const_char* filetypename, const_char* postfixes, bool for_loading){
