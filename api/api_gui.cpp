@@ -4179,6 +4179,16 @@ void gui_raise(int64_t guinum){
   //w->activateWindow();
 }
 
+void gui_activate(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  QWidget *w = gui->_widget;
+
+  w->activateWindow();
+}
+
 void gui_setPos(int64_t guinum, int x, int y){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
