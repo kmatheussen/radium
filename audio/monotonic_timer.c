@@ -92,6 +92,7 @@ static void sleep_1second(void){
   // make this function a constructor.
   // TODO(awreece) Actually attempt to compile on windows.
 
+#define MUST_CALL_INIT_PCFREQ 1
 
   static void init_pcfreq(void ){
 
@@ -156,7 +157,9 @@ static void sleep_1second(void){
 #if defined(NEED_RDTSC)
 
 #if defined(RELEASE)
-#error "should not be necessary"
+//#if !defined(FOR_WINDOWS)
+#error "should not be necessary, we should have _POSIX_MONOTONIC_CLOCK on all three platforms."
+  //#endif
 #endif
 
 static inline uint64_t rdtsc() {
@@ -190,7 +193,7 @@ static inline double monotonic_rdtsc_seconds(){
 
 
 void MONOTONIC_TIMER_init(void ){
-#if defined(_WIN32)
+#if defined(MUST_CALL_INIT_PCFREQ)
   init_pcfreq();
 #endif
 
