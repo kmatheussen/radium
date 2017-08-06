@@ -4186,6 +4186,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
 ;; test :fine-velocity-slide
 ;;
+
 (***assert*** (get-velocities (m-e :note :value 20 :line 5)
                               32
                               (list 
@@ -4621,7 +4622,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                               :line linenum
                               :pattern patternnum
                               :channel channelnum
-                              :value effectvalue)))
+                              :value (between 0 effectvalue 64)))) ;; Massacre by Esau has at least one volume with value 65. Wonder what it means.
          
         ((= effectnum 13)
          (push! *events* (m-e :break
@@ -4801,13 +4802,15 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
     
     (when (or (not (validate-gliding2 pitches))
               (not (validate-gliding2 velocities)))
-      (c-display "FAILED")
+      (c-display "FAILED:"
+                 (validate-gliding2 pitches)
+                 (validate-gliding2 velocities))
       (c-display "pitches: " pitches)
       (c-display "velocities: " velocities)
       (c-display note)
       (print-events events)
       (assert #f))      
-    
+
     (let ((radium-notenum (<ra> :add-note (+ *pitch-transpose* first-pitch-value)
                                           (/ first-velocity-value 64)
                                           start-place
