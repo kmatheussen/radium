@@ -104,16 +104,16 @@ void Glissando_CurrPos(struct Tracker_Windows *window){
           if(nextnote==NULL) return;
           
           if(PlaceIsBetween2(p,&note->l.p,&nextnote->l.p)){
-            PC_Pause();{
-              ADD_UNDO(Notes_CurrPos(window));
-              Glissando(wblock,wtrack,note);
-            }PC_StopPause(window);
+            ADD_UNDO(Notes_CurrPos(window));
+            Glissando(wblock,wtrack,note);
+            /*
             UpdateAndClearSomeTrackReallinesAndGfxWTracks(
                                                           window,
                                                           wblock,
                                                           wtrack->l.num,
                                                           wtrack->l.num
                                                           );
+            */
             return;
           }
           note=nextnote;
