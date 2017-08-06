@@ -97,14 +97,15 @@ void Glissando_CurrPos(struct Tracker_Windows *window){
 	struct WTracks *wtrack=wblock->wtrack;
 	struct Notes *note=wtrack->track->notes;
 	struct Notes *nextnote;
-	const Place *p=&wblock->reallines[wblock->curr_realline]->l.p;
+        int realline = wblock->curr_realline;
+	const Place *p=&wblock->reallines[realline]->l.p;
 
         while(note!=NULL){
           nextnote=NextNote(note);
           if(nextnote==NULL) return;
           
           if(PlaceIsBetween2(p,&note->l.p,&nextnote->l.p)){
-            ADD_UNDO(Notes_CurrPos(window));
+            ADD_UNDO(Notes(window, wblock->block, wtrack->track, realline));
             Glissando(wblock,wtrack,note);
             /*
             UpdateAndClearSomeTrackReallinesAndGfxWTracks(
