@@ -491,6 +491,9 @@
   (define color (<ra> :get-instrument-color instrument-id))
 
   (define label (<gui> :widget))
+
+  (if is-minimized
+      (<gui> :set-tool-tip label name))
   
   (if is-minimized
       (<gui> :set-min-height label (* 2 (<gui> :get-system-fontheight))))
