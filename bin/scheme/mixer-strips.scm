@@ -1685,6 +1685,7 @@
 
   (<gui> :set-size-policy volslider #t #t)
   ;;(<gui> :set-min-width volslider 1) ;; ?? Why is this necessary?
+  (<gui> :set-min-height volslider (* (get-fontheight) 2)) ;; This is strange. If we don't do this, min-height will be set to approx something that looks very good, but I don't find the call doing that.
   
   (define (paint-text gui text)
     (define width (<gui> :width gui))
