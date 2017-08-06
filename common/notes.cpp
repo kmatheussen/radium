@@ -50,6 +50,7 @@ static int last_free_polyphony_num;
 static int FindFirstFreePolyphony_num(const Place *p){
   int i;
   for(i=0 ; i < end_places_size ; i++){
+    //printf("i: %d, last_free:%d, p: %s\n", i, last_free_polyphony_num, PlaceToString(p));
     if (i==last_free_polyphony_num) {
       last_free_polyphony_num++;
       return i;
@@ -63,6 +64,7 @@ static int FindFirstFreePolyphony_num(const Place *p){
 
 // Also sets the track->polyphony attribute.
 void SetNotePolyphonyAttributes(struct Tracks *track){
+  //printf("**************  Track: %d\n", track->l.num);
   last_free_polyphony_num = 0; // reset
   
   if (end_places==NULL)
@@ -72,6 +74,7 @@ void SetNotePolyphonyAttributes(struct Tracks *track){
   
   struct Notes *note = track->notes;
   while(note != NULL){
+    //printf("**************  Note at: %s\n", PlaceToString(&note->l.p));
     int polyphony_num = FindFirstFreePolyphony_num(&note->l.p);
     note->polyphony_num = polyphony_num;
     

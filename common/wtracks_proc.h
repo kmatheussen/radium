@@ -90,11 +90,15 @@ extern LANGSPEC void ChangeNoteAreaWidth_Block_CurrPos(
                                        );
   
 extern LANGSPEC void MinimizeTrack_CurrPos(
-	struct Tracker_Windows *window
+                                           struct Tracker_Windows *window,
+                                           struct WBlocks *wblock,
+                                           struct WTracks *wtrack
+
 );
 
 extern LANGSPEC void MinimizeBlock_CurrPos(
-	struct Tracker_Windows *window
+                                           struct Tracker_Windows *window,
+                                           struct WBlocks *wblock
 );
 
 extern LANGSPEC void SwapTrack_CurrPos(
