@@ -148,6 +148,7 @@ void GFX_SetSystemFont(QFont font){
     widget->update();
   }
 
+  remakeMixerStrips(-1);
   evalScheme("(minimize-lowertab)");
 }
 
