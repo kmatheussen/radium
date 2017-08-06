@@ -62,7 +62,15 @@
 
 (define (get-global-mixer-strips-popup-entries instrument-id strips-config)
   (list
-
+   (list "Make all strips wide" (lambda ()
+                                  (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #t)) (get-all-audio-instruments))
+                                  (<ra> :remake-mixer-strips)))
+   (list "Make no strips wide" (lambda ()
+                                 (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #f)) (get-all-audio-instruments))
+                                 (<ra> :remake-mixer-strips)))
+   
+   "----------"
+   
    (list "Hide mixer strip" :enabled (and instrument-id strips-config)
          (lambda ()
            (set! (strips-config :is-enabled instrument-id) #f)))
