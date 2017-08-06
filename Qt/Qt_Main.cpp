@@ -778,11 +778,11 @@ protected:
       // Qt doesn't do anything when pressing page down / page up / shift+down / shift+up / home / end
       switch(keynum){
         case EVENT_DOWNARROW:
-          if (is_key_press && shiftPressed())
+          if (is_key_press && (QApplication::keyboardModifiers() & Qt::ShiftModifier))
             send_key_down(GFX_GetActiveMenu(), 3);
           break;
         case EVENT_UPARROW:
-          if (is_key_press && shiftPressed())
+          if (is_key_press && (QApplication::keyboardModifiers() & Qt::ShiftModifier))
             send_key_up(GFX_GetActiveMenu(), 3);
           break;
         case EVENT_PAGE_DOWN:
