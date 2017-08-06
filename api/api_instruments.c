@@ -1874,3 +1874,13 @@ void setWideInstrumentStrip(int64_t instrument_id, bool is_wide){
   patch->wide_mixer_strip=is_wide;
 }
 
+void setMixerStripCommentsVisible(bool val){
+  if(root->song->mixer_comments_visible != val){
+    root->song->mixer_comments_visible = val;
+    remakeMixerStrips(-1);
+  }
+}
+  
+bool mixerStripCommentsVisible(void){
+  return root->song->mixer_comments_visible;
+}

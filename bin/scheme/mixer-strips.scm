@@ -2052,8 +2052,10 @@
   (<gui> :add gui (create-mixer-strip-pan instrument-id strips-config system-background-color background-color pan-height))
   (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color mutesolo-height #f))
   (<gui> :add gui (create-mixer-strip-volume instrument-id meter-instrument-id strips-config background-color #f) 1)
-  (define comment (create-mixer-strip-comment instrument-id strips-config comment-height))
-  (<gui> :add gui comment)
+
+  (when (<ra> :mixer-strip-comments-visible)
+    (define comment (create-mixer-strip-comment instrument-id strips-config comment-height))
+    (<gui> :add gui comment))
 
   ;;(if (not is-standalone-mixer-strip)
   ;;    (create-current-instrument-border gui instrument-id))

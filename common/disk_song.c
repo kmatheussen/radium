@@ -64,6 +64,8 @@ DC_start("SONG");
         
         DC_SSB("plugins_should_receive_swing_tempo", song->plugins_should_receive_swing_tempo);
         DC_SSB("editor_should_swing_along", song->editor_should_swing_along);
+
+        DC_SSB("mixer_comments_visible", root->song->mixer_comments_visible);
         
         DC_start("COMMENT");{
           HASH_save(COMMENT_get_state(), dc.file);
@@ -102,7 +104,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	static char *vars[8]={
+	static char *vars[9]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -110,7 +112,8 @@ struct Song *LoadSong(void){
                 "linear_accelerando",
                 "linear_ritardando",
                 "plugins_should_receive_swing_tempo",
-                "editor_should_swing_along"
+                "editor_should_swing_along",
+                "mixer_comments_visible"
 	};
 	struct Song *song=SONG_create();
         
@@ -135,7 +138,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
         
-        GENERAL_LOAD(7,8)
+        GENERAL_LOAD(7,9)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -202,9 +205,10 @@ var7:
         song->editor_should_swing_along = DC_LoadB();
         goto start;
 
-
-
 var8:
+        root->song->mixer_comments_visible = DC_LoadB();
+        goto start;
+        
 var9:
 var10:
 var11:

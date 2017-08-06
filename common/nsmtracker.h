@@ -2402,6 +2402,8 @@ struct Song{
         DEFINE_ATOMIC(bool, linear_ritardando);
         bool plugins_should_receive_swing_tempo;
         bool editor_should_swing_along;
+
+        bool mixer_comments_visible;
   
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.

@@ -25,6 +25,10 @@ extern "C"{
     ensure_widget_is_created();
 
     safeShowOrExec(widget, true);
+    
+    // minimize
+    //widget->adjustSize();
+    //widget->updateGeometry();
   }
 
   void SONGPROPERTIES_update(struct Song *song){
