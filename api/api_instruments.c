@@ -1717,6 +1717,7 @@ void showInstrumentInfo(dyn_t instrument_id_or_description, int64_t parentgui){
 }
 
 
+
 /********** Instrument deletion generation ***************/
 
 static int64_t g_deletion_generation = 0;
@@ -1737,6 +1738,7 @@ int64_t getAudioInstrumentDeletionGeneration(void){
 }
 
 
+
 /******** Effect monitors ************/
 
 struct EffectMonitor{
@@ -1745,6 +1747,7 @@ struct EffectMonitor{
   struct Patch *patch;
   
   int64_t instrument_id;
+  bool monitor_automation;
   int effect_num;
   func_t *func;
 
@@ -1774,14 +1777,14 @@ static struct EffectMonitor *find_effect_monitor(int effect_num, int64_t instrum
 }
 */
 
-int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, func_t *func){
+int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, bool monitor_automation, func_t *func){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("Instrument #%d has been closed", (int)instrument_id);
+    handleError("addEffectMonitor: Instrument #%d has been closed", (int)instrument_id);
     return -1;
   }
 
@@ -1806,6 +1809,7 @@ int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, func_t 
   
   effect_monitor->effect_num = effect_num;
   effect_monitor->instrument_id = instrument_id;
+  effect_monitor->monitor_automation = monitor_automation;
   effect_monitor->func = func;
 
   effect_monitor->last_value = 0;
@@ -1835,17 +1839,23 @@ void API_instruments_call_regularly(void){
     struct Patch *patch = effect_monitor->patch;
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     if(plugin!=NULL){
-      float now = plugin->stored_effect_values_scaled[effect_monitor->effect_num];
+      float now;
+      if (effect_monitor->monitor_automation)
+        now = safe_float_read(&plugin->slider_automation_values[effect_monitor->effect_num]);
+      else
+        now = plugin->stored_effect_values_scaled[effect_monitor->effect_num];
       if (now != effect_monitor->last_value){
         effect_monitor->last_value = now;
-        S7CALL(void_void,effect_monitor->func);
+        S7CALL(void_double,effect_monitor->func, now);
       }
     }
   }END_VECTOR_FOR_EACH;
 }
 
 
+
 // Mixer strips
+////////////////////////////////////////////////
 
 void redrawMixerStrips(bool immediately){
   if (immediately)

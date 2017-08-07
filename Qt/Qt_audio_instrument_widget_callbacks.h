@@ -528,12 +528,10 @@ public:
       SLIDERPAINTER_set_peak_value_pointers(bus5_slider->_painter,2, plugin->bus4_volume_peaks.decaying_dbs, true);
     }
 
-    if(num_inputs>0 || num_outputs>0){//plugin->input_volume_peak_values==NULL){
-      if(num_inputs>0)
-        SLIDERPAINTER_set_peak_value_pointers(input_volume_slider->_painter, num_inputs, plugin->input_volume_peaks.decaying_dbs, true);
-      else
-        SLIDERPAINTER_set_peak_value_pointers(input_volume_slider->_painter, num_outputs, plugin->input_volume_peaks.decaying_dbs, true);
-    }
+    if(num_inputs>0)
+      SLIDERPAINTER_set_peak_value_pointers(input_volume_slider->_painter, num_inputs, plugin->input_volume_peaks.decaying_dbs, true);
+    else if (num_outputs>0)
+      SLIDERPAINTER_set_peak_value_pointers(input_volume_slider->_painter, num_outputs, plugin->input_volume_peaks.decaying_dbs, true);
 
     // automation
 
