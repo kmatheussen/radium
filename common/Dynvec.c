@@ -14,6 +14,17 @@ const dyn_t g_empty_dynvec = {
  .array = (dynvec_t*)&g_empty_dynvec_dynvec
 };
 
+const dyn_t g_dyn_false = {
+  .type = BOOL_TYPE,
+  .bool_number = false
+};
+  
+const dyn_t g_dyn_true = {
+  .type = BOOL_TYPE,
+  .bool_number = true
+};
+  
+
 const dyn_t g_uninitialized_dyn = {0};
 
 bool DYNVEC_equal(dynvec_t *v1, dynvec_t *v2){

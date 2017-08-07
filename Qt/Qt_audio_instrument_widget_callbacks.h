@@ -430,7 +430,7 @@ public:
 
     int effect_num = type->num_effects + system_effect;
 
-    bool val = PLUGIN_get_effect_value(plugin,effect_num,VALUE_FROM_STORAGE) > 0.5f;
+    bool val = PLUGIN_get_effect_value(plugin,effect_num, VALUE_FROM_PLUGIN) >= 0.5f;
 
     checkwidget->setChecked(val);
 

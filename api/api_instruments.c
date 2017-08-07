@@ -738,7 +738,21 @@ float getInstrumentEffect(int64_t instrument_id, const_char* effect_name){
     return 0.0;
   }
 
-  return PLUGIN_get_effect_from_name(plugin, effect_name);
+  return PLUGIN_get_effect_from_name(plugin, effect_name, VALUE_FROM_PLUGIN);
+}
+
+float getStoredInstrumentEffect(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return 0.0;
+  }
+
+  return PLUGIN_get_effect_from_name(plugin, effect_name, VALUE_FROM_STORAGE);
 }
 
 
@@ -778,6 +792,28 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
   GFX_update_instrument_widget(patch);
 }
 
+
+const_char* getInstrumentEffectColor(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return "";
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return "";
+  }
+
+  int effect_num = PLUGIN_get_effect_num(plugin, effect_name, false);
+  if (effect_num==-1){
+    handleError("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)instrument_id, patch->name);
+    return "";
+  }
+
+  return GFX_get_colorname_from_color(GFX_get_color(get_effect_color(plugin, effect_num)));
+}
+
+
 void setInstrumentSolo(int64_t instrument_id, bool do_solo){
   S7CALL2(void_int_bool,"FROM-C-set-solo!", instrument_id, do_solo);
 }
@@ -816,14 +852,14 @@ void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("Instrument #%d has been closed", (int)instrument_id);
+    handleError("Instrument #%d (\"%s\") has been closed", (int)instrument_id, patch->name);
     return;
   }
 
-  int effect_num = PLUGIN_get_effect_num(plugin, effect_name);
+  int effect_num = PLUGIN_get_effect_num(plugin, effect_name, false);
 
   if (effect_num==-1){
-    handleError(" ");
+    handleError("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)instrument_id, patch->name);
     return;
   }
   
@@ -1747,11 +1783,13 @@ struct EffectMonitor{
   struct Patch *patch;
   
   int64_t instrument_id;
+  bool monitor_stored;
   bool monitor_automation;
   int effect_num;
   func_t *func;
 
-  float last_value;
+  float last_stored_value;
+  float last_automation_value;
 };
 
 static int64_t g_effect_monitor_id = 0;
@@ -1777,7 +1815,9 @@ static struct EffectMonitor *find_effect_monitor(int effect_num, int64_t instrum
 }
 */
 
-int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, bool monitor_automation, func_t *func){
+int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, bool monitor_stored, bool monitor_automation, func_t *func){
+  R_ASSERT_NON_RELEASE(monitor_automation || monitor_stored);
+
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
@@ -1788,10 +1828,10 @@ int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, bool mo
     return -1;
   }
 
-  int effect_num = PLUGIN_get_effect_num(plugin, effect_name);
+  int effect_num = PLUGIN_get_effect_num(plugin, effect_name, false);
 
   if (effect_num==-1){
-    handleError(" ");
+    handleError("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)instrument_id, patch->name);
     return -1;
   }
   
@@ -1809,10 +1849,12 @@ int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, bool mo
   
   effect_monitor->effect_num = effect_num;
   effect_monitor->instrument_id = instrument_id;
+  effect_monitor->monitor_stored = monitor_stored;
   effect_monitor->monitor_automation = monitor_automation;
   effect_monitor->func = func;
 
-  effect_monitor->last_value = 0;
+  effect_monitor->last_stored_value = 0;
+  effect_monitor->last_automation_value = -10;
 
   VECTOR_push_back(&g_effect_monitors, effect_monitor);
 
@@ -1839,14 +1881,34 @@ void API_instruments_call_regularly(void){
     struct Patch *patch = effect_monitor->patch;
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     if(plugin!=NULL){
-      float now;
-      if (effect_monitor->monitor_automation)
-        now = safe_float_read(&plugin->slider_automation_values[effect_monitor->effect_num]);
-      else
-        now = plugin->stored_effect_values_scaled[effect_monitor->effect_num];
-      if (now != effect_monitor->last_value){
-        effect_monitor->last_value = now;
-        S7CALL(void_double,effect_monitor->func, now);
+
+      bool send_stored=false, send_automation = false;
+      
+      float stored_now = -1;
+      float automation_now = -10;
+
+      if (effect_monitor->monitor_stored){
+        stored_now = plugin->stored_effect_values_scaled[effect_monitor->effect_num];
+        if (stored_now != effect_monitor->last_stored_value){
+          effect_monitor->last_stored_value = stored_now;
+          send_stored = true;
+        }
+      }
+
+      if (effect_monitor->monitor_automation){
+        automation_now = safe_float_read(&plugin->slider_automation_values[effect_monitor->effect_num]);
+        if (automation_now != effect_monitor->last_automation_value){
+          effect_monitor->last_automation_value = automation_now;
+          send_automation = true;
+        }
+      }
+      
+      if (send_stored || send_automation){
+        S7CALL(void_dyn_dyn,
+               effect_monitor->func,
+               send_stored ? DYN_create_float(stored_now) : g_dyn_false,
+               send_automation ? DYN_create_float(automation_now) : g_dyn_false
+               );
       }
     }
   }END_VECTOR_FOR_EACH;

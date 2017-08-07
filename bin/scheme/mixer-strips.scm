@@ -160,8 +160,8 @@
         checkbox))
 
 
-(define (add-gui-effect-monitor gui instrument-id effect-name monitor-automation callback)
-  (let ((effect-monitor (<ra> :add-effect-monitor effect-name instrument-id monitor-automation callback)))
+(define (add-gui-effect-monitor gui instrument-id effect-name monitor-stored monitor-automation callback)
+  (let ((effect-monitor (<ra> :add-effect-monitor effect-name instrument-id monitor-stored monitor-automation callback)))
     (<gui> :add-deleted-callback gui
            (lambda (radium-runs-custom-exec)
              (<ra> :remove-effect-monitor effect-monitor))))) ;; This function should be safe to call also when 'radium-runs-custom-exec' is true.
@@ -788,7 +788,7 @@
     ;;(if (not (is-enabled?))
     ;;    #t
     ;;    (if is-send? ;; Wrong. We don't gray out a plugins sends. The sends are still working.
-    ;;        (< (<ra> :get-instrument-effect parent-instrument-id "System Effects On/Off") 0.5)
+    ;;        (< (<ra> :get-stored-instrument-effect parent-instrument-id "System Effects On/Off") 0.5)
     ;;        #f)))
     
     
@@ -953,8 +953,8 @@
   (<gui> :set-size-policy widget #t #t)
   
   (if (not is-send?)
-      (add-gui-effect-monitor widget instrument-id "System Effects On/Off" #f
-                              (lambda (on/off)
+      (add-gui-effect-monitor widget instrument-id "System Effects On/Off" #t #t
+                              (lambda (on/off automation)
                                 (<gui> :update widget))))
   
   widget)
@@ -963,7 +963,7 @@
 
 (define (create-mixer-strip-plugin gui first-instrument-id parent-instrument-id instrument-id strips-config)
   (define (get-drywet)
-    (<ra> :get-instrument-effect instrument-id "System Dry/Wet"))
+    (<ra> :get-stored-instrument-effect instrument-id "System Dry/Wet"))
   
   (define (delete-instrument)
 
@@ -1031,8 +1031,8 @@
                                reset
                                ))
 
-  (add-gui-effect-monitor slider instrument-id "System Dry/Wet" #f
-                          (lambda (drywet)
+  (add-gui-effect-monitor slider instrument-id "System Dry/Wet" #t #t
+                          (lambda (drywet automation)
                             (set! doit #f)
                             (<gui> :set-value slider drywet)
                             (set! doit #t)))
@@ -1122,7 +1122,7 @@
     (set-db-value 0))
 
   (define (get-db-value)
-    (radium-normalized-to-db (<ra> :get-instrument-effect instrument-id "System In")))
+    (radium-normalized-to-db (<ra> :get-stored-instrument-effect instrument-id "System In")))
 
   (define last-value (get-db-value))
   
@@ -1157,13 +1157,14 @@
                                ))
                                      
 
-  (add-gui-effect-monitor slider instrument-id "System In" #f
-                          (lambda (system-in)
-                            (define new-value (radium-normalized-to-slider system-in))
-                            (when (not (= new-value (<gui> :get-value slider)))
-                              (set! doit #f)
-                              (<gui> :set-value slider new-value)
-                              (set! doit #t))))
+  (add-gui-effect-monitor slider instrument-id "System In" #t #t
+                          (lambda (system-in automation)
+                            (when system-in
+                              (define new-value (radium-normalized-to-slider system-in))
+                              (when (not (= new-value (<gui> :get-value slider)))
+                                (set! doit #f)
+                                (<gui> :set-value slider new-value)
+                                (set! doit #t)))))
 
   (<gui> :add horiz slider)
   horiz)
@@ -1263,14 +1264,15 @@
                                   (delete)
                                   (create-send-func gain '()))))))
   (define (get-db-value)
-    (radium-normalized-to-db (<ra> :get-instrument-effect instrument-id effect-name)))
+    (radium-normalized-to-db (<ra> :get-stored-instrument-effect instrument-id effect-name)))
 
   (define (set-db-value db)
     (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized db)))
   
   (define (add-monitor slider callback)
-    (add-gui-effect-monitor slider instrument-id effect-name #f (lambda (radium-normalized)
-                                                                  (callback (radium-normalized-to-db radium-normalized)))))
+    (add-gui-effect-monitor slider instrument-id effect-name #t #t
+                            (lambda (radium-normalized automation)
+                              (callback (radium-normalized-to-db radium-normalized)))))
   
   (set! send-gui (create-mixer-strip-send gui
                                           first-instrument-id
@@ -1443,7 +1445,7 @@
                   -90 90)))
     
   (define (get-pan)
-    (get-pan-slider-value (<ra> :get-instrument-effect instrument-id "System Pan")))
+    (get-pan-slider-value (<ra> :get-stored-instrument-effect instrument-id "System Pan")))
   
   (define doit #t)
 
@@ -1494,15 +1496,16 @@
 
   ;;(paint)
 
-  (add-gui-effect-monitor slider instrument-id "System Pan" #f
-                          (lambda (normalized-value)
+  (add-gui-effect-monitor slider instrument-id "System Pan" #t #t
+                          (lambda (normalized-value automation)
                             (set! doit #f)
                             (<gui> :set-value slider (get-pan-slider-value normalized-value))
                             ;;(<gui> :update slider)
                             (set! doit #t)))
   
-  (add-gui-effect-monitor slider instrument-id "System Pan On/Off" #f (lambda (on/off)
-                                                                        (<gui> :update slider)))
+  (add-gui-effect-monitor slider instrument-id "System Pan On/Off" #t #t
+                          (lambda (on/off automation)
+                            (<gui> :update slider)))
 
   (add-safe-mouse-callback slider
          (lambda (button state x y)
@@ -1640,12 +1643,12 @@
                                        (get-soloed)
                                        height))
   
-  (add-gui-effect-monitor (cadr mute) instrument-id volume-on-off-name #f
-                          (lambda (on/off)
+  (add-gui-effect-monitor (cadr mute) instrument-id volume-on-off-name #t #t
+                          (lambda (on/off automation)
                             ((car mute) (get-muted))))
   
-  (add-gui-effect-monitor (cadr solo) instrument-id "System Solo On/Off" #f
-                          (lambda (on/off)
+  (add-gui-effect-monitor (cadr solo) instrument-id "System Solo On/Off" #t #t
+                          (lambda (on/off automation)
                             (c-display "Solo changed for" instrument-id)
                             ((car solo) (get-soloed))))
   
@@ -1684,7 +1687,7 @@
                           "System Volume"))
   
   (define (get-volume)
-    (radium-normalized-to-db (<ra> :get-instrument-effect instrument-id effect-name)))
+    (radium-normalized-to-db (<ra> :get-stored-instrument-effect instrument-id effect-name)))
 
   (define doit #f)
 
@@ -1750,7 +1753,12 @@
     )
 
   (define volslider-rounding (if is-minimized 0 2))
-  
+
+  (define automation-radium-normalized-volume -10)
+  (define automation-slider-value -10)
+
+  (define volume-automation-color (<ra> :get-instrument-effect-color instrument-id effect-name))
+                                 
   (set! paint-slider
         (lambda ()
           (define volslider-width (<gui> :width volslider))
@@ -1783,6 +1791,11 @@
           ;; slider 0db, white line
           (define middle_0db (scale (db-to-slider 0) 0 1 height 0))
           (<gui> :draw-line volslider "#eeeeee" (1+ x1) middle_0db (1- x2) middle_0db 0.3)
+
+          ;; Automation value
+          (if (> automation-slider-value 0)
+              (let ((automation-y (max 0 (scale automation-slider-value 0 1 height 0))))
+                (<gui> :draw-line volslider volume-automation-color x1 automation-y x2 automation-y 2.0)))
           ))
 
   (add-safe-paint-callback volslider (lambda x (paint-slider)))
@@ -1790,16 +1803,24 @@
 
   (define volmeter (<gui> :vertical-audio-meter meter-instrument-id))
   
-  (add-gui-effect-monitor volslider instrument-id effect-name #f
-                          (lambda (radium-normalized-volume)
-                            (set! doit #f)
-                            (<gui> :set-value volslider (radium-normalized-to-slider radium-normalized-volume))
-                            ;;(<gui> :set-value voltext (get-volume))
-                            (if paint-voltext
-                                (<gui> :update voltext))
-                            ;;(<gui> :update volslider)
-                            (set! doit #t)))
-
+  (add-gui-effect-monitor volslider instrument-id effect-name #t #t
+                          (lambda (radium-normalized-volume radium-normalized-automation-volume)
+                            (when radium-normalized-volume
+                              (set! doit #f)
+                              (<gui> :set-value volslider (radium-normalized-to-slider radium-normalized-volume))
+                              ;;(<gui> :set-value voltext (get-volume))
+                              (if paint-voltext
+                                  (<gui> :update voltext))
+                              ;;(<gui> :update volslider)
+                              (set! doit #t))
+                            (when radium-normalized-automation-volume
+                              (set! automation-radium-normalized-volume radium-normalized-automation-volume)
+                              (if (< radium-normalized-automation-volume 0)
+                                  (set! automation-slider-value -10)
+                                  (set! automation-slider-value (radium-normalized-to-slider radium-normalized-automation-volume)))
+                              ;;(c-display "got automation value" radium-normalized-automation-volume automation-slider-value)
+                              (<gui> :update volslider))))
+                              
   (add-safe-mouse-callback volslider
          (lambda (button state x y)
            (cond ((and (= button *left-button*)
