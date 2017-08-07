@@ -1394,7 +1394,7 @@ void FX_call_me_before_starting_to_play_song(struct SeqTrack *seqtrack, const st
 
       R_ASSERT_RETURN_IF_FALSE(value != fx->min-1);
       R_ASSERT_RETURN_IF_FALSE(value >= fx->min);
-      R_ASSERT_RETURN_IF_FALSE(value < fx->max);
+      R_ASSERT_RETURN_IF_FALSE(value <= fx->max);
 
       int64_t abstime = get_abstime_from_seqtime(seqtrack, seqblock, seqblock->time + time);
                                
