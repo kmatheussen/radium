@@ -769,6 +769,7 @@
                       get-scaled-value
                       get-value-text
                       set-value
+                      get-automation-data
                       delete-func
                       replace-func
                       reset-func)
@@ -824,19 +825,31 @@
     
     ;;(if (= (<ra> :get-current-instrument) instrument-id)
     ;;    (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
+
+    (define w 1.2)
+    (define w2 (* 2 w))
+    (define w3 (* 3 w))
+
+    (define is-current (= (<ra> :get-current-instrument) instrument-id))
     
+    (if get-automation-data
+        (get-automation-data
+         (lambda (value color)
+           (let* ((w (if is-current w3 1))
+                  (x (max 0 (scale value 0 1 w (- width w)))))
+             (<gui> :draw-line widget color x w x (- height w) 2.0)))))
+
+
     ;; border
-    (if (= (<ra> :get-current-instrument) instrument-id)
-        (let* ((w 1.2)
-               (w*2 (* w 3)))
-          (<gui> :draw-box widget *current-mixer-strip-border-color* w w (- width 2) (- height 2) w*2 5 5)) ;; "#aa111144"
+    (if is-current
+        (<gui> :draw-box widget *current-mixer-strip-border-color* w w (- width w) (- height w) w3 5 5) ;; "#aa111144"
         (<gui> :draw-box widget "gray"      0 0 width height 0.8 5 5))
     
     (define text (get-slider-text value))
     
     (if is-changing-value
         (set-tooltip-and-statusbar text))
-    
+
     (define text-color (if (is-grayed?)
                            (<gui> :mix-colors *text-color* "#ff000000" 0.5)
                            *text-color*))
@@ -1031,7 +1044,14 @@
   (define (reset)
     (<ra> :set-instrument-effect instrument-id "System Dry/Wet" 1))
 
+  (define automation-value #f)
+  (define automation-color (<ra> :get-instrument-effect-color instrument-id "System Dry/Wet"))
+  (define (get-automation-data kont)
+    (if automation-value
+        (kont automation-value automation-color)))
+  
   (define doit #t)
+  
   (define slider (strip-slider first-instrument-id
                                parent-instrument-id
                                instrument-id
@@ -1045,6 +1065,7 @@
                                (lambda (new-scaled-value)
                                  (if (and doit (not (= new-scaled-value (get-drywet))))                                     
                                      (<ra> :set-instrument-effect instrument-id "System Dry/Wet" new-scaled-value)))
+                               get-automation-data
                                delete-instrument
                                das-replace-instrument
                                reset
@@ -1052,10 +1073,16 @@
 
   (add-gui-effect-monitor slider instrument-id "System Dry/Wet" #t #t
                           (lambda (drywet automation)
-                            (set! doit #f)
-                            (<gui> :set-value slider drywet)
-                            (set! doit #t)))
-
+                            (when drywet
+                              (set! doit #f)
+                              (<gui> :set-value slider drywet)
+                              (set! doit #t))
+                            (when automation
+                              (set! automation-value (if (< automation 0)
+                                                         #f
+                                                         automation))
+                              (<gui> :update slider))))
+  
   (<gui> :add gui slider))
 
 
@@ -1144,6 +1171,14 @@
     (radium-normalized-to-db (<ra> :get-stored-instrument-effect instrument-id "System In")))
 
   (define last-value (get-db-value))
+
+  (define automation-value #f)
+  (define automation-color (<ra> :get-instrument-effect-color instrument-id "System In"))
+  (define (get-automation-data kont)
+    (if automation-value
+        (if (> automation-value 1.0)
+            (kont 1.0 automation-color)
+            (kont automation-value automation-color))))
   
   (define doit #t)
   (define slider (strip-slider first-instrument-id
@@ -1168,8 +1203,10 @@
                                  ;;(c-display "new-db:" db ", old-db:" last-value)
                                  (when (and doit (not (= last-value db)))
                                    (set! last-value db)
-                                   (set-db-value db)))
+                                   (set-db-value db)))                               
 
+                               get-automation-data
+                               
                                delete
                                replace
                                reset
@@ -1183,7 +1220,13 @@
                               (when (not (= new-value (<gui> :get-value slider)))
                                 (set! doit #f)
                                 (<gui> :set-value slider new-value)
-                                (set! doit #t)))))
+                                (set! doit #t)))
+                            (when automation
+                              (set! automation-value (if (< automation 0)
+                                                         #f
+                                                         (radium-normalized-to-slider automation)))
+                              (<gui> :update slider))))
+
 
   (<gui> :add horiz slider)
   horiz)
@@ -1208,6 +1251,12 @@
     (make-undo)
     (set-db-value 0)
     (remake-mixer-strips))
+
+  (define automation-value #f)
+  (define automation-color "white") ;;(<ra> :get-instrument-effect-color instrument-id "System Dry/Wet"))
+  (define (get-automation-data kont)
+    (if automation-value
+        (kont (min 1.0 automation-value) automation-color)))
 
   (define doit #t)
 
@@ -1239,6 +1288,8 @@
                                  (when (and doit (not (= last-value db)))
                                    (set! last-value db)
                                    (set-db-value db)))
+
+                               get-automation-data
                                
                                delete
                                replace
@@ -1246,12 +1297,18 @@
   
   (if add-monitor
       (add-monitor slider
-                   (lambda (new-db)
-                     (define new-slider-value (db-to-slider new-db))
-                     (when (not (= new-slider-value (<gui> :get-value slider)))
-                       (set! doit #f)
-                       (<gui> :set-value slider new-slider-value)
-                       (set! doit #t)))))
+                   (lambda (new-db automation-normalized)
+                     (when new-db
+                       (define new-slider-value (db-to-slider new-db))
+                       (when (not (= new-slider-value (<gui> :get-value slider)))
+                         (set! doit #f)
+                         (<gui> :set-value slider new-slider-value)
+                         (set! doit #t)))
+                     (when automation-normalized
+                       (set! automation-value (if (< automation-normalized 0)
+                                                  #f
+                                                  (radium-normalized-to-slider automation-normalized)))
+                       (<gui> :update slider)))))
   
   (<gui> :add horiz slider)
   horiz)
@@ -1291,7 +1348,9 @@
   (define (add-monitor slider callback)
     (add-gui-effect-monitor slider instrument-id effect-name #t #t
                             (lambda (radium-normalized automation)
-                              (callback (radium-normalized-to-db radium-normalized)))))
+                              (callback (and radium-normalized (radium-normalized-to-db radium-normalized))
+                                        automation
+                                        ))))
   
   (set! send-gui (create-mixer-strip-send gui
                                           first-instrument-id
