@@ -488,7 +488,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
     int i;
     plugin->stored_effect_values_native = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
     plugin->stored_effect_values_scaled = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
-    plugin->last_written_effect_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->last_written_effect_values_native = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->last_written_effect_values_scaled = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
     plugin->initial_effect_values=(float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
     
 #if 0
@@ -499,7 +500,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
       plugin->stored_effect_values_native[i] = PLUGIN_get_effect_value2(plugin, i, VALUE_FROM_PLUGIN, EFFECT_FORMAT_NATIVE);
       plugin->stored_effect_values_scaled[i] = PLUGIN_get_effect_value2(plugin, i, VALUE_FROM_PLUGIN, EFFECT_FORMAT_SCALED);
       
-      plugin->last_written_effect_values[i]  = plugin->stored_effect_values_native[i];
+      plugin->last_written_effect_values_native[i]  = plugin->stored_effect_values_native[i];
+      plugin->last_written_effect_values_scaled[i]  = plugin->stored_effect_values_scaled[i];
       plugin->initial_effect_values[i]       = plugin->stored_effect_values_native[i];
     }
 
@@ -527,6 +529,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
     plugin_type->called_after_plugin_has_been_created(plugin_type, plugin);
 
   PLUGIN_touch(plugin);
+
+  plugin->has_initialized = true;
   
   return plugin;
 }
@@ -547,7 +551,8 @@ void PLUGIN_delete(SoundPlugin *plugin){
   
   V_free(plugin->do_random_change);
   V_free(plugin->initial_effect_values);
-  V_free(plugin->last_written_effect_values);
+  V_free(plugin->last_written_effect_values_native);
+  V_free(plugin->last_written_effect_values_scaled);
   V_free(plugin->stored_effect_values_native);
   V_free(plugin->stored_effect_values_scaled);
 
@@ -743,7 +748,7 @@ const char *PLUGIN_get_new_name_if_name_has_changed(struct SoundPlugin *plugin, 
   return effect_name;
 }
 
-int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
+int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name, bool show_error_message){
   const struct SoundPluginType *plugin_type = plugin->type;
 
   int i;
@@ -755,7 +760,8 @@ int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name){
     if(!strcmp(effect_name,plugin_type->get_effect_name(plugin,i)))
       return i;
 
-  GFX_Message(NULL, "The effect names of %s / %s has changed.\n\"%s\" will be ignored.\n\nIf you know the new name of the effect, you can edit the song manually in a text editor.", plugin_type->type_name, plugin_type->name, effect_name);
+  if (show_error_message)
+    GFX_Message(NULL, "The effect names of %s / %s has changed.\n\"%s\" will be ignored.\n\nIf you know the new name of the effect, you can edit the song manually in a text editor.", plugin_type->type_name, plugin_type->name, effect_name);
   
   return -1;
 }
@@ -935,14 +941,13 @@ static void update_instrument_gui(struct SoundPlugin *plugin){
 
 static void set_voice_onoff(struct SoundPlugin *plugin, int num, float value){
   if (plugin->patch != NULL) {
-    if (value>=0.5)
-      plugin->patch->voices[num].is_on = true;
-    else
-      plugin->patch->voices[num].is_on = false;
-
-    //printf("      Setting voice %d to %d\n", num, plugin->patch->voices[num].is_on );
+    bool new_val = value>=0.5;
     
-    update_instrument_gui(plugin);
+    if (new_val != plugin->patch->voices[num].is_on){
+      plugin->patch->voices[num].is_on = new_val;
+      //printf("      Setting voice %d to %d\n", num, plugin->patch->voices[num].is_on );
+      update_instrument_gui(plugin);
+    }
   }
 }
                       
@@ -970,15 +975,48 @@ static float get_chance(struct SoundPlugin *plugin, int num){
   } else
     return 1;
 }
-                      
-#define SET_SMOOTH_ON_OFF(smooth, on_off, value, set_value) {   \
-    if(value>0.5f){                                             \
-      SMOOTH_set_target_value(smooth, set_value);               \
-      ATOMIC_SET(on_off, true);                                 \
-    }else{                                                      \
-      ATOMIC_SET(on_off, false);                                \
-      SMOOTH_set_target_value(smooth, 0.0f);                    \
-    }                                                           \
+
+#define SET_ATOMIC_ON_OFF(on_off, value) { \
+    {                                                                   \
+      bool old_val = ATOMIC_GET(on_off);                                \
+      if(value>=0.5f && !old_val){                                      \
+        ATOMIC_SET(on_off, true);                                       \
+        update_instrument_gui(plugin);                                  \
+      }else if (value<0.5f && old_val){                                 \
+        ATOMIC_SET(on_off, false);                                      \
+        update_instrument_gui(plugin);                                  \
+      }                                                                 \
+    }                                                                   \
+  }
+
+#define SET_ATOMIC_ON_OFF2(on_off, value, var, on_value, off_value) {   \
+    {                                                                   \
+      bool old_val = ATOMIC_GET(on_off);                                \
+      if(value>=0.5f && !old_val){                                      \
+        var = on_value;                                                 \
+        ATOMIC_SET(on_off, true);                                       \
+        update_instrument_gui(plugin);                                  \
+      }else if (value<0.5f && old_val){                                 \
+        ATOMIC_SET(on_off, false);                                      \
+        var = off_value;                                                \
+        update_instrument_gui(plugin);                                  \
+      }                                                                 \
+    }                                                                   \
+  }
+
+#define SET_SMOOTH_ON_OFF(smooth, on_off, value, on_value, off_value) { \
+    {                                                                   \
+      bool old_val = ATOMIC_GET(on_off);                                \
+      if(value>=0.5f && !old_val){                                      \
+        SMOOTH_set_target_value(smooth, on_value);                      \
+        ATOMIC_SET(on_off, true);                                       \
+        update_instrument_gui(plugin);                                  \
+      }else if (value<0.5f && old_val){                                 \
+        ATOMIC_SET(on_off, false);                                      \
+        SMOOTH_set_target_value(smooth, off_value);                     \
+        update_instrument_gui(plugin);                                  \
+      }                                                                 \
+    }                                                                   \
   }
 
 #define SET_BUS_VOLUME(busnum)                                          \
@@ -990,7 +1028,7 @@ static float get_chance(struct SoundPlugin *plugin, int num){
   get_gain_value(safe_float_read(&plugin->bus_volume[busnum]), value_format)
 
 static void set_bus_onoff(struct SoundPlugin *plugin, float value, int busnum){
-  bool newval = value > 0.5f;
+  bool newval = value >= 0.5f;
   bool oldval = ATOMIC_SET_RETURN_OLD_ARRAY(plugin->bus_volume_is_on, busnum, newval);
   if (oldval != newval){
     volatile struct Patch *patch = plugin->patch;
@@ -1001,6 +1039,7 @@ static void set_bus_onoff(struct SoundPlugin *plugin, float value, int busnum){
 #if !defined(RELEASE)
     printf("       Remake: BUS_ONOFF %d. On: %d\n", busnum, newval);
 #endif
+    update_instrument_gui(plugin);
   }
 }
 
@@ -1171,7 +1210,8 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
 
   }
 
-  safe_float_write(&plugin->last_written_effect_values[effect_num], native_value);
+  safe_float_write(&plugin->last_written_effect_values_native[effect_num], native_value);
+  safe_float_write(&plugin->last_written_effect_values_scaled[effect_num], scaled_value);
   
   safe_float_write(&plugin->slider_automation_values[effect_num],
                    FX_when_is_automation(when) ? scaled_value : -10
@@ -1196,7 +1236,7 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
 }
 
                                
-static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int effect_num, float value, enum StoreitType storeit_type, FX_when when, enum ValueFormat value_format, bool sent_from_midi_learn){
+static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time, const int effect_num, float value, const enum StoreitType storeit_type, const FX_when when, const enum ValueFormat value_format, const bool sent_from_midi_learn){
   float store_value_native = value;
   float store_value_scaled = value;
   //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
@@ -1255,7 +1295,6 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
 
     int num_effects = plugin->type->num_effects;
     int system_effect = effect_num - num_effects;
-    int ch;
 
     switch(system_effect){
       
@@ -1266,20 +1305,13 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
       break;
       
     case EFFNUM_INPUT_VOLUME_ONOFF:
-      SET_SMOOTH_ON_OFF(&plugin->input_volume, plugin->input_volume_is_on, value, plugin->last_written_effect_values[plugin->type->num_effects + EFFNUM_INPUT_VOLUME]);
-      update_instrument_gui(plugin);
+      SET_SMOOTH_ON_OFF(&plugin->input_volume, plugin->input_volume_is_on, value, plugin->last_written_effect_values_native[plugin->type->num_effects + EFFNUM_INPUT_VOLUME], 0.0f);
       break;
 
 
       
     case EFFNUM_SOLO_ONOFF:
-      if(value>0.5f) {
-        ATOMIC_SET(plugin->solo_is_on, true);
-      }else {
-        ATOMIC_SET(plugin->solo_is_on, false);
-      }
-      update_instrument_gui(plugin);
-      //RT_schedule_mixer_strips_remake();
+      SET_ATOMIC_ON_OFF(plugin->solo_is_on, value);
       break;
 
 
@@ -1289,16 +1321,13 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
       if (ATOMIC_GET(plugin->volume_is_on))
         plugin->volume = store_value_native;
       break;
+
       
     case EFFNUM_VOLUME_ONOFF:
-      if(value>0.5f) {
-        plugin->volume = plugin->last_written_effect_values[plugin->type->num_effects + EFFNUM_VOLUME];
-        ATOMIC_SET(plugin->volume_is_on, true);
-      }else {
-        ATOMIC_SET(plugin->volume_is_on, false);
-        plugin->volume = 0.0f;
-      }
-      update_instrument_gui(plugin);
+      SET_ATOMIC_ON_OFF2(plugin->volume_is_on, value,
+                         plugin->volume,
+                         plugin->last_written_effect_values_native[plugin->type->num_effects + EFFNUM_VOLUME],
+                         0);
       break;
 
 
@@ -1310,14 +1339,9 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
       break;
       
     case EFFNUM_OUTPUT_VOLUME_ONOFF:
-      if (value > 0.5f)
-        ATOMIC_SET(plugin->output_volume_is_on, true);
-      else
-        ATOMIC_SET(plugin->output_volume_is_on, false);
+      SET_ATOMIC_ON_OFF(plugin->output_volume_is_on, value);
       break;
 
-
-      
     case EFFNUM_BUS1:
       SET_BUS_VOLUME(0);
       
@@ -1342,7 +1366,6 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
     case EFFNUM_BUS3_ONOFF:
       set_bus_onoff(plugin, value, 2);
       break;
-      break;
     case EFFNUM_BUS4_ONOFF:
       set_bus_onoff(plugin, value, 3);
       break;
@@ -1357,14 +1380,9 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
       break;
       
     case EFFNUM_PAN_ONOFF:
-      if(value>0.5f){
-        SMOOTH_set_target_value(&plugin->pan, plugin->last_written_effect_values[plugin->type->num_effects + EFFNUM_PAN]);
-        ATOMIC_SET(plugin->pan_is_on, true);
-      }else{
-        ATOMIC_SET(plugin->pan_is_on, false);
-        SMOOTH_set_target_value(&plugin->pan, 0.5f);
-      }
+      SET_SMOOTH_ON_OFF(&plugin->pan, plugin->pan_is_on, value, plugin->last_written_effect_values_native[plugin->type->num_effects + EFFNUM_PAN], 0.5);
       break;
+      
 #if 0
     case EFFNUM_EDITOR_ONOFF:
       if(value>0.5f){
@@ -1388,27 +1406,19 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
 
       
     case EFFNUM_EFFECTS_ONOFF:
-      if(value>0.5f){
-        SMOOTH_set_target_value(&plugin->drywet, plugin->last_written_effect_values[plugin->type->num_effects + EFFNUM_DRYWET]);
-        ATOMIC_SET(plugin->effects_are_on, true);
-      }else{
-        ATOMIC_SET(plugin->effects_are_on, false);
-        SMOOTH_set_target_value(&plugin->drywet, 0.0f);
-      }
-      update_instrument_gui(plugin); // This line was uncommented, but there was no comment why it was commented out... Instrument gui needs to be updated though. Especially when turning off bypass.
+      SET_SMOOTH_ON_OFF(&plugin->drywet, plugin->effects_are_on, value, plugin->last_written_effect_values_native[plugin->type->num_effects + EFFNUM_DRYWET], 0.0f);
       break;
-
 
       
     case EFFNUM_LOWPASS_FREQ:
       set_freq_store_value(store_value_native, store_value_scaled, value_format);
       plugin->lowpass_freq = store_value_native;
-      for(ch=0;ch<plugin->type->num_outputs;ch++)
+      for(int ch=0;ch<plugin->type->num_outputs;ch++)
         plugin->lowpass.plugins[ch]->type->set_effect_value(plugin->lowpass.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
       
     case EFFNUM_LOWPASS_ONOFF:
-      ATOMIC_SET(plugin->lowpass.is_on, value > 0.5f);
+      SET_ATOMIC_ON_OFF(plugin->lowpass.is_on, value);
       break;
 
 
@@ -1416,12 +1426,12 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
     case EFFNUM_HIGHPASS_FREQ:
       set_freq_store_value(store_value_native, store_value_scaled, value_format);
       plugin->highpass_freq = store_value_native;
-      for(ch=0;ch<plugin->type->num_outputs;ch++)
+      for(int ch=0;ch<plugin->type->num_outputs;ch++)
         plugin->highpass.plugins[ch]->type->set_effect_value(plugin->highpass.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
       
     case EFFNUM_HIGHPASS_ONOFF:
-      ATOMIC_SET(plugin->highpass.is_on, value > 0.5f);
+      SET_ATOMIC_ON_OFF(plugin->highpass.is_on, value);
       break;
 
 
@@ -1429,19 +1439,19 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
     case EFFNUM_EQ1_FREQ:
       set_freq_store_value(store_value_native, store_value_scaled, value_format);
       plugin->eq1_freq = store_value_native;
-      for(ch=0;ch<plugin->type->num_outputs;ch++)
+      for(int ch=0;ch<plugin->type->num_outputs;ch++)
         plugin->eq1.plugins[ch]->type->set_effect_value(plugin->eq1.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
       
     case EFFNUM_EQ1_GAIN:
       set_filter_gain_store_value(store_value_native, store_value_scaled, value_format);
       plugin->eq1_db = store_value_native;
-      for(ch=0;ch<plugin->type->num_outputs;ch++)
+      for(int ch=0;ch<plugin->type->num_outputs;ch++)
         plugin->eq1.plugins[ch]->type->set_effect_value(plugin->eq1.plugins[ch], time, 1, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
       
     case EFFNUM_EQ1_ONOFF:
-      ATOMIC_SET(plugin->eq1.is_on, value > 0.5f);
+      SET_ATOMIC_ON_OFF(plugin->eq1.is_on, value);
       break;
 
 
@@ -1449,19 +1459,19 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
     case EFFNUM_EQ2_FREQ:
       set_freq_store_value(store_value_native, store_value_scaled, value_format);
       plugin->eq2_freq = store_value_native;
-      for(ch=0;ch<plugin->type->num_outputs;ch++)
+      for(int ch=0;ch<plugin->type->num_outputs;ch++)
         plugin->eq2.plugins[ch]->type->set_effect_value(plugin->eq2.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
       
     case EFFNUM_EQ2_GAIN:
       set_filter_gain_store_value(store_value_native, store_value_scaled, value_format);
       plugin->eq2_db = store_value_native;
-      for(ch=0;ch<plugin->type->num_outputs;ch++)
+      for(int ch=0;ch<plugin->type->num_outputs;ch++)
         plugin->eq2.plugins[ch]->type->set_effect_value(plugin->eq2.plugins[ch], time, 1, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
       
     case EFFNUM_EQ2_ONOFF:
-      ATOMIC_SET(plugin->eq2.is_on, value > 0.5f);
+      SET_ATOMIC_ON_OFF(plugin->eq2.is_on, value);
       break;
 
 
@@ -1469,19 +1479,19 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
     case EFFNUM_LOWSHELF_FREQ:
       set_freq_store_value(store_value_native, store_value_scaled, value_format);
       plugin->lowshelf_freq = store_value_native;
-      for(ch=0;ch<plugin->type->num_outputs;ch++)
+      for(int ch=0;ch<plugin->type->num_outputs;ch++)
         plugin->lowshelf.plugins[ch]->type->set_effect_value(plugin->lowshelf.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
       
     case EFFNUM_LOWSHELF_GAIN:
       set_filter_gain_store_value(store_value_native, store_value_scaled, value_format);
       plugin->lowshelf_db = store_value_native;
-      for(ch=0;ch<plugin->type->num_outputs;ch++)
+      for(int ch=0;ch<plugin->type->num_outputs;ch++)
         plugin->lowshelf.plugins[ch]->type->set_effect_value(plugin->lowshelf.plugins[ch], time, 1, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
       
     case EFFNUM_LOWSHELF_ONOFF:
-      ATOMIC_SET(plugin->lowshelf.is_on, value > 0.5f);
+      SET_ATOMIC_ON_OFF(plugin->lowshelf.is_on, value);
       break;
 
 
@@ -1489,39 +1499,44 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
     case EFFNUM_HIGHSHELF_FREQ:
       set_freq_store_value(store_value_native, store_value_scaled, value_format);
       plugin->highshelf_freq = store_value_native;
-      for(ch=0;ch<plugin->type->num_outputs;ch++)
+      for(int ch=0;ch<plugin->type->num_outputs;ch++)
         plugin->highshelf.plugins[ch]->type->set_effect_value(plugin->highshelf.plugins[ch], time, 0, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
       
     case EFFNUM_HIGHSHELF_GAIN:
       set_filter_gain_store_value(store_value_native, store_value_scaled, value_format);
       plugin->highshelf_db = store_value_native;
-      for(ch=0;ch<plugin->type->num_outputs;ch++)
+      for(int ch=0;ch<plugin->type->num_outputs;ch++)
         plugin->highshelf.plugins[ch]->type->set_effect_value(plugin->highshelf.plugins[ch], time, 1, store_value_native, EFFECT_FORMAT_NATIVE, when);
       break;
       
     case EFFNUM_HIGHSHELF_ONOFF:
-      ATOMIC_SET(plugin->highshelf.is_on, value > 0.5f);
+      SET_ATOMIC_ON_OFF(plugin->highshelf.is_on, value);
       break;
 
       
     case EFFNUM_EQ_SHOW_GUI:
-      plugin->show_equalizer_gui = value > 0.5f;
-      update_instrument_gui(plugin);
+      if ( (value >= 0.5f) != plugin->show_equalizer_gui){
+        plugin->show_equalizer_gui = value >= 0.5f;
+        update_instrument_gui(plugin);
+      }
       break;
-
 
       
     case EFFNUM_BROWSER_SHOW_GUI:
-      plugin->show_browser_gui = value > 0.5f;
-      update_instrument_gui(plugin);
+      if ( (value >= 0.5f) != plugin->show_browser_gui){
+        plugin->show_browser_gui = value >= 0.5f;
+        update_instrument_gui(plugin);
+      }
       break;
 
 
       
     case EFFNUM_CONTROLS_SHOW_GUI:
-      plugin->show_controls_gui = value > 0.5f;
-      update_instrument_gui(plugin);
+      if ( (value >= 0.5f) != plugin->show_controls_gui){
+        plugin->show_controls_gui = value >= 0.5f;
+        update_instrument_gui(plugin);
+      }
       break;
 
 
@@ -1609,12 +1624,11 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
       break;
       
     case EFFNUM_COMP_ONOFF:
-      ATOMIC_SET(plugin->comp.is_on, value > 0.5f);
-      //printf("storing comp. %d %f %f\n",plugin->comp.is_on,value,value);
+      SET_ATOMIC_ON_OFF(plugin->comp.is_on, value);
       break;
 
     case EFFNUM_COMP_SHOW_GUI:
-      plugin->show_compressor_gui = value > 0.5f;
+      plugin->show_compressor_gui = value >= 0.5f;
       update_instrument_gui(plugin);
       break;
 
@@ -1639,15 +1653,23 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, int time, int e
       
     case EFFNUM_DELAY_ONOFF:
       {
-        radium::PlayerRecursiveLock lock;
+        radium::PlayerRecursiveLock lock; // Not sure, but we might need exclusive access to read plugin->delay_is_on as well. (performance-vice it doesn't matter where this line is placed. If it's called from automation (where performance matter), the lock has been obtained already)
+       
+        bool new_value = value >= 0.5f;
+        bool old_value = ATOMIC_GET(plugin->delay_is_on);
         
-        ATOMIC_SET(plugin->delay_is_on, value > 0.5f);
-        if (plugin->delay != NULL){
-          int val = 0;
-          if (ATOMIC_GET(plugin->delay_is_on))
-            val = plugin->delay_time*MIXER_get_sample_rate()/1000;
-          static_cast<radium::SmoothDelay*>(plugin->delay)->setSize(val);
+        if (old_value != new_value){
+          
+          ATOMIC_SET(plugin->delay_is_on, new_value);
+          
+          if (plugin->delay != NULL){
+            int val = new_value ? plugin->delay_time*MIXER_get_sample_rate()/1000 : 0;
+            static_cast<radium::SmoothDelay*>(plugin->delay)->setSize(val);
+          }
+          
+          update_instrument_gui(plugin);
         }
+        
         break;
       }
 
@@ -1699,10 +1721,19 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
   }
 
   
-  if(effect_num < plugin->type->num_effects) // || plugin->type->plugin_takes_care_of_stored_values==true)
-    return plugin->type->get_effect_value(plugin, effect_num, value_format);
+  if(effect_num < plugin->type->num_effects){
+    if (plugin->type->get_effect_value!=NULL)
+      return plugin->type->get_effect_value(plugin, effect_num, value_format);
+  }
 
+  if (plugin->has_initialized) {
+    if (value_format==EFFECT_FORMAT_SCALED)
+      return safe_float_read(&plugin->last_written_effect_values_scaled[effect_num]);
+    else
+      return safe_float_read(&plugin->last_written_effect_values_native[effect_num]);
+  }
 
+  
   int system_effect_num = effect_num - plugin->type->num_effects;
 
   switch(system_effect_num){
@@ -2038,7 +2069,7 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
   return state;
 }
 
-float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name){
+float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name, enum WhereToGetValue where){
   const SoundPluginType *type=plugin->type;
   int i;
 
@@ -2052,7 +2083,7 @@ float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name){
     return 0;
   }
 
-  return PLUGIN_get_effect_value(plugin, i, VALUE_FROM_STORAGE);
+  return PLUGIN_get_effect_value(plugin, i, where);
 }
 
 void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value){

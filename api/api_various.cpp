@@ -582,14 +582,33 @@ void changeBlockNoteAreaWidth(int windownum){
   ChangeNoteAreaWidth_Block_CurrPos(window);
 }
 
-void minimizeTrack(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  MinimizeTrack_CurrPos(window);
+void minimizeTrack(int windownum, int blocknum, int tracknum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack=getWTrackFromNumA(
+                                           windownum,
+                                           &window,
+                                           blocknum,
+                                           &wblock,
+                                           tracknum
+                                           );
+  if(wtrack==NULL) return;
+  MinimizeTrack_CurrPos(window, wblock, wtrack);
 }
 
-void minimizeBlockTracks(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  MinimizeBlock_CurrPos(window);
+void minimizeBlockTracks(int windownum, int blocknum){
+  struct Tracker_Windows *window=NULL;
+  struct WBlocks *wblock;
+
+  wblock=getWBlockFromNumA(
+                           windownum,
+                           &window,
+                           blocknum
+                           );
+
+  if(wblock==NULL) return;
+  
+  MinimizeBlock_CurrPos(window, wblock);
 }
 
 extern bool doquit;

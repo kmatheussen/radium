@@ -58,8 +58,10 @@ extern LANGSPEC int GFX_Message2_internal(vector_t *buttons, bool program_state_
 #define GFX_Message(buttons, ...) GFX_Message2(buttons, false,  __VA_ARGS__)
 #define GFX_SafeMessage(buttons, ...) GFX_Message2(buttons, true, __VA_ARGS__)
 
-extern LANGSPEC void GFX_addMessage_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2);
-#define GFX_addMessage(...) do{(void)donothing(0 && printf(__VA_ARGS__)); GFX_addMessage_internal(__VA_ARGS__);}while(0) // Add a "printf" call to make the C compiler show warning/error,
+//extern LANGSPEC void GFX_addMessage_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2);
+extern LANGSPEC void GFX_addMessage_internal(const char *message);
+//#define GFX_addMessage(...) do{(void)donothing(0 && printf(__VA_ARGS__)); GFX_addMessage_internal(__VA_ARGS__);}while(0) // Add a "printf" call to make the C compiler show warning/error,
+#define GFX_addMessage(...) GFX_addMessage_internal(talloc_format_internal(__VA_ARGS__))
 
 extern LANGSPEC const char *GFX_qVersion(void);
 

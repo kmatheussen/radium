@@ -18,15 +18,40 @@
 (define *current-mixer-strip-is-wide* #f)
 
 
+(define (mixer-normalized-to-slider mixer-normalized) ;; TODO: Rename "scaled" into "normalized" in the whole program.
+  (* mixer-normalized mixer-normalized)) ;; Seems to work okay
+
+(define (radium-normalized-to-mixer-normalized radium-normalized)
+  (db-to-mixer-normalized
+   (radium-normalized-to-db
+    radium-normalized)))
+         
+(define (radium-normalized-to-slider radium-normalized)
+  (mixer-normalized-to-slider (radium-normalized-to-mixer-normalized radium-normalized)))
+
+(define (radium-normalized-to-db radium-normalized)
+  (scale radium-normalized 0 1 *min-db* *max-db*))
+
+(define (mixer-normalized-to-db mixer-normalized)
+  (scale mixer-normalized 0 1 *min-db* *max-mixer-db*))
+
+(define (db-to-mixer-normalized db)
+  (scale db *min-db* *max-mixer-db* 0 1))
+
+(define (db-to-radium-normalized db)
+  (scale db *min-db* *max-db* 0 1))
+
 (define (db-to-slider db)
   (if (<= db *min-db*)
       0
-      (let ((scaled (scale db *min-db* *max-mixer-db* 0 1)))
-        (* scaled scaled)))) ;; Seems to work okay
+      (mixer-normalized-to-slider (db-to-mixer-normalized db))))
+
+(define (slider-to-mixer-normalized slider)
+  (sqrt slider)) ;; Seems to work okay
 
 (define (slider-to-db slider)
-  (define scaled (sqrt slider)) ;; Seems to work okay
-  (scale scaled 0 1 *min-db* *max-mixer-db*))
+  (define mixer-normalized (slider-to-mixer-normalized slider))
+  (mixer-normalized-to-db mixer-normalized))
 
 (define (db-to-text db add-dB-string)
   (if  (<= db *min-db*)
@@ -62,7 +87,15 @@
 
 (define (get-global-mixer-strips-popup-entries instrument-id strips-config)
   (list
-
+   (list "Make all strips wide" (lambda ()
+                                  (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #t)) (get-all-audio-instruments))
+                                  (<ra> :remake-mixer-strips)))
+   (list "Make no strips wide" (lambda ()
+                                 (for-each (lambda (i) (<ra> :set-wide-instrument-strip i #f)) (get-all-audio-instruments))
+                                 (<ra> :remake-mixer-strips)))
+   
+   "----------"
+   
    (list "Hide mixer strip" :enabled (and instrument-id strips-config)
          (lambda ()
            (set! (strips-config :is-enabled instrument-id) #f)))
@@ -127,8 +160,8 @@
         checkbox))
 
 
-(define (add-gui-effect-monitor gui instrument-id effect-name callback)
-  (let ((effect-monitor (<ra> :add-effect-monitor effect-name instrument-id callback)))
+(define (add-gui-effect-monitor gui instrument-id effect-name monitor-stored monitor-automation callback)
+  (let ((effect-monitor (<ra> :add-effect-monitor effect-name instrument-id monitor-stored monitor-automation callback)))
     (<gui> :add-deleted-callback gui
            (lambda (radium-runs-custom-exec)
              (<ra> :remove-effect-monitor effect-monitor))))) ;; This function should be safe to call also when 'radium-runs-custom-exec' is true.
@@ -483,6 +516,9 @@
   (define color (<ra> :get-instrument-color instrument-id))
 
   (define label (<gui> :widget))
+
+  (if is-minimized
+      (<gui> :set-tool-tip label name))
   
   (if is-minimized
       (<gui> :set-min-height label (* 2 (<gui> :get-system-fontheight))))
@@ -550,9 +586,7 @@
                                                      (<ra> :undo-instrument-effect instrument-id bus-effect-name))
                                                  (<ra> :set-instrument-effect instrument-id bus-onoff-effect-name 1.0)
                                                  (if gain
-                                                     (<ra> :set-instrument-effect instrument-id bus-effect-name (scale (<ra> :gain-to-db gain)
-                                                                                                                       *min-db* *max-db*
-                                                                                                                       0 1)))
+                                                     (<ra> :set-instrument-effect instrument-id bus-effect-name (db-to-radium-normalized (<ra> :gain-to-db gain))))
                                                  (apply-changes changes))))))))
 
              *bus-effect-names*
@@ -754,7 +788,7 @@
     ;;(if (not (is-enabled?))
     ;;    #t
     ;;    (if is-send? ;; Wrong. We don't gray out a plugins sends. The sends are still working.
-    ;;        (< (<ra> :get-instrument-effect parent-instrument-id "System Effects On/Off") 0.5)
+    ;;        (< (<ra> :get-stored-instrument-effect parent-instrument-id "System Effects On/Off") 0.5)
     ;;        #f)))
     
     
@@ -770,6 +804,13 @@
           (<ra> :set-instrument-bypass instrument-id (not (not is-enabled)))
           (<gui> :update widget))))
   ;;(<gui> :update (<gui> :get-parent-gui widget)))))
+
+  (define (get-slider-text value)
+    (<-> instrument-name ": " (get-value-text value)))
+  
+  (define (set-tooltip-and-statusbar text)
+    (<ra> :set-statusbar-text text)
+    (<gui> :tool-tip text))
 
   (define (paint-slider x1-on/off width height)
     (define color (<ra> :get-instrument-color instrument-id))
@@ -791,10 +832,11 @@
           (<gui> :draw-box widget *current-mixer-strip-border-color* w w (- width 2) (- height 2) w*2 5 5)) ;; "#aa111144"
         (<gui> :draw-box widget "gray"      0 0 width height 0.8 5 5))
     
-    (define text (<-> instrument-name ": " (get-value-text value)))
-    (when is-changing-value
-      (<ra> :set-statusbar-text text)
-      (<gui> :tool-tip text))
+    (define text (get-slider-text value))
+    
+    (if is-changing-value
+        (set-tooltip-and-statusbar text))
+    
     (define text-color (if (is-grayed?)
                            (<gui> :mix-colors *text-color* "#ff000000" 0.5)
                            *text-color*))
@@ -868,7 +910,9 @@
                            (< x x2)
                            (< y y2)))))
 
-  (add-safe-mouse-callback widget (lambda (button state x y)
+  (define has-made-undo #t)
+  
+  (add-safe-mouse-callback widget (lambda (button state x y)                                    
                                     (define is-left-pressing (and (= button *left-button*)
                                                                   (= state *is-pressing*)))
 
@@ -878,9 +922,18 @@
                                               (toggle-enabled))
                                           #t)
                                         (begin
+                                          (if (and (not is-changing-value))
+                                              (<ra> :set-statusbar-text (get-slider-text (get-scaled-value))))
                                           (when is-left-pressing
+                                            (set-tooltip-and-statusbar (get-slider-text(get-scaled-value)))
                                             (set! is-changing-value #t)
-                                            (make-undo))
+                                            (set! has-made-undo #f)
+                                            )
+                                          (when (and (not has-made-undo)
+                                                     (= button *left-button*)
+                                                     (= state *is-moving*))                                                     
+                                            (make-undo)
+                                            (set! has-made-undo #t))
                                           (when (= state *is-releasing*)
                                             (set! is-changing-value #f)
                                             (<gui> :tool-tip "")
@@ -909,7 +962,7 @@
                                                  (toggle-enabled)
                                                  (begin
                                                    (c-display " Double clicking" button)
-                                                   (<ra> :cancel-last-undo) ;; Undo the added undo made at th mouse callback above.
+                                                   ;;(<ra> :cancel-last-undo) ;; Undo the added undo made at th mouse callback above. (now we wait until slider is moved before making undo)
                                                    (<ra> :show-instrument-gui instrument-id (<ra> :show-instrument-widget-when-double-clicking-sound-object))
                                                    )))))
 
@@ -919,8 +972,8 @@
   (<gui> :set-size-policy widget #t #t)
   
   (if (not is-send?)
-      (add-gui-effect-monitor widget instrument-id "System Effects On/Off"
-                              (lambda ()
+      (add-gui-effect-monitor widget instrument-id "System Effects On/Off" #t #t
+                              (lambda (on/off automation)
                                 (<gui> :update widget))))
   
   widget)
@@ -929,7 +982,7 @@
 
 (define (create-mixer-strip-plugin gui first-instrument-id parent-instrument-id instrument-id strips-config)
   (define (get-drywet)
-    (<ra> :get-instrument-effect instrument-id "System Dry/Wet"))
+    (<ra> :get-stored-instrument-effect instrument-id "System Dry/Wet"))
   
   (define (delete-instrument)
 
@@ -997,10 +1050,10 @@
                                reset
                                ))
 
-  (add-gui-effect-monitor slider instrument-id "System Dry/Wet"
-                          (lambda ()
+  (add-gui-effect-monitor slider instrument-id "System Dry/Wet" #t #t
+                          (lambda (drywet automation)
                             (set! doit #f)
-                            (<gui> :set-value slider (get-drywet))
+                            (<gui> :set-value slider drywet)
                             (set! doit #t)))
 
   (<gui> :add gui slider))
@@ -1081,16 +1134,14 @@
                                   (create-send-func gain changes))))))
 
   (define (set-db-value db)
-    (<ra> :set-instrument-effect instrument-id "System In" (scale db *min-db* *max-db* 0 1)))
+    (<ra> :set-instrument-effect instrument-id "System In" (db-to-radium-normalized db)))
   
   (define (reset)
     (make-undo)
     (set-db-value 0))
 
   (define (get-db-value)
-    (scale (<ra> :get-instrument-effect instrument-id "System In")
-           0 1
-           *min-db* *max-db*))
+    (radium-normalized-to-db (<ra> :get-stored-instrument-effect instrument-id "System In")))
 
   (define last-value (get-db-value))
   
@@ -1125,13 +1176,14 @@
                                ))
                                      
 
-  (add-gui-effect-monitor slider instrument-id "System In"
-                          (lambda ()
-                            (define new-value (db-to-slider (get-db-value)))
-                            (when (not (= new-value (<gui> :get-value slider)))
-                              (set! doit #f)
-                              (<gui> :set-value slider new-value)
-                              (set! doit #t))))
+  (add-gui-effect-monitor slider instrument-id "System In" #t #t
+                          (lambda (system-in automation)
+                            (when system-in
+                              (define new-value (radium-normalized-to-slider system-in))
+                              (when (not (= new-value (<gui> :get-value slider)))
+                                (set! doit #f)
+                                (<gui> :set-value slider new-value)
+                                (set! doit #t)))))
 
   (<gui> :add horiz slider)
   horiz)
@@ -1194,11 +1246,11 @@
   
   (if add-monitor
       (add-monitor slider
-                   (lambda ()
-                     (define new-value (db-to-slider (get-db-value)))
-                     (when (not (= new-value (<gui> :get-value slider)))
+                   (lambda (new-db)
+                     (define new-slider-value (db-to-slider new-db))
+                     (when (not (= new-slider-value (<gui> :get-value slider)))
                        (set! doit #f)
-                       (<gui> :set-value slider new-value)
+                       (<gui> :set-value slider new-slider-value)
                        (set! doit #t)))))
   
   (<gui> :add horiz slider)
@@ -1231,16 +1283,15 @@
                                   (delete)
                                   (create-send-func gain '()))))))
   (define (get-db-value)
-    (let ((db (<ra> :get-instrument-effect instrument-id effect-name)))
-      (scale db
-             0 1
-             *min-db* *max-db*)))
+    (radium-normalized-to-db (<ra> :get-stored-instrument-effect instrument-id effect-name)))
 
   (define (set-db-value db)
-    (<ra> :set-instrument-effect instrument-id effect-name (scale db *min-db* *max-db* 0 1)))
+    (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized db)))
   
   (define (add-monitor slider callback)
-    (add-gui-effect-monitor slider instrument-id effect-name callback))
+    (add-gui-effect-monitor slider instrument-id effect-name #t #t
+                            (lambda (radium-normalized automation)
+                              (callback (radium-normalized-to-db radium-normalized)))))
   
   (set! send-gui (create-mixer-strip-send gui
                                           first-instrument-id
@@ -1289,19 +1340,19 @@
     ;;(c-display "setting db to" db)
     (<ra> :set-audio-connection-gain source-id target-id (<ra> :db-to-gain db) #t)
     (for-each (lambda (send-callback)
-                (send-callback gui source-id target-id))
+                (send-callback gui source-id target-id db))
               *send-callbacks*))
   
   (define (add-monitor slider callback)
     (define send-callback
-      (lambda (maybe-gui maybe-source-id maybe-target-id)
+      (lambda (maybe-gui maybe-source-id maybe-target-id db)
         (if (and (not (= gui maybe-gui))
                  (= maybe-source-id source-id)
                  (= maybe-target-id target-id)
                  (<ra> :instrument-is-open source-id)
                  (<ra> :instrument-is-open target-id)
                  (<ra> :has-audio-connection source-id target-id))
-            (callback))))
+            (callback db))))
   
     (push-back! *send-callbacks* send-callback)
     
@@ -1406,11 +1457,15 @@
 (define (create-mixer-strip-pan instrument-id strips-config system-background-color background-color height)
   (define (pan-enabled?)
     (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))
-  
-  (define (get-pan)
-    (floor (scale (<ra> :get-instrument-effect instrument-id "System Pan")
+
+  (define (get-pan-slider-value normalized-value)
+    (floor (scale normalized-value
                   0 1
                   -90 90)))
+    
+  (define (get-pan)
+    (get-pan-slider-value (<ra> :get-stored-instrument-effect instrument-id "System Pan")))
+  
   (define doit #t)
 
   (define paint #f)
@@ -1460,26 +1515,34 @@
 
   ;;(paint)
 
-  (add-gui-effect-monitor slider instrument-id "System Pan"
-                          (lambda ()
+  (add-gui-effect-monitor slider instrument-id "System Pan" #t #t
+                          (lambda (normalized-value automation)
                             (set! doit #f)
-                            (<gui> :set-value slider (get-pan))
-                            (<gui> :update slider)
+                            (<gui> :set-value slider (get-pan-slider-value normalized-value))
+                            ;;(<gui> :update slider)
                             (set! doit #t)))
   
-  (add-gui-effect-monitor slider instrument-id "System Pan On/Off" (lambda ()
-                                                                     (<gui> :update slider)))
+  (add-gui-effect-monitor slider instrument-id "System Pan On/Off" #t #t
+                          (lambda (on/off automation)
+                            (<gui> :update slider)))
 
+  (define has-made-undo #t)
+  
   (add-safe-mouse-callback slider
          (lambda (button state x y)
            (cond ((and (= button *left-button*)
                        (= state *is-pressing*))
+                  (set! has-made-undo #f)
+                  #f)
+                 ((and (not has-made-undo)
+                       (= button *left-button*)
+                       (= state *is-moving*))
                   (undo-block
                    (lambda ()
                      (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
                      (<ra> :undo-instrument-effect instrument-id "System Pan")))
+                  (set! has-made-undo #t)
                   #f)
-
                  ((and (= button *right-button*)
                        (= state *is-releasing*))
                   
@@ -1606,12 +1669,12 @@
                                        (get-soloed)
                                        height))
   
-  (add-gui-effect-monitor (cadr mute) instrument-id volume-on-off-name
-                          (lambda ()
+  (add-gui-effect-monitor (cadr mute) instrument-id volume-on-off-name #t #t
+                          (lambda (on/off automation)
                             ((car mute) (get-muted))))
   
-  (add-gui-effect-monitor (cadr solo) instrument-id "System Solo On/Off"
-                          (lambda ()
+  (add-gui-effect-monitor (cadr solo) instrument-id "System Solo On/Off" #t #t
+                          (lambda (on/off automation)
                             (c-display "Solo changed for" instrument-id)
                             ((car solo) (get-soloed))))
   
@@ -1650,15 +1713,7 @@
                           "System Volume"))
   
   (define (get-volume)
-    ;(c-display "           got"
-    ;           (<ra> :get-instrument-effect instrument-id effect-name)
-    ;           (scale (<ra> :get-instrument-effect instrument-id effect-name)
-    ;                  0 1
-    ;                  *min-db* *max-db*)
-    ;           " for " (<ra> :get-instrument-name instrument-id))
-    (scale (<ra> :get-instrument-effect instrument-id effect-name)
-           0 1
-           *min-db* *max-db*))
+    (radium-normalized-to-db (<ra> :get-stored-instrument-effect instrument-id effect-name)))
 
   (define doit #f)
 
@@ -1670,21 +1725,22 @@
 
   (define paint-slider #f)
 
-  (define last-vol-slider (get-volume))
+  (define last-vol-slider-db-value (get-volume))
   (define volslider (<gui> :vertical-slider
                            ""
                            0 (db-to-slider (get-volume)) 1
                            (lambda (val)
                              (define db (slider-to-db val))
-                             (when (and doit (not (= last-vol-slider db)))
-                               (set! last-vol-slider db)
+                             (when (and doit (not (= last-vol-slider-db-value db)))
+                               (set! last-vol-slider-db-value db)
                                ;;(c-display "             hepp hepp")
-                               (<ra> :set-instrument-effect instrument-id effect-name (scale db *min-db* *max-db* 0 1))
+                               (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized db))
                                (if paint-voltext
                                    (<gui> :update voltext))))))
 
   (<gui> :set-size-policy volslider #t #t)
   ;;(<gui> :set-min-width volslider 1) ;; ?? Why is this necessary?
+  (<gui> :set-min-height volslider (* (get-fontheight) 2)) ;; This is strange. If we don't do this, min-height will be set to approx something that looks very good, but I don't find the call doing that.
   
   (define (paint-text gui text)
     (define width (<gui> :width gui))
@@ -1723,7 +1779,12 @@
     )
 
   (define volslider-rounding (if is-minimized 0 2))
-  
+
+  (define automation-radium-normalized-volume -10)
+  (define automation-slider-value -10)
+
+  (define volume-automation-color (<ra> :get-instrument-effect-color instrument-id effect-name))
+                                 
   (set! paint-slider
         (lambda ()
           (define volslider-width (<gui> :width volslider))
@@ -1756,6 +1817,11 @@
           ;; slider 0db, white line
           (define middle_0db (scale (db-to-slider 0) 0 1 height 0))
           (<gui> :draw-line volslider "#eeeeee" (1+ x1) middle_0db (1- x2) middle_0db 0.3)
+
+          ;; Automation value
+          (if (> automation-slider-value 0)
+              (let ((automation-y (max 0 (scale automation-slider-value 0 1 height 0))))
+                (<gui> :draw-line volslider volume-automation-color x1 automation-y x2 automation-y 2.0)))
           ))
 
   (add-safe-paint-callback volslider (lambda x (paint-slider)))
@@ -1763,26 +1829,41 @@
 
   (define volmeter (<gui> :vertical-audio-meter meter-instrument-id))
   
-  (add-gui-effect-monitor volslider instrument-id effect-name
-                          (lambda ()
-                            (set! doit #f)
-                            (<gui> :set-value volslider (db-to-slider (get-volume)))
-                            ;;(<gui> :set-value voltext (get-volume))
-                            (if paint-voltext
-                                (<gui> :update voltext))
-                            (<gui> :update volslider)
-                            (set! doit #t)))
+  (add-gui-effect-monitor volslider instrument-id effect-name #t #t
+                          (lambda (radium-normalized-volume radium-normalized-automation-volume)
+                            (when radium-normalized-volume
+                              (set! doit #f)
+                              (<gui> :set-value volslider (radium-normalized-to-slider radium-normalized-volume))
+                              ;;(<gui> :set-value voltext (get-volume))
+                              (if paint-voltext
+                                  (<gui> :update voltext))
+                              ;;(<gui> :update volslider)
+                              (set! doit #t))
+                            (when radium-normalized-automation-volume
+                              (set! automation-radium-normalized-volume radium-normalized-automation-volume)
+                              (if (< radium-normalized-automation-volume 0)
+                                  (set! automation-slider-value -10)
+                                  (set! automation-slider-value (radium-normalized-to-slider radium-normalized-automation-volume)))
+                              ;;(c-display "got automation value" radium-normalized-automation-volume automation-slider-value)
+                              (<gui> :update volslider))))
 
+  (define has-made-undo #t)
+  
   (add-safe-mouse-callback volslider
          (lambda (button state x y)
            (cond ((and (= button *left-button*)
                        (= state *is-pressing*))
-                  (<ra> :undo-instrument-effect instrument-id effect-name))
+                  (set! has-made-undo #f))
+                 ((and (not has-made-undo)
+                       (= button *left-button*)
+                       (= state *is-moving*))
+                  (<ra> :undo-instrument-effect instrument-id effect-name)
+                  (set! has-made-undo #t))
                  ((and (= button *right-button*)
                        (= state *is-pressing*))
                   (popup-menu "Reset" (lambda ()
                                         (<ra> :undo-instrument-effect instrument-id effect-name)
-                                        (<ra> :set-instrument-effect instrument-id effect-name (scale 0 *min-db* *max-db* 0 1)))
+                                        (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized 0)))
                               "------------"
                               (get-global-mixer-strips-popup-entries instrument-id strips-config))))
            #f))
@@ -1818,7 +1899,7 @@
                                                                       (<ra> :request-float "dB: " *min-db* *max-db* #f old-volume)))))
                                                   (when (>= maybe *min-db*)
                                                     (<ra> :undo-instrument-effect instrument-id effect-name)
-                                                    (<ra> :set-instrument-effect instrument-id effect-name (scale maybe *min-db* *max-db* 0 1))))
+                                                    (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized maybe))))
                                                 #t)
                                                (else
                                                 #f))))
@@ -2051,8 +2132,10 @@
   (<gui> :add gui (create-mixer-strip-pan instrument-id strips-config system-background-color background-color pan-height))
   (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color mutesolo-height #f))
   (<gui> :add gui (create-mixer-strip-volume instrument-id meter-instrument-id strips-config background-color #f) 1)
-  (define comment (create-mixer-strip-comment instrument-id strips-config comment-height))
-  (<gui> :add gui comment)
+
+  (when (<ra> :mixer-strip-comments-visible)
+    (define comment (create-mixer-strip-comment instrument-id strips-config comment-height))
+    (<gui> :add gui comment))
 
   ;;(if (not is-standalone-mixer-strip)
   ;;    (create-current-instrument-border gui instrument-id))

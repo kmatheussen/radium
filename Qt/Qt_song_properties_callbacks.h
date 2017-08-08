@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/OS_string_proc.h"
 
+#include "../api/api_proc.h"
+
 //namespace{
 #include "Qt_MyQCheckBox.h"
 //}
@@ -58,6 +60,7 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     
     set_linear_accelerando_and_ritardando(ATOMIC_GET(song->linear_accelerando), ATOMIC_GET(song->linear_ritardando));
     send_swing_to_plugins->setChecked(song->plugins_should_receive_swing_tempo);
+    mixer_comments_visible->setChecked(mixerStripCommentsVisible());
     swing_along->setChecked(song->editor_should_swing_along);
   }
   
@@ -95,6 +98,13 @@ public slots:
     root->song->tracker_windows->must_redraw_editor = true;
   }
 
+  void on_mixer_comments_visible_toggled(bool val){
+    if (_initing==true)
+      return;
+
+    setMixerStripCommentsVisible(val);
+  }
+  
   void on_send_swing_to_plugins_toggled(bool val){
     if (_initing==true)
       return;

@@ -754,12 +754,17 @@ static inline dyn_t DYN_create_int(int64_t int_number){
   return a;
 }
 
+/*
 static inline dyn_t DYN_create_bool(bool bool_number){
   dyn_t a;
   a.type = BOOL_TYPE;
   a.bool_number = bool_number;
   return a;
 }
+*/
+
+#define DYN_create_bool(B) ((B) ? g_dyn_true : g_dyn_false)
+
 
 static inline dyn_t DYN_create_float(double float_number){
   dyn_t a;
@@ -1151,7 +1156,7 @@ struct Patch{
   struct Instruments *instrument;
 
   int permanent_id;             // Free use by the instrument plug-in.
-  void *patchdata;		// Free use by the instrument plug-in.
+  void *patchdata;		// Free use by the instrument plug-in. May be NULL. Player is locked when value is set.
   bool wide_mixer_strip;        // Only used by the audio instrument.
 
   void (*changeTrackPan)(int newpan,const struct Tracks *track);
@@ -2402,6 +2407,8 @@ struct Song{
         DEFINE_ATOMIC(bool, linear_ritardando);
         bool plugins_should_receive_swing_tempo;
         bool editor_should_swing_along;
+
+        bool mixer_comments_visible;
   
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.

@@ -76,6 +76,10 @@ void addUndoTrack(void){
   ADD_UNDO(Track_CurrPos(window->wblock->l.num, window->wblock->wtrack->l.num));
 }
 
+bool askAreYouSureSongHasChanged(void){
+  return Undo_are_you_sure_questionmark();
+}
+
 void openUndo(void){
   UNDO_OPEN_REC();
 }

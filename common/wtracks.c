@@ -322,6 +322,8 @@ void UpdateAllWTracksCoordinates(
 
 	if(wtrack==NULL) return;
 
+        //printf("   Block %d\n", wblock->l.num);
+               
 	while(wtrack!=NULL){
           SetNotePolyphonyAttributes(wtrack->track); // Make sure track->polyphony is valid
 	  wtrack=NextWTrack(wtrack);
@@ -487,10 +489,10 @@ void ChangeNoteAreaWidth_Block_CurrPos(
 }
 
 void MinimizeTrack_CurrPos(
-	struct Tracker_Windows *window
+                           struct Tracker_Windows *window,
+                           struct WBlocks *wblock,
+                           struct WTracks *wtrack                           
 ){
-	struct WBlocks *wblock=window->wblock;
-	struct WTracks *wtrack=wblock->wtrack;
 
 	SetNoteLength(window,wtrack,2);
 	wtrack->fxwidth=window->fontwidth*wtrack->track->polyphony*2;
@@ -503,8 +505,7 @@ void MinimizeTrack_CurrPos(
 }
 
 
-bool WTRACK_allinside(struct Tracker_Windows *window){
-	struct WBlocks *wblock=window->wblock;
+static bool WTRACK_allinside(struct Tracker_Windows *window, struct WBlocks *wblock){
 	struct WTracks *rightwtrack;
 
 	if(wblock->block->num_tracks-1 > wblock->right_track){
@@ -522,9 +523,9 @@ bool WTRACK_allinside(struct Tracker_Windows *window){
 
 
 void MinimizeBlock_CurrPos(
-	struct Tracker_Windows *window
+                           struct Tracker_Windows *window,
+                           struct WBlocks *wblock
 ){
-	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack;
 	int notelength=3;
 	int inc=0;
@@ -543,9 +544,9 @@ void MinimizeBlock_CurrPos(
 		wtrack->fxwidth=2;
 		wtrack=NextWTrack(wtrack);
 	}
-	UpdateWBlockCoordinates(window,window->wblock);
+	UpdateWBlockCoordinates(window,wblock);
 
-	if(WTRACK_allinside(window)==false){
+	if(WTRACK_allinside(window, wblock)==false){
 		goto update;
 	}
 
@@ -558,9 +559,9 @@ void MinimizeBlock_CurrPos(
 		wtrack->fxwidth=window->fontwidth*polyphony;
 		wtrack=NextWTrack(wtrack);
 	}
-	UpdateWBlockCoordinates(window,window->wblock);
+	UpdateWBlockCoordinates(window,wblock);
 
-	if(WTRACK_allinside(window)==false){
+	if(WTRACK_allinside(window, wblock)==false){
 	  notelength=2;
 	  startinc=2;
 	  nummul=0;
@@ -574,9 +575,9 @@ void MinimizeBlock_CurrPos(
 		wtrack->fxwidth=window->fontwidth*wtrack->track->polyphony;
 		wtrack=NextWTrack(wtrack);
 	}
-	UpdateWBlockCoordinates(window,window->wblock);
+	UpdateWBlockCoordinates(window,wblock);
 
-	if(WTRACK_allinside(window)==false){
+	if(WTRACK_allinside(window, wblock)==false){
 
 	  wtrack=wblock->wtracks;
 	  wblock->temponodearea.width=2;;
@@ -585,9 +586,9 @@ void MinimizeBlock_CurrPos(
 	    wtrack->fxwidth=2;
 	    wtrack=NextWTrack(wtrack);
 	  }
-	  UpdateWBlockCoordinates(window,window->wblock);
+	  UpdateWBlockCoordinates(window,wblock);
 
-	  if(WTRACK_allinside(window)==false){
+	  if(WTRACK_allinside(window, wblock)==false){
 	    notelength=2;
 	  }else{
 	    nummul=0;
@@ -607,8 +608,8 @@ void MinimizeBlock_CurrPos(
 			wtrack->fxwidth=(window->fontwidth*wtrack->track->polyphony*nummul)+inc;
 			wtrack=NextWTrack(wtrack);
 		}
-		UpdateWBlockCoordinates(window,window->wblock);
-	}while(WTRACK_allinside(window)==true);
+		UpdateWBlockCoordinates(window,wblock);
+	}while(WTRACK_allinside(window, wblock)==true);
 
 	wblock->temponodearea.width=(window->fontwidth*notelength*nummul)+inc-1;
 	wtrack=wblock->wtracks;
@@ -617,7 +618,7 @@ void MinimizeBlock_CurrPos(
 		wtrack->fxwidth=(window->fontwidth*wtrack->track->polyphony*nummul)+inc-1;
 		wtrack=NextWTrack(wtrack);
 	}
-	UpdateWBlockCoordinates(window,window->wblock);
+	UpdateWBlockCoordinates(window,wblock);
 
 
 update:

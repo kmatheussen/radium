@@ -40,20 +40,21 @@ tr:nth-child(even) {
             You can also stop navigating the menus by pressing Esc.
             Hold shift to quicker navigate up and down when using the up and down arrow keys.
           </div>
-        <LI> <A href="editor.html">Editor</a>
-          * Tempo tracks
-          * Note tracks
-           * Piano roll
-           * Sub tracks
-          * Tempo multiplier slider
-          Press F12 to assign an instrument to the current track.
-          Press Right Shift to play current block.
-          <UL>
-            <LI> <A href="fxtext.html">FX text</A>
-            <LI> <A href="chancetext.html">Chance text</A>
-            <LI> <A href="swingtext.html">Swing text</A>
-            <LI> <A href="velocitytext.html">Velocity text</A>
-          </UL>
+        <LI> <A onclick="showHide('editor')" href="#!">Editor</a>
+          <div id="editor" style="display: none">
+            <UL>
+              <LI>The editor consists of tempo tracks and note tracks. In the lower left area, there is a slider to change tempo in realtime and a slider.
+              <LI>Press F12 to assign an instrument to the current track.
+              <LI>Press Right Shift to play current block.
+              <LI> Help texts for the note tracks:
+                <UL>
+                  <LI> <A href="fxtext.html">FX text</A>
+                  <LI> <A href="chancetext.html">Chance text</A>
+                  <LI> <A href="swingtext.html">Swing text</A>
+                  <LI> <A href="velocitytext.html">Velocity text</A>
+                </UL>
+            </UL>
+          </div>
         <LI> <a onclick="showHide('blocklist')" href="#!">Blocklist</A>
           <div id="blocklist" style="display: none">
             The <b>blocklist</b> shows a list of all available blocks.
@@ -80,9 +81,9 @@ tr:nth-child(even) {
           <UL>
             <LI> <a onclick="showHide('sequencer')" href="#!">Sequencer</a>
               <div id="sequencer" style="display: none">
-                In the sequencer, you organize when blocks are played. The sequencer shows <i>sequencer tracks</i> in the vertical direction, and <i>sequencer blocks</i> in the horizontal direction. You can also add effect automations, tempo automations, and loop start and loop end (rihgut click mouse).
-To quickly start playing from a position, scroll up using the <b>mouse scroll wheel mouse</b>, and stop by scrolling down.
-                (under construction)
+                The sequencer lets you position blocks in time. Initially there is only one sequencer track, but more tracks can be added by selecting "Insert sequencer track" or "Append sequencer track". You can also add effect automations, tempo automations, and loop start and end positions.
+                <p>
+To quickly start playing from a position, scroll up with the <b>mouse wheel</b>, and stop by scrolling down.
               </div>
             <LI> <a onclick="showHide('instrument')" href="#!">Instrument widget</a>
               <div id="instrument" style="display: none">

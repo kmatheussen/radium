@@ -882,16 +882,7 @@ int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const 
   }
 }
 
-void GFX_addMessage_internal(const char *fmt,...){
-
-  char message[1000];
-  va_list argp;
-  
-  va_start(argp,fmt);
-  /*	vfprintf(stderr,fmt,argp); */
-  vsnprintf(message, 998, fmt,argp);
-  va_end(argp);
-
+void GFX_addMessage_internal(const char *message){
   addMessage(message);
 }
 

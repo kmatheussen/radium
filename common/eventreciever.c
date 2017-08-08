@@ -109,6 +109,9 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
 
 			len=0;
 
+                        // Important: The qualifier list must be sorted. (e.g. EVENT_RIGHTCTRL can not be checked before EVENT_LEFTCTRL)
+                        // See bin/keysubids.py for order.
+                        
 			if(a&EVENT_LEFTCTRL){
 				places[len]=EVENT_CTRL_L;
 				len++;
@@ -145,6 +148,10 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
 				places[len]=EVENT_EXTRA_R;
 				len++;
 			}
+			if(in_tevent->ID==TR_KEYBOARDUP){
+				places[len]=EVENT_UP;
+				len++;
+			}
 			if(a&EVENT_MOUSE_EDITOR2){
                           places[len]=EVENT_MOUSE_EDITOR;
                           len++;
@@ -153,22 +160,18 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
                           places[len]=EVENT_MOUSE_MIXER;
                           len++;
 			}
-			if(a&EVENT_MOUSE_MIXERSTRIPS2){
-                          places[len]=EVENT_MOUSE_MIXERSTRIPS;
-                          len++;
-			}
 			if(a&EVENT_MOUSE_SEQUENCER2){
                           places[len]=EVENT_MOUSE_SEQUENCER;
+                          len++;
+			}
+			if(a&EVENT_MOUSE_MIXERSTRIPS2){
+                          places[len]=EVENT_MOUSE_MIXERSTRIPS;
                           len++;
 			}
 			//if(a&EVENT_AUTOREPEAT2){
 			//	places[len]=EVENT_AUTOREPEAT;
 			//	len++;
 			//}
-			if(in_tevent->ID==TR_KEYBOARDUP){
-				places[len]=EVENT_UP;
-				len++;
-			}
 
 			list=Lists_py[len];
 

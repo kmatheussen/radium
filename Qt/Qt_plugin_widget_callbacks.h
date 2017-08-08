@@ -817,8 +817,9 @@ public slots:
   
     void on_limiter_bypass_button_toggled(bool val){
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      int effect_num = PLUGIN_get_effect_num(plugin, "Limiter Bypass");
-
+      int effect_num = PLUGIN_get_effect_num(plugin, "Limiter Bypass", false);
+      R_ASSERT_RETURN_IF_FALSE(effect_num != -1);
+      
       PLUGIN_set_effect_value(plugin, -1, effect_num, val==true ? 1.0 : 0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
 
       //update_limiter_sliders();

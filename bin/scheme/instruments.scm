@@ -512,7 +512,7 @@
            (when (not (= -1 id-new-instrument))
              (<ra> :set-instrument-effect
                    id-new-instrument "System Dry/Wet"
-                   (<ra> :get-instrument-effect id-old-instrument "System Dry/Wet"))
+                   (<ra> :get-stored-instrument-effect id-old-instrument "System Dry/Wet"))
              ;;(<ra> :replace-all-seq-automation id-old-instrument id-new-instrument)
              (<ra> :replace-use-of-instrument id-old-instrument id-new-instrument)
              (<ra> :undo-mixer-connections)

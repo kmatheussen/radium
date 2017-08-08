@@ -4186,6 +4186,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
 ;; test :fine-velocity-slide
 ;;
+
 (***assert*** (get-velocities (m-e :note :value 20 :line 5)
                               32
                               (list 
@@ -4621,7 +4622,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                               :line linenum
                               :pattern patternnum
                               :channel channelnum
-                              :value effectvalue)))
+                              :value (between 0 effectvalue 64)))) ;; Massacre by Esau has at least one volume with value 65. Wonder what it means.
          
         ((= effectnum 13)
          (push! *events* (m-e :break
@@ -4801,13 +4802,15 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
     
     (when (or (not (validate-gliding2 pitches))
               (not (validate-gliding2 velocities)))
-      (c-display "FAILED")
+      (c-display "FAILED:"
+                 (validate-gliding2 pitches)
+                 (validate-gliding2 velocities))
       (c-display "pitches: " pitches)
       (c-display "velocities: " velocities)
       (c-display note)
       (print-events events)
       (assert #f))      
-    
+
     (let ((radium-notenum (<ra> :add-note (+ *pitch-transpose* first-pitch-value)
                                           (/ first-velocity-value 64)
                                           start-place
@@ -5522,8 +5525,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                 
                 ;; We don't hear clicks when modules are played in protracker, for some reason.
                 ;; But in Radium the clicks are quite noticable.
-                (<ra> :set-instrument-effect radium-instrument-num "Attack" 1)
-                (<ra> :set-instrument-effect radium-instrument-num "Release" 1)
+                (<ra> :set-instrument-effect radium-instrument-num "Attack" (scale 1 0 1000 0 1.0)) ;; TODO: Implement set-normalized-instrument-effect
+                (<ra> :set-instrument-effect radium-instrument-num "Release" (scale 1 0 2000 0 1.0))
                 ))
             
             (vector->list instruments)))
@@ -5802,28 +5805,32 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   
 
 (delafina (async-load-protracker-module :filename "")
-  (if (string=? "" filename)
-      (let ((gui (<gui> :file-requester "Choose MOD file" "" "Mod files" "*.mod *.MOD mod.* MOD.*" #t
-                        (lambda (filename)
-                          (<gui> :update -1) ;; -1 is the main window. (not sure this makes any difference)
-                          (<ra> :schedule 50 ;; Give some time to update graphics after closing the file requester (not always enough)
-                                (lambda ()
-                                  (load-protracker-module filename)
-                                  #f))))))
-        (<gui> :add-deleted-callback gui (lambda (radium-runs-custom-exec)
-                                           (c-display "    RELEASING   ")
-                                           (<ra> :release-keyboard-focus)
-                                           #t))
-        (<gui> :set-modal gui #t)
-        (<gui> :set-parent gui -1)
-        (<ra> :obtain-keyboard-focus gui) ;; Must obtain keyboard focus before showing the gui. If not, the qlineedit widget in the filedialog loses focus.
-        (c-display "    OBTAINING   ")
-        (<gui> :show gui)
-        )
-      (<ra> :schedule 1
-            (lambda ()
-              (load-protracker-module filename)
-              #f))))
+  (<ra> :schedule 1
+        (lambda ()
+          (when (<ra> :ask-are-you-sure-song-has-changed)
+            (if (string=? "" filename)
+                (let ((gui (<gui> :file-requester "Choose MOD file" "" "Mod files" "*.mod *.MOD mod.* MOD.*" #t
+                                  (lambda (filename)
+                                    (<gui> :update -1) ;; -1 is the main window. (not sure this makes any difference)
+                                    (<ra> :schedule 50 ;; Give some time to update graphics after closing the file requester (not always enough)
+                                          (lambda ()
+                                            (load-protracker-module filename)
+                                            #f))))))
+                  (<gui> :add-deleted-callback gui (lambda (radium-runs-custom-exec)
+                                                     (c-display "    RELEASING   ")
+                                                     (<ra> :release-keyboard-focus)
+                                                     #t))
+                  (<gui> :set-modal gui #t)
+                  (<gui> :set-parent gui -1)
+                  (<gui> :activate gui)
+                  (<ra> :obtain-keyboard-focus gui) ;; Must obtain keyboard focus before showing the gui. If not, the qlineedit widget in the filedialog loses focus.
+                  (<gui> :activate gui)
+                  (c-display "    OBTAINING   ")
+                  (<gui> :activate gui) ;; Seems like it's impossible to give focus to a new window. Qt is crap.
+                  (<gui> :show gui)
+                  )
+                (load-protracker-module filename)))
+          #f)))
 
 
 

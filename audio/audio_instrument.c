@@ -906,7 +906,7 @@ void DLoadAudioInstrument(void){
           SoundPlugin *plugin = fx_patch->patchdata;
           if(plugin!=NULL){
             fx->name = PLUGIN_get_new_name_if_name_has_changed(plugin, fx->name);
-            int effect_num = PLUGIN_get_effect_num(plugin, fx->name);
+            int effect_num = PLUGIN_get_effect_num(plugin, fx->name, true);
             if (effect_num >= 0)
               fx->effect_num = effect_num;
             

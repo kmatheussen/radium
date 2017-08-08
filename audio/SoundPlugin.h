@@ -421,7 +421,8 @@ typedef struct SoundPlugin{
   // When dragging a slider, we want to save that value. But we don't want to save the last sent out automation value. (saving to disk, that is)
   float *stored_effect_values_native; // native format values
   float *stored_effect_values_scaled; // scaled (0->1) format values
-  float *last_written_effect_values; // native format. Is set regardless of StoreitType.
+  float *last_written_effect_values_native; // Is set regardless of StoreitType.
+  float *last_written_effect_values_scaled; // Is set regardless of StoreitType.
   
   float *initial_effect_values; // Used when resetting. Native format.
   bool *do_random_change;       // Used when selecting "Random".
@@ -550,6 +551,8 @@ typedef struct SoundPlugin{
   
   DEFINE_ATOMIC(bool, is_selected);
 
+  bool has_initialized;
+  
 } SoundPlugin;
 
 
