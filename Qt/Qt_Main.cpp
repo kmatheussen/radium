@@ -606,8 +606,8 @@ protected:
 
     //printf("modifier: %d. Right shift: %d\n",modifier, modifier==EVENT_SHIFT_R);
     if (g_show_key_codes){
-      char *message = talloc_format("%d - %d - %d", is_key_press ? 1 : 0, modifier, OS_SYSTEM_get_scancode(event));
-      //printf("  Got key: %s\n",message);
+      char *message = talloc_format("%d - %d: %s", modifier, OS_SYSTEM_get_scancode(event), tevent_autorepeat ? "Autorepeat" : is_key_press ? "Down" : "Up");
+      printf("  Got key: %s\n",message);
       window->message=message;
       
       GL_create(window);
