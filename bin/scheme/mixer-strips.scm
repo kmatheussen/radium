@@ -805,6 +805,13 @@
           (<gui> :update widget))))
   ;;(<gui> :update (<gui> :get-parent-gui widget)))))
 
+  (define (get-slider-text value)
+    (<-> instrument-name ": " (get-value-text value)))
+  
+  (define (set-tooltip-and-statusbar text)
+    (<ra> :set-statusbar-text text)
+    (<gui> :tool-tip text))
+
   (define (paint-slider x1-on/off width height)
     (define color (<ra> :get-instrument-color instrument-id))
     (define value (get-scaled-value))
@@ -825,10 +832,11 @@
           (<gui> :draw-box widget *current-mixer-strip-border-color* w w (- width 2) (- height 2) w*2 5 5)) ;; "#aa111144"
         (<gui> :draw-box widget "gray"      0 0 width height 0.8 5 5))
     
-    (define text (<-> instrument-name ": " (get-value-text value)))
-    (when is-changing-value
-      (<ra> :set-statusbar-text text)
-      (<gui> :tool-tip text))
+    (define text (get-slider-text value))
+    
+    (if is-changing-value
+        (set-tooltip-and-statusbar text))
+    
     (define text-color (if (is-grayed?)
                            (<gui> :mix-colors *text-color* "#ff000000" 0.5)
                            *text-color*))
@@ -902,7 +910,9 @@
                            (< x x2)
                            (< y y2)))))
 
-  (add-safe-mouse-callback widget (lambda (button state x y)
+  (define has-made-undo #t)
+  
+  (add-safe-mouse-callback widget (lambda (button state x y)                                    
                                     (define is-left-pressing (and (= button *left-button*)
                                                                   (= state *is-pressing*)))
 
@@ -912,9 +922,18 @@
                                               (toggle-enabled))
                                           #t)
                                         (begin
+                                          (if (and (not is-changing-value))
+                                              (<ra> :set-statusbar-text (get-slider-text (get-scaled-value))))
                                           (when is-left-pressing
+                                            (set-tooltip-and-statusbar (get-slider-text(get-scaled-value)))
                                             (set! is-changing-value #t)
-                                            (make-undo))
+                                            (set! has-made-undo #f)
+                                            )
+                                          (when (and (not has-made-undo)
+                                                     (= button *left-button*)
+                                                     (= state *is-moving*))                                                     
+                                            (make-undo)
+                                            (set! has-made-undo #t))
                                           (when (= state *is-releasing*)
                                             (set! is-changing-value #f)
                                             (<gui> :tool-tip "")
@@ -943,7 +962,7 @@
                                                  (toggle-enabled)
                                                  (begin
                                                    (c-display " Double clicking" button)
-                                                   (<ra> :cancel-last-undo) ;; Undo the added undo made at th mouse callback above.
+                                                   ;;(<ra> :cancel-last-undo) ;; Undo the added undo made at th mouse callback above. (now we wait until slider is moved before making undo)
                                                    (<ra> :show-instrument-gui instrument-id (<ra> :show-instrument-widget-when-double-clicking-sound-object))
                                                    )))))
 
@@ -1507,16 +1526,23 @@
                           (lambda (on/off automation)
                             (<gui> :update slider)))
 
+  (define has-made-undo #t)
+  
   (add-safe-mouse-callback slider
          (lambda (button state x y)
            (cond ((and (= button *left-button*)
                        (= state *is-pressing*))
+                  (set! has-made-undo #f)
+                  #f)
+                 ((and (not has-made-undo)
+                       (= button *left-button*)
+                       (= state *is-moving*))
                   (undo-block
                    (lambda ()
                      (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
                      (<ra> :undo-instrument-effect instrument-id "System Pan")))
+                  (set! has-made-undo #t)
                   #f)
-
                  ((and (= button *right-button*)
                        (= state *is-releasing*))
                   
@@ -1699,14 +1725,14 @@
 
   (define paint-slider #f)
 
-  (define last-vol-slider (get-volume))
+  (define last-vol-slider-db-value (get-volume))
   (define volslider (<gui> :vertical-slider
                            ""
                            0 (db-to-slider (get-volume)) 1
                            (lambda (val)
                              (define db (slider-to-db val))
-                             (when (and doit (not (= last-vol-slider db)))
-                               (set! last-vol-slider db)
+                             (when (and doit (not (= last-vol-slider-db-value db)))
+                               (set! last-vol-slider-db-value db)
                                ;;(c-display "             hepp hepp")
                                (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized db))
                                (if paint-voltext
@@ -1820,12 +1846,19 @@
                                   (set! automation-slider-value (radium-normalized-to-slider radium-normalized-automation-volume)))
                               ;;(c-display "got automation value" radium-normalized-automation-volume automation-slider-value)
                               (<gui> :update volslider))))
-                              
+
+  (define has-made-undo #t)
+  
   (add-safe-mouse-callback volslider
          (lambda (button state x y)
            (cond ((and (= button *left-button*)
                        (= state *is-pressing*))
-                  (<ra> :undo-instrument-effect instrument-id effect-name))
+                  (set! has-made-undo #f))
+                 ((and (not has-made-undo)
+                       (= button *left-button*)
+                       (= state *is-moving*))
+                  (<ra> :undo-instrument-effect instrument-id effect-name)
+                  (set! has-made-undo #t))
                  ((and (= button *right-button*)
                        (= state *is-pressing*))
                   (popup-menu "Reset" (lambda ()
