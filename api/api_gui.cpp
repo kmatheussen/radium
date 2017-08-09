@@ -272,7 +272,9 @@ static QHash<const QWidget*, Gui*> g_gui_from_widgets; // Q: What if a QWidget i
 static QHash<int64_t, const char*> g_guis_can_not_be_closed; // The string contains the reason that this gui can not be closed.
 
 static QHash<const FullScreenParent*, Gui*> g_gui_from_full_screen_widgets;
-  
+
+static QSet<Gui*> g_delayed_resized_guis;
+
 struct VerticalAudioMeter;
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
@@ -545,7 +547,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool _is_pure_qwidget;
 
     QColor _background_color;
-    
+
+
     Gui(QWidget *widget, bool created_from_existing_widget = false)
       : _widget_as_key(widget)
       , _widget(widget)
@@ -585,6 +588,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       //printf("Deleting Gui %p (%d) (classname: %s)\n",this,(int)get_gui_num(), _class_name.toUtf8().constData());
 
+      g_delayed_resized_guis.remove(this);
+      
       for(func_t *func : _deleted_callbacks){
         S7CALL(void_bool,func, g_radium_runs_custom_exec);
         s7extra_unprotect(func);
@@ -877,22 +882,51 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     func_t *_resize_callback = NULL;
     bool _resize_callback_failed = false;
 
+    void do_the_resize(int width, int height){
+      if(gui_isOpen(_gui_num)){ // && _widget->isVisible()){ //  && _widget->width()>0 && _widget->height()>0)
+        S7CALL(void_int_int,_resize_callback, width, height);
+        if (g_scheme_failed==true)
+          _resize_callback_failed = true;
+      }
+    }
+    
+    static void do_all_the_resizing(void){
+
+      if (g_delayed_resized_guis.isEmpty())
+        return;
+            
+      if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint){
+        QTimer::singleShot(100, do_all_the_resizing); // try again later
+        return;
+      }
+
+      //printf("do_the_resize called\n");
+      for(Gui *gui : g_delayed_resized_guis){
+        //printf("   Aiai. Resizing %p\n", gui);
+        gui->do_the_resize(gui->_widget->width(), gui->_widget->height());
+      }
+    
+      g_delayed_resized_guis.clear();
+    }
+    
     void resizeEvent(QResizeEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
-
-      if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint)  // FIX! We need to recall resize_callbacks later.
-        return;
 
       if (_resize_callback_failed){
         printf("resize_event failed last time. Won't try again to avoid a debug output bonanza (%s).\n", _class_name.toUtf8().constData());
         return;
       }
 
-      if(gui_isOpen(_gui_num)){ // && _widget->isVisible()){ //  && _widget->width()>0 && _widget->height()>0)
-        S7CALL(void_int_int,_resize_callback, event->size().width(), event->size().height());
-        if (g_scheme_failed==true)
-          _resize_callback_failed = true;
+      if(g_delayed_resized_guis.contains(this))
+        return; // already scheduled.
+
+      if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint){
+        g_delayed_resized_guis.insert(this);
+        QTimer::singleShot(100, do_all_the_resizing);
+        return;
       }
+
+      do_the_resize(event->size().width(), event->size().height());
     }
 
     void addResizeCallback(func_t* func){
@@ -1554,6 +1588,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     {
       R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
 
+      /*
+      // autofill black bacground color
+      setAutoFillBackground(true);
+      QPalette pal = palette();
+      pal.setColor(QPalette::Window, QColor("black"));
+      setPalette(pal);
+      */
+                            
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
 
@@ -1688,15 +1730,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if(plugin==NULL)
         return;
 
-      for(int ch=0 ; ch < _num_channels ; ch++){
+      const AudioMeterPeaks &peaks = get_audio_meter_peaks();
+      
+      for(int ch=0 ; ch < R_MIN(peaks.num_channels, _num_channels) ; ch++){
         float prev_pos = _pos[ch];
         float prev_falloff_pos = _falloff_pos[ch];
 
         float db;
         float db_falloff;
         float db_peak;
-
-        const AudioMeterPeaks &peaks = get_audio_meter_peaks();
 
         db = peaks.decaying_dbs[ch];
         db_falloff = peaks.falloff_dbs[ch];
@@ -1767,14 +1809,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
         float pos = _pos[ch];
 
-        // Background
+        // Background (using autofill instead since this way left created graphical artifacts)
         {
           QRectF rect1(x1,  get_pos_y1(),
                        x2-x1,  pos-get_pos_y1());
           p.setBrush(qcolor1);
           p.drawRect(rect1);
         }
-
+        
+        
         // decaying meter
         {
 
