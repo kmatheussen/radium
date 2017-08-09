@@ -1679,8 +1679,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     // This means that _patch->plugin might be gone, and the same goes for soundproducer.
     // (_patch is never gone, never deleted)
     void call_regularly(void){
-      if (gui->_widget==NULL)
+      if (_widget.data()==NULL){ // Don't think this is possible though since this class is a subclass of QWidget, and therefore gui->_widget==this.
+        R_ASSERT_NON_RELEASE(false);
         return;
+      }
             
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       if(plugin==NULL)
