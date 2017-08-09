@@ -1242,6 +1242,7 @@
                                  get-db-value
                                  set-db-value
                                  add-monitor
+                                 automation-color
                                  delete
                                  replace)
 
@@ -1253,7 +1254,6 @@
     (remake-mixer-strips))
 
   (define automation-value #f)
-  (define automation-color "white") ;;(<ra> :get-instrument-effect-color instrument-id "System Dry/Wet"))
   (define (get-automation-data kont)
     (if automation-value
         (kont (min 1.0 automation-value) automation-color)))
@@ -1361,6 +1361,7 @@
                                           get-db-value
                                           set-db-value
                                           add-monitor
+                                          (<ra> :get-instrument-effect-color instrument-id effect-name)
                                           delete
                                           replace))
   send-gui)
@@ -1444,6 +1445,7 @@
                                           get-db-value
                                           set-db-value
                                           add-monitor
+                                          "white"
                                           delete
                                           replace))
   send-gui)
@@ -1524,6 +1526,7 @@
     
   (define (get-pan)
     (get-pan-slider-value (<ra> :get-stored-instrument-effect instrument-id "System Pan")))
+
   
   (define doit #t)
 
@@ -1544,6 +1547,11 @@
                               (<gui> :update slider))))))
 
   (set-fixed-height slider height)
+
+  (define automation-radium-normalized-pan -10)
+  (define automation-slider-value -100)
+  (define pan-automation-color (<ra> :get-instrument-effect-color instrument-id "System Pan"))
+                                 
 
   (set! paint
         (lambda ()
@@ -1567,6 +1575,11 @@
           (<gui> :filled-box slider col2 (- middle inner-width/2 outer-width/2) 2 (- middle inner-width/2) (- height 3))
           (<gui> :filled-box slider col2 (+ middle inner-width/2) 2 (+ middle inner-width/2 outer-width/2) (- height 3))
           ;;(<gui> :draw-text slider "white" (<-> value "o") 0 0 width height #t)
+
+          (when (> automation-slider-value -100)
+            (define middle (scale automation-slider-value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
+            (<gui> :draw-line slider pan-automation-color middle 2 middle (- height 3) 2.0))
+          
           (<gui> :draw-box slider "#404040" 0 0 width height 2)
           ))
 
@@ -1576,10 +1589,17 @@
 
   (add-gui-effect-monitor slider instrument-id "System Pan" #t #t
                           (lambda (normalized-value automation)
-                            (set! doit #f)
-                            (<gui> :set-value slider (get-pan-slider-value normalized-value))
-                            ;;(<gui> :update slider)
-                            (set! doit #t)))
+                            (when normalized-value
+                              (set! doit #f)
+                              (<gui> :set-value slider (get-pan-slider-value normalized-value))
+                              ;;(<gui> :update slider)
+                              (set! doit #t))
+                            (when automation
+                              (set! automation-radium-normalized-pan automation)
+                              (if (< automation 0)
+                                  (set! automation-slider-value -100)
+                                  (set! automation-slider-value (get-pan-slider-value automation)))
+                              (<gui> :update slider))))
   
   (add-gui-effect-monitor slider instrument-id "System Pan On/Off" #t #t
                           (lambda (on/off automation)
