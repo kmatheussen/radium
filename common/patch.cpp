@@ -82,9 +82,14 @@ static linked_note_t *g_unused_linked_notes = NULL;
 static vector_t g_unused_patches; // <-- patches are never deleted, but they are removed from the instruments. In order for the gc to find the removed patches (when stored some place where the gc can't find them, for instance in a C++ object), we put them here. (There shouldn't be any situation where this might happen, but we do it anyway, just in case, because GC bugs are so hard to find.)
 
 // Called when loading new song
-// Perhaps we can delay this? _patch is stored lots of places which is not reachable for the gc.
 static void PATCH_clean_unused_patches(void){
-  VECTOR_clean(&g_unused_patches);
+  // Too dangerous. We clean the content instead.
+  //VECTOR_clean(&g_unused_patches);
+
+  // Release memory. We keep the patches themselves though, since they are stored various places.
+  VECTOR_FOR_EACH(struct Patch *, patch, &g_unused_patches){
+    memset(patch, 0, sizeof(struct Patch));
+  }END_VECTOR_FOR_EACH;
 }
 
 void PATCH_remove_from_instrument(struct Patch *patch){
