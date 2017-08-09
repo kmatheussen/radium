@@ -2900,6 +2900,7 @@ static void apply_ab_connections_state(hash_t *connections){
 #endif
 }
 
+// 'curr_state' is used to compare states. We skip applying the new state if it isn't different.
 static void apply_ab_state(hash_t *state, hash_t *curr_state){
 
   UNDO_OPEN();{
