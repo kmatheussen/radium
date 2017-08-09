@@ -1831,6 +1831,10 @@ protected:
     
     if (is_called_every_ms(50)){ // 50ms = 3*1000ms/60 (each third frame)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function
+
+    }
+    
+    if (is_called_every_ms(10)){ // 50ms = 3*1000ms/60 (each third frame)
       API_instruments_call_regularly();
     }
     
