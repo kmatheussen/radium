@@ -2123,9 +2123,44 @@
   gui)
 
 
-(define (create-mixer-strip-wide instrument-id strips-config min-width is-standalone-mixer-strip)
-  (define gui (<gui> :vertical-layout)) ;; min-width height))
-  (<gui> :set-min-width gui min-width)
+(define *min-mixer-strip-with-sends-width* 100)
+(define *min-mixer-strip-without-sends-width* 80)
+(define *min-mixer-strip-without-plugins-width* 60)
+
+;; we call this each time we create mixer strips in case font size has changed.
+(define (set-minimum-mixer-strip-widths!)
+  (set! *min-mixer-strip-with-sends-width* 100)
+  (define base1 (<gui> :text-width " -14.2 -23.5 "))
+  (define base2 (<gui> :text-width " Mute Solo "))
+  
+  (set! *min-mixer-strip-with-sends-width* (1+ (floor (max (* 1.8 base1)
+                                                           (* 1.8 base2)))))
+  
+  (set! *min-mixer-strip-without-sends-width* (1+ (floor (max (* 1.4 base1)
+                                                              (* 1.4 base2)))))
+  
+  (set! *min-mixer-strip-without-plugins-width* (1+ (floor (max (* 0.9 base1)
+                                                                (* 0.9 base2))))))
+  
+
+(define (get-min-mixer-strip-width instrument-id)
+  (let loop ((instrument-id instrument-id)
+             (result-so-far *min-mixer-strip-without-plugins-width*))
+    (get-mixer-strip-path-instruments instrument-id
+                                      (lambda (bus-sends instrument-sends next-plugin-instrument)
+                                        (cond ((not (null? bus-sends))
+                                               *min-mixer-strip-with-sends-width*)
+                                              ((not (null? instrument-sends))
+                                               *min-mixer-strip-with-sends-width*)
+                                              (next-plugin-instrument
+                                               (loop next-plugin-instrument
+                                                     *min-mixer-strip-without-sends-width*))
+                                              (else
+                                               result-so-far))))))
+
+(define (create-mixer-strip-wide instrument-id strips-config is-standalone-mixer-strip)
+  (define gui (<gui> :vertical-layout)) ;; min-width height))  
+  (<gui> :set-min-width gui (get-min-mixer-strip-width instrument-id))
   ;;(<gui> :set-max-width gui width)
   ;;(<gui> :set-size-policy gui #f #t)
 
@@ -2207,14 +2242,13 @@
   gui)
 
 (delafina (create-mixer-strip :instrument-id
-                              :min-width
                               :strips-config #f
                               :is-standalone-mixer-strip #f)
   (define is-wide (if is-standalone-mixer-strip
                       *current-mixer-strip-is-wide*
                       (<ra> :has-wide-instrument-strip instrument-id)))
   (if is-wide
-      (create-mixer-strip-wide instrument-id strips-config min-width is-standalone-mixer-strip)
+      (create-mixer-strip-wide instrument-id strips-config is-standalone-mixer-strip)
       (create-mixer-strip-minimized instrument-id strips-config is-standalone-mixer-strip)))
 
 
@@ -2252,6 +2286,8 @@
   ;;(define parent (<gui> :horizontal-layout))
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
+  (set-minimum-mixer-strip-widths!)
+  
   (define parent (<gui> :widget width height)) ;; Lots of trouble using a widget as parent instead of a layout. However, it's an easy way to avoid flickering when changing current instrument.
   
   ;;(define width (floor (* 1 (<gui> :text-width "MUTE SOLO"))))
@@ -2275,7 +2311,7 @@
          (set! das-mixer-strip-gui #f))
        
        (when instrument-is-open                
-         (set! das-mixer-strip-gui (create-mixer-strip instrument-id width :is-standalone-mixer-strip #t))
+         (set! das-mixer-strip-gui (create-mixer-strip instrument-id :is-standalone-mixer-strip #t))
          (if *current-mixer-strip-is-wide*
              (set! width org-width)
              (set! width (<gui> :width das-mixer-strip-gui)))
@@ -2385,9 +2421,6 @@
                                              (strips-config :is-enabled id))
                                            (get-all-audio-instruments))))
 
-  (define min-mixer-strip-width (1+ (floor (max (* 1.7 (<gui> :text-width " -14.2 -23.5 "))
-                                                (* 1.7 (<gui> :text-width " Mute Solo "))))))
-
   (define num-strips-per-row (ceiling (/ num-visible-strips num-rows)))
 
   (define (add-strips id-instruments)
@@ -2397,7 +2430,7 @@
            (define stored-mixer-strip (get-stored-mixer-strip stored-mixer-strips instrument-id))
            (define mixer-strip (if (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
                                    (get-mixer-strip-from-stored-mixer-strip stored-mixer-strip)
-                                   (create-mixer-strip instrument-id min-mixer-strip-width :strips-config strips-config)))
+                                   (create-mixer-strip instrument-id :strips-config strips-config)))
            '(c-display "   Creating" instrument-id ". Stored is valid?" (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
                        "stored-mixer-strip:" stored-mixer-strip
                        "list-of-modified:" list-of-modified-instrument-ids)
@@ -2566,6 +2599,7 @@
 !!#
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)
+  (set-minimum-mixer-strip-widths!)
   ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " (sort list-of-modified-instrument-ids <) (length *mixer-strips-objects*) "\n\n\n")
   ;;(c-display "all:" (sort (get-all-audio-instruments) <))
   (let ((list-of-modified-instrument-ids (cond ((or (null? list-of-modified-instrument-ids)
@@ -2586,6 +2620,7 @@
               *mixer-strips-objects*)))
 
 (define (redraw-mixer-strips . list-of-modified-instrument-ids)
+  (set-minimum-mixer-strip-widths!)
   ;;(c-display "\n\n\n             REDRAW MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
   (for-each (lambda (a-mixer-strips-object)
               ;;(<gui> :update-recursively (a-mixer-strips-object :gui))  ;; When is this necessary?
