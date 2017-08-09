@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 #include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
+#include <QQueue>
 #pragma clang diagnostic pop
 
 
@@ -273,7 +274,8 @@ static QHash<int64_t, const char*> g_guis_can_not_be_closed; // The string conta
 
 static QHash<const FullScreenParent*, Gui*> g_gui_from_full_screen_widgets;
 
-static QSet<Gui*> g_delayed_resized_guis;
+static bool g_delayed_resizing_timer_active = false;
+static QQueue<Gui*> g_delayed_resized_guis;
 
 struct VerticalAudioMeter;
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
@@ -588,7 +590,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       //printf("Deleting Gui %p (%d) (classname: %s)\n",this,(int)get_gui_num(), _class_name.toUtf8().constData());
 
-      g_delayed_resized_guis.remove(this);
+      if (g_delayed_resized_guis.contains(this))
+        g_delayed_resized_guis.removeOne(this);
       
       for(func_t *func : _deleted_callbacks){
         S7CALL(void_bool,func, g_radium_runs_custom_exec);
@@ -891,22 +894,24 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     
     static void do_all_the_resizing(void){
-
-      if (g_delayed_resized_guis.isEmpty())
-        return;
+      g_delayed_resizing_timer_active = false;
             
+
+      //R_ASSERT_NON_RELEASE(g_delayed_resized_guis.isEmpty()==false); // This happens. I guess calls to "do_the_resize" triggers new resizes.
+    
       if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint){
+        g_delayed_resizing_timer_active = true;
         QTimer::singleShot(100, do_all_the_resizing); // try again later
         return;
       }
 
       //printf("do_the_resize called\n");
-      for(Gui *gui : g_delayed_resized_guis){
+      while(!g_delayed_resized_guis.isEmpty()){
+        Gui *gui = g_delayed_resized_guis.first();
+        g_delayed_resized_guis.pop_front();
         //printf("   Aiai. Resizing %p\n", gui);
         gui->do_the_resize(gui->_widget->width(), gui->_widget->height());
       }
-    
-      g_delayed_resized_guis.clear();
     }
     
     void resizeEvent(QResizeEvent *event){
@@ -921,8 +926,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         return; // already scheduled.
 
       if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint){
-        g_delayed_resized_guis.insert(this);
-        QTimer::singleShot(100, do_all_the_resizing);
+        g_delayed_resized_guis.push_back(this);
+        if (g_delayed_resizing_timer_active==false){
+          g_delayed_resizing_timer_active = true;
+          QTimer::singleShot(100, do_all_the_resizing);
+        }
         return;
       }
 
