@@ -678,7 +678,10 @@ void openAboutWindow(void){
               "Jack samplerate: %d<br>"
               "Monitor refresh rate: %s"
               "<p>"
-              "Song length: %02d : %02d : %02d",
+              "Song length: %02d : %02d : %02d"
+              "<p>"
+              "Radium needs more demo songs. If you provide one which is suitable, you will get a free lifetime subscription. More information <A href=\"http://users.notam02.no/~kjetism/radium/songs.php\">here</A>."
+              ,
               ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : ATOMIC_GET(GE_vendor_string),
               ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : ATOMIC_GET(GE_renderer_string),
               ATOMIC_GET(GE_version_string)==NULL ? "(null)" : ATOMIC_GET(GE_version_string),
