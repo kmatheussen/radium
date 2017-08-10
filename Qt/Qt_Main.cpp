@@ -1834,7 +1834,7 @@ protected:
 
     }
     
-    if (is_called_every_ms(10)){ // 50ms = 3*1000ms/60 (each third frame)
+    if (is_called_every_ms(15)){
       API_instruments_call_regularly();
     }
     

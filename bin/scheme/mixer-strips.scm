@@ -630,6 +630,8 @@
                                replace-func
                                reset-func
 
+                               effect-name
+                               
                                parentgui
                                )
 
@@ -701,41 +703,56 @@
                     :enabled reset-func
                     (lambda ()
                       (reset-func)))
+              
+              "------------"
+              (list (if effect-name
+                        "Add automation to current editor track"
+                        "(Send-automation not supported yet)")
+                    :enabled effect-name
+                    (lambda ()
+                      (<ra> :add-automation-to-current-editor-track instrument-id effect-name)))
+              (list (if effect-name
+                        "Add automation to current sequencer track"
+                        "(Send-automation not supported yet)")
+                    :enabled effect-name
+                    (lambda ()
+                      (<ra> :add-automation-to-current-sequencer-track instrument-id effect-name)))
+
 
               ;;"----------"
               ;;"Convert to standalone strip" (lambda ()
               ;;                                #t)
 
-                "----------"
-                (list "Set as current instrument"
-                      :enabled (not (= (<ra> :get-current-instrument)
-                                       instrument-id))
-                      (lambda ()
-                        (<ra> :set-current-instrument instrument-id #f)))
-                "Rename" (lambda ()
-                           (define old-name (<ra> :get-instrument-name instrument-id))
-                           (define new-name (<ra> :request-string "New name:" #t old-name))
-                           (c-display "NEWNAME" (<-> "-" new-name "-"))
-                           (if (and (not (string=? new-name ""))
-                                    (not (string=? new-name old-name)))
-                               (<ra> :set-instrument-name new-name instrument-id)))
-                "Show Info" (lambda ()
-                              (<ra> :show-instrument-info instrument-id parentgui))
-                "Configure color" (lambda ()
-                                    (show-instrument-color-dialog parentgui instrument-id))
-                (list "Show GUI"
-                      :enabled (<ra> :has-native-instrument-gui instrument-id)
-                      (lambda ()
-                        (<ra> :show-instrument-gui instrument-id #f)))
-                "----------"
-                (list "Wide mode"
-                      :check (<ra> :has-wide-instrument-strip parent-instrument-id)
-                      (lambda (enabled)
-                        (<ra> :set-wide-instrument-strip parent-instrument-id enabled)
-                        (remake-mixer-strips parent-instrument-id)))
-                ;;(remake-mixer-strips parent-instrument-id)))
-                (get-global-mixer-strips-popup-entries first-instrument-id strips-config)
-                ))
+              "----------"
+              (list "Set as current instrument"
+                    :enabled (not (= (<ra> :get-current-instrument)
+                                     instrument-id))
+                    (lambda ()
+                      (<ra> :set-current-instrument instrument-id #f)))
+              "Rename" (lambda ()
+                         (define old-name (<ra> :get-instrument-name instrument-id))
+                         (define new-name (<ra> :request-string "New name:" #t old-name))
+                         (c-display "NEWNAME" (<-> "-" new-name "-"))
+                         (if (and (not (string=? new-name ""))
+                                  (not (string=? new-name old-name)))
+                             (<ra> :set-instrument-name new-name instrument-id)))
+              "Show Info" (lambda ()
+                            (<ra> :show-instrument-info instrument-id parentgui))
+              "Configure color" (lambda ()
+                                  (show-instrument-color-dialog parentgui instrument-id))
+              (list "Show GUI"
+                    :enabled (<ra> :has-native-instrument-gui instrument-id)
+                    (lambda ()
+                      (<ra> :show-instrument-gui instrument-id #f)))
+              "----------"
+              (list "Wide mode"
+                    :check (<ra> :has-wide-instrument-strip parent-instrument-id)
+                    (lambda (enabled)
+                      (<ra> :set-wide-instrument-strip parent-instrument-id enabled)
+                      (remake-mixer-strips parent-instrument-id)))
+              ;;(remake-mixer-strips parent-instrument-id)))
+              (get-global-mixer-strips-popup-entries first-instrument-id strips-config)
+              ))
 
 (define (create-default-mixer-path-popup instrument-id strips-config gui)
   (define is-permanent? (<ra> :instrument-is-permanent instrument-id))
@@ -757,6 +774,7 @@
                          (if is-permanent? #f delete)
                          (if is-permanent? #f replace)
                          reset
+                         #f
                          gui))
   
 (define (strip-slider first-instrument-id
@@ -772,7 +790,8 @@
                       get-automation-data
                       delete-func
                       replace-func
-                      reset-func)
+                      reset-func
+                      effect-name)
 
   (define instrument-name (<ra> :get-instrument-name instrument-id))
   ;;(define widget (<gui> :widget 100 (get-fontheight)))
@@ -966,6 +985,7 @@
                                                                        delete-func
                                                                        replace-func
                                                                        reset-func
+                                                                       effect-name
                                                                        widget)))
                                           #f))))
   
@@ -1069,6 +1089,7 @@
                                delete-instrument
                                das-replace-instrument
                                reset
+                               "System Dry/Wet"
                                ))
 
   (add-gui-effect-monitor slider instrument-id "System Dry/Wet" #t #t
@@ -1210,6 +1231,8 @@
                                delete
                                replace
                                reset
+
+                               "System In"
                                ))
                                      
 
@@ -1244,7 +1267,8 @@
                                  add-monitor
                                  automation-color
                                  delete
-                                 replace)
+                                 replace
+                                 effect-name)
 
   (define horiz (get-mixer-strip-send-horiz gui))
 
@@ -1293,7 +1317,10 @@
                                
                                delete
                                replace
-                               reset))
+                               reset
+
+                               effect-name
+                               ))
   
   (if add-monitor
       (add-monitor slider
@@ -1363,7 +1390,8 @@
                                           add-monitor
                                           (<ra> :get-instrument-effect-color instrument-id effect-name)
                                           delete
-                                          replace))
+                                          replace
+                                          effect-name))
   send-gui)
 
 
@@ -1412,7 +1440,7 @@
                  (<ra> :instrument-is-open source-id)
                  (<ra> :instrument-is-open target-id)
                  (<ra> :has-audio-connection source-id target-id))
-            (callback db))))
+            (callback db #f)))) ;; #f = automation value (automating audio connection gain is not supported yet)
   
     (push-back! *send-callbacks* send-callback)
     
@@ -1445,9 +1473,10 @@
                                           get-db-value
                                           set-db-value
                                           add-monitor
-                                          "white"
+                                          "white" ;; not used (automation color)
                                           delete
-                                          replace))
+                                          replace
+                                          #f)) ;; automation not supported
   send-gui)
 
 
@@ -1606,7 +1635,12 @@
                             (<gui> :update slider)))
 
   (define has-made-undo #t)
-  
+
+  (define (enable! onoff)
+    (when (not (eq? onoff (pan-enabled?)))
+      (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
+      (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0))))
+    
   (add-safe-mouse-callback slider
          (lambda (button state x y)
            (cond ((and (= button *left-button*)
@@ -1624,15 +1658,24 @@
                   #f)
                  ((and (= button *right-button*)
                        (= state *is-releasing*))
-                  
-                  (popup-menu "Reset" (lambda ()
-                                        (<ra> :undo-instrument-effect instrument-id "System Pan")
-                                        (<ra> :set-instrument-effect instrument-id "System Pan" 0.5))
+                  (define pan-enabled (pan-enabled?))
+                  (popup-menu (list "Reset" (lambda ()
+                                              (<ra> :undo-instrument-effect instrument-id "System Pan")
+                                              (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))
                               (list "Enabled"
-                                    :check (pan-enabled?)
-                                    (lambda (onoff)
-                                      (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
-                                      (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0))))
+                                    :check pan-enabled
+                                    enable!)
+                              "------------"
+                              (list "Add automation to current editor track"
+                                    (lambda ()
+                                      (undo-block (lambda ()
+                                                    (enable! #t)
+                                                    (<ra> :add-automation-to-current-editor-track instrument-id "System Pan")))))
+                              (list "Add automation to current sequencer track"
+                                    (lambda ()
+                                      (undo-block (lambda ()
+                                                    (enable! #t)
+                                                    (<ra> :add-automation-to-current-sequencer-track instrument-id "System Pan")))))
                               "------------"
                               (get-global-mixer-strips-popup-entries instrument-id strips-config))
                   #t)
@@ -1943,6 +1986,13 @@
                   (popup-menu "Reset" (lambda ()
                                         (<ra> :undo-instrument-effect instrument-id effect-name)
                                         (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized 0)))
+                              "------------"
+                              (list "Add automation to current editor track"
+                                    (lambda ()
+                                      (<ra> :add-automation-to-current-editor-track instrument-id effect-name)))
+                              (list "Add automation to current sequencer track"
+                                    (lambda ()
+                                      (<ra> :add-automation-to-current-sequencer-track instrument-id effect-name)))
                               "------------"
                               (get-global-mixer-strips-popup-entries instrument-id strips-config))))
            #f))

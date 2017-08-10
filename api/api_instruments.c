@@ -21,11 +21,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
 #include "../common/vector_proc.h"
+#include "../common/placement_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/undo.h"
 #include "../common/undo_tracks_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
 #include "../common/player_pause_proc.h"
+#include "../common/seqtrack_proc.h"
+#include "../common/seqtrack_automation_proc.h"
 #include "../audio/undo_plugin_state_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
@@ -813,6 +816,96 @@ const_char* getInstrumentEffectColor(int64_t instrument_id, const_char* effect_n
   return GFX_get_colorname_from_color(GFX_get_color(get_effect_color(plugin, effect_num)));
 }
 
+bool addAutomationToCurrentEditorTrack(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+
+  int effect_num = PLUGIN_get_effect_num(plugin, effect_name, false);
+  if (effect_num==-1){
+    handleError("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)instrument_id, patch->name);
+    return false;
+  }
+
+  int blocknum = currentBlock(-1);
+  int tracknum = R_MAX(0, currentTrack(blocknum, -1));
+  int64_t track_instrument_id = getInstrumentForTrack(tracknum, blocknum, -1);
+  
+  if (track_instrument_id < 0) {
+    track_instrument_id = instrument_id;
+    setInstrumentForTrack(instrument_id, tracknum, blocknum, -1);
+  }
+        
+  float value_ = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
+  
+  int fxnum = getFx(effect_name, tracknum, patch->id, blocknum, -1);
+  
+  if (fxnum >= 0){
+    
+    addFxnode(value_,
+              p_Create(currentLine(blocknum, -1), 0, 1),
+              fxnum,
+              tracknum,
+              blocknum,
+              -1);
+    
+    
+  } else {
+    
+    addFx(value_,
+          p_Create(currentLine(blocknum, -1), 0, 1),
+          effect_name,
+          tracknum,
+          patch->id,
+          blocknum,
+          -1);
+  }
+
+  return true;
+}
+
+bool addAutomationToCurrentSequencerTrack(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+
+  int effect_num = PLUGIN_get_effect_num(plugin, effect_name, false);
+  if (effect_num==-1){
+    handleError("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)instrument_id, patch->name);
+    return false;
+  }
+  
+  struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+  if (seqtrack == NULL)
+    return false;
+  
+  undoSequencerAutomation();
+  
+  float value_ = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
+  
+  int64_t pos1 = ATOMIC_DOUBLE_GET(pc->song_abstime); //is_playing() && pc->playtype==PLAYSONG ? ATOMIC_DOUBLE_GET(pc->song_abstime) : 0;
+  
+  int64_t visible_duration = R_MAX(100, SEQUENCER_get_visible_end_time() - SEQUENCER_get_visible_start_time());
+  
+  int64_t pos2 = pos1 + visible_duration / 10;
+  
+  SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, pos1, value_, LOGTYPE_LINEAR, pos2, value_);
+
+  return true;
+}
+  
 
 void setInstrumentSolo(int64_t instrument_id, bool do_solo){
   S7CALL2(void_int_bool,"FROM-C-set-solo!", instrument_id, do_solo);

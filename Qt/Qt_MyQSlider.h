@@ -318,65 +318,11 @@ struct MyQSlider : public QSlider {
       
       else if (command==add_automation_to_current_editor_track) {
 
-        int blocknum = currentBlock(-1);
-        int tracknum = R_MAX(0, currentTrack(blocknum, -1));
-        int64_t current_instrument_id = getInstrumentForTrack(tracknum, blocknum, -1);
-        if (current_instrument_id < 0) {
-          current_instrument_id = _patch->id;
-          setInstrumentForTrack(_patch->id, tracknum, blocknum, -1);
-        }
-        
-        if (!instrumentIsAudio(current_instrument_id)){
-          
-          GFX_addMessage("The instrument for the current track is not an audio instrument");
-          
-        } else {
-
-          const char *fxname = PLUGIN_get_effect_name(plugin, _effect_num);
-          float value_ = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
-
-          int fxnum = getFx(fxname, tracknum, _patch->id, blocknum, -1);
-
-          if (fxnum >= 0){
-
-            addFxnode(value_,
-                      p_Create(currentLine(blocknum, -1), 0, 1),
-                      fxnum,
-                      tracknum,
-                      blocknum,
-                      -1);
-            
-            
-          } else {
-                            
-            addFx(value_,
-                  p_Create(currentLine(blocknum, -1), 0, 1),
-                  fxname,
-                  tracknum,
-                  _patch->id,
-                  blocknum,
-                  -1);
-          }
-        }
+        addAutomationToCurrentEditorTrack(_patch->id, getInstrumentEffectName(_patch->id, _effect_num));
 
       } else if (command==add_automation_to_current_sequencer_track) {
 
-        struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-
-        if (seqtrack != NULL) {
-
-          undoSequencerAutomation();
-
-          float value_ = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
-
-          int64_t pos1 = ATOMIC_DOUBLE_GET(pc->song_abstime); //is_playing() && pc->playtype==PLAYSONG ? ATOMIC_DOUBLE_GET(pc->song_abstime) : 0;
-
-          int64_t visible_duration = R_MAX(100, SEQUENCER_get_visible_end_time() - SEQUENCER_get_visible_start_time());
-          
-          int64_t pos2 = pos1 + visible_duration / 10;
-
-          SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, _patch, _effect_num, pos1, value_, LOGTYPE_LINEAR, pos2, value_);
-        }
+        addAutomationToCurrentSequencerTrack(_patch->id, getInstrumentEffectName(_patch->id, _effect_num));
 
       }
         
