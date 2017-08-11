@@ -543,11 +543,13 @@
         (set! *current-track-num-all-tracks* #f))
       (begin
         (define track-num (get-track-num X Y))
+        ;;(c-display "track-num:" track-num)
         (set! *current-track-num-all-tracks* track-num)
         (if (and track-num
                  (>= track-num 0))
             (set! *current-track-num* track-num)
             (set! *current-track-num* #f))
+        ;;(c-display "track-num:" track-num *current-track-num*)
         (cond (*current-track-num*
                (set-mouse-track *current-track-num*))
               ((and (<ra> :reltempo-track-visible)
@@ -2821,7 +2823,7 @@
                      *current-track-num*
                      (inside-box (<ra> :get-box track-fx *current-track-num*) X Y)
                      (<ra> :select-track *current-track-num*)
-                     (<ra> :request-fx-mouse-pos)
+                     (<ra> :request-fx *current-track-num*)
                      #t))))
 
 

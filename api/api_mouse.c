@@ -2159,6 +2159,7 @@ void requestFX(int tracknum, int blocknum, int windownum){
   AddFXNodeLineCurrPos(window, wblock, wtrack);
 }
 
+/*
 void requestFXMousePos(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL)
@@ -2166,6 +2167,7 @@ void requestFXMousePos(int windownum){
 
   AddFXNodeLineCurrMousePos(window);
 }
+*/
 
 static int get_effect_num(struct Patch *patch, const char *fx_name){
   int effect_num = 0;
