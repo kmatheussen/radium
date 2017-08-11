@@ -33,14 +33,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 int SWINGTEXT_subsubtrack(const struct Tracker_Windows *window, const struct WTracks *wtrack){
-  if (wtrack->swingtext_on == false)
-    return -1;
-
 
   int curr_track_sub;
       
   if (wtrack==NULL) {
-    
+
+    if (wtrack->swingtext_on == false)
+      return -1;
+
     if (window->curr_track != SWINGTRACK)
       return -1;
     
