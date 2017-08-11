@@ -36,19 +36,20 @@ int SWINGTEXT_subsubtrack(const struct Tracker_Windows *window, const struct WTr
 
   int curr_track_sub;
       
-  if (wtrack==NULL) {
+  if (wtrack!=NULL) {
 
     if (wtrack->swingtext_on == false)
       return -1;
 
+    curr_track_sub = window->curr_track_sub;
+    
+  } else {
+    
     if (window->curr_track != SWINGTRACK)
       return -1;
     
     curr_track_sub = window->curr_othertrack_sub;
     
-  } else {
-    
-    curr_track_sub = window->curr_track_sub;
   }
   
   if (curr_track_sub < 0)
