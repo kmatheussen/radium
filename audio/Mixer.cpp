@@ -267,7 +267,7 @@ static void unlock_player(void){
 }
 
 #define MAX_LOCK_DURATION_MS 0.05
-#define MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS 0.1 // Set this value lower to get more messages about spending too much time holding the player lock.
+#define MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS 0.3 // Set this value lower to get more messages about spending too much time holding the player lock.
 
 static bool g_signalled_someone = false;
 
