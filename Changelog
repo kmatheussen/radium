@@ -1,3 +1,68 @@
+Changes 4.9.14 -> 4.9.16:
+* Swing: Fix swing area being skewed to the start of a block
+  when the first defined swing value is placed in the second
+  bar or later.
+* Swing: Fix crash if trying to edit block swing (not track
+  swing). Bug introduced in 4.9.6
+* Mouse: Fix creating new automation in the editor when
+  the leftmost visible track is not the first track.
+* Mixer strips: Add options to "Add automation to current
+  editor track" and "Add automation to current sequencer
+  track" for sliders that can be automated.
+* GUI: Fix graphics not being quite updated right after
+  opening a requester, etc. (Very rare problem)
+* Internal: don't update audio meter data after gui has closed.
+* Internal: Never release patch structs, just clean content.
+  Might fix very rare crashes. (I got one though.)
+* Mixer strips: Allow strips without sends to be smaller than
+  strips with sends
+* Mixer strips; Allow strips without plugins to be smaller
+  than strips with plugins.
+* Mixer strips: Don't make undo before a slider is actually
+  moved.
+* Mixer strips: Show plugin/send values in the status bar.
+* Keyboard: Fix keyboard release handling. It was broken
+  in 4.9.14.
+* Mixer strips: Show automation values. Shown the same way as
+  in the instrument widget.
+* Instrument widget: Make sure on/off elements (such as
+  highshelf on/off, pan on/off, solo on/off, etc.) are updated
+  immediately when automated.
+* Mixer strips: Make sure on/off elements (such as pan on/off,
+  solo on/off, and so forth) are updated immediately when
+  automated.
+* Automation: Internal optimization.
+* Automation: Fixes assertion window sometimes popping up
+  unnecessarily when starting to play. (Related to automation)
+* Mixer strips: Add tool tips to the name label of non-wide
+  strips. This makes it easier to read the names (because they
+  are vertical).
+* Import mod: Fix importing modules that has a "C" command
+  (volume) set higher than 0x40. This fixes import of the
+  module "Massaker" by Esau.
+* Mixer strips: Option to widen and unwiden all strips.
+* Editor: Menu option to make all blocks fit in window, not
+  just the current block.
+* Mixer strips: Remake mixer strips after changing system font
+  to adjust geometries.
+* Mixer strips: Make it possible to hide comments at the bottom
+  of the strips. Also make it hidden by default. Can be enabled
+  again in the song preferences.
+* Mixer strips: Allow shorter mixer strips (3-4 rows should fit
+  in a 1900x1800 screen, even when the sequencer is visible).
+* Editor: No need to pause playing when adding glissando.
+* Import mod: Ask "are you sure?" if current song has unsaved
+  changes.
+* API:
+  * New functions: setMixerStripCommentsVisible,
+    mixerStripCommentsVisible, getStoredInstrumentEffect,
+    getInstrumentEffectColor,
+    addAutomationToCurrentEditorTrack,
+    addAutomationToCurrentSequencer.
+  * Make addEffectMonitor monitor automation values in
+    addition to user-setted values.
+
+
 Changes 4.9.12 -> 4.9.14:
 * Import MOD: Fix attack and release values for the instruments.
   Bug introduced in 4.9.9.
