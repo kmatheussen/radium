@@ -5818,15 +5818,15 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                                             #f))))))
                   (<gui> :add-deleted-callback gui (lambda (radium-runs-custom-exec)
                                                      (c-display "    RELEASING   ")
-                                                     (<ra> :release-keyboard-focus)
+                                                     ;;(<ra> :release-keyboard-focus)
                                                      #t))
                   (<gui> :set-modal gui #t)
                   (<gui> :set-parent gui -1)
-                  (<gui> :activate gui)
-                  (<ra> :obtain-keyboard-focus gui) ;; Must obtain keyboard focus before showing the gui. If not, the qlineedit widget in the filedialog loses focus.
-                  (<gui> :activate gui)
+                  ;;(<gui> :activate gui)
+                  ;;(<ra> :obtain-keyboard-focus gui) ;; Must obtain keyboard focus before showing the gui. If not, the qlineedit widget in the filedialog loses focus.
+                  ;;(<gui> :activate gui)
                   (c-display "    OBTAINING   ")
-                  (<gui> :activate gui) ;; Seems like it's impossible to give focus to a new window. Qt is crap.
+                  ;;(<gui> :activate gui) ;; Seems like it's impossible to give focus to a new window. Qt is crap.
                   (<gui> :show gui)
                   )
                 (load-protracker-module filename)))
