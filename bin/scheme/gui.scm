@@ -647,5 +647,37 @@
     (<gui> :set-pos left x1 y1)
     (<gui> :set-size left w height)))
 
+
+
+;; Font requesters
+;;;;;;;;;;;;;;;;;;;;;;
+
+(define (create-font-requester org-font set-font-func)
+  (let ((fontreq (<gui> :font-requester "")))
     
-                                              
+    (<gui> :add-callback fontreq
+           (lambda (fontstring-or-buttons)
+             (c-display "fontstring:" fontstring-or-buttons ". gui:" fontreq)
+             (if (boolean? fontstring-or-buttons)
+                 (if (not fontstring-or-buttons)
+                     (set-font-func org-font))
+                 (set-font-func fontstring-or-buttons))))
+
+    (<gui> :set-parent fontreq -2)
+    
+    (<gui> :show fontreq)
+    fontreq))
+
+(define (create-change-system-font-requester)
+  (create-font-requester (<ra> :get-system-font)
+                         ra:set-system-font))
+
+(define (create-change-editor-font-requester)
+  (create-font-requester (<ra> :get-editor-font)
+                         ra:set-editor-font))
+
+
+#!!
+(create-change-system-font-requester)
+(create-change-editor-font-requester)
+!!#

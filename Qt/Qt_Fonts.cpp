@@ -103,17 +103,26 @@ void setFontValues(struct Tracker_Windows *tvisual){
   tvisual->fontwidth      = (int)(width3/3.0) + 1;
   tvisual->org_fontheight = fm.height() - 1;
   tvisual->fontheight     = tvisual->org_fontheight;
+
+  tvisual->must_redraw = true;
 }
 
-void updateAllFonts(QWidget *widget, const QFont &old_font, QFont font){
-  if(widget!=NULL){
-    if (widget->font()==old_font)
-      widget->setFont(font);//QApplication::font());
+static void updateAllFonts(QObject *object, const QFont &old_font, QFont new_font){
+  if(object != NULL){
 
-    const QList<QObject*> list = widget->children();
-    for (int i = 0; i < list.size(); ++i) {
-      QWidget *child = dynamic_cast<QWidget*>(list.at(i));
-      updateAllFonts(child, old_font, font);
+    QWidget *widget = qobject_cast<QWidget*>(object);
+
+    bool is_font_dialog = widget!=NULL && qobject_cast<QFontDialog*>(widget->window())!=NULL;
+  
+    if (!is_font_dialog){
+      if (widget!=NULL && widget->font()==old_font){
+        widget->setFont(new_font);
+        widget->update();
+      }
+      
+      const QList<QObject*> list = object->children();
+      for (int i = 0; i < list.size(); ++i)
+        updateAllFonts(list.at(i), old_font, new_font);
     }
   }
 }
@@ -145,11 +154,38 @@ void GFX_SetSystemFont(QFont font){
 
   foreach (QWidget *widget, QApplication::allWidgets()) {
     updateAllFonts(widget, old_font, font);
-    widget->update();
+    //widget->update();
   }
 
   remakeMixerStrips(-1);
   evalScheme("(minimize-lowertab)");
+}
+
+void GFX_SetSystemFont(const char *fontdescr){
+  QFont font;
+  font.fromString(fontdescr);
+  GFX_SetSystemFont(font);
+}
+
+const char *GFX_GetSystemFont(void){
+  return talloc_strdup(qApp->font().toString().toUtf8().constData());
+}
+
+void GFX_SetEditorFont(const char *fontdescr){
+  struct Tracker_Windows *tvisual = root->song->tracker_windows;
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  QFont font;
+  font.fromString(fontdescr);
+  editor->font = font;
+  setFontValues(tvisual);
+  UpdateAllWBlockWidths(tvisual);
+  GL_create(tvisual);
+}
+
+const char *GFX_GetEditorFont(void){
+  struct Tracker_Windows *tvisual = root->song->tracker_windows;
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  return talloc_strdup(editor->font.toString().toUtf8().constData());
 }
 
 void GFX_ConfigSystemFont(void){
@@ -159,6 +195,7 @@ void GFX_ConfigSystemFont(void){
 
   GFX_SetSystemFont(font);
 }
+
 
 static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
@@ -170,15 +207,14 @@ static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
   printf("Raw font name: \"%s\"\n",editor->font.rawName().toUtf8().constData());
 
   setFontValues(tvisual);
-
+  UpdateAllWBlockWidths(tvisual);
+  
   //SETTINGS_write_string("font_style",editor->font.styleName().toUtf8().constData()); // toString doesn't seem to cover this. (arrgh, there's a billion bugs in qt when it comes to font styles)
   return talloc_strdup((char*)editor->font.toString().toUtf8().constData());
 }
 
 void GFX_ConfigFonts(struct Tracker_Windows *tvisual){
   char *font = GFX_SelectEditFont(tvisual);
-  UpdateAllWBlockWidths(tvisual);
-  tvisual->must_redraw = true;
   SETTINGS_write_string("font",font);
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   SETTINGS_write_string("font_style",editor->font.styleName()); // toString doesn't seem to cover this.
@@ -197,7 +233,6 @@ void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
 
   setFontValues(tvisual);
   UpdateAllWBlockWidths(tvisual);
-  tvisual->must_redraw = true;
 
 #if USE_OPENGL
   editor->position_gl_widget(tvisual);
@@ -227,9 +262,7 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
   }
  exit:
   setFontValues(tvisual);
-
   UpdateAllWBlockWidths(tvisual);
-  tvisual->must_redraw = true;
   
 #if USE_OPENGL
   editor->position_gl_widget(tvisual);
@@ -262,9 +295,7 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
   editor->font = font;
   //editor->setFont(editor->font);
   setFontValues(tvisual);
-
   UpdateAllWBlockWidths(tvisual);
-  tvisual->must_redraw = true;
 }
 
 void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){

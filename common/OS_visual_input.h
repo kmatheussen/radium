@@ -25,6 +25,12 @@ extern LANGSPEC void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels
 extern LANGSPEC void GFX_SetDefaultFont(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual);
 
+extern LANGSPEC void GFX_SetSystemFont(const char *fontdescr);
+extern LANGSPEC const char *GFX_GetSystemFont(void);
+extern LANGSPEC void GFX_SetEditorFont(const char *fontdescr);
+extern LANGSPEC const char *GFX_GetEditorFont(void);
+
+
 extern LANGSPEC bool RT_message_will_be_sent(void);
 extern LANGSPEC void RT_message_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2);
 #define RT_message(...) do{donothing(0 && printf(__VA_ARGS__)); RT_message_internal(__VA_ARGS__);}while(0) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.

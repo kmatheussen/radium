@@ -55,6 +55,22 @@ void configFonts(int windownum){
   GFX_ConfigFonts(window);
 }
 
+void setEditorFont(const_char* fontdescr){
+  GFX_SetEditorFont(fontdescr);
+}
+
+void setSystemFont(const_char* fontdescr){
+  GFX_SetSystemFont(fontdescr);
+}
+
+const_char* getEditorFont(void){
+  return GFX_GetEditorFont();
+}
+
+const_char* getSystemFont(void){
+  return GFX_GetSystemFont();
+}
+
 void setDefaultEditorFont(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   GFX_SetDefaultFont(window);

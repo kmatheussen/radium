@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1920</width>
-    <height>191</height>
+    <width>1807</width>
+    <height>42</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -22,7 +22,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="vertical_layout">
+  <layout class="QVBoxLayout" name="vertical_layout" stretch="0,1,0">
    <property name="spacing">
     <number>2</number>
    </property>

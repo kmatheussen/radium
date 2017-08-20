@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDesktopWidget>
 #include <QDir>
 #include <QFileDialog>
+#include <QFontDialog>
 #include <QTabWidget>
 #include <QTextBrowser>
 #include <QTextDocumentFragment>
@@ -85,7 +86,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_gui_proc.h"
 
 
-QByteArray g_filedialog_geometry;
+static QByteArray g_filedialog_geometry;
+static QByteArray g_fontdialog_geometry;
 
 
 // To make sure we don't sent double click events to a widget that has just been opened. (seems like a minor qt quirk/bug)
@@ -283,16 +285,17 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   struct Callback : QObject {
     Q_OBJECT;
 
-    func_t *_func;
     QWidget *_widget;
 
     QString _last_string_value = "__________________________________"; // Workaround for https://bugreports.qt.io/browse/QTBUG-40
     
   public:
-    
+
+    func_t *_func;
+
     Callback(func_t *func, QWidget *widget)
-      : _func(func)
-      , _widget(widget)
+      : _widget(widget)
+      , _func(func)
     {
       s7extra_protect(_func);
     }
@@ -312,6 +315,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void editingFinished(){
       QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
+      R_ASSERT_RETURN_IF_FALSE(line_edit!=NULL);
+      
       QString value = line_edit->text();
             
       set_editor_focus();
@@ -328,6 +333,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void textChanged(QString text){
       S7CALL(void_charpointer,_func, text.toUtf8().constData());
+    }
+    
+    void currentFontChanged(const QFont &font){
+      S7CALL(void_dyn,_func, DYN_create_string(font.toString()));//.toUtf8().constData()));
     }
 
     void intValueChanged(int val){
@@ -1445,6 +1454,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         }
       }
 
+      {
+        QFontDialog *font_dialog = dynamic_cast<QFontDialog*>(_widget.data());
+        if(font_dialog != NULL){
+          font_dialog->connect(font_dialog, SIGNAL(fontSelected(const QFont&)), callback, SLOT(currentFontChanged(const QFont&)));
+          font_dialog->connect(font_dialog, SIGNAL(currentFontChanged(const QFont&)), callback, SLOT(currentFontChanged(const QFont&)));
+          goto gotit;
+        }
+      }
+      
       {
         QCheckBox *button = dynamic_cast<QCheckBox*>(_widget.data());
         if (button!=NULL){
@@ -2626,7 +2644,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         restoreGeometry(g_filedialog_geometry);
       }
       
-      _have_set_size = true;
+      _have_set_size = true; // shouldn't this one be set only if we restore geometry?
     }
 
     ~FileRequester(){
@@ -2645,6 +2663,38 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
 
     OVERRIDERS(QFileDialog);
+  };
+
+  
+  struct FontRequester : QFontDialog, Gui{
+    Q_OBJECT;
+    
+  public:
+
+    FontRequester(QFont font)
+      : Gui(this)
+    {
+      // setOption(QFontDialog::NoButtons, true);
+      setCurrentFont(font);
+      if (!g_fontdialog_geometry.isEmpty()){
+        restoreGeometry(g_fontdialog_geometry);
+        _have_set_size = true;
+      }
+    }
+
+    ~FontRequester(){
+      g_fontdialog_geometry = saveGeometry();
+    }
+    
+    void done(int result) override{
+      printf("  DONE: %d\n", result);
+      for (auto *callback : _callbacks)
+        S7CALL(void_dyn, callback->_func, DYN_create_bool(result==0 ? false : 1));
+      
+      deleteLater(); // Must do this to close the dialog. Qt does something strange here. Seems like QFontDialog overrides the close callback.
+    }
+
+    OVERRIDERS(QFontDialog);
   };
 
   struct TabBar : QTabBar, Gui{
@@ -3261,6 +3311,12 @@ void openExternalWebBrowser(const_char *stringurl){
 
 int64_t gui_fileRequester(const_char* header_text, const_char* dir, const_char* filetypename, const_char* postfixes, bool for_loading){
   return (new FileRequester(header_text, dir, filetypename, postfixes, for_loading))->get_gui_num();
+}
+
+int64_t gui_fontRequester(const_char* fontdescr){
+  QFont font;
+  font.fromString(fontdescr);
+  return (new FontRequester(font))->get_gui_num();
 }
 
 
@@ -4001,7 +4057,7 @@ void gui_close(int64_t guinum){
     handleError("Gui #%d can not be closed.\nReason: %s", (int)guinum, can_not_be_closed_reason);
     return;
   }
-  
+
   if (gui->_has_been_closed){
     handleError("Gui #%d has already been closed", (int)guinum);
     return;

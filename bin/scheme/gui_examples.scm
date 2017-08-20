@@ -441,3 +441,25 @@
        (lambda (val)
          (c-display "val:" val)))
 
+
+(define fontreq
+  (let ((fontreq (<gui> :font-requester "")))
+
+    (define org-font (<ra> :get-system-font))
+    
+    (<gui> :add-callback fontreq
+           (lambda (fontstring-or-buttons)
+             (c-display "fontstring:" fontstring-or-buttons ". gui:" fontreq)
+             (if (boolean? fontstring-or-buttons)
+                 (begin
+                   (if (not fontstring-or-buttons)
+                       (<ra> :set-system-font org-font))
+                   ;;(<gui> :close fontreq)
+                   )
+                 (<ra> :set-system-font fontstring-or-buttons))))
+
+    (<gui> :set-parent fontreq -2)
+    
+    (<gui> :show fontreq)
+    fontreq))
+
