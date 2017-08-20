@@ -19,8 +19,10 @@ extern int g_pausing_level;
 extern LANGSPEC void PC_Pause_set_pos(int blocknum, int realline);
 
 extern LANGSPEC void PC_Pause(void);
+extern LANGSPEC void PC_PauseNoMessage(void);
 
 extern LANGSPEC void PC_StopPause(struct Tracker_Windows *window);
+extern LANGSPEC void PC_StopPauseAtCurrCursorPos(struct Tracker_Windows *window);
 extern LANGSPEC void PC_StopPause_ForcePlayBlock(struct Tracker_Windows *window);
 
 #ifdef __cplusplus

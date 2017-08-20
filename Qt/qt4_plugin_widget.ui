@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1920</width>
-    <height>191</height>
+    <width>1807</width>
+    <height>42</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -22,7 +22,7 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="vertical_layout">
+  <layout class="QVBoxLayout" name="vertical_layout" stretch="0,1,0">
    <property name="spacing">
     <number>2</number>
    </property>
@@ -41,7 +41,7 @@
    <item>
     <widget class="QWidget" name="header" native="true">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -130,6 +130,12 @@
       </item>
       <item>
        <widget class="QToolButton" name="auto_bypass_menu_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="toolTip">
          <string>Configure Auto-suspend</string>
         </property>
@@ -1282,7 +1288,7 @@ Example:
       <item>
        <widget class="QToolButton" name="ab_reset">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -1303,6 +1309,12 @@ Example:
       </item>
       <item>
        <widget class="QCheckBox" name="ab_a">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>A*</string>
         </property>
@@ -1313,6 +1325,12 @@ Example:
       </item>
       <item>
        <widget class="QCheckBox" name="ab_b">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>B</string>
         </property>
@@ -1320,6 +1338,12 @@ Example:
       </item>
       <item>
        <widget class="QCheckBox" name="enable_sample_seek">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="toolTip">
          <string>Enable poor man's sample-seek.
 
@@ -1478,7 +1502,7 @@ seek sample-accurately forward.</string>
       <item>
        <widget class="QSpinBox" name="preset_selector">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>

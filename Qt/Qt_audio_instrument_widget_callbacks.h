@@ -104,6 +104,8 @@ public:
 
     setupUi(this);    
 
+    time_of_last_minheight_inc.start();
+    
     /*
     {
       //QFontMetrics fm(font());
@@ -478,6 +480,9 @@ public:
   }
 
 
+  QTime time_of_last_minheight_inc;
+  int number_of_minheight_incs = 0;
+  
   void calledRegularlyByParent(void){
     
     //printf("hello %p\n", this);
@@ -492,9 +497,25 @@ public:
     if (_comp_widget->isVisible())
       _comp_widget->calledRegularlyByParent();
 
+    int curr_minimum_height = minimumHeight();
+    
     bool is_visible = scrollArea->verticalScrollBar()->isVisible();
-    if (is_visible)
-      setMinimumHeight(height()+5);
+    
+    if (is_visible) {
+
+      printf("  **UP** MINIMIZING UP to %d\n", curr_minimum_height+5);
+      setMinimumHeight(curr_minimum_height+5);
+      time_of_last_minheight_inc.restart();
+      number_of_minheight_incs++;
+      
+    } else if (_size_type != SIZETYPE_HALF && curr_minimum_height > 5){
+
+      if (time_of_last_minheight_inc.elapsed() > 1000 && number_of_minheight_incs < 3) { // Wait at least 1 second before trying to lower it again. If not, it won't stabilize. (might not stabilize now either though, but it won't be that visible now)
+        printf("  **DOWN** MINIMIZING DOWN to %d\n", curr_minimum_height-5);
+        setMinimumHeight(curr_minimum_height-5);
+        number_of_minheight_incs = 0;
+      }
+    }
   }
 
   void callSystemSliderpainterUpdateCallbacks(void){
