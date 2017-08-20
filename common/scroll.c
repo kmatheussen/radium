@@ -122,7 +122,7 @@ void Scroll_scroll(
   bool dopause = (ATOMIC_GET(root->play_cursor_onoff)==false);
   
   if (dopause)
-    PC_Pause();
+    PC_PauseNoMessage();
   
 //  int lokke;
 	struct WBlocks *wblock=window->wblock;
@@ -173,7 +173,7 @@ void Scroll_scroll(
 #endif
 
         if (dopause)
-          PC_StopPause(window);
+          PC_StopPauseAtCurrCursorPos(window);
 
         
 //	printf("scroll3: n: %d\n",num_lines);

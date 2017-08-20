@@ -54,7 +54,7 @@ void PC_Pause_set_pos(int blocknum, int realline){
 }
 
 // Note that it's perfectly fine calling PlayStop() between calling PC_Pause and PC_StopPause. PC_StopPause will still work as it's supposed to.
-void PC_Pause(void){
+static void pause(bool show_message){
   R_ASSERT(THREADING_is_main_thread());
 
   //printf("   000 Enter pause %d\n", g_pausing_level);
@@ -72,7 +72,7 @@ void PC_Pause(void){
   
   if (is_playing()){
 
-    if(g_is_starting_up==false){
+    if(g_is_starting_up==false && show_message){
       struct Tracker_Windows *window = root->song->tracker_windows;
       //g_pause_realline = ATOMIC_GET(window->wblock->till_curr_realline);
       window->message = "Temporarily stopping player";
@@ -91,12 +91,20 @@ void PC_Pause(void){
   }  
 }
 
+void PC_Pause(void){
+  pause(true);
+}
+
+void PC_PauseNoMessage(void){
+  pause(false);
+}
+  
 static const Place *get_place_from_realline(const struct WBlocks *wblock, int realline){
   int bounded_realline = R_BOUNDARIES(0, realline, wblock->num_reallines-1);
   return &wblock->reallines[bounded_realline]->l.p;
 }
 
-static void stop_pause(struct Tracker_Windows *window, bool force_play_block){
+static void stop_pause(struct Tracker_Windows *window, bool continue_at_cursor_pos, bool force_play_block){
   R_ASSERT(THREADING_is_main_thread());
 
   g_pausing_level--;
@@ -132,27 +140,45 @@ static void stop_pause(struct Tracker_Windows *window, bool force_play_block){
       PlayBlockCurrPos2(window, place);
 
     } else if (g_playtype==PLAYSONG) {
-      
-      PlaySong(g_pause_song_abstime);
+
+      if (continue_at_cursor_pos)
+        PlaySongCurrPos();
+      else
+        PlaySong(g_pause_song_abstime);
 
     } else {
-      
-      const Place *place = get_place_from_realline(wblock, ATOMIC_GET(g_pause_realline));
-    
-      if (g_was_playing_range)
-        PlayRangeCurrPos2(window, place);
-      
-      else if (g_playtype==PLAYBLOCK)
-        PlayBlockCurrPos2(window, place);
+
+      if (continue_at_cursor_pos){
+
+        if (g_was_playing_range)
+          PlayRangeCurrPos(window);
+        else
+          PlayBlockCurrPos(window);
+
+      } else {
+          
+        const Place *place = get_place_from_realline(wblock, ATOMIC_GET(g_pause_realline));
+        
+        if (g_was_playing_range)
+          PlayRangeCurrPos2(window, place);
+        
+        else if (g_playtype==PLAYBLOCK)
+          PlayBlockCurrPos2(window, place);
+
+      }
       
     }
   }
 }
 
 void PC_StopPause(struct Tracker_Windows *window){
-  stop_pause(window, false);
+  stop_pause(window, false, false);
+}
+
+void PC_StopPauseAtCurrCursorPos(struct Tracker_Windows *window){
+  stop_pause(window, true, false);
 }
 
 void PC_StopPause_ForcePlayBlock(struct Tracker_Windows *window){
-  stop_pause(window, true);
+  stop_pause(window, false, true);
 }
