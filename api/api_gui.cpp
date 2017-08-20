@@ -198,10 +198,12 @@ static QPointer<QWidget> g_last_released_widget = NULL;
     remember_geometry.hideEvent_override(this);                         \
   }
 
-#define CHANGE_OVERRIDER(classname)             \
-  void changeEvent(QEvent *event) override {    \
+#define CHANGE_OVERRIDER(classname)              \
+  void changeEvent(QEvent *event) override {     \
     Gui::changeEvent(event);                     \
+    classname::changeEvent(event);               \
   }
+
 
 #define OVERRIDERS_WITHOUT_KEY(classname)                               \
   MOUSE_OVERRIDERS(classname)                                           \
@@ -210,7 +212,8 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   DOUBLECLICK_OVERRIDER(classname)                                      \
   CLOSE_OVERRIDER(classname)                                            \
   RESIZE_OVERRIDER(classname)                                           \
-  PAINT_OVERRIDER(classname)
+  PAINT_OVERRIDER(classname)                                            \
+  CHANGE_OVERRIDER(classname)                                           \
   
 #define OVERRIDERS(classname)                           \
   OVERRIDERS_WITHOUT_KEY(classname)                     \
@@ -677,6 +680,18 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         _modality = radium::IS_MODAL;
       else
         _modality = radium::NOT_MODAL;
+    }
+
+    void changeEvent(QEvent *event){
+      if(_widget->isWindow()){
+        if (event->type()==QEvent::ActivationChange){
+          printf("  Is Active: %d\n", _widget->isActiveWindow());
+          if(_widget->isActiveWindow())
+            obtain_keyboard_focus();
+          else
+            release_keyboard_focus();
+        }
+      }
     }
     
     /************ MOUSE *******************/
@@ -4017,11 +4032,12 @@ void gui_show(int64_t guinum){
   //if (w->isWindow())
   safeShow(w);
 
+  /*
   if (w->isWindow()){
     w->setFocusPolicy(Qt::StrongFocus);
     w->setFocus();
   }
-
+  */
 }
 
 void gui_hide(int64_t guinum){
@@ -4577,6 +4593,7 @@ void gui_minimizeAsMuchAsPossible(int64_t guinum){
   if (gui==NULL)
     return;
 
+  gui->_widget->resize(10,10);
   gui->_widget->adjustSize();
   gui->_widget->updateGeometry();
 }
