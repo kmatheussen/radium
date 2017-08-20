@@ -1,3 +1,23 @@
+Changes 4.9.16 -> 4.9.17:
+* Playlist: Add "Hide" option to the popup menu.
+* Player: Fix changing cursor position while playing.
+  E.g when pressing page up/down
+* GUI: Fix keyboard focus for the tracker module file
+  requester.
+* GUI: Let all windows obtain keyboard focus by default when
+  selected.
+* GUI: Tweak automatic adjustment of the height of the
+  instrument widget.
+* GUI: Fonts are immediately changed in the font requesters.
+* GUI: Update all, or almost all, fonts when changing system
+  font.
+* API:
+  * New functions: setEditorFont, setSystemFont, getEditorFont,
+    getSystemFont, gui_fontRequester
+ 
+
+
+
 Changes 4.9.14 -> 4.9.16:
 * Swing: Fix swing area being skewed to the start of a block
   when the first defined swing value is placed in the second
