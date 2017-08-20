@@ -415,7 +415,7 @@ class SetSeveralAtomicVariables{
 
 
 // Class to store a pointer.
-// The main thread can set, replace and free the pointer at any time.
+// The main thread can set, replace and free the pointer at any time. (doesn't look like it can free... that seems to be taken care of automatically)
 // A realtime thread can access the pointer at any time by using the ScopedUsage class.
 //
 class AtomicPointerStorage{
