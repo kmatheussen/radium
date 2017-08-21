@@ -53,6 +53,13 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 	if(window->curr_track>=0){
 
 		window->curr_track_sub++;
+
+                if (wtrack->swingtext_on==true && window->curr_track_sub==3)
+                  window->curr_track_sub = -1;
+
+                if (wtrack->swingtext_on==true && window->curr_track_sub==0)
+                  window->curr_track_sub = 3;
+
                 int num_subtracks = GetNumSubtracks(wtrack);
 
 		if(window->curr_track_sub>=num_subtracks){
@@ -62,8 +69,13 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 				window->curr_track_sub--;
 				return 0;
 			}else{
-				window->curr_track_sub= -1;
-				ATOMIC_WRITE(wblock->wtrack, NextWTrack(wtrack));
+
+                          if (wtrack->swingtext_on)
+                            window->curr_track_sub = 0;
+                          else
+                            window->curr_track_sub = -1;
+
+                          ATOMIC_WRITE(wblock->wtrack, NextWTrack(wtrack));
 			}
 		}
 
@@ -155,8 +167,12 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
                 if (window->curr_track==TEMPONODETRACK && window->show_reltempo_track==false)
                   ATOMIC_INC(window->curr_track, 1);
 
-		if (0==window->curr_track)
-                  window->curr_track_sub= -1;
+		if (0==window->curr_track) {
+                  if (wblock->wtracks->swingtext_on)
+                    window->curr_track_sub = 0;
+                  else
+                    window->curr_track_sub = -1;
+                }
                 
                 if (window->curr_track==SWINGTRACK)
                   window->curr_othertrack_sub = 0;
@@ -202,11 +218,48 @@ static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *windo
 }
 
 int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
-	if(window->curr_track>0 || (0==window->curr_track && window->curr_track_sub>=0)){
+  struct WTracks *wtrack = wblock->wtrack;
+  bool is_going_to_be_at_normal_track = false;
+
+  if (window->curr_track>=0){
+    is_going_to_be_at_normal_track = true;
+    if (window->curr_track==0){
+      if (wtrack->swingtext_on){
+        if (window->curr_track_sub==0)
+          is_going_to_be_at_normal_track = false;
+      }else{
+        if (window->curr_track_sub==-1)
+          is_going_to_be_at_normal_track = false;
+      }
+    }
+  }
+        
+      if(is_going_to_be_at_normal_track){
+
+                int prev = window->curr_track_sub;
 
 		window->curr_track_sub--;
 
-		if(window->curr_track_sub==-2){
+                bool move_to_prev_track = false;
+
+                if (wtrack->swingtext_on && window->curr_track_sub==-1){
+                  move_to_prev_track = true;
+
+                } else if (wtrack->swingtext_on && window->curr_track_sub==-2){
+                  window->curr_track_sub = 2;
+
+                } else if (wtrack->swingtext_on && window->curr_track_sub==2){
+                  window->curr_track_sub = -1;
+
+                } else if (window->curr_track_sub==-2){
+                    move_to_prev_track=true;
+                    
+                }
+
+                printf("prev: %d. now: %d. move prevtrack: %d\n", prev, window->curr_track_sub, move_to_prev_track);
+
+
+                if (move_to_prev_track){
                   do{
                     ATOMIC_INC(window->curr_track, -1);
                     R_ASSERT_RETURN_IF_FALSE2(window->curr_track >= 0, 0);
@@ -214,7 +267,8 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
                   }while(wblock->wtrack==NULL);
                   int num_subtracks = GetNumSubtracks(wblock->wtrack);
                   window->curr_track_sub=num_subtracks-1;
-		}
+                }
+
 
 		if(
 			window->curr_track<wblock->left_track ||
