@@ -200,6 +200,13 @@ void UpdateWTrackCoordinates(
 
         int x = wtrack_x;
 
+        // swing
+        wtrack->swingtextarea.x = x;
+        wtrack->swingtextarea.x2 = wtrack->swingtextarea.x + (window->fontwidth * 4);
+
+        if (wtrack->swingtext_on==true)
+          x = wtrack->swingtextarea.x2 + 2;
+        
         // pianoroll
         if (wtrack->pianoroll_on) {
           wtrack->pianoroll_width = WTRACK_get_pianoroll_width(window, wtrack);
@@ -216,13 +223,6 @@ void UpdateWTrackCoordinates(
 
         x = wtrack->notearea.x2 + 2;
 
-        // swing
-        wtrack->swingtextarea.x = x;
-        wtrack->swingtextarea.x2 = wtrack->swingtextarea.x + (window->fontwidth * 4);
-
-        if (wtrack->swingtext_on==true)
-          x = wtrack->swingtextarea.x2 + 2;
-        
         // centtext
         wtrack->centtextarea.x = x;
         wtrack->centtextarea.x2 = wtrack->centtextarea.x + (window->fontwidth * 2);

@@ -803,6 +803,115 @@ float getTrackFxY2(int tracknum, int blocknum, int windownum){
   return wtrack==NULL ? 0 : wtrack->y2;
 }
 
+
+/////
+
+float getCenttextX1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->centtextarea.x;
+}
+
+float getCenttextY1(int tracknum, int blocknum, int windownum){
+  return getBlockHeaderY2(blocknum, windownum);
+}
+
+float getCenttextX2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->centtextarea.x2;
+}
+
+float getCenttextY2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y2;
+}
+
+/////
+
+float getSwingtextX1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->swingtextarea.x;
+}
+
+float getSwingtextY1(int tracknum, int blocknum, int windownum){
+  return getBlockHeaderY2(blocknum, windownum);
+}
+
+float getSwingtextX2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->swingtextarea.x2;
+}
+
+float getSwingtextY2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y2;
+}
+
+/////
+
+float getChancetextX1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->chancetextarea.x;
+}
+
+float getChancetextY1(int tracknum, int blocknum, int windownum){
+  return getBlockHeaderY2(blocknum, windownum);
+}
+
+float getChancetextX2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->chancetextarea.x2;
+}
+
+float getChancetextY2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y2;
+}
+
+/////
+
+float getVelocitytextX1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->veltextarea.x;
+}
+
+float getVelocitytextY1(int tracknum, int blocknum, int windownum){
+  return getBlockHeaderY2(blocknum, windownum);
+}
+
+float getVelocitytextX2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->veltextarea.x2;
+}
+
+float getVelocitytextY2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y2;
+}
+
+/////
+
+float getFxtextX1(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->fxtextarea.x;
+}
+
+float getFxtextY1(int tracknum, int blocknum, int windownum){
+  return getBlockHeaderY2(blocknum, windownum);
+}
+
+float getFxtextX2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->fxtextarea.x2;
+}
+
+float getFxtextY2(int tracknum, int blocknum, int windownum){
+  struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
+  return wtrack==NULL ? 0 : wtrack->y2;
+}
+
+///
+
+
 int getLeftmostTrackNum(void){
   return LEFTMOSTTRACK;
 }

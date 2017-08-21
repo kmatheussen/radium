@@ -1174,25 +1174,52 @@
                       (<ra> :set-instrument-color color instrument-id))
                     instrument-ids))))
 
+(define (swingtext-popup-elements)
+  (list (list "Swing text" :check (<ra> :swingtext-visible *current-track-num*) (lambda (onoff)
+                                                                                  (<ra> :show-swingtext onoff *current-track-num*)))
+        (list "Help Swing text" (lambda ()
+                                  (<ra> :show-swing-help-window)))))
+
+(define (centtext-popup-elements)
+  (list (list "Cents text"
+              :check (<ra> :centtext-visible *current-track-num*)
+              :enabled (<ra> :centtext-can-be-turned-off *current-track-num*)
+              (lambda (onoff)
+                (<ra> :show-centtext  onoff *current-track-num*)))
+        (list)))
+
+(define (chancetext-popup-elements)
+  (list (list "Chance text" :check (<ra> :chancetext-visible *current-track-num*) (lambda (onoff)
+                                                                                    (<ra> :show-chancetext onoff *current-track-num*)))
+        (list "Help Chance text" (lambda ()
+                                   (<ra> :show-chance-help-window)))))
+
+(define (velocitytext-popup-elements)
+  (list (list "Velocity text (left alt + y)" :check (<ra> :veltext-visible *current-track-num*) (lambda (onoff)
+                                                                                                  (<ra> :show-veltext onoff *current-track-num*)))
+        (list "Help Velocity text" (lambda ()
+                                     (<ra> :show-velocity-help-window)))))
+        
+(define (fxtext-popup-elements)
+  (list (list "FX text" :check (<ra> :fxtext-visible *current-track-num*)   (lambda (onoff)
+                                                                              (<ra> :show-fxtext onoff *current-track-num*)))
+        (list "Help FX text" (lambda ()
+                               (<ra> :show-fx-help-window)))))
+
+        
+
 (define (track-configuration-popup-async X Y)
   (c-display "TRACK " *current-track-num*)
-  (popup-menu "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*) (lambda (onoff)
+  (popup-menu (car (swingtext-popup-elements))
+              "Pianoroll     (left alt + p)" :check (<ra> :pianoroll-visible *current-track-num*) (lambda (onoff)
                                                                                                     (<ra> :show-pianoroll onoff *current-track-num*))
               "Note text     (left alt + n)" :check (<ra> :note-track-visible *current-track-num*) (lambda (onoff)
                                                                                                      (<ra> :show-note-track onoff *current-track-num*))
-              "Swing text" :check (<ra> :swingtext-visible *current-track-num*) (lambda (onoff)
-                                                                                  (<ra> :show-swingtext onoff *current-track-num*))
-              (list "Cents text"
-                    :check (<ra> :centtext-visible *current-track-num*)
-                    :enabled (<ra> :centtext-can-be-turned-off *current-track-num*)
-                    (lambda (onoff)
-                      (<ra> :show-centtext  onoff *current-track-num*)))
-              "Chance text" :check (<ra> :chancetext-visible *current-track-num*) (lambda (onoff)
-                                                                                    (<ra> :show-chancetext onoff *current-track-num*))
-              "Velocity text (left alt + y)" :check (<ra> :veltext-visible *current-track-num*) (lambda (onoff)
-                                                                                                  (<ra> :show-veltext onoff *current-track-num*))
-              "FX text"                      :check (<ra> :fxtext-visible *current-track-num*)   (lambda (onoff)
-                                                                                                   (<ra> :show-fxtext onoff *current-track-num*))
+              (car (centtext-popup-elements))
+              (car (chancetext-popup-elements))
+              (car (velocitytext-popup-elements))
+              (car (fxtext-popup-elements))
+
               "-------"
               "Copy Track     (left alt + c)" (lambda ()
                                                 (<ra> :copy-track *current-track-num*))
@@ -1227,14 +1254,11 @@
                       (lambda ()
                         (show-instrument-color-dialog -1 instrument-id))))
               "-------"
-              "Help Chance text" (lambda ()
-                                   (<ra> :show-chance-help-window))
-              "Help Velocity text" (lambda ()
-                                     (<ra> :show-velocity-help-window))
-              "Help FX text" (lambda ()
-                               (<ra> :show-fx-help-window))
-              "Help Swing text" (lambda ()
-                                  (<ra> :show-swing-help-window))
+              (cadr (swingtext-popup-elements))
+              (cadr (centtext-popup-elements))
+              (cadr (chancetext-popup-elements))
+              (cadr (velocitytext-popup-elements))
+              (cadr (fxtext-popup-elements))
               ))
 
 #||        
@@ -2835,6 +2859,25 @@
       fxname
       (<-> fxname " (" (<ra> :get-instrument-name fxinstrument_id) ")")))
 
+
+;; Sub track text popup menues
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and *current-track-num*
+                     (= Button *right-button*)
+                     (cond ((inside-box (<ra> :get-box swingtext *current-track-num*) X Y)
+                            (popup-menu (swingtext-popup-elements)))
+                           ((inside-box (<ra> :get-box centtext *current-track-num*) X Y)
+                            (popup-menu (centtext-popup-elements)))
+                           ((inside-box (<ra> :get-box chancetext *current-track-num*) X Y)
+                            (popup-menu (chancetext-popup-elements)))
+                           ((inside-box (<ra> :get-box velocitytext *current-track-num*) X Y)
+                            (popup-menu (velocitytext-popup-elements)))
+                           ((inside-box (<ra> :get-box fxtext *current-track-num*) X Y)
+                            (popup-menu (fxtext-popup-elements)))
+                           )))))
+                                        
 ;; Show and set:
 ;;  1. current fx or current note, depending on which nodeline is closest to the mouse pointer
 ;;  2. current velocity node, or current fxnode
@@ -2876,8 +2919,25 @@
                   
                   (define-lazy trackwidth-info (get-trackwidth-info X Y))
                   (set! *current-fx/distance* #f)
+
+                  ;;(c-display "curr" *current-track-num-all-tracks*)
                   
-                  (cond (velocity-info
+                  (cond ((and (<ra> :swingtext-visible)
+                              (inside-box (<ra> :get-box swingtext *current-track-num*) X Y))
+                         (<ra> :set-statusbar-text (<-> "Swing text for track #" *current-track-num*)))
+                        ((and (<ra> :centtext-visible)
+                              (inside-box (<ra> :get-box centtext *current-track-num*) X Y))
+                         (<ra> :set-statusbar-text (<-> "Cent text for track #" *current-track-num*)))
+                        ((and (<ra> :chancetext-visible)
+                              (inside-box (<ra> :get-box chancetext *current-track-num*) X Y))
+                         (<ra> :set-statusbar-text (<-> "Chance text for track #" *current-track-num*)))
+                        ((and (<ra> :veltext-visible)
+                              (inside-box (<ra> :get-box velocitytext *current-track-num*) X Y))
+                         (<ra> :set-statusbar-text (<-> "Velocity text for track #" *current-track-num*)))
+                        ((and (<ra> :fxtext-visible)
+                              (inside-box (<ra> :get-box fxtext *current-track-num*) X Y))
+                         (<ra> :set-statusbar-text (<-> "FX text for track #" *current-track-num*)))
+                        (velocity-info
                          (set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
                          ;;(c-display "setting current to " (velocity-info :velocitynum) (velocity-info :dir))
                          (set-indicator-velocity-node (velocity-info :velocitynum)
@@ -2957,7 +3017,9 @@
                             (popup-menu "hide time signature track" ra:show-hide-signature-track))
                            ((= *current-track-num-all-tracks* (<ra> :get-swing-track-num))
                             (c-display "swing")
-                            (popup-menu "hide swing track" ra:show-hide-swing-track)))
+                            (popup-menu "hide swing track" ra:show-hide-swing-track))
+                           (else
+                            (c-display "nothing")))
                      #t))))
 
 
