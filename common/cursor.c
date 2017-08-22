@@ -378,7 +378,6 @@ int CursorNextTrack(struct Tracker_Windows *window,struct WBlocks *wblock){
 }
 
 
-
 bool SetCursorPosConcrete(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
@@ -489,16 +488,24 @@ void SetCursorPosConcrete_CurrPos(
 
 void CursorNextTrack_CurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
-	struct WTracks *wtrack=wblock->wtrack;
-	int ret;
+	//struct WTracks *wtrack=wblock->wtrack;
+	//int ret;
 
-	if(wtrack->l.next==NULL){
-		ret=SetCursorPosConcrete(window,wblock,0,-1);
-	}else{
-		ret=CursorNextTrack(window,wblock);
+	if(wblock->wtrack->l.next==NULL){
+          SetCursorPosConcrete(window,wblock,0,-1);
+	}else if (window->curr_track < -1){
+          CursorNextTrack(window,wblock);
+        } else {
+          SetCursorPosConcrete(
+                               window,
+                               wblock,
+                               window->curr_track + 1,
+                               -1
+                               );
+          //ret=CursorNextTrack(window,wblock);
 	}
 
-	TrackSelectUpdate(window,wblock,ret);
+	TrackSelectUpdate(window,wblock,-1);
 }
 
 static int find_track_left(struct Tracker_Windows *window){

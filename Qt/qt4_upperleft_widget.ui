@@ -410,6 +410,9 @@
     </item>
     <item>
      <widget class="QCheckBox" name="swing_onoff">
+      <property name="toolTip">
+       <string>Enable swing</string>
+      </property>
       <property name="text">
        <string>On</string>
       </property>
