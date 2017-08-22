@@ -46,7 +46,7 @@ void DrawWTrackNames(
   int x1 = wtrack1->x + 2;
   int x2 = wtrack2->x2 - 1;
   int y1 = wtrack1->y;
-  int y2 = wtrack1->panonoff.y1 - 1;
+  int y2 = wtrack1->panonoff.y1 - 2;
 
   // Background
   unsigned int color = patch==NULL ? GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM) : patch->color;
@@ -98,7 +98,7 @@ void DrawWTrackNames(
     GFX_T_Text(
                window,TEXT_COLOR_NUM,temp,
                wtrack1->x+window->fontwidth/2,
-               wtrack1->y+WTRACKS_SPACE,
+               wtrack1->y+WTRACKS_SPACE-1,
                wtrack1->x2-wtrack1->x-1,
                TEXT_CLIPRECT|TEXT_BOLD|TEXT_NOTEXT,
                PAINT_BUFFER
@@ -114,7 +114,7 @@ void DrawWTrackNames(
     GFX_T_Text(
                window,INSTRUMENT_NAME_COLOR_NUM, name,
                name_x,
-               wtrack1->y+WTRACKS_SPACE,
+               wtrack1->y+WTRACKS_SPACE-1,
                wtrack2->x2 - name_x, //(wtrack2->x2-window->fontwidth/2) - name_x,
                TEXT_SCALE|TEXT_NOTEXT, //|TEXT_CENTER,
                PAINT_BUFFER
@@ -321,8 +321,8 @@ void UpdateAllPianoRollHeaders(
       //struct Tracks *track = wtrack->track;
       
       int x1 = wtrack->x + 2;
-      int x2 = wtrack->panonoff.x1;
-      int y1 = wtrack->panonoff.y1 + 2;
+      int x2 = wtrack->panonoff.x1 - 1;
+      int y1 = wtrack->panonoff.y1 + 1;
       int y2 = wtrack->volumeonoff.y2;
       
       PIANOROLLHEADER_assignTrack(pianorollheader, wblock->l.num, wtrack->l.num);
