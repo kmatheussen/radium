@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "playerclass.h"
 #include "tracks_proc.h"
 #include "notes_proc.h"
+#include "swingtext_proc.h"
 
 #include "wtracks_proc.h"
 
@@ -202,11 +203,17 @@ void UpdateWTrackCoordinates(
 
         // swing
         wtrack->swingtextarea.x = x;
-        wtrack->swingtextarea.x2 = wtrack->swingtextarea.x + (window->fontwidth * 4);
+        wtrack->swingtextarea.x2 = wtrack->swingtextarea.x + (window->fontwidth * 3);
 
-        if (wtrack->swingtext_on==true)
+        if (wtrack->swingtext_on==true){
+          wtrack->swingtext_fits_reallines = swingtext_fits_reallines(wblock, wtrack->track->filledout_swings.array);
+
+          if (!wtrack->swingtext_fits_reallines)
+            wtrack->swingtextarea.x2 = wtrack->swingtextarea.x + (window->fontwidth * 4);
+
           x = wtrack->swingtextarea.x2 + 2;
-        
+        }
+
         // pianoroll
         if (wtrack->pianoroll_on) {
           wtrack->pianoroll_width = WTRACK_get_pianoroll_width(window, wtrack);

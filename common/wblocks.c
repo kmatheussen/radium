@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "seqtrack_proc.h"
 #include "visual_proc.h"
 #include "Signature_proc.h"
+#include "swingtext_proc.h"
 #include "../OpenGL/Widget_proc.h"
 
 #include "../api/api_proc.h"
@@ -262,13 +263,20 @@ void UpdateWBlockCoordinates(
         
         // SWING
         /////////////////////
+        if (window->show_swing_track){
+          wblock->swingtext_fits_reallines = swingtext_fits_reallines(wblock, wblock->block->filledout_swings.array);
+          if (wblock->swingtext_fits_reallines)
+            wblock->swingTypearea.width  = 0;
+          else
+            wblock->swingTypearea.width  = window->fontwidth;
+        }
         wblock->swingTypearea.x  = next_x2;
 	wblock->swingTypearea.x2 = wblock->swingTypearea.x     + wblock->swingTypearea.width;
 	wblock->swingarea.x      = wblock->swingTypearea.x2    ; // + 3;
 	wblock->swingarea.x2     = wblock->swingarea.x         + wblock->swingarea.width;
-        if (window->show_swing_track)
+        if (window->show_swing_track){
           next_x2 = wblock->swingarea.x2 + 3;
-
+        }
         
         // Temponode
         /////////////////////////
@@ -331,7 +339,16 @@ void UpdateWBlockWidths(struct Tracker_Windows *window,struct WBlocks *wblock){
 	wblock->lpbarea.width        = window->fontwidth*2;
 	wblock->tempoTypearea.width  = window->fontwidth;
 	wblock->tempoarea.width      = window->fontwidth*4;
-        wblock->swingTypearea.width  = window->fontwidth;
+
+        if (window->show_swing_track){
+          wblock->swingtext_fits_reallines = swingtext_fits_reallines(wblock, wblock->block->filledout_swings.array);
+          if (wblock->swingtext_fits_reallines)
+            wblock->swingTypearea.width  = 0;
+          else
+            wblock->swingTypearea.width  = window->fontwidth;
+        }else
+          wblock->swingTypearea.width  = window->fontwidth;
+
         wblock->swingarea.width      = window->fontwidth*3;
         if(wblock->temponodearea.width==0)
           wblock->temponodearea.width  = window->fontwidth*7;

@@ -1646,7 +1646,8 @@ struct WTracks{
 
         bool swingtext_on;
         Area swingtextarea;
-  
+        bool swingtext_fits_reallines;
+
         bool centtext_on;
         Area centtextarea;
   
@@ -2008,6 +2009,7 @@ struct WBlocks{
 	WArea tempoarea;
         WArea swingTypearea;
         WArea swingarea;
+        bool swingtext_fits_reallines;
 	WArea temponodearea;
 
 	YArea linearea;
