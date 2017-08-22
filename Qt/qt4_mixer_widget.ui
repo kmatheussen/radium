@@ -74,6 +74,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="ab_a">
+        <property name="toolTip">
+         <string>Select setting A</string>
+        </property>
         <property name="text">
          <string>A*</string>
         </property>
@@ -87,6 +90,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="ab_b">
+        <property name="toolTip">
+         <string>Select setting B</string>
+        </property>
         <property name="text">
          <string>B</string>
         </property>
@@ -97,6 +103,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="ab_c">
+        <property name="toolTip">
+         <string>Select setting C</string>
+        </property>
         <property name="text">
          <string>C</string>
         </property>
@@ -107,6 +116,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="ab_d">
+        <property name="toolTip">
+         <string>Select setting D</string>
+        </property>
         <property name="text">
          <string>D</string>
         </property>
@@ -117,6 +129,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="ab_e">
+        <property name="toolTip">
+         <string>Select setting E</string>
+        </property>
         <property name="text">
          <string>E</string>
         </property>
@@ -127,6 +142,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="ab_f">
+        <property name="toolTip">
+         <string>Select setting F</string>
+        </property>
         <property name="text">
          <string>F</string>
         </property>
@@ -137,6 +155,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="ab_g">
+        <property name="toolTip">
+         <string>Select setting G</string>
+        </property>
         <property name="text">
          <string>G</string>
         </property>
@@ -147,6 +168,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="ab_h">
+        <property name="toolTip">
+         <string>Select setting H</string>
+        </property>
         <property name="text">
          <string>H</string>
         </property>
@@ -262,6 +286,9 @@
       </item>
       <item>
        <widget class="QCheckBox" name="show_cpu_usage">
+        <property name="toolTip">
+         <string>Show CPU usage for each module</string>
+        </property>
         <property name="text">
          <string>CPU</string>
         </property>
@@ -294,7 +321,7 @@
       <item>
        <widget class="QToolButton" name="zoomreset_button">
         <property name="toolTip">
-         <string>Reset zoom to default value.</string>
+         <string>Set default zoom level</string>
         </property>
         <property name="text">
          <string>↝ Zoom</string>
