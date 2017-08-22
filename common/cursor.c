@@ -421,7 +421,7 @@ bool SetCursorPosConcrete(
 
                 bool move_right = false;
 
-		if(tracknum < window->curr_track)
+		if(tracknum > window->curr_track)
                   move_right = true;
 
                 else if (tracknum==window->curr_track) {
@@ -441,8 +441,10 @@ bool SetCursorPosConcrete(
 				tempret=CursorRight(window,wblock);
                                 //printf("wtrack->num: %d, curr_track: %d, num_tracks: %d\n",wtrack->l.num, window->curr_track,wblock->block->num_tracks);
 				ret=R_MAX(tempret,ret);
-                                if (window->curr_track==last_tracknum && window->curr_track_sub==last_subtracknum && window->curr_othertrack_sub==last_curr_othertrack_sub)
+                                if (window->curr_track==last_tracknum && window->curr_track_sub==last_subtracknum && window->curr_othertrack_sub==last_curr_othertrack_sub){
+                                  R_ASSERT_NON_RELEASE(false);
                                   break; // prevent infinite loop in case of bug
+                                }
                                 last_tracknum = window->curr_track;
                                 last_subtracknum = window->curr_track_sub;
                                 last_curr_othertrack_sub = window->curr_othertrack_sub;
@@ -451,8 +453,10 @@ bool SetCursorPosConcrete(
 			while(window->curr_track!=tracknum || window->curr_track_sub!=subtrack){
 				tempret=CursorLeft(window,wblock);
 				ret=R_MAX(tempret,ret);
-                                if (window->curr_track==last_tracknum && window->curr_track_sub==last_subtracknum && window->curr_othertrack_sub==last_curr_othertrack_sub)
+                                if (window->curr_track==last_tracknum && window->curr_track_sub==last_subtracknum && window->curr_othertrack_sub==last_curr_othertrack_sub){
+                                  R_ASSERT_NON_RELEASE(false);
                                   break; // prevent infinite loop in case of bug
+                                }
                                 last_tracknum = window->curr_track;
                                 last_subtracknum = window->curr_track_sub;
                                 last_curr_othertrack_sub = window->curr_othertrack_sub;
