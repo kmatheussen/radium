@@ -406,23 +406,56 @@ bool SetCursorPosConcrete(
 		}
 	}else{
 		wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
+                R_ASSERT_RETURN_IF_FALSE2(wtrack!=NULL, false);
+
                 int num_subtracks = GetNumSubtracks(wtrack);
 
 		subtrack=R_MIN(num_subtracks-1,subtrack);
 
 		if(tracknum==window->curr_track && subtrack==window->curr_track_sub)
-                  return 0;
+                  return false;
+                
+                int last_tracknum = -2000;
+                int last_subtracknum = -2000;
+                int last_curr_othertrack_sub = -2000;
 
-		if(tracknum>window->curr_track || (tracknum==window->curr_track && subtrack>window->curr_track_sub)){
+                bool move_right = false;
+
+		if(tracknum < window->curr_track)
+                  move_right = true;
+
+                else if (tracknum==window->curr_track) {
+                  if (wtrack->swingtext_on){
+                    if (subtrack==-1 && window->curr_track_sub < 3)
+                      move_right = true;
+                    else if (subtrack < window->curr_track_sub)
+                      move_right = true;
+                  } else {
+                    if (subtrack < window->curr_track_sub)
+                      move_right = true;
+                  }
+                }
+
+		if(move_right) {
 			while(window->curr_track!=tracknum || window->curr_track_sub!=subtrack){
 				tempret=CursorRight(window,wblock);
                                 //printf("wtrack->num: %d, curr_track: %d, num_tracks: %d\n",wtrack->l.num, window->curr_track,wblock->block->num_tracks);
 				ret=R_MAX(tempret,ret);
+                                if (window->curr_track==last_tracknum && window->curr_track_sub==last_subtracknum && window->curr_othertrack_sub==last_curr_othertrack_sub)
+                                  break; // prevent infinite loop in case of bug
+                                last_tracknum = window->curr_track;
+                                last_subtracknum = window->curr_track_sub;
+                                last_curr_othertrack_sub = window->curr_othertrack_sub;
 			}
 		}else{
 			while(window->curr_track!=tracknum || window->curr_track_sub!=subtrack){
 				tempret=CursorLeft(window,wblock);
 				ret=R_MAX(tempret,ret);
+                                if (window->curr_track==last_tracknum && window->curr_track_sub==last_subtracknum && window->curr_othertrack_sub==last_curr_othertrack_sub)
+                                  break; // prevent infinite loop in case of bug
+                                last_tracknum = window->curr_track;
+                                last_subtracknum = window->curr_track_sub;
+                                last_curr_othertrack_sub = window->curr_othertrack_sub;
 			}
 		}
 	}
