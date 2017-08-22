@@ -42,6 +42,15 @@ void R_SetCursorPos(struct Tracker_Windows *window){
 #endif
 }
 
+static bool nextTrackHasSwingtext(struct WTracks *wtrack){
+  R_ASSERT_RETURN_IF_FALSE2(wtrack!=NULL, false);
+
+  struct WTracks *next = NextWTrack(wtrack);
+  if (next==NULL)
+    return false;
+
+  return next->swingtext_on;
+}
 
 int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 	struct WTracks *wtrack=wblock->wtrack;
@@ -70,7 +79,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 				return 0;
 			}else{
 
-                          if (wtrack->swingtext_on)
+                          if (nextTrackHasSwingtext(wtrack))
                             window->curr_track_sub = 0;
                           else
                             window->curr_track_sub = -1;
