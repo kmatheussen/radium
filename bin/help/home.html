@@ -68,49 +68,138 @@ tr:nth-child(even) {
           <div id="playlist" style="display: none">
             The <b>playlist</b> is a textual representation of the current track in the <a onclick="showHide('sequencer')" href="#!">sequencer</a>. The playlist does not display more information than the sequencer, but it can be more convenient to use, especially if there is only one track in the sequencer.
           </div>
-        <LI> <A href="mixer.html">Mixer</A>
+        <LI> <a onclick="showHide('mixer')" href="#!">Mixer</A> <!-- <A href="mixer.html">Mixer</A> -->
+
+          <div id="mixer" style="display: none">
+
+            <h2> Mixer widget header</h2>
+
+            <UL>
+              <LI> Header:
+                <UL>
+                  <LI> A/B settings buttons
+                  <LI> "I" button: Whether to show the instrument widget inside the mixer widget.
+                  <LI> "W" button: Whether to show the mixer widget in a separate window
+                  <LI> "M" button: Whether to show the modular mixer or mixer strips.
+                </UL>
+            </UL>
+
+            <h2> Modular Mixer</h2>
+
+
+<h3>General</h3>
+<UL>
+<LI>Move objects with right mouse button.
+  <LI>Double-click the name of an object to open GUI.
+  <LI>Delete objects or connections by pressing SHIFT and click left (or right).
+  <LI>Select more than one object by holding CTRL when clicking. (Use Cmd key instead of CTRL if using Mac)
+  <LI>Move and connect object in one operation: Place one object on 
+    top of another object.
+  <LI>Zoom in and out by pressing CTRL and using the scroll wheel.    
+</UL>
+
+<h3>Mixer objects</h3>
+<UL>
+  <LI> "M": Mute
+  <LI> "S": Solo
+  <LI> "B": Bypass
+</UL>
+
+
+<h2>Mixer Strips</h2>
+
+<h3>Order</h3>
+The order of the strips is not random or chronological. The sorting logic has four stages:
+<OL>
+  <LI> Sort by whether the strip is a bus or not. Non-buses are displayed first.
+  <LI> Sort by vertical position in the modular mixer (top -> bottom).
+  <LI> Sort by horizontal position in the modular mixer (left -> right).
+  <LI> Slightly rearrange the strips order so that the audio flow always goes from left to right.
+</OL>  
+
+<p>
+
+<h3>How to...</h3>
+Q: Set accurate volum by writing a number?<br>
+A: Click the number box right above the volume slider
+<p>
+Q: Reset highest peak value in the box above the audio meter?<br>
+A: Just click the box.
+<p>
+Q: Add a new mixer strip?<br>
+A: You can not do that directly in a mixer strips window. You either have to create a new instrument in the modular mixer, or add a new instrument to a track in the editor.
+<p>
+Q: Switch between a narrow and a wide strip?<br>
+A: Left-click the name of the current mixer strip. (if the mixer strip isn't current, click first to make it current.)
+<p>
+Q: Delete a mixer strip?<br>
+A: Right-click the name of the mixer strip, and select "Delete". Or shift+right click the name.
+</div>
+
         <LI> <a onclick="showHide('mixerstripforcurrentinstrument')" href="#!">Mixer strip for current instrument</A>
           <div id="mixerstripforcurrentinstrument" style="display: none">
-            Shows a <a href="mixer.html">mixer strip</a> for the current instrument. The current instrument is shown in the <a onclick="showHide('instrument')" href="#!">instrument widget</a>.
-            Input MIDI signals are also sent to this instrument.
+            <UL>
+              <LI>Shows a <a href="mixer.html">mixer strip</a> for the current instrument.
+              <LI>The current instrument is also shown in the <a onclick="showHide('instrument')" href="#!">instrument widget</a>.
+              <LI>Input MIDI signals are sent to the current instrument.
+            </UL>
           </div>
-        <LI> <A onclick="showHide('lowertabs')" href="#!">Main window lower tabs</a>
+        <LI> Main window lower tabs <!-- <A onclick="showHide('lowertabs')" href="#!">Main window lower tabs</a> -->
+<!--
           <div id="lowertabs" style="display: none">
             (under construction)
           </div>
+-->
           <UL>
             <LI> <a onclick="showHide('sequencer')" href="#!">Sequencer</a>
               <div id="sequencer" style="display: none">
-                The sequencer lets you position blocks in time. Initially there is only one sequencer track, but more tracks can be added by selecting "Insert sequencer track" or "Append sequencer track". You can also add effect automations, tempo automations, and loop start and end positions.
-                <p>
-To quickly start playing from a position, scroll up with the <b>mouse wheel</b>, and stop by scrolling down.
+                <UL>
+                  <LI> The sequencer lets you position blocks in time. Initially there is only one sequencer track,
+                    but more tracks can be added by selecting "Insert sequencer track" or "Append sequencer track".
+                  <LI> Use the popup menu to add effect automations, tempo automations, loop start and end positions, and other operations.
+                  <LI> To quickly start playing from a position, scroll the mouse wheel <b>up</b>, and stop by scrolling <b>down</b>.
+                </UL>
               </div>
             <LI> <a onclick="showHide('instrument')" href="#!">Instrument widget</a>
               <div id="instrument" style="display: none">
-                (under construction)
+                <UL>
+                  <LI>The instrument widget contains several elements to control the sound. See tool tips for more information.
+                  <LI>The term "Instrument" is used for all types of sound objects, for instance plugins, MIDI event manipulators, and sound buses.
+                  <LI>The instrument widget is either positioned in:
+                    <UL>
+                      <LI>The lower tabs in the main window
+                      <LI>The lower area of the mixer window
+                    </UL>
+                    Click the "I" button in the mixer to switch between these two positions.
+                  <LI> Some common instruments:
+                    <UL>
+                      <LI> <a onclick="showHide('sampler')" href="#!">Sampler</a>
+                        <div id="sampler" style="display: none">
+                          The sampler instrument 
+                          (under construction)
+                        </div>
+                      <LI> <a onclick="showHide('faustdev')" href="#!">FaustDev</a>
+                        <div id="faustdev" style="display: none">
+                          The Faust instrument lets you program <A href="http://faust.grame.fr">Faust</A> instruments in Radium. There is no "compile" button.
+                          The programs are compiled in realtime while you write the code.
+                        </div>
+                      <LI> <a onclick="showHide('puredata')" href="#!">Pure Data</a>
+                        <div id="puredata" style="display: none">
+                          The Pure Data instrument lets you program <A href="http://puredata.info">Pure Data</A> instruments in Radium. Currently, this instrument is only available in Linux.
+                        </div>
+                    </UL>
+                </UL>
               </div>
-              <UL>
-                <LI> <a onclick="showHide('sampler')" href="#!">Sampler</a>
-                  <div id="sampler" style="display: none">
-                    (under construction)
-                  </div>
-                <LI> <a onclick="showHide('faustdev')" href="#!">FaustDev</a>
-                  <div id="faustdev" style="display: none">
-                    (under construction)
-                  </div>
-                <LI> <a onclick="showHide('puredata')" href="#!">Pure Data</a>
-                  <div id="puredata" style="display: none">
-                    (under construction)
-                  </div>
-              </UL>
             <LI> <a onclick="showHide('edit')" href="#!">Edit</A>
               <div id="edit" style="display: none">
-                (under construction)
+                The edit tab has functions to edit notes in the editor.
               </div>
           </UL>
         <LI> <a onclick="showHide('bottombar')" href="#!">Bottom bar</A>
           <div id="bottombar" style="display: none">
-            (under construction)
+            The bottom bar contains elements that might be useful at all times.
+            It is visible both in the bottom of the main window, and in the bottom of the mixer when the mixer runs in its own window.
+            Use the tool tips to get more information about each element in the bottom bar.
           </div>
     </OL>
 
