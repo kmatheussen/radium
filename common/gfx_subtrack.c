@@ -61,12 +61,13 @@ int GetXSubTrack1(
   int sn = 0;
 
   if (wtrack->swingtext_on){
+    int skew = wtrack->swingtext_fits_reallines ? 0 : fontwidth;
     if (subtrack == sn)
-      return wtrack->swingtextarea.x + fontwidth;
+      return wtrack->swingtextarea.x + fontwidth*0 + skew;
     if (subtrack == sn+1)
-      return wtrack->swingtextarea.x + fontwidth*2;
+      return wtrack->swingtextarea.x + fontwidth*1 + skew;
     if (subtrack == sn+2)
-      return wtrack->swingtextarea.x + fontwidth*3;
+      return wtrack->swingtextarea.x + fontwidth*2 + skew;
 
     sn += 3;
   }
@@ -159,12 +160,13 @@ int GetXSubTrack2(
     int sn = 0;
 
     if (wtrack->swingtext_on){
+      int skew = wtrack->swingtext_fits_reallines ? 0 : fontwidth;
       if (subtrack == sn)
-        return wtrack->swingtextarea.x + fontwidth*2;
+        return wtrack->swingtextarea.x + (fontwidth*1) + skew;
       if (subtrack == sn+1)
-        return wtrack->swingtextarea.x + (fontwidth*3);
+        return wtrack->swingtextarea.x + (fontwidth*2) + skew;
       if (subtrack == sn+2)
-        return wtrack->swingtextarea.x + (fontwidth*4);
+        return wtrack->swingtextarea.x + (fontwidth*3) + skew;
       
       sn += 3;
     }
