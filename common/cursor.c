@@ -430,7 +430,7 @@ bool SetCursorPosConcrete(
                     else if (subtrack < window->curr_track_sub)
                       move_right = true;
                   } else {
-                    if (subtrack < window->curr_track_sub)
+                    if (subtrack > window->curr_track_sub)
                       move_right = true;
                   }
                 }
