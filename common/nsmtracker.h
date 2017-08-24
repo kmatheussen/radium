@@ -1694,7 +1694,7 @@ struct WTracks{
 
 struct CurrentPianoNote{
   int tracknum;
-  int notenum;
+  int64_t noteid;
   int pianonotenum;
 };
 

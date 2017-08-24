@@ -2260,6 +2260,10 @@ int getLogtypeHold(void){
   return LOGTYPE_HOLD;
 }
 
+int getLogtypeLinear(void){
+  return LOGTYPE_LINEAR;
+}
+
 Place getCursorPlace(int blocknum, int windownum){
   struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);if(wblock==NULL) return place(0,0,1);
 

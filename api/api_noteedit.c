@@ -264,8 +264,8 @@ int getNoteScrollLength(void){
 
 /****************** notes **********************/
 
-int getNoteVolume(int windownum,int blocknum,int tracknum,int notenum){
-	struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+int getNoteVolume(int windownum,int blocknum,int tracknum,dyn_t dynnote){
+	struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
 	if(note==NULL) return -1;
 
@@ -281,22 +281,22 @@ int getNumNotes(int tracknum,int blocknum,int windownum){
 	return ListFindNumElements3(&wtrack->track->notes->l);
 }
 
-bool noteContinuesNextBlock(int notenum, int tracknum, int blocknum, int windownum){
+bool noteContinuesNextBlock(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return false;
 
   return note_continues_next_block(wblock->block, note);
 }
 
-void setNoteContinueNextBlock(bool continuenextblock, int notenum, int tracknum, int blocknum, int windownum){
+void setNoteContinueNextBlock(bool continuenextblock, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return;
   
@@ -385,11 +385,11 @@ int addNote3(float notevalue,float velocity,
   return addNote(notevalue, velocity, start, end, tracknum, blocknum, windownum);
 }
 
-void cutNote(Place place, int notenum, int tracknum, int blocknum, int windownum){
+void cutNote(Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return;
 
@@ -406,8 +406,8 @@ void cutNote(Place place, int notenum, int tracknum, int blocknum, int windownum
   
 }
 
-void deleteNote(int notenum, int tracknum, int blocknum, int windownum){
-  deletePianonote(0, notenum, tracknum, blocknum, windownum);
+void deleteNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  deletePianonote(0, dynnote, tracknum, blocknum, windownum);
 }
 
 void deleteAllNotesInTrack(int tracknum, int blocknum, int windownum){
@@ -434,8 +434,8 @@ void undoNotes(int tracknum, int blocknum){
   ADD_UNDO(Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline));
 }
 
-Place getNoteStart(int notenum, int tracknum, int blocknum, int windownum){
-  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+Place getNoteStart(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
   if(note==NULL)
     return place(0,0,1);
@@ -443,8 +443,8 @@ Place getNoteStart(int notenum, int tracknum, int blocknum, int windownum){
   return note->l.p;
 }
 
-Place getNoteEnd(int notenum, int tracknum, int blocknum, int windownum){
-  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+Place getNoteEnd(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
   if(note==NULL)
     return place(1,0,1);
@@ -452,8 +452,8 @@ Place getNoteEnd(int notenum, int tracknum, int blocknum, int windownum){
   return note->end;
 }
 
-float getNoteValue(int notenum, int tracknum, int blocknum, int windownum){
-  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+float getNoteValue(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
   if(note==NULL)
     return 64.0f;
@@ -461,8 +461,8 @@ float getNoteValue(int notenum, int tracknum, int blocknum, int windownum){
   return note->note;
 }
 
-float getNoteEndPitch(int notenum, int tracknum, int blocknum, int windownum){
-  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,notenum);
+float getNoteEndPitch(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
   if(note==NULL)
     return 0;
@@ -470,11 +470,11 @@ float getNoteEndPitch(int notenum, int tracknum, int blocknum, int windownum){
   return note->pitch_end;
 }
 
-int getNoteSubtrack(int notenum, int tracknum, int blocknum, int windownum){
+int getNoteSubtrack(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return 0;
 
@@ -494,11 +494,11 @@ void setNoMouseNote(int blocknum, int windownum){
   }
 }
 
-void setMouseNote(int notenum, int tracknum, int blocknum, int windownum){
+void setMouseNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return;
   else if (wblock->mouse_note != note){

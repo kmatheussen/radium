@@ -1887,15 +1887,15 @@
                                                                 (<ra> :get-pianoroll-low-key *current-track-num*)
                                                                 (<ra> :get-pianoroll-high-key *current-track-num*)))
                                            (define Next-Place (get-next-place-from-y *left-button* (<ra> :get-mouse-pointer-y)))
-                                           (define Num (<ra> :add-pianonote Value Place Next-Place *current-track-num*))
-                                           (if (= -1 Num)
+                                           (define noteid (<ra> :add-pianonote Value Place Next-Place *current-track-num*))
+                                           (if (and (number? noteid) (= -1 noteid))
                                                #f
                                                (callback (make-pianonote-info :tracknum *current-track-num*
-                                                                              :notenum Num
+                                                                              :notenum noteid
                                                                               :pianonotenum 0
                                                                               :move-type *pianonote-move-end*
                                                                               :mouse-delta 0
-                                                                              :note-id (create-play-pianonote Num 0))
+                                                                              :note-id (create-play-pianonote noteid 0))
                                                          Value)))
                         :Publicize (lambda (pianonote-info)
                                      (set-current-pianonote (pianonote-info :pianonotenum)
@@ -1929,7 +1929,8 @@
                                              (pianonote-info :notenum)
                                              (pianonote-info :tracknum)))
 
-                                     (if (not (= -1 (pianonote-info :note-id)))
+                                     (if (not (and (number? (pianonote-info :note-id))
+                                                   (= -1 (pianonote-info :note-id))))
                                          (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
                                            (if (>= instrument-id 0)
                                                (<ra> :change-note-pitch
@@ -1947,7 +1948,8 @@
                                                           ))
 
                         :Release-node (lambda (pianonote-info)
-                                        (if (not (= -1 (pianonote-info :note-id)))
+                                        (if (not (and (number? (pianonote-info :note-id))
+                                                      (= -1 (pianonote-info :note-id))))
                                             (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
                                               (if (>= instrument-id 0)
                                                   (<ra> :stop-note (pianonote-info :note-id)
@@ -1959,6 +1961,7 @@
                                                      (<ra> :get-pianoroll-high-key *current-track-num*)
                                                      (<ra> :get-half-of-node-width))
                         )
+
 
 
 ;; highlight current pianonote

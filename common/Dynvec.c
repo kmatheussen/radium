@@ -24,6 +24,11 @@ const dyn_t g_dyn_true = {
   .bool_number = true
 };
   
+const dyn_t g_dyn_minus_one = {
+  .type = INT_TYPE,
+  .int_number = -1
+};
+
 
 const dyn_t g_uninitialized_dyn = {0};
 

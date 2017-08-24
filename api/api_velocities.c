@@ -20,17 +20,17 @@
 // velocities
 //////////////////////////////////////////////////
 
-static struct Node *get_velocitynode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+static struct Node *get_velocitynode(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return NULL;
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    handleError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    handleError("There is no velocity #%d in note %d in track #%d in block #%d",velocitynum, (int)note->id, tracknum, blocknum);
     return NULL;
   }
   
@@ -38,24 +38,24 @@ static struct Node *get_velocitynode(int velocitynum, int notenum, int tracknum,
 }
 
 
-float getVelocityX(int num, int notenum, int tracknum, int blocknum, int windownum){
-  struct Node *node = get_velocitynode(num, notenum, tracknum, blocknum, windownum);
+float getVelocityX(int num, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  struct Node *node = get_velocitynode(num, dynnote, tracknum, blocknum, windownum);
   return node==NULL ? 0 : node->x;
 }
 
-float getVelocityY(int num, int notenum, int tracknum, int blocknum, int windownum){
-  struct Node *node = get_velocitynode(num, notenum, tracknum, blocknum, windownum);
+float getVelocityY(int num, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  struct Node *node = get_velocitynode(num, dynnote, tracknum, blocknum, windownum);
   return node==NULL ? 0 : node->y-get_scroll_pos();
 }
 
 
-float getVelocityValue(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+float getVelocityValue(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note = NULL;
 
-  struct Velocities *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, velocitynum);
+  struct Velocities *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, velocitynum);
 
   if (velocity==NULL){
 
@@ -73,13 +73,13 @@ float getVelocityValue(int velocitynum, int notenum, int tracknum, int blocknum,
   return (double)velocity->velocity / (double)MAX_VELOCITY;
 }
 
-Place getVelocityPlace(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+Place getVelocityPlace(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note = NULL;
 
-  struct Velocities *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, velocitynum);
+  struct Velocities *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, velocitynum);
 
   if (velocity==NULL){
 
@@ -97,13 +97,13 @@ Place getVelocityPlace(int velocitynum, int notenum, int tracknum, int blocknum,
   return velocity->l.p;
 }
 
-int getVelocityLogtype(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+int getVelocityLogtype(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note = NULL;
 
-  struct Velocities *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, velocitynum);
+  struct Velocities *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, velocitynum);
 
   if (velocity==NULL){
 
@@ -120,34 +120,34 @@ int getVelocityLogtype(int velocitynum, int notenum, int tracknum, int blocknum,
   return velocity->logtype;
 }
 
-int getNumVelocities(int notenum, int tracknum, int blocknum, int windownum){
+int getNumVelocities(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return 0;
 
   return 2+ListFindNumElements3(&note->velocities->l);
 }
 
-int addVelocity(float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
+int addVelocity(float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum){
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return -1;
 
   if (PlaceLessOrEqual(&place, &note->l.p)) {
-    //if (notenum>0)
-    //  handleError("addVelocity: placement before note start for note #%d", notenum);
+    //if (dynnote>0)
+    //  handleError("addVelocity: placement before note start for note #%d", dynnote);
     return -1;
   }
 
   if (PlaceGreaterOrEqual(&place, &note->end)) {
-    //handleError("addVelocity: placement after note end for note #%d", notenum);
+    //handleError("addVelocity: placement after note end for note #%d", dynnote);
     return -1;
   }
 
@@ -166,28 +166,28 @@ int addVelocity(float value, Place place, int notenum, int tracknum, int blocknu
   return ret+1;
 }
 
-int addVelocityF(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int addVelocityF(float value, float floatplace, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
-  return addVelocity(value, place, notenum, tracknum, blocknum, windownum);
+  return addVelocity(value, place, dynnote, tracknum, blocknum, windownum);
 }
 
-int setVelocity(float value, Place place, int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+dyn_t setVelocity(float value, Place place, int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
-    return notenum;
+    return dynnote;
 
   struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
   
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    handleError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
-    return notenum;
+    handleError("There is no velocity #%d in note %d in track #%d in block# %d",velocitynum, (int)note->id, tracknum, blocknum);
+    return dynnote;
   }
 
   window->must_redraw_editor = true;
@@ -228,10 +228,10 @@ int setVelocity(float value, Place place, int velocitynum, int notenum, int trac
     velocity->velocity=R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
   }
 
-  return notenum;
+  return dynnote;
 }
 
-int setVelocityF(float value, float floatplace, int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+dyn_t setVelocityF(float value, float floatplace, int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   Place place;
   
   if (floatplace < 0) {
@@ -240,14 +240,14 @@ int setVelocityF(float value, float floatplace, int velocitynum, int notenum, in
     place.dividor=1;
   }else
     Float2Placement(floatplace, &place);
-  return setVelocity(value, place, velocitynum, notenum, tracknum, blocknum, windownum);
+  return setVelocity(value, place, velocitynum, dynnote, tracknum, blocknum, windownum);
 }
 
-void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+void deleteVelocity(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
  struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return;
 
@@ -256,7 +256,7 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    handleError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    handleError("There is no velocity #%d in note %d in track #%d in block #%d",velocitynum, (int)note->id, tracknum, blocknum);
     return;
   }
 
@@ -292,11 +292,11 @@ void deleteVelocity(int velocitynum, int notenum, int tracknum, int blocknum, in
   window->must_redraw_editor = true;
 }
 
-void setVelocityLogtype(int logtype, int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+void setVelocityLogtype(int logtype, int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return;
 
@@ -305,7 +305,7 @@ void setVelocityLogtype(int logtype, int velocitynum, int notenum, int tracknum,
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    handleError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    handleError("There is no velocity #%d in note %d in track #%d in block #%d",velocitynum, (int)note->id, tracknum, blocknum);
     return;
   }
     
@@ -330,17 +330,17 @@ void setVelocityLogtype(int logtype, int velocitynum, int notenum, int tracknum,
 }
   
 
-void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+void setCurrentVelocityNode(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
  struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return;
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    handleError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    handleError("There is no velocity #%d in note %d in track #%d in block #%d",velocitynum, (int)note->id, tracknum, blocknum);
     return;
   }
 
@@ -350,17 +350,17 @@ void setCurrentVelocityNode(int velocitynum, int notenum, int tracknum, int bloc
   setCurrentNode(&current->l);
 }
 
-void setIndicatorVelocityNode(int velocitynum, int notenum, int tracknum, int blocknum, int windownum){
+void setIndicatorVelocityNode(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return;
 
   const vector_t *nodes = GetVelocityNodes(window, wblock, wtrack, note);
   if (velocitynum < 0 || velocitynum>=nodes->num_elements) {
-    handleError("There is no velocity %d in note %d in track %d in block %d",velocitynum, notenum, tracknum, blocknum);
+    handleError("There is no velocity #%d in note %d in track #%d in block #%d",velocitynum, (int)note->id, tracknum, blocknum);
     return;
   }
 

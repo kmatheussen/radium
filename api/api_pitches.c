@@ -20,13 +20,13 @@
 // pitches
 //////////////////////////////////////////////////
 
-float getPitchValue(int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+float getPitchValue(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note = NULL;
 
-  struct Pitches *pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, pitchnum);
+  struct Pitches *pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, pitchnum);
 
   if (pitch==NULL){
     if (note==NULL)
@@ -47,13 +47,13 @@ float getPitchValue(int pitchnum, int notenum, int tracknum, int blocknum, int w
   return pitch->note;
 }
 
-Place getPitchPlace(int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+Place getPitchPlace(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note = NULL;
 
-  struct Pitches *pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, pitchnum);
+  struct Pitches *pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, pitchnum);
 
   if (pitch==NULL){
 
@@ -71,13 +71,13 @@ Place getPitchPlace(int pitchnum, int notenum, int tracknum, int blocknum, int w
   return pitch->l.p;
 }
 
-int getPitchLogtype(int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+int getPitchLogtype(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note = NULL;
 
-  struct Pitches *pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, pitchnum);
+  struct Pitches *pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, pitchnum);
 
   if (pitch==NULL){
 
@@ -94,13 +94,13 @@ int getPitchLogtype(int pitchnum, int notenum, int tracknum, int blocknum, int w
   return pitch->logtype;
 }
 
-float getPitchChance(int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+float getPitchChance(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note = NULL;
 
-  struct Pitches *pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, pitchnum);
+  struct Pitches *pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, pitchnum);
 
   if (pitch==NULL){
 
@@ -117,34 +117,34 @@ float getPitchChance(int pitchnum, int notenum, int tracknum, int blocknum, int 
   return (double)pitch->chance / 256.0;
 }
 
-int getNumPitches(int notenum, int tracknum, int blocknum, int windownum){
+int getNumPitches(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return 0;
 
   return 2+ListFindNumElements3(&note->pitches->l);
 }
 
-int addPitch(float value, Place place, int notenum, int tracknum, int blocknum, int windownum){
+int addPitch(float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum){
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return -1;
 
   if (PlaceLessOrEqual(&place, &note->l.p)) {
-    //if (notenum>0)
-    //  handleError("addPitch: placement before note start for note #%d", notenum);
+    //if (dynnote>0)
+    //  handleError("addPitch: placement before note start for note #%d", dynnote);
     return -1;
   }
 
   if (PlaceGreaterOrEqual(&place, &note->end)) {
-    //handleError("addPitch: placement after note end for note #%d", notenum);
+    //handleError("addPitch: placement after note end for note #%d", dynnote);
     return -1;
   }
 
@@ -161,28 +161,28 @@ int addPitch(float value, Place place, int notenum, int tracknum, int blocknum, 
   return ListPosition3(&note->pitches->l, &pitch->l) + 1;
 }
 
-int addPitchF(float value, float floatplace, int notenum, int tracknum, int blocknum, int windownum){
+int addPitchF(float value, float floatplace, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   Place place;
   Float2Placement(floatplace, &place);
-  return addPitch(value, place, notenum, tracknum, blocknum, windownum);
+  return addPitch(value, place, dynnote, tracknum, blocknum, windownum);
 }
 
 
-int setPitch(float value, Place place, int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+dyn_t setPitch(float value, Place place, int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
-    return notenum;
+    return dynnote;
 
   struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
 
   if (value < 0.001){
     handleError("setPitch: Pitch less than 0.001: %f\n", value);
-    return -1;
+    return dynnote;
   }
 
   if (value > 127)
@@ -190,8 +190,8 @@ int setPitch(float value, Place place, int pitchnum, int notenum, int tracknum, 
   
   const vector_t *nodes = GetPitchNodes(window, wblock, wtrack, note);
   if (pitchnum < 0 || pitchnum>=nodes->num_elements) {
-    handleError("There is no pitch %d in note %d in track %d in block %d",pitchnum, notenum, tracknum, blocknum);
-    return notenum;
+    handleError("There is no pitch #%d in note %d in track #%d in block #%d",pitchnum, (int)note->id, tracknum, blocknum);
+    return dynnote;
   }
 
   window->must_redraw_editor = true;
@@ -231,10 +231,10 @@ int setPitch(float value, Place place, int pitchnum, int notenum, int tracknum, 
     pitch->note=value;
   }
 
-  return notenum;
+  return dynnote;
 }
 
-int setPitchF(float value, float floatplace, int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
+dyn_t setPitchF(float value, float floatplace, int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   Place place;
   
   if (floatplace < 0) {
@@ -249,16 +249,16 @@ int setPitchF(float value, float floatplace, int pitchnum, int notenum, int trac
     
   }
   
-  return setPitch(value, place, pitchnum, notenum, tracknum, blocknum, windownum);
+  return setPitch(value, place, pitchnum, dynnote, tracknum, blocknum, windownum);
 }
 
 
-void deletePitch(int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
-  deletePianonote(pitchnum, notenum, tracknum, blocknum, windownum); // Think this is correct.
+void deletePitch(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  deletePianonote(pitchnum, dynnote, tracknum, blocknum, windownum); // Think this is correct.
 }
 
-void setPitchLogtype(int logtype, int pitchnum, int notenum, int tracknum, int blocknum, int windownum){
-  setPianonoteLogtype(logtype, pitchnum, notenum, tracknum, blocknum, windownum); // Think this is correct
+void setPitchLogtype(int logtype, int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  setPianonoteLogtype(logtype, pitchnum, dynnote, tracknum, blocknum, windownum); // Think this is correct
 }
 
 

@@ -20,10 +20,10 @@ enum DynType{
   HASH_TYPE,
   ARRAY_TYPE,
   RATIO_TYPE,
-  BOOL_TYPE // must be placed last
+  BOOL_TYPE // must be placed last (see below)
 };
 
-#define NUM_DYNTYPE_TYPES (1+BOOL_TYPE)
+#define NUM_DYNTYPE_TYPES (1+BOOL_TYPE) // If placed inside enum, compiler will complain about missing handler in switch{}.
 
 typedef struct{
   enum DynType type;
@@ -49,5 +49,7 @@ extern const dyn_t g_uninitialized_dyn;
 
 extern const dyn_t g_dyn_false;
 extern const dyn_t g_dyn_true;
+
+extern const dyn_t g_dyn_minus_one;
 
 #endif

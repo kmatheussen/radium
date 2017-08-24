@@ -233,41 +233,80 @@ struct WTracks *getWTrackFromNumA(
         return ret;
 }
 
+static struct Notes *getCurrNote(int windownum, struct Tracker_Windows **window, int blocknum, int tracknum){
+  struct Notes *note = GetCurrNote(*window);
+  if (note==NULL) {
+    handleError("Current note in track #%d in block #%d in window #%d does not exist",tracknum,blocknum,windownum);
+    return NULL;
+  }else
+    return note;
+}
                              
-struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum){
+struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote){
   (*wtrack) = getWTrackFromNumA(windownum, window, blocknum, wblock, tracknum);
   if ((*wtrack)==NULL)
     return NULL;
 
-  if(notenum==-1){
+  if(dynnote.type==UNINITIALIZED_TYPE){
+
+    return getCurrNote(windownum, window, blocknum, tracknum);
     
-    struct Notes *note = GetCurrNote(*window);
-    if (note==NULL) {
-      handleError("Note #%d in track #%d in block #%d in window #%d does not exist",notenum,tracknum,blocknum,windownum);
-      return NULL;
-    }else
-      return note;
-    
-  }else{
+  } else {
     
     struct Tracks *track = (*wtrack)->track;
-    struct Notes *ret = ListFindElement3_num_r0(&track->notes->l,(NInt)notenum);
-    if (ret==NULL)
-      handleError("Note #%d in track #%d in block #%d does not exist",notenum,tracknum,blocknum);
-    
-    return ret;
+
+    if (dynnote.type==INT_TYPE){
+      int notenum = dynnote.int_number;
+      if (notenum==-1)
+        return getCurrNote(windownum, window, blocknum, tracknum);
+
+      struct Notes *ret = ListFindElement3_num_r0(&track->notes->l,notenum);
+      if (ret==NULL)
+        handleError("Note #%d in track #%d in block #%d does not exist",notenum,tracknum,blocknum);
+      return ret;
+
+    } else if (dynnote.type==STRING_TYPE){
+
+      const char *chars = STRING_get_chars(dynnote.string);
+      if (chars[0]==0)
+        return getCurrNote(windownum, window, blocknum, tracknum);
+
+      int64_t note_id = atoll(chars);
+      if (note_id==-1)
+        return getCurrNote(windownum, window, blocknum, tracknum);
+      if (note_id < 0){
+        handleError("Illegal note id: \"%s\"", chars);
+        return NULL;
+      }
+
+      struct Notes *note = track->notes;
+      while(note != NULL){
+        if (note->id==note_id)
+          return note;
+        note = NextNote(note);
+      }
+
+      handleError("Note with id %s in track #%d in block #%d note found",chars,tracknum,blocknum);
+      return NULL;
+      
+
+    } else {
+      handleError("Expected number or string for note, got %s", DYN_type_name(dynnote.type));
+      return NULL;
+    }
+
   }
 }
 
-struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,int notenum){
+struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  return getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum);
+  return getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
 }
 
-struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum, struct Notes **note, int pitchnum){
-  (*note) = getNoteFromNumA(windownum, window, blocknum, wblock, tracknum, wtrack, notenum);
+struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int pitchnum){
+  (*note) = getNoteFromNumA(windownum, window, blocknum, wblock, tracknum, wtrack, dynnote);
   if ((*note)==NULL)
     return NULL;
 
@@ -280,24 +319,24 @@ struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, 
       
   struct Pitches *pitch = ListFindElement3_num_r0(&(*note)->pitches->l, pitchnum-1);
   if (pitch==NULL){
-    handleError("There is no pitch %d in note %d in track %d in block %d",pitchnum,notenum,tracknum,blocknum);
+    handleError("There is no pitch #%d in note %d in track #%d in block #%d",pitchnum,(int)(*note)->id,tracknum,blocknum);
     return NULL;
   }
 
   return pitch;
 }
 
-struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,int notenum,int pitchnum){
+struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int pitchnum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note;
-  return getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, pitchnum);
+  return getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, pitchnum);
 }
 
 
-struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, int notenum, struct Notes **note, int velocitynum){
-  (*note) = getNoteFromNumA(windownum, window, blocknum, wblock, tracknum, wtrack, notenum);
+struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int velocitynum){
+  (*note) = getNoteFromNumA(windownum, window, blocknum, wblock, tracknum, wtrack, dynnote);
   if ((*note)==NULL)
     return NULL;
 
@@ -310,19 +349,19 @@ struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **wi
       
   struct Velocities *velocity = ListFindElement3_num_r0(&(*note)->velocities->l, velocitynum-1);
   if (velocity==NULL){
-    handleError("There is no velocity %d in note %d in track %d in block %d",velocitynum,notenum,tracknum,blocknum);
+    handleError("There is no velocity #%d in note %d in track #%d in block #%d",velocitynum,(int)(*note)->id,tracknum,blocknum);
     return NULL;
   }
 
   return velocity;
 }
 
-struct Velocities *getVelocityFromNum(int windownum,int blocknum,int tracknum,int notenum,int velocitynum){
+struct Velocities *getVelocityFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int velocitynum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note;
-  return getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, notenum, &note, velocitynum);
+  return getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, velocitynum);
 }
 
 
@@ -510,6 +549,11 @@ static const Place *getNextLegalNotePlace(const struct Notes *note){
 }
 
 
+dyn_t GetNoteId(struct Notes *note){
+  return DYN_create_string_from_chars(talloc_format("%" PRId64 "",note->id));
+}
+
+
 void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, const Place *place, bool last_legal_may_be_next_note){
   Place firstLegal, lastLegal;
 
@@ -550,7 +594,7 @@ void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note,
   R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
 }
 
-int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends){
+dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends){
   Place old_place = note->l.p;
 
   if (!PlaceEqual(&old_place, place)) {
@@ -580,7 +624,7 @@ int MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Pla
     }
 
   }
-  
-  return ListPosition3(&track->notes->l, &note->l);
+
+  return GetNoteId(note);
 }
 

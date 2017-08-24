@@ -1667,7 +1667,6 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
   GE_Context *current_note_color = NULL;
   GE_Context *note_color = NULL;
   
-  int notenum = 0;
   const struct Notes *note=wtrack->track->notes;
   while(note != NULL){
     const struct NodeLine *nodelines = GetPianorollNodeLines(window,
@@ -1698,7 +1697,7 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
       border_color = border_color!=NULL ? GE_y(border_color, y1) : GE_color_alpha_z(PIANOROLL_NOTE_BORDER_COLOR_NUM, 0.7, Z_ABOVE(Z_ZERO), y1);
  
 
-      bool is_current = wtrack->l.num==current_piano_note.tracknum && notenum==current_piano_note.notenum && pianonotenum==current_piano_note.pianonotenum;
+      bool is_current = wtrack->l.num==current_piano_note.tracknum && note->id==current_piano_note.noteid && pianonotenum==current_piano_note.pianonotenum;
 
       //printf("pianonotenum: %d, curr.pianonotenum: %d, is_current: %s\n",pianonotenum,current_piano_note.pianonotenum,is_current?"true":"false");
 
@@ -1872,7 +1871,6 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
                          wtrack->pianoroll_area.x2+1);
     }
 
-    notenum++;
     note = NextNote(note);
   }
 
