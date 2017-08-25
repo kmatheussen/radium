@@ -261,9 +261,9 @@ extern void PlaceAddfloat(Place *p,float f);
 extern void PlaceSubfloat(Place *p,float f);
 
 //extern void PlaceSetLastPos(struct Blocks *wblock,Place *p);
-extern bool PlaceLegal(const struct Blocks *block,  const Place *p);
-extern void PlaceSetFirstPos(Place *p);
-extern Place *PlaceGetFirstPos(void);
+extern LANGSPEC bool PlaceLegal(const struct Blocks *block,  const Place *p);
+extern LANGSPEC void PlaceSetFirstPos(Place *p);
+extern LANGSPEC Place *PlaceGetFirstPos(void);
 
 extern LANGSPEC void PlaceSetReallinePlace(
                                            const struct WBlocks *wblock,
