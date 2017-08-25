@@ -1560,8 +1560,8 @@ api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.c $(API)radium_
 api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.c $(API)radium_proc.h
 	$(CC)  $(API)api_navigate.c $(OPT)
 
-api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.c $(API)radium_proc.h
-	$(CC)  $(API)api_noteedit.c $(OPT)
+api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp $(API)radium_proc.h
+	$(CCC)  $(API)api_noteedit.cpp $(QTOPT)
 
 api_velocities.o:  $(BUILD_DEPENDENCIES)  $(API)api_velocities.c $(API)radium_proc.h
 	$(CC)  $(API)api_velocities.c $(OPT)
