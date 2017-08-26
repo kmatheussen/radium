@@ -55,6 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "GfxElements.h"
 
 #include "../api/api_proc.h"
+#include "../api/api_noteedit_proc.h"
 
 #include "Render_proc.h"
 
@@ -1569,6 +1570,12 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
   }
 }
 
+static float get_pianoroll_note_width(const struct WTracks *wtrack){
+  float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
+  float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
+  float note_width = gfx_width / notespan;
+  return note_width;
+}
 
 static void create_pianoroll_grid(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
   int y1=get_realline_y1(window, 0);
@@ -1580,9 +1587,7 @@ static void create_pianoroll_grid(const struct Tracker_Windows *window, const st
   GE_Context *white_key_color = GE_color_alpha(WHITE_COLOR_NUM, 0.1, NOMASK_Y);
   GE_Context *black_key_color = GE_color_alpha(BLACK_COLOR_NUM, 0.1, NOMASK_Y);
 
-  float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
-  float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
-  float note_width = gfx_width / notespan;
+  float note_width = get_pianoroll_note_width(wtrack);
 
   float x = wtrack->pianoroll_area.x;
 
@@ -1639,6 +1644,40 @@ static void draw_pianonote_text(const struct Tracker_Windows *window, float note
     paint_halfsize_note(c,0,text,x,y);
 }
 
+
+struct PianorollRubber g_current_pianobar_rubber = {-1,-1,{0,0,1},{0,0,1},-2,-2};
+
+static void create_pianoroll_rubber(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, float pitch1, float pitch2, const Place &place1, const Place &place2){
+  float reallineF1 = FindReallineForF(wblock, 0, &place1);
+  float reallineF2 = FindReallineForF(wblock, 0, &place2);
+
+  float y1 = get_realline_y(window, reallineF1);
+  float y2 = get_realline_y(window, reallineF2);
+
+  //float note_width = get_pianoroll_note_width(wtrack);
+
+  float px1 = wtrack->pianoroll_area.x;
+  float px2 = wtrack->pianoroll_area.x2;
+
+  float x1 = scale(pitch1, wtrack->pianoroll_lowkey, wtrack->pianoroll_highkey, px1, px2);
+  float x2 = scale(pitch2, wtrack->pianoroll_lowkey, wtrack->pianoroll_highkey, px1, px2);
+
+  const float width = 1.7;
+  
+  //printf("Painting rubber %f %f %f %f\n", x1, y1, x2, y2);
+  GE_filledBox(GE_color_alpha(WHITE_COLOR_NUM, 0.5, y1), // grayish background
+               x1, y1,
+               x2, y2
+               );
+  
+  GE_box(GE_rgba_color(1, 30, 60, 128, y1), // bluish border
+         x1, y1,
+         x2, y2,
+         width
+         );
+}
+
+
 static void create_pianoroll(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
   //int x1 = 100;
   //int x2 = 200;
@@ -1652,9 +1691,7 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
   if (wtrack->pianoroll_area.x < wblock->t.x1)
     return;
   
-  float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
-  float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
-  float note_width = gfx_width / notespan;
+  float note_width = get_pianoroll_note_width(wtrack);
 
   create_pianoroll_grid(window, wblock, wtrack);
 
@@ -1720,6 +1757,11 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
         }
         c = note_color;
       }
+
+      bool is_selected = API_note_is_selected(wblock, note);
+
+      if (is_selected)
+        c = GE_mix_color(GE_get_rgb(c), GE_rgb(0,0,255), 0.5, y1);
 
       GE_line(c,
               x1, y1,
@@ -1875,6 +1917,10 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
   }
 
   GE_unset_x_scissor();
+
+  if (g_current_pianobar_rubber.blocknum==-1 || g_current_pianobar_rubber.blocknum==wblock->l.num)
+    if (g_current_pianobar_rubber.tracknum==-1 || g_current_pianobar_rubber.tracknum==wtrack->l.num)
+      create_pianoroll_rubber(window, wblock, wtrack, g_current_pianobar_rubber.pitch1, g_current_pianobar_rubber.pitch2, g_current_pianobar_rubber.place1, g_current_pianobar_rubber.place2);
 }
 
 

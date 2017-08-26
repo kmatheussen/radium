@@ -1533,7 +1533,6 @@ void deletePianonote(int pianonotenum, dyn_t dynnote, int tracknum, int blocknum
 }
 
 
-extern struct CurrentPianoNote current_piano_note;
   
 void setCurrentPianonote(int num, dyn_t dynnote, int tracknum){
   struct Notes *note=getNoteFromNum(-1, -1, tracknum, dynnote);
@@ -1579,6 +1578,20 @@ void addPianonotePitch(float value, Place place, dyn_t dynnote, int tracknum, in
   addPitch2(window, wblock, wtrack, note, &place, value);
 }
 
+void showPianorollEraser(float pitch1, float pitch2, Place place1, Place place2, int tracknum, int blocknum, int windownum){
+  g_current_pianobar_rubber.pitch1 = pitch1;
+  g_current_pianobar_rubber.pitch2 = pitch2;
+  g_current_pianobar_rubber.place1 = place1;
+  g_current_pianobar_rubber.place2 = place2;
+  g_current_pianobar_rubber.tracknum = tracknum;
+  g_current_pianobar_rubber.blocknum = blocknum;
+  root->song->tracker_windows->must_redraw_editor = true;
+}
+
+void hidePianorollEraser(int windownum){
+  g_current_pianobar_rubber.blocknum = -2;
+  root->song->tracker_windows->must_redraw_editor = true;
+}
 
 // pitchnums
 //////////////////////////////////////////////////
@@ -1821,7 +1834,7 @@ static void setPitchnumLogtype2(int logtype, int pitchnum, struct Tracks *track)
   getPitch(pitchnum, &pitch, &note, &is_end_pitch, track);
 
   if (is_end_pitch) {
-    RError("Can not set hold type of end pitch. pitchnum: %d, tracknum: %d",pitchnum,track->l.num);
+    RError("Can not set logtype of end pitch. pitchnum: %d, tracknum: %d",pitchnum,track->l.num);
     return;
   }
       
@@ -2160,6 +2173,9 @@ bool portamentoEnabled(dyn_t dynnote, int tracknum, int blocknum, int windownum)
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return false;
+
+  //if (note->pitch_first_logtype==LOGTYPE_HOLD && note->pitches==NULL && note->pitch_end==note->note)
+  //  return false;
 
   return note->pitch_end > 0;
 }

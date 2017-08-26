@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_support_proc.h"
 #include "radium_proc.h"
 
+#include "api_noteedit_proc.h"
+
 
 
 extern char *NotesTexts2[];

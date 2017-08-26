@@ -84,10 +84,15 @@ int getPitchLogtype(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int
     if (note==NULL)
       return 0;
 
-    else if (pitchnum==0)
-      return note->pitch_first_logtype;
+    else if (pitchnum==0) {
+      /*
+      if (note->pitch_end==0.0)
+        return LOGTYPE_HOLD;
+      else
+      */
+        return note->pitch_first_logtype;
 
-    else
+    } else
       return 0; // Last logtype. Always 0. Irrelevant.
   }
 

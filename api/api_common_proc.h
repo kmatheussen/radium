@@ -87,6 +87,7 @@ extern struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum);
 extern struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getGfxGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
 
+extern dyn_t GetNoteIdFromNoteId(int64_t note_id);
 extern dyn_t GetNoteId(struct Notes *note);
 
 extern void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, const Place *place, bool last_legal_may_be_next_note);

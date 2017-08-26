@@ -29,6 +29,7 @@
   (+ (note :place)
      (get-note-duration note)))
 
+
 (define-struct editor-area
   :start-place
   :end-place
@@ -49,46 +50,46 @@
           
 (delafina (get-block-editor-area :blocknum -1)
   (make-editor-area :start-place 0
-                  :end-place (<ra> :get-num-lines blocknum)
-                  :start-track 0
-                  :end-track (<ra> :get-num-tracks blocknum)
-                  :blocknum blocknum))
+                    :end-place (<ra> :get-num-lines blocknum)
+                    :start-track 0
+                    :end-track (<ra> :get-num-tracks blocknum)
+                    :blocknum blocknum))
 
 (delafina (get-track-editor-area :tracknum -1
-                               :blocknum -1)
+                                 :blocknum -1)
   (define start-track (if (= -1 tracknum)
                           (<ra> :current-track blocknum)
                           tracknum))
   (assert (< start-track (<ra> :get-num-tracks)))
   (assert (>= start-track 0))
-          
+  
   (make-editor-area :start-place 0
-                  :end-place (<ra> :get-num-lines blocknum)
-                  :start-track start-track
-                  :end-track (1+ start-track)
-                  :blocknum blocknum))
+                    :end-place (<ra> :get-num-lines blocknum)
+                    :start-track start-track
+                    :end-track (1+ start-track)
+                    :blocknum blocknum))
 
 (delafina (get-ranged-editor-area :blocknum -1)
   (assert (<ra> :has-range blocknum))
   (make-editor-area :start-place (<ra> :get-range-start-place blocknum)
-                  :end-place (<ra> :get-range-end-place blocknum)
-                  :start-track (<ra> :get-range-start-track blocknum)
-                  :end-track (<ra> :get-range-end-track blocknum)
-                  :blocknum blocknum))
+                    :end-place (<ra> :get-range-end-place blocknum)
+                    :start-track (<ra> :get-range-start-track blocknum)
+                    :end-track (<ra> :get-range-end-track blocknum)
+                    :blocknum blocknum))
 
 (define (undo-editor-area area)
   (undo-block
    (lambda ()
-     (let loop ((tracknum (area :start-track)))
-       (when (< tracknum (area :end-track))
-         (c-display "Creating undo for track " tracknum)
-         (<ra> :undo-notes tracknum (area :blocknum))
-         (loop (1+ tracknum)))))))
+     (for-each (lambda (tracknum)
+                 (c-display "Creating undo for track " tracknum)
+                 (<ra> :undo-notes tracknum (area :blocknum)))
+               (integer-range (area :start-track) (1- (area :end-track)))))))
              
+
 ;;;;;;;;; GET NOTES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (get-note-velocities blocknum tracknum notenum notestart)
-  (c-display "num velocities:" blocknum tracknum notenum (<ra> :get-num-velocities notenum tracknum blocknum))
+  ;;(c-display "num velocities:" blocknum tracknum notenum (<ra> :get-num-velocities notenum tracknum blocknum))
   (map (lambda (velocitynum)
          (make-velocity :place (- (<ra> :get-velocity-place velocitynum notenum tracknum blocknum) notestart)
                         :value (<ra> :get-velocity-value velocitynum notenum tracknum blocknum)
@@ -102,6 +103,13 @@
                      :logtype (<ra> :get-pitch-logtype pitchnum notenum tracknum blocknum)
                      :chance (<ra> :get-pitch-chance pitchnum notenum tracknum blocknum)))
        (iota (<ra> :get-num-pitches notenum tracknum blocknum))))
+
+#!
+(<ra> :get-pitch-logtype 0 0 0 0)
+(get-note-pitches 0 0 0 0)
+(<ra> :get-pianonote-logtype 0 0 0)
+(<ra> :get-num-pianonotes 0 0)
+!#
 
 (define (get-note blocknum tracknum notenum startplace)
   (let* ((note-start (<ra> :get-note-start notenum tracknum blocknum))
@@ -181,9 +189,200 @@
 ||#
 
 
-(define (cut-note note place)
-  (assert (> place (note :place)))
-  note)
+(define (cut-pitchvelocity-keep-end pv place portamento-enabled)
+  ;;(c-display "place:" place)
+  (let loop ((pv pv))
+    ;;(c-display "pv:" (pp pv))
+    (if (or (null? pv)
+            (null? (cdr pv)))
+        '()
+        (let* ((pv1 (car pv))
+               (pv2 (cadr pv))
+               (place1 (pv1 :place))
+               (place2 (pv2 :place)))
+          (cond ((= place place1)
+                 pv)
+                ((= place place2)
+                 (if (null? (cddr pv))
+                     '()
+                     (cdr pv)))
+                ((< place place2)
+                 (let ((logtype (pv1 :logtype))
+                       (value1 (pv1 :value))
+                       (value2 (pv2 :value)))
+                   (let* ((value (if (or (logtype-holding? logtype)
+                                         (not portamento-enabled))
+                                     value1
+                                     (scale place place1 place2 value1 value2)))
+                          (copied-pv (copy pv1)))
+                     (hash-table-set! copied-pv :value value)
+                     (hash-table-set! copied-pv :place place)
+                     (cons copied-pv (cdr pv)))))
+                (else
+                 (loop (cdr pv))))))))
+
+
+(***assert*** (cut-pitchvelocity-keep-end (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-hold))
+                                                (make-velocity :place 1 :value 0 :logtype (<ra> :get-logtype-hold)))
+                                          0 #t)
+              (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-hold))
+                    (make-velocity :place 1 :value 0 :logtype (<ra> :get-logtype-hold))))
+
+(***assert*** (cut-pitchvelocity-keep-end (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-hold))
+                                                (make-velocity :place 1 :value 1 :logtype (<ra> :get-logtype-hold)))
+                                          1 #t)
+              '())
+
+(***assert*** (cut-pitchvelocity-keep-end (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-hold))
+                                                (make-velocity :place 2 :value 2 :logtype (<ra> :get-logtype-hold)))
+                                          1 #t)
+              (list (make-velocity :place 1 :value 0 :logtype (<ra> :get-logtype-hold))
+                    (make-velocity :place 2 :value 2 :logtype (<ra> :get-logtype-hold))))
+
+(***assert*** (cut-pitchvelocity-keep-end (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-linear))
+                                                (make-velocity :place 2 :value 2 :logtype (<ra> :get-logtype-linear)))
+                                          1 #t)
+              (list (make-velocity :place 1 :value 1 :logtype (<ra> :get-logtype-linear))
+                    (make-velocity :place 2 :value 2 :logtype (<ra> :get-logtype-linear))))
+
+(***assert*** (cut-pitchvelocity-keep-end (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-linear))
+                                                (make-velocity :place 2 :value 2 :logtype (<ra> :get-logtype-linear))
+                                                (make-velocity :place 4 :value 9 :logtype (<ra> :get-logtype-linear)))
+                                          1 #t)
+              (list (make-velocity :place 1 :value 1 :logtype (<ra> :get-logtype-linear))
+                    (make-velocity :place 2 :value 2 :logtype (<ra> :get-logtype-linear))
+                    (make-velocity :place 4 :value 9 :logtype (<ra> :get-logtype-linear))))
+
+(***assert*** (cut-pitchvelocity-keep-end (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-linear))
+                                                (make-velocity :place 2 :value 2 :logtype (<ra> :get-logtype-linear))
+                                                (make-velocity :place 4 :value 9 :logtype (<ra> :get-logtype-linear)))
+                                          2.5 #t)
+              (list (make-velocity :place 2.5 :value (scale 2.5 2 4 2 9) :logtype (<ra> :get-logtype-linear))
+                    (make-velocity :place 4 :value 9 :logtype (<ra> :get-logtype-linear))))
+
+
+#!!
+(pretty-print (cut-pitchvelocity-keep-end (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-linear))
+                                                (make-velocity :place 2 :value 2 :logtype (<ra> :get-logtype-linear))
+                                                (make-velocity :place 4 :value 9 :logtype (<ra> :get-logtype-linear)))
+                                          2.5 #t))
+!!#
+
+
+;; Note: this function might return a note without pitches or velocities.
+(define (cut-note-keep-end note place)
+  ;;(c-display "Note place2:" (note :place) ". place:" place)
+  (if (>= (note :place) place)
+      (<copy-note> note
+                   :pitches '()
+                   :velocities '())
+      (begin
+        (define pitches (note :pitches))
+        (define velocities (note :velocities))
+        (define cut-place (- place (note :place)))
+        
+        (define portamento-enabled (or (> (length pitches) 2)
+                                       (> (pitches 1 :value) 0)))
+        
+        (define (skew-pvs pvs)
+          (map (lambda (cutted-pv)
+                 (let ((ret (copy cutted-pv)))
+                   (hash-table-set! ret :place (- (ret :place) cut-place))
+                   ret))
+               pvs))
+        
+        ;;(c-display "PLACE: " place ". Note-place:" (note :place) ". Cut-place:" cut-place ". Portamento-enabled:" portamento-enabled)
+        ;;(c-display "velocities:\n" (pp velocities))
+        ;;(c-display "\nvelocities cut:\n" (pp (cut-pitchvelocity-keep-end velocities cut-place #t)))
+        ;;(c-display "\nvelocities skew:\n" (pp (skew-pvs (cut-pitchvelocity-keep-end velocities cut-place #t))))
+        
+        (<copy-note> note
+                     :place place
+                     :pitches (skew-pvs (cut-pitchvelocity-keep-end pitches cut-place portamento-enabled))
+                     :velocities (skew-pvs (cut-pitchvelocity-keep-end velocities cut-place #t))
+                     :continues-next-block #f))))
+
+
+
+(define (cut-pitchvelocity-keep-start pv place portamento-enabled)
+  (let loop ((pv pv))
+    (if (or (null? pv)
+            (null? (cdr pv)))
+        pv
+        (let* ((pv1 (car pv))
+               (pv2 (cadr pv))
+               (place1 (pv1 :place))
+               (place2 (pv2 :place)))
+          (cond ((>= place1 place)
+                 '())
+                ((< place2 place)
+                 (cons pv1
+                       (loop (cdr pv))))
+                ((= place2 place)
+                 (list pv1 pv2))
+                ((> place2 place)
+                 (let ((logtype (pv1 :logtype))
+                       (value1 (pv1 :value))
+                       (value2 (pv2 :value)))
+                   (let* ((value (cond ((not portamento-enabled)
+                                        0)
+                                       ((logtype-holding? logtype)
+                                        value1)
+                                       (else
+                                        (scale place place1 place2 value1 value2))))
+                          (copied-pv (copy pv2)))
+                     (hash-table-set! copied-pv :value value)
+                     (hash-table-set! copied-pv :place place)
+                     (list pv1 copied-pv))))
+                (else
+                 (error 'internal-error-in-cut-pitchvelocity-keep-start (<-displayable-> "pv1:" pv1 ", pv2: " pv2 ", place1: " place1 ", place2: " place2 ", place: "place))
+                 (assert #f)))))))
+
+(***assert*** (cut-pitchvelocity-keep-start (list (make-velocity :place 1 :value 0 :logtype (<ra> :get-logtype-hold))
+                                                  (make-velocity :place 2 :value 0 :logtype (<ra> :get-logtype-hold)))
+                                            0 #t)
+              '())
+(***assert*** (cut-pitchvelocity-keep-start (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-hold))
+                                                  (make-velocity :place 1 :value 0 :logtype (<ra> :get-logtype-hold)))
+                                            0 #t)
+              '())
+(let ((l (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-hold))
+               (make-velocity :place 1 :value 1 :logtype (<ra> :get-logtype-hold)))))
+  (***assert*** (cut-pitchvelocity-keep-start l
+                                              1 #t)
+                l))
+(***assert*** (cut-pitchvelocity-keep-start (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-hold))
+                                                  (make-velocity :place 1 :value 2 :logtype (<ra> :get-logtype-hold)))
+                                            1 #t)
+              (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-hold))
+                    (make-velocity :place 1 :value 2 :logtype (<ra> :get-logtype-hold))))
+
+(***assert*** (cut-pitchvelocity-keep-start (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-linear))
+                                                  (make-velocity :place 2 :value 2 :logtype (<ra> :get-logtype-linear)))
+                                            1 #t)
+              (list (make-velocity :place 0 :value 0 :logtype (<ra> :get-logtype-linear))
+                    (make-velocity :place 1 :value 1 :logtype (<ra> :get-logtype-linear))))
+
+
+;; Note: this function might return a note without pitches or velocities.
+(define (cut-note-keep-start note place)
+  ;;(c-display "Note place:" (note :place) ". place:" place)
+  (if (>= (note :place) place)
+      (<copy-note> note
+                   :pitches '()
+                   :velocities '())
+      (begin
+        (define pitches (note :pitches))
+        (define velocities (note :velocities))
+        (define dplace (- place (note :place)))
+        
+        (define portamento-enabled (or (> (length pitches) 2)
+                                       (> (pitches 1 :value) 0)))
+        
+        (<copy-note> note
+                     :pitches (cut-pitchvelocity-keep-start pitches dplace portamento-enabled)
+                     :velocities (cut-pitchvelocity-keep-start velocities dplace #t)
+                     :continues-next-block #f))))
 
 (define (split-notes notes place)
   (let loop ((bef '())
@@ -197,7 +396,7 @@
           (cond ((>= start place)
                  (list (reverse bef) notes))
                 (else
-                 (loop (cons (cut-note note place)
+                 (loop (cons (cut-note-end-at note place)
                              bef)
                        (cdr notes))))))))
                
@@ -263,12 +462,11 @@
 
 (define (add-note! note tracknum blocknum)
 
-  (c-display "note:")
-  (pretty-print note)
+  ;;(pretty-print note)
 
   (define num-lines (<ra> :get-num-lines blocknum))
   (assert (< (note :place) num-lines))
-           
+
   ;; add note
   (define notenum (<ra> :add-note
                         (note :pitches 0 :value)
@@ -300,10 +498,10 @@
                                         (pitch :value)
                                         place
                                         notenum tracknum blocknum)))
+                    (assert (> pitchnum 0))
                     (<ra> :set-pitch-logtype (pitch :logtype) pitchnum notenum tracknum blocknum))))
             (cdr (butlast (note :pitches))))
 
-  
   ;; add velocities
   ;;
   ;; logtype of first velocity.
@@ -325,6 +523,8 @@
                                            (velocity :value)
                                            place
                                            notenum tracknum blocknum)))
+                    ;;(c-display "place/value:" place (velocity :value))
+                    (assert (> velocitynum 0))
                     (<ra> :set-velocity-logtype (velocity :logtype) velocitynum notenum tracknum blocknum))))
             (cdr (butlast (note :velocities))))
   
@@ -342,8 +542,8 @@
                     (for-each (lambda (note)
                                 (let ((place (+ startplace (note :place))))
                                   (if (< place endplace)
-                                      (add-note! (copy-note note
-                                                            :place place)
+                                      (add-note! (<copy-note> note
+                                                              :place place)
                                                  tracknum
                                                  blocknum))))
                               track-notes))))
@@ -397,6 +597,105 @@
   (replace-notes! notes :starttrack 1))
 
 ||#
+
+
+;;;;;;;;; PB ERASE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (get-all-note-pitch-ranges note)
+  (let loop ((curr-pitch (car (note :pitches)))
+             (pitches (cdr (note :pitches))))
+    (if (null? pitches)
+        '()
+        (let ((next-pitch (car pitches)))
+          (cons (list (curr-pitch :value)
+                      (next-pitch :value))
+                (loop next-pitch
+                      (cdr pitches)))))))
+
+(define (is-note-inside-pitch-range? note startnote endnote)
+  (any? (lambda (hepp)
+          (define pitch1 (car hepp))
+          (define pitch2 (cadr hepp))
+          (or (and (>= pitch1 startnote) ;; pitch1 in range
+                   (< pitch1 endnote))
+              (and (>= pitch2 startnote) ;; pitch2 in range
+                   (< pitch2 endnote))
+              (and (> pitch2 0)
+                   (<= pitch1 startnote) ;; A point in pitch1->pitch2 is in range
+                   (>= pitch2 endnote))
+              (and (> pitch2 0)
+                   (<= pitch2 startnote) ;; A point in pitch2->pitch1 is in range
+                   (>= pitch1 endnote))))
+        (get-all-note-pitch-ranges note)))
+
+(define (is-note-inside-place-range? note place1 place2)
+  (let ((n1 (note :place))
+        (n2 (get-note-end note)))
+    (cond ((< n2 place1)
+           #f)
+          ((>= n1 place2)
+           #f)
+          (else
+           #t))))
+
+(define (remove-notes-outside-pitch-range notes startpitch endpitch)
+  (keep (lambda (note)
+          (is-note-inside-pitch-range? note startpitch endpitch))
+        notes))
+                
+(define (pr-erase-split-note note startsplit endsplit)
+  ;;(c-display "START/END-split:" startsplit endsplit)
+  (define note1 (cut-note-keep-start note startsplit))
+  (define note2 (cut-note-keep-end note endsplit))
+  (keep (lambda (note)
+          (define has-pitches (not (null? (note :pitches))))
+          (define has-velocities (not (null? (note :velocities))))
+          (assert (or (and has-pitches has-velocities)
+                      (and (not has-pitches) (not has-velocities))))
+          has-pitches)
+        (list note1 note2)))
+        
+
+(define (pr-erase! blocknum tracknum startnote endnote startsplit endsplit make-undo)
+  (define area (get-track-editor-area tracknum blocknum))
+  (define notes (car (get-area-notes :area area
+                                     :include-all #t)))
+  ;;(c-display " old notes:\n" (pp notes))
+
+  (define do-erase-something #f)
+  
+  (define new-notes
+    (let loop ((notes notes))
+      (if (null? notes)
+          '()
+          (let ((note (car notes)))
+            (if (and (is-note-inside-place-range? note startsplit endsplit)
+                     (is-note-inside-pitch-range? note startnote endnote))
+                (begin
+                  (set! do-erase-something #t)
+                  (append (pr-erase-split-note note startsplit endsplit)
+                          (loop (cdr notes))))
+                (cons note
+                      (loop (cdr notes))))))))
+
+  (define (apply-changes)
+    (<ra> :undo-notes tracknum)
+    (replace-notes! :area-notes (list new-notes)
+                    :area area
+                    :include-all #t))
+
+  (if do-erase-something
+      (if make-undo
+          (undo-block apply-changes)
+          (ignore-undo-block apply-changes)))
+           
+  do-erase-something)
+
+
+#!!
+(pr-erase! 0 0 0 128 5 6)
+!!#
+
 
 
 ;;;;;;;;; TESTING ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

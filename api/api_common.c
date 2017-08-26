@@ -549,8 +549,12 @@ static const Place *getNextLegalNotePlace(const struct Notes *note){
 }
 
 
+dyn_t GetNoteIdFromNoteId(int64_t note_id){
+  return DYN_create_string_from_chars(talloc_format("%" PRId64 "",note_id));
+}
+
 dyn_t GetNoteId(struct Notes *note){
-  return DYN_create_string_from_chars(talloc_format("%" PRId64 "",note->id));
+  return GetNoteIdFromNoteId(note->id);
 }
 
 

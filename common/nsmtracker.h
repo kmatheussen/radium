@@ -1698,6 +1698,8 @@ struct CurrentPianoNote{
   int pianonotenum;
 };
 
+extern struct CurrentPianoNote current_piano_note;
+
 static inline NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const struct NodeLine *nodeline){
   const float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
   const float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
@@ -1733,6 +1735,17 @@ static inline NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const st
 
   return nodelineBox;
 }
+
+struct PianorollRubber{
+  float pitch1;
+  float pitch2;
+  Place place1;
+  Place place2;
+  int tracknum;
+  int blocknum;
+};
+
+extern struct PianorollRubber g_current_pianobar_rubber;
 
 
 /*********************************************************************
