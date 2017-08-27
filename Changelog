@@ -1,3 +1,32 @@
+Changes 4.9.17 -> 4.9.19:
+* Mixer strips: Don't show an error message when inserting plugin.
+  (An unnecessary error message was shown in some situations.)
+* Audio: Fix sample seek when block tempo is not 1.0.
+* GUI: Various tool tips improvements.
+* Editor: Eraser for the pianoroll. Press right mouse button
+  to erase notes.
+* Editor: Some tweaks when drawing track headers.
+* Editor: Don't show the swingtype column (i.e. where "d" or
+  "m" is written) unless it's used.
+* Doc: some updates to home.html
+* GUI: Update tooltips for the mixer widget header.
+* Editor: Show info about the current sub track when the mouse
+  pointer is above a subtrack. (E.g  make it quicker to find
+  out whether a subtrack is the chance track, or the
+  swing track.)
+* Editor: Add "Hide/Show swing" to the track popup menu
+* Editor: Add "Help swing" to the the track popup menu.
+* Editor: Move the swing sub tracks to the left of the
+  piano roll.
+* API:
+  * Replace use of "int notenum" with "dyn_t note", where "note"
+    can be either "int notenum" or "const char *note_id"
+  * New functions: getCenttextX1/etc, getChancetextX1/etc,
+    getSwingtextX1/etc, getVelocitytextX1/etc, getFxtextX1/etc,
+    unselectAllNotes, noteIsSelected, selectNote, unselectNote,
+    getSelectedNotes, showPianorollEraser, hidePianorollEraser.
+
+
 Changes 4.9.16 -> 4.9.17:
 * Playlist: Add "Hide" option to the popup menu.
 * Player: Fix changing cursor position while playing.
