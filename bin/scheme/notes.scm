@@ -638,11 +638,12 @@
                                           (not portamento-enabled))
                                       a_pitch1
                                       (pitch2 :value))))
-                   (rectangle-intersects-with-parallelogram eraser_place1 eraser_pitch1
-                                                            eraser_place2 eraser_pitch2
+                   ;;(c-display "hold?" (logtype-holding? (pitch1 :logtype)) (not portamento-enabled) ". note pitch 1/2:" a_pitch1 a_pitch2 ". endpitch:" (pitch2 :value))
+                   (rectangle-intersects-with-parallelogram eraser_pitch1 eraser_place1
+                                                            eraser_pitch2 eraser_place2
                                                             
-                                                            a_place1 a_pitch1
-                                                            a_place2 a_pitch2
+                                                            a_pitch1 a_place1
+                                                            a_pitch2 a_place2
                                                             1))))))))
                                                             
 #||                                      

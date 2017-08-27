@@ -16,16 +16,26 @@
                             a_x1 a_y2))
   (define b_triangle1 (list b_x1 b_y1
                             (+ b_x1 b_width) b_y1
-                            b_x1 b_y2))
+                            b_x2 b_y2))
   (define b_triangle2 (list (+ b_x1 b_width) b_y1
                             (+ b_x2 b_width) b_y2
-                            b_x1 b_y2))
+                            b_x2 b_y2))
   ;;(c-display "rect1:" a_x1 a_y1 " - " a_x2 a_y2)
-  ;;(c-display "rect2:" b_x1 b_y1 " - " b_x2 b_y2)
-  (or (apply ra:triangles-intersects (append a_triangle1 b_triangle1))
-      (apply ra:triangles-intersects (append a_triangle1 b_triangle2))
-      (apply ra:triangles-intersects (append a_triangle2 b_triangle1))
-      (apply ra:triangles-intersects (append a_triangle2 b_triangle2))))
+  ;;(c-display "rect2:" b_x1 b_y1 " - " (* 1.0 b_x2) b_y2 b_width)
+  ;;(c-display "tri1:" (map (lambda (a) (* 1.0 a)) a_triangle1))
+  ;;(c-display "tri2:" (map (lambda (a) (* 1.0 a)) b_triangle1))
+  (define ret (or (apply ra:triangles-intersects (append a_triangle1 b_triangle1))
+                  (apply ra:triangles-intersects (append a_triangle1 b_triangle2))
+                  (apply ra:triangles-intersects (append a_triangle2 b_triangle1))
+                  (apply ra:triangles-intersects (append a_triangle2 b_triangle2))))
+  ;;(c-display "ret" ret
+  ;;           (apply ra:triangles-intersects (append a_triangle1 b_triangle1))
+  ;;           (apply ra:triangles-intersects (append a_triangle1 b_triangle2))
+  ;;           (apply ra:triangles-intersects (append a_triangle2 b_triangle1))
+  ;;           (apply ra:triangles-intersects (append a_triangle2 b_triangle2))
+  ;;           "\n\n")
+  ret)
+
 
 #!!
 (rectangle-intersects-with-parallelogram 0 0 4 4
@@ -33,6 +43,13 @@
 
 (rectangle-intersects-with-parallelogram 4.01 4 10 10
                                          0 0 4 4 1)
+(apply ra:triangles-intersects
+       (append (list 0 0
+                     0 10
+                     5 5)
+               (list 0 0
+                     0 10
+                     5 5)))
 !!#
 
 
