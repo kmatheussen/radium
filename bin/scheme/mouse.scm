@@ -243,7 +243,7 @@
 (delafina (add-delta-mouse-handler :press :move-and-release :release #f :mouse-pointer-is-hidden-func #f)
   (define prev-x #f)
   (define prev-y #f)
-  (define value #f)
+  (define instance #f)
 
   (define next-mouse-x-set-time 0)
   (define next-mouse-x #f)
@@ -266,8 +266,8 @@
             
     (if (and (morally-equal? $x prev-x)
              (morally-equal? $y prev-y)
-             (not value))
-        value
+             (not instance))
+        instance
         (begin
           (define dx (cond ((only-y-direction)
                             0)
@@ -306,15 +306,15 @@
               (set! next-mouse-y 300)
               ))
           
-          (set! value (move-and-release $button
+          (set! instance (move-and-release $button
                                         dx
                                         dy
-                                        value)))))
+                                        instance)))))
   
   (add-mouse-cycle (make-mouse-cycle
                     :press-func (lambda ($button $x $y)
-                                  (set! value (press $button $x $y))
-                                  (if value
+                                  (set! instance (press $button $x $y))
+                                  (if instance
                                       (begin
                                         (set! prev-x $x)
                                         (set! prev-y $y)
@@ -324,7 +324,7 @@
                     :release-func (lambda ($button $x $y)
                                     (call-move-and-release $button $x $y)
                                     (if release
-                                        (release $button $x $y value))
+                                        (release $button $x $y instance))
                                     (set! prev-x #f)
                                     (set! prev-y #f)))))
   
@@ -2149,50 +2149,67 @@
                        #f)))))
 
 
-;; Erase
-(define (get-pianoroll-pitches-and-places $button $x $y kont)
+;; Eraser
+
+(define (get-pianoroll-eraser-pitches-and-places $button $x $y kont)
   (let* ((pitch (if (<ra> :control-pressed)
                     (get-pianoroll-key $x)
                     (round (get-pianoroll-key $x))))
          (place1 (get-place-from-y $button $y))
          (place2 (+ place1 (/ (<ra> :get-grid)
                               (<ra> :get-line-zoom-block-ratio))))
-         ;;(get-next-place-from-y $button $y))
          )
     (if (<ra> :control-pressed)
         (kont (- pitch 0.5) (+ pitch 0.5) place1 place2)
         (kont pitch (1+ pitch) place1 place2))))
 
-  
+
+(define (move-pianoroll-eraser $button $dx $dy $instance)
+  (define $x (+ ($instance :x) $dx))
+  (define $y (+ ($instance :y) $dy))
+  (define has-made-undo ($instance :has-made-undo))
+  (get-pianoroll-eraser-pitches-and-places $button $x $y
+                                           (lambda (pitch1 pitch2 place1 place2)
+                                             (<ra> :show-pianoroll-eraser pitch1 pitch2 place1 place2 *current-track-num*)
+                                             (define made-undo-now (pr-erase! -1 *current-track-num*
+                                                                              (min pitch1 ($instance :pitch1))
+                                                                              (max pitch2 ($instance :pitch2))
+                                                                              (min place1 ($instance :place1))
+                                                                              (max place2 ($instance :place2))
+                                                                              (not has-made-undo)))
+                                             (hash-table* :x $x
+                                                          :y $y
+                                                          :has-made-undo (or made-undo-now
+                                                                             has-made-undo)
+                                                          :pitch1 pitch1
+                                                          :pitch2 pitch2
+                                                          :place1 place1
+                                                          :place2 place2))))
+
 (add-delta-mouse-handler :press (lambda ($button $x $y)
                                   (and (= $button *right-button*)
                                        *current-track-num*
                                        (<ra> :pianoroll-visible *current-track-num*)
                                        (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
                                        (not (get-pianonote-info $x $y *current-track-num*))
-                                       (get-pianoroll-pitches-and-places $button $x $y
-                                                                         (lambda (pitch1 pitch2 place1 place2)
-                                                                           (set-mouse-pointer ra:set-blank-mouse-pointer (<gui> :get-editor-gui))
-                                                                           (<ra> :show-pianoroll-eraser pitch1 pitch2 place1 place2 *current-track-num*)
-                                                                           ;;(c-display "PRESSING")
-                                                                           (list $x $y #f)))))
-                         :move-and-release (lambda ($button $dx $dy x-and-y)
-                                             ;;(c-display "x-and-y" x-and-y $dx $dy)
-                                             (define $x (+ (car x-and-y) $dx))
-                                             (define $y (+ (cadr x-and-y) $dy))
-                                             (define has-made-undo (caddr x-and-y))
-                                             (get-pianoroll-pitches-and-places $button $x $y
-                                                                               (lambda (pitch1 pitch2 place1 place2)
-                                                                                 (<ra> :show-pianoroll-eraser pitch1 pitch2 place1 place2 *current-track-num*)
-                                                                                 (list $x $y
-                                                                                       (or (pr-erase! -1 *current-track-num* pitch1 pitch2 place1 place2 (not has-made-undo))
-                                                                                           has-made-undo)))))
+                                       (set-mouse-pointer ra:set-blank-mouse-pointer (<gui> :get-editor-gui))
+                                       (move-pianoroll-eraser $button 0 0 (hash-table* :x $x
+                                                                                       :y $y
+                                                                                       :has-made-undo #f
+                                                                                       :pitch1 100000
+                                                                                       :pitch2 -100000
+                                                                                       :place1 1000000
+                                                                                       :place2 -10000000))))
+                         :move-and-release move-pianoroll-eraser
+
                          :release (lambda ($button $x $y x-and-y)
                                     (set-mouse-pointer ra:set-normal-mouse-pointer (<gui> :get-editor-gui))
                                     (<ra> :hide-pianoroll-eraser)
                                     ;;(c-display "RELEASING")
                                     )
+                         :mouse-pointer-is-hidden-func (lambda () #t)
                          )
+
 
 
 ;; velocities
