@@ -2209,8 +2209,8 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
   HASH_put_int(state, "to_patch",   get_saving_patch_id(to,   patches));
   HASH_put_bool(state, "is_event_connection", connection->is_event_connection);
   if (!connection->is_event_connection)
-    HASH_put_float(state, "gain", getAudioConnectionGain(from->id, to->id));
-  HASH_put_bool(state, "enabled", getConnectionEnabled(from->id, to->id));
+    HASH_put_float(state, "gain", getAudioConnectionGain(from->id, to->id, true));
+  HASH_put_bool(state, "enabled", getConnectionEnabled(from->id, to->id, true));
 
   return state;
 }
