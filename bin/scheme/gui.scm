@@ -5,6 +5,37 @@
 (define-constant *max-mixer-db* 6)
 
 
+
+(define (rectangle-intersects-with-parallelogram a_x1 a_y1 a_x2 a_y2
+                                                 b_x1 b_y1 b_x2 b_y2 b_width)
+  (define a_triangle1 (list a_x1 a_y1
+                            a_x2 a_y1
+                            a_x1 a_y2))
+  (define a_triangle2 (list a_x2 a_y1
+                            a_x2 a_y2
+                            a_x1 a_y2))
+  (define b_triangle1 (list b_x1 b_y1
+                            (+ b_x1 b_width) b_y1
+                            b_x1 b_y2))
+  (define b_triangle2 (list (+ b_x1 b_width) b_y1
+                            (+ b_x2 b_width) b_y2
+                            b_x1 b_y2))
+  ;;(c-display "rect1:" a_x1 a_y1 " - " a_x2 a_y2)
+  ;;(c-display "rect2:" b_x1 b_y1 " - " b_x2 b_y2)
+  (or (apply ra:triangles-intersects (append a_triangle1 b_triangle1))
+      (apply ra:triangles-intersects (append a_triangle1 b_triangle2))
+      (apply ra:triangles-intersects (append a_triangle2 b_triangle1))
+      (apply ra:triangles-intersects (append a_triangle2 b_triangle2))))
+
+#!!
+(rectangle-intersects-with-parallelogram 0 0 4 4
+                                         4 4 10 10 1)
+
+(rectangle-intersects-with-parallelogram 4.01 4 10 10
+                                         0 0 4 4 1)
+!!#
+
+
 (define (set-fixed-size gui width height)
   (<gui> :set-min-height gui height)
   (<gui> :set-max-height gui height)
@@ -681,3 +712,6 @@
 (create-change-system-font-requester)
 (create-change-editor-font-requester)
 !!#
+
+
+

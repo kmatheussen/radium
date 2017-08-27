@@ -601,6 +601,7 @@
 
 ;;;;;;;;; PB ERASE ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+#!!
 (define (get-all-note-pitch-ranges note)
   (let loop ((curr-pitch (car (note :pitches)))
              (pitches (cdr (note :pitches))))
@@ -611,8 +612,40 @@
                       (next-pitch :value))
                 (loop next-pitch
                       (cdr pitches)))))))
+!!#
 
-(define (is-note-inside-pitch-range? note startnote endnote)
+
+(define (is-note-inside-pitch-range? note eraser_place1 eraser_place2 eraser_pitch1 eraser_pitch2)
+  (define pitches (note :pitches))
+  (define portamento-enabled (or (> (length pitches) 2)
+                                 (> (pitches 1 :value) 0)))
+  (define note-start (note :place))
+  (let loop ((pitches pitches))
+    (if (or (null? pitches)
+            (null? (cdr pitches)))
+        #f
+        (let* ((pitch1 (car pitches))
+               (pitch2 (cadr pitches))
+               (a_place1 (+ note-start (pitch1 :place)))
+               (a_place2 (+ note-start (pitch2 :place))))
+          (cond ((>= a_place1 eraser_place2)
+                 #f)
+                ((< a_place2 eraser_place1)
+                 (loop (cdr pitches)))
+                (else
+                 (let* ((a_pitch1 (pitch1 :value))
+                        (a_pitch2 (if (or (logtype-holding? (pitch1 :logtype))
+                                          (not portamento-enabled))
+                                      a_pitch1
+                                      (pitch2 :value))))
+                   (rectangle-intersects-with-parallelogram eraser_place1 eraser_pitch1
+                                                            eraser_place2 eraser_pitch2
+                                                            
+                                                            a_place1 a_pitch1
+                                                            a_place2 a_pitch2
+                                                            1))))))))
+                                                            
+#||                                      
   (any? (lambda (hepp)
           (define pitch1 (car hepp))
           (define pitch2 (cadr hepp))
@@ -627,6 +660,7 @@
                    (<= pitch2 startnote) ;; A point in pitch2->pitch1 is in range
                    (>= pitch1 endnote))))
         (get-all-note-pitch-ranges note)))
+||#
 
 (define (is-note-inside-place-range? note place1 place2)
   (let ((n1 (note :place))
@@ -670,7 +704,7 @@
           '()
           (let ((note (car notes)))
             (if (and (is-note-inside-place-range? note startsplit endsplit)
-                     (is-note-inside-pitch-range? note startnote endnote))
+                     (is-note-inside-pitch-range? note startsplit endsplit startnote endnote))
                 (begin
                   (set! do-erase-something #t)
                   (append (pr-erase-split-note note startsplit endsplit)

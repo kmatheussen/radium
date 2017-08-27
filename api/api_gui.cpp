@@ -5063,6 +5063,116 @@ int64_t gui_createSingleMixerStrip(int64_t instrument_id, int width, int height)
   return S7CALL2(int_int_int_int,"create-standalone-mixer-strip", instrument_id, width, height);
 }
 
+
+///////////////// Triangle collision detection
+//////////////////////////////////////////////
+
+// Based on https://gist.github.com/TimSC/5ba18ae21c4459275f90
+//2D Triangle-Triangle collisions in C++
+//Release by Tim Sheerman-Chase 2016 under CC0
+
+
+//#include <vector>
+//#include <iostream>
+//#include <stdexcept>
+//using namespace std;
+
+typedef std::pair<double, double> TriPoint;
+
+static inline double Det2D(TriPoint &p1, TriPoint &p2, TriPoint &p3) 
+{
+	return +p1.first*(p2.second-p3.second)
+		+p2.first*(p3.second-p1.second)
+		+p3.first*(p1.second-p2.second);
+}
+
+static bool CheckTriWinding(TriPoint &p1, TriPoint &p2, TriPoint &p3, bool allowReversed)
+{
+	double detTri = Det2D(p1, p2, p3);
+	if(detTri < 0.0)
+	{
+		if (allowReversed)
+		{
+			TriPoint a = p3;
+			p3 = p2;
+			p2 = a;
+		}
+		else{
+                  handleError("triangle has wrong winding direction");
+                  return false;
+                }
+	}
+        return true;
+}
+
+static bool BoundaryCollideChk(TriPoint &p1, TriPoint &p2, TriPoint &p3, double eps)
+{
+	return Det2D(p1, p2, p3) < eps;
+}
+
+static bool BoundaryDoesntCollideChk(TriPoint &p1, TriPoint &p2, TriPoint &p3, double eps)
+{
+	return Det2D(p1, p2, p3) <= eps;
+}
+
+static bool TriTri2D(TriPoint *t1,
+                     TriPoint *t2,
+                     double eps = 0.0, bool allowReversed = true, bool onBoundary = true)
+{
+  //Trangles must be expressed anti-clockwise
+  if (CheckTriWinding(t1[0], t1[1], t1[2], allowReversed)==false)
+    return false;
+  
+  if (CheckTriWinding(t2[0], t2[1], t2[2], allowReversed)==false)
+    return false;
+
+	bool (*chkEdge)(TriPoint &, TriPoint &, TriPoint &, double) = NULL;
+	if(onBoundary) //Points on the boundary are considered as colliding
+		chkEdge = BoundaryCollideChk;
+	else //Points on the boundary are not considered as colliding
+		chkEdge = BoundaryDoesntCollideChk;
+
+	//For edge E of trangle 1,
+	for(int i=0; i<3; i++)
+	{
+		int j=(i+1)%3;
+
+		//Check all points of trangle 2 lay on the external side of the edge E. If
+		//they do, the triangles do not collide.
+		if (chkEdge(t1[i], t1[j], t2[0], eps) &&
+			chkEdge(t1[i], t1[j], t2[1], eps) &&
+			chkEdge(t1[i], t1[j], t2[2], eps))
+			return false;
+	}
+
+	//For edge E of trangle 2,
+	for(int i=0; i<3; i++)
+	{
+		int j=(i+1)%3;
+
+		//Check all points of trangle 1 lay on the external side of the edge E. If
+		//they do, the triangles do not collide.
+		if (chkEdge(t2[i], t2[j], t1[0], eps) &&
+			chkEdge(t2[i], t2[j], t1[1], eps) &&
+			chkEdge(t2[i], t2[j], t1[2], eps))
+			return false;
+	}
+
+	//The triangles collide
+	return true;
+}
+
+bool trianglesIntersects(float a_x1, float a_y1, float a_x2, float a_y2, float a_x3, float a_y3, float b_x1, float b_y1, float b_x2, float b_y2, float b_x3, float b_y3, bool allowReversed, bool onBoundary){
+  TriPoint t1[] = {TriPoint(a_x1,a_y1),TriPoint(a_x2,a_y2),TriPoint(a_x3, a_y3)};
+  TriPoint t2[] = {TriPoint(b_x1,b_y1),TriPoint(b_x2,b_y2),TriPoint(b_x3, b_y3)};
+  return TriTri2D(t1, t2, 0.0, allowReversed, onBoundary);
+}
+
+
+
+
+
+
 #include "mapi_gui.cpp"
 
 
