@@ -58,7 +58,7 @@ static void Undo_AudioConnectionGain(
   undo_ae->source = source;
   undo_ae->target = target;
 
-  undo_ae->gain = getAudioConnectionGain(source->id, target->id);
+  undo_ae->gain = getAudioConnectionGain(source->id, target->id, true);
 
 
   //printf("********* Storing eff undo. value: %f %d\n",undo_ae->value,plugin->comp.is_on);
@@ -91,7 +91,7 @@ static void *Undo_Do_AudioConnectionGain(
 
   struct Undo_AudioConnectionGain *undo_ae=pointer;
 
-  float now_gain = getAudioConnectionGain(undo_ae->source->id, undo_ae->target->id);
+  float now_gain = getAudioConnectionGain(undo_ae->source->id, undo_ae->target->id, true);
 
   setAudioConnectionGain(undo_ae->source->id, undo_ae->target->id, undo_ae->gain, true);
 
