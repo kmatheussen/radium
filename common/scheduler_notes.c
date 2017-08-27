@@ -182,8 +182,8 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
     
   if(doit && track->onoff==1 && patch!=NULL){
 
-    int64_t sample_pos = R_MAX(0, time - note_time);
-    
+    int64_t sample_pos = R_MAX(0, time - note_time) / ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+
     note_t note2 = create_note_t(seqblock,
                                  note->id,
                                  note->note,
