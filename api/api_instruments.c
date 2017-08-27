@@ -1383,7 +1383,7 @@ bool hasEventConnection(int64_t source_id, int64_t dest_id){
   return MW_are_econnected(source, dest);
 }
 
-bool get_connection_gain_enabled(int64_t source_id, int64_t dest_id, float *gain, bool *is_enabled){
+bool get_connection_gain_enabled(int64_t source_id, int64_t dest_id, float *gain, bool *is_enabled, bool show_error_if_not_connected){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return false;
@@ -1416,24 +1416,25 @@ bool get_connection_gain_enabled(int64_t source_id, int64_t dest_id, float *gain
     *is_enabled = SP_get_link_enabled(dest_sp, source_sp, &error);
 
   if (error!=NULL){
-    handleError("Could not find audio connection between instrument %d and instrument %d", (int)source_id, (int)dest_id);
+    if (show_error_if_not_connected)
+      handleError("Could not find audio connection between instrument %d (%s) and instrument %d (%s): %s", (int)source_id, source->name, (int)dest_id, dest->name, error);
     return false;
   }
 
   return true;
 }
 
-float getAudioConnectionGain(int64_t source_id, int64_t dest_id){
+float getAudioConnectionGain(int64_t source_id, int64_t dest_id, bool show_error_if_not_connected){
   float ret;
-  if (get_connection_gain_enabled(source_id, dest_id, &ret, NULL))
+  if (get_connection_gain_enabled(source_id, dest_id, &ret, NULL, show_error_if_not_connected))
     return ret;
   else
     return 0.0;
 }
 
-bool getConnectionEnabled(int64_t source_id, int64_t dest_id){
+bool getConnectionEnabled(int64_t source_id, int64_t dest_id, bool show_error_if_not_connected){
   bool ret;
-  if (get_connection_gain_enabled(source_id, dest_id, NULL, &ret))
+  if (get_connection_gain_enabled(source_id, dest_id, NULL, &ret, show_error_if_not_connected))
     return ret;
   else
     return false;

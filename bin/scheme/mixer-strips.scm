@@ -427,9 +427,10 @@
 
 
   (define (set-conf-var! instrument-id keyword new-value)
-    (set! (confs instrument-id)
-          (let ((conf (confs instrument-id)))
-            (<copy-conf> conf keyword new-value))))
+    (let ((conf (confs instrument-id)))
+      (assert conf)
+      (set! (confs instrument-id) (<copy-conf> conf keyword new-value))))
+                   
 
   (define this
     (dilambda (lambda (keyword . rest)
@@ -799,8 +800,9 @@
   (define is-changing-value #f)
   
   (define (is-enabled?)
+    ;;(c-display "INSTRUMENT:" instrument-name)
     (if is-send?
-        (<ra> :get-connection-enabled parent-instrument-id instrument-id)
+        (<ra> :get-connection-enabled parent-instrument-id instrument-id #f) ;; #f means don"t show error if not connected. That might happen if redrawing before remaking after changing configuration.
         (>= (<ra> :get-instrument-effect instrument-id "System Effects On/Off") 0.5)))
   
   (define (is-grayed?)
@@ -833,6 +835,7 @@
     (<gui> :tool-tip text))
 
   (define (paint-slider x1-on/off width height)
+    ;;(c-display "PAINTING SLIDER FOR" instrument-name)
     (define color (<ra> :get-instrument-color instrument-id))
     (define value (get-scaled-value))
     ;;(c-display "value: " value)
