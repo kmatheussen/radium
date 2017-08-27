@@ -58,7 +58,7 @@ static void Undo_ConnectionEnabled(
   undo_ae->source = source;
   undo_ae->target = target;
 
-  undo_ae->enabled = getConnectionEnabled(source->id, target->id);
+  undo_ae->enabled = getConnectionEnabled(source->id, target->id, true);
 
 
   //printf("********* Storing eff undo. value: %f %d\n",undo_ae->value,plugin->comp.is_on);
@@ -91,7 +91,7 @@ static void *Undo_Do_ConnectionEnabled(
 
   struct Undo_ConnectionEnabled *undo_ae=pointer;
 
-  bool now_enabled = getConnectionEnabled(undo_ae->source->id, undo_ae->target->id);
+  bool now_enabled = getConnectionEnabled(undo_ae->source->id, undo_ae->target->id, true);
 
   setConnectionEnabled(undo_ae->source->id, undo_ae->target->id, undo_ae->enabled, true);
 
