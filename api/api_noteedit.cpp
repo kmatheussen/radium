@@ -510,3 +510,82 @@ void setMouseNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   }
 }
 
+
+/* Select/unselect notes */
+
+#include <QMap>
+#include <QSet>
+
+static QMap< const struct WBlocks*, QSet<int64_t> > g_selected_notes;
+
+void unselectAllNotes(void){
+  g_selected_notes.clear();
+}
+
+bool API_note_is_selected(const struct WBlocks *wblock, const struct Notes *note){
+  R_ASSERT_RETURN_IF_FALSE2(wblock!=NULL,false);
+  R_ASSERT_RETURN_IF_FALSE2(note!=NULL,false);
+  return g_selected_notes.value(wblock).contains(note->id);
+}
+
+bool noteIsSelected(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  const struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  if (note==NULL)
+    return false;
+  
+  return API_note_is_selected(wblock, note);
+}
+
+void selectNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  const struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  if (note==NULL)
+    return;
+  
+  g_selected_notes[wblock].insert(note->id);
+}
+
+void unselectNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  const struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  if (note==NULL)
+    return;
+  
+  if (g_selected_notes.contains(wblock)==false){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+
+  auto &theset = g_selected_notes[wblock];
+
+  if (theset.contains(note->id)==false){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+  
+  theset.remove(note->id);
+}
+  
+dyn_t getSelectedNotes(int blocknum, int windownum){
+  dynvec_t ret = {};
+
+  const struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if (wblock!=NULL){
+
+    const auto &note_ids = g_selected_notes.value(wblock);
+    for(auto note_id : note_ids){
+      DYNVEC_push_back(&ret, GetNoteIdFromNoteId(note_id));
+    }
+
+  }
+
+  return DYN_create_array(ret);
+}
+
