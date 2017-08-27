@@ -36,17 +36,19 @@ tr:nth-child(even) {
     <OL align="left" width="50%">
         <LI> <a onclick="showHide('menu')" href="#!">Menus</A>
           <div id="menu" style="display: none">
-            Use the left alt key to show/hide menus and start/stop navigitating the menus.
-            You can also stop navigating the menus by pressing Esc.
-            Hold shift to quicker navigate up and down when using the up and down arrow keys.
+            <UL>
+              <LI>Use the left alt key to show/hide menus and start/stop navigitating the menus with the keyboard.
+              <LI>You can also stop navigating the menus by pressing Esc.
+              <LI>Hold shift to quicker navigate up and down when using the up and down arrow keys.
+            </UL>
           </div>
         <LI> <A onclick="showHide('editor')" href="#!">Editor</a>
           <div id="editor" style="display: none">
             <UL>
-              <LI>The editor consists of tempo tracks and note tracks. In the lower left area, there is a slider to change tempo in realtime and a slider.
+              <LI>The editor consists of tempo tracks and note tracks. In the lower left area, there is a slider to change tempo in realtime, and a track scrollbar.
               <LI>Press F12 to assign an instrument to the current track.
               <LI>Press Right Shift to play current block.
-              <LI> Help texts for the note tracks:
+              <LI> Some documentation for the note tracks:
                 <UL>
                   <LI> <A href="fxtext.html">FX text</A>
                   <LI> <A href="chancetext.html">Chance text</A>
@@ -61,7 +63,7 @@ tr:nth-child(even) {
             <UL>
               <LI>Click a block to make it the current block.
               <LI>Doubleclick a block to add it to the playlist.
-              <LI>Shift + rightclick a block to delete it.
+              <LI>Shift + rightclick a block to delete a block.
             </UL>
           </div>
         <LI><a onclick="showHide('playlist')" href="#!">Playlist</A>
@@ -75,13 +77,10 @@ tr:nth-child(even) {
             <h2> Mixer widget header</h2>
 
             <UL>
-              <LI> Header:
-                <UL>
-                  <LI> A/B settings buttons
-                  <LI> "I" button: Whether to show the instrument widget inside the mixer widget.
-                  <LI> "W" button: Whether to show the mixer widget in a separate window
-                  <LI> "M" button: Whether to show the modular mixer or mixer strips.
-                </UL>
+              <LI> A/B settings buttons
+              <LI> "I" button: Whether to show the instrument widget inside the mixer widget.
+              <LI> "W" button: Whether to show the mixer widget in a separate window.
+              <LI> "M" button: Whether to show the modular mixer or mixer strips.
             </UL>
 
             <h2> Modular Mixer</h2>
@@ -111,16 +110,16 @@ tr:nth-child(even) {
 <h3>Order</h3>
 The order of the strips is not random or chronological. The sorting logic has four stages:
 <OL>
-  <LI> Sort by whether the strip is a bus or not. Non-buses are displayed first.
+  <LI> Sort by whether the strip is a bus or not. Non-buses are placed before buses.
   <LI> Sort by vertical position in the modular mixer (top -> bottom).
   <LI> Sort by horizontal position in the modular mixer (left -> right).
-  <LI> Slightly rearrange the strips order so that the audio flow always goes from left to right.
+  <LI> Rearrange (as little as possible) so that the audio flow always goes from left to right.
 </OL>  
 
 <p>
 
 <h3>How to...</h3>
-Q: Set accurate volum by writing a number?<br>
+Q: Set accurate volume by writing a number?<br>
 A: Click the number box right above the volume slider
 <p>
 Q: Reset highest peak value in the box above the audio meter?<br>
@@ -154,10 +153,10 @@ A: Right-click the name of the mixer strip, and select "Delete". Or shift+right 
             <LI> <a onclick="showHide('sequencer')" href="#!">Sequencer</a>
               <div id="sequencer" style="display: none">
                 <UL>
-                  <LI> The sequencer lets you position blocks in time. Initially there is only one sequencer track,
-                    but more tracks can be added by selecting "Insert sequencer track" or "Append sequencer track".
+                  <LI> The sequencer lets you select when a block starts playing. Initially there is only one sequencer track,
+                    but more tracks can be added by selecting "Insert sequencer track" or "Append sequencer track" from the popup menu.
                   <LI> Use the popup menu to add effect automations, tempo automations, loop start and end positions, and other operations.
-                  <LI> To quickly start playing from a position, scroll the mouse wheel <b>up</b>, and stop by scrolling <b>down</b>.
+                  <LI> To quickly start playing at the position of the mouse cursor, scroll the mouse wheel <b>up</b>, and stop by scrolling <b>down</b>.
                 </UL>
               </div>
             <LI> <a onclick="showHide('instrument')" href="#!">Instrument widget</a>
@@ -173,33 +172,44 @@ A: Right-click the name of the mixer strip, and select "Delete". Or shift+right 
                     Click the "I" button in the mixer to switch between these two positions.
                   <LI> Some common instruments:
                     <UL>
-                      <LI> <a onclick="showHide('sampler')" href="#!">Sampler</a>
+                      <LI> <a onclick="showHide('sampler')" href="#!">Sample Player</a>
                         <div id="sampler" style="display: none">
-                          The sampler instrument 
-                          (under construction)
+                          The sample player plays audio files.
+			  <UL>
+			    <LI>The Sample Player can load XI intruments; Soundfonts, and all types of sample formats supported by libsndfile.
+			    <LI>WAV files are looped if they have loops defined in the "sampl" chunk, or they have "Loop Start" and "Loop End" cue id's.
+			    <LI>SoundFonts (.sf2 files) often sound better when played with the FluidSynth instrument instead of the Sample Player. However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports pitch changes and polyphonic aftertouch (velocity can be changed while a note is playing), and has configurable options such as attack, decay, sustain, and release.
+			    <LI>There is currently no graphical sample editor to edit samples, a feature which traditionally are provided by trackers. This feature should be provided later though. Until then, external sample editors must be used instead, if needed.
+			    <LI>To record audio, either from outside the program or inside the program, click the red <font color="red">Record</font> button in the instrument widget header. A new audio file will be created automatically when recording. Recording will start when the new instrument receives a note, and it will stop recording when that note stops playing.
+			  </UL>
                         </div>
                       <LI> <a onclick="showHide('faustdev')" href="#!">FaustDev</a>
                         <div id="faustdev" style="display: none">
-                          The Faust instrument lets you program <A href="http://faust.grame.fr">Faust</A> instruments in Radium. There is no "compile" button.
-                          The programs are compiled in realtime while you write the code.
+                          The Faust instrument lets you program <A href="http://faust.grame.fr">Faust</A> instruments in Radium. Also note that there is no "compile" button since programs are compiled in realtime while you write code.
                         </div>
                       <LI> <a onclick="showHide('puredata')" href="#!">Pure Data</a>
                         <div id="puredata" style="display: none">
-                          The Pure Data instrument lets you program <A href="http://puredata.info">Pure Data</A> instruments in Radium. Currently, this instrument is only available in Linux.
+                          The Pure Data instrument lets you program <A href="http://puredata.info">Pure Data</A> instruments in Radium. Currently, this instrument is only available on Linux.
                         </div>
                     </UL>
                 </UL>
               </div>
             <LI> <a onclick="showHide('edit')" href="#!">Edit</A>
               <div id="edit" style="display: none">
-                The edit tab has functions to edit notes in the editor.
+                The edit tab provides various functions to edit notes in the editor.
               </div>
           </UL>
         <LI> <a onclick="showHide('bottombar')" href="#!">Bottom bar</A>
           <div id="bottombar" style="display: none">
             The bottom bar contains elements that might be useful at all times.
-            It is visible both in the bottom of the main window, and in the bottom of the mixer when the mixer runs in its own window.
-            Use the tool tips to get more information about each element in the bottom bar.
+	    <UL>
+              <LI>The bottom bar is visible in:
+		<OL>
+		  <LI> The bottom of the main window
+		  <LI> The bottom of the mixer, when the mixer runs in its own window.
+		</OL>
+	      <LI>Use tool tips to get more information about each element in the bottom bar.
+	    </UL>
           </div>
     </OL>
 
