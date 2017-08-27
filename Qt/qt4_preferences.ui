@@ -3343,7 +3343,7 @@ by mixing sound for all the buses.
             <item>
              <widget class="QRadioButton" name="button_everything_else_moving">
               <property name="text">
-               <string>Static. Everything else moves instead</string>
+               <string>Fixed position. Everything else moves instead</string>
               </property>
              </widget>
             </item>
@@ -4457,8 +4457,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>829</width>
-            <height>564</height>
+            <width>398</width>
+            <height>28</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -7057,8 +7057,8 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>983</width>
-               <height>298</height>
+               <width>100</width>
+               <height>30</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -7275,8 +7275,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>

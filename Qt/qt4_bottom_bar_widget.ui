@@ -203,6 +203,9 @@
        </disabled>
       </palette>
      </property>
+     <property name="toolTip">
+      <string>Status bar</string>
+     </property>
      <property name="frameShape">
       <enum>QFrame::Panel</enum>
      </property>
@@ -2541,6 +2544,9 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="toolTip">
+         <string>Drunk velocity: Inserted notes will be given a velocity between min vel and max vel using a random walk algorithm.</string>
+        </property>
         <property name="maximum">
          <number>10000</number>
         </property>
@@ -2559,6 +2565,9 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Drunk velocity: Inserted notes will be given a velocity between min vel and max vel using a random walk algorithm.</string>
         </property>
         <property name="maximum">
          <number>10000</number>
@@ -3617,7 +3626,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>Edit mode: When on, notes played on the keyboard or from midi are recorded into the editor, when off, notes are only played back, but not placed in the editor.</string>
+         <string>Edit mode: When on, notes played on the keyboard or from midi are recorded into the editor, when off, notes are played back, but not inserted into the editor.</string>
         </property>
         <property name="text">
          <string>Edit</string>
@@ -3696,6 +3705,9 @@
           <width>16777215</width>
           <height>16777215</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>Enable metronome</string>
         </property>
         <property name="text">
          <string>Click</string>
@@ -5253,6 +5265,9 @@ Scrolling too often can be tiresome for the eyes.</string>
       </item>
       <item>
        <widget class="QLabel" name="label">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The three numbers, from left to right, show:&lt;/p&gt;&lt;p&gt;1. The &lt;span style=&quot; font-size:11pt; font-weight:600; text-decoration: underline;&quot;&gt;lowest&lt;/span&gt; amount of CPU measured for processing an audio block during the last second.&lt;/p&gt;&lt;p&gt;2. The &lt;span style=&quot; font-size:11pt; font-weight:600; text-decoration: underline;&quot;&gt;average&lt;/span&gt; amount of CPU measured for processing audio blocks during the last second.&lt;/p&gt;&lt;p&gt;3. The &lt;span style=&quot; font-size:11pt; font-weight:600; text-decoration: underline;&quot;&gt;highest&lt;/span&gt; amount of CPU measured for processing an audio block during the last second.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
         <property name="text">
          <string>CPU:</string>
         </property>
