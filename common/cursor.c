@@ -420,25 +420,32 @@ bool SetCursorPosConcrete(
 
                 bool move_right = false;
 
-		if(tracknum > window->curr_track)
+		if(tracknum > window->curr_track){
+                  //printf("mr1\n");
                   move_right = true;
+                }
 
                 else if (tracknum==window->curr_track) {
-                  if (wtrack->swingtext_on){
-                    if (subtrack==-1 && window->curr_track_sub < 3)
+                  if (wtrack->swingtext_on && window->curr_track_sub < 3){
+                    if (subtrack==-1){
+                      //printf("mr2\n");
                       move_right = true;
-                    else if (subtrack < window->curr_track_sub)
+                    }else if (subtrack >2){
+                      //printf("mr3\n");
                       move_right = true;
+                    }
                   } else {
-                    if (subtrack > window->curr_track_sub)
+                    if (subtrack > window->curr_track_sub){
+                      //printf("mr4\n");
                       move_right = true;
+                    }
                   }
                 }
 
 		if(move_right) {
 			while(window->curr_track!=tracknum || window->curr_track_sub!=subtrack){
 				tempret=CursorRight(window,wblock);
-                                //printf("wtrack->num: %d, curr_track: %d, num_tracks: %d\n",wtrack->l.num, window->curr_track,wblock->block->num_tracks);
+                                //printf("wtrack->num: %d, curr_track: %d, curr_track_sub: %d, num_tracks: %d\n",wtrack->l.num, window->curr_track,window->curr_track_sub,wblock->block->num_tracks);
 				ret=R_MAX(tempret,ret);
                                 if (window->curr_track==last_tracknum && window->curr_track_sub==last_subtracknum && window->curr_othertrack_sub==last_curr_othertrack_sub){
                                   R_ASSERT_NON_RELEASE(false);
