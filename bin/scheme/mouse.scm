@@ -3016,7 +3016,12 @@
                          (<ra> :set-statusbar-text (<-> "Velocity text for track #" *current-track-num*)))
                         ((and (<ra> :fxtext-visible *current-track-num*)
                               (inside-box (<ra> :get-box fxtext *current-track-num*) X Y))
-                         (<ra> :set-statusbar-text (<-> "FX text for track #" *current-track-num*)))
+                         (define instrument-id (<ra> :get-instrument-for-track  *current-track-num*))
+                         (when (>= instrument-id 0)
+                           (define effect-num (<ra> :get-fxtext-effect-num-from-x X *current-track-num*))
+                           (when (>= effect-num 0)
+                             (define effect-name (<ra> :get-instrument-effect-name effect-num instrument-id))
+                             (<ra> :set-statusbar-text (<-> "FX text \"" effect-name "\", track #" *current-track-num*)))))
                         (velocity-info
                          (set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
                          ;;(c-display "setting current to " (velocity-info :velocitynum) (velocity-info :dir))
