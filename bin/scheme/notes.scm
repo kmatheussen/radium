@@ -104,12 +104,12 @@
                      :chance (<ra> :get-pitch-chance pitchnum notenum tracknum blocknum)))
        (iota (<ra> :get-num-pitches notenum tracknum blocknum))))
 
-#!
+#!!
 (<ra> :get-pitch-logtype 0 0 0 0)
 (get-note-pitches 0 0 0 0)
 (<ra> :get-pianonote-logtype 0 0 0)
 (<ra> :get-num-pianonotes 0 0)
-!#
+!!#
 
 (define (get-note blocknum tracknum notenum startplace)
   (let* ((note-start (<ra> :get-note-start notenum tracknum blocknum))
@@ -333,8 +333,7 @@
                                       :value value
                                       :place place)))))
                 (else
-                 (error 'internal-error-in-cut-pitchvelocity-keep-start (<-displayable-> "pv1:" pv1 ", pv2: " pv2 ", place1: " place1 ", place2: " place2 ", place: "place))
-                 (assert #f)))))))
+                 (error 'internal-error-in-cut-pitchvelocity-keep-start (<-displayable-> "pv1:" pv1 ", pv2: " pv2 ", place1: " place1 ", place2: " place2 ", place: "place))))))))
 
 (***assert*** (cut-pitchvelocity-keep-start (list (make-velocity :place 1 :value 0 :logtype (<ra> :get-logtype-hold))
                                                   (make-velocity :place 2 :value 0 :logtype (<ra> :get-logtype-hold)))
@@ -669,11 +668,13 @@
         (else
          #t)))
 
+#||
 (define (remove-notes-outside-pitch-range notes startpitch endpitch)
   (keep (lambda (note)
           (is-note-inside-pitch-range? note startpitch endpitch))
         notes))
-                
+||#
+             
 (define (pr-erase-split-note note startsplit endsplit)
   ;;(c-display "START/END-split:" startsplit endsplit)
   (define note1 (cut-note-keep-start note startsplit))

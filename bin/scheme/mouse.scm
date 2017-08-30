@@ -1187,7 +1187,7 @@
               :enabled (<ra> :centtext-can-be-turned-off *current-track-num*)
               (lambda (onoff)
                 (<ra> :show-centtext  onoff *current-track-num*)))
-        (list)))
+        '()))
 
 (define (chancetext-popup-elements)
   (list (list "Chance text" :check (<ra> :chancetext-visible *current-track-num*) (lambda (onoff)
@@ -1834,7 +1834,8 @@
 
 (define (create-play-pianonote note-id pianonote-id)
   (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
-    (if (>= instrument-id 0)
+    (if (< instrument-id 0)
+        -1
         (<ra> :play-note
               (<ra> :get-pianonote-value pianonote-id note-id *current-track-num*)
               (if (<ra> :get-track-volume-on-off *current-track-num*)
@@ -1844,8 +1845,7 @@
                   (<ra> :get-track-pan *current-track-num*)
                   0.0)
               (<ra> :get-track-midi-channel *current-track-num*)
-              instrument-id)
-        -1)))
+              instrument-id))))
 
 (define (get-pianoroll-key X)
   (scale X

@@ -2478,6 +2478,7 @@ hash_t *MW_get_state(const vector_t *patches, bool include_ab){
 
   HASH_put_dyn(state, "mixer_strips_configuration", MW_get_mixer_strips_state());
 
+  HASH_put_bool(state, "volume_applied_before_drywet", true);
   return state;
 }
 
@@ -2692,6 +2693,15 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
     MW_apply_mixer_strips_state(HASH_get_dyn(state, "mixer_strips_configuration"));
   else
     gui_resetAllMixerStrips();
+
+  
+  if (!HASH_has_key(state, "volume_applied_before_drywet")){
+    evalScheme("(<ra> :schedule 100 (lambda () (show-message-gui "
+               "\"Beware that this song was created with a version of Radium where volume was applied after drywet and bypass.\n"
+               "If you use bypass or dry/wet, it might not sound exactly the same.\""
+               ") #f))");
+  }
+
 }
 
 // This function is called when loading a song saved with a version of radium made before the audio system was added.
