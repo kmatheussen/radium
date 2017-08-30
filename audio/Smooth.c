@@ -208,23 +208,23 @@ void SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source,
   }
 }
 
-void SMOOTH_mix_sounds_using_inverted_values(const Smooth *smooth, float *target, const float *source, int num_frames){
+void SMOOTH_mix_sounds_using_inverted_values(const Smooth *smooth, float *wet, const float *dry, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
   int i;
   if(is_smoothing_necessary(smooth)==true){
     float *values = smooth->values;
     for(i=0;i<num_frames;i++)
-      target[i] += source[i] * (1.0f-values[i]);
+      wet[i] += dry[i] * (1.0f-values[i]);
   }else{
     //printf("%p smooth->get: %f, smooth->set: %f. start: %f, end: %f\n",smooth,smooth->get,smooth->set,smooth->start_value,smooth->end_value);
     float volume = (1.0f-smooth->value);
     if(volume == 1.0f)
       for(i=0;i<num_frames;i++)
-        target[i] += source[i];
+        wet[i] += dry[i];
     else if(volume > 0.0f)
       for(i=0;i<num_frames;i++)
-        target[i] += source[i] * volume;
+        wet[i] += dry[i] * volume;
   }
 }
 

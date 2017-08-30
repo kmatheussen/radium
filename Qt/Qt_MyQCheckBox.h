@@ -66,6 +66,15 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
         col = mix_colors(col, QColor(255,0,0), 0.6);
       else if (text=="Recording")
         col = mix_colors(col, QColor(255,0,0), 0.1);
+
+      if (is_checked) {
+        if (text=="Mute")
+          col = mix_colors(col, Qt::green, 0.75);
+        else if (text=="Solo")
+          col = mix_colors(col, Qt::yellow, 0.75);
+        else if (text=="Bypass")
+          col = mix_colors(col, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), 0.6);
+      }
       
 #if 0
       col = mix_colors(col.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);

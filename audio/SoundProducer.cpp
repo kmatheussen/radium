@@ -291,7 +291,10 @@ struct SoundProducerLink {
   
   float get_total_link_volume(void) const {
     const SoundPlugin *source_plugin = SP_get_plugin(source);
-    float plugin_volume = source_plugin->volume;  // (Note that plugin->volume==0 when plugin->volume_onoff==false, so we don't need to test for that)
+
+    //bool do_bypass      = !ATOMIC_GET(source_plugin->effects_are_on);
+
+    //float plugin_volume = do_bypass ? 1.0 : source_plugin->volume;  // (Note that plugin->volume==0 when plugin->volume_onoff==false, so we don't need to test for that)
 
     if (turn_off_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis())
       return 0.0f;
@@ -307,14 +310,14 @@ struct SoundProducerLink {
       int bus_num = SP_get_bus_num(target);
       
       if (ATOMIC_GET_ARRAY(source_plugin->bus_volume_is_on, bus_num))
-        return source_plugin->bus_volume[bus_num] * plugin_volume; // The links are invisible here, so it doesn't make sense multiplying with link_volume (don't need two bus volumes)
+        return source_plugin->bus_volume[bus_num]; // * plugin_volume; // The links are invisible here, so it doesn't make sense multiplying with link_volume (don't need two bus volumes)
       else
         return 0.0f;
       
     } else {
     
       if (ATOMIC_GET(source_plugin->output_volume_is_on))
-        return source_plugin->output_volume * plugin_volume * RT_link_volume;
+        return source_plugin->output_volume * RT_link_volume; // * plugin_volume
       else
         return 0.0f;
 
@@ -482,14 +485,18 @@ static void RT_copy_sound_and_apply_volume(float *to_sound, const float *from_so
 #endif
 
 
-static void RT_apply_dry_wet(const float **dry, int num_dry_channels, float **wet, int num_wet_channels, int num_frames, const Smooth *wet_values){
-  int num_channels = std::min(num_dry_channels,num_wet_channels);
-  for(int ch=0;ch<num_channels;ch++){
-    float *w=wet[ch];
-    const float *d=dry[ch];
+static void RT_apply_dry_wet(const float **dry, int num_dry_channels,
+                             float **wet, int num_wet_channels,
+                             int num_frames,
+                             const Smooth *wet_values){
+  //int num_channels = num_wet_channels; //std::min(num_dry_channels,num_wet_channels);
+  for(int ch=0;ch<num_wet_channels;ch++){
+    float       *w = wet[ch];
 
     SMOOTH_apply_volume(wet_values, w, num_frames);
-    SMOOTH_mix_sounds_using_inverted_values(wet_values, w, d, num_frames);
+
+    if (ch < num_dry_channels)
+      SMOOTH_mix_sounds_using_inverted_values(wet_values, w, dry[ch], num_frames);
   }
 }
 
@@ -1108,8 +1115,8 @@ public:
     // 2. REMOVING: Remove links that must be removed first to avoid recursive graph. (these are found in the is_recursive function)
     //
     {
-      radium::Vector<SoundProducerLink*> empty_to_add;
-      SoundProducer::add_and_remove_links(empty_to_add, links_that_must_be_removed_first);
+      radium::Vector<SoundProducerLink*> empty;
+      SoundProducer::add_and_remove_links(empty, links_that_must_be_removed_first);
     }
 
     
@@ -1138,6 +1145,7 @@ public:
         linkvector->ensure_there_is_room_for_more_without_having_to_allocate_memory(howmanys.value(linkvector));
       }
     }
+
 
     // 4. REMOVING/ADDING: Request links to be removed to turn off, and add new links.
     //
@@ -1746,7 +1754,6 @@ public:
 
     
     bool is_a_generator = _num_inputs==0;
-    bool do_bypass      = _plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.value==0.0f;
 
   
     if(is_a_generator)
@@ -1755,6 +1762,8 @@ public:
 
     // Input peaks
     if (_num_dry_sounds > 0){
+      bool do_bypass     = !ATOMIC_GET(_plugin->effects_are_on); //_plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.value==0.0f;
+
       float input_peaks[_num_dry_sounds];
       for(int ch=0;ch<_num_dry_sounds;ch++) {
         
@@ -1764,13 +1773,13 @@ public:
           RT_PLUGIN_touch(_plugin);
         
         float input_volume = SMOOTH_get_target_value(&_plugin->input_volume);
-
+        
         input_peaks[ch] = do_bypass ? 0.0f : dry_peak *  input_volume;
       }
       RT_set_input_peak_values(input_peaks, dry_sound);
     }
 
-    float latency_dry_sound_sound[R_MAX(1,_num_dry_sounds)][num_frames];
+    float latency_dry_sound_sound[R_MAX(1,_num_dry_sounds)][num_frames]; // Using 'R_MAX' since array[0] is undefined behavior. (ubsan fix only, most likely nothing bad would happen)
     const float *latency_dry_sound[R_MAX(1,_num_dry_sounds)];
     for(int ch=0;ch<_num_dry_sounds;ch++)        
       latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch], latency_dry_sound_sound[ch], num_frames);
@@ -1804,11 +1813,21 @@ public:
     RT_apply_system_filter(&_plugin->highshelf, _output_sound, _num_outputs, num_frames, process_plugins);
     RT_apply_system_filter(&_plugin->lowpass,   _output_sound, _num_outputs, num_frames, process_plugins);
     RT_apply_system_filter(&_plugin->highpass,  _output_sound, _num_outputs, num_frames, process_plugins);
-    
-    // dry/wet              
-    RT_apply_dry_wet(latency_dry_sound, _num_dry_sounds, _output_sound, _num_outputs, num_frames, &_plugin->drywet);
 
-    
+    // Apply volume to the wet values.
+    for(int ch=0 ; ch < _num_outputs ; ch++)
+      SMOOTH_apply_volume(&_plugin->volume, _output_sound[ch], num_frames);
+
+
+    // Note: We could have optimized applying volume and dry/wet into one step. But that would have made the code a little bit more complicated.
+    // In addition, applying dry/wet is a dummy operation if wet=1.0 and dry=0.0, which is the normal situation, so it would normally
+    // not make a difference in CPU usage. (and even when drywet!=1.0, there would probably be very little difference in CPU usage)
+
+    RT_apply_dry_wet(latency_dry_sound, _num_dry_sounds, // dry
+                     _output_sound, _num_outputs,        // wet (-> becomes output sound)
+                     num_frames,
+                     &_plugin->drywet);
+
     // Output pan
     SMOOTH_apply_pan(&_plugin->pan, _output_sound, _num_outputs, num_frames);
 
@@ -1823,11 +1842,10 @@ public:
       
       for(int ch=0;ch<_num_outputs;ch++) {
 
-        float out_peak = RT_get_max_val(_output_sound[ch],num_frames);
+        const float out_peak = RT_get_max_val(_output_sound[ch],num_frames);
+        volume_peaks[ch] = out_peak;
 
         is_touched = is_touched || (out_peak > MIN_AUTOSUSPEND_PEAK);
-
-        volume_peaks[ch] = out_peak * _plugin->volume;
       }
 
       if(is_touched) {

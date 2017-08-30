@@ -1992,12 +1992,12 @@
                   <number>0</number>
                  </property>
                  <item>
-                  <layout class="QHBoxLayout" name="horizontalLayout_5">
+                  <layout class="QHBoxLayout" name="horizontalLayout_8">
                    <property name="spacing">
                     <number>0</number>
                    </property>
                    <item>
-                    <widget class="QCheckBox" name="effects_onoff">
+                    <widget class="QCheckBox" name="mute_button">
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                        <horstretch>0</horstretch>
@@ -2005,10 +2005,80 @@
                       </sizepolicy>
                      </property>
                      <property name="text">
-                      <string/>
+                      <string>Mute</string>
                      </property>
                     </widget>
                    </item>
+                   <item>
+                    <widget class="QCheckBox" name="solo_button">
+                     <property name="text">
+                      <string>Solo</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item>
+                    <widget class="QCheckBox" name="bypass_button">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="text">
+                      <string>Bypass</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </item>
+                 <item>
+                  <widget class="QWidget" name="volume_widget" native="true">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
+                   <layout class="QHBoxLayout" name="bus1_layout_3">
+                    <property name="spacing">
+                     <number>0</number>
+                    </property>
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QSlider" name="volume_slider">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="maximum">
+                       <number>10000</number>
+                      </property>
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item>
+                  <layout class="QHBoxLayout" name="horizontalLayout_5">
+                   <property name="spacing">
+                    <number>0</number>
+                   </property>
                    <item>
                     <widget class="QSlider" name="drywet_slider">
                      <property name="sizePolicy">
@@ -2122,62 +2192,6 @@
                     </widget>
                    </item>
                   </layout>
-                 </item>
-                 <item>
-                  <widget class="QWidget" name="volume_widget" native="true">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <layout class="QHBoxLayout" name="bus1_layout_3">
-                    <property name="spacing">
-                     <number>0</number>
-                    </property>
-                    <property name="leftMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="topMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>0</number>
-                    </property>
-                    <item>
-                     <widget class="QCheckBox" name="volume_onoff">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
-                     <widget class="QSlider" name="volume_slider">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="maximum">
-                       <number>10000</number>
-                      </property>
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                     </widget>
-                    </item>
-                   </layout>
-                  </widget>
                  </item>
                 </layout>
                </item>

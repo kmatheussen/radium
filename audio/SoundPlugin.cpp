@@ -429,6 +429,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   plugin->output_volume = 1.0f;
   SMOOTH_init(&plugin->pan           , 0.5f, buffer_size);
   SMOOTH_init(&plugin->drywet        , 1.0f, buffer_size);
+  SMOOTH_init(&plugin->volume        , 1.0f, buffer_size);
 
   ATOMIC_SET(plugin->input_volume_is_on, true);
   ATOMIC_SET(plugin->output_volume_is_on, true);
@@ -436,7 +437,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   ATOMIC_SET_ARRAY(plugin->bus_volume_is_on, 1, false);
   ATOMIC_SET(plugin->effects_are_on, true);
              
-  plugin->volume = 1.0f;
+  //plugin->volume = 1.0f;
   ATOMIC_SET(plugin->volume_is_on, true);
 
 
@@ -562,6 +563,7 @@ void PLUGIN_delete(SoundPlugin *plugin){
   SMOOTH_release(&plugin->pan);
   
   SMOOTH_release(&plugin->drywet);
+  SMOOTH_release(&plugin->volume);
   
   release_system_filter(&plugin->lowpass, plugin_type->num_outputs);
   
@@ -618,6 +620,7 @@ void PLUGIN_update_smooth_values(SoundPlugin *plugin){
   SMOOTH_called_per_block(&plugin->input_volume);
   SMOOTH_called_per_block(&plugin->pan);
   SMOOTH_called_per_block(&plugin->drywet);
+  SMOOTH_called_per_block(&plugin->volume);
 }
 
 int PLUGIN_get_num_visible_effects(SoundPlugin *plugin){
@@ -1319,15 +1322,14 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
     case EFFNUM_VOLUME:
       set_gain_store_value(store_value_native, store_value_scaled, value_format);
       if (ATOMIC_GET(plugin->volume_is_on))
-        plugin->volume = store_value_native;
+        SMOOTH_set_target_value(&plugin->volume, store_value_native);
       break;
 
       
     case EFFNUM_VOLUME_ONOFF:
-      SET_ATOMIC_ON_OFF2(plugin->volume_is_on, value,
-                         plugin->volume,
-                         plugin->last_written_effect_values_native[plugin->type->num_effects + EFFNUM_VOLUME],
-                         0);
+      SET_SMOOTH_ON_OFF(&plugin->volume, plugin->volume_is_on, value,
+                        plugin->last_written_effect_values_native[plugin->type->num_effects + EFFNUM_VOLUME],
+                        0.0f);
       break;
 
 
@@ -1747,7 +1749,8 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
     return ATOMIC_GET(plugin->solo_is_on)==true ? 1.0 : 0.0f;
 
   case EFFNUM_VOLUME:
-    return get_gain_value(plugin->volume, value_format);
+    return get_gain_value(SMOOTH_get_target_value(&plugin->volume), value_format); // drywet is 0-1 both for native and scaled
+    //return get_gain_value(plugin->volume, value_format);
   case EFFNUM_VOLUME_ONOFF:
     return ATOMIC_GET(plugin->volume_is_on)==true ? 1.0 : 0.0f;
 
