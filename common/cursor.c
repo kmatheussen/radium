@@ -31,6 +31,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "gfx_wtrackheaders_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "notes_proc.h"
+#include "veltext_proc.h"
+#include "fxtext_proc.h"
+#include "centtext_proc.h"
+#include "chancetext_proc.h"
+#include "bpmtext_proc.h"
+#include "lpbtext_proc.h"
+#include "swingtext_proc.h"
+#include "signaturetext_proc.h"
+
+#include "../api/api_proc.h"
 
 #include "cursor_proc.h"
 
@@ -347,10 +357,63 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
 	}
 }
 
+static void show_curr_track_in_statusbar(struct Tracker_Windows *window,struct WBlocks *wblock){
+  struct WTracks *wtrack = wblock->wtrack;
+  const char *message = NULL;
+  struct FXs *fxs;
+
+#define PRE "Moved cursor to "
+
+  if (VELTEXT_subsubtrack(window, wtrack) >= 0){
+    message = talloc_format(PRE "velocity text subtrack in track #%d", wtrack->l.num);;
+
+  } else if (FXTEXT_subsubtrack(window, wtrack, &fxs) >= 0){
+    message = talloc_format(PRE "fx text subtrack in track #%d", wtrack->l.num);;
+
+  } else if (CHANCETEXT_subsubtrack(window, wtrack) >= 0){
+    message = talloc_format(PRE "chance text subtrack in track #%d", wtrack->l.num);;
+
+  } else if (CENTTEXT_subsubtrack(window, wtrack) >= 0) {
+    message = talloc_format(PRE "cent text subtrack in track #%d", wtrack->l.num);;
+
+  } else if (BPMTEXT_subsubtrack(window) >= 0) {
+    message = PRE "BPM track";
+
+  } else if (LPBTEXT_subsubtrack(window) >= 0) {
+    message = PRE "LPB track";
+
+  } else if (SIGNATURETEXT_subsubtrack(window) >= 0) {
+    message = PRE "Signature track";
+
+  } else if (SWINGTEXT_subsubtrack(window, window->curr_track < 0 ? NULL : wtrack) >= 0) {
+    if (window->curr_track >= 0)
+      message = PRE "Swing text sub track";
+    else
+      message = PRE "global Swing track";
+
+  } else if (window->curr_track >= 0) {
+    if (window->curr_track_sub==-1)
+      message = talloc_format(PRE "note text in track #%d", wtrack->l.num);
+    else {
+      message = talloc_format(PRE "automation area in track #%d", wtrack->l.num);
+      //int veltracknum = (int)scale_int64(window->curr_track_sub, 0, GetNumSubtracks(wtrack) - ;
+    }
+      
+  } else {
+      message = talloc_format(PRE "the %s track", get_track_name(window->curr_track));
+  }
+  
+  setStatusbarText(message, window->l.num);
+
+#undef PRE
+}
+
 static void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wblock, int unused){
 
         GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
 
+        show_curr_track_in_statusbar(window, wblock);
+        
         window->must_redraw=true;
 }
 
