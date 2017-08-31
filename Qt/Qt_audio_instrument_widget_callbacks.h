@@ -440,6 +440,13 @@ public:
       checkwidget->setChecked(!val);
     else
       checkwidget->setChecked(val);
+
+    if (checkwidget==mute_button){
+      if (PATCH_get_from_id(_patch->id)==NULL) // happens during initialization.
+        mute_button->_is_implicitly_on = false;
+      else
+        mute_button->_is_implicitly_on = instrumentIsImplicitlyMuted(_patch->id);
+    }
     
     if(system_effect==EFFNUM_INPUT_VOLUME_ONOFF)
       input_volume_slider->setEnabled(val);
@@ -599,6 +606,7 @@ public:
   }
   
   void updateWidgets(){
+    //printf("updateWidgets %s\n", _patch->name);
     set_arrow_style(controlsArrow, false);
     set_arrow_style(arrow2, false);
     set_arrow_style(arrow3);
@@ -773,6 +781,8 @@ public:
     if(_sample_requester_widget != NULL){
       _sample_requester_widget->updateWidgets();
     }
+
+    update();
   }
 
   void set_plugin_value(int sliderval, int system_effect){
@@ -1166,8 +1176,7 @@ public slots:
   }
 
   void on_solo_button_toggled(bool val){
-    set_plugin_value(val==true ? 10000 : 0, EFFNUM_SOLO_ONOFF);
-    //updateWidgets();
+    setInstrumentSolo(_patch->id, val);
   }
 
   void on_drywet_slider_valueChanged(int val){
