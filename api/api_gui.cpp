@@ -20,8 +20,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
 #include "../common/includepython.h"
+
+#include <inttypes.h>
+
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
@@ -524,7 +526,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     QVector<Callback*> _callbacks;
  
   public:
-    int _gui_num;
+    int64_t _gui_num;
     int _valid_guis_pos;
 
     const QWidget *_widget_as_key; // Need a way to get hold of the original widget's address in the destructor, even after the original widget has been deleted. (Note that _widget_as_key might have been deleted. Only _widget can be considered to have a valid widget value.)
@@ -548,7 +550,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return _full_screen_parent!=NULL;
     }
     
-    int get_gui_num(void) const {
+    int64_t get_gui_num(void) const {
       return _gui_num;
     }
     bool _has_been_closed = false;
@@ -780,7 +782,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void addMouseCallback(func_t* func){      
       if (_mouse_callback!=NULL){
-        handleError("Gui %d already has a mouse callback.", _gui_num);
+        handleError("Gui %d already has a mouse callback.", (int)_gui_num);
         return;
       }
 
@@ -833,7 +835,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void addKeyCallback(func_t* func){      
       if (_key_callback!=NULL){
-        handleError("Gui %d already has a key callback.", _gui_num);
+        handleError("Gui %d already has a key callback.", (int)_gui_num);
         return;
       }
 
@@ -867,7 +869,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       } else {
         
         if (_doubleclick_callback!=NULL){
-          handleError("Gui %d already has a doubleclick callback.", _gui_num);
+          handleError("Gui %d already has a doubleclick callback.", (int)_gui_num);
           return;
         }        
         _doubleclick_callback = func;
@@ -895,7 +897,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void addCloseCallback(func_t* func){      
       if (_close_callback!=NULL){
-        handleError("Gui %d already has a close callback.", _gui_num);
+        handleError("Gui %d already has a close callback.", (int)_gui_num);
         return;
       }
 
@@ -963,7 +965,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void addResizeCallback(func_t* func){
       if (_resize_callback!=NULL){
-        handleError("Gui %d already has a resize callback.", _gui_num);
+        handleError("Gui %d already has a resize callback.", (int)_gui_num);
         return;
       }
 
@@ -1033,7 +1035,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void addPaintCallback(func_t* func){
       if (_paint_callback!=NULL){
-        handleError("Gui %d already has a paint callback.", _gui_num);
+        handleError("Gui %d already has a paint callback.", (int)_gui_num);
         return;
       }
 
@@ -1057,7 +1059,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       //width*=2;
       //height*=2;
 
-      //printf("   %d: num_calls to setNewImage: %d. %d >= %d, %d >= %d\n", _gui_num, num_calls++, _image==NULL ? -1 : _image->width(), width, _image==NULL ? -1 : _image->height(), height);
+      //printf("   %d: num_calls to setNewImage: %d. %d >= %d, %d >= %d\n", (int)_gui_num, num_calls++, _image==NULL ? -1 : _image->width(), width, _image==NULL ? -1 : _image->height(), height);
 
       auto *new_image = new QImage(width, height, QImage::Format_ARGB32);
       auto *new_image_painter = new QPainter(new_image);
@@ -1263,7 +1265,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         }
       }
 
-      handleError("Gui #%d does not have a setGuiText method", _gui_num);
+      handleError("Gui #%d does not have a setGuiText method", (int)_gui_num);
       return;
     }
 
@@ -1376,7 +1378,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         }
       }
                   
-      handleError("Gui #%d does not have a setValue method", _gui_num);
+      handleError("Gui #%d does not have a setValue method", (int)_gui_num);
     }
 
     // Should put as much as possible in here since ui widgets does not use the subclasses. (Actually, the ui widgets can probably use the subclasses by extending the "createWidget" function, but qwidgets created elsewhere can not). The code is cleaner this way too than to add virtual methods into all subclasses. (Virtual methods in subclasses are somewhat faster though, but performance doesn't matter here.))
@@ -1426,7 +1428,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         return DYN_create_float(doublespinbox->value());
       
                   
-      handleError("Gui #%d does not have a getValue method", _gui_num);
+      handleError("Gui #%d does not have a getValue method", (int)_gui_num);
       return DYN_create_bool(false);
     }
 
@@ -1441,7 +1443,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         }
       }
       
-      handleError("Gui #%d does not have a addRealtimeCallback method", _gui_num);
+      handleError("Gui #%d does not have an addRealtimeCallback method", (int)_gui_num);
       delete callback;
       return;
       
@@ -1559,7 +1561,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         }
       }
             
-      handleError("Gui #%d does not have a addCallback method", _gui_num);
+      handleError("Gui #%d does not have an addCallback method", (int)_gui_num);
       delete callback;
       return;
 
@@ -2505,7 +2507,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   MakeFocusSnifferClass(QWebView);
 
   static QUrl getUrl(QString stringurl){
-    if (stringurl.startsWith("http"))
+    if (stringurl.startsWith("http") || stringurl.startsWith("file:"))
       return stringurl;
     else if (QFileInfo(stringurl).isAbsolute())
       return QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
@@ -2522,6 +2524,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : Gui(this)
     {
       setUrl(getUrl(url));
+      //connect(page(),SIGNAL(downloadRequested(QNetworkRequest)),this,SLOT(download(QNetworkRequest)));
     }
 
     /*
@@ -2530,6 +2533,39 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     */
 
+    // https://forum.qt.io/topic/23736/qwebview-qwebpage-need-help-with-context-menu/4
+    void contextMenuEvent(QContextMenuEvent * ev) override {
+      auto *main_frame = page()->mainFrame();
+      auto rel_pos = ev->pos();
+      auto hit_test = main_frame->hitTestContent(rel_pos);
+      auto hit_url = hit_test.linkUrl();
+      if(hit_url.isEmpty()){
+        //printf("NOT LINK URL\n");
+        FocusSnifferQWebView::contextMenuEvent(ev);
+        return;
+      }
+
+      int64_t parentgui = -1;
+      QWidget *parent_widget = parentWidget();
+      if (parent_widget!=NULL)
+        parentgui = API_get_gui_from_widget(parent_widget);
+
+      const char *code = talloc_format("(popup-menu \"Open Link\" (lambda ()\n"
+                                       "                           (<gui> :set-url %" PRId64 " \"%s\"))\n"
+                                       "            \"Open in New Window\" (lambda ()\n"
+                                       "                                      (define web (<gui> :web \"%s\"))\n"
+                                       "                                      (<gui> :set-parent web %" PRId64 ")\n"
+                                       "                                      (<gui> :show web))\n"
+                                       ")",
+                                       get_gui_num(),
+                                       hit_url.toString().toUtf8().constData(),
+                                       hit_url.toString().toUtf8().constData(),
+                                       parentgui
+                                       );
+      //printf("Evaling -%s-\n", code);
+      evalScheme(code);
+    }
+    
     QString _last_search_text;
 
     void searchForward(void){
@@ -2636,8 +2672,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       ret->show();
       return ret;
     }
-    
+                           
     OVERRIDERS_WITHOUT_KEY(FocusSnifferQWebView);
+
+    /*
+  public slots:
+    void download(const QNetworkRequest &request){
+      qDebug()<<"Download Requested: "<<request.url();
+    } 
+    */   
   };
 
 
@@ -3324,6 +3367,16 @@ int64_t gui_floatText(double min, double curr, double max, int num_decimals, dou
 
 int64_t gui_web(const_char* stringurl){
   return (new Web(stringurl))->get_gui_num();
+}
+
+void gui_setUrl(int64_t guinum, const_char* url){
+  Gui *web_gui = get_gui(guinum);
+  if (web_gui==NULL)
+    return;
+
+  QWebView *web = web_gui->mycast<QWebView>(__FUNCTION__);
+
+  web->setUrl(getUrl(url));
 }
 
 void openExternalWebBrowser(const_char *stringurl){
