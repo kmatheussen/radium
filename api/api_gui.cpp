@@ -2631,6 +2631,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
     }
 
+    QWebView *createWindow(QWebPage::WebWindowType type) override{
+      auto *ret = new Web("");
+      ret->show();
+      return ret;
+    }
+    
     OVERRIDERS_WITHOUT_KEY(FocusSnifferQWebView);
   };
 
