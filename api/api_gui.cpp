@@ -270,7 +270,7 @@ struct Gui;
 
 static QVector<Gui*> g_valid_guis;
 
-static int g_highest_guinum = 0;
+static int64_t g_highest_guinum = 0;
 static QHash<int64_t, Gui*> g_guis;
 
 static QHash<const QWidget*, Gui*> g_gui_from_widgets; // Q: What if a QWidget is deleted, and later a new QWidget gets the same pointer value? 
@@ -282,7 +282,7 @@ static QHash<int64_t, const char*> g_guis_can_not_be_closed; // The string conta
 static QHash<const FullScreenParent*, Gui*> g_gui_from_full_screen_widgets;
 
 static bool g_delayed_resizing_timer_active = false;
-static QQueue<Gui*> g_delayed_resized_guis;
+static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one, if present. We could have used QPointer<Gui> instead, but that would make it harder to check if gui is already scheduled for later resizing.
 
 struct VerticalAudioMeter;
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
@@ -1676,9 +1676,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     DOUBLECLICK_OVERRIDER(QWidget);
     RESIZE_OVERRIDER(QWidget);
 
-    void addPeakCallback(func_t *func, int guinum){
+    void addPeakCallback(func_t *func, int64_t guinum){
       if (_peak_callback != NULL){
-        handleError("Audio Meter #%d already have a peak callback", guinum);
+        handleError("Audio Meter #%d already have a peak callback", (int)guinum);
         return;
       }
 
@@ -3728,7 +3728,7 @@ int64_t gui_addTableFloatCell(int64_t table_guinum, double num, int x, int y, bo
   return add_table_cell(table_guinum, NULL, item, x, y, enabled);
 }
 
-int gui_getTableRowNum(int64_t table_guinum, int cell_guinum){
+int gui_getTableRowNum(int64_t table_guinum, int64_t cell_guinum){
   Gui *table_gui = get_gui(table_guinum);
   if (table_gui==NULL)
     return -1;
@@ -4743,7 +4743,7 @@ int64_t gui_verticalAudioMeter(int instrument_id){
   return (new VerticalAudioMeter(patch))->get_gui_num();
 }
 
-void gui_addAudioMeterPeakCallback(int guinum, func_t* func){
+void gui_addAudioMeterPeakCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
@@ -4755,7 +4755,7 @@ void gui_addAudioMeterPeakCallback(int guinum, func_t* func){
   meter->addPeakCallback(func, guinum);
 }
 
-void gui_resetAudioMeterPeak(int guinum){
+void gui_resetAudioMeterPeak(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
