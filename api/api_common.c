@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#define __STDC_FORMAT_MACROS 1
+#include <inttypes.h>
 
 #include "../common/includepython.h"
 
@@ -550,7 +552,7 @@ static const Place *getNextLegalNotePlace(const struct Notes *note){
 
 
 dyn_t GetNoteIdFromNoteId(int64_t note_id){
-  return DYN_create_string_from_chars(talloc_format("%" PRId64 "",note_id));
+  return DYN_create_string_from_chars(talloc_format("%" PRId64, note_id));
 }
 
 dyn_t GetNoteId(struct Notes *note){
