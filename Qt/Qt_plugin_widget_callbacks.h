@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#define SHOW_SOLO_BUTTON 0
 
 #include <QFileDialog>
 
@@ -95,11 +96,15 @@ public:
       
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
-    
+
+#if SHOW_SOLO_BUTTON
     solo_checkbox->_patch = _patch;
     solo_checkbox->_effect_num = type->num_effects + EFFNUM_SOLO_ONOFF;
     solo_checkbox->_add_undo_when_clicked = false;
-
+#else
+    solo_checkbox->hide();
+#endif
+    
     bool will_always_autosuspend = type->will_always_autosuspend;
 
     if(will_always_autosuspend || type->will_never_autosuspend)
@@ -426,11 +431,13 @@ public:
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       if (plugin != NULL){
 
+#if SHOW_SOLO_BUTTON
         {
           bool is_solo = ATOMIC_GET(plugin->solo_is_on);
           if (solo_checkbox->isChecked() != is_solo)
             solo_checkbox->setChecked(is_solo);
         }
+#endif
         
         {
           enum AutoSuspendBehavior auto_suspend_behavior = PLUGIN_get_autosuspend_behavior(plugin);
@@ -999,6 +1006,7 @@ public slots:
     set_editor_focus();
   }
 
+#if SHOW_SOLO_BUTTON
   void on_solo_checkbox_toggled(bool val){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin != NULL){
@@ -1010,6 +1018,7 @@ public slots:
       //CHIP_update(plugin);
     }
   }
+#endif
 };
 
 }

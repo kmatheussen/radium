@@ -42,7 +42,7 @@ extern LANGSPEC AudioMeterPeaks AUDIOMETERPEAKS_create(int num_channels);
 extern LANGSPEC void AUDIOMETERPEAKS_delete(AudioMeterPeaks peaks);
 
 #ifdef __cplusplus
-static inline void RT_AUDIOMETERPEAKS_add(const AudioMeterPeaks &peaks, int ch, float val){
+static inline void RT_AUDIOMETERPEAKS_add(AudioMeterPeaks &peaks, int ch, float val){
   for(;;){
     float old_val = atomic_get_float_relaxed(&ATOMIC_NAME(peaks.RT_max_gains)[ch]);
     float max_val = R_MAX(old_val, val);

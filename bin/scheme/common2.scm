@@ -238,6 +238,18 @@
 ||#
 
 
+;; copy-hash
+(define (copy-hash hash . rest)
+  (define ret (copy hash))
+  (let loop ((rest rest))
+    (if (null? rest)
+        ret
+        (let ((key (car rest))
+              (value (cadr rest)))
+          (hash-table-set! ret key value)
+          (loop (cddr rest))))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; define-struct ;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

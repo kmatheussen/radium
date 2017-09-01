@@ -47,7 +47,7 @@ export OPTIMIZE="-O2 -mfpmath=sse -msse2 $RADIUM_RELEASE_CFLAGS"
 #fi
 
 export CPUOPT=
-#"$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind.
+#"$OPTIMIZE" # Some files are so CPU intensive that we need to turn on optimizations even in debug mode, at least when running in valgrind. (Makefile sets CPUOPT to "-Og" in debug mode and "-O3" in release mode)
 #export CPUOPT=
 
 #export CCC="clang++ -mfpmath=sse -msse2"

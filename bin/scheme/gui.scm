@@ -542,7 +542,7 @@
 
 (define (FROM-C-show-help-window filename)
   (define web (or (*help-windows* filename)
-                  (let ((web (<gui> :web filename)))
+                  (let ((web (<gui> :web filename)))                    
                     (set! (*help-windows* filename) web)
                     (<gui> :add-close-callback web (lambda x
                                                      (<gui> :hide web)

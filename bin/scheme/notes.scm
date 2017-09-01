@@ -104,12 +104,12 @@
                      :chance (<ra> :get-pitch-chance pitchnum notenum tracknum blocknum)))
        (iota (<ra> :get-num-pitches notenum tracknum blocknum))))
 
-#!
+#!!
 (<ra> :get-pitch-logtype 0 0 0 0)
 (get-note-pitches 0 0 0 0)
 (<ra> :get-pianonote-logtype 0 0 0)
 (<ra> :get-num-pianonotes 0 0)
-!#
+!!#
 
 (define (get-note blocknum tracknum notenum startplace)
   (let* ((note-start (<ra> :get-note-start notenum tracknum blocknum))
@@ -210,14 +210,14 @@
                  (let ((logtype (pv1 :logtype))
                        (value1 (pv1 :value))
                        (value2 (pv2 :value)))
-                   (let* ((value (if (or (logtype-holding? logtype)
-                                         (not portamento-enabled))
-                                     value1
-                                     (scale place place1 place2 value1 value2)))
-                          (copied-pv (copy pv1)))
-                     (hash-table-set! copied-pv :value value)
-                     (hash-table-set! copied-pv :place place)
-                     (cons copied-pv (cdr pv)))))
+                   (let ((value (if (or (logtype-holding? logtype)
+                                        (not portamento-enabled))
+                                    value1
+                                    (scale place place1 place2 value1 value2))))
+                     (cons (copy-hash pv1
+                                      :value value
+                                      :place place)
+                           (cdr pv)))))
                 (else
                  (loop (cdr pv))))))))
 
@@ -286,9 +286,7 @@
         
         (define (skew-pvs pvs)
           (map (lambda (cutted-pv)
-                 (let ((ret (copy cutted-pv)))
-                   (hash-table-set! ret :place (- (ret :place) cut-place))
-                   ret))
+                 (copy-hash cutted-pv :place (- (cutted-pv :place) cut-place)))
                pvs))
         
         ;;(c-display "PLACE: " place ". Note-place:" (note :place) ". Cut-place:" cut-place ". Portamento-enabled:" portamento-enabled)
@@ -324,19 +322,18 @@
                  (let ((logtype (pv1 :logtype))
                        (value1 (pv1 :value))
                        (value2 (pv2 :value)))
-                   (let* ((value (cond ((not portamento-enabled)
-                                        0)
-                                       ((logtype-holding? logtype)
-                                        value1)
-                                       (else
-                                        (scale place place1 place2 value1 value2))))
-                          (copied-pv (copy pv2)))
-                     (hash-table-set! copied-pv :value value)
-                     (hash-table-set! copied-pv :place place)
-                     (list pv1 copied-pv))))
+                   (let ((value (cond ((not portamento-enabled)
+                                       0)
+                                      ((logtype-holding? logtype)
+                                       value1)
+                                      (else
+                                       (scale place place1 place2 value1 value2)))))
+                     (list pv1
+                           (copy-hash pv2
+                                      :value value
+                                      :place place)))))
                 (else
-                 (error 'internal-error-in-cut-pitchvelocity-keep-start (<-displayable-> "pv1:" pv1 ", pv2: " pv2 ", place1: " place1 ", place2: " place2 ", place: "place))
-                 (assert #f)))))))
+                 (error 'internal-error-in-cut-pitchvelocity-keep-start (<-displayable-> "pv1:" pv1 ", pv2: " pv2 ", place1: " place1 ", place2: " place2 ", place: "place))))))))
 
 (***assert*** (cut-pitchvelocity-keep-start (list (make-velocity :place 1 :value 0 :logtype (<ra> :get-logtype-hold))
                                                   (make-velocity :place 2 :value 0 :logtype (<ra> :get-logtype-hold)))
@@ -664,20 +661,20 @@
 ||#
 
 (define (is-note-inside-place-range? note place1 place2)
-  (let ((n1 (note :place))
-        (n2 (get-note-end note)))
-    (cond ((< n2 place1)
-           #f)
-          ((>= n1 place2)
-           #f)
-          (else
-           #t))))
+  (cond ((< (get-note-end note) place1)
+         #f)
+        ((>= (note :place) place2)
+         #f)
+        (else
+         #t)))
 
+#||
 (define (remove-notes-outside-pitch-range notes startpitch endpitch)
   (keep (lambda (note)
           (is-note-inside-pitch-range? note startpitch endpitch))
         notes))
-                
+||#
+             
 (define (pr-erase-split-note note startsplit endsplit)
   ;;(c-display "START/END-split:" startsplit endsplit)
   (define note1 (cut-note-keep-start note startsplit))

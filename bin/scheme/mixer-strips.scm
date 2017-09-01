@@ -2660,6 +2660,8 @@
                          *mixer-strips-objects*))))
 
   ;;mixer-strips-object
+
+  (<gui> :set-take-keyboard-focus gui #f)
   
   gui
   )

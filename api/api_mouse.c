@@ -909,6 +909,31 @@ float getFxtextY2(int tracknum, int blocknum, int windownum){
   return wtrack==NULL ? 0 : wtrack->y2;
 }
 
+int getFxtextEffectNumFromX(float x, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return -1;
+
+  if (fxtextVisible(tracknum, blocknum, windownum)==false)
+    return -1;
+
+  if (wtrack->track->fxs.num_elements==0)
+    return -1;
+
+  int column = 0;
+  VECTOR_FOR_EACH(const struct FXs *fxs, &wtrack->track->fxs){
+    float x2 = wtrack->fxtextarea.x + ((column+1) * WTRACK_fxtrack_width(window->fontwidth));
+    if (x < x2)
+      return fxs->fx->effect_num;
+    column++;
+  }END_VECTOR_FOR_EACH;
+
+  struct FXs *fxs = VECTOR_last(&wtrack->track->fxs);
+  return fxs->fx->effect_num;
+}
+
 ///
 
 

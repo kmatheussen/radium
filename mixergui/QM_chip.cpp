@@ -1486,6 +1486,7 @@ QPainterPath Chip::shape() const
   return path;
 }
 
+/*
 inline static void CHECKBOX_paint_arc(QPainter *painter, bool is_checked, bool is_enabled, int width, int height){
     QColor col1; // off
     QColor col2; // on
@@ -1522,6 +1523,7 @@ inline static void CHECKBOX_paint_arc(QPainter *painter, bool is_checked, bool i
 
     painter->setBrush(Qt::NoBrush);
 }
+*/
 
 extern QHash<int, QColor> custom_colors;
 

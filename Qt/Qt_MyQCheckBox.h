@@ -48,7 +48,7 @@ static int get_text_width(QString text){
   return fn.width(text);
 }
 
-inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height, QString text){
+inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_enabled, int width, int height, QString text, bool _is_implicitly_on){
 #ifdef COMPILING_RADIUM
   //QColor *colors = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors;
 #else
@@ -57,15 +57,30 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
 
     QColor col; // on
 
+    QColor checked_col;
+    
     if(text!=""){
       col = get_qcolor(BUTTONS_COLOR_NUM);
-
+      
       if (text=="Record")
         col = mix_colors(col, QColor(255,0,0), 0.9);
       else if (text=="Waiting for note...")
         col = mix_colors(col, QColor(255,0,0), 0.6);
       else if (text=="Recording")
         col = mix_colors(col, QColor(255,0,0), 0.1);
+
+      if (text=="Mute")
+        checked_col = mix_colors(col, Qt::green, 0.75);
+      else if (text=="Solo")
+        checked_col = mix_colors(col, Qt::yellow, 0.75);
+      else if (text=="Bypass")
+        checked_col = mix_colors(col, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), 0.6);
+      else
+        checked_col = col;
+
+      if (is_checked) {
+        col = checked_col;
+      }
       
 #if 0
       col = mix_colors(col.light(70),QColor(98,59,33),0.55);//editor->colors[colnum].light(52);
@@ -90,8 +105,14 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
       //p.drawRect(0,0,width()-1,height()-1);
       //p.drawRect(1,1,width()-3,height()-3);
     }else{
-      painter->setPen(col);
+      if(_is_implicitly_on)
+        painter->setPen(checked_col);
+      else
+        painter->setPen(col);
+
       painter->drawRect(1,1,width-3,height-2); // outer
+      if(_is_implicitly_on)
+        painter->setPen(col);
       painter->drawRect(2,2,width-5,height-4); // inner
     }
 
@@ -135,7 +156,7 @@ struct MyQCheckBox : public QCheckBox{
   bool _is_patchvoice_onoff_button;
   bool _add_undo_when_clicked = true;
   bool _is_a_pd_slider;
-
+  bool _is_implicitly_on = false;
   QString vertical_text;
 
   void init(){
@@ -279,7 +300,7 @@ struct MyQCheckBox : public QCheckBox{
       text2 = b + text2 + a;
     }
     
-    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2);
+    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2, _is_implicitly_on);
   }
 
 #if 0  //unable to make this work. Using the "clicked" signal instead.

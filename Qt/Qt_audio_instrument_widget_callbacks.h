@@ -340,7 +340,7 @@ public:
     case EFFNUM_INPUT_VOLUME_ONOFF:
       return input_volume_onoff;
     case EFFNUM_VOLUME_ONOFF:
-      return volume_onoff;
+      return mute_button;
     case EFFNUM_OUTPUT_VOLUME_ONOFF:
       return output_volume_onoff;
     case EFFNUM_BUS1_ONOFF:
@@ -356,7 +356,9 @@ public:
     case EFFNUM_PAN_ONOFF:
       return panning_onoff;
     case EFFNUM_EFFECTS_ONOFF:
-      return effects_onoff;
+      return bypass_button;
+    case EFFNUM_SOLO_ONOFF:
+      return solo_button;
     case EFFNUM_LOWPASS_ONOFF:
       return lowpass_onoff;
     case EFFNUM_HIGHPASS_ONOFF:
@@ -434,12 +436,22 @@ public:
 
     bool val = PLUGIN_get_effect_value(plugin,effect_num, VALUE_FROM_PLUGIN) >= 0.5f;
 
-    checkwidget->setChecked(val);
+    if(system_effect==EFFNUM_VOLUME_ONOFF || system_effect==EFFNUM_EFFECTS_ONOFF)
+      checkwidget->setChecked(!val);
+    else
+      checkwidget->setChecked(val);
 
+    if (checkwidget==mute_button){
+      if (PATCH_get_from_id(_patch->id)==NULL) // happens during initialization.
+        mute_button->_is_implicitly_on = false;
+      else
+        mute_button->_is_implicitly_on = instrumentIsImplicitlyMuted(_patch->id);
+    }
+    
     if(system_effect==EFFNUM_INPUT_VOLUME_ONOFF)
       input_volume_slider->setEnabled(val);
-    if(system_effect==EFFNUM_VOLUME_ONOFF)
-      volume_slider->setEnabled(val);
+    //if(system_effect==EFFNUM_VOLUME_ONOFF)
+    //  volume_slider->setEnabled(val);
     if(system_effect==EFFNUM_OUTPUT_VOLUME_ONOFF)
       output_volume_slider->setEnabled(val);
     if(system_effect==EFFNUM_BUS1_ONOFF)
@@ -594,6 +606,7 @@ public:
   }
   
   void updateWidgets(){
+    //printf("updateWidgets %s\n", _patch->name);
     set_arrow_style(controlsArrow, false);
     set_arrow_style(arrow2, false);
     set_arrow_style(arrow3);
@@ -654,7 +667,7 @@ public:
     updateSlider(EFFNUM_DELAY_TIME);
 
     updateChecked(input_volume_onoff, EFFNUM_INPUT_VOLUME_ONOFF);
-    updateChecked(volume_onoff, EFFNUM_VOLUME_ONOFF);
+    updateChecked(mute_button, EFFNUM_VOLUME_ONOFF);
     updateChecked(output_volume_onoff, EFFNUM_OUTPUT_VOLUME_ONOFF);
     updateChecked(bus1_onoff, EFFNUM_BUS1_ONOFF);
     updateChecked(bus2_onoff, EFFNUM_BUS2_ONOFF);
@@ -663,7 +676,8 @@ public:
     updateChecked(bus5_onoff, EFFNUM_BUS5_ONOFF);
 
     updateChecked(panning_onoff, EFFNUM_PAN_ONOFF);
-    updateChecked(effects_onoff, EFFNUM_EFFECTS_ONOFF);
+    updateChecked(bypass_button, EFFNUM_EFFECTS_ONOFF);
+    updateChecked(solo_button, EFFNUM_SOLO_ONOFF);
 
     updateChecked(lowpass_onoff, EFFNUM_LOWPASS_ONOFF);
     updateChecked(highpass_onoff, EFFNUM_HIGHPASS_ONOFF);
@@ -747,10 +761,12 @@ public:
     int num_outputs = type->num_outputs;
 
     if(num_outputs>0){
-      input_volume_layout->setEnabled(ATOMIC_GET(plugin->effects_are_on));
+      bool effects_are_on = ATOMIC_GET(plugin->effects_are_on);
+      input_volume_layout->setEnabled(effects_are_on);
       if(plugin->type->num_inputs>0)
-        _plugin_widget->setEnabled(ATOMIC_GET(plugin->effects_are_on));
-      filters_widget->setEnabled(ATOMIC_GET(plugin->effects_are_on));
+        _plugin_widget->setEnabled(effects_are_on);
+      filters_widget->setEnabled(effects_are_on);
+      volume_widget->setEnabled(effects_are_on);
     }
 
     _comp_widget->update_gui();
@@ -765,6 +781,8 @@ public:
     if(_sample_requester_widget != NULL){
       _sample_requester_widget->updateWidgets();
     }
+
+    update();
   }
 
   void set_plugin_value(int sliderval, int system_effect){
@@ -1100,9 +1118,9 @@ public slots:
     input_volume_slider->setEnabled(val);
   }
 
-  void on_volume_onoff_toggled(bool val){
-    set_plugin_value(val==true ? 10000 : 0, EFFNUM_VOLUME_ONOFF);
-    volume_slider->setEnabled(val);
+  void on_mute_button_toggled(bool val){
+    set_plugin_value(val==false ? 10000 : 0, EFFNUM_VOLUME_ONOFF);
+    //volume_slider->setEnabled(!val);
     CHIP_update((SoundPlugin*)_patch->patchdata);
   }
 
@@ -1150,11 +1168,15 @@ public slots:
 
   // effects onoff / dry_wet
 
-  void on_effects_onoff_toggled(bool val){
-    set_plugin_value(val==true ? 10000 : 0, EFFNUM_EFFECTS_ONOFF);
-    drywet_slider->setEnabled(val);
+  void on_bypass_button_toggled(bool val){
+    set_plugin_value(val==false ? 10000 : 0, EFFNUM_EFFECTS_ONOFF);
+    drywet_slider->setEnabled(!val);
     CHIP_update((SoundPlugin*)_patch->patchdata);
     updateWidgets();
+  }
+
+  void on_solo_button_toggled(bool val){
+    setInstrumentSolo(_patch->id, val);
   }
 
   void on_drywet_slider_valueChanged(int val){

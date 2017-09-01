@@ -441,7 +441,8 @@ typedef struct SoundPlugin{
   Smooth input_volume;
   DEFINE_ATOMIC(bool, input_volume_is_on);
 
-  float volume;
+  //float volume;
+  Smooth volume;
   DEFINE_ATOMIC(bool, volume_is_on);
 
   float output_volume;
