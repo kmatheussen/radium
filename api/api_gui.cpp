@@ -539,6 +539,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     Qt::WindowFlags _original_flags;
     QPointer<QWidget> _original_parent;
     QRect _original_geometry;
+
+    bool _take_keyboard_focus = true;
+    bool _has_keyboard_focus = false;
     
     QVector<func_t*> _deleted_callbacks;
 
@@ -686,12 +689,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void changeEvent(QEvent *event){
       if(_widget->isWindow()){
-        if (event->type()==QEvent::ActivationChange){
+        if (_take_keyboard_focus==true && event->type()==QEvent::ActivationChange){
           printf("  Is Active: %d\n", _widget->isActiveWindow());
-          if(_widget->isActiveWindow())
+          if(_widget->isActiveWindow()){
             obtain_keyboard_focus();
-          else
+            _has_keyboard_focus = true;
+          } else {
             release_keyboard_focus();
+            _has_keyboard_focus = false;
+          }
         }
       }
     }
@@ -4488,6 +4494,28 @@ bool gui_isFullScreen(int64_t guinum){
 
   //return gui->_widget->isFullScreen();
   return gui->is_full_screen();
+}
+
+void gui_setTakeKeyboardFocus(int64_t guinum, bool take_it){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  if (gui->_has_keyboard_focus && take_it==false) {
+    release_keyboard_focus();
+    gui->_has_keyboard_focus = false;
+  }
+    
+  
+  gui->_take_keyboard_focus = take_it;
+}
+
+bool gui_takesKeyboardFocus(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return false;
+
+  return gui->_take_keyboard_focus;
 }
 
 void gui_setBackgroundColor(int64_t guinum, const_char* color){
