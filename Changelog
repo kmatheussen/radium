@@ -1,3 +1,31 @@
+Changes 4.9.19 -> 5.0.10:
+* Mixer strips windows: Don't obtain keyboard focus.
+* Doc: Remove "Save URL" and "Save link" from the popup menu when
+  clicking a link.
+* Doc: Fix "Open in new window" when right clicking a link.
+* Editor: Show track info in the status bar when moving cursor left
+  or right.
+* Audio: If a plugin has more outputs than inputs, silence those
+  extra outputs when plugin is bypassed.
+* Instrument widget: Move the "Solo" button next to the "Mute" and
+  "Bypass" buttons.
+* Instrument widget: Replace the "Effect on/off" button with
+  a "Bypass" button.
+* Instrument widget: Replace the "Volume on/off" button with
+  a "Mute" button.
+* Audio: Only apply "Volume" if effect is NOT bypassed, and apply
+  volume BEFORE applying dry/wet, not after. Radium will also
+  show a warning when loading song created with an older version
+  of Radium since it could sound different now if using bypass
+  or dry/wet.
+* Editor: Fix moving cursor to the note text when swing text is
+  visible and cursor is positioned to the right of the note text.
+* Editor: Also show the effect name in the status bar when mouse
+  is above an fx text sub track.
+* API: getFxtextEffectNumFromX, gui_setTakeKeyboardFocus,
+  gui_takesKeyboardFocus, gui_setUrl.
+
+
 Changes 4.9.17 -> 4.9.19:
 * Mixer strips: Don't show an error message when inserting plugin.
   (An unnecessary error message was shown in some situations.)
