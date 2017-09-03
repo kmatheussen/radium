@@ -963,7 +963,7 @@ public:
     return false;
   }
 
-#if defined(RELEASE)
+#if 1 //defined(RELEASE)
 #define D(n)
 #else
 #define D(n) n

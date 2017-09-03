@@ -2131,7 +2131,7 @@ WPoint GetPointerPos(struct Tracker_Windows *tvisual){
 
 void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
 #if defined(FOR_MACOSX) && !defined(USE_QT5)
-  GFX_Message2(NULL, false, "Full screen not supported in OSX");
+  GFX_Message2(NULL, false, "Full screen not supported on OSX");
 #else
   QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
 
@@ -2167,6 +2167,8 @@ void GFX_toggleCurrWindowFullScreen(void){
 
       if (toplevel != g_main_window){
 
+        fprintf(stderr, "\n\n\n     TOGGLE non-main window\n\n\n");
+        
         QWidget *w = get_qwidget(g_mixer_widget);
         //printf("top: %p. w: %p. g_mixer_widget: %p. parentWidget1: %p\n", toplevel, w, g_mixer_widget, w->parentWidget());
         
@@ -2178,9 +2180,14 @@ void GFX_toggleCurrWindowFullScreen(void){
         gui_setFullScreen(guinum, !gui_isFullScreen(guinum));
         
       } else {
+
+        // main window
+
+        fprintf(stderr, "\n\n     TOGGLE main window\n\n\n");
+
         
         if(toplevel->isFullScreen()){
-          //printf("Trying to set normal\n");
+          printf("Trying to set normal\n");
           toplevel->showNormal();
         }else{
 
@@ -2189,7 +2196,7 @@ void GFX_toggleCurrWindowFullScreen(void){
             toplevel->setParent(NULL, Qt::Window  | DEFAULT_WINDOW_FLAGS);
           */
           
-          //printf("Trying to set full screen\n");
+          printf("Trying to set full screen\n");
           toplevel->showFullScreen();
         }
 

@@ -538,7 +538,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     QPointer<QWidget> _original_parent;
     QRect _original_geometry;
 
-    bool _take_keyboard_focus = true;
+    bool _take_keyboard_focus;
     bool _has_keyboard_focus = false;
     
     QVector<func_t*> _deleted_callbacks;
@@ -570,6 +570,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       : _widget_as_key(widget)
       , _widget(widget)
       , _created_from_existing_widget(created_from_existing_widget)
+      , _take_keyboard_focus(created_from_existing_widget==false)
       , _class_name(widget->metaObject()->className())
     {
       _is_pure_qwidget = _class_name=="QWidget";
@@ -601,8 +602,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       R_ASSERT(g_guis.contains(_gui_num));
       R_ASSERT(g_guis.value(_gui_num) != NULL);
 
-      R_ASSERT_NON_RELEASE(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
+      R_ASSERT_RETURN_IF_FALSE(_widget!=g_main_window);
 
+      if(g_static_toplevel_widgets.contains(_widget)){
+        R_ASSERT_NON_RELEASE(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
+      }
+      
       //printf("Deleting Gui %p (%d) (classname: %s)\n",this,(int)get_gui_num(), _class_name.toUtf8().constData());
 
       if (g_delayed_resized_guis.contains(this))
@@ -825,10 +830,25 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool keyPressEvent(QKeyEvent *event){
       if (event->key()==Qt::Key_F11){
         event->accept();
-        int64_t window_gui = gui_getParentWindow(get_gui_num());
-        gui_setFullScreen(window_gui, !gui_isFullScreen(window_gui));
+        GFX_toggleCurrWindowFullScreen();
+        /*
+          fprintf(stderr,"\n\n\n api_gui.cpp / KeyPressEvent: F11 Pressed.   IS MAIN WINDOW: %d. %p / %p\n\n\n", parentwindow==g_main_window, _widget, _widget->window());
+          //int64_t window_gui = gui_getParentWindow(get_gui_num());
+          int64_t window_gui = API_get_gui_from_widget(parentwindow);
+          gui_setFullScreen(window_gui, !gui_isFullScreen(window_gui));
+          */
         return true;
       }
+
+      /*
+      if (_created_from_existing_widget)
+        return false;
+
+      QWidget *parentwindow = _widget->window();
+
+      if (parentwindow!=g_main_window && !_created_from_existing_widget){  // Happens when a gui is created here and placed into the main window. For instance the Edit tab.
+      }
+      */
       
       return keyEvent(event, 0);
     }
@@ -4449,6 +4469,11 @@ void gui_setFullScreen(int64_t guinum, bool enable){
   if (gui==NULL)
     return;
 
+  if (gui->_widget->window()==g_main_window){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+  
   QPointer<QWidget> focusWidget = gui->_widget->focusWidget(); // Seems like focus is always lost when we change parent of the widget
 
   if(enable){
@@ -4462,6 +4487,8 @@ void gui_setFullScreen(int64_t guinum, bool enable){
 #endif
 #endif
 
+    fprintf(stderr, "  gui_setFullScreen: Setting FULLSCREEN\n");
+    
     // I've spent xx hours trying to show full screen work by calling showFullScreen() directly on the widget, but it's not working very well.
     // Creating a new full screen parent works much better.
 
@@ -4472,9 +4499,11 @@ void gui_setFullScreen(int64_t guinum, bool enable){
     if(!gui->is_full_screen())
       return;
 
+    fprintf(stderr, "  gui_setFullScreen: Setting BACK fullscreen. NOT fullscreen.\n");
+        
     gui->_full_screen_parent->resetChildToOriginalState();
     
-    //printf("Hiding full\n\n");
+    fprintf(stderr, "  Hiding full\n\n");
     delete gui->_full_screen_parent;
 
     gui->_widget->show();
