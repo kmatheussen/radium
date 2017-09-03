@@ -1,3 +1,8 @@
+Changes 5.0.10 -> 5.0.11:
+* Gui: Fix a crash that could happen when toggling full screen (F11)
+  for the mixer window.
+
+
 Changes 4.9.19 -> 5.0.10:
 * Mixer strips windows: Don't obtain keyboard focus.
 * Doc: Remove "Save URL" and "Save link" from the popup menu when
