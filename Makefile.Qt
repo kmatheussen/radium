@@ -179,7 +179,7 @@ endif
 #THREAD_SANITIZE_OPTS=-Og -fsanitize=thread #-DDISABLE_BDWGC
 THREAD_SANITIZE_OPTS=
 
-ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common
+ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common -DDISABLE_BDWGC
 #ADDRESS_SANITIZE_OPTS=
 
 
