@@ -2597,7 +2597,24 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         findText(_last_search_text, QWebPage::FindWrapsAroundDocument);
     }
 
+    void zoom(bool zoom_in){
+      float zoom = zoomFactor();      
+      float newzoom;
+      if (zoom_in)
+        newzoom = zoom * 1.2;
+      else
+        newzoom = zoom / 1.2;
+      
+      if (newzoom > 0.85 && newzoom < 1.15)
+        newzoom = 1.0;
+      
+      if (newzoom > 0.05)
+        page()->mainFrame()->setZoomFactor(newzoom);
+    }
+
     void keyPressEvent(QKeyEvent *event) override{
+
+      // back / forward
       if (event->modifiers() & Qt::AltModifier){
         if (event->key()==Qt::Key_Left){
           back();
@@ -2610,12 +2627,25 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
           return;
         }
       }
+
+      // reload
       if (event->key()==Qt::Key_F5 || (event->key()==Qt::Key_R && event->modifiers()&Qt::ControlModifier)){
         reload();
         event->accept();
         return;
       }
 
+      // zoom
+      if (event->modifiers()&Qt::ControlModifier){
+
+        if (event->key()==Qt::Key_Minus || event->key()==Qt::Key_Plus) { 
+          zoom(event->key()==Qt::Key_Plus);
+          event->accept();
+          return;
+        }
+      }
+
+      // search
       if (event->key()==Qt::Key_F && event->modifiers()&Qt::ControlModifier){
         char *s = GFX_GetString(root->song->tracker_windows, NULL, "Search for (F3 to repeat): ", true);
         if (s!=NULL && strlen(s)>0){
@@ -2636,13 +2666,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         return;
       }
 
+      // repeat search
       if (event->key()==Qt::Key_F3){
         searchForward();
         event->accept();
         return;
       }
 
-      // Must catch Key_Escape since the focussniffer gives up focus when receiving escape.
+      // cancel search
+      // (Must also catch Key_Escape since the focussniffer gives up focus when receiving escape.)
       if (event->key()==Qt::Key_Escape){
         findText(""); // Cancel search highlightning
         event->accept();
@@ -2655,6 +2687,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
     }
 
+    // TODO: We should probably not call FocusSnifferQWebView::keyReleaseEvent if we ate the keypress event.
     void keyReleaseEvent(QKeyEvent *event) override{
       if (!Gui::keyReleaseEvent(event)){
         FocusSnifferQWebView::keyReleaseEvent(event);
@@ -2664,19 +2697,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void wheelEvent(QWheelEvent *qwheelevent) override {
       if (qwheelevent->modifiers() & Qt::ControlModifier){
-        float zoom = zoomFactor();      
-        float newzoom;
-        if (qwheelevent->delta() > 0)
-          newzoom = zoom * 1.2;
-        else
-          newzoom = zoom * 0.8;
-        
-        if (newzoom > 0.85 && newzoom < 1.15)
-          newzoom = 1.0;
-        
-        if (newzoom > 0.05) {
-          page()->mainFrame()->setZoomFactor(newzoom);
-        }
+
+        zoom(qwheelevent->delta() > 0);
+
       } else {
 
         Qt::Orientation orientation;
@@ -2691,12 +2714,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
     }
 
+    // Implement "Open link in new window"
     QWebView *createWindow(QWebPage::WebWindowType type) override{
       auto *ret = new Web("");
       ret->show();
       return ret;
     }
-                           
+                     
     OVERRIDERS_WITHOUT_KEY(FocusSnifferQWebView);
 
     /*
