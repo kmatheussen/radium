@@ -92,13 +92,15 @@ void CB_PasteBlock(
 	toblock->num_tracks=org_num_tracks;
 
 	Block_Set_num_tracks(toblock,block->num_tracks);
-
+        TIME_everything_in_block_has_changed(towblock->block); // UpdateReallines requires updated time values (for whether to show swing type track or not).
+        
 	toblock->name=talloc_atomic((int)strlen(block->name)+1);
 	memcpy(toblock->name,block->name,(int)strlen(block->name)+1);
 
 	towblock->localzooms=NULL;
 	CB_UnpackLocalZooms(&towblock->localzooms,wblock->localzooms,block->num_lines);
 	//towblock->reallines=NULL;
+        
 	UpdateRealLines_dont_change_curr_realline(window, towblock);
 
 	//towblock->wtempos=NULL;
@@ -112,8 +114,6 @@ void CB_PasteBlock(
 	toblock->temponodes=CB_CopyTempoNodes(block->temponodes);
 	toblock->lasttemponode=(struct TempoNodes *)ListLast3(&toblock->temponodes->l);
 
-        TIME_everything_in_block_has_changed(towblock->block);
-        
 	UpdateReallinesDependens(window,towblock);
 
 	wtrack=wblock->wtracks;
