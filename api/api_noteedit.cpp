@@ -436,6 +436,14 @@ void undoNotes(int tracknum, int blocknum){
   ADD_UNDO(Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline));
 }
 
+const_char* getNoteId(int notenum, int tracknum, int blocknum, int windownum){
+  struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,DYN_create_int(notenum));
+  if (note==NULL)
+    return "";
+  
+  return GetNoteIdAsCharString(note->id);
+}
+
 Place getNoteStart(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 

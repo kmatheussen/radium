@@ -20,8 +20,18 @@
   :pitches
   :velocities
   :continues-next-block
+  :id
   )
 
+#||
+(define-struct notes
+  :notes
+  :subtracknum
+  :tracknum
+  :blocknum)
+||#
+
+  
 (define (get-note-duration note)
   ((last (note :pitches)) :place))
 
@@ -118,7 +128,8 @@
     (make-note :place (- note-start startplace)
                :pitches pitches
                :velocities velocities
-               :continues-next-block (<ra> :note-continues-next-block notenum tracknum blocknum))))
+               :continues-next-block (<ra> :note-continues-next-block notenum tracknum blocknum)
+               :id (<ra> :get-note-id notenum tracknum blocknum))))
 
 (delafina (get-area-notes :area
                           :include-all #t) ;; if include-all is #t, we also include all notes starting to play before the area and either ends inside the area or after.

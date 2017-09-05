@@ -49,22 +49,29 @@
 (define (create-under-construction)
   (mid-horizontal-layout (<gui> :text "Under construction.")))
 
-(define (create-notem-button groupname ra-funcname)
+(define (create-notem-button groupname ra-funcname . arguments)
   (define funcname-contains-range (string-contains? ra-funcname "range"))
   (define ra-func (eval-string ra-funcname))
   (define (func)
     (if (and funcname-contains-range
              (not (<ra> :has-range)))
         (show-async-message :text "No range in block. Select range by using Left Meta + b")
-        (ra-func)))
+        (apply ra-func arguments)))
   
   (let ((keybinding (get-displayable-keybinding ra-funcname)))
     (if (string=? keybinding "")
         (<gui> :button groupname func)
-        (let ((ret (<gui> :group groupname (<gui> :button keybinding func))))
+        ;;(<gui> :button (<-> groupname " (" keybinding ")") func)
+        (<gui> :horizontal-layout
+               (<gui> :button groupname func)
+               (<gui> :text (<-> " (" keybinding ")")))
+        
+        )))
+
+;        (let ((ret (<gui> :group groupname (<gui> :button keybinding func))))
           ;;(<gui> :set-layout-spacing ret 6 9 9 9 9)
           ;;(<gui> :set-background-color ret "color9")
-          ret))))
+ ;         ret))))
 
 (define (create-notem-layout . elements)
   (define ret (<gui> :horizontal-layout))
@@ -192,6 +199,64 @@
 
 (define *various-tab* #f)
 
+
+(define (moduloskew-track-notes notes how-much start-place end-place tracknum)
+  (set! how-much (/ how-much
+                    (<ra> :get-line-zoom-block-ratio)))
+
+  (define duration (- end-place start-place))
+  (define was-polyphonic (any? (lambda (note)
+                                 (> (<ra> :get-note-subtrack (note :id) tracknum)
+                                    0))
+                               notes))
+  (define notes-moduloed (map (lambda (note)
+                                (define place (note :place))
+                                (define new-place (modulo (+ place how-much) duration))
+                                (copy-note note
+                                           :place new-place))
+                              notes))
+  (define sorted-notes (sort notes-moduloed (lambda (note1 note2)
+                                              (< (note1 :place) (note2 :place)))))
+  (define (make-monophonic notes)
+    (let loop ((notes notes))
+      (if (or (null? notes)
+              (null? (cdr notes)))
+          notes
+          (let* ((note1 (car notes))
+                 (note1-start (note1 :place))
+                 (note1-end (get-note-end note1))
+                 (note2 (cadr notes))
+                 (note2-start (note2 :place)))
+            (cons (if (> note1-end note2-start)
+                        (cut-note-keep-start note1 note2-start)
+                        note1)
+                  (loop (cdr notes)))))))
+    
+  (if was-polyphonic
+      sorted-notes ;; We don't force a polyphonic track to be monophonic.
+      (make-monophonic sorted-notes)))
+        
+(define (moduloskew-notes! area how-much)
+  (undo-editor-area area)
+  (define start-place (area :start-place))
+  (define end-place (area :end-place))
+  (replace-notes! (map (lambda (tracknum track-notes)
+                         (moduloskew-track-notes track-notes how-much start-place end-place tracknum))
+                       (integer-range (area :start-track) (1- (area :end-track)))
+                       (get-area-notes area))
+                  area))
+
+(delafina (moduloskew-range :how-much 1 :blocknum -1)
+  (moduloskew-notes! (get-ranged-editor-area blocknum) how-much))
+
+(delafina (moduloskew-track :how-much 1 :tracknum -1 :blocknum -1)
+  (moduloskew-notes! (get-track-editor-area tracknum blocknum) how-much))
+
+(delafina (moduloskew-block :how-much 1)
+  (moduloskew-notes! (get-block-editor-area) how-much))
+
+
+
 (define (replace-with-random-pitches! area)  
   (undo-editor-area area)  
   (replace-notes! (map-area-notes (get-area-notes area)
@@ -261,6 +326,33 @@
   (replace-with-random-velocities! (get-block-editor-area)))
 
 
+(define (create-randomize/skew-notem)
+
+  (define random-layout (create-notem-layout (create-notem-button "Range" "replace-with-random-notes-in-range")
+                                             (create-notem-button "Track" "replace-with-random-notes-in-track")
+                                             (create-notem-button "Block" "replace-with-random-notes-in-block")))
+
+  (define random-velocities-layout (create-notem-layout (create-notem-button "Range" "replace-with-random-velocities-in-range")
+                                                        (create-notem-button "Track" "replace-with-random-velocities-in-track")
+                                                        (create-notem-button "Block" "replace-with-random-velocities-in-block")))
+
+  (define moduloskew-notes-layout (create-notem-layout (<gui> :vertical-layout
+                                                              (create-notem-button "Range Up" "moduloskew-range" -1)
+                                                              (create-notem-button "Range Down" "moduloskew-range" 1))
+                                                       (<gui> :vertical-layout
+                                                              (create-notem-button "Track Up" "moduloskew-track" -1)
+                                                              (create-notem-button "Track Down" "moduloskew-track" 1)
+                                                              )
+                                                       (<gui> :vertical-layout
+                                                              (create-notem-button "Block Up" "moduloskew-block" -1)
+                                                              (create-notem-button "Block Down" "moduloskew-block" 1))))
+  
+  (define ret (create-notem-flow-layout (<gui> :group "Randomize pitch" random-layout)
+                                        (<gui> :group "Randomize velocities" random-velocities-layout)
+                                        (<gui> :group "Modulo skew" moduloskew-notes-layout)
+                                        ))
+  ret)
+
 (define (create-various-notem)
 
   (define lines-layout (create-notem-layout (create-notem-button (notem-group-name "Range" "EXTRA_L") "ra:expand-range")
@@ -280,28 +372,16 @@
                                                 (create-notem-button (notem-group-name "Track" "ALT_L") "ra:backwards-track")
                                                 (create-notem-button (notem-group-name "Block" "CTRL_L")  "ra:backwards-block")))
   
-  
   (define glissando-layout (create-notem-layout (create-notem-button "Apply glissando between two notes" "ra:glissando")))
   
   (define monophonic-layout (create-notem-layout (create-notem-button "Make track monophonic" "ra:make-track-monophonic")
-                                           (create-notem-button "Split track into several monophonic tracks" "ra:split-track-into-monophonic-tracks")))
-
-  (define random-layout (create-notem-layout (create-notem-button "Range" "replace-with-random-notes-in-range")
-                                             (create-notem-button "Track" "replace-with-random-notes-in-track")
-                                             (create-notem-button "Block" "replace-with-random-notes-in-block")))
-
-  (define random-velocities-layout (create-notem-layout (create-notem-button "Range" "replace-with-random-velocities-in-range")
-                                                        (create-notem-button "Track" "replace-with-random-velocities-in-track")
-                                                        (create-notem-button "Block" "replace-with-random-velocities-in-block")))
-
+                                                 (create-notem-button "Split track into several monophonic tracks" "ra:split-track-into-monophonic-tracks")))
   (define ret (create-notem-flow-layout (<gui> :group "Expand/shrink Pitch" pitches-layout)
                                         (<gui> :group "Expand/shrink Lines" lines-layout)
                                         (<gui> :group "Invert Pitches" invert-layout)
                                         (<gui> :group "Reverse notes" backwards-layout)
                                         (<gui> :group "Glissando" glissando-layout)
                                         (<gui> :group "Polyphonic tracks" monophonic-layout)
-                                        (<gui> :group "Randomize pitch" random-layout)
-                                        (<gui> :group "Randomize velocities" random-velocities-layout)
                                         ))
   
   ;;(<gui> :set-size-policy vertical-layout #t #t)
@@ -325,8 +405,11 @@
   (set! *quanititize-tab* (create-quantitize-gui-for-tab))
   (add-notem-tab "Quantization" *quanititize-tab*)
   (add-notem-tab "Transpose" (create-transpose-notem))
+  (add-notem-tab "Randomize/Skew" (create-randomize/skew-notem))
   (add-notem-tab "Various" (create-various-notem))
   ;;(add-notem-tab "More" (mid-vertical-layout (create-under-construction)))
+  (if (not (<ra> :release-mode))
+      (<gui> :set-current-tab *notem-gui* 2))
   )
 
 (define (replace-edit-tabs)
