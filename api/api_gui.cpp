@@ -1289,6 +1289,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         }
       }
 
+      {
+        QLabel *label = dynamic_cast<QLabel*>(_widget.data());
+        if (label!=NULL){
+          label->setText(text);
+          return;
+        }
+      }
+
       handleError("Gui #%d does not have a setGuiText method", (int)_gui_num);
       return;
     }
