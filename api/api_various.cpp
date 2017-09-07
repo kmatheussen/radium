@@ -1877,19 +1877,21 @@ void evalPython(const_char *code){
   PyRun_SimpleString(code);
 }
 
+
+static dyn_t g_keybindings = g_uninitialized_dyn;
+
+
 // Fun fact: This function takes a python hash table and converts it into a radium hash table which is further converted into an s7 hash table.
 dyn_t getKeybindings(void){
 
-  static dyn_t ret = g_uninitialized_dyn;
-
-  if (ret.type!=UNINITIALIZED_TYPE)
-    return ret;
+  if (g_keybindings.type!=UNINITIALIZED_TYPE)
+    return g_keybindings;
 
   PyObject *radium = PyImport_ImportModule("radium");
-  R_ASSERT_RETURN_IF_FALSE2(radium!=NULL, ret);
+  R_ASSERT_RETURN_IF_FALSE2(radium!=NULL, g_keybindings);
   
   PyObject *keybindings = PyObject_GetAttrString(radium, "_keybindingsdict");
-  R_ASSERT_RETURN_IF_FALSE2(keybindings!=NULL, ret);
+  R_ASSERT_RETURN_IF_FALSE2(keybindings!=NULL, g_keybindings);
   
 
   hash_t *r_keybindings = HASH_create(512);
@@ -1940,9 +1942,9 @@ dyn_t getKeybindings(void){
   Py_DECREF(radium);
 
   
-  ret = DYN_create_hash(r_keybindings);
+  g_keybindings = DYN_create_hash(r_keybindings);
   
-  return ret;
+  return g_keybindings;
 }
 
 
@@ -1953,6 +1955,57 @@ dyn_t getKeybinding(const_char *pyfunccall){
   else
     return g_uninitialized_dyn;
 }
+
+void reloadKeybindings(void){
+  evalPython("keybindingsparser.parse_and_show_errors()");
+  g_keybindings = g_uninitialized_dyn;
+  //evalPython("import menues");
+}
+
+void setKeybinding(const_char* keyname, dyn_t qualifiers, const_char* funcname, dyn_t arguments){
+
+  if (qualifiers.type != ARRAY_TYPE){
+    handleError("setKeybinding: Expected for argument \"qualifiers\". Found %s", DYN_type_name(qualifiers.type));
+    return;
+  }
+
+  if (arguments.type != ARRAY_TYPE){
+    handleError("setKeybinding: Expected for argument \"qualifiers\". Found %s", DYN_type_name(qualifiers.type));
+    return;
+  }
+
+  const char *keybinding = keyname;
+  for(int i=0;i<qualifiers.array->num_elements;i++){
+    dyn_t qualifier = qualifiers.array->elements[i];
+    if (qualifier.type != STRING_TYPE){
+      handleError("setKeybinding: Expected string in qualifiers[%d], found %s", i, DYN_type_name(qualifier.type));
+      return;
+    }
+    keybinding = talloc_format("%s %s", keybinding, STRING_get_chars(qualifier.string));
+  }
+
+  const char *command = funcname;
+  for(int i=0;i<arguments.array->num_elements;i++){
+    dyn_t argument = arguments.array->elements[i];
+    if (argument.type != STRING_TYPE){
+      handleError("setKeybinding: Expected string in argument[%d], found %s", i, DYN_type_name(argument.type));
+      return;
+    }
+    command = talloc_format("%s %s", command, STRING_get_chars(argument.string));
+  }
+
+  const char *pythoncommand = talloc_format("keybindings_changer.FROM_C_insert_new_keybinding_into_conf_file(\"%s\", \'%s\')", keybinding, command);
+  printf("Evaling -%s\n", pythoncommand);
+
+  static bool has_imported = false;
+  if (has_imported==false){
+    evalPython("import keybindings_changer");
+    has_imported = true;
+  }
+  
+  evalPython(pythoncommand);  
+}
+
 
 const_char* getQualifierName(const_char *qualifier){
 #if FOR_LINUX
@@ -2327,6 +2380,7 @@ const_char *getOsName(void){
 #error "unknown"
 #endif
 }
+
 
 
 // Scheduler
