@@ -537,13 +537,13 @@
 (***assert*** (get-python-ra-funcname "ra:transpose-block")
               "ra.transposeBlock")
 
-(define (get-python-ra-funccall rafuncname . args)
+(define (get-python-ra-funccall rafuncname args)
   (<-> (get-python-ra-funcname rafuncname)
        "("
        (string-join (map to-displayable-string args) ",")
        ")"))
               
-(***assert*** (get-python-ra-funccall "ra:transpose-block" 1)
+(***assert*** (get-python-ra-funccall "ra:transpose-block" (list 1))
               "ra.transposeBlock(1)")
 
 

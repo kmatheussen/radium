@@ -318,6 +318,111 @@
           layout)
 
 
+(define (get-displayable-keybinding rafuncname args)
+  (let ((keybinding (<ra> :get-keybinding (get-python-ra-funccall rafuncname args))))
+    (c-display "keybinding" (hash-table? keybinding) "name:" (get-python-ra-funccall rafuncname args))
+    ;(c-display (to-list (keybinding :qualifiers))
+    ;           (to-list (keybinding :keys)))
+    (if (not (hash-table? keybinding))
+        ""
+        (string-join (map (lambda (key)
+                            (let ((a (ra:get-qualifier-name key)))
+                              (if (string=? "" a)
+                                  key
+                                  a)))
+                          (append (to-list (keybinding :qualifiers))
+                                  (to-list (keybinding :keys))))
+                     " + "))))
+
+#!!
+(let ((gakk (get-displayable-keybinding "ra:transpose-block" (list 1))))
+  (c-display "gakk:" gakk)
+  gakk)
+!!#
+
+
+
+(delafina (add-keybinding-configuration-to-gui :gui
+                                               :ra-funcname
+                                               :args '()
+                                               :set-keybinding-callback #f)
+
+  (define (get-arg-string arg)
+    (let ((arg2 (to-displayable-string arg)))
+      (if (string? arg)
+          (<-> "\"" arg2 "\"")
+          arg2)))
+  
+  (define command (<-> (get-python-ra-funcname ra-funcname)
+                       (apply <-> (map (lambda (arg)
+                                         (<-> " " (get-arg-string arg)))
+                                       args))))
+  
+  (define keybinding (get-displayable-keybinding ra-funcname args))
+  (define has-keybinding (not (string=? keybinding "")))
+
+  (define (changeit)
+    (<ra> :set-keybinding "C" '("CTRL_L") (get-python-ra-funcname ra-funcname) (map get-arg-string args))
+    (set! keybinding (get-displayable-keybinding ra-funcname args))
+    (when set-keybinding-callback
+      (set-keybinding-callback keybinding))
+    (c-display "hello1"))
+    
+  (define (keybinding-mouse-handler button state x y)
+    (if (and (= button *right-button*)
+             (= state *is-pressing*))
+        (if has-keybinding
+            (popup-menu (<-> "Change keybinding for \"" command "\"")
+                        changeit)
+            (popup-menu (<-> "Add keybinding for \"" command "\"")
+                        changeit)))
+    #f)
+
+  (<gui> :add-mouse-callback gui keybinding-mouse-handler))
+
+    
+  
+(delafina (create-keybinding-button :name
+                                    :ra-funcname
+                                    :arguments '())
+  (define funcname-contains-range (string-contains? ra-funcname "range"))
+  (define ra-func (eval-string ra-funcname))
+  (define (func)
+    (if (and funcname-contains-range
+             (not (<ra> :has-range)))
+        (show-async-message :text "No range in block. Select range by using Left Meta + b")
+        (apply ra-func arguments)))
+
+  (define button (<gui> :button name func))  
+
+  (define keybinding (get-displayable-keybinding ra-funcname arguments))
+  (define has-keybinding (not (string=? keybinding "")))
+
+  (define gui (<gui> :horizontal-layout
+                     button))
+
+  (define text #f)
+
+  (define (add-text-gui)
+    (set! text (<gui> :text (<-> " (" keybinding ")")))
+    (<gui> :add gui text))
+    
+  (if has-keybinding
+      (add-text-gui))
+  
+  (define (set-keybinding-callback new-keybinding)
+    (set! keybinding new-keybinding)
+    (if has-keybinding
+        (<gui> :set-text text new-keybinding)
+        (begin
+          (set! has-keybinding #t)
+          (add-text-gui))))
+          
+  (add-keybinding-configuration-to-gui gui ra-funcname arguments set-keybinding-callback)
+                                       
+  gui)
+
+
 (define (ra:gui_requester-operations text block)
   (c-display "OPEN REQ")
   (<ra> :open-requester text)

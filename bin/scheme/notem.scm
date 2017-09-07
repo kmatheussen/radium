@@ -18,29 +18,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-(define (get-displayable-keybinding rafuncname . args)
-  (let ((keybinding (<ra> :get-keybinding (apply get-python-ra-funccall (cons rafuncname args)))))
-    (c-display "keybinding" (hash-table? keybinding) "name:" (apply get-python-ra-funccall (cons rafuncname args)))
-    ;(c-display (to-list (keybinding :qualifiers))
-    ;           (to-list (keybinding :keys)))
-    (if (not (hash-table? keybinding))
-        ""
-        (string-join (map (lambda (key)
-                            (let ((a (ra:get-qualifier-name key)))
-                              (if (string=? "" a)
-                                  key
-                                  a)))
-                          (append (to-list (keybinding :qualifiers))
-                                  (to-list (keybinding :keys))))
-                     " + "))))
-
-#!!
-(let ((gakk (get-displayable-keybinding "ra:transpose-block" 1)))
-  (c-display "gakk:" gakk)
-  gakk)
-!!#
-
-
 (define (notem-group-name name qualifier)
   name)
 ;;  (<-> name "  -  " (get-displayable-qualifier qualifier) ""))
@@ -49,29 +26,6 @@
 (define (create-under-construction)
   (mid-horizontal-layout (<gui> :text "Under construction.")))
 
-(define (create-notem-button groupname ra-funcname . arguments)
-  (define funcname-contains-range (string-contains? ra-funcname "range"))
-  (define ra-func (eval-string ra-funcname))
-  (define (func)
-    (if (and funcname-contains-range
-             (not (<ra> :has-range)))
-        (show-async-message :text "No range in block. Select range by using Left Meta + b")
-        (apply ra-func arguments)))
-  
-  (let ((keybinding (get-displayable-keybinding ra-funcname)))
-    (if (string=? keybinding "")
-        (<gui> :button groupname func)
-        ;;(<gui> :button (<-> groupname " (" keybinding ")") func)
-        (<gui> :horizontal-layout
-               (<gui> :button groupname func)
-               (<gui> :text (<-> " (" keybinding ")")))
-        
-        )))
-
-;        (let ((ret (<gui> :group groupname (<gui> :button keybinding func))))
-          ;;(<gui> :set-layout-spacing ret 6 9 9 9 9)
-          ;;(<gui> :set-background-color ret "color9")
- ;         ret))))
 
 (define (create-notem-layout . elements)
   (define ret (<gui> :horizontal-layout))
@@ -146,15 +100,17 @@
   
   (define (create-button how-much)
     (define arrow (if (> how-much 0) "Up" "Down")) ;; "↑" "↓"))
-    (<gui> :group (<-> arrow " " how-much ": ")
-           ;;(<gui> :text (<-> arrow " " how-much ": "))
-           (<gui> :button
-                  (let ((a (get-displayable-keybinding ra-funcname how-much)))
-                    (if (string=? "" a)
-                        "Click me"
-                        a))
-                  (lambda ()
-                    (func how-much)))))
+    (define gui (<gui> :group (<-> arrow " " (abs how-much) ": ")
+                       ;;(<gui> :text (<-> arrow " " how-much ": "))
+                       (<gui> :button
+                              (let ((a (get-displayable-keybinding ra-funcname (list how-much))))
+                                (if (string=? "" a)
+                                    "Click me"
+                                    a))
+                              (lambda ()
+                                (func how-much)))))
+    (add-keybinding-configuration-to-gui gui ra-funcname (list how-much))
+    gui)
 
   (define horizontal (<gui> :horizontal-layout
                             (<gui> :vertical-layout
@@ -172,6 +128,7 @@
                      
   (<gui> :set-layout-spacing ret 6 9 0 9 0)
   ;;(<gui> :set-background-color ret "color9")
+  
   ret)
 
 (define *transpose-tab* #f)
@@ -328,24 +285,23 @@
 
 (define (create-randomize/skew-notem)
 
-  (define random-layout (create-notem-layout (create-notem-button "Range" "replace-with-random-notes-in-range")
-                                             (create-notem-button "Track" "replace-with-random-notes-in-track")
-                                             (create-notem-button "Block" "replace-with-random-notes-in-block")))
+  (define random-layout (create-notem-layout (create-keybinding-button "Range" "ra:eval-scheme" '("(replace-with-random-notes-in-range)"))
+                                             (create-keybinding-button "Track" "ra:eval-scheme" '("(replace-with-random-notes-in-track)"))
+                                             (create-keybinding-button "Block" "ra:eval-scheme" '("(replace-with-random-notes-in-block)"))))
 
-  (define random-velocities-layout (create-notem-layout (create-notem-button "Range" "replace-with-random-velocities-in-range")
-                                                        (create-notem-button "Track" "replace-with-random-velocities-in-track")
-                                                        (create-notem-button "Block" "replace-with-random-velocities-in-block")))
+  (define random-velocities-layout (create-notem-layout (create-keybinding-button "Range" "ra:eval-scheme" '("(replace-with-random-velocities-in-range)"))
+                                                        (create-keybinding-button "Track" "ra:eval-scheme" '("(replace-with-random-velocities-in-track)"))
+                                                        (create-keybinding-button "Block" "ra:eval-scheme" '("(replace-with-random-velocities-in-block)"))))
 
   (define moduloskew-notes-layout (create-notem-layout (<gui> :vertical-layout
-                                                              (create-notem-button "Range Up" "moduloskew-range" -1)
-                                                              (create-notem-button "Range Down" "moduloskew-range" 1))
+                                                              (create-keybinding-button "Range Up" "ra:eval-scheme" '("(moduloskew-range -1)"))
+                                                              (create-keybinding-button "Range Down" "ra:eval-scheme" '("(moduloskew-range 1")))
                                                        (<gui> :vertical-layout
-                                                              (create-notem-button "Track Up" "moduloskew-track" -1)
-                                                              (create-notem-button "Track Down" "moduloskew-track" 1)
-                                                              )
+                                                              (create-keybinding-button "Track Up" "ra:eval-scheme" '("moduloskew-track -1"))
+                                                              (create-keybinding-button "Track Down" "ra:eval-scheme" '("moduloskew-track 1")))
                                                        (<gui> :vertical-layout
-                                                              (create-notem-button "Block Up" "moduloskew-block" -1)
-                                                              (create-notem-button "Block Down" "moduloskew-block" 1))))
+                                                              (create-keybinding-button "Block Up" "ra:eval-scheme" '("moduloskew-block -1"))
+                                                              (create-keybinding-button "Block Down" "ra:eval-scheme" '("moduloskew-block 1")))))
   
   (define ret (create-notem-flow-layout (<gui> :group "Randomize pitch" random-layout)
                                         (<gui> :group "Randomize velocities" random-velocities-layout)
@@ -355,27 +311,27 @@
 
 (define (create-various-notem)
 
-  (define lines-layout (create-notem-layout (create-notem-button (notem-group-name "Range" "EXTRA_L") "ra:expand-range")
-                                            (create-notem-button (notem-group-name "Block" "CTRL_L")  "ra:expand-block")))
+  (define lines-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:expand-range")
+                                            (create-keybinding-button (notem-group-name "Block" "CTRL_L")  "ra:expand-block")))
   
   
-  (define pitches-layout (create-notem-layout (create-notem-button (notem-group-name "Range" "EXTRA_L") "ra:pexpand-range")
-                                              (create-notem-button (notem-group-name "Track" "ALT_L") "ra:pexpand-track")
-                                              (create-notem-button (notem-group-name "Block" "CTRL_L")  "ra:pexpand-block")))
+  (define pitches-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:pexpand-range")
+                                              (create-keybinding-button (notem-group-name "Track" "ALT_L") "ra:pexpand-track")
+                                              (create-keybinding-button (notem-group-name "Block" "CTRL_L")  "ra:pexpand-block")))
   
-  (define invert-layout (create-notem-layout (create-notem-button (notem-group-name "Range" "EXTRA_L") "ra:invert-range")
-                                             (create-notem-button (notem-group-name "Track" "ALT_L") "ra:invert-track")
-                                             (create-notem-button (notem-group-name "Block" "CTRL_L")  "ra:invert-block")))
+  (define invert-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:invert-range")
+                                             (create-keybinding-button (notem-group-name "Track" "ALT_L") "ra:invert-track")
+                                             (create-keybinding-button (notem-group-name "Block" "CTRL_L")  "ra:invert-block")))
   
   
-  (define backwards-layout (create-notem-layout (create-notem-button (notem-group-name "Range" "EXTRA_L") "ra:backwards-range")
-                                                (create-notem-button (notem-group-name "Track" "ALT_L") "ra:backwards-track")
-                                                (create-notem-button (notem-group-name "Block" "CTRL_L")  "ra:backwards-block")))
+  (define backwards-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:backwards-range")
+                                                (create-keybinding-button (notem-group-name "Track" "ALT_L") "ra:backwards-track")
+                                                (create-keybinding-button (notem-group-name "Block" "CTRL_L")  "ra:backwards-block")))
   
-  (define glissando-layout (create-notem-layout (create-notem-button "Apply glissando between two notes" "ra:glissando")))
+  (define glissando-layout (create-notem-layout (create-keybinding-button "Apply glissando between two notes" "ra:glissando")))
   
-  (define monophonic-layout (create-notem-layout (create-notem-button "Make track monophonic" "ra:make-track-monophonic")
-                                                 (create-notem-button "Split track into several monophonic tracks" "ra:split-track-into-monophonic-tracks")))
+  (define monophonic-layout (create-notem-layout (create-keybinding-button "Make track monophonic" "ra:make-track-monophonic")
+                                                 (create-keybinding-button "Split track into several monophonic tracks" "ra:split-track-into-monophonic-tracks")))
   (define ret (create-notem-flow-layout (<gui> :group "Expand/shrink Pitch" pitches-layout)
                                         (<gui> :group "Expand/shrink Lines" lines-layout)
                                         (<gui> :group "Invert Pitches" invert-layout)

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>925</width>
-    <height>253</height>
+    <width>904</width>
+    <height>208</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -298,47 +298,49 @@
     </spacer>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
-     <item>
-      <widget class="QToolButton" name="quantitize_range">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Quantitze Range</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="quantitize_track">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Quantitize Track</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="quantitize_block">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Quantitize Block</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="QWidget" name="button_layout" native="true">
+     <layout class="QHBoxLayout" name="button_layout_layout">
+      <item>
+       <widget class="QToolButton" name="quantitize_range">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Quantitze Range</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="quantitize_track">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Quantitize Track</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="quantitize_block">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Quantitize Block</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>

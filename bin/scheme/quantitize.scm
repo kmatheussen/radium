@@ -162,32 +162,27 @@
 
   ;; Buttons
   ;;
-  (<gui> :add-callback (<gui> :child quant-gui "quantitize_range")
-         (lambda ()
-           (set-me-as-current!)
-           (set-global-quantitize-value!)
-           (<ra> :quantitize-range)))
-  (<gui> :set-tool-tip (<gui> :child quant-gui "quantitize_range") (get-displayable-keybinding "ra:quantitize-range"))
+  (define button-layout (<gui> :child quant-gui "button_layout"))
   
-  (<gui> :add-callback (<gui> :child quant-gui "quantitize_track")
-         (lambda ()
-           (set-me-as-current!)
-           (set-global-quantitize-value!)
-           (<ra> :general-track-quantitize)))
-  (<gui> :set-tool-tip (<gui> :child quant-gui "quantitize_track") (get-displayable-keybinding "ra:general-track-quantitize"))
+  (define (fix-button name guiname funcname)
+    (let ((button (<gui> :child quant-gui guiname)))
+      (<gui> :close button)
+      (<gui> :add button-layout (create-keybinding-button name funcname '()))))
   
-  '(<gui> :add-callback (<gui> :child quant-gui "quantitize_fx")
-         (lambda ()
-           (set-me-as-current!)
-           (set-global-quantitize-value!)
-           (<ra> :quantitize-track)))
-  
-  (<gui> :add-callback (<gui> :child quant-gui "quantitize_block")
-         (lambda ()
-           (set-me-as-current!)
-           (set-global-quantitize-value!)
-           (<ra> :quantitize-block)))
-  (<gui> :set-tool-tip (<gui> :child quant-gui "quantitize_block") (get-displayable-keybinding "ra:quantitize-block"))
+  ;    (define func (eval funcname))
+  ;    (<gui> :add-callback button
+  ;           (lambda ()
+  ;             (set-me-as-current!)
+  ;             (set-global-quantitize-value!)
+  ;             (func)))
+  ;    (<gui> :set-tool-tip button (get-displayable-keybinding funcname '()))
+  ;    (add-keybinding-configuration-to-gui button funcname '())))
+
+  (fix-button "Quantitize Range2" "quantitize_range" "ra:quantitize-range")
+  (fix-button "Quantitize Track" "quantitize_track" "ra:general-track-quantitize")
+  ;;(fix-button "quantitize_fx" "ra:quantitize-fx")
+  (fix-button "Quantitize Block" "quantitize_block" "ra:quantitize-block")
+
   
   ;; Set me as current quantitize gui, and return me
   ;;
