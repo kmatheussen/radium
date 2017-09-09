@@ -172,9 +172,14 @@ static QVector<QString> get_lines(const char* key){
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static void transfer_temporary_file_to_file(QString from, QString to){
   
-  // Maybe take backup of the existing file here.
-  if (QFile::exists(to))
+  if (QFile::exists(to)){
+    QFile::remove(to+".bak");
+    if (QFile::copy(to, to+".bak")==false){
+      GFX_Message(NULL, "Unable to make backup of \%s\". Something is wrong with the file system. Will not try to update the configuration file.",to.toUtf8().constData());
+      return;
+    }
     QFile::remove(to);
+  }
   
   if (QFile::copy(from, to)==false)
     GFX_Message(NULL, "Unable to write config file (\%s\")",to.toUtf8().constData());
