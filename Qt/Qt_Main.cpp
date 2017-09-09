@@ -321,18 +321,23 @@ uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch){
     //  printf("        KEY. MIXER STRIP HAS KEY WINDOW.\n");
   }
   
-  if (mixer_strips_has_focus)
+  if (mixer_strips_has_focus){
     keyswitch |= EVENT_MOUSE_MIXERSTRIPS2;
+    //printf("  MOUSE: Mixerstrips\n");
   
-  else if (SEQUENCER_has_mouse_pointer())
+  }else if (SEQUENCER_has_mouse_pointer()){
     keyswitch |= EVENT_MOUSE_SEQUENCER2;
-
-  else if (MW_has_mouse_pointer())
+    //printf("  MOUSE: Sequencer\n");
+    
+  }else if (MW_has_mouse_pointer()){
     keyswitch |= EVENT_MOUSE_MIXER2;
-
-  else
+    //printf("  MOUSE: Mixer\n");
+    
+  }else {
     keyswitch |= EVENT_MOUSE_EDITOR2;
-
+    //printf("  MOUSE: Editor\n");
+  }
+    
   return keyswitch;
 }
 
@@ -728,10 +733,6 @@ protected:
 
       g_up_downs[modifier] = is_key_press;
 
-#if !defined(FOR_WINDOWS)
-      set_keyswitch(); // In windows, tevent.keyswitch was set when calling OS_SYSTEM_EventPreHandler.
-#endif
-      
       //printf("__________________________ Got modifier %s. Returning false\n",is_key_press ? "down" : "up");
 
       //printf(" Got key 2\n");
@@ -744,6 +745,12 @@ protected:
       //printf("  Returning false 1\n");
       return false;
     }
+
+    
+#if !defined(FOR_WINDOWS)
+    set_keyswitch(); // In windows, tevent.keyswitch was set when calling OS_SYSTEM_EventPreHandler.
+#endif
+      
 
 #if 0
     printf("is_key_press: %d, keynum: %d, EVENT_MENU: %d\n",is_key_press,keynum,EVENT_MENU);

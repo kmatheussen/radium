@@ -1175,6 +1175,7 @@ bool MW_has_mouse_pointer(void){
     return false;
 
   QPoint p = g_mixer_widget->mapFromGlobal(QCursor::pos());
+  //printf("x: %d, y: %d. width: %d, height: %d\n", (int)p.x(), (int)p.y(), g_mixer_widget->width(), g_mixer_widget->height());
   if (true
       && p.x() >= 0
       && p.x() <  g_mixer_widget->width()
