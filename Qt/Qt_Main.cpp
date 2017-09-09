@@ -1441,9 +1441,12 @@ static bool maybe_got_key_window(QWindow *window){
   return OS_WINDOWS_is_key_window((void*)window->winId());
 #elif FOR_LINUX
   //return g_qapplication->focusWidget()!=NULL && window==g_qapplication->focusWidget()->window(); //activeWindow();
-  if (QApplication::topLevelAt(QCursor::pos())==NULL)
+  QWidget *topwindow = QApplication::topLevelAt(QCursor::pos());
+  if (topwindow==NULL)
     return false;
-  return window==QApplication::topLevelAt(QCursor::pos())->window()->windowHandle();
+  if (topwindow->window()==NULL) // got a crash below. it was impossible to find out what went wrong from the backtrace, so added this test.
+    return false;
+  return window==topwindow->window()->windowHandle();
   //->isActiveWindow();
 #else
   RError("Unknown platform");
