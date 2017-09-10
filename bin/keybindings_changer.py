@@ -42,20 +42,20 @@ def get_lines():
 
 def write_lines(lines):
     try:
-        _,tempfilename = tempfile.mkstemp("radium_temp_conf")
+        fd,tempfilename = tempfile.mkstemp("radium_temp_conf", text=True)
         print "tempfilename",tempfilename
-        dastempfile = open(tempfilename, 'w')
         for line in lines:
             print "line:",line
-            dastempfile.write(line + "\n")
+            os.write(fd, line + "\n")
 
-        dastempfile.close()
+        os.close(fd)
 
     except:
         e = sys.exc_info()[0]
         message = traceback.format_exc()
-        print "Unable to create temporary file %s" % tempfilename,message
-        radium.addMessage("Unable to create temporary file %s" % tempfilename)
+        message2 = "Unable to create temporary file %s:<br><pre>%s</pre>" % (tempfilename,message)
+        print message2
+        radium.addMessage(message2)
         return
         
     filename = get_filename()
@@ -64,13 +64,20 @@ def write_lines(lines):
         if os.path.isfile(filename) and os.path.exists(filename):
             shutil.copy2(filename, filename + ".bak")
         shutil.copyfile(tempfilename, filename)
+        #os.rename(tempfilename, filename)
     except:
         e = sys.exc_info()[0]
         message = traceback.format_exc()
         print "Could not copy %s to %s" % (tempfilename,filename),message
         radium.addMessage("Could not copy %s to %s:<pre>%s</pre>" % (tempfilename,filename,message))
 
-    os.remove(tempfilename)
+    try:
+        os.remove(tempfilename)
+    except:
+        e = sys.exc_info()[0]
+        message = traceback.format_exc()
+        print "Unable to delete temporary file %s" % tempfilename, message
+        #radium.addMessage("Could not copy %s to %s:<pre>%s</pre>" % (tempfilename,filename,message))
     
 
 
