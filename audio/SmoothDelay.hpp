@@ -131,6 +131,8 @@ struct SmoothDelay {
         IOTA++;
       }
 
+      IOTA = IOTA & anding; // To avoid ubsan hit (integer overflow). Since the CPU usage of this line is insignificant, We also do this in RELEASE mode to avoid a difference between DEBUG and RELEASE.
+      
       //   if (input0 != output0)
       //  memcpy(output0, input0, sizeof(float)*R_COUNT);
       
