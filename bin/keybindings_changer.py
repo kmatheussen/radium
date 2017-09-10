@@ -130,49 +130,32 @@ Key2 : function()
 Key  : function2()
 """
 
-#returns lines, or False, if nothing needs to be changed
+# Returns new lines, or False, if nothing needs to be changed
+#
+# Works quite brutally:
+# 1. Remove all lines that has either keybinding or command
+# 2. Appends new_line
 def ensure_has_line(new_line):
     lines = get_lines()
-    if has_line(new_line, lines):
-        return False
 
     keybinding = get_keybinding_from_line(new_line)
     command = get_command_from_line(new_line)
 
+    num_removed = 0
+    
     def keepit(line):
         if get_keybinding_from_line(line) != keybinding and get_command_from_line(line) != command:
             return True
         else:
+            num_removed = num_removed + 1
             return False
 
     new_lines = filter(keepit, lines)
-    
+
+    if num_removed==1 and has_line(new_line, lines):
+        return False
+
     return append_line(new_line, new_lines)
-            
-        
-    has_inserted = False
-    
-    keybinding = get_keybinding_from_line(new_line)
-
-    old_line = has_keybinding(keybinding, lines)
-    if old_line:
-        lines = change_line(old_line, new_line, lines)
-        has_inserted = True
-    
-    command = get_command_from_line(new_line)
-
-    old_line = has_command(command, lines)
-    if old_line:
-        if has_inserted:
-            lines = remove_line(old_line, lines)
-        else:
-            lines = change_line(old_line, new_line, lines)
-            has_inserted = True
-
-    if has_inserted:
-        return lines
-    else:
-        return append_line(new_line, lines)
 
 #returns True if configuration file was changed.
 def insert_new_line_into_conf_file(new_line):
@@ -199,6 +182,24 @@ def FROM_C_insert_new_keybinding_into_conf_file(keybinding, command):
 
     radium.reloadKeybindings()
 
+
+def remove_keybinding_from_conf_file(keybinding, command):
+    new_line = keybinding + " : " command
+    
+    lines = get_lines()
+    if has_line(new_line, lines):
+        return False
+
+    def keepit(line):
+        if get_keybinding_from_line(line) != keybinding and get_command_from_line(line) != command:
+            return True
+        else:
+            return False
+
+    new_lines = filter(keepit, lines)
+    
+
+    
 
 if __name__ == "__main__":
     #update_conf_file("#gakkgakk")

@@ -26,7 +26,7 @@ IF YOU GOT THE SOURCE FROM GIT
      
          wget https://github.com/kmatheussen/radium/archive/<version>.tar.gz
 
-     However, if you still want to use GIT, you sometime have to
+     However, if you still want to use GIT, you sometimes have to execute
      
           make very_clean
 

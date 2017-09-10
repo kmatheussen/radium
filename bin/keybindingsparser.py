@@ -526,7 +526,7 @@ def get_file_handles():
 
 
 def parse():
-    keybindingsdict={} # Note: Latest E-radium version has just removed everything related to keybindingsdict from this function. Could be unnecessary.
+    keybindingsdict={}
 
     filehandle, filehandle2, outfilehandle = get_file_handles()
     
@@ -572,21 +572,27 @@ def parse():
                     commands[lokke-1]="%d" % (int(commands[lokke-1])/add)
                 lokke+=1
 
+            command = commands[0]
+            for c in commands[1:]:
+                command += " " + c
+
+            keybindingsdict[command]=[map(lambda x:keysub[x],parser.getKeys()),
+                                      map(lambda x:keysub[x],parser.getQualifiers())]
+
             #print "commands", commands
-            command=commands.pop(0)
-            command+="("
+            pythoncall=commands.pop(0)
+            pythoncall+="("
             while len(commands)>1:
-                command+=commands.pop(0)+","
+                pythoncall+=commands.pop(0)+","
             if len(commands)>0:
-                command+=commands.pop(0)
-            command+=")"
+                pythoncall+=commands.pop(0)
+            pythoncall+=")"
             keys=parser.getKeys()+parser.getQualifiers() 
             firstkey=keys.pop(0)
                 
-            keybindingsdict[command]=[map(lambda x:keysub[x],parser.getKeys()),map(lambda x:keysub[x],parser.getQualifiers())]
             #printsak(0,keyhandles,parser,command)
             
-            addIt(keyhandles, parser, command)
+            addIt(keyhandles, parser, pythoncall)
 
     try:
         radium._keybindingsdict = keybindingsdict

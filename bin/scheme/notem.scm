@@ -2,6 +2,7 @@
 (provide 'notem.scm)
 
 (my-require 'notes.scm)
+(my-require 'keybindings.scm)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -100,16 +101,30 @@
   
   (define (create-button how-much)
     (define arrow (if (> how-much 0) "Up" "Down")) ;; "↑" "↓"))
-    (define gui (<gui> :group (<-> arrow " " (abs how-much) ": ")
-                       ;;(<gui> :text (<-> arrow " " how-much ": "))
-                       (<gui> :button
-                              (let ((a (get-displayable-keybinding ra-funcname (list how-much))))
+    (define button (<gui> :button
+                          ""
+                          (lambda ()
+                            (func how-much))))
+    (define (set-button-text!)
+      (<gui> :set-text button (let ((a (get-displayable-keybinding ra-funcname (list how-much))))
                                 (if (string=? "" a)
                                     "Click me"
-                                    a))
-                              (lambda ()
-                                (func how-much)))))
+                                    a))))
+
+    (set-button-text!)
+    
+    (define gui (<gui> :group (<-> arrow " " (abs how-much) ": ")
+                       button))
+
+    (define (reloaded-keybinding-callback)
+      (if (not (<gui> :is-open gui))
+          (remove-reload-keybindings-callback reloaded-keybinding-callback)
+          (set-button-text!)))
+    
+    (add-reload-keybindings-callback reloaded-keybinding-callback)
+
     (add-keybinding-configuration-to-gui gui ra-funcname (list how-much))
+
     gui)
 
   (define horizontal (<gui> :horizontal-layout

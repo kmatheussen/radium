@@ -762,7 +762,7 @@ protected:
 
     RETURN_IF_DATA_IS_INACCESSIBLE(false);
       
-    if (editor_has_keyboard_focus()==false){
+    if (g_grab_next_eventreceiver_key==false && editor_has_keyboard_focus()==false){
       //printf("  Returning false 2.2\n");
       return false;
     }

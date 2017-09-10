@@ -29,4 +29,17 @@ print "EVENT_DASMAX"
 print "};"
 print
 print "#endif //TRACKER_SUBIDS"
+print
+print "#ifdef INCLUDE_KEY_EVENT_NAMES"
+print
+print "#ifndef TRACKER_SUBIDS_KEY_EVENT_NAMES"
+print "#define TRACKER_SUBIDS_KEY_EVENT_NAMES"
+print
+print "static const char *g_key_event_names[] = {"
+for k in keysub:
+    print '"' + k + '",'
+print "};"
+print "#endif // TRACKER_SUBIDS_KEY_EVENT_NAMES"
+print "#endif // INCLUDE_KEY_EVENT_NAMES"
+print
 

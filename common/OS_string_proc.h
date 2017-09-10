@@ -40,6 +40,8 @@ extern LANGSPEC const wchar_t *STRING_get_sha1(const wchar_t *string);
 
 #include <QString>
 
+wchar_t *STRING_append(const wchar_t *s1, const char *w2);
+
 wchar_t *STRING_create(const QString s, bool use_gc_alloc = true);
 
 static inline QString STRING_get_qstring(const wchar_t *string){ // TODO: Rename to STRING_create_qstring.

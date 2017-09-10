@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_support_proc.h"
 #include "../api/api_requesters_proc.h"
+#include "../api/api_various_proc.h"
 
 #include "OS_Player_proc.h"
 
@@ -78,6 +79,10 @@ void init_pyobjects(void){
 	}
 
 }
+
+
+bool g_grab_next_eventreceiver_key = false;
+
 
 static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window){
   bool ret = false;
@@ -173,6 +178,12 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
 			//	len++;
 			//}
 
+                        if (g_grab_next_eventreceiver_key){
+                          API_has_grabbed_keybinding(in_tevent->SubID, places, len);
+                          g_grab_next_eventreceiver_key = false;
+                          break;
+                        }
+
 			list=Lists_py[len];
 
 			for(lokke=0;lokke<len;lokke++){
@@ -206,7 +217,7 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
                                   else if (result==Py_True)
                                     resultbool=true;
                                   else {
-                                    RError("Something is wrong. keyboard exe function didnt return boolean");                                    
+                                    RError("Something is wrong. keyboard handler didn't return a boolean.");
                                     resultbool=true;
                                   }
                                   //printf("********** result: %d\n",resultbool);
