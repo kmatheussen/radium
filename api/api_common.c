@@ -260,7 +260,7 @@ struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int
     struct Tracks *track = (*wtrack)->track;
 
     if (dynnote.type==INT_TYPE){
-      int notenum = dynnote.int_number;
+      int notenum = (int)dynnote.int_number;
       if (notenum==-1)
         return getCurrNote(windownum, window, blocknum, tracknum);
 

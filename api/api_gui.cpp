@@ -696,7 +696,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if(_widget->isWindow() && _widget->window()!=g_main_window->window()){
         if (_take_keyboard_focus==true){
           if (event->type()==QEvent::ActivationChange){
+#if !defined(__clang__)
             printf("  ActitionChange. Is Active: %d. Classname: %s. Widget: %p. Window: %p\n", _widget->isActiveWindow(), _class_name.toUtf8().constData(),_widget,_widget->window());
+#endif
             if(_widget->isActiveWindow()){
               obtain_keyboard_focus();
               _has_keyboard_focus = true;
@@ -705,7 +707,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
               _has_keyboard_focus = false;
             }
           } else if (event->type()==QEvent::Close || event->type()==QEvent::Hide){
+#if !defined(__clang__)
             printf("  Close/Hide. Is Active: %d. Classname: %s. Widget: %p. Window: %p\n", _widget->isActiveWindow(), _class_name.toUtf8().constData(),_widget,_widget->window());
+#endif
             release_keyboard_focus();
             _has_keyboard_focus = false;
           }
@@ -717,7 +721,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       printf("  Hide event 1.\n");
       if(_widget->isWindow() && _widget->window()!=g_main_window->window()){
         if (_take_keyboard_focus==true){
+#if !defined(__clang__)
           printf("  Hide event 2. Is Active: %d. Classname: %s. Widget: %p. Window: %p\n", _widget->isActiveWindow(), _class_name.toUtf8().constData(),_widget,_widget->window());
+#endif
           release_keyboard_focus();
           _has_keyboard_focus = false;
         }
