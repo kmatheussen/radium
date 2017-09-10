@@ -153,9 +153,131 @@
 
 ;;        Various
 ;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define *various-tab* #f)
 
+
+
+;; shuffle
+
+(define (shuffle-notes notes duration shuffle-func)
+  
+  (define (pitch-in-range note pitch)
+    (define place (+ (note :place)
+                     (pitch :place)))
+    (and (>= place 0)
+         (< place duration)))
+             
+  (define (get-pitch-values notes)
+    (keep (lambda (pitch)
+            (> pitch 0))
+          (let loop ((notes notes))
+            (if (null? notes)
+                '()
+                (let ((note (car notes)))
+                  (if (>= (note :place) duration)
+                      (begin
+                        (if (not (<ra> :release-mode))
+                            (assert #f))
+                        '())
+                      (append (map (lambda (pitch)
+                                     (pitch :value))
+                                   (keep (lambda (pitch)
+                                           (pitch-in-range note pitch))
+                                         (note :pitches)))
+                              (loop (cdr notes)))))))))
+
+  (define (replace-pitch-values notes pitch-values)
+    (let loop ((notes notes)
+               (pitch-values pitch-values))
+      (if (null? notes)
+          '()
+          (let ((note (car notes)))
+            ;;(c-display "notestart:" (note :place) ", pitch-values:" (length notes) (length pitch-values) pitch-values)
+            (let loop2 ((pitches (note :pitches))
+                        (new-pitches '())
+                        (pitch-values pitch-values))
+              (if (null? pitches)
+                  (cons (copy-note note
+                                   :pitches (reverse new-pitches))
+                        (loop (cdr notes)
+                              pitch-values))
+                  (let ((pitch (car pitches)))
+                    (if (or (= 0 (pitch :value))
+                            (not (pitch-in-range note pitch)))
+                        (loop2 (cdr pitches)
+                               (cons pitch new-pitches)
+                               pitch-values)
+                        (loop2 (cdr pitches)
+                               (cons (copy-pitch pitch
+                                                 :value (car pitch-values))
+                                     new-pitches)
+                               (cdr pitch-values))))))))))
+
+  ;;(c-display "pitch-values:" (get-pitch-values notes))
+  (replace-pitch-values notes (shuffle-func (get-pitch-values notes))))
+
+
+
+;; light shuffle
+;;;;;;;;;;;;;;;;
+
+
+(define (shuffle-notes! area chance)
+  (undo-editor-area area)
+  (define start-place (area :start-place))
+  (define end-place (area :end-place))
+  (replace-notes! (map (lambda (tracknum track-notes)
+                         (shuffle-notes track-notes (- end-place start-place) (lambda (seq)
+                                                                                (light-shuffle seq chance))))
+                       (integer-range (area :start-track) (1- (area :end-track)))
+                       (get-area-notes area))
+                  area))
+
+(delafina (shuffle-range :chance 1 :blocknum -1)
+  (shuffle-notes! (get-ranged-editor-area blocknum) chance))
+
+(delafina (shuffle-track :chance 1 :tracknum -1 :blocknum -1)
+  (shuffle-notes! (get-track-editor-area tracknum blocknum) chance))
+
+(delafina (shuffle-block :chance 1)
+  (shuffle-notes! (get-block-editor-area) chance))
+
+
+
+;; heavy shuffle
+;;;;;;;;;;;;;;;;
+
+
+
+(define (fullshuffle-notes! area chance)
+  (undo-editor-area area)
+  (define start-place (area :start-place))
+  (define end-place (area :end-place))
+  (replace-notes! (map (lambda (tracknum track-notes)
+                         (shuffle-notes track-notes (- end-place start-place) random-shuffle))
+                       (integer-range (area :start-track) (1- (area :end-track)))
+                       (get-area-notes area))
+                  area))
+
+(delafina (fullshuffle-range :chance 1 :blocknum -1)
+  (fullshuffle-notes! (get-ranged-editor-area blocknum) chance))
+
+(delafina (fullshuffle-track :chance 1 :tracknum -1 :blocknum -1)
+  ;;(<ra> :play-song-from-start)
+  (c-display "fs-track")
+  (fullshuffle-notes! (get-track-editor-area tracknum blocknum) chance))
+
+;;(fullshuffle-track)
+
+(delafina (fullshuffle-block :chance 1)
+  (fullshuffle-notes! (get-block-editor-area) chance))
+
+
+
+;; moduloskew
+;;;;;;;;;;;;;
 
 (define (moduloskew-track-notes notes how-much start-place end-place tracknum)
   (set! how-much (/ how-much
@@ -299,17 +421,34 @@
                                                               (create-keybinding-button "Range Up" "ra:eval-scheme" '("(moduloskew-range -1)"))
                                                               (create-keybinding-button "Range Down" "ra:eval-scheme" '("(moduloskew-range 1")))
                                                        (<gui> :vertical-layout
-                                                              (create-keybinding-button "Track Up" "ra:eval-scheme" '("moduloskew-track -1"))
-                                                              (create-keybinding-button "Track Down" "ra:eval-scheme" '("moduloskew-track 1")))
+                                                              (create-keybinding-button "Track Up" "ra:eval-scheme" '("(moduloskew-track -1)"))
+                                                              (create-keybinding-button "Track Down" "ra:eval-scheme" '("(moduloskew-track 1)")))
                                                        (<gui> :vertical-layout
                                                               (create-keybinding-button "Block Up" "ra:eval-scheme" '("moduloskew-block -1"))
                                                               (create-keybinding-button "Block Down" "ra:eval-scheme" '("moduloskew-block 1")))))
   
+  (define shuffle-notes-layout (create-notem-layout (<gui> :vertical-layout
+                                                           (create-keybinding-button "Range" "ra:eval-scheme" '("(shuffle-range 0.5)")))
+                                                    (<gui> :vertical-layout
+                                                           (create-keybinding-button "Track" "ra:eval-scheme" '("(shuffle-track 0.5)")))
+                                                    (<gui> :vertical-layout
+                                                           (create-keybinding-button "Block" "ra:eval-scheme" '("(shuffle-block 0.5)")))))
+  
+  (define fullshuffle-notes-layout (create-notem-layout (<gui> :vertical-layout
+                                                               (create-keybinding-button "Range" "ra:eval-scheme" '("(fullshuffle-range)")))
+                                                        (<gui> :vertical-layout
+                                                               (create-keybinding-button "Track" "ra:eval-scheme" '("(fullshuffle-track)")))
+                                                        (<gui> :vertical-layout
+                                                               (create-keybinding-button "Block" "ra:eval-scheme" '("(fullshuffle-block)")))))
+  
   (define ret (create-notem-flow-layout (<gui> :group "Randomize pitch" random-layout)
                                         (<gui> :group "Randomize velocities" random-velocities-layout)
                                         (<gui> :group "Modulo skew" moduloskew-notes-layout)
+                                        (<gui> :group "Lightly shuffle pitches" shuffle-notes-layout)
+                                        (<gui> :group "Heavily shuffle pitches" fullshuffle-notes-layout)
                                         ))
   ret)
+
 
 (define (create-various-notem)
 

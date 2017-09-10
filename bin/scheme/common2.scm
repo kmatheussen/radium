@@ -136,6 +136,57 @@
 (define (myrand low high)
   (scale (random 100000) 0 100000 low high))
 
+(define (integer-myrand low high)
+  (+ low (random (1+ (- high low)))))
+
+#!!
+(integer-myrand 0 1)
+!!#
+
+(define (random-shuffle seq)
+  (define v (to-vector seq))
+  (define size (length v))
+  (if (< size 2)
+      seq
+      (begin
+        (for-each (lambda (to-pos)
+                    (define from-pos (integer-myrand to-pos (1- size)))
+                    (define to-val (v to-pos))
+                    (define from-val (v from-pos))
+                    ;;(c-display "swapping " to-pos from-pos)
+                    (set! (v to-pos) from-val)
+                    (set! (v from-pos) to-val))
+                  (integer-range 0 (- size 2)))
+        (if (vector? seq)
+            v
+            (to-list v)))))
+
+#!!
+(random-shuffle '(6 2 3 1))
+(random-shuffle '())
+(random-shuffle '(4))
+(random-shuffle '(5 2))
+
+6 2 3 1))
+!!#
+
+;; uses "chance" to determine the chance of swapping two sequential elements
+(define (light-shuffle seq chance)
+  (let loop ((seq (to-list seq)))
+    (if (or (null? seq)
+            (null? (cdr seq)))
+        seq
+        (let ((element1 (car seq))
+              (element2 (cadr seq)))
+          (if (>= (myrand 0 1) chance)
+              (append (list element2 element1)
+                      (loop (cddr seq)))
+              (cons element1
+                    (loop (cdr seq))))))))
+#!!
+(light-shuffle '(1 2 3 4) 0.5)
+!!#
+
 ;; (round 2.5) -> 2
 ;; (roundup 2.5) -> 3
 (define (roundup A)
