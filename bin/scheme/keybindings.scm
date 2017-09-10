@@ -96,6 +96,7 @@
   (define (changeit)
     (define grab-gui (<gui> :vertical-layout))
 
+    #||
     (define all (<gui> :radiobutton "All" #t))
     (define mixerstrips (<gui> :radiobutton "Mixer strips" #f))
     (define sequencer (<gui> :radiobutton "Mixer strips" #f))
@@ -104,6 +105,7 @@
     
     (define buttons (<gui> :horizontal-layout all mixerstrips sequencer mixer editor))
     (<gui> :add grab-gui buttons)
+    ||#
     
     (define wait-text (mid-horizontal-layout (<gui> :text "Waiting for key....")))
     (<gui> :add grab-gui wait-text)
