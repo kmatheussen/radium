@@ -479,11 +479,17 @@ def getKeyHandler(num):
     return KeyHandler()
 
 
-keyhandles=map(getKeyHandler,range(len(keysub)))
+keyhandles = False
 
+def resetKeyHandles():
+    global keyhandles
+    keyhandles=map(getKeyHandler,range(len(keysub)))
+
+resetKeyHandles()
 
 # key and keys are constants!
 def gotKey(windownum,key,keys):
+    global keyhandles
     #print "*********** key: " + keysub[key] + ". keys: " + str(map(lambda k:keysub[k], keys))
     #    key=keys.pop(0)
     return keyhandles[key].exe(windownum,keys);    
@@ -492,6 +498,8 @@ filename1 = ""
 filename2 = ""
 
 def init(filename1_2, filename2_2):
+    global filename1
+    global filename2
     filename1 = filename1_2
     filename2 = filename2_2
     
@@ -526,6 +534,7 @@ def get_file_handles():
 
 
 def parse():
+    global keyhandles
     keybindingsdict={}
 
     filehandle, filehandle2, outfilehandle = get_file_handles()
@@ -621,12 +630,17 @@ def parse():
 
 
 def parse_and_show_errors():
+    global keyhandles
+    old_keyhandles = keyhandles
     try:
+        resetKeyHandles()
         parse()
     except:
         print sys.exc_info()
         #radium.addMessage("Couldn't create keybindings dict. ("+str(sys.exc_info())+")")
         message = traceback.format_exc()
+        print message
         #radium.addMessage("Loading "+filename+" failed.") # If this is a valid module file, please send it to k.s.matheussen@notam02.no ("+str(e)+")")
         #        for m in message.split("\n"):
         radium.addMessage("Couldn't parse keybindings file.\n\nBacktrace:<pre>"+message+"</pre>")
+        keyhandles = old_keyhandles

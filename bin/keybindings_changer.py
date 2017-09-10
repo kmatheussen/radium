@@ -142,15 +142,13 @@ def ensure_has_line(new_line):
     command = get_command_from_line(new_line)
 
     num_removed = 0
+    new_lines = []
     
-    def keepit(line):
+    for line in lines:
         if get_keybinding_from_line(line) != keybinding and get_command_from_line(line) != command:
-            return True
+            new_lines += [line]
         else:
-            num_removed = num_removed + 1
-            return False
-
-    new_lines = filter(keepit, lines)
+            num_removed += 1
 
     if num_removed==1 and has_line(new_line, lines):
         return False
@@ -176,29 +174,46 @@ def FROM_C_insert_new_keybinding_into_conf_file(keybinding, command):
     except:
         e = sys.exc_info()[0]
         message = traceback.format_exc()
-        print "Unable to add keybinding for %s to do %s" % (keybinding, command)
-        radium.addMessage("Unable to add keybinding for %s to do %s" % (keybinding, command))
+        message2 = "Unable to add keybinding for %s to do %s:<br><pre>%s</pre>" % (keybinding, command, message)
+        print message2
+        radium.addMessage(message2)
         return
 
     radium.reloadKeybindings()
 
 
 def remove_keybinding_from_conf_file(keybinding, command):
-    new_line = keybinding + " : " command
+    line_to_remove = keybinding + " : " + command
     
     lines = get_lines()
-    if has_line(new_line, lines):
-        return False
+    if has_line(line_to_remove, lines)==False:
+        message2 = "Could not remove keybinding \"%s\".<br>The reason could be that it's a default keybinding, which can't be removed yet." % line_to_remove
+        print message2
+        radium.addMessage(message2)
+        return
 
     def keepit(line):
-        if get_keybinding_from_line(line) != keybinding and get_command_from_line(line) != command:
+        if line != line_to_remove:
             return True
         else:
             return False
 
     new_lines = filter(keepit, lines)
-    
 
+    write_lines(new_lines)
+
+def FROM_C_remove_keybinding_from_conf_file(keybinding, command):
+    try:
+        remove_keybinding_from_conf_file(keybinding, command)
+    except:
+        e = sys.exc_info()[0]
+        message = traceback.format_exc()
+        message2 = "Unable to remove keybinding %s - %s:<br><pre>%s</pre>" % (keybinding, command, message)
+        print message2
+        radium.addMessage(message2)
+        return
+
+    radium.reloadKeybindings()
     
 
 if __name__ == "__main__":

@@ -178,13 +178,17 @@
         seq
         (let ((element1 (car seq))
               (element2 (cadr seq)))
-          (if (>= (myrand 0 1) chance)
-              (append (list element2 element1)
-                      (loop (cddr seq)))
+          (if (>= chance (myrand 0 1))
+              (if #f
+                  (append (list element2 element1)
+                          (loop (cddr seq)))
+                  (cons element2
+                        (loop (cons element1
+                                    (cddr seq)))))
               (cons element1
                     (loop (cdr seq))))))))
 #!!
-(light-shuffle '(1 2 3 4) 0.5)
+(light-shuffle '(1 2 3 4) 0.0)
 !!#
 
 ;; (round 2.5) -> 2

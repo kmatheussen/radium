@@ -2084,6 +2084,36 @@ void setKeybinding(const_char* keybinding, const_char* funcname, dyn_t arguments
 }
 
 
+void removeKeybinding(const_char* keybinding, const_char* funcname, dyn_t arguments){
+
+  if (arguments.type != ARRAY_TYPE){
+    handleError("setKeybinding: Expected for argument \"arguments\". Found %s", DYN_type_name(arguments.type));
+    return;
+  }
+
+  const char *command = funcname;
+  for(int i=0;i<arguments.array->num_elements;i++){
+    dyn_t argument = arguments.array->elements[i];
+    if (argument.type != STRING_TYPE){
+      handleError("setKeybinding: Expected string in argument[%d], found %s", i, DYN_type_name(argument.type));
+      return;
+    }
+    command = talloc_format("%s %s", command, STRING_get_chars(argument.string));
+  }
+
+  const char *pythoncommand = talloc_format("keybindings_changer.FROM_C_remove_keybinding_from_conf_file(\"%s\", \'%s\')", keybinding, command);
+  printf("Evaling -%s\n", pythoncommand);
+
+  static bool has_imported = false;
+  if (has_imported==false){
+    evalPython("import keybindings_changer");
+    has_imported = true;
+  }
+  
+  evalPython(pythoncommand);  
+}
+
+
 #define INCLUDE_KEY_EVENT_NAMES 1
 #include "../common/keyboard_sub_ids.h"
 

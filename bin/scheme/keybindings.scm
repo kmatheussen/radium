@@ -47,23 +47,27 @@
                     " ")))
 
 
+(define (get-displayable-keybinding-from-keybinding keybinding)
+  (string-join (map (lambda (qualifier)
+                      (let ((readable (<ra> :get-qualifier-name qualifier)))
+                        (if (string=? "" readable)
+                            qualifier
+                            readable)))
+                    (let ((keys (string-split keybinding #\ )))
+                      (c-display "keys" keys)
+                      (append (cdr keys)
+                              (list (car keys)))))
+               " + "))
+
 (define (get-displayable-keybinding rafuncname args)  
   (let* ((command (get-keybindings-command (get-python-ra-funcname rafuncname) args))
          (keybinding (<ra> :get-keybinding-from-command command)))
     (c-display "keybinding" keybinding (<-> "command: -" command "-"))
     (if (string=? "" keybinding)
         ""
-        (string-join (map (lambda (qualifier)
-                            (let ((readable (<ra> :get-qualifier-name qualifier)))
-                              (if (string=? "" readable)
-                                  qualifier
-                                  readable)))
-                          (let ((keys (string-split keybinding #\ )))
-                            (c-display "keys" keys)
-                            (append (cdr keys)
-                                    (list (car keys)))))
-                     " + "))))
+        (get-displayable-keybinding-from-keybinding keybinding))))
 
+         
 #!!
 (get-displayable-keybinding "ra:eval-scheme" '("(moduloskew-track -1)"))
   
@@ -89,9 +93,6 @@
                                          (<-> " " (get-arg-string arg)))
                                        args))))
   
-  (define keybinding (get-displayable-keybinding ra-funcname args))
-  (define has-keybinding (not (string=? keybinding "")))
-
   (define (changeit)
     (define grab-gui (<gui> :vertical-layout))
 
@@ -121,7 +122,7 @@
             (define existing-command (<ra> :get-keybinding-from-keys keybinding))
             (if (string=? "" existing-command)
                 (setit!)
-                (show-async-message :text (<-> "Keybinding \"" keybinding "\" already bound to \"" existing-command "\". Override?")
+                (show-async-message :text (<-> "Keybinding \"" (get-displayable-keybinding-from-keybinding keybinding) "\" already bound to \"" existing-command "\". Override?")
                                     :buttons '("Yes" "No")
                                     :callback (lambda (answer)
                                                 (if (string=? "Yes" answer)
@@ -130,6 +131,9 @@
             (c-display "hello1"))))
     
   (define (keybinding-mouse-handler button state x y)
+    (define keybinding (get-displayable-keybinding ra-funcname args))
+    (define has-keybinding (not (string=? keybinding "")))
+    
     (if (and (= button *right-button*)
              (= state *is-pressing*))
         (popup-menu (list (if has-keybinding
@@ -140,6 +144,11 @@
                         (list 
                          "Remove the keybinding"
                          (lambda ()
+                           (define python-ra-funcname (get-python-ra-funcname ra-funcname))
+                           (<ra> :remove-keybinding
+                                 (<ra> :get-keybinding-from-command (get-keybindings-command python-ra-funcname args))
+                                 python-ra-funcname
+                                 (map get-arg-string args))
                            (c-display "removing")))
                         '())))
     #f)
@@ -151,10 +160,10 @@
 (delafina (create-keybinding-button :name
                                     :ra-funcname
                                     :arguments '())
-  (define funcname-contains-range (string-contains? ra-funcname "range"))
+  (define requires-range (string-case-insensitive-contains? (<-> ra-funcname name) "range"))
   (define ra-func (eval-string ra-funcname))
   (define (func)
-    (if (and funcname-contains-range
+    (if (and requires-range
              (not (<ra> :has-range)))
         (show-async-message :text "No range in block. Select range by using Left Meta + b")
         (apply ra-func arguments)))

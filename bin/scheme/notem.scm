@@ -238,6 +238,7 @@
 ;; light shuffle
 ;;;;;;;;;;;;;;;;
 
+(define *default-shuffle-chance* 0.5)
 
 (define (shuffle-notes! area chance)
   (undo-editor-area area)
@@ -250,14 +251,16 @@
                        (get-area-notes area))
                   area))
 
-(delafina (shuffle-range :chance 1 :blocknum -1)
-  (shuffle-notes! (get-ranged-editor-area blocknum) chance))
+(delafina (shuffle-range :chance *default-shuffle-chance* :blocknum -1)
+  (if (not (<ra> :has-range blocknum))
+      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+      (shuffle-notes! (get-ranged-editor-area blocknum) chance)))
 
-(delafina (shuffle-track :chance 1 :tracknum -1 :blocknum -1)
+(delafina (shuffle-track :chance *default-shuffle-chance* :tracknum -1 :blocknum -1)
   (shuffle-notes! (get-track-editor-area tracknum blocknum) chance))
 
-(delafina (shuffle-block :chance 1)
-  (shuffle-notes! (get-block-editor-area) chance))
+(delafina (shuffle-block :chance *default-shuffle-chance* :blocknum -1)
+  (shuffle-notes! (get-block-editor-area blocknum) chance))
 
 
 
@@ -277,7 +280,9 @@
                   area))
 
 (delafina (fullshuffle-range :chance 1 :blocknum -1)
-  (fullshuffle-notes! (get-ranged-editor-area blocknum) chance))
+  (if (not (<ra> :has-range blocknum))
+      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+      (fullshuffle-notes! (get-ranged-editor-area blocknum) chance)))
 
 (delafina (fullshuffle-track :chance 1 :tracknum -1 :blocknum -1)
   ;;(<ra> :play-song-from-start)
@@ -343,7 +348,9 @@
                   :include-starting-before #f))
 
 (delafina (moduloskew-range :how-much 1 :blocknum -1)
-  (moduloskew-notes! (get-ranged-editor-area blocknum) how-much))
+  (if (not (<ra> :has-range blocknum))
+      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+      (moduloskew-notes! (get-ranged-editor-area blocknum) how-much)))
 
 (delafina (moduloskew-track :how-much 1 :tracknum -1 :blocknum -1)
   (moduloskew-notes! (get-track-editor-area tracknum blocknum) how-much))
@@ -377,7 +384,9 @@
                   area))
 
 (delafina (replace-with-random-notes-in-range :blocknum -1)
-  (replace-with-random-pitches! (get-ranged-editor-area blocknum)))
+  (if (not (<ra> :has-range blocknum))
+      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+      (replace-with-random-pitches! (get-ranged-editor-area blocknum))))
 
 (delafina (replace-with-random-notes-in-track :tracknum -1 :blocknum -1)
   (replace-with-random-pitches! (get-track-editor-area tracknum blocknum)))
@@ -413,7 +422,9 @@
                   area))
 
 (delafina (replace-with-random-velocities-in-range :blocknum -1)
-  (replace-with-random-velocities! (get-ranged-editor-area blocknum)))
+  (if (not (<ra> :has-range blocknum))
+      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+      (replace-with-random-velocities! (get-ranged-editor-area blocknum))))
 
 (delafina (replace-with-random-velocities-in-track :tracknum -1 :blocknum -1)
   (replace-with-random-velocities! (get-track-editor-area tracknum blocknum)))
@@ -441,13 +452,17 @@
                                                        (<gui> :vertical-layout
                                                               (create-keybinding-button "Block Up" "ra:eval-scheme" '("moduloskew-block -1"))
                                                               (create-keybinding-button "Block Down" "ra:eval-scheme" '("moduloskew-block 1")))))
-  
-  (define shuffle-notes-layout (create-notem-layout (<gui> :vertical-layout
-                                                           (create-keybinding-button "Range" "ra:eval-scheme" '("(shuffle-range 0.5)")))
+
+  (define shuffle-notes-layout (create-notem-layout (<gui> :horizontal-int-slider "chance %: "
+                                                           0 (floor (* 100 *default-shuffle-chance*)) 100
+                                                           (lambda (val)
+                                                             (set! *default-shuffle-chance* (/ val 100))))
                                                     (<gui> :vertical-layout
-                                                           (create-keybinding-button "Track" "ra:eval-scheme" '("(shuffle-track 0.5)")))
+                                                           (create-keybinding-button "Range" "ra:eval-scheme" '("(shuffle-range)")))
                                                     (<gui> :vertical-layout
-                                                           (create-keybinding-button "Block" "ra:eval-scheme" '("(shuffle-block 0.5)")))))
+                                                           (create-keybinding-button "Track" "ra:eval-scheme" '("(shuffle-track)")))
+                                                    (<gui> :vertical-layout
+                                                           (create-keybinding-button "Block" "ra:eval-scheme" '("(shuffle-block)")))))
   
   (define fullshuffle-notes-layout (create-notem-layout (<gui> :vertical-layout
                                                                (create-keybinding-button "Range" "ra:eval-scheme" '("(fullshuffle-range)")))

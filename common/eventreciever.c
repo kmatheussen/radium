@@ -179,53 +179,57 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
 			//}
 
                         if (g_grab_next_eventreceiver_key){
+                          
                           API_has_grabbed_keybinding(in_tevent->SubID, places, len);
                           g_grab_next_eventreceiver_key = false;
-                          break;
+                          ret = true;
+                          
+                        } else {
+
+                          list=Lists_py[len];
+                          
+                          for(lokke=0;lokke<len;lokke++){
+                            /* Incrementing the one to insert, so it doesn't dissapear when/if its replaced later. */
+                            Py_INCREF(Integers_py[places[lokke]]);
+                            PyList_SetItem(list,lokke,Integers_py[places[lokke]]);
+                          }
+                          
+                          if(list!=NULL){
+                            Py_INCREF(Integers_py[window->l.num]);
+                            Py_INCREF(Integers_py[in_tevent->SubID]);
+                            Py_INCREF(list);
+                            
+                            Py_INCREF(Integers_py[window->l.num]);
+                            Py_INCREF(Integers_py[in_tevent->SubID]);
+                            Py_INCREF(list);
+                            
+                            arglist=Py_BuildValue("llO",window->l.num,in_tevent->SubID,list);
+                            
+                            /* Executing python-code */
+                            //printf("EVALING gotkeyfunc\n");
+                            result=PyEval_CallObject(gotkeyFunc,arglist);
+                            
+                            Py_DECREF(arglist);
+                            if(result!=NULL){
+                              
+                              bool resultbool;
+                              
+                              if (result==Py_False)
+                                resultbool=false;
+                              else if (result==Py_True)
+                                resultbool=true;
+                              else {
+                                RError("Something is wrong. keyboard handler didn't return a boolean.");
+                                resultbool=true;
+                              }
+                              //printf("********** result: %d\n",resultbool);
+                              ret = resultbool;
+                              
+                              Py_DECREF(result);
+                            }
+                          }
+                          
                         }
-
-			list=Lists_py[len];
-
-			for(lokke=0;lokke<len;lokke++){
-			        /* Incrementing the one to insert, so it doesn't dissapear when/if its replaced later. */
-				Py_INCREF(Integers_py[places[lokke]]);
-				PyList_SetItem(list,lokke,Integers_py[places[lokke]]);
-			}
-
-			if(list!=NULL){
-				Py_INCREF(Integers_py[window->l.num]);
-				Py_INCREF(Integers_py[in_tevent->SubID]);
-				Py_INCREF(list);
-
-				Py_INCREF(Integers_py[window->l.num]);
-				Py_INCREF(Integers_py[in_tevent->SubID]);
-				Py_INCREF(list);
-
-				arglist=Py_BuildValue("llO",window->l.num,in_tevent->SubID,list);
-
-				/* Executing python-code */
-				//printf("EVALING gotkeyfunc\n");
-				result=PyEval_CallObject(gotkeyFunc,arglist);
-          
-				Py_DECREF(arglist);
-				if(result!=NULL){
-
-                                  bool resultbool;
-
-                                  if (result==Py_False)
-                                    resultbool=false;
-                                  else if (result==Py_True)
-                                    resultbool=true;
-                                  else {
-                                    RError("Something is wrong. keyboard handler didn't return a boolean.");
-                                    resultbool=true;
-                                  }
-                                  //printf("********** result: %d\n",resultbool);
-                                  ret = resultbool;
-                                  
-				  Py_DECREF(result);
-				}
-			}
 
 			break;
 	}
