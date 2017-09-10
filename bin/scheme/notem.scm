@@ -200,8 +200,10 @@
   (replace-notes! (map (lambda (tracknum track-notes)
                          (moduloskew-track-notes track-notes how-much start-place end-place tracknum))
                        (integer-range (area :start-track) (1- (area :end-track)))
-                       (get-area-notes area))
-                  area))
+                       (get-area-notes area
+                                       :include-starting-before #f))
+                  area
+                  :include-starting-before #f))
 
 (delafina (moduloskew-range :how-much 1 :blocknum -1)
   (moduloskew-notes! (get-ranged-editor-area blocknum) how-much))

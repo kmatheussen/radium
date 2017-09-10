@@ -49,14 +49,23 @@
 
 (delafina (in-editor-area :start-place
                           :end-place #f
-                          :area)
-  (if (not end-place)
-      (and (>= start-place (area :start-place))
-           (< start-place (area :end-place)))
-      (begin
-        (assert (> end-place start-place))
-        (and (< start-place (area :end-place))
-             (>= end-place (area :start-place))))))
+                          :area
+                          :include-ending-after #t ;; only has meaning if end-place is #t
+                          :include-starting-before #t)
+  (cond ((and end-place
+              (not include-ending-after)
+              (> end-place (area :end-place)))
+         #f)
+        ((and (not include-starting-before)
+              (< start-place (area :start-place)))
+         #f)
+        ((not end-place)
+         (and (>= start-place (area :start-place))
+              (< start-place (area :end-place))))
+        (else
+         (assert (> end-place start-place))
+         (and (< start-place (area :end-place))
+              (>= end-place (area :start-place))))))
           
 (delafina (get-block-editor-area :blocknum -1)
   (make-editor-area :start-place 0
@@ -132,7 +141,9 @@
                :id (<ra> :get-note-id notenum tracknum blocknum))))
 
 (delafina (get-area-notes :area
-                          :include-all #t) ;; if include-all is #t, we also include all notes starting to play before the area and either ends inside the area or after.
+                          :include-ending-after #t
+                          :include-starting-before #t
+                          )
   (define blocknum (area :blocknum))
   (define startplace (area :start-place))
   (define endplace (area :end-place))
@@ -147,8 +158,10 @@
                        (cond ((>= note-start endplace)
                               '())
                              ((in-editor-area note-start
-                                              (and include-all (<ra> :get-note-end notenum tracknum blocknum))
-                                              area)
+                                              (<ra> :get-note-end notenum tracknum blocknum)
+                                              :area area
+                                              :include-ending-after include-ending-after
+                                              :include-starting-before include-starting-before)
                               (cons (get-note blocknum tracknum notenum startplace)
                                     (loop (1+ notenum))))
                              (else
@@ -559,7 +572,8 @@
             area-notes))
 
 (delafina (remove-notes! :area
-                         :include-all #t) ;; if include-all is #t, we also include all notes starting to play before the area and either ends inside the area or after.
+                         :include-ending-after #t
+                         :include-starting-before #t)
   (define blocknum (area :blocknum))
   (define startplace (area :start-place))
   (define endplace (area :end-place))
@@ -578,8 +592,10 @@
                        (loop (1+ tracknum)
                              0))
                       ((in-editor-area note-start
-                                       (and include-all (<ra> :get-note-end notenum tracknum blocknum))
-                                       area)
+                                       (<ra> :get-note-end notenum tracknum blocknum)
+                                       :area area
+                                       :include-ending-after include-ending-after
+                                       :include-starting-before include-starting-before)
                        (<ra> :delete-note notenum tracknum blocknum)
                        (loop tracknum
                              notenum))
@@ -594,9 +610,13 @@
 
 (delafina (replace-notes! :area-notes
                           :area
-                          :include-all #t)
-  (remove-notes! area)
-  (add-notes! area-notes area))
+                          :include-ending-after #t
+                          :include-starting-before #t)
+  (remove-notes! area
+                 :include-ending-after include-ending-after
+                 :include-starting-before include-starting-before)
+  (add-notes! area-notes
+              area))
 
 #||
 (let ((notes (get-notes :starttracknum 0)))
