@@ -255,9 +255,13 @@ void obtain_keyboard_focus(void){
 }
 
 void release_keyboard_focus(void){
+  printf("  RELEASE keyboard focus called.... ");
   if (g_radium_runs_custom_exec==false){
+    printf("... Got it\n");
     editor_has_keyboard = true;
     set_grey_editor(!editor_has_keyboard_focus());
+  }else{
+    printf("... Failed\n");
   }
   //root->song->tracker_windows->must_redraw_editor = true;
 }

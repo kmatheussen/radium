@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextBrowser>
 #include <QTextDocumentFragment>
 #include <QSplitter>
+#include <QHideEvent>
 
 #include <QDesktopServices>
 #include <QtWebKitWidgets/QWebView>
@@ -196,6 +197,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 #define HIDE_OVERRIDER(classname)                                       \
   void hideEvent(QHideEvent *event_) override {                         \
     remember_geometry.hideEvent_override(this);                         \
+    Gui::hideEvent(event_);                                             \
   }
 
 #define CHANGE_OVERRIDER(classname)              \
@@ -691,20 +693,37 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
 
     void changeEvent(QEvent *event){
-      if(_widget->isWindow()){
-        if (_take_keyboard_focus==true && event->type()==QEvent::ActivationChange){
-          printf("  Is Active: %d\n", _widget->isActiveWindow());
-          if(_widget->isActiveWindow()){
-            obtain_keyboard_focus();
-            _has_keyboard_focus = true;
-          } else {
+      if(_widget->isWindow() && _widget->window()!=g_main_window->window()){
+        if (_take_keyboard_focus==true){
+          if (event->type()==QEvent::ActivationChange){
+            printf("  ActitionChange. Is Active: %d. Classname: %s. Widget: %p. Window: %p\n", _widget->isActiveWindow(), _class_name.toUtf8().constData(),_widget,_widget->window());
+            if(_widget->isActiveWindow()){
+              obtain_keyboard_focus();
+              _has_keyboard_focus = true;
+            } else {
+              release_keyboard_focus();
+              _has_keyboard_focus = false;
+            }
+          } else if (event->type()==QEvent::Close || event->type()==QEvent::Hide){
+            printf("  Close/Hide. Is Active: %d. Classname: %s. Widget: %p. Window: %p\n", _widget->isActiveWindow(), _class_name.toUtf8().constData(),_widget,_widget->window());
             release_keyboard_focus();
             _has_keyboard_focus = false;
           }
         }
       }
     }
-    
+
+    void hideEvent(QHideEvent *event){
+      printf("  Hide event 1.\n");
+      if(_widget->isWindow() && _widget->window()!=g_main_window->window()){
+        if (_take_keyboard_focus==true){
+          printf("  Hide event 2. Is Active: %d. Classname: %s. Widget: %p. Window: %p\n", _widget->isActiveWindow(), _class_name.toUtf8().constData(),_widget,_widget->window());
+          release_keyboard_focus();
+          _has_keyboard_focus = false;
+        }
+      }
+    }
+
     /************ MOUSE *******************/
     
     func_t *_mouse_callback = NULL;
