@@ -61,7 +61,8 @@ def write_lines(lines):
     filename = get_filename()
     
     try:
-        shutil.copy2(filename, filename + ".bak")
+        if os.path.isfile(filename) and os.path.exists(filename):
+            shutil.copy2(filename, filename + ".bak")
         shutil.copyfile(tempfilename, filename)
     except:
         e = sys.exc_info()[0]
