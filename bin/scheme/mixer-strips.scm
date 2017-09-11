@@ -96,9 +96,12 @@
    
    "----------"
    
-   (list "Hide mixer strip" :enabled (and instrument-id strips-config)
+   (list "Hide mixer strip" :enabled (or instrument-id
+                                         (not strips-config))
          (lambda ()
-           (set! (strips-config :is-enabled instrument-id) #f)))
+           (if (not strips-config)
+               (<ra> :show-hide-mixer-strip)
+               (set! (strips-config :is-enabled instrument-id) #f))))
    (list "Configure mixer strips on/off" :enabled strips-config
               (lambda ()
                 (strips-config :show-config-gui)))
