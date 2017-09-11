@@ -1,6 +1,5 @@
 
 import os
-import tempfile
 import shutil
 import sys
 import traceback
@@ -14,75 +13,53 @@ if __name__ == "__main__" or sys.g_program_path=='__main__':
 else:
     import radium
 
+ra = radium
+
 
 def get_filename():
-    return os.path.join(os.path.expanduser("~"), ".radium", "keybindings.conf")
+    return ra.appendFilePaths(ra.getHomePath(),
+                              ra.appendFilePaths(ra.getPath(".radium"),
+                                                 ra.getPath("keybindings.conf")))
+
+    #return os.path.join(os.path.expanduser("~"), ".radium", "keybindings.conf")
 
 
 def get_lines():
     filename = get_filename()
+
     try:
-        filehandle=open(filename,'r')
+        disk=ra.openFileForReading(filename)
     except:
-        print "Configuration file %s does not seem to exist" % filename
+        e = sys.exc_info()[0]
+        message = traceback.format_exc()
+        message2 = "Configuration file %s does not seem to exist:<br><pre>%s</pre>" % (ra.getPathString(filename), message)
+        print message2
+        #ra.addMessage(message2)
         return []
 
-    content = filehandle.read()
-    filehandle.close()
+    ret = []
 
-    if len(content)==0:
-        return []
-    
-    if content[-1] != "\n":
-        content += "\n"
-        
-    return content.splitlines()
+    while ra.fileAtEnd(disk)==False:
+        ret += [ra.readLineFromFile(disk)]
 
+    ra.closeFile(disk)
+
+    return ret
 
 
 def write_lines(lines):
-    try:
-        fd,tempfilename = tempfile.mkstemp("radium_temp_conf", text=True)
-        print "tempfilename",tempfilename
-        for line in lines:
-            print "line:",line
-            os.write(fd, line + "\n")
+    disk = ra.openFileForWriting(get_filename())
 
-        os.close(fd)
+    for line in lines:
+        print "line:",line
+        ra.writeToFile(disk, line + "\n")
 
-    except:
-        e = sys.exc_info()[0]
-        message = traceback.format_exc()
-        message2 = "Unable to create temporary file %s:<br><pre>%s</pre>" % (tempfilename,message)
-        print message2
-        radium.addMessage(message2)
-        return
-        
-    filename = get_filename()
-    
-    try:
-        if os.path.isfile(filename) and os.path.exists(filename):
-            shutil.copy2(filename, filename + ".bak")
-        shutil.copyfile(tempfilename, filename)
-        #os.rename(tempfilename, filename)
-    except:
-        e = sys.exc_info()[0]
-        message = traceback.format_exc()
-        print "Could not copy %s to %s" % (tempfilename,filename),message
-        radium.addMessage("Could not copy %s to %s:<pre>%s</pre>" % (tempfilename,filename,message))
-
-    try:
-        os.remove(tempfilename)
-    except:
-        e = sys.exc_info()[0]
-        message = traceback.format_exc()
-        print "Unable to delete temporary file %s" % tempfilename, message
-        #radium.addMessage("Could not copy %s to %s:<pre>%s</pre>" % (tempfilename,filename,message))
-    
+    ra.closeFile(disk)
 
 
 def has_line(line, lines):
     for aline in lines:
+        print "comparing start->",aline,"-",line,"<-end"
         if line==aline:
             return True
     return False
@@ -184,20 +161,21 @@ def FROM_C_insert_new_keybinding_into_conf_file(keybinding, command):
         message = traceback.format_exc()
         message2 = "Unable to add keybinding for %s to do %s:<br><pre>%s</pre>" % (keybinding, command, message)
         print message2
-        radium.addMessage(message2)
+        ra.addMessage(message2)
         return
 
-    radium.reloadKeybindings()
+    ra.reloadKeybindings()
 
 
 def remove_keybinding_from_conf_file(keybinding, command):
     line_to_remove = keybinding + " : " + command
     
     lines = get_lines()
+    print "lines:",lines
     if has_line(line_to_remove, lines)==False:
         message2 = "Could not remove keybinding \"%s\".<br>The reason could be that it's a default keybinding, which can't be removed yet." % line_to_remove
         print message2
-        radium.addMessage(message2)
+        ra.addMessage(message2)
         return
 
     def keepit(line):
@@ -218,10 +196,10 @@ def FROM_C_remove_keybinding_from_conf_file(keybinding, command):
         message = traceback.format_exc()
         message2 = "Unable to remove keybinding %s - %s:<br><pre>%s</pre>" % (keybinding, command, message)
         print message2
-        radium.addMessage(message2)
+        ra.addMessage(message2)
         return
 
-    radium.reloadKeybindings()
+    ra.reloadKeybindings()
     
 
 if __name__ == "__main__":

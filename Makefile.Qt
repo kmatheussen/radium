@@ -364,7 +364,7 @@ OBJ_WIN ?= X11_disk.o X11_Qtstuff.o W_Keyboard.o
 OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o cocoa_Keyboard.o do.o
 
 #Python
-OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_velocities.o api_pitches.o api_timing.o api_support.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_soundpluginregistry.o api_requesters.o api_mouse.o api_seqtracks.o api_gui.o
+OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_disk.o api_noteedit.o api_velocities.o api_pitches.o api_timing.o api_support.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_soundpluginregistry.o api_requesters.o api_mouse.o api_seqtracks.o api_gui.o
 
 #Midi
 OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_i_input.o midi_menues.o
@@ -1559,6 +1559,9 @@ api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.c $(API)radium_
 
 api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.c $(API)radium_proc.h
 	$(CC)  $(API)api_navigate.c $(OPT)
+
+api_disk.o:  $(BUILD_DEPENDENCIES)  $(API)api_disk.cpp $(API)radium_proc.h
+	$(CCC)  $(API)api_disk.cpp $(QTOPT)
 
 api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp $(API)radium_proc.h
 	$(CCC)  $(API)api_noteedit.cpp $(QTOPT)

@@ -27,6 +27,7 @@ extern LANGSPEC int DISK_write(disk_t *disk, const char *data);
 
 
 // READ TEXT
+extern LANGSPEC bool DISK_at_end(disk_t *disk);
 extern LANGSPEC int DISK_get_curr_read_line(disk_t *disk);
 extern LANGSPEC wchar_t *DISK_read_wchar_line(disk_t *disk);
 extern LANGSPEC char *DISK_readline(disk_t *disk);
