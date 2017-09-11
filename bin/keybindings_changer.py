@@ -1,6 +1,5 @@
 
 import os
-import shutil
 import sys
 import traceback
 
@@ -26,16 +25,11 @@ def get_filename():
 
 def get_lines():
     filename = get_filename()
-
-    try:
-        disk=ra.openFileForReading(filename)
-    except:
-        e = sys.exc_info()[0]
-        message = traceback.format_exc()
-        message2 = "Configuration file %s does not seem to exist:<br><pre>%s</pre>" % (ra.getPathString(filename), message)
-        print message2
-        #ra.addMessage(message2)
+    if ra.fileExists(filename)==False:
+        print "User keyboard configuration file doesn't exist"
         return []
+
+    disk=ra.openFileForReading(filename)
 
     ret = []
 

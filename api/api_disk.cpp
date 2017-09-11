@@ -83,6 +83,11 @@ const_char* appendFilePaths(const_char* w_path1, const_char* w_path2){
   return qstring_to_w(w_to_qstring(w_path1) + QDir::separator() + w_to_qstring(w_path2));
 }
 
+bool fileExists(const_char* w_path){
+  QString filename = w_to_qstring(w_path);
+  return QFileInfo::exists(filename);
+}
+
 int64_t openFileForReading(const_char* w_path){
   disk_t *disk = DISK_open_for_reading(w_to_qstring(w_path));
   if (disk==NULL){
@@ -123,11 +128,11 @@ int writeToFile(int64_t disknum, const_char* string){
   disk_t *disk = g_disks[disknum];
   if (disk==NULL){
     handleError("writeToFile: No file #%d", (int)disknum);
-    return false;
+    return -1;
   }
 
   int bytes_written = DISK_write(disk, string);
-  int string_len = strlen(string);
+  int string_len = (int)strlen(string);
   if (bytes_written != string_len){
     handleError("writeToFile: Unable to write all bytes to file. (%d / %d)", bytes_written, string_len);
   }
@@ -149,7 +154,7 @@ const_char* readLineFromFile(int64_t disknum){
   disk_t *disk = g_disks[disknum];
   if (disk==NULL){
     handleError("writeToFile: No file #%d", (int)disknum);
-    return false;
+    return "";
   }
 
   const_char* ret = DISK_read_trimmed_line(disk);
