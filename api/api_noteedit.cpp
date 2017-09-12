@@ -518,6 +518,10 @@ void setMouseNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   }
 }
 
+void updateNotesInPlayer(void){
+  PC_PauseNoMessage();
+  PC_StopPause(NULL);
+}
 
 /* Select/unselect notes */
 

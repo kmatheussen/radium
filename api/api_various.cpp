@@ -693,6 +693,7 @@ void openAboutWindow(void){
               );
 }
 
+/*
 const_char *getProgramPath(void){
   return (char*)OS_get_program_path();
 }
@@ -700,6 +701,7 @@ const_char *getProgramPath(void){
 const_char *appendPaths(const_char* path1, const_char* path2){
   return talloc_format("%s%s%s", path1, OS_get_directory_separator(), path2);
 }
+*/
 
 const_char *getConfPath(const char *filename){
   return OS_get_conf_filename2(filename);

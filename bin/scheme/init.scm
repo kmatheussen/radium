@@ -134,7 +134,8 @@
   (let loop ((load-path *load-path*))
     (if (null? load-path)
         filename
-        (let ((full-path (string-append (ra:get-program-path) "/" (car load-path) "/" filename)))
+        ;; (let ((full-path (string-append (ra:get-program-path) "/" (car load-path) "/" filename))) ;; can't use absolute paths in s7.
+        (let ((full-path (string-append (car load-path) "/" filename)))
           (if (file-exists? full-path)
               full-path
               (loop (cdr load-path)))))))

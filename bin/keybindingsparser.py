@@ -57,6 +57,7 @@ RAO_SetKeyOctave(24)
 
 import sys,string,os
 import traceback
+import platform
 
 import radium,protoconfparser
 from types import *
@@ -66,6 +67,10 @@ ra=radium
 
 true=1
 false=0
+
+class NullWriter(object):
+    def write(self, value): pass
+
 
 def makeemptylist(len):
     ret=[]
@@ -631,6 +636,13 @@ def parse():
 
 def parse_and_show_errors():
     global keyhandles
+    
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = NullWriter()
+        sys.stderr = NullWriter()
+        
     old_keyhandles = keyhandles
     try:
         resetKeyHandles()
@@ -644,3 +656,7 @@ def parse_and_show_errors():
         #        for m in message.split("\n"):
         radium.addMessage("Couldn't parse keybindings file.\n\nBacktrace:<pre>"+message+"</pre>")
         keyhandles = old_keyhandles
+
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr

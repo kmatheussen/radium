@@ -318,11 +318,11 @@ struct MyQSlider : public QSlider {
       
       else if (command==add_automation_to_current_editor_track) {
 
-        addAutomationToCurrentEditorTrack(_patch->id, getInstrumentEffectName(_patch->id, _effect_num));
+        addAutomationToCurrentEditorTrack(_patch->id, getInstrumentEffectName(_effect_num, _patch->id));
 
       } else if (command==add_automation_to_current_sequencer_track) {
 
-        addAutomationToCurrentSequencerTrack(_patch->id, getInstrumentEffectName(_patch->id, _effect_num));
+        addAutomationToCurrentSequencerTrack(_patch->id, getInstrumentEffectName(_effect_num, _patch->id));
 
       }
         

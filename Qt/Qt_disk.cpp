@@ -330,6 +330,10 @@ int DISK_get_curr_read_line(disk_t *disk){
   return disk->curr_read_line;
 }
 
+bool DISK_at_end(disk_t *disk){
+  return disk->stream->atEnd();
+}
+
 QString DISK_read_qstring_line(disk_t *disk){
   R_ASSERT(disk->is_binary==false);
   R_ASSERT(disk->type==disk_t::READ);

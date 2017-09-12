@@ -1678,6 +1678,19 @@ for .emacs:
                :finally (lambda ()
                           (<ra> :stop-ignoring-undo))))
 
+;; ensures that (<ra> :update-notes-in-player) is only called after the outermost block is finished.
+(define *currently-in-update-notes-after-block-block* #f)
+(define (update-notes-after-block block)
+  (if *currently-in-update-notes-after-block-block*
+      (block)
+      (begin
+        (set! *currently-in-update-notes-after-block-block* #t)
+        (try-finally :try block
+                     :finally (lambda ()
+                                (set! *currently-in-update-notes-after-block-block* #f)
+                                (<ra> :update-notes-in-player))))))
+  
+
 (define (draw-plot xs func)
   (define ys (map func xs))
   (define args "")

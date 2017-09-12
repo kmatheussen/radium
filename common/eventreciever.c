@@ -122,7 +122,7 @@ static bool EventTreater(struct TEvent *in_tevent,struct Tracker_Windows *window
 				len++;
 			}
 			if(a&EVENT_RIGHTCTRL){
-				places[len]=EVENT_CTRL_L;
+				places[len]=EVENT_CTRL_R;
 				len++;
 			}
 			if(a&EVENT_CAPSLOCK){

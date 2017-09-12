@@ -1,3 +1,51 @@
+Changes 5.0.11 -> 5.1.3:
+* Windows32: Remove some console printing that could have caused
+  importing xm modules to fail.
+* Build: Delete the radium_plugin_scanner binaries when
+  executing "make clean"
+* Current mixer strip: Make the "Hide mixer strip" popup menu
+  option work.
+* Keyboard: Fix bug causing Right Ctrl to always be registered
+  as Left Ctrl. (Not discovered until now since almost all
+  default keybindings bound to Left Ctrl are also bound to
+  Right Ctrl.)
+* Ctrl + J: Fix ",x", where "x" is track number. Earlier the
+  cursor also jumped to line 0. When there is nothing before the
+  comma, Ctrl + J is only supposed to move the cursor
+  horizontally.
+* Edit: Tell the player to reload notes after changing them.
+  No need to restart player or wait until it starts from the
+  beginning of a block or range before hearing the difference.
+* Instrument widget: Fix "Add automation to current editor track"
+  and "Add automation to current sequencer track".
+* GUI: Ensure that we have keyboard focus when closing a window.
+  Fixes so that you don't have to click inside the editor to get
+  focus back. This problem was especially notable on Windows.
+* Edit: Functions to shuffle pitch values.
+* Settings: Take backup of old file before overwriting
+  configuration file.
+* Linux: Fix for rare crash related to mouse movement.
+* Keyboard (linux/osx): Fix keyboard handler not immediately
+  registering when mouse moved to a different area.
+* GUI: Add "Set/Change/Remove keybinding" options to the popup
+  menu for all buttons in the Edit tab.
+* Menus: Add "Reload keyboard configuration" to the help menu.
+* Edit: Functions to modulo-move notes up or down.
+* Editor: Don't show assertion reporter if undoing after
+  increasing number of lines when a track has swing.
+* Html viewer: Let Ctrl + +/- zoom out/in.
+* API: 
+  * Make gui_setText also work on Text classes
+  * New functions: getNoteId, reloadKeybindings, setKeybinding,
+    getKeybindingsFromCommands, getKeybindingFromCommand,
+    getKeybindingsFromKeys, getKeybindingFromKeys, setKeybinding,
+    grabKeybinding, removeKeybinding,
+    getPath, getHomePath, getProgramPath, getPathString,
+    appendFilePaths, openFileForReading, openFileForWriting,
+    closeFile, writeToFile, fileAtEnd, readLineFromFile,
+    fileExists
+
+
 Changes 5.0.10 -> 5.0.11:
 * Gui: Fix a crash that could happen when toggling full screen (F11)
   for the mixer window.

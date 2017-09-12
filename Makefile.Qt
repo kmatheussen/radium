@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 5.0.11
+VERSION = 5.1.3
 
 
 #----------------USER SETTINGS-------------------------------
@@ -364,7 +364,7 @@ OBJ_WIN ?= X11_disk.o X11_Qtstuff.o W_Keyboard.o
 OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o cocoa_Keyboard.o do.o
 
 #Python
-OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_noteedit.o api_velocities.o api_pitches.o api_timing.o api_support.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_soundpluginregistry.o api_requesters.o api_mouse.o api_seqtracks.o api_gui.o
+OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_disk.o api_noteedit.o api_velocities.o api_pitches.o api_timing.o api_support.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_soundpluginregistry.o api_requesters.o api_mouse.o api_seqtracks.o api_gui.o
 
 #Midi
 OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_i_input.o midi_menues.o
@@ -420,7 +420,7 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe bin/radium_plugin_scanner bin/radium_plugin_scanner.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
 
 dependencies_ok: check_dependencies.sh #Makefile
@@ -1559,6 +1559,9 @@ api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.c $(API)radium_
 
 api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.c $(API)radium_proc.h
 	$(CC)  $(API)api_navigate.c $(OPT)
+
+api_disk.o:  $(BUILD_DEPENDENCIES)  $(API)api_disk.cpp $(API)radium_proc.h
+	$(CCC)  $(API)api_disk.cpp $(QTOPT)
 
 api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp $(API)radium_proc.h
 	$(CCC)  $(API)api_noteedit.cpp $(QTOPT)

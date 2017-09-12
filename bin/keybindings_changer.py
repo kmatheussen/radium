@@ -1,9 +1,13 @@
 
 import os
-import tempfile
-import shutil
 import sys
 import traceback
+import platform
+
+
+class NullWriter(object):
+    def write(self, value): pass
+
 
 class RadiumMock:
     def addMessage(self, message):
@@ -14,67 +18,48 @@ if __name__ == "__main__" or sys.g_program_path=='__main__':
 else:
     import radium
 
+ra = radium
+
 
 def get_filename():
-    return os.path.join(os.path.expanduser("~"), ".radium", "keybindings.conf")
+    return ra.appendFilePaths(ra.getHomePath(),
+                              ra.appendFilePaths(ra.getPath(".radium"),
+                                                 ra.getPath("keybindings.conf")))
+
+    #return os.path.join(os.path.expanduser("~"), ".radium", "keybindings.conf")
 
 
 def get_lines():
     filename = get_filename()
-    try:
-        filehandle=open(filename,'r')
-    except:
-        print "Configuration file %s does not seem to exist" % filename
+    if ra.fileExists(filename)==False:
+        #print "User keyboard configuration file doesn't exist"
         return []
 
-    content = filehandle.read()
-    filehandle.close()
+    disk=ra.openFileForReading(filename)
 
-    if len(content)==0:
-        return []
-    
-    if content[-1] != "\n":
-        content += "\n"
-        
-    return content.splitlines()
+    ret = []
 
+    while ra.fileAtEnd(disk)==False:
+        ret += [ra.readLineFromFile(disk)]
+
+    ra.closeFile(disk)
+
+    return ret
 
 
 def write_lines(lines):
-    try:
-        _,tempfilename = tempfile.mkstemp("radium_temp_conf")
-        print "tempfilename",tempfilename
-        dastempfile = open(tempfilename, 'w')
-        for line in lines:
-            print "line:",line
-            dastempfile.write(line + "\n")
+    disk = ra.openFileForWriting(get_filename())
 
-        dastempfile.close()
+    for line in lines:
+        print "line:",line
+        ra.writeToFile(disk, line + "\n")
 
-    except:
-        e = sys.exc_info()[0]
-        message = traceback.format_exc()
-        print "Unable to create temporary file %s" % tempfilename,message
-        radium.addMessage("Unable to create temporary file %s" % tempfilename)
-        return
-        
-    filename = get_filename()
-    
-    try:
-        shutil.copy2(filename, filename + ".bak")
-        shutil.copyfile(tempfilename, filename)
-    except:
-        e = sys.exc_info()[0]
-        message = traceback.format_exc()
-        print "Could not copy %s to %s" % (tempfilename,filename),message
-        radium.addMessage("Could not copy %s to %s:<pre>%s</pre>" % (tempfilename,filename,message))
-
-    os.remove(tempfilename)
-    
+    ra.closeFile(disk)
 
 
 def has_line(line, lines):
     for aline in lines:
+        print "comparing start->",aline,"-",line,"<-end"
         if line==aline:
             return True
     return False
@@ -168,28 +153,40 @@ def insert_new_line_into_conf_file(new_line):
 def insert_new_keybinding_into_conf_file(keybinding, command):
     return insert_new_line_into_conf_file(keybinding + " : " + command)
 
-def FROM_C_insert_new_keybinding_into_conf_file(keybinding, command):
+def FROM_C_insert_new_keybinding_into_conf_file(keybinding, command):            
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = NullWriter()
+        sys.stderr = NullWriter()
+
     try:
         insert_new_line_into_conf_file(keybinding + " : " + command)
+
     except:
         e = sys.exc_info()[0]
         message = traceback.format_exc()
         message2 = "Unable to add keybinding for %s to do %s:<br><pre>%s</pre>" % (keybinding, command, message)
         print message2
-        radium.addMessage(message2)
+        ra.addMessage(message2)
         return
 
-    radium.reloadKeybindings()
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
+
+    ra.reloadKeybindings()
 
 
 def remove_keybinding_from_conf_file(keybinding, command):
     line_to_remove = keybinding + " : " + command
     
     lines = get_lines()
+    print "lines:",lines
     if has_line(line_to_remove, lines)==False:
         message2 = "Could not remove keybinding \"%s\".<br>The reason could be that it's a default keybinding, which can't be removed yet." % line_to_remove
         print message2
-        radium.addMessage(message2)
+        ra.addMessage(message2)
         return
 
     def keepit(line):
@@ -203,6 +200,12 @@ def remove_keybinding_from_conf_file(keybinding, command):
     write_lines(new_lines)
 
 def FROM_C_remove_keybinding_from_conf_file(keybinding, command):
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = NullWriter()
+        sys.stderr = NullWriter()
+
     try:
         remove_keybinding_from_conf_file(keybinding, command)
     except:
@@ -210,11 +213,16 @@ def FROM_C_remove_keybinding_from_conf_file(keybinding, command):
         message = traceback.format_exc()
         message2 = "Unable to remove keybinding %s - %s:<br><pre>%s</pre>" % (keybinding, command, message)
         print message2
-        radium.addMessage(message2)
+        ra.addMessage(message2)
         return
 
-    radium.reloadKeybindings()
-    
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
+        
+    ra.reloadKeybindings()
+
+
 
 if __name__ == "__main__":
     #update_conf_file("#gakkgakk")

@@ -313,25 +313,27 @@ void requestCursorMove(void){
       SetCursorPosConcrete_CurrPos(window,(NInt)tracknum);
   }
 
-  if (line[0]=='l'){
-
-    if(len>1){
-      int linenum = atoi(&line[1]);
-      if (linenum >= 0)
-        ScrollEditorToRealLine(window, wblock, get_realline_from_line(wblock, linenum));
+  if (strlen(line) > 0) {
+    if (line[0]=='l'){
+      
+      if(len>1){
+        int linenum = atoi(&line[1]);
+        if (linenum >= 0)
+          ScrollEditorToRealLine(window, wblock, get_realline_from_line(wblock, linenum));
+      }
+      
+    } else {
+      
+      Ratio ratio = RATIO_from_string(STRING_create(line));
+      if (ratio.denominator==0)
+        goto exit;
+      
+      int realline = get_realline_from_beat(wblock, (int)ratio.numerator, (int)ratio.denominator);
+      if (realline==-1)
+        goto exit;
+      
+      ScrollEditorToRealLine(window, wblock, realline);
     }
-    
-  } else {
-  
-    Ratio ratio = RATIO_from_string(STRING_create(line));
-    if (ratio.denominator==0)
-      goto exit;
-    
-    int realline = get_realline_from_beat(wblock, (int)ratio.numerator, (int)ratio.denominator);
-    if (realline==-1)
-      goto exit;
-
-    ScrollEditorToRealLine(window, wblock, realline);
   }
   
  exit:
