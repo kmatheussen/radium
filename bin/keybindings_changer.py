@@ -2,6 +2,12 @@
 import os
 import sys
 import traceback
+import platform
+
+
+class NullWriter(object):
+    def write(self, value): pass
+
 
 class RadiumMock:
     def addMessage(self, message):
@@ -26,7 +32,7 @@ def get_filename():
 def get_lines():
     filename = get_filename()
     if ra.fileExists(filename)==False:
-        print "User keyboard configuration file doesn't exist"
+        #print "User keyboard configuration file doesn't exist"
         return []
 
     disk=ra.openFileForReading(filename)
@@ -147,9 +153,16 @@ def insert_new_line_into_conf_file(new_line):
 def insert_new_keybinding_into_conf_file(keybinding, command):
     return insert_new_line_into_conf_file(keybinding + " : " + command)
 
-def FROM_C_insert_new_keybinding_into_conf_file(keybinding, command):
+def FROM_C_insert_new_keybinding_into_conf_file(keybinding, command):            
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = NullWriter()
+        sys.stderr = NullWriter()
+
     try:
         insert_new_line_into_conf_file(keybinding + " : " + command)
+
     except:
         e = sys.exc_info()[0]
         message = traceback.format_exc()
@@ -157,6 +170,10 @@ def FROM_C_insert_new_keybinding_into_conf_file(keybinding, command):
         print message2
         ra.addMessage(message2)
         return
+
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
 
     ra.reloadKeybindings()
 
@@ -183,6 +200,12 @@ def remove_keybinding_from_conf_file(keybinding, command):
     write_lines(new_lines)
 
 def FROM_C_remove_keybinding_from_conf_file(keybinding, command):
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = NullWriter()
+        sys.stderr = NullWriter()
+
     try:
         remove_keybinding_from_conf_file(keybinding, command)
     except:
@@ -193,8 +216,13 @@ def FROM_C_remove_keybinding_from_conf_file(keybinding, command):
         ra.addMessage(message2)
         return
 
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
+        
     ra.reloadKeybindings()
-    
+
+
 
 if __name__ == "__main__":
     #update_conf_file("#gakkgakk")

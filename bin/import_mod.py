@@ -1651,6 +1651,13 @@ def import_xm(filename=""):
     if not filename or filename=="":
         return
 
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = NullWriter()
+        sys.stderr = NullWriter()
+
+
     try:
         file = open(filename, "rb")
 
@@ -1675,6 +1682,11 @@ def import_xm(filename=""):
         #        for m in message.split("\n"):
         radium.addMessage(message)
 
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
+
+
 def import_mod(filename=""):
     #import_xm(filename)
     #return
@@ -1683,6 +1695,12 @@ def import_mod(filename=""):
         filename = radium.getLoadFilename("Choose MOD file", "*.mod *.MOD mod.* MOD.*")
     if not filename or filename=="":
         return
+
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = NullWriter()
+        sys.stderr = NullWriter()
 
     try:
         file = open(filename, "rb")
@@ -1696,19 +1714,9 @@ def import_mod(filename=""):
     #file = open("/home/kjetil/Downloads/DOPE.MOD", "rb")
     #file = open("/home/kjetil/Downloads/velcoitytest.mod", "rb")
 
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
-        if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
-            sys.stdout = NullWriter()
-            sys.stderr = NullWriter()
-
         song = read_song(file)
 
         generate_from_mod(song)
-
-        if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
 
     except:
         e = sys.exc_info()[0]
@@ -1720,6 +1728,11 @@ def import_mod(filename=""):
         else:
             for m in message.split("\n"):
                 radium.addMessage(m)
+                
+    if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
+
 
 
 if __name__ == "__main__":
