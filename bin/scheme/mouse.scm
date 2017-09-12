@@ -1208,6 +1208,40 @@
                                (<ra> :show-fx-help-window)))))
 
         
+(define (request-midi-channel now callback)
+  (define ready #f)
+  (define main-layout (<gui> :vertical-layout))
+
+  (for-each (lambda (rownum)
+              (define layout (<gui> :horizontal-layout))
+              (<gui> :add main-layout layout)
+              (for-each (lambda (columnnum)
+                          (define channelnum (+ (* rownum 4) columnnum))
+                          (<gui> :add
+                                 layout
+                                 (<gui> :radiobutton
+                                        (<-> (1+ channelnum))
+                                        (= now channelnum)
+                                        (lambda (pressed)
+                                          (when (and pressed ready)
+                                            (<gui> :close main-layout)
+                                            ;;(c-display "channelnum:" channelnum)
+                                            (callback channelnum))))))
+                        (iota 4)))
+            (iota 4))
+  #||
+  (<gui> :set-size layout
+         (* (<gui> :get-system-fontheight) 8)
+         (* (<gui> :get-system-fontheight) 4))
+  (<gui> :minimize-as-much-as-possible layout)
+  ||#
+  (set! ready #t)
+  (<gui> :show main-layout)
+  )
+#!!
+(request-midi-channel 5 c-display)
+!!#
+;;(<ra> :request-integer "MIDI channel (1-16):" 1 16))
 
 (define (track-configuration-popup-async X Y)
   (c-display "TRACK " *current-track-num*)
@@ -1243,12 +1277,15 @@
               "-------"
               "Set Instrument     (F12)" (lambda ()
                                            (select-track-instrument *current-track-num*))
-              (<-> "Set MIDI channel (now: " (1+ (<ra> :get-track-midi-channel *current-track-num*)) ")")
-              (lambda ()
-                (c-display "CURETNTE TRSCKN NUM: " *current-track-num*)
-                (define channelnum (<ra> :request-integer "MIDI channel (1-16):" 1 16))
-                (if (>= channelnum 1)
-                    (<ra> :set-track-midi-channel (1- channelnum) *current-track-num*)))
+              (let* ((tracknum *current-track-num*)
+                     (curr-midi-channel (<ra> :get-track-midi-channel tracknum)))
+                (list (<-> "Set MIDI channel (now: " (1+ curr-midi-channel) ")")
+                      (lambda ()
+                        (c-display "CURETNTE TRSCKN NUM: " tracknum)
+                        (request-midi-channel curr-midi-channel
+                                              (lambda (channelnum)
+                                                (c-display "channelnum2:" channelnum tracknum)
+                                                (<ra> :set-track-midi-channel channelnum tracknum))))))
               (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
                 (list "Configure instrument color"
                       :enabled (>= instrument-id 0)
