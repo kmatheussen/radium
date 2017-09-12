@@ -362,19 +362,19 @@ static void show_curr_track_in_statusbar(struct Tracker_Windows *window,struct W
   const char *message = NULL;
   struct FXs *fxs;
 
-#define PRE "Moved cursor to "
+#define PRE "" //Moved cursor to "
 
   if (VELTEXT_subsubtrack(window, wtrack) >= 0){
-    message = talloc_format(PRE "velocity text subtrack in track #%d", wtrack->l.num);;
+    message = talloc_format(PRE "Velocity text, track #%d", wtrack->l.num);;
 
   } else if (FXTEXT_subsubtrack(window, wtrack, &fxs) >= 0){
-    message = talloc_format(PRE "fx text subtrack in track #%d", wtrack->l.num);;
+    message = talloc_format(PRE "Fx text, track #%d", wtrack->l.num);;
 
   } else if (CHANCETEXT_subsubtrack(window, wtrack) >= 0){
-    message = talloc_format(PRE "chance text subtrack in track #%d", wtrack->l.num);;
+    message = talloc_format(PRE "Chance text, track #%d", wtrack->l.num);;
 
   } else if (CENTTEXT_subsubtrack(window, wtrack) >= 0) {
-    message = talloc_format(PRE "cent text subtrack in track #%d", wtrack->l.num);;
+    message = talloc_format(PRE "Cent text, track #%d", wtrack->l.num);;
 
   } else if (BPMTEXT_subsubtrack(window) >= 0) {
     message = PRE "BPM track";
@@ -389,18 +389,19 @@ static void show_curr_track_in_statusbar(struct Tracker_Windows *window,struct W
     if (window->curr_track >= 0)
       message = PRE "Swing text sub track";
     else
-      message = PRE "global Swing track";
+      message = PRE "Global Swing track";
 
   } else if (window->curr_track >= 0) {
     if (window->curr_track_sub==-1)
-      message = talloc_format(PRE "note text in track #%d", wtrack->l.num);
+      message = talloc_format(PRE "Note text, track #%d", wtrack->l.num);
     else {
-      message = talloc_format(PRE "automation area in track #%d", wtrack->l.num);
+      message = talloc_format(PRE "Automation area, track #%d", wtrack->l.num);
       //int veltracknum = (int)scale_int64(window->curr_track_sub, 0, GetNumSubtracks(wtrack) - ;
     }
       
   } else {
-      message = talloc_format(PRE "the %s track", get_track_name(window->curr_track));
+    //message = talloc_format(PRE "the %s track", get_track_name(window->curr_track));
+    message = talloc_format(PRE "%s track", get_track_name(window->curr_track));
   }
   
   setStatusbarText(message, window->l.num);
