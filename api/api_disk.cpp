@@ -166,3 +166,154 @@ const_char* readLineFromFile(int64_t disknum){
   return ret;
 }
 
+
+
+// read binary
+#include "../common/read_binary.h"
+
+
+int64_t openFileForBinaryReading(const_char* w_path){
+  disk_t *disk = DISK_open_binary_for_reading(STRING_create(w_to_qstring(w_path)));
+  if (disk==NULL){
+    handleError("Unable to open file %s for reading\n", w_to_qstring(w_path).toUtf8().constData());
+    return -1;
+  }
+
+  R_ASSERT(DISK_is_binary(disk));
+
+  int64_t disknum = ++g_curr_disknum;
+  g_disks[disknum] = disk;
+  return disknum;
+}
+
+
+static bool read_binary(const_char* funcname, int64_t disknum, unsigned char dest[], int num_bytes){
+  disk_t *disk = g_disks[disknum];
+  if (disk==NULL){
+    handleError("%s: No file #%d", funcname, (int)disknum);
+    return false;
+  }
+
+  if (DISK_is_binary(disk)==false){
+    handleError("%s: File #%d is not opened in binary mode", funcname, (int)disknum);
+    return false;
+  }
+
+  int num_bytes_read = DISK_read_binary(disk, dest, num_bytes);
+  if(num_bytes_read != num_bytes){
+    handleError("%s: Reading file failed", funcname);
+    return false;
+  }
+
+  return true;
+}
+
+
+// 32 bit
+
+int readLe32FromFile(int64_t disknum){
+  unsigned char chars[4];
+  if(read_binary("readLe32FromFile", disknum, chars, 4)==false)
+    return 0;
+
+  return get_le_32(chars);
+}
+
+int64_t readLeU32FromFile(int64_t disknum){
+  unsigned char chars[4];
+  if(read_binary("readLeU32FromFile", disknum, chars, 4)==false)
+    return 0;
+
+  return get_le_u32(chars);
+}
+
+/*
+// there is no get_be_32 function
+int readBe32FromFile(int64_t disknum){
+  unsigned char chars[4];
+  if(read_binary("readLe32FromFile", disknum, chars, 4)==false)
+    return 0;
+
+  return get_be_32(chars);
+}
+*/
+
+int64_t readBeU32FromFile(int64_t disknum){
+  unsigned char chars[4];
+  if(read_binary("readLeU32FromFile", disknum, chars, 4)==false)
+    return 0;
+
+  return get_be_u32(chars);
+}
+
+// 16 bit
+
+int readLe16FromFile(int64_t disknum){
+  unsigned char chars[2];
+  if(read_binary("readLe16FromFile", disknum, chars, 2)==false)
+    return 0;
+
+  return get_le_16(chars);
+}
+
+/*
+// there is no get_le_u16 function
+int readLeU16FromFile(int64_t disknum){
+  unsigned char chars[2];
+  if(read_binary("readLeU16FromFile", disknum, chars, 2)==false)
+    return 0;
+
+  return get_le_u16(chars);
+}
+*/
+
+/*
+// there is no get_be_16 function
+int readBe16FromFile(int64_t disknum){
+  unsigned char chars[2];
+  if(read_binary("readBe16FromFile", disknum, chars, 2)==false)
+    return 0;
+
+  return get_be_16(chars);
+}
+*/
+
+int readBeU16FromFile(int64_t disknum){
+  unsigned char chars[2];
+  if(read_binary("readBeU16FromFile", disknum, chars, 2)==false)
+    return 0;
+
+  return get_be_u16(chars);
+}
+
+// 8 bit
+
+int read8FromFile(int64_t disknum){
+  disk_t *disk = g_disks[disknum];
+  if (disk==NULL){
+    handleError("readU8FromFile: No file #%d", (int)disknum);
+    return 0;
+  }
+  
+  if (DISK_is_binary(disk)==false){
+    handleError("read8FromFile: File #%d is not opened in binary mode", (int)disknum);
+    return 0;
+  }
+
+  int8_t size_chars[1] = {};
+  if(DISK_read_binary(disk, size_chars, 1) !=1 ){
+    handleError("read8FromFile: unable to read from file #%d",(int)disknum);
+    return 0;
+  }
+
+  return size_chars[0];
+}
+
+int readU8FromFile(int64_t disknum){
+  unsigned char chars[1];
+  if(read_binary("read8FromFile", disknum, chars, 1)==false)
+    return 0;
+
+  return chars[0];
+}
+

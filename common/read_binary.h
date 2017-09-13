@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 // based on code from soundtracker
-static inline int32_t get_le_32 (char *src)
+static inline int32_t get_le_32 (unsigned char *src)
 {
 #if IS_LITTLE_ENDIAN
     return *(int32_t*)src;
@@ -35,7 +35,7 @@ static inline int32_t get_le_32 (char *src)
 #endif
 }
 
-static inline uint32_t get_le_u32 (char *src)
+static inline uint32_t get_le_u32 (unsigned char *src)
 {
 #if IS_LITTLE_ENDIAN
     return *(int32_t*)src;
@@ -45,14 +45,14 @@ static inline uint32_t get_le_u32 (char *src)
 }
 
 static inline int32_t read_le32int(disk_t *file){
-  char size_chars[4] = {0};
+  unsigned char size_chars[4] = {0};
   if(DISK_read_binary(file, size_chars, 4) != 4)
     fprintf(stderr,"Reading file failed\n");
   return get_le_32(size_chars);
 }
 
 static inline uint32_t read_le32uint(disk_t *file){
-  char size_chars[4] = {0};
+  unsigned char size_chars[4] = {0};
   if(DISK_read_binary(file, size_chars, 4) != 4)
     fprintf(stderr,"Reading file failed\n");
   return get_le_u32(size_chars);
@@ -92,7 +92,7 @@ static inline uint16_t read_be16uint(disk_t *file){
 }
 
 // based on code from soundtracker
-static inline int16_t get_le_16 (char *src)
+static inline int16_t get_le_16 (unsigned char *src)
 {
 #if IS_LITTLE_ENDIAN
     return *(int16_t*)src;
@@ -114,7 +114,7 @@ static inline void convert_16_bit_little_endian_to_native(int16_t *src, int num_
 }
 
 static inline int read_le16int(disk_t *file){
-  char size_chars[2] = {};
+  unsigned char size_chars[2] = {};
   if(DISK_read_binary(file, size_chars, 2) != 2)
     fprintf(stderr,"Reading file failed\n");
   return get_le_16(size_chars);

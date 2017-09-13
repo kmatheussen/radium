@@ -1606,7 +1606,7 @@
                                                           Max
                                                           (min Least-So-Far
                                                                (<ra> :get-pitchnum-value N *current-track-num*))))
-  
+
 (define (get-min-pitch-in-current-track)
   (1- (get-min-pitch-in-current-track-0 0
                                         (<ra> :get-num-pitchnums *current-track-num*)

@@ -387,6 +387,10 @@ int64_t DISK_pos(disk_t *disk){
   return disk->pos();
 }
 
+bool DISK_is_binary(disk_t *disk){
+  return disk->is_binary;
+}
+
 int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes){
   R_ASSERT(disk->is_binary==true);
   R_ASSERT(disk->type==disk_t::READ);

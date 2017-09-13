@@ -38,6 +38,7 @@ extern LANGSPEC char *DISK_read_trimmed_line(disk_t *disk);
 extern LANGSPEC bool DISK_set_pos(disk_t *disk, int64_t pos); // File must have been opened with 'DISK_open_binary_for_reading'.
 extern LANGSPEC bool DISK_spool(disk_t *disk, int64_t how_much); // File must have been opened with 'DISK_open_binary_for_reading'.
 extern LANGSPEC int64_t DISK_pos(disk_t *disk); // File must have been opened with 'DISK_open_binary_for_reading'.
+extern LANGSPEC bool DISK_is_binary(disk_t *disk);
 extern LANGSPEC int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes); // return actual number of bytes read. File must have been opened with 'DISK_open_binary_for_reading'.
 
 
