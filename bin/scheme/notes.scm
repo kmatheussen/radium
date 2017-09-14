@@ -729,8 +729,7 @@
 
 (define (pr-erase! blocknum tracknum startnote endnote startsplit endsplit make-undo)
   (define area (get-track-editor-area tracknum blocknum))
-  (define notes (car (get-area-notes :area area
-                                     :include-all #t)))
+  (define notes (car (get-area-notes :area area)))
   ;;(c-display " old notes:\n" (pp notes))
 
   (define do-erase-something #f)
@@ -752,8 +751,7 @@
   (define (apply-changes)
     (<ra> :undo-notes tracknum)
     (replace-notes! :area-notes (list new-notes)
-                    :area area
-                    :include-all #t))
+                    :area area))
 
   (if do-erase-something
       (if make-undo
