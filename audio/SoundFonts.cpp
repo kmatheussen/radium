@@ -433,7 +433,7 @@ float *SF2_load_sample(const wchar_t *filename, int sample_num){
   }
 
   for(int i=0;i<num_frames;i++){
-    int16_t val = get_le_16((char*)&s16[i]);
+    int16_t val = get_le_16((unsigned char*)&s16[i]);
     ret[i] = val / 32768.0f;
   }
 

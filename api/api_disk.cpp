@@ -187,7 +187,7 @@ int64_t openFileForBinaryReading(const_char* w_path){
 }
 
 
-static bool read_binary(const_char* funcname, int64_t disknum, unsigned char dest[], int num_bytes){
+static bool read_binary(const_char* funcname, int64_t disknum, unsigned char dest[], int64_t num_bytes){
   disk_t *disk = g_disks[disknum];
   if (disk==NULL){
     handleError("%s: No file #%d", funcname, (int)disknum);
@@ -199,7 +199,7 @@ static bool read_binary(const_char* funcname, int64_t disknum, unsigned char des
     return false;
   }
 
-  int num_bytes_read = DISK_read_binary(disk, dest, num_bytes);
+  int64_t num_bytes_read = DISK_read_binary(disk, dest, num_bytes);
   if(num_bytes_read != num_bytes){
     handleError("%s: Reading file failed", funcname);
     return false;
