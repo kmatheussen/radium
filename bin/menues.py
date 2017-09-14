@@ -35,8 +35,7 @@ else:
   ra = Mock()
   sys.g_program_path = ""
 
-
-
+  
 commands = {}
 def get_command(menutext):
   if menutext in commands:
@@ -131,19 +130,42 @@ class LineParser:
     keykey=string.lstrip(string.rstrip(items[1]))
     if keykey not in keybindingsdict:
       ret = string.rstrip(items[0])
-      commands[string.lstrip(ret)] = string.lstrip(items[1])
-      return ret
+    else:
     
-    key=keybindingsdict[keykey]
-    qualifier=""
+      key=keybindingsdict[keykey]
+      qualifier=""
     
-    for item in key[1]:
-      qualifier+=get_key_name(item)+" + "
+      for item in key[1]:
+        qualifier+=get_key_name(item)+" + "
 
       #print "items[0]",items[0],len(items[0]),qualifier
-    stripped0 = string.rstrip(items[0])
-    ret = stripped0 + emptystring(41-len(stripped0)) + qualifier + get_key_name(key[0][0])
-    commands[string.lstrip(ret)] = string.lstrip(items[1])
+      stripped0 = string.rstrip(items[0])
+      ret = stripped0 + emptystring(41-len(stripped0)) + qualifier + get_key_name(key[0][0])
+
+    command = string.lstrip(items[1])
+    hashpos = command.find("#")
+    if hashpos >= 0:
+      command = command[0:hashpos]
+      
+    command = command.strip()
+    
+    if command.find("ra.evalPython")==0 or command.find("ra.evalScheme")==0: # Treat these two specially since the arguments can contain spaces
+      firstspace = command.find(" ")
+      command = command[0:firstspace] + "(" + command[firstspace+1:] + ")"
+    else:
+      splitted = command.split(" ")
+      command = splitted[0] + "("
+      is_first = True
+      for arg in splitted[1:]:
+        if len(arg) > 0:
+          if is_first==False:
+            command += "," + arg
+          else:
+            command += arg
+          is_first = False
+      command += ")"
+      
+    commands[string.lstrip(ret)] = command
     return ret
   
   def numTabs(self,line):
