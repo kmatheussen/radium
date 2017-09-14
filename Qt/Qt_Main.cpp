@@ -737,6 +737,10 @@ protected:
 
       g_up_downs[modifier] = is_key_press;
 
+#if !defined(FOR_WINDOWS)
+      set_keyswitch(); // In windows, tevent.keyswitch was set when calling OS_SYSTEM_EventPreHandler.
+#endif
+      
       //printf("__________________________ Got modifier %s. Returning false\n",is_key_press ? "down" : "up");
 
       //printf(" Got key 2\n");
