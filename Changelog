@@ -1,3 +1,28 @@
+Changes 5.1.3 -> 5.1.4:
+* Edit: Fix operations on track when cursor is placed to the left
+  of the first track.
+* Edit: Fix Modulo skew block.
+* Windows: Fix Radium not always starting.
+* Editor: Fix pianoroll eraser. It was broken in 5.1.3.
+* Editor: Fix mouse scroll wheel up/down wrongfully using the
+  qualifier keys that was used when pressing a normal key last time.
+* Menus: Show keybindings again. (They disappeared in 5.1.3.)
+* Editor: Don't show MIDI channel name in track header if the track
+  is assigned to a MIDI instrument. (MIDI channel is set in the
+  instrument widget for those instruments).
+* Editor: Don't enable the popup menu option to change MIDI channel
+  for tracks assigned to MIDI instruments.
+* Editor: Shorter status bar text when moving cursor.
+* Editor: Show buttons when selecting midi channel for track instead
+  of showing a text requester.
+* Doc: Fix first sentence of swing help text.
+* API: Functions to read binary from file: openFileForBinaryReading,
+  readLe32FromFile, readLeU32FromFile, readBe32FromFile,
+  readBeU32FromFile, readLe16FromFile, readLeU16FromFile,
+  readBe16FromFile, readBeU16FromFile, read8FromFile,
+  readU8FromFile
+
+
 Changes 5.0.11 -> 5.1.3:
 * Windows32: Remove some console printing that could have caused
   importing xm modules to fail.
