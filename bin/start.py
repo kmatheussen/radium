@@ -58,8 +58,6 @@ print "Parsing keybindings.conf..."
 
 try:
     keybindingsparser.init(sys.argv[1], sys.argv[2])
-    if keybindingsparser.parse()==False:
-        sys.exit(5)
 except:
     print sys.exc_info()
     #radium.addMessage("Couldn't create keybindings dict. ("+str(sys.exc_info())+")")
@@ -69,6 +67,8 @@ except:
     radium.addMessage("Couldn't parse keybindings file.\n\nBacktrace:"+message)
     sys.exit(6)
 
+if keybindingsparser.parse_and_show_errors()==False:
+    sys.exit(5)
 
 
 import generated_keybinding_code as keybinding

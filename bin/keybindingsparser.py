@@ -456,9 +456,10 @@ class KeyHandler:
     def addHandle(self,keys,handle):
         for lokke in range(len(self.keyslist)):
             if self.keyslist[lokke]==keys:
-                print "NOTE. Overriding",self.keyslist,"keybinding."
-                #ra.addMessage("Overriding the " + str(self.keyslist) + " keybinding.")
-                #return False
+                if platform.system() != "Linux":
+                    print "NOTE. Overriding",self.keyslist,"keybinding."
+                    #ra.addMessage("Overriding the " + str(self.keyslist) + " keybinding.")
+                    #return False
 
         self.keyslist.insert(0,keys)
         self.handlers.insert(0,handle)
@@ -642,11 +643,13 @@ def parse_and_show_errors():
     if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
         sys.stdout = NullWriter()
         sys.stderr = NullWriter()
-        
+
+    ret = False
+    
     old_keyhandles = keyhandles
     try:
         resetKeyHandles()
-        parse()
+        ret = parse()
     except:
         print sys.exc_info()
         #radium.addMessage("Couldn't create keybindings dict. ("+str(sys.exc_info())+")")
@@ -660,3 +663,5 @@ def parse_and_show_errors():
     if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
         sys.stdout = old_stdout
         sys.stderr = old_stderr
+
+    return ret
