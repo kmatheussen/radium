@@ -206,6 +206,9 @@
           <property name="mouseTracking">
            <bool>false</bool>
           </property>
+          <property name="toolTip">
+           <string>This value overrides the MIDI channel specified for the editor track.</string>
+          </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>

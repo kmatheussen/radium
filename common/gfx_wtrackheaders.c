@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../Qt/Qt_instruments_proc.h"
 #include "OS_visual_input.h"
+#include "instruments_proc.h"
 
 #include "gfx_wtrackheaders_proc.h"
 
@@ -107,9 +108,11 @@ void DrawWTrackNames(
     int name_x = wtrack1->x+window->fontwidth/2 + GFX_get_text_width(window,temp) + window->fontwidth;
     const char *name = patch==NULL ? wtrack1->track->trackname : patch->name;
     int midi_channel = ATOMIC_GET(wtrack1->track->midi_channel);
-    if (midi_channel > 0){
-      snprintf(temp, 498, "%s [%d]", name, midi_channel+1);
-      name = (const char*)&temp;
+    if (midi_channel){
+      if (patch==NULL || patch->instrument!=get_MIDI_instrument()){
+        snprintf(temp, 498, "%s [%d]", name, midi_channel+1);
+        name = (const char*)&temp;
+      }
     }
     GFX_T_Text(
                window,INSTRUMENT_NAME_COLOR_NUM, name,
