@@ -76,9 +76,10 @@
 
 (delafina (get-track-editor-area :tracknum -1
                                  :blocknum -1)
-  (define start-track (if (= -1 tracknum)
-                          (<ra> :current-track blocknum)
-                          tracknum))
+  (define start-track (max 0
+                           (if (= -1 tracknum)
+                               (<ra> :current-track blocknum)
+                               tracknum)))
   (assert (< start-track (<ra> :get-num-tracks)))
   (assert (>= start-track 0))
   

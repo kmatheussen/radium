@@ -450,8 +450,8 @@
                                                               (create-keybinding-button "Track Up" "ra:eval-scheme" '("(moduloskew-track -1)"))
                                                               (create-keybinding-button "Track Down" "ra:eval-scheme" '("(moduloskew-track 1)")))
                                                        (<gui> :vertical-layout
-                                                              (create-keybinding-button "Block Up" "ra:eval-scheme" '("moduloskew-block -1"))
-                                                              (create-keybinding-button "Block Down" "ra:eval-scheme" '("moduloskew-block 1")))))
+                                                              (create-keybinding-button "Block Up" "ra:eval-scheme" '("(moduloskew-block -1)"))
+                                                              (create-keybinding-button "Block Down" "ra:eval-scheme" '("(moduloskew-block 1)")))))
 
   (define shuffle-notes-layout (create-notem-layout (<gui> :horizontal-int-slider "chance %: "
                                                            0 (floor (* 100 *default-shuffle-chance*)) 100
