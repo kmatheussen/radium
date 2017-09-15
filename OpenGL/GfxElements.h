@@ -27,6 +27,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SharedVariables.hpp"
 
 
+enum UseScissors{
+  NO_SCISSORS = 0,
+  USE_SCISSORS = 1
+};
+
+
+struct GE_Conf{
+  int z;
+  int y;
+  enum UseScissors use_scissors;
+
+  GE_Conf(int z, int y, enum UseScissors use_scissors = USE_SCISSORS)
+    : z(z)
+    , y(y)
+    , use_scissors(use_scissors)
+  {
+  }
+
+  const GE_Conf copy(int new_y) const {
+    return GE_Conf(z, new_y, use_scissors);
+  }
+};
+
+
 typedef struct{
   unsigned char r,g,b,a;
 } GE_Rgb;
@@ -142,7 +166,7 @@ GE_Rgb GE_get_rgb(const GE_Context *c);
 
 #if defined(VectorGraphics_INCLUDE_ONCE) // i.e. when <vlVG/VectorGraphics.hpp> has been #included
 
-SharedVariables *GE_get_shared_variables(PaintingData *painting_data);
+const SharedVariables *GE_get_shared_variables(const PaintingData *painting_data);
 int GE_get_slice_size(const PaintingData *painting_data);
 
 
@@ -154,29 +178,29 @@ void GE_start_writing(int full_height, bool block_is_visible); // 'full_height' 
 void GE_end_writing(GE_Rgb new_background_color);
 void GE_wait_until_block_is_rendered(void);
 
-GE_Context *GE_z(const GE_Rgb rgb, int z, int y);
-static inline GE_Context *GE(const GE_Rgb rgb, int y){
-  return GE_z(rgb, Z_ZERO, y);
+GE_Context *GE_z(const GE_Rgb rgb, const GE_Conf &conf);
+static inline GE_Context *GE(const GE_Rgb rgb, int y, enum UseScissors use_scissors = USE_SCISSORS){
+  return GE_z(rgb, GE_Conf(Z_ZERO, y, use_scissors));
 }
 GE_Context *GE_y(GE_Context *c, int y);
-GE_Context *GE_color_z(enum ColorNums colornum, int z, int y);
-GE_Context *GE_textcolor_z(enum ColorNums colornum, int z, int y);
-GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z, int y);
-GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z, int y);
-GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z, int y);
-GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z, int y);
+GE_Context *GE_color_z(enum ColorNums colornum, const GE_Conf &conf);
+GE_Context *GE_textcolor_z(enum ColorNums colornum, const GE_Conf &conf);
+GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, const GE_Conf &conf);
+GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, const GE_Conf &conf);
+GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, const GE_Conf &conf);
+GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, const GE_Conf &conf);
 
 #ifdef __cplusplus
-GE_Context *GE_color_z(const QColor &color, int z, int y);
-static inline GE_Context *GE_color(const QColor &color, int y) {
-  return GE_color_z(color, Z_ZERO, y);
+GE_Context *GE_color_z(const QColor &color, const GE_Conf &conf);
+static inline GE_Context *GE_color(const QColor &color, int y, enum UseScissors use_scissors = USE_SCISSORS) {
+  return GE_color_z(color, GE_Conf(Z_ZERO, y, use_scissors));
 }
-GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z, int y);
-static inline GE_Context *GE_mix_alpha(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha, int y){
-  return GE(GE_alpha(GE_mix(c1, c2, how_much), alpha), y);
+GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, const GE_Conf &conf);
+static inline GE_Context *GE_mix_alpha(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha, int y, enum UseScissors use_scissors = USE_SCISSORS){
+  return GE(GE_alpha(GE_mix(c1, c2, how_much), alpha), y, use_scissors);
 }
-static inline GE_Context *GE_mix_alpha_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha, int z, int y){
-  return GE_z(GE_alpha(GE_mix(c1, c2, how_much), alpha), z, y);
+static inline GE_Context *GE_mix_alpha_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha, const GE_Conf &conf){
+  return GE_z(GE_alpha(GE_mix(c1, c2, how_much), alpha), conf);
 }
 
 #ifndef EDITOR_WIDGET_H
@@ -189,34 +213,34 @@ static inline QColor GE_qcolor(enum ColorNums colornum){
 
 #endif
 
-static inline GE_Context *GE_color(enum ColorNums colornum, int y) {
-  return GE_color_z(colornum, Z_ZERO, y);
+static inline GE_Context *GE_color(enum ColorNums colornum, int y, enum UseScissors use_scissors = USE_SCISSORS) {
+  return GE_color_z(colornum, GE_Conf(Z_ZERO, y, use_scissors));
 }
 
-GE_Context *GE_color_alpha_z(enum ColorNums colornum, float alpha, int z, int y);
-static inline GE_Context *GE_color_alpha(enum ColorNums colornum, float alpha, int y) {
-  return GE_color_alpha_z(colornum, alpha, Z_ZERO, y);
+GE_Context *GE_color_alpha_z(enum ColorNums colornum, float alpha, const GE_Conf &conf);
+static inline GE_Context *GE_color_alpha(enum ColorNums colornum, float alpha, int y, enum UseScissors use_scissors = USE_SCISSORS) {
+  return GE_color_alpha_z(colornum, alpha, GE_Conf(Z_ZERO, y, use_scissors));
 }
 
-static inline GE_Context *GE_textcolor(enum ColorNums colornum, int y) {
-  return GE_textcolor_z(colornum, Z_ZERO, y);
+static inline GE_Context *GE_textcolor(enum ColorNums colornum, int y, enum UseScissors use_scissors = USE_SCISSORS) {
+  return GE_textcolor_z(colornum, GE_Conf(Z_ZERO, y, use_scissors));
 }
-static inline GE_Context *GE_rgb_color(unsigned char r, unsigned char g, unsigned char b, int y) {
-  return GE_rgb_color_z(r,g,b, Z_ZERO, y);
+static inline GE_Context *GE_rgb_color(unsigned char r, unsigned char g, unsigned char b, int y, enum UseScissors use_scissors = USE_SCISSORS) {
+  return GE_rgb_color_z(r,g,b, GE_Conf(Z_ZERO, y, use_scissors));
 }
 
-#define Black_color(y) GE_rgb_color(0,0,0,y)
-#define White_color(y) GE_rgb_color(0,0,0,y)
+#define Black_color(y,use_scissors) GE_rgb_color(0,0,0,y,use_scissors)
+#define White_color(y,use_scissors) GE_rgb_color(0,0,0,y,use_scissors)
 
 
-static inline GE_Context *GE_rgba_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int y) {
-  return GE_rgba_color_z(r,g,b,a, Z_ZERO,y);
+static inline GE_Context *GE_rgba_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int y, enum UseScissors use_scissors = USE_SCISSORS) {
+  return GE_rgba_color_z(r,g,b,a, GE_Conf(Z_ZERO,y,use_scissors));
 }
-static inline GE_Context *GE_mix_color(const GE_Rgb c1, const GE_Rgb c2, float how_much, int y) {
-  return GE_mix_color_z(c1,c2,how_much, Z_ZERO,y);
+static inline GE_Context *GE_mix_color(const GE_Rgb c1, const GE_Rgb c2, float how_much, int y, enum UseScissors use_scissors = USE_SCISSORS) {
+  return GE_mix_color_z(c1,c2,how_much, GE_Conf(Z_ZERO,y,use_scissors));
 }
-static inline GE_Context *GE_gradient(const GE_Rgb c1, const GE_Rgb c2, int y) {
-  return GE_gradient_z(c1,c2, Z_ZERO,y);
+static inline GE_Context *GE_gradient(const GE_Rgb c1, const GE_Rgb c2, int y, enum UseScissors use_scissors = USE_SCISSORS) {
+  return GE_gradient_z(c1,c2, GE_Conf(Z_ZERO,y,use_scissors));
 }
 
 #ifdef __cplusplus

@@ -398,7 +398,7 @@ void GE_set_curr_realline(int curr_realline){
 }
 
 // OpenGL thread
-static float GE_scroll_pos(SharedVariables *sv, double realline){
+static float GE_scroll_pos(const SharedVariables *sv, double realline){
   double extra = sv->top_realline - sv->curr_realline;
   return
     (   (realline+extra) * sv->fontheight  );
@@ -418,7 +418,7 @@ TimeEstimator time_estimator;
 
 
 // OpenGL thread
-static double get_realline_stime(SharedVariables *sv, int realline){  
+static double get_realline_stime(const SharedVariables *sv, int realline){  
   if(realline==sv->num_reallines)
     return sv->block_duration;
   else
@@ -427,7 +427,7 @@ static double get_realline_stime(SharedVariables *sv, int realline){
 
 
 // OpenGL thread
-static bool need_to_reset_timing(SharedVariables *sv, double stime, int last_used_i_realline, const struct Blocks *last_used_block, double last_used_stime, double blocktime){
+static bool need_to_reset_timing(const SharedVariables *sv, double stime, int last_used_i_realline, const struct Blocks *last_used_block, double last_used_stime, double blocktime){
   if (stime < 0){
     fprintf(stderr,"Error: stime: %f, pc->blocktime: %f\n",stime,blocktime);
     #if 0
@@ -456,7 +456,7 @@ static bool need_to_reset_timing(SharedVariables *sv, double stime, int last_use
 
 
 // OpenGL thread
-static double find_current_realline_while_playing(SharedVariables *sv, double blocktime){
+static double find_current_realline_while_playing(const SharedVariables *sv, double blocktime){
 
   double time_in_ms = blocktime * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
   double stime      = time_estimator.get(time_in_ms, sv->reltempo * ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo)) * (double)pc->pfreq / 1000.0; // Could this value be slightly off because we just changed block, and because of that we skipped a few calles to time_estimator.get ? (it shouldn't matter though, timing is resetted when that happens. 'time_in_ms' should always be valid)
@@ -695,6 +695,7 @@ public:
     
     glContext->initGLContext(); // Sometimes, the first gl* call crashes inside here on OSX.
 
+    // TODO: Maybe this should be user configurable
     QThread::currentThread()->setPriority(QThread::HighPriority);
     
     _rendering = new vl::Rendering;
@@ -904,7 +905,7 @@ private:
       return false;
     }
 
-    SharedVariables *sv = GE_get_shared_variables(t2_data->painting_data);
+    const SharedVariables *sv = GE_get_shared_variables(t2_data->painting_data);
     if (sv->block_is_visible==false && is_playing)
       is_playing = false; // I.e. we are not rendering the block that is currently playing (if any).
 

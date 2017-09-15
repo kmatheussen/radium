@@ -26,6 +26,8 @@ struct SharedVariables{
   float scrollbar_height;
   float scrollbar_scroller_height;
 
+  int wtracks_scissor_x1, wtracks_scissor_x2;
+
   const struct Root *root;
   
   const struct Blocks *block; // We store it in g_shared_variables_gc_storage, so it can not be garbage collected while it is here.
@@ -99,6 +101,9 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   sv->scrollbar_height          = get_scrollbar_y2(window,wblock) - get_scrollbar_y1(window,wblock);
   sv->scrollbar_scroller_height = get_scrollbar_scroller_height(window,wblock);
+
+  sv->wtracks_scissor_x1 = wblock->t.x1;
+  sv->wtracks_scissor_x2 = wblock->t.x2;
 
   sv->block          = block;
 

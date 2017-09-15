@@ -259,7 +259,7 @@ struct TextBitmaps{
 
   // Called from OpenGL thread.
   // This one looks slightly better than the "ImageHolder" version below, and the code is a billion times simpler too (approx.), but it uses too much CPU. (needs more work though, can't just be enabled. By far, the biggest problem is to get a font file name from a QFont.)
-  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform, bool set_mask, PaintingData *painting_data) const {
+  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform, bool set_mask, PaintingData *painting_data, enum UseScissors use_scissors) const {
       
     QHash<char, std::vector<vl::dvec2> >::iterator i;
     for (i = points.begin(); i != points.end(); ++i) {
@@ -274,11 +274,16 @@ struct TextBitmaps{
         //text->setClampY(false);
 
         Actor *actor = vg->drawText(points.x()-5, points.y()-5, vl::String(c));
+
+        if (use_scissors==USE_SCISSORS)
+          actor->setScissor(new vl::Scissor(100, 100, 500, 500));
+
         actor->computeBounds();
         if (set_mask)
           setActorEnableMask(actor,painting_data);
         
         actor->setTransform(transform);
+        //actor->setScissor(new vl::Scissor(100, 100, 500, 500));
       }
     }
   }
@@ -286,7 +291,7 @@ struct TextBitmaps{
 #else
   
   // Called from OpenGL thread
-  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform, bool set_mask, PaintingData *painting_data) const {
+  void drawAllCharBoxes(vl::VectorGraphics *vg, vl::Transform *transform, bool set_mask, PaintingData *painting_data, vl::Scissor *scissor) const {
     
     //QHash<char, std::vector<vl::dvec2> >::iterator i;
     for (auto i = points.begin(); i != points.end(); ++i) {
@@ -302,11 +307,16 @@ struct TextBitmaps{
         //vg->setColor(vl::fvec4(0.1,0.05,0.1,0.8));
         
         vl::Actor *actor = vg->drawPoints(pointspoints);
+
+        if (scissor != NULL)
+          actor->setScissor(scissor);
+
         actor->computeBounds();
 
         if (set_mask)
           setActorEnableMask(actor,painting_data);
         
+        //actor->setScissor(new vl::Scissor(100, 100, 500, 500));
         actor->setTransform(transform);
       }
     }

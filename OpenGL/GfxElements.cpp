@@ -602,6 +602,7 @@ static void T1_collect_gradients1_garbage(void){
   velocityGradientTriangles.T1_collect_gradient_triangles_garbage();
 }
 
+
 struct _GE_Context : public vl::Object{
   //std::map< int, std::vector<vl::dvec2> > lines; // lines, boxes and polylines
   std::vector< vl::dvec2 > boxes; // filled boxes
@@ -623,9 +624,10 @@ struct _GE_Context : public vl::Object{
     uint64_t key;
   } color;
 
-  int _z;
+  GE_Conf _conf;
   int _slice;
-  
+  mutable vl::ref<vl::Scissor> _scissor;
+
   std::vector< vl::ref<GradientTriangles> > gradient_triangles;
   
   //private:
@@ -643,12 +645,12 @@ public:
   }
   */
 
-  _GE_Context(const Color _color, int z, int slice)
+  _GE_Context(const Color _color, const GE_Conf &conf, int slice)
     : textbitmaps(false)
     , textbitmaps_halfsize(true)
       //, has_scissor(false)
     , color(_color)
-    , _z(z)
+    , _conf(conf)
     , _slice(slice)
       //, gradient(NULL)
       //, is_gradient(false)
@@ -656,9 +658,21 @@ public:
     R_ASSERT(sizeof(Color)==sizeof(uint64_t));
   }
 
+  vl::Scissor *get_scissor(const PaintingData *painting_data) const {
+    if (_conf.use_scissors==NO_SCISSORS)
+      return NULL;
+    
+    if (_scissor.get()==NULL){
+      const SharedVariables *shared_variables = GE_get_shared_variables(painting_data);
+      _scissor = new vl::Scissor(shared_variables->wtracks_scissor_x1, 0, shared_variables->wtracks_scissor_x2 - shared_variables->wtracks_scissor_x1, g_height);
+    }
+
+    return _scissor.get();
+  }
+
 #if 0
   ~_GE_Context(){
-    printf("Deleting context with z %d\n",_z);
+    printf("Deleting context with z %d\n",_conf.z);
   }
 #endif
 
@@ -672,15 +686,15 @@ public:
 
   vl::Transform *get_transform(T2_data *t2_data, bool &is_scroll_transform) const {
     is_scroll_transform = false;
-    if (Z_IS_STATIC_X(_z)){
+    if (Z_IS_STATIC_X(_conf.z)){
       is_scroll_transform = true;
       return t2_data->scroll_transform.get();
-    }else if (_z == Z_PLAYCURSOR)
+    }else if (_conf.z == Z_PLAYCURSOR)
       return t2_data->playcursor_transform.get();
-    else if (_z <= Z_MAX_SCROLLTRANSFORM){
+    else if (_conf.z <= Z_MAX_SCROLLTRANSFORM){
       is_scroll_transform = true;
       return t2_data->scroll_transform.get();
-    }else if (_z < Z_MIN_STATIC)
+    }else if (_conf.z < Z_MIN_STATIC)
       return t2_data->scrollbar_transform.get();
     else
       return NULL;
@@ -689,11 +703,11 @@ public:
 };
 
 void GE_set_z(GE_Context *c, int new_z) {
-  c->_z = new_z;
+  c->_conf.z = new_z;
 }
 
 int GE_get_z(const GE_Context *c){
-  return c->_z;
+  return c->_conf.z;
 }
 
 GE_Rgb GE_get_rgb(const GE_Context *c){
@@ -712,6 +726,10 @@ static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_da
 }
 
 static void setScrollTransform(const GE_Context *c, vl::Actor *actor, T2_data *t2_data){
+
+  vl::Scissor *scissor = c->get_scissor(t2_data->painting_data);
+  if (scissor != NULL)
+    actor->setScissor(scissor);
   
   actor->computeBounds();
 
@@ -722,11 +740,6 @@ static void setScrollTransform(const GE_Context *c, vl::Actor *actor, T2_data *t
     setActorEnableMask(actor, t2_data->painting_data);
 
   actor->setTransform(transform);
-
-#if 0
-  if (transform==scroll_transform)
-    actor->setScissor(new vl::Scissor(100, 100, 500, 500));
-#endif
 }
 
 
@@ -741,12 +754,15 @@ static float get_pen_width_from_key(int key){
   return (float)key/10.0;
 }
 
-
-
-typedef QMap<int, QHash<int, QHash<uint64_t, vl::ref<GE_Context> > > >Contexts;
-//            ^          ^            ^
-//            |          |            |
-//            z     block slice      color
+typedef QMap<int,                        // <- z
+             QHash<int,                  // <- block slice (from calculated from y)
+                   QHash<enum UseScissors,            // <- whether to use scissor. 0: no scissor, 1: scissor (tried to use array instead of hash, but the code became too complicated)
+                         QHash<uint64_t, // <- color
+                               vl::ref<GE_Context>
+                               >
+                         >
+                   >
+             > Contexts;
 
 
 // Contains all data necessary to paint the editor.
@@ -781,7 +797,7 @@ void GE_delete_painting_data(PaintingData *painting_data){
 static PaintingData *g_painting_data = NULL;
 
 // Called from the OpenGL thread
-SharedVariables *GE_get_shared_variables(PaintingData *painting_data){
+const SharedVariables *GE_get_shared_variables(const PaintingData *painting_data){
   return &painting_data->shared_variables;
 }
 
@@ -847,13 +863,17 @@ static void setColorEnd(vl::VectorGraphics *vg, const GE_Context *c){
 // OpenGL Thread
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset){
   for (const auto hepp : painting_data->contexts) {
-      
+    
     for (const auto contexts : hepp) {
       
-      for(const auto c : contexts) {
-        
-        for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
-          gradient_triangles->set_y_offset(y_offset);
+      for (const auto c2 : contexts) {
+
+        for (const auto c : c2) {
+          
+          for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
+            gradient_triangles->set_y_offset(y_offset);
+          
+        }
       }
     }
   }
@@ -879,112 +899,107 @@ void GE_draw_vl(T2_data *t2_data){
     vg->setPointSmoothing(false); // images are drawn using drawPoint.
     //vg->setTextureMode(vl::TextureMode_Repeat 	); // Note: MAY FIX gradient triangle non-overlaps.
 
-    for (const auto hepp : painting_data->contexts) {
-
-      for (const auto contexts : hepp) {
-
-        //int z = it.key();
-
-        // 1. Filled boxes
-        for(const auto c2 : contexts){
+      for (const auto hepp : painting_data->contexts) {
         
-          const GE_Context *c = c2.get();
-        
-          if(c->boxes.size() > 0) {
-            setColorBegin(vg, c);
+        for (const auto contexts : hepp) {
           
-            setScrollTransform(c, vg->fillQuads(c->boxes), t2_data);
-          
-            setColorEnd(vg, c);
-          }
-        }
-      
-        // 2. triangle strips
-        for(const auto c2 : contexts){
-
-          const GE_Context *c = c2.get();
+          for (const auto c2 : contexts) {
         
+            // 1. Filled boxes
+            for(const auto c : c2){
+              
+              if(c->boxes.size() > 0) {
+                setColorBegin(vg, c.get());
+                
+                setScrollTransform(c.get(), vg->fillQuads(c->boxes), t2_data);
+                
+                setColorEnd(vg, c.get());
+              }
+            }
+          
+            // 2. triangle strips
+            for(const auto c : c2){
+              
 #if USE_TRIANGLE_STRIPS
-          if(c->trianglestrips.size() > 0) {
-            setColorBegin(vg, c);
-            setScrollTransform(c, vg->fillTriangleStrips(c->trianglestrips), t2_data);
-            //vg->fillPolygons(c->trianglestrips);
-          
-            setColorEnd(vg, c);
-          }
-          // note: missing gradient triangles for USE_TRIANGLE_STRIPS.
+              if(c->trianglestrips.size() > 0) {
+                setColorBegin(vg, c.get());
+                setScrollTransform(c.get(), vg->fillTriangleStrips(c->trianglestrips), t2_data);
+                //vg->fillPolygons(c->trianglestrips);
+                
+                setColorEnd(vg, c.get());
+              }
+              // note: missing gradient triangles for USE_TRIANGLE_STRIPS.
 #else
-          for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
-            setScrollTransform(c, gradient_triangles->render(vg), t2_data);
-          
-          if(c->triangles.size() > 0) {
-            setColorBegin(vg, c);
-          
-            setScrollTransform(c, vg->fillTriangles(c->triangles), t2_data);
-            //printf("triangles size: %d\n",(int)c->triangles.size());
-          
-            setColorEnd(vg, c);
-          }
-
+              for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
+                setScrollTransform(c.get(), gradient_triangles->render(vg), t2_data);
+              
+              if(c->triangles.size() > 0) {
+                setColorBegin(vg, c.get());
+                
+                setScrollTransform(c.get(), vg->fillTriangles(c->triangles), t2_data);
+                //printf("triangles size: %d\n",(int)c->triangles.size());
+                
+                setColorEnd(vg, c.get());
+              }
+            }
+            
 #endif
-        }
 
       
-        // 3. Polylines
-        // 4. Boxes
-        // 5. Lines
-        /*
-        for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
+          // 3. Polylines
+          // 4. Boxes
+          // 5. Lines
+          /*
+            for(auto iterator = contexts.begin(); iterator != contexts.end(); ++iterator) {
         
-          const GE_Context *c = iterator.value().get();
+            const GE_Context *c = iterator.value().get();
         
-          bool has_set_color = false;
+            bool has_set_color = false;
         
-          for(auto iterator = c->lines.begin(); iterator != c->lines.end(); ++iterator) {
+            for(auto iterator = c->lines.begin(); iterator != c->lines.end(); ++iterator) {
             if(has_set_color==false)
-              setColorBegin(vg, c);
+            setColorBegin(vg, c);
             has_set_color=true;
           
             vg->setLineWidth(get_pen_width_from_key(iterator->first));
             setScrollTransform(c, vg->drawLines(iterator->second), t2_data);
             //if(c->triangles.size()>0)
             //  setScrollTransform(c, vg->drawLines(c->triangles), scroll_transform, static_x_transform, scrollbar_transform);
-          }
+            }
         
-          if(has_set_color==true)
+            if(has_set_color==true)
             setColorEnd(vg, c);
-        }
-        */
+            }
+          */
         
-        // 6. Text
-        for(auto c2 : contexts) {
+          // 6. Text
+            for(const auto c : c2) {
         
-          const GE_Context *c = c2.get();
-
-          if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
-           
-            setColorBegin(vg, c);
-
-            bool set_mask;
-            vl::Transform *transform = c->get_transform(t2_data, set_mask);
-              
-            if(c->textbitmaps.points.size() > 0)
-              c->textbitmaps.drawAllCharBoxes(vg, transform, set_mask, painting_data);
-        
-            if(c->textbitmaps_halfsize.points.size() > 0)
-              c->textbitmaps_halfsize.drawAllCharBoxes(vg, transform, set_mask, painting_data);
-
-            setColorEnd(vg, c);
+              if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
+                
+                setColorBegin(vg, c.get());
+                
+                bool set_mask;
+                vl::Transform *transform = c->get_transform(t2_data, set_mask);
+                
+                if(c->textbitmaps.points.size() > 0)
+                  c->textbitmaps.drawAllCharBoxes(vg, transform, set_mask, painting_data, c->get_scissor(painting_data));
+                
+                if(c->textbitmaps_halfsize.points.size() > 0)
+                  c->textbitmaps_halfsize.drawAllCharBoxes(vg, transform, set_mask, painting_data, c->get_scissor(painting_data));
+                
+                setColorEnd(vg, c.get());
+              }
+            }
           }
-        }
 
 
-        //printf("************ z: %d, NUM contexts: %d\n",z, (int)g_contexts.size());
+          //printf("************ z: %d, NUM contexts: %d\n",z, (int)g_contexts.size());
 
       
+        }
       }
-    }
-    
+      
   }vg->endDrawing();
   //GL_draw_unlock();           
 }
@@ -1002,15 +1017,15 @@ static int get_slice_from_y(const int y){
   return y/g_painting_data->slice_size;
 }
 
-static GE_Context *get_context(const GE_Context::Color color, int z, int y){
-  const int slice = get_slice_from_y(y);
-  
-  if(g_painting_data->contexts[z][slice].contains(color.key)>0)
-    return g_painting_data->contexts[z][slice][color.key].get();
+static GE_Context *get_context(const GE_Context::Color color, const GE_Conf &conf){
+  int slice = get_slice_from_y(conf.y);
 
-  GE_Context *c = new GE_Context(color, z, slice);
+  if(g_painting_data->contexts[conf.z][slice][conf.use_scissors].contains(color.key))
+    return g_painting_data->contexts[conf.z][slice][conf.use_scissors][color.key].get();
 
-  g_painting_data->contexts[z][slice][color.key] = c;
+  GE_Context *c = new GE_Context(color, conf, slice);
+
+  g_painting_data->contexts[conf.z][slice][conf.use_scissors][color.key] = c;
   return c;
 }
 
@@ -1019,18 +1034,20 @@ GE_Context *GE_y(GE_Context *c, int y){
 
   if (slice==c->_slice)
     return c;
-  else
-    return get_context(c->color, c->_z, y);
+  
+  c->_conf.y = y;
+
+  return get_context(c->color, c->_conf);
 }
 
 
-GE_Context *GE_z(const GE_Rgb rgb, int z, int y){
+GE_Context *GE_z(const GE_Rgb rgb, const GE_Conf &conf){
   GE_Context::Color color;
 
   color.key = 0;
   color.c = rgb;
 
-  return get_context(color, z, y);
+  return get_context(color, conf);
 }
 
 static GE_Rgb rgb_from_qcolor(const QColor &color){
@@ -1038,28 +1055,28 @@ static GE_Rgb rgb_from_qcolor(const QColor &color){
   return rgb;
 }
 
-GE_Context *GE_color_z(const QColor &color, int z, int y){
-  return GE_z(rgb_from_qcolor(color), z, y);
+GE_Context *GE_color_z(const QColor &color, const GE_Conf &conf){
+  return GE_z(rgb_from_qcolor(color), conf);
 }
 
-GE_Context *GE_color_z(enum ColorNums colornum, int z, int y){
+GE_Context *GE_color_z(enum ColorNums colornum, const GE_Conf &conf){
   //const QColor c = get_qcolor(window, colornum);
-  return GE_z(GE_get_rgb(colornum), z, y);
+  return GE_z(GE_get_rgb(colornum), conf);
 }
 
-GE_Context *GE_color_alpha_z(enum ColorNums colornum, float alpha, int z, int y){
+GE_Context *GE_color_alpha_z(enum ColorNums colornum, float alpha, const GE_Conf &conf){
   GE_Rgb rgb = GE_get_rgb(colornum);
   rgb.a = alpha * 255;
-  return GE_z(rgb, z, y);
+  return GE_z(rgb, conf);
 }
 
-GE_Context *GE_textcolor_z(enum ColorNums colornum, int z, int y){
+GE_Context *GE_textcolor_z(enum ColorNums colornum, const GE_Conf &conf){
   GE_Rgb rgb = GE_get_rgb(colornum);
   rgb.a=230;
-  return GE_z(rgb, z, y);
+  return GE_z(rgb, conf);
 }
 
-GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int z, int y){
+GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, const GE_Conf &conf){
 #if 1
   // Reduce number of contexts. May also reduce cpu usage significantly.
   r |= 15;
@@ -1070,11 +1087,11 @@ GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, u
 
   GE_Rgb rgb = {r,g,b,a};
 
-  return GE_z(rgb, z, y);
+  return GE_z(rgb, conf);
 }
 
-GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, int z, int y){
-  return GE_rgba_color_z(r,g,b,255, z, y);
+GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, const GE_Conf &conf){
+  return GE_rgba_color_z(r,g,b,255, conf);
 }
 
 GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much){
@@ -1099,25 +1116,25 @@ GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much){
   return rgb;
 }
 
-GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, int z, int y){
-  return GE_z(GE_mix(c1, c2, how_much), z, y);
+GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, const GE_Conf &conf){
+  return GE_z(GE_mix(c1, c2, how_much), conf);
 }
 
-GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, int z, int y){
+GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, const GE_Conf &conf){
   GE_Context::Color color;
 
   color.c=c1;
   color.c_gradient=c2;
 
-  GE_Context *c = get_context(color, z, y);
+  GE_Context *c = get_context(color, conf);
 
   //c->is_gradient = true;
 
   return c;
 }
 
-GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, int z, int y){
-  return GE_gradient_z(rgb_from_qcolor(c1), rgb_from_qcolor(c2), z, y);
+GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, const GE_Conf &conf){
+  return GE_gradient_z(rgb_from_qcolor(c1), rgb_from_qcolor(c2), conf);
 }
 
 
