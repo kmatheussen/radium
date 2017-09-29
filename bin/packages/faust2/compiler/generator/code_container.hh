@@ -119,7 +119,7 @@ class CodeContainer : public virtual Garbageable {
         }
 
         void generateDAGLoopAux(CodeLoop* loop, BlockInst* loop_code, DeclareVarInst* count, int loop_num, bool omp = false);
-        void generateDAGLoopInternal(CodeLoop* loop, BlockInst* block, DeclareVarInst * count, bool omp);
+        void generateDAGLoopInternal(CodeLoop* loop, BlockInst* block, DeclareVarInst* count, bool omp);
 
       public:
 
@@ -350,8 +350,8 @@ class CodeContainer : public virtual Garbageable {
         const string& getClassName() { return fKlassName; }
 
         // UI construction
-        void addUIMacro(const string& str)  { fUIMacro.push_back(str); }
-        void addUICode(const string& str)	{ fUICode.push_back(str); }
+        void addUIMacro(const string& str) { fUIMacro.push_back(str); }
+        void addUICode(const string& str) { fUICode.push_back(str); }
 
         virtual CodeContainer* createScalarContainer(const string& name, int sub_container_type) = 0;
 
