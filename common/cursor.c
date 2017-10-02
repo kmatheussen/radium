@@ -52,6 +52,37 @@ void R_SetCursorPos(struct Tracker_Windows *window){
 #endif
 }
 
+static void make_cursor_visible(struct Tracker_Windows *window,struct WBlocks *wblock,int prevcursorpos){
+
+  if (window->curr_track < 0){
+    if (prevcursorpos>=0)
+      wblock->skew_x = 0;
+    return;
+  }
+
+  NInt track    = window->curr_track;
+  int  subtrack = window->curr_track_sub;
+  
+  int x1 = GetXSubTrack_B1(wblock,track,subtrack)-1;
+
+  //printf("x1: %d, wblock->t.x1: %d\n", x1, wblock->t.x1);
+
+  if (x1 < wblock->t.x1){
+    wblock->skew_x -= x1 - wblock->t.x1;
+    //printf("Skewing left: %d\n", wblock->skew_x);
+    return;
+  }
+
+  int x2 = GetXSubTrack_B2(wblock,track,subtrack)+1;
+
+  if (x2 > wblock->t.x2){
+    wblock->skew_x -= x2 - wblock->t.x2;
+    //printf("Skewing left: %d\n", wblock->skew_x);
+    return;
+  }
+}
+
+
 static bool nextTrackHasSwingtext(struct WTracks *wtrack){
   R_ASSERT_RETURN_IF_FALSE2(wtrack!=NULL, false);
 
@@ -415,7 +446,9 @@ static void show_curr_track_in_statusbar(struct Tracker_Windows *window,struct W
 #undef PRE
 }
 
-static void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wblock, int unused){
+static void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wblock, int unused, int prevcursorpos){
+
+  make_cursor_visible(window, wblock, prevcursorpos);
 
         GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
 
@@ -426,14 +459,16 @@ static void TrackSelectUpdate(struct Tracker_Windows *window,struct WBlocks *wbl
 
 void CursorRight_CurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
-	TrackSelectUpdate(window,wblock,CursorRight(window,wblock));
+        int prevcursorpos = window->curr_track;
+	TrackSelectUpdate(window,wblock,CursorRight(window,wblock), prevcursorpos);
 }
 
 
 
 void CursorLeft_CurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
-	TrackSelectUpdate(window,wblock,CursorLeft(window,wblock));
+        int prevcursorpos = window->curr_track;
+	TrackSelectUpdate(window,wblock,CursorLeft(window,wblock),prevcursorpos);
 }
 
 int CursorNextTrack(struct Tracker_Windows *window,struct WBlocks *wblock){
@@ -559,7 +594,8 @@ void SetCursorPosConcrete_CurrPos(
                              -1
                              );
         
-	TrackSelectUpdate(window,wblock,-1);
+        int prevcursorpos = window->curr_track;
+	TrackSelectUpdate(window,wblock,-1,prevcursorpos);
 }
 
 
@@ -582,7 +618,8 @@ void CursorNextTrack_CurrPos(struct Tracker_Windows *window){
           //ret=CursorNextTrack(window,wblock);
 	}
 
-	TrackSelectUpdate(window,wblock,-1);
+        int prevcursorpos = window->curr_track;
+	TrackSelectUpdate(window,wblock,-1, prevcursorpos);
 }
 
 static int find_track_left(struct Tracker_Windows *window){
@@ -623,7 +660,8 @@ void CursorPrevTrack_CurrPos(struct Tracker_Windows *window){
         
         SetCursorPosConcrete(window,wblock,new_track,-1);
         
-	TrackSelectUpdate(window,wblock,0);
+        int prevcursorpos = window->curr_track;
+	TrackSelectUpdate(window,wblock,0,prevcursorpos);
 }
 
 

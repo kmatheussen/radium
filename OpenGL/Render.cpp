@@ -2602,6 +2602,17 @@ static void create_cursor(const struct Tracker_Windows *window, const struct WBl
   int xb1 = GetXSubTrack_B1(wblock,track,subtrack)-1;
   int xb2 = GetXSubTrack_B2(wblock,track,subtrack)+1;
 
+  bool curr_pos_invisible = false;
+
+  if (window->curr_track >=0){
+    if (xb2 < wblock->t.x1)
+      curr_pos_invisible = true;
+    else{
+      xb1 = R_MAX(xb1, wblock->t.x1);
+      xb2 = R_MAX(xb2, wblock->t.x1);
+    }
+  }
+
   int x1 = window->leftslider.width;
   int x2 = xb1;
   int x3 = xb2;
@@ -2611,15 +2622,22 @@ static void create_cursor(const struct Tracker_Windows *window, const struct WBl
   int y1 = GetCursorY1Pos(window, wblock) - dy;
   int y2 = GetCursorY2Pos(window, wblock) - dy;
 
-  GE_filledBox(c, 
-               x1, y1,
-               x2, y2
-               );
-  
-  GE_filledBox(c, 
-               x3, y1,
-               x4, y2
-               );
+  if (curr_pos_invisible){
+    GE_filledBox(c, 
+                 x1, y1,
+                 x4, y2
+                 );
+  } else {
+    GE_filledBox(c, 
+                 x1, y1,
+                 x2, y2
+                 );
+    
+    GE_filledBox(c, 
+                 x3, y1,
+                 x4, y2
+                 );
+  }
 
   {
     const GE_Conf conf(Z_STATIC, y1, NO_SCISSORS);
