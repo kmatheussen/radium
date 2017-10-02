@@ -14,15 +14,16 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef _RADIUM_COMMON_SLIDERS_PROC_H
+#define _RADIUM_COMMON_SLIDERS_PROC_H
 
-#ifndef TRACKER_INCLUDE
+extern LANGSPEC TBox GetBottomSliderCoordinates(const struct Tracker_Windows *window, const struct WBlocks *wblock, int *inner_x1, int *inner_x2);
 
-#include "nsmtracker.h"
-
-extern void UpdateBottomSlider(struct Tracker_Windows *window);
-extern void DrawBottomSlider(struct Tracker_Windows *window);
-extern void UpdateLeftSlider(struct Tracker_Windows *window);
-extern void DrawLeftSlider(struct Tracker_Windows *window);
-extern void InitSliderValues(struct Tracker_Windows *window);
+extern LANGSPEC void UpdateBottomSlider(struct Tracker_Windows *window);
+extern LANGSPEC void DrawBottomSlider(struct Tracker_Windows *window);
+extern LANGSPEC void UpdateLeftSlider(struct Tracker_Windows *window);
+extern LANGSPEC void DrawLeftSlider(struct Tracker_Windows *window);
+extern LANGSPEC void InitSliderValues(struct Tracker_Windows *window);
 
 #endif
+

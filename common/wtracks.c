@@ -163,8 +163,8 @@ static int WTRACKS_get_non_polyphonic_subtracks_width(const struct Tracker_Windo
 }
     
 static int WTRACK_get_pianoroll_width(
-                                      struct Tracker_Windows *window,
-                                      struct WTracks *wtrack
+                                      const struct Tracker_Windows *window,
+                                      const struct WTracks *wtrack
                                       )
 {
   if (wtrack->pianoroll_on==false)
@@ -175,8 +175,8 @@ static int WTRACK_get_pianoroll_width(
 
 // Function to use when the coordinates are not calculated.
 int WTRACK_getWidth(
-	struct Tracker_Windows *window,
-	struct WTracks *wtrack
+	const struct Tracker_Windows *window,
+	const struct WTracks *wtrack
 	)
 {
   return 
@@ -188,6 +188,22 @@ int WTRACK_getWidth(
     ;
 }
 
+
+int WTRACKS_getWidth(const struct Tracker_Windows *window,
+                     const struct WBlocks *wblock){
+
+  struct WTracks *wtrack = wblock->wtracks;
+
+  while(true){
+    struct WTracks *next = NextWTrack(wtrack);
+    if (next==NULL)
+      return wtrack->x2 - wblock->skew_x - wblock->t.x1 - 2; // "- 2" is here to make Ctrl + M work fully.
+    wtrack = next;
+  }
+
+  R_ASSERT(false);
+  return 0;
+}
 
 
 /* Update all wtrackcoordinates starting from "wtrack". */
@@ -346,10 +362,12 @@ void UpdateAllWTracksCoordinates(
 	leftX = wblock->t.x1;
 
 	wtrack=wblock->wtracks;
+        /*
 	while(wtrack->l.num < wblock->left_track){
 	  leftX-=WTRACK_getWidth(window,wtrack);
 	  wtrack=NextWTrack(wtrack);
 	}
+        */
 
         {
           struct WTracks *left_wtrack = wtrack;
@@ -364,7 +382,7 @@ void UpdateAllWTracksCoordinates(
 	}
 
 	//UpdateWTrackCoordinates(window,wblock,wblock->wtracks,leftX);
-        UpdateWTrackCoordinates(window,wblock,wtrack,wblock->t.x1);
+        UpdateWTrackCoordinates(window,wblock,wtrack,wblock->skew_x + wblock->t.x1);//wblock->t.x1);
         
 #if 0
 	wtrack=wblock->wtracks;
@@ -389,13 +407,14 @@ void UpdateAllWTracksCoordinates(
 
 	while(wtrack!=NULL){
 		wblock->right_track=wtrack->l.num;
-		if(NextWTrack(wtrack)==NULL){
+                struct WTracks *next_wtrack = NextWTrack(wtrack);
+		if(next_wtrack==NULL){
                   int num_subtracks = WTRACK_num_subtracks(wtrack);
                   wblock->right_subtrack=num_subtracks-1;
                   goto exit;
 		}
-		if(NextWTrack(wtrack)->notearea.x>=wblock->a.x2-2) break;
-		wtrack=NextWTrack(wtrack);
+		if(next_wtrack->notearea.x>=wblock->a.x2-2) break;
+		wtrack=next_wtrack;
 	}
 
 	for(right_subtrack=0;;right_subtrack++){

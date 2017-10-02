@@ -33,9 +33,12 @@ static inline int NOTE_subtrack(const struct WTracks *wtrack, const struct Notes
 
 
 extern LANGSPEC int WTRACK_getWidth(
-                    struct Tracker_Windows *window,
-                    struct WTracks *wtrack
+                    const struct Tracker_Windows *window,
+                    const struct WTracks *wtrack
                     );
+
+extern LANGSPEC int WTRACKS_getWidth(const struct Tracker_Windows *window,
+                                     const struct WBlocks *wblock);
 
 extern LANGSPEC struct WTracks *WTRACK_new(void);
 

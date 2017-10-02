@@ -1082,48 +1082,45 @@
                                     #f))))
 
 ;; track slider
-#||
-(add-mouse-cycle (make-mouse-cycle
-                  :press-func (lambda (Button X Y)                                
-                                (if (inside-box (<ra> :get-box track-slider) X Y)
-                                    (begin
-                                      (show-async-message -1 "The track slider can not be moved.\nOnly keyboard is supported to navigate to other tracks.")
-                                      #t)
-                                    #f))))
-||#
-
-(add-horizontal-handler :Get-handler-data (lambda (X Y)
-                                            (define box (<ra> :get-box track-slider))
-                                            (and (inside-box box X Y)
-                                                 (<ra> :current-track)))
-                        :Get-x1 (lambda (_)
-                                  (<ra> :get-track-slider-x1))
-                        :Get-x2 (lambda (_)
-                                  (<ra> :get-track-slider-x2))
-                        :Get-min-value (lambda (_)
-                                         0)
-                        :Get-max-value (lambda (_)
-                                         (<ra> :get-num-tracks))
-                        :Get-x (lambda (_)
-                                 (/ (+ (<ra> :get-track-slider-x1)
-                                       (<ra> :get-track-slider-x2))
-                                    2))
-                        :Get-value (lambda (Value)
-                                     Value)
-                        :Make-undo (lambda (_)
-                                     50)
-                        :Move (lambda (_ Value)
-                                (cond ((>= Value (1+ (<ra> :current-track)))
-                                       (<ra> :cursor-right))
-                                      ((<= Value (1- (<ra> :current-track)))
-                                       (<ra> :cursor-left)))
-                                Value)
-                        :Publicize (lambda (_)
-                                     60)
-
+(add-node-mouse-handler :Get-area-box (lambda ()
+                                        (<ra> :get-box track-slider))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  ;;(c-display "hep" X Y (box-to-string (<ra> :get-box editor-scrollbar-scroller)) (inside-box (<ra> :get-box editor-scrollbar-scroller) X Y))
+                                                  (and (inside-box (<ra> :get-box track-slider) X Y)
+                                                       (begin
+                                                         (<ra> :set-track-slider-is-moving #t)
+                                                         (callback (<ra> :get-track-slider-pos)
+                                                                   (<ra> :get-track-slider-pos)
+                                                                   0))))
+                        :Get-min-value (lambda (_) 0)
+                        :Get-max-value (lambda (_) 1)
+                                        ;:Get-x (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-x1) (<ra> :get-editor-scrollbar-scroller-x2)))
+                                        ;:Get-y (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-y1) (<ra> :get-editor-scrollbar-scroller-y2)))
+                        :Make-undo (lambda (_) 50)
+                        :Create-new-node (lambda (X Place callback)
+                                           #f)
+                        :Move-node (lambda (Pos Value Y)
+                                     (define newpos (scale Value
+                                                           0 1
+                                                           0 1))
+                                     ;;(c-display "Pos/Value/Y/newpos" Pos Value Y newpos)
+                                     (<ra> :set-track-slider-pos newpos)
+                                     (<ra> :get-track-slider-pos)
+                                     )
+                        :Release-node (lambda (Num)
+                                        (<ra> :set-track-slider-is-moving #f)
+                                        #f
+                                        )
+                        :Publicize (lambda (Num)
+                                     #f)
+                        :Use-Place #f
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
+                        :Get-pixels-per-value-unit #f ;;(lambda (_)
+                        ;;1)
                         )
 
+;;(<ra> :set-track-slider-pos 0)
+;;(<ra> :set-track-slider-pos -100)
 
 ;; Editor scrollbar
 ;;
@@ -1133,7 +1130,7 @@
                                                   ;;(c-display "hep" X Y (box-to-string (<ra> :get-box editor-scrollbar-scroller)) (inside-box (<ra> :get-box editor-scrollbar-scroller) X Y))
                                                   (and (inside-box (<ra> :get-box editor-scrollbar) X Y)
                                                        (begin
-                                                         (<ra> :set-scrollbar-is-moving #t)
+                                                         (<ra> :set-editor-scrollbar-is-moving #t)
                                                          (callback (<ra> :get-curr-realline)
                                                                    (<ra> :get-curr-realline)
                                                                    0))))
@@ -1158,7 +1155,7 @@
                                      Num
                                      )
                         :Release-node (lambda (Num)
-                                        (<ra> :set-scrollbar-is-moving #f))
+                                        (<ra> :set-editor-scrollbar-is-moving #f))
                         :Publicize (lambda (Num)
                                      #f)
                         :Use-Place #f

@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/tempos_proc.h"
 #include "../common/undo_tempos_proc.h"
 #include "../common/seqtrack_proc.h"
+#include "../common/sliders_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -293,7 +294,11 @@ void undoReltempo(void){
 }
 
 void setReltempo(double reltempo){
+  //skew_x = scale(reltempo, 0, 6, 0, -1000);
+
+  //printf("   skew_x: %f\n", skew_x);
   struct Tracker_Windows *window = root->song->tracker_windows;
+
   struct WBlocks *wblock = window->wblock;
   
   double new_reltempo = R_BOUNDARIES(
@@ -308,7 +313,7 @@ void setReltempo(double reltempo){
   //DrawBlockRelTempo(window,wblock);
 
   SEQUENCER_update();
-    
+
   window->must_redraw = true;
 }
 
@@ -323,8 +328,9 @@ float getMaxReltempo(void){
 
 
 
-// The track "scrollbar"
+// The track scrollbar (horizontal scrollbar)
 ///////////////////////////////////////////////////
+
 float getTrackSliderX1(void){
   return root->song->tracker_windows->bottomslider.x;
 }
@@ -338,9 +344,91 @@ float getTrackSliderY2(void){
   return root->song->tracker_windows->wblock->reltempo.y2;
 }
 
+float getTrackSliderScrollerX1(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(blocknum, &window, windownum);
+  if(wblock==NULL)
+    return 0.0;
 
-// The editor scrollbar
+  int inner_x1;
+  int inner_x2;
+  GetBottomSliderCoordinates(window, window->wblock, &inner_x1, &inner_x2);
+
+  return inner_x1;
+}
+
+float getTrackSliderScrollerY1(void){
+  return getTrackSliderY1();
+}
+
+float getTrackSliderScrollerX2(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(blocknum, &window, windownum);
+  if(wblock==NULL)
+    return 0.0;
+
+  int inner_x1;
+  int inner_x2;
+  GetBottomSliderCoordinates(window, window->wblock, &inner_x1, &inner_x2);
+
+  return inner_x2;
+}
+
+float getTrackSliderScrollerY2(void){
+  return getTrackSliderY2();
+}
+
+float getTrackSliderPos(int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(blocknum, &window, windownum);
+  if(wblock==NULL)
+    return 0;
+
+  int total_width = WTRACKS_getWidth(window, wblock);
+
+  return scale(wblock->skew_x, 0, -total_width, 0, 1);
+}
+
+void setTrackSliderPos(float pos, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(blocknum, &window, windownum);
+  if(wblock==NULL)
+    return;
+
+  int visible_width = root->song->tracker_windows->bottomslider.x2 - root->song->tracker_windows->bottomslider.x;
+  int total_width = WTRACKS_getWidth(window, wblock);
+
+  if (visible_width >= total_width){
+    R_ASSERT_NON_RELEASE(wblock->skew_x == 0);
+    wblock->skew_x = 0;
+    return;
+  }
+
+  wblock->skew_x = scale(pos, 0, 1, 0, -total_width);
+  if (wblock->skew_x > 0)
+    wblock->skew_x = 0;
+
+  if (wblock->skew_x < -(total_width-visible_width))
+    wblock->skew_x = -(total_width-visible_width);
+  //calculateblockcoordinates must also ensure that the current track is visible.
+  window->must_redraw=true;
+}
+
+void setTrackSliderIsMoving(bool is_moving, int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if(window==NULL)
+    return;
+
+  window->track_slider_is_moving = is_moving;
+  window->must_redraw=true;
+}
+
+
+
+// The line scrollbar (vertical scrollbar)
 ///////////////////////////////////////////////////
+
+
 float getEditorScrollbarX1(void){
   return get_scrollbar_x1(root->song->tracker_windows);
 }
@@ -361,6 +449,7 @@ float getEditorScrollbarY2(void){
     return 0.0;
   return wblock->t.y1 + get_scrollbar_y2(window, wblock);
 }
+
 
 float getEditorScrollbarScrollerX1(void){
   return getEditorScrollbarX1();
@@ -390,7 +479,7 @@ float getEditorScrollbarScrollerY2(int blocknum, int windownum){
   return getEditorScrollbarScrollerY1(blocknum, windownum) + get_scrollbar_scroller_height(window, wblock);
 }
 
-void setScrollbarIsMoving(bool is_moving, int windownum){
+void setEditorScrollbarIsMoving(bool is_moving, int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if(window==NULL)
     return;

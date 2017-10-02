@@ -1999,6 +1999,8 @@ struct WBlocks{
 	TBox a; // everything
 //	int x,y,x2,y2;						/* GFX area. */
 
+        int skew_x; // All x values in the tracks has this value added to them. It is always 0 or negative. Set when moving the track scrollbar.
+
 	TBox t;
 //	int tx,ty,tx2,ty2;				/* lines, nodes, etc. GFX area. */
 
@@ -2155,6 +2157,7 @@ struct Tracker_Windows{
 	struct Slider leftslider;
 	struct Slider rightslider;
 
+        bool track_slider_is_moving; // If true, draw bottomslider in a different color.
         bool scrollbar_is_moving; // If true, draw leftslider in a different color.
   
 	bool playalong;					/* If true, this window allso shows whats being played

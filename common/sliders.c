@@ -113,17 +113,16 @@ void UpdateBottomSlider(struct Tracker_Windows *window){
 }
 #endif
 
-
+/*
 typedef struct {
   int leftmost_visible_x;
   int rightmost_visible_x;
   int total_width;
 } SliderData;
 
-static SliderData get_sliderdata(struct Tracker_Windows *window){
+static SliderData get_sliderdata(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   SliderData data;
 
-  struct WBlocks *wblock = window->wblock;
   struct WTracks *wtrack = wblock->wtracks;
 
   int x = 0;
@@ -154,6 +153,29 @@ static SliderData get_sliderdata(struct Tracker_Windows *window){
 
   return data;
 }
+*/
+
+TBox GetBottomSliderCoordinates(const struct Tracker_Windows *window, const struct WBlocks *wblock, int *inner_x1, int *inner_x2){
+  TBox box = {
+    .x1 = window->bottomslider.x,
+    .y1 = wblock->reltempo.y1,
+    .x2 = window->bottomslider.x2,
+    .y2 = wblock->reltempo.y2
+  };
+
+  if (inner_x1 != NULL){
+    //SliderData data = get_sliderdata(window, wblock);
+    int total_width = WTRACKS_getWidth(window, wblock);
+                     
+    //*inner_x1 = scale(data.leftmost_visible_x, 0, data.total_width, box.x1, box.x2);
+    //*inner_x2 = scale(data.rightmost_visible_x, 0, data.total_width, box.x1, box.x2);
+    *inner_x1 = scale(0, wblock->skew_x, total_width + wblock->skew_x, box.x1, box.x2);
+    *inner_x2 = scale(box.x2-box.x1, wblock->skew_x, total_width + wblock->skew_x, box.x1, box.x2);
+  }
+
+  return box;
+}
+
 
 /********************************************************
   FUNCTION
@@ -163,39 +185,36 @@ static SliderData get_sliderdata(struct Tracker_Windows *window){
 // Note that this is the track selector slider, not the block tempo slider.
 void DrawBottomSlider(struct Tracker_Windows *window){
   window->bottomslider.x = window->wblock->t.x1;
-  
-  int x1 = window->bottomslider.x;
-  int x2 = window->bottomslider.x2;
-  int y1 = window->wblock->reltempo.y1;
-  int y2 = window->wblock->reltempo.y2;
 
-  SliderData data = get_sliderdata(window);
-  
-  int inner_x1 = scale(data.leftmost_visible_x, 0, data.total_width, x1, x2);
-  int inner_x2 = scale(data.rightmost_visible_x, 0, data.total_width, x1, x2);
+  int inner_x1;
+  int inner_x2;
+  TBox box = GetBottomSliderCoordinates(window, window->wblock, &inner_x1, &inner_x2);
 
   // background
   GFX_FilledBox(
                 window,
                 HIGH_BACKGROUND_COLOR_NUM,
-                window->wblock->reltempo.x2,y1,
-                x2,y2,
+                window->wblock->reltempo.x2,box.y1,
+                box.x2,box.y2,
                 PAINT_DIRECTLY
                 );
 
+
+  if (window->track_slider_is_moving)
+    GFX_SetMixColor(window, TRACK_SLIDER_COLOR_NUM, BLACK_COLOR_NUM, 500);
   
   // slider
   GFX_FilledBox(
                 window,TRACK_SLIDER_COLOR_NUM,
-                inner_x1,y1,
-                inner_x2,y2,
+                inner_x1,box.y1,
+                inner_x2,box.y2,
                 PAINT_DIRECTLY
                 );
   // border
   GFX_Box(
           window,TRACK_SLIDER_COLOR_NUM,
-          x1,y1,
-          x2,y2,
+          box.x1,box.y1,
+          box.x2,box.y2,
           PAINT_DIRECTLY
           );  
                 
