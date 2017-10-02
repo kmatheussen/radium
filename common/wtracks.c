@@ -564,6 +564,8 @@ void MinimizeBlock_CurrPos(
 
         ADD_UNDO(Block_CurrPos(window));
 
+        wblock->skew_x = 0;
+        
 	SetCursorPosConcrete(window,wblock,0,-1);
 
 	wblock->temponodearea.width=2;
