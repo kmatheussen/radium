@@ -93,20 +93,22 @@ void DrawWTrackNames(
   GFX_SetClipRect(window,x1, 0, x2, wblock->t.y1, PAINT_BUFFER);
   {
     static char temp[500];
+    int wtrack_x1 = R_MAX(wtrack1->x, wblock->t.x1) + window->fontwidth/2;
+
     if (wtrack1->l.num==wtrack2->l.num)
       sprintf(temp,"%d:", wtrack1->l.num);
     else
       sprintf(temp,"%d->%d:", wtrack1->l.num, wtrack2->l.num);
     GFX_T_Text(
                window,TEXT_COLOR_NUM,temp,
-               wtrack1->x+window->fontwidth/2,
+               wtrack_x1,
                wtrack1->y+WTRACKS_SPACE-1,
                wtrack1->x2-wtrack1->x-1,
                TEXT_CLIPRECT|TEXT_BOLD|TEXT_NOTEXT,
                PAINT_BUFFER
                );
     
-    int name_x = wtrack1->x+window->fontwidth/2 + GFX_get_text_width(window,temp) + window->fontwidth;
+    int name_x = wtrack_x1 + GFX_get_text_width(window,temp) + window->fontwidth;
     const char *name = patch==NULL ? wtrack1->track->trackname : patch->name;
     int midi_channel = ATOMIC_GET(wtrack1->track->midi_channel);
     if (midi_channel){
@@ -187,6 +189,7 @@ static void DrawAllWTrackSliders(
 {
   ITERATE_VISIBLE_WTRACKS(wblock) {
     UpdatePanSlider(window,wblock,wtrack);
+    GFX_CancelMixColor(window); // in case track is not visible and the above filledbox call is not executed, the mixcolor will be set for the next paint operation instead. Bad stuff, caused by radium originally being written for amigaos, where painting outside the visible area would cause memory corruption (instead of being ignored). Unfortunately, the cliprect system was wrongly put into common/ instead of amiga/.
     UpdateVolumeSlider(window,wblock,wtrack);
   }
 
