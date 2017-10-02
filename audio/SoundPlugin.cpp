@@ -390,7 +390,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 
   plugin->midi_learns = new radium::Vector<SoundPluginEffectMidiLearn*>;
 
-  // TODO: Don't do this. Check if all plugins can be initialized later.
+  // We can't do this any later since plugin_type->num_effects may be set here.
+  // Use plugin->has_initialized to avoid running code that operates on plugin data that might be called while calling create_plugin_data.
   plugin->data = plugin_type->create_plugin_data(plugin_type, plugin, plugin_state, MIXER_get_sample_rate(), buffer_size, is_loading);
   if(plugin->data==NULL){
     V_free(plugin);

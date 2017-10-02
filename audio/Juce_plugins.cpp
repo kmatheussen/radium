@@ -113,12 +113,13 @@ namespace{
 #if !defined(RELEASE)
       printf("   JUCE listener: parm %d changed to %f\n",parameterIndex,newValue);
 #endif
-      PLUGIN_call_me_when_an_effect_value_has_changed(_plugin,
-                                                      parameterIndex,
-                                                      newValue, // native
-                                                      newValue, // scaled
-                                                      true // make undo
-                                                      );
+      if (_plugin->has_initialized)
+        PLUGIN_call_me_when_an_effect_value_has_changed(_plugin,
+                                                        parameterIndex,
+                                                        newValue, // native
+                                                        newValue, // scaled
+                                                        true // make undo
+                                                        );
     }
  
     // Called to indicate that something else in the plugin has changed, like its program, number of parameters, etc.
