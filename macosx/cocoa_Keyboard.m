@@ -316,6 +316,8 @@ static UniChar get_char_from_keycode(int keyCode){
   if (reload_keyboard_every_time || keyboardLayout==NULL){
     currentKeyboard = TISCopyCurrentKeyboardInputSource();
     uchr = (CFDataRef)TISGetInputSourceProperty(currentKeyboard, kTISPropertyUnicodeKeyLayoutData);
+    if (!uchr)
+      return -1;
     keyboardLayout = (const UCKeyboardLayout*)CFDataGetBytePtr(uchr);
   }
 
