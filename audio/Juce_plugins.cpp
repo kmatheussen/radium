@@ -314,10 +314,20 @@ namespace{
     return is_vst2(plugin->type);
   }
 
-  static bool is_vst3(const SoundPlugin *plugin) {
-    return !strcmp(plugin->type->type_name, "VST3");
+  static bool is_vst3(const SoundPluginType *type){
+    return !strcmp(type->type_name, "VST3");
   }
 
+  static bool is_vst3(const SoundPlugin *plugin) {
+    return is_vst3(plugin->type);
+  }
+
+  /*
+  static bool is_vst(const struct SoundPluginType *type) {
+    return is_vst2(type) || is_vst3(type);
+  }
+  */
+  
   /*
   static bool is_vst(const SoundPlugin *plugin) {
     return is_vst2(plugin) || is_vst3(plugin);
@@ -1314,6 +1324,21 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     return NULL;
   }
 
+  if(is_vst2(plugin_type) || is_vst3(plugin_type)){
+    printf("TYPE_NAME: -%s-, NAME: -%s-. Version: %s\n", plugin_type->type_name, plugin_type->name, type_data->description.version.toRawUTF8());
+    if (String(plugin_type->name)=="Moody Sampler" && (type_data->description.version=="V5.0" || type_data->description.version=="0.5.0")){
+      vector_t v = {};
+
+      VECTOR_push_back(&v, "Yes");
+      int no = VECTOR_push_back(&v, "No");
+      
+      int ret = GFX_Message(&v,
+                            "Warning, this plugin (\"Moody Sampler\") has been marked as unstable.<p>Reason: Crashes program when deleted.<p>Load it anyway?");
+      if (ret==no)
+        return NULL;
+    }
+  }
+  
   AudioPluginInstance *audio_instance = create_audio_instance(type_data, sample_rate, block_size);
   if (audio_instance==NULL){
     return NULL;
