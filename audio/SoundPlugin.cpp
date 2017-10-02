@@ -532,12 +532,14 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
 
   PLUGIN_touch(plugin);
 
-  plugin->has_initialized = true;
+  ATOMIC_SET(plugin->has_initialized, true);
   
   return plugin;
 }
 
 void PLUGIN_delete(SoundPlugin *plugin){
+  ATOMIC_SET(plugin->is_shutting_down, true);
+  
   RT_PLUGIN_touch(plugin);
   
   const SoundPluginType *plugin_type = plugin->type;
@@ -1139,7 +1141,8 @@ void PLUGIN_call_me_very_often_from_main_thread(void){
   static int64_t last_effect_num = -1;
 
   double curr_time = TIME_get_ms();
-
+  //printf("curr_time: %f\n", curr_time/1000.0);
+  
   EffectUndoData eud;
 
   while(g_effect_undo_data_buffer.pop(eud)==true){
@@ -1729,7 +1732,7 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
       return plugin->type->get_effect_value(plugin, effect_num, value_format);
   }
 
-  if (plugin->has_initialized) {
+  if (ATOMIC_GET(plugin->has_initialized)) {
     if (value_format==EFFECT_FORMAT_SCALED)
       return safe_float_read(&plugin->last_written_effect_values_scaled[effect_num]);
     else

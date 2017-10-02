@@ -1112,11 +1112,13 @@ hash_t *AUDIO_get_audio_patch_state(struct Patch *patch){
 static void AUDIO_remove_patchdata(struct Patch *patch){
   ADD_UNDO(MixerConnections_CurrPos());
   
-  InstrumentWidget_delete(patch);
-    
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   struct SoundProducer *sound_producer = plugin->sp;
 
+  ATOMIC_SET(plugin->is_shutting_down, true);
+  
+  InstrumentWidget_delete(patch);
+    
   hash_t *state = PLUGIN_get_state(plugin);
           
   CHIP_delete(patch);

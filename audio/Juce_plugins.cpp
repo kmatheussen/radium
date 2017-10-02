@@ -100,6 +100,58 @@ static int RT_get_latency(struct SoundPlugin *plugin);
 
 namespace{
 
+  static bool is_au(const struct SoundPluginType *type) {
+    return !strcmp(type->type_name, "AU");
+  }
+  
+  static bool is_au(const struct SoundPlugin *plugin) {
+    return is_au(plugin->type);
+  }
+  
+  static bool is_vst2(const struct SoundPluginType *type) {
+    return !strcmp(type->type_name, "VST");
+  }
+  
+  static bool is_vst2(const SoundPlugin *plugin) {
+    return is_vst2(plugin->type);
+  }
+
+  static bool is_vst3(const SoundPluginType *type){
+    return !strcmp(type->type_name, "VST3");
+  }
+
+  static bool is_vst3(const SoundPlugin *plugin) {
+    return is_vst3(plugin->type);
+  }
+
+  /*
+  static bool is_vst(const struct SoundPluginType *type) {
+    return is_vst2(type) || is_vst3(type);
+  }
+  */
+  
+  /*
+  static bool is_vst(const SoundPlugin *plugin) {
+    return is_vst2(plugin) || is_vst3(plugin);
+  }
+  */
+  
+  /*
+  static bool is_vst2(AudioProcessor *processor){
+    return processor->wrapperType == AudioProcessor::wrapperType_VST;
+  }
+
+  static bool is_vst3(AudioProcessor *processor){
+    RError("This function doesnt work");
+    return processor->wrapperType == AudioProcessor::wrapperType_VST3;
+  }
+
+  static bool is_vst(AudioProcessor *processor){
+    return is_vst2(processor) || is_vst3(processor);
+  }
+  */
+  
+
   struct PluginWindow;
 
   struct Listener : public AudioProcessorListener {
@@ -110,16 +162,26 @@ namespace{
     
     // Receives a callback when a parameter is changed.
     void 	audioProcessorParameterChanged (AudioProcessor *processor, int parameterIndex, float newValue) override {
+      if (ATOMIC_GET(_plugin->has_initialized) && !ATOMIC_GET(_plugin->is_shutting_down)) {
+        bool same = false;
+        
+        if (is_au(_plugin)){
+          float old = processor->getParameter(parameterIndex); // JUCE sometimes calls this function for AU plugins even when the value hasn't changed
+          same = old==newValue;
+        }
+
 #if !defined(RELEASE)
-      printf("   JUCE listener: parm %d changed to %f\n",parameterIndex,newValue);
+        printf("   JUCE listener: Same: %d. parm %d changed to %f. has_inited: %d. is_shutting_down: %d\n",same,parameterIndex, newValue, ATOMIC_GET(_plugin->has_initialized), ATOMIC_GET(_plugin->is_shutting_down));
 #endif
-      if (_plugin->has_initialized)
-        PLUGIN_call_me_when_an_effect_value_has_changed(_plugin,
-                                                        parameterIndex,
-                                                        newValue, // native
-                                                        newValue, // scaled
-                                                        true // make undo
-                                                        );
+
+        if (!same)
+          PLUGIN_call_me_when_an_effect_value_has_changed(_plugin,
+                                                          parameterIndex,
+                                                          newValue, // native
+                                                          newValue, // scaled
+                                                          true // make undo
+                                                          );
+      }
     }
  
     // Called to indicate that something else in the plugin has changed, like its program, number of parameters, etc.
@@ -306,49 +368,6 @@ namespace{
     }
   };
 
-  static bool is_vst2(const struct SoundPluginType *type) {
-    return !strcmp(type->type_name, "VST");
-  }
-  
-  static bool is_vst2(const SoundPlugin *plugin) {
-    return is_vst2(plugin->type);
-  }
-
-  static bool is_vst3(const SoundPluginType *type){
-    return !strcmp(type->type_name, "VST3");
-  }
-
-  static bool is_vst3(const SoundPlugin *plugin) {
-    return is_vst3(plugin->type);
-  }
-
-  /*
-  static bool is_vst(const struct SoundPluginType *type) {
-    return is_vst2(type) || is_vst3(type);
-  }
-  */
-  
-  /*
-  static bool is_vst(const SoundPlugin *plugin) {
-    return is_vst2(plugin) || is_vst3(plugin);
-  }
-  */
-  
-  /*
-  static bool is_vst2(AudioProcessor *processor){
-    return processor->wrapperType == AudioProcessor::wrapperType_VST;
-  }
-
-  static bool is_vst3(AudioProcessor *processor){
-    RError("This function doesnt work");
-    return processor->wrapperType == AudioProcessor::wrapperType_VST3;
-  }
-
-  static bool is_vst(AudioProcessor *processor){
-    return is_vst2(processor) || is_vst3(processor);
-  }
-  */
-  
   struct Data{
     AudioPluginInstance *audio_instance;
 

@@ -552,7 +552,8 @@ typedef struct SoundPlugin{
   
   DEFINE_ATOMIC(bool, is_selected);
 
-  bool has_initialized;
+  DEFINE_ATOMIC(bool, has_initialized);
+  DEFINE_ATOMIC(bool, is_shutting_down);
   
 } SoundPlugin;
 
