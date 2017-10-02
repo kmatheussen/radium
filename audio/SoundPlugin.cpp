@@ -1136,9 +1136,10 @@ static boost::lockfree::queue<EffectUndoData, boost::lockfree::capacity<8000> > 
 
 void PLUGIN_call_me_very_often_from_main_thread(void){
 
-  static double last_time = -1;
+  // TODO: This isn't working very well. We don't save final value if the final value was set less than 1 second since last undo value was made (and that's the common situation)
+  
+  static QHash<int, double> last_time;
   static int64_t last_patch_id = -1;
-  static int64_t last_effect_num = -1;
 
   double curr_time = TIME_get_ms();
   //printf("curr_time: %f\n", curr_time/1000.0);
@@ -1147,7 +1148,7 @@ void PLUGIN_call_me_very_often_from_main_thread(void){
 
   while(g_effect_undo_data_buffer.pop(eud)==true){
     
-    if (eud.patch_id != last_patch_id || eud.effect_num != last_effect_num || curr_time > last_time+1000) {
+    if (eud.patch_id != last_patch_id || curr_time > last_time.value(eud.effect_num)+1000) {
 
       struct Patch *patch = PATCH_get_from_id(eud.patch_id);
 
@@ -1158,8 +1159,7 @@ void PLUGIN_call_me_very_often_from_main_thread(void){
       }
       
       last_patch_id = eud.patch_id;
-      last_effect_num = eud.effect_num;
-      last_time = curr_time;
+      last_time[eud.effect_num] = curr_time;
     }
     
   }
