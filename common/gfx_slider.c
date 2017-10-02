@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 void DrawSlider(
                 struct Tracker_Windows *window,
-                TBox *box,
+                const TBox *box,
                 float f_val,
                 float f_min,
                 float f_max,

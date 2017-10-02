@@ -38,7 +38,7 @@ void PIANOROLLHEADER_assignTrack(void *pianorollheader, int blocknum, int trackn
   widget->tracknum = tracknum;
 }
 
-void PIANOROLLHEADER_show(void *pianorollheader, int x, int y, int x2, int y2){
+void PIANOROLLHEADER_show(const struct WBlocks *wblock, void *pianorollheader, int x, int y, int x2, int y2){
   Pianorollheader *widget=static_cast<Pianorollheader*>(pianorollheader);
 
   //if (widget->parent()==NULL)
@@ -47,6 +47,13 @@ void PIANOROLLHEADER_show(void *pianorollheader, int x, int y, int x2, int y2){
   GL_lock();{
     widget->move(x,y);
     widget->resize(x2-x, y2-y);
+
+    if (x < wblock->t.x1){
+      int x1 = wblock->t.x1 - x;
+      int w = x2-x1;
+      widget->setMask(QRegion(x1, 0, w, widget->height()));
+    }else
+      widget->clearMask();
     
     //widget->move(0,widget->tracknum*20);
     //widget->resize(100,100);

@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "vector_proc.h"
 #include "gfx_wtrackheader_volpan_proc.h"
 #include "blts_proc.h"
+#include "wtracks_proc.h"
 #include "../audio/SoundPlugin.h"
 #include "../Qt/Qt_instruments_proc.h"
 #include "OS_visual_input.h"
@@ -33,7 +34,7 @@ extern char *NotesTexts3[];
 
 void DrawWTrackNames(
                      struct Tracker_Windows *window,
-                     struct WBlocks *wblock,
+                     const struct WBlocks *wblock,
                      int starttrack,
                      int endtrack
                      )
@@ -128,7 +129,7 @@ void DrawWTrackNames(
 
 static void DrawAllWTrackNames(
                                struct Tracker_Windows *window,
-                               struct WBlocks *wblock
+                               const struct WBlocks *wblock
                                )
 {  
   //int num_tracks = ListFindNumElements1(&wblock->wtracks->l);
@@ -136,9 +137,11 @@ static void DrawAllWTrackNames(
   //memset(draw_border, 0, sizeof(bool) * num_tracks);
 
   {
-    const struct WTracks *wtrack1 = (struct WTracks *)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
+    const struct WTracks *wtrack1 = get_leftmost_visible_wtrack(wblock);
     if (wtrack1==NULL)
       return;
+
+    const struct WTracks *rightmost_wtrack = get_rightmost_visible_wtrack(wblock, wtrack1);
     
     int tracknum1 = wtrack1->l.num;
     
@@ -156,6 +159,9 @@ static void DrawAllWTrackNames(
         tracknum1 = tracknum2 = tracknum2+1;
         channelnum1 = channelnum2;
         patch1 = wtrack2==NULL ? NULL : wtrack2->track->patch;
+
+        if (tracknum1 > rightmost_wtrack->l.num)
+          break;
       
       } else {
         tracknum2++;
@@ -176,20 +182,12 @@ static void DrawAllWTrackNames(
 
 static void DrawAllWTrackSliders(
                                  struct Tracker_Windows *window,
-                                 struct WBlocks *wblock
+                                 const struct WBlocks *wblock
                                  )
 {
-  struct WTracks *wtrack=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
-  
-  while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
-    if(wtrack->x >= wblock->a.x2){
-      break;
-    }
-    
+  ITERATE_VISIBLE_WTRACKS(wblock) {
     UpdatePanSlider(window,wblock,wtrack);
     UpdateVolumeSlider(window,wblock,wtrack);
-    
-    wtrack=NextWTrack(wtrack);
   }
 
   GFX_CancelMixColor(window); // in case track is not visible and the above filledbox call is not executed, the mixcolor will be set for the next paint operation instead. Bad stuff, caused by radium originally being written for amigaos, where painting outside the visible area would cause memory corruption (instead of being ignored). Unfortunately, the cliprect system was wrongly put into common/ instead of amiga/.
@@ -197,13 +195,11 @@ static void DrawAllWTrackSliders(
 
 static void DrawAllWTrackOnOffs(
                                 struct Tracker_Windows *window,
-                                struct WBlocks *wblock
+                                const struct WBlocks *wblock
                                 )
 {
 
-  struct WTracks *wtrack=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
-  
-  while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
+  ITERATE_VISIBLE_WTRACKS(wblock) {
 
 	if(wtrack->track->onoff==0){
 		GFX_T_Line(window,WAVEFORM_COLOR_NUM,
@@ -218,7 +214,6 @@ static void DrawAllWTrackOnOffs(
 		);
 	}
 
-        wtrack=NextWTrack(wtrack);
   }
 }
 
@@ -304,21 +299,23 @@ void UpdateAllPianoRollHeaders(
                                struct WBlocks *wblock
                                )
 {
-  struct WTracks *wtrack=wblock->wtracks;
+  const struct WTracks *wtrack=wblock->wtracks;
 
-  int tracknum = 0;
-  if (wtrack!=NULL)
-    R_ASSERT(tracknum==wtrack->l.num);
+  int last_tracknum = 0;
   
+  const struct WTracks *left_wtrack = get_leftmost_visible_wtrack(wblock);
+  const struct WTracks *right_wtrack = get_rightmost_visible_wtrack(wblock, left_wtrack);
+
   while(wtrack!=NULL) {
 
     void *pianorollheader = get_pianorollheader(wtrack->l.num, true);
     
-    if (wtrack->l.num < wblock->left_track || wtrack->l.num > wblock->right_track+1 ||  wtrack->pianoroll_area.x < wblock->t.x1) {
+    if (wtrack->l.num < left_wtrack->l.num || wtrack->l.num > right_wtrack->l.num+1 || wtrack->pianoroll_area.x2 <= wblock->t.x1) {
 
-      if (pianorollheader != NULL)
-        PIANOROLLHEADER_hide(pianorollheader);
-      
+      PIANOROLLHEADER_hide(pianorollheader);
+      //if(wtrack->l.num==0)
+      //  printf("Hiding header\n");
+
     } else {
 
       //struct Tracks *track = wtrack->track;
@@ -327,19 +324,22 @@ void UpdateAllPianoRollHeaders(
       int x2 = wtrack->panonoff.x1 - 1;
       int y1 = wtrack->panonoff.y1 + 1;
       int y2 = wtrack->volumeonoff.y2;
-      
+ 
+      //if(wtrack->l.num==0)
+      //  printf("Showing header\n");
+     
       PIANOROLLHEADER_assignTrack(pianorollheader, wblock->l.num, wtrack->l.num);
-      PIANOROLLHEADER_show(pianorollheader, x1, y1, x2, y2);
+      PIANOROLLHEADER_show(wblock, pianorollheader, x1, y1, x2, y2);
     }
     
     wtrack=NextWTrack(wtrack);
-    tracknum++;
+    last_tracknum++;
     if (wtrack!=NULL)
-      R_ASSERT(tracknum==wtrack->l.num);
+      R_ASSERT(last_tracknum==wtrack->l.num);
   }
 
-  // Make sure all pianoroll headers to the right of the rightmost track is hidden.
-  for(;;){
+  // Make sure all pianoroll headers to the right of the rightmost track is hidden. (leftovers from earlier, for instance when showing a different block with more tracks)
+  for(int tracknum = last_tracknum;;){
     void *pianorollheader = get_pianorollheader(tracknum, false);
     if (pianorollheader==NULL)
       break;
@@ -351,7 +351,7 @@ void UpdateAllPianoRollHeaders(
 
 void DrawAllWTrackHeaders(
                           struct Tracker_Windows *window,
-                          struct WBlocks *wblock
+                          const struct WBlocks *wblock
                           )
 {  
 #if 1

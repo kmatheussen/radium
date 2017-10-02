@@ -1,6 +1,6 @@
 void DrawSlider(
 	struct Tracker_Windows *window,
-	TBox *box,
+	const TBox *box,
 	float f_val,
 //	int val,
 	float f_min,

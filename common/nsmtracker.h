@@ -2056,10 +2056,12 @@ struct WBlocks{
 	struct WTracks *wtracks;
 	struct WTracks *wtrack;			/* Current track. Only referenced. */
 
-	NInt left_track;					/* The leftmost visible track. */
+  /*
+	NInt left_track;				
 	int left_subtrack;
-	NInt right_track;					/* The rightmost visible track. */
+	NInt right_track;				
 	int right_subtrack;
+*/
 
         //struct WTempos *wtempos;
 	double reltempomax;

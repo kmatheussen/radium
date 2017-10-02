@@ -24,14 +24,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC void UpdateVolumeSlider(
 	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
+	const struct WBlocks *wblock,
+	const struct WTracks *wtrack
 );
 
 extern LANGSPEC void UpdatePanSlider(
 	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
+	const struct WBlocks *wblock,
+	const struct WTracks *wtrack
 );
 
 #endif

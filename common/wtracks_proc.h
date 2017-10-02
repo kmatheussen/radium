@@ -124,4 +124,46 @@ extern LANGSPEC int WTRACK_getx2(
 
 extern LANGSPEC struct WTracks *WTRACK_get(struct WBlocks *wblock, int x);
 
+static inline const struct WTracks *get_leftmost_visible_wtrack(const struct WBlocks *wblock){
+  const struct WTracks *wtrack = wblock->wtracks;
+  while(wtrack!=NULL){
+    if (wtrack->x2 >= wblock->t.x1)
+      return wtrack;
+    wtrack = NextWTrack(wtrack);
+  }
+  
+  R_ASSERT(false);
+  return wblock->wtracks;
+}
+
+static inline const struct WTracks *get_rightmost_visible_wtrack(const struct WBlocks *wblock, const struct WTracks *a_wtrack_to_the_left_of){
+  const struct WTracks *wtrack = a_wtrack_to_the_left_of == NULL ? wblock->wtracks : a_wtrack_to_the_left_of;
+
+  while(wtrack!=NULL){
+    struct WTracks *next = NextWTrack(wtrack);
+    if (next==NULL)
+      return wtrack;
+
+    if (next->x >= wblock->t.x2)
+      return wtrack;
+
+    wtrack = next;
+  }
+  
+  R_ASSERT(false);
+  return wblock->wtracks;
+}
+
+// might return NULL
+static inline const struct WTracks *get_first_not_visible_wtrack(const struct WBlocks *wblock, const struct WTracks *a_wtrack_to_the_left_of){
+  const struct WTracks *wtrack = get_rightmost_visible_wtrack(wblock, a_wtrack_to_the_left_of);
+  return NextWTrack(wtrack);
+}
+
+#define ITERATE_VISIBLE_WTRACKS(wblock) \
+  const struct WTracks *wtrack = get_leftmost_visible_wtrack(wblock);   \
+  const struct WTracks *_____end_wtrack = get_first_not_visible_wtrack(wblock, wtrack); \
+  for( ; wtrack != _____end_wtrack ; wtrack = NextWTrack(wtrack))
+
+
 #endif

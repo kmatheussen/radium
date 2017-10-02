@@ -463,7 +463,8 @@ static void create_background_realline(const struct Tracker_Windows *window, con
       first_beat_opacity = SETTINGS_read_int32("first_beat_opacity", 870);
     
 
-    struct WTracks *wtrack=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
+    const struct WTracks *wtrack = get_leftmost_visible_wtrack(wblock);
+    const struct WTracks *end_wtrack = get_first_not_visible_wtrack(wblock, wtrack);
     
     {
       GE_Context *c = GE_z(shade_realline(GE_get_rgb(c15), false, wsignature, localzoom), GE_Conf(Z_BACKGROUND | Z_STATIC_X, y1));
@@ -476,8 +477,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
 
     if (g_colored_tracks) {
       
-      struct WTracks *wtrack=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
-      while(wtrack!=NULL && wtrack->l.num<=wblock->right_track){
+      while(wtrack != end_wtrack){
 
         int x1 = R_MAX(wtrack->x - 1, wblock->t.x1);
         int x2 = wtrack->x2;
@@ -1191,7 +1191,7 @@ void create_block_borders(
 /************************************
    tracks
  ************************************/
-void create_track_borders(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int left_subtrack){
+void create_track_borders(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
   int y1=get_realline_y1(window, 0);
   int y2=get_realline_y2(window, wblock->num_reallines-1);
   
@@ -1201,7 +1201,7 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
                        y2,
                        USE_SCISSORS);
 
-  if(left_subtrack==-1 && wtrack->notesonoff==1)
+  if(wtrack->notesonoff==1)
     create_single_border(
                          wtrack->notearea.x2+1,
                          y1,
@@ -1258,7 +1258,7 @@ void create_track_borders(const struct Tracker_Windows *window, const struct WBl
 
   }
   
-  for(int lokke=R_MAX(1, R_MAX(first_polyphony_subtrack, left_subtrack)) ; lokke < num_subtracks ; lokke++){
+  for(int lokke=R_MAX(1, first_polyphony_subtrack) ; lokke < num_subtracks ; lokke++){
     create_single_border(
                          GetXSubTrack1(wtrack,lokke)-1,
                          y1,
@@ -2472,8 +2472,8 @@ static void create_track_fxtext(const struct Tracker_Windows *window, const stru
   create_track_fxtext2(window, wblock, wtrack, realline, vt.fx->color, column, v1, v2, v3);
 }
 
-static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, int left_subtrack){
-  create_track_borders(window, wblock, wtrack, left_subtrack);
+static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack){
+  create_track_borders(window, wblock, wtrack);
 
   SetNotePolyphonyAttributes(wtrack->track);
 
@@ -2481,19 +2481,17 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   {  
     const struct Notes *note=wtrack->track->notes;
     while(note != NULL){
-      if(NOTE_subtrack(wtrack, note) >= left_subtrack) {        
-        if (left_subtrack==-1 && wtrack->notesonoff==1)
-          create_pitches(window, wblock, wtrack, note);
-        create_track_velocities(window, wblock, wtrack, note);
-      }
+      if (wtrack->notesonoff==1)
+        create_pitches(window, wblock, wtrack, note);
+      create_track_velocities(window, wblock, wtrack, note);
       note = NextNote(note);
     }
   }
 
   // note/pitch names / cents
-  if( (left_subtrack==-1 && wtrack->notesonoff==1) || wtrack->centtext_on) {
+  if( (wtrack->notesonoff==1) || wtrack->centtext_on) {
 
-    bool show_notes = (left_subtrack==-1 && wtrack->notesonoff==1);
+    bool show_notes = wtrack->notesonoff==1;
     
     const Trss &trss = TRSS_get(wblock, wtrack);
 
@@ -2536,11 +2534,9 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   }
   
   // fxs
-  if(left_subtrack<=0){
-    VECTOR_FOR_EACH(const struct FXs *, fxs, &wtrack->track->fxs){
-      create_track_fxs(window, wblock, wtrack, fxs);
-    }END_VECTOR_FOR_EACH;
-  }
+  VECTOR_FOR_EACH(const struct FXs *, fxs, &wtrack->track->fxs){
+    create_track_fxs(window, wblock, wtrack, fxs);
+  }END_VECTOR_FOR_EACH;
 
   // stop lines
   create_track_stops(window, wblock, wtrack);
@@ -2555,14 +2551,8 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
 
 
 static void create_tracks(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  struct WTracks *wtrack=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,wblock->left_track);
-
-  while(wtrack!=NULL && wtrack->x <= wblock->a.x2){// && wtrack->l.num<=wblock->right_track){ <- Using right_track isn't quite correct since piano-roll is to the left of the cursor.
-    //printf("drawing track %d\n", wtrack->l.num);
-    int left_subtrack = wtrack->l.num==wblock->left_track ? wblock->left_subtrack : -1;
-    create_track(window, wblock, wtrack, left_subtrack);
-    wtrack=NextWTrack(wtrack);
-  }
+  ITERATE_VISIBLE_WTRACKS(wblock)
+    create_track(window, wblock, const_cast<struct WTracks*>(wtrack));
 }
 
 static void create_range(const struct Tracker_Windows *window, const struct WBlocks *wblock){
@@ -2864,16 +2854,8 @@ void GL_create_all(const struct Tracker_Windows *window){
   
   while(wblock!=NULL){
     if (wblock != window->wblock){
-      int org_left_track = wblock->left_track;
-      int org_right_track = wblock->right_track;
-      wblock->left_track = 0;
-      wblock->right_track = wblock->block->num_tracks-1;
-      
       GL_create2(window, wblock);
       GE_wait_until_block_is_rendered();
-
-      wblock->left_track = org_left_track;
-      wblock->right_track = org_right_track;
     }
     wblock = NextWBlock(wblock);
   }

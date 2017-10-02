@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "visual_proc.h"
 #include "blts_proc.h"
 
-#include "gfx_wtrackheader_volume_proc.h"
+#include "gfx_wtrackheader_volpan_proc.h"
 
 
 static void DrawOnOffBox(
@@ -66,8 +66,8 @@ static void DrawOnOffBox(
 
 void UpdateVolumeSlider(
 	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
+	const struct WBlocks *wblock,
+	const struct WTracks *wtrack
 ){
 
 	DrawSlider(
@@ -85,8 +85,8 @@ void UpdateVolumeSlider(
 
 void UpdatePanSlider(
 	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
+	const struct WBlocks *wblock,
+	const struct WTracks *wtrack
 ){
 
 	DrawSlider(

@@ -533,8 +533,8 @@ void InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
              polyphonic
              );
 
-  if(wtrack->l.num==wblock->right_track && polyphonic)
-    UpdateAllWTracksCoordinates(window,wblock);
+  //if(wtrack->l.num==wblock->right_track && polyphonic)
+  //  UpdateAllWTracksCoordinates(window,wblock);
 
   if (!polyphonic)
     maybe_scroll_down(window);

@@ -197,7 +197,7 @@ int WTRACKS_getWidth(const struct Tracker_Windows *window,
   while(true){
     struct WTracks *next = NextWTrack(wtrack);
     if (next==NULL)
-      return wtrack->x2 - wblock->skew_x - wblock->t.x1 - 2; // "- 2" is here to make Ctrl + M work fully.
+      return wtrack->x2 - wblock->skew_x - wblock->t.x1;
     wtrack = next;
   }
 
@@ -346,8 +346,8 @@ void UpdateAllWTracksCoordinates(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
-	int leftX=0;
-	int right_subtrack;
+  //int leftX=0;
+	//int right_subtrack;
 	struct WTracks *wtrack=wblock->wtracks;
 
 	if(wtrack==NULL) return;
@@ -359,7 +359,7 @@ void UpdateAllWTracksCoordinates(
 	  wtrack=NextWTrack(wtrack);
 	}
 
-	leftX = wblock->t.x1;
+	//leftX = wblock->t.x1;
 
 	wtrack=wblock->wtracks;
         /*
@@ -375,11 +375,13 @@ void UpdateAllWTracksCoordinates(
           GFX_SetMinimumWindowWidth(window, left_wtrack->x2);
         }
 
+        /*
         // TODO: Fix with the new subtrack system
 	if(wblock->left_subtrack>=0){
 	  leftX -= (wtrack->fxwidth*wblock->left_subtrack/wtrack->track->polyphony)
                  + (wblock->left_subtrack>0 ? 1 : 0);
 	}
+        */
 
 	//UpdateWTrackCoordinates(window,wblock,wblock->wtracks,leftX);
         UpdateWTrackCoordinates(window,wblock,wtrack,wblock->skew_x + wblock->t.x1);//wblock->t.x1);
@@ -403,6 +405,7 @@ void UpdateAllWTracksCoordinates(
 	UpdateWTrackCoordinates(window,wblock,wtrack,leftX);
 #endif
 
+        /*
 	wtrack=wblock->wtracks;
 
 	while(wtrack!=NULL){
@@ -424,10 +427,11 @@ void UpdateAllWTracksCoordinates(
 			break;
 		}
 	}
+        */
 
 	//	wblock->t.x2=GetXSubTrack_B1(wblock,wblock->right_track,wblock->right_subtrack);
- exit:
-        return;
+        // exit:
+        //return;
 }
 
 
@@ -539,19 +543,11 @@ void MinimizeTrack_CurrPos(
 
 
 static bool WTRACK_allinside(struct Tracker_Windows *window, struct WBlocks *wblock){
-	struct WTracks *rightwtrack;
-
-	if(wblock->block->num_tracks-1 > wblock->right_track){
-		return false;
-	}
-
-	if(wblock->right_track==wblock->block->num_tracks-1){
-		rightwtrack=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,wblock->right_track);
-		if(rightwtrack->x2>wblock->a.x2){
-			return false;
-		}
-	}
-	return true;
+  struct WTracks *last = ListLast1(&wblock->wtracks->l);
+  if (last->x2 <= wblock->t.x2)
+    return true;
+  else
+    return false;
 }
 
 
@@ -665,7 +661,7 @@ update:
 	}
 	*/
 
-#if 1
+#if 0
         // small adjustment.
         {
           struct WTracks *rightwtrack = (struct WTracks *)ListFindElement1(&wblock->wtracks->l, wblock->right_track);

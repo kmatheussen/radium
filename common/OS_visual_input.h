@@ -163,5 +163,5 @@ extern LANGSPEC void TOOLS_open(void);
 
 extern LANGSPEC void *PIANOROLLHEADER_create(void);
 extern LANGSPEC void PIANOROLLHEADER_assignTrack(void *pianorollheader, int blocknum, int tracknum);
-extern LANGSPEC void PIANOROLLHEADER_show(void *pianorollheader, int x, int y, int x2, int y2);
+extern LANGSPEC void PIANOROLLHEADER_show(const struct WBlocks *wblock, void *pianorollheader, int x, int y, int x2, int y2);
 extern LANGSPEC void PIANOROLLHEADER_hide(void *pianorollheader);

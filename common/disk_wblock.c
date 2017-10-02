@@ -229,7 +229,7 @@ if(wblock==NULL) return;
         
 	wblock->wtrack=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,window->curr_track);
 
-	wblock->left_subtrack=-1;
+	//wblock->left_subtrack=-1;
 
 	DLoadWTracks(newroot,window,wblock,wblock->wtrack, true);
 

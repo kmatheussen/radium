@@ -64,10 +64,10 @@ static bool nextTrackHasSwingtext(struct WTracks *wtrack){
 
 int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 	struct WTracks *wtrack=wblock->wtrack;
-	struct WTracks *leftwtrack;
-	struct WTracks *rightwtrack;
+	//struct WTracks *leftwtrack;
+	//struct WTracks *rightwtrack;
 	int update=0;
-	int x2;
+	//int x2;
         
 	if(window->curr_track>=0){
 
@@ -98,6 +98,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 			}
 		}
 
+                /*
 		while(
 			window->curr_track>wblock->right_track
 			||
@@ -131,6 +132,8 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 			UpdateAllWTracksCoordinates(window,wblock);
 			update=1;
 		}
+                */
+                /*
 		for(;;){
 		  rightwtrack=ListFindElement1(&wblock->wtracks->l,window->curr_track);
                   int num_subtracks = GetNumSubtracks(rightwtrack);
@@ -154,7 +157,8 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 		  }else{
 		    break;
 		  }
-		}
+                }
+                */
 
         } else if (window->curr_track==TEMPOTRACK && window->curr_othertrack_sub<3) {
 
@@ -231,7 +235,7 @@ static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *windo
     ATOMIC_WRITE(window->curr_track, TEMPONODETRACK);
   
   else {
-    ATOMIC_WRITE(window->curr_track, window->wblock->left_track);
+    ATOMIC_WRITE(window->curr_track, get_leftmost_visible_wtrack(window->wblock)->l.num);
     window->curr_track_sub = -1;
   }
 }
@@ -288,7 +292,7 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
                   window->curr_track_sub=num_subtracks-1;
                 }
 
-
+                /*
 		if(
 			window->curr_track<wblock->left_track ||
 			(window->curr_track==wblock->left_track && window->curr_track_sub<wblock->left_subtrack)
@@ -303,6 +307,8 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
                         printf("   left_track: %d, left_subtrack: %d, curr_track: %d\n",wblock->left_track, wblock->left_subtrack,window->curr_track);
 			return 1;
 		}
+                */
+                return 1;
 
         } else if (window->curr_track==TEMPOTRACK && window->curr_othertrack_sub>0) {
           

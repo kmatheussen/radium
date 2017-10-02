@@ -383,7 +383,7 @@ void NewWBlock(
 	//wblock->zoomlinearea.width = 0;
 	UpdateWBlockWidths(window,wblock);
 
-	wblock->left_subtrack= -1;
+	//wblock->left_subtrack= -1;
 
 	wblock->reltempomax=2.0;
 
