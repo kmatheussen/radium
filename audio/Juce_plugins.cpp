@@ -100,6 +100,7 @@ static int RT_get_latency(struct SoundPlugin *plugin);
 
 namespace{
 
+  /*
   static bool is_au(const struct SoundPluginType *type) {
     return !strcmp(type->type_name, "AU");
   }
@@ -107,7 +108,8 @@ namespace{
   static bool is_au(const struct SoundPlugin *plugin) {
     return is_au(plugin->type);
   }
-  
+  */
+
   static bool is_vst2(const struct SoundPluginType *type) {
     return !strcmp(type->type_name, "VST");
   }
@@ -162,26 +164,18 @@ namespace{
     
     // Receives a callback when a parameter is changed.
     void 	audioProcessorParameterChanged (AudioProcessor *processor, int parameterIndex, float newValue) override {
-      if (ATOMIC_GET(_plugin->has_initialized) && !ATOMIC_GET(_plugin->is_shutting_down)) {
-        bool same = false;
-        
-        if (is_au(_plugin)){
-          float old = processor->getParameter(parameterIndex); // JUCE sometimes calls this function for AU plugins even when the value hasn't changed
-          same = old==newValue;
-        }
 
 #if !defined(RELEASE)
-        printf("   JUCE listener: Same: %d. parm %d changed to %f. has_inited: %d. is_shutting_down: %d\n",same,parameterIndex, newValue, ATOMIC_GET(_plugin->has_initialized), ATOMIC_GET(_plugin->is_shutting_down));
+        printf("   JUCE listener: parm %d changed to %f. has_inited: %d. is_shutting_down: %d\n",parameterIndex, newValue, ATOMIC_GET(_plugin->has_initialized), ATOMIC_GET(_plugin->is_shutting_down));
 #endif
 
-        if (!same)
-          PLUGIN_call_me_when_an_effect_value_has_changed(_plugin,
-                                                          parameterIndex,
-                                                          newValue, // native
-                                                          newValue, // scaled
-                                                          true // make undo
-                                                          );
-      }
+      if (ATOMIC_GET(_plugin->has_initialized) && !ATOMIC_GET(_plugin->is_shutting_down))
+        PLUGIN_call_me_when_an_effect_value_has_changed(_plugin,
+                                                        parameterIndex,
+                                                        newValue, // native
+                                                        newValue, // scaled
+                                                        true // make undo
+                                                        );
     }
  
     // Called to indicate that something else in the plugin has changed, like its program, number of parameters, etc.

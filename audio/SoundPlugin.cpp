@@ -1136,32 +1136,46 @@ static boost::lockfree::queue<EffectUndoData, boost::lockfree::capacity<8000> > 
 
 void PLUGIN_call_me_very_often_from_main_thread(void){
 
-  // TODO: This isn't working very well. We don't save final value if the final value was set less than 1 second since last undo value was made (and that's the common situation)
-  
-  static QHash<int, double> last_time;
+  static double last_time;
   static int64_t last_patch_id = -1;
+
+  if (g_effect_undo_data_buffer.empty())
+    return;
 
   double curr_time = TIME_get_ms();
   //printf("curr_time: %f\n", curr_time/1000.0);
   
-  EffectUndoData eud;
+  bool is_old = curr_time > last_time+1000;
+  bool patch_has_changed = false;
 
-  while(g_effect_undo_data_buffer.pop(eud)==true){
-    
-    if (eud.patch_id != last_patch_id || curr_time > last_time.value(eud.effect_num)+1000) {
+  QVector<EffectUndoData> euds;
 
-      struct Patch *patch = PATCH_get_from_id(eud.patch_id);
-
-      if (patch != NULL) {
-      
-        ADD_UNDO(AudioEffect_CurrPos2(patch, eud.effect_num, eud.effect_value));
-
-      }
-      
-      last_patch_id = eud.patch_id;
-      last_time[eud.effect_num] = curr_time;
+  {
+    EffectUndoData eud;
+    while(g_effect_undo_data_buffer.pop(eud)==true){
+      patch_has_changed = patch_has_changed || eud.patch_id != last_patch_id;
+      euds.push_back(eud);
     }
-    
+  }
+
+  if (is_old || patch_has_changed){
+    radium::ScopedUndo scoped_undo;
+
+    for(auto &eud : euds){
+      
+      struct Patch *patch = PATCH_get_from_id(eud.patch_id);
+        
+      if (patch != NULL) {
+          
+        ADD_UNDO(AudioEffect_CurrPos2(patch, eud.effect_num, eud.effect_value));
+          
+      }
+        
+      last_patch_id = eud.patch_id;
+    }
+
+    last_time = curr_time;
+
   }
 }
 
@@ -1199,18 +1213,21 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
       MIDI_add_automation_recording_event(plugin, effect_num, scaled_value);
     
     if (make_undo) {
-      volatile struct Patch *patch = plugin->patch;
-      if (patch != NULL){
-        EffectUndoData eud;
-        eud.patch_id = patch->id;
-        //eud.undo_generation = ...;
-        eud.effect_num = effect_num;
-        eud.effect_value = safe_float_read(&plugin->stored_effect_values_native[effect_num]);
-        
-        if (!g_effect_undo_data_buffer.bounded_push(eud)){
+      float old_native_value = safe_float_read(&plugin->stored_effect_values_native[effect_num]);
+      if (old_native_value != native_value) {
+        volatile struct Patch *patch = plugin->patch;
+        if (patch != NULL){
+          EffectUndoData eud;
+          eud.patch_id = patch->id;
+          //eud.undo_generation = ...;
+          eud.effect_num = effect_num;
+          eud.effect_value = old_native_value;
+          
+          if (!g_effect_undo_data_buffer.bounded_push(eud)){
 #if !defined(RELEASE)
-          RT_message("g_effect_undo_data buffer full\n");
+            RT_message("g_effect_undo_data buffer full\n");
 #endif
+          }
         }
       }
     }
