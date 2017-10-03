@@ -1726,7 +1726,7 @@ for .emacs:
   :please-stop-me #f)
 
 (define (coroutine-alive? coroutine)
-  ;;(c-display "coroutine:" coroutine (coroutine :is-scheduled))
+  ;;(c-display "coroutine:" coroutine (coroutine :is-scheduled) (coroutine :is-running))
   (or (coroutine :is-scheduled)
       (coroutine :is-running)))
 

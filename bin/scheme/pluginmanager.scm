@@ -421,7 +421,7 @@
               *pmg-populate-buttons*)
     (finished-callback)
     #f)
-  
+
   (pmg-stop-search!)
 
   (update-progress entries)
@@ -504,7 +504,10 @@
 
   (define (finished-callback)
     (if search-finished-callback
-        (search-finished-callback)))
+        (<ra> :schedule 0 ;; To avoid starting the search coroutine from the search coroutine.
+              (lambda ()
+                (search-finished-callback)
+                #f))))
   
   (set! search-string (string-upcase search-string))
 

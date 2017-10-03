@@ -714,7 +714,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
 
     void hideEvent(QHideEvent *event){
-      printf("  Hide event 1.\n");
+      //printf("  Hide event 1.\n");
       if(_widget->isWindow() && _widget->window()!=g_main_window->window()){
         if (_take_keyboard_focus==true){
           printf("  Hide event 2. Is Active: %d. Classname: %s. Widget: %p. Window: %p\n", _widget->isActiveWindow(), _class_name.toUtf8().constData(),_widget.data(),_widget->window());
