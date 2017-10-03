@@ -2059,7 +2059,7 @@ void setKeybinding(const_char* keyname, dyn_t qualifiers, const_char* funcname, 
 void setKeybinding(const_char* keybinding, const_char* funcname, dyn_t arguments){
 
   if (arguments.type != ARRAY_TYPE){
-    handleError("setKeybinding: Expected for argument \"arguments\". Found %s", DYN_type_name(arguments.type));
+    handleError("setKeybinding: Expected array for argument \"arguments\". Found %s", DYN_type_name(arguments.type));
     return;
   }
 

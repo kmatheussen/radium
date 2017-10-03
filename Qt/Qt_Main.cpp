@@ -2080,6 +2080,8 @@ static void setCursor(int64_t guinum, const QCursor &cursor){
   R_ASSERT_RETURN_IF_FALSE(guinum>=0);
   
   QWidget *widget = API_gui_get_widget(guinum);
+  if (widget==NULL)
+    return;
 
   R_ASSERT(!widget->isWindow()); // Can have this assertion since we currently have no such calls. If it happens, it will cause the mouse cursor to be stuck in this mode.
     

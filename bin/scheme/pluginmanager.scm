@@ -7,7 +7,7 @@
   (when (not *pmg-has-keyboard-focus*)
     (<ra> :obtain-keyboard-focus *pmg-search-text-field*) ;; hack. (all of this is just fallback code in case something goes wrong)
     (set! *pmg-has-keyboard-focus* #f))
-  (<gui> :set-static-toplevel-widget *pluginmanager-gui* #f)
+  ;;(<gui> :set-static-toplevel-widget *pluginmanager-gui* #f)
   (if *message-gui*
       (<gui> :set-parent *message-gui* -1)) ;; Change parent of message gui. Don't want to delete it. (Note that we are in DEV mode here. This code should never be run by user.) TODO: We could perhaps, somehow, do this automatically in the setStaticToplevelWidget function. We would probably have less semi-weird crashes during development then.
   (<gui> :close *pluginmanager-gui*))
@@ -16,7 +16,9 @@
 
 (define *pluginmanager-gui* (<gui> :ui "pluginmanager.ui")) ;; Must use relative path. Haven't gotten absolute paths to work in windows when using char* instead of wchar_t*. And s7 uses char*.
 ;;(<gui> :ui (<ra> :append-paths (<ra> :get-program-path) "pluginmanager.ui"))
-(<gui> :set-static-toplevel-widget *pluginmanager-gui* #t)
+
+;; Not sure about this. It's hidden and shown and not very static.
+;;(<gui> :set-static-toplevel-widget *pluginmanager-gui* #t)
 
 (<gui> :set-modal *pluginmanager-gui* #t)
 (let ((width (floor (* 3 (<gui> :text-width "Usage  Name  Type    Category    Creator        Path              Inputs Outputs")))))

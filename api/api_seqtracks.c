@@ -541,6 +541,10 @@ int addSeqtemponode(double abstime, double value, int logtype){
   return ret;
 }
 void deleteSeqtemponode(int nodenum){
+  if (nodenum < -1 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
+    handleError("There is no tempo node #%d", nodenum);
+    return;
+  }
   return TEMPOAUTOMATION_delete_node(nodenum);
 }
 void setCurrSeqtemponode(int nodenum){

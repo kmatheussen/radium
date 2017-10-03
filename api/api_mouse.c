@@ -2275,6 +2275,11 @@ int addPitchnum(float value, Place place, int tracknum, int blocknum, int window
 }
 
 int addPitchnumF(float value, float floatplace, int tracknum, int blocknum, int windownum){
+  if (floatplace < 0){
+    handleError("Place can not be negative: %f", floatplace);
+    return -1;
+  }
+
   Place place;
   Float2Placement(floatplace, &place);
   return addPitchnum(value, place, tracknum, blocknum, windownum);
@@ -2559,6 +2564,11 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
 }
 
 int addFxF(float value, float floatplace, const char* fx_name, int tracknum, int64_t instrument_id, int blocknum, int windownum){
+  if (floatplace < 0){
+    handleError("Place can not be negative: %f", floatplace);
+    return -1;
+  }
+
   Place place;
   Float2Placement(floatplace, &place);
 
@@ -2806,6 +2816,11 @@ int addFxnode(float value, Place place, int fxnum, int tracknum, int blocknum, i
 }
 
 int addFxnodeF(float value, float floatplace, int fxnum, int tracknum, int blocknum, int windownum){
+  if (floatplace < 0){
+    handleError("Place can not be negative: %f", floatplace);
+    return -1;
+  }
+
   Place place;
   Float2Placement(floatplace, &place);
 
