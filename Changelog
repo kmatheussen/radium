@@ -1,3 +1,27 @@
+Changes 5.1.4 -> 5.1.5:
+* Audio: Fix adding undo entries when parameters are changed in the
+  native GUI of a plugin. Sometimes a lot more than 1 undo entry
+  was added per second. (This functionality is still not working
+  perfectly though.)
+* OSX: Workaround for a bug in a 3rd party library that caused lots
+  of undo entries to be made when when creating and deleting
+  AU plugins in certain situations.
+* OSX: Fix a bug the in keyboard handler that sometimes made Radium
+  crash. Seems to be related to using non-latin keyboard.
+  (More info: https://tinyurl.com/ydaz9os9)
+* Audio: Ask "Are you sure?" when trying to load a Moody Sampler 5.0
+  VST plugin instance. This plugin crashes when it is deleted.
+* Audio: Don't crash some VST plugins when undoing a deletion.
+* Editor: Make the horizontal track slider more conventional.
+* Build: Include initial LLVM 5.0.0 support from Faust2 (Teteros)
+* API:
+  * New functions: getTrackSliderScrollerX1, getTrackSliderScrollerY1,
+    getTrackSliderScrollerX2, getTrackSliderScrollerY2,
+    setTrackSliderIsMoving, getTrackSliderPos, setTrackSliderPos.
+  * Renamed setScrollbarIsMoving to setEditorScrollbarIsMoving.
+
+
+
 Changes 5.1.3 -> 5.1.4:
 * Edit: Fix operations on track when cursor is placed to the left
   of the first track.
