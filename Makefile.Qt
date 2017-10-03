@@ -399,7 +399,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 BUILD_DEPENDENCIES = $(API)radium_proc.h buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
-PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/X11_Qtstuff.py bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
+PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/X11_Qtstuff.py bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so bin/scheme/api_protos.scm
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 all:
@@ -2287,6 +2287,9 @@ radium_s7_wrap.o: api/radium_s7_wrap.c $(API)radium_proc.h
 
 api/radium_s7_wrap.c: bin/protoconfparser.py api/protos.conf
 	cd api && $(PYTHONEXE) ../bin/protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c
+
+bin/scheme/api_protos.scm: bin/protos.conf bin/protoconfparser.py 
+	cd bin/scheme && $(PYTHONEXE) ../protoconfparser.py api_protos.scm >api_protos.scm
 
 #bin/zita_rev_ladspa.so: audio/zita_rev.dsp
 #	cd audio && $(FAUST) -a ladspa.cpp -cn zita_rev_radium zita_rev.dsp >zita_rev_ladspa.cpp

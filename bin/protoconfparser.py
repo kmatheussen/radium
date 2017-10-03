@@ -630,7 +630,15 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         description       = "("+scheme_funcname+" "+self.get_arg_list(self.args," ")+")"
 
         oh.write('  s7_define_function(s7, "'+scheme_funcname+'", '+c_funcname+", "+str(num_required_args)+", "+str(num_optional_args)+", "+has_rest_arg+', "'+description+'");\n')
-        
+
+    def write_scheme_proto(self, oh):
+        oh.write("  (")
+        oh.write(self.proc.type_string + " ")
+        oh.write(self.proc.get_scheme_varname() + " ")
+        for var in self.args:
+            oh.write("(" + var.type_string + " " + var.varname + " " + var.default + ") ")
+        oh.write(")\n")
+
     def getUnfoldedCall(self,arguments):
         arglen=len(arguments)
         if arglen>self.arglen:
@@ -708,6 +716,10 @@ class Protos:
     def write_s7_defines(self,oh):
         for proto in self.protos:
             proto.write_s7_define(oh)
+
+    def write_scheme_protos(self,oh):
+        for proto in self.protos:
+            proto.write_scheme_proto(oh)
 
     def getProto(self, command): 
         for lokke in range(len(self.protos)):
@@ -826,6 +838,13 @@ class Read:
         self.protos.write_s7_defines(oh)
         oh.write("}\n")
 
+    def makeRadium_scheme_protos(self):
+        oh=sys.stdout
+        oh.write("(provide 'api_protos.scm)\n")
+        oh.write("(define ra:api-protos '(\n")
+        self.protos.write_scheme_protos(oh)
+        oh.write("))\n")
+
     def getUnfoldedCall(self,command,arguments):        
         return self.protos.getUnfoldedCall(command,arguments)
         
@@ -841,4 +860,6 @@ if __name__=="__main__":
         re.makeRadium_wrap_c()
     if sys.argv[1]=="radium_s7_wrap.c":
         re.makeRadium_s7_wrap_c()
+    if sys.argv[1]=="api_protos.scm":
+        re.makeRadium_scheme_protos()
 
