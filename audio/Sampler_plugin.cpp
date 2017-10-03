@@ -1496,7 +1496,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       if (!can_crossfade(data)){
         
         //printf("Doing it %p\n",plugin->patch);
-        PLUGIN_set_effect_value(plugin, time, EFF_CROSSFADE_LENGTH, 0, STORE_VALUE, when, EFFECT_FORMAT_NATIVE);
+        PLUGIN_set_effect_value(plugin, time, EFF_CROSSFADE_LENGTH, 0, THREADING_is_main_thread() ? STORE_VALUE : DONT_STORE_VALUE, when, EFFECT_FORMAT_NATIVE);
         
         if (plugin->patch != NULL)
           GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
@@ -1508,7 +1508,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       ATOMIC_SET(data->p.pingpong, value>=0.5f);
       if (!can_crossfade(data)){
 
-        PLUGIN_set_effect_value(plugin, time, EFF_CROSSFADE_LENGTH, 0, STORE_VALUE, when, EFFECT_FORMAT_NATIVE);
+        PLUGIN_set_effect_value(plugin, time, EFF_CROSSFADE_LENGTH, 0, THREADING_is_main_thread() ? STORE_VALUE : DONT_STORE_VALUE, when, EFFECT_FORMAT_NATIVE);
         
         if (plugin->patch != NULL)
           GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
