@@ -104,7 +104,7 @@ QDialog *FAUST_create_qdialog(void){
 
 void FAUST_change_qtguistyle(const char *style_name){
 
-  QString filename = "packages/faust2/architecture/faust/gui/Styles/" + QString(getFaustGuiStyle()) + ".qs";
+  QString filename = "packages/faust2/architecture/faust/gui/Styles/" + QString(getFaustGuiStyle()) + ".qss";
   if (!OS_has_full_program_file_path(filename)){
     GFX_Message2(NULL, true, "File not found (%s)", filename.toUtf8().constData());
     return;
