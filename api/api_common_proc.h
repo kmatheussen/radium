@@ -51,11 +51,11 @@ static inline void *VECTOR_get2(const vector_t *v, int num, const char *type){
 }
 
 static inline bool validate_place(const Place place){
-  if (place.line < 0 || place.counter >= place.dividor || place.dividor >= MAX_UINT32){
+  if (place.line < 0 || place.counter >= place.dividor || place.dividor > MAX_UINT32){
     handleError("Place %d + %d/%d is not valid", place.line, place.counter, place.dividor);
     return false;
   }
-
+  
   return true;
 }
 #endif
