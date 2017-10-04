@@ -91,11 +91,13 @@ static void request_load_preset_filename_from_requester(int64_t parentgui, func_
 
   QString filename;
 
+  QWidget *parentWidget = API_gui_get_parentwidget(NULL, parentgui);
+  
   {
     radium::ScopedExec scopedExec(true);
 
     filename = QFileDialog::getOpenFileName(
-                                            API_gui_get_parentwidget(NULL, parentgui),
+                                            parentWidget,
                                             "Load Effect configuration",
                                             g_last_preset_path,
 #if FOR_WINDOWS
@@ -366,13 +368,15 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
   bool is_multipreset = patches->num_elements > 1;
 
   QString filename;
+
+  QWidget *parentWidget = API_gui_get_parentwidget(NULL, parentgui);
   
   {
 
     radium::ScopedExec scopedExec(true);
         
     filename = QFileDialog::getSaveFileName(
-                                            API_gui_get_parentwidget(NULL, parentgui),
+                                            parentWidget,
                                             "Save Effect configuration",
                                             g_last_preset_path,
 #if FOR_WINDOWS

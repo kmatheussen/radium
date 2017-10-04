@@ -104,7 +104,13 @@ QDialog *FAUST_create_qdialog(void){
 
 void FAUST_change_qtguistyle(const char *style_name){
 
-  QString filename = OS_get_full_program_file_path("packages/faust2/architecture/faust/gui/Styles/" + QString(getFaustGuiStyle()) + ".qss");
+  QString filename = "packages/faust2/architecture/faust/gui/Styles/" + QString(getFaustGuiStyle()) + ".qs";
+  if (!OS_has_full_program_file_path(filename)){
+    GFX_Message2(NULL, true, "File not found (%s)", filename.toUtf8().constData());
+    return;
+  }
+                                
+  filename = OS_get_full_program_file_path(filename);
   disk_t *disk = DISK_open_for_reading(filename);
   if (disk==NULL){
       

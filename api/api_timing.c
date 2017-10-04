@@ -472,9 +472,11 @@ void deleteTemponode(int num, int blocknum){
 int addTemponode(float value, Place place, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL)
+  if (wblock==NULL){
     handleError("addTemponode: No block %d in window %d",blocknum,windownum);
-
+    return -1;
+  }
+  
   struct Blocks *block = wblock->block;
   
   if (place.line < 0)

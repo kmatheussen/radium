@@ -74,6 +74,14 @@
                                  ra:add-menu-separator
 
                                  ra:get-conf-path
+
+                                 ra:set-modal-windows
+                                 
+                                 ra:gui_set-parent ;; Sometimes makes the program stall for a very long time.
+                                 ra:gui_set-modal
+                                 ra:gui_set-as-window
+                                 ra:gui_set-full-screen
+                                 ra:gui_set-enabled
                                  ))
 (define (get-random-api-args args)
   (map (lambda (arg)
@@ -139,11 +147,14 @@
   (define gui (<gui> :text-edit "" #t))
   (<gui> :show gui)
   (<gui> :set-size gui 1000 400)
-  (<gui> :move-to-centre-of gui -1)
+  ;;(<gui> :move-to-centre-of gui -1)
   (<gui> :raise gui)
   (let loop ((i 100))
     (when (> i 0)
       (define func (test-funcs (integer-myrand 0 (1- num-funcs))))
       (func gui)
-      (loop (1- i)))))
+      (<ra> :schedule 100
+            (lambda ()
+              (loop (1- i))
+              #f)))))
 

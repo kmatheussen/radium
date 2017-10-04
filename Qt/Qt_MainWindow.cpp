@@ -849,7 +849,8 @@ static int show_gfx_message(vector_t *buttons, bool program_state_is_valid, QStr
 
   } else {
 
-    GFX_Message_call_after_showing(clicked_button->text().contains(wait_message));
+    bool clicked_ignore = clicked_button != NULL && clicked_button->text().contains(wait_message);
+    GFX_Message_call_after_showing(clicked_ignore);
   
   }
 

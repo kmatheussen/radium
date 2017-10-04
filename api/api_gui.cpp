@@ -2562,8 +2562,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return stringurl;
     else if (QFileInfo(stringurl).isAbsolute())
       return QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
-    else
+    else if (OS_has_full_program_file_path(stringurl))
       return QUrl::fromLocalFile(QDir::fromNativeSeparators(OS_get_full_program_file_path(stringurl)));
+    else
+      return QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
   }
   
   struct Web : FocusSnifferQWebView, Gui{

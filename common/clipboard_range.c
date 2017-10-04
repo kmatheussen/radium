@@ -194,6 +194,11 @@ void MakeRangeLegal(
         if (p_Greater_Than(wblock->rangey2, p_Create(wblock->block->num_lines, 0, 1)))
           wblock->rangey2=p_Create(wblock->block->num_lines, 0, 1);
 
+        if (p_Greater_Than(wblock->rangey1, p_Create(wblock->block->num_lines, 0, 1))){
+          wblock->rangey1=p_Create(wblock->block->num_lines-1, 0, 1);
+          wblock->rangey2=p_Create(wblock->block->num_lines,   0, 1);
+        }
+
         if(p_Greater_Or_Equal(wblock->rangey1, wblock->rangey2)){
           R_ASSERT_NON_RELEASE(false);
           wblock->rangey1 = p_Create(0,0,1);

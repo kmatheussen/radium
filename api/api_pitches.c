@@ -167,6 +167,11 @@ int addPitch(float value, Place place, dyn_t dynnote, int tracknum, int blocknum
 }
 
 int addPitchF(float value, float floatplace, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  if (floatplace < 0){
+    handleError("Place can not be negative: %f", floatplace);
+    return -1;
+  }
+
   Place place;
   Float2Placement(floatplace, &place);
   return addPitch(value, place, dynnote, tracknum, blocknum, windownum);

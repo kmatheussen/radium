@@ -27,6 +27,40 @@ extern void throwExceptionIfError(void); // Warning, is likely to cause a longjm
 extern void clearErrorMessage(void); // Should be called before running code that might call handleError followed by throwExceptionIfError.
 
 
+#ifdef RADIUM_COMMON_NSMTRACKER_H
+static inline void *VECTOR_get2_r0(const vector_t *v, int num, const char *type){
+  if (num < 0){
+    handleError("Can not have negative index for VECTOR_get. name: %s index: %d (size: %d)",type,num,v->num_elements);
+    return NULL;
+  }
+  if (num>=v->num_elements)
+    return NULL;
+  
+  return v->elements[num];
+}
+                         
+static inline void *VECTOR_get2(const vector_t *v, int num, const char *type){
+  void *ret = VECTOR_get_r0(v, num, type);
+
+  if (ret==NULL && num>=0){
+    handleError("There is no %s %d (size: %d)",type,num,v->num_elements);
+    return NULL;
+  }
+  
+  return v->elements[num];
+}
+
+static inline bool validate_place(const Place place){
+  if (place.line < 0 || place.counter >= place.dividor || place.dividor >= MAX_UINT32){
+    handleError("Place %d + %d/%d is not valid", place.line, place.counter, place.dividor);
+    return false;
+  }
+
+  return true;
+}
+#endif
+
+
 extern struct Tracker_Windows *getWindowFromNum(int windownum);
 
 
@@ -58,7 +92,7 @@ extern struct WTracks *getWTrackFromNumA(
 	int wtracknum
 );
 
-  extern struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,dyn_t note);
+extern struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,dyn_t note);
 extern struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote);
 
 extern struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int pitchnum);

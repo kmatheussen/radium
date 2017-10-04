@@ -2482,7 +2482,8 @@ Place getCursorPlace(int blocknum, int windownum){
 
 int getCursorTrack(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
-
+  if (window==NULL)
+    return 0;
   return window->curr_track;
 }
 

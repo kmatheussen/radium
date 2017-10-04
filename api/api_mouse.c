@@ -1078,10 +1078,11 @@ float getTemponodeMax(int blocknum, int windownum){
 }
 
 static const struct Node *get_temponode(int boxnum){
-  return VECTOR_get(GetTempoNodes(root->song->tracker_windows, root->song->tracker_windows->wblock),
-                    boxnum,
-                    "temponode"
-                    );
+  const vector_t *nodes = GetTempoNodes(root->song->tracker_windows, root->song->tracker_windows->wblock);
+  return VECTOR_get2(nodes,
+                     boxnum,
+                     "temponode"
+                     );
 }
 
 float getTemponodeX(int num){
@@ -1917,7 +1918,8 @@ static int getPitchnumLogtype_internal(int pitchnum, struct Tracks *track){
   bool is_end_pitch = false;
   struct Notes *note = NULL;
   struct Pitches *pitch = NULL;
-  getPitch(pitchnum, &pitch, &note, &is_end_pitch, track);
+  if (getPitch(pitchnum, &pitch, &note, &is_end_pitch, track)==false)
+    return 0;
 
   if (is_end_pitch)
     return LOGTYPE_IRRELEVANT;
@@ -1945,10 +1947,11 @@ static void setPitchnumLogtype2(int logtype, int pitchnum, struct Tracks *track)
   struct Notes *note = NULL;
   struct Pitches *pitch = NULL;
 
-  getPitch(pitchnum, &pitch, &note, &is_end_pitch, track);
+  if (getPitch(pitchnum, &pitch, &note, &is_end_pitch, track)==false)
+    return;
 
   if (is_end_pitch) {
-    RError("Can not set logtype of end pitch. pitchnum: %d, tracknum: %d",pitchnum,track->l.num);
+    handleError("Can not set logtype of end pitch. pitchnum: %d, tracknum: %d",pitchnum,track->l.num);
     return;
   }
       
@@ -2489,9 +2492,11 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
   R_ASSERT(value >= 0);
   R_ASSERT(value <= 1);
 #endif
-  
-  value = R_BOUNDARIES(0, value, 1);
 
+  if(value < 0 || value > 1){
+    GFX_addMessage("addFx: Value must be between 0 and 1. Found %f", value);
+    value = R_BOUNDARIES(0, value, 1);
+  }
 
   
   struct Tracks *track = wtrack->track;
@@ -2507,7 +2512,8 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
 
   if (instrument_id >= 0){
     if (track->patch->instrument != get_audio_instrument()){
-      RError("track->patch->instrument != get_audio_instrument()");
+      handleError("An audio instrument is not assigned to track %d", track->l.num);
+      return -1;
     } else {
       patch = getPatchFromNum(instrument_id);
     }

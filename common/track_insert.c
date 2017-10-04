@@ -45,10 +45,7 @@ void DeleteTracks(
                   NInt todelete
                   )
 {
-	NInt lokke;
-	NInt num_tracks;
 	struct Blocks *block=wblock->block;
-	struct WTracks *wtrack;
 
         if(tracknum>=block->num_tracks+1 || tracknum<0) return;
                 
@@ -64,15 +61,19 @@ void DeleteTracks(
             goto exit;
           }
           
-          num_tracks=block->num_tracks-todelete;
+          int new_num_tracks=block->num_tracks-todelete;
           
-          fprintf(stderr,"delete track. Curr: %d, num_tracks: %d, todelete: %d\n",tracknum,num_tracks,todelete);
+          fprintf(stderr,"delete track. Curr: %d, new_num_tracks: %d, todelete: %d\n",tracknum,new_num_tracks,todelete);
           
-          for(lokke=tracknum ; lokke<num_tracks-1+todelete;lokke++){
-            wtrack=CB_CopyTrack(
-                                wblock,
-                                ListFindElement1(&wblock->wtracks->l,lokke+todelete)
-                                );
+          for(int lokke=tracknum ; lokke<new_num_tracks-1+todelete;lokke++){
+            
+            if (lokke+todelete >= block->num_tracks)
+              break;
+            
+            struct WTracks *wtrack=CB_CopyTrack(
+                                                wblock,
+                                                ListFindElement1(&wblock->wtracks->l,lokke+todelete)
+                                                );
             co_CB_PasteTrack(
                              wblock,
                              wtrack,
@@ -80,7 +81,7 @@ void DeleteTracks(
                              );
           }
 	
-          Block_Set_num_tracks(block,num_tracks);
+          Block_Set_num_tracks(block,new_num_tracks);
           
         }
         

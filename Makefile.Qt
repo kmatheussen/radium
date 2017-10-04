@@ -2289,7 +2289,7 @@ api/radium_s7_wrap.c: bin/protoconfparser.py api/protos.conf
 	cd api && $(PYTHONEXE) ../bin/protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c
 
 bin/scheme/api_protos.scm: bin/protos.conf bin/protoconfparser.py 
-	cd bin/scheme && $(PYTHONEXE) ../protoconfparser.py api_protos.scm >api_protos.scm
+	cd api && $(PYTHONEXE) ../bin/protoconfparser.py api_protos.scm >../bin/scheme/api_protos.scm
 
 #bin/zita_rev_ladspa.so: audio/zita_rev.dsp
 #	cd audio && $(FAUST) -a ladspa.cpp -cn zita_rev_radium zita_rev.dsp >zita_rev_ladspa.cpp

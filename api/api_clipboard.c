@@ -230,7 +230,7 @@ int getRangeEndTrack(int blocknum, int windownum){
                            );
 
   if(wblock==NULL)
-    return wblock->block->num_tracks;
+    return 0;
 
   if (wblock->rangex1 < 0)
     return 0;
