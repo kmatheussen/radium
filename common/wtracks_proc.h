@@ -131,9 +131,9 @@ static inline const struct WTracks *get_leftmost_visible_wtrack(const struct WBl
       return wtrack;
     wtrack = NextWTrack(wtrack);
   }
-  
-  R_ASSERT(false);
-  return wblock->wtracks;
+
+  // Happens when no wtrack is visible.
+  return NULL;
 }
 
 static inline const struct WTracks *get_rightmost_visible_wtrack(const struct WBlocks *wblock, const struct WTracks *a_wtrack_to_the_left_of){
@@ -149,15 +149,18 @@ static inline const struct WTracks *get_rightmost_visible_wtrack(const struct WB
 
     wtrack = next;
   }
-  
-  R_ASSERT(false);
-  return wblock->wtracks;
+
+  // Happens when no wtrack is visible.
+  return NULL;
 }
 
 // might return NULL
 static inline const struct WTracks *get_first_not_visible_wtrack(const struct WBlocks *wblock, const struct WTracks *a_wtrack_to_the_left_of){
   const struct WTracks *wtrack = get_rightmost_visible_wtrack(wblock, a_wtrack_to_the_left_of);
-  return NextWTrack(wtrack);
+  if (wtrack==NULL)
+    return NULL;
+  else
+    return NextWTrack(wtrack);
 }
 
 #define ITERATE_VISIBLE_WTRACKS(wblock) \

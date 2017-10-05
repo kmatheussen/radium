@@ -62,9 +62,11 @@ vector_t *VECTOR_copy(vector_t *from){
   to->num_elements_allocated = from->num_elements_allocated;
   to->num_elements = from->num_elements;
 
-  to->elements=talloc(from->num_elements_allocated*sizeof(void*));
-  memcpy(to->elements,from->elements,from->num_elements*sizeof(void*));
-
+  if (from->num_elements_allocated > 0){    
+    to->elements=talloc(from->num_elements_allocated*sizeof(void*));
+    memcpy(to->elements,from->elements,from->num_elements*sizeof(void*));
+  }
+  
   return to;
 }
 

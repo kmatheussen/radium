@@ -266,7 +266,11 @@ static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *windo
     ATOMIC_WRITE(window->curr_track, TEMPONODETRACK);
   
   else {
-    ATOMIC_WRITE(window->curr_track, get_leftmost_visible_wtrack(window->wblock)->l.num);
+    const struct WTracks *wtrack = get_leftmost_visible_wtrack(window->wblock);
+    if (wtrack==NULL)
+      ATOMIC_WRITE(window->curr_track, 0);
+    else
+      ATOMIC_WRITE(window->curr_track, wtrack->l.num);
     window->curr_track_sub = -1;
   }
 }
@@ -474,11 +478,14 @@ void CursorLeft_CurrPos(struct Tracker_Windows *window){
 int CursorNextTrack(struct Tracker_Windows *window,struct WBlocks *wblock){
 	int curr_track=window->curr_track;
 	int ret=0,tempret;
-
-	while(curr_track==window->curr_track){
+        int safe=10000;
+        
+	while(curr_track==window->curr_track && safe>0){
 		tempret=CursorRight(window,wblock);
 		ret=R_MAX(tempret,ret);
+                safe--;
 	}
+        R_ASSERT_NON_RELEASE(safe>0);
 	return ret;
 }
 
@@ -491,22 +498,28 @@ bool SetCursorPosConcrete(
 ){
         struct WTracks *wtrack;
 	int ret=0,tempret;
-
+        
 	if(tracknum>=wblock->block->num_tracks || tracknum<TEMPOTRACK) return false;
 
 	if(tracknum<0){
 		if(tracknum==window->curr_track) return true;
 
 		if(tracknum>window->curr_track){
-			while(window->curr_track!=tracknum){
+                        int safe=10000;
+			while(window->curr_track!=tracknum && safe > 0){
 				tempret=CursorRight(window,wblock);
 				ret=R_MAX(tempret,ret);
+                                safe--;
 			}
+                        R_ASSERT_NON_RELEASE(safe>0);
 		}else{
-			while(window->curr_track!=tracknum){
+                        int safe=10000;
+			while(window->curr_track!=tracknum && safe > 0){
 				tempret=CursorLeft(window,wblock);
 				ret=R_MAX(tempret,ret);
+                                safe--;
 			}
+                        R_ASSERT_NON_RELEASE(safe>0);
 		}
 	}else{
 		wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
@@ -548,6 +561,7 @@ bool SetCursorPosConcrete(
                 }
 
 		if(move_right) {
+                        int safe=10000;
 			while(window->curr_track!=tracknum || window->curr_track_sub!=subtrack){
 				tempret=CursorRight(window,wblock);
                                 //printf("wtrack->num: %d, curr_track: %d, curr_track_sub: %d, num_tracks: %d\n",wtrack->l.num, window->curr_track,window->curr_track_sub,wblock->block->num_tracks);
@@ -559,8 +573,13 @@ bool SetCursorPosConcrete(
                                 last_tracknum = window->curr_track;
                                 last_subtracknum = window->curr_track_sub;
                                 last_curr_othertrack_sub = window->curr_othertrack_sub;
+                                safe--;
+                                if(safe==0)
+                                  break;
 			}
+                        R_ASSERT_NON_RELEASE(safe>0);
 		}else{
+                        int safe=10000;
 			while(window->curr_track!=tracknum || window->curr_track_sub!=subtrack){
 				tempret=CursorLeft(window,wblock);
 				ret=R_MAX(tempret,ret);
@@ -571,7 +590,11 @@ bool SetCursorPosConcrete(
                                 last_tracknum = window->curr_track;
                                 last_subtracknum = window->curr_track_sub;
                                 last_curr_othertrack_sub = window->curr_othertrack_sub;
+                                safe--;
+                                if(safe==0)
+                                  break;
 			}
+                        R_ASSERT_NON_RELEASE(safe>0);
 		}
 	}
 

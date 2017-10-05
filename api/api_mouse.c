@@ -813,6 +813,11 @@ float getTrackX1(int tracknum, int blocknum, int windownum){
   if(wblock==NULL)
     return 0;
 
+  if (tracknum < LEFTMOSTTRACK || tracknum >= wblock->block->num_tracks){
+    handleError("getTrackX2: No track %d", tracknum);
+    return 0.0f;
+  }
+  
   return WTRACK_getx1(window, wblock, tracknum);
 }
 
@@ -827,6 +832,11 @@ float getTrackX2(int tracknum, int blocknum, int windownum){
   if(wblock==NULL)
     return 0;
 
+  if (tracknum < LEFTMOSTTRACK || tracknum >= wblock->block->num_tracks){
+    handleError("getTrackX2: No track %d", tracknum);
+    return 0.0f;
+  }
+  
   return WTRACK_getx2(window, wblock, tracknum);
 }
 
@@ -2484,14 +2494,6 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, int64_t i
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
   if (wtrack==NULL)
     return -1;
-
-#ifdef RELEASE
-  R_ASSERT_MESSAGE(value >= 0);
-  R_ASSERT_MESSAGE(value <= 1);
-#else
-  R_ASSERT(value >= 0);
-  R_ASSERT(value <= 1);
-#endif
 
   if(value < 0 || value > 1){
     GFX_addMessage("addFx: Value must be between 0 and 1. Found %f", value);

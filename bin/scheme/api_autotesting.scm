@@ -9,12 +9,17 @@
 
 
 (define blacklisted-api-protos '(ra:init_radium
+                                 ra:quit
 
+                                 ra:eval-scheme
+                                 ra:eval-python
+                                 
                                  ra:start-ignoring-undo
                                  ra:stop-ignoring-undo
                                  ra:open-undo
                                  ra:close-undo
-
+                                 ra:cancel-last-undo
+                                 
                                  ra:test-crashreporter
                                  ra:test-crashreporter-in-audio-thread
                                  ra:show-warning
@@ -88,7 +93,7 @@
          (define type (car arg))
          (define varname (cadr arg))
          (define default (cl-caddr arg))
-         (define use-default (and default (< (integer-myrand 0 10)
+         (define use-default (and default (< (integer-myrand 0 9)
                                              9)))
          (if use-default
              (cond ((eq? default 'false)
@@ -108,7 +113,7 @@
                     (myrand -1 20))
                    ((or (eq? type 'int)
                         (eq? type 'int64_t))
-                    (integer-myrand -1 2000))
+                    (integer-myrand -1 20))
                    ((eq? type 'Place)
                     (integer-myrand 0 63))
                    ((eq? type 'bool)

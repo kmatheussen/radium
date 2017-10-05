@@ -173,7 +173,13 @@ int SYSTEM_show_message(const char *message){
 
   GL_unlock();
 
-  if (myProcess->waitForFinished(20000)==false){ // Have timeout value in case the GUI doesn't show up or is hidden somehow.
+  int res;
+  
+  GFX_HideProgress();{
+    res = myProcess->waitForFinished(20000);
+  }GFX_ShowProgress();
+  
+  if (res==false){ // Have timeout value in case the GUI doesn't show up or is hidden somehow.
     printf("WARN: radium_error_message timed out. Returning -1\n");
     return -1;
   }

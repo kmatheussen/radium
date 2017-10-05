@@ -170,6 +170,12 @@ int addLPB(int lpb_value,
     return -1;
   }
 
+  if (lpb_value < 1){
+    handleError("addBPM: lpb must be 1 or higher. Found %d", lpb_value);
+    return -1;
+  }
+  
+
   ADD_UNDO(LPBs_CurrPos(window));
   
   struct LPBs *lpb = SetLPB(wblock->block,&place,lpb_value);
@@ -277,6 +283,11 @@ int addBPM(int bpm,
     return -1;
   }
 
+  if (bpm < 1){
+    handleError("addBPM: bpm must be 1 or higher. Found %d", bpm);
+    return -1;
+  }
+  
   ADD_UNDO(Tempos_CurrPos(window));
 
   struct Tempos *tempo = SetTempo(wblock->block,&place,bpm,LOGTYPE_HOLD);

@@ -6,11 +6,13 @@
 #define SEQNAV_SIZE_HANDLE_WIDTH 50
 #define SEQUENCER_EXTRA_SONG_LENGTH 30.0 // sequencer gui always shows 30 seconds more than the song length
 
-enum GridType{
+enum GridType{  
   NO_GRID = 0,
   BAR_GRID = 1,
   BEAT_GRID = 2
 };
+#define FIRST_LEGAL_GRID NO_GRID
+#define LAST_LEGAL_GRID BEAT_GRID
 
 
 extern LANGSPEC int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int64_t seqtime); // Result is rounded down to nearest integer. 'seqblock' may be NULL.

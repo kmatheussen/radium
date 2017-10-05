@@ -571,6 +571,11 @@ struct SeqBlock *SEQBLOCK_create_from_state(const hash_t *state){
   double samplerate = HASH_get_float(state, "samplerate");
 
   struct SeqBlock *seqblock = SEQBLOCK_create((struct Blocks*)ListFindElement1(&root->song->blocks->l, blocknum));
+  if (seqblock==NULL){
+    // not supposed to happen, but it did happen once when undoing/redoing a lot after running the api autotester.
+    // (assertion reporter popped up in the call to ListFindElement1 above)
+    seqblock = SEQBLOCK_create((struct Blocks*)ListFindElement1(&root->song->blocks->l, 0));
+  }
   
   seqblock->time = round(double(HASH_get_int(state, "time")) * MIXER_get_sample_rate() / samplerate);
 

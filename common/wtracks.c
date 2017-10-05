@@ -766,7 +766,7 @@ int WTRACK_getx1(
 		break;
 	}
 
-	if(tracknum>=wblock->block->num_tracks || tracknum<0){
+	if(tracknum < 0 || tracknum>=wblock->block->num_tracks){
           RError("illegal track number %d supplied function WTRACK_getx1 in file wtracks.c",tracknum);
           return wblock->temponodearea.x2+3;
 	}
@@ -785,31 +785,31 @@ int WTRACK_getx2(
 
 	struct WTracks *wtrack;
 
-	switch(tracknum){
-	case LINENUMBTRACK:
-		return wblock->linenumarea.x2;
-		break;
-	case TEMPOCOLORTRACK:
-		return wblock->tempocolorarea.x2;
-		break;
+        switch(tracknum){
+        case LINENUMBTRACK:
+          return wblock->linenumarea.x2;
+          break;
+        case TEMPOCOLORTRACK:
+          return wblock->tempocolorarea.x2;
+          break;
         case SWINGTRACK:
-                return wblock->swingarea.x2;
-                break;
-	case SIGNATURETRACK:
-		return wblock->signaturearea.x2;
-		break;
-	case LPBTRACK:
-		return wblock->lpbarea.x2;
-		break;
-	case TEMPOTRACK:
-		return wblock->tempoarea.x2;
-		break;
-	case TEMPONODETRACK:
-		return wblock->temponodearea.x2;
-		break;
-	}
+          return wblock->swingarea.x2;
+          break;
+        case SIGNATURETRACK:
+          return wblock->signaturearea.x2;
+            break;
+        case LPBTRACK:
+          return wblock->lpbarea.x2;
+          break;
+        case TEMPOTRACK:
+          return wblock->tempoarea.x2;
+            break;
+        case TEMPONODETRACK:
+          return wblock->temponodearea.x2;
+          break;
+        }
 
-        if(tracknum>=wblock->block->num_tracks || tracknum<0){
+        if(tracknum < 0 || tracknum>=wblock->block->num_tracks){
           RError("illegal track number %d supplied function WTRACK_getx2 in file wtracks.c",tracknum);
           return wblock->temponodearea.x2+3;
 	}

@@ -83,15 +83,27 @@ int64_t getSequencerVisibleEndTime(void){
 }
 
 void setSequencerVisibleStartTime(int64_t value){
+  if (value <= 0 || value >= SEQUENCER_get_visible_end_time()){
+    handleError("setSequencerVisibleStartTime: Value must be higher than 0 and lower than visible end time. End time: %f. Value: %f\n", SEQUENCER_get_visible_end_time(), (double)value);
+    return;
+  }
   //printf("                   Set: %f\n", value/48000.0);
   SEQUENCER_set_visible_start_time(value);
 }
 
 void setSequencerVisibleEndTime(int64_t value){
+  if (value <= SEQUENCER_get_visible_start_time()){
+    handleError("setSequencerVisibleEndTime: Value must be higher than visible start time. Start time: %f. Value: %f\n", SEQUENCER_get_visible_start_time(), (double)value);
+    return;
+  }
   SEQUENCER_set_visible_end_time(value);
 }
 
 void setSequencerGridType(int grid_type){
+  if (grid_type < FIRST_LEGAL_GRID || grid_type > LAST_LEGAL_GRID){
+    handleError("setSequencerGridType: Illegal grid type %d", grid_type);
+    return;
+  }
   SEQUENCER_set_grid_type(grid_type);
 }
 
@@ -541,7 +553,7 @@ int addSeqtemponode(double abstime, double value, int logtype){
   return ret;
 }
 void deleteSeqtemponode(int nodenum){
-  if (nodenum < -1 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
+  if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
     handleError("There is no tempo node #%d", nodenum);
     return;
   }
@@ -805,7 +817,7 @@ const_char *getSeqBlockGridType(void){
 }
 
 void setSeqBlockGridType(const_char *type){
-  if (!strcmp(type, "no") && !strcmp(type, "line") && !strcmp(type, "beat") && !strcmp(type, "bar")){
+  if (strcmp(type, "no") && strcmp(type, "line") && strcmp(type, "beat") && strcmp(type, "bar")){
     handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
     return;
   }
@@ -824,7 +836,7 @@ const_char *getSeqAutomationGridType(void){
 }
 
 void setSeqAutomationGridType(const_char *type){
-  if (!strcmp(type, "no") && !strcmp(type, "line") && !strcmp(type, "beat") && !strcmp(type, "bar")){
+  if (strcmp(type, "no") && strcmp(type, "line") && strcmp(type, "beat") && strcmp(type, "bar")){
     handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
     return;
   }
@@ -843,7 +855,7 @@ const_char *getSeqTempoGridType(void){
 }
 
 void setSeqTempoGridType(const_char *type){
-  if (!strcmp(type, "no") && !strcmp(type, "line") && !strcmp(type, "beat") && !strcmp(type, "bar")){
+  if (strcmp(type, "no") && strcmp(type, "line") && strcmp(type, "beat") && strcmp(type, "bar")){
     handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
     return;
   }
@@ -863,7 +875,7 @@ const_char *getSeqLoopGridType(void){
 }
 
 void setSeqLoopGridType(const_char *type){
-  if (!strcmp(type, "no") && !strcmp(type, "line") && !strcmp(type, "beat") && !strcmp(type, "bar")){
+  if (strcmp(type, "no") && strcmp(type, "line") && strcmp(type, "beat") && strcmp(type, "bar")){
     handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
     return;
   }

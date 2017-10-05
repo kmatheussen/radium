@@ -98,7 +98,7 @@ static void ShutDownYepp(void) {
 	exit(1);
 }
 
-int allocated=0;
+int64_t allocated=0;
 
 
 #if defined(VALIDATE_MEM)

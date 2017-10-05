@@ -282,10 +282,16 @@ void PlaceSetLastPos(struct Blocks *block,Place *p){
     in the block.
 **********************************************************/
 bool PlaceLegal(const struct Blocks *block,  const Place *p){
-	Place temp;
-	PlaceSetLastPos(block,&temp);
-	if(PlaceGreaterThan(p,&temp)) return false;
-	return true;
+  R_ASSERT_RETURN_IF_FALSE2(p!=NULL, false);
+  R_ASSERT_RETURN_IF_FALSE2(block!=NULL, false);
+
+  if (p->line < 0 || p->counter >= p->dividor || p->dividor > MAX_UINT32)
+    return false;
+  
+  Place temp;
+  PlaceSetLastPos(block,&temp);
+  if(PlaceGreaterThan(p,&temp)) return false;
+  return true;
 }
 
 /**********************************************************

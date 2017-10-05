@@ -1202,7 +1202,7 @@ void OS_VST_config(struct Tracker_Windows *window){
   GFX_addMessage("No VST options to edit on OSX");
 #else
   //EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
-  Vst_paths_widget *vst_paths_widget=new Vst_paths_widget(g_main_window); // I'm not quite sure i it's safe to make this one static. It seems to work, but shouldn't the dialog be deleted when destroying the window? Not having it static is at least safe, although it might leak some memory.
+  Vst_paths_widget *vst_paths_widget=new Vst_paths_widget(NULL); // If we set the parent to g_main_window, it will open inside the main window.
   GL_lock();{
     vst_paths_widget->show();
   } GL_unlock();

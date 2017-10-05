@@ -534,7 +534,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     bool _created_from_existing_widget; // Is false if _widget was created by using one of the gui_* functions (except gui_child()). Only used for validation.
 
     // Has value when running full screen.
-    bool _is_full_screen = false;
+    //bool _is_full_screen = false;
     QPointer<FullScreenParent> _full_screen_parent = NULL;
     Qt::WindowFlags _original_flags;
     QPointer<QWidget> _original_parent;
@@ -3452,8 +3452,9 @@ void gui_setUrl(int64_t guinum, const_char* url){
     return;
 
   QWebView *web = web_gui->mycast<QWebView>(__FUNCTION__);
-
-  web->setUrl(getUrl(url));
+  
+  if (web != NULL)
+    web->setUrl(getUrl(url));
 }
 
 void openExternalWebBrowser(const_char *stringurl){
@@ -4255,12 +4256,13 @@ int64_t gui_getParentGui(int64_t guinum){
 }
 
 bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
+  
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return false;
 
   if (mustBeWindow){
-    bool is_window = gui->_widget->isWindow() || gui->_widget->parent()==NULL;
+    bool is_window = gui->_widget->isWindow() || gui->_widget->parent()==NULL || gui->is_full_screen();
     if(!is_window){
       handleError("gui_setParent: Gui #%d is not a window. (className: %s)", (int)guinum, gui_className(guinum));
       return false;
@@ -4553,14 +4555,17 @@ void gui_setFullScreen(int64_t guinum, bool enable){
       return;
 
     fprintf(stderr, "  gui_setFullScreen: Setting BACK fullscreen. NOT fullscreen.\n");
-        
-    gui->_full_screen_parent->resetChildToOriginalState();
-    
-    fprintf(stderr, "  Hiding full\n\n");
-    delete gui->_full_screen_parent;
 
-    gui->_widget->show();
-    gui->_widget->setFocus();
+    if (gui->_full_screen_parent.data() != NULL && gui->_widget != NULL) {
+      gui->_full_screen_parent->resetChildToOriginalState();
+    
+      fprintf(stderr, "  Hiding full\n\n");
+      delete gui->_full_screen_parent;
+      
+      gui->_widget->show();
+      gui->_widget->setFocus();
+    }
+      
   }
 
   if (focusWidget.data() != NULL)

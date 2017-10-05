@@ -63,6 +63,10 @@ void stopIgnoringUndo(void){
 }
 
 void cancelLastUndo(void){
+  if (Undo_num_undos()==0){
+    handleError("cancelLastUndo: No undos");
+    return;
+  }
   UNDO_CANCEL_LAST_UNDO();
 }
 

@@ -247,8 +247,11 @@ void setRangePasteScrollDown(bool doit){
 int g_downscroll = 1;
 
 void setNoteScrollLength(int l){
-  R_ASSERT_RETURN_IF_FALSE(l>=0);
-
+  if (l<0){
+    handleError("setNoteScrollLength: argument must be 0 or higher. Found %d", l);
+    return;
+  }
+  
   if (l != g_downscroll){
   
     g_downscroll = l;

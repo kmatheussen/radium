@@ -275,7 +275,9 @@ void replaceUseOfInstrument(int64_t old_instrument_id, int64_t new_instrument_id
   if (new_patch==old_patch)
     return;
 
-  PATCH_handle_editor_and_automation_when_replacing_patch(old_patch, new_patch);
+  UNDO_OPEN_REC();{
+    PATCH_handle_editor_and_automation_when_replacing_patch(old_patch, new_patch);
+  }UNDO_CLOSE();
 }
   
 // 

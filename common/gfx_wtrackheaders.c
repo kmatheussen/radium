@@ -144,7 +144,8 @@ static void DrawAllWTrackNames(
       return;
 
     const struct WTracks *rightmost_wtrack = get_rightmost_visible_wtrack(wblock, wtrack1);
-    
+    R_ASSERT_RETURN_IF_FALSE(rightmost_wtrack!=NULL);
+                      
     int tracknum1 = wtrack1->l.num;
     
     int channelnum1 = ATOMIC_GET(wtrack1->track->midi_channel);
@@ -309,36 +310,38 @@ void UpdateAllPianoRollHeaders(
   const struct WTracks *left_wtrack = get_leftmost_visible_wtrack(wblock);
   const struct WTracks *right_wtrack = get_rightmost_visible_wtrack(wblock, left_wtrack);
 
-  while(wtrack!=NULL) {
+  if (left_wtrack!=NULL && right_wtrack!=NULL){
+    while(wtrack!=NULL) {
 
-    void *pianorollheader = get_pianorollheader(wtrack->l.num, true);
-    
-    if (wtrack->l.num < left_wtrack->l.num || wtrack->l.num > right_wtrack->l.num+1 || wtrack->pianoroll_area.x2 <= wblock->t.x1) {
-
-      PIANOROLLHEADER_hide(pianorollheader);
-      //if(wtrack->l.num==0)
-      //  printf("Hiding header\n");
-
-    } else {
-
-      //struct Tracks *track = wtrack->track;
+      void *pianorollheader = get_pianorollheader(wtrack->l.num, true);
       
-      int x1 = wtrack->x + 2;
-      int x2 = wtrack->panonoff.x1 - 1;
-      int y1 = wtrack->panonoff.y1 + 1;
-      int y2 = wtrack->volumeonoff.y2;
- 
-      //if(wtrack->l.num==0)
-      //  printf("Showing header\n");
-     
-      PIANOROLLHEADER_assignTrack(pianorollheader, wblock->l.num, wtrack->l.num);
-      PIANOROLLHEADER_show(wblock, pianorollheader, x1, y1, x2, y2);
+      if (wtrack->l.num < left_wtrack->l.num || wtrack->l.num > right_wtrack->l.num+1 || wtrack->pianoroll_area.x2 <= wblock->t.x1) {
+        
+        PIANOROLLHEADER_hide(pianorollheader);
+        //if(wtrack->l.num==0)
+        //  printf("Hiding header\n");
+        
+      } else {
+        
+        //struct Tracks *track = wtrack->track;
+        
+        int x1 = wtrack->x + 2;
+        int x2 = wtrack->panonoff.x1 - 1;
+        int y1 = wtrack->panonoff.y1 + 1;
+        int y2 = wtrack->volumeonoff.y2;
+        
+        //if(wtrack->l.num==0)
+        //  printf("Showing header\n");
+        
+        PIANOROLLHEADER_assignTrack(pianorollheader, wblock->l.num, wtrack->l.num);
+        PIANOROLLHEADER_show(wblock, pianorollheader, x1, y1, x2, y2);
+      }
+      
+      wtrack=NextWTrack(wtrack);
+      last_tracknum++;
+      if (wtrack!=NULL)
+        R_ASSERT(last_tracknum==wtrack->l.num);
     }
-    
-    wtrack=NextWTrack(wtrack);
-    last_tracknum++;
-    if (wtrack!=NULL)
-      R_ASSERT(last_tracknum==wtrack->l.num);
   }
 
   // Make sure all pianoroll headers to the right of the rightmost track is hidden. (leftovers from earlier, for instance when showing a different block with more tracks)

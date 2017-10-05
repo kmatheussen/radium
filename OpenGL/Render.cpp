@@ -452,63 +452,68 @@ static void create_background_realline(const struct Tracker_Windows *window, con
 
 
   const enum ColorNums c15 = HIGH_EDITOR_BACKGROUND_COLOR_NUM;
-
+  
+  if(beat_opacity == -1)
+    beat_opacity = SETTINGS_read_int32("beat_opacity", 950);
+  
+  if(first_beat_opacity == -1)
+    first_beat_opacity = SETTINGS_read_int32("first_beat_opacity", 870);
+  
 
   // background
-  {
-    if(beat_opacity == -1)
-      beat_opacity = SETTINGS_read_int32("beat_opacity", 950);
-
-    if(first_beat_opacity == -1)
-      first_beat_opacity = SETTINGS_read_int32("first_beat_opacity", 870);
-    
+  {    
 
     const struct WTracks *wtrack = get_leftmost_visible_wtrack(wblock);
     const struct WTracks *end_wtrack = get_first_not_visible_wtrack(wblock, wtrack);
-    
-    {
-      GE_Context *c = GE_z(shade_realline(GE_get_rgb(c15), false, wsignature, localzoom), GE_Conf(Z_BACKGROUND | Z_STATIC_X, y1));
-      
-      if (g_colored_tracks)
-        GE_filledBox(c,x1,y1,wtrack->x,y2);
-      else
-        GE_filledBox(c,x1,y1,x2,y2);
-    }
 
-    if (g_colored_tracks) {
-      
-      while(wtrack != end_wtrack){
+    if (wtrack==NULL)
+      R_ASSERT_RETURN_IF_FALSE(end_wtrack==NULL);
 
-        int x1 = R_MAX(wtrack->x - 1, wblock->t.x1);
-        int x2 = wtrack->x2;
-        //int y1 = wtrack1->y;
-        //int y2 = wtrack1->panonoff.y1 - 1;
+    if (wtrack!=NULL){
+      {
+        GE_Context *c = GE_z(shade_realline(GE_get_rgb(c15), false, wsignature, localzoom), GE_Conf(Z_BACKGROUND | Z_STATIC_X, y1));
         
-        struct Patch *patch = wtrack->track->patch;
-        
-        if (patch != NULL){
-          GE_Rgb rgb = patch==NULL ? GE_get_custom_rgb(HIGH_EDITOR_BACKGROUND_COLOR_NUM) : GE_get_rgb(patch->color);
-
-          bool is_current_track = get_current_instruments_gui_patch()==patch;
-
-          GE_Context *c = GE_z(
-                               shade_realline(rgb,
-                                              is_current_track,
-                                              wsignature,
-                                              localzoom
-                                              )
-                               ,
-                               GE_Conf(Z_BACKGROUND | Z_STATIC_X, y1)
-                               );
-          
+        if (g_colored_tracks)
+          GE_filledBox(c,x1,y1,wtrack->x,y2);
+        else
           GE_filledBox(c,x1,y1,x2,y2);
-        }
-        
-        wtrack=NextWTrack(wtrack);
       }
       
-    }
+      if (g_colored_tracks) {
+        
+        while(wtrack != end_wtrack){
+          
+          int x1 = R_MAX(wtrack->x - 1, wblock->t.x1);
+          int x2 = wtrack->x2;
+          //int y1 = wtrack1->y;
+          //int y2 = wtrack1->panonoff.y1 - 1;
+          
+          struct Patch *patch = wtrack->track->patch;
+          
+          if (patch != NULL){
+            GE_Rgb rgb = patch==NULL ? GE_get_custom_rgb(HIGH_EDITOR_BACKGROUND_COLOR_NUM) : GE_get_rgb(patch->color);
+            
+            bool is_current_track = get_current_instruments_gui_patch()==patch;
+            
+            GE_Context *c = GE_z(
+                                 shade_realline(rgb,
+                                                is_current_track,
+                                                wsignature,
+                                                localzoom
+                                                )
+                                 ,
+                                 GE_Conf(Z_BACKGROUND | Z_STATIC_X, y1)
+                                 );
+          
+            GE_filledBox(c,x1,y1,x2,y2);
+          }
+          
+          wtrack=NextWTrack(wtrack);
+        }
+        
+      }
 
+    }
   }
 
   float line_width = 0.6f;
