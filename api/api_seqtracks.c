@@ -83,8 +83,8 @@ int64_t getSequencerVisibleEndTime(void){
 }
 
 void setSequencerVisibleStartTime(int64_t value){
-  if (value <= 0 || value >= SEQUENCER_get_visible_end_time()){
-    handleError("setSequencerVisibleStartTime: Value must be higher than 0 and lower than visible end time. End time: %f. Value: %f\n", SEQUENCER_get_visible_end_time(), (double)value);
+  if (value < 0 || value >= SEQUENCER_get_visible_end_time()){
+    handleError("setSequencerVisibleStartTime: Value must be 0 or higher and lower than visible end time. End time: %f. Value: %f\n", SEQUENCER_get_visible_end_time(), (double)value);
     return;
   }
   //printf("                   Set: %f\n", value/48000.0);
