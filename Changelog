@@ -1,3 +1,18 @@
+Changes 5.1.5 -> 5.1.6:
+* Menus: add "Show undo history" option under
+  Help -> Program debugging
+* Lots of bugs fixed. The bugs are found by running an autotester
+  script.
+* Audio: Fix the crossfade value in the sampler instrument when
+  automating reverse or pingpong.
+* Menus: Some minor fixes to the keybindings.
+* Audio: Fix undo handling when parameters are changed in the
+  native gui of a plugin.
+* Plugin manager: Don't display an error message when finished
+  scanning remaining plugins.
+
+
+
 Changes 5.1.4 -> 5.1.5:
 * Audio: Fix adding undo entries when parameters are changed in the
   native GUI of a plugin. Sometimes a lot more than 1 undo entry
