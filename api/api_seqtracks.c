@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 
 #include "../audio/Mixer_proc.h"
+#include "../audio/SoundPlugin.h"
 
 #include "api_common_proc.h"
 
@@ -242,6 +243,24 @@ int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, i
   if(patch==NULL)
     return -1;
 
+  if (effect_num < 0){
+    handleError("Unknown effect number %d", effect_num);
+    return -1;
+  }
+  
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, -1);
+
+  if (effect_num >= plugin->type->num_effects + NUM_SYSTEM_EFFECTS){
+    handleError("Unknown effect number %d. (Number of effects for %s: %d)", effect_num, patch->name, plugin->type->num_effects + NUM_SYSTEM_EFFECTS);
+    return -1;
+  }
+
+  if (time1<0 || time2 <= time1){
+    handleError("addSeqAutomation: Illegal time values. time1: %d. time2: %d", (int)time1, (int)time2);
+    return -1;
+  }
+  
   undoSequencerAutomation();
 
   int64_t seqtime1 = get_seqtime_from_abstime(seqtrack, NULL, time1);
@@ -283,6 +302,12 @@ int getNumSeqAutomations(int seqtracknum){
   if (nodenum < 0 || nodenum >= SEQTRACK_AUTOMATION_get_num_nodes(seqtrack->seqtrackautomation, automationnum)){ \
     handleError("There is no node #%d in automation #%d in sequencer track #%d", nodenum, automationnum, seqtracknum); \
     return ret;                                                          \
+  }
+
+#define VALIDATE_TIME(time,ret)                                 \
+  if (time < 0){                                                \
+    handleError("Time can not be negative: %d", (int)time);     \
+    return ret;                                                 \
   }
 
 int64_t getSeqAutomationInstrumentId(int automationnum, int seqtracknum){
@@ -360,7 +385,8 @@ int addSeqAutomationNode(int64_t time, float value, int logtype, int automationn
     return -1;
 
   VALIDATE_AUTOMATIONNUM(-1);
-
+  VALIDATE_TIME(time, -1)
+    
   undoSequencerAutomation();
 
   int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
@@ -452,7 +478,8 @@ void setSeqAutomationNode(int64_t time, float value, int logtype, int nodenum, i
 
   VALIDATE_AUTOMATIONNUM();
   VALIDATE_NODENUM();
-
+  VALIDATE_TIME(time,)
+    
   int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
   SEQTRACK_AUTOMATION_set(seqtrack, automationnum, nodenum, seqtime, R_BOUNDARIES(0, value, 1), logtype);
 }
@@ -546,6 +573,7 @@ int getNumSeqtemponodes(void){
   return TEMPOAUTOMATION_get_num_nodes();
 }
 int addSeqtemponode(double abstime, double value, int logtype){
+  VALIDATE_TIME(abstime, -1);
   undoSeqtempo();
   int ret = TEMPOAUTOMATION_add_node(abstime, value, logtype);
   if (ret==-1)
@@ -567,6 +595,7 @@ void setCurrSeqtemponode(int nodenum){
   TEMPOAUTOMATION_set_curr_node(nodenum);
 }
 void setSeqtemponode(double abstime, double value, int logtype, int nodenum){
+  VALIDATE_TIME(abstime,);
   if (nodenum < 0 || nodenum >= TEMPOAUTOMATION_get_num_nodes()){
     handleError("There is no tempo node #%d", nodenum);
     return;
@@ -574,12 +603,14 @@ void setSeqtemponode(double abstime, double value, int logtype, int nodenum){
   return TEMPOAUTOMATION_set(nodenum, abstime, value, logtype);
 }
 void setSeqtempoLength(double end_time, bool do_shrink){
+  VALIDATE_TIME(end_time,)
   return TEMPOAUTOMATION_set_length(end_time, do_shrink);
 }
 double getSeqtempoLength(void){
   return TEMPOAUTOMATION_get_length();
 }
 int64_t getSeqtempoAbsabstime(double abstime){
+  VALIDATE_TIME(abstime,-1);
   return TEMPOAUTOMATION_get_absabstime(abstime);
 }
 
@@ -1001,6 +1032,8 @@ void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum, int new_seq
   if (seqblock==NULL)
     return;
 
+  VALIDATE_TIME(abstime,);
+  
   if (new_seqtracknum==-1)
     new_seqtracknum = seqtracknum;
 
@@ -1020,6 +1053,8 @@ void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum, int new_
   if (seqblock==NULL)
     return;
 
+  VALIDATE_TIME(abstime,);
+  
   if (new_seqtracknum==-1)
     new_seqtracknum = seqtracknum;
 
@@ -1039,6 +1074,8 @@ void moveSeqblockGfxGfx(int seqblocknum, int64_t abstime, int seqtracknum, int n
   if (seqblock==NULL)
     return;
 
+  VALIDATE_TIME(abstime,);
+  
   if (new_seqtracknum==-1)
     new_seqtracknum = seqtracknum;
 
@@ -1140,7 +1177,7 @@ void pasteSeqblocks(int seqtracknum, int64_t abstime){
   //printf(" pasteSeqblocks. seqtracknum: %d, abstime: %f\n", seqtracknum, (double)abstime);
 
   //abort();
-  
+
   if (seqtracknum==-1)
     seqtracknum = getSeqtrackFromY(tevent.y);
 

@@ -556,6 +556,9 @@ void *ListFindElement1_num_r0(
 	const struct ListHeader1 *element,
 	NInt num
 ){
+  if (num < 0)
+    return NULL;
+  
 	int lokke;
 
 	for(lokke=0;lokke<num && element!=NULL;lokke++)
@@ -590,6 +593,9 @@ void *ListFindElement3_num(
 	struct ListHeader3 *element,
 	NInt num
 ){
+  if (num < 0)
+    return NULL;
+  
 	int lokke;
 
 	for(lokke=0;lokke<num && element!=NULL;lokke++)
@@ -602,6 +608,9 @@ void *ListFindElement3_num_r0(
 	struct ListHeader3 *element,
 	NInt num
 ){
+  if (num < 0)
+    return NULL;
+  
 	int lokke;
 
 	for(lokke=0;lokke<num && element!=NULL;lokke++)

@@ -185,6 +185,8 @@ enum{
 extern bool g_is_loading;
 extern bool g_initing_starting_to_play_song;
 
+extern bool g_user_interaction_enabled; // Used for testing. If this one is false, all user interaction will be done automatically, randomly.
+
 #include "../crashreporter/crashreporter_proc.h"
 
 
@@ -263,7 +265,7 @@ extern LANGSPEC void handleError_internal(const char *fmt,...) FORMAT_ATTRIBUTE(
 
 #include "validatemem_proc.h"
 
-extern LANGSPEC void msleep(int64_t ms);
+extern LANGSPEC void msleep(int ms);
 
 static inline int bool_to_int(bool val){
   return val==true ? 1 : 0;
@@ -2539,8 +2541,10 @@ static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
   //R_ASSERT(pan >= -1); // Pans have different range in midi
   //R_ASSERT(pan <= 1);
 #endif
-
-  if(note_id==-1)
+  
+  midi_channel = R_BOUNDARIES(0,midi_channel, 15);
+  
+  if(note_id<=-1)
     note_id = NotenumId(pitch);
 
   note_t note = {

@@ -63,6 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/AudioMeterPeaks_proc.h"
+#include "../audio/Juce_plugins_proc.h"
 
 #include "../Qt/FocusSniffers.h"
 #include "../Qt/ScrollArea.hpp"
@@ -74,6 +75,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/seqtrack_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
+#include "../embedded_scheme/scheme_proc.h"
 
 #include "../common/OS_system_proc.h"
 
@@ -441,10 +443,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       layout()->removeWidget(_child);
 
-      if (_original_parent != NULL){
-        QWidget *parentWidget = dynamic_cast<QWidget*>(_original_parent.data());
-        _child->setParent(parentWidget, _original_flags);
-      }
+      QWidget *parentWidget = dynamic_cast<QWidget*>(_original_parent.data()); // Might be null, not only if _original_parent is not a qwidget, but also if the original parent was deleted.
+      _child->setParent(parentWidget, _original_flags); // Must set a different parent to the child. If not the child will be deleted in the destructor of this class.
       
       _child->setGeometry(_original_geometry);
     }
@@ -567,7 +567,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     QColor _background_color;
 
-
+#if !defined(RELEASE)
+    // for debugging. Use "call puts(gui->scheme_backtrace)" in gdb to print.
+    //const char *backtrace = strdup(JUCE_get_backtrace()); // Extremely slow.
+    const char *scheme_backtrace = strdup(SCHEME_get_history());
+#endif
+                   
     Gui(QWidget *widget, bool created_from_existing_widget = false)
       : _widget_as_key(widget)
       , _widget(widget)
@@ -3091,6 +3096,10 @@ int gui_numOpenGuis(void){
   return g_valid_guis.size();
 }
 
+int64_t gui_random(void){
+  return g_valid_guis[qrand() % g_valid_guis.size()]->get_gui_num();
+}
+
 int64_t gui_child(int64_t guinum, const_char* childname){
   Gui *gui = get_gui(guinum);
 
@@ -4067,6 +4076,17 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
         scroll_area->contents->resize(new_width, new_height);
         
       }else{
+
+        QWidget *child_window =  child->_widget->window();
+        QWidget *parent_window = parent->_widget->window();
+
+        if (child_window!=NULL && parent_window!=NULL){
+          if (child_window==parent_window){
+            handleError("gui_add: Will not set gui #%d as a child of gui #%d since they both belong to the same window. (Qt often freezes if trying to do that plus that it's likely that there is a bug somewhere since this call was made. If this is not a bug, as a workaround, you need to remove the old parent of the child before calling gui_add. And if the child is already a window, then it's definitely a bug since it means that parent is a child of the child.)", (int)child->get_gui_num(), (int)parent->get_gui_num());
+            return;
+          }
+        }
+        
         child->_widget->setParent(parent->_widget);
         child->_widget->move(x1,y1);
         if (parent->_widget->isVisible())
@@ -4121,13 +4141,35 @@ void gui_replace(int64_t parentnum, int64_t oldchildnum, int64_t newchildnum){
   if (newchild==NULL)
     return;
 
+  if (g_static_toplevel_widgets.contains(newchild->_widget)){
+    handleError("gui_replace: Trying to put a permanent widget into a layout. This is probably a bug.");
+    return;
+  }
+
+  // Check that parent is not a child of newchild
+  {
+    QObject *parentparent = parent->_widget->parent();
+    while(parentparent != NULL){
+      if (parentparent==newchild->_widget){
+        handleError("gui_replace: Can not replace #%d with #%d in #%d since #%d is a parent of #%d", (int)oldchildnum, (int)newchildnum, (int)parentnum, (int)newchildnum, (int)parentnum);
+        return;
+      }
+      parentparent = parentparent->parent();
+    }
+  }
+  
   QLayout *layout = parent->getLayout();
   if(layout==NULL){
     handleError("Gui #%d does not have a layout", (int)parentnum);
     return;
   }
+
+  // Trying to see if this prevents Qt from sometimes freezing. (Stuck in QWidgetPrivate::invalidateGraphicsEffectsRecursively())
+  // (don't remove, it seems to work.)
+  if (newchild->_widget->parent() != NULL)
+    newchild->_widget->setParent(NULL);
   
-  QLayoutItem *old_item = layout->replaceWidget(oldchild->_widget, newchild->_widget);
+  QLayoutItem *old_item = layout->replaceWidget(oldchild->_widget, newchild->_widget, Qt::FindDirectChildrenOnly);
 
   if(old_item==NULL){
     handleError("Gui #%d not found in #%d", (int)oldchildnum, (int)parentnum);
@@ -4256,6 +4298,7 @@ int64_t gui_getParentGui(int64_t guinum){
 }
 
 bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
+  //return false;
   
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -4287,9 +4330,31 @@ bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
     bool isvisible = gui->_widget->isVisible();
     if (isvisible)
       gui->_widget->hide();
-    
-    //if (gui->_widget->parent() != NULL)
-    //   gui->_widget->setParent(NULL); // Don't remember why I did this. Should have added a comment. Seems unnecessary. And if it is necessary, it should probably be handled in set_window_parent() and not here.
+
+    {
+
+      // sanity checks
+      
+      QWidget *child_window =  gui->_widget->window();
+      QWidget *parent_window = parent->window();
+      
+      if (child_window!=NULL && parent_window!=NULL){
+        if (child_window==parent_window){
+          handleError("gui_setParent2: Will not set gui #%d as a child of gui #%d (parentgui parameter: %d) since they both belong to the same window. (Qt often freezes if trying to do that plus that it's likely that there is a bug somewhere since this call was made. If this is not a bug, you can, as a workaround, remove the old parent of the child before calling gui_add. If the child is already a window, then it's definitely a bug since it means that parent is a child of the child.)", (int)gui->get_gui_num(), (int)API_get_gui_from_widget(parent), (int)parentgui);
+          return false;
+        }
+      }
+    }
+
+    if (g_static_toplevel_widgets.contains(gui->_widget)){
+      handleError("gui_setParent2: Trying to set parent of a permanent widget. This is probably a bug.");
+      return false;
+    }
+      
+    // Trying to see if this prevents Qt from sometimes freezing the program when calling QWidget::setParent() in Qt/helpers.h. (Stuck in QWidgetPrivate::invalidateGraphicsEffectsRecursively())
+    // (don't remove, it seems to work.)
+    if (gui->_widget->parent() != NULL)
+      gui->_widget->setParent(NULL);
 
     set_window_parent(gui->_widget, parent, gui->_modality);
 
@@ -4555,7 +4620,8 @@ void gui_setFullScreen(int64_t guinum, bool enable){
       return;
 
     fprintf(stderr, "  gui_setFullScreen: Setting BACK fullscreen. NOT fullscreen.\n");
-
+    R_ASSERT_NON_RELEASE(gui->_widget != NULL);
+    
     if (gui->_full_screen_parent.data() != NULL && gui->_widget != NULL) {
       gui->_full_screen_parent->resetChildToOriginalState();
     
@@ -4848,7 +4914,7 @@ const_char *getHtmlFromText(const_char* text){
 // audio meter
 ////////////////
 
-int64_t gui_verticalAudioMeter(int instrument_id){
+int64_t gui_verticalAudioMeter(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;

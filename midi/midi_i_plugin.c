@@ -558,7 +558,7 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,cons
 
       int result = GFX_Message2(&v, program_state_is_valid, "Are you sure? Port \"%s\" is an input port. If you send MIDI data to this port, you risk starting a recursive connection that's impossible to stop.", midi_port->name);
 
-      if (result!=yes)
+      if (g_user_interaction_enabled==false || result!=yes)
         return MIDIgetPort(window, reqtype, NULL, program_state_is_valid);
 
       (void)no;

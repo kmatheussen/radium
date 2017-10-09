@@ -111,6 +111,9 @@ struct MyQMenuBar : QMenuBar {
 };
 */
 
+bool g_user_interaction_enabled = true;
+
+
 #if USE_GTK_VISUAL
 
 #if FOR_WINDOWS
@@ -870,7 +873,14 @@ int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const 
   va_end(argp);
 
   R_ASSERT_NON_RELEASE(g_radium_runs_custom_exec==false);
-    
+
+  if (g_user_interaction_enabled==false){
+    const char *message2 = talloc_format("  TESTING. show_gfx_message: %s. Num buttons: %d. Autoreturning false.\n", message, buttons==NULL ? 0 : buttons->num_elements);
+    addMessage(message2);
+    puts(message2);
+    return 0;
+  }
+  
   if (g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || !THREADING_is_main_thread() || g_radium_runs_custom_exec){
     
     SYSTEM_show_message(message);

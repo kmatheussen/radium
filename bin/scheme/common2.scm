@@ -602,6 +602,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
   (catch #t
          thunk
          (lambda args
+           (display args)(newline)
            (safe-display-ow!)
            *try-finally-failed-return-value*)))
 

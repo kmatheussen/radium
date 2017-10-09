@@ -61,6 +61,9 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
 
 void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
 
+        if (g_user_interaction_enabled==false)
+          return;
+
         if (Save_Initialize(filename, "RADIUM SONG")==false)
           return;
         
@@ -89,6 +92,9 @@ void SaveAs(struct Root *theroot){
         if (doStopPlayingWhenSavingSong())
           PlayStop();
 
+        if (g_user_interaction_enabled==false)
+          return;
+        
         const wchar_t *filename=GFX_GetSaveFileName(theroot->song->tracker_windows, NULL," Select file to save", NULL, "*.rad", NULL, true);
 
 	if(filename==NULL) return;

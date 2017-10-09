@@ -775,6 +775,9 @@ int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name, b
 const char *PLUGIN_get_effect_name(SoundPlugin *plugin, int effect_num){
   const struct SoundPluginType *plugin_type = plugin->type;
 
+  R_ASSERT_RETURN_IF_FALSE2(effect_num >= 0,"error1");
+  R_ASSERT_RETURN_IF_FALSE2(effect_num < plugin_type->num_effects + NUM_SYSTEM_EFFECTS,"error2");
+  
   if(effect_num<plugin_type->num_effects)
     return plugin_type->get_effect_name(plugin, effect_num);
 

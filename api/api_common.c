@@ -435,9 +435,9 @@ struct FXs *getFXsFromNumA(int windownum,struct Tracker_Windows **window, int bl
     return NULL;
 
   struct Tracks *track = (*wtrack)->track;
-  struct FXs *ret = fxnum < 0 ? NULL : VECTOR_get_r0(&track->fxs,fxnum,"fxs");
+  struct FXs *ret = fxnum < 0 ? NULL : VECTOR_get2(&track->fxs,fxnum,"fxs");
   if (ret==NULL)
-    handleError("FX #%d in track #%d in block #%d does not exist",fxnum,tracknum,blocknum);
+    return NULL;
   
   return ret;
 }

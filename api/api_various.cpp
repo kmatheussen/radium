@@ -1091,7 +1091,7 @@ int getTrackMidiChannel(int tracknum, int blocknum, int windownum){
   return ATOMIC_GET(wtrack->track->midi_channel);
 }
 
-void setTrackMidiChannel(int channelnum, int tracknum, int blocknum, int windownum){
+void setTrackMidiChannel(int midi_channel, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;
   struct WBlocks *wblock;
@@ -1106,8 +1106,14 @@ void setTrackMidiChannel(int channelnum, int tracknum, int blocknum, int windown
 
   if(wtrack==NULL) return;
 
+  if (midi_channel < 0 || midi_channel > 15){
+    handleError("midi_channel must be between 0 and 15. Found %d", midi_channel);
+    return;
+  }
+  
+
   ADD_UNDO(TrackHeader(wblock->l.num, wtrack->l.num));
-  ATOMIC_SET(wtrack->track->midi_channel, channelnum);
+  ATOMIC_SET(wtrack->track->midi_channel, midi_channel);
 }
 
 
@@ -2380,6 +2386,19 @@ void testErrorMessage(void){
   SYSTEM_show_message("Error message seems to work");
 }
 
+void startAutotestingMode(void){
+  g_user_interaction_enabled = false;
+}
+
+void stopAutotestingMode(void){
+  g_user_interaction_enabled = true;
+}
+
+bool isInAutotestingMode(void){
+  return g_user_interaction_enabled==false;
+}
+
+
 // FAUST
 
 static int g_faust_optimization_level;
@@ -2513,7 +2532,7 @@ const_char *fromBase64(const char *s){
   return STRING_get_chars(STRING_fromBase64(STRING_create(s)));
 }
 
-void msleep(int64_t ms){
+void msleep(int ms){
   QThread::msleep(ms);
   //usleep(1000*ms); // usleep only works in the range 0->1000000
 }

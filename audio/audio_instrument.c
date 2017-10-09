@@ -462,6 +462,15 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
     }
   }
 
+  // Add this check here (and not at the beginning of the function) since type_name is NULL when creating from state.
+  if (false==is_loading_song){
+    if (!strcmp(plugin->type->type_name,"Bus")){
+      GFX_Message(NULL, "Only 5 buses are supported. If you need more than 5 buses, please make a feature request.");
+      PLUGIN_delete(plugin);
+      return false;
+    }
+  }
+  
   bool needs_name = patch->name==NULL || (strlen(patch->name)==0);
 
   if (needs_name){

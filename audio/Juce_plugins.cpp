@@ -1977,7 +1977,11 @@ char *JUCE_download(const char *url_url){
 static String g_backtrace;
 
 const char *JUCE_get_backtrace(void){
+  static int num=0;
+  printf("Getting backtrace %d\n", num);
   g_backtrace = SystemStats::getStackBacktrace();
+  printf("Got backtrace %d\n", num);
+  num++;
   return g_backtrace.toUTF8();
 }
 

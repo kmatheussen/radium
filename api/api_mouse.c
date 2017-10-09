@@ -2592,7 +2592,7 @@ static struct Node *get_fxnode(int fxnodenum, int fxnum, int tracknum, int block
     return NULL;
   
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
-  return VECTOR_get(nodes, fxnodenum, "fx node");
+  return VECTOR_get2(nodes, fxnodenum, "fx node");
 }
 
 
@@ -2615,7 +2615,7 @@ Place getFxnodePlace(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
     return place(0,0,1);
   
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
-  struct Node *node = VECTOR_get(nodes, fxnodenum, "fx node");
+  struct Node *node = VECTOR_get2(nodes, fxnodenum, "fx node");
   if (node==NULL)
     return place(0,0,1);
 
@@ -2633,7 +2633,7 @@ float getFxnodeValue(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
     return 0.0f;
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
-  struct Node *node = VECTOR_get(nodes, fxnodenum, "fx node");
+  struct Node *node = VECTOR_get2(nodes, fxnodenum, "fx node");
   if (node==NULL)
     return 0.0f;
 
@@ -2654,7 +2654,7 @@ int getFxnodeLogtype(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
     return 0.0f;
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
-  struct Node *node = VECTOR_get(nodes, fxnodenum, "fx node");
+  struct Node *node = VECTOR_get2(nodes, fxnodenum, "fx node");
   if (node==NULL)
     return 0.0f;
 
@@ -2702,7 +2702,7 @@ const_char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, in
     return NULL;
 
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
-  struct Node *node = VECTOR_get(nodes, fxnodenum, "fx node");
+  struct Node *node = VECTOR_get2(nodes, fxnodenum, "fx node");
   if (node==NULL)
     return "<fxnode not found>";
 
@@ -3027,9 +3027,8 @@ Place getFxrangenodePlace(int fxnodenum, int fxnum, int rangetracknum){
     return place(0,0,1);
   }
   
-  struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
-    handleError("fxnum > num_fxs: %d",fxnum);
     return place(0,0,1);
   }
   
@@ -3053,9 +3052,8 @@ float getFxrangenodeValue(int fxnodenum, int fxnum, int rangetracknum){
     return 0;
   }
   
-  struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
-    handleError("fxnum > num_fxs: %d",fxnum);
     return 0;
   }
   
@@ -3081,9 +3079,8 @@ int getFxrangenodeLogtype(int fxnodenum, int fxnum, int rangetracknum){
     return 0;
   }
   
-  struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
-    handleError("fxnum > num_fxs: %d",fxnum);
     return 0;
   }
   
@@ -3106,9 +3103,8 @@ const char* getFxrangeName(int fxnum, int rangetracknum){
     return 0;
   }
 
-  struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
-    handleError("fxnum > num_fxs: %d",fxnum);
     return "";
   }
   
@@ -3124,9 +3120,8 @@ int getNumFxrangenodes(int fxnum, int rangetracknum){
     return 0;
   }
 
-  struct FXs *fxs = VECTOR_get_r0(&range->fxs[rangetracknum], fxnum, "fxs");
+  struct FXs *fxs = VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
-    handleError("fxnum > num_fxs: %d",fxnum);
     return 0;
   }
   

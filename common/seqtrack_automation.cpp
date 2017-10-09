@@ -121,7 +121,7 @@ struct Automation{
 
     hash_t *state = HASH_create(3);
     HASH_put_int(state, "patch", patch->id);
-    HASH_put_chars(state, "effect_name", PLUGIN_get_effect_name(plugin, effect_num));
+    HASH_put_chars(state, "effect_name", effect_num==-1 ? "<effect not found>" : PLUGIN_get_effect_name(plugin, effect_num));
     HASH_put_hash(state, "automation", automation.get_state(get_node_state));
     return state;
   }
@@ -135,6 +135,11 @@ struct Automation{
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
 
+    R_ASSERT(effect_num >= 0);
+    R_ASSERT(effect_num < plugin->type->num_effects + NUM_SYSTEM_EFFECTS);
+
+    effect_num = R_BOUNDARIES(0, effect_num, plugin->type->num_effects + NUM_SYSTEM_EFFECTS - 1);
+    
     color = get_qcolor(get_effect_color(plugin, effect_num));
   }
 
@@ -155,9 +160,12 @@ struct Automation{
         break;
     }
     
-    if (i==type->num_effects+NUM_SYSTEM_EFFECTS)
+    if (i==type->num_effects+NUM_SYSTEM_EFFECTS){
       GFX_Message(NULL, "Sequencer automation: Could not find effect named \"%s\" in %s/%s", effect_name, type->type_name, type->name);
-    else{
+#if !defined(RELEASE)
+      R_ASSERT(false);
+#endif
+    }else{
       effect_num = i;//HASH_get_int32(state, "effect_num");
       color = get_qcolor(get_effect_color(plugin, effect_num));
     }

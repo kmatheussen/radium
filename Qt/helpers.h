@@ -105,9 +105,9 @@ static bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_to_run_c
   if (dynamic_cast<QMenu*>(w) != NULL)
     return false;
 
-  // Should be safe. When running custom exec, a widget can not be deleted until exec() is finished.
-  if(is_going_to_run_custom_exec==true)
-    return true;
+  // Should be safe. When running custom exec, a widget can not be deleted until exec() is finished. (don't think that's correct. exec() can do anything)
+  //if(is_going_to_run_custom_exec==true)
+  //  return true;
 
   if (w->windowFlags() & Qt::Popup)
     return false;
@@ -115,7 +115,7 @@ static bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_to_run_c
   return true;
 }
 
-#if 0
+#if !defined(RELEASE)
   #define D(A) A
 #else
   #define D(A)
@@ -131,7 +131,7 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
 #endif
       if (child==g_main_window){
         int *ai=NULL;
-        ai[0] = 51; // Workaround. We can't use R_ASSERT in this function since get_current_parent is used by some of the bin/radium_* programs.
+        ai[0] = 51; // Start the crash reporter. We can't use R_ASSERT in this function since get_current_parent is used by some of the bin/radium_* programs.
       }
       return g_main_window;
     }
@@ -154,12 +154,14 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
     return ret->window();
   }
 
+  /*
   ret = QApplication::activePopupWidget();
   D(printf("333555 %p\n", ret));
   if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
     return ret->window();
   }
-
+  */
+  
   ret = QApplication::activeWindow();
   D(printf("444 %p\n", ret));
   if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
@@ -173,13 +175,16 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
     return mixer_strips_widget;
   }
   */
-  
+
+  /*
+    // Don't think we usually want this. Not sure.
   ret = QApplication::widgetAt(QCursor::pos());
   D(printf("666 %p\n", ret));
   if (g_static_toplevel_widgets.contains(ret)){
     return ret->window();;
   }
-
+  */
+  
   D(printf("777\n"));
   return g_main_window;
     
@@ -218,6 +223,33 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
   const bool set_parent_working_properly = true;
 #endif
 
+  {
+    // sanity checks
+
+#if !defined(RELEASE)
+    if(!window->isWindow())
+      abort();
+#endif
+    
+    QWidget *child_window = window->window();
+    QWidget *parent_window = parent==NULL ? NULL : parent->window();
+
+#if !defined(RELEASE)
+    if(parent!=NULL && parent_window==NULL)
+      abort();
+#endif
+    
+    if (child_window!=NULL && parent_window!=NULL){
+      if (child_window==parent_window){
+#if !defined(RELEASE)
+        abort();
+#endif
+        return false;
+      }
+    }
+  }
+  
+        
   Qt::WindowFlags f = Qt::Window | DEFAULT_WINDOW_FLAGS;
   bool force_modal = false;
 

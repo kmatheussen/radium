@@ -344,8 +344,11 @@ static dyn_t create_dyn_from_s7(s7_scheme *s7, s7_pointer s, bool undefinedIsErr
     return DYN_create_array(vec);
   }    
 
-  if(undefinedIsError)
+  if(undefinedIsError){
+    //if (g_user_interaction_enabled==false)
+    //  abort(); // Something is wrong with the script. Call abort here to get backtrace.
     handleError("s7extra_dyn: Unsupported s7 type");
+  }
   
   return g_uninitialized_dyn;
 }

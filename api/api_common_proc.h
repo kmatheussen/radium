@@ -30,7 +30,7 @@ extern void clearErrorMessage(void); // Should be called before running code tha
 #ifdef RADIUM_COMMON_NSMTRACKER_H
 static inline void *VECTOR_get2_r0(const vector_t *v, int num, const char *type){
   if (num < 0){
-    handleError("Can not have negative index for VECTOR_get. name: %s index: %d (size: %d)",type,num,v->num_elements);
+    handleError("Can not use negative index for VECTOR_get. name: %s index: %d (size: %d)",type,num,v->num_elements);
     return NULL;
   }
   if (num>=v->num_elements)
@@ -40,7 +40,7 @@ static inline void *VECTOR_get2_r0(const vector_t *v, int num, const char *type)
 }
                          
 static inline void *VECTOR_get2(const vector_t *v, int num, const char *type){
-  void *ret = VECTOR_get_r0(v, num, type);
+  void *ret = VECTOR_get2_r0(v, num, type);
 
   if (ret==NULL && num>=0){
     handleError("There is no %s %d (size: %d)",type,num,v->num_elements);

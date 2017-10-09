@@ -1607,40 +1607,65 @@ void midi_setInputPort(void){
 }
 
 #define NUM_IDS 2048
-static int note_ids_pos = 0;
-static int64_t note_ids[NUM_IDS] = {0}; // TODO: Change int to int64_t everywhere in the api.
-static float initial_pitches[NUM_IDS] = {0}; // TODO: Change int to int64_t everywhere in the api.
+static int playnote_ids_pos = 0;
+static int64_t playnote_ids[NUM_IDS] = {0};
+static float initial_pitches[NUM_IDS] = {0};
 
 int playNote(float pitch, float velocity, float pan, int midi_channel, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;
 
-  int ret = note_ids_pos;
+  if (midi_channel < 0 || midi_channel > 15){
+    handleError("midi_channel must be between 0 and 15. Found %d", midi_channel);
+    return -1;
+  }
+  
+  if (pitch <= 0){
+    handleError("pitch must be higher than 0. Found %f", pitch);
+    return -1;
+  }
+  
+  if (velocity < 0){
+    handleError("velocity must be 0 or higher. Found %f", velocity);
+    return -1;
+  }
+  
+  int ret = playnote_ids_pos;
 
-  note_ids[ret] = PATCH_play_note(patch, create_note_t(NULL, -1, pitch, velocity, pan, midi_channel, 0, 0));
+  playnote_ids[ret] = PATCH_play_note(patch, create_note_t(NULL, -1, pitch, velocity, pan, midi_channel, 0, 0));
   initial_pitches[ret] = pitch;
     
-  note_ids_pos++;
-  if (note_ids_pos==NUM_IDS)
-    note_ids_pos = 0;
+  playnote_ids_pos++;
+  if (playnote_ids_pos==NUM_IDS)
+    playnote_ids_pos = 0;
   
   return ret;
 }
 
-void changeNotePitch(float pitch, int note_id, int midi_channel, int64_t instrument_id){
+void changeNotePitch(float pitch, int playnote_id, int midi_channel, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
 
-  if (note_id < 0 || note_id >= NUM_IDS) {
-    handleError("note_id %d not found", note_id);
+  if (playnote_id < 0 || playnote_id >= NUM_IDS) {
+    handleError("playnote_id %d not found", playnote_id);
     return;
   }
 
-  //printf("change pitch %f %d %d\n",pitch,note_id,instrument_id);
+  if (midi_channel < 0 || midi_channel > 15){
+    handleError("midi_channel must be between 0 and 15. Found %d", midi_channel);
+    return;
+  }
+
+  if (pitch <= 0){
+    handleError("pitch must be higher than 0. Found %f", pitch);
+    return;
+  }
+  
+  //printf("change pitch %f %d %d\n",pitch,playnote_id,instrument_id);
   PATCH_change_pitch(patch, create_note_t(NULL,
-                                          note_ids[note_id],
+                                          playnote_ids[playnote_id],
                                           pitch,
                                           0,
                                           pitch,
@@ -1650,20 +1675,25 @@ void changeNotePitch(float pitch, int note_id, int midi_channel, int64_t instrum
                                           ));
 }
 
-void stopNote(int note_id, int midi_channel, int64_t instrument_id){
+void stopNote(int playnote_id, int midi_channel, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
 
-  if (note_id < 0 || note_id >= NUM_IDS) {
-    handleError("note_id %d not found", note_id);
+  if (playnote_id < 0 || playnote_id >= NUM_IDS) {
+    handleError("playnote_id %d not found", playnote_id);
     return;
   }
 
-  //printf("stop note %d %d\n",note_id,instrument_id);
+  if (midi_channel < 0 || midi_channel > 15){
+    handleError("midi_channel must be between 0 and 15. Found %d", midi_channel);
+    return;
+  }
+  
+  //printf("stop note %d %d\n",playnote_id,instrument_id);
   PATCH_stop_note(patch, create_note_t(NULL,
-                                       note_ids[note_id],
-                                       initial_pitches[note_id],
+                                       playnote_ids[playnote_id],
+                                       initial_pitches[playnote_id],
                                        0,
                                        0,
                                        midi_channel,
@@ -1912,8 +1942,11 @@ static struct EffectMonitor *find_effect_monitor(int effect_num, int64_t instrum
 */
 
 int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, bool monitor_stored, bool monitor_automation, func_t *func){
-  R_ASSERT_NON_RELEASE(monitor_automation || monitor_stored);
-
+  if (!monitor_automation && !monitor_stored){
+    handleError("addEfectMonitor: at least one of monitor_stored and monitor_automation must be true");
+    return -1;
+  }
+  
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return -1;

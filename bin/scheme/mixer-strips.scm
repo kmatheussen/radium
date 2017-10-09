@@ -2709,19 +2709,27 @@
 
 (define (get-mixer-strips-object-from-gui mixer-strips-gui)
   (let loop ((objects *mixer-strips-objects*))
-    (if (= ((car objects) :gui)
-           mixer-strips-gui)
-        (car objects)
-        (loop (cdr objects)))))
+    (cond ((null? objects)
+           (let ((message (<-> "There is no mixer strips gui #" mixer-strips-gui)))
+             (<ra> :add-message message)
+             (error message)))
+          ((= ((car objects) :gui)
+              mixer-strips-gui)
+           (car objects))
+          (else
+           (loop (cdr objects))))))
                    
 
 (define (mixer-strips-get-num-rows mixer-strips-gui)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
-    (object :strips-config :num-rows)))
+    (if object
+        (object :strips-config :num-rows)
+        #f)))
 
 (define (mixer-strips-change-num-rows mixer-strips-gui num-rows)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
-    (set! (object :strips-config :num-rows) num-rows)))
+    (if object
+        (set! (object :strips-config :num-rows) num-rows))))
 
 #!!
 (mixer-strips-change-num-rows ((car *mixer-strips-objects*) :gui) 6)
@@ -2730,7 +2738,8 @@
 
 (define (mixer-strips-reset-configuration! mixer-strips-gui)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
-    (object :strips-config :reset!)))
+    (if object
+        (object :strips-config :reset!))))
 
 #!!
 (mixer-strips-reset-configuration! ((car *mixer-strips-objects*) :gui))
@@ -2738,11 +2747,13 @@
 
 (define (mixer-strips-get-configuration mixer-strips-gui)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
-    (object :strips-config :get)))
+    (if object
+        (object :strips-config :get))))
   
 (define (mixer-strips-set-configuration! mixer-strips-gui configuration)
   (let ((object (get-mixer-strips-object-from-gui mixer-strips-gui)))
-    (object :strips-config :set! configuration)))
+    (if object
+        (object :strips-config :set! configuration))))
   
 
 (define (toggle-all-mixer-strips-fullscreen)

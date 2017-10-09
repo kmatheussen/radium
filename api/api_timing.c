@@ -46,8 +46,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 /********** Signatures  **********/
 
 void setMainSignature(int numerator, int denominator){
-  if (numerator<=0 || denominator<=0)
+  if (numerator <= 0 || denominator <= 0){
+    handleError("%d / %d is not a legal signature", numerator, denominator);
     return;
+  }
+   
   if (numerator==root->signature.numerator && denominator==root->signature.denominator)
     return;
   
@@ -90,6 +93,11 @@ int addSignature(int numerator, int denominator,
     return -1;
   }
 
+  if (numerator <= 0 || denominator <= 0){
+    handleError("%d / %d is not a legal signature", numerator, denominator);
+    return -1;    
+  }
+  
   ADD_UNDO(Signatures_CurrPos(window));
         
   struct Signatures *signature;
@@ -411,14 +419,14 @@ void setTemponode(int num, float value, Place place, int blocknum, int windownum
   struct TempoNodes *temponode;
 
   const vector_t *tempo_nodes = GetTempoNodes(window, wblock);
-  
+
   if (num==0)
     temponode = block->temponodes; // don't want to set placement for the first node. It's always at top.
   
   else if (num==tempo_nodes->num_elements-1)
     temponode = ListLast3(&block->temponodes->l); // don't want to set placement for the last node. It's always at bottom.
 
-  else if (num>=tempo_nodes->num_elements) {
+  else if (num < 0 || num>=tempo_nodes->num_elements) {
     handleError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return;
     
@@ -427,6 +435,7 @@ void setTemponode(int num, float value, Place place, int blocknum, int windownum
 
   } else {
     temponode = (struct TempoNodes *)ListMoveElement3_FromNum_ns(&block->temponodes, num, &place, NULL, NULL);
+    R_ASSERT_RETURN_IF_FALSE(temponode!=NULL);
   }
   
   if ( (value+1) > wblock->reltempomax) {
@@ -461,7 +470,7 @@ void deleteTemponode(int num, int blocknum){
 
   const vector_t *tempo_nodes = GetTempoNodes(window, wblock);
 
-  if (num >= tempo_nodes->num_elements){
+  if (num < 0 || num >= tempo_nodes->num_elements){
     handleError("deleteTemponode: No temponode %d in block %d",num,blocknum);
     return;
   }

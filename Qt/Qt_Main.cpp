@@ -2083,10 +2083,10 @@ static void setCursor(int64_t guinum, const QCursor &cursor){
   if (widget==NULL)
     return;
 
-  R_ASSERT(!widget->isWindow()); // Can have this assertion since we currently have no such calls. If it happens, it will cause the mouse cursor to be stuck in this mode.
+  if (g_user_interaction_enabled==true)
+    R_ASSERT(!widget->isWindow()); // Can have this assertion since we currently have no such calls. If it happens, it will cause the mouse cursor to be stuck in this mode for the whole window.
     
-  if (widget != NULL)
-    widget->setCursor(cursor);
+  widget->setCursor(cursor);
 }
 
 void SetNormalPointer(int64_t guinum){
