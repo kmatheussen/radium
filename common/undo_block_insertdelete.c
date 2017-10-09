@@ -108,12 +108,13 @@ void *Undo_Do_Block_Insert(
 		return Undo_Do_Block_Delete(window,wblock,wtrack,realline,pointer);
 	}
 
+        SEQUENCER_create_from_state(ubi->sequencer_state);
+
 	ubi->wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,ubi->blockpos);
 	DeleteBlock(ubi->blockpos);
 
-        SEQUENCER_create_from_state(ubi->sequencer_state);
-	BS_UpdateBlockList();
 	BS_UpdatePlayList();
+        BS_UpdateBlockList();
 
 	return ubi;
 }
@@ -136,6 +137,7 @@ void *Undo_Do_Block_Delete(
 	ListAddElement1(&window->wblocks,&ubi->wblock->l);
 
         SEQUENCER_create_from_state(ubi->sequencer_state);
+        
 	BS_UpdateBlockList();
 	BS_UpdatePlayList();
 
