@@ -231,14 +231,15 @@ if(wblock==NULL) return;
 
 	//wblock->left_subtrack=-1;
 
-	DLoadWTracks(newroot,window,wblock,wblock->wtrack, true);
+	DLoadWTracks(newroot,window,wblock,wblock->wtrack, true); // Call this one before DLoadLocalZooms since DLoadLocalZooms calls functions that uses wtracks.
+
+        DLoadLocalZooms(newroot,window,wblock); // Call this one as early as possible to fill in wblock->reallines, which is used lots of places.
+        
 
         UpdateWBlockWidths(window,wblock);
 
 
         UpdateWBlockCoordinates(window,wblock);	//Also updates wtrack coordinates
-
-	DLoadLocalZooms(newroot,window,wblock);
 
         // Range
         if (wblock->rangey1.dividor==0){ // I.e. old type

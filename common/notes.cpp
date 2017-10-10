@@ -64,6 +64,8 @@ static int FindFirstFreePolyphony_num(const Place *p){
 
 // Also sets the track->polyphony attribute.
 void SetNotePolyphonyAttributes(struct Tracks *track){
+  R_ASSERT_RETURN_IF_FALSE(track!=NULL);
+  
   //printf("**************  Track: %d\n", track->l.num);
   last_free_polyphony_num = 0; // reset
   

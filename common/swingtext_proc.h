@@ -11,7 +11,8 @@ extern LANGSPEC bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct W
 static inline bool swingtext_fits_reallines(struct WBlocks *wblock, const dynvec_t *barswings){
   R_ASSERT_RETURN_IF_FALSE2(wblock->block->beats!=NULL, false);
   R_ASSERT_RETURN_IF_FALSE2(wblock->block->filledout_swings.type==ARRAY_TYPE, false);
-
+  R_ASSERT_RETURN_IF_FALSE2(wblock->reallines!=NULL, false);
+  
   const struct Beats *beats = wblock->block->beats;
   
   //const dynvec_t *barswings = wblock->block->filledout_swings.array;
