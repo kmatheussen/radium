@@ -1420,7 +1420,10 @@ dyn_t movePianonote(int pianonotenum, float value, Place place, dyn_t dynnote, i
 
   if (place.line < 0)
     return dynnote;
-  
+
+  if (validate_place(place)==false)
+    return dynnote;
+
   float floatplace = GetfloatFromPlace(&place);
   
   struct Tracks *track = wtrack->track;
@@ -1459,6 +1462,9 @@ dyn_t movePianonoteStart(int pianonotenum, float value, Place place, dyn_t dynno
   window->must_redraw_editor = true;
     
   if (place.line < 0)
+    return dynnote;
+
+  if (validate_place(place)==false)
     return dynnote;
 
   float floatplace = GetfloatFromPlace(&place);
@@ -1569,6 +1575,9 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place, dyn_t dynnote
     if (place.line < 0)
       return dynnote;
 
+    if (validate_place(place)==false)
+      return dynnote;
+    
     float floatplace = GetfloatFromPlace(&place);
       
     const float mindiff = 0.001;
@@ -2245,6 +2254,9 @@ static int addNote4(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
 static int addPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value){
 
+  if (validate_place(*place)==false)
+    return -1;
+
   struct Pitches *pitch = AddPitch(window, wblock, wtrack, note, place, value);
 
   if(pitch==NULL)
@@ -2267,6 +2279,9 @@ int addPitchnum(float value, Place place, int tracknum, int blocknum, int window
   if (wtrack==NULL)
     return -1;
 
+  if (validate_place(place)==false)
+    return -1;
+      
   struct Notes *note = getNoteAtPlace(wtrack->track, &place);
 
   value = R_BOUNDARIES(1,value,127);

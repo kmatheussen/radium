@@ -28,6 +28,9 @@ extern void clearErrorMessage(void); // Should be called before running code tha
 
 
 #ifdef RADIUM_COMMON_NSMTRACKER_H
+
+#include "../common/placement_proc.h"
+  
 static inline void *VECTOR_get2_r0(const vector_t *v, int num, const char *type){
   if (num < 0){
     handleError("Can not use negative index for VECTOR_get. name: %s index: %d (size: %d)",type,num,v->num_elements);
@@ -56,6 +59,18 @@ static inline bool validate_place(const Place place){
     return false;
   }
   
+  return true;
+}
+
+static inline bool validate_place2(const Place place, const struct Blocks *block){
+  if (validate_place(place)==false)
+    return false;
+  
+  if (p_Greater_Or_Equal(place, p_Last_Pos(block))){
+    handleError("Place %s is placed after block end", p_ToString(place));
+    return false;
+  }
+
   return true;
 }
 #endif

@@ -86,6 +86,13 @@ static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget, QRect parent
   moveWindowToCentre(widget, parentRect);
 }
 
+#if !defined(RELEASE)
+  #define D(A) A
+#else
+  #define D(A)
+#endif
+
+
 static bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_to_run_custom_exec){
   if (w==NULL)
     return false;
@@ -98,28 +105,49 @@ static bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_to_run_c
     return false;
   */
 
-  if (w==g_curr_popup_qmenu)
+  if (w->isVisible()==false)
     return false;
-  if (w->windowFlags() & Qt::ToolTip)
+  
+  if (w==g_curr_popup_qmenu){
+    D(printf("iscurrpopup\n"));
     return false;
-  if (dynamic_cast<QMenu*>(w) != NULL)
+  }
+
+  if (w->windowFlags() & Qt::ToolTip){
+    D(printf("istooltip\n"));
     return false;
+  }
+  
+  if (dynamic_cast<QMenu*>(w) != NULL){
+    D(printf("ismenu\n"));
+    return false;
+  }
 
   // Should be safe. When running custom exec, a widget can not be deleted until exec() is finished. (don't think that's correct. exec() can do anything)
   //if(is_going_to_run_custom_exec==true)
   //  return true;
 
-  if (w->windowFlags() & Qt::Popup)
+  if (w->windowFlags() & Qt::Popup){
+    D(printf("ispopup\n"));
     return false;
+  }
   
   return true;
 }
 
-#if !defined(RELEASE)
-  #define D(A) A
-#else
-  #define D(A)
-#endif
+/*
+// Didn't work very well.
+static inline QWidget *find_modal_childwindow_to_be_parent(QWidget *widget, bool is_going_to_run_custom_exec){
+  const QList<QObject*> list = widget->children();
+  for (auto *o : list){
+    QWidget *widget = dynamic_cast<QWidget*>(o);
+    if(widget!=NULL && widget->isWindow() && widget->isModal() && widget->isVisible()) // && can_widget_be_parent_questionmark(widget, is_going_to_run_custom_exec))
+      return widget;
+  }
+
+  return NULL;
+}
+*/
 
 // Can only return a widget that is a member of g_static_toplevel_widgets.
 static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_custom_exec, bool may_return_current_parent_before_qmenu_opened = true){
@@ -142,7 +170,7 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
     return g_current_parent_before_qmenu_opened;
   }
 
-  QWidget *ret = QApplication::activeModalWidget();
+  QWidget *ret = QApplication::activeModalWidget(); // TODO: Fix. This one returns NULL if the widget is not active. But the active window could be the parent (seems like), and we don't want to return the parent. At least we don't want to return g_main_window when it has a modal window as child. (tried that, but qt behaved strange)
   D(printf("2222 %p\n", ret));
   if (can_widget_be_parent_questionmark(ret, is_going_to_run_custom_exec)){
     return ret;
@@ -184,8 +212,16 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
     return ret->window();;
   }
   */
+
+  /*
+  ret = find_modal_childwindow_to_be_parent(g_main_window, is_going_to_run_custom_exec);
+  D(printf("777 %p\n", ret));
+  if (ret != NULL)
+    return ret;
+  */
   
-  D(printf("777\n"));
+  D(printf("888\n"));
+  
   return g_main_window;
     
     /*
