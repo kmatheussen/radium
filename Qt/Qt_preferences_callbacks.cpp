@@ -579,7 +579,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       show_mixer_strip_during_startup->setChecked(showMixerStripDuringStartup());
       show_mixer_strip_on_the_left->setChecked(showMixerStripOnLeftSide());
         
-
+      max_num_menu_elements->setValue(getMaxSubmenuEntries());
+      
       modal_windows->setChecked(doModalWindows());
 #if FOR_WINDOWS
       native_file_requesters->hide();
@@ -1086,7 +1087,21 @@ public slots:
   }
 
 
+  
   // windows
+
+  void on_max_num_menu_elements_valueChanged(int val){
+    printf("max menu entries: %d\n",val);
+    if (_initing==false)
+      setMaxSubmenuEntries(val);
+  }
+  void on_max_num_menu_elements_editingFinished(){
+    set_editor_focus();
+
+    GL_lock();{
+      max_num_menu_elements->clearFocus();
+    }GL_unlock();
+  }
 
   void on_modal_windows_toggled(bool val){
     if (_initing==false)
