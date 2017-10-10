@@ -106,7 +106,12 @@ bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, 
 
       if (dat.is_valid==false)
         return false;
-      
+
+      if (dat.value==swing->weight)
+        return true; // I.e. we eat the key.
+          
+      ADD_UNDO(Swings_CurrPos(window));  
+
       AddSwing(block, track, swing->l.p, dat.value, dat.logtype);
     }
   }
