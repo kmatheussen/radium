@@ -107,8 +107,8 @@ bool SWINGTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, 
       if (dat.is_valid==false)
         return false;
 
-      if (dat.value==swing->weight)
-        return true; // I.e. we eat the key.
+      if (dat.value==swing->weight && dat.logtype==swing->logtype)
+        return true; // I.e. although the user didn't change anything, the key was valid so we still eat it (by returning true instead of false).
           
       ADD_UNDO(Swings_CurrPos(window));  
 
