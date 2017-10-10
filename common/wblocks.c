@@ -380,6 +380,13 @@ void NewWBlock(
         wblock->rangey1 = p_Create(0,0,1);
         wblock->rangey2 = p_Create(0,0,1);
 
+        UpdateWTracks(window,wblock);
+
+        // do this as early as possible. wblock->reallines is used lots of places.
+        NewLocalZooms(window,wblock);
+	UpdateRealLines(window,wblock);
+        
+
 	//wblock->zoomlinearea.width = 0;
 	UpdateWBlockWidths(window,wblock);
 
@@ -388,14 +395,9 @@ void NewWBlock(
 	wblock->reltempomax=2.0;
 
 	UpdateWBlockCoordinates(window,wblock);
-	UpdateWTracks(window,wblock);
 	wblock->wtrack=wblock->wtracks;
 	UpdateAllWTracksCoordinates(window,wblock);
 
-	NewLocalZooms(window,wblock);
-
-	UpdateRealLines(window,wblock);
-        
 	//UpdateWTempos(window,wblock);
 	//UpdateWLPBs(window,wblock);
 #if !USE_OPENGL
