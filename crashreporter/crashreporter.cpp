@@ -626,6 +626,9 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "OpenGL version: " + QString((ATOMIC_GET(GE_version_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_version_string))) + "\n";
   tosend += QString("OpenGL flags: %1").arg(ATOMIC_GET(GE_opengl_version_flags), 0, 16) + "\n\n";
 
+  tosend += "Runtime Qt version: " + QString(qVersion()) + " on " + QSysInfo::currentCpuArchitecture().toUtf8().constData() + "\n";
+  tosend += "Compile-time Qt version:" + QString(QT_VERSION_STR) +  " for " + QSysInfo::buildAbi().toUtf8().constData() + ".\n\n";
+  
   tosend += "Running plugins: " + plugin_names + "\n\n";
   tosend += "Running time: " + QString::number(time/1000.0) + " seconds.\n\n";
   tosend += "Last painter: " + QString(g_qt_is_painting_where) + "\n\n";
