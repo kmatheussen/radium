@@ -706,6 +706,12 @@ const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *window, 
 
   STime last_time = -1;
   int pos=0;
+
+  const struct STimes *stimes;
+  if (window->curr_track >= 0)
+    stimes = wblock->wtrack->track->times;
+  else
+    stimes = wblock->block->times_with_global_swings;
   
   for(int realline = 0 ; realline < wblock->num_reallines ; realline++){
     float fp1=GetfloatFromPlace(&wblock->reallines[realline]->l.p);
