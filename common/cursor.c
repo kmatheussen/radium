@@ -428,7 +428,7 @@ static void show_curr_track_in_statusbar(struct Tracker_Windows *window,struct W
 
   } else if (SWINGTEXT_subsubtrack(window, window->curr_track < 0 ? NULL : wtrack) >= 0) {
     if (window->curr_track >= 0)
-      message = PRE "Swing text sub track";
+      message = talloc_format(PRE "Swing text sub track. track #%d", window->curr_track);
     else
       message = PRE "Global Swing track";
 
