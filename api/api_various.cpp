@@ -1878,6 +1878,35 @@ dyn_t evalSchemeWithReturn(const_char *code){
 }
 
 void evalScheme(const_char *code){
+#if !defined(RELEASE)
+  QString code2(code);
+  code2.simplified();
+  printf("0 -%s\n", code2.toUtf8().constData());
+  
+  if(code2.at(0) == QChar('(')){
+    printf("1\n");
+    code2.remove(0,1);
+    code2.trimmed();
+    int pos_space = code2.indexOf(' ');
+    int pos_rp = code2.indexOf(')');
+    int pos;
+    if (pos_space==-1)
+      pos=pos_rp;
+    else if (pos_rp==-1)
+      pos=pos_space;
+    else
+      pos=R_MIN(pos_rp, pos_space);
+
+    printf("2: %d\n", pos);
+    
+    if (pos > 0){
+      code2 = code2.left(pos);
+      code2.trimmed();
+      printf("   CODE2: -%s-\n", code2.toUtf8().constData());
+      S7CALL2(void_charpointer,"FROM-C-assert-that-function-can-be-called-from-evalScheme",code2.toUtf8().constData());
+    }
+  }
+#endif
   SCHEME_eval(code);
 }
 

@@ -296,8 +296,7 @@ public slots:
   void ShowSwingPopup(const QPoint& pos)
   {
     printf("GOTIT swing\n");
-    if (simplePopupMenu("hide swing track")==0)
-      showHideSwingTrack(-1);
+    evalScheme("(show-global-swing-track-popup-menu)");
   }
 
   void on_swing_onoff_toggled(bool val){

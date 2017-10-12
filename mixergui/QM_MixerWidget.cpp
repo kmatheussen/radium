@@ -2697,9 +2697,9 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
 
   
   if (!HASH_has_key(state, "volume_applied_before_drywet")){
-    evalScheme("(<ra> :schedule 100 (lambda () (show-message-gui "
+    evalScheme("(ra:schedule 100 (lambda () (show-message-gui "
                "\"Beware that this song was created with a version of Radium where volume was applied after drywet and bypass.\n"
-               "If you use bypass or dry/wet, it might not sound exactly the same.\""
+               "If the song uses bypass or dry/wet, it might not sound exactly the same.\""
                ") #f))");
   }
 

@@ -412,7 +412,44 @@
 (my-require 'timing.scm) ;; Note that the program assumes that g_scheme_has_inited1 is true after timing.scm has been loaded.
 
 
+(define-constant *functions-called-from-evalScheme* 
+  '(show-global-swing-track-popup-menu
+    minimize-lowertab
+    remake-mixer-strips
+    redraw-mixer-strips
+    toggle-current-mixer-strips-fullscreen
+    set-random-sample-for-all-selected-sampler-instruments
+    show-async-message
+    FROM-C-show-help-window
+    cut-all-selected-seqblocks
+    paste-sequencer-blocks
+    copy-all-selected-seqblocks
+    delete-all-selected-seqblocks
+    pmg-start
+    make-instrument-conf
+    FROM_C-keybindings-have-been-reloaded
+    add-protracker-trackline         ;; import_mod.scm isn't loaded until we need it.
+    start-adding-protracker-events!  ;;
+    ra:schedule
+    ))
 
+(define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
+  '(add-protracker-trackline         ;; import_mod.scm isn't loaded until we need it.
+    start-adding-protracker-events!  ;; -------- '' --------
+    ))
+
+(define (FROM-C-assert-that-function-can-be-called-from-evalScheme funcname)
+  (if (not (memq (string->symbol funcname) *functions-called-from-evalScheme*))
+      (ra:show-error (<-> "The function -" funcname "- has not been added to the list of functions that can be called from evalScheme"))))
+
+(define (assert-functions-called-from-evalScheme)
+  (for-each (lambda (funcname)
+              (c-display "CHECKING that" funcname "is defined")
+              (if (not (memq funcname *functions-called-from-evalScheme-that-are-not-available-at-program-startup*))
+                  (assert (defined? funcname))))
+            *functions-called-from-evalScheme*))
+              
+              
 ;; The files loaded in init-step-2 can use ra: functions.
 (define (init-step-2)
 
@@ -426,6 +463,8 @@
   (my-require 'mouse.scm)
   (my-require 'mixer-strips.scm)
   (my-require 'pluginmanager.scm)
+
+  (assert-functions-called-from-evalScheme)
   
   (set! *is-initializing* #f))
 

@@ -5,9 +5,8 @@
 #include "mQt_song_properties_callbacks.h"
 
 
-extern struct Root *root;
-
 static bool g_has_been_made = false;
+
 static QPointer<song_properties> widget=NULL;
 
 static void ensure_widget_is_created(void){
