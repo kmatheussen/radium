@@ -539,7 +539,6 @@ Old version. Not correct.
      denominator)
   )
 
-;; todo: invert weights.
           
 (define (create-tempo-multipliers-from-swing start-line bar-swing)
   (define swings (to-list (bar-swing :swings)))
@@ -572,7 +571,10 @@ Old version. Not correct.
                                       num-lines))
                            (duration (- line2 line1)))
                       ;;(c-display "x" x "dur" duration "weight" (get-swing-weight swing))
-                      (define tempo-multiplier (/ (* x (scale (get-swing-weight swing) min-weight max-weight max-weight min-weight))
+                      (define tempo-multiplier (/ (* x  ;; [1]
+                                                     (scale (get-swing-weight swing)
+                                                            min-weight max-weight
+                                                            max-weight min-weight))
                                                   1));duration))
                       (let* ((x1 tempo-multiplier)
                              (rest (loop (cdr swings)
@@ -587,6 +589,16 @@ Old version. Not correct.
                       (cons (make-tempo-multiplier :y1 (+ start-line line1) :x1 x1
                                                    :y2 (+ start-line line2) :x2 x2)
                             rest))))))))))
+
+#||
+[1] This calculation is wrong for gliding swings.
+I haven't taken time to figure out the math for this, so instead the time values for bars with gliding swings are scaled in common/time.c.
+The result should be the same, and the added CPU usage (multiplying time values by a constant factor during "runtime") shouldn't matter.
+
+Note that the problem is not as simple as merging in a tempo multiplier with the most obvious value. For instance, changing BPM from 120
+to 60 will seldomly double the duration if the song contains accelerando or ritardando and acc/rit behavior is NOT set to "linear" (non-linear rit/acc is the default).
+The duration will almost double though, but not exactly.
+||#
 
 (pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 3 0)
                                                                                     (create-swing 1 2 0))
@@ -611,6 +623,7 @@ Old version. Not correct.
                                                                                     (create-swing 1 1 0))  ;; rask
                                                             :num-lines 4)))
 
+#!!
 (+ (* 3 (/ 1 13/16))
    (* 1 (/ 1 13/4)))
 
@@ -656,6 +669,8 @@ Old version. Not correct.
 
 (+ (* 8/5 1 (/ 1 4))
    (* 8/5 1 (/ 1 1)))
+
+!!#
 
 (pp (create-tempo-multipliers-from-swing 10 (make-bar-swing :barnum 1 :swings (list (create-swing 0 4 0)
                                                                                     (create-swing 2 1 0))
@@ -1028,8 +1043,21 @@ Old version. Not correct.
                     (make-tempo-multiplier :y1 5 :x1 1
                                            :y2 8 :x2 1)))
 
+#!!
 
-
+(pretty-print
+ (merge-tempo-multipliers (list (make-tempo-multiplier :y1 0 :x1 2   ;; accelerando
+                                                       :y2 5 :x2 4))
+                          (list (make-tempo-multiplier :y1 0 :x1 1   ;; bar 1 and 2
+                                                       :y2 4 :x2 1)
+                                (make-tempo-multiplier :y1 4 :x1 1
+                                                       :y2 8 :x2 1))
+                          8))
+((hash-table '(:y1 . 0) '(:x1 . 1)
+             '(:y2 . 4) '(:x2 . 1))
+ (hash-table '(:y1 . 4) '(:x1 . 1)
+             '(:y2 . 8) '(:x2 . 1)))
+!!#
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 

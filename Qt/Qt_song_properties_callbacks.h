@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
 #include "../common/OS_string_proc.h"
+#include "../common/OS_Player_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -58,7 +59,7 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
   void update_widgets(struct Song *song){
     R_ASSERT(_initing==true);
     
-    set_linear_accelerando_and_ritardando(ATOMIC_GET(song->linear_accelerando), ATOMIC_GET(song->linear_ritardando));
+    set_linear_accelerando_and_ritardando(song->linear_accelerando, song->linear_ritardando);
     send_swing_to_plugins->setChecked(song->plugins_should_receive_swing_tempo);
     mixer_comments_visible->setChecked(mixerStripCommentsVisible());
     swing_along->setChecked(song->editor_should_swing_along);
@@ -82,7 +83,11 @@ public slots:
     if (_initing==true)
       return;
     
-    ATOMIC_SET(root->song->linear_accelerando, val);
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
+      root->song->linear_accelerando = val;
+    }
+    
     TIME_global_tempos_have_changed();
 
     root->song->tracker_windows->must_redraw_editor = true;
@@ -91,8 +96,12 @@ public slots:
   void on_rit_linear_toggled(bool val){
     if (_initing==true)
       return;
+
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
+      root->song->linear_ritardando = val;
+    }
     
-    ATOMIC_SET(root->song->linear_ritardando, val);
     TIME_global_tempos_have_changed();
     
     root->song->tracker_windows->must_redraw_editor = true;

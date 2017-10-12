@@ -99,6 +99,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #error "unknown architecture"
 #endif
 
+
+#ifdef __cplusplus
+static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or higher (the assertion is here because the function llabs is used on int64_t)");
+#endif
+
 /******************************************************************
   Main header file for the tracker. Each struct often has a source-
   file with the same, or nearly the same, name.
@@ -2425,8 +2430,8 @@ struct Song{
 	NInt num_blocks;
 	char *songname;
 
-        DEFINE_ATOMIC(bool, linear_accelerando);
-        DEFINE_ATOMIC(bool, linear_ritardando);
+        bool linear_accelerando; // player must be stopped when writing to, or hold the player lock.
+        bool linear_ritardando; // player must be stopped when writing to, or hold the player lock.
         bool plugins_should_receive_swing_tempo;
         bool editor_should_swing_along;
 

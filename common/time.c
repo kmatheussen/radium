@@ -756,12 +756,21 @@ void UpdateAllSTimes(void){
 #else // USE_NEW_TIMING
 
 
+#if 1 //defined(RELEASE)
+#define D(n)
+#else
+#define D(n) n
+#endif
+
+
 struct STimeChange{
   double y1,x1,t1; // y=line (place as double), x = tempo at y, t = time at y
   double y2,x2,t2; //
 
-  double logt1;   // Precalculated log(x1)     [ !!!!! not log(t1)    !!!!! ]
-  double logt2t1; // Precalculated log(x2/x1)  [ !!!!! not log(t2/t2) !!!!! ]
+  double logt1;   // Precalculated log(x1)     [ !!!!! NOT log(t1)    !!!!! ]
+  double logt2t1; // Precalculated log(x2/x1)  [ !!!!! NOT log(t2/t2) !!!!! ]
+
+  double glidingswing_scale_value; // hack to fix gliding swing values. Not used if it has value 0;
 };
 
 
@@ -770,7 +779,7 @@ struct STimeChange{
   ;; integrate 1/(t1*((t2/t1)^(x/b))), x from 0 to c
   ;; https://www.wolframalpha.com/input/?i=integrate+1%2F(t1*((t2%2Ft1)%5E(x%2Fb))),+x+from+0+to+c
 */
-static STime get_stime_from_stimechange_equal_ratio_accelerando(const struct STimeChange *tc, double y){
+static double get_stime_from_stimechange_equal_ratio_accelerando(const struct STimeChange *tc, double y){
   double t1 = tc->x1;
   double t2 = tc->x2;
   double b = tc->y2 - tc->y1;
@@ -790,7 +799,7 @@ static STime get_stime_from_stimechange_equal_ratio_accelerando(const struct STi
   integrate 1/(t1 + (t2 - (t1 * (t2/t1)^((b-x)/b)))), t1>0, t2>0, x from 0 to c
   (-b Log[t1]+c Log[t2/t1]+b Log[t1+t2-t2 ((t2/t1))^(-c/b)])/((t1+t2) Log[t2/t1])
 */
-static STime get_stime_from_stimechange_equal_ratio_deaccelerando(const struct STimeChange *tc, double y){
+static double get_stime_from_stimechange_equal_ratio_deaccelerando(const struct STimeChange *tc, double y){
   double t1 = tc->x1;
   double t2 = tc->x2;
   double b = tc->y2 -tc->y1;
@@ -811,21 +820,30 @@ static STime get_stime_from_stimechange_equal_ratio_deaccelerando(const struct S
 
   double denominator = (t1+t2) * tc->logt2t1;
 
-  return pc->pfreq * 60 * numerator/denominator;
+  return (double)pc->pfreq * 60.0 * numerator/denominator;
 }
 
 
-static STime get_stime_from_stimechange_linear(const struct STimeChange *c, double y){
+static double get_stime_from_stimechange_linear(const struct STimeChange *c, double y){
   const double k = (c->x2-c->x1) / (c->y2-c->y1);
   const double Tbp = scale_double(y, c->y1, c->y2, c->x1, c->x2);
 
-  return pc->pfreq * 60 * (1.0/k) * log(Tbp/c->x1);
+  return (double)pc->pfreq * 60.0 * (1.0/k) * log(Tbp/c->x1);
 }
 
+static inline bool tchange_has_gliding_tempo(const struct STimeChange *c){
+  return fabs(c->x2-c->x1) >= 0.003; // approx.
+}
 
-static STime get_stime_from_stimechange(const struct STimeChange *c, double y, const bool has_t){
+static double get_stime_from_stimechange(const struct STimeChange *c, double y, const bool has_t){
   //printf("  Diff: %f\n", fabs(c->x2-c->x1));
-  if (fabs(c->x2-c->x1) < 0.003){
+
+  double stime;
+  
+  if (!tchange_has_gliding_tempo(c)){
+
+    // no tempo change (almost no tempo change)
+    ///////////////////////////////////////////
     
     //    if (has_t)
     //   return scale_double(y, c->y1, c->y2, c->t1, c->t2) - c->t1;
@@ -836,47 +854,71 @@ static STime get_stime_from_stimechange(const struct STimeChange *c, double y, c
       time = distance/speed
     */
 
-    double distance = y - c->y1;
+    double distance = y - c->y1; 
     double speed = (c->x1 + c->x2) / 2.0;
-    return pc->pfreq * 60 * distance / speed;
+    stime = (double)pc->pfreq * 60.0 * distance / speed;
 
   } else if (c->x2>c->x1) {
-    
-    if (ATOMIC_GET(root->song->linear_accelerando))
-      return get_stime_from_stimechange_linear(c, y);
+
+    // accelerando
+    //////////////
+
+    if (root->song->linear_accelerando)
+      stime = get_stime_from_stimechange_linear(c, y);
     else
-      return get_stime_from_stimechange_equal_ratio_accelerando(c, y);
+      stime = get_stime_from_stimechange_equal_ratio_accelerando(c, y);
     
   } else {
 
-    if (ATOMIC_GET(root->song->linear_ritardando))
-      return get_stime_from_stimechange_linear(c, y);
+    // ritardando
+    /////////////
+
+    if (root->song->linear_ritardando)
+      stime = get_stime_from_stimechange_linear(c, y);
     else
-      return get_stime_from_stimechange_equal_ratio_deaccelerando(c, y);
+      stime = get_stime_from_stimechange_equal_ratio_deaccelerando(c, y);
     
   }
-  
+
+  if (c->glidingswing_scale_value != 0)
+    return stime * c->glidingswing_scale_value;
+  else
+    return stime;
 }
 
-static double Place2STime_from_times2(
-                                      const struct STimes *stimes,
-                                      double y
-                                      )
-{
-  R_ASSERT_NON_RELEASE(stimes!=NULL);
-  R_ASSERT_NON_RELEASE(&stimes[(int)y] != NULL);
-
-  // Find the right time_change to use.
+static const struct STimeChange *get_stimechange(const struct STimes *stimes, double y){
   const struct STimeChange *time_change=stimes[(int)y].tchanges;
   R_ASSERT_NON_RELEASE(time_change!=NULL);
   
   while(time_change->y2 < y){
     time_change = time_change + 1; // All changes in a block are allocated sequentially.
     //R_ASSERT_RETURN_IF_FALSE2(time_change->t1 > 0, (time_change-1)->t2); // Can happen, for instance if the second tempo node is crammed to the top of the block.
-    R_ASSERT_NON_RELEASE(time_change!=NULL);
+    R_ASSERT_NON_RELEASE(time_change->y2 != 0);
   }
 
-  return time_change->t1 + get_stime_from_stimechange(time_change, y, true);
+  return time_change;
+}
+
+double Place2STime_from_times2(
+                               const struct STimes *stimes,
+                               double place_as_float
+                               )
+{
+  R_ASSERT_NON_RELEASE(stimes!=NULL);
+  R_ASSERT_NON_RELEASE(&stimes[(int)place_as_float] != NULL);
+
+  // Find the right time_change to use.
+  const struct STimeChange *time_change=get_stimechange(stimes, place_as_float);
+
+  //printf("  %f: Found %f -> %f. (%f -> %f)", place_as_float, time_change->y1, time_change->y2, time_change->t1/pc->pfreq, time_change->t2/pc->pfreq);
+  double ret = time_change->t1 + get_stime_from_stimechange(time_change, place_as_float, true);
+
+  R_ASSERT_NON_RELEASE(ret < time_change->t2 + 10);
+
+  if (ret > time_change->t2)
+    return time_change->t2; // Could happen due to rounding errors.
+  else
+    return ret;
 }
 
 STime Place2STime_from_times(int num_lines, const struct STimes *times, const Place *p){
@@ -899,69 +941,8 @@ STime Place2STime(
   return Place2STime_from_times(block->num_lines, block->times, p);
 }
 
-// Returns an array of STimeChange elements
-static struct STimeChange *create_time_changes_from_scheme_data(const dynvec_t *timings){
-  struct STimeChange *time_changes = talloc(sizeof(struct STimeChange)*(timings->num_elements+1)); // Allocate one more element so that the last element is nulled out (used for assertion).
-  
-  double t1 = 0;
-  
-  for(int i=0;i<timings->num_elements;i++){
-    hash_t *h = timings->elements[i].hash;
-    time_changes[i].y1 = DYN_get_double_from_number(HASH_get_dyn(h, ":y1"));
-    time_changes[i].y2 = DYN_get_double_from_number(HASH_get_dyn(h, ":y2"));
 
-    double x1 = DYN_get_double_from_number(HASH_get_dyn(h, ":x1"));
-    double x2 = DYN_get_double_from_number(HASH_get_dyn(h, ":x2"));
 
-    time_changes[i].x1 = x1;
-    time_changes[i].x2 = x2;
-
-    time_changes[i].logt1 = log(x1);
-    time_changes[i].logt2t1 = log(x2/x1);
-
-    time_changes[i].t1 = t1;
-
-    double t2 = t1 + get_stime_from_stimechange(&time_changes[i], time_changes[i].y2, false);
-    time_changes[i].t2 = t2;
-    
-    t1 = t2;
-
-    //printf("   TIMING. %d: %f,%f - %f,%f. t1: %f, t2: %f\n", i, time_changes[i].y1, time_changes[i].x1, time_changes[i].y2, time_changes[i].x2, time_changes[i].t1 / pc->pfreq, time_changes[i].t2 / pc->pfreq);
-  }
-
-  /*
-  for(int i=0;i<timings->num_elements;i++){
-    hash_t *h = timings->elements[i].hash;
-    time_changes[i].y1 = HASH_get_float(h, "y1");
-    time_changes[i].x1 = HASH_get_float(h, "x1");
-    time_changes[i].t1 = HASH_get_float(h, "t1");
-    time_changes[i].y2 = HASH_get_float(h, "y2");
-    time_changes[i].x2 = HASH_get_float(h, "x2");
-    time_changes[i].t2 = HASH_get_float(h, "t2");
-  }
-  */
-  
-  return time_changes;
-}
-
-/*
-static const struct STimeChange **create_tchanges_from_time_changes(const struct STimeChange *time_changes, int num_lines, int num_elements){ // num_elements is only used to check if something is very wrong.
-  int i=0;
-  const struct STimeChange **tchanges = talloc(sizeof(struct STimeChange*)*num_lines+1);
-
-  for(int line=0;line<=num_lines;line++){
-    while(time_changes[i].y2 < line)
-      i++;
-    if (i>=num_elements){
-      RError("i>=num_elements: %d >= %d. line: %d, num_lines: %d",i,num_elements,line,num_lines);
-      i=0;
-    }
-    tchanges[line] = &time_changes[i];
-  }
-
-  return tchanges;
-}
-*/
 
 // Precalculate timing for all line starts. (optimization)
 struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChange *time_changes, int num_elements){//const struct STimeChange **tchanges){
@@ -971,20 +952,38 @@ struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChan
   int i=0;
 
   for(int line=0;line<=num_lines;line++){
-    while(time_changes[i].y2 < line)
+    while(time_changes[i].y2 <= line && i < num_elements-1)
       i++;
-    if (i>=num_elements){
+
+#if !defined(RELEASE)
+    if (line > time_changes[i].y2){
       RError("i>=num_elements: %d >= %d. line: %d, num_lines: %d",i,num_elements,line,num_lines);
-      i=0;
+      break;
     }
+#endif
+    
     const struct STimeChange *tchange = &time_changes[i];
 
-    double dur = get_stime_from_stimechange(tchange, line, true);
-
-    stimes[line].time = tchange->t1 + dur;
+    // more work to avoid slightly wrong values due to rounding errors.
+    if (line==tchange->y1)
+      stimes[line].time = tchange->t1;
+    else if (line==tchange->y2)
+      stimes[line].time = tchange->t2;
+    else {    
+      double dur = get_stime_from_stimechange(tchange, line, true);
+      stimes[line].time = tchange->t1 + dur;
+    }
+    
     stimes[line].tchanges = tchange;
-
-    //printf("   STIME %d: %f. t1: %f, Dur: %f\n", line, (double)stimes[line].time / pc->pfreq, tchange->t1/pc->pfreq, dur/pc->pfreq);
+    
+    D(printf("   STIME %d: %d. t1: %d, t2: %d. Dur: %f\n",
+             line,
+             (int)stimes[line].time,// / pc->pfreq,
+             (int)tchange->t1,
+             (int)tchange->t2,
+             -1.0
+             //dur/pc->pfreq);
+             ));
   }
   /*
   stimes[num_lines].time = tchanges[num_lines-1]->t2;
@@ -1061,16 +1060,176 @@ static dyn_t get_fallback_timings(const struct Blocks *block, const dyn_t dynbea
 }
 
 
-static struct STimes *create_stimes(const struct Blocks *block, const dyn_t dynbeats, const dyn_t filledout_swings, int default_bpm, int default_lpb){
+// Returns an array of STimeChange elements
+static struct STimeChange *create_time_changes_from_scheme_data(const dynvec_t *timings){
+  struct STimeChange *time_changes = talloc(sizeof(struct STimeChange)*(timings->num_elements+1)); // Allocate one more element so that the last element is nulled out (used for assertion).
+  
+  for(int i=0;i<timings->num_elements;i++){
+    hash_t *h = timings->elements[i].hash;
+    time_changes[i].y1 = DYN_get_double_from_number(HASH_get_dyn(h, ":y1"));
+    time_changes[i].y2 = DYN_get_double_from_number(HASH_get_dyn(h, ":y2"));
+
+    double x1 = DYN_get_double_from_number(HASH_get_dyn(h, ":x1"));
+    double x2 = DYN_get_double_from_number(HASH_get_dyn(h, ":x2"));
+
+    time_changes[i].x1 = x1;
+    time_changes[i].x2 = x2;
+
+    time_changes[i].logt1 = log(x1);
+    time_changes[i].logt2t1 = log(x2/x1);
+
+    //printf("   TIMING. %d: %f,%f - %f,%f. t1: %f, t2: %f\n", i, time_changes[i].y1, time_changes[i].x1, time_changes[i].y2, time_changes[i].x2, time_changes[i].t1 / pc->pfreq, time_changes[i].t2 / pc->pfreq);
+  }
+
+  return time_changes;
+}
+
+
+// 1. Sets the .t1/.t2 attributes when .y1/.y2 is on a bar line. We do this to ensure all bars are equally long. (They are sometimes slightly wrong, probably due to rounding errors).
+// The rounding errors also accumulate further down the block if we don't do this.
+// This also makes sure that all STimeChange arrays of a block have the same duration. (Did experience a crash somewhere when that was not the case.)
+//
+// 2. Sets the .glidingswing_scale_value attribute.
+// This is is necessary if using gliding swings since 'create-tempo-multipliers-from-swing' in timing.scm doesn't calculate correct tempo multipliers for gliding swings.
+// (It's quite complicated to fix 'create-tempo-multipliers-from-swing'. Code is probably cleaner this way.)
+//
+static void postprocess_swing_changes(const struct Beats *beats, struct STimeChange *swing_changes, int num_swing_changes, const struct STimes *nonswing_stimes, int num_lines){
+
+  int changepos1 = 0;
+  
+  double nonswing_t1 = 0;
+  int last_barnum = beats->bar_num;
+
+  // Iterate over all beats. When we hit a bar ("if (new_bar)"), we do our things.
+  do{
+    beats = NextBeat(beats);
+    
+    bool new_bar = false;
+    Place p2;
+
+    if (beats==NULL){
+      p2 = p_Create(num_lines,0,1);
+      new_bar = true;
+    } else if (beats->bar_num != last_barnum){
+      p2 = beats->l.p;
+      last_barnum = beats->bar_num;
+      new_bar = true;
+    }
+
+    if (new_bar){
+
+      double nonswing_t2 = Place2STime_from_times(num_lines, nonswing_stimes, &p2);
+
+      double float_p2 = GetDoubleFromPlace(&p2);
+
+      int changepos2 = changepos1;
+
+      bool contains_gliding_swing = false;
+      
+      // Find swing duration and the range of swing_changes that belongs to this bar.
+      do{
+        struct STimeChange *swing_change = &swing_changes[changepos2];
+        if (swing_change->y1+0.00001 >= float_p2){
+          R_ASSERT_NON_RELEASE(swing_change->y1 == float_p2); // I guess this assertion could fail in some situations without anything being wrong. (probably not in debug mode on an intel cpu though)
+          break;
+        }
+        
+        contains_gliding_swing = contains_gliding_swing || tchange_has_gliding_tempo(swing_change);
+        
+        changepos2++;
+      }while(changepos2 < num_swing_changes);
+      
+      R_ASSERT_RETURN_IF_FALSE(changepos2 > changepos1);
+      
+      if (contains_gliding_swing){
+
+        double nonswing_dur = nonswing_t2 - nonswing_t1;
+
+        double swing_dur = 0.0;
+
+        // find bar-duration of the swings.
+        for(int pos = changepos1 ; pos < changepos2 ; pos++)
+          swing_dur += get_stime_from_stimechange(&swing_changes[pos], swing_changes[pos].y2, false);
+        
+        // fill in glidingswing_scale_value for the changes belonging to this bar. (Workaround. The scheme code doesn't calculate correct tempo values for gliding swings.)
+        if (fabsf(nonswing_dur-swing_dur) > 0.001){          
+          R_ASSERT_RETURN_IF_FALSE(swing_dur > 0);
+          double scale_value = nonswing_dur / swing_dur;
+          for(int pos = changepos1 ; pos < changepos2 ; pos++)
+            swing_changes[pos].glidingswing_scale_value = scale_value;
+        }
+      }
+
+      // set t1 and t2 for bar start and bar end values.
+      D(printf("   . Setting swing[%d].t1 = %f\n", changepos1, nonswing_t1));
+      D(printf("   . Setting swing[%d].t2 = %f\n", changepos2-1, nonswing_t2));
+      swing_changes[changepos1].t1 = nonswing_t1;
+      swing_changes[changepos2-1].t2 = nonswing_t2;
+      
+      changepos1 = changepos2;
+      nonswing_t1 = nonswing_t2;
+    }    
+    
+  }while(beats!=NULL);
+  
+}
+
+
+static void set_t_values_in_time_changes(struct STimeChange *time_changes, int num_time_changes){
+  double t1 = 0;
+  
+  for(int i=0;i<num_time_changes;i++){
+    struct STimeChange *time_change = &time_changes[i];
+
+    if (time_changes->t1 == 0)
+      time_change->t1 = t1;
+
+    if (time_change->t2 == 0)
+      time_change->t2 = time_change->t1 + get_stime_from_stimechange(time_change, time_change->y2, false);
+
+    if (time_change->t2 < time_change->t1){
+      R_ASSERT(false);
+      time_change->t2 = time_change->t1;
+    }
+  
+    t1 = time_change->t2;
+  }
+
+}
+  
+
+static const struct STimeChange *create_tchanges(const dynvec_t *timings, const struct Beats *beats, const struct STimes *nonswing_stimes, int num_lines){
+  int num_time_changes = timings->num_elements;
+
+  struct STimeChange *time_changes = create_time_changes_from_scheme_data(timings);
+
+  if (nonswing_stimes != NULL)
+    postprocess_swing_changes(beats, time_changes, num_time_changes, nonswing_stimes, num_lines);
+
+  set_t_values_in_time_changes(time_changes, num_time_changes);
+
+  return time_changes;
+}
+
+
+
+static struct STimes *create_stimes(const struct Blocks *block,
+                                    const dyn_t dynbeats,
+                                    const struct Beats *beats,
+                                    const dyn_t filledout_swings,
+                                    const struct STimes *nonswing_stimes,
+                                    int default_bpm, int default_lpb)
+{  
   dyn_t timings = get_timings_from_scheme(block, dynbeats, filledout_swings, default_bpm, default_lpb);
+  
   if (timings.type!=ARRAY_TYPE){
     GFX_Message(NULL, "Error. timings function returned faulty data. Expected an array, got %s\n", DYN_type_name(timings.type));
     timings = get_fallback_timings(block, dynbeats, default_bpm, default_lpb);
     R_ASSERT(timings.type==ARRAY_TYPE);      
   }
 
-  const struct STimeChange *time_changes = create_time_changes_from_scheme_data(timings.array);
-  //const struct STimeChange **tchanges = create_tchanges_from_time_changes(time_changes, block->num_lines, timings.array->num_elements);
+  const struct STimeChange *time_changes = create_tchanges(timings.array, beats, nonswing_stimes, block->num_lines);
+    
   struct STimes *times = create_stimes_from_tchanges(block->num_lines, time_changes, timings.array->num_elements);
 
   return times;
@@ -1176,36 +1335,31 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
         bool has_block_swings = blocks[i]->swing_enabled==true && blocks[i]->swings!=NULL;
         
         int num_lines = blocks[i]->num_lines;
-        
-        stimes_without_global_swings[i] = create_stimes(blocks[i], dynbeats[i], g_empty_dynvec, default_bpm, default_lpb);
+
+        stimes_without_global_swings[i] = create_stimes(blocks[i], dynbeats[i], beats[i], g_empty_dynvec, NULL, default_bpm, default_lpb);
+        int64_t blocklen = stimes_without_global_swings[i][num_lines].time;
         
         if (!has_block_swings)
           stimes_with_global_swings[i] = stimes_without_global_swings[i];
-        else
-          stimes_with_global_swings[i] = create_stimes(blocks[i], dynbeats[i], filledout_swingss[i], default_bpm, default_lpb);
+        else{
+          stimes_with_global_swings[i] = create_stimes(blocks[i], dynbeats[i], beats[i], filledout_swingss[i], stimes_without_global_swings[i], default_bpm, default_lpb);
+          R_ASSERT(stimes_with_global_swings[i][num_lines].time == blocklen);
+        }
         
-        STime max_blocklen = R_MAX(stimes_without_global_swings[i][num_lines].time, stimes_with_global_swings[i][num_lines].time);
- 
         if (update_swings) {
+          
           const struct Tracks *track = blocks[i]->tracks;
           while(track!=NULL){
             if (track->swings==NULL)
               VECTOR_push_back(&trackstimess[i], stimes_with_global_swings[i]);
             else{
               const dyn_t filledout_trackswing = filledout_trackswingss[i].elements[track->l.num];
-              struct STimes *trackstimes = create_stimes(blocks[i], dynbeats[i], filledout_trackswing, default_bpm, default_lpb);
+              struct STimes *trackstimes = create_stimes(blocks[i], dynbeats[i], beats[i], filledout_trackswing, stimes_without_global_swings[i], default_bpm, default_lpb);
               VECTOR_push_back(&trackstimess[i], trackstimes);
-              max_blocklen = R_MAX(max_blocklen, trackstimes[num_lines].time);
+              R_ASSERT(trackstimes[num_lines].time = blocklen);
             }
             track = NextTrack(track);
           }
-
-          // apply max_blocklen to all stime arrays. (all tracks should have the same duration, but due to rounding errors, some tracks can be a few frames longer than others)
-          stimes_without_global_swings[i][num_lines].time = max_blocklen;
-          stimes_with_global_swings[i][num_lines].time = max_blocklen;
-          VECTOR_FOR_EACH(struct STimes *trackstimes, &trackstimess[i]){
-            trackstimes[num_lines].time = max_blocklen;
-          }END_VECTOR_FOR_EACH;
           
         }
 
@@ -1228,11 +1382,16 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
         if (stimes_without_global_swings[i] != NULL){ // Shouldn't happen, but if it does, we keep the old timing.
           block->times_without_global_swings = stimes_without_global_swings[i];
           block->num_time_lines = block->num_lines;
+        }else{
+          R_ASSERT_NON_RELEASE(false);
         }
 
         if (stimes_with_global_swings[i] != NULL) // Shouldn't happen, but if it does, we keep the old timing.
           block->times_with_global_swings = stimes_with_global_swings[i];
-
+        else{
+          R_ASSERT_NON_RELEASE(false);
+        }
+        
         if (plugins_should_receive_swing_tempo)
           block->times = block->times_with_global_swings;
         else

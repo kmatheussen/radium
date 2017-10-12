@@ -431,6 +431,32 @@
     add-protracker-trackline         ;; import_mod.scm isn't loaded until we need it.
     start-adding-protracker-events!  ;;
     ra:schedule
+    ra:add-message
+    show/hide-instrument-gui
+    system
+    create-change-editor-font-requester
+    create-change-system-font-requester
+    for-each
+    line-zoom-in-exponentially
+    line-zoom-out-exponentially
+    begin
+    c-display
+    moduloskew-track
+    replace-with-random-notes-in-range
+    replace-with-random-notes-in-track
+    replace-with-random-notes-in-block
+    replace-with-random-velocities-in-range
+    replace-with-random-velocities-in-track
+    replace-with-random-velocities-in-block
+    moduloskew-range
+    moduloskew-track
+    moduloskew-block
+    shuffle-range
+    shuffle-track
+    shuffle-block
+    fullshuffle-range
+    fullshuffle-track
+    fullshuffle-block
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

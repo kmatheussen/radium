@@ -294,7 +294,7 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
         
       if(is_going_to_be_at_normal_track){
 
-                int prev = window->curr_track_sub;
+               //int prev = window->curr_track_sub;
 
 		window->curr_track_sub--;
 
@@ -314,7 +314,7 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
                     
                 }
 
-                printf("prev: %d. now: %d. move prevtrack: %d\n", prev, window->curr_track_sub, move_to_prev_track);
+                //printf("prev: %d. now: %d. move prevtrack: %d\n", prev, window->curr_track_sub, move_to_prev_track);
 
 
                 if (move_to_prev_track){

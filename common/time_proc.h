@@ -20,6 +20,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+extern LANGSPEC double Place2STime_from_times2(
+                                               const struct STimes *stimes,
+                                               double place_as_float
+                                               );
+
 extern LANGSPEC STime Place2STime_from_times(
                                              int num_lines,
                                              const struct STimes *times,

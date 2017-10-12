@@ -59,8 +59,8 @@ DC_start("SONG");
 	DC_SSS("songname",song->songname);
 	//DC_SSN("maxtracks",song->maxtracks);
 
-        DC_SSB("linear_accelerando", ATOMIC_GET(song->linear_accelerando));
-        DC_SSB("linear_ritardando", ATOMIC_GET(song->linear_ritardando));
+        DC_SSB("linear_accelerando", song->linear_accelerando);
+        DC_SSB("linear_ritardando", song->linear_ritardando);
         
         DC_SSB("plugins_should_receive_swing_tempo", song->plugins_should_receive_swing_tempo);
         DC_SSB("editor_should_swing_along", song->editor_should_swing_along);
@@ -190,11 +190,11 @@ var3:
 	goto start;
 
 var4:
-        ATOMIC_SET(song->linear_accelerando, DC_LoadB());
+        song->linear_accelerando = DC_LoadB();
         goto start;
         
 var5:
-        ATOMIC_SET(song->linear_ritardando, DC_LoadB());
+        song->linear_ritardando = DC_LoadB();
         goto start;
         
 var6:
