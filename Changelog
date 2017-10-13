@@ -1,3 +1,26 @@
+Changes 5.1.6 -> 5.1.8:
+* Editor: Also show the track number in status bar when moving
+  cursor to a swing text sub track.
+* Swing: Fix wrong timing values for gliding swing.
+* Editor: Add option to show swing help to the popup menu in the
+  global swing track.
+* Crashreporter: Include Qt version in the report.
+* Editor: Use the tempo of the current track tempo when rendering
+  the vertical tempo indicator lane (the area to the right of the
+  line slider). Before this release Radium only displayed global
+  tempo in the tempo indicator lane.
+* Editor: Add undo when overwriting a swing value.
+* Load: Fix bug that very often caused program to crash when
+  loading a song with swing.
+* Preferences: Add interface to set maximum elements in a popup
+  menu.
+* More bugs found by the autotester fixed.
+* Playlist/Sequencer: Fix crash when doing
+  "delete block" -> "undo" -> "redo" for a block in the playlist
+* Menus: Add "Show message window" option to the help menu.
+
+
+
 Changes 5.1.5 -> 5.1.6:
 * Menus: add "Show undo history" option under
   Help -> Program debugging
