@@ -344,25 +344,21 @@ int addNote(float notevalue,
     return -1;
   }
 
-  Place *end_place = NULL;
-
   if (end.line >=0 ) {
 
     if (validate_place(end)==false)
       return -1;
     
     if (end.line==wblock->block->num_lines && end.counter==0)
-      PlaceSetLastPos(wblock->block, end_place);
+      PlaceSetLastPos(wblock->block, &end);
 
-    end_place = &end;
-
-    if (!PlaceLegal(wblock->block, end_place)) {
+    if (!PlaceLegal(wblock->block, &end)) {
       handleError("addNote: End place %d + %d/%d is not legal", end.line, end.counter, end.dividor);
       return -1;
     }
 
-    if (PlaceLessOrEqual(end_place, &start)){
-      handleError("addNote: Note end (%s) positioned before or at note start (%s)", PlaceToString(end_place), PlaceToString(&start));
+    if (PlaceLessOrEqual(&end, &start)){
+      handleError("addNote: Note end (%s) positioned before or at note start (%s)", PlaceToString(&end), PlaceToString(&start));
       return -1;
     }
   }
@@ -370,7 +366,7 @@ int addNote(float notevalue,
   struct Notes *note = InsertNote(wblock,
                                   wtrack,
                                   &start,
-                                  end_place,
+                                  &end,
                                   notevalue,
                                   MAX_VELOCITY*velocity,
                                   true);
