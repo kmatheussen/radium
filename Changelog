@@ -1,3 +1,8 @@
+Changes 5.1.8 -> 5.1.9:
+* Editor: Fix crash when adding note in some situations.
+
+
+
 Changes 5.1.6 -> 5.1.8:
 * Editor: Also show the track number in status bar when moving
   cursor to a swing text sub track.
