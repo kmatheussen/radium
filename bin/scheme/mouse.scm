@@ -1175,8 +1175,8 @@
 (define (swingtext-popup-elements)
   (list (list "Swing text" :check (<ra> :swingtext-visible *current-track-num*) (lambda (onoff)
                                                                                   (<ra> :show-swingtext onoff *current-track-num*)))
-        (list "Help Swing text" (lambda ()
-                                  (<ra> :show-swing-help-window)))))
+        (list "Swing help" (lambda ()
+                             (<ra> :show-swing-help-window)))))
 
 (define (centtext-popup-elements)
   (list (list "Cents text"
@@ -3120,9 +3120,9 @@
 
 (define (show-global-swing-track-popup-menu)
   (c-display "global swing track popup menu")
-  (popup-menu "hide swing track" ra:show-hide-swing-track
-              (list "Help Swing text" (lambda ()
-                                        (<ra> :show-swing-help-window)))))
+  (popup-menu "Hide swing track" ra:show-hide-swing-track
+              (list "Swing help" (lambda ()
+                                   (<ra> :show-swing-help-window)))))
 
 
 ;; show/hide time tracks
