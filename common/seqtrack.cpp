@@ -211,6 +211,7 @@ static int64_t convert_seqtime(struct SeqTrack *from_seqtrack, struct SeqTrack *
 static struct SeqBlock *SEQBLOCK_create(struct Blocks *block){
   struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
   seqblock->block = block;
+  seqblock->track_is_disabled = (bool*)talloc_atomic(sizeof(bool)*MAX_DISABLED_SEQBLOCK_TRACKS);;
   seqblock->time = -1;
   seqblock->gfx_time = seqblock->time;
   return seqblock;
@@ -554,17 +555,25 @@ static void set_plain_seqtrack_timing_no_pauses(struct SeqTrack *seqtrack){
 }
 
 
-hash_t *SEQBLOCK_get_state(const struct SeqBlock *seqblock){
+static hash_t *SEQBLOCK_get_state(const struct SeqBlock *seqblock){
   hash_t *state = HASH_create(2);
   
   HASH_put_int(state, "blocknum", seqblock->block->l.num);
   HASH_put_int(state, "time", seqblock->time);
   HASH_put_float(state, "samplerate", MIXER_get_sample_rate());
+
+  R_ASSERT_RETURN_IF_FALSE2(seqblock->track_is_disabled!=NULL, state);
+  
+  for(int i=0;i<MAX_DISABLED_SEQBLOCK_TRACKS;i++){
+    if(seqblock->track_is_disabled[i]){
+      HASH_put_bool_at(state, "track_disabled", i, true);
+    }
+  }
   
   return state;
 }
 
-struct SeqBlock *SEQBLOCK_create_from_state(const hash_t *state){
+static struct SeqBlock *SEQBLOCK_create_from_state(const hash_t *state){
   
   int blocknum = HASH_get_int32(state, "blocknum");
 
@@ -576,7 +585,13 @@ struct SeqBlock *SEQBLOCK_create_from_state(const hash_t *state){
     // (assertion reporter popped up in the call to ListFindElement1 above)
     seqblock = SEQBLOCK_create((struct Blocks*)ListFindElement1(&root->song->blocks->l, 0));
   }
-  
+
+  for(int i=0;i<MAX_DISABLED_SEQBLOCK_TRACKS;i++){
+    if (HASH_has_key_at(state, "track_disabled", i)){ 
+      seqblock->track_is_disabled[i] = HASH_get_bool_at(state, "track_disabled", i);
+    }
+  }
+
   seqblock->time = round(double(HASH_get_int(state, "time")) * MIXER_get_sample_rate() / samplerate);
 
   seqblock->gfx_time = seqblock->time;

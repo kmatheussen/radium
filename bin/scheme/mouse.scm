@@ -4375,6 +4375,39 @@
         all-instruments)))
 
 
+(define (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)
+  (define starting #t)
+  (define gui (<gui> :vertical-layout))
+  (for-each (lambda (tracknum)
+              (<gui> :add gui
+                     (<gui> :checkbox
+                            (<-> tracknum)
+                            (<ra> :is-seqblock-track-enabled tracknum seqblocknum seqtracknum)
+                            #t
+                            (lambda (enabled)
+                              (when (not starting)
+                                (c-display "clicked" tracknum enabled)
+                                (<ra> :set-seqblock-track-enabled enabled tracknum seqblocknum seqtracknum)
+                                )))))
+            (iota (<ra> :get-num-tracks blocknum)))
+  
+  (define close-button (<gui> :button "Close" (lambda ()
+                                                (<gui> :close gui))))
+  (<gui> :add gui close-button)
+  
+  (<gui> :set-takes-keyboard-focus gui #f)
+  (<gui> :set-parent gui -1)
+  (<gui> :show gui)  
+  (set! starting #f)
+
+  gui
+  )
+
+#!!
+(show-seqblock-track-on-off-configuration 0 0 0)
+!!#
+
+
 ;; seqblock menu
 (add-mouse-cycle
  (make-mouse-cycle
@@ -4457,6 +4490,13 @@
                                                     (<ra> :paste-seqblocks seqtracknum pos))))
                                           
                                           
+                                          "--------------------"
+                                          
+                                          (list "Enable/disable tracks"
+                                                :enabled seqblocknum
+                                                (lambda ()
+                                                  (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))
+
                                           "--------------------"
                                           
                                           ;;(list "Replace with current block"

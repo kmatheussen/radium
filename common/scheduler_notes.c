@@ -262,14 +262,23 @@ void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
 
   while(track!=NULL){
     R_ASSERT_NON_RELEASE(track->times!=NULL);
+
+    int tracknum = track->l.num;
+
+    bool doit = seqblock->track_is_disabled==NULL // i.e. playing block
+      || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS
+      || !seqblock->track_is_disabled[tracknum];
     
-    struct Notes *note=track->notes;
+    if (doit){
+
+      struct Notes *note=track->notes;
     
-    while(note != NULL && PlaceLessThan(&note->end,&start_place))
-      note=NextNote(note);
+      while(note != NULL && PlaceLessThan(&note->end,&start_place))
+        note=NextNote(note);
     
-    if(note!=NULL)
-      RT_schedule_note(seqtrack,seqblock,track,note,start_time);
+      if(note!=NULL)
+        RT_schedule_note(seqtrack,seqblock,track,note,start_time);
+    }
     
     track=NextTrack(track);   
   }

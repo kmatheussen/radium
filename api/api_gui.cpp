@@ -4647,7 +4647,7 @@ bool gui_isFullScreen(int64_t guinum){
   return gui->is_full_screen();
 }
 
-void gui_setTakeKeyboardFocus(int64_t guinum, bool take_it){
+void gui_setTakesKeyboardFocus(int64_t guinum, bool take_it){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;

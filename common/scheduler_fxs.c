@@ -142,31 +142,39 @@ void RT_schedule_fxs_newblock(struct SeqTrack *seqtrack,
   
   while(track!=NULL){
 
-    VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+    int tracknum = track->l.num;
 
-      struct FXNodeLines *fxnodeline1 = fxs->fxnodelines;
+    bool doit = seqblock->track_is_disabled==NULL  // i.e. playing block
+      || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS
+      || !seqblock->track_is_disabled[tracknum];
 
-      if (PlaceGreaterOrEqual(&fxnodeline1->l.p, &start_place)){
+    if (doit){
+      
+      VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
         
-        RT_schedule_fxnodeline(seqtrack, seqblock, track, fxs->fx, fxnodeline1, fxnodeline1->l.p);
+        struct FXNodeLines *fxnodeline1 = fxs->fxnodelines;
         
-      } else {
-
-        struct FXNodeLines *fxnodeline2 = NextFXNodeLine(fxnodeline1);
-
-        while(fxnodeline2 != NULL){
-          if (PlaceGreaterOrEqual(&start_place, &fxnodeline1->l.p) && PlaceLessThan(&start_place, &fxnodeline2->l.p)) {
-            RT_schedule_fxnodeline(seqtrack, seqblock, track, fxs->fx, fxnodeline1, start_place);
-            break;
+        if (PlaceGreaterOrEqual(&fxnodeline1->l.p, &start_place)){
+          
+          RT_schedule_fxnodeline(seqtrack, seqblock, track, fxs->fx, fxnodeline1, fxnodeline1->l.p);
+          
+        } else {
+          
+          struct FXNodeLines *fxnodeline2 = NextFXNodeLine(fxnodeline1);
+          
+          while(fxnodeline2 != NULL){
+            if (PlaceGreaterOrEqual(&start_place, &fxnodeline1->l.p) && PlaceLessThan(&start_place, &fxnodeline2->l.p)) {
+              RT_schedule_fxnodeline(seqtrack, seqblock, track, fxs->fx, fxnodeline1, start_place);
+              break;
+            }
+            fxnodeline1 = fxnodeline2;
+            fxnodeline2 = NextFXNodeLine(fxnodeline2);
           }
-          fxnodeline1 = fxnodeline2;
-          fxnodeline2 = NextFXNodeLine(fxnodeline2);
+          
         }
         
-      }
-      
-    }END_VECTOR_FOR_EACH;
-
+      }END_VECTOR_FOR_EACH;
+    }
     
     track=NextTrack(track);   
   }

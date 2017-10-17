@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Bs_edit_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/player_pause_proc.h"
 
 #include "../audio/Mixer_proc.h"
 #include "../audio/SoundPlugin.h"
@@ -1167,6 +1168,40 @@ bool isSeqblockSelected(int seqblocknum, int seqtracknum){
     return false;
 
   return seqblock->is_selected;
+}
+
+bool isSeqblockTrackEnabled(int tracknum, int seqblocknum, int seqtracknum){
+  if (tracknum < 0 || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS){
+    handleError("setSeqblockTrackEnabled: Illegal tracknum: %d", tracknum);
+    return false;
+  }
+    
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return false;
+
+  return !seqblock->track_is_disabled[tracknum];
+}
+
+  
+void setSeqblockTrackEnabled(bool is_enabled, int tracknum, int seqblocknum, int seqtracknum){
+  if (tracknum < 0 || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS){
+    handleError("setSeqblockTrackEnabled: Illegal tracknum: %d", tracknum);
+    return;
+  }
+    
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  if (seqblock->track_is_disabled[tracknum] == is_enabled){
+    PC_Pause();{
+      seqblock->track_is_disabled[tracknum] = !is_enabled;
+    }PC_StopPause(NULL);
+    SEQUENCER_update();
+  }
 }
 
 void cutSelectedSeqblocks(void){

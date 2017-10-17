@@ -2402,6 +2402,22 @@ static void create_track_is_recording(const struct Tracker_Windows *window, cons
   GE_text(c, "Rec", wtrack->x, 0);
 }
 
+static void create_track_is_disabled_in_seqblock(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
+  GE_Context *c = GE_z(GE_alpha(GE_get_rgb(WHITE_COLOR_NUM), 0.7), GE_Conf(Z_STATIC, NOMASK_Y));
+
+  float y2 = get_scrollbar_y2(window, wblock);
+  
+  GE_line(c,
+          wtrack->x, 0,
+          wtrack->x2, y2,
+          2.3);
+          
+  GE_line(c,
+          wtrack->x, y2,
+          wtrack->x2, 0,
+          2.3);
+}
+
 
 static void create_track_veltext2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, int realline, char v1, char v2, char v3){
 
@@ -2564,6 +2580,23 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   // rec.
   if (ATOMIC_GET(wtrack->track->is_recording))
     create_track_is_recording(window, wblock, wtrack);
+
+  // disabled in seqblock (two white crossing diagonal lines)
+  if (wtrack->l.num < MAX_DISABLED_SEQBLOCK_TRACKS){
+    if (is_playing() && pc->playtype==PLAYSONG){
+      struct SeqBlock *seqblock = RT_get_curr_seqblock();
+      
+      R_ASSERT_NON_RELEASE(seqblock!=NULL);
+      
+      if(seqblock!=NULL){
+        
+        R_ASSERT_NON_RELEASE(seqblock->track_is_disabled!=NULL);
+        
+        if (seqblock->track_is_disabled[wtrack->l.num])
+          create_track_is_disabled_in_seqblock(window, wblock, wtrack);
+      }
+    }
+  }
 }
 
 

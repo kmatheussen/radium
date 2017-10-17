@@ -432,7 +432,7 @@ public:
      
   }
 
-  void paintEditorTrack(QPainter &p, float x1, float y1, float x2, float y2, const struct Blocks *block, const struct Tracks *track, int64_t blocklen, bool is_multiselected) const {
+  void paintEditorTrack(QPainter &p, float x1, float y1, float x2, float y2, const struct SeqBlock *seqblock, const struct Blocks *block, const struct Tracks *track, int64_t blocklen, bool is_multiselected) const {
     QColor color1 = get_qcolor(SEQUENCER_NOTE_COLOR_NUM);
     QColor color2 = get_qcolor(SEQUENCER_NOTE_START_COLOR_NUM);
     
@@ -563,6 +563,21 @@ public:
       
       note = NextNote(note);
     }
+
+    if (track->l.num < MAX_DISABLED_SEQBLOCK_TRACKS){
+      if (seqblock->track_is_disabled[track->l.num]){
+        QPen pen1(QColor(250,250,250));
+        pen1.setWidthF(2.3);
+        pen1.setCapStyle(Qt::FlatCap);
+        p.setPen(pen1);
+        
+        QLineF line1(x1, y1, x2, y2);
+        QLineF line2(x1, y2, x2, y1);
+        p.drawLine(line1);
+        p.drawLine(line2);
+      }
+    }
+      
   }
   
   QColor half_alpha(QColor c, bool is_gfx) const {
@@ -644,7 +659,7 @@ public:
         }
         
         // Draw track
-        paintEditorTrack(p, x1, t_y1, x2, t_y2, block, track, blocklen, is_gfx);
+        paintEditorTrack(p, x1, t_y1, x2, t_y2, seqblock, block, track, blocklen, is_gfx);
         
         track = NextTrack(track);
       }

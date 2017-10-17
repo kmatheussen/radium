@@ -2316,12 +2316,16 @@ typedef struct {
   Ratio signature_value; // = {4,4};
 } Signature_Iterator;
 
+#define MAX_DISABLED_SEQBLOCK_TRACKS 512
+
 struct SeqBlock{
   int seqblocknum; // Must be unique. Can change value when player is stopped.
   
   int64_t time;      // Seqtime. Player must be stopped when modifying this variable. Note that because of tempo multipliers (block->reltempo), the 'start_time' and 'end_time' fields does not correspond linearly to this value. Written to by the main thread, read by the main thread and the player thread(s).
   struct Blocks *block;
 
+  bool *track_is_disabled; // Is NULL in the seqblock used when playing block.
+  
   int64_t gfx_time;  // Usually contains the same value as 'time', but when moving seqblocks with the mouse, it contains the currently visible time instead. When releasing the mouse button, 'time' will get the same value as 'gfx_time'.
 
   bool is_selected;
