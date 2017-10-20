@@ -4489,14 +4489,6 @@
                                                   (let ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
                                                     (<ra> :paste-seqblocks seqtracknum pos))))
                                           
-                                          
-                                          "--------------------"
-                                          
-                                          (list "Enable/disable tracks"
-                                                :enabled seqblocknum
-                                                (lambda ()
-                                                  (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))
-
                                           "--------------------"
                                           
                                           ;;(list "Replace with current block"
@@ -4606,6 +4598,12 @@
                                                   (<ra> :color-dialog (<ra> :get-block-color blocknum) -1
                                                         (lambda (color)
                                                           (<ra> :set-block-color color blocknum)))))
+
+                                          (list "Enable/disable tracks"
+                                                :enabled seqblocknum
+                                                (lambda ()
+                                                  (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))
+                                          
                                           ;;
                                           ;;(list "Remove pause"
                                           ;;      :enabled #f

@@ -287,6 +287,7 @@ void TEMPOAUTOMATION_set_length(double end_time, bool do_shrink){
   R_ASSERT_RETURN_IF_FALSE(end_time >= 0);
   
   int size = g_tempo_automation.size();
+  R_ASSERT_RETURN_IF_FALSE(size != 1);
   
   if (size==0){
     
