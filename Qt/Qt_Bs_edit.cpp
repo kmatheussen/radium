@@ -764,7 +764,7 @@ public slots:
 
     printf("block high num: %d\n",num);
 
-    PC_Pause();{
+    PC_PauseNoMessage();{
       
       struct Tracker_Windows *window=getWindowFromNum(-1);
       struct WBlocks *wblock=getWBlockFromNum(-1,num);
@@ -859,7 +859,7 @@ public slots:
         if(wblock->curr_realline == wblock->num_reallines-1)
           wblock->curr_realline = 0;
         
-        PC_Pause();{
+        PC_PauseNoMessage();{
           ATOMIC_DOUBLE_SET(pc->song_abstime, abstime);
           //ATOMIC_DOUBLE_SET(seqtrack->start_time_f, seqtime);
           printf("seqtime: %d\n",(int)seqtime);
