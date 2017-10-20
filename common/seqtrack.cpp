@@ -211,7 +211,7 @@ static int64_t convert_seqtime(struct SeqTrack *from_seqtrack, struct SeqTrack *
 static struct SeqBlock *SEQBLOCK_create(struct Blocks *block){
   struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
   seqblock->block = block;
-  seqblock->track_is_disabled = (bool*)talloc_atomic(sizeof(bool)*MAX_DISABLED_SEQBLOCK_TRACKS);;
+  seqblock->track_is_disabled = (bool*)talloc_atomic_clean(sizeof(bool)*MAX_DISABLED_SEQBLOCK_TRACKS);;
   seqblock->time = -1;
   seqblock->gfx_time = seqblock->time;
   return seqblock;

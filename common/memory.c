@@ -187,7 +187,7 @@ void *talloc_atomic__(int size, const char *filename, int linenumber){
         
 	ret=tracker_alloc__(size,GC_malloc_atomic, filename, linenumber);
 
-	if(ret!=NULL) return ret;
+	if(ret!=NULL) return goto gotit;
 
 #if 0
 	if(tmemoryisused==0){
@@ -207,13 +207,27 @@ void *talloc_atomic__(int size, const char *filename, int linenumber){
 
         ret = calloc(1,size);
         
-	if(ret!=NULL) return ret;
+	if(ret!=NULL) return goto gotit;
 
 
         RWarning("Out of memory. Quitting\n");
 	ShutDownYepp();
 
-	return NULL;
+ gotit:
+        
+#if !defined(RELEASE)
+        
+        // Fill with random data. Very often GC_malloc_atomic returns zeros, but not always, and this can hide bugs.
+        
+        if (ret != NULL){
+          char *chars = ret;
+          for(int i=0;i<size;i++){
+            char[i] = rand() % 256;            
+          }
+        }
+#endif
+        
+	return ret;
 }
 
 

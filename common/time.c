@@ -1152,7 +1152,7 @@ static void postprocess_swing_changes(const struct Beats *beats, struct STimeCha
           swing_dur += get_stime_from_stimechange(&swing_changes[pos], swing_changes[pos].y2, false);
         
         // fill in glidingswing_scale_value for the changes belonging to this bar. (Workaround. The scheme code doesn't calculate correct tempo values for gliding swings.)
-        if (fabs(nonswing_dur-swing_dur) > 0.001){          
+        if (fabs(nonswing_dur-swing_dur) > 0.001){
           R_ASSERT_RETURN_IF_FALSE(swing_dur > 0);
           double scale_value = nonswing_dur / swing_dur;
           for(int pos = changepos1 ; pos < changepos2 ; pos++)
