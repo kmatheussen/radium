@@ -3,6 +3,7 @@
 
 (my-require 'notes.scm)
 (my-require 'keybindings.scm)
+(my-require 'randomize-note-durations.scm)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -433,6 +434,23 @@
   (replace-with-random-velocities! (get-block-editor-area)))
 
 
+
+
+;; Randomize note positions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(delafina (randomize-note-durations-range :blocknum -1)
+  (randomize-note-durations! (get-ranged-editor-area blocknum)))
+
+(delafina (randomize-note-durations-track :tracknum -1 :blocknum -1)
+  (randomize-note-durations! (get-track-editor-area tracknum blocknum)))
+
+(define (randomize-note-durations-block)
+  (randomize-note-durations! (get-block-editor-area)))
+
+
+
+;; Randomize/skew/shuffle tab
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (create-randomize/skew-notem)
 
   (define random-layout (create-notem-layout (create-keybinding-button "Range" "ra:eval-scheme" '("(replace-with-random-notes-in-range)"))
@@ -471,8 +489,16 @@
                                                         (<gui> :vertical-layout
                                                                (create-keybinding-button "Block" "ra:eval-scheme" '("(fullshuffle-block)")))))
   
+  (define randomize-note-durations-layout (create-notem-layout (<gui> :vertical-layout
+                                                                    (create-keybinding-button "Range" "ra:eval-scheme" '("(randomize-note-durations-range)")))
+                                                             (<gui> :vertical-layout
+                                                                    (create-keybinding-button "Track" "ra:eval-scheme" '("(randomize-note-durations-track)")))
+                                                             (<gui> :vertical-layout
+                                                                    (create-keybinding-button "Block" "ra:eval-scheme" '("(randomize-note-durations-block)")))))
+  
   (define ret (create-notem-flow-layout (<gui> :group "Randomize pitch" random-layout)
                                         (<gui> :group "Randomize velocities" random-velocities-layout)
+                                        (<gui> :group "Randomize note positions and durations" randomize-note-durations-layout)
                                         (<gui> :group "Modulo skew" moduloskew-notes-layout)
                                         (<gui> :group "Lightly shuffle pitches" shuffle-notes-layout)
                                         (<gui> :group "Heavily shuffle pitches" fullshuffle-notes-layout)
@@ -532,7 +558,7 @@
   (set! *quanititize-tab* (create-quantitize-gui-for-tab))
   (add-notem-tab "Quantization" *quanititize-tab*)
   (add-notem-tab "Transpose" (create-transpose-notem))
-  (add-notem-tab "Randomize/Skew" (create-randomize/skew-notem))
+  (add-notem-tab "Randomize/Skew/Shuffle" (create-randomize/skew-notem))
   (add-notem-tab "Various" (create-various-notem))
   ;;(add-notem-tab "More" (mid-vertical-layout (create-under-construction)))
   (if (not (<ra> :release-mode))

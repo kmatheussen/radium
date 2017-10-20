@@ -304,6 +304,12 @@
           (hash-table-set! ret key value)
           (loop (cddr rest))))))
 
+(***assert*** (copy-hash (hash-table* :a 9 :b 10 :c 'a)
+                         :a 8
+                         :b 11)
+              (hash-table* :a 8
+                           :b 11
+                           :c 'a))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;; define-struct ;;;;;;;;;;;;;;;
@@ -1157,8 +1163,18 @@ for .emacs:
                    (butlast elements))
               (list (last elements)))))
 
-(define (second-last elements)
-  (cadr (reverse elements)))
+;;(define (second-last elements)
+;;  (cadr (reverse elements)))
+(define (second-last alist)
+  (if (null? (cddr alist))
+      (car alist)
+      (second-last (cdr alist))))
+
+(***assert*** (second-last '(1 2))
+              1)
+(***assert*** (second-last '(1 2 3))
+              2)
+               
 
 ;; like list-set! except that it doesn't modify the list
 (define (list-replace-element das-list pos new-value)

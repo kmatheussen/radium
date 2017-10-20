@@ -1881,10 +1881,10 @@ void evalScheme(const_char *code){
 #if !defined(RELEASE)
   QString code2(code);
   code2.simplified();
-  printf("0 -%s\n", code2.toUtf8().constData());
+  //printf("0 -%s\n", code2.toUtf8().constData());
   
   if(code2.at(0) == QChar('(')){
-    printf("1\n");
+    //printf("1\n");
     code2.remove(0,1);
     code2.trimmed();
     int pos_space = code2.indexOf(' ');
@@ -1897,7 +1897,7 @@ void evalScheme(const_char *code){
     else
       pos=R_MIN(pos_rp, pos_space);
 
-    printf("2: %d\n", pos);
+    //printf("2: %d\n", pos);
     
     if (pos > 0){
       code2 = code2.left(pos);

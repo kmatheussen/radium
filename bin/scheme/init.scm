@@ -457,6 +457,9 @@
     fullshuffle-range
     fullshuffle-track
     fullshuffle-block
+    randomize-note-durations-range
+    randomize-note-durations-track
+    randomize-note-durations-block
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

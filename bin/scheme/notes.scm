@@ -31,6 +31,28 @@
   :blocknum)
 ||#
 
+(delafina (make-simple-note :place
+                            :end-place
+                            :pitch 60)                          
+  (make-note :place place
+             :pitches (list (make-pitch :place 0
+                                        :value pitch
+                                        :logtype 0
+                                        :chance 1)
+                            (make-pitch :place (- end-place place)
+                                        :value pitch
+                                        :logtype 0
+                                        :chance 1))
+             :velocities (list (make-velocity :place 0
+                                              :value 1
+                                              :logtype 0)
+                               (make-velocity :place (- end-place place)
+                                              :value 1
+                                              :logtype 0))
+             :continues-next-block #t
+             :id -1))
+
+             
   
 (define (get-note-duration note)
   ((last (note :pitches)) :place))
