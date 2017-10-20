@@ -187,7 +187,7 @@ void *talloc_atomic__(int size, const char *filename, int linenumber){
         
 	ret=tracker_alloc__(size,GC_malloc_atomic, filename, linenumber);
 
-	if(ret!=NULL) return goto gotit;
+	if(ret!=NULL) goto gotit;
 
 #if 0
 	if(tmemoryisused==0){
@@ -207,7 +207,7 @@ void *talloc_atomic__(int size, const char *filename, int linenumber){
 
         ret = calloc(1,size);
         
-	if(ret!=NULL) return goto gotit;
+	if(ret!=NULL) goto gotit;
 
 
         RWarning("Out of memory. Quitting\n");
@@ -222,7 +222,7 @@ void *talloc_atomic__(int size, const char *filename, int linenumber){
         if (ret != NULL){
           char *chars = ret;
           for(int i=0;i<size;i++){
-            char[i] = rand() % 256;            
+            chars[i] = rand() % 256;            
           }
         }
 #endif
