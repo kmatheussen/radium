@@ -936,6 +936,13 @@ static inline void safeMenuPopup(QMenu *menu){
   menu->popup(QCursor::pos());
 }
 
+static inline void safeShowPopup(QWidget *popup){
+  R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
+  
+  closePopup();
+  popup->show();
+}
+
 static inline void safeShow(QWidget *widget){
   R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
   closePopup();

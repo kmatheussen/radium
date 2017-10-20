@@ -3124,6 +3124,25 @@
               (list "Swing help" (lambda ()
                                    (<ra> :show-swing-help-window)))))
 
+(define (show-bars-and-beats-or-line-numbers-popup-menu)
+  (define gui (<gui> :popup))
+  (let ((layout (<gui> :vertical-layout
+                       (<gui> :radiobutton "Show bars and beats" (not (<ra> :linenumbers-visible))
+                              (lambda (is-checked)
+                                (when (and is-checked (<ra> :linenumbers-visible))
+                                  (<ra> :set-linenumbers-visible #f)
+                                  (<gui> :close gui)
+                                  (c-display "show barsandobaetsa"))))
+                       (<gui> :radiobutton "Show line numbers" (<ra> :linenumbers-visible)
+                              (lambda (is-checked)
+                                (c-display "show line numbers")
+                                (when (and is-checked (not (<ra> :linenumbers-visible)))
+                                  (<ra> :set-linenumbers-visible #t)
+                                  (<gui> :close gui)))))))
+    (<gui> :add gui layout)
+    (<gui> :show gui)
+    ))
+                                              
 
 ;; show/hide time tracks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -3148,6 +3167,8 @@
                             (popup-menu "hide time signature track" ra:show-hide-signature-track))
                            ((= *current-track-num-all-tracks* (<ra> :get-swing-track-num))
                             (show-global-swing-track-popup-menu))
+                           ((= *current-track-num-all-tracks* (<ra> :get-linenum-track-num))
+                            (show-bars-and-beats-or-line-numbers-popup-menu))
                            (else
                             (c-display "nothing")))
                      #t))))

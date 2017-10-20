@@ -1651,6 +1651,32 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     OVERRIDERS(QWidget);
   };
 
+  struct Popup : QWidget, Gui{
+    Q_OBJECT;
+
+  public:
+    
+    Popup(int width, int height)
+      : Gui(this)
+    {
+      
+      setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
+      
+      if (width>=0 || height>=0){
+        if(width<=0)
+          width=R_MAX(1, QWidget::width());
+        if(height<=0)
+          height=R_MAX(1, QWidget::height());
+        resize(width,height);
+      }
+    }
+
+    ~Popup() {
+    }
+
+    OVERRIDERS(QWidget);
+  };
+
   /*
   struct Frame : QFrame, Gui{
     Q_OBJECT;
@@ -3323,6 +3349,10 @@ int64_t gui_widget(int width, int height){
   return (new Widget(width, height))->get_gui_num();
 }
 
+int64_t gui_popup(int width, int height){
+  return (new Popup(width, height))->get_gui_num();
+}
+
 /*
 int64_t gui_frame(void){
   return (new Frame())->get_gui_num();
@@ -4036,14 +4066,15 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
   
   QLayout *layout = parent->getLayout();
 
+  // Automatically add layout to widget, if necessary.
+  if (splitter==NULL && layout==NULL && y1==-1){
+    layout = new QHBoxLayout;
+    setDefaultSpacing(layout);
+    parent->_widget->setLayout(layout);
+  }
+  
   if(splitter!=NULL || layout==NULL || y1!=-1) {
 
-    if (splitter==NULL && layout==NULL && (y1==-1 || x2==-1 || y2==-1)){
-      handleError("Warning: Parent gui #%d does not have a layout", (int)parentnum);
-      x1_or_stretch = 0;
-      y1 = 0;
-    }
-    
     int x1 = x1_or_stretch;
 
     if (x1<0)
@@ -4199,7 +4230,17 @@ void gui_show(int64_t guinum){
 
   QWidget *w = gui->_widget;
 
+  if (dynamic_cast<Popup*>(w) != NULL) {
+    printf("   Showing POPUP\n");
+    //w->move(QCursor::pos()); // Has no effect. Probably yet another bug in Qt which the Qt people states is not a bug.
+    safeShowPopup(w);
+    w->move(QCursor::pos()); // Workaround. Causes flickering though. I have tried a lot of things to get rid of the flickering. Hopefully it's only visible in X11.
+    return;
+  }
+
+  
   if (!gui->size_is_valid()){
+    //printf("ADJUSTING SIZE AND GEOMETRY\n");
     w->adjustSize();
     w->updateGeometry();
   }

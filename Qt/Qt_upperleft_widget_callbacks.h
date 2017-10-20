@@ -76,6 +76,10 @@ class Upperleft_widget : public QWidget, public Ui::Upperleft_widget {
       connect(signature, SIGNAL(customContextMenuRequested(const QPoint&)),
               this, SLOT(ShowSignaturePopup(const QPoint&)));
 
+      lineZoomWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+      connect(lineZoomWidget, SIGNAL(customContextMenuRequested(const QPoint&)),
+              this, SLOT(ShowLZPopup(const QPoint&)));
+
       signature_label->setContextMenuPolicy(Qt::CustomContextMenu);
       connect(signature_label, SIGNAL(customContextMenuRequested(const QPoint&)),
               this, SLOT(ShowSignaturePopup(const QPoint&)));
@@ -293,6 +297,10 @@ public slots:
       showHideSignatureTrack(-1);
   }
 
+  void ShowLZPopup(const QPoint&){
+    evalScheme("(show-bars-and-beats-or-line-numbers-popup-menu)");
+  }
+  
   void ShowSwingPopup(const QPoint& pos)
   {
     printf("GOTIT swing\n");
