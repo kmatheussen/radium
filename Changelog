@@ -1,3 +1,24 @@
+Changes 5.1.9 -> 5.2.1:
+* Windows: Not necessary anymore to install jack to run Radium.
+  Radium now includes an embedded version of Jack which is used if
+  Jack is not installed globally.
+* Mixer: Fix the "W" button. Broken in 5.1.8.
+* Current mixer strip: Don't show error message when changing
+  width.
+* Playlist: Don't show "Pause player" message briefly when
+  changing block or playlist position.
+* Editor: Popup menu to switch between showing line numbers and
+  bars/beats.
+* Edit: Add "Randomize note positions and durations" functions to
+  the Randomize/Skew/Shuffle tab.
+* Editor: Replace "Help Swing text" with "Swing Help" in the popup
+  menus
+* Sequencer: Option to disable/enable individual editor tracks in
+  sequencer blocks.
+* API: gui_popup
+
+
+
 Changes 5.1.8 -> 5.1.9:
 * Editor: Fix crash when adding note in some situations.
 
