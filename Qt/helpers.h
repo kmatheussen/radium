@@ -248,7 +248,7 @@ namespace radium{
 }
 
 // Returns true if modality is turned on when 'is_modal'==false.
-static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *parent, radium::Modality modality, bool only_set_flags){ //bool is_modal, bool only_set_flags){
+static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *parent, radium::Modality modality, bool only_set_flags, bool is_converting_widget_to_window = false){ //bool is_modal, bool only_set_flags){
 
 //  #if defined(FOR_MACOSX)
 #if 1
@@ -259,8 +259,13 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
   const bool set_parent_working_properly = true;
 #endif
 
-  {
-    // sanity checks
+  // sanity checks
+
+  if (is_converting_widget_to_window){
+
+    R_ASSERT_RETURN_IF_FALSE2(!window->isWindow(), false);
+
+  } else {
 
 #if !defined(RELEASE)
     if(!window->isWindow())
@@ -273,8 +278,7 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
 #if !defined(RELEASE)
     if(parent!=NULL && parent_window==NULL)
       abort();
-#endif
-    
+#endif    
     if (child_window!=NULL && parent_window!=NULL){
       if (child_window==parent_window){
 #if !defined(RELEASE)
@@ -338,6 +342,11 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
 // Returns true if modality is turned on when 'is_modal'==false.
 static inline bool set_window_parent(QWidget *window, QWidget *parent, radium::Modality modality){
   return set_window_parent_andor_flags(window, parent, modality, false);
+}
+
+// Returns true if modality is turned on when 'is_modal'==false.
+static inline bool convert_widget_to_window(QWidget *widget, QWidget *parent, radium::Modality modality){
+  return set_window_parent_andor_flags(widget, parent, modality, false, true);
 }
 
 // Returns true if modality is turned on when 'is_modal'==false.
