@@ -14,7 +14,7 @@ export RADIUM_BIN="bin/radium_linux.bin"
 #export BUILDTYPE=RELEASE
 
 export JACKOPT="-DNO_JACK_METADATA"
-export JACK_LDFLAGS="-ljack"
+export JACK_LDFLAGS="-ljack -ldl"
 
 if ! env |grep RADIUM_QT_VERSION ; then
     echo "Must define RADIUM_QT_VERSION to either 4 or 5. For instance: \"BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j7\""

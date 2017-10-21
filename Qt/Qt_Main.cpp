@@ -3137,6 +3137,9 @@ void processEventsALittleBit(void){
 
 //extern LANGSPEC void testme(void);
 
+extern LANGSPEC void init_weak_jack(void);
+
+
 #if TEST_CRASHREPORTER
 static void
 crashreporter_foo()
@@ -3234,6 +3237,8 @@ int main(int argc, char **argv){
   qapplication=new MyApplication(argc,argv);
   qapplication->setAttribute(Qt::AA_MacDontSwapCtrlAndMeta, true);
   qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt. https://bugreports.qt.io/browse/QTBUG-33479
+
+  init_weak_jack();
   
   g_startup_rect = QApplication::desktop()->screenGeometry(); // Probably no point. Hoped that it would force radium to open on the same desktop that was current when program started.
 

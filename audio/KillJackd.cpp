@@ -54,9 +54,15 @@ int process (jack_nframes_t nframes, void *arg){
   return 0;      
 }
 
+#include <QCoreApplication>
 
-int main(void){
+//extern void init_weak_jack(void);
 
+int main(int argc, char **argv){
+
+  QCoreApplication app(argc, argv);
+  init_weak_jack();
+    
   jack_status_t status;
   
   jack_client_t *client = jack_client_open("radium_check_jack_working",JackNoStartServer,&status,NULL);

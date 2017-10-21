@@ -173,7 +173,7 @@ static void check_jackd_arguments(void){
 
     printf("Got line: \"%s\" %s\n",line.toUtf8().constData(),command_line);
 
-    if(line.startsWith("jackd") || line.startsWith("jackd.exe") || line.contains("/jackd.exe ") || line.contains("\\jackd.exe ") || line.contains("/jackd.exe\"") || line.contains("\\jackd.exe\"")) {
+    if(line.startsWith("jackd") || line.startsWith("jackd.exe") || line.contains("/jackd.exe ") || line.contains("\\jackd.exe ") || line.contains("\\jackd ") || line.contains("/jackd.exe\"") || line.contains("\\jackd.exe\"")) {
 
       found_jack = true;
 

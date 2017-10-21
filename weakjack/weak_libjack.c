@@ -20,7 +20,7 @@
 #include "weak_libjack.h"
 
 #ifndef USE_WEAK_JACK
-
+#error "USE_WEAK_JACK not defined"
 int have_libjack (void) {
 	return 0;
 }
@@ -33,17 +33,23 @@ int have_libjack (void) {
 
 #ifdef _WIN32
 #include <windows.h>
+#include "../windows/find_jack_library_proc.h"
 #else
 #include <dlfcn.h>
 #endif
 
-static void* lib_open(const char* const so) {
 #ifdef _WIN32
-	return (void*) LoadLibraryA(so);
-#else
-	return dlopen(so, RTLD_NOW|RTLD_LOCAL);
-#endif
+static void* lib_open(bool is_installed_globally, const wchar_t* const so) {
+  if (is_installed_globally)
+    return (void*) LoadLibraryW(so);
+  else
+    return (void*) LoadLibraryExW(so, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
 }
+#else
+static void* lib_open(const char* const so) {
+  return dlopen(so, RTLD_NOW|RTLD_LOCAL);
+}
+#endif
 
 static void* lib_symbol(void* const lib, const char* const sym) {
 #ifdef _WIN32
@@ -93,8 +99,8 @@ static struct WeakJack {
 
 static int _status = -1;
 
-__attribute__((constructor))
-static void init_weak_jack(void)
+//__attribute__((constructor))
+void init_weak_jack(void)
 {
 	void* lib;
 	int err = 0;
@@ -107,20 +113,27 @@ static void init_weak_jack(void)
 #ifdef __APPLE__
 	lib = lib_open("libjack.dylib");
 	if (!lib) {
-		lib = lib_open("/usr/local/lib/libjack.dylib");
+          lib = lib_open("/usr/local/lib/libjack.dylib");
 	}
 #elif (defined _WIN32)
-# ifdef __x86_64__
-	lib = lib_open("libjack64.dll");
-# else
-	lib = lib_open("libjack.dll");
-# endif
+        bool installed_globally = jack_is_installed_globally();
+        char temp[1000];
+        const wchar_t *jacklibname = find_libjack_library(installed_globally);
+        wcstombs(temp, jacklibname, 999);
+        printf("Trying to open: -%s-. Global: %d\n", temp, installed_globally);
+        fflush(stdout);        
+	lib = lib_open(installed_globally, jacklibname); //"e:\\windows_dist64\\bin\\jack_local\\win32libs\\libjack.dll");
+        if (lib==NULL)
+          fprintf(stderr, "*** WEAK-JACK: libjack was not found: %d\n", (int)GetLastError());
 #else
 	lib = lib_open("libjack.so.0");
 #endif
 	if (!lib) {
 #ifndef NDEBUG
-		fprintf(stderr, "*** WEAK-JACK: libjack was not found\n");
+          fprintf(stderr, "*** WEAK-JACK: libjack was not found\n");
+#if !defined(RELEASE)
+          abort();
+#endif
 #endif
 		_status = -2;
 		return;
