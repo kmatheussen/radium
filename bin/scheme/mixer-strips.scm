@@ -2377,28 +2377,33 @@
 
   (define org-width width)
 
-  (define (remake width height)
-    (define instrument-is-open (<ra> :instrument-is-open instrument-id))
-    
-    (run-instrument-data-memoized
-     (lambda()
-       (when das-mixer-strip-gui
-         (<gui> :close das-mixer-strip-gui)
-         (set! das-mixer-strip-gui #f))
-       
-       (when instrument-is-open                
-         (set! das-mixer-strip-gui (create-mixer-strip instrument-id :is-standalone-mixer-strip #t))
-         (if *current-mixer-strip-is-wide*
-             (set! width org-width)
-             (set! width (<gui> :width das-mixer-strip-gui)))
-         (set-fixed-width parent width)
-         (set-fixed-width das-mixer-strip-gui width)
-         (<gui> :add parent das-mixer-strip-gui 0 0 width height)
-         )
-       
-       )))
-
+  (define is-calling-remake #f)
   
+  (define (remake width height)
+    (when (not is-calling-remake)
+      (set! is-calling-remake #t)
+      (define instrument-is-open (<ra> :instrument-is-open instrument-id))
+      
+      (run-instrument-data-memoized
+       (lambda()
+         (when das-mixer-strip-gui
+           (<gui> :close das-mixer-strip-gui)
+           (set! das-mixer-strip-gui #f))
+         
+         (when instrument-is-open                
+           (set! das-mixer-strip-gui (create-mixer-strip instrument-id :is-standalone-mixer-strip #t))
+           (if *current-mixer-strip-is-wide*
+               (set! width org-width)
+               (set! width (<gui> :width das-mixer-strip-gui)))
+           (set-fixed-width parent width)         
+           (set-fixed-width das-mixer-strip-gui width)
+           (<gui> :add parent das-mixer-strip-gui 0 0 width height)
+           )       
+         ))
+      (set! is-calling-remake #f)))
+
+
+  ;;(c-display "  Calling remake from constructor")
   (remake width height)
   
 
@@ -2406,15 +2411,18 @@
   
   (<gui> :add-resize-callback parent
          (lambda (width height)
-           (when (not is-resizing) ;; Unfortunately, remake triggers a new resize, and we get a recursive call here. TODO: Fix this. Resize callback should never call itself.
+           (when (and (not is-resizing) ;; Unfortunately, remake triggers a new resize, and we get a recursive call here. TODO: Fix this. Resize callback should never call itself.
+                      (not is-calling-remake))
              (set! is-resizing #t)             
              (<gui> :disable-updates parent)
+             ;;(c-display "  Calling remake from resize callback")
              (remake width height) ;; Don't need to use safe callback here. 'remake' checks that the instrument is open.
              (<gui> :enable-updates parent)
              (set! is-resizing #f))))
   
   (define mixer-strips-object (make-mixer-strips-object :gui parent
                                                         :remake (lambda (list-of-modified-instrument-ids)
+                                                                  ;;(c-display "  Calling remake from global callback")
                                                                   (remake (<gui> :width parent) (<gui> :height parent)))))
   
   ;;(<ra> :inform-about-gui-being-a-mixer-strips parent) // Must only be called for standalone windows.

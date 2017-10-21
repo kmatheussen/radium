@@ -4062,6 +4062,9 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
   if (child==NULL)
     return;
 
+  //printf("Child parent: %p\n", child->_widget->parent());
+  R_ASSERT_NON_RELEASE(child->_widget->parent()==NULL);
+  
   QSplitter *splitter = dynamic_cast<QSplitter*>(parent);
   
   QLayout *layout = parent->getLayout();
@@ -4113,7 +4116,7 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
 
         if (child_window!=NULL && parent_window!=NULL){
           if (child_window==parent_window){
-            handleError("gui_add: Will not set gui #%d as a child of gui #%d since they both belong to the same window. (Qt often freezes if trying to do that plus that it's likely that there is a bug somewhere since this call was made. If this is not a bug, as a workaround, you need to remove the old parent of the child before calling gui_add. And if the child is already a window, then it's definitely a bug since it means that parent is a child of the child.)", (int)child->get_gui_num(), (int)parent->get_gui_num());
+            handleError("gui_add: Will not set gui #%d as a child of gui #%d since they both belong to the same window. (Qt often freezes if trying to do that plus that it's likely that there is a bug somewhere since this call was made. If this is not a bug, as a workaround, you need to remove the old parent of the child before calling gui_add. And if the child is already a window, then it's definitely a bug since it means that parent is a child of the child.). %p %p", (int)child->get_gui_num(), (int)parent->get_gui_num(), child->_widget->parent(), parent->_widget->parent());
             return;
           }
         }
