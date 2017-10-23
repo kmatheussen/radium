@@ -210,7 +210,7 @@ static float gain_2_slider(float gain, const float db_min, const float db_max){
   // This one should normally be precalculated, I hope, since db_min and db_max are constants from the caller.
   const float threshold_gain = powf(10,
                                     scale(threshold_val, 0.0f, 1.0f, db_min, db_max) / 20.0f);
-
+  
   float ret;
   
   if(gain <= threshold_gain) // Below threshold, we do a linear conversion. If not there will be a jump between 0 and almost 0.
