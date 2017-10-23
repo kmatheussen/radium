@@ -425,8 +425,7 @@
 (define (show-message-gui message)
   (<ra> :schedule 0 ;; In case we are called from a paint callback. Not only isn't the message displayed if we call directly, we also end up in an infinite loop since this function is called from various error handlers.
         (lambda ()
-          (when (or (not *message-gui*)
-                    (not (<gui> :is-open *message-gui*)))
+          (when (not *message-gui*)
             (define buttonlayout (<gui> :horizontal-layout))
             (<gui> :set-layout-spacing buttonlayout 2 0 2 0 2)
             
@@ -434,31 +433,25 @@
             
             (define hide-button (<gui> :button "Hide"))
             (<gui> :add-callback hide-button (lambda ()                                       
-                                               (<gui> :hide *message-gui*)))
+                                               (<gui> :close *message-gui*)))
             (<gui> :add buttonlayout hide-button)
 
             (set! *message-gui-text-edit* (<gui> :text-edit "" #t))
-            (define gui2 (<gui> :vertical-layout *message-gui-text-edit* buttonlayout))
-            (<gui> :set-layout-spacing gui2 2 2 2 2 2)
+            (define gui (<gui> :vertical-layout *message-gui-text-edit* buttonlayout))
+            (<gui> :set-window-title *pluginmanager-gui* "Message Window")
+            (<gui> :set-layout-spacing gui 2 2 2 2 2)
             
-            (<gui> :set-size gui2
+            (<gui> :set-size gui
                    (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 oiwaefoajefoijaowepijaeporgijpoaghjto#$#$% 2q3e4tERTQERT paerjgoijaerpoiporegi"))
                    (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345")))
 
-            ;; definitely not.
-            ;;(<gui> :set-static-toplevel-widget gui2 #t)
-            
-            ;; Just hide window when closing it.
-            (<gui> :add-close-callback gui2
+            (<gui> :add-close-callback gui
                    (lambda (radium-runs-custom-exec)
-                     ;;(<gui> :set-parent *message-gui* -3)
+                     (set! *message-gui* #f)
                      (c-display "              GAKK GAKK GAKK")
-                     (<gui> :hide *message-gui*)
-                     #f))
-            
-            (set! *message-gui* gui2))
-          
-          ;;(c-display gui2)
+                     #t)) ;; close it.
+                   
+            (set! *message-gui* gui))
           
           (reopen-gui-at-curr-pos :gui *message-gui*
                                   :parentgui -2)
