@@ -90,11 +90,22 @@
            (set! files (cons (and (pair? (car x)) (pair-filename (car x))) files))))))))
 
 (define (safe-history-ow!)
-  (catch #t
-         (lambda ()
-           (history-ow!)) ;; to strip down some unnecessary history produced by history-ow!
-         (lambda args
-           (get-as-displayable-string-as-possible (list "history-ow! failed: " args)))))
+  (string-append (catch #t
+                        (lambda ()
+                          (let ((ow (owlet)))
+                            (string-append (format #f "~%;error-code: ~S~%" (ow 'error-code))
+                                           (if (ow 'error-line)
+                                               (format #f "~%;error-file/line: ~S[~A]~%" (ow 'error-file) (ow 'error-line))
+                                               (format #f "~%;error-file/line: ; no file/linenum")))))
+                        (lambda args
+                          (display "ARGS1:")(display args)(newline)
+                          (get-as-displayable-string-as-possible (list "s7 error-code/error-file/line failed: " args))))
+                 (catch #t
+                        (lambda ()
+                          (history-ow!))
+                        (lambda args
+                          (display "ARGS2:")(display args)(newline)
+                          (get-as-displayable-string-as-possible (list "history-ow! failed: " args))))))
 
 #!!
 (safe-history-ow!)
@@ -110,7 +121,7 @@
            (lambda ()
              (define infostring (get-as-displayable-string-as-possible info))
              (display "infostring: ")
-             (display infostring)
+             (display infostring)             
              ;;(ow!) ;; to strip down some unnecessary history produced by history-ow!
              (newline)
              (ra:show-error infostring)
