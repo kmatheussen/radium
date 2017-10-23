@@ -263,8 +263,11 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
 
   if (is_converting_widget_to_window){
 
-    R_ASSERT_RETURN_IF_FALSE2(!window->isWindow(), false);
-
+#if !defined(RELEASE)
+    if(window->isWindow())
+      abort();
+#endif
+    
   } else {
 
 #if !defined(RELEASE)
