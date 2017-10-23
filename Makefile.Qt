@@ -1479,7 +1479,7 @@ bin/radium_progress_window: $(P)Qt_progresswindow.cpp
 	rm radium_progress_window.o
 
 bin/radium_check_jack_status: audio/KillJackd.cpp Jack_plugin.o find_jack_library.o # Jack_plugin.o depends on all the weakjack things
-	$(CCC) -Wall -Werror audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -o radium_check_jack_status.o
+	$(CCC) -Wall -Werror audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -o radium_check_jack_status.o -Wno-error=deprecated-declarations
 	$(LINKER) `cat buildtype.opt` radium_check_jack_status.o find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) -o bin/radium_check_jack_status $(FPIC)
 	rm radium_check_jack_status.o
 
