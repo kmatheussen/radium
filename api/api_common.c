@@ -82,8 +82,10 @@ void init_radium(char *arg,PyObject *gkf){
 static const char *g_error_message = NULL;
 
 const char *pullErrorMessage(void){
+  //const char *old = g_error_message;
   const char *message = g_error_message;
   g_error_message = NULL;
+  //printf("pullErrorMessage: g: %p. Content: -%s-. Returned: %p. Content: -%s-\n", old, old, message, message);
   return message;
 }
 
@@ -140,8 +142,11 @@ void handleError_internal(const char *fmt,...){
   int ret = GFX_Message(&v, "%s", message);
 
   // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above, which is called when exiting an api call.
-  if (ret!=continue_)
-    g_error_message = talloc_strdup(message);  
+  if (ret!=continue_){
+    //const char *old = g_error_message;
+    g_error_message = talloc_strdup(message);
+    //printf("handleError_internal: g: %p. Content: -%s-.\n    Old g: %p. Content: -%s-.\n", g_error_message, g_error_message, old, old);
+  }
 }
 
 struct Tracker_Windows *getWindowFromNum(int windownum){

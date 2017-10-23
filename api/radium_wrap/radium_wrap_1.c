@@ -14,6 +14,11 @@
 
 #include "Python.h"
 
+#include "api_common_proc.h"
+#include "../crashreporter/crashreporter_proc.h"
+
+
+
 #define SWIGPYTHON
 /***********************************************************************
  * common.swg
