@@ -315,7 +315,7 @@ class Proto:
             oh.write("result;\n")
 
         if self.defaults==true:
-            oh.write("static const char *kwlist[]={")
+            oh.write("static char *kwlist[]={")
             for lokke in range(self.arglen):
                 oh.write("\""+self.args[lokke].varname+"\",")
             oh.write("NULL};\n")
