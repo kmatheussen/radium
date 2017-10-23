@@ -2562,6 +2562,8 @@
                                    '()
                                    *mixer-strips-objects*))
 
+(define *mixer-strip-gui-num* 1)
+
 (delafina (create-mixer-strips-gui :num-rows 1
                                    :instrument-ids #f
                                    :is-full-screen #f
@@ -2576,6 +2578,10 @@
   ;;(define gui (<gui> :scroll-area #t #t))
   ;;(define gui (<gui> :widget))
   (define gui (<gui> :horizontal-layout))
+  
+  (<gui> :set-window-title gui (<-> "Radium Mixer #" *mixer-strip-gui-num*))
+  (inc! *mixer-strip-gui-num* 1)
+  
   (<gui> :set-layout-spacing gui 0 0 0 0 0)
 
   (define width (if pos (caddr pos) 1000))

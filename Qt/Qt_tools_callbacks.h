@@ -115,6 +115,8 @@ public:
     : RememberGeometryQDialog(parent, radium::NOT_MODAL)
     , timer(this)
   {
+    setWindowTitle("MIDI Learn Configuration");
+    
     main_layout = new QGridLayout(this);
     setLayout(main_layout);
 

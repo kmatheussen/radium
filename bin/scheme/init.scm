@@ -472,6 +472,7 @@
     randomize-note-durations-track
     randomize-note-durations-block
     show-bars-and-beats-or-line-numbers-popup-menu
+    popup-menu
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

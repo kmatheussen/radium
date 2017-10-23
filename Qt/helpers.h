@@ -511,6 +511,7 @@ struct MyQMessageBox : public QMessageBox {
   MyQMessageBox(bool is_going_to_run_custom_exec, QWidget *parent_ = NULL)
     : QMessageBox(parent_!=NULL ? parent_ : get_current_parent(NULL, is_going_to_run_custom_exec))
   {
+    setWindowTitle("Radium message");
     //printf("            PAERENT: %p. visible: %d\n",parent(),dynamic_cast<QWidget*>(parent())==NULL ? 0 : dynamic_cast<QWidget*>(parent())->isVisible());
     if(dynamic_cast<QWidget*>(parent())==NULL || dynamic_cast<QWidget*>(parent())->isVisible()==false){
       //setWindowModality(Qt::ApplicationModal);

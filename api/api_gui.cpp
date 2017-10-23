@@ -2607,8 +2607,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     Web(QString url)
       : Gui(this)
     {
+      //setWindowTitle(url);
       setUrl(getUrl(url));
       //connect(page(),SIGNAL(downloadRequested(QNetworkRequest)),this,SLOT(download(QNetworkRequest)));
+      connect(this,SIGNAL(urlChanged(const QUrl &)),this,SLOT(urlChanged(const QUrl &)));
     }
 
     /*
@@ -2783,8 +2785,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
                      
     OVERRIDERS_WITHOUT_KEY(FocusSnifferQWebView);
 
-    /*
   public slots:
+    
+    void urlChanged(const QUrl &url){
+      setWindowTitle(url.toString());
+    }
+    
+    /*
+
     void download(const QNetworkRequest &request){
       qDebug()<<"Download Requested: "<<request.url();
     } 
@@ -3492,8 +3500,10 @@ void gui_setUrl(int64_t guinum, const_char* url){
 
   QWebView *web = web_gui->mycast<QWebView>(__FUNCTION__);
   
-  if (web != NULL)
+  if (web != NULL){
+    //web->setWindowTitle(url);
     web->setUrl(getUrl(url));
+  }
 }
 
 void openExternalWebBrowser(const_char *stringurl){
@@ -4019,6 +4029,14 @@ const_char* gui_className(int64_t guinum){
     return "(not found)";
 
   return talloc_strdup(gui->_class_name.toUtf8().constData()); //widget->metaObject()->className(); // ->metaObject()->className() is always supposed to work though.
+}
+
+void gui_setWindowTitle(int64_t guinum, const_char *value){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setWindowTitle(value);
 }
 
 void gui_setToolTip(int64_t guinum, const_char *value){

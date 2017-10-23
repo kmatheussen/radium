@@ -2681,6 +2681,8 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
   }
   
   MyQMessageBox *infoBox = MyQMessageBox::create(false, API_gui_get_parentwidget(NULL, parentgui));
+  infoBox->setWindowTitle("Instrument info");
+                          
   infoBox->setAttribute(Qt::WA_DeleteOnClose);
   
   infoBox->setText(info);

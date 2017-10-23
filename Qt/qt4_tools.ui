@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>Tools</string>
+   <string>Post-recording Tools</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
