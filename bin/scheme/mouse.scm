@@ -947,7 +947,7 @@
                 (<ra> :set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
 
                ((inside-box (<ra> :get-box sequencer) X Y)
-                (cond ((get-seqblock-info X Y)
+                (cond (*current-seqblock-info*
                        (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))
                        )
                       ((inside-box (get-seqnav-move-box) X Y)
@@ -3469,6 +3469,7 @@
           (else
            (loop (1+ seqtracknum))))))
 
+;; Update current seqtrack num.
 (add-mouse-move-handler
  :move (lambda (Button X Y)
          (let ((old *current-seqtrack-num*)
@@ -3483,6 +3484,7 @@
                   (set! *current-seqtrack-num* new))
                  (else
                   #f)))))
+
 
 
              
@@ -3510,12 +3512,33 @@
            (loop (1+ seqblocknum))))))
 
 (define (get-seqblock-info X Y)
-  (and (inside-box (<ra> :get-box sequencer) X Y)
-       (begin
-         (define seqtracknum *current-seqtrack-num*)
-         ;;(c-display "seqtracknum:" seqtracknum X Y (inside-box (ra:get-box2 seqtrack 1) X Y))
-         (and seqtracknum
-              (get-seqblock seqtracknum X Y)))))
+  (let ((seqtracknum *current-seqtrack-num*))
+    (and seqtracknum
+         (inside-box (<ra> :get-box sequencer) X Y)
+         ;;(begin (c-display "seqtracknum:" seqtracknum X Y (inside-box (ra:get-box2 seqtrack 1) X Y)) #t)
+         (get-seqblock seqtracknum X Y))))
+
+
+;; Update current seqblock info
+(define2 *current-seqblock-info* (curry-or not hash-table?) #f)
+
+;; Update current seqtrack info.
+(add-mouse-move-handler
+ :move (lambda (Button X Y)
+         (let ((old *current-seqblock-info*)
+               (new (get-seqblock-info X Y)))
+           (c-display "old/new seqblock-info" old new)
+           (cond ((and old (not new))
+                  (set! *current-seqblock-info* new))
+                 ((or (and new (not old))
+                      (not (morally-equal? new old)))
+                  ;;(c-display "set-normal")
+                  ;;(<ra> :set-normal-mouse-pointer)
+                  (set! *current-seqblock-info* new))
+                 (else
+                  #f)))))
+
+
 
 (define (num-seqblocks-in-sequencer)
   (apply +
@@ -3626,7 +3649,7 @@
                                                          seqtracknum
                                                          (begin
                                                            (<ra> :select-seqtrack seqtracknum)
-                                                           (let ((seqblock-info (get-seqblock-info X Y)))
+                                                           (let ((seqblock-info *current-seqblock-info*))
                                                              ;;(c-display "get-existing " seqblock-info X Y seqtracknum)
                                                              (and seqblock-info
                                                                   (let* ((seqtracknum (and seqblock-info (seqblock-info :seqtracknum)))
@@ -3842,7 +3865,7 @@
                                                          seqtracknum
                                                          (begin
                                                            (<ra> :select-seqtrack seqtracknum)
-                                                           (let ((seqblock-info (get-seqblock-info X Y)))
+                                                           (let ((seqblock-info *current-seqblock-info*))
                                                              ;;(c-display "get-existing " seqblock-info X Y)
                                                              (and seqblock-info
                                                                   (let* ((seqtracknum (and seqblock-info (seqblock-info :seqtracknum)))
@@ -4252,7 +4275,7 @@
   :press-func (lambda (Button X Y)
                 (and (= Button *right-button*)
                      (<ra> :shift-pressed)
-                     (let ((seqblock-info (get-seqblock-info X Y)))
+                     (let ((seqblock-info *current-seqblock-info*))
                        ;;(c-display "get-existing " seqblock-info X Y)
                        (and seqblock-info
                             (begin
@@ -4438,7 +4461,7 @@
                      (let ((seqtracknum *current-seqtrack-num*))
                        (and seqtracknum
                             (let ((seqblock-infos (get-selected-seqblock-infos))
-                                  (seqblock-info (get-seqblock-info X Y)))
+                                  (seqblock-info *current-seqblock-info*))
                               (define seqblocknum (and seqblock-info
                                                        (seqblock-info :seqblocknum)))
                               (define blocknum (and seqblock-info
