@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QColor>
 #include <QRawFont>
 #include <QApplication>
-#include <QGraphicsBlurEffect>
 
 #include "Qt_MyQCheckBox.h"
 #include "Qt_MyQSlider.h"
@@ -37,6 +36,76 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define D(n)
 //#define D(n) n
+
+
+// copied from https://stackoverflow.com/questions/3903223/qt4-how-to-blur-qpixmap-image
+static QImage blurred(QImage& image, const QRect& rect, int radius, bool alphaOnly = false)
+{
+    int tab[] = { 14, 10, 8, 6, 5, 5, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2 };
+    int alpha = (radius < 1)  ? 16 : (radius > 17) ? 1 : tab[radius-1];
+
+    QImage &result = image;//image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    int r1 = rect.top();
+    int r2 = rect.bottom();
+    int c1 = rect.left();
+    int c2 = rect.right();
+
+    int bpl = result.bytesPerLine();
+    int rgba[4];
+    unsigned char* p;
+
+    int i1 = 0;
+    int i2 = 3;
+
+    if (alphaOnly)
+        i1 = i2 = (QSysInfo::ByteOrder == QSysInfo::BigEndian ? 0 : 3);
+
+    for (int col = c1; col <= c2; col++) {
+        p = result.scanLine(r1) + col * 4;
+        for (int i = i1; i <= i2; i++)
+            rgba[i] = p[i] << 4;
+
+        p += bpl;
+        for (int j = r1; j < r2; j++, p += bpl)
+            for (int i = i1; i <= i2; i++)
+                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+    }
+
+    for (int row = r1; row <= r2; row++) {
+        p = result.scanLine(row) + c1 * 4;
+        for (int i = i1; i <= i2; i++)
+            rgba[i] = p[i] << 4;
+
+        p += 4;
+        for (int j = c1; j < c2; j++, p += 4)
+            for (int i = i1; i <= i2; i++)
+                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+    }
+
+    for (int col = c1; col <= c2; col++) {
+        p = result.scanLine(r2) + col * 4;
+        for (int i = i1; i <= i2; i++)
+            rgba[i] = p[i] << 4;
+
+        p -= bpl;
+        for (int j = r1; j < r2; j++, p -= bpl)
+            for (int i = i1; i <= i2; i++)
+                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+    }
+
+    for (int row = r1; row <= r2; row++) {
+        p = result.scanLine(row) + c2 * 4;
+        for (int i = i1; i <= i2; i++)
+            rgba[i] = p[i] << 4;
+
+        p -= 4;
+        for (int j = c1; j < c2; j++, p -= 4)
+            for (int i = i1; i <= i2; i++)
+                p[i] = (rgba[i] += ((p[i] << 4) - rgba[i]) * alpha / 16) >> 4;
+    }
+
+    return result;
+}
 
 
 static bool g_need_update = false;
@@ -346,189 +415,6 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
   }
 }
 
-namespace{
-
-class ClippedGraphicsBlurEffect : public QGraphicsEffect {
-  
-  QRectF _blury_areaF;
-  QRect _blury_area;
-  
-  QGraphicsScene _scene;
-  QGraphicsPixmapItem _item;
-
-  QImage _image;
-  
-
-public:
-  
-  ClippedGraphicsBlurEffect(){
-    _item.setGraphicsEffect(new QGraphicsBlurEffect);
-    _scene.addItem(&_item);
-  }
-
-  void setArea(const QRectF &area){
-    if (area != _blury_areaF){
-      int x = floor(area.x());
-      int y = floor(area.y());
-      float x_add = area.x()-x;
-      float y_add = area.y()-y;
-        
-      _blury_areaF = area;
-      _blury_area = QRect(x, y, ceil(area.width()+x_add), ceil(area.height()+y_add));
-      
-      int old_width = _image.width();
-      int old_height = _image.height();
-      int new_width = _blury_area.width();
-      int new_height = _blury_area.height();
-      
-      if (new_width > old_width || (old_width-new_width) > 10 || new_height > old_height || (old_height-new_height) > 10){
-        //printf("Creating new %d %d (%d,%d)\n", new_width, new_height, abs(old_width-new_width), abs(old_height-new_height));
-        _image = QImage(new_width, new_height, QImage::Format_ARGB32);
-      }
-    }
-  }
-  
-  void draw_interface(QPainter *painter){
-    qreal x1,y1,x2,y2;
-    _blury_areaF.getCoords(&x1, &y1, &x2, &y2);
-
-    float border = 2.1;
-    
-    float xsplit1 = get_seqblock_xsplit1(x1, x2);
-    float xsplit2 = get_seqblock_xsplit2(x1, x2);
-
-    float ysplit1 = get_seqblock_ysplit1(y1, y2);
-    float ysplit2 = get_seqblock_ysplit2(y1, y2);
-        
-    painter->setRenderHints(QPainter::Antialiasing,true);
-      
-    QPen pen(QColor(0,255,0));
-    pen.setWidth(2.3);
-    painter->setPen(pen);
-
-    // xsplit1 vertical line, left
-    QLineF line1(xsplit1,y1+border,xsplit1,y2-border);
-    painter->drawLine(line1);
-
-    // xsplit2 vertical line, left
-    QLineF line2(xsplit2,y1+border,xsplit2,y2-border);
-    painter->drawLine(line2);
-    
-    // ysplit1 horizontal line, left
-    QLineF line3a(x1+border, ysplit1, xsplit1-border, ysplit1);
-    painter->drawLine(line3a);
-    
-    // ysplit1 horizontal line, right
-    QLineF line3b(xsplit2+border, ysplit1, x2-border, ysplit1);
-    painter->drawLine(line3b);
-    
-    // ysplit2 horizontal line
-    QLineF line4a(x1+border, ysplit2, xsplit1-border, ysplit2);
-    painter->drawLine(line4a);
-    
-    // ysplit2 horizontal line
-    QLineF line4b(xsplit2+border, ysplit2, x2-border, ysplit2);
-    painter->drawLine(line4b);
-    
-    myDrawText(*painter, _blury_areaF, "hello");
-    
-    painter->setRenderHints(QPainter::Antialiasing,false);
-    
-  }
-  
-protected:
-  /*
-  QRectF boundingRectFor(const QRectF &rect) const override {
-    printf("rect: %f, %f, %f, %f\n", rect.x(),rect.y(),rect.width(),rect.height());
-    printf("blury: %f, %f, %f, %f\n\n", _blury_area.x(),_blury_area.y(),_blury_area.width(),_blury_area.height());
-    return _blury_area;
-    //return rect;
-  }
-  */
-
-  void draw(QPainter *painter) override {
-
-    /*
-    float x1 = 40;
-    float x2 = 200;
-    float y1 = 40;
-    float y2 = 100;
-    QRectF rect(x1,y1,x2-x1,y2-y1);
-    */
-
-    QWidget *parent_widget = SEQUENCER_getWidget();
-    if(parent_widget==NULL) // Assertion about this in SEQUENCER_getWidget().
-      return;
-
-    QPoint offset;
-    QPixmap pixmap;
-    if (sourceIsPixmap()) {
-      // No point in drawing in device coordinates (pixmap will be scaled anyways).
-      pixmap = sourcePixmap(Qt::LogicalCoordinates, &offset);
-    } else {
-      // Draw pixmap in device coordinates to avoid pixmap scaling;
-      pixmap = sourcePixmap(Qt::DeviceCoordinates, &offset);
-    }
-    
-    _item.setPixmap(pixmap.copy(_blury_area));
-
-    {
-      QPainter ptr(&_image);
-
-      QRect sizerect(0,0,_blury_area.width(), _blury_area.height());
-      _scene.render(&ptr, sizerect, sizerect);
-    }
-
-    painter->drawImage(_blury_area.x(), _blury_area.y(), _image);
-    
-    
-    /*
-
-    // old code. It worked too, but the current version seems faster.
-
-    painter->setClipping(true);    
-
-    painter->setClipRect(_blury_area);
-    */
-
-    /*
-    // Copy and blury the blury area
-    {
-      QGraphicsBlurEffect::draw(painter);
-    }
-    */
-
-    draw_interface(painter);
-    
-    
-
-    // Copy non-blury area;
-    {
-      QPainterPath inside;
-      inside.addRect(_blury_area);
-      
-      QPainterPath outside;
-      outside.addRect(0,0,parent_widget->width(), parent_widget->height()); //= painter->clipPath().subtracted(inside);
-
-      painter->setClipping(true);
-    
-      painter->setClipPath(outside.subtracted(inside)); // Instead, we could do four individual calls to drawPixmap. Probably equally fast though.
-      
-      if (sourceIsPixmap()) {
-        // No point in drawing in device coordinates (pixmap will be scaled anyways).
-        painter->drawPixmap(offset, pixmap);
-      } else {
-        // Draw pixmap in device coordinates to avoid pixmap scaling;
-        painter->setWorldTransform(QTransform());
-        painter->drawPixmap(offset, pixmap);
-      }
-
-      painter->setClipping(false);
-    }
-  }
-};
-}
-
 
 class Seqblocks_widget {
 public:
@@ -639,30 +525,6 @@ public:
      
   }
 
-  bool set_blury_area(ClippedGraphicsBlurEffect *blur_effect){
-    double sample_rate = MIXER_get_sample_rate();
-
-    SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
-    
-    double start_time = _start_time / sample_rate;
-    double end_time = _end_time / sample_rate;
-    
-    int header_height = get_block_header_height();
-    
-    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &_seqtrack->seqblocks){
-      float x1 = get_seqblock_x1(seqblock, start_time, end_time);
-      float x2 = get_seqblock_x2(seqblock, start_time, end_time);
-      QRectF rect(x1,t_y1+header_height,x2-x1,height-header_height);
-      //printf("Setting rect to %f, %f, %f, %f\n", rect.x(),rect.y(),rect.width(),rect.height());
-      
-      blur_effect->setArea(rect);
-         
-      return true;
-    }END_VECTOR_FOR_EACH;
-
-    return false;
-  }
-    
   void paintEditorTrack(QPainter &p, float x1, float y1, float x2, float y2, const struct SeqBlock *seqblock, const struct Blocks *block, const struct Tracks *track, int64_t blocklen, bool is_multiselected) const {
     QColor color1 = get_qcolor(SEQUENCER_NOTE_COLOR_NUM);
     QColor color2 = get_qcolor(SEQUENCER_NOTE_START_COLOR_NUM);
@@ -822,7 +684,7 @@ public:
     return half_alpha(c, is_gfx);
   }
 
-  void paintBlock(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
+  void paintBlockGraphics(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
     const struct Blocks *block = seqblock->block;
 
     const int header_height = get_block_header_height();
@@ -941,6 +803,95 @@ public:
       p.drawRect(rect);
 
       p.setBrush(Qt::NoBrush);
+    }
+  }
+
+  void draw_interface(QPainter *painter, QRectF _blury_areaF){
+    qreal x1,y1,x2,y2;
+    _blury_areaF.getCoords(&x1, &y1, &x2, &y2);
+
+    float border = 2.1;
+    
+    float xsplit1 = get_seqblock_xsplit1(x1, x2);
+    float xsplit2 = get_seqblock_xsplit2(x1, x2);
+
+    float ysplit1 = get_seqblock_ysplit1(y1, y2);
+    float ysplit2 = get_seqblock_ysplit2(y1, y2);
+        
+    painter->setRenderHints(QPainter::Antialiasing,true);
+      
+    QPen pen(QColor(0,255,0));
+    pen.setWidth(2.3);
+    painter->setPen(pen);
+
+    // xsplit1 vertical line, left
+    QLineF line1(xsplit1,y1+border,xsplit1,y2-border);
+    painter->drawLine(line1);
+
+    // xsplit2 vertical line, left
+    QLineF line2(xsplit2,y1+border,xsplit2,y2-border);
+    painter->drawLine(line2);
+    
+    // ysplit1 horizontal line, left
+    QLineF line3a(x1+border, ysplit1, xsplit1-border, ysplit1);
+    painter->drawLine(line3a);
+    
+    // ysplit1 horizontal line, right
+    QLineF line3b(xsplit2+border, ysplit1, x2-border, ysplit1);
+    painter->drawLine(line3b);
+    
+    // ysplit2 horizontal line
+    QLineF line4a(x1+border, ysplit2, xsplit1-border, ysplit2);
+    painter->drawLine(line4a);
+    
+    // ysplit2 horizontal line
+    QLineF line4b(xsplit2+border, ysplit2, x2-border, ysplit2);
+    painter->drawLine(line4b);
+    
+    myDrawText(*painter, _blury_areaF, "hello");
+    
+    painter->setRenderHints(QPainter::Antialiasing,false);
+    
+  }
+
+  void paintBlock(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
+    QPoint mousep = _sequencer_widget->mapFromGlobal(QCursor::pos());
+
+    if(!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
+
+      paintBlockGraphics(p, rect, seqblock, is_gfx);
+
+    } else {
+
+      int header_height = get_block_header_height();
+      
+      int rwidth = ceil(rect.width());
+      int rheight = ceil(rect.height());
+
+      if(rwidth<=0 || rheight<=0){
+        R_ASSERT_NON_RELEASE(false);
+        return;
+      }
+
+      QImage image(rwidth, rheight, QImage::Format_ARGB32);
+
+      QRectF rect2(0, 0, rwidth, rheight);
+      QRect blur_rect = rect2.toRect().adjusted(0, header_height, 0, 0);
+
+      {
+        QPainter ptr(&image);
+        paintBlockGraphics(ptr, rect2, seqblock, is_gfx);
+      }
+
+#if 1
+      blurred(image, blur_rect, 3);
+      //QImage image2 = blurred(image, rect2.toRect(), 3);
+#else
+      QImage &image2 = image;
+#endif
+      
+      p.drawImage((int)rect.x(), (int)rect.y(), image);
+      draw_interface(&p, rect.adjusted(0, header_height, 0, 0));
     }
   }
   
@@ -1096,10 +1047,6 @@ class Seqtrack_widget : public QWidget, public Ui::Seqtrack_widget {
     _seqblocks_widget.set_seqblocks_is_selected(selection_rect);
   }
 
-  bool set_blury_area(ClippedGraphicsBlurEffect *blur_effect){
-    return _seqblocks_widget.set_blury_area(blur_effect);
-  }
-      
   void paint(const QRect &update_rect, QPainter &p){
     _seqblocks_widget.paint(update_rect, p);
   }
@@ -1186,14 +1133,6 @@ public:
       seqtrack_widget->set_seqblocks_is_selected(selection_rect);
   }
 
-  bool set_blury_area(ClippedGraphicsBlurEffect *blur_effect){
-    for(auto *seqtrack_widget : _seqtrack_widgets)
-      if (seqtrack_widget->set_blury_area(blur_effect)==true)
-        return true;
-
-    return false;
-  }
-  
   void paint(const QRect &update_rect, QPainter &p){
     position_widgets(t_x1, t_y1, t_x2, t_y2);
 
@@ -1732,8 +1671,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   bool _has_selection_rectangle = false;
   QRect _selection_rectangle;
 
-  ClippedGraphicsBlurEffect *_blur_effect = new ClippedGraphicsBlurEffect;
- 
   Sequencer_widget(QWidget *parent)
     : MouseTrackerQWidget(parent)
     , _end_time(SONG_get_gfx_length()*MIXER_get_sample_rate())
@@ -1757,8 +1694,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     int height = root->song->tracker_windows->systemfontheight*1.3 * 13;
     setMinimumHeight(height);
     //setMaximumHeight(height);
-
-    setGraphicsEffect(_blur_effect);
   }
 
   void legalize_start_end_times(void){
@@ -2090,12 +2025,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     RETURN_IF_DATA_IS_INACCESSIBLE();
 
-    if (_seqtracks_widget.set_blury_area(_blur_effect)==true){
-      _blur_effect->setEnabled(true);
-    } else {
-      _blur_effect->setEnabled(false);
-    }
-    
     QPainter p(this);
 
     p.eraseRect(rect()); // We don't paint everything.

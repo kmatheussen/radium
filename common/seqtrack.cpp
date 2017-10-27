@@ -258,7 +258,7 @@ void SEQBLOCK_init(struct SeqBlock *seqblock, struct Blocks *block, bool *track_
   seqblock->track_is_disabled = track_is_disabled;
   seqblock->time = time;
   seqblock->gfx_time = time;
-  seqblock->time2 = getBlockSTimeLength(block);
+  seqblock->time2 = seqblock->time + getBlockSTimeLength(block);
   seqblock->gfx_time2 = seqblock->time2;
   seqblock->stretch = 1.0;
   seqblock->gfx_stretch = 1.0;
@@ -660,6 +660,13 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const hash_t *state){
     seqblock->gfx_time2 = time2;
     set_seqblock_stretch(seqblock, false);
   }
+
+  R_ASSERT(seqblock->time2 > seqblock->time);
+  R_ASSERT(seqblock->gfx_time==seqblock->time);
+  R_ASSERT(seqblock->gfx_time2==seqblock->time2);
+
+  R_ASSERT(seqblock->stretch > 0);
+  R_ASSERT(seqblock->gfx_stretch==seqblock->stretch);
 
   for(int i=0;i<MAX_DISABLED_SEQBLOCK_TRACKS;i++){
     if (HASH_has_key_at(state, "track_disabled", i)){ 
