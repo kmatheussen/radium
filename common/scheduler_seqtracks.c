@@ -55,7 +55,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
   } else {
 
     if (place_pointer==NULL)
-      place = STime2Place(block, seqtime - seqblock->time);
+      place = STime2Place(block, seqtime_to_blocktime(seqblock, seqtime - seqblock->time));
     else
       place = *place_pointer;
   }
@@ -96,11 +96,12 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     RT_schedule_notes_newblock(seqtrack, seqblock, seqtime, place);
   }
 
+  int64_t endblock_seqtime = SEQBLOCK_get_seq_endtime(seqblock);
+
   // Schedule end block
   {
     union SuperType args[1];
-    int64_t endblock_time = seqblock->time + getBlockSTimeLength(block);
-    SCHEDULER_add_event(seqtrack, endblock_time, RT_scheduled_end_of_seqblock, &args[0], 0, SCHEDULER_ENDBLOCK_PRIORITY);
+    SCHEDULER_add_event(seqtrack, endblock_seqtime, RT_scheduled_end_of_seqblock, &args[0], 0, SCHEDULER_ENDBLOCK_PRIORITY);
   }
     
 
@@ -116,9 +117,8 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
         next_seqblock = NULL;
         next_time = 0;
       } else {
-        int64_t seqblock_duration = getBlockSTimeLength(block);
         next_seqblock = seqblock;
-        next_time = seqblock->time + seqblock_duration;
+        next_time = endblock_seqtime;
       }
       
     } else {
@@ -183,37 +183,36 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
     
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
+  int64_t abs_start_time;
+  int64_t seq_start_times[root->song->seqtracks.num_elements];
+
   {
-    struct SeqBlock *seqblock = startdata->seqblock;
-    struct Blocks *block = seqblock==NULL ? NULL : seqblock->block;
+    const struct SeqBlock *seqblock = startdata->seqblock;
+    const struct Blocks *block = seqblock==NULL ? NULL : seqblock->block;
+
+    int64_t seqtime = 0;
 
     if (block!=NULL)
       ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Stop gfx rendering since we are soon going to change the values of seqtrack->end_time and friends.
+        
+    if (startdata->seqtrack == NULL) {
+      abs_start_time = startdata->abstime;
+    } else {
+      R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
+      R_ASSERT_RETURN_IF_FALSE(block!=NULL);
+      STime block_stime = Place2STime(block, &startdata->place);
+      seqtime = seqblock->time + blocktime_to_seqtime(seqblock, block_stime);
+      abs_start_time = get_abstime_from_seqtime(startdata->seqtrack, seqblock, seqtime);
+    }
+  
+    VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+      if (seqtrack==startdata->seqtrack)
+        seq_start_times[iterator666] = seqtime;
+      else
+        seq_start_times[iterator666] = get_seqtime_from_abstime(seqtrack, NULL, abs_start_time); // Ab ab ab. Not quite working if starting to play in the middle of a block, I think.      
+    }END_VECTOR_FOR_EACH;
   }
   
-  
-  int64_t seqtime = 0;
-  int64_t abs_start_time;
-  
-  if (startdata->seqtrack == NULL) {
-    abs_start_time = startdata->abstime;
-  } else {
-    R_ASSERT_RETURN_IF_FALSE(startdata->seqblock!=NULL);
-    R_ASSERT_RETURN_IF_FALSE(startdata->seqblock->block!=NULL);
-    STime block_stime = Place2STime(startdata->seqblock->block, &startdata->place);
-    seqtime = startdata->seqblock->time + block_stime;
-    abs_start_time = get_abstime_from_seqtime(startdata->seqtrack, startdata->seqblock, seqtime);
-  }
-
-  
-  int64_t seq_start_times[root->song->seqtracks.num_elements];
-  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
-    if (seqtrack==startdata->seqtrack)
-      seq_start_times[iterator666] = seqtime;
-    else
-      seq_start_times[iterator666] = get_seqtime_from_abstime(seqtrack, NULL, abs_start_time); // Ab ab ab. Not quite working if starting to play in the middle of a block, I think.      
-  }END_VECTOR_FOR_EACH;
-
   
   PLAYER_lock();{
 
@@ -239,7 +238,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
       VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
         
         int64_t seqblock_start_time = seqblock->time;
-        int64_t seqblock_end_time   = seqblock_start_time + getBlockSTimeLength(seqblock->block);
+        int64_t seqblock_end_time   = SEQBLOCK_get_seq_endtime(seqblock);
         
         if (seq_start_time < seqblock_end_time){
           
@@ -269,6 +268,8 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
 
 
 void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, int playtype){
+  R_ASSERT(playtype=PLAYBLOCK);
+  
   static Place static_place;
 
   static_place = place;
@@ -280,7 +281,7 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
     
   ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Stop gfx rendering since we are soon going to change the values of seqtrack->end_time and friends.
 
-  int64_t seq_start_time = Place2STime(block, &place);
+  int64_t seq_start_time = Place2STime(block, &place); // When playing block, seqtime==blocktime.
               
   PLAYER_lock();{
 
@@ -300,9 +301,8 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
     atomic_pointer_write_relaxed((void**)&seqtrack->curr_seqblock, NULL);
     
     static struct SeqBlock seqblock = {0};
-    seqblock.block = block;
-    seqblock.time = 0;
- 
+    SEQBLOCK_init(&seqblock, block, NULL, 0);
+      
     union SuperType args[G_NUM_ARGS];
     
     args[0].pointer = &seqblock;

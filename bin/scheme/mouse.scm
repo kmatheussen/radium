@@ -3527,7 +3527,7 @@
  :move (lambda (Button X Y)
          (let ((old *current-seqblock-info*)
                (new (get-seqblock-info X Y)))
-           (c-display "old/new seqblock-info" old new)
+           ;;(c-display "old/new seqblock-info" old new)
            (cond ((and old (not new))
                   (set! *current-seqblock-info* new))
                  ((or (and new (not old))
@@ -3624,6 +3624,196 @@
                  (if data
                   (apply ra:add-block-to-seqtrack data)))
                data))))
+
+
+(define (get-sequencer-pixels-per-value-unit)
+  (/ (- (<ra> :get-sequencer-x2)
+        (<ra> :get-sequencer-x1))
+     (- (<ra> :get-sequencer-visible-end-time)
+        (<ra> :get-sequencer-visible-start-time))))
+
+
+
+;; Change seqblock stretch values
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define *min-seqblock-width* 5)
+
+(define (get-min-seqblock-duration min-num-pixels seqblock-info)
+  (define seqtracknum (seqblock-info :seqtracknum))
+  (define seqblocknum (seqblock-info :seqblocknum))
+  (define x1 (<ra> :get-seqblock-x1 seqblocknum seqtracknum))
+  (define x2 (<ra> :get-seqblock-x2 seqblocknum seqtracknum))
+  (define width (- x2 x1))
+  (define start-time (<ra> :get-seqblock-gfx-start-time seqblocknum seqtracknum))
+  (define end-time (<ra> :get-seqblock-gfx-end-time seqblocknum seqtracknum))
+  (define duration (- end-time start-time))
+  (scale min-num-pixels
+         0 width
+         0 duration))
+
+(define (get-max-seqblock-start-pos min-num-pixels seqblock-info)
+  (define seqtracknum (seqblock-info :seqtracknum))
+  (define seqblocknum (seqblock-info :seqblocknum))
+  (define end-time (<ra> :get-seqblock-gfx-end-time seqblocknum seqtracknum))
+  (- end-time (get-min-seqblock-duration min-num-pixels seqblock-info))
+  )
+
+(define (get-min-seqblock-end-pos min-num-pixels seqblock-info)
+  (define seqtracknum (seqblock-info :seqtracknum))
+  (define seqblocknum (seqblock-info :seqblocknum))
+  (define start-time (<ra> :get-seqblock-gfx-start-time seqblocknum seqtracknum))
+  (+ start-time (get-min-seqblock-duration min-num-pixels seqblock-info))
+  )
+
+(define (apply-seqblock-gfx-position seqblock-info)
+  (define seqtracknum (seqblock-info :seqtracknum))
+  (define seqblocknum (seqblock-info :seqblocknum))
+  (define start-time (<ra> :get-seqblock-gfx-start-time seqblocknum seqtracknum))
+  (define end-time (<ra> :get-seqblock-gfx-end-time seqblocknum seqtracknum))
+  (<ra> :undo-sequencer)
+  (<ra> :position-seqblock start-time end-time seqblocknum seqtracknum)
+  seqblock-info)
+
+;; right handle
+(add-node-mouse-handler :Get-area-box (lambda()
+                                        (and *current-seqblock-info*
+                                             (let ((box (<ra> :get-box seqblock-right-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))))
+                                               ;;(c-display "BOX:" (box-to-string box))
+                                               box)))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  (define seqblock-info *current-seqblock-info*)
+                                                  (define seqtracknum (seqblock-info :seqtracknum))
+                                                  (define seqblocknum (seqblock-info :seqblocknum))
+                                                  (define start-pos (<ra> :get-seqblock-end-time seqblocknum seqtracknum))
+                                                  (callback seqblock-info start-pos Y))
+
+                        :Get-min-value (lambda (seqblock-info)
+                                         (get-min-seqblock-end-pos *min-seqblock-width* seqblock-info)
+                                         )
+                        
+                        :Get-max-value (lambda (seqblock-info)
+                                         (define seqtracknum (seqblock-info :seqtracknum))
+                                         (define seqblocknum (seqblock-info :seqblocknum))
+                                         (define num-seqblocks (<ra> :get-num-seqblocks (seqblock-info :seqtracknum)))
+                                         (if (or #t (= (1- num-seqblocks) seqblocknum))
+                                             (+ 10000000000 (<ra> :get-seqblock-end-time (seqblock-info :seqblocknum) seqtracknum)) ;; always return this one. It's more accurate to limit size in common/seqtrack.c instead.
+                                             (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum)))
+                        :Get-x (lambda (info) #f)
+                        :Get-y (lambda (info) #f)
+
+                        :Make-undo (lambda (_)
+                                     #f)
+                        
+                        :Create-new-node (lambda (X seqtracknum callback)
+                                           (assert #f)
+                                           #f)
+                        
+                        :Release-node apply-seqblock-gfx-position
+
+                        :Move-node (lambda (seqblock-info Value Y)
+                                     (define seqtracknum (seqblock-info :seqtracknum))
+                                     (define seqblocknum (seqblock-info :seqblocknum))
+
+                                     (define new-pos (if (<ra> :control-pressed)
+                                                         (floor Value)
+                                                         (<ra> :get-seq-gridded-time (floor Value) 0 (<ra> :get-seq-block-grid-type)))
+                                       )
+
+                                     (when (> new-pos (get-min-seqblock-end-pos *min-seqblock-width* seqblock-info))  ;; Get-min-value sometimes fails because it doesn't look at grid.
+                                       (set-grid-type #t)
+                                       
+                                       (define start-time (<ra> :get-seqblock-gfx-start-time seqblocknum seqtracknum))
+                                       (<ra> :position-seqblock-gfx start-time new-pos seqblocknum seqtracknum)
+                                       )
+                                     
+                                     seqblock-info)
+
+                        :Publicize (lambda (seqblock-info)
+                                     (define seqtracknum (seqblock-info :seqtracknum))
+                                     (define seqblocknum (seqblock-info :seqblocknum))
+                                     (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch-gfx seqblocknum seqtracknum)))))
+
+                        :Get-pixels-per-value-unit (lambda (seqblock-info)
+                                                     (get-sequencer-pixels-per-value-unit))
+
+                        :Use-Place #f
+
+                        :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
+                        
+                        :Get-guinum (lambda() (<gui> :get-sequencer-gui))
+                        )
+
+
+;; left handle
+(add-node-mouse-handler :Get-area-box (lambda()
+                                        (and *current-seqblock-info*
+                                             (let ((box (<ra> :get-box seqblock-left-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))))
+                                               ;;(c-display "BOX:" (box-to-string box))
+                                               box)))
+                        :Get-existing-node-info (lambda (X Y callback)
+                                                  (define seqblock-info *current-seqblock-info*)
+                                                  (define seqtracknum (seqblock-info :seqtracknum))
+                                                  (define seqblocknum (seqblock-info :seqblocknum))
+                                                  (define start-pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+                                                  (callback seqblock-info start-pos Y))
+
+                        :Get-min-value (lambda (seqblock-info)
+                                         0) ;; the API does a better job of limiting min value.
+                        
+                        :Get-max-value (lambda (seqblock-info)
+                                         (get-max-seqblock-start-pos *min-seqblock-width* seqblock-info))
+
+                        :Get-x (lambda (info) #f)
+                        :Get-y (lambda (info) #f)
+
+                        :Make-undo (lambda (_)
+                                     #f)
+                        
+                        :Create-new-node (lambda (X seqtracknum callback)
+                                           (assert #f)
+                                           #f)
+
+                        :Release-node apply-seqblock-gfx-position
+
+                        :Move-node (lambda (seqblock-info Value Y)
+                                     (define seqtracknum (seqblock-info :seqtracknum))
+                                     (define seqblocknum (seqblock-info :seqblocknum))
+
+                                     (define new-pos (if (or (and (= 0 seqtracknum)
+                                                                  (= 0 seqblocknum))
+                                                             (<ra> :control-pressed))
+                                                         (floor Value)
+                                                         (<ra> :get-seq-gridded-time (floor Value) 0 (<ra> :get-seq-block-grid-type)))
+                                       )
+
+                                     (when (< new-pos (get-max-seqblock-start-pos *min-seqblock-width* seqblock-info))
+                                       (set-grid-type #t)                                       
+                                       (define end-time (<ra> :get-seqblock-gfx-end-time seqblocknum seqtracknum))
+                                       (<ra> :position-seqblock-gfx new-pos end-time seqblocknum seqtracknum)
+                                       )
+                                     
+                                     seqblock-info)
+
+                        :Publicize (lambda (seqblock-info)
+                                     (define seqtracknum (seqblock-info :seqtracknum))
+                                     (define seqblocknum (seqblock-info :seqblocknum))
+                                     (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch-gfx seqblocknum seqtracknum)))))
+
+                        :Get-pixels-per-value-unit (lambda (seqblock-info)
+                                                     (get-sequencer-pixels-per-value-unit))
+
+                        :Use-Place #f
+
+                        :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
+                        
+                        :Get-guinum (lambda() (<gui> :get-sequencer-gui))
+                        )
+
+
+
+
+
 
 
 ;; seqblock move
@@ -3724,11 +3914,11 @@
                                                 (<ra> :undo-sequencer)
                                                 (set! gakkgakk-has-made-undo #f))
                                               (begin
-                                                (<ra> :move-seqblock seqblocknum new-pos seqtracknum)
+                                                (<ra> :move-seqblock new-pos seqblocknum seqtracknum)
                                                 ;;(c-display "moving 1")
                                                 ))
                                             (begin
-                                              (<ra> :move-seqblock-gfx seqblocknum old-pos seqtracknum)
+                                              (<ra> :move-seqblock-gfx old-pos seqblocknum seqtracknum)
                                               ;;(c-display "moving 2. old:" old-pos ". new-pos:" new-pos)
                                               ))
                                         (set-grid-type #f)
@@ -3749,8 +3939,9 @@
                                                              (<ra> :control-pressed))
                                                          (floor Value)
                                                          (<ra> :get-seq-gridded-time (floor Value) 0 (<ra> :get-seq-block-grid-type))))
-
+                                     
                                      ;;(c-display "  MOVING GFX " (/ new-pos 44100.0))
+                                     ;;(c-display "Value:" Value)
                                      
                                      (set! gakkgakk-last-value new-pos)
                                      
@@ -3834,7 +4025,7 @@
                                                  ;; Move gfx
                                                  (else
                                                   ;;(c-display "  22. MOVING GFX " (/ new-pos 44100.0))
-                                                  (<ra> :move-seqblock-gfx seqblocknum new-pos seqtracknum)
+                                                  (<ra> :move-seqblock-gfx new-pos seqblocknum seqtracknum)
                                                   seqblock-info)))))
 
                         :Use-Place #f
@@ -3844,11 +4035,7 @@
                         ;;:Mouse-pointer-func ra:set-blank-mouse-pointer
                         
                         :Get-pixels-per-value-unit (lambda (seqblock-info)
-                                                     (/ (- (<ra> :get-sequencer-x2)
-                                                           (<ra> :get-sequencer-x1))
-                                                        (- (<ra> :get-sequencer-visible-end-time)
-                                                           (<ra> :get-sequencer-visible-start-time))))
-
+                                                     (get-sequencer-pixels-per-value-unit))
                         )
 
 
@@ -4474,12 +4661,14 @@
 
                               (popup-menu "Insert existing block" (lambda ()
                                                                     (let ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                                                      (apply popup-menu
-                                                                             (map (lambda (blocknum)
-                                                                                    (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
-                                                                                          (lambda ()
-                                                                                            (<ra> :add-block-to-seqtrack seqtracknum blocknum pos))))
-                                                                                  (iota (<ra> :get-num-blocks))))))
+                                                                      (if (= 1 (<ra> :get-num-blocks))
+                                                                          (<ra> :add-block-to-seqtrack seqtracknum 0 pos)                                          
+                                                                          (apply popup-menu
+                                                                                 (map (lambda (blocknum)
+                                                                                        (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                                                                                              (lambda ()
+                                                                                                (<ra> :add-block-to-seqtrack seqtracknum blocknum pos))))
+                                                                                      (iota (<ra> :get-num-blocks)))))))
 
                                           ;;   Sub menues version. It looks better, but it is less convenient.
                                           ;;"Insert existing block" (map (lambda (blocknum)

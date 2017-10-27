@@ -87,7 +87,7 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
           
     if(pc->playtype==PLAYBLOCK) {
             
-      addtime = getBlockSTimeLength(block);
+      addtime = SEQBLOCK_get_seq_duration(seqblock);
       next_track = track;
             
     } else {

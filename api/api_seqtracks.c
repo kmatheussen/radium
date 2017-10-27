@@ -996,21 +996,36 @@ int64_t getSeqblockEndTime(int seqblocknum, int seqtracknum){
   SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
 
   return seqblock->end_time * MIXER_get_sample_rate();
-//return seqblock->time + getBlockSTimeLength(seqblock->block);
 }
 
+int64_t getSeqblockGfxStartTime(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 0;
+
+  SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
+    
+  return seqblock->start_time * MIXER_get_sample_rate(); //seqblock->time;
+}
+
+int64_t getSeqblockGfxEndTime(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 0;
+
+  SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
+
+  return seqblock->end_time * MIXER_get_sample_rate();
+}
+
+// seqblock area
 float getSeqblockX1(int seqblocknum, int seqtracknum){
   if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
   
   return SEQBLOCK_get_x1(seqblocknum, seqtracknum);
-}
-
-float getSeqblockX2(int seqblocknum, int seqtracknum){
-  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
-    return 0;
-  
-  return SEQBLOCK_get_x2(seqblocknum, seqtracknum);
 }
 
 float getSeqblockY1(int seqblocknum, int seqtracknum){
@@ -1020,6 +1035,13 @@ float getSeqblockY1(int seqblocknum, int seqtracknum){
   return SEQBLOCK_get_y1(seqblocknum, seqtracknum);
 }
 
+float getSeqblockX2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_x2(seqblocknum, seqtracknum);
+}
+
 float getSeqblockY2(int seqblocknum, int seqtracknum){
   if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
     return 0;
@@ -1027,7 +1049,93 @@ float getSeqblockY2(int seqblocknum, int seqtracknum){
   return SEQBLOCK_get_y2(seqblocknum, seqtracknum);
 }
 
-void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum, int new_seqtracknum){
+
+// seqblock left stretch area
+
+float getSeqblockLeftStretchX1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_stretch_x1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftStretchY1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_stretch_y1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftStretchX2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_stretch_x2(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftStretchY2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_stretch_y2(seqblocknum, seqtracknum);
+}
+
+// seqblock right stretch area
+
+float getSeqblockRightStretchX1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_stretch_x1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightStretchY1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_stretch_y1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightStretchX2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_stretch_x2(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightStretchY2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_stretch_y2(seqblocknum, seqtracknum);
+}
+
+
+
+// move seqblock / set stretch
+
+static void positionSeqblock2(int64_t start_abstime, int64_t end_abstime, int seqblocknum, int seqtracknum, bool is_gfx){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  VALIDATE_TIME(start_abstime,);
+  VALIDATE_TIME(end_abstime,);
+  
+  //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
+  SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, start_abstime, end_abstime, is_gfx);
+}
+
+void positionSeqblock(int64_t start_abstime, int64_t end_abstime, int seqblocknum, int seqtracknum){
+  positionSeqblock2(start_abstime, end_abstime, seqblocknum, seqtracknum, false);
+}
+
+void positionSeqblockGfx(int64_t start_abstime, int64_t end_abstime, int seqblocknum, int seqtracknum){
+  positionSeqblock2(start_abstime, end_abstime, seqblocknum, seqtracknum, true);
+}
+
+void moveSeqblock(int64_t abstime, int seqblocknum, int seqtracknum, int new_seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
@@ -1048,7 +1156,7 @@ void moveSeqblock(int seqblocknum, int64_t abstime, int seqtracknum, int new_seq
   SEQTRACK_move_seqblock(seqtrack, seqblock, abstime);
 }
 
-void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum, int new_seqtracknum){
+void moveSeqblockGfx(int64_t abstime, int seqblocknum, int seqtracknum, int new_seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
@@ -1069,6 +1177,27 @@ void moveSeqblockGfx(int seqblocknum, int64_t abstime, int seqtracknum, int new_
   SEQTRACK_move_gfx_seqblock(seqtrack, seqblock, abstime);
 }
 
+
+double getSeqblockStretch(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 1;
+
+  return seqblock->stretch;
+}
+
+double getSeqblockStretchGfx(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 1;
+
+  return seqblock->gfx_stretch;
+}
+
+
+/*
 void moveSeqblockGfxGfx(int seqblocknum, int64_t abstime, int seqtracknum, int new_seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getGfxGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
@@ -1089,6 +1218,7 @@ void moveSeqblockGfxGfx(int seqblocknum, int64_t abstime, int seqtracknum, int n
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_move_gfx_gfx_seqblock(seqtrack, seqblock, abstime);
 }
+*/
 
 void deleteSeqblock(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;

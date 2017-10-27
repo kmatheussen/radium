@@ -233,7 +233,7 @@ QVector<PlaylistElement> get_playlist_elements(void){
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
 
-    int64_t next_last_end_seq_time = seqblock->gfx_time + getBlockSTimeLength(seqblock->block);
+    int64_t next_last_end_seq_time = seqblock->gfx_time2;
         
     int64_t pause_time = seqblock->gfx_time - last_end_seq_time;
 
@@ -643,7 +643,7 @@ public slots:
       // Append block
 
       const struct SeqBlock *last_seqblock = (const struct SeqBlock*)VECTOR_last(&seqtrack->seqblocks);
-      int64_t seqtime = last_seqblock==NULL ? 0 : (last_seqblock->time + getBlockSTimeLength(last_seqblock->block));
+      int64_t seqtime = last_seqblock==NULL ? 0 : SEQBLOCK_get_seq_endtime(last_seqblock);
       
       SEQTRACK_insert_block(seqtrack, block, seqtime);
 
@@ -680,7 +680,7 @@ public slots:
       SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -pe.get_pause());
     else{
       SEQTRACK_delete_seqblock(SEQUENCER_get_curr_seqtrack(), pe.seqblock);
-      SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -getBlockSTimeLength(pe.seqblock->block));
+      SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -1 * SEQBLOCK_get_seq_duration(pe.seqblock));
     }
     
       //BL_deleteCurrPos(num);
@@ -720,7 +720,7 @@ public slots:
 
         SEQTRACK_delete_seqblock(seqtrack, seqblock1);
         SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock1->time);
-        SEQTRACK_insert_seqblock(seqtrack, seqblock1, seqblock2->time+getBlockSTimeLength(seqblock2->block));
+        SEQTRACK_insert_seqblock(seqtrack, seqblock1, SEQBLOCK_get_seq_endtime(seqblock2));
       }
 
       //printf("Aft2: %f %f\n", (double)seqblock1->time/MIXER_get_sample_rate(), (double)seqblock2->time/MIXER_get_sample_rate());
@@ -845,7 +845,7 @@ public slots:
         } else {
           struct SeqBlock *prev_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum-1];
           abstime = prev_seqblock->end_time * MIXER_get_sample_rate();
-          seqtime = prev_seqblock->start_time + getBlockSTimeLength(prev_seqblock->block);
+          seqtime = prev_seqblock->start_time + SEQBLOCK_get_seq_duration(prev_seqblock);
         }
       } else {
         abstime = seqblock->start_time * MIXER_get_sample_rate();

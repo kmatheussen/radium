@@ -20,7 +20,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef COMMON_SCHEDULER_PROC_H
 #define COMMON_SCHEDULER_PROC_H
 
+
 #include "time_proc.h"
+
+#include "seqtrack_proc.h"
+
+
 
 typedef int64_t (*SchedulerCallback)(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);
 
@@ -93,12 +98,12 @@ static inline note_t create_note_from_args(const union SuperType *args){
 
 
 static inline int64_t get_seqblock_place_time(const struct SeqBlock *seqblock, const Place p){
-  return seqblock->time + Place2STime(seqblock->block, &p);
+  return seqblock->time + blocktime_to_seqtime(seqblock, Place2STime(seqblock->block, &p));
 }
                                  
 static inline int64_t get_seqblock_place_time2(const struct SeqBlock *seqblock, const struct Tracks *track, const Place p){
   R_ASSERT_NON_RELEASE(track->times!=NULL);
-  return seqblock->time + Place2STime_from_times(seqblock->block->num_lines, track->times, &p);
+  return seqblock->time + blocktime_to_seqtime(seqblock, Place2STime_from_times(seqblock->block->num_lines, track->times, &p));
 }
                                  
 

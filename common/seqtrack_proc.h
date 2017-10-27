@@ -3,8 +3,13 @@
 #ifndef _RADIUM_COMMON_SEQTRACK_PROC_H
 #define _RADIUM_COMMON_SEQTRACK_PROC_H
 
+
+#include <math.h>
+
+
 #define SEQNAV_SIZE_HANDLE_WIDTH 50
 #define SEQUENCER_EXTRA_SONG_LENGTH 30.0 // sequencer gui always shows 30 seconds more than the song length
+
 
 enum GridType{  
   NO_GRID = 0,
@@ -15,10 +20,57 @@ enum GridType{
 #define LAST_LEGAL_GRID BEAT_GRID
 
 
+
+static inline int64_t SEQBLOCK_get_seq_duration(const struct SeqBlock *seqblock){
+  return seqblock->time2 - seqblock->time;
+}
+
+static inline int64_t SEQBLOCK_get_seq_endtime(const struct SeqBlock *seqblock){
+  return seqblock->time2;
+}
+
+
+static inline double seqtime_to_blocktime_double(const struct SeqBlock *seqblock, double seqtime){
+  if(seqblock->stretch==1.0)
+    return seqtime;
+  else
+    return seqtime / seqblock->stretch;
+}
+
+
+static inline int64_t seqtime_to_blocktime(const struct SeqBlock *seqblock, int64_t seqtime){
+  if(seqblock->stretch==1.0)
+    return seqtime;
+  else
+    return round((double)seqtime / seqblock->stretch);
+}
+
+static inline double blocktime_to_seqtime_double(const double stretch, const double blocktime){
+  if(stretch==1.0)
+    return blocktime;
+  else
+    return blocktime * stretch;
+}
+
+static inline int64_t blocktime_to_seqtime2(const double stretch, const int64_t blocktime){
+  if(stretch==1.0)
+    return blocktime;
+  else
+    return round((double)blocktime * stretch);
+}
+
+static inline int64_t blocktime_to_seqtime(const struct SeqBlock *seqblock, const int64_t blocktime){
+  return blocktime_to_seqtime2(seqblock->stretch, blocktime);
+}
+
+
 extern LANGSPEC int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int64_t seqtime); // Result is rounded down to nearest integer. 'seqblock' may be NULL.
 extern LANGSPEC int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime); // Result is rounded down to nearest integer.
 
 extern LANGSPEC void SONG_call_me_before_starting_to_play_song_MIDDLE(int64_t abstime);
+
+// 'seqblock' must be nulled out before calling.
+extern LANGSPEC void SEQBLOCK_init(struct SeqBlock *seqblock, struct Blocks *block, bool *track_is_disabled, int64_t time);
   
 // sequencer gfx
 #ifdef USE_QT4
@@ -106,6 +158,18 @@ extern LANGSPEC float SEQBLOCK_get_x2(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_y1(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum);
 
+// seqblock left stretch
+extern LANGSPEC float SEQBLOCK_get_left_stretch_x1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_stretch_y1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_stretch_x2(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_stretch_y2(int seqblocknum, int seqtracknum);
+
+// seqblock right stretch
+extern LANGSPEC float SEQBLOCK_get_right_stretch_x1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_stretch_y1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_stretch_x2(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_stretch_y2(int seqblocknum, int seqtracknum);
+
 // sequencer_gfx
 extern LANGSPEC void SEQTRACK_update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_update_all_seqblock_gfx_start_and_end_times(struct SeqTrack *seqtrack);
@@ -119,9 +183,14 @@ extern LANGSPEC void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int seqblocknum, int64_t how_much);
 extern LANGSPEC void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 extern LANGSPEC void SEQTRACK_delete_gfx_gfx_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
+
+extern LANGSPEC bool SEQTRACK_set_seqblock_start_and_stop(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_start_time, int64_t new_end_time, const bool is_gfx);
+    
 extern LANGSPEC void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 extern LANGSPEC void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
-extern LANGSPEC void SEQTRACK_move_gfx_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_abs_time);
+
+//extern LANGSPEC void SEQTRACK_move_gfx_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_abs_time);
+
 extern LANGSPEC void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t length);
 extern LANGSPEC int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime);
 extern LANGSPEC int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime);

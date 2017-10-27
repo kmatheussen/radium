@@ -33,22 +33,66 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "song_tempo_automation_proc.h"
 #include "seqtrack_automation_proc.h"
 #include "patch_proc.h"
-
+#include "../api/api_proc.h"
 
 #include "seqtrack_proc.h"
 
+static inline int64_t get_seqblock_endtime(const struct SeqBlock *seqblock, bool is_gfx){
+  if (is_gfx)
+    return seqblock->gfx_time2;
+  else
+    return seqblock->time2;
+}
 
+static inline int64_t get_seqblock_duration(const struct SeqBlock *seqblock, bool is_gfx){
+  if (is_gfx)
+    return seqblock->gfx_time2 - seqblock->gfx_time;
+  else
+    return seqblock->time2 - seqblock->time;
+}
+
+static int64_t SEQBLOCK_get_seq_time(const struct SeqBlock *seqblock, int64_t blocktime){
+  return seqblock->time + blocktime_to_seqtime(seqblock, blocktime);
+}
+
+static void move_seqblock(struct SeqBlock *seqblock, int64_t new_start, bool is_gfx){
+  int64_t duration = get_seqblock_duration(seqblock, is_gfx);
+
+  seqblock->gfx_time = new_start;
+  seqblock->gfx_time2 = new_start + duration;
+  
+  if (!is_gfx){
+    seqblock->time = new_start;
+    seqblock->time2 = seqblock->gfx_time2;
+  }
+}
+
+static bool seqblock_has_stretch(const struct SeqBlock *seqblock, bool is_gfx){
+  int64_t blocklen = getBlockSTimeLength(seqblock->block);
+  return blocklen != get_seqblock_duration(seqblock, is_gfx);
+}
+
+static void set_seqblock_stretch(struct SeqBlock *seqblock, bool is_gfx){
+  double blocklen = getBlockSTimeLength(seqblock->block);
+
+  seqblock->gfx_stretch = (double)(seqblock->gfx_time2-seqblock->gfx_time) / blocklen;
+  
+  if(!is_gfx)
+    seqblock->stretch = (double)(seqblock->time2-seqblock->time) / blocklen;
+}
+
+                          
 // 'seqblock_where_time_is' can be NULL, but it works faster if it is not null. (Not quite sure if that is the whole difference)
 int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_where_time_is, int64_t seqtime){
   int64_t last_seq_end_time = 0;
   double last_abs_end_time = 0; // Is double because of reltempo multiplication.
 
-  int64_t block_stime = seqblock_where_time_is == NULL ? -1 : seqtime-seqblock_where_time_is->time;
+  int64_t block_stime = seqblock_where_time_is == NULL ? -1 : seqtime_to_blocktime(seqblock_where_time_is, seqtime-seqblock_where_time_is->time);
     
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     
-    struct Blocks *block            = seqblock->block;
-    double         tempo_multiplier = ATOMIC_DOUBLE_GET(block->reltempo);
+    struct Blocks *block    = seqblock->block;
+    double         reltempo = ATOMIC_DOUBLE_GET(block->reltempo);
     
     int64_t pause_duration  = seqblock->time - last_seq_end_time; // (reltempo is not applied to pauses)
     
@@ -61,10 +105,10 @@ int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct S
     }
     
     if (seqblock == seqblock_where_time_is)
-      return abs_start_time + ((double)block_stime / ATOMIC_DOUBLE_GET(seqblock->block->reltempo)); // Important that we round down.
+      return abs_start_time + blocktime_to_seqtime(seqblock, (double)block_stime / reltempo); // Important that we round down.
       
-    int64_t seq_block_duration = getBlockSTimeLength(seqblock->block);
-    int64_t abs_block_duration = ((double)seq_block_duration / tempo_multiplier);
+    int64_t seq_block_duration = get_seqblock_duration(seqblock, false);
+    int64_t abs_block_duration = ((double)seq_block_duration / reltempo);
     
     int64_t seq_end_time = seq_start_time + seq_block_duration;
     double  abs_end_time = abs_start_time + abs_block_duration;
@@ -88,10 +132,10 @@ int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct S
   R_ASSERT(false);
   // !!!
   
-  return seqblock_where_time_is->time + ((double)block_stime / ATOMIC_DOUBLE_GET(seqblock_where_time_is->block->reltempo)); // fallback.
+  return seqblock_where_time_is->time + blocktime_to_seqtime(seqblock_where_time_is, ((double)block_stime / ATOMIC_DOUBLE_GET(seqblock_where_time_is->block->reltempo))); // fallback.
 }
 
-// Returns in frame format, not in seconds. (int64_t is always in frames, double is always in seconds)
+// Returns in frame format, not in seconds. (int64_t is usually in frames, double is usually in seconds)
 int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime){
   //int64_t last_seq_start_time = 0;
   int64_t last_seq_end_time = 0;
@@ -113,7 +157,7 @@ int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct S
       if (abstime <= abs_start_time)
         break;
       
-      int64_t seq_block_duration = getBlockSTimeLength(seqblock->block);
+      int64_t seq_block_duration = get_seqblock_duration(seqblock, false);
       int64_t abs_block_duration = ((double)seq_block_duration / tempo_multiplier);
       
       int64_t seq_end_time = seq_start_time + seq_block_duration;
@@ -144,7 +188,7 @@ static bool plays_same_seqblock_completely_later_in_seqtrack(struct SeqTrack *se
     const struct SeqBlock *seqblock2 = (struct SeqBlock *)seqtrack->seqblocks.elements[pos];
     const struct Blocks *block2 = seqblock2->block;
     int64_t start_seqblock2_seqtime = seqblock2->time;
-    int64_t end_seqblock2_seqtime = start_seqblock2_seqtime + getBlockSTimeLength(block2);
+    int64_t end_seqblock2_seqtime = start_seqblock2_seqtime + get_seqblock_duration(seqblock, false);
     
     if (end_seqblock2_seqtime > before_seqtime)
       return false;
@@ -189,9 +233,9 @@ void SONG_call_me_before_starting_to_play_song_MIDDLE(int64_t abstime){
                   
       if (!plays_same_seqblock_completely_later_in_seqtrack(seqtrack, i, seqtime)){
 
-        STime block_stime = R_MIN(getBlockSTimeLength(block), seqtime - seqblock->time);
+        STime blocktime = R_MIN(getBlockSTimeLength(block), seqtime_to_blocktime(seqblock, seqtime - seqblock->time));
 
-        FX_call_me_before_starting_to_play_song(seqtrack, seqblock, block_stime);
+        FX_call_me_before_starting_to_play_song(seqtrack, seqblock, blocktime);
         
       }
                                            
@@ -208,12 +252,25 @@ static int64_t convert_seqtime(struct SeqTrack *from_seqtrack, struct SeqTrack *
   return get_seqtime_from_abstime(to_seqtrack, NULL, abstime);
 }
 
-static struct SeqBlock *SEQBLOCK_create(struct Blocks *block){
-  struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
+void SEQBLOCK_init(struct SeqBlock *seqblock, struct Blocks *block, bool *track_is_disabled, int64_t time){
+  R_ASSERT(block!=NULL);
   seqblock->block = block;
-  seqblock->track_is_disabled = (bool*)talloc_atomic_clean(sizeof(bool)*MAX_DISABLED_SEQBLOCK_TRACKS);;
-  seqblock->time = -1;
-  seqblock->gfx_time = seqblock->time;
+  seqblock->track_is_disabled = track_is_disabled;
+  seqblock->time = time;
+  seqblock->gfx_time = time;
+  seqblock->time2 = getBlockSTimeLength(block);
+  seqblock->gfx_time2 = seqblock->time2;
+  seqblock->stretch = 1.0;
+  seqblock->gfx_stretch = 1.0;
+}
+
+static struct SeqBlock *SEQBLOCK_create(struct Blocks *block, int64_t time){
+  struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
+  SEQBLOCK_init(seqblock,
+                block,
+                (bool*)talloc_atomic_clean(sizeof(bool)*MAX_DISABLED_SEQBLOCK_TRACKS),
+                time
+                );
   return seqblock;
 }
 
@@ -231,21 +288,18 @@ static void legalize_seqtrack_timing(struct SeqTrack *seqtrack, bool is_gfx){
   int64_t time_to_add = 0;
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-    int64_t seq_block_start = seqblock->time + time_to_add;
+    int64_t seq_block_start = (is_gfx ? seqblock->gfx_time : seqblock->time) + time_to_add;
 
     if (seq_block_start < last_end_time) {
       time_to_add += (last_end_time - seq_block_start);
       seq_block_start = last_end_time;
     }
 
-    if (seq_block_start != seqblock->time) {
-      if (!is_gfx)
-        seqblock->time = seq_block_start;
-      seqblock->gfx_time = seq_block_start;
-    }
+    if (seq_block_start != seqblock->time) 
+      move_seqblock(seqblock, seq_block_start, is_gfx);
 
-    last_end_time = seq_block_start + getBlockSTimeLength(seqblock->block);
-      
+    last_end_time = is_gfx ? seqblock->gfx_time2 : seqblock->time2;
+    
   }END_VECTOR_FOR_EACH;
 
 }
@@ -276,7 +330,7 @@ static void update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack, b
     
     double abs_block_start = last_abs_end_time + abs_block_pause;
     
-    int64_t seq_block_duration = getBlockSTimeLength(seqblock->block);
+    int64_t seq_block_duration = get_seqblock_duration(seqblock, is_gfx);
     double  abs_block_duration = ((double)seq_block_duration / tempo_multiplier) / sample_rate;
     
     int64_t seq_end_time = seq_block_start + seq_block_duration;
@@ -297,7 +351,7 @@ static void update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack, b
   seqblocks = &seqtrack->gfx_gfx_seqblocks;
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
     seqblock->start_time = get_abstime_from_seqtime(seqtrack, NULL, seqblock->time) / sample_rate;
-    seqblock->end_time = get_abstime_from_seqtime(seqtrack, NULL, seqblock->time + getBlockSTimeLength(seqblock->block)) / sample_rate;
+    seqblock->end_time = get_abstime_from_seqtime(seqtrack, NULL, get_seqblock_endtime(seqblock, is_gfx)) / sample_rate;
     //printf("   %d: %f %f\n", iterator666, seqblock->start_time / 44100.0, seqblock->end_time / 44100.0);
   }END_VECTOR_FOR_EACH;
 }
@@ -387,7 +441,7 @@ static int64_t find_barorbeat_start_inside(const struct SeqBlock *seqblock, int6
   
   if (what==WhatToFind::LINE){
     for(int line=0;line<block->num_lines;line++){
-      int64_t stime = seqblock->time + block->times[line].time;
+      int64_t stime = seqblock->time + blocktime_to_seqtime(seqblock, block->times[line].time);
       int64_t dist = R_ABS(stime-seqtime);
       //printf("bar/beat: %d/%d. seqtime: %f. bartime: %f. dist: %f\n",beat->bar_num,beat->beat_num,(double)seqtime/44100.0, (double)bartime/44100.0,(double)dist/44100.0);
       if (dist < mindist){
@@ -404,7 +458,7 @@ static int64_t find_barorbeat_start_inside(const struct SeqBlock *seqblock, int6
 
   while (beat != NULL){
     if (beat->beat_num==1 || what==WhatToFind::BEAT){
-      int64_t beattime = seqblock->time + Place2STime(block, &beat->l.p);
+      int64_t beattime = seqblock->time + blocktime_to_seqtime(seqblock, Place2STime(block, &beat->l.p));
       int64_t dist = R_ABS(beattime-seqtime);
       //printf("bar/beat: %d/%d. seqtime: %f. bartime: %f. dist: %f\n",beat->bar_num,beat->beat_num,(double)seqtime/44100.0, (double)bartime/44100.0,(double)dist/44100.0);
       if (dist < mindist){
@@ -424,7 +478,7 @@ static int64_t find_barorbeat_start_inside(const struct SeqBlock *seqblock, int6
 static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64_t seqtime, int64_t maxtime, WhatToFind what){
   const struct Blocks *block = seqblock->block;
   int64_t blocklen = getBlockSTimeLength(block);
-  int64_t interval_length;
+  int64_t block_interval_length;
 
   if (what==WhatToFind::NOTHING) {
 
@@ -432,7 +486,7 @@ static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64
   
   } else if (what==WhatToFind::LINE){
     
-    interval_length = blocklen - block->times[block->num_lines-1].time;
+    block_interval_length = blocklen - block->times[block->num_lines-1].time;
 
   } else {
 
@@ -446,14 +500,15 @@ static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64
     }
     
     if (last_barorbeat==NULL)
-      interval_length = blocklen;
+      block_interval_length = blocklen; // no bars in the seqblock
     else
-      interval_length = blocklen - Place2STime(block, &last_barorbeat->l.p);
+      block_interval_length = blocklen - Place2STime(block, &last_barorbeat->l.p);
   }
 
-  interval_length /= ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
-
-  int64_t ret = seqblock->time + blocklen;
+  int64_t interval_length = blocktime_to_seqtime(seqblock, block_interval_length / ATOMIC_DOUBLE_GET(block->reltempo));
+  //printf("  ... interval_length: %f\n", (double)interval_length / 44100.0);
+  
+  int64_t ret = SEQBLOCK_get_seq_endtime(seqblock);
   int64_t mindiff = R_ABS(ret-seqtime);
   int64_t lastdiff = mindiff;
   
@@ -471,7 +526,7 @@ static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64
     lastdiff = diff;
     maybe += interval_length;
   }
-  
+
   return ret;
 }
 
@@ -491,20 +546,23 @@ int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, WhatT
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     
     int64_t starttime = seqblock->time;
-    int64_t endtime = seqblock->time + getBlockSTimeLength(seqblock->block);
+    int64_t endtime = SEQBLOCK_get_seq_endtime(seqblock);
     
     if (seqtime >= starttime && seqtime < endtime) {
+      //printf("inside:  ");
       barorbeat_start_time = find_barorbeat_start_inside(seqblock, seqtime, what);
       goto gotit;
     }
     
     if (seqtime < starttime && last_seqblock==NULL) {
+      //printf("pos_abstime:  ");
       return pos_abstime;
       //bar_start_time = pos_seqtime; //find_bar_start_before(seqblock, seqtime);
       //goto gotit;
     }
     
     if (seqtime < starttime) {
+      //printf("after:  ");
       barorbeat_start_time = find_barorbeat_start_after(last_seqblock, seqtime, starttime, what);
       goto gotit;
     }
@@ -512,10 +570,13 @@ int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, WhatT
     last_seqblock = seqblock;
   }END_VECTOR_FOR_EACH;
 
-  if (last_seqblock==NULL)
+  if (last_seqblock==NULL){
+    //printf("pos_abstime2:  ");
     return pos_abstime;
-  else
+  } else {
+    //printf("after2:  ");
     barorbeat_start_time = find_barorbeat_start_after(last_seqblock, seqtime, INT64_MAX, what);
+  }
   
  gotit:
 
@@ -548,9 +609,8 @@ static void set_plain_seqtrack_timing_no_pauses(struct SeqTrack *seqtrack){
   int64_t time = 0;
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-    seqblock->time = time;
-    seqblock->gfx_time = time;
-    time += getBlockSTimeLength(seqblock->block);
+    move_seqblock(seqblock, time, false);
+    time += get_seqblock_duration(seqblock, false);
   }END_VECTOR_FOR_EACH;
 }
 
@@ -560,6 +620,7 @@ static hash_t *SEQBLOCK_get_state(const struct SeqBlock *seqblock){
   
   HASH_put_int(state, "blocknum", seqblock->block->l.num);
   HASH_put_int(state, "time", seqblock->time);
+  HASH_put_int(state, "time2", seqblock_has_stretch(seqblock, false) ? seqblock->time2 : -1); // time2 = -1 if there is no stretch. If not, we could artificially create stretch if loading the song with a different sample rate.
   HASH_put_float(state, "samplerate", MIXER_get_sample_rate());
 
   R_ASSERT_RETURN_IF_FALSE2(seqblock->track_is_disabled!=NULL, state);
@@ -574,16 +635,30 @@ static hash_t *SEQBLOCK_get_state(const struct SeqBlock *seqblock){
 }
 
 static struct SeqBlock *SEQBLOCK_create_from_state(const hash_t *state){
-  
+
+  double state_samplerate = HASH_get_float(state, "samplerate");
+  int64_t time = round(double(HASH_get_int(state, "time")) * MIXER_get_sample_rate() / state_samplerate);
+
+  int64_t time2 = -1;
+  if (HASH_has_key(state, "time2")){
+    time2 = HASH_get_int(state, "time2");
+    if (time2 != -1)
+      time2 = round(double(time2) * MIXER_get_sample_rate() / state_samplerate);
+  }
+
   int blocknum = HASH_get_int32(state, "blocknum");
 
-  double samplerate = HASH_get_float(state, "samplerate");
-
-  struct SeqBlock *seqblock = SEQBLOCK_create((struct Blocks*)ListFindElement1(&root->song->blocks->l, blocknum));
-  if (seqblock==NULL){
+  struct Blocks *block = (struct Blocks*)ListFindElement1(&root->song->blocks->l, blocknum);
+  if (block==NULL)
     // not supposed to happen, but it did happen once when undoing/redoing a lot after running the api autotester.
-    // (assertion reporter popped up in the call to ListFindElement1 above)
-    seqblock = SEQBLOCK_create((struct Blocks*)ListFindElement1(&root->song->blocks->l, 0));
+    // (assertion reporter pops up in the call to ListFindElement1 above)
+    block = (struct Blocks*)ListFindElement1(&root->song->blocks->l, 0);
+
+  struct SeqBlock *seqblock = SEQBLOCK_create(block, time);
+  if (time2 != -1){
+    seqblock->time2 = time2;
+    seqblock->gfx_time2 = time2;
+    set_seqblock_stretch(seqblock, false);
   }
 
   for(int i=0;i<MAX_DISABLED_SEQBLOCK_TRACKS;i++){
@@ -592,10 +667,6 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const hash_t *state){
     }
   }
 
-  seqblock->time = round(double(HASH_get_int(state, "time")) * MIXER_get_sample_rate() / samplerate);
-
-  seqblock->gfx_time = seqblock->time;
-  
   return seqblock;
 }
 
@@ -653,8 +724,10 @@ struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
   vector_t seqblocks = {0};
   
   for(int pos=0;pos<len;pos++)
-    VECTOR_push_back(&seqblocks, SEQBLOCK_create((struct Blocks *)ListFindElement1(&root->song->blocks->l,playlist[pos])));
-  
+    VECTOR_push_back(&seqblocks,
+                     SEQBLOCK_create((struct Blocks *)ListFindElement1(&root->song->blocks->l,playlist[pos]),
+                                     -1));
+                     
   struct SeqTrack *seqtrack = SEQTRACK_create(NULL);
     
   seqtrack->seqblocks = seqblocks;
@@ -688,8 +761,7 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
 
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
       if (iterator666 >= pos){
-        seqblock->time = get_seqtime_from_abstime(seqtrack, seqblock, abstimes[iterator666+1]);
-        seqblock->gfx_time = seqblock->time;
+        move_seqblock(seqblock, get_seqtime_from_abstime(seqtrack, seqblock, abstimes[iterator666+1]), false);
         //printf("Skewing %f -> %f\n", (seqblock->time-skew) / 44100.0, seqblock->time / 44100.0);
       }
     }END_VECTOR_FOR_EACH;
@@ -733,12 +805,8 @@ void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int 
     radium::PlayerLock lock;
     
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-      if (iterator666 >= seqblocknum) {
-        seqblock->time += how_much;
-        seqblock->gfx_time = seqblock->time;
-
-        printf("  Dec %d in %d by %d\n", (int)seqblock->time, iterator666, (int)how_much);
-      }
+      if (iterator666 >= seqblocknum)
+        move_seqblock(seqblock, seqblock->time+how_much, false);
     }END_VECTOR_FOR_EACH;
     
     RT_legalize_seqtrack_timing(seqtrack);
@@ -747,56 +815,102 @@ void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int 
   RT_SEQUENCER_update_sequencer_and_playlist();
 }
 
-static void move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_abs_time, bool is_gfx){
-  R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
+// 'new_start_time' and 'new_end_time' are in the seqtime format.
+// if new_start_time==-1, use old start time. Same with new_end_time.
+bool SEQTRACK_set_seqblock_start_and_stop(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_start_time, int64_t new_end_time, const bool is_gfx){
+  // We also set seqblock->stretch here, based on new_start_time and new_end_time. (if stretch is changed).
 
-  int64_t new_seqblock_time = get_seqtime_from_abstime(seqtrack, seqblock, new_abs_time);
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
+  R_ASSERT_RETURN_IF_FALSE2(seqblock!=NULL, false);
+
+#if !defined(RELEASE)
+  R_ASSERT_RETURN_IF_FALSE2(VECTOR_find_pos(&seqtrack->seqblocks, seqblock) >= 0, false);
+#endif
+
+  if(new_start_time==-1 && new_end_time==-1)
+    return false;
   
-  if (new_seqblock_time < 0)
-    new_seqblock_time = 0;
+  int64_t old_start_time = is_gfx ? seqblock->gfx_time : seqblock->time;
+  int64_t old_end_time   = is_gfx ? seqblock->gfx_time2 : seqblock->time2;
 
-  //printf("abs_time: %f.   seqblock_time: %f\n",(double)new_abs_time/48000.0, (double)new_seqblock_time/48000.0);
+  int64_t old_duration = old_end_time-old_start_time;
+
+  if (new_start_time==-1)
+    new_start_time = new_end_time - old_duration;
+
+  if (new_end_time==-1)
+    new_end_time = new_start_time + old_duration;
+
+  if (new_start_time==old_start_time && new_end_time==old_end_time)
+    return false;
   
-  const struct SeqBlock *prev_seqblock = get_prev_seqblock(seqtrack, seqblock);
-  const struct SeqBlock *next_seqblock = get_next_seqblock(seqtrack, seqblock);
+  R_ASSERT_RETURN_IF_FALSE2(new_start_time >= 0, false);
+  R_ASSERT_RETURN_IF_FALSE2(new_end_time > new_start_time, false);
 
-  int64_t time1 = is_gfx ? seqblock->gfx_time : seqblock->time;
-  int64_t time2 = time1 + getBlockSTimeLength(seqblock->block);
-  int64_t duration = time2-time1;
-  
-  int64_t mintime;
-  int64_t maxtime;
+  int64_t new_duration = new_end_time-new_start_time;
+    
+  bool want_to_change_stretch = old_duration != new_duration;
+    
+  // legalize new_start_time and new_end_time
+  {
+    const struct SeqBlock *prev_seqblock = get_prev_seqblock(seqtrack, seqblock);
+    const struct SeqBlock *next_seqblock = get_next_seqblock(seqtrack, seqblock);
+    
+    int64_t boundary_min = prev_seqblock==NULL ?  0 : prev_seqblock->time2;
+    int64_t boundary_max = next_seqblock==NULL ? -1 : next_seqblock->time;
 
-  if (false && is_gfx) {
-    mintime = 0;
-    maxtime = SONG_get_gfx_length() + 10000000;
-  } else {
-    mintime = prev_seqblock==NULL ?  0 : prev_seqblock->time + getBlockSTimeLength(prev_seqblock->block);
-    maxtime = next_seqblock==NULL ? -1 : next_seqblock->time - duration;
+    if (new_start_time < boundary_min){
+      new_start_time = boundary_min;
+      if (!want_to_change_stretch)
+        new_end_time = new_start_time + new_duration;
+      
+      new_duration = new_end_time-new_start_time;
+    }
 
-    if (maxtime==-1)
-      new_seqblock_time = R_MAX(mintime, new_seqblock_time);
-    else
-      new_seqblock_time = R_BOUNDARIES(mintime, new_seqblock_time, maxtime);
+    if (boundary_max!=-1 && new_end_time > boundary_max){
+      new_end_time = boundary_max;
+      if (!want_to_change_stretch){
+        new_start_time = new_end_time - new_duration;
+        if (new_start_time < boundary_min){
+          addMessage("Not enough room");
+          return false;
+        }
+      }
+      
+      new_duration = new_end_time-new_start_time;
+    }
   }
-  
-  if (new_seqblock_time==time1)
-    return;
 
+  R_ASSERT_RETURN_IF_FALSE2(new_duration > 0, false);
+
+  if (new_start_time==old_start_time && new_end_time==old_end_time)
+    return false;
+
+  
   double old_song_visible_length = SONG_get_gfx_length();
 
   if (is_gfx) {
+
+    seqblock->gfx_time = new_start_time;
+    seqblock->gfx_time2 = new_end_time;
     
-    seqblock->gfx_time = new_seqblock_time;
-    
+    if (want_to_change_stretch)    
+      set_seqblock_stretch(seqblock, true);
+
     legalize_seqtrack_timing(seqtrack, true);
     
   } else {
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
 
-    seqblock->time = new_seqblock_time;
-    seqblock->gfx_time = seqblock->time;
+    seqblock->time = new_start_time;
+    seqblock->gfx_time = new_start_time;
+    
+    seqblock->time2 = new_end_time;
+    seqblock->gfx_time2 = new_end_time;
+    
+    if (want_to_change_stretch)
+      set_seqblock_stretch(seqblock, false);
 
     legalize_seqtrack_timing(seqtrack, false);
   }
@@ -811,16 +925,19 @@ static void move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, 
   }
 
   BS_UpdatePlayList();
+
+  return true;
 }
 
 void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_abs_time){
-  move_seqblock(seqtrack, seqblock, new_abs_time, false);
+  SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, get_seqtime_from_abstime(seqtrack, seqblock, new_abs_time), -1, false);
 }
 
 void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_abs_time){
-  move_seqblock(seqtrack, seqblock, new_abs_time, true);
+  SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, get_seqtime_from_abstime(seqtrack, seqblock, new_abs_time), -1, true);
 }
 
+/*
 void SEQTRACK_move_gfx_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_abs_time){
   int64_t new_seqblock_time = get_seqtime_from_abstime(seqtrack, seqblock, new_abs_time);
   
@@ -832,6 +949,7 @@ void SEQTRACK_move_gfx_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
 
   SEQUENCER_update();
 }
+*/
 
 void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t length){
 
@@ -841,10 +959,8 @@ void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t
     
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
 
-      if (seqblock->time >= seqtime) {
-        seqblock->time += length;
-        seqblock->gfx_time = seqblock->time;
-      }
+      if (seqblock->time >= seqtime)
+        move_seqblock(seqblock, seqblock->time+length, false);
       
     }END_VECTOR_FOR_EACH;
 
@@ -888,16 +1004,13 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
 
-    seqblock->time = seqtime;
-    seqblock->gfx_time = seqblock->time;
+    move_seqblock(seqblock, seqtime, false);
     
     VECTOR_insert(&seqtrack->seqblocks, seqblock, pos);
 
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-      if (iterator666 > pos){
-        seqblock->time = get_seqtime_from_abstime(seqtrack, seqblock, abstimes[iterator666-1]);
-        seqblock->gfx_time = seqblock->time;
-      }
+      if (iterator666 > pos)
+        move_seqblock(seqblock, get_seqtime_from_abstime(seqtrack, seqblock, abstimes[iterator666-1]), false);
     }END_VECTOR_FOR_EACH;
 
     RT_legalize_seqtrack_timing(seqtrack);
@@ -909,14 +1022,12 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
 }
 
 int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime){
-  struct SeqBlock *seqblock = SEQBLOCK_create(block);
+  struct SeqBlock *seqblock = SEQBLOCK_create(block, -1);
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime);
 }
 
 int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime){
-  struct SeqBlock *seqblock = SEQBLOCK_create(block);
-  seqblock->time = seqtime;
-  seqblock->gfx_time = seqblock->time;
+  struct SeqBlock *seqblock = SEQBLOCK_create(block, seqtime);
   seqblock->is_selected = true;
 
   vector_t *seqblocks = &seqtrack->gfx_gfx_seqblocks;
@@ -1101,7 +1212,7 @@ void SONG_init(void){
   
   VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
   
-  struct SeqBlock *seqblock = SEQBLOCK_create(root->song->blocks);
+  struct SeqBlock *seqblock = SEQBLOCK_create(root->song->blocks, -1);
 
   SEQUENCER_init(root->song);
   

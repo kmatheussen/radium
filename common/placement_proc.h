@@ -155,6 +155,10 @@ static inline Place p_FromDouble(double d){
   return place;
 }
 
+static inline double p_getDouble(const Place p){
+  return (double)p.line + (double)p.counter/(double)p.dividor;
+}
+
 /*************************************************************
   FUNCTION
     Returns 0 if placement1 is the same as placement2,

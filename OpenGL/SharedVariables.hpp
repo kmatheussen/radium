@@ -38,6 +38,8 @@ struct SharedVariables{
 
   const struct LocalZooms **reallines; // We store it in g_shared_variables_gc_storage, so it can not be garbage collected while it is here.
 
+  double seqblock_stretch;
+  
   bool block_is_visible;
   
   SharedVariables(bool block_is_visible)
@@ -124,6 +126,11 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
     
     const struct SeqBlock *seqblock = seqtrack==NULL ? NULL : (struct SeqBlock*)atomic_pointer_read_relaxed((void**)&seqtrack->curr_seqblock);
     sv->curr_playing_block = seqblock==NULL ? NULL : seqblock->block;
+
+    if(seqblock==NULL)
+      sv->seqblock_stretch = 1.0;
+    else
+      sv->seqblock_stretch = seqblock->stretch;
   }
 
   

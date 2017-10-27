@@ -55,6 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/list_proc.h"
 #include "../common/realline_calc_proc.h"
 #include "../common/time_proc.h"
+#include "../common/seqtrack_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/OS_Semaphores.h"
 #include "../common/OS_Player_proc.h"
@@ -408,21 +409,25 @@ static float GE_scroll_pos(const SharedVariables *sv, double realline){
 extern int scrolls_per_second;
 extern int default_scrolls_per_second;
 
+
 // The time_estimator is used to estimate the screen refresh rate according to the soundcard clock.
 // I.e. 60.0 hz when using the gfx card clock is unlikely to be 60.0 hz when using the soundcard clock.
 //
 // However, since we put a high pass filter on the scroll position, it doesn't really matter, so
 // we only estimate using QT4. In Qt5, we just use the widget->windowHandle()->screen()->refreshRate() value instead.
 //
-TimeEstimator time_estimator;
+static TimeEstimator time_estimator;
 
 
 // OpenGL thread
-static double get_realline_stime(const SharedVariables *sv, int realline){  
+static double get_realline_stime(const SharedVariables *sv, int realline){
+  double blocktime;
   if(realline==sv->num_reallines)
-    return sv->block_duration;
+    blocktime = sv->block_duration;
   else
-    return Place2STime_from_times(sv->num_lines, sv->times, &sv->reallines[realline]->l.p);
+    blocktime = Place2STime_from_times2(sv->times, p_getDouble(sv->reallines[realline]->l.p));
+  
+  return blocktime_to_seqtime_double(sv->seqblock_stretch, blocktime);
 }
 
 
