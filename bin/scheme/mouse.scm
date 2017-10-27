@@ -3529,11 +3529,13 @@
                (new (get-seqblock-info X Y)))
            ;;(c-display "old/new seqblock-info" old new)
            (cond ((and old (not new))
-                  (set! *current-seqblock-info* new))
+                  (<ra> :cancel-curr-seqblock)
+                  (set! *current-seqblock-info* #f))
                  ((or (and new (not old))
                       (not (morally-equal? new old)))
                   ;;(c-display "set-normal")
                   ;;(<ra> :set-normal-mouse-pointer)
+                  (<ra> :set-curr-seqblock (new :seqblocknum) (new :seqtracknum))
                   (set! *current-seqblock-info* new))
                  (else
                   #f)))))
@@ -3680,6 +3682,7 @@
                                         (and *current-seqblock-info*
                                              (let ((box (<ra> :get-box seqblock-right-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))))
                                                ;;(c-display "BOX:" (box-to-string box))
+                                               ;;(<ra> :set-curr-seqblock seqblocknum seqtracknum)
                                                box)))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (define seqblock-info *current-seqblock-info*)
@@ -3721,12 +3724,12 @@
                                        )
 
                                      (when (> new-pos (get-min-seqblock-end-pos *min-seqblock-width* seqblock-info))  ;; Get-min-value sometimes fails because it doesn't look at grid.
-                                       (set-grid-type #t)
-                                       
+                                       (set-grid-type #t)                                      
+
                                        (define start-time (<ra> :get-seqblock-gfx-start-time seqblocknum seqtracknum))
                                        (<ra> :position-seqblock-gfx start-time new-pos seqblocknum seqtracknum)
-                                       )
-                                     
+                                       )                                    
+
                                      seqblock-info)
 
                         :Publicize (lambda (seqblock-info)

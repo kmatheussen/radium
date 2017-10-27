@@ -960,6 +960,18 @@ int addGfxGfxBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos){
 
 // seqblocks
 
+void setCurrSeqblock(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
+  g_curr_seqblock = seqblock;
+}
+
+void cancelCurrSeqblock(void){
+  g_curr_seqblock = NULL;
+}
+
 int getNumSeqblocks(int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)

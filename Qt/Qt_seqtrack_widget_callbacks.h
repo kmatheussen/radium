@@ -116,6 +116,8 @@ static bool smooth_scrolling(void){
 
 static bool g_draw_colored_seqblock_tracks = true;
 
+SeqBlock *g_curr_seqblock = NULL;
+
 
 /* Custom font drawing code */
 
@@ -855,9 +857,9 @@ public:
   }
 
   void paintBlock(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
-    QPoint mousep = _sequencer_widget->mapFromGlobal(QCursor::pos());
+    //QPoint mousep = _sequencer_widget->mapFromGlobal(QCursor::pos());
 
-    if(!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
+    if(seqblock != g_curr_seqblock){ //!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
 
       paintBlockGraphics(p, rect, seqblock, is_gfx);
 
