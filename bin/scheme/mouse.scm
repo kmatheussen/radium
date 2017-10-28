@@ -948,7 +948,19 @@
 
                ((inside-box (<ra> :get-box sequencer) X Y)
                 (cond (*current-seqblock-info*
-                       (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))
+                       (define seqblock-info *current-seqblock-info*)
+                       (define seqtracknum (seqblock-info :seqtracknum))
+                       (define seqblocknum (seqblock-info :seqblocknum))
+                       (cond ((inside-box (<ra> :get-box seqblock-right-stretch seqblocknum seqtracknum) X Y)
+                              (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
+                              (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+                             ((inside-box (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y)
+                              (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
+                              (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+                             (else
+                              (<ra> :set-statusbar-text (two-decimal-string (/ (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
+                                                                               (<ra> :get-sample-rate))))
+                              (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))))
                        )
                       ((inside-box (get-seqnav-move-box) X Y)
                        (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))
