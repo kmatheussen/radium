@@ -3984,6 +3984,7 @@
                                          
                                          (ignore-undo-block (lambda ()
                                                               ;;(c-display "bef:" (/ (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum) 44100.0))
+                                                              (set! *current-seqblock-info* #f)
                                                               (<ra> :delete-seqblock seqblocknum seqtracknum)
                                                               ;;(c-display "aft:" (/ (<ra> :get-seqblock-start-time seqblocknum seqtracknum) 44100.0))
                                                               (if dosomething
@@ -4004,6 +4005,7 @@
                                        (define blocknum2 (<ra> :get-seqblock-blocknum (1+ seqblocknum) seqtracknum))
 
                                        (ignore-undo-block (lambda ()
+                                                            (set! *current-seqblock-info* #f)
                                                             (<ra> :delete-seqblock seqblocknum seqtracknum)
                                                             (<ra> :delete-seqblock seqblocknum seqtracknum)
                                                             (<ra> :add-block-to-seqtrack seqtracknum blocknum2 new-pos2)
@@ -4497,6 +4499,7 @@
                        (and seqblock-info
                             (begin
                               (<ra> :delete-seqblock (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
+                              (set! *current-seqblock-info* #f)
                               #t)))))))
 
 (define (get-sequencer-pos-from-x X)
@@ -4583,6 +4586,7 @@
               (loop 0 (1+ seqtracknum)))
              ((<ra> :is-seqblock-selected seqblocknum seqtracknum)
               (<ra> :delete-seqblock seqblocknum seqtracknum)
+              (set! *current-seqblock-info* #f)
               (set! deleted-something #t)
               (loop seqblocknum seqtracknum))
              (else
@@ -4599,6 +4603,7 @@
                 (loop 0 (1+ seqtracknum)))
                ((inside-box (<ra> :get-box seqblock seqblocknum seqtracknum) x y)
                 (<ra> :delete-seqblock seqblocknum seqtracknum)
+                (set! *current-seqblock-info* #f)
                 (loop seqblocknum seqtracknum))
                (else
                 (loop (1+ seqblocknum) seqtracknum))))))))
@@ -4776,6 +4781,7 @@
                                                                                        (let* ((seqblocknum (seqblock-info :seqblocknum))
                                                                                               (seqtracknum (seqblock-info :seqtracknum))
                                                                                               (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                                                                                         (set! *current-seqblock-info* #f)
                                                                                          (<ra> :delete-seqblock seqblocknum seqtracknum)
                                                                                          (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
                                                                                      (if (null? seqblock-infos)
@@ -4823,6 +4829,7 @@
                                                                    (let* ((seqblocknum (seqblock-info :seqblocknum))
                                                                           (seqtracknum (seqblock-info :seqtracknum))
                                                                           (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                                                                     (set! *current-seqblock-info* #f)
                                                                      (<ra> :delete-seqblock seqblocknum seqtracknum)
                                                                      (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
                                                                  (if (null? seqblock-infos)
@@ -4895,6 +4902,7 @@
                                           (list "Delete sequencer track"
                                                 :enabled (> (<ra> :get-num-seqtracks) 1)
                                                 (lambda ()
+                                                  (set! *current-seqblock-info* #f)
                                                   (<ra> :delete-seqtrack seqtracknum)))
                                           "Append sequencer track" (lambda ()
                                                                      (<ra> :append-seqtrack))
