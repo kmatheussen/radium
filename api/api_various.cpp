@@ -2495,11 +2495,11 @@ static double get_block_length(struct Blocks *block){
   return time / (double)MIXER_get_sample_rate();
 }
 
-double getBlockLength(int blocknum, int windownum){
-  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
-  if(wblock==NULL) return 1.0; // return 1.0 instead of 0.0 to avoid divide by zero errors.
+int64_t getBlockLength(int blocknum, int windownum){
+  const struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+  if(wblock==NULL) return 1; // return 1.0 instead of 0.0 to avoid divide by zero errors.
 
-  return get_block_length(wblock->block);
+  return getBlockSTimeLength(wblock->block); //get_block_length(wblock->block);
 }
 
 double getSongLength(void){

@@ -4841,7 +4841,17 @@
                                                 :enabled seqblocknum
                                                 (lambda ()
                                                   (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))
-                                          
+
+                                          (list "Reset stretch"
+                                                :enabled (and seqblocknum
+                                                              (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
+                                                (lambda ()
+                                                  (c-display "stretch:" (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
+                                                  (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+                                                  (define blocklength (<ra> :get-block-length blocknum))
+                                                  (<ra> :position-seqblock start-time (+ start-time blocklength) seqblocknum seqtracknum)
+                                                  (c-display "hepp")))
+                                                
                                           ;;
                                           ;;(list "Remove pause"
                                           ;;      :enabled #f
