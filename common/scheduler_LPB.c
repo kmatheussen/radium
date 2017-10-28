@@ -26,7 +26,7 @@ static double get_num_beats(const struct SeqTrack *seqtrack, const struct SeqBlo
   if (time < 0) // Happens when switching between two seqblocks at a non-audio block alignment (i.e. delta time > 0). To avoid this minor inaccuracy, it seems necessary to break the use of constant 64 frame audio block sizes, so it's probably not worth it.
     time = 0;
   
-  double stime_to_add = (double)seqtime_to_blocktime_double(seqblock, audioframes_to_add) * ATOMIC_DOUBLE_GET(block->reltempo);
+  double stime_to_add = (double)audioframes_to_add * ATOMIC_DOUBLE_GET(block->reltempo);
 
 #if DEBUG_BUGS
   printf("Get num_beats. from_where: %s, time: %f, stime_to_add: %f, pc->start_time_f: %f, stime2place: %f\n",
@@ -38,12 +38,14 @@ static double get_num_beats(const struct SeqTrack *seqtrack, const struct SeqBlo
          );
 #endif
 
-  if (time+stime_to_add > getBlockSTimeLength(block)) // can happen when switching block
+  double block_time = seqtime_to_blocktime_double(seqblock, time+stime_to_add);
+  
+  if (block_time > getBlockSTimeLength(block)) // can happen when switching block
     *curr_num_beats_is_valid = false;
   
   return
     iterator->num_beats_played_so_far +
-    scale_double(STime2Place_f(block, time+stime_to_add),
+    scale_double(STime2Place_f(block,block_time),
                  iterator->place1_f, iterator->place2_f,
                  0.0, iterator->num_beats_between_place1_and_place2
                  );

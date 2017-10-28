@@ -37,7 +37,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define D(n)
 //#define D(n) n
 
+#define USE_BLURRED 0
 
+#if USE_BLURRED
 // copied from https://stackoverflow.com/questions/3903223/qt4-how-to-blur-qpixmap-image
 static QImage blurred(QImage& image, const QRect& rect, int radius, bool alphaOnly = false)
 {
@@ -106,6 +108,7 @@ static QImage blurred(QImage& image, const QRect& rect, int radius, bool alphaOn
 
     return result;
 }
+#endif
 
 
 static bool g_need_update = false;
@@ -817,23 +820,39 @@ public:
     float xsplit1 = get_seqblock_xsplit1(x1, x2);
     float xsplit2 = get_seqblock_xsplit2(x1, x2);
 
+#define INTERFACE_IS_READY 0
+    
+#if INTERFACE_IS_READY
     float ysplit1 = get_seqblock_ysplit1(y1, y2);
+#endif
     float ysplit2 = get_seqblock_ysplit2(y1, y2);
         
-    painter->setRenderHints(QPainter::Antialiasing,true);
-      
-    QPen pen(QColor(0,255,0));
+    QPen pen(QColor(0, 200 ,0, 200));
     pen.setWidth(2.3);
     painter->setPen(pen);
 
+#if INTERFACE_IS_READY
     // xsplit1 vertical line, left
     QLineF line1(xsplit1,y1+border,xsplit1,y2-border);
     painter->drawLine(line1);
 
-    // xsplit2 vertical line, left
+    // xsplit2 vertical line, right
     QLineF line2(xsplit2,y1+border,xsplit2,y2-border);
     painter->drawLine(line2);
+#else
     
+    // xsplit1 vertical line 2, left
+    QLineF line1b(xsplit1,ysplit2,xsplit1,y2-border);
+    painter->drawLine(line1b);
+
+    // xsplit1 vertical line 2, right
+    QLineF line2b(xsplit2,ysplit2,xsplit2,y2-border);
+    painter->drawLine(line2b);
+
+
+#endif
+
+#if INTERFACE_IS_READY
     // ysplit1 horizontal line, left
     QLineF line3a(x1+border, ysplit1, xsplit1-border, ysplit1);
     painter->drawLine(line3a);
@@ -841,6 +860,7 @@ public:
     // ysplit1 horizontal line, right
     QLineF line3b(xsplit2+border, ysplit1, x2-border, ysplit1);
     painter->drawLine(line3b);
+#endif
     
     // ysplit2 horizontal line
     QLineF line4a(x1+border, ysplit2, xsplit1-border, ysplit2);
@@ -850,9 +870,7 @@ public:
     QLineF line4b(xsplit2+border, ysplit2, x2-border, ysplit2);
     painter->drawLine(line4b);
     
-    myDrawText(*painter, _blury_areaF, "hello");
-    
-    painter->setRenderHints(QPainter::Antialiasing,false);
+    //myDrawText(*painter, _blury_areaF, "hello");
     
   }
 
@@ -866,6 +884,8 @@ public:
     } else {
 
       int header_height = get_block_header_height();
+
+#if USE_BLURRED
       
       int rwidth = ceil(rect.width());
       int rheight = ceil(rect.height());
@@ -876,13 +896,16 @@ public:
       }
 
       QImage image(rwidth, rheight, QImage::Format_ARGB32);
-
+      // todo: must fill background image of image before painting.
+      
       QRectF rect2(0, 0, rwidth, rheight);
       QRect blur_rect = rect2.toRect().adjusted(0, header_height, 0, 0);
 
       {
         QPainter ptr(&image);
+        ptr.setRenderHints(QPainter::Antialiasing,true);
         paintBlockGraphics(ptr, rect2, seqblock, is_gfx);
+        ptr.setRenderHints(QPainter::Antialiasing,false);
       }
 
 #if 1
@@ -893,7 +916,15 @@ public:
 #endif
       
       p.drawImage((int)rect.x(), (int)rect.y(), image);
+      
+#else
+      
+      paintBlockGraphics(p, rect, seqblock, is_gfx);
+      
+#endif
+      
       draw_interface(&p, rect.adjusted(0, header_height, 0, 0));
+            
     }
   }
   

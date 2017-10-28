@@ -966,10 +966,12 @@ void setCurrSeqblock(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return;
   g_curr_seqblock = seqblock;
+  SEQUENCER_update();
 }
 
 void cancelCurrSeqblock(void){
   g_curr_seqblock = NULL;
+  SEQUENCER_update();
 }
 
 int getNumSeqblocks(int seqtracknum){

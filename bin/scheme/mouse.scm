@@ -3965,6 +3965,7 @@
                                                                   (dosomething))
                                                               (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
                                                               (<ra> :select-seqblock #t new-seqblocknum new-seqtracknum)
+                                                              (<ra> :set-curr-seqblock new-seqblocknum new-seqtracknum)
                                                               (make-seqblock-info :seqtracknum new-seqtracknum
                                                                                   :seqblocknum new-seqblocknum)))))                     
 
@@ -3983,6 +3984,7 @@
                                                             (<ra> :add-block-to-seqtrack seqtracknum blocknum2 new-pos2)
                                                             (<ra> :add-block-to-seqtrack seqtracknum blocknum1 new-pos1)
                                                             (<ra> :select-seqblock #t ret-seqblocknum new-seqtracknum)
+                                                            (<ra> :set-curr-seqblock ret-seqblocknum new-seqtracknum)
                                                             (make-seqblock-info :seqtracknum new-seqtracknum
                                                                                 :seqblocknum ret-seqblocknum))))
 
