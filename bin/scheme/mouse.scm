@@ -3300,7 +3300,7 @@
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
                      (<ra> :seqtempo-visible)                     
-                     (inside-box-forgiving (<ra> :get-box seqtempo-area) $x $y)
+                     (inside-box (<ra> :get-box seqtempo-area) $x $y)
                      (begin
                        (define Num (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
                                           (existing-box Num Box) :> Num
@@ -3349,6 +3349,13 @@
                                        (list "Hide song tempo automation"
                                              (lambda ()
                                                (<ra> :set-seqtempo-visible #f)))
+
+                                       "-----------------"
+
+                                       (list "Preferences"
+                                             (lambda ()
+                                               (<ra> :open-sequencer-preferences-dialog)))
+                                       
                                        ))
                        #t)))))
 
@@ -3453,10 +3460,16 @@
                                 (if (and (= Button *right-button*)
                                          (inside-box (<ra> :get-box seqtimeline-area) X Y))
                                     (begin
-                                      (popup-menu "Play loop"
-                                                  :check (<ra> :is-seqlooping)
-                                                  (lambda (val)
-                                                    (<ra> :set-seqlooping val)))
+                                      (popup-menu (list "Play loop"
+                                                        :check (<ra> :is-seqlooping)
+                                                        (lambda (val)
+                                                          (<ra> :set-seqlooping val)))
+                                                  "-----------------"
+                                                  
+                                                  (list "Preferences"
+                                                        (lambda ()
+                                                          (<ra> :open-sequencer-preferences-dialog))))
+
                                       #t)
                                     #f))))
 
@@ -4896,6 +4909,13 @@
                                                 :check (<ra> :is-seqlooping)
                                                 (lambda (val)
                                                   (<ra> :set-seqlooping val)))
+
+                                          "-----------------"
+
+                                          (list "Preferences"
+                                                (lambda ()
+                                                  (<ra> :open-sequencer-preferences-dialog)))
+                                          
                                           ))))))))
                                                                                  
 

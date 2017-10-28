@@ -642,6 +642,10 @@ void openMIDIPreferencesDialog(void){
   PREFERENCES_open_MIDI();
 }
 
+void openSequencerPreferencesDialog(void){
+  PREFERENCES_open_sequencer();
+}
+
 void openToolsDialog(void){
   TOOLS_open();
 }

@@ -50,6 +50,7 @@ extern QString SETTINGS_read_qstring(QString key, QString def);
 
 extern LANGSPEC void PREFERENCES_open(void); // open gui
 extern LANGSPEC void PREFERENCES_open_MIDI(void);
+extern LANGSPEC void PREFERENCES_open_sequencer(void);
 extern LANGSPEC void PREFERENCES_update(void);
 
 #endif

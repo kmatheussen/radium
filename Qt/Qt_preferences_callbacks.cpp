@@ -1202,6 +1202,11 @@ void PREFERENCES_open_MIDI(void){
   g_preferences_widget->tabWidget->setCurrentWidget(g_preferences_widget->MIDI);
 }
 
+void PREFERENCES_open_sequencer(void){
+  PREFERENCES_open();
+  g_preferences_widget->tabWidget->setCurrentWidget(g_preferences_widget->sequencer);
+}
+
 void PREFERENCES_update(void){
   if (g_preferences_widget != NULL) {
     g_preferences_widget->_needs_to_update = true;
