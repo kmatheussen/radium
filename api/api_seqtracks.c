@@ -1136,9 +1136,41 @@ static void positionSeqblock2(int64_t start_abstime, int64_t end_abstime, int se
 
   VALIDATE_TIME(start_abstime,);
   VALIDATE_TIME(end_abstime,);
-  
+
+  int64_t start_seqtime = start_abstime==-1 ? -1 : get_seqtime_from_abstime(seqtrack, seqblock, start_abstime);
+  int64_t end_seqtime;
+
+  if (end_abstime == -1){
+    
+    end_seqtime = -1;
+    
+  } else {
+    
+    struct Blocks *block = seqblock->block;
+    double reltempo = ATOMIC_DOUBLE_GET(block->reltempo);
+    
+    if (reltempo==1.0) {
+      end_seqtime = get_seqtime_from_abstime(seqtrack, seqblock, end_abstime);
+    } else { 
+      double blocklen = getBlockSTimeLength(seqblock->block);      
+      int64_t startseqtime = start_seqtime==-1 ? seqblock->time : start_seqtime;
+      double stretch;
+
+      if (start_abstime==-1) {
+        stretch = seqblock->stretch;
+      } else {
+        int64_t nonstretched_abs_duration = blocklen / reltempo;      
+        int64_t stretched_abs_duration = end_abstime-start_abstime;
+        stretch = (double)stretched_abs_duration / (double)nonstretched_abs_duration;
+      }
+      
+      end_seqtime = startseqtime + blocklen * stretch;
+    }
+    
+  }
+                           
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
-  SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, start_abstime, end_abstime, is_gfx);
+  SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, start_seqtime, end_seqtime, is_gfx);
 }
 
 void positionSeqblock(int64_t start_abstime, int64_t end_abstime, int seqblocknum, int seqtracknum){

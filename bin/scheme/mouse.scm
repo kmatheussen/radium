@@ -3752,6 +3752,7 @@
                                        (set-grid-type #t)                                      
 
                                        (define start-time (<ra> :get-seqblock-gfx-start-time seqblocknum seqtracknum))
+                                       ;;(c-display "start/end:" (/ start-time 44100.0) (/ new-pos 44100.0))
                                        (<ra> :position-seqblock-gfx start-time new-pos seqblocknum seqtracknum)
                                        )                                    
 
