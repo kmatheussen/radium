@@ -92,7 +92,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse2 -fno-omit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras`"
+export OS_OPTS="-Werror=array-bounds -msse2 -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras`"
 #export OS_OPTS="-Werror=array-bounds -march=native"
 
 if env |grep INCLUDE_FAUSTDEV ; then
