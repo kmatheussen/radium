@@ -3573,7 +3573,6 @@
                  :end-time (+ (seqblock :end-time) delta-time)
                  :seqtracknum (+ (seqblock :seqtracknum) delta-tracknum)))
 
-;; TODO: If placing above an existing seqblock, duration sometimes changes.
 (define (apply-seqblock seqblock)
   (define seqtracknum (seqblock :seqtracknum))
   (define blocknum (seqblock :blocknum))
