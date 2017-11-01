@@ -411,6 +411,7 @@
   (<ra> :cancel-indicator-node)
   )
 
+
 (define (handling-nodes thunk)
   (set! mouse-fx-has-been-set #f)
   (set! mouse-track-has-been-set #f)
@@ -425,6 +426,7 @@
   (try-finally :try thunk
                :failure (lambda ()
                           (set! *current-mouse-cycle* #f)
+                          (set! *current-seqblock-info* #f)
                           ;; We also used to rethrow the error here. Don't know why. Seems like the wrong thing to do.
                           #f
                           )
@@ -912,7 +914,62 @@
 
 
 
-;; status bar and mouse pointer for block and track sliders and track on/off buttons
+;; Update current seqblock info
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;             
+(define-struct seqblock-info
+  :seqtracknum
+  :seqblocknum)
+
+(define (get-selected-seqblock-infos)
+  (define ret '())
+  (for-each-selected-seqblock (lambda (seqtracknum seqblocknum)
+                                (push-back! ret (make-seqblock-info :seqtracknum seqtracknum
+                                                                    :seqblocknum seqblocknum))))
+  ret)
+
+(define (get-seqblock seqtracknum X Y)
+  (define num-seqblocks (<ra> :get-num-seqblocks seqtracknum))
+  (let loop ((seqblocknum 0))
+    (cond ((= seqblocknum num-seqblocks)
+           #f)
+          ((inside-box (ra:get-box2 seqblock seqblocknum seqtracknum) X Y)
+           (make-seqblock-info :seqtracknum seqtracknum
+                               :seqblocknum seqblocknum))
+          (else
+           ;;(c-display X Y (box-to-string (ra:get-box2 seqblock seqblocknum seqtracknum)))
+           (loop (1+ seqblocknum))))))
+
+(define (get-seqblock-info X Y)
+  (let ((seqtracknum *current-seqtrack-num*))
+    (and seqtracknum
+         (inside-box (<ra> :get-box sequencer) X Y)
+         ;;(begin (c-display "seqtracknum:" seqtracknum X Y (inside-box (ra:get-box2 seqtrack 1) X Y)) #t)
+         (get-seqblock seqtracknum X Y))))
+
+
+(define2 *current-seqblock-info* (curry-or not hash-table?) #f)
+
+;;(define (update-current-seqblock-info!) )
+  
+(add-mouse-move-handler
+ :move (lambda (Button X Y)
+         (let ((old *current-seqblock-info*)
+               (new (get-seqblock-info X Y)))
+           ;;(c-display "old/new seqblock-info" old new)
+           (cond ((and old (not new))
+                  (<ra> :cancel-curr-seqblock)
+                  (set! *current-seqblock-info* #f))
+                 ((or (and new (not old))
+                      (not (morally-equal? new old)))
+                  ;;(c-display "set-normal")
+                  ;;(<ra> :set-normal-mouse-pointer)
+                  (<ra> :set-curr-seqblock (new :seqblocknum) (new :seqtracknum))
+                  (set! *current-seqblock-info* new))
+                 (else
+                  #f)))))
+
+
+;; status bar and Update mouse pointer shape when moved above various things
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (add-mouse-move-handler
  :move (lambda ($button X Y)
@@ -3480,7 +3537,55 @@
 (<ra> :set-seqlooping-end 500000)
 ||#
 
+(define (get-editor-track-on-off-for-seqblock seqtracknum seqblocknum)
+  (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
+  (map (lambda (tracknum)
+         (<ra> :is-seqblock-track-enabled tracknum seqblocknum seqtracknum))
+       (iota (<ra> :get-num-tracks blocknum))))
+  
 
+(define-struct seqblock
+  :seqtracknum
+  :blocknum
+  :start-time
+  :end-time
+  :editor-track-on-off)
+
+(define (create-seqblock-from-existing-seqblock seqtracknum seqblocknum)
+  (make-seqblock seqtracknum
+                 (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)
+                 (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
+                 (<ra> :get-seqblock-end-time seqblocknum seqtracknum)
+                 (get-editor-track-on-off-for-seqblock seqtracknum seqblocknum)))
+
+(define (move-seqblock seqblock new-start-time)
+  (define duration (- (seqblock :end-time)
+                      (seqblock :start-time)))
+  (copy-seqblock seqblock
+                 :start-time new-start-time
+                 :end-time (+ new-start-time duration)))
+
+(define (move-seqblock2 seqblock delta-time delta-tracknum)
+  (define duration (- (seqblock :end-time)
+                      (seqblock :start-time)))
+  (copy-seqblock seqblock
+                 :start-time (+ (seqblock :start-time) delta-time)
+                 :end-time (+ (seqblock :end-time) delta-time)
+                 :seqtracknum (+ (seqblock :seqtracknum) delta-tracknum)))
+
+(define (apply-seqblock seqblock)
+  (define seqtracknum (seqblock :seqtracknum))
+  (define blocknum (seqblock :blocknum))
+  (define start-time (seqblock :start-time))
+  (define end-time (seqblock :end-time))
+  (define seqblocknum (<ra> :create-seqblock seqtracknum blocknum start-time end-time))
+  ;;(<ra> :position-seqblock start-time end-time seqblocknum seqtracknum)
+  (for-each (lambda (tracknum enabled)
+              (<ra> :set-seqblock-track-enabled enabled tracknum seqblocknum seqtracknum))
+            (iota (<ra> :get-num-tracks blocknum))
+            (seqblock :editor-track-on-off))
+  seqblocknum)
+              
 
 (define2 *current-seqtrack-num* (curry-or not integer?) #f)
 
@@ -3510,60 +3615,6 @@
                  (else
                   #f)))))
 
-
-
-             
-(define-struct seqblock-info
-  :seqtracknum
-  :seqblocknum)
-
-(define (get-selected-seqblock-infos)
-  (define ret '())
-  (for-each-selected-seqblock (lambda (seqtracknum seqblocknum)
-                                (push-back! ret (make-seqblock-info :seqtracknum seqtracknum
-                                                                    :seqblocknum seqblocknum))))
-  ret)
-
-(define (get-seqblock seqtracknum X Y)
-  (define num-seqblocks (<ra> :get-num-seqblocks seqtracknum))
-  (let loop ((seqblocknum 0))
-    (cond ((= seqblocknum num-seqblocks)
-           #f)
-          ((inside-box (ra:get-box2 seqblock seqblocknum seqtracknum) X Y)
-           (make-seqblock-info :seqtracknum seqtracknum
-                               :seqblocknum seqblocknum))
-          (else
-           ;;(c-display X Y (box-to-string (ra:get-box2 seqblock seqblocknum seqtracknum)))
-           (loop (1+ seqblocknum))))))
-
-(define (get-seqblock-info X Y)
-  (let ((seqtracknum *current-seqtrack-num*))
-    (and seqtracknum
-         (inside-box (<ra> :get-box sequencer) X Y)
-         ;;(begin (c-display "seqtracknum:" seqtracknum X Y (inside-box (ra:get-box2 seqtrack 1) X Y)) #t)
-         (get-seqblock seqtracknum X Y))))
-
-
-;; Update current seqblock info
-(define2 *current-seqblock-info* (curry-or not hash-table?) #f)
-
-;; Update current seqtrack info.
-(add-mouse-move-handler
- :move (lambda (Button X Y)
-         (let ((old *current-seqblock-info*)
-               (new (get-seqblock-info X Y)))
-           ;;(c-display "old/new seqblock-info" old new)
-           (cond ((and old (not new))
-                  (<ra> :cancel-curr-seqblock)
-                  (set! *current-seqblock-info* #f))
-                 ((or (and new (not old))
-                      (not (morally-equal? new old)))
-                  ;;(c-display "set-normal")
-                  ;;(<ra> :set-normal-mouse-pointer)
-                  (<ra> :set-curr-seqblock (new :seqblocknum) (new :seqtracknum))
-                  (set! *current-seqblock-info* new))
-                 (else
-                  #f)))))
 
 
 
@@ -3604,6 +3655,9 @@
          (define seqblocknum (seqblock-info :seqblocknum))
          (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
          (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+         (define is-stretched (not (= (<ra> :get-seqblock-stretch seqblocknum seqtracknum) 1.0)))
+         (define end-time (<ra> :get-seqblock-end-time seqblocknum seqtracknum))
+         ;;(c-display "is-stretched:" is-stretched ". end-time:" end-time)
          (define new-seqtracknum (+ seqtracknum inc-track))
          (cond ((and (>= new-seqtracknum 0)
                      (< new-seqtracknum num-seqtracks))
@@ -3619,38 +3673,52 @@
                   (set! skew (- new-pos2 new-pos))
                   (set! gakkgakk-really-last-inc-time (- new-pos2 start-time)))
 
+                (define new-start-time (+ skew new-pos))
+                
                 ;;(c-display "start-time/inc-time:" start-time inc-time)
-                (list new-seqtracknum
-                      blocknum
-                      (+ skew new-pos)))
+                (make-seqblock new-seqtracknum
+                               blocknum
+                               new-start-time
+                               (if is-stretched
+                                   (+ end-time (- new-start-time start-time))
+                                   -1)
+                               (get-editor-track-on-off-for-seqblock seqtracknum seqblocknum)))
+               
+                                        ;(list new-seqtracknum
+               ;       blocknum
+               ;       (+ skew new-pos)))
                (else
                 #f)))
        seqblock-infos))
   
 (define (create-gfx-gfx-seqblocks seqblock-infos inc-time inc-track)
-  (if (< (+ gakkgakk-smallest-time inc-time) 0)
-      (set! inc-time (- gakkgakk-smallest-time)))
+  (if (< (+ gakkgakk-earliest-time inc-time) 0)
+      (set! inc-time (- gakkgakk-earliest-time)))
 
   (set! gakkgakk-last-inc-time inc-time)
   (set! gakkgakk-last-inc-track inc-track)
   (for-each (lambda (data)
               (if data
-                  (apply ra:add-gfx-gfx-block-to-seqtrack data)))
+                  (ra:create-gfx-gfx-seqblock (data :seqtracknum)
+                                              (data :blocknum)
+                                              (data :start-time)
+                                              (data :end-time)
+                                              )))
             (get-data-for-seqblock-moving seqblock-infos inc-time inc-track)))
 
 (define (apply-gfx-gfx-seqblocks seqblock-infos)
   (define inc-time gakkgakk-last-inc-time)
   (define inc-track gakkgakk-last-inc-track)
   
-  (define data (get-data-for-seqblock-moving seqblock-infos inc-time inc-track)) ;; Must do this before deleting the old seqblocks.
+  (define seqblocks (get-data-for-seqblock-moving seqblock-infos inc-time inc-track)) ;; Must do this before deleting the old seqblocks.
 
   (undo-block
    (lambda ()
-     (delete-all-selected-seqblocks) ;; Hack. This will only work if seqblock-infos contains the current set of selected blocks. (deleting from seqblock-infos is a little bit tricky since the seqblock indexes changes)
-     (for-each (lambda (data)
-                 (if data
-                  (apply ra:add-block-to-seqtrack data)))
-               data))))
+     (FROM_C-delete-all-selected-seqblocks) ;; Hack. This will only work if seqblock-infos contains the current set of selected blocks. (deleting from seqblock-infos is a little bit tricky since the seqblock indexes changes)
+     (for-each (lambda (seqblock)
+                 (if seqblock
+                     (apply-seqblock seqblock)))
+               seqblocks))))
 
 
 (define (get-sequencer-pixels-per-value-unit)
@@ -3704,7 +3772,7 @@
 
 ;; right handle
 (add-node-mouse-handler :Get-area-box (lambda()
-                                        (and *current-seqblock-info*
+                                        (and *current-seqblock-info* ;;(get-current-seqblock-info)
                                              (let ((box (<ra> :get-box seqblock-right-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))))
                                                ;;(c-display "BOX:" (box-to-string box))
                                                ;;(<ra> :set-curr-seqblock seqblocknum seqtracknum)
@@ -3847,6 +3915,23 @@
 
 ;; seqblock move
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (move-seqblock-to-new-seqtrack seqtracknum new-seqtracknum seqblocknum new-pos add-undo)
+  (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
+
+  (ignore-undo-block (lambda ()
+                       ;;(c-display "bef:" (/ (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum) 44100.0))
+                       (set! *current-seqblock-info* #f)
+                       (define seqblock (copy-seqblock (create-seqblock-from-existing-seqblock seqtracknum seqblocknum)
+                                                       :seqtracknum new-seqtracknum))
+                       ;;(c-display "seqblock:" seqblock)
+                       (<ra> :delete-seqblock seqblocknum seqtracknum)
+                       (define new-seqblocknum (apply-seqblock seqblock))
+                       (<ra> :select-seqblock #t new-seqblocknum new-seqtracknum)
+                       (<ra> :set-curr-seqblock new-seqblocknum new-seqtracknum)
+                       (make-seqblock-info :seqtracknum new-seqtracknum
+                                           :seqblocknum new-seqblocknum))))
+
 (define2 gakkgakk-last-value (curry-or not number? list?) #f) ;; TODO: Fix.
 (define2 gakkgakk-has-made-undo boolean? #f)
 (define2 gakkgakk-start-pos (curry-or number? list?) 0)
@@ -3976,26 +4061,6 @@
                                      
                                      (set-grid-type #t)
 
-                                     (define (replace-seqblock new-pos dosomething)
-                                       (let ((blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
-                                         
-                                         (when (not gakkgakk-has-made-undo)
-                                           (<ra> :undo-sequencer)
-                                           (set! gakkgakk-has-made-undo #t))
-                                         
-                                         (ignore-undo-block (lambda ()
-                                                              ;;(c-display "bef:" (/ (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum) 44100.0))
-                                                              (set! *current-seqblock-info* #f)
-                                                              (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                                              ;;(c-display "aft:" (/ (<ra> :get-seqblock-start-time seqblocknum seqtracknum) 44100.0))
-                                                              (if dosomething
-                                                                  (dosomething))
-                                                              (define new-seqblocknum (<ra> :add-block-to-seqtrack new-seqtracknum blocknum new-pos))
-                                                              (<ra> :select-seqblock #t new-seqblocknum new-seqtracknum)
-                                                              (<ra> :set-curr-seqblock new-seqblocknum new-seqtracknum)
-                                                              (make-seqblock-info :seqtracknum new-seqtracknum
-                                                                                  :seqblocknum new-seqblocknum)))))                     
-
                                      (define (swap-blocks seqblocknum ret-seqblocknum new-pos1 new-pos2)
                                        
                                        (when (not gakkgakk-has-made-undo)
@@ -4007,10 +4072,12 @@
 
                                        (ignore-undo-block (lambda ()
                                                             (set! *current-seqblock-info* #f)
+                                                            (define seqblock1 (create-seqblock-from-existing-seqblock seqtracknum seqblocknum))
+                                                            (define seqblock2 (create-seqblock-from-existing-seqblock seqtracknum (1+ seqblocknum)))
                                                             (<ra> :delete-seqblock seqblocknum seqtracknum)
                                                             (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                                            (<ra> :add-block-to-seqtrack seqtracknum blocknum2 new-pos2)
-                                                            (<ra> :add-block-to-seqtrack seqtracknum blocknum1 new-pos1)
+                                                            (apply-seqblock (move-seqblock seqblock1 new-pos1))
+                                                            (apply-seqblock (move-seqblock seqblock2 new-pos2))
                                                             (<ra> :select-seqblock #t ret-seqblocknum new-seqtracknum)
                                                             (<ra> :set-curr-seqblock ret-seqblocknum new-seqtracknum)
                                                             (make-seqblock-info :seqtracknum new-seqtracknum
@@ -4020,7 +4087,12 @@
                                      (if (not (= (seqblock-info :seqtracknum) new-seqtracknum))
 
                                          ;; changing track
-                                         (replace-seqblock new-pos #f)
+                                         (begin
+                                           (when (not gakkgakk-has-made-undo)
+                                             (<ra> :undo-sequencer)
+                                             (set! gakkgakk-has-made-undo #t))
+
+                                           (move-seqblock-to-new-seqtrack seqtracknum new-seqtracknum seqblocknum new-pos (not gakkgakk-has-made-undo)))
 
                                          ;; not changing track
                                          (begin
@@ -4074,7 +4146,7 @@
 
 (define2 gakkgakk-startseqtracknum integer? 0)
 (define2 gakkgakk-startseqblocknum integer? 0)
-(define2 gakkgakk-smallest-time number? 0)
+(define2 gakkgakk-earliest-time number? 0)
 
 ;; Move multiple seqblocks
 (add-node-mouse-handler :Get-area-box (lambda()
@@ -4113,7 +4185,7 @@
 
                                                                            (define seqblock-infos (get-selected-seqblock-infos))
 
-                                                                           (set! gakkgakk-smallest-time (apply min (map (lambda (seqblock-info)
+                                                                           (set! gakkgakk-earliest-time (apply min (map (lambda (seqblock-info)
                                                                                                                           (<ra> :get-seqblock-start-time
                                                                                                                                 (seqblock-info :seqblocknum)
                                                                                                                                 (seqblock-info :seqtracknum)))
@@ -4499,6 +4571,7 @@
                        ;;(c-display "get-existing " seqblock-info X Y)
                        (and seqblock-info
                             (begin
+                              (set! *current-seqblock-info* #f)
                               (<ra> :delete-seqblock (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
                               (set! *current-seqblock-info* #f)
                               #t)))))))
@@ -4511,12 +4584,6 @@
 
 (define2 *seqblock-clipboard* list? '())
 
-(define-struct clipboard-seqblock
-  :seqtracknum
-  :blocknum
-  :time
-  )
-
 (define (seqblock-selected?)
   (call/cc (lambda (return)
              (for-each-seqblock (lambda (seqtracknum seqblocknum)
@@ -4524,24 +4591,22 @@
                                       (return #t))))
              (return #f))))
 
-(define (copy-all-selected-seqblocks)
+(define (FROM_C-copy-all-selected-seqblocks)
   (define minseqtrack #f)
   (define mintime #f)
   (set! *seqblock-clipboard* '())
 
   (define (add-seqblock! seqtracknum seqblocknum)
-    (define time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
     (push-back! *seqblock-clipboard*
-                (make-clipboard-seqblock :seqtracknum seqtracknum
-                                         :blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)
-                                         :time time))
+                (create-seqblock-from-existing-seqblock seqtracknum seqblocknum))
     (if (not minseqtrack)
         (set! minseqtrack seqtracknum)
         (set! minseqtrack (min seqtracknum minseqtrack)))
-    (if (not mintime)
-        (set! mintime time)
-        (set! mintime (min time mintime))))
-
+    (let ((start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+      (if (not mintime)
+          (set! mintime start-time)
+          (set! mintime (min start-time mintime)))))
+    
   ;; Find all selected seqblocks
   (for-each-seqblock (lambda (seqtracknum seqblocknum)
                        (when (<ra> :is-seqblock-selected seqblocknum seqtracknum)
@@ -4556,26 +4621,25 @@
 
   ;; Scale time
   (set! *seqblock-clipboard*
-        (map (lambda (clipboard-seqblock)
-               (make-clipboard-seqblock :seqtracknum (- (clipboard-seqblock :seqtracknum) minseqtrack)
-                                        :blocknum (clipboard-seqblock :blocknum)
-                                        :time (- (clipboard-seqblock :time) mintime)))
+        (map (lambda (seqblock)
+               (move-seqblock2 seqblock
+                               (- mintime)
+                               (- minseqtrack)))
              *seqblock-clipboard*)))
 
-(define (paste-sequencer-blocks seqtracknum time)
+(define (FROM_C-paste-sequencer-blocks seqtracknum time)
   (undo-block
    (lambda ()
-     (for-each (lambda (clipboard-seqblock)
-                 (define seqtracknum2 (+ seqtracknum (clipboard-seqblock :seqtracknum)))
+     (for-each (lambda (seqblock)
+                 (define seqtracknum2 (+ seqtracknum (seqblock :seqtracknum)))
                  (if (< seqtracknum2 (<ra> :get-num-seqtracks))
-                     (<ra> :add-block-to-seqtrack
-                           seqtracknum2
-                           (clipboard-seqblock :blocknum)
-                           (+ time (clipboard-seqblock :time)))))
+                     (apply-seqblock (move-seqblock2 seqblock time seqtracknum))))
                *seqblock-clipboard*))))
 
-(define (delete-all-selected-seqblocks)
+(define (FROM_C-delete-all-selected-seqblocks)
   (define deleted-something #f)
+
+  (set! *current-seqblock-info* #f)
 
   (undo-block
    (lambda ()
@@ -4609,9 +4673,9 @@
                (else
                 (loop (1+ seqblocknum) seqtracknum))))))))
 
-(define (cut-all-selected-seqblocks)
-  (copy-all-selected-seqblocks)
-  (delete-all-selected-seqblocks))
+(define (FROM_C-cut-all-selected-seqblocks)
+  (FROM_C-copy-all-selected-seqblocks)
+  (FROM_C-delete-all-selected-seqblocks))
 
 
 (define (create-sequencer-automation seqtracknum X Y)
@@ -4675,6 +4739,30 @@
 !!#
 
 
+;; seqblock stretch handle menu
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)
+                     (not (<ra> :shift-pressed))
+                     *current-seqblock-info*
+                     (let ((seqtracknum (*current-seqblock-info* :seqtracknum))
+                           (seqblocknum (*current-seqblock-info* :seqblocknum)))
+                       (and (or (inside-box (<ra> :get-box seqblock-right-stretch seqblocknum seqtracknum) X Y)
+                                (inside-box (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y))
+                            (begin
+                              (popup-menu (list "Reset stretch"
+                                                :enabled (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum)))
+                                                (lambda ()
+                                                  (c-display "stretch:" (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
+                                                  (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+                                                  (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
+                                                  (define blocklength (<ra> :get-block-length blocknum))
+                                                  (<ra> :position-seqblock start-time (+ start-time blocklength) seqblocknum seqtracknum))))
+                              #t)))))))
+
+
+
 ;; seqblock menu
 (add-mouse-cycle
  (make-mouse-cycle
@@ -4688,8 +4776,7 @@
                               (define seqblocknum (and seqblock-info
                                                        (seqblock-info :seqblocknum)))
                               (define blocknum (and seqblock-info
-                                                    (<ra> :get-seqblock-blocknum seqblocknum
-                                                          seqtracknum)))
+                                                    (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
                               (if seqblock-info
                                   (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
                                       (only-select-one-seqblock seqblocknum seqtracknum)
@@ -4698,12 +4785,12 @@
                               (popup-menu "Insert existing block" (lambda ()
                                                                     (let ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
                                                                       (if (= 1 (<ra> :get-num-blocks))
-                                                                          (<ra> :add-block-to-seqtrack seqtracknum 0 pos)                                          
+                                                                          (<ra> :create-seqblock seqtracknum 0 pos)                                          
                                                                           (apply popup-menu
                                                                                  (map (lambda (blocknum)
                                                                                         (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
                                                                                               (lambda ()
-                                                                                                (<ra> :add-block-to-seqtrack seqtracknum blocknum pos))))
+                                                                                                (<ra> :create-seqblock seqtracknum blocknum pos))))
                                                                                       (iota (<ra> :get-num-blocks)))))))
 
                                           ;;   Sub menues version. It looks better, but it is less convenient.
@@ -4718,18 +4805,18 @@
                                           "Insert current block" (lambda ()
                                                                    (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
                                                                           (blocknum (<ra> :current-block)))
-                                                                     (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
+                                                                     (<ra> :create-seqblock seqtracknum blocknum pos)))
                                           
                                           "Insert new block" (lambda ()
                                                                (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
                                                                       (blocknum (<ra> :append-block)))
-                                                                 (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
+                                                                 (<ra> :create-seqblock seqtracknum blocknum pos)))
                                           "Insert new block from disk (BETA)" (lambda ()
                                                                                 (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
                                                                                        (num-blocks (<ra> :get-num-blocks)))
                                                                                   (<ra> :load-block "")
                                                                                   (if (not (= num-blocks (<ra> :get-num-blocks)))
-                                                                                      (<ra> :add-block-to-seqtrack seqtracknum num-blocks pos))))
+                                                                                      (<ra> :create-seqblock seqtracknum num-blocks pos))))
                                           "--------------------"
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
@@ -4784,7 +4871,7 @@
                                                                                               (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
                                                                                          (set! *current-seqblock-info* #f)
                                                                                          (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                                                                         (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
+                                                                                         (<ra> :create-seqblock seqtracknum blocknum pos)))
                                                                                      (if (null? seqblock-infos)
                                                                                          (list seqblock-info)
                                                                                          seqblock-infos))))
@@ -4832,7 +4919,7 @@
                                                                           (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
                                                                      (set! *current-seqblock-info* #f)
                                                                      (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                                                     (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
+                                                                     (<ra> :create-seqblock seqtracknum blocknum pos)))
                                                                  (if (null? seqblock-infos)
                                                                      (list seqblock-info)
                                                                      seqblock-infos))))
@@ -4875,15 +4962,15 @@
                                                 (lambda ()
                                                   (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))
 
-                                          (list "Reset stretch"
-                                                :enabled (and seqblocknum
-                                                              (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
-                                                (lambda ()
-                                                  (c-display "stretch:" (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
-                                                  (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
-                                                  (define blocklength (<ra> :get-block-length blocknum))
-                                                  (<ra> :position-seqblock start-time (+ start-time blocklength) seqblocknum seqtracknum)
-                                                  (c-display "hepp")))
+                                          ;;(list "Reset stretch"
+                                          ;;      :enabled (and seqblocknum
+                                          ;;                    (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
+                                          ;;      (lambda ()
+                                          ;;        (c-display "stretch:" (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
+                                          ;;        (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+                                          ;;        (define blocklength (<ra> :get-block-length blocknum))
+                                          ;;        (<ra> :position-seqblock start-time (+ start-time blocklength) seqblocknum seqtracknum)
+                                          ;;        (c-display "hepp")))
                                                 
                                           ;;
                                           ;;(list "Remove pause"

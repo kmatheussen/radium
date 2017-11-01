@@ -432,10 +432,10 @@
     set-random-sample-for-all-selected-sampler-instruments
     show-async-message
     FROM-C-show-help-window
-    cut-all-selected-seqblocks
-    paste-sequencer-blocks
-    copy-all-selected-seqblocks
-    delete-all-selected-seqblocks
+    FROM_C-cut-all-selected-seqblocks
+    FROM_C-paste-sequencer-blocks
+    FROM_C-copy-all-selected-seqblocks
+    FROM_C-delete-all-selected-seqblocks
     pmg-start
     make-instrument-conf
     FROM_C-keybindings-have-been-reloaded

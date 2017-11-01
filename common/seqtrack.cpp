@@ -836,7 +836,11 @@ bool SEQTRACK_set_seqblock_start_and_stop(struct SeqTrack *seqtrack, struct SeqB
 
   if(new_start_time==-1 && new_end_time==-1)
     return false;
+
+  if (new_start_time!=-1 && new_end_time!=-1)
+    R_ASSERT_RETURN_IF_FALSE2(new_end_time > new_start_time, false);
   
+
   int64_t old_start_time = is_gfx ? seqblock->gfx_time : seqblock->time;
   int64_t old_end_time   = is_gfx ? seqblock->gfx_time2 : seqblock->time2;
 
@@ -990,7 +994,16 @@ static int get_seqblock_pos(vector_t *seqblocks, int64_t seqtime){
   return seqblocks->num_elements;
 }
 
-int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime){
+int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime, int64_t end_seqtime){
+  if (end_seqtime != -1)
+    R_ASSERT_RETURN_IF_FALSE2(end_seqtime >= seqtime, -1);
+
+  if (end_seqtime != -1){
+    seqblock->time2 = end_seqtime;
+    seqblock->gfx_time2 = end_seqtime;
+    set_seqblock_stretch(seqblock, false);
+  }
+
   // Assert that the seqblock is not in a seqtrack already.
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack_here, &root->song->seqtracks){
     R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&seqtrack_here->seqblocks, seqblock), 0);
@@ -1012,6 +1025,11 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
     radium::PlayerLock lock;
 
     move_seqblock(seqblock, seqtime, false);
+    if (end_seqtime != -1){
+      seqblock->time2 = end_seqtime;
+      seqblock->gfx_time2 = end_seqtime;
+      set_seqblock_stretch(seqblock, false);
+    }
     
     VECTOR_insert(&seqtrack->seqblocks, seqblock, pos);
 
@@ -1028,13 +1046,25 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
   return pos;
 }
 
-int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime){
+int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime, int64_t end_seqtime){
   struct SeqBlock *seqblock = SEQBLOCK_create(block, -1);
-  return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime);
+  return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime, end_seqtime);
 }
 
-int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime){
+int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime, int64_t end_seqtime){
+  if (end_seqtime != -1)
+    R_ASSERT_RETURN_IF_FALSE2(end_seqtime >= seqtime, -1);
+
   struct SeqBlock *seqblock = SEQBLOCK_create(block, seqtime);
+  
+  if (end_seqtime != -1){
+    seqblock->time2 = end_seqtime;
+    seqblock->gfx_time2 = end_seqtime;
+    set_seqblock_stretch(seqblock, false);
+  }
+
+  //printf("Insert gfx gfx. start: %d. end: %d (%d). stretch: %f\n", (int)seqblock->time,(int)seqblock->time2, (int)end_seqtime, seqblock->stretch);
+
   seqblock->is_selected = true;
 
   vector_t *seqblocks = &seqtrack->gfx_gfx_seqblocks;
