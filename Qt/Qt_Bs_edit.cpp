@@ -645,7 +645,7 @@ public slots:
       const struct SeqBlock *last_seqblock = (const struct SeqBlock*)VECTOR_last(&seqtrack->seqblocks);
       int64_t seqtime = last_seqblock==NULL ? 0 : SEQBLOCK_get_seq_endtime(last_seqblock);
       
-      SEQTRACK_insert_block(seqtrack, block, seqtime);
+      SEQTRACK_insert_block(seqtrack, block, seqtime, -1);
 
     } else {
 
@@ -660,7 +660,7 @@ public slots:
       //
       // SEQTRACK_insert_silence(seqtrack, seqtime, getBlockSTimeLength(block));
       
-      SEQTRACK_insert_block(seqtrack, block, seqtime);
+      SEQTRACK_insert_block(seqtrack, block, seqtime, -1);
       
     }
     
@@ -720,7 +720,7 @@ public slots:
 
         SEQTRACK_delete_seqblock(seqtrack, seqblock1);
         SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock1->time);
-        SEQTRACK_insert_seqblock(seqtrack, seqblock1, SEQBLOCK_get_seq_endtime(seqblock2));
+        SEQTRACK_insert_seqblock(seqtrack, seqblock1, SEQBLOCK_get_seq_endtime(seqblock2), -1);
       }
 
       //printf("Aft2: %f %f\n", (double)seqblock1->time/MIXER_get_sample_rate(), (double)seqblock2->time/MIXER_get_sample_rate());

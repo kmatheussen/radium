@@ -311,6 +311,12 @@ int getNumSeqAutomations(int seqtracknum){
     return ret;                                                 \
   }
 
+#define VALIDATE_TIME2(time,ret)                                 \
+  if (time < -1){                                                \
+    handleError("Time can not be less than -1: %d", (int)time);     \
+    return ret;                                                 \
+  }
+
 int64_t getSeqAutomationInstrumentId(int automationnum, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
@@ -928,7 +934,8 @@ void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
   SEQTRACK_insert_silence(seqtrack, pos, duration);
 }
 
-int addBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos){
+// TODO: Rename to createSeqblock
+int addBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
@@ -940,11 +947,12 @@ int addBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos){
   ADD_UNDO(Sequencer());
 
   int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, pos);
-                           
-  return SEQTRACK_insert_block(seqtrack, block, seqtime);
+  int64_t end_seqtime = endpos==-1 ? -1 : get_seqtime_from_abstime(seqtrack, NULL, endpos);
+  
+  return SEQTRACK_insert_block(seqtrack, block, seqtime, end_seqtime);
 }
 
-int addGfxGfxBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos){
+int addGfxGfxBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
@@ -954,8 +962,9 @@ int addGfxGfxBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos){
     return -1;
 
   int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, pos);
+  int64_t end_seqtime = endpos==-1 ? -1 : get_seqtime_from_abstime(seqtrack, NULL, endpos);
                            
-  return SEQTRACK_insert_gfx_gfx_block(seqtrack, block, seqtime);
+  return SEQTRACK_insert_gfx_gfx_block(seqtrack, block, seqtime, end_seqtime);
 }
 
 // seqblocks
