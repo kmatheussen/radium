@@ -127,6 +127,11 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
 
 	dc.filename=filename;
 
+        dc.embedded_files_dirname = STRING_append(filename,
+                                                  STRING_create("_embedded_samples"));
+        dc.has_shown_embedded_files_dirname_warning = false;
+        DISK_delete_all_files_in_dir(dc.embedded_files_dirname);
+
 	dc.playlist=NULL;
 
 	DC_Next();

@@ -49,6 +49,50 @@ bool DISK_create_dir(const wchar_t *wdirname){
   return DISK_dir_exists(wdirname);
 }
 
+bool DISK_delete_file(const wchar_t *wfilename){
+  if(!DISK_file_exists(wfilename))
+    return true;
+  
+  QFile::remove(STRING_get_qstring(wfilename));
+
+  return !DISK_file_exists(wfilename);
+}
+
+void DISK_delete_all_files_in_dir(const wchar_t *wdirname){
+  QDir dir(STRING_get_qstring(wdirname));
+  R_ASSERT_RETURN_IF_FALSE(dir.absolutePath() != QDir::root().absolutePath());
+  
+  QFileInfoList files = dir.entryInfoList(QDir::Files|QDir::NoDotAndDotDot);
+  
+  for(const auto &file : files)
+    QFile::remove(file.absoluteFilePath());
+}
+
+const wchar_t *DISK_get_dir_separator(void){
+  return STRING_create(QDir::separator());
+}
+
+const wchar_t *DISK_create_non_existant_filename(const wchar_t *filename){
+  if (DISK_file_exists(filename)==false)
+    return filename;
+
+  QFileInfo info(STRING_get_qstring(filename));
+  
+  QString dirname = info.absoluteDir().absolutePath();
+  QString basename = info.baseName();
+  QString suffix = info.completeSuffix();
+  if (suffix != "")
+    suffix = "." + suffix;
+
+  for(int i=2;i<10000;i++){
+    QString maybe = dirname + QDir::separator() + basename + "_" + QString::number(i) + suffix;
+    if (DISK_file_exists(STRING_create(maybe))==false)
+      return STRING_create(maybe);
+  }
+
+  return filename;
+}
+
 struct _radium_os_disk {
   enum Type{
     READ,

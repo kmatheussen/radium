@@ -2541,7 +2541,7 @@ static QString get_final_embedded_filename(QString org_filename, QString new_fil
 */
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
-  const wchar_t *filename;
+  const wchar_t *filename = NULL;
   bool           use_sample_file_middle_note = true ; if (HASH_has_key(state, "use_sample_file_middle_note")) use_sample_file_middle_note = HASH_get_bool(state, "use_sample_file_middle_note");
   int            instrument_number = HASH_get_int32(state, "instrument_number");
   enum ResamplerType resampler_type    = (enum ResamplerType)HASH_get_int(state, "resampler_type");
@@ -2553,18 +2553,26 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   const wchar_t *org_filename = HASH_get_string(state, "filename");
 
   if (audiodata_is_included){
-    filename = NULL;
-    QString embedded_dir = STRING_get_qstring(dc.filename) + "_embedded_samples";
-    if (DISK_create_dir(STRING_create(embedded_dir))==false){
-      GFX_Message(NULL, "Unable to create directory \"%s\"", embedded_dir.toUtf8().constData());
-    }else{
-      filename = STRING_create(embedded_dir + QDir::separator() + QFileInfo(STRING_get_qstring(org_filename)).fileName());
+
+    if (DISK_create_dir(dc.embedded_files_dirname)==false){
+      if (dc.has_shown_embedded_files_dirname_warning==false){
+        GFX_Message(NULL, "Unable to create directory \"%s\"", STRING_get_chars(dc.embedded_files_dirname));
+        dc.has_shown_embedded_files_dirname_warning = true;
+      }
+    }else{      
+      filename = STRING_create(STRING_get_qstring(dc.embedded_files_dirname) + QDir::separator() + QFileInfo(STRING_get_qstring(org_filename)).fileName());
+      filename = DISK_create_non_existant_filename(filename);
     }
+
     filename = DISK_base64_to_file(filename, HASH_get_chars(state, "audiofile"));
     if (filename==NULL)
       filename = DISK_base64_to_file(NULL, HASH_get_chars(state, "audiofile"));
-  }else
+
+  } else {
+
     filename = org_filename;
+
+  }
   
   if(filename==NULL){
     RError("filename==NULL");
