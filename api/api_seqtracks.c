@@ -934,8 +934,54 @@ void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
   SEQTRACK_insert_silence(seqtrack, pos, duration);
 }
 
-// TODO: Rename to createSeqblock
+
+
+static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
+                                               const struct SeqBlock *seqblock,
+                                               const struct Blocks *block,
+                                               int64_t start_abstime, int64_t end_abstime,
+                                               int64_t *start_seqtime, int64_t *end_seqtime)
+{
+  if(start_abstime==-1){
+    if(seqblock==NULL){
+      *start_seqtime = 0;
+      *end_seqtime = 30000;
+      R_ASSERT(false);
+      return;
+    }
+  }
+  
+  *start_seqtime = start_abstime==-1 ? -1 : get_seqtime_from_abstime(seqtrack, seqblock, start_abstime);
+
+  if (end_abstime == -1){
+    *end_seqtime = -1;
+    return;
+  }
+
+  double reltempo = ATOMIC_DOUBLE_GET(block->reltempo);
+  
+  if (reltempo==1.0) {
+    *end_seqtime = get_seqtime_from_abstime(seqtrack, seqblock, end_abstime);
+  } else { 
+    double blocklen = getBlockSTimeLength(block);      
+    int64_t startseqtime = (*start_seqtime)==-1 ? seqblock->time : (*start_seqtime);
+    double stretch;
+    
+    if (start_abstime==-1) {
+      stretch = seqblock->stretch;
+    } else {
+      int64_t nonstretched_abs_duration = blocklen / reltempo;      
+      int64_t stretched_abs_duration = end_abstime-start_abstime;
+      stretch = (double)stretched_abs_duration / (double)nonstretched_abs_duration;
+    }
+    
+    *end_seqtime = startseqtime + blocklen * stretch;
+  }
+}
+
 int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
+  VALIDATE_TIME(pos, -1);
+  
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
@@ -946,13 +992,17 @@ int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
 
   ADD_UNDO(Sequencer());
 
-  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, pos);
-  int64_t end_seqtime = endpos==-1 ? -1 : get_seqtime_from_abstime(seqtrack, NULL, endpos);
+  int64_t start_seqtime;
+  int64_t end_seqtime;
+
+  get_seqblock_start_and_end_seqtime(seqtrack, NULL, block, pos, endpos, &start_seqtime, &end_seqtime);
   
-  return SEQTRACK_insert_block(seqtrack, block, seqtime, end_seqtime);
+  return SEQTRACK_insert_block(seqtrack, block, start_seqtime, end_seqtime);
 }
 
 int createGfxGfxSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
+  VALIDATE_TIME(pos, -1);
+  
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
@@ -961,10 +1011,12 @@ int createGfxGfxSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t end
   if (block==NULL)
     return -1;
 
-  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, pos);
-  int64_t end_seqtime = endpos==-1 ? -1 : get_seqtime_from_abstime(seqtrack, NULL, endpos);
-                           
-  return SEQTRACK_insert_gfx_gfx_block(seqtrack, block, seqtime, end_seqtime);
+  int64_t start_seqtime;
+  int64_t end_seqtime;
+
+  get_seqblock_start_and_end_seqtime(seqtrack, NULL, block, pos, endpos, &start_seqtime, &end_seqtime);
+  
+  return SEQTRACK_insert_gfx_gfx_block(seqtrack, block, start_seqtime, end_seqtime);
 }
 
 // seqblocks
@@ -1133,8 +1185,6 @@ float getSeqblockRightStretchY2(int seqblocknum, int seqtracknum){
   return SEQBLOCK_get_right_stretch_y2(seqblocknum, seqtracknum);
 }
 
-
-
 // move seqblock / set stretch
 
 static void positionSeqblock2(int64_t start_abstime, int64_t end_abstime, int seqblocknum, int seqtracknum, bool is_gfx){
@@ -1143,41 +1193,14 @@ static void positionSeqblock2(int64_t start_abstime, int64_t end_abstime, int se
   if (seqblock==NULL)
     return;
 
-  VALIDATE_TIME(start_abstime,);
-  VALIDATE_TIME(end_abstime,);
+  VALIDATE_TIME2(start_abstime,);
+  VALIDATE_TIME2(end_abstime,);
 
-  int64_t start_seqtime = start_abstime==-1 ? -1 : get_seqtime_from_abstime(seqtrack, seqblock, start_abstime);
+  int64_t start_seqtime;
   int64_t end_seqtime;
 
-  if (end_abstime == -1){
-    
-    end_seqtime = -1;
-    
-  } else {
-    
-    struct Blocks *block = seqblock->block;
-    double reltempo = ATOMIC_DOUBLE_GET(block->reltempo);
-    
-    if (reltempo==1.0) {
-      end_seqtime = get_seqtime_from_abstime(seqtrack, seqblock, end_abstime);
-    } else { 
-      double blocklen = getBlockSTimeLength(seqblock->block);      
-      int64_t startseqtime = start_seqtime==-1 ? seqblock->time : start_seqtime;
-      double stretch;
-
-      if (start_abstime==-1) {
-        stretch = seqblock->stretch;
-      } else {
-        int64_t nonstretched_abs_duration = blocklen / reltempo;      
-        int64_t stretched_abs_duration = end_abstime-start_abstime;
-        stretch = (double)stretched_abs_duration / (double)nonstretched_abs_duration;
-      }
-      
-      end_seqtime = startseqtime + blocklen * stretch;
-    }
-    
-  }
-                           
+  get_seqblock_start_and_end_seqtime(seqtrack, seqblock, seqblock->block, start_abstime, end_abstime, &start_seqtime, &end_seqtime);
+  
   //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
   SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, start_seqtime, end_seqtime, is_gfx);
 }
