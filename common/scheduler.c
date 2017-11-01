@@ -191,6 +191,9 @@ void SCHEDULER_add_event(struct SeqTrack *seqtrack, int64_t seq_time, SchedulerC
   event_t *event = get_free_event();
   if (event==NULL){
     RT_message("Unable to schedule event. This means that more things are happening at once than the program was configured to handle.");
+#if !defined(RELEASE)
+    abort();
+#endif
     return;
   }
   

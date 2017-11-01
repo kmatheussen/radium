@@ -262,7 +262,7 @@ void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
 
   while(track!=NULL){
     R_ASSERT_NON_RELEASE(track->times!=NULL);
-
+    //printf("scheduling track %d\n", track->l.num);
     int tracknum = track->l.num;
 
     bool doit = seqblock->track_is_disabled==NULL // i.e. playing block

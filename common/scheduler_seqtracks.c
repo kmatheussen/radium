@@ -29,7 +29,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
 {
 
   R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
-  
+
   Place place;
 
   struct Blocks *block = seqblock->block;
@@ -50,8 +50,10 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
 
     place = *place_pointer;
     
+    int64_t duration = SEQBLOCK_get_seq_duration(seqblock);
     seqblock->time = block_start_time; // We can not set seqblock->time before scheduling since seqblock->time is used various places when playing a block.
-    
+    seqblock->time2 = seqblock->time + duration;
+
   } else {
 
     if (place_pointer==NULL)
@@ -96,12 +98,10 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     RT_schedule_notes_newblock(seqtrack, seqblock, seqtime, place);
   }
 
-  int64_t endblock_seqtime = SEQBLOCK_get_seq_endtime(seqblock);
-
   // Schedule end block
   {
     union SuperType args[1];
-    SCHEDULER_add_event(seqtrack, endblock_seqtime, RT_scheduled_end_of_seqblock, &args[0], 0, SCHEDULER_ENDBLOCK_PRIORITY);
+    SCHEDULER_add_event(seqtrack, seqblock->time2, RT_scheduled_end_of_seqblock, &args[0], 0, SCHEDULER_ENDBLOCK_PRIORITY);
   }
     
 
@@ -118,7 +118,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
         next_time = 0;
       } else {
         next_seqblock = seqblock;
-        next_time = endblock_seqtime;
+        next_time = seqblock->time2;
       }
       
     } else {
@@ -144,7 +144,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
       args[3].int32_num     = playtype;
 
 #if DO_DEBUG
-      printf("  2. Scheduling RT_scheduled_seqblock at %f\n",next_time/MIXER_get_sample_rate());
+      printf("  2. Scheduling RT_scheduled_seqblock at %f. Curr_time: %f\n",next_time/MIXER_get_sample_rate(), seqtime/MIXER_get_sample_rate());
 #endif
       SCHEDULER_add_event(seqtrack, next_time, RT_scheduled_seqblock, &args[0], G_NUM_ARGS, SCHEDULER_INIT_BLOCK_PRIORITY);
 
