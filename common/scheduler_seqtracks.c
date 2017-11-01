@@ -188,13 +188,13 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
 
   {
     const struct SeqBlock *seqblock = startdata->seqblock;
-    const struct Blocks *block = seqblock==NULL ? NULL : seqblock->block;
+    struct Blocks *block = seqblock==NULL ? NULL : seqblock->block;
 
     int64_t seqtime = 0;
 
     if (block!=NULL)
       ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Stop gfx rendering since we are soon going to change the values of seqtrack->end_time and friends.
-        
+    
     if (startdata->seqtrack == NULL) {
       abs_start_time = startdata->abstime;
     } else {

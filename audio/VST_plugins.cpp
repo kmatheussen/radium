@@ -39,8 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <vector>
 
-
-#if USE_VESTIGE
+#if 0 //defined(USE_VESTIGE) && USE_VESTIGE
 
 #warning
 #warning
@@ -78,6 +77,7 @@ const int kVstMaxParamStrLen = 8;
 #  include <pluginterfaces/vst2.x/aeffectx.h>
 
 #endif //  USE_VESTIGE
+
 
 #include <QApplication>
 #include <QTime>

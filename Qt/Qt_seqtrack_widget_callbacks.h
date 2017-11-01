@@ -828,7 +828,7 @@ public:
     float ysplit2 = get_seqblock_ysplit2(y1, y2);
         
     QPen pen(QColor(0, 200 ,0, 200));
-    pen.setWidth(2.3);
+    pen.setWidthF(2.3);
     painter->setPen(pen);
 
 #if INTERFACE_IS_READY

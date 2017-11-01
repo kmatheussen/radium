@@ -50,7 +50,7 @@ static inline float gain2db(float gain){
   if(gain<=0.0f)
     return MIN_DB;
 
-#if __cplusplus
+#if __cplusplus && !defined(__clang__)
   constexpr
 #else
   const
@@ -79,7 +79,7 @@ static inline float db2gain(float db){
     if (db <= MIN_DB)
       return 0.0f;
     
-#if __cplusplus
+#if __cplusplus && !defined(__clang__)
   constexpr
 #else
   const

@@ -342,7 +342,7 @@ static_assert (sizeof(double) == sizeof(int64_t), "Size of double is not correct
 
 #define ATOMIC_DOUBLE_SET(name,new_value) ({                            \
       double new_value_variable = new_value;                            \
-      __atomic_store (&ATOMIC_NAME(name), &new_value_variable, __ATOMIC_SEQ_CST); \
+      __atomic_store (&(ATOMIC_NAME(name)), &new_value_variable, __ATOMIC_SEQ_CST); \
     })
 
 

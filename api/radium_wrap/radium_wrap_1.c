@@ -239,14 +239,14 @@ typedef struct swig_varlinkobject {
 
 static PyObject *
 swig_varlink_repr(swig_varlinkobject *v) {
-  v = v;
+  //v = v;
   return PyString_FromString("<Global variables>");
 }
 
 static int
 swig_varlink_print(swig_varlinkobject *v, FILE *fp, int flags) {
   swig_globalvar  *var;
-  flags = flags;
+  //flags = flags;
   fprintf(fp,"Global variables { ");
   for (var = v->vars; var; var=var->next) {
     fprintf(fp,"%s", var->name);
