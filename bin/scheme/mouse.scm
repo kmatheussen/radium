@@ -3565,6 +3565,14 @@
                  :start-time new-start-time
                  :end-time (+ new-start-time duration)))
 
+(define (move-seqblock2 seqblock delta-time delta-tracknum)
+  (define duration (- (seqblock :end-time)
+                      (seqblock :start-time)))
+  (copy-seqblock seqblock
+                 :start-time (+ (seqblock :start-time) delta-time)
+                 :end-time (+ (seqblock :end-time) delta-time)
+                 :seqtracknum (+ (seqblock :seqtracknum) delta-tracknum)))
+
 ;; TODO: If placing above an existing seqblock, duration sometimes changes.
 (define (apply-seqblock seqblock)
   (define seqtracknum (seqblock :seqtracknum))
@@ -3707,7 +3715,7 @@
 
   (undo-block
    (lambda ()
-     (delete-all-selected-seqblocks) ;; Hack. This will only work if seqblock-infos contains the current set of selected blocks. (deleting from seqblock-infos is a little bit tricky since the seqblock indexes changes)
+     (FROM_C-delete-all-selected-seqblocks) ;; Hack. This will only work if seqblock-infos contains the current set of selected blocks. (deleting from seqblock-infos is a little bit tricky since the seqblock indexes changes)
      (for-each (lambda (seqblock)
                  (if seqblock
                      (apply-seqblock seqblock)))
@@ -4575,12 +4583,6 @@
 
 (define2 *seqblock-clipboard* list? '())
 
-(define-struct clipboard-seqblock
-  :seqtracknum
-  :blocknum
-  :time
-  )
-
 (define (seqblock-selected?)
   (call/cc (lambda (return)
              (for-each-seqblock (lambda (seqtracknum seqblocknum)
@@ -4588,24 +4590,22 @@
                                       (return #t))))
              (return #f))))
 
-(define (copy-all-selected-seqblocks)
+(define (FROM_C-copy-all-selected-seqblocks)
   (define minseqtrack #f)
   (define mintime #f)
   (set! *seqblock-clipboard* '())
 
   (define (add-seqblock! seqtracknum seqblocknum)
-    (define time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
     (push-back! *seqblock-clipboard*
-                (make-clipboard-seqblock :seqtracknum seqtracknum
-                                         :blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)
-                                         :time time))
+                (create-seqblock-from-existing-seqblock seqtracknum seqblocknum))
     (if (not minseqtrack)
         (set! minseqtrack seqtracknum)
         (set! minseqtrack (min seqtracknum minseqtrack)))
-    (if (not mintime)
-        (set! mintime time)
-        (set! mintime (min time mintime))))
-
+    (let ((start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+      (if (not mintime)
+          (set! mintime start-time)
+          (set! mintime (min start-time mintime)))))
+    
   ;; Find all selected seqblocks
   (for-each-seqblock (lambda (seqtracknum seqblocknum)
                        (when (<ra> :is-seqblock-selected seqblocknum seqtracknum)
@@ -4620,25 +4620,22 @@
 
   ;; Scale time
   (set! *seqblock-clipboard*
-        (map (lambda (clipboard-seqblock)
-               (make-clipboard-seqblock :seqtracknum (- (clipboard-seqblock :seqtracknum) minseqtrack)
-                                        :blocknum (clipboard-seqblock :blocknum)
-                                        :time (- (clipboard-seqblock :time) mintime)))
+        (map (lambda (seqblock)
+               (move-seqblock2 seqblock
+                               (- mintime)
+                               (- minseqtrack)))
              *seqblock-clipboard*)))
 
-(define (paste-sequencer-blocks seqtracknum time)
+(define (FROM_C-paste-sequencer-blocks seqtracknum time)
   (undo-block
    (lambda ()
-     (for-each (lambda (clipboard-seqblock)
-                 (define seqtracknum2 (+ seqtracknum (clipboard-seqblock :seqtracknum)))
+     (for-each (lambda (seqblock)
+                 (define seqtracknum2 (+ seqtracknum (seqblock :seqtracknum)))
                  (if (< seqtracknum2 (<ra> :get-num-seqtracks))
-                     (<ra> :create-seqblock
-                           seqtracknum2
-                           (clipboard-seqblock :blocknum)
-                           (+ time (clipboard-seqblock :time)))))
+                     (apply-seqblock (move-seqblock2 seqblock time seqtracknum))))
                *seqblock-clipboard*))))
 
-(define (delete-all-selected-seqblocks)
+(define (FROM_C-delete-all-selected-seqblocks)
   (define deleted-something #f)
 
   (set! *current-seqblock-info* #f)
@@ -4673,9 +4670,9 @@
                (else
                 (loop (1+ seqblocknum) seqtracknum))))))))
 
-(define (cut-all-selected-seqblocks)
-  (copy-all-selected-seqblocks)
-  (delete-all-selected-seqblocks))
+(define (FROM_C-cut-all-selected-seqblocks)
+  (FROM_C-copy-all-selected-seqblocks)
+  (FROM_C-delete-all-selected-seqblocks))
 
 
 (define (create-sequencer-automation seqtracknum X Y)

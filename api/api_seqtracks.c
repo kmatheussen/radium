@@ -1358,7 +1358,7 @@ void setSeqblockTrackEnabled(bool is_enabled, int tracknum, int seqblocknum, int
 }
 
 void cutSelectedSeqblocks(void){
-  evalScheme("(cut-all-selected-seqblocks)");      
+  evalScheme("(FROM_C-cut-all-selected-seqblocks)");      
 }
 
 void pasteSeqblocks(int seqtracknum, int64_t abstime){
@@ -1382,17 +1382,17 @@ void pasteSeqblocks(int seqtracknum, int64_t abstime){
   if (abstime < 0)
     return;
 
-  evalScheme(talloc_format("(paste-sequencer-blocks %d " "%" PRId64 ")", seqtracknum, abstime));
+  evalScheme(talloc_format("(FROM_C-paste-sequencer-blocks %d " "%" PRId64 ")", seqtracknum, abstime));
 }
 
 
 void copySelectedSeqblocks(void){
-  evalScheme("(copy-all-selected-seqblocks)");
+  evalScheme("(FROM_C-copy-all-selected-seqblocks)");
 }
 
 
 void deleteSelectedSeqblocks(void){
-  evalScheme("(delete-all-selected-seqblocks)");
+  evalScheme("(FROM_C-delete-all-selected-seqblocks)");
 }
 
 
