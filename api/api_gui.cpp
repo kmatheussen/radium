@@ -4081,7 +4081,12 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
     return;
 
   //printf("Child parent: %p\n", child->_widget->parent());
-  R_ASSERT_NON_RELEASE(child->_widget->parent()==NULL);
+#if !defined(RELEASE)
+  if(child->_widget->parent()==NULL){
+    handleError("gui_add: child->_widget->parent()==NULL");
+    return;
+  }
+#endif
   
   QSplitter *splitter = dynamic_cast<QSplitter*>(parent);
   

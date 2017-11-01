@@ -1561,6 +1561,14 @@ void deleteInstrument(int64_t instrument_id){
   root->song->tracker_windows->must_redraw=true;
 }
 
+bool instrumentIsOpenAndAudio(int64_t instrument_id){
+  const struct Patch *patch = PATCH_get_from_id(instrument_id);
+  if (patch==NULL)
+    return false;
+
+  return patch->instrument == get_audio_instrument();
+}
+
 bool instrumentIsOpen(int64_t instrument_id){
   return PATCH_get_from_id(instrument_id) != NULL;
 }

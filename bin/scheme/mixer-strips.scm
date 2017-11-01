@@ -496,7 +496,7 @@
 #||
 (define (create-mixer-strip-name-line instrument-id strips-config height)
   (define name (<gui> :line (<ra> :get-instrument-name instrument-id) (lambda (edited)
-                                                                        (if (<ra> :instrument-is-open instrument-id)
+                                                                        (if (<ra> :instrument-is-open-and-audio instrument-id)
                                                                             (<ra> :set-instrument-name edited instrument-id)))))
   (<gui> :set-background-color name (<ra> :get-instrument-color instrument-id))
 
@@ -1443,8 +1443,8 @@
         (if (and (not (= gui maybe-gui))
                  (= maybe-source-id source-id)
                  (= maybe-target-id target-id)
-                 (<ra> :instrument-is-open source-id)
-                 (<ra> :instrument-is-open target-id)
+                 (<ra> :instrument-is-open-and-audio source-id)
+                 (<ra> :instrument-is-open-and-audio target-id)
                  (<ra> :has-audio-connection source-id target-id))
             (callback db #f)))) ;; #f = automation value (automating audio connection gain is not supported yet)
   
@@ -1461,8 +1461,8 @@
   ;(define (add-monitor slider callback)
   ;  (<ra> :schedule (random 1000) (lambda ()
   ;                                  (if (and (<gui> :is-open gui)
-  ;                                           (<ra> :instrument-is-open source-id)
-  ;                                           (<ra> :instrument-is-open target-id))                                             
+  ;                                           (<ra> :instrument-is-open-and-audio source-id)
+  ;                                           (<ra> :instrument-is-open-and-audio target-id))                                             
   ;                                      (begin
   ;                                        (callback)
   ;                                        100)
@@ -1772,7 +1772,7 @@
 
   (<ra> :schedule (random 1000) (let ((mute (cadr mute)))
                                   (lambda ()
-                                    (if (and (<gui> :is-open mute) (<ra> :instrument-is-open instrument-id))
+                                    (if (and (<gui> :is-open mute) (<ra> :instrument-is-open-and-audio instrument-id))
                                         (let ((last-implicitly-muted implicitly-muted))
                                           (set! implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
                                           (when (not (eq? implicitly-muted last-implicitly-muted))
@@ -2382,7 +2382,7 @@
   (define (remake width height)
     (when (not is-calling-remake)
       (set! is-calling-remake #t)
-      (define instrument-is-open (<ra> :instrument-is-open instrument-id))
+      (define instrument-is-open (<ra> :instrument-is-open-and-audio instrument-id))
       
       (run-instrument-data-memoized
        (lambda()
