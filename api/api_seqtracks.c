@@ -935,7 +935,7 @@ void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
 }
 
 // TODO: Rename to createSeqblock
-int addBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
+int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
@@ -952,7 +952,7 @@ int addBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos, int64_t endpo
   return SEQTRACK_insert_block(seqtrack, block, seqtime, end_seqtime);
 }
 
-int addGfxGfxBlockToSeqtrack(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
+int createGfxGfxSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
