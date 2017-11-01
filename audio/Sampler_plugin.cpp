@@ -2552,9 +2552,18 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 
   const wchar_t *org_filename = HASH_get_string(state, "filename");
 
-  if (audiodata_is_included)
-    filename = DISK_base64_to_file(NULL, HASH_get_chars(state, "audiofile"));
-  else
+  if (audiodata_is_included){
+    filename = NULL;
+    QString embedded_dir = STRING_get_qstring(dc.filename) + "_embedded_samples";
+    if (DISK_create_dir(STRING_create(embedded_dir))==false){
+      GFX_Message(NULL, "Unable to create directory \"%s\"", embedded_dir.toUtf8().constData());
+    }else{
+      filename = STRING_create(embedded_dir + QDir::separator() + QFileInfo(STRING_get_qstring(org_filename)).fileName());
+    }
+    filename = DISK_base64_to_file(filename, HASH_get_chars(state, "audiofile"));
+    if (filename==NULL)
+      filename = DISK_base64_to_file(NULL, HASH_get_chars(state, "audiofile"));
+  }else
     filename = org_filename;
   
   if(filename==NULL){
@@ -2570,12 +2579,14 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   if (is_loading && disk_load_version <= 0.865){
     data->p.note_adjust = int(data->p.note_adjust);
   }
-  
+
+  /*  
   if (audiodata_is_included) {    
     if (data!=NULL)
       data->filename = wcsdup(org_filename);
   }
-  
+  */
+
   // Can not delete now. file is still used when creating/recreating states. Deleting at program end.
   //if (audiodata_is_included)
   //  DISK_delete_base64_file(filename);

@@ -37,6 +37,17 @@ bool DISK_file_exists(const wchar_t *wfilename){
   return QFile::exists(filename);
 }
 
+bool DISK_dir_exists(const wchar_t *wdirname){
+  QString filename = STRING_get_qstring(wdirname);
+  return QDir(filename).exists();
+}
+
+bool DISK_create_dir(const wchar_t *wdirname){
+  if(DISK_dir_exists(wdirname))
+    return true;
+  QDir::root().mkpath(STRING_get_qstring(wdirname));
+  return DISK_dir_exists(wdirname);
+}
 
 struct _radium_os_disk {
   enum Type{

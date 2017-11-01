@@ -4,8 +4,10 @@
 
 #include "OS_string_proc.h"
 
-
+// Some helper functions. The file API in Qt is quite often ridiculous.
 extern LANGSPEC bool DISK_file_exists(const wchar_t *filename);
+extern LANGSPEC bool DISK_dir_exists(const wchar_t *dirname);
+extern LANGSPEC bool DISK_create_dir(const wchar_t *wdirname);
 
 
 // OPEN
