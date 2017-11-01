@@ -31,6 +31,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define SUPPORT_TEMP_WRITING_FUNCTIONS 0
 
+const wchar_t *DISK_get_absolute_file_path(const wchar_t *wfilename){
+  QFileInfo info(STRING_get_qstring(wfilename));
+  return STRING_create(info.absoluteFilePath());
+}
 
 bool DISK_file_exists(const wchar_t *wfilename){
   QString filename = STRING_get_qstring(wfilename);
