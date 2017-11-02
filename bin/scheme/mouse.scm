@@ -4856,8 +4856,8 @@
                                           ;;           (<ra> :delete-seqblock seqblocknum seqtracknum)                 
                                           ;;           (<ra> :add-block-to-seqtrack seqtracknum (<ra> :current-block) pos)))))
                                           
-                                          (list "Replace with existing block"
-                                                :enabled (or seqblock-info seqblock-infos)
+                                          (list (if (pair? seqblock-infos) "Replace blocks with existing block" "Replace with existing block")
+                                                :enabled (or seqblock-info (pair? seqblock-infos))
                                                 (lambda ()
                                                   (apply popup-menu
                                                          (map (lambda (blocknum)
@@ -4907,8 +4907,9 @@
                                           ;;             (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
                                           ;;          (<ra> :select-block blocknum))))
                                           
-                                          (list "Replace with new block"
-                                                :enabled (or seqblock-infos seqblock-info)
+                                          (list (if (pair? seqblock-infos) "Replace blocks with new block" "Replace with new block")
+                                                :enabled (or (pair? seqblock-infos)
+                                                             seqblock-info)
                                                 (lambda ()
                                                   (let ((blocknum (<ra> :append-block)))
                                                     (undo-block
@@ -4928,8 +4929,8 @@
                                           ;;"-----------------"
                                           "------------------"
 
-                                          (list (if seqblock-infos "Clone blocks" "Clone block")
-                                                :enabled (and (or seqblock-infos seqblock-info)
+                                          (list (if (pair? seqblock-infos) "Clone blocks" "Clone block")
+                                                :enabled (and (or (pair? seqblock-infos) seqblock-info)
                                                               (not (<ra> :is-playing-song)))
                                                 (lambda ()
                                                   (<ra> :select-block blocknum)
