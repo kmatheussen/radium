@@ -1,3 +1,44 @@
+Changes 5.2.1 -> 5.2.3:
+* MIDI: Add "Delete all unused MIDI instruments" option to the
+  MIDI menu.
+* Sequencer: Don't enable the "Replace with existing block",
+  "Replace with new block", and "Clone block(s)" options when no
+  block is selected
+* Preferences: Update information text for the
+  "Protect against high CPU usage" option.
+* Demo songs: Add "Care" by Nikos Levantis.
+* Mixer: Fix error message sometimes popping up when loading a song
+  if there are MIDI instruments in the current song.
+* Windows/Linux: Build with "-fomit-frame-pointer" instead of
+  "-fno-omit-frame-pointer". This could make the program
+  notably faster in some situations. OSX is still compiled with
+  "-fno-omit-frame-pointer" since bactrace didn't work without it.
+* Demo songs: Add "Change The World" by Nikos Levantis.
+* Load: Put embedded samples into a newly created directory placed
+  where the song file is.
+* Sequencer: Show sequencer block start position in the status
+  bar when mouse pointer is above a sequencer block.
+* Menus: Change "Make Block fit in window" to
+  "Make current Block fit in window"
+* Sequencer: Stretch sequencer block.
+* Mouse: Only call get-seqblock-info once. (small optimization)
+* GUI: Set window title for various windows.
+* Crashreporter: Include last s7 error message and file/line.
+* Message window: Fix memory leak. Old message window was not
+  deleted when reopening.
+* API:
+  * New functions: getSeqblockGfxStartTime, getSeqblockGfxEndTime,
+    getSeqblockLeftStretchBox, getSeqblockRightStretchBox,
+    positionSeqblock, positionSeqblockGfx, getSeqblockStretch,
+    getSeqblockStretchGfx, setCurrSeqblock, cancelCurrSeqblock,
+    gui_setWindowTitle.
+  * Renamed: addBlockToSeqtrack to createSeqblock and
+    addGfxGfxBlockToSeqtrack to createGfxGfxSeqblock.
+  * Fix crash that could happen if handleError() was called during
+    a call to a Python API function.
+ 
+
+
 Changes 5.1.9 -> 5.2.1:
 * Windows: Not necessary anymore to install jack to run Radium.
   Radium now includes an embedded version of Jack which is used if
