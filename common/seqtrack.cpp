@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "player_proc.h"
 #include "vector_proc.h"
+#include "placement_proc.h"
 #include "player_pause_proc.h"
 #include "time_proc.h"
 #include "hashmap_proc.h"
@@ -67,18 +68,26 @@ static void move_seqblock(struct SeqBlock *seqblock, int64_t new_start, bool is_
   }
 }
 
+static int64_t get_seqblock_stime_duration(const struct SeqBlock *seqblock, bool is_gfx){
+#if 0
+  const struct Blocks *block = seqblock->block;
+  double start_stime = Place2STime(block, is_gfx ? &seqblock->gfx_start_place : &seqblock->start_place);
+  double end_stime = Place2STime(block, is_gfx ? &seqblock->gfx_end_place : &seqblock->end_place);
+  return end_stime - start_stime;
+#else
+  return getBlockSTimeLength(seqblock->block);
+#endif
+}
+
 static bool seqblock_has_stretch(const struct SeqBlock *seqblock, bool is_gfx){
-  int64_t blocklen = getBlockSTimeLength(seqblock->block);
-  return blocklen != get_seqblock_duration(seqblock, is_gfx);
+  return get_seqblock_stime_duration(seqblock, is_gfx) != get_seqblock_duration(seqblock, is_gfx);
 }
 
 static void set_seqblock_stretch(struct SeqBlock *seqblock, bool is_gfx){
-  double blocklen = getBlockSTimeLength(seqblock->block);
-
-  seqblock->gfx_stretch = (double)(seqblock->gfx_time2-seqblock->gfx_time) / blocklen;
+  seqblock->gfx_stretch = (double)(seqblock->gfx_time2-seqblock->gfx_time) / (double)get_seqblock_stime_duration(seqblock, true);
   
   if(!is_gfx)
-    seqblock->stretch = (double)(seqblock->time2-seqblock->time) / blocklen;
+    seqblock->stretch = (double)(seqblock->time2-seqblock->time) / (double)get_seqblock_stime_duration(seqblock, false);
 }
 
                           
@@ -256,12 +265,26 @@ void SEQBLOCK_init(struct SeqBlock *seqblock, struct Blocks *block, bool *track_
   R_ASSERT(block!=NULL);
   seqblock->block = block;
   seqblock->track_is_disabled = track_is_disabled;
+
   seqblock->time = time;
   seqblock->gfx_time = time;
-  seqblock->time2 = seqblock->time + getBlockSTimeLength(block);
+
+  int64_t block_duration = getBlockSTimeLength(block);
+
+  seqblock->time2 = seqblock->time + block_duration;
   seqblock->gfx_time2 = seqblock->time2;
+
+  seqblock->start_place = p_Create(0,0,1);
+  seqblock->gfx_start_place = seqblock->start_place;
+
+  seqblock->end_place = p_Create(block->num_lines,0,1);
+  seqblock->gfx_end_place = seqblock->end_place;
+
   seqblock->stretch = 1.0;
   seqblock->gfx_stretch = 1.0;
+
+  seqblock->block_duration = block_duration;
+  seqblock->gfx_block_duration = block_duration;
 }
 
 static struct SeqBlock *SEQBLOCK_create(struct Blocks *block, int64_t time){
@@ -946,6 +969,30 @@ void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock
 
 void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_abs_time){
   SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, get_seqtime_from_abstime(seqtrack, seqblock, new_abs_time), -1, true);
+}
+
+void SEQUENCER_timing_has_changed(void){
+
+  ALL_SEQTRACKS_FOR_EACH(){
+
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+      const struct Blocks *block = seqblock->block;
+      const int64_t block_duration = getBlockSTimeLength(block);
+
+      if (seqblock->block_duration != block_duration){
+        double stretch = seqblock->stretch;
+        if (stretch==1.0)
+          seqblock->time2 = seqblock->time + block_duration;
+        else
+          seqblock->time2 = seqblock->time + round(stretch*(double)block_duration);
+        seqblock->gfx_time2 = seqblock->time2;        
+
+        seqblock->block_duration = block_duration;
+      }
+
+    }END_VECTOR_FOR_EACH;
+
+  }END_ALL_SEQTRACKS_FOR_EACH;
 }
 
 /*

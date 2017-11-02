@@ -318,19 +318,3 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
   }PLAYER_unlock();
 }
 
-
-#if 0
-void start_seqtrack_scheduling(const player_start_data_t *startdata){
-  if (startdata->playtype==PLAYSONG) {
-    
-    start_seqtrack_song_scheduling(startdata);
-    
-  } else {
-
-    start_seqtrack_block_sceduling(startdata->seqblock->block, startdata->place);
-    
-  }
-    
-}
-
-#endif

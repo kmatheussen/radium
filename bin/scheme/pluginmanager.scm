@@ -26,7 +26,21 @@
 (let ((width (floor (* 3 (<gui> :text-width "Usage  Name  Type    Category    Creator        Path              Inputs Outputs")))))
   (<gui> :set-size *pluginmanager-gui* width (floor (/ width 1.5))))
 
-(define *pmg-table* (<gui> :table (list "Usage" "Name" "Type" "Category" "Creator" "Path" "Inputs" "Outputs")))
+(define *selected-pmg-row-callback* (lambda x #f)) ;; redefined later
+(define *hide-pmg-callback* (lambda x #f)) ;; redefined later
+(define *accept-key-callback?-callback* (lambda x #t)) ;; redefined later
+
+(define *pmg-table* (create-table-gui (list (make-table-row "Usage" "Usage")
+                                            (make-table-row "Name" "Multi-band compressor")
+                                            (make-table-row "Type" "Sample Player")
+                                            (make-table-row "Category" "Category")
+                                            (make-table-row "Creator" "Joern Nettingsmeier")
+                                            (make-table-row "Path" "VST / plugin type / plugin name" #t)
+                                            (make-table-row "Inputs" "Outputs")
+                                            (make-table-row "Outputs" "Outputs"))
+                                      :selected-row-callback (lambda x (apply *selected-pmg-row-callback* x))
+                                      :hide-callback (lambda x (apply *hide-pmg-callback* x))
+                                      :accept-key-callback?-callback (lambda x (apply *accept-key-callback?-callback* x))))
 
 (define-constant *pmg-use-x* 0)
 (define-constant *pmg-name-x* 1)
@@ -109,18 +123,7 @@
          #f))
 
 ;; init table stuff
-(let ((table *pmg-table*))
-  (<gui> :stretch-table table *pmg-use-x* #f (floor (* 1.5 (<gui> :text-width "Usage"))))  ;; TODO: Does ':text-width' consistently return a too small value?
-  (<gui> :stretch-table table *pmg-name-x* #f (floor (* 1.5 (<gui> :text-width "Multi-band compressor"))))
-  (<gui> :stretch-table table *pmg-type-x* #f (floor (* 1.5 (<gui> :text-width "Sample Player"))))
-  (<gui> :stretch-table table *pmg-category-x* #f (floor (* 1.5 (<gui> :text-width "Category"))))
-  (<gui> :stretch-table table *pmg-creator-x* #f (floor (* 1.5 (<gui> :text-width "Joern Nettingsmeier"))))
-  (<gui> :stretch-table table *pmg-path-x* #t (floor (* 1.5 (<gui> :text-width "VST / plugin type / plugin name"))))
-  (<gui> :stretch-table table *pmg-inputs-x* #f  (floor (* 1.5 (<gui> :text-width "Outputs")))) ;; same width for input and output
-  (<gui> :stretch-table table *pmg-outputs-x* #f (floor (* 1.5 (<gui> :text-width "Outputs"))))
-
-  (<gui> :sort-table-by table *pmg-path-x* #t)
-  )
+(<gui> :sort-table-by *pmg-table* *pmg-path-x* #t)
 
 
 ;; Set up button and search field callbacks
@@ -240,41 +243,22 @@
               ((> (length row) 0)
                (<ra> :add-message (<-> "Error. Unable to find instrument description for row " (pp (<gui> :get-value *pmg-table*)))))))))
 
+  (set! *selected-pmg-row-callback* (lambda x
+                                      (made-selection)))
+  (set! *hide-pmg-callback* (lambda x
+                              (pmg-hide)))
+  (set! *accept-key-callback?-callback* (lambda x
+                                          (> (- (time) last-time-we-pressed-return-in-search-field) ;; Another hack: TODO sniff native keyboard events from Qt_Main.cpp instead.
+                                             0.2)))
+
   (define last-time-we-pressed-return-in-search-field 0)
   
   (<gui> :add-callback *pmg-search-text-field*
          (lambda (val)           
            (set! last-time-we-pressed-return-in-search-field (time))))
   
-  (<gui> :add-key-callback *pluginmanager-gui*
-         (lambda (presstype key)
-           ;;(c-display "GOT KEY" presstype key (string=? key "\n"))
-           (cond ((< (- (time) last-time-we-pressed-return-in-search-field) ;; Another hack: TODO sniff native keyboard events from Qt_Main.cpp instead.
-                     0.2)
-                  #f)
-                 ;;((= 1 presstype) ;; Qt eats a lot of key down events, so we can't ignore key up. TODO: Let :add-key-callback sniff native keyboard events from Qt_Main.cpp instead.
-                 ;; #f)
-                 ((string=? key "HOME")
-                  (<gui> :set-value *pmg-table* 0)
-                  #t)
-                 ((string=? key "END")
-                  (<gui> :set-value *pmg-table* (1- (<gui> :get-num-table-rows *pmg-table*)))
-                  #t)
-                 ((string=? key "\n")
-                  (made-selection)
-                  #t)
-                 ((string=? key "ESC")
-                  (pmg-hide)
-                  #t)
-                 (else
-                  #f))))
-
   (<gui> :add-callback *pmg-add-button* made-selection)
   
-  (<gui> :add-double-click-callback *pmg-table*
-         (lambda (x y)
-           (made-selection)))
-
   (<gui> :add-callback *pmg-cancel-button* pmg-hide)
   )
 

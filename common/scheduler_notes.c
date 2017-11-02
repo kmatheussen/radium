@@ -84,7 +84,9 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
     const struct Tracks *next_track = NULL;
 
     int64_t addtime = 0;
-          
+
+    // 1. Find track and seqblock with the next stop or note event.
+
     if(pc->playtype==PLAYBLOCK) {
             
       addtime = SEQBLOCK_get_seq_duration(seqblock);
@@ -116,7 +118,9 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
       return -1;
           
     const Place *p = NULL;
-          
+
+    // 2. Find next place.
+
     if (next_track->notes!=NULL)
       p = &next_track->notes->l.p;
           
@@ -245,7 +249,6 @@ static void RT_schedule_note(struct SeqTrack *seqtrack,
   
   if (note->chance==0)
     time++;
-
   
 
   //printf(" Scheduling note at %d. seqblock->time: %d, track %d\n",(int)time, (int)seqblock->time, track->l.num);
@@ -266,14 +269,13 @@ void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
     int tracknum = track->l.num;
 
     bool doit = seqblock->track_is_disabled==NULL // i.e. playing block
-      || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS
-      || !seqblock->track_is_disabled[tracknum];
+      || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS // this seqblock track can not be disabled
+      || !seqblock->track_is_disabled[tracknum]; // seqblock track is not disabled.
     
     if (doit){
-
       struct Notes *note=track->notes;
     
-      while(note != NULL && PlaceLessThan(&note->end,&start_place))
+      while(note != NULL && p_Less_Than(note->end,start_place))
         note=NextNote(note);
     
       if(note!=NULL)
