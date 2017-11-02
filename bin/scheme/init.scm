@@ -473,6 +473,7 @@
     randomize-note-durations-block
     show-bars-and-beats-or-line-numbers-popup-menu
     popup-menu
+    delete-all-unused-MIDI-instruments
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

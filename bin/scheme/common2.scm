@@ -1379,7 +1379,7 @@ for .emacs:
     (set! vector #f)
     (set! list #f)
     (set! hash #f)
-    (set! num-elements (lengh elements)))
+    (set! num-elements (length elements)))
     
   (when (not eq-func)
     (set! eq-func 
@@ -1446,8 +1446,12 @@ for .emacs:
   :get (pos)
   ((get-vector) pos)
 
-  :add! (elememnt)
+  :add! (element)
   (clear! (cons element (get-list)))
+
+  :add-unique! (element)
+  (if (not (this->contains element))
+      (this->add! element))
 
   :cons (element)
   (<new> :container (cons element (get-list))))

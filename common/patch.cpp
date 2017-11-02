@@ -533,12 +533,16 @@ static void make_inactive(struct Patch *patch, bool force_removal){
     return;
   }
 
+  bool is_midi_instrument = patch->instrument==get_MIDI_instrument();
+
+  /*
   if(patch->instrument!=get_audio_instrument()){
     GFX_Message2(NULL, !force_removal, "Not possible to delete MIDI instrument");
     return;
   }
-
-  if(force_removal==false && AUDIO_is_permanent_patch(patch)==true){
+  */
+  
+  if(force_removal==false && !is_midi_instrument && AUDIO_is_permanent_patch(patch)==true){
     if (force_removal)
       GFX_Message(NULL, "Instrument \"%s\" can not be deleted", patch->name);
     else
@@ -550,13 +554,14 @@ static void make_inactive(struct Patch *patch, bool force_removal){
 
   PATCH_handle_editor_and_automation_when_replacing_patch(patch, NULL);
 
-  hash_t *audio_patch_state = AUDIO_get_audio_patch_state(patch); // The state is unavailable after calling remove_patch().
+  hash_t *audio_patch_state = is_midi_instrument ? NULL : AUDIO_get_audio_patch_state(patch); // The state is unavailable after calling remove_patch().
 
   patch->instrument->remove_patchdata(patch); // Remove Audio things.
   
   R_ASSERT(patch->patchdata==NULL);
-  
-  ADD_UNDO(Audio_Patch_Remove_CurrPos(patch, audio_patch_state)); // Must be called last, if not the undo/redo order will be wrong.
+
+  if(!is_midi_instrument)
+    ADD_UNDO(Audio_Patch_Remove_CurrPos(patch, audio_patch_state)); // Must be called last, if not the undo/redo order will be wrong.
 
   PATCH_remove_from_instrument(patch);
 

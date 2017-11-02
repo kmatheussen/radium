@@ -705,7 +705,7 @@ static void MIDI_handle_fx_when_a_patch_has_been_replaced(const struct Patch *ol
 }
 
 static void MIDI_remove_patchdata(struct Patch *patch){
-  // nothing to do.
+  patch->patchdata = NULL;
 }
 
 static void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch, bool is_loading){

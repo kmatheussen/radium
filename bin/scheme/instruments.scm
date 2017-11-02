@@ -954,7 +954,36 @@
 (create-instrument-popup-menu (make-instrument-conf))
 !!#
 
-                                  
+
+(define (delete-all-unused-MIDI-instruments)
+  (define used-instruments (<new> :container '() =))
+  (define unused-MIDI-instruments '())
+  
+  (for-each (lambda (blocknum)
+              (for-each (lambda (tracknum)
+                          (used-instruments :add-unique! (<ra> :get-instrument-for-track tracknum blocknum)))
+                        (iota (<ra> :get-num-tracks blocknum))))
+            (iota (<ra> :get-num-blocks)))
+  
+  (for-each (lambda (midi-instrument)
+              (if (not (used-instruments :contains midi-instrument))
+                  (push-back! unused-MIDI-instruments midi-instrument)))
+            (get-all-midi-instruments))
+
+  (if (null? unused-MIDI-instruments)
+      (show-async-message :text "There are no unused MIDI instruments in this song")
+      (show-async-message :text "Are you sure? You can not undo this operation."
+                          :buttons (list "Yes" "No")
+                          :is-modal #f
+                          :callback (lambda (res)
+                                      (if (string=? "Yes" res)
+                                          (ignore-undo-block
+                                           (lambda ()
+                                             (for-each ra:delete-instrument unused-MIDI-instruments))))))))
+
+#!
+(delete-all-unused-MIDI-instruments)
+!#
 
 ;; async
 (define (select-track-instrument tracknum)
