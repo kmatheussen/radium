@@ -726,4 +726,88 @@
 !!#
 
 
+;; Table
+;;;;;;;;;;;;;;;;;;;;;;
+
+(define-struct table-row
+  :header-name
+  :initial-width #f ;; Can contain a string or a number.
+  :stretch #f)
+  
+(delafina (create-table-gui :table-rows
+                            :selected-row-callback #f
+                            :hide-callback #f
+                            :accept-key-callback?-callback #f)
+
+  (c-display "table-rows:" table-rows)
+  (define table (<gui> :table (map (lambda (conf)
+                                     (conf :header-name))
+                                   table-rows)))
+  (for-each (lambda (header-num conf)
+              (let ((width (cond ((string? (conf :initial-width))
+                                  (floor (* 1.5 (<gui> :text-width (conf :initial-width)))))
+                                 ((number? (conf :initial-width))
+                                  (floor (conf :initial-width)))
+                                 (else
+                                  #f))))
+                (if width
+                    (<gui> :stretch-table table header-num (conf :stretch) width))))
+            (iota (length table-rows))
+            table-rows)
+
+  (define (maybe-call-selected-row-callback)
+    (if selected-row-callback
+        (selected-row-callback table
+                               (<gui> :curr-table-row table)
+                               (<gui> :get-value table))))
+
+  (<gui> :add-key-callback table
+         (lambda (presstype key)
+           ;;(c-display "GOT KEY" presstype key (string=? key "\n"))
+           (cond ((and accept-key-callback?-callback
+                       (not (accept-key-callback?-callback table presstype key)))
+                  ;;(c-display "not accepted")
+                  #f)
+                 ;;((= 1 presstype) ;; Qt eats a lot of key down events, so we can't ignore key up. TODO: Let :add-key-callback sniff native keyboard events from Qt_Main.cpp instead.
+                 ;; #f)
+                 ((string=? key "HOME")
+                  (<gui> :set-value table 0)
+                  #t)
+                 ((string=? key "END")
+                  (<gui> :set-value table (1- (<gui> :get-num-table-rows table)))
+                  #t)
+                 ((string=? key "\n")
+                  (maybe-call-selected-row-callback)
+                  #t)
+                 ((string=? key "ESC")
+                  (if hide-callback
+                      (hide-callback table))
+                  #t)
+                 (else
+                  #f))))
+
+  (<gui> :add-double-click-callback table
+         (lambda (x y)
+           (maybe-call-selected-row-callback)
+           #f))
+
+  table)
+
+#!!
+(define table (create-table-gui (list (make-table-row "number" #f #f)
+                                      (make-table-row "row1" "asdfasdfasdf" #t)
+                                      (make-table-row "row2" 300))
+                                :selected-row-callback (lambda (table row-num row-content)
+                                                         (c-display "row num" row-num "selected. Content:" row-content))
+                                :hide-callback (lambda (table)
+                                                 (<gui> :close table))))
+(<gui> :add-table-rows table 0 20)
+(<gui> :show table)
+
+!!#
+
+              
+
+
+
 

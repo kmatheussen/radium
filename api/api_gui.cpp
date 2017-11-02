@@ -3707,7 +3707,7 @@ int64_t gui_table(dyn_t header_names){
   for(int i=0;i<header_names.array->num_elements;i++){
     dyn_t el = header_names.array->elements[i];
     if(el.type != STRING_TYPE){
-      handleError("gui_table: Element %d in header_names is not a string", i);
+      handleError("gui_table: Element %d in header_names is not a string: %s", i, DYN_type_name(el.type));
       return -1;
     }
     
@@ -3934,6 +3934,24 @@ int gui_getNumTableRows(int64_t table_guinum){
   return table->rowCount();
 }
 
+int gui_currTableRow(int64_t table_guinum){
+  Gui *table_gui = get_gui(table_guinum);
+  if (table_gui==NULL)
+    return 0;
+
+  QTableWidget *table = table_gui->mycast<QTableWidget>(__FUNCTION__);
+  if (table==NULL)
+    return 0;
+
+  if (table->rowCount()==0){
+    handleError("gui_currTableRow: There are no rows in this table");
+    return 0;
+  }
+
+  return table->currentRow();
+}
+
+
 void gui_enableTableSorting(int64_t table_guinum, bool do_sort){
   Gui *table_gui = get_gui(table_guinum);
   if (table_gui==NULL)
@@ -4015,7 +4033,6 @@ void gui_stretchTable(int64_t table_guinum, int x, bool do_stretch, int size){
   
   table->horizontalHeader()->resizeSection(x, size);
 }
-
 
 
 ////////////////////////////
