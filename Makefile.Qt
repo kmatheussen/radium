@@ -1617,10 +1617,13 @@ api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp $(API)radium_proc.h Qt/Scro
 	$(CCC)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS)
 
 
-radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c $(API)radium_proc.h
-	$(CC)  $(API)radium_wrap.c $(OPT) -Wno-unused-function
-#-Wno-unused-but-set-variable
+NOUNUSEDBUTSETVARIABLEWARNING=
+ifeq (,$(findstring clang,$(CC)))
+	NOUNUSEDBUTSETVARIABLEWARNING += -Wno-unused-but-set-variable
+endif
 
+radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c $(API)radium_proc.h
+	$(CC) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING)
 
 $(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
 	cd $(API) ; bash makeradiumwrap_c.sh $(PYTHONEXE) ; cd ..

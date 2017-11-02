@@ -191,6 +191,8 @@ extern LANGSPEC bool SEQTRACK_set_seqblock_start_and_stop(struct SeqTrack *seqtr
 extern LANGSPEC void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 extern LANGSPEC void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 
+extern LANGSPEC void SEQUENCER_timing_has_changed(void);
+
 //extern LANGSPEC void SEQTRACK_move_gfx_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_abs_time);
 
 extern LANGSPEC void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t length);

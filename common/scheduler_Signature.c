@@ -13,10 +13,17 @@ Ratio RT_Signature_get_current_Signature(const struct SeqTrack *seqtrack){
   if (is_playing())
     return seqtrack->signature_iterator.signature_value;
   else {
-    if (root==NULL) // When does this happen?
+    if (root==NULL){ // When does this happen?
+#if !defined(RELEASE)
+      abort();
+#endif
       return make_ratio(4,4);
-    else
-      return root->signature;
+    }else {
+      Ratio signature = root->signature;
+      if (signature.denominator<=0 || signature.denominator<=0)
+        signature = make_ratio(4,4); // Happens during startup, and maybe when loading song.
+      return signature;
+    }
   }
 }
 

@@ -217,10 +217,10 @@ void *talloc_atomic__(int size, const char *filename, int linenumber){
         
 #if !defined(RELEASE)
         
-        // Fill with random data. Very often GC_malloc_atomic returns zeros, but not always, and this can hide bugs.
+        // Fill with random data. Very often GC_malloc_atomic returns zeros, but not always.
         
         if (ret != NULL){
-          char *chars = ret;
+          unsigned char *chars = ret;
           for(int i=0;i<size;i++){
             chars[i] = rand() % 256;            
           }

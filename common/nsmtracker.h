@@ -2328,12 +2328,22 @@ struct SeqBlock{
   // Written to by the main thread, read by the main thread and the player thread(s).
   int64_t time;
   int64_t gfx_time;  // Usually contains the same value as 'time', but when moving seqblocks with the mouse, it contains the currently visible time instead. When releasing the mouse button, 'time' will get the same value as 'gfx_time'.
-
   
   // End seqtime.
   // When seqblock is NOT stretched, end_time = time + getBlockSTimeLength(seqblock->block).
   int64_t time2;
   int64_t gfx_time2; // (see gfx_time)
+
+  
+  int64_t block_duration; // Usually has value Place2Stime(end_place)-Place2Stime(start_place). Also used to set the stretch value.
+  int64_t gfx_block_duration;
+
+
+  Place start_place; // usually {0,0,1} (not used yet)
+  Place gfx_start_place; // (not used yet)
+
+  Place end_place;   // usually {num_lines,0,1} (not used yet)
+  Place gfx_end_place; // (not used yet)
 
   
   // stretch = (end_time-time) / getBlockSTimeLength(seqblock->block)
@@ -2343,7 +2353,6 @@ struct SeqBlock{
   double stretch;
   double gfx_stretch; // (see gfx_time)
 
-  
   struct Blocks *block;
 
   
