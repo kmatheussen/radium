@@ -2554,6 +2554,11 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 
   if (audiodata_is_included){
 
+    if (dc.has_deleted_files_in_embedded_dir==false){
+      DISK_delete_all_files_in_dir(dc.embedded_files_dirname);
+      dc.has_deleted_files_in_embedded_dir=true;
+    }
+    
     if (DISK_create_dir(dc.embedded_files_dirname)==false){
       if (dc.has_shown_embedded_files_dirname_warning==false){
         GFX_Message(NULL, "Unable to create directory \"%s\"", STRING_get_chars(dc.embedded_files_dirname));

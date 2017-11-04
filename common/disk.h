@@ -44,6 +44,7 @@ typedef struct{
 	const wchar_t *filename;
 	const wchar_t *embedded_files_dirname;
         bool has_shown_embedded_files_dirname_warning;
+        bool has_deleted_files_in_embedded_dir;
 	bool success;
 	int type;
 	char *ls;
