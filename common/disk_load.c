@@ -158,6 +158,8 @@ static bool Load(const wchar_t *filename){
           return false;
 	}
 
+        g_curr_song_contains_embedded_samples = false; // Might be set to true during loading.
+        
 	LoadOsStuff();
         
 	printf("dc.ls: -%s-\n",dc.ls);

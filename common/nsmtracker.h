@@ -2514,6 +2514,7 @@ extern DEFINE_ATOMIC(bool, is_starting_up);
 extern bool g_is_starting_up;
 
 extern bool g_embed_samples;
+extern bool g_curr_song_contains_embedded_samples;
 
 static inline struct SeqTrack *SEQUENCER_get_curr_seqtrack(void){
   int curr_seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);

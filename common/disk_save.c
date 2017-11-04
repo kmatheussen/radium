@@ -130,6 +130,7 @@ void SaveWithEmbeddedSamples(struct Root *theroot){
   g_embed_samples=true;
   SaveAs(theroot);
   g_embed_samples=false;
+  g_curr_song_contains_embedded_samples = true;
 }
 
 void Save(struct Root *theroot){
@@ -140,7 +141,12 @@ void Save(struct Root *theroot){
 	if(dc.filename==NULL){
           SaveAs(theroot);
 	}else{
+          bool embed = g_curr_song_contains_embedded_samples;
+          if (embed)
+            g_embed_samples=true;
           Save_Clean(dc.filename,theroot,false);
+          if (embed)
+            g_embed_samples=false;
 	}
 }
 
