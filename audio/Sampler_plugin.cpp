@@ -2594,6 +2594,8 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
     const char *audiofile = DISK_file_to_base64(maybe_relative_filename);
     if (audiofile != NULL)
       HASH_put_chars(state, "audiofile", audiofile);
+    else
+      GFX_addMessage("Unable to embed sample \"%s\". Could not read file.", STRING_get_chars(maybe_relative_filename));
   }
 }
 
