@@ -37,8 +37,10 @@ static QHash<QString, QDir> resolved_paths;
 static void ask_to_add_resolved_path(QDir key, QDir value, bool program_state_is_valid){
   ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
 
-  msgBox->setText("A different path was selected");
-  msgBox->setInformativeText("Do you want Radium to automatically check "+value.path()+" for all future files not found in "+key.path()+"?");
+  msgBox->setText("A different path was selected"
+                  "<p>"
+                  "Should Radium automatically check <span style=\"white-space: nowrap\">\""+value.path()+"\"</span> for all future files not found in <nobrk>\""+key.path()+"\"</nobrk>?"
+                  );
   msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
   msgBox->setDefaultButton(QMessageBox::Yes);
 
@@ -173,7 +175,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool prog
       {
         ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
         
-        msgBox->setText(QString("Could not find "+info.fileName()+" in "+dir.path()+".\nPlease select new file."));
+        msgBox->setText(QString("<br>Could not find <nobrk>\""+info.fileName()+"\"</nobrk> in <nobrk>\""+dir.path()+"\"</nobrk>.<p>Please select new file."));
         //msgBox->setInformativeText("Could not find "+info.fileName()+" in"+dir.path()+". Please select new file."
         msgBox->setStandardButtons(QMessageBox::Ok);
         
