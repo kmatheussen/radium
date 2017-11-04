@@ -551,7 +551,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   HASH_put_int(state, "preset_num", data->preset_num);
 
   if (g_embed_samples){
-    const char *audiofile = DISK_file_to_base64(maybe_relative_filename);
+    const char *audiofile = DISK_file_to_base64(data->filename);
     if (audiofile != NULL)
       HASH_put_chars(state, "audiofile", audiofile);
     else
