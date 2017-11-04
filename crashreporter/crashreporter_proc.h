@@ -37,7 +37,8 @@ extern "C"{
 #endif
 
   void EVENTLOG_add_event(const char *log_entry);
-  
+  const char *EVENTLOG_get(void);
+    
   void CRASHREPORTER_init(void);
   int CRASHREPORTER_set_plugin_name(const char *plugin_name);
   void CRASHREPORTER_unset_plugin_name(int pos);

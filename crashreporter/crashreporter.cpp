@@ -142,6 +142,24 @@ QString get_event_string(int pos, double time_now){
   return QString(QString::number((time_now - g_time_log[pos])/1000.0, 'f', 6) + ": " + g_event_log[pos]) + "\n";
 }
 
+QString get_event_log(int event_pos, double time_now){
+  QString ret;
+  
+  for(int i=event_pos-1; i>=0 ; i--)
+    ret += get_event_string(i, time_now);
+
+  for(int i=NUM_EVENTS-1; i>=event_pos ; i--)
+    ret += get_event_string(i, time_now);
+
+  return ret;
+}
+
+const char *EVENTLOG_get(void){
+  int event_pos = ATOMIC_GET(g_event_pos)  % NUM_EVENTS;
+  return talloc_strdup(get_event_log(event_pos, TIME_get_ms()).toUtf8().constData());
+}
+
+
 #endif
 
 
@@ -644,11 +662,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
   tosend += "start event_pos: " + QString::number(event_pos) + "\n";
 
-  for(int i=event_pos-1; i>=0 ; i--)
-    tosend += get_event_string(i, time);
-
-  for(int i=NUM_EVENTS-1; i>=event_pos ; i--)
-    tosend += get_event_string(i, time);
+  tosend += get_event_log(event_pos, time);
 
   tosend += "end event_pos: " + QString::number(ATOMIC_GET(g_event_pos) % NUM_EVENTS) + "\n";
   
