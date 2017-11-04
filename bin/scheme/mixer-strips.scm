@@ -451,17 +451,22 @@
                   ((:recreate-config-gui-content) (recreate-config-gui-content))
                   ((:num-rows) num-rows)
                   ((:get) (hash-table* :num-rows num-rows
-                                       :instrument-settings (map (lambda (entry)
-                                                                   (define instrument-id (car entry))
-                                                                   (define conf (cdr entry))
-                                                                   (hash-table* :instrument-id instrument-id
-                                                                                :is-enabled (conf :is-enabled)))
-                                                                 confs)))
+                                       :instrument-settings (keep identity
+                                                                  (map (lambda (entry)
+                                                                         (define instrument-id (car entry))
+                                                                         (if (<ra> :instrument-is-open-and-audio instrument-id) ;; When saving song, conf can include deleted instruments.
+                                                                             (let ((conf (cdr entry)))
+                                                                               (hash-table* :instrument-id instrument-id
+                                                                                            :is-enabled (conf :is-enabled)))
+                                                                             #f))
+                                                                       confs))))
                   ((:set!) (let ((settings (car rest)))
                              (reset!)
                              (set! num-rows (settings :num-rows))
                              (for-each (lambda (conf)
-                                         (set-conf-var! (conf :instrument-id) :is-enabled (conf :is-enabled)))
+                                         (define instrument-id (conf :instrument-id))
+                                         (if (<ra> :instrument-is-open-and-audio instrument-id) ;; When loading older songs, settings can include id of deleted instruments
+                                             (set-conf-var! instrument-id :is-enabled (conf :is-enabled))))
                                        (to-list (settings :instrument-settings)))
                              (remake :non-are-valid)))
                   (else
