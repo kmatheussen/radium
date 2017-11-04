@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #include <boost/lockfree/queue.hpp>
 
+#include <QDir>
+#include <QFileInfo>
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
@@ -37,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/threading.h"
+#include "../common/disk.h"
 
 #include "../midi/midi_i_input_proc.h"
 
@@ -2689,4 +2692,42 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
 
   infoBox->setWindowModality(Qt::NonModal);
   safeShow(infoBox);
+}
+
+const wchar_t *PLUGIN_DISK_get_audio_filename(hash_t *state){
+  bool audiodata_is_included = HASH_has_key(state, "audiofile");
+
+  const wchar_t *filename = NULL;
+  const wchar_t *org_filename = HASH_get_string(state, "filename");
+
+  if (audiodata_is_included){
+
+    if (dc.has_deleted_files_in_embedded_dir==false){
+      DISK_delete_all_files_in_dir(dc.embedded_files_dirname);
+      dc.has_deleted_files_in_embedded_dir=true;
+    }
+    
+    if (DISK_create_dir(dc.embedded_files_dirname)==false){
+      if (dc.has_shown_embedded_files_dirname_warning==false){
+        GFX_Message(NULL, "Unable to create directory \"%s\"", STRING_get_chars(dc.embedded_files_dirname));
+        dc.has_shown_embedded_files_dirname_warning = true;
+      }
+    }else{      
+      filename = STRING_create(STRING_get_qstring(dc.embedded_files_dirname) + QDir::separator() + QFileInfo(STRING_get_qstring(org_filename)).fileName());
+      filename = DISK_create_non_existant_filename(filename);
+    }
+
+    filename = DISK_base64_to_file(filename, HASH_get_chars(state, "audiofile"));
+    if (filename==NULL)
+      filename = DISK_base64_to_file(NULL, HASH_get_chars(state, "audiofile"));
+
+  } else {
+
+    filename = org_filename;
+
+  }
+  
+  R_ASSERT(filename!=NULL);
+  
+  return filename;
 }

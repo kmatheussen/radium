@@ -525,18 +525,12 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int
 }
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
-  const wchar_t *filename;
   int         bank_num    = HASH_get_int32(state, "bank_num");
   int         preset_num  = HASH_get_int32(state, "preset_num");
 
-  bool audiodata_is_included = HASH_has_key(state, "audiofile");
-  
-  if (audiodata_is_included)
-    filename = DISK_base64_to_file(NULL, HASH_get_chars(state, "audiofile"));
-  else
-    filename = HASH_get_string(state, "filename");
-  
-  if(filename==NULL)
+  const wchar_t *filename = PLUGIN_DISK_get_audio_filename(state);
+
+  if(filename==NULL) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
     return;
 
   if(FLUIDSYNTH_set_new_preset(plugin, filename, bank_num, preset_num)==false)
