@@ -495,7 +495,7 @@ static radium::Mutex g_mutex;
 // Only used for audio files, so we don't bother with decompression.
 const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars){
   QFile *file;
-  
+
   QTemporaryFile *temporary_write_file = NULL;
     
   QFile outfile;
@@ -531,7 +531,8 @@ const wchar_t *DISK_base64_to_file(const wchar_t *wfilename, const char *chars){
   if (wfilename==NULL){
     radium::ScopedMutex lock(g_mutex);
     g_temporary_files[temporary_write_file->fileName()] = temporary_write_file;
-  }
+  }else
+    R_ASSERT(temporary_write_file==NULL);
   
   return STRING_create(file->fileName());
 }

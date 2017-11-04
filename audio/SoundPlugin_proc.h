@@ -154,6 +154,8 @@ extern LANGSPEC void PLUGIN_random(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, int64_t parentgui);
 
+extern LANGSPEC const wchar_t *PLUGIN_DISK_get_audio_filename(hash_t *state);
+
 // Defined in Qt/Qt_Main.cpp
 extern LANGSPEC void RT_schedule_mixer_strips_remake(int64_t id); // id==-1: remake all, id==-2: remake none (only strip order may have changed).
 extern LANGSPEC void RT_schedule_mixer_strips_redraw(void);

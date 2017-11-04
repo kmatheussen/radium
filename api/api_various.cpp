@@ -71,6 +71,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Faust_plugins_proc.h"
 #include "../mixergui/QM_MixerWidget.h"
 #include "../embedded_scheme/s7extra_proc.h"
+#include "../crashreporter/crashreporter_proc.h"
 
 #include "../common/PriorityQueue.hpp"
 
@@ -2591,6 +2592,9 @@ const_char *getOsName(void){
 #endif
 }
 
+const_char* getProgramLog(void){
+  return EVENTLOG_get();
+}
 
 
 // Scheduler
