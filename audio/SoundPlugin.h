@@ -45,24 +45,17 @@ extern "C"{
 #define MIN_DB_THRESHOLD -35 // "gain_value" = 0.01778279410038923. Between MIN_DB and MIN_DB_THRESHOLD, we do linear gain<->db conversion. "scaled effect value" = 0.06666666666666667.
 #define MAX_DB 35            // "gain value" = 56.23413251903491. "scaled effect value" = 1.0.
   
-
-static inline float gain2db(float gain){
-  if(gain<=0.0f)
-    return MIN_DB;
-
-#if __cplusplus && !defined(__clang__) && !defined(FOR_WINDOWS)
-  constexpr
-#else
-  const
-#endif
-    float threshold_gain  = powf(10,
-                                 MIN_DB_THRESHOLD / 20.0f);
+#define THRESHOLD_GAIN 0.01778279410038923 // = powf(10, MIN_DB_THRESHOLD / 20.0f);
   
-  if (gain <= threshold_gain) {
+static inline float gain2db(float gain){
+  if (gain <= THRESHOLD_GAIN) {
+
+    if(gain<=0.0f)
+      return MIN_DB;
 
     // We need to do linear conversion below MIN_DB_THRESHOLD here in order to convert back and forth between gain2db and db2gain correctly. (that's probably the only reason)
     
-    return scale(gain, 0, threshold_gain, MIN_DB, MIN_DB_THRESHOLD);
+    return scale(gain, 0, THRESHOLD_GAIN, MIN_DB, MIN_DB_THRESHOLD);
     
   } else {
     
@@ -74,20 +67,12 @@ static inline float gain2db(float gain){
 static inline float db2gain(float db){
   if (db <= MIN_DB_THRESHOLD){
 
-    // do linear scale down to zero when db is less than -35 (if not, we won't get 0 gain)
-    
     if (db <= MIN_DB)
       return 0.0f;
     
-#if __cplusplus && !defined(__clang__) && !defined(FOR_WINDOWS)
-  constexpr
-#else
-  const
-#endif
-    float threshold_gain  = powf(10,
-                                 MIN_DB_THRESHOLD / 20.0f);
-  
-    return scale(db, MIN_DB, MIN_DB_THRESHOLD, 0, threshold_gain);
+    // do linear scale down to zero when db is less than -35 (if not, we won't get 0 gain)
+    
+    return scale(db, MIN_DB, MIN_DB_THRESHOLD, 0, THRESHOLD_GAIN);
     
   }else{
     

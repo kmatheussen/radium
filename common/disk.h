@@ -211,6 +211,8 @@ start:															\
 						goto var19;								\
 					case 20:										\
 						goto var20;								\
+					case 21:										\
+						goto var21;								\
 					default:										\
 						goto error;								\
 				}													\

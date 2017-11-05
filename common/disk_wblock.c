@@ -206,6 +206,7 @@ obj3:
         
 var19:
 var20:
+ var21:
 obj4:
 obj5:
 obj6:
