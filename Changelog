@@ -1,3 +1,14 @@
+Changes 5.2.4 -> 5.2.5:
+* Help: Minor fixes to mixer documentation..
+* Audio: Possibly optimize conversion between db and gain on
+  OSX and Windows.
+* Import mod: Don't show swing track, and hide bus and click
+  mixer strips
+* Disk: Save show/hide global swing track status to disk.
+* Import mod: Fix import mod (broken a couple of releases ago).
+
+
+
 Changes 5.2.3 -> 5.2.4:
 * Disk: Use full path when saving embedded sample.
 * Disk: Show error message when unable to embed audio file.
