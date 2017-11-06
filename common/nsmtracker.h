@@ -1211,9 +1211,9 @@ static inline void Patch_copyAttributesFromAnotherPatch(struct Patch *dest, stru
 *********************************************************************/
 
 typedef enum {
-  FX_start = 0,   // Exclusively used for automation
-  FX_middle = 1,  // Exclusively used for automation
-  FX_end = 2,     // Exclusively used for automation
+  FX_start = 0,   // Used by automation and envelope controller
+  FX_middle = 1,  // Used by automation and envelope controller
+  FX_end = 2,     // Used by automation and envelope controller
   FX_single = 3,
   //FX_no_fx = 4; // No effect must be sent out. Used by seqtrack automation.
 } FX_when;
