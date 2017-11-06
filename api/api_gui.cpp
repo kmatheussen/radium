@@ -4420,7 +4420,7 @@ bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
       // sanity checks
       
       QWidget *child_window =  gui->_widget->window();
-      QWidget *parent_window = parent->window();
+      QWidget *parent_window = parent==NULL ? NULL : parent->window();
       
       if (child_window!=NULL && parent_window!=NULL){
         if (child_window==parent_window){
@@ -4456,6 +4456,18 @@ bool gui_setAsWindow(int64_t guinum, int64_t parentgui){
 
 bool gui_setParent(int64_t guinum, int64_t parentgui){
   return gui_setParent2(guinum, parentgui, true);
+}
+
+bool gui_removeParent(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return false;
+
+  if (gui->_widget->parent()==NULL)
+    return false;
+
+  gui->_widget->setParent(NULL);
+  return true;
 }
 
 void gui_setModal(int64_t guinum, bool set_modal){

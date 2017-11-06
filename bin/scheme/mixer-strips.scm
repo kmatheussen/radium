@@ -2517,13 +2517,17 @@
            (set! (strips-config :row-num instrument-id) row-num)
            ;;(c-display "adding strips for" instrument-id)
            (define stored-mixer-strip (get-stored-mixer-strip stored-mixer-strips instrument-id))
-           (define mixer-strip (if (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
+           (define stored-valid? (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids))
+           (define mixer-strip (if stored-valid?
                                    (get-mixer-strip-from-stored-mixer-strip stored-mixer-strip)
                                    (create-mixer-strip instrument-id :strips-config strips-config)))
            '(c-display "   Creating" instrument-id ". Stored is valid?" (stored-mixer-strip-is-valid? stored-mixer-strip list-of-modified-instrument-ids)
                        "stored-mixer-strip:" stored-mixer-strip
                        "list-of-modified:" list-of-modified-instrument-ids)
            
+           (if stored-valid?
+               (<gui> :remove-parent mixer-strip)) ;; remove existing parent of stored mixer strip.
+
            (<gui> :add horizontal-layout mixer-strip)
            
            (set! column-num (1+ column-num))
