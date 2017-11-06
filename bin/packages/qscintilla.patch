@@ -1,14 +1,6 @@
---- qsciscintillabase.cpp~	2016-04-18 11:08:48.000000000 +0200
-+++ qsciscintillabase.cpp	2016-06-22 11:57:22.353636841 +0200
-@@ -89,6 +89,7 @@
-         , clickCausedFocus(false)
- #endif
- {
-+
-     connect(verticalScrollBar(), SIGNAL(valueChanged(int)),
-             SLOT(handleVSb(int)));
- 
-@@ -134,6 +135,10 @@
+--- ./qsciscintillabase.cpp~	2017-11-05 22:46:46.243994489 +0100
++++ qsciscintillabase.cpp	2017-11-05 22:47:26.731915448 +0100
+@@ -131,6 +131,10 @@
  
      // Add it to the pool.
      poolList.append(this);
