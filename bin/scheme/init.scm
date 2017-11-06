@@ -441,6 +441,9 @@
     FROM_C-keybindings-have-been-reloaded
     add-protracker-trackline         ;; import_mod.scm isn't loaded until we need it.
     start-adding-protracker-events!  ;;
+    set-protracker-instrumentlist!   ;;
+    set-protracker-playlist!         ;;
+    set-protracker-pattern-format    ;;
     ra:schedule
     ra:add-message
     show/hide-instrument-gui
@@ -479,6 +482,9 @@
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
   '(add-protracker-trackline         ;; import_mod.scm isn't loaded until we need it.
     start-adding-protracker-events!  ;; -------- '' --------
+    set-protracker-instrumentlist!   ;; -------- '' --------
+    set-protracker-playlist!         ;; -------- '' --------
+    set-protracker-pattern-format    ;; -------- '' --------
     ))
 
 (define (FROM-C-assert-that-function-can-be-called-from-evalScheme funcname)

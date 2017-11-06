@@ -74,6 +74,7 @@ DC_start("TRACKER_WINDOW");
         DC_SSB("show_lpb_track",window->show_lpb_track);
         DC_SSB("show_bpm_track",window->show_bpm_track);
         DC_SSB("show_reltempo_track",window->show_reltempo_track);
+        DC_SSB("show_swing_track",window->show_swing_track);
 
 	SaveWBlock(window->wblocks, true);
 
@@ -88,7 +89,7 @@ struct Tracker_Windows *LoadWindow(void){
 	static char *objs[1]={
 		"WBLOCK"
 	};
-	static char *vars[21]={
+	static char *vars[22]={
 		"x",
 		"y",
 		"width",
@@ -109,7 +110,8 @@ struct Tracker_Windows *LoadWindow(void){
                 "show_signature_track",
                 "show_lpb_track",
                 "show_bpm_track",
-                "show_reltempo_track"
+                "show_reltempo_track",
+                "show_swing_track"
 	};
         struct Slider dummy;
 	struct Tracker_Windows *window=DC_alloc(sizeof(struct Tracker_Windows));
@@ -121,7 +123,7 @@ struct Tracker_Windows *LoadWindow(void){
         window->show_bpm_track=true;
         window->show_reltempo_track=true;
 
-	GENERAL_LOAD(1,21)
+	GENERAL_LOAD(1,22)
 
 var0:
 	//window->x=
@@ -204,6 +206,10 @@ var19:
 
 var20:
         window->show_reltempo_track=DC_LoadB();
+	goto start;
+
+var21:
+        window->show_swing_track=DC_LoadB();
 	goto start;
 
 obj0:

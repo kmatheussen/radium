@@ -1,3 +1,33 @@
+Changes 5.2.4 -> 5.2.5:
+* Help: Minor fixes to mixer documentation..
+* Audio: Possibly optimize conversion between db and gain on
+  OSX and Windows.
+* Import mod: Don't show swing track, and hide bus and click
+  mixer strips
+* Disk: Save show/hide global swing track status to disk.
+* Import mod: Fix import mod (broken a couple of releases ago).
+
+
+
+Changes 5.2.3 -> 5.2.4:
+* Disk: Use full path when saving embedded sample.
+* Disk: Show error message when unable to embed audio file.
+* Menus: Add "Show program log" option to Help.
+* Demo songs: Un-embed the samples of "Care" to avoid error
+  messages when radium is placed in a read-only directory.
+* Disk: Don't un-embed samples when selecting "Save" (autobackups
+  does not embed samples though).
+* Disk: Fix embedding samples for fluidsynth.
+* Disk: Don't delete content of embedded audio files folder when
+  loading song, unless necessary.
+* Disk: Improve text in message boxes used to find paths for missing
+  audio files.
+* Mixer strips: Fix error message popping up after loading some
+  songs when pressing "M".
+* Scheme: Update s7 to latest version.
+
+
+
 Changes 5.2.1 -> 5.2.3:
 * MIDI: Add "Delete all unused MIDI instruments" option to the
   MIDI menu.
