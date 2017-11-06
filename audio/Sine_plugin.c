@@ -40,7 +40,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 }
 
 static double hz_to_radians(double hz, double sample_rate){
-  return hz*((2*3.14159)/sample_rate);
+  return hz*((2*3.1415926535897932384626433832795)/sample_rate);
 }
 
 static double midi_to_hz(int midi){
