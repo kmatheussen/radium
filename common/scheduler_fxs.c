@@ -66,7 +66,7 @@ static int64_t RT_scheduled_fx(struct SeqTrack *seqtrack, int64_t time, union Su
     //printf("   scheduler_fxs.c. Sending out %d at %d (%d)\n",x,fxnodeline1->l.p.line, (int)time);
 
     RT_FX_treat_fx(seqtrack, fx, x, time, 0, when);
-
+    /*
     float *slider_automation_value = ATOMIC_GET(fx->slider_automation_value);
     if(slider_automation_value!=NULL)
       safe_float_write(slider_automation_value, scale_double(x,fx->min,fx->max,0.0f,1.0f));
@@ -74,6 +74,7 @@ static int64_t RT_scheduled_fx(struct SeqTrack *seqtrack, int64_t time, union Su
     enum ColorNums *slider_automation_color = ATOMIC_GET(fx->slider_automation_color);    
     if(slider_automation_color!=NULL)
       __atomic_store_n(slider_automation_color, fx->color, __ATOMIC_SEQ_CST);
+    */
   }
   
   if (time >= time2) { // If we check "when==FX_end" instead, we go into an infinte loop if time==time1==time2.
