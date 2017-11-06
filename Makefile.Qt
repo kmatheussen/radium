@@ -98,7 +98,6 @@ JACKOPT ?=
 LRDFOPT ?= `$(PKG) --cflags lrdf`
 SNDFILEOPT ?= `$(PKG) --cflags sndfile`
 SAMPLERATEOPT ?= `$(PKG) --cflags samplerate`
-GLIBOPT ?= `$(PKG) --cflags glib-2.0`
 # (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 
 PYPATH ?=
@@ -110,7 +109,7 @@ ifeq ($(RADIUM_QT_VERSION),4)
 	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs QtGui`
 	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags QtNetwork`
 	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs QtNetwork`
-	QT_CFLAGS ?= `$(PKGqt) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL --cflags QtWebKit` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) 
+	QT_CFLAGS ?= `$(PKGqt) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL --cflags QtWebKit` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.1/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) 
 	QT_LDFLAGS ?= `$(PKGqt) --libs QtGui --libs QtOpenGL --libs QtNetwork --libs QtWebKit`
 endif
 
@@ -125,11 +124,11 @@ ifeq ($(RADIUM_QT_VERSION),5)
 	QT_UI_LDFLAGS ?= `$(PKGqt) --libs Qt5UiTools` $(FPIC)
 
 #	If using QtWebEngine: (Not recommended, dragging doesn't work using it)
-#	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5
+#	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.1/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
 
 #	If using QtWebKit:
-	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.9.2/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
+	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.1/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
 	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets` $(FPIC)
 endif
 
@@ -374,7 +373,7 @@ OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfro
 OBJ_FAUST=zita_rev.o stk_flute.o stk_bowed.o stk_blow_bottle.o stk_bass.o stk_blow_hole.o stk_brass.o stk_clarinet.o stk_flute_stk.o stk_glass_harmonica.o stk_harpsi.o stk_modal_bar.o stk_NLF_eks.o stk_NLF_fm.o stk_piano.o stk_saxophony.o stk_sitar.o stk_tibetan_bowl.o stk_tuned_bar.o stk_uni_bar.o stk_voice_form.o faust_tapiir.o faust_system_eq.o faust_system_tremolo.o faust_system_lowpass.o faust_system_highpass.o faust_system_lowshelf.o faust_system_highshelf.o faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o find_jack_library.o Faust_plugins.o Bus_plugins.o Timeskew_plugin.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o SampleRecorder.o FluidSynth_plugin.o Pd_plugin.o SoundPluginRegistry.o SoundPlugin.o AudioMeterPeaks.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o Presets.o undo_audio_effect.o undo_connection_enabled.o undo_audio_connection_gain.o undo_pd_controllers.o undo_plugin_state.o SoundfileSaver.o system_compressor_wrapper.o KillJackd.o 
+OBJ_AUDIO=audio_instrument.o SoundProducer.o Jack_plugin.o find_jack_library.o Faust_plugins.o Bus_plugins.o Timeskew_plugin.o Patchbay_plugin.o MidiMessages_plugin.o VST_plugins.o Ladspa_plugins.o Sampler_plugin.o SampleRecorder.o FluidSynth_plugin.o Pd_plugin.o EnvelopeController_plugin.o SoundPluginRegistry.o SoundPlugin.o AudioMeterPeaks.o Mixer.o get_windows_commandlines.o Envelope.o Resampler.o SoundFonts.o Smooth.o Presets.o undo_audio_effect.o undo_connection_enabled.o undo_audio_connection_gain.o undo_pd_controllers.o undo_plugin_state.o SoundfileSaver.o system_compressor_wrapper.o KillJackd.o 
  
 #MultiCore.o
 
@@ -1773,7 +1772,7 @@ Ladspa_plugins.o: audio/Ladspa_plugins.cpp
 	$(CCC) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT) $(IS_LINUX_BINARY)
 
 Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h
-	$(CCC) $(QTOPT)  $(CPUOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) $(GLIBOPT)
+	$(CCC) $(QTOPT)  $(CPUOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT)
 
 SampleRecorder.o: audio/SampleRecorder.cpp
 	$(CCC) $(QTOPT) audio/SampleRecorder.cpp $(SNDFILEOPT)
@@ -1784,6 +1783,9 @@ FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 
 Pd_plugin.o: audio/Pd_plugin.cpp
 	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
+
+EnvelopeController_plugin.o: audio/EnvelopeController_plugin.cpp
+	$(CCC) $(QTOPT) audio/EnvelopeController_plugin.cpp
 
 
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
@@ -2116,7 +2118,7 @@ SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_e
 SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_proc.h
 	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
-SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h
+SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h Sine_plugin.o # we add Sine_plugin.o here to make sure it is up to date.
 	$(CCC) audio/SoundPlugin.cpp $(QTOPT)
 ### $(CPUOPT)
 

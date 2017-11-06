@@ -40,7 +40,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 }
 
 static double hz_to_radians(double hz, double sample_rate){
-  return hz*((2*3.14159)/sample_rate);
+  return hz*((2*3.1415926535897932384626433832795)/sample_rate);
 }
 
 static double midi_to_hz(int midi){
@@ -54,26 +54,26 @@ static double midi_to_radians(int midi, double sample_rate){
   return hz_to_radians(midi_to_hz(midi),sample_rate);
 }
 
-static void play_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume,float pan){
+static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   Data *data = (Data*)plugin->data;
-  data->phase_add = midi_to_radians(note_num,data->sample_rate);
-  data->volume = volume;
-  printf("####################################################### Setting volume to %f (play note)\n",volume);
+  data->phase_add = midi_to_radians(note2.pitch,data->sample_rate);
+  data->volume = note2.velocity;
+  printf("####################################################### Setting volume to %f (play note)\n",note2.velocity);
 }
 
-static void set_note_volume(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id, float volume){
+static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
-  data->volume = volume;
-  printf("####################################################### Setting volume to %f\n",volume);
+  data->volume = note.velocity;
+  printf("####################################################### Setting volume to %f\n",note.velocity);
 }
 
-static void stop_note(struct SoundPlugin *plugin, int64_t time, float note_num, int64_t note_id){
+static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
   data->volume = 0.0f;
   printf("####################################################### Setting sine volume to %f (stop note)\n",0.0f);
 }
 
-static void set_effect_value(struct SoundPlugin *plugin, int64_t time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
   printf("####################################################### Setting sine volume to %f\n",value);
   data->volume = value;
@@ -89,7 +89,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   snprintf(buffer,buffersize-1,"%f",data->volume);
 }
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size){
+static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   Data *data = (Data*)V_calloc(1,sizeof(Data));
   data->phase = 0.0f;
   data->phase_add = 0.062;

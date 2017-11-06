@@ -148,9 +148,9 @@ cd ..
 
 
 # QScintilla
-rm -fr QScintilla_gpl-2.9.2
-tar xvzf QScintilla_gpl-2.9.2.tar.gz
-cd QScintilla_gpl-2.9.2/Qt4Qt5/
+rm -fr QScintilla_gpl-2.10.1
+tar xvzf QScintilla_gpl-2.10.1.tar.gz
+cd QScintilla_gpl-2.10.1/Qt4Qt5/
 echo "CONFIG += staticlib" >> qscintilla.pro
 `../../../../find_moc_and_uic_paths.sh qmake`
 patch -p0 <../../qscintilla.patch

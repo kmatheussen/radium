@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/Pd_plugin_proc.h"
+#include "../audio/EnvelopeController_plugin_proc.h"
 
 #include "Qt_instruments_proc.h"
 
@@ -234,12 +235,19 @@ struct MyQSlider : public QSlider {
       bool has_midi_learn = PLUGIN_has_midi_learn(plugin, _effect_num);
       bool is_recording_automation = PLUGIN_is_recording_automation(plugin, _effect_num);
       bool doing_random_change = PLUGIN_get_random_behavior(plugin, _effect_num);
+      int64_t envelopecontroller_id = ENVELOPECONTROLLER_get_controller_id(_patch, _effect_num);
       
       int pd_delete=-10;
       int reset=-10;
+      
       int remove_midi_learn=-10;
       int midi_relearn=-10;
       int midi_learn=-10;
+      
+      int remove_envelope_controller=-10;
+      int replace_envelope_controller=-10;
+      int add_envelope_controller=-10;
+      
       int record=-10;
       int add_automation_to_current_editor_track=-10;
       int add_automation_to_current_sequencer_track=-10;
@@ -268,6 +276,13 @@ struct MyQSlider : public QSlider {
         midi_learn = VECTOR_push_back(&options, "MIDI Learn");
       }
 
+      if(envelopecontroller_id >= 0){
+        remove_envelope_controller=VECTOR_push_back(&options, "Remove Envelope Controller");
+        replace_envelope_controller=VECTOR_push_back(&options, "Replace Envelope Controller");        
+      } else {
+        add_envelope_controller=VECTOR_push_back(&options, "Add Envelope Controller");
+      }
+    
       if (!is_recording_automation)
         record = VECTOR_push_back(&options, "Record");
 
@@ -303,11 +318,21 @@ struct MyQSlider : public QSlider {
           PLUGIN_remove_midi_learn(plugin, _effect_num, true);
           PLUGIN_add_midi_learn(plugin, _effect_num);
         }
-
+      
       else if (command==midi_learn)
         PLUGIN_add_midi_learn(plugin, _effect_num);
 
-      else if (command==record)
+      else if (command==remove_envelope_controller){
+        ENVELOPECONTROLLER_remove_target(envelopecontroller_id, _patch, _effect_num);
+      
+      }else if (command==replace_envelope_controller){
+        ENVELOPECONTROLLER_remove_target(envelopecontroller_id, _patch, _effect_num);
+        ENVELOPECONTROLLER_maybe_create_and_add_target(_patch, _effect_num);
+      
+      }else if (command==add_envelope_controller){
+        ENVELOPECONTROLLER_maybe_create_and_add_target(_patch, _effect_num);
+      
+      }else if (command==record)
         PLUGIN_set_recording_automation(plugin, _effect_num, true);
 
       else if (command==remove_random)
@@ -325,7 +350,8 @@ struct MyQSlider : public QSlider {
         addAutomationToCurrentSequencerTrack(_patch->id, getInstrumentEffectName(_effect_num, _patch->id));
 
       }
-        
+      
+       
         
       GFX_update_instrument_widget(_patch);
         

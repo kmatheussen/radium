@@ -60,6 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "CpuUsage.hpp"
 #include "SampleRecorder_proc.h"
 #include "Juce_plugins_proc.h"
+#include "EnvelopeController_plugin_proc.h"
 
 #include "Mixer_proc.h"
 
@@ -997,9 +998,12 @@ struct Mixer{
             
             RT_MIDI_handle_play_buffer();
 
+            RT_ENVELOPECONTROLLER_process();
+
             float start_time;
 
             if (jackblock_delta_time==0) start_time = MIXER_get_curr_audio_block_cycle_fraction(); else start_time = 0; // else clause added to silence compiler warning.
+
             {
               MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
             }

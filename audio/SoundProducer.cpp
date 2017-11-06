@@ -1469,8 +1469,8 @@ public:
 
     {
       // Set up buffers used when fading in/out
-      float *s[num_channels];
-      float filter_sound[num_channels*num_frames];
+      float *s[R_MAX(1, num_channels)];
+      float filter_sound[R_MAX(1, num_channels*num_frames)];
       for(int ch=0;ch<num_channels;ch++)
         s[ch] = &filter_sound[ch*num_frames];
       
