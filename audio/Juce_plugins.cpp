@@ -249,7 +249,7 @@ namespace{
         
       //RT_PLUGIN_touch(_plugin); // If the plugin needs timing data, it should probably not be autopaused.
 
-      bool isplaying = is_playing();
+      bool isplaying = is_really_playing();
 
       const struct SeqTrack *seqtrack;
 
