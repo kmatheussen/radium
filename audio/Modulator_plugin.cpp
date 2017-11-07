@@ -33,11 +33,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_proc.h"
 
 
-#include "EnvelopeController_plugin_proc.h"
+#include "Modulator_plugin_proc.h"
 
 #define M_PI2 (2.0*M_PI)
 
-#define ENVELOPE_CONTROLLER_NAME "Envelope Controller"
+#define MODULATOR_NAME "Modulator"
 
 enum{
   EFF_ON_OFF,
@@ -65,11 +65,11 @@ static double hz_to_radians(double hz){
 
 namespace{
 
-struct EnvelopeControllerTarget{
+struct ModulatorTarget{
   const struct Patch *patch;
   int effect_num;
 
-  EnvelopeControllerTarget(const struct Patch *patch, int effect_num)
+  ModulatorTarget(const struct Patch *patch, int effect_num)
     : patch(patch)
     , effect_num(effect_num)
   {}
@@ -165,9 +165,11 @@ struct OscillatorGenerator : public Generator {
   void RT_process(const struct Patch *patch, int effect_num, const GeneratorParameters &parms) override {
     if(patch->instrument==get_audio_instrument()){
       SoundPlugin *plugin = static_cast<SoundPlugin*>(patch->patchdata);
-      if(plugin==NULL){        
-        R_ASSERT_NON_RELEASE(false);
-        return;        
+      if(plugin==NULL){
+#if !defined(RELEASE)
+        //       printf("Note: plugin==NULL for %s\n", patch->name);
+#endif
+        return;
       }
 
       PLUGIN_set_effect_value(plugin, 0, effect_num, _curr_value, DONT_STORE_VALUE, FX_middle, EFFECT_FORMAT_SCALED);
@@ -270,7 +272,7 @@ struct InvertedSawGenerator : public OscillatorGenerator {
 
 static int64_t g_id = 0;
 
-class EnvelopeController{
+class Modulator{
   
 public:
   
@@ -278,7 +280,7 @@ public:
 
 private:
   
-  radium::Vector<const EnvelopeControllerTarget*> _targets;
+  radium::Vector<const ModulatorTarget*> _targets;
 
   SinewaveGenerator _sinewave_generator;
   TriangleGenerator _triangle_generator;
@@ -295,11 +297,11 @@ public:
 
   struct SoundPlugin *_plugin;
 
-  EnvelopeController(struct SoundPlugin *plugin)
+  Modulator(struct SoundPlugin *plugin)
     : _plugin(plugin)
   {}
 
-  ~EnvelopeController(){
+  ~Modulator(){
     for(auto *target : _targets)
       delete target; // TODO: Must tell patch that envelope controller has been removed. For the GUI. Or perhaps the gui should just ask if a patch + effect num combo is connected... That sounds cleaner.
   }
@@ -339,7 +341,7 @@ public:
   void add_target(const struct Patch *patch, int effect_num){
     R_ASSERT_RETURN_IF_FALSE(has_target(patch,effect_num)==false);
     
-    auto *target = new EnvelopeControllerTarget(patch, effect_num);
+    auto *target = new ModulatorTarget(patch, effect_num);
 
     _targets.ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
 
@@ -351,7 +353,7 @@ public:
   }
 
   void remove_target(const struct Patch *patch, int effect_num){
-    const EnvelopeControllerTarget *target = NULL;
+    const ModulatorTarget *target = NULL;
     
     for(auto *maybetarget : _targets)
       if (maybetarget->patch==patch && maybetarget->effect_num==effect_num){
@@ -384,18 +386,18 @@ public:
 } // end anon. namespace
 
 
-static QHash<int64_t, EnvelopeController*> g_envelope_controllers;
-static radium::Vector<EnvelopeController*> g_envelope_controllers2;
+static QHash<int64_t, Modulator*> g_modulators;
+static radium::Vector<Modulator*> g_modulators2;
 
 // Called from the main audio thread
-void RT_ENVELOPECONTROLLER_process(void){
-  for(auto *controller : g_envelope_controllers2)
+void RT_MODULATOR_process(void){
+  for(auto *controller : g_modulators2)
     controller->RT_process();
 }
 
-int64_t ENVELOPECONTROLLER_get_controller_id(const struct Patch *patch, int effect_num){
-  for(int64_t id : g_envelope_controllers.keys()){
-    auto *controller = g_envelope_controllers[id];
+int64_t MODULATOR_get_controller_id(const struct Patch *patch, int effect_num){
+  for(int64_t id : g_modulators.keys()){
+    auto *controller = g_modulators[id];
     if(controller->has_target(patch, effect_num))
       return id;
   }
@@ -404,27 +406,27 @@ int64_t ENVELOPECONTROLLER_get_controller_id(const struct Patch *patch, int effe
 }
                                              
 
-void ENVELOPECONTROLLER_add_target(int64_t controller_id, const struct Patch *patch, int effect_num){
-  R_ASSERT_RETURN_IF_FALSE(true==g_envelope_controllers.contains(controller_id));
+void MODULATOR_add_target(int64_t controller_id, const struct Patch *patch, int effect_num){
+  R_ASSERT_RETURN_IF_FALSE(true==g_modulators.contains(controller_id));
 
-  R_ASSERT_RETURN_IF_FALSE(ENVELOPECONTROLLER_get_controller_id(patch, effect_num)==-1);
+  R_ASSERT_RETURN_IF_FALSE(MODULATOR_get_controller_id(patch, effect_num)==-1);
 
-  g_envelope_controllers[controller_id]->add_target(patch, effect_num);
+  g_modulators[controller_id]->add_target(patch, effect_num);
 }
 
 
-void ENVELOPECONTROLLER_maybe_create_and_add_target(const struct Patch *patch, int effect_num){
-  R_ASSERT_RETURN_IF_FALSE(ENVELOPECONTROLLER_get_controller_id(patch, effect_num)==-1);
+void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect_num){
+  R_ASSERT_RETURN_IF_FALSE(MODULATOR_get_controller_id(patch, effect_num)==-1);
   
   vector_t v = {0};
 
   int create_new = VECTOR_push_back(&v, "Create new envelope controller");
   VECTOR_push_back(&v, "--------------");
-  for(int64_t id : g_envelope_controllers.keys()){
-    //auto *controller = g_envelope_controllers[id];    
-    auto *controller = g_envelope_controllers[id];
+  for(int64_t id : g_modulators.keys()){
+    //auto *controller = g_modulators[id];    
+    auto *controller = g_modulators[id];
     volatile struct Patch *patch = controller->_plugin->patch;
-    VECTOR_push_back(&v, talloc_format("%d: %s (%s)", (int)id, ENVELOPECONTROLLER_get_description(id), patch==NULL ? "" : patch->name));
+    VECTOR_push_back(&v, talloc_format("%d: %s (%s)", (int)id, MODULATOR_get_description(id), patch==NULL ? "" : patch->name));
   }
 
   int64_t controller_id;
@@ -438,7 +440,7 @@ void ENVELOPECONTROLLER_maybe_create_and_add_target(const struct Patch *patch, i
 
     struct Patch *curr_patch = g_currpatch;
 
-    int64_t instrument_id = createAudioInstrument(ENVELOPE_CONTROLLER_NAME, ENVELOPE_CONTROLLER_NAME, "", 0, 0);
+    int64_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0);
     if (instrument_id==-1)
       return;
 
@@ -454,53 +456,53 @@ void ENVELOPECONTROLLER_maybe_create_and_add_target(const struct Patch *patch, i
       return;        
       }
 
-    EnvelopeController *controller = static_cast<EnvelopeController*>(plugin->data);
+    Modulator *controller = static_cast<Modulator*>(plugin->data);
     
     controller_id = controller->_id;
 
   } else {
 
-    controller_id = g_envelope_controllers.keys()[command - 2];
+    controller_id = g_modulators.keys()[command - 2];
 
   }
 
-  ENVELOPECONTROLLER_add_target(controller_id, patch, effect_num);
+  MODULATOR_add_target(controller_id, patch, effect_num);
 }
 
-void ENVELOPECONTROLLER_remove_target(int controller_id, const struct Patch *patch, int effect_num){
-  R_ASSERT_RETURN_IF_FALSE(g_envelope_controllers.contains(controller_id));  
-  g_envelope_controllers[controller_id]->remove_target(patch, effect_num);
+void MODULATOR_remove_target(int controller_id, const struct Patch *patch, int effect_num){
+  R_ASSERT_RETURN_IF_FALSE(g_modulators.contains(controller_id));  
+  g_modulators[controller_id]->remove_target(patch, effect_num);
 }
 
-int64_t *ENVELOPECONTROLLER_get_controller_ids(int *num_controllers){
+int64_t *MODULATOR_get_controller_ids(int *num_controllers){
 
-  const auto &keys = g_envelope_controllers.keys();
+  const auto &keys = g_modulators.keys();
   *num_controllers = keys.size();
 
   int64_t *ids = (int64_t*)talloc(sizeof(int64_t)*keys.size());
 
   int i=0;
-  for(int64_t id : g_envelope_controllers.keys())
+  for(int64_t id : g_modulators.keys())
     ids[i++] = id;
 
   return ids;
 }
 
-const char *ENVELOPECONTROLLER_get_description(int64_t controller_id){
-  R_ASSERT_RETURN_IF_FALSE2(g_envelope_controllers.contains(controller_id), "");
-  auto *controller = g_envelope_controllers[controller_id];
+const char *MODULATOR_get_description(int64_t controller_id){
+  R_ASSERT_RETURN_IF_FALSE2(g_modulators.contains(controller_id), "");
+  auto *controller = g_modulators[controller_id];
   return controller->_generator->_name;
 }
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  //EnvelopeController *controller = static_cast<EnvelopeController*>(plugin->data);
+  //Modulator *controller = static_cast<Modulator*>(plugin->data);
 
   // no need to do anything. no inputs and no outputs.
 }
 
 
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
-  EnvelopeController *controller = static_cast<EnvelopeController*>(plugin->data);
+  Modulator *controller = static_cast<Modulator*>(plugin->data);
 
   if(value_format==EFFECT_FORMAT_SCALED){
     
@@ -560,7 +562,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
 }
 
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
-  const EnvelopeController *controller = static_cast<EnvelopeController*>(plugin->data);
+  const Modulator *controller = static_cast<Modulator*>(plugin->data);
 
   float value;
 
@@ -623,7 +625,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
-  const EnvelopeController *controller = static_cast<EnvelopeController*>(plugin->data);
+  const Modulator *controller = static_cast<Modulator*>(plugin->data);
 
   switch(effect_num){
 
@@ -743,26 +745,29 @@ static const char *get_effect_description(struct SoundPlugin *plugin, int effect
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
-  EnvelopeController *controller = new EnvelopeController(plugin);
-  g_envelope_controllers[controller->_id] = controller;
+  Modulator *controller = new Modulator(plugin);
+  g_modulators[controller->_id] = controller;
 
-  g_envelope_controllers2.ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
+  g_modulators2.ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
   PLAYER_lock();{
-    g_envelope_controllers2.push_back(controller);
+    g_modulators2.push_back(controller);
   }PLAYER_unlock();
-  g_envelope_controllers2.post_add();
+  g_modulators2.post_add();
 
   return controller;
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
-  EnvelopeController *controller = static_cast<EnvelopeController*>(plugin->data);
+  Modulator *controller = static_cast<Modulator*>(plugin->data);
 
+  printf("\n\n  Size before: %d\n", g_modulators2.size());
   PLAYER_lock();{
-    g_envelope_controllers2.remove(controller);
+    g_modulators2.remove(controller);
   }PLAYER_unlock();
+  printf("  Size after: %d\n\n\n", g_modulators2.size());
+
   
-  g_envelope_controllers.remove(controller->_id);
+  g_modulators.remove(controller->_id);
 
   delete controller;
 }
@@ -773,11 +778,11 @@ static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
 }
 
 
-void create_envelope_controller_plugin(void){
+void create_modulator_plugin(void){
   SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
 
-  plugin_type->type_name                = ENVELOPE_CONTROLLER_NAME;
-  plugin_type->name                     = ENVELOPE_CONTROLLER_NAME;
+  plugin_type->type_name                = MODULATOR_NAME;
+  plugin_type->name                     = MODULATOR_NAME;
   plugin_type->num_inputs               = 0;
   plugin_type->num_outputs              = 0;
   plugin_type->is_instrument            = false;

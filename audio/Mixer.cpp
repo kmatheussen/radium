@@ -60,7 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "CpuUsage.hpp"
 #include "SampleRecorder_proc.h"
 #include "Juce_plugins_proc.h"
-#include "EnvelopeController_plugin_proc.h"
+#include "Modulator_plugin_proc.h"
 
 #include "Mixer_proc.h"
 
@@ -998,7 +998,7 @@ struct Mixer{
             
             RT_MIDI_handle_play_buffer();
 
-            RT_ENVELOPECONTROLLER_process();
+            RT_MODULATOR_process();
 
             float start_time;
 

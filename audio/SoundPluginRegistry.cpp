@@ -630,7 +630,7 @@ extern void create_ladspa_plugins(void);
 extern void create_sample_plugin(void);
 extern "C" void create_fluidsynth_plugin(void);
 extern void create_pd_plugin(void);
-extern void create_envelope_controller_plugin(void);
+extern void create_modulator_plugin(void);
 
 extern "C" void create_midimessages_plugin(void);
   
@@ -760,13 +760,13 @@ void PR_init_plugin_types(void){
   create_timeskew_plugin();
   create_patchbay_plugin();
   create_midimessages_plugin();
+  create_modulator_plugin();
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   //create_sine_plugin();
   create_sample_plugin();
   create_fluidsynth_plugin();
   create_pd_plugin();
-  create_envelope_controller_plugin();
   create_zita_rev_plugin();
   create_faust_tapiir_plugin();
   create_faust_multibandcomp_plugin();
