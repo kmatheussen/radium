@@ -1959,8 +1959,11 @@
 
   (add-safe-paint-callback volslider (lambda x (paint-slider)))
 
-
-  (define volmeter (<gui> :vertical-audio-meter meter-instrument-id))
+  (define has-inputs-or-outputs (or (> (<ra> :get-num-input-channels instrument-id) 0)
+                                    (> (<ra> :get-num-output-channels instrument-id) 0)))
+  (define volmeter (if has-inputs-or-outputs
+                       (<gui> :vertical-audio-meter meter-instrument-id)
+                       (<gui> :widget)))
   
   (add-gui-effect-monitor volslider instrument-id effect-name #t #t
                           (lambda (radium-normalized-volume radium-normalized-automation-volume)
@@ -2045,19 +2048,19 @@
                                                 #f))))
     )
 
-  (when show-peaktext
+  (when (and show-peaktext has-inputs-or-outputs)
 
     (<gui> :add-audio-meter-peak-callback volmeter (lambda (text)
                                                      (set! peaktexttext text)
                                                      (<gui> :update peaktext)))
-
+    
     (add-safe-mouse-callback volmeter (lambda (button state x y)
-                                          (cond ((and (= button *right-button*)
-                                                      (= state *is-pressing*))
-                                                 (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
-                                                 #t)
-                                                (else
-                                                 #f))))
+                                        (cond ((and (= button *right-button*)
+                                                    (= state *is-pressing*))
+                                               (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))
+                                               #t)
+                                              (else
+                                               #f))))
 
     (add-safe-mouse-callback peaktext (lambda (button state x y)
                                           (cond ((and (= button *right-button*)
@@ -2073,6 +2076,15 @@
                                                 (else
                                                  #f)))))
 
+  #||
+  ;; disable this code since graphics isn't different when disabled.
+  (when (not has-inputs-or-outputs)
+    (<gui> :set-enabled volmeter #f)
+    (<gui> :set-enabled voltext #f)
+    (<gui> :set-enabled volslider #f)
+    (<gui> :set-enabled peaktext #f))
+  ||#
+    
   ;; horiz 1 (voltext and peaktext)
   ;;
   (define horizontal1 (<gui> :horizontal-layout))

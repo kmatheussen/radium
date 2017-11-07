@@ -5015,6 +5015,14 @@ int64_t gui_verticalAudioMeter(int64_t instrument_id){
   if(patch==NULL)
     return -1;
 
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, -1);
+  
+  if(plugin->type->num_outputs==0 && plugin->type->num_inputs==0){
+    handleError("gui_verticalAudioMeter: instrument %s has no audio inputs or audio outputs", patch->name);
+    return -1;
+  }
+  
   return (new VerticalAudioMeter(patch))->get_gui_num();
 }
 
