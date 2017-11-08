@@ -1524,8 +1524,35 @@ void undoAudioConnectionGain(int64_t source_id, int64_t dest_id){
   ADD_UNDO(AudioConnectionGain_CurrPos(source, dest));
 }
 
+// modulator connections
 
+/*
+void addModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
 
+  if (get_modulator(instrument_id, effect_name) >= 0){
+    handleError("addModulator: Effect %s in instrument \"%s\" already has a modulator: %s", effect_name, getInstrumentName(instrument_id), getModulatorDescription(modulator_instrument_id));
+    return;
+  }
+}
+
+void removeModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+}
+
+void replaceModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+}
+
+int64_t getModulator(int64_t instrument_id, const char *effect_name){
+}
+
+dyn_t get_modulators_instruments(void){
+}
+
+const_char *getModulatorDescription(int64_t modulator_instrument_id){
+}
+*/
 
 int getNumInputChannels(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);

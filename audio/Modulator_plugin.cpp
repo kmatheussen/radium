@@ -16,6 +16,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include <QHash>
+#include <QDateTime>
+
+#include <vector>
 
 
 #include "../common/nsmtracker.h"
@@ -29,6 +32,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 #include "SoundPluginRegistry_proc.h"
+
+#include "../mixergui/undo_chip_position_proc.h"
+#include "../mixergui/undo_mixer_connections_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -163,15 +169,22 @@ struct OscillatorGenerator : public Generator {
   }
 
   void RT_process(const struct Patch *patch, int effect_num, const GeneratorParameters &parms) override {
-    if(patch->instrument==get_audio_instrument()){
-      SoundPlugin *plugin = static_cast<SoundPlugin*>(patch->patchdata);
-      if(plugin==NULL){
-#if !defined(RELEASE)
-        //       printf("Note: plugin==NULL for %s\n", patch->name);
-#endif
-        return;
-      }
+    // Should we check if patch has been closed here?
+    // Probably not. patch->plugin is probably set to NULL before the plugin is deleted. Yes, looks so in AUDIO_remove_patchdata.
 
+    void *patchdata = patch->patchdata;
+
+    // This check should be good enough.
+    if (patchdata==NULL){
+#if !defined(RELEASE)
+      printf("1111. Note: patch->patchdata==NULL for %s (this should be perfectly legal in brief moments while a patch is deleted)\n", patch->name);
+#endif
+      return;
+    }
+
+    if(patch->instrument==get_audio_instrument()){
+
+      SoundPlugin *plugin = static_cast<SoundPlugin*>(patchdata);
       PLUGIN_set_effect_value(plugin, 0, effect_num, _curr_value, DONT_STORE_VALUE, FX_middle, EFFECT_FORMAT_SCALED);
 
     } else {
@@ -278,9 +291,11 @@ public:
   
   int64_t _id = g_id++;
 
+  int64_t _creation_time;
+
 private:
   
-  radium::Vector<const ModulatorTarget*> _targets;
+  radium::Vector<const ModulatorTarget*> *_targets = new radium::Vector<const ModulatorTarget*>;
 
   SinewaveGenerator _sinewave_generator;
   TriangleGenerator _triangle_generator;
@@ -297,18 +312,77 @@ public:
 
   struct SoundPlugin *_plugin;
 
-  Modulator(struct SoundPlugin *plugin)
-    : _plugin(plugin)
-  {}
+  Modulator(struct SoundPlugin *plugin, hash_t *state = NULL)
+    : _creation_time(state==NULL ? QDateTime::currentMSecsSinceEpoch() : HASH_get_int(state, "creation_time"))
+    , _plugin(plugin)
+  {
+  }
 
   ~Modulator(){
-    for(auto *target : _targets)
-      delete target; // TODO: Must tell patch that envelope controller has been removed. For the GUI. Or perhaps the gui should just ask if a patch + effect num combo is connected... That sounds cleaner.
+    for(auto *target : *_targets)
+      delete target;
   }
+
+  hash_t *get_state(void) const {
+    hash_t *state = HASH_create(4);
+
+    {
+      const volatile struct Patch *modulator_patch = _plugin->patch;
+      R_ASSERT_RETURN_IF_FALSE2(modulator_patch != NULL, state);
+      HASH_put_int(state, "modulator_patch_id", modulator_patch->id);
+    }
+
+    int i = 0;
+    for(auto *target : *_targets){
+      HASH_put_int_at(state, "target_patch_id", i, target->patch->id);
+      HASH_put_int_at(state, "target_effect_num", i, target->effect_num);
+      i++;
+    }
+
+    return state;
+  }
+
+  void apply_state(hash_t *state){
+    // Assert that the state is for this modulator.
+    {
+      const volatile struct Patch *modulator_patch = _plugin->patch;
+      R_ASSERT_RETURN_IF_FALSE(modulator_patch != NULL);
+      
+      int64_t patch_id = HASH_get_int(state, "modulator_patch_id");
+      R_ASSERT_RETURN_IF_FALSE(patch_id==modulator_patch->id);
+    }
+
+    radium::Vector<const ModulatorTarget*> *new_targets = new radium::Vector<const ModulatorTarget*>;
+
+    int num_new_targets = HASH_get_array_size(state, "target_patch_id");
+    for(int i=0 ; i<num_new_targets ; i++){
+      int64_t target_patch_id = HASH_get_int_at(state, "target_patch_id", i);
+      const struct Patch *patch = PATCH_get_from_id(target_patch_id);
+      R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+      int effect_num = HASH_get_int32_at(state, "target_effect_num", i);
+
+      auto *new_target = new ModulatorTarget(patch, effect_num);
+      new_targets->push_back(new_target);
+    }    
+
+    auto *old_targets = _targets;
+
+    // TODO: Check if new target and old target contains the same.
+    PLAYER_lock();{
+      _targets = new_targets;
+    }PLAYER_unlock();
+
+    for(auto *target : *old_targets)
+      delete target;
+
+    delete old_targets;
+  }
+
 
   int _type = 0;
   void set_type(int type){
-    R_ASSERT_NON_RELEASE(type>=0 && type < NUM_TYPES);
+    R_ASSERT_RETURN_IF_FALSE(type>=0 && type < NUM_TYPES);
     _type = type;
     if (type==0)
       _generator = &_sinewave_generator;
@@ -331,7 +405,7 @@ public:
   }
   
   bool has_target(const struct Patch *patch, int effect_num) const {
-    for(auto *target : _targets)
+    for(auto *target : *_targets)
       if (target->patch==patch && target->effect_num==effect_num)
         return true;
 
@@ -343,31 +417,43 @@ public:
     
     auto *target = new ModulatorTarget(patch, effect_num);
 
-    _targets.ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
+    _targets->ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
 
     PLAYER_lock();{
-      _targets.push_back(target);
+      _targets->push_back(target);
     }PLAYER_unlock();
 
-    _targets.post_add();
+    _targets->post_add();
   }
 
   void remove_target(const struct Patch *patch, int effect_num){
     const ModulatorTarget *target = NULL;
     
-    for(auto *maybetarget : _targets)
+    for(auto *maybetarget : *_targets)
       if (maybetarget->patch==patch && maybetarget->effect_num==effect_num){
         target = maybetarget;
         break;
       }
 
     R_ASSERT_RETURN_IF_FALSE(target!=NULL);
-        
+    
+    ADD_UNDO(MixerConnections_CurrPos());
+
     PLAYER_lock();{
-      _targets.remove(target);
+      _targets->remove(target);
     }PLAYER_unlock();
   }
-  
+
+  void call_me_when_a_patch_is_made_inactive(const struct Patch *patch, radium::PlayerLockOnlyIfNeeded &lock){
+  again:
+    for(auto *maybetarget : *_targets)
+      if (maybetarget->patch==patch){
+        lock.maybe_pause((int)_id);
+        _targets->remove(maybetarget);
+        goto again;
+      }
+  }
+
   void RT_process(void){
 
     if (_parms.is_enabled==false)
@@ -375,7 +461,7 @@ public:
 
     _generator->RT_pre_process(_parms);
 
-    for(auto *target : _targets){
+    for(auto *target : *_targets){
       _generator->RT_process(target->patch, target->effect_num, _parms);
     }
 
@@ -385,51 +471,91 @@ public:
 
 } // end anon. namespace
 
+static bool sort_modulators_by_creation_time(const Modulator *a, const Modulator *b){
+  return a->_creation_time < b->_creation_time;
+}
 
 static QHash<int64_t, Modulator*> g_modulators;
 static radium::Vector<Modulator*> g_modulators2;
 
 // Called from the main audio thread
 void RT_MODULATOR_process(void){
-  for(auto *controller : g_modulators2)
-    controller->RT_process();
+  for(auto *modulator : g_modulators2)
+    modulator->RT_process();
 }
 
-int64_t MODULATOR_get_controller_id(const struct Patch *patch, int effect_num){
+int64_t MODULATOR_get_id(const struct Patch *patch, int effect_num){
   for(int64_t id : g_modulators.keys()){
-    auto *controller = g_modulators[id];
-    if(controller->has_target(patch, effect_num))
-      return id;
+    auto *modulator = g_modulators[id];
+    if(modulator->has_target(patch, effect_num))
+      return modulator->_id;
   }
 
   return -1;
 }
-                                             
 
-void MODULATOR_add_target(int64_t controller_id, const struct Patch *patch, int effect_num){
-  R_ASSERT_RETURN_IF_FALSE(true==g_modulators.contains(controller_id));
+int64_t MODULATOR_get_id_from_modulator_patch(const struct Patch *patch){
+  for(int64_t id : g_modulators.keys()){
+    auto *modulator = g_modulators[id];
+    const volatile struct Patch *modulator_patch = modulator->_plugin->patch;
+    R_ASSERT(modulator_patch != NULL);
+    if (modulator_patch == patch)
+      return modulator->_id;
+  }
 
-  R_ASSERT_RETURN_IF_FALSE(MODULATOR_get_controller_id(patch, effect_num)==-1);
+  return -1;
+}
+  
+struct Patch *MODULATOR_get_modulator_patch(const struct Patch *patch, int effect_num){
+  for(const auto *modulator : g_modulators2){
+    if (effect_num==EFFNUM_INPUT_VOLUME){
+      printf("       FOUND target? %s. Found it: %d\n", patch->name, modulator->has_target(patch, effect_num));
+    }
+    if(modulator->has_target(patch, effect_num)){      
+      volatile struct Patch *modulator_patch = modulator->_plugin->patch;
+      R_ASSERT(modulator_patch != NULL);
+      return (struct Patch*)modulator_patch;
+    }
+  }
 
-  g_modulators[controller_id]->add_target(patch, effect_num);
+  return NULL;
 }
 
 
-void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect_num){
-  R_ASSERT_RETURN_IF_FALSE(MODULATOR_get_controller_id(patch, effect_num)==-1);
-  
+void MODULATOR_add_target(int64_t modulator_id, const struct Patch *patch, int effect_num){
+  R_ASSERT_RETURN_IF_FALSE(true==g_modulators.contains(modulator_id));
+
+  R_ASSERT_RETURN_IF_FALSE(MODULATOR_get_id(patch, effect_num)==-1);
+
+  g_modulators[modulator_id]->add_target(patch, effect_num);
+}
+
+
+void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect_num, bool do_replace){
+  radium::ScopedUndo scoped_undo;
+
+  int64_t old_modulator_id = MODULATOR_get_id(patch, effect_num);
+
+  if(do_replace)
+    R_ASSERT(old_modulator_id >= 0);
+  else
+    R_ASSERT(old_modulator_id==-1);
+
   vector_t v = {0};
 
-  int create_new = VECTOR_push_back(&v, "Create new envelope controller");
+  int create_new = VECTOR_push_back(&v, "Create new envelope modulator");
   VECTOR_push_back(&v, "--------------");
-  for(int64_t id : g_modulators.keys()){
-    //auto *controller = g_modulators[id];    
-    auto *controller = g_modulators[id];
-    volatile struct Patch *patch = controller->_plugin->patch;
-    VECTOR_push_back(&v, talloc_format("%d: %s (%s)", (int)id, MODULATOR_get_description(id), patch==NULL ? "" : patch->name));
+
+  auto modulators = g_modulators2.to_std_vector(); // Make a copy so we don't have to lock player while sorting.
+  std::sort(modulators.begin(), modulators.end(), sort_modulators_by_creation_time);
+
+  for(auto *modulator : modulators){
+    volatile struct Patch *patch = modulator->_plugin->patch;
+    R_ASSERT(patch!=NULL);
+    VECTOR_push_back(&v, talloc_format("%s: %s", patch==NULL ? "" : patch->name, MODULATOR_get_description(modulator->_id)));
   }
 
-  int64_t controller_id;
+  int64_t new_modulator_id;
 
   int command = GFX_Menu(root->song->tracker_windows, NULL, "", v, true);
   if (command < 0)
@@ -444,65 +570,116 @@ void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect
     if (instrument_id==-1)
       return;
 
-    autopositionInstrument(instrument_id);
-
     if (curr_patch != NULL)
       GFX_PP_Update(curr_patch, false); // Set back current instrument.
 
-    const struct Patch *controller_patch = PATCH_get_from_id(instrument_id);
-    SoundPlugin *plugin = static_cast<SoundPlugin*>(controller_patch->patchdata);
+    const struct Patch *modulator_patch = PATCH_get_from_id(instrument_id);
+
+    ADD_UNDO(ChipPos_CurrPos(modulator_patch));
+    autopositionInstrument(instrument_id);
+
+    SoundPlugin *plugin = static_cast<SoundPlugin*>(modulator_patch->patchdata);
     if(plugin==NULL){        
       R_ASSERT_NON_RELEASE(false);
       return;        
-      }
+    }
 
-    Modulator *controller = static_cast<Modulator*>(plugin->data);
+    Modulator *modulator = static_cast<Modulator*>(plugin->data);
     
-    controller_id = controller->_id;
+    new_modulator_id = modulator->_id;
 
   } else {
 
-    controller_id = g_modulators.keys()[command - 2];
+    new_modulator_id = modulators[command-2]->_id;
 
   }
 
-  MODULATOR_add_target(controller_id, patch, effect_num);
+  if(old_modulator_id >= 0)
+    MODULATOR_remove_target(old_modulator_id, patch, effect_num);
+  else
+    ADD_UNDO(MixerConnections_CurrPos());
+
+  MODULATOR_add_target(new_modulator_id, patch, effect_num);
 }
 
-void MODULATOR_remove_target(int controller_id, const struct Patch *patch, int effect_num){
-  R_ASSERT_RETURN_IF_FALSE(g_modulators.contains(controller_id));  
-  g_modulators[controller_id]->remove_target(patch, effect_num);
+void MODULATOR_remove_target(int modulator_id, const struct Patch *patch, int effect_num){
+  R_ASSERT_RETURN_IF_FALSE(g_modulators.contains(modulator_id));  
+  g_modulators[modulator_id]->remove_target(patch, effect_num);
 }
 
-int64_t *MODULATOR_get_controller_ids(int *num_controllers){
+void MODULATOR_call_me_when_a_patch_is_made_inactive(const struct Patch *patch){
+  radium::PlayerLockOnlyIfNeeded lock;
+
+  for(auto *modulator : g_modulators2)
+    modulator->call_me_when_a_patch_is_made_inactive(patch, lock);
+}
+
+int64_t *MODULATOR_get_ids(int *num_modulators){
 
   const auto &keys = g_modulators.keys();
-  *num_controllers = keys.size();
+  *num_modulators = keys.size();
 
   int64_t *ids = (int64_t*)talloc(sizeof(int64_t)*keys.size());
 
-  int i=0;
+  int i=keys.size()-1;
   for(int64_t id : g_modulators.keys())
-    ids[i++] = id;
+    ids[i--] = id;
 
   return ids;
 }
 
-const char *MODULATOR_get_description(int64_t controller_id){
-  R_ASSERT_RETURN_IF_FALSE2(g_modulators.contains(controller_id), "");
-  auto *controller = g_modulators[controller_id];
-  return controller->_generator->_name;
+const char *MODULATOR_get_description(int64_t modulator_id){
+  R_ASSERT_RETURN_IF_FALSE2(g_modulators.contains(modulator_id), "");
+  auto *modulator = g_modulators[modulator_id];
+  return modulator->_generator->_name;
+}
+
+hash_t *MODULATOR_get_connections_state(void){
+  hash_t *state = HASH_create(g_modulators2.size());
+
+  int i = 0;
+  for(auto *modulator : g_modulators2){
+    HASH_put_hash_at(state, "modulator", i, modulator->get_state());
+    i++;
+  }
+
+  return state;
+}
+
+static Modulator *get_modulator_from_patch_id(int64_t patch_id){
+  for(auto *modulator : g_modulators2){
+    const volatile struct Patch *modulator_patch = modulator->_plugin->patch;
+    if (modulator_patch==NULL)
+      R_ASSERT(false);
+    else if (modulator_patch->id==patch_id)
+      return modulator;
+  }  
+  return NULL;
+}
+
+void MODULATOR_apply_connections_state(hash_t *state){
+  int size = HASH_get_array_size(state, "modulator");
+  for(int i=0 ; i<size ; i++){
+    hash_t *modulator_state = HASH_get_hash_at(state, "modulator", i);
+    if(modulator_state==NULL) return; // assertion was thrown in hashmap.c
+
+    int64_t patch_id = HASH_get_int(modulator_state, "modulator_patch_id");
+    Modulator *modulator = get_modulator_from_patch_id(patch_id);
+    R_ASSERT_RETURN_IF_FALSE(modulator!=NULL);
+
+    modulator->apply_state(modulator_state);
+  }
 }
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  //Modulator *controller = static_cast<Modulator*>(plugin->data);
+  //Modulator *modulator = static_cast<Modulator*>(plugin->data);
 
   // no need to do anything. no inputs and no outputs.
 }
 
 
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
-  Modulator *controller = static_cast<Modulator*>(plugin->data);
+  Modulator *modulator = static_cast<Modulator*>(plugin->data);
 
   if(value_format==EFFECT_FORMAT_SCALED){
     
@@ -526,33 +703,33 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
   switch(effect_num){
 
   case EFF_ON_OFF:
-    controller->_parms.is_enabled = value >= 0.5;
+    modulator->_parms.is_enabled = value >= 0.5;
     break;
     
   case EFF_TYPE:
-    controller->set_type(value);
+    modulator->set_type(value);
     break;
     
     
   case EFF_MULTIPLIER_NUMERATOR:
-    controller->_parms.tempo_numerator = floor(value);
+    modulator->_parms.tempo_numerator = floor(value);
     break;
     
   case EFF_MULTIPLIER_DENOMINATOR:
-    controller->_parms.tempo_denominator = floor(value);
+    modulator->_parms.tempo_denominator = floor(value);
     break;
 
     
   case EFF_PHASE_SHIFT:
-    controller->_parms.phase_shift = value;
+    modulator->_parms.phase_shift = value;
     break;
     
   case EFF_MIN:
-    controller->_parms.min = R_BOUNDARIES(0, value, controller->_parms.max);
+    modulator->_parms.min = R_BOUNDARIES(0, value, modulator->_parms.max);
     break;
     
   case EFF_MAX:
-    controller->_parms.max = R_BOUNDARIES(controller->_parms.min, value, 1);
+    modulator->_parms.max = R_BOUNDARIES(modulator->_parms.min, value, 1);
     break;
 
   default:
@@ -562,40 +739,40 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
 }
 
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
-  const Modulator *controller = static_cast<Modulator*>(plugin->data);
+  const Modulator *modulator = static_cast<Modulator*>(plugin->data);
 
   float value;
 
   switch(effect_num){
 
   case EFF_ON_OFF:
-    value = controller->_parms.is_enabled;
+    value = modulator->_parms.is_enabled;
     break;
     
   case EFF_TYPE:
-    value = controller->get_type();
+    value = modulator->get_type();
     break;
     
     
   case EFF_MULTIPLIER_NUMERATOR:
-    value = controller->_parms.tempo_numerator;
+    value = modulator->_parms.tempo_numerator;
     break;
     
   case EFF_MULTIPLIER_DENOMINATOR:
-    value = controller->_parms.tempo_denominator;
+    value = modulator->_parms.tempo_denominator;
     break;
 
     
   case EFF_PHASE_SHIFT:
-    value = controller->_parms.phase_shift;
+    value = modulator->_parms.phase_shift;
     break;
     
   case EFF_MIN:
-    value = controller->_parms.min;
+    value = modulator->_parms.min;
     break;
     
   case EFF_MAX:
-    value = controller->_parms.max;
+    value = modulator->_parms.max;
     break;
 
   default:
@@ -625,38 +802,38 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
-  const Modulator *controller = static_cast<Modulator*>(plugin->data);
+  const Modulator *modulator = static_cast<Modulator*>(plugin->data);
 
   switch(effect_num){
 
   case EFF_ON_OFF:
-    snprintf(buffer,buffersize-1,"%s",controller->_parms.is_enabled ? "ON" : "OFF");
+    snprintf(buffer,buffersize-1,"%s",modulator->_parms.is_enabled ? "ON" : "OFF");
     break;
     
   case EFF_TYPE:
-    snprintf(buffer, buffersize-1, "%s", controller->get_type_name());
+    snprintf(buffer, buffersize-1, "%s", modulator->get_type_name());
     break;
     
     
   case EFF_MULTIPLIER_NUMERATOR:
-    snprintf(buffer, buffersize-1, "%d", (int)controller->_parms.tempo_numerator);
+    snprintf(buffer, buffersize-1, "%d", (int)modulator->_parms.tempo_numerator);
     break;
     
   case EFF_MULTIPLIER_DENOMINATOR:
-    snprintf(buffer, buffersize-1, "%d", (int)controller->_parms.tempo_denominator);
+    snprintf(buffer, buffersize-1, "%d", (int)modulator->_parms.tempo_denominator);
     break;
 
     
   case EFF_PHASE_SHIFT:
-    snprintf(buffer, buffersize-1, "%f", controller->_parms.phase_shift);
+    snprintf(buffer, buffersize-1, "%f", modulator->_parms.phase_shift);
     break;
     
   case EFF_MIN:
-    snprintf(buffer, buffersize-1, "%f", controller->_parms.min);
+    snprintf(buffer, buffersize-1, "%f", modulator->_parms.min);
     break;
     
   case EFF_MAX:
-    snprintf(buffer, buffersize-1, "%f", controller->_parms.max);
+    snprintf(buffer, buffersize-1, "%f", modulator->_parms.max);
     break;
 
   default:
@@ -710,10 +887,10 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
     return "Type";
     
   case EFF_MULTIPLIER_NUMERATOR:
-    return "Tempo multiplier numerator";
+    return "Tempo multiplier";
     
   case EFF_MULTIPLIER_DENOMINATOR:
-    return "Tempo multiplier denominator";
+    return "Tempo divisor";
 
     
   case EFF_PHASE_SHIFT:
@@ -745,33 +922,40 @@ static const char *get_effect_description(struct SoundPlugin *plugin, int effect
 }
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
-  Modulator *controller = new Modulator(plugin);
-  g_modulators[controller->_id] = controller;
+  Modulator *modulator = new Modulator(plugin, state);
+  g_modulators[modulator->_id] = modulator;
 
   g_modulators2.ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
   PLAYER_lock();{
-    g_modulators2.push_back(controller);
+    g_modulators2.push_back(modulator);
   }PLAYER_unlock();
   g_modulators2.post_add();
 
-  return controller;
+  return modulator;
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
-  Modulator *controller = static_cast<Modulator*>(plugin->data);
+  Modulator *modulator = static_cast<Modulator*>(plugin->data);
 
   printf("\n\n  Size before: %d\n", g_modulators2.size());
   PLAYER_lock();{
-    g_modulators2.remove(controller);
+    g_modulators2.remove(modulator);
   }PLAYER_unlock();
   printf("  Size after: %d\n\n\n", g_modulators2.size());
 
   
-  g_modulators.remove(controller->_id);
+  g_modulators.remove(modulator->_id);
 
-  delete controller;
+  delete modulator;
 }
 
+static void create_state(struct SoundPlugin *plugin, hash_t *state){
+  R_ASSERT_RETURN_IF_FALSE(state!=NULL);
+
+  Modulator *modulator = static_cast<Modulator*>(plugin->data);
+
+  HASH_put_int(state, "creation_time", modulator->_creation_time);
+}
 
 static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
   return 0;
@@ -794,6 +978,7 @@ void create_modulator_plugin(void){
   plugin_type->effect_is_RT             = NULL;
   plugin_type->create_plugin_data       = create_plugin_data;
   plugin_type->cleanup_plugin_data      = cleanup_plugin_data;
+  plugin_type->create_state             = create_state;
 
   plugin_type->RT_get_audio_tail_length = RT_get_audio_tail_length;
   

@@ -528,7 +528,7 @@ extern LANGSPEC void CHIP_update(struct SoundPlugin *plugin);
 
 extern LANGSPEC float CHIP_get_pos_x(const struct Patch *patch);
 extern LANGSPEC float CHIP_get_pos_y(const struct Patch *patch);
-extern LANGSPEC void CHIP_set_pos(struct Patch *patch,float x, float y);
+extern LANGSPEC void CHIP_set_pos(const struct Patch *patch,float x, float y);
 
 extern LANGSPEC bool CONNECTIONS_apply_changes(const dyn_t changes);
 

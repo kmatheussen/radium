@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "../audio/audio_instrument_proc.h"
+#include "../audio/Modulator_plugin_proc.h"
 
 //#include "../mixergui/undo_chip_addremove_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
@@ -556,12 +557,19 @@ static void make_inactive(struct Patch *patch, bool force_removal){
 
   hash_t *audio_patch_state = is_midi_instrument ? NULL : AUDIO_get_audio_patch_state(patch); // The state is unavailable after calling remove_patch().
 
-  patch->instrument->remove_patchdata(patch); // Remove Audio things.
+  patch->instrument->remove_patchdata(patch); // Remove Audio/Midi things.
   
   R_ASSERT(patch->patchdata==NULL);
 
   if(!is_midi_instrument)
     ADD_UNDO(Audio_Patch_Remove_CurrPos(patch, audio_patch_state)); // Must be called last, if not the undo/redo order will be wrong.
+
+  // Ideally, this we should call this function before removing the patch, but we call it here, right after calling Audio_Patch_Remove_CurrPos,
+  // since undo data for connections are created in that call.
+  //
+  // This means that modulators could, for very brief moments, operate on inactive patches, but shouldn't be a problem since the modulator checks
+  // that patch->patchdata is not NULL.
+  MODULATOR_call_me_when_a_patch_is_made_inactive(patch);
 
   PATCH_remove_from_instrument(patch);
 

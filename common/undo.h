@@ -156,6 +156,17 @@ namespace radium{
     }
   };
 
+  struct ScopedIgnoreUndo{
+  
+    ScopedIgnoreUndo(){
+      Undo_start_ignoring_undo_operations();
+    }
+    
+    ~ScopedIgnoreUndo(){
+      Undo_stop_ignoring_undo_operations();
+    }
+  };
+
 }
 
 #endif

@@ -93,10 +93,10 @@ end:
 #include "../midi/midi_playfromstart_proc.h"
 #include "../midi/OS_midigfx_proc.h"
 
-
 void DLoadInstrument(struct Instruments *instrument){
-  if(instrument==get_MIDI_instrument())
+  if(instrument==get_MIDI_instrument()) {
     MIDI_initInstrumentPlugIn(instrument);
+  }
 }
 
 void DLoadInstrumentGUI(struct Instruments *instrument){

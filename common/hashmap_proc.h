@@ -103,6 +103,10 @@ extern LANGSPEC dyn_t HASH_get_dyn_at(hash_t *hash, const char *key, int i);
 extern LANGSPEC const wchar_t *HASH_get_string_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC const char *HASH_get_chars_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC int64_t HASH_get_int_at(const hash_t *hash, const char *key, int i);
+static inline int HASH_get_int32_at(const hash_t *hash, const char *key, int i){
+  return (int)HASH_get_int_at(hash, key, i);
+}
+
 extern LANGSPEC bool HASH_get_bool_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC double HASH_get_float_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC hash_t *HASH_get_hash_at(const hash_t *hash, const char *key, int i);

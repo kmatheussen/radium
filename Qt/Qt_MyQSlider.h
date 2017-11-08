@@ -235,7 +235,7 @@ struct MyQSlider : public QSlider {
       bool has_midi_learn = PLUGIN_has_midi_learn(plugin, _effect_num);
       bool is_recording_automation = PLUGIN_is_recording_automation(plugin, _effect_num);
       bool doing_random_change = PLUGIN_get_random_behavior(plugin, _effect_num);
-      int64_t modulator_id = MODULATOR_get_controller_id(_patch, _effect_num);
+      int64_t modulator_id = MODULATOR_get_id(_patch, _effect_num);
       
       int pd_delete=-10;
       int reset=-10;
@@ -269,6 +269,8 @@ struct MyQSlider : public QSlider {
         //VECTOR_push_back(&options, "Set Value");
       }
 
+      VECTOR_push_back(&options, "--------------");
+
       if (has_midi_learn){
         remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
         midi_relearn = VECTOR_push_back(&options, "MIDI Relearn");
@@ -276,18 +278,26 @@ struct MyQSlider : public QSlider {
         midi_learn = VECTOR_push_back(&options, "MIDI Learn");
       }
 
+      VECTOR_push_back(&options, "--------------");
+
       if(modulator_id >= 0){
         remove_modulator=VECTOR_push_back(&options, "Remove Modulator");
         replace_modulator=VECTOR_push_back(&options, "Replace Modulator");        
       } else {
         add_modulator=VECTOR_push_back(&options, "Assign Modulator");
       }
+
+      VECTOR_push_back(&options, "--------------");
     
       if (!is_recording_automation)
         record = VECTOR_push_back(&options, "Record");
 
+      VECTOR_push_back(&options, "--------------");
+
       add_automation_to_current_editor_track = VECTOR_push_back(&options, "Add automation to current editor track");
       add_automation_to_current_sequencer_track = VECTOR_push_back(&options, "Add automation to current sequencer track");
+
+      VECTOR_push_back(&options, "--------------");
 
       if (_effect_num < plugin->type->num_effects){
         if (doing_random_change)
@@ -326,11 +336,10 @@ struct MyQSlider : public QSlider {
         MODULATOR_remove_target(modulator_id, _patch, _effect_num);
       
       }else if (command==replace_modulator){
-        MODULATOR_remove_target(modulator_id, _patch, _effect_num);
-        MODULATOR_maybe_create_and_add_target(_patch, _effect_num);
-      
+        MODULATOR_maybe_create_and_add_target(_patch, _effect_num, true);
+
       }else if (command==add_modulator){
-        MODULATOR_maybe_create_and_add_target(_patch, _effect_num);
+        MODULATOR_maybe_create_and_add_target(_patch, _effect_num, false);
       
       }else if (command==record)
         PLUGIN_set_recording_automation(plugin, _effect_num, true);

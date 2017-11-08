@@ -151,7 +151,7 @@ public:
     }
   }
 
-  void ensure_there_is_room_for_more_at_least_n_without_having_to_allocate_memory(int n){
+  void ensure2(int n){
     ensure_there_is_room_for_more_without_having_to_allocate_memory(n - num_elements);
   }
     
@@ -365,7 +365,18 @@ public:
     
     std::sort(&elements[0], &elements[num_elements], comp);
   }
-  
+    
+  std::vector<T> to_std_vector(void) const{
+    LOCKASSERTER_SHARED(&lockAsserter);
+
+    std::vector<T> ret;
+
+    for(int pos=0 ; pos<num_elements ; pos++)
+      ret.push_back(elements[pos]);
+
+    return ret;
+  }
+
   // RT safe
   //
   // This function can NOT be called in parallell with other functions

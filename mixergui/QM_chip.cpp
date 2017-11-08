@@ -79,6 +79,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/CpuUsage.hpp"
+#include "../audio/Modulator_plugin_proc.h"
+
 #include "../Qt/EditorWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
 //#include "../Qt/Qt_MyQCheckBox.h"
@@ -484,7 +486,7 @@ void CHIP_set_pos(Chip *chip, float x, float y){
   remakeMixerStrips(-2);
 }
 
-void CHIP_set_pos(struct Patch *patch,float x,float y){
+void CHIP_set_pos(const struct Patch *patch,float x,float y){
   Chip *chip = find_chip_for_plugin(get_scene(g_mixer_widget), (SoundPlugin*)patch->patchdata);
   if (chip!=NULL)
     CHIP_set_pos(chip, x, y);
@@ -2279,6 +2281,7 @@ static void CONNECTIONS_create_from_state2(QGraphicsScene *scene, changes::Audio
   }
 }
 
+// Only used when loading song.
 void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connections,
                                    int patch_id_old, int patch_id_new,
                                    int64_t patch_id_old2, int64_t patch_id_new2
@@ -2287,6 +2290,9 @@ void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connecti
   changes::AudioGraph changes;
   CONNECTIONS_create_from_state2(scene, changes, connections, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2, true);
   CONNECTIONS_apply_changes(scene, changes);
+
+  if (HASH_has_key(connections, "modulator_connections"))
+    MODULATOR_apply_connections_state(HASH_get_hash(connections, "modulator_connections"));
 }
 
 static void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new){
@@ -2305,6 +2311,9 @@ void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *con
   CONNECTIONS_create_from_state2(scene, changes, connections, -1, -1, -1, -1, all_patches_are_always_supposed_to_be_here);
   
   CONNECTIONS_apply_changes(scene, changes);
+
+  if (HASH_has_key(connections, "modulator_connections"))
+    MODULATOR_apply_connections_state(HASH_get_hash(connections, "modulator_connections"));
 }
 
 // Called from MW_create_from_state, which is called from Presets.cpp.

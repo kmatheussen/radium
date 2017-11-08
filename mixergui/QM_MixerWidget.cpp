@@ -2448,6 +2448,8 @@ hash_t *MW_get_connections_state(const vector_t *patches){
   
   HASH_put_int(connections, "num_connections", num_connections);
 
+  HASH_put_hash(connections, "modulator_connections", MODULATOR_get_connections_state());
+
   return connections;
 }
 

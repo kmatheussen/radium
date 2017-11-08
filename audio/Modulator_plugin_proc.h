@@ -3,14 +3,17 @@
 #define _RADIUM_AUDIO_MODULATOR_PLUGIN_PROC_H
 
 extern LANGSPEC void RT_MODULATOR_process(void);
-extern LANGSPEC int64_t MODULATOR_get_controller_id(const struct Patch *patch, int effect_num);
-extern LANGSPEC void MODULATOR_add_target(int64_t controller_id, const struct Patch *patch, int effect_num);
-extern LANGSPEC void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect_num);
-extern LANGSPEC void MODULATOR_remove_target(int controller_id, const struct Patch *patch, int effect_num);
-extern LANGSPEC int64_t *MODULATOR_get_controller_ids(int *num_controllers);
-extern LANGSPEC const char *MODULATOR_get_description(int64_t controller_id);
-
-
+extern LANGSPEC int64_t MODULATOR_get_id(const struct Patch *patch, int effect_num);
+extern LANGSPEC int64_t MODULATOR_get_id_from_modulator_patch(const struct Patch *patch);
+extern LANGSPEC struct Patch *MODULATOR_get_modulator_patch(const struct Patch *patch, int effect_num);
+extern LANGSPEC void MODULATOR_add_target(int64_t modulator_id, const struct Patch *patch, int effect_num);
+extern LANGSPEC void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect_num, bool do_replace);
+extern LANGSPEC void MODULATOR_remove_target(int modulator_id, const struct Patch *patch, int effect_num);
+extern LANGSPEC void MODULATOR_call_me_when_a_patch_is_made_inactive(const struct Patch *patch);
+extern LANGSPEC int64_t *MODULATOR_get_ids(int *num_modulators);
+extern LANGSPEC const char *MODULATOR_get_description(int64_t modulator_id);
+extern LANGSPEC hash_t *MODULATOR_get_connections_state(void);
+extern LANGSPEC void MODULATOR_apply_connections_state(hash_t *state);
 
 #endif
 

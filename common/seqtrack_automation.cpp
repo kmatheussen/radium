@@ -252,7 +252,7 @@ public:
         new_automations.push_back(automation);
     }
 
-    _automations.ensure_there_is_room_for_at_least_n_without_having_to_allocate_memory(new_automations.size());
+    _automations.ensure2(new_automations.size());
     
     {
       radium::PlayerLock lock;    

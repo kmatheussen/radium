@@ -30,7 +30,7 @@ extern struct Root *root;
 
 
 struct Undo_ChipPos{
-  struct Patch *patch;
+  const struct Patch *patch;
   float x;
   float y;
 };
@@ -46,7 +46,7 @@ static void *Undo_Do_ChipPos(
 static void Undo_ChipPos(
                              struct Tracker_Windows *window,
                              struct WBlocks *wblock,
-                             struct Patch *patch
+                             const struct Patch *patch
                              )
 {
   struct Undo_ChipPos *undo_ae=talloc(sizeof(struct Undo_ChipPos));
@@ -69,7 +69,7 @@ static void Undo_ChipPos(
                              );
 }
 
-void ADD_UNDO_FUNC(ChipPos_CurrPos(struct Patch *patch)){
+void ADD_UNDO_FUNC(ChipPos_CurrPos(const struct Patch *patch)){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
   Undo_ChipPos(window,window->wblock, patch);

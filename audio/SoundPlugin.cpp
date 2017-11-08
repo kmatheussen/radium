@@ -60,6 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "audio_instrument_proc.h"
 #include "CpuUsage.hpp"
 #include "SmoothDelay.hpp"
+#include "Modulator_plugin_proc.h"
 
 #include "../api/api_gui_proc.h"
 
@@ -1955,7 +1956,60 @@ hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
   return effects;
 }
 
+/*
+hash_t *PLUGIN_get_modulation_state(SoundPlugin *plugin){
+  struct Patch *patch = (struct Patch*)plugin->patch;
+  if(patch==NULL){
+    R_ASSERT(false);
+    return NULL;
+  }
 
+  const SoundPluginType *type=plugin->type;
+  hash_t *modulation=NULL;
+
+  for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+    struct Patch *modulator_patch = MODULATOR_get_modulator_patch(patch, i); // We probably need to store modulator data here. During loading, etc., MODULATOR_get_modulator_patch could return NULL. But that won't work either, because the modulator has to inform the targets when it is deleted, and then we lose the information again.
+    if (modulator_patch != NULL){
+      if (modulation==NULL)
+        modulation=HASH_create(3);
+      HASH_put_int_at(modulation, "patch", i, modulator_patch->id);
+    }
+  }
+
+  return modulation;
+}
+
+void PLUGIN_apply_modulation_state(SoundPlugin *plugin, hash_t *modulation){
+  const SoundPluginType *type=plugin->type;
+
+  struct Patch *patch = (struct Patch*)plugin->patch;
+  if(patch==NULL){
+    R_ASSERT(false);
+    return;
+  }
+
+  for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+    if (HASH_has_key_at(modulation, "patch", i)){
+
+      int64_t modulator_patch_id = HASH_get_int_at(modulation, "patch", i);
+      R_ASSERT_RETURN_IF_FALSE(modulator_patch_id >= 0);
+
+      struct Patch *modulator_patch;
+      if (modulator_patch_id==patch->id)
+        modulator_patch = patch; // If we are connected to ourself, the id hasn't been inserted into the system yet, and PATCH_get_from_id won't work.
+      else
+        modulator_patch = PATCH_get_from_id(modulator_patch_id);
+
+      R_ASSERT_RETURN_IF_FALSE(modulator_patch!=NULL);
+
+      int64_t modulator_id = MODULATOR_get_id_from_modulator_patch(modulator_patch);
+      R_ASSERT_RETURN_IF_FALSE(modulator_id >= 0);
+
+      MODULATOR_add_target(modulator_id, patch, i);
+    }
+  }  
+}
+*/
 
 
 void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state){
@@ -2051,6 +2105,15 @@ hash_t *PLUGIN_get_state(SoundPlugin *plugin){
                      
   // effects
   HASH_put_hash(state,"effects",PLUGIN_get_effects_state(plugin));
+
+  /*
+  // modulation
+  {
+    hash_t *modulation_state = PLUGIN_get_modulation_state(plugin);
+    if (modulation_state != NULL)
+      HASH_put_hash(state,"modulation",modulation_state);
+  }
+  */
 
   // auto-suspend
   HASH_put_int(state,"auto_suspend_behavior", PLUGIN_get_autosuspend_behavior(plugin));
@@ -2209,6 +2272,17 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   }
 }
 
+// Called from DLoadAudioInstrument when loading, and AUDIO_InitPatch2 when not loading.
+void PLUGIN_DLoad(SoundPlugin *plugin){
+  /*
+  if (plugin->modulation_state != NULL){
+    PLUGIN_apply_modulation_state(plugin, plugin->modulation_state);
+    remove_gc_root(plugin->modulation_state);
+    plugin->modulation_state = NULL;
+  }
+  */
+}
+
 SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   const char *container_name = HASH_has_key(state, "container_name") ? HASH_get_chars(state, "container_name") : NULL;
   const char *type_name = HASH_get_chars(state, "type_name");
@@ -2252,6 +2326,15 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   // auto-suspend
   if (HASH_has_key(state, "auto_suspend_behavior"))
     PLUGIN_set_autosuspend_behavior(plugin, (AutoSuspendBehavior)HASH_get_int(state, "auto_suspend_behavior"));
+
+  // modulation
+  /*
+  if (HASH_has_key(state, "modulation")){
+    hash_t *modulation = HASH_get_hash(state, "modulation");
+    if (modulation!=NULL)
+      plugin->modulation_state = add_gc_root(modulation); // Apply modulation later since the modulation patches might not exist yet. (especially if it's connected to itself)
+  }
+  */
 
   // do_random
   for(int i=0;i<type->num_effects;i++)

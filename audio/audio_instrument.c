@@ -503,6 +503,9 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
   InstrumentWidget_create_audio_instrument_widget(patch,is_loading_song);
   
   patch->is_usable = true;
+
+  if (!is_loading_song)
+    PLUGIN_DLoad(plugin);
   
   return true;
 }
@@ -931,6 +934,13 @@ void DLoadAudioInstrument(void){
     }
     block = NextBlock(block);
   }
+
+  vector_t patches = get_audio_instrument()->patches;
+  VECTOR_FOR_EACH(struct Patch *patch, &patches){
+    struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+    R_ASSERT(plugin!=NULL);
+    PLUGIN_DLoad(plugin);
+  }END_VECTOR_FOR_EACH;
 }
 
 /*

@@ -100,6 +100,10 @@ static inline void VECTOR_insert(vector_t *v, const void *element, int pos){
   }
 }
 
+static inline void VECTOR_push_front(vector_t *v, const void *element){
+  VECTOR_insert(v, element, 0);
+}
+
 static inline void *VECTOR_get_r0(const vector_t *v, int num, const char *type){
   if (num < 0){
     RError("Can not use negative index for VECTOR_get. name: %s index: %d (size: %d)",type,num,v->num_elements);
