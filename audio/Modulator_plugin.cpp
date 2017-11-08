@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include <math.h>
 
 #include <QHash>
 #include <QDateTime>
@@ -32,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 #include "SoundPluginRegistry_proc.h"
+#include "SoundProducer_proc.h"
+#include "Delay.hpp"
 
 #include "../mixergui/undo_chip_position_proc.h"
 #include "../mixergui/undo_mixer_connections_proc.h"
@@ -55,11 +58,15 @@ enum{
   
   EFF_MIN,
   EFF_MAX,
-  
+
+  EFF_MANUAL_INPUT,
+
+  EFF_ENABLE_WHEN_NOT_PLAYING,
+
   EFF_NUM_EFFECTS
 };
 
-#define NUM_TYPES 5
+#define NUM_TYPES 7
 
 #define MAX_MULTIPLIER_NUMERATOR 32
 #define MAX_MULTIPLIER_DENOMINATOR 32
@@ -104,13 +111,50 @@ struct GeneratorParameters{
 struct Generator{
   const char * const _name = NULL;
 
+  float _curr_value;
+
+private:
+
+  radium::Delay<float> _delay;
+
+public:
+
   Generator(const char *name)
-    :_name(name)
+    : _name(name)
+    , _delay(ceil((double)MAX_COMPENSATED_LATENCY*(double)MIXER_get_sample_rate() / (1000.0 * (double)RADIUM_BLOCKSIZE)))
   {}
   
   virtual void RT_pre_process(const GeneratorParameters &parms){
   }
-  virtual void RT_process(const struct Patch *patch, int effect_num, const GeneratorParameters &parms) = 0;
+
+  virtual void RT_process(int modulator_latency, const struct Patch *patch, int effect_num, const GeneratorParameters &parms) {
+    void *patchdata = patch->patchdata;
+
+    if (patchdata==NULL){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+
+    _delay.write(_curr_value);
+
+    if(patch->instrument==get_audio_instrument()){
+
+      SoundPlugin *plugin = static_cast<SoundPlugin*>(patchdata);
+
+      const int audio_rate_latency = R_MAX(0, RT_SP_get_input_latency(plugin->sp) - modulator_latency);
+      const int block_rate_latency = audio_rate_latency / RADIUM_BLOCKSIZE; // This function is running at block rate, not audio rate.
+
+      float value = _delay.tap(block_rate_latency);
+
+      PLUGIN_set_effect_value(plugin, 0, effect_num, value, DONT_STORE_VALUE, FX_middle, EFFECT_FORMAT_SCALED);
+
+    } else {
+
+      MIDI_set_effect_value(patch, 0, effect_num, _delay.tap(0));
+
+    }
+  }
+
   virtual void RT_post_process(const GeneratorParameters &parms){
   }
 
@@ -122,7 +166,6 @@ struct OscillatorGenerator : public Generator {
 
   double _phase = 0.0;
   double _phase_add = 0.002;
-  float _curr_value;
 
   OscillatorGenerator(const char *name)
     : Generator(name)
@@ -161,31 +204,12 @@ struct OscillatorGenerator : public Generator {
                                scale_double(oscillator(_phase),
                                             -1.0f, 1.0f,
                                             parms.min, parms.max),
-                               parms.max);
-
+                               parms.max
+                               );
+    
     //printf("_curr_value: %f - %f. %*f\n", _phase, beatpos, 10 + (int)scale(_curr_value, 0, 1, 0, 150), _curr_value);//_curr_value);
 
     _phase += _phase_add;
-  }
-
-  void RT_process(const struct Patch *patch, int effect_num, const GeneratorParameters &parms) override {
-    void *patchdata = patch->patchdata;
-
-    if (patchdata==NULL){
-      R_ASSERT_NON_RELEASE(false);
-      return;
-    }
-
-    if(patch->instrument==get_audio_instrument()){
-
-      SoundPlugin *plugin = static_cast<SoundPlugin*>(patchdata);
-      PLUGIN_set_effect_value(plugin, 0, effect_num, _curr_value, DONT_STORE_VALUE, FX_middle, EFFECT_FORMAT_SCALED);
-
-    } else {
-
-      MIDI_set_effect_value(patch, 0, effect_num, _curr_value);
-
-    }
   }
 };
 
@@ -274,8 +298,6 @@ struct InvertedSawGenerator : public OscillatorGenerator {
       return scale_double(phase, M_PI, M_PI2, 1, 0);
   }
 };
- 
-
 
 static int64_t g_id = 0;
 
@@ -296,7 +318,8 @@ private:
   SquareGenerator _square_generator;
   SawGenerator _saw_generator;
   InvertedSawGenerator _inverted_saw_generator;
-  
+  Generator _manual_parameter_input_generator;
+  Generator _audio_input_generator;
   
 public:
 
@@ -306,8 +329,12 @@ public:
 
   struct SoundPlugin *_plugin;
 
+  bool enable_when_not_playing = true;
+
   Modulator(struct SoundPlugin *plugin, hash_t *state = NULL)
     : _creation_time(state==NULL ? QDateTime::currentMSecsSinceEpoch() : HASH_get_int(state, "creation_time"))
+    , _manual_parameter_input_generator("Manual Parameter Input")
+    , _audio_input_generator("Audio Input (no envelope follower, no filtering)")
     , _plugin(plugin)
   {
   }
@@ -315,6 +342,28 @@ public:
   ~Modulator(){
     for(auto *target : *_targets)
       delete target;
+  }
+
+  void set_audio_generator_value(float val){
+    float value =  /*
+                     scale(_parms.phase_shift,
+                     0, 1,
+                     -1, 1)
+                     +
+                   */
+      scale(val,
+            -1, 1,
+            _parms.min, _parms.max);
+
+    _audio_input_generator._curr_value = R_BOUNDARIES(0, value, 1);
+  }
+
+  void set_manual_parameter_input(float val){
+    _manual_parameter_input_generator._curr_value = val;
+  }
+
+  float get_manual_parameter_input(void) const {
+    return _manual_parameter_input_generator._curr_value;
   }
 
   hash_t *get_state(void) const {
@@ -388,6 +437,10 @@ public:
       _generator = &_saw_generator;
     else if (type==4)
       _generator = &_inverted_saw_generator;
+    else if (type==5)
+      _generator = &_manual_parameter_input_generator;
+    else if (type==6)
+      _generator = &_audio_input_generator;
   }
 
   int get_type(void) const {
@@ -458,10 +511,17 @@ public:
     if (_parms.is_enabled==false)
       return;
 
+    if (is_really_playing()==false && enable_when_not_playing==false)
+      return;
+
+    int modulator_latency = 0;
+    if (_type==6)
+      modulator_latency = RT_SP_get_input_latency(_plugin->sp); // If this value is higher than the target latency, we get negative latency. Oh well.
+
     _generator->RT_pre_process(_parms);
 
     for(auto *target : *_targets){
-      _generator->RT_process(target->patch, target->effect_num, _parms);
+      _generator->RT_process(modulator_latency, target->patch, target->effect_num, _parms);
     }
 
     _generator->RT_post_process(_parms);
@@ -674,9 +734,8 @@ void MODULATOR_apply_connections_state(hash_t *state){
 }
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
-  //Modulator *modulator = static_cast<Modulator*>(plugin->data);
-
-  // no need to do anything. no inputs and no outputs.
+  Modulator *modulator = static_cast<Modulator*>(plugin->data);
+  modulator->set_audio_generator_value(inputs[0][0]);
 }
 
 
@@ -734,6 +793,14 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
     modulator->_parms.max = R_BOUNDARIES(modulator->_parms.min, value, 1);
     break;
 
+  case EFF_MANUAL_INPUT:
+    modulator->set_manual_parameter_input(value);
+    break;
+
+  case EFF_ENABLE_WHEN_NOT_PLAYING:
+    modulator->enable_when_not_playing = value >= 0.5;
+    break;
+
   default:
     RError("Unknown effect number %d. Value: %f\n",effect_num, value);
   }
@@ -775,6 +842,14 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
     
   case EFF_MAX:
     value = modulator->_parms.max;
+    break;
+
+  case EFF_MANUAL_INPUT:
+    value = modulator->get_manual_parameter_input();
+    break;
+
+  case EFF_ENABLE_WHEN_NOT_PLAYING:
+    return modulator->enable_when_not_playing ? 1.0 : 0.0;
     break;
 
   default:
@@ -838,6 +913,14 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     snprintf(buffer, buffersize-1, "%f", modulator->_parms.max);
     break;
 
+  case EFF_MANUAL_INPUT:
+    snprintf(buffer, buffersize-1, "%f", modulator->get_manual_parameter_input());
+    break;
+
+  case EFF_ENABLE_WHEN_NOT_PLAYING:
+    snprintf(buffer, buffersize-1, "%s", modulator->enable_when_not_playing ? "Yes" : "No");
+    break;
+
   default:
     RError("Unknown effect number %d",effect_num);
     return;
@@ -850,7 +933,6 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
 
   case EFF_ON_OFF:
     return EFFECT_FORMAT_BOOL;
-    break;
     
   case EFF_TYPE:
     return EFFECT_FORMAT_INT;
@@ -871,6 +953,12 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
   case EFF_MAX:
     return EFFECT_FORMAT_FLOAT;
     
+  case EFF_MANUAL_INPUT:
+    return EFFECT_FORMAT_FLOAT;
+
+  case EFF_ENABLE_WHEN_NOT_PLAYING:
+    return EFFECT_FORMAT_BOOL;
+
   default:
     RError("Unknown effect number %d",effect_num);
     return EFFECT_FORMAT_FLOAT;
@@ -904,6 +992,12 @@ static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
   case EFF_MAX:
     return "Maximum value";
 
+  case EFF_MANUAL_INPUT:
+    return "Manual input";
+
+  case EFF_ENABLE_WHEN_NOT_PLAYING:
+    return "Enable when not playing";
+
   default:
     RError("Unknown effect number %d",effect_num);
     return "(Error)";
@@ -918,6 +1012,11 @@ static const char *get_effect_description(struct SoundPlugin *plugin, int effect
     
   case EFF_MULTIPLIER_DENOMINATOR:
     return "Tip: Try to assign this Envelope Generator (to itself, that is)";
+
+  case EFF_MANUAL_INPUT:
+    return "<br>Modulation value when \"Type\" is set to \"Manual\". Normal operations would be to move the slider manually, use automation, or MIDI learn."
+      "<p>"
+      "TIP: This slider is convenient to MIDI-learn on when using 3rd party modulators.";
   }
 
   return "";
@@ -969,7 +1068,7 @@ void create_modulator_plugin(void){
 
   plugin_type->type_name                = MODULATOR_NAME;
   plugin_type->name                     = MODULATOR_NAME;
-  plugin_type->num_inputs               = 0;
+  plugin_type->num_inputs               = 1;
   plugin_type->num_outputs              = 0;
   plugin_type->is_instrument            = false;
   plugin_type->note_handling_is_RT      = false;

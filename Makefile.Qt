@@ -1784,7 +1784,7 @@ FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 Pd_plugin.o: audio/Pd_plugin.cpp
 	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
-Modulator_plugin.o: audio/Modulator_plugin.cpp
+Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
 	$(CCC) $(QTOPT) audio/Modulator_plugin.cpp
 
 

@@ -36,6 +36,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern "C"{
 #endif
 
+#define MAX_COMPENSATED_LATENCY 1000 // ms
+
+
 #define MIN_AUTOSUSPEND_PEAK 0.00001
   
 #define NOTUSED_EFFECT_NAME "NOTUSED"

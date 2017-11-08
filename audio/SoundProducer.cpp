@@ -174,8 +174,6 @@ namespace{
 #endif
 
 
-#define MAX_COMPENSATED_LATENCY 1000
-
 static float *g_empty_sound = NULL;
   
 struct LatencyCompensatorDelay {
