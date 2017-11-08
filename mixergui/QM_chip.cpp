@@ -768,13 +768,15 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
 
       bool from_is_mono = from->_num_outputs==1;
       bool to_is_mono   = to->_num_inputs==1;
-    
+      //printf("  %d -> %d\n", from->_num_outputs, to->_num_inputs);
+
       if(from_is_mono==true){
         for(int to_portnum=0 ; to_portnum<to->_num_inputs ; to_portnum++)
           add_linkparameters.add(from, 0, to, to_portnum, parm._volume, parm._must_set_enabled, parm._is_enabled);
       }else if(to_is_mono==true){
-        for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++)
+        for(int from_portnum=0 ; from_portnum<from->_num_outputs ; from_portnum++){
           add_linkparameters.add(from, from_portnum, to, 0, parm._volume, parm._must_set_enabled, parm._is_enabled);
+        }
       }else{
         for(int portnum=0 ; portnum<std::min(from->_num_outputs,to->_num_inputs) ; portnum++)
           add_linkparameters.add(from, portnum, to, portnum, parm._volume, parm._must_set_enabled, parm._is_enabled);
@@ -994,6 +996,7 @@ bool CONNECTIONS_apply_changes(const dyn_t dynchanges){
   
 
 void CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to){
+//printf("Connect chips\n");
   CONNECTIONS_apply_changes(scene, changes::Connect(from, to));
 }
 
