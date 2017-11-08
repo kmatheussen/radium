@@ -169,16 +169,10 @@ struct OscillatorGenerator : public Generator {
   }
 
   void RT_process(const struct Patch *patch, int effect_num, const GeneratorParameters &parms) override {
-    // Should we check if patch has been closed here?
-    // Probably not. patch->plugin is probably set to NULL before the plugin is deleted. Yes, looks so in AUDIO_remove_patchdata.
-
     void *patchdata = patch->patchdata;
 
-    // This check should be good enough.
     if (patchdata==NULL){
-#if !defined(RELEASE)
-      printf("1111. Note: patch->patchdata==NULL for %s (this should be perfectly legal in brief moments while a patch is deleted)\n", patch->name);
-#endif
+      R_ASSERT_NON_RELEASE(false);
       return;
     }
 
@@ -444,11 +438,16 @@ public:
     }PLAYER_unlock();
   }
 
-  void call_me_when_a_patch_is_made_inactive(const struct Patch *patch, radium::PlayerLockOnlyIfNeeded &lock){
+  void call_me_when_a_patch_is_made_inactive(const struct Patch *patch, radium::PlayerLockOnlyIfNeeded &lock, radium::UndoOnlyIfNeeded &undo){
   again:
     for(auto *maybetarget : *_targets)
       if (maybetarget->patch==patch){
+
+        if(undo.should_I_make_undo_questionmark())
+          ADD_UNDO(MixerConnections_CurrPos());
+
         lock.maybe_pause((int)_id);
+
         _targets->remove(maybetarget);
         goto again;
       }
@@ -608,10 +607,13 @@ void MODULATOR_remove_target(int modulator_id, const struct Patch *patch, int ef
 }
 
 void MODULATOR_call_me_when_a_patch_is_made_inactive(const struct Patch *patch){
+  R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
+
   radium::PlayerLockOnlyIfNeeded lock;
+  radium::UndoOnlyIfNeeded undo;
 
   for(auto *modulator : g_modulators2)
-    modulator->call_me_when_a_patch_is_made_inactive(patch, lock);
+    modulator->call_me_when_a_patch_is_made_inactive(patch, lock, undo);
 }
 
 int64_t *MODULATOR_get_ids(int *num_modulators){

@@ -167,6 +167,24 @@ namespace radium{
     }
   };
 
+  struct UndoOnlyIfNeeded{
+    bool has_made_undo = false;
+    
+    bool should_I_make_undo_questionmark(void){
+      if (has_made_undo==false){
+        has_made_undo = true;
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    UndoOnlyIfNeeded(){}
+    
+    UndoOnlyIfNeeded(const UndoOnlyIfNeeded&) = delete;
+    UndoOnlyIfNeeded& operator=(const UndoOnlyIfNeeded&) = delete;
+  };
+
 }
 
 #endif
