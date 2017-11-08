@@ -439,35 +439,7 @@ int64_t cloneAudioInstrument(int64_t instrument_id, float x, float y){
   return new_patch->id;
 }
 
-void connectAudioInstrumentToMainPipe(int64_t instrument_id){
-  struct Patch *patch = getAudioPatchFromNum(instrument_id);
-  if(patch==NULL)
-    return;
 
-  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
-  if (plugin==NULL){
-    handleError("Instrument #%d has been closed", (int)instrument_id);
-    return;
-  }
-
-  ADD_UNDO(MixerConnections_CurrPos());
-  MW_connect_plugin_to_main_pipe(plugin);
-}
-
-bool autoconnectInstrument(int64_t instrument_id, float x, float y){
-  struct Patch *patch = getAudioPatchFromNum(instrument_id);
-  if(patch==NULL)
-    return false;
-
-  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
-  if (plugin==NULL){
-    handleError("Instrument #%d has been closed", (int)instrument_id);
-    return false;
-  }
-
-  ADD_UNDO(MixerConnections_CurrPos());
-  return MW_autoconnect(patch, x, y);
-}
 
 dyn_t createNewInstrumentConf(float x, float y,
                               bool connect_to_main_pipe,
@@ -1220,6 +1192,40 @@ bool instrumentIsSelected(int64_t instrument_id){
   return ATOMIC_GET(plugin->is_selected);
 }
 
+
+
+// connections
+
+void connectAudioInstrumentToMainPipe(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+
+  ADD_UNDO(MixerConnections_CurrPos());
+  MW_connect_plugin_to_main_pipe(plugin);
+}
+
+bool autoconnectInstrument(int64_t instrument_id, float x, float y){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+
+  ADD_UNDO(MixerConnections_CurrPos());
+  return MW_autoconnect(patch, x, y);
+}
+
 int getNumInAudioConnections(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -1517,6 +1523,8 @@ void undoAudioConnectionGain(int64_t source_id, int64_t dest_id){
 
   ADD_UNDO(AudioConnectionGain_CurrPos(source, dest));
 }
+
+
 
 
 int getNumInputChannels(int64_t instrument_id){
