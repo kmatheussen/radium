@@ -800,7 +800,7 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
           remove_linkparameters.add(from, 0, to, to_portnum);
         }
       }else if(to_is_mono==true){
-        for(int from_portnum=0 ; from_portnum<to->_num_outputs ; from_portnum++){
+        for(int from_portnum=0 ; from_portnum<from->_num_outputs ; from_portnum++){
           remove_linkparameters.add(from, from_portnum, to, 0);
         }
       }else{
