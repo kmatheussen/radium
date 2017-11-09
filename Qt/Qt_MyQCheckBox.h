@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/Pd_plugin_proc.h"
+#include "../audio/Modulator_plugin_proc.h"
 
 #include "Qt_instruments_proc.h"
 
@@ -208,12 +209,19 @@ struct MyQCheckBox : public QCheckBox{
 
       bool has_midi_learn = PLUGIN_has_midi_learn(plugin, _effect_num);
       bool doing_random_change = PLUGIN_get_random_behavior(plugin, _effect_num);
-
+      int64_t modulator_id = MODULATOR_get_id(_patch, _effect_num);
+      
       int delete_pd = -10;
       int reset = -10;
+
       int remove_midi_learn = -10;
       int midi_relearn = -10;
       int add_midi_learn = -10;
+
+      int remove_modulator=-10;
+      int replace_modulator=-10;
+      int add_modulator=-10;
+
       int add_random = -10;
       int remove_random = -10;
 
@@ -230,12 +238,25 @@ struct MyQCheckBox : public QCheckBox{
         //VECTOR_push_back(&options, "Set Value");
       }
 
+      VECTOR_push_back(&options, "--------------");
+
       if (has_midi_learn){
         remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
         midi_relearn = VECTOR_push_back(&options, "MIDI Relearn");
       }else{
         add_midi_learn = VECTOR_push_back(&options, "MIDI Learn");
       }      
+
+      VECTOR_push_back(&options, "--------------");
+
+      if(modulator_id >= 0){
+        remove_modulator=VECTOR_push_back(&options, "Remove Modulator");
+        replace_modulator=VECTOR_push_back(&options, "Replace Modulator");        
+      } else {
+        add_modulator=VECTOR_push_back(&options, "Assign Modulator");
+      }
+
+      VECTOR_push_back(&options, "--------------");
 
       if (_effect_num < plugin->type->num_effects){
         if (doing_random_change)
@@ -269,6 +290,15 @@ struct MyQCheckBox : public QCheckBox{
       else if (command==midi_relearn) {
         PLUGIN_remove_midi_learn(plugin, _effect_num, true);
         PLUGIN_add_midi_learn(plugin, _effect_num);
+      }
+      else if (command==remove_modulator){
+        MODULATOR_remove_target(modulator_id, _patch, _effect_num);
+        
+      }else if (command==replace_modulator){
+        MODULATOR_maybe_create_and_add_target(_patch, _effect_num, true);
+        
+      }else if (command==add_modulator){
+        MODULATOR_maybe_create_and_add_target(_patch, _effect_num, false);
       }
 
       GFX_update_instrument_widget(_patch);
