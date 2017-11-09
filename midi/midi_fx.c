@@ -434,7 +434,7 @@ static int scale_0x3fff(float scaled_value){
 }
 
 static int scale_pitchpan7(float scaled_value){
-  return R_BOUNDARIES(-64, scale(scaled_value, 0, 1, 64, 63), 63);
+  return R_BOUNDARIES(-64, scale(scaled_value, 0, 1, -64, 63), 63);
 }
 
 static int scale_pitchpan14(float scaled_value){
@@ -455,16 +455,17 @@ void MIDI_set_effect_value(const struct Patch *patch, STime time, int effect_num
 		case PITCH7_CC:
                   treat_pitch7(patch, scale_pitchpan7(scaled_value), time);
                   break;
-		case PITCH14_CC:
+		case PITCH14_CC:                  
                   treat_pitch14(patch, scale_pitchpan14(scaled_value), time);
                   break;
 
                 case 10: // pan7
+                  //printf("PAN7. In: %f. Out: %d\n", scaled_value, scale_pitchpan7(scaled_value)); 
                   treat_pan7(patch, scale_pitchpan7(scaled_value), time);
                   break;
                   
                 case 128+10: // pan14
-                  treat_pan7(patch, scale_pitchpan7(scaled_value), time);
+                  treat_pan14(patch, scale_pitchpan7(scaled_value), time);
                   break;
 
 		default:

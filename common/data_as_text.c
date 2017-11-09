@@ -33,6 +33,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "data_as_text_proc.h"
 
 
+extern struct TEvent tevent;
+
+
+
 static int get_val_from_key(int key){
   int val = -1;
   
@@ -76,6 +80,12 @@ data_as_text_t DAT_get_newvalue(int subsubtrack,
   dat.is_valid = false;
   
   int logtype = default_logtype; //LOGTYPE_LINEAR;
+  
+  /*
+  if (CapsLock(tevent.keyswitch))
+    logtype = LOGTYPE_HOLD;
+  printf("Caps1: %d\n", CapsLock(tevent.keyswitch));
+  */
 
   int val = get_val_from_key(key);
   if (val==-1)
@@ -132,6 +142,12 @@ data_as_text_t DAT_get_newvalue(int subsubtrack,
 }
 
 data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, int key, int min_value, int max_value, int min_return_value, int max_return_value, bool is_hex, bool highest_value_is_one_more){
+
+  /*
+  if (CapsLock(tevent.keyswitch))
+    logtype = LOGTYPE_HOLD;
+  printf("Caps2: %d\n", CapsLock(tevent.keyswitch));
+  */
 
   data_as_text_t dat;
   dat.is_valid = false;

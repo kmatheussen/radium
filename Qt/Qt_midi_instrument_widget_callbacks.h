@@ -37,6 +37,11 @@ public:
     _patch_widget = new Patch_widget(this,patch);
     main_layout->insertWidget(0,_patch_widget);
 
+    panning_slider->_patch = patch;
+    panning_slider->_effect_num = 10;
+
+    volume_slider->_patch = patch;
+    volume_slider->_effect_num = 7;
   }
   
 

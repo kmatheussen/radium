@@ -223,18 +223,20 @@ struct MyQSlider : public QSlider {
 
     }else{
 
-      if(_patch==NULL || _patch->instrument!=get_audio_instrument() || _patch->patchdata == NULL)
+      if(_patch==NULL || _patch->patchdata == NULL) //  _patch->instrument!=get_audio_instrument() 
         return;
       
+      bool is_audio_instrument = _patch->instrument==get_audio_instrument() ;
+
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
 
 #ifdef COMPILING_RADIUM
       vector_t options = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
-      bool has_midi_learn = PLUGIN_has_midi_learn(plugin, _effect_num);
-      bool is_recording_automation = PLUGIN_is_recording_automation(plugin, _effect_num);
-      bool doing_random_change = PLUGIN_get_random_behavior(plugin, _effect_num);
+      bool has_midi_learn = is_audio_instrument && PLUGIN_has_midi_learn(plugin, _effect_num);
+      bool is_recording_automation = is_audio_instrument && PLUGIN_is_recording_automation(plugin, _effect_num);
+      bool doing_random_change = is_audio_instrument && PLUGIN_get_random_behavior(plugin, _effect_num);
       int64_t modulator_id = MODULATOR_get_id(_patch, _effect_num);
       
       int pd_delete=-10;
@@ -254,31 +256,35 @@ struct MyQSlider : public QSlider {
       int add_random = -10;
       int remove_random = -10;
       
-      if(_is_a_pd_slider){
-        /*
-        VECTOR_push_back(&options, "Set Symbol Name");
-        VECTOR_push_back(&options, "Set Type");
-        VECTOR_push_back(&options, "Set Minimum Value");
-        VECTOR_push_back(&options, "Set Maximum Value");
-        */
-        pd_delete = VECTOR_push_back(&options, "Delete");
-      } else {
+      if (is_audio_instrument) {
 
-        reset=VECTOR_push_back(&options, "Reset");
+        if(_is_a_pd_slider){
+          /*
+            VECTOR_push_back(&options, "Set Symbol Name");
+            VECTOR_push_back(&options, "Set Type");
+            VECTOR_push_back(&options, "Set Minimum Value");
+            VECTOR_push_back(&options, "Set Maximum Value");
+          */
+          pd_delete = VECTOR_push_back(&options, "Delete");
+        } else {
+          
+          reset=VECTOR_push_back(&options, "Reset");
+          
+          //VECTOR_push_back(&options, "Set Value");
+        }
+        
+        VECTOR_push_back(&options, "--------------");
+        
+        if (has_midi_learn){
+          remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
+          midi_relearn = VECTOR_push_back(&options, "MIDI Relearn");
+        }else{
+          midi_learn = VECTOR_push_back(&options, "MIDI Learn");
+        }
 
-        //VECTOR_push_back(&options, "Set Value");
+        VECTOR_push_back(&options, "--------------");
+
       }
-
-      VECTOR_push_back(&options, "--------------");
-
-      if (has_midi_learn){
-        remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
-        midi_relearn = VECTOR_push_back(&options, "MIDI Relearn");
-      }else{
-        midi_learn = VECTOR_push_back(&options, "MIDI Learn");
-      }
-
-      VECTOR_push_back(&options, "--------------");
 
       if(modulator_id >= 0){
         remove_modulator=VECTOR_push_back(&options, "Remove Modulator");
@@ -287,23 +293,26 @@ struct MyQSlider : public QSlider {
         add_modulator=VECTOR_push_back(&options, "Assign Modulator");
       }
 
-      VECTOR_push_back(&options, "--------------");
-    
-      if (!is_recording_automation)
-        record = VECTOR_push_back(&options, "Record");
+      if (is_audio_instrument) {
 
-      VECTOR_push_back(&options, "--------------");
-
-      add_automation_to_current_editor_track = VECTOR_push_back(&options, "Add automation to current editor track");
-      add_automation_to_current_sequencer_track = VECTOR_push_back(&options, "Add automation to current sequencer track");
-
-      VECTOR_push_back(&options, "--------------");
-
-      if (_effect_num < plugin->type->num_effects){
-        if (doing_random_change)
-          remove_random = VECTOR_push_back(&options, "Don't change value when pressing \"Random\"");
-        else
-          add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
+        VECTOR_push_back(&options, "--------------");
+        
+        if (!is_recording_automation)
+          record = VECTOR_push_back(&options, "Record");
+        
+        VECTOR_push_back(&options, "--------------");
+        
+        add_automation_to_current_editor_track = VECTOR_push_back(&options, "Add automation to current editor track");
+        add_automation_to_current_sequencer_track = VECTOR_push_back(&options, "Add automation to current sequencer track");
+        
+        VECTOR_push_back(&options, "--------------");
+        
+        if (_effect_num < plugin->type->num_effects){
+          if (doing_random_change)
+            remove_random = VECTOR_push_back(&options, "Don't change value when pressing \"Random\"");
+          else
+            add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
+        }
       }
       
       //VECTOR_push_back(&options, "");
