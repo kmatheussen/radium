@@ -2,6 +2,14 @@
 #ifndef _RADIUM_AUDIO_MODULATOR_PLUGIN_PROC_H
 #define _RADIUM_AUDIO_MODULATOR_PLUGIN_PROC_H
 
+enum ModulatorEnabledTypes{
+  MET_DISABLED,
+  MET_ONLY_ENABLE_WHEN_PLAYING,
+  MET_ENABLED,
+
+  MET_NUM_ENABLED_TYPES
+};
+
 extern LANGSPEC void RT_MODULATOR_process(void);
 extern LANGSPEC int64_t MODULATOR_get_id(const struct Patch *patch, int effect_num);
 extern LANGSPEC int64_t MODULATOR_get_id_from_modulator_patch(const struct Patch *patch);
