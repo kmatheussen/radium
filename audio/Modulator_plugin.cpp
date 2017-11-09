@@ -139,10 +139,10 @@ public:
     , _delay(ceil((double)MAX_COMPENSATED_LATENCY*(double)MIXER_get_sample_rate() / (1000.0 * (double)RADIUM_BLOCKSIZE)))
   {}
   
-  virtual void RT_pre_process(const GeneratorParameters &parms){
+  virtual void RT_block_pre_process(const GeneratorParameters &parms){
   }
 
-  virtual void RT_process(int modulator_latency, const struct Patch *patch, int effect_num, const GeneratorParameters &parms) {
+  virtual void RT_block_process(int modulator_latency, const struct Patch *patch, int effect_num, const GeneratorParameters &parms) {
     void *patchdata = patch->patchdata;
 
     if (patchdata==NULL){
@@ -160,6 +160,7 @@ public:
       const int block_rate_latency = audio_rate_latency / RADIUM_BLOCKSIZE; // This function is running at block rate, not audio rate.
 
       float value = R_BOUNDARIES(0, _delay.tap(block_rate_latency), 1);
+      //printf("VALUE: %f\n", value);
 
       PLUGIN_set_effect_value(plugin, 0, effect_num, value, DONT_STORE_VALUE, FX_middle, EFFECT_FORMAT_SCALED);
 
@@ -190,7 +191,7 @@ struct OscillatorGenerator : public Generator {
   
   virtual double oscillator(double phase) = 0;
   
-  void RT_pre_process(const GeneratorParameters &parms) override {
+  void RT_block_pre_process(const GeneratorParameters &parms) override {
 
     double beatpos;
 
@@ -342,7 +343,7 @@ public:
   ~EnvelopeFollowerGenerator(){
   }
 
-  void RT_compute(int count, float* input0, const GeneratorParameters &parms) {
+  void RT_compute(int count, float* input0, float *output0, const GeneratorParameters &parms) {
     const double fHslider0 = _attack;
     const double fHslider1 = _release;
 
@@ -353,7 +354,7 @@ public:
       double fTemp1 = ((fRec0[1] > fTemp0)?fSlow1:fSlow0);
       fRec1[0] = ((fRec1[1] * fTemp1) + ((1.0 - fTemp1) * fTemp0));
       fRec0[0] = fRec1[0];
-      //output0[i] = FAUSTFLOAT(fRec0[0]);
+      output0[i] = FAUSTFLOAT(fRec0[0]);
       fRec1[1] = fRec1[0];
       fRec0[1] = fRec0[0];      
     }
@@ -421,15 +422,10 @@ public:
                      +
                    */
       scale(val,
-            -1, 1,
+            0, 1,
             _parms.min, _parms.max);
 
     _audio_input_generator._curr_value = value;
-  }
-
-  void RT_generate_envelope_following(float *input, int num_frames){
-    if (_type==EnvelopeFollowerType)
-      _audio_envelope_follower.RT_compute(num_frames, input, _parms);
   }
 
   void RT_set_attack(float value){
@@ -611,7 +607,7 @@ public:
       }
   }
 
-  void RT_process(void){
+  void RT_block_process(void){
 
     if (_parms.enabled_type==MET_DISABLED)
       return;
@@ -623,14 +619,26 @@ public:
     if (_type==AudioInputType || _type==EnvelopeFollowerType)
       modulator_latency = RT_SP_get_input_latency(_plugin->sp) - 1; // We subtract 1 since _curr_value was set to the last value of the previous block. Now we are called right before processing a new block.
 
-    _generator->RT_pre_process(_parms);
+    _generator->RT_block_pre_process(_parms);
 
     for(auto *target : *_targets){
-      _generator->RT_process(modulator_latency, target->patch, target->effect_num, _parms);
+      _generator->RT_block_process(modulator_latency, target->patch, target->effect_num, _parms);
     }
 
     _generator->RT_post_process(_parms);
   }
+  void RT_process(int num_frames, float *input, float *output){
+    RT_set_audio_generator_value(input[num_frames-1]); // We use the last frame since the value is not going to be used until the next block.
+
+    if (_type==EnvelopeFollowerType)
+      _audio_envelope_follower.RT_compute(num_frames, input, output, _parms);
+    else {
+      float val = _generator->_curr_value;
+      for(int i=0 ; i < num_frames ; i++)
+        output[i] = val;
+    }
+  }
+
 };
 
 } // end anon. namespace
@@ -645,7 +653,7 @@ static radium::Vector<Modulator*> g_modulators2;
 // Called from the main audio thread
 void RT_MODULATOR_process(void){
   for(auto *modulator : g_modulators2)
-    modulator->RT_process();
+    modulator->RT_block_process();
 }
 
 int64_t MODULATOR_get_id(const struct Patch *patch, int effect_num){
@@ -840,8 +848,7 @@ void MODULATOR_apply_connections_state(hash_t *state){
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   Modulator *modulator = static_cast<Modulator*>(plugin->data);
-  modulator->RT_set_audio_generator_value(inputs[0][num_frames-1]); // We use the last frame since the value is not going to be used until the next block.
-  modulator->RT_generate_envelope_following(inputs[0], num_frames);
+  modulator->RT_process(num_frames, inputs[0], outputs[0]);
 }
 
 
@@ -1238,7 +1245,7 @@ void create_modulator_plugin(void){
   plugin_type->type_name                = MODULATOR_NAME;
   plugin_type->name                     = MODULATOR_NAME;
   plugin_type->num_inputs               = 1;
-  plugin_type->num_outputs              = 0;
+  plugin_type->num_outputs              = 1;
   plugin_type->is_instrument            = false;
   plugin_type->note_handling_is_RT      = false;
   plugin_type->num_effects              = EFF_NUM_EFFECTS;
