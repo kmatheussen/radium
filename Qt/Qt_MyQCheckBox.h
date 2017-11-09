@@ -322,12 +322,17 @@ struct MyQCheckBox : public QCheckBox{
 
     QString text2 = vertical_text!="" ? vertical_text : text();
 
-    if(_patch!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata != NULL){
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      QString b = PLUGIN_has_midi_learn(plugin, _effect_num) ? "*" : "";
-      QString a = (_effect_num>=plugin->type->num_effects || PLUGIN_get_random_behavior(plugin, _effect_num)) ? "" : " [xR]";
+    if(_patch!=NULL && _patch->patchdata != NULL){
+      // TODO: This code is copied three times.
+      QString c = MODULATOR_get_id(_patch, _effect_num) >= 0 ? "<m>" : "";
+      QString b,a;
+      if(_patch->instrument==get_audio_instrument()){
+        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+        b = PLUGIN_has_midi_learn(plugin, _effect_num) ? "*" : "";
+        a = (_effect_num>=plugin->type->num_effects || PLUGIN_get_random_behavior(plugin, _effect_num)) ? "" : " [xR]";
+      }
 
-      text2 = b + text2 + a;
+      text2 = c + b + text2 + a;
     }
     
     CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2, _is_implicitly_on);

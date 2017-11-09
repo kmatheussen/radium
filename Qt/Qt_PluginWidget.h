@@ -300,10 +300,12 @@ class ParamWidget : public QWidget {
     char buf[64]={0};
     PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
 
+    // TODO: This code is copied three times.
+    QString c = MODULATOR_get_id(_patch, _effect_num) >= 0 ? "<m>" : "";
     QString b = PLUGIN_has_midi_learn(plugin, _effect_num) ? "*" : "";
     QString a = PLUGIN_get_random_behavior(plugin, _effect_num) ? "" : " [xR]";
 
-    return b + _name + ": " + QString::fromUtf8(buf) + a;
+    return c + b + _name + ": " + QString::fromUtf8(buf) + a;
   }
   
   void set_slider_string(void){
