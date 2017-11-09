@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
 #include "../midi/midi_i_input_proc.h"
+#include "../midi/midi_fx_proc.h"
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/Modulator_plugin_proc.h"
 
@@ -157,6 +158,39 @@ struct Patch *PATCH_get_from_id(int64_t id){
   return NULL;
 #endif
 }
+
+int PATCH_get_effect_num(const struct Patch *patch, const char *effect_name, char **error_message){
+  if (patch->patchdata==NULL){
+    char *message = talloc_format("Instrument #%d (%s) has been closed", (int)patch->id, patch->name);
+    if (error_message != NULL)
+      *error_message = message;
+    else
+      GFX_Message(NULL, message);
+    return -1;
+  }
+  
+  int ret;
+  if (patch->instrument==get_audio_instrument()) {
+
+    struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+    //if (plugin==NULL) // already checked above.
+
+    ret = PLUGIN_get_effect_num(plugin, effect_name, error_message);
+
+  } else {
+
+    ret = MIDI_get_effect_num(patch, effect_name, error_message);
+
+  }
+
+
+  if (ret==-1 && error_message!=NULL && (*error_message)==NULL){
+    *error_message = talloc_format("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)patch->id, patch->name);
+  }
+
+  return ret;
+}
+
 
 void PATCH_handle_fx_when_theres_a_new_patch_for_track(struct Blocks *block, struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch, bool *has_paused){
   

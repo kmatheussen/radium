@@ -133,6 +133,56 @@
                                                (sort-instruments-by-mixer-position-and-connections 
                                                 (get-all-audio-instruments)))))))
 
+(delafina (get-effect-popup-entries :instrument-id
+                                    :effect-name
+                                    :automation-error-message #f ;; If set to a string, the entries will be disabled, and this will be the text
+                                    :modulation-error-message #f ;; If set to a string, the entries will be disabled, and this will be the text
+                                    :pre-undo-block-callback (lambda () #f)
+                                    :post-undo-block-callback (lambda () #f)
+                                    )
+  (list
+   (list (or automation-error-message
+             "Add automation to current editor track")
+         :enabled (not automation-error-message)
+         (lambda ()
+           (undo-block (lambda ()
+                         (pre-undo-block-callback)
+                         (<ra> :add-automation-to-current-editor-track instrument-id effect-name)
+                         (post-undo-block-callback)))))
+   (list (or automation-error-message
+             "Add automation to current sequencer track")
+         :enabled (not automation-error-message)
+         (lambda ()
+           (undo-block (lambda ()
+                         (pre-undo-block-callback)
+                         (<ra> :add-automation-to-current-sequencer-track instrument-id effect-name)
+                         (post-undo-block-callback)))))
+   "------------"
+   (let ((has-modulator (and (not modulation-error-message)
+                             (<ra> :has-modulator instrument-id effect-name))))
+     (if has-modulator
+         (list (list (<-> "Remove modulator (" (<ra> :get-modulator-description instrument-id effect-name) ")")
+                     (lambda ()
+                       (undo-block (lambda ()
+                                     (pre-undo-block-callback)
+                                     (<ra> :remove-modulator instrument-id effect-name)
+                                     (post-undo-block-callback)))))
+               (list (<-> "Replace modulator (" (<ra> :get-modulator-description instrument-id effect-name) ")")
+                     (lambda ()
+                       (undo-block (lambda ()
+                                     (pre-undo-block-callback)
+                                     (<ra> :replace-modulator instrument-id effect-name)
+                                     (post-undo-block-callback))))))
+         (list (list (or modulation-error-message
+                         "Assign modulator")
+                     :enabled (not automation-error-message)
+                     (lambda ()
+                       (undo-block (lambda ()
+                                     ;;(c-display "adding modulator for" instrument-id effect-name)
+                                     (pre-undo-block-callback)
+                                     (<ra> :add-modulator instrument-id effect-name)
+                                     (post-undo-block-callback))))))))
+   ))
 
 
 (define (create-custom-checkbox instrument-id strips-config paint-func value-changed is-selected min-height)
@@ -645,6 +695,8 @@
                                )
 
   (set! parentgui (<gui> :get-parent-window parentgui))
+  ;;(c-display (<-> "Effect name: -" effect-name "-"))
+  ;;(c-display "ins:" instrument-id)
 
   (popup-menu (list "Delete"
                      :enabled delete-func
@@ -714,20 +766,14 @@
                       (reset-func)))
               
               "------------"
-              (list (if effect-name
-                        "Add automation to current editor track"
-                        "(Send-automation not supported yet)")
-                    :enabled effect-name
-                    (lambda ()
-                      (<ra> :add-automation-to-current-editor-track instrument-id effect-name)))
-              (list (if effect-name
-                        "Add automation to current sequencer track"
-                        "(Send-automation not supported yet)")
-                    :enabled effect-name
-                    (lambda ()
-                      (<ra> :add-automation-to-current-sequencer-track instrument-id effect-name)))
-
-
+              (get-effect-popup-entries parent-instrument-id
+                                        effect-name
+                                        :automation-error-message (if effect-name
+                                                                      #f
+                                                                      "(Connection gain automation not supported yet)")
+                                        :modulation-error-message (if effect-name
+                                                                      #f
+                                                                      "(Connection gain modulation not supported yet)"))
               ;;"----------"
               ;;"Convert to standalone strip" (lambda ()
               ;;                                #t)
@@ -1677,16 +1723,9 @@
                                     :check pan-enabled
                                     enable!)
                               "------------"
-                              (list "Add automation to current editor track"
-                                    (lambda ()
-                                      (undo-block (lambda ()
-                                                    (enable! #t)
-                                                    (<ra> :add-automation-to-current-editor-track instrument-id "System Pan")))))
-                              (list "Add automation to current sequencer track"
-                                    (lambda ()
-                                      (undo-block (lambda ()
-                                                    (enable! #t)
-                                                    (<ra> :add-automation-to-current-sequencer-track instrument-id "System Pan")))))
+                              (get-effect-popup-entries instrument-id "System Pan"
+                                                        :pre-undo-block-callback (lambda ()
+                                                                                   (enable! #t)))
                               "------------"
                               (get-global-mixer-strips-popup-entries instrument-id strips-config))
                   #t)
@@ -2001,12 +2040,7 @@
                                         (<ra> :undo-instrument-effect instrument-id effect-name)
                                         (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized 0)))
                               "------------"
-                              (list "Add automation to current editor track"
-                                    (lambda ()
-                                      (<ra> :add-automation-to-current-editor-track instrument-id effect-name)))
-                              (list "Add automation to current sequencer track"
-                                    (lambda ()
-                                      (<ra> :add-automation-to-current-sequencer-track instrument-id effect-name)))
+                              (get-effect-popup-entries instrument-id effect-name)
                               "------------"
                               (get-global-mixer-strips-popup-entries instrument-id strips-config))))
            #f))

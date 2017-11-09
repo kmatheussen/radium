@@ -250,8 +250,8 @@ struct MyQCheckBox : public QCheckBox{
       VECTOR_push_back(&options, "--------------");
 
       if(modulator_id >= 0){
-        remove_modulator=VECTOR_push_back(&options, "Remove Modulator");
-        replace_modulator=VECTOR_push_back(&options, "Replace Modulator");        
+        remove_modulator=VECTOR_push_back(&options, talloc_format("Remove Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
+        replace_modulator=VECTOR_push_back(&options, talloc_format("Replace Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
       } else {
         add_modulator=VECTOR_push_back(&options, "Assign Modulator");
       }

@@ -758,7 +758,7 @@ const char *PLUGIN_get_new_name_if_name_has_changed(struct SoundPlugin *plugin, 
   return effect_name;
 }
 
-int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name, bool show_error_message){
+int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name, char **error_message){
   const struct SoundPluginType *plugin_type = plugin->type;
 
   int i;
@@ -770,8 +770,12 @@ int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name, b
     if(!strcmp(effect_name,plugin_type->get_effect_name(plugin,i)))
       return i;
 
-  if (show_error_message)
-    GFX_Message(NULL, "The effect names of %s / %s has changed.\n\"%s\" will be ignored.\n\nIf you know the new name of the effect, you can edit the song manually in a text editor.", plugin_type->type_name, plugin_type->name, effect_name);
+  char *message = talloc_format("The effect names of %s / %s has changed.\n\"%s\" will be ignored.\n\nIf you know the new name of the effect, you can edit the song manually in a text editor.", plugin_type->type_name, plugin_type->name, effect_name);
+
+  if (error_message==NULL)
+    GFX_Message(NULL, message);
+  else
+    *error_message = message;
   
   return -1;
 }

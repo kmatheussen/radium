@@ -23,6 +23,8 @@ extern LANGSPEC void PATCH_add_to_instrument(struct Patch *patch);
 extern LANGSPEC struct Patch *PATCH_get_from_id(int64_t id);
 extern LANGSPEC int64_t PATCH_get_new_id(void);
 
+extern LANGSPEC int PATCH_get_effect_num(const struct Patch *patch, const char *effect_name, char **error_message);
+
 extern LANGSPEC void PATCH_handle_fx_when_theres_a_new_patch_for_track(struct Blocks *block, struct Tracks *track, struct Patch *old_patch, struct Patch *new_patch, bool *has_paused);
 extern LANGSPEC void PATCH_handle_editor_and_automation_when_replacing_patch(struct Patch *old_patch, struct Patch *new_patch);
 extern LANGSPEC void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *patch, bool keep_unassigned_effects);

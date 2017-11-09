@@ -16,10 +16,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-
-
-
 #include "midi_i_plugin.h"
 
 
@@ -27,6 +23,8 @@ extern void MIDI_treatFX(struct FX *fx,int val,const struct Tracks *track,int sk
 extern void MIDI_closeFX(struct FX *fx,const struct Tracks *track);
 
 extern LANGSPEC void MIDI_set_effect_value(const struct Patch *patch, STime time, int effect_num, float scaled_value); // MIDI version of SOUNDPLUGIN_set_effect_value
+
+extern LANGSPEC int MIDI_get_effect_num(const struct Patch *patch, const char *effect_name, char **error_message);
   
 extern bool MIDISetTreatFX(struct FX *fx,struct MIDI_FX *midi_fx);
 

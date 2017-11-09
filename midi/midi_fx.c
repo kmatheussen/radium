@@ -482,6 +482,23 @@ void MIDI_set_effect_value(const struct Patch *patch, STime time, int effect_num
 	}  
 }
 
+
+int MIDI_get_effect_num(const struct Patch *patch, const char *effect_name, char **error_message){
+  for(int i = 0 ; i< MIDI_NUM_FX ; i++){
+    struct MIDI_FX fx = MIDI_fxs[i];
+    if (!strcmp(effect_name, fx.name))
+      return fx.effect_num;
+  }
+
+  int ret = atoi(effect_name);
+  if (ret < 0){
+    return -1;
+  }
+
+  return ret;
+}
+
+
 // NOT called from RT thread
 static int MIDI_default_FX_value(const struct FX *fx){
   return (fx->min + fx->max) / 2;

@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/undo_connection_enabled_proc.h"
 #include "../audio/undo_audio_connection_gain_proc.h"
+#include "../audio/Modulator_plugin_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../mixergui/QM_chip.h"
@@ -769,23 +770,28 @@ void setInstrumentEffect(int64_t instrument_id, const char *effect_name, float v
   GFX_update_instrument_widget(patch);
 }
 
+static int get_effect_num(const struct Patch *patch, const_char* effect_name){
+  char *error_message = NULL;
+  int effect_num = PATCH_get_effect_num(patch, effect_name, &error_message);
+  if (effect_num==-1)
+    handleError(error_message);
+  return effect_num;
+}
 
 const_char* getInstrumentEffectColor(int64_t instrument_id, const_char* effect_name){
-  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  const struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return "";
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
     handleError("Instrument #%d has been closed", (int)instrument_id);
-    return "";
+    return false;
   }
 
-  int effect_num = PLUGIN_get_effect_num(plugin, effect_name, false);
-  if (effect_num==-1){
-    handleError("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)instrument_id, patch->name);
+  int effect_num = get_effect_num(patch, effect_name);
+  if(effect_num==-1)
     return "";
-  }
 
   return GFX_get_colorname_from_color(GFX_get_color(get_effect_color(plugin, effect_num)));
 }
@@ -801,11 +807,9 @@ bool addAutomationToCurrentEditorTrack(int64_t instrument_id, const_char* effect
     return false;
   }
 
-  int effect_num = PLUGIN_get_effect_num(plugin, effect_name, false);
-  if (effect_num==-1){
-    handleError("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)instrument_id, patch->name);
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num==-1)
     return false;
-  }
 
   int blocknum = currentBlock(-1);
   int tracknum = R_MAX(0, currentTrack(blocknum, -1));
@@ -855,11 +859,9 @@ bool addAutomationToCurrentSequencerTrack(int64_t instrument_id, const_char* eff
     return false;
   }
 
-  int effect_num = PLUGIN_get_effect_num(plugin, effect_name, false);
-  if (effect_num==-1){
-    handleError("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)instrument_id, patch->name);
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num==-1)
     return false;
-  }
   
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
   if (seqtrack == NULL)
@@ -923,12 +925,9 @@ void undoInstrumentEffect(int64_t instrument_id, const char *effect_name){
     return;
   }
 
-  int effect_num = PLUGIN_get_effect_num(plugin, effect_name, false);
-
-  if (effect_num==-1){
-    handleError("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)instrument_id, patch->name);
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num==-1)
     return;
-  }
   
   ADD_UNDO(AudioEffect_CurrPos(patch, effect_num));
 }
@@ -1526,6 +1525,108 @@ void undoAudioConnectionGain(int64_t source_id, int64_t dest_id){
 
 // modulator connections
 
+bool hasModulator(int64_t instrument_id, const char *effect_name){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num==-1)
+    return false;
+
+  int64_t modulator_id = MODULATOR_get_id(patch, effect_num);
+
+  return modulator_id >= 0;
+}
+
+static void addModulator2(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id, bool supposed_to_already_have_modulator){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  if (modulator_instrument_id != -1){
+    handleError("Not implemented yet. modulator_instrument_id must have the value -1.");
+    return;
+  }
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num==-1)
+    return;
+
+  int64_t modulator_id = MODULATOR_get_id(patch, effect_num);
+
+  if (supposed_to_already_have_modulator) {
+    if (modulator_id == -1){
+      handleError("replaceModulator: Effect %s in instrument \"%s\" does not have a modulator", effect_name, getInstrumentName(instrument_id));
+      return;
+    }
+  } else {
+    if (modulator_id >= 0){
+      handleError("addModulator: Effect %s in instrument \"%s\" already has a modulator: %s", effect_name, getInstrumentName(instrument_id), MODULATOR_get_description(modulator_id));
+      return;
+    }
+  }
+
+  MODULATOR_maybe_create_and_add_target(patch, effect_num, supposed_to_already_have_modulator);
+}
+
+void addModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+  addModulator2(instrument_id, effect_name, modulator_instrument_id, false);
+}
+
+void replaceModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
+  addModulator2(instrument_id, effect_name, modulator_instrument_id, true);
+}
+
+void removeModulator(int64_t instrument_id, const char *effect_name){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num==-1)
+    return;
+
+  int64_t modulator_id = MODULATOR_get_id(patch, effect_num);
+
+  if (modulator_id == -1){
+    handleError("removeModulator: Effect %s in instrument \"%s\" does not have a modulator", effect_name, getInstrumentName(instrument_id));
+    return;
+  }
+
+  MODULATOR_remove_target(modulator_id, patch, effect_num);
+}
+
+const char *getModulatorDescription2(int64_t instrument_id, int effect_num){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return "";
+  
+  int64_t modulator_id = MODULATOR_get_id(patch, effect_num);
+
+  if (modulator_id == -1){
+    handleError("getModulatorDescription: Effect %d in instrument \"%s\" does not have a modulator", effect_num, getInstrumentName(instrument_id));
+    return "";
+  }
+
+  struct Patch *modulation_patch = MODULATOR_get_modulator_patch(patch, effect_num);
+
+  return talloc_format("%s: %s", modulation_patch->name, MODULATOR_get_description(modulator_id));
+}
+
+const char *getModulatorDescription(int64_t instrument_id, const char *effect_name){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return "";
+  
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num==-1)
+    return "";
+
+  return getModulatorDescription2(instrument_id, effect_num);
+}
+
+
 /*
 void addModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
@@ -2000,12 +2101,9 @@ int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, bool mo
     return -1;
   }
 
-  int effect_num = PLUGIN_get_effect_num(plugin, effect_name, false);
-
-  if (effect_num==-1){
-    handleError("Unknown effect \"%s\" in instrument #%d (\"%s\")", effect_name, (int)instrument_id, patch->name);
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num==-1)
     return -1;
-  }
   
     /*
   if (find_effect_monitor(effect_num, instrument_id) != NULL){
