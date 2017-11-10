@@ -53,6 +53,23 @@ static inline int DYNVEC_push_back(dynvec_t &v, const dyn_t element){
   return DYNVEC_push_back(&v, element);
 }
 
+static inline const dyn_t* begin(const dynvec_t &v) {
+  return &v.elements[0];
+}
+
+static inline const dyn_t* end(const dynvec_t &v) {
+  return &v.elements[v.num_elements];
+}
+
+static inline const dyn_t* begin(const dynvec_t *v) {
+  return &v->elements[0];
+}
+
+static inline const dyn_t* end(const dynvec_t *v) {
+  return &v->elements[v->num_elements];
+}
+
+
 #endif
 
 

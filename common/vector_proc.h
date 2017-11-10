@@ -181,7 +181,8 @@ static inline void VECTOR_delete_last(vector_t *v){
 
 #define END_ALL_SEQTRACKS_FOR_EACH }
 
-  
+
+
 extern vector_t g_global_roots;
 
 #ifdef __cplusplus

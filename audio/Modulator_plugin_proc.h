@@ -20,8 +20,8 @@ extern LANGSPEC void MODULATOR_remove_target(int modulator_id, const struct Patc
 extern LANGSPEC void MODULATOR_call_me_when_a_patch_is_made_inactive(const struct Patch *patch);
 extern LANGSPEC int64_t *MODULATOR_get_ids(int *num_modulators);
 extern LANGSPEC const char *MODULATOR_get_description(int64_t modulator_id);
-extern LANGSPEC hash_t *MODULATOR_get_connections_state(void);
-extern LANGSPEC void MODULATOR_apply_connections_state(hash_t *state);
+extern LANGSPEC dyn_t MODULATOR_get_connections_state(void);
+extern LANGSPEC void MODULATOR_apply_connections_state(const dyn_t state);
 
 #endif
 

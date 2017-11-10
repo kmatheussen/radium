@@ -101,6 +101,31 @@ struct ModulatorTarget{
     : patch(patch)
     , effect_num(effect_num)
   {}
+
+  ModulatorTarget(const dyn_t dynstate)
+    : ModulatorTarget(NULL, EFFNUM_INPUT_VOLUME)
+  {    
+    if (dynstate.type!=HASH_TYPE){
+      R_ASSERT(false);
+      return;
+    }
+
+    const hash_t *state = dynstate.hash;
+    
+    int64_t patch_id = HASH_get_int(state, ":patch-id");
+    patch = PATCH_get_from_id(patch_id);
+
+    effect_num = HASH_get_int32(state, ":effect-num");    
+  }
+      
+  dyn_t get_state(void) const {
+    hash_t *state = HASH_create(2);
+    HASH_put_int(state, ":patch-id", patch->id);
+    HASH_put_int(state, ":effect-num", effect_num);
+
+    return DYN_create_hash(state);
+  }
+
 };
 
 
@@ -455,7 +480,7 @@ public:
   }
 
   hash_t *get_state(void) const {
-    hash_t *state = HASH_create(4);
+    hash_t *state = HASH_create(2);
 
     {
       const volatile struct Patch *modulator_patch = _plugin->patch;
@@ -463,17 +488,17 @@ public:
       HASH_put_int(state, "modulator_patch_id", modulator_patch->id);
     }
 
-    int i = 0;
-    for(auto *target : *_targets){
-      HASH_put_int_at(state, "target_patch_id", i, target->patch->id);
-      HASH_put_int_at(state, "target_effect_num", i, target->effect_num);
-      i++;
-    }
+    dynvec_t targets = {0};
+    
+    for(auto *target : *_targets)
+      DYNVEC_push_back(&targets, target->get_state());
 
+    HASH_put_dyn(state, "targets", DYN_create_array(targets));
+    
     return state;
   }
 
-  void apply_state(hash_t *state){
+  void apply_state(const hash_t *state){
     // Assert that the state is for this modulator.
     {
       const volatile struct Patch *modulator_patch = _plugin->patch;
@@ -485,17 +510,16 @@ public:
 
     radium::Vector<const ModulatorTarget*> *new_targets = new radium::Vector<const ModulatorTarget*>;
 
-    int num_new_targets = HASH_get_array_size(state, "target_patch_id");
-    for(int i=0 ; i<num_new_targets ; i++){
-      int64_t target_patch_id = HASH_get_int_at(state, "target_patch_id", i);
-      const struct Patch *patch = PATCH_get_from_id(target_patch_id);
-      R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+    const dyn_t dyntargets = HASH_get_dyn(state, "targets");
+    R_ASSERT_RETURN_IF_FALSE(dyntargets.type==ARRAY_TYPE);
 
-      int effect_num = HASH_get_int32_at(state, "target_effect_num", i);
+    const dynvec_t *targets = dyntargets.array;
 
-      auto *new_target = new ModulatorTarget(patch, effect_num);
-      new_targets->push_back(new_target);
-    }    
+    for(const dyn_t target : targets){
+      auto *new_target = new ModulatorTarget(target);//targets->elements[i]);
+      if (new_target->patch != NULL)
+        new_targets->push_back(new_target);
+    }
 
     auto *old_targets = _targets;
 
@@ -809,16 +833,13 @@ const char *MODULATOR_get_description(int64_t modulator_id){
   return modulator->_generator->_name;
 }
 
-hash_t *MODULATOR_get_connections_state(void){
-  hash_t *state = HASH_create(g_modulators2.size());
+dyn_t MODULATOR_get_connections_state(void){
+  dynvec_t vec = {0};
 
-  int i = 0;
-  for(auto *modulator : g_modulators2){
-    HASH_put_hash_at(state, "modulator", i, modulator->get_state());
-    i++;
-  }
+  for(auto *modulator : g_modulators2)
+    DYNVEC_push_back(&vec, DYN_create_hash(modulator->get_state()));
 
-  return state;
+  return DYN_create_array(vec);
 }
 
 static Modulator *get_modulator_from_patch_id(int64_t patch_id){
@@ -832,17 +853,17 @@ static Modulator *get_modulator_from_patch_id(int64_t patch_id){
   return NULL;
 }
 
-void MODULATOR_apply_connections_state(hash_t *state){
-  int size = HASH_get_array_size(state, "modulator");
-  for(int i=0 ; i<size ; i++){
-    hash_t *modulator_state = HASH_get_hash_at(state, "modulator", i);
-    if(modulator_state==NULL) return; // assertion was thrown in hashmap.c
+void MODULATOR_apply_connections_state(const dyn_t dynstate){
+  R_ASSERT_RETURN_IF_FALSE(dynstate.type==ARRAY_TYPE);
+  
+  for(const dyn_t modulator_state : dynstate.array){
+    R_ASSERT_RETURN_IF_FALSE(modulator_state.type==HASH_TYPE);
 
-    int64_t patch_id = HASH_get_int(modulator_state, "modulator_patch_id");
+    int64_t patch_id = HASH_get_int(modulator_state.hash, "modulator_patch_id");
     Modulator *modulator = get_modulator_from_patch_id(patch_id);
     R_ASSERT_RETURN_IF_FALSE(modulator!=NULL);
 
-    modulator->apply_state(modulator_state);
+    modulator->apply_state(modulator_state.hash);
   }
 }
 

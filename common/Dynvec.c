@@ -88,7 +88,7 @@ void DYN_save(disk_t *file, const dyn_t dyn){
   
 void DYNVEC_save(disk_t *file, const dynvec_t dynvec){
   DISK_write(file, ">> DYNVEC BEGIN\n"); // Not really needed, but makes it simpler to read in a text editor. (it would be enough just to write version number)
-  DISK_write(file, "3\n");
+  DISK_write(file, "3\n"); // version number.
              
   DISK_printf(file, "%d\n", dynvec.num_elements);
   
