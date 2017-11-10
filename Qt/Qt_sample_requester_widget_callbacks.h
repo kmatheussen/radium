@@ -286,8 +286,8 @@ class Sample_requester_widget : public QWidget
     _file_chooser_state = IN_DIRECTORY;
 
     octave->setToolTip("Preview octave.");
-    up->setToolTip("Shift preview sound one octave up.");
-    down->setToolTip("Shift preview sound one octave down");
+    up->setToolTip("Octave up (preview sound).");
+    down->setToolTip("Octave down (preview sound).");
 
     update_file_list(false);
 

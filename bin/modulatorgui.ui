@@ -39,6 +39,38 @@
     </widget>
    </item>
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="phase_04">
+       <property name="text">
+        <string>Set phase to 0/4</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="phase_14">
+       <property name="text">
+        <string>Set phase to 1/4</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="phase_24">
+       <property name="text">
+        <string>Set phase to 2/4</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="phase_34">
+       <property name="text">
+        <string>Set phase to 3/4</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <widget class="QWidget" name="" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">

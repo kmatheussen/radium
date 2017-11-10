@@ -128,6 +128,14 @@
                  (update-rows!)
                  200))))
 
+  (for-each (lambda (phasenum)
+              (define button (<gui> :child gui (<-> "phase_" phasenum "4")))
+              (<gui> :add-callback button (lambda ()
+                                            (when (<ra> :instrument-is-open-and-audio instrument-id)
+                                              (<ra> :undo-instrument-effect instrument-id "Phase shift")
+                                              (<ra> :set-instrument-effect instrument-id "Phase shift" (/ phasenum 4))))))
+            (list 0 1 2 3))
+  
   (define close-button (<gui> :child gui "close_button"))
   (<gui> :add-callback close-button (lambda ()
                                       (<gui> :close gui)))

@@ -322,7 +322,7 @@ struct MyQCheckBox : public QCheckBox{
 
     QString text2 = vertical_text!="" ? vertical_text : text();
 
-    if(_patch!=NULL && _patch->patchdata != NULL)
+    if(_patch!=NULL && _patch->patchdata != NULL && _is_patchvoice_onoff_button==false)
       text2 = get_parameter_prepend_text(_patch, _effect_num) + text2;
     
     CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2, _is_implicitly_on);
