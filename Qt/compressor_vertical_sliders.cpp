@@ -709,7 +709,9 @@ struct Comp
 
   void set_threshold(float val){
     //double bef=in_val2;
-    double old_inval1_scaled = scale(in_val1,0,in_val2,0,1);
+    double old_inval1_scaled = in_val2==0 ? 0 : scale(in_val1,
+                                                      0,in_val2,
+                                                      0,1);
     double old_ratio_factor = out_val1 / (in_val2-in_val1);
 
     in_val2 = val;
