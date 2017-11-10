@@ -835,7 +835,7 @@ void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect
   MODULATOR_add_target(new_modulator_id, patch, effect_num);
 }
 
-void MODULATOR_remove_target(int modulator_id, const struct Patch *patch, int effect_num){
+void MODULATOR_remove_target(int64_t modulator_id, const struct Patch *patch, int effect_num){
   R_ASSERT_RETURN_IF_FALSE(g_modulators.contains(modulator_id));  
   g_modulators[modulator_id]->remove_target(patch, effect_num);
 }

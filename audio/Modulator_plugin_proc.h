@@ -16,7 +16,7 @@ extern LANGSPEC int64_t MODULATOR_get_id_from_modulator_patch(const struct Patch
 extern LANGSPEC struct Patch *MODULATOR_get_modulator_patch(const struct Patch *patch, int effect_num);
 extern LANGSPEC void MODULATOR_add_target(int64_t modulator_id, const struct Patch *patch, int effect_num);
 extern LANGSPEC void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect_num, bool do_replace);
-extern LANGSPEC void MODULATOR_remove_target(int modulator_id, const struct Patch *patch, int effect_num);
+extern LANGSPEC void MODULATOR_remove_target(int64_t modulator_id, const struct Patch *patch, int effect_num);
 extern LANGSPEC void MODULATOR_set_target_enabled(int64_t modulator_id, const struct Patch *patch, int effect_num, bool enabled);
 extern LANGSPEC bool MODULATOR_get_target_enabled(int64_t modulator_id, const struct Patch *patch, int effect_num);
 extern LANGSPEC void MODULATOR_call_me_when_a_patch_is_made_inactive(const struct Patch *patch);
