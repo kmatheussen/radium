@@ -1,5 +1,37 @@
+Changes 5.2.5 -> 5.2.7:
+* Audio: Don't show an error message when undoing the deletion
+  of an instrument that was soloing.
+* Demo: Added "The tree of bugs" song by Nikos Levantis.
+* GUI: Minor fix to the compressor GUI.
+* Audio: Fix making audio connection to an instrument with only
+  one input from an instrument with more than one output. Bug
+  created summer 2017.
+* Colors: Change the default automation color 7 from an almost
+  invisible blue-like color to a more visible red-like color.
+* Mixer strips: Fix showing strips for instruments not having
+  audio inputs or outputs.
+* Audio: Minor fix to the timing values sent to VST/AU/Jack/etc.
+* Audio: Modulator instrument. Right-click a slider or checkbox
+  and select "Assign modulator". Currently it can generate
+  Sine LFO, Triangle LFO, Square LFO, Saw LFO, Inverted Saw LFO,
+  manual input (which can be MIDI-learned on), unmodified
+  audio input, and the output of running an envelope-follower
+  on the audio input. Parameters for both audio and MIDI
+  instruments can be modulated. Currently it only follows
+  global tempo. Triggering from note input has not been
+  implemented yet.
+* Build: Update QScintilla from 2.9.2 to 2.10.1. (The
+  text editor used in the Faust instrument.)
+* API: New functions: gui_removeParent, hasModulator,
+  addModulator, replaceModulator, removeModulator,
+  getModulatorDescription, getModulatorDescription2,
+  getModulatorInstruments, getModulatorTargets,
+  setModulatorEnabled, getModulatorEnabled
+
+
+
 Changes 5.2.4 -> 5.2.5:
-* Help: Minor fixes to mixer documentation..
+* Help: Minor fixes to mixer documentation.
 * Audio: Possibly optimize conversion between db and gain on
   OSX and Windows.
 * Import mod: Don't show swing track, and hide bus and click
