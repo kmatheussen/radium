@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/scheduler_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "../midi/midi_fx_proc.h"
 
 #include "SoundPlugin.h"
@@ -96,14 +98,16 @@ namespace{
 struct ModulatorTarget{
   const struct Patch *patch;
   int effect_num;
-
-  ModulatorTarget(const struct Patch *patch, int effect_num)
+  bool enabled;
+  
+  ModulatorTarget(const struct Patch *patch, int effect_num, bool enabled)
     : patch(patch)
     , effect_num(effect_num)
+    , enabled(enabled)
   {}
 
   ModulatorTarget(const dyn_t dynstate)
-    : ModulatorTarget(NULL, EFFNUM_INPUT_VOLUME)
+    : ModulatorTarget(NULL, EFFNUM_INPUT_VOLUME, true)
   {    
     if (dynstate.type!=HASH_TYPE){
       R_ASSERT(false);
@@ -112,16 +116,19 @@ struct ModulatorTarget{
 
     const hash_t *state = dynstate.hash;
     
-    int64_t patch_id = HASH_get_int(state, ":patch-id");
+    int64_t patch_id = HASH_get_int(state, ":instrument-id");
     patch = PATCH_get_from_id(patch_id);
 
-    effect_num = HASH_get_int32(state, ":effect-num");    
+    effect_num = HASH_get_int32(state, ":effect-num");
+    enabled = HASH_get_bool(state, ":enabled");
   }
-      
+
+  // Note: Used directly in the API (i.e don't change the key names)
   dyn_t get_state(void) const {
     hash_t *state = HASH_create(2);
-    HASH_put_int(state, ":patch-id", patch->id);
+    HASH_put_int(state, ":instrument-id", patch->id);
     HASH_put_int(state, ":effect-num", effect_num);
+    HASH_put_bool(state, ":enabled", enabled);
 
     return DYN_create_hash(state);
   }
@@ -257,7 +264,7 @@ struct OscillatorGenerator : public Generator {
 struct SinewaveGenerator : public OscillatorGenerator {
 
   SinewaveGenerator()
-    : OscillatorGenerator("Sine wave")
+    : OscillatorGenerator("Sine")
   {}
 
   double oscillator(double phase) override {
@@ -403,9 +410,11 @@ public:
 
   int64_t _creation_time;
 
+  int64_t gui = -1;
+  
 private:
   
-  radium::Vector<const ModulatorTarget*> *_targets = new radium::Vector<const ModulatorTarget*>;
+  radium::Vector<ModulatorTarget*> *_targets = new radium::Vector<ModulatorTarget*>;
 
   SinewaveGenerator _sinewave_generator;
   TriangleGenerator _triangle_generator;
@@ -508,7 +517,7 @@ public:
       R_ASSERT_RETURN_IF_FALSE(patch_id==modulator_patch->id);
     }
 
-    radium::Vector<const ModulatorTarget*> *new_targets = new radium::Vector<const ModulatorTarget*>;
+    radium::Vector<ModulatorTarget*> *new_targets = new radium::Vector<ModulatorTarget*>;
 
     const dyn_t dyntargets = HASH_get_dyn(state, "targets");
     R_ASSERT_RETURN_IF_FALSE(dyntargets.type==ARRAY_TYPE);
@@ -575,19 +584,23 @@ public:
   const char *get_type_name(void) const {
     return _generator->_name;
   }
+
+  ModulatorTarget *get_target(const struct Patch *patch, int effect_num) const {
+    for(auto *maybetarget : *_targets)
+      if (maybetarget->patch==patch && maybetarget->effect_num==effect_num)
+        return maybetarget;
+
+    return NULL;
+  }
   
   bool has_target(const struct Patch *patch, int effect_num) const {
-    for(auto *target : *_targets)
-      if (target->patch==patch && target->effect_num==effect_num)
-        return true;
-
-    return false;
+    return get_target(patch, effect_num) != NULL;
   }
   
   void add_target(const struct Patch *patch, int effect_num){
     R_ASSERT_RETURN_IF_FALSE(has_target(patch,effect_num)==false);
     
-    auto *target = new ModulatorTarget(patch, effect_num);
+    auto *target = new ModulatorTarget(patch, effect_num, true);
 
     _targets->ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
 
@@ -599,14 +612,7 @@ public:
   }
 
   void remove_target(const struct Patch *patch, int effect_num){
-    const ModulatorTarget *target = NULL;
-    
-    for(auto *maybetarget : *_targets)
-      if (maybetarget->patch==patch && maybetarget->effect_num==effect_num){
-        target = maybetarget;
-        break;
-      }
-
+    ModulatorTarget *target = get_target(patch, effect_num);
     R_ASSERT_RETURN_IF_FALSE(target!=NULL);
     
     ADD_UNDO(MixerConnections_CurrPos());
@@ -616,6 +622,24 @@ public:
     }PLAYER_unlock();
   }
 
+  void set_target_enabled(const struct Patch *patch, int effect_num, bool enabled){
+    ModulatorTarget *target = get_target(patch, effect_num);
+    R_ASSERT_RETURN_IF_FALSE(target!=NULL);
+
+    ADD_UNDO(MixerConnections_CurrPos());
+    
+    PLAYER_lock();{
+      target->enabled = enabled;
+    }PLAYER_unlock();
+  }
+
+  bool get_target_enabled(const struct Patch *patch, int effect_num){
+    const ModulatorTarget *target = get_target(patch, effect_num);
+    R_ASSERT_RETURN_IF_FALSE2(target!=NULL, false);
+
+    return target->enabled;
+  }
+  
   void call_me_when_a_patch_is_made_inactive(const struct Patch *patch, radium::PlayerLockOnlyIfNeeded &lock, radium::UndoOnlyIfNeeded &undo){
   again:
     for(auto *maybetarget : *_targets)
@@ -646,7 +670,8 @@ public:
     _generator->RT_block_pre_process(_parms);
 
     for(auto *target : *_targets){
-      _generator->RT_block_process(modulator_latency, target->patch, target->effect_num, _parms);
+      if (target->enabled)
+        _generator->RT_block_process(modulator_latency, target->patch, target->effect_num, _parms);
     }
 
     _generator->RT_post_process(_parms);
@@ -680,6 +705,18 @@ void RT_MODULATOR_process(void){
     modulator->RT_block_process();
 }
 
+static Modulator *get_modulator(int64_t modulator_patch_id){
+  for(auto *modulator : g_modulators2){
+    const volatile struct Patch *modulator_patch = modulator->_plugin->patch;
+    R_ASSERT(modulator_patch != NULL);
+    if (modulator_patch_id == modulator_patch->id)
+      return modulator;
+  }
+
+  R_ASSERT(false);
+  return NULL;
+}
+                                
 int64_t MODULATOR_get_id(const struct Patch *patch, int effect_num){
   for(int64_t id : g_modulators.keys()){
     auto *modulator = g_modulators[id];
@@ -803,6 +840,16 @@ void MODULATOR_remove_target(int modulator_id, const struct Patch *patch, int ef
   g_modulators[modulator_id]->remove_target(patch, effect_num);
 }
 
+void MODULATOR_set_target_enabled(int64_t modulator_id, const struct Patch *patch, int effect_num, bool enabled){
+  R_ASSERT_RETURN_IF_FALSE(g_modulators.contains(modulator_id));  
+  g_modulators[modulator_id]->set_target_enabled(patch, effect_num, enabled);
+}
+
+bool MODULATOR_get_target_enabled(int64_t modulator_id, const struct Patch *patch, int effect_num){
+  R_ASSERT_RETURN_IF_FALSE2(g_modulators.contains(modulator_id), false);
+  return g_modulators[modulator_id]->get_target_enabled(patch, effect_num);
+}
+
 void MODULATOR_call_me_when_a_patch_is_made_inactive(const struct Patch *patch){
   R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Undoing() || Undo_Is_Currently_Ignoring());
 
@@ -831,6 +878,23 @@ const char *MODULATOR_get_description(int64_t modulator_id){
   R_ASSERT_RETURN_IF_FALSE2(g_modulators.contains(modulator_id), "");
   auto *modulator = g_modulators[modulator_id];
   return modulator->_generator->_name;
+}
+
+bool MODULATOR_is_modulator(int64_t modulator_patch_id){
+  return get_modulator(modulator_patch_id) != NULL;
+}
+
+// Note: The result is sent directly to the API
+dynvec_t MODULATOR_get_modulator_targets(int64_t modulator_patch_id){
+  Modulator *modulator = get_modulator(modulator_patch_id);
+  if (modulator==NULL)
+    return *g_empty_dynvec.array;
+
+  hash_t *state = modulator->get_state();
+  dyn_t dyn = HASH_get_dyn(state, "targets");
+  R_ASSERT_RETURN_IF_FALSE2(dyn.type==ARRAY_TYPE, *g_empty_dynvec.array);
+  
+  return *dyn.array;
 }
 
 dyn_t MODULATOR_get_connections_state(void){
@@ -1259,6 +1323,51 @@ static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
   return 0;
 }
 
+static bool gui_is_visible(struct SoundPlugin *plugin){
+  const volatile struct Patch *modulator_patch = plugin->patch;
+  if(modulator_patch==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+
+  Modulator *modulator = static_cast<Modulator*>(plugin->data);
+
+  if (modulator->gui >= 0 && gui_isOpen(modulator->gui))
+    return true;
+
+  return false;
+}
+
+static void show_gui(struct SoundPlugin *plugin){
+  const volatile struct Patch *modulator_patch = plugin->patch;
+  if(modulator_patch==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+
+  Modulator *modulator = static_cast<Modulator*>(plugin->data);
+
+  if (modulator->gui >= 0 && gui_isOpen(modulator->gui)){
+    gui_raise(modulator->gui);
+    return;
+  }
+  
+  modulator->gui = S7CALL2(int_int, "FROM_C-create-modulator-gui", modulator_patch->id);
+
+  if (modulator->gui>=0){
+    gui_show(modulator->gui);
+  }
+}
+
+static void hide_gui(struct SoundPlugin *plugin){
+  Modulator *modulator = static_cast<Modulator*>(plugin->data);
+
+  if (modulator->gui >= 0){
+    if (gui_isOpen(modulator->gui))
+      gui_close(modulator->gui);
+    modulator->gui = -1;
+  }
+}
 
 void create_modulator_plugin(void){
   SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
@@ -1289,6 +1398,10 @@ void create_modulator_plugin(void){
   plugin_type->set_effect_value = set_effect_value;
   plugin_type->get_effect_value = get_effect_value;
   plugin_type->get_display_value_string = get_display_value_string;
+
+  plugin_type->gui_is_visible = gui_is_visible;
+  plugin_type->show_gui = show_gui;
+  plugin_type->hide_gui = hide_gui;
 
   plugin_type->will_never_autosuspend = true; // Must always run.
   

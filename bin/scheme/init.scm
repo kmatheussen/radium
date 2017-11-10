@@ -477,6 +477,7 @@
     show-bars-and-beats-or-line-numbers-popup-menu
     popup-menu
     delete-all-unused-MIDI-instruments
+    FROM_C-create-modulator-gui
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

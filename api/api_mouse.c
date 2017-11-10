@@ -399,7 +399,7 @@ void setTrackSliderPos(float pos, int blocknum, int windownum){
   int total_width = WTRACKS_getWidth(window, wblock);
 
   if (visible_width >= total_width){
-    R_ASSERT_NON_RELEASE(wblock->skew_x == 0);
+    //    R_ASSERT_NON_RELEASE(wblock->skew_x == 0);
     wblock->skew_x = 0;
     return;
   }

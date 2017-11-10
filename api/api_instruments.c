@@ -1626,7 +1626,78 @@ const char *getModulatorDescription(int64_t instrument_id, const char *effect_na
   return getModulatorDescription2(instrument_id, effect_num);
 }
 
+dyn_t getModulatorInstruments(void){
+  dynvec_t dynvec = {0};
 
+  const dyn_t dynstate = MODULATOR_get_connections_state();
+  const dynvec_t *vec = dynstate.array;
+  
+  for(int i = 0 ; i < vec->num_elements ; i++){
+    dyn_t dynstate = vec->elements[i];
+    
+    hash_t *modulator_state = dynstate.hash;
+    int64_t patch_id = HASH_get_int(modulator_state, "modulator_patch_id");
+
+    DYNVEC_push_back(&dynvec, DYN_create_int(patch_id));
+  }
+
+  return DYN_create_array(dynvec);
+}
+
+// Note, called quite often.
+dyn_t getModulatorTargets(int64_t modulator_instrument_id){
+
+  struct Patch *patch = getAudioPatchFromNum(modulator_instrument_id);
+  if(patch==NULL)
+    return g_empty_dynvec;
+
+  if (!MODULATOR_is_modulator(modulator_instrument_id)){
+    handleError("getModulatorTargets: Instrument #%d is not a modulator", (int)modulator_instrument_id);
+    return g_empty_dynvec;
+  }
+    
+  return DYN_create_array(MODULATOR_get_modulator_targets(modulator_instrument_id));
+}
+
+void setModulatorEnabled(int64_t instrument_id, const char *effect_name, bool enabled){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num==-1)
+    return;
+
+  int64_t modulator_id = MODULATOR_get_id(patch, effect_num);
+
+  if (modulator_id == -1){
+    handleError("removeModulator: Effect %s in instrument \"%s\" does not have a modulator", effect_name, getInstrumentName(instrument_id));
+    return;
+  }
+
+  MODULATOR_set_target_enabled(modulator_id, patch, effect_num, enabled);
+}
+
+bool getModulatorEnabled(int64_t instrument_id, const char *effect_name){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num==-1)
+    return false;
+
+  int64_t modulator_id = MODULATOR_get_id(patch, effect_num);
+
+  if (modulator_id == -1){
+    handleError("removeModulator: Effect %s in instrument \"%s\" does not have a modulator", effect_name, getInstrumentName(instrument_id));
+    return false;
+  }
+
+  return MODULATOR_get_target_enabled(modulator_id, patch, effect_num);
+}
+
+                               
 /*
 void addModulator(int64_t instrument_id, const char *effect_name, int64_t modulator_instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
