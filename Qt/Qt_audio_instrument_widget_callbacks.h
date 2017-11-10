@@ -1176,7 +1176,8 @@ public slots:
   }
 
   void on_solo_button_toggled(bool val){
-    setInstrumentSolo(_patch->id, val);
+    if(is_starting==false)
+      setInstrumentSolo(_patch->id, val);
   }
 
   void on_drywet_slider_valueChanged(int val){
