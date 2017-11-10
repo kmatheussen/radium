@@ -392,12 +392,7 @@ public:
 
     SLIDERPAINTER_set_recording_color(slider->_painter, PLUGIN_is_recording_automation(plugin, effect_num));
     
-    // TODO: This code is copied three times.
-    QString c = MODULATOR_get_id(_patch, effect_num) >= 0 ? "<m>" : "";
-    QString b = PLUGIN_has_midi_learn(plugin, effect_num) ? "*" : "";
-    QString a; // = PLUGIN_get_random_behavior(plugin, effect_num) ? "" : " [xR]"; (all of these have random behavior turned off)
-
-    QString p = c + b + a;
+    QString p = get_parameter_prepend_text(_patch, effect_num);
     
     char buf[64]={0};
     PLUGIN_get_display_value_string(plugin, effect_num, buf, 64);

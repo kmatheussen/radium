@@ -161,4 +161,36 @@ extern LANGSPEC const wchar_t *PLUGIN_DISK_get_audio_filename(hash_t *state);
 extern LANGSPEC void RT_schedule_mixer_strips_remake(int64_t id); // id==-1: remake all, id==-2: remake none (only strip order may have changed).
 extern LANGSPEC void RT_schedule_mixer_strips_redraw(void);
 
+
+#if defined(USE_QT4) && defined(QSTRING_H)
+
+#include "Modulator_plugin_proc.h"
+#include "../common/instruments_proc.h"
+
+static inline QString get_parameter_prepend_text(const struct Patch *patch, int effect_num){
+  QString ret;
+
+  if (MODULATOR_get_id(patch, effect_num) >= 0)
+    ret = "m";
+  
+  if(patch->instrument==get_audio_instrument()){
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, ret);
+    
+    if (PLUGIN_has_midi_learn(plugin, effect_num))
+      ret += "M";
+
+    if(effect_num<plugin->type->num_effects && !PLUGIN_get_random_behavior(plugin, effect_num))
+      ret += "r";
+  }
+
+  if (ret=="")
+    return "";
+  else
+    return "[" + ret + "] ";
+}
+                                         
+#endif
+
+
 #endif // AUDIO_SOUNDPLUGIN_PROC_H
