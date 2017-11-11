@@ -116,7 +116,7 @@ else
 fi
 
 if env |grep INCLUDE_FAUSTDEV ; then
-    FAUSTLDFLAGS="bin/packages/QScintilla_gpl-2.9.2/Qt4Qt5/libqscintilla2.a bin/packages/faust2/compiler/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
+    FAUSTLDFLAGS="bin/packages/QScintilla_gpl-2.10.1/Qt4Qt5/libqscintilla2.a bin/packages/faust2/compiler/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
 else    
     FAUSTLDFLAGS=""
 fi

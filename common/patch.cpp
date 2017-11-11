@@ -165,7 +165,7 @@ int PATCH_get_effect_num(const struct Patch *patch, const char *effect_name, cha
     if (error_message != NULL)
       *error_message = message;
     else
-      GFX_Message(NULL, message);
+      GFX_Message(NULL, "%s", message);
     return -1;
   }
   

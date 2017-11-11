@@ -774,7 +774,7 @@ static int get_effect_num(const struct Patch *patch, const_char* effect_name){
   char *error_message = NULL;
   int effect_num = PATCH_get_effect_num(patch, effect_name, &error_message);
   if (effect_num==-1)
-    handleError(error_message);
+    handleError("%s", error_message);
   return effect_num;
 }
 
