@@ -3767,17 +3767,71 @@ namespace{
   };
 
   struct MyGuiItem : public QTableWidgetItem, public Pri{
-    MyGuiItem()
+    int64_t _guinum;
+    QPointer<QWidget> _widget;
+    
+    MyGuiItem(int64_t guinum)
       : Pri(DBL_MAX)
-    {}
+      , _guinum(guinum)
+    {
+      Gui *cell_gui = get_gui(guinum);
+      R_ASSERT_RETURN_IF_FALSE(cell_gui!=NULL);  
+      _widget = cell_gui->_widget.data();
+    }
+    
     bool operator<(const QTableWidgetItem &other) const override{
-      const Pri *myother = dynamic_cast<const Pri*>(&other);
-      if (myother!=NULL)
-        return _pri < myother->_pri; //false; //_name < other.text(); //QTableWidgetItem::operator<(other);
-      else
-        return true;
+      bool fallback = true;
+      
+      {
+        const Pri *other_pri = dynamic_cast<const Pri*>(&other);
+        if (other_pri!=NULL)
+          fallback = _pri < other_pri->_pri; //false; //_name < other.text(); //QTableWidgetItem::operator<(other);
+      }
+      
+      const MyGuiItem *other_gui_item = dynamic_cast<const MyGuiItem*>(&other);
+      
+      if (other_gui_item != NULL){
+
+        fallback = _guinum < other_gui_item->_guinum;
+        
+        const QWidget *w1 = _widget;
+        const QWidget *w2 = other_gui_item->_widget;
+        
+        const QAbstractButton *b1 = dynamic_cast<const QAbstractButton*>(w1);
+        const QAbstractButton *b2 = dynamic_cast<const QAbstractButton*>(w2);
+        
+        if (b1==NULL || b2==NULL)
+          return fallback;
+        
+        if (b1->isCheckable() && b2->isCheckable()){
+          
+          if (b1->isChecked()==b2->isChecked())
+            return fallback;
+          
+          return !b1->isChecked();          
+        }
+
+        if (b1->text()==b2->text())
+          return fallback;
+        
+        return b1->text() < b2->text();
+      }
+      
+      return fallback;
     }
   };
+}
+
+// Same as mid-vertical-layout in gui.scm
+static QWidget *create_mid_widget(QWidget *content_widget){
+  int64_t content = API_get_gui_from_widget(content_widget);
+  
+  int64_t layout = gui_verticalLayout();
+  gui_addLayoutSpace(layout, 10, 10, false, true);
+  gui_add(layout, content, -1, -1, -1, -1);
+  gui_addLayoutSpace(layout, 10, 10, false, true);
+
+  return API_gui_get_widget(content);
 }
 
 static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetItem *item, int x, int y, bool enabled){
@@ -3811,7 +3865,7 @@ static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetI
   // Workaround for Qt bug.
   g_guis_can_not_be_closed[cell_gui->get_gui_num()] = "Gui is placed inside a Table. Qt seems to crash with if you close a QTableWidget cell widget manually. However, table cells are deleted automatically when being replaced, or a row is deleted, or a table is cleared, so it's probably never necessary to close them manually.";
 
-  table->setCellWidget(y, x, cell_gui->_widget);
+  table->setCellWidget(y, x, create_mid_widget(cell_gui->_widget));
 
   return cell_gui->get_gui_num();
 }
@@ -3821,7 +3875,7 @@ int64_t gui_addTableGuiCell(int64_t table_guinum, int64_t cell_gui_num, int x, i
   if (cell_gui==NULL)
     return -1;
 
-  auto *item = new MyGuiItem();
+  auto *item = new MyGuiItem(cell_gui_num);
   
   return add_table_cell(table_guinum, cell_gui, item, x, y, enabled);
 }

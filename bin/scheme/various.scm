@@ -86,10 +86,10 @@
     (<gui> :add-table-string-cell table effect-name 1 n)
     
     (define onoff (create-enabled target-id effect-name))
-    (<gui> :add-table-gui-cell table (mid-horizontal-layout onoff) 2 n)
+    (<gui> :add-table-gui-cell table onoff 2 n)
 
     (define delete (create-delete target-id effect-name))
-    (<gui> :add-table-gui-cell table (mid-horizontal-layout delete) 3 n)
+    (<gui> :add-table-gui-cell table delete 3 n)
     )
 
   (define curr-targets #f)
@@ -101,6 +101,8 @@
       
       ;;(c-display "NEW TARGETS:" (pp targets))
 
+      (<gui> :enable-table-sorting table #f)
+      
       (define num-rows (<gui> :get-num-table-rows table))
       (<gui> :add-table-rows table 0 (- (length targets)
                                         num-rows))
@@ -115,7 +117,9 @@
                 (iota (length targets))
                 targets)
 
-      (set! doit #t)))
+      (set! doit #t)
+
+      (<gui> :enable-table-sorting table #t)))
 
   (<ra> :schedule 0
         (lambda ()
