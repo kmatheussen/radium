@@ -806,11 +806,10 @@ static void add_event_to_play_buffer(const symbol_t *port_name, uint32_t msg){
 }
 
 
-// This is safe. A patch is never deleted.
+// This is safe. A patch is never deleted. (But that changed later, the content of all patches are cleared when loading a song, and usage of g_through_patch has caused at least one crash)
 void MIDI_SetThroughPatch(struct Patch *patch){
   //printf("Sat new patch %p\n",patch);
-  if(patch!=NULL)
-    ATOMIC_SET(g_through_patch, patch);
+  ATOMIC_SET(g_through_patch, patch);
 }
 
 

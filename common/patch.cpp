@@ -88,6 +88,9 @@ static void PATCH_clean_unused_patches(void){
   // Too dangerous. We clean the content instead.
   //VECTOR_clean(&g_unused_patches);
 
+  MIDI_SetThroughPatch(NULL);
+  g_currpatch = NULL;
+  
   // Release memory. We keep the patches themselves though, since they are stored various places.
   VECTOR_FOR_EACH(struct Patch *, patch, &g_unused_patches){
     memset(patch, 0, sizeof(struct Patch));

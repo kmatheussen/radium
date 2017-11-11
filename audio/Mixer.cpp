@@ -998,7 +998,7 @@ struct Mixer{
             
             RT_MIDI_handle_play_buffer();
 
-            RT_MODULATOR_process();
+            RT_MODULATOR_process(); // Important that the modulators run after handling midi so MIDI-learned parameters won't be delayed by a block.
 
             float start_time;
 
