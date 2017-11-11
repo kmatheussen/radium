@@ -264,7 +264,7 @@ struct OscillatorGenerator : public Generator {
 struct SinewaveGenerator : public OscillatorGenerator {
 
   SinewaveGenerator()
-    : OscillatorGenerator("Sine")
+    : OscillatorGenerator("Sine (LFO)")
   {}
 
   double oscillator(double phase) override {
@@ -277,7 +277,7 @@ struct SinewaveGenerator : public OscillatorGenerator {
 struct TriangleGenerator : public OscillatorGenerator {
 
   TriangleGenerator()
-    : OscillatorGenerator("Triangle")
+    : OscillatorGenerator("Triangle (LFO)")
   {}
 
   double oscillator(double phase) override {
@@ -297,7 +297,7 @@ struct TriangleGenerator : public OscillatorGenerator {
 struct SquareGenerator : public OscillatorGenerator {
 
   SquareGenerator()
-    : OscillatorGenerator("Square")
+    : OscillatorGenerator("Square (LFO)")
   {}
 
   double oscillator(double phase) override {
@@ -316,7 +316,7 @@ struct SquareGenerator : public OscillatorGenerator {
 struct SawGenerator : public OscillatorGenerator {
 
   SawGenerator()
-    : OscillatorGenerator("Saw")
+    : OscillatorGenerator("Saw (LFO)")
   {}
 
   double oscillator(double phase) override {
@@ -333,7 +333,7 @@ struct SawGenerator : public OscillatorGenerator {
 struct InvertedSawGenerator : public OscillatorGenerator {
 
   InvertedSawGenerator()
-    : OscillatorGenerator("Inverted Saw")
+    : OscillatorGenerator("Inverted Saw (LFO)")
   {}
 
   double oscillator(double phase) override {
