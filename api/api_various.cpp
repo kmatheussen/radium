@@ -907,7 +907,9 @@ void selectBlock(int blocknum, int windownum){
                                              );
   if(wblock==NULL) return;
 
-  SelectWBlock(window, wblock);    
+  PC_PauseNoMessage();{
+    SelectWBlock(window, wblock);    
+  }PC_StopPause_ForcePlayBlock(NULL);
 }
 
 void setBlockColor(const_char *colorname, int blocknum, int windownum){

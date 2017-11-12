@@ -374,7 +374,7 @@
   (<gui> :add-callback close-button (lambda ()
                                       (<gui> :close gui)))
 
-  ;;(<gui> :set-takes-keyboard-focus gui #f)
+  (<gui> :set-takes-keyboard-focus gui #f)
 
   (<gui> :enable-table-sorting table #t)
 
