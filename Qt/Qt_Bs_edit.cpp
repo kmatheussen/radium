@@ -766,18 +766,7 @@ public slots:
 
     printf("block high num: %d\n",num);
 
-    PC_PauseNoMessage();{
-      
-      struct Tracker_Windows *window=getWindowFromNum(-1);
-      struct WBlocks *wblock=getWBlockFromNum(-1,num);
-      if(wblock->curr_realline == wblock->num_reallines-1)
-        wblock->curr_realline = 0;
-      
-      DO_GFX(SelectWBlock(window,wblock));
-      //EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-      //editor->updateEditor();
-
-    }PC_StopPause_ForcePlayBlock(NULL);
+    selectBlock(num, -1);
   }
 
   void blocklist_doubleclicked(QListWidgetItem *item){

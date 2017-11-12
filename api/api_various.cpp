@@ -908,6 +908,9 @@ void selectBlock(int blocknum, int windownum){
   if(wblock==NULL) return;
 
   PC_PauseNoMessage();{
+    if(wblock->curr_realline == wblock->num_reallines-1)
+      wblock->curr_realline = 0;
+
     SelectWBlock(window, wblock);    
   }PC_StopPause_ForcePlayBlock(NULL);
 }
