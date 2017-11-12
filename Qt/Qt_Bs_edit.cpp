@@ -104,7 +104,7 @@ public:
     
       //printf("mouse pressed %d %d %p\n",(int)event->buttons(),is_blocklist,item);
       
-      int result = simplePopupMenu(talloc_format("Insert new block%%Append new block%%%sDelete block%%Load Block (BETA!)%%Save Block%%Hide",item==NULL?"[disabled]":""));
+      int result = simplePopupMenu(talloc_format("Insert new block%%Append new block%%%sDelete block%%--------------%%Load Block (BETA!)%%Save Block%%--------------%%Show block list%%--------------%%Hide",item==NULL?"[disabled]":""));
       //printf("result: %d\n",result);
 
       if (result != -1){
@@ -115,12 +115,14 @@ public:
         } else if (result==1){
           appendBlock();
         } else if (result==2){
-          deleteBlock(-1);
-        } else if (result==3){
-          loadBlock("");
+          deleteBlock(-1,-1);
         } else if (result==4){
-          saveBlock("",-1,-1);
+          loadBlock("");
         } else if (result==5){
+          saveBlock("",-1,-1);
+        } else if (result==7){
+          showBlocklistGui();
+        } else if (result==9){
           showHidePlaylist(-1);
         } 
         gotit = true;
@@ -792,7 +794,7 @@ public slots:
       blocklist_highlighted(pos);
       
       if (shiftPressed()){
-        deleteBlock(-1);
+        deleteBlock(pos,-1);
       }
     }
   }

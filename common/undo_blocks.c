@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "playerclass.h"
 #include "undo.h"
+#include "list_proc.h"
 #include "clipboard_block_copy_proc.h"
 #include "clipboard_block_paste_proc.h"
 #include "../audio/Mixer_proc.h"
@@ -76,6 +77,18 @@ void ADD_UNDO_FUNC(Block(
       last_wtrack=wtrack;
       last_realline=realline;
     }
+}
+
+void ADD_UNDO_FUNC(Block2(
+                          int blocknum
+                          )
+                   )
+{
+  R_ASSERT_RETURN_IF_FALSE(blocknum>=0 && blocknum < root->song->num_blocks);
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = ListFindElement1_r0(&window->wblocks->l, blocknum);
+  R_ASSERT_RETURN_IF_FALSE(wblock!=NULL);
+  CALL_ADD_UNDO_FUNC(Block(window,wblock,wblock->wtrack,wblock->curr_realline));
 }
 
 void ADD_UNDO_FUNC(Block_CurrPos(

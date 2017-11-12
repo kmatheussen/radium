@@ -52,15 +52,14 @@ void DeleteBlock(
 
 
 void DeleteBlock_CurrPos(
-	struct Tracker_Windows *window
+                         struct Tracker_Windows *window,
+                         int blockpos
 ){
 	struct WBlocks *wblock=window->wblock;
-	NInt blockpos;
     
 	if(wblock->l.next==NULL && wblock==window->wblocks) return;
 
-
-        blockpos=window->wblock->l.num;
+        blockpos=blockpos==-1 ? window->wblock->l.num : blockpos;
 
         ADD_UNDO(Block_Delete(blockpos));
 

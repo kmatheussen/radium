@@ -58,7 +58,7 @@ struct Blocks *InsertBlock(
                            NInt blockpos,
                            NInt num_tracks,
                            int num_lines,
-                           char *name
+                           const char *name
                            )
 {
         R_ASSERT(is_playing()==false);

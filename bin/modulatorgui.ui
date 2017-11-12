@@ -31,7 +31,7 @@
    </property>
    <item>
     <widget class="QWidget" name="tableParent" native="true">
-     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="">
+     <layout class="QVBoxLayout" name="verticalLayout_3">
       <property name="spacing">
        <number>1</number>
       </property>
@@ -71,7 +71,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QWidget" name="" native="true">
+    <widget class="QWidget" name="widget" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -80,6 +80,18 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <property name="spacing">
+       <number>1</number>
+      </property>
+      <property name="leftMargin">
+       <number>1</number>
+      </property>
+      <property name="topMargin">
+       <number>1</number>
+      </property>
+      <property name="rightMargin">
+       <number>1</number>
+      </property>
+      <property name="bottomMargin">
        <number>1</number>
       </property>
       <item>

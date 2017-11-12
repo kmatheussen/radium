@@ -10,7 +10,7 @@ extern LANGSPEC struct Blocks *InsertBlock(
                            NInt blockpos,
                            NInt num_tracks,
                            int num_lines,
-                           char *name
+                           const char *name
                            );
 
 extern LANGSPEC struct Blocks *InsertBlock_CurrPos(

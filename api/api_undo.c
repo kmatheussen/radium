@@ -70,9 +70,13 @@ void cancelLastUndo(void){
   UNDO_CANCEL_LAST_UNDO();
 }
 
-void addUndoBlock(void){
+void addUndoBlock(int blocknum){
+  if (blocknum<0 || blocknum>=root->song->num_blocks){
+    handleError("addUndoBlock: There is no block #%d", blocknum);
+    return;
+  }
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
-  ADD_UNDO(Block_CurrPos(window));
+  ADD_UNDO(Block2(blocknum));
 }
 
 void addUndoTrack(void){

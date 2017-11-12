@@ -849,9 +849,9 @@ void deleteTrack(int tracknum, int blocknum, int windownum){
   insertOrDeleteTrack(tracknum, blocknum, windownum, -1);
 }
 
-void deleteBlock(int windownum){
+void deleteBlock(int blocknum, int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  DeleteBlock_CurrPos(window);
+  DeleteBlock_CurrPos(window, blocknum);
 }
 
 int insertBlock(int windownum){
@@ -885,6 +885,13 @@ const char *getBlockName(int blocknum){
   if(wblock==NULL) return "";
 
   return wblock->block->name;
+}
+
+void setBlockName(const_char* new_name, int blocknum){
+  struct WBlocks *wblock = getWBlockFromNum(-1, blocknum);
+  if(wblock==NULL) return;
+  
+  Block_set_name(wblock->block, new_name);
 }
 
 int getNumBlocks(void){
@@ -928,6 +935,10 @@ const char *getBlockColor(int blocknum, int windownum){
   if(wblock==NULL) return "";
 
   return GFX_get_colorname_from_color(wblock->block->color);
+}
+
+void showBlocklistGui(void){
+  evalScheme("(FROM_C-create-blocks-table-gui)");
 }
 
 void setTrackNoteShowType(int type,int tracknum,int blocknum,int windownum){

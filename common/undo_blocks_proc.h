@@ -28,6 +28,11 @@ extern LANGSPEC void ADD_UNDO_FUNC(
                          )
                    );
 
+extern LANGSPEC void ADD_UNDO_FUNC(Block2(
+                                          int blocknum
+                                          )
+                                   );
+
 extern LANGSPEC void ADD_UNDO_FUNC(
                           Block_CurrPos(
                                         struct Tracker_Windows *window

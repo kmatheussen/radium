@@ -43,7 +43,7 @@ void NewBlock(
 	struct Blocks *block,
 	NInt num_tracks,
 	int num_lines,
-	char *name
+	const char *name
 ){
 	int lokke;
 	struct TempoNodes *temponode;

@@ -295,6 +295,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     QWidget *_widget;
 
     QString _last_string_value = "__________________________________"; // Workaround for https://bugreports.qt.io/browse/QTBUG-40
+    int64_t _last_int_value = INT64_MIN; // an int normally can't (or at least won't) hold this value.
+    int64_t _last_double_value = -DBL_MAX;
     
   public:
 
@@ -338,6 +340,43 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
     }
 
+    void intTextEditingFinished(){
+      QSpinBox *spinbox = dynamic_cast<QSpinBox*>(_widget);
+      R_ASSERT_RETURN_IF_FALSE(spinbox!=NULL);
+      
+      int value = spinbox->value();
+            
+      set_editor_focus();
+
+      GL_lock();{
+        spinbox->clearFocus();
+      }GL_unlock();
+
+      if (value != _last_int_value){
+        S7CALL(void_int, _func, value);
+        _last_int_value = value;
+      }
+    }
+
+    void doubleTextEditingFinished(){
+      QDoubleSpinBox *spinbox = dynamic_cast<QDoubleSpinBox*>(_widget);
+      R_ASSERT_RETURN_IF_FALSE(spinbox!=NULL);
+      
+      double value = spinbox->value();
+            
+      set_editor_focus();
+
+      GL_lock();{
+        spinbox->clearFocus();
+      }GL_unlock();
+
+      if (value != _last_int_value){
+        S7CALL(void_double, _func, value);
+        _last_double_value = value;
+      }
+    }
+
+
     void textChanged(QString text){
       S7CALL(void_charpointer,_func, text.toUtf8().constData());
     }
@@ -362,6 +401,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void plainTextChanged(){
       QPlainTextEdit *text_edit = dynamic_cast<QPlainTextEdit*>(_widget);
       S7CALL(void_charpointer,_func, text_edit->toPlainText().toUtf8().constData());
+    }
+    
+    void itemSelectionChanged(){
+      //QTableWidget *table = dynamic_cast<QTableWidget*>(_widget);
+      S7CALL(void_void,_func);
     }
     
     void cellDoubleClicked(int row, int column){
@@ -1332,7 +1376,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         QTableWidget *qtableWidget = dynamic_cast<QTableWidget*>(_widget.data());
         if (qtableWidget!=NULL){
           if(val.type==INT_TYPE)
-            qtableWidget->setCurrentCell((int)val.int_number, qtableWidget->currentColumn());
+            qtableWidget->setCurrentCell((int)val.int_number, 1);//qtableWidget->currentColumn());
           else
             handleError("Table->setValue received %s, expected INT_TYPE", DYN_type_name(val.type));
           return;
@@ -1584,7 +1628,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       {
         QSpinBox *spinbox = dynamic_cast<QSpinBox*>(_widget.data());
         if (spinbox!=NULL){
-          spinbox->connect(spinbox, SIGNAL(valueChanged(int)), callback, SLOT(intValueChanged(int)));
+          //spinbox->connect(spinbox, SIGNAL(valueChanged(int)), callback, SLOT(spinboxIntValueChanged(int)));
+          spinbox->connect(spinbox, SIGNAL(editingFinished()), callback, SLOT(intTextEditingFinished()));
           S7CALL(void_int,func, spinbox->value());
           goto gotit;
         }
@@ -1593,7 +1638,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       {
         QDoubleSpinBox *spinbox = dynamic_cast<QDoubleSpinBox*>(_widget.data());
         if (spinbox!=NULL){
-          spinbox->connect(spinbox, SIGNAL(valueChanged(double)), callback, SLOT(doubleValueChanged(double)));
+          //spinbox->connect(spinbox, SIGNAL(valueChanged(double)), callback, SLOT(doubleValueChanged(double)));
+          spinbox->connect(spinbox, SIGNAL(editingFinished()), callback, SLOT(doubleTextEditingFinished()));
           S7CALL(void_double,func, spinbox->value());
           goto gotit;
         }
@@ -1616,7 +1662,16 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
           goto gotit;
         }
       }
-            
+
+      {
+        QTableWidget *table = dynamic_cast<QTableWidget*>(_widget.data());
+        if (table != NULL){
+          table->connect(table, SIGNAL(itemSelectionChanged()), callback, SLOT(itemSelectionChanged()));
+          S7CALL(void_void,func);
+          goto gotit;          
+        }
+      }
+
       handleError("Gui #%d does not have an addCallback method", (int)_gui_num);
       delete callback;
       return;
@@ -2518,7 +2573,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     {
       connect(this, SIGNAL(editingFinished()), this, SLOT(editingFinished()));
     }
-
   public slots:
     void editingFinished(){
       set_editor_focus();
@@ -2539,6 +2593,14 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     {
       setMinimum(R_MIN(min, max));
       setMaximum(R_MAX(min, max));
+      setValue(curr);
+    }
+
+    void stepBy(int steps) override{
+      QSpinBox::stepBy(steps);
+      printf("  STEPBY: %d\n", steps);
+
+      emit editingFinished();
     }
 
     OVERRIDERS(MyFocusSnifferQSpinBox);
@@ -2580,6 +2642,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       else
         setSingleStep(step_interval);
       setValue(curr);
+    }
+
+    void stepBy(int steps) override{
+      MyFocusSnifferQDoubleSpinBox::stepBy(steps);
+      printf("  STEPBY: %d\n", steps);
+
+      emit editingFinished();
     }
 
     OVERRIDERS(MyFocusSnifferQDoubleSpinBox);
@@ -3766,6 +3835,24 @@ namespace{
     }
   };
 
+  // If w contains a layout, return the first widget (if any) in the layout that does not have a layout. Returns NULL if no such widget is found.
+  // Note: Depth first search.
+  static QWidget *get_first_widget_in_widget(QWidget *w){
+    if (w->layout()==NULL)
+      return w;
+
+    for(auto *c : w->children()){
+      QWidget *maybe = dynamic_cast<QWidget*>(c);
+      if (maybe != NULL){
+        maybe = get_first_widget_in_widget(maybe);
+        if (maybe != NULL)
+          return maybe;
+      }
+    }
+
+    return NULL;
+  }
+
   struct MyGuiItem : public QTableWidgetItem, public Pri{
     int64_t _guinum;
     QPointer<QWidget> _widget;
@@ -3794,27 +3881,64 @@ namespace{
 
         fallback = _guinum < other_gui_item->_guinum;
         
-        const QWidget *w1 = _widget;
-        const QWidget *w2 = other_gui_item->_widget;
-        
-        const QAbstractButton *b1 = dynamic_cast<const QAbstractButton*>(w1);
-        const QAbstractButton *b2 = dynamic_cast<const QAbstractButton*>(w2);
-        
-        if (b1==NULL || b2==NULL)
-          return fallback;
-        
-        if (b1->isCheckable() && b2->isCheckable()){
+        const QWidget *w1 = get_first_widget_in_widget(_widget);
+        if (w1==NULL) w1 = _widget;
+
+        const QWidget *w2 = get_first_widget_in_widget(other_gui_item->_widget);
+        if (w2==NULL) w2 = other_gui_item->_widget;
+
+        // line edits
+        {
+          const QLineEdit *b1 = dynamic_cast<const QLineEdit*>(w1);
+          const QLineEdit *b2 = dynamic_cast<const QLineEdit*>(w2);
           
-          if (b1->isChecked()==b2->isChecked())
-            return fallback;
-          
-          return !b1->isChecked();          
+          if (b1!=NULL && b2!=NULL) {
+            
+            if (b1->text()==b2->text())
+              return fallback;
+            
+            return b1->text().compare(b2->text(), Qt::CaseInsensitive) < 0;
+          }
         }
 
-        if (b1->text()==b2->text())
-          return fallback;
-        
-        return b1->text() < b2->text();
+        // Buttons
+        {
+          const QAbstractButton *b1 = dynamic_cast<const QAbstractButton*>(w1);
+          const QAbstractButton *b2 = dynamic_cast<const QAbstractButton*>(w2);
+          
+          if (b1!=NULL && b2!=NULL) {
+            
+            if (b1->isCheckable() && b2->isCheckable()){
+              
+              if (b1->isChecked()==b2->isChecked())
+                return fallback;
+              
+              return !b1->isChecked();          
+            }
+            
+            if (b1->text()==b2->text())
+              return fallback;
+            
+            return b1->text().compare(b2->text(), Qt::CaseInsensitive) < 0;
+          }
+        }
+
+        // Spinboxes
+        {
+          const QAbstractSpinBox *b1 = dynamic_cast<const QAbstractSpinBox*>(w1);
+          const QAbstractSpinBox *b2 = dynamic_cast<const QAbstractSpinBox*>(w2);
+          
+          if (b1!=NULL && b2!=NULL) {
+            
+            double val1 = STRING_get_double(STRING_create(b1->text()));
+            double val2 = STRING_get_double(STRING_create(b2->text()));
+
+            if (val1==val2)
+              return fallback;
+            else
+              return val1 < val2;
+          }
+        }
       }
       
       return fallback;
@@ -3931,6 +4055,7 @@ int gui_getTableRowNum(int64_t table_guinum, int64_t cell_guinum){
 
   return -1;
 }
+
 
 void gui_addTableRows(int64_t table_guinum, int pos, int how_many){
   Gui *table_gui = get_gui(table_guinum);
@@ -5310,6 +5435,7 @@ bool gui_hasKeyboardFocus(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return false;
+
   return gui->_widget->hasFocus();
 }
 

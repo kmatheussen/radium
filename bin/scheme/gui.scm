@@ -334,7 +334,8 @@
   (<gui> :disable-updates gui)
   (try-finally :try block
                :finally (lambda ()
-                          (<gui> :enable-updates gui))))
+                          (<gui> :enable-updates gui)
+                          )))
 
 (delafina (reopen-gui-at-curr-pos :gui
                                   :parentgui -1
@@ -737,12 +738,25 @@
 (delafina (create-table-gui :table-rows
                             :selected-row-callback #f
                             :hide-callback #f
-                            :accept-key-callback?-callback #f)
+                            :accept-key-callback?-callback #f
+                            :curr-selected-row-changed-callback #f)
 
   (c-display "table-rows:" table-rows)
-  (define table (<gui> :table (map (lambda (conf)
-                                     (conf :header-name))
-                                   table-rows)))
+
+  (define table #f)
+
+  (define doit #f)
+  (set! table (<gui> :table (map (lambda (conf)
+                                   (conf :header-name))
+                                 table-rows)
+                     (lambda ()
+                       (if (and doit curr-selected-row-changed-callback)
+                           (curr-selected-row-changed-callback table
+                                                               (<gui> :curr-table-row table)
+                                                               (<gui> :get-value table)))
+                       (c-display "TABLECALLBACK:"))))
+  (set! doit #t)
+
   (for-each (lambda (header-num conf)
               (let ((width (cond ((string? (conf :initial-width))
                                   (floor (* 1.5 (<gui> :text-width (conf :initial-width)))))

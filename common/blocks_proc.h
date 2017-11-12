@@ -25,7 +25,7 @@ extern void NewBlock(
 	struct Blocks *block,
 	NInt num_tracks,
 	int num_lines,
-	char *name
+	const char *name
 );
 extern struct Blocks *AppendBlock(void);
 extern void AppendBlock_spes(int num_lines,NInt num_tracks);

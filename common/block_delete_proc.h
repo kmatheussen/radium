@@ -7,7 +7,8 @@ extern LANGSPEC void DeleteBlock(
 );
 
 extern LANGSPEC void DeleteBlock_CurrPos(
-	struct Tracker_Windows *window
+                                         struct Tracker_Windows *window,
+                                         int blockpos
 );
 
 #endif
