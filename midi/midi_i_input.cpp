@@ -812,6 +812,9 @@ void MIDI_SetThroughPatch(struct Patch *patch){
   ATOMIC_SET(g_through_patch, patch);
 }
 
+struct Patch *MIDI_GetThroughPatch(void){
+  return ATOMIC_GET(g_through_patch);
+}
 
 
 /*********************************************************

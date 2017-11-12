@@ -571,6 +571,9 @@ static void make_inactive(struct Patch *patch, bool force_removal){
     return;
   }
 
+  if (patch==MIDI_GetThroughPatch())
+    MIDI_SetThroughPatch(NULL);
+  
   bool is_midi_instrument = patch->instrument==get_MIDI_instrument();
 
   /*

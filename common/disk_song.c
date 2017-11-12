@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mixergui/QM_MixerWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
 #include "../audio/audio_instrument_proc.h"
+#include "../midi/midi_i_input_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -116,7 +117,9 @@ struct Song *LoadSong(void){
                 "mixer_comments_visible"
 	};
 	struct Song *song=SONG_create();
-        
+
+        MIDI_SetThroughPatch(NULL);
+          
         MW_cleanup(true);
           
         VECTOR_FOR_EACH(struct Patch *patch, &get_MIDI_instrument()->patches){
