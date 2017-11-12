@@ -1908,7 +1908,8 @@
                                ;;(c-display "             hepp hepp")
                                (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized db))
                                (if paint-voltext
-                                   (<gui> :update voltext))))))
+                                   (<gui> :update voltext)
+                                   (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": " (db-to-text db #t))))))))
 
   (<gui> :set-size-policy volslider #t #t)
   ;;(<gui> :set-min-width volslider 1) ;; ?? Why is this necessary?
