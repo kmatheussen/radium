@@ -1035,6 +1035,25 @@ void cancelCurrSeqblock(void){
   SEQUENCER_update();
 }
 
+dyn_t getBlockUsageInSequencer(void){
+  int num_blocks = root->song->num_blocks;
+  int ret[num_blocks];
+  memset(ret, 0, sizeof(int)*num_blocks);
+
+  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
+    VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+      ret[seqblock->block->l.num]++;
+    }END_VECTOR_FOR_EACH;
+  }END_VECTOR_FOR_EACH;
+
+  dynvec_t dynvec = {0};
+
+  for(int i=0;i<num_blocks;i++)
+    DYNVEC_push_back(&dynvec, DYN_create_int(ret[i]));
+
+  return DYN_create_array(dynvec);
+}
+
 int getNumSeqblocks(int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)

@@ -198,6 +198,7 @@
     (<gui> :set-size gui width (floor (* width 0.7))))
 
   (define table (create-table-gui (list (make-table-row "Block #" "Block #" #f)
+                                        (make-table-row "Usage #" "Usage #" #f)
                                         (make-table-row "Name" "Long name of a block" #t)
                                         (make-table-row "Lines" "Tracks9" #f)
                                         (make-table-row "Tracks" "Tracks9" #f)
@@ -266,8 +267,9 @@
              (<ra> :delete-block blocknum)
              (update-rows!))))
 
-  (define (create-row! blockinfo rownum curr-blocknum)
+  (define (create-row! blockinfo rownum curr-blocknum blockusage)
     (define blocknum (car blockinfo))
+    (define usage (blockusage blocknum))
     (define blockname (cadr blockinfo))
     (define num-lines (caddr blockinfo))
     (define num-tracks (cadddr blockinfo))
@@ -276,19 +278,21 @@
     (<gui> :add-table-int-cell table blocknum 0 rownum)
     (define time2 (time))
 
+    (<gui> :add-table-int-cell table usage 1 rownum)
+
     (define blocknamegui (create-name blocknum blockname))
-    (<gui> :add-table-gui-cell table blocknamegui 1 rownum)
+    (<gui> :add-table-gui-cell table blocknamegui 2 rownum)
     (define time3 (time))
-    
-    (<gui> :add-table-gui-cell table (create-num-lines blocknum num-lines) 2 rownum)
+
+    (<gui> :add-table-gui-cell table (create-num-lines blocknum num-lines) 3 rownum)
     (define time4 (time))
     
-    (<gui> :add-table-gui-cell table (create-num-tracks blocknum num-tracks) 3 rownum)
+    (<gui> :add-table-gui-cell table (create-num-tracks blocknum num-tracks) 4 rownum)
     (define time5 (time))
     
     (define delete (create-delete blocknum))
     (define time6 (time))
-    (<gui> :add-table-gui-cell table delete 4 rownum)
+    (<gui> :add-table-gui-cell table delete 5 rownum)
     (define time7 (time))
 
     (if (= blocknum curr-blocknum)
@@ -299,7 +303,8 @@
   (define curr-data #f)
 
   (define (get-data)
-    (cons (<ra> :current-block)
+    (list (<ra> :current-block)
+          (<ra> :get-block-usage-in-sequencer)
           (keep identity
                 (map (lambda (blocknum)
                        (define blockname (<ra> :get-block-name blocknum))
@@ -317,7 +322,8 @@
       (set! curr-data data)
       
       (define curr-blocknum (car data))
-      (define blockdata (cdr data))
+      (define blockusage (cadr data))
+      (define blockdata (caddr data))
 
       (c-display "DATA:" (pp data))
 
@@ -339,8 +345,8 @@
         (<gui> :set-value table -1) ;; unselect current row.
 
          (for-each (lambda (rowdata rownum)
-                     (create-row! rowdata rownum curr-blocknum))
-                   blockdata
+                     (create-row! rowdata rownum curr-blocknum blockusage))
+                   blockdata                   
                    (iota (length blockdata)))
          (<gui> :show table)
 
@@ -368,7 +374,7 @@
   (<gui> :add-callback close-button (lambda ()
                                       (<gui> :close gui)))
 
-  (<gui> :set-takes-keyboard-focus gui #f)
+  ;;(<gui> :set-takes-keyboard-focus gui #f)
 
   (<gui> :enable-table-sorting table #t)
 
