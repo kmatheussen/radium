@@ -1929,7 +1929,7 @@ struct STimes{									/* One element for each line. */
 struct Blocks{
 	struct ListHeader1 l;
 
-	char *name;
+	const char *name;
 
 	NInt num_tracks;
 	int num_lines;

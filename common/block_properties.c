@@ -242,6 +242,11 @@ void Block_Properties(
     }PC_StopPause(NULL);
 }
 
+void Block_set_name(struct Blocks *block, const char *new_name){
+  block->name=new_name;
+  BS_UpdateBlockList();
+  BS_UpdatePlayList();
+}
 
 void Block_Properties_CurrPos(
 	struct Tracker_Windows *window
@@ -249,7 +254,6 @@ void Block_Properties_CurrPos(
 	NInt num_tracks;
 	int num_lines;
 	char seltext[500];
-	char *blockname;
 	ReqType reqtype;
 
 	struct WBlocks *wblock=window->wblock;
@@ -266,12 +270,15 @@ void Block_Properties_CurrPos(
 	if(num_lines==1) num_lines=wblock->block->num_lines;
 
 	sprintf(seltext,"Name (now: '%s'): ",wblock->block->name);
-	blockname=GFX_GetString(window,reqtype,seltext,true);
+	const char *blockname=GFX_GetString(window,reqtype,seltext,true);
+
+        bool has_made_undo = false;
+
 	if(blockname!=NULL){
-		wblock->block->name=blockname;
-		BS_UpdateBlockList();
-		BS_UpdatePlayList();
-	}
+          ADD_UNDO(Block_CurrPos(window));
+          has_made_undo = true;
+          Block_set_name(wblock->block, blockname);
+        }
 
 	GFX_CloseReq(window,reqtype);
 
@@ -279,7 +286,8 @@ void Block_Properties_CurrPos(
 		return;
 	}
 
-	ADD_UNDO(Block_CurrPos(window));
+        if (has_made_undo==false)
+          ADD_UNDO(Block_CurrPos(window));
 
 	Block_Properties(block,num_tracks,num_lines);
 

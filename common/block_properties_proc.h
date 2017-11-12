@@ -29,6 +29,8 @@ extern LANGSPEC void Block_Set_num_tracks(
 	NInt num_tracks
 );
 
+extern LANGSPEC void Block_set_name(struct Blocks *block, const char *new_name);
+
 extern LANGSPEC void Block_Properties(
 	struct Blocks *block,
 	NInt num_tracks,

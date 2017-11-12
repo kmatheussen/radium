@@ -62,8 +62,7 @@ struct WBlocks *CB_CopyBlock(
         
 	toblock->l.next=NULL;
 
-	toblock->name=talloc_atomic((int)strlen(block->name)+1);
-	memcpy(toblock->name,block->name,(int)strlen(block->name)+1);
+	toblock->name=block->name;
 
 	toblock->times=NULL;
 

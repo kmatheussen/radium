@@ -94,8 +94,7 @@ void CB_PasteBlock(
 	Block_Set_num_tracks(toblock,block->num_tracks);
         TIME_everything_in_block_has_changed(towblock->block); // UpdateReallines requires updated time values (for whether to show swing type track or not).
         
-	toblock->name=talloc_atomic((int)strlen(block->name)+1);
-	memcpy(toblock->name,block->name,(int)strlen(block->name)+1);
+	toblock->name=block->name;
 
 	towblock->localzooms=NULL;
 	CB_UnpackLocalZooms(&towblock->localzooms,wblock->localzooms,block->num_lines);
