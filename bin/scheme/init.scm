@@ -479,6 +479,7 @@
     delete-all-unused-MIDI-instruments
     FROM_C-create-modulator-gui
     FROM_C-create-blocks-table-gui
+    FROM_C-create-instruments-table-gui
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

@@ -61,7 +61,7 @@
                                   :selected-row-callback (lambda (table row-num row-content)
                                                            (c-display "row num" row-num "selected. Content:" row-content))
                                   :hide-callback (lambda (table)
-                                                   (<gui> :close table))))
+                                                   (<gui> :close gui))))
   
   (let ((table-parent (<gui> :child gui "tableParent")))
     ;;(<gui> :set-layout-spacing table-parent 2 0 2 0 2)
@@ -183,13 +183,11 @@
   (define search-text (<gui> :child gui "search_text"))
   (<gui> :hide (<gui> :child gui "search_button"))
 
-  (define blocknum->rownum-map (vector))
-
   (<gui> :add-realtime-callback search-text
          (lambda (new-text)
            (when doit
              (set! search-string new-text)
-             (c-display "SETTING search to" new-text)
+             ;;(c-display "SETTING search to" new-text)
              (update-rows!))))
 
   (<gui> :set-layout-spacing (<gui> :child gui "searchWidget") 0 0 0 0 2)
@@ -207,12 +205,13 @@
                                                    (<gui> :close table))
                                   :curr-selected-row-changed-callback (lambda (table row-num row-content)
                                                                         (when doit
-                                                                          (c-display "ROW_CONTENT:" row-content row-num)
+                                                                          ;;(c-display "ROW_CONTENT:" row-content row-num)
                                                                           (define blocknum (to-integer (string->number (first row-content))))
                                                                           (when (not (= blocknum (<ra> :current-block)))
                                                                             (<ra> :select-block blocknum)
                                                                             (update-rows!)
-                                                                            (c-display (integer? blocknum) blocknum "row num" row-num "selected. Content:" row-content))))))
+                                                                            ;;(c-display (integer? blocknum) blocknum "row num" row-num "selected. Content:" row-content)
+                                                                            )))))
                                                                         
 
   
@@ -225,11 +224,17 @@
     (define ret (<gui> :line curr
                        (lambda (value)
                          (when doit
-                           (c-display "VALUE:" value)
+                           ;;(c-display "VALUE:" value)
                            (when (not (string=? value curr))
                              (<ra> :add-undo-block blocknum)
                              (<ra> :set-block-name value blocknum)
                              (update-rows!))))))
+
+    (<gui> :add-focus-in-callback ret (lambda ()
+                                        (<ra> :select-block blocknum)
+                                        (update-rows!)
+                                        ))
+
     (define color (<gui> :mix-colors
                          (<ra> :get-block-color blocknum)
                          (<gui> :get-background-color -1)
@@ -244,7 +249,7 @@
     (<gui> :int-text 2 curr (max curr 9999)
            (lambda (value)
              (when doit
-               (c-display "VALUE:" value)
+               ;;(c-display "VALUE:" value)
                (<ra> :add-undo-block blocknum)
                (<ra> :schedule 10
                      (lambda ()
@@ -267,6 +272,9 @@
              (<ra> :delete-block blocknum)
              (update-rows!))))
 
+  (define last-time 0)
+  (define start-time 0)
+  
   (define (create-row! blockinfo rownum curr-blocknum blockusage)
     (define blocknum (car blockinfo))
     (define usage (blockusage blocknum))
@@ -297,7 +305,10 @@
 
     (if (= blocknum curr-blocknum)
         (<gui> :set-value table rownum))
-    ;;(c-display "Created " blocknum blockname (- time2 time1) (- time3 time2) (- time4 time3) (- time5 time4) (- time6 time5) (- time7 time6))
+
+    (define time8 (time))
+    (c-display "Created " blocknum blockname (- time8 last-time) "-" (- time8 start-time) ":" (- time2 time1) (- time3 time2) (- time4 time3) (- time5 time4) (- time6 time5) (- time7 time6) (- time8 time7))
+    (set! last-time time8)
     )
 
   (define curr-data #f)
@@ -325,13 +336,15 @@
       (define blockusage (cadr data))
       (define blockdata (caddr data))
 
-      (c-display "DATA:" (pp data))
+      ;;(c-display "DATA:" (pp data))
 
       (<gui> :enable-table-sorting table #f)
       
       (define num-rows (<gui> :get-num-table-rows table))
 
       (set! doit #f)
+
+      (set! start-time (time))
       
       (disable-gui-updates-block ;; Speed up.
        table
@@ -339,8 +352,11 @@
 
          (<gui> :add-table-rows table 0 (- (length blockdata)
                                            num-rows))
-         
-         (<gui> :hide table) ;; Major speedup when the block list is updated due to user interaction in the gui. Probably just a workaround for bad qt performance. Tested on Qt 5.4.1. Not unlikely that this is not necessary in newer versions of Qt. (TODO: Test newer versions of Qt)
+
+         ;; Hiding the table is a major speedup when the block list is updated due to user interaction in the gui.
+         ;; It's mainly a workaround for very bad qt performance on Qt 5.4.1. (I hadn't discovered it on newer Qt versions)
+         ;; On Qt 5.9.0, it only increases performance with around 20-30%.
+         (<gui> :hide table)
 
         (<gui> :set-value table -1) ;; unselect current row.
 
@@ -348,14 +364,14 @@
                      (create-row! rowdata rownum curr-blocknum blockusage))
                    blockdata                   
                    (iota (length blockdata)))
+
+         ;; show it again.
          (<gui> :show table)
 
          (<gui> :enable-table-sorting table #t)
          
          ))
 
-      (c-display "HASIT:" (<gui> :has-keyboard-focus search-text))
-               
       (set! doit #t)))
 
 
@@ -377,23 +393,16 @@
   (<gui> :set-takes-keyboard-focus gui #f)
 
   (<gui> :enable-table-sorting table #t)
-
+  
   (<gui> :set-parent gui -1) ;; Set parent to the main window.
 
   (<gui> :show gui)
 
-  (c-display "HASIT2:" (<gui> :has-keyboard-focus search-text))
-  (c-display "HASIT3:" (<gui> :has-keyboard-focus gui))
-
-  (<ra> :schedule 100
-        (lambda ()
-          (c-display "HASIT4:" (<gui> :has-keyboard-focus search-text))
-          #f))
   gui)
 
 
-(if (not *is-initializing*)
-    (create-blocks-table-gui))
+;(if (not *is-initializing*)
+;    (create-blocks-table-gui))
 
 
 (define *blocks-table-gui* #f)  
@@ -403,5 +412,258 @@
           (not (<gui> :is-open *blocks-table-gui*)))
       (set! *blocks-table-gui* (create-blocks-table-gui))
       (<gui> :raise *blocks-table-gui*)))
+
+  
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Instruments table GUI
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (create-instruments-table-gui)
+
+  (define gui (<gui> :ui "blocks.ui"))
+  (<gui> :set-window-title gui "Instruments")
+
+  (define doit #f)
+
+  (define search-string "")
+
+  (define search-text (<gui> :child gui "search_text"))
+  (<gui> :hide (<gui> :child gui "search_button"))
+
+  (<gui> :add-realtime-callback search-text
+         (lambda (new-text)
+           (when doit
+             (set! search-string new-text)
+             ;;(c-display "SETTING search to" new-text)
+             (update-rows!))))
+
+  (<gui> :set-layout-spacing (<gui> :child gui "searchWidget") 0 0 0 0 2)
+
+  (let ((width (floor (* 3 (<gui> :text-width "Instrument # Long name LInes Tracks Delete")))))
+    (<gui> :set-size gui width (floor (* width 0.7))))
+
+  (define table (create-table-gui (list (make-table-row "#" "123" #f)
+                                        (make-table-row "# Conn." "# Conn." #f)
+                                        (make-table-row "Name" "Long name of a instrument" #t)
+                                        (make-table-row "# in" "# in" #f)
+                                        (make-table-row "# out" "# out" #f)
+                                        (make-table-row "Type" "GAkk gkkakkg kakkg / asdf" #t)
+                                        (make-table-row "GUI" "GUI" #f)
+                                        (make-table-row "Delete" #f #f))
+                                  :hide-callback (lambda (table)
+                                                   (<gui> :close gui))
+                                  :curr-selected-row-changed-callback (lambda (table row-num row-content)
+                                                                        (when doit
+                                                                          ;;(c-display "ROW_CONTENT:" row-content row-num)
+                                                                          (define instrument-id (to-integer (string->number (first row-content))))
+                                                                          (when (not (= instrument-id (<ra> :get-current-instrument)))
+                                                                            (<ra> :set-current-instrument instrument-id)
+                                                                            (update-rows!)
+                                                                            ;;(c-display (integer? instrumentnum) instrumentnum "row num" row-num "selected. Content:" row-content)
+                                                                            )))))
+                                                                        
+
+  
+  (let ((table-parent (<gui> :child gui "tableParent")))
+    (<gui> :set-layout-spacing table-parent 0 0 0 0 2)
+    (<gui> :set-layout-spacing gui 0 2 2 2 2)
+    (<gui> :add table-parent table))
+
+  (define (create-name instrument-id curr)
+    (define ret (<gui> :line curr
+                       (lambda (value)
+                         (when doit
+                           ;;(c-display "VALUE:" value)
+                           (when (not (string=? value curr))
+                             (<ra> :set-instrument-name value instrument-id)
+                             (update-rows!))))))    
+    
+    (<gui> :add-focus-in-callback ret (lambda ()
+                                        (<ra> :set-current-instrument instrument-id)
+                                        (update-rows!)
+                                        ))
+    
+    (define color (<gui> :mix-colors
+                         (<ra> :get-instrument-color instrument-id)
+                         (<gui> :get-background-color -1)
+                         0.9))
+    (<gui> :set-background-color ret color)
+    (define layout (<gui> :vertical-layout))
+    (<gui> :add layout ret)
+    (<gui> :set-layout-spacing layout 2 2 2 2 2)
+    (<gui> :set-size-policy layout #t #f)
+    layout)
+
+  (define (create-gui-onoff instrument-id)
+    (define has-gui (<ra> :has-native-instrument-gui instrument-id))
+    (if (not has-gui)
+        #f
+        (mid-horizontal-layout (<gui> :checkbox "" (<ra> :instrument-gui-is-visible instrument-id)
+               (lambda (onoff)
+                 (if onoff
+                     (<ra> :show-instrument-gui instrument-id)
+                     (<ra> :hide-instrument-gui instrument-id)))))))
+
+  (define (create-delete instrument-id)
+    (<gui> :button "Delete"
+           (lambda ()
+             (<ra> :delete-instrument instrument-id)
+             (update-rows!))))
+
+  (define last-time 0)
+  (define start-time 0)
+  
+  (define (create-row! instrumentinfo rownum curr-instrument-id)
+    (define instrument-id (car instrumentinfo))
+    (define usage (cadr instrumentinfo))
+    (define instrumentname (caddr instrumentinfo))
+    (define num-inputs (<ra> :get-num-input-channels instrument-id))
+    (define num-outputs (<ra> :get-num-output-channels instrument-id))
+    (define type (cadddr instrumentinfo))
+    
+    (define time1 (time))
+    (<gui> :add-table-int-cell table instrument-id 0 rownum)
+    (define time2 (time))
+
+    (<gui> :add-table-int-cell table usage 1 rownum)
+    
+    (define instrumentnamegui (create-name instrument-id instrumentname))
+    (<gui> :add-table-gui-cell table instrumentnamegui 2 rownum)
+    (define time3 (time))
+
+    (<gui> :add-table-int-cell table num-inputs 3 rownum)
+    (define time4 (time))
+    
+    (<gui> :add-table-int-cell table num-outputs 4 rownum)
+    (define time5 (time))
+    
+    (<gui> :add-table-string-cell table type 5 rownum)
+
+    (define onoffgui (create-gui-onoff instrument-id))
+    (if onoffgui
+        (<gui> :add-table-gui-cell table onoffgui 6 rownum)
+        (<gui> :add-table-string-cell table "" 6 rownum)) ;; clear the cell. TODO: create a clear-cell function.
+
+    (define delete (create-delete instrument-id))
+    (define time6 (time))
+    (<gui> :add-table-gui-cell table delete 7 rownum)
+    (define time7 (time))
+
+    (if (= instrument-id curr-instrument-id)
+        (<gui> :set-value table rownum))
+
+    (define time8 (time))
+    (c-display "Created " instrument-id instrumentname (- time8 last-time) "-" (- time8 start-time) ":" (- time2 time1) (- time3 time2) (- time4 time3) (- time5 time4) (- time6 time5) (- time7 time6) (- time8 time7))
+    (set! last-time time8)
+    )
+
+  (define curr-data #f)
+
+  (define (get-data)
+    (list (<ra> :get-current-instrument)
+          (keep identity
+                (map (lambda (instrument-id)
+                       (define instrumentname (<ra> :get-instrument-name instrument-id))
+                       (define type (<-> (<ra> :get-instrument-type-name instrument-id) " / " (<ra> :get-instrument-plugin-name instrument-id)))
+                       (and (or (string=? search-string "")
+                                (string-case-insensitive-contains? instrumentname search-string)
+                                (string-case-insensitive-contains? type search-string))
+                            (list instrument-id
+                                  (+ (<ra> :get-num-in-audio-connections instrument-id)
+                                     (<ra> :get-num-out-audio-connections instrument-id)
+                                     (<ra> :get-num-in-event-connections instrument-id)
+                                     (<ra> :get-num-out-event-connections instrument-id))
+                                  instrumentname
+                                  type)))
+                     (append ;;(get-all-midi-instruments)
+                             (get-all-audio-instruments))))))
+  
+  (define (update-rows!)
+    (define data (get-data))
+    (when (not (morally-equal? data curr-data))
+      (set! curr-data data)
+      
+      (define curr-instrument-id (car data))
+      (define instrumentdata (cadr data))
+
+      ;;(c-display "DATA:" (pp data))
+
+      (<gui> :enable-table-sorting table #f)
+      
+      (define num-rows (<gui> :get-num-table-rows table))
+
+      (set! doit #f)
+
+      (set! start-time (time))
+      
+      (disable-gui-updates-block ;; Speed up.
+       table
+       (lambda ()
+
+         (<gui> :add-table-rows table 0 (- (length instrumentdata)
+                                           num-rows))
+
+         ;; Hiding the table is a major speedup when the instrument list is updated due to user interaction in the gui.
+         ;; It's mainly a workaround for very bad qt performance on Qt 5.4.1. (I hadn't discovered it on newer Qt versions)
+         ;; On Qt 5.9.0, it only increases performance with around 20-30%.
+         (<gui> :hide table)
+
+        (<gui> :set-value table -1) ;; unselect current row.
+
+         (for-each (lambda (rowdata rownum)
+                     (create-row! rowdata rownum curr-instrument-id))
+                   instrumentdata                   
+                   (iota (length instrumentdata)))
+
+         ;; show it again.
+         (<gui> :show table)
+
+         (<gui> :enable-table-sorting table #t)
+         
+         ))
+
+      (set! doit #t)))
+
+
+
+  (update-rows!)
+
+  (<ra> :schedule 1100
+        (lambda ()
+          (cond ((not (<gui> :is-open gui))
+                 #f)
+                (else
+                 (update-rows!)
+                 200))))
+
+  (define close-button (<gui> :child gui "close_button"))
+  (<gui> :add-callback close-button (lambda ()
+                                      (<gui> :close gui)))
+
+  (<gui> :set-takes-keyboard-focus gui #f)
+
+  (<gui> :enable-table-sorting table #t)
+  (<gui> :sort-table-by table 0 #t)
+
+  (<gui> :set-parent gui -1) ;; Set parent to the main window.
+
+  (<gui> :show gui)
+
+  gui)
+
+
+(if (not *is-initializing*)
+    (create-instruments-table-gui))
+
+
+(define *instruments-table-gui* #f)  
+
+(define (FROM_C-create-instruments-table-gui)
+  (if (or (not *instruments-table-gui*)
+          (not (<gui> :is-open *instruments-table-gui*)))
+      (set! *instruments-table-gui* (create-instruments-table-gui))
+      (<gui> :raise *instruments-table-gui*)))
 
   

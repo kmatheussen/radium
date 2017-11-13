@@ -145,6 +145,13 @@ static QPointer<QWidget> g_last_released_widget = NULL;
       classname::keyReleaseEvent(event);                                \
   }
 
+#define FOCUSIN_OVERRIDER(classname)                    \
+  void focusInEvent ( QFocusEvent *event ) override {   \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();             \
+    Gui::focusInEvent(event);                           \
+    classname::focusInEvent(event);                     \
+  }
+
 
 #define CLOSE_OVERRIDER(classname)                                      \
   void closeEvent(QCloseEvent *ev) override {                           \
@@ -218,6 +225,8 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   RESIZE_OVERRIDER(classname)                                           \
   PAINT_OVERRIDER(classname)                                            \
   CHANGE_OVERRIDER(classname)                                           \
+  FOCUSIN_OVERRIDER(classname)                                          \
+
   
 #define OVERRIDERS(classname)                           \
   OVERRIDERS_WITHOUT_KEY(classname)                     \
@@ -296,7 +305,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     QString _last_string_value = "__________________________________"; // Workaround for https://bugreports.qt.io/browse/QTBUG-40
     int64_t _last_int_value = INT64_MIN; // an int normally can't (or at least won't) hold this value.
-    int64_t _last_double_value = -DBL_MAX;
+    double _last_double_value = -DBL_MAX;
     
   public:
 
@@ -681,6 +690,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (_key_callback!=NULL)
         s7extra_unprotect(_key_callback);
 
+      if (_focus_in_callback!=NULL)
+        s7extra_unprotect(_focus_in_callback);
+
       if (_doubleclick_callback!=NULL)
         s7extra_unprotect(_doubleclick_callback);
 
@@ -934,7 +946,30 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       _key_callback = func;
       s7extra_protect(_key_callback);
     }
+
     
+    /************ FOCUS IN *******************/
+
+    func_t *_focus_in_callback = NULL;
+    
+    void focusInEvent(QFocusEvent *event){
+      if (_focus_in_callback==NULL)
+        return;
+
+      S7CALL(void_void, _focus_in_callback);
+    }
+
+
+    void addFocusInCallback(func_t* func){      
+      if (_focus_in_callback!=NULL){
+        handleError("Gui %d already has a focus in callback.", (int)_gui_num);
+        return;
+      }
+
+      _focus_in_callback = func;
+      s7extra_protect(_focus_in_callback);
+    }
+
     /************ DOUBLECLICK *******************/
 
     func_t *_doubleclick_callback = NULL;
@@ -3354,6 +3389,15 @@ void gui_addKeyCallback(int64_t guinum, func_t* func){
   gui->addKeyCallback(func);
 }
 
+void gui_addFocusInCallback(int64_t guinum, func_t* func){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->addFocusInCallback(func);
+}
+
 void gui_addDoubleClickCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
 
@@ -3946,16 +3990,21 @@ namespace{
   };
 }
 
-// Same as mid-vertical-layout in gui.scm
-static QWidget *create_mid_widget(QWidget *content_widget){
-  int64_t content = API_get_gui_from_widget(content_widget);
+// Same as mid-horizontal-layout in gui.scm
+static QWidget *create_mid_widget(Gui *gui){//QWidget *content_widget){
+  //printf("HORPOL: %d\n", (int)gui->_widget->sizePolicy().horizontalPolicy());
+  if (gui->_widget->sizePolicy().horizontalPolicy() != QSizePolicy::Fixed){
+    return gui->_widget; // is stretching.
+  }
+      
+  int64_t content = gui->get_gui_num(); //API_get_gui_from_widget(content_widget);
   
-  int64_t layout = gui_verticalLayout();
-  gui_addLayoutSpace(layout, 10, 10, false, true);
+  int64_t layout = gui_horizontalLayout();
+  gui_addLayoutSpace(layout, 1, 1, true, false);
   gui_add(layout, content, -1, -1, -1, -1);
-  gui_addLayoutSpace(layout, 10, 10, false, true);
+  gui_addLayoutSpace(layout, 1, 1, true, false);
 
-  return API_gui_get_widget(content);
+  return API_gui_get_widget(layout);
 }
 
 static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetItem *item, int x, int y, bool enabled){
@@ -3989,8 +4038,9 @@ static int64_t add_table_cell(int64_t table_guinum, Gui *cell_gui, QTableWidgetI
   // Workaround for Qt bug.
   g_guis_can_not_be_closed[cell_gui->get_gui_num()] = "Gui is placed inside a Table. Qt seems to crash with if you close a QTableWidget cell widget manually. However, table cells are deleted automatically when being replaced, or a row is deleted, or a table is cleared, so it's probably never necessary to close them manually.";
 
-  table->setCellWidget(y, x, create_mid_widget(cell_gui->_widget));
-
+  //table->setCellWidget(y, x, API_gui_get_widget(S7CALL2(int_int, "mid-horizontal-layout", cell_gui->get_gui_num()))); // "
+  table->setCellWidget(y, x, create_mid_widget(cell_gui));
+  
   return cell_gui->get_gui_num();
 }
                               

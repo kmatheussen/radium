@@ -468,7 +468,6 @@
      (get-bool *current-mouse-cycle*))))
 
 (define (radium-mouse-move $button $x $y)
-
   (handling-nodes
    (lambda()
      ;;(c-display "mouse move2" $button $x $y (<ra> :control-pressed) (<ra> :shift-pressed))

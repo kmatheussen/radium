@@ -946,6 +946,10 @@ void showBlocklistGui(void){
   evalScheme("(FROM_C-create-blocks-table-gui)");
 }
 
+void showInstrumentListGui(void){
+  evalScheme("(FROM_C-create-instruments-table-gui)");
+}
+
 void setTrackNoteShowType(int type,int tracknum,int blocknum,int windownum){
   struct Tracker_Windows *window=NULL;
   struct WTracks *wtrack;

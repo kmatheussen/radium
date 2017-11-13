@@ -54,7 +54,14 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="QLineEdit" name="search_text"/>
+       <widget class="QLineEdit" name="search_text">
+        <property name="focusPolicy">
+         <enum>Qt::StrongFocus</enum>
+        </property>
+        <property name="toolTip">
+         <string>Filter</string>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QPushButton" name="search_button">
