@@ -2778,7 +2778,6 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
   infoBox->setText(info);
 
   infoBox->setWindowModality(Qt::NonModal);
-  register_modal_qwidget(infoBox);
 
   safeShow(infoBox);
 }

@@ -183,7 +183,7 @@
                   (<ra> :add-message message))
                 (<ra> :schedule 50 ;; Give the "Please wait" message a little bit of time to display.
                       (lambda ()
-                        (<ra> :clear-sound-plugin-registry)
+                        (<ra> :clear-sound-plugin-registry)                        
                         (pmg-search "" #f pmg-scan-all-remaining)
                         #f)))))))
 
@@ -206,10 +206,11 @@
 (define *pmg-search-text-field* (<gui> :child *pluginmanager-gui* "search_text"))
 (<gui> :set-value *pmg-search-text-field* "")
 
+(define *do-search* #t)
 
 (<gui> :add-realtime-callback *pmg-search-text-field*
        (lambda (val)
-         (if (pmg-visible?)
+         (if (and *do-search* (pmg-visible?))
              (pmg-search val #t))))
 
 
@@ -477,6 +478,14 @@
 (delafina (pmg-search :search-string
                       :check-same-search
                       :search-finished-callback #f)
+
+  (when (not (string=? (<gui> :get-value *pmg-search-text-field*)
+                       search-string))
+    (set! *do-search* #f)
+    (try-finally :try (lambda ()
+                        (<gui> :set-value *pmg-search-text-field* search-string))
+                 :finally (lambda ()
+                            (set! *do-search* #t))))
 
   (define table *pmg-table*)
   

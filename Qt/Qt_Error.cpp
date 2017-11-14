@@ -151,9 +151,18 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
   
   QStringList arguments;
   arguments << QString(QString(message).toUtf8().toBase64().constData());
-  VECTOR_FOR_EACH(const char*, menu_string, options){
-    arguments << QString(QString(menu_string).toUtf8().toBase64().constData());
-  }END_VECTOR_FOR_EACH;
+
+  if(options==NULL) {
+
+    arguments << QString(QString("OK").toUtf8().toBase64().constData());
+
+  }else {
+
+    VECTOR_FOR_EACH(const char*, menu_string, options){
+      arguments << QString(QString(menu_string).toUtf8().toBase64().constData());
+    }END_VECTOR_FOR_EACH;
+
+  }
 
   QProcess *myProcess = new QProcess();
   myProcess->connect(myProcess, SIGNAL(finished(int)), myProcess, SLOT(deleteLater()));

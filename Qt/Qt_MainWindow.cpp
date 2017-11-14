@@ -787,9 +787,11 @@ static void remove_null_and_nonmodal_widgets(void){
 }
 
 void register_modal_qwidget(QWidget *widget){
+#if !defined(RELEASE)
   R_ASSERT_RETURN_IF_FALSE(widget->isModal());
+#endif
 
-  R_ASSERT_NON_RELEASE(!a_modal_widget_is_open());
+  //R_ASSERT_NON_RELEASE(!a_modal_widget_is_open());
 
   remove_null_and_nonmodal_widgets();
 
