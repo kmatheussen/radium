@@ -1388,12 +1388,12 @@ $(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_wid
 # Look at this one for creating Qt dialogs (the other Qt dialogs are hacks since the "create_source_from_uio.sh" script is not called
 ######################################################################################################################################
 Qt_comment_dialog.o: $(BUILD_DEPENDENCIES) $(P)Qt_comment_dialog_callbacks.h $(P)Qt_comment_dialog.cpp $(P)qt4_comment_dialog.ui
-	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) comment_dialog
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) comment_dialog  DONT_USE_RADIUM_CHECKBOXES
 	ln -sf mQt_comment_dialog_callbacks.h $(P)mQt_comment_dialog_callbacks.cpp
 	$(CCC) $(P)Qt_comment_dialog.cpp $(QTOPT) -o Qt_comment_dialog.o
 
 Qt_song_properties.o: $(BUILD_DEPENDENCIES) $(P)Qt_song_properties_callbacks.h $(P)Qt_song_properties.cpp $(P)qt4_song_properties.ui
-	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) song_properties
+	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) song_properties DONT_USE_RADIUM_CHECKBOXES
 	ln -sf mQt_song_properties_callbacks.h $(P)mQt_song_properties_callbacks.cpp
 	$(CCC) $(P)Qt_song_properties.cpp $(QTOPT) -o Qt_song_properties.o
 
