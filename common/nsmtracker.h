@@ -2459,6 +2459,7 @@ struct Looping{
   DEFINE_ATOMIC(int64_t, end);   // abstime
 };
 
+
 struct Song{
 	struct Tracker_Windows *tracker_windows;
 	struct Blocks *blocks;
@@ -2482,6 +2483,10 @@ struct Song{
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.
 };
+
+extern LANGSPEC void SONGPROPERTIES_update(struct Song *song);
+
+
 
 /*********************************************************************
 	root.h

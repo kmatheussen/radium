@@ -2793,7 +2793,7 @@ const wchar_t *PLUGIN_DISK_get_audio_filename(hash_t *state){
   if (audiodata_is_included){
 
     g_curr_song_contains_embedded_samples = true;
-    
+
     if (dc.has_deleted_files_in_embedded_dir==false){
       DISK_delete_all_files_in_dir(dc.embedded_files_dirname);
       dc.has_deleted_files_in_embedded_dir=true;

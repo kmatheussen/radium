@@ -126,11 +126,20 @@ void SaveAs(struct Root *theroot){
 }
 
 bool g_embed_samples = false;
+
 void SaveWithEmbeddedSamples(struct Root *theroot){
   g_embed_samples=true;
   SaveAs(theroot);
   g_embed_samples=false;
   g_curr_song_contains_embedded_samples = true;
+  SONGPROPERTIES_update(theroot->song);
+}
+
+void SaveWithoutEmbeddedSamples(struct Root *theroot){
+  g_embed_samples=false;
+  SaveAs(theroot);
+  g_curr_song_contains_embedded_samples = false;
+  SONGPROPERTIES_update(theroot->song);
 }
 
 void Save(struct Root *theroot){
@@ -138,16 +147,26 @@ void Save(struct Root *theroot){
   if (doStopPlayingWhenSavingSong())
     PlayStop();
   
-	if(dc.filename==NULL){
-          SaveAs(theroot);
-	}else{
-          bool embed = g_curr_song_contains_embedded_samples;
-          if (embed)
-            g_embed_samples=true;
-          Save_Clean(dc.filename,theroot,false);
-          if (embed)
-            g_embed_samples=false;
-	}
+  if(dc.filename==NULL){
+    
+    g_embed_samples = g_curr_song_contains_embedded_samples;
+
+    SaveAs(theroot);
+
+    g_embed_samples=false;
+    
+  }else{
+    
+    bool embed = g_curr_song_contains_embedded_samples;
+    if (embed)
+      g_embed_samples=true;
+
+    Save_Clean(dc.filename,theroot,false);
+
+    if (embed)
+      g_embed_samples=false;
+    
+  }
 }
 
 void Save_Backup(wchar_t *filename, struct Root *theroot){

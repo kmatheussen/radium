@@ -93,8 +93,6 @@ DC_start("SONG");
 DC_end();
 }
 
-void SONGPROPERTIES_update(struct Song *song);
-
 struct Song *LoadSong(void){
 	static char *objs[7]={
 		"TRACKER_WINDOW",

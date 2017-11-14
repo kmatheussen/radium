@@ -749,6 +749,10 @@ void saveWithEmbeddedSamples(void){
   SaveWithEmbeddedSamples(root);
 }
 
+void saveWithoutEmbeddedSamples(void){
+  SaveWithoutEmbeddedSamples(root);
+}
+
 
 extern bool isloaded;
 
