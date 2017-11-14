@@ -1,11 +1,15 @@
 #include <samplerate.h>
 
+namespace radium{
+  struct Resampler;
+}
 
-extern LANGSPEC void *RESAMPLER_create(src_callback_t callback, int num_channels, void *arg, enum ResamplerType type);
+extern struct radium::Resampler *RESAMPLER_create(src_callback_t callback, int num_channels, void *arg, enum ResamplerType type);
 
-extern LANGSPEC void RESAMPLER_delete(void *res);
+extern void RESAMPLER_delete(struct radium::Resampler *res);
 
-extern LANGSPEC int RESAMPLER_read(void *res,double ratio,int num_frames, float *out);
+extern int RESAMPLER_read(struct radium::Resampler *res,double ratio,int num_frames, float *out);
 
-extern LANGSPEC void RESAMPLER_reset(void *res);
+extern void RESAMPLER_reset(struct radium::Resampler *res);
+
 

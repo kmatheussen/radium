@@ -161,7 +161,7 @@ typedef struct _Voice{
 
   bool reverse;
   
-  void *resampler;
+  radium::Resampler *resampler;
   void *adsr;
 
   int delta_pos_at_start; // Within the current block. Set when starting a note.
