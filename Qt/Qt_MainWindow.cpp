@@ -770,6 +770,51 @@ const wchar_t *GFX_GetSaveFileName(
     return STRING_create(filename);
 }
 
+static QVector<QPointer<QWidget>> g_modal_widgets;
+
+static void remove_null_and_nonmodal_widgets(void){
+  QVector<QPointer<QWidget>> new_modal_widgets;
+
+  for(QPointer<QWidget> &w : g_modal_widgets){
+    if (w.data() != NULL){
+      if (w.data()->isModal()==true){
+        new_modal_widgets.push_back(w);
+      }
+    }
+  }
+
+  g_modal_widgets = new_modal_widgets;
+}
+
+void register_modal_qwidget(QWidget *widget){
+  R_ASSERT_RETURN_IF_FALSE(widget->isModal());
+
+  R_ASSERT_NON_RELEASE(!a_modal_widget_is_open());
+
+  remove_null_and_nonmodal_widgets();
+
+  for(auto &w : g_modal_widgets){
+    if (w.data()==widget){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+  }
+
+  g_modal_widgets.push_back(QPointer<QWidget>(widget));
+}
+
+bool a_modal_widget_is_open(void){
+  remove_null_and_nonmodal_widgets();
+
+  for(auto &w : g_modal_widgets){
+    if (w.data()->isVisible())
+      return true;
+  }
+
+  return false;
+}
+
+
 static double g_last_time = -1;
 static double g_ignore_until = -1;
 
@@ -881,7 +926,7 @@ int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const 
     return 0;
   }
   
-  if (g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || !THREADING_is_main_thread() || g_radium_runs_custom_exec){
+  if (g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || !THREADING_is_main_thread() || g_radium_runs_custom_exec || QApplication::activeModalWidget()!=NULL || !g_curr_popup_qmenu.isNull() || QApplication::activePopupWidget()!=NULL || a_modal_widget_is_open()){
     
     return SYSTEM_show_message_menu(buttons, message);
     

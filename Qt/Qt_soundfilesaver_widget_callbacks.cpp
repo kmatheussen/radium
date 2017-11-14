@@ -358,6 +358,7 @@ public slots:
       QFileDialog dialog(this, 
                          QString("Select directory")
                          );
+
       dialog.setOptions(options | QFileDialog::ShowDirsOnly);
       dialog.setFileMode(QFileDialog::Directory);
       //dialog.setFileMode(QFileDialog::AnyFile);

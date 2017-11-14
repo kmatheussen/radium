@@ -1616,6 +1616,7 @@ namespace{
     NoKeyboardEventsQMessageBox(QWidget *parent)
       : QMessageBox(parent)
     {
+      register_modal_qwidget(this);
       setFocusPolicy( Qt::NoFocus );
     }
     

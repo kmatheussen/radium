@@ -83,7 +83,8 @@ QWidget *MIXERSTRIPS_get_curr_widget(void){
 bool MIXERSTRIPS_has_mouse_pointer(void){  // used by helpers.h
   return false;
 }
-
+void register_modal_qwidget(QWidget *widget){
+}
 
 int main(int argc, char **argv){
 #if FOR_LINUX

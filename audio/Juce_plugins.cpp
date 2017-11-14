@@ -1803,6 +1803,7 @@ static enum PopulateContainerResult populate(SoundPluginTypeContainer *container
 
   container->is_populated = true;
   container->num_types = 0;
+  //return POPULATE_RESULT_OTHER_ERROR;
 
   ContainerData *data = (ContainerData*)container->data;
 
