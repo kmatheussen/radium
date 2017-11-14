@@ -56,7 +56,7 @@ static void show_alert(String message){
 //
 static void add_descriptions_from_plugin_file(OwnedArray<PluginDescription> &descriptions, String description_filename){
   //  CRASHREPORTER_dont_report();{ // If findAllTypesForFile crashes, it's the plugin that crashes and not Radium (and we don't want to show a message about "Radium crashing" when it actually didn't). If we crash here, the plugin is blacklisted, and that's the important thing.
-    
+
     VSTPluginFormat vst2_format;
     vst2_format.findAllTypesForFile(descriptions, description_filename);
     
@@ -88,7 +88,7 @@ static void write_container_descriptions_to_cache_on_disk(String container_filen
   //Thread::sleep(10000);
   
   //fprintf(stderr, "===...===...   %s: GOING TO Write Plugin description file \"%s\".\n", String(container_filename).toRawUTF8(), description_filename.toRawUTF8());
-    
+
   File file(description_filename);
   
   if (xml_descriptions.writeToFile(file, "")==false){

@@ -295,10 +295,12 @@ SoundPluginTypeContainer *PR_get_populated_container(const char *container_name,
   bool user_has_cancelled_scanning = false;
 
   for(auto *container : containers){
+    //printf(" ---- CHECKING container \"%s / %s\". Is populated: %d\n", container->type_name, container->name, container->is_populated);
     if (!container->is_populated){ // && !API_container_is_blacklisted(container)){
       int num_previously_recorded_entries = API_get_num_entries_in_disk_container(container);
       if (num_previously_recorded_entries > 0 || num_previously_recorded_entries==-1){
         populate(container);
+        //printf("  Able to populate? -%d-. Num types: %d\n", container->is_populated, container->num_types);
         if (container->is_populated)
           populated_containers.push_back(container);
         else

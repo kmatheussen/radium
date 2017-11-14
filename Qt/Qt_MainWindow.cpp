@@ -884,7 +884,7 @@ int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const 
   if (g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || !THREADING_is_main_thread() || g_radium_runs_custom_exec){
     
     SYSTEM_show_message(message);
-    return -1;
+    return -1; // TODO: FIX: This is really really really horrible.
 
   } else {
  

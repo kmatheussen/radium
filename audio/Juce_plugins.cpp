@@ -1709,7 +1709,7 @@ static enum PopulateContainerResult launch_program_calling_write_container_descr
     fprintf(stderr, "Got answer from requester\n");
     if (ret==w3)
       s = 3;
-    else if (ret==w20)
+    else if (ret==w20 || ret==-1) // ret==-1 is a quick hack to fix loading of slow-loading plugins when loading song. The real fix is to fix SYSTEM_show_message (which really must be done).
       s = 20;
     else {
       process.kill();
@@ -1788,7 +1788,7 @@ static enum PopulateContainerResult get_container_descriptions(SoundPluginTypeCo
     return result;
   
 #endif
-  
+
   return get_container_descriptions_from_disk(container, descriptions);
 }
 
