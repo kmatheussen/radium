@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>8</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -7073,7 +7073,7 @@ you should check this box.
           <bool>true</bool>
          </property>
          <property name="text">
-          <string>Use MIDI channel in current track when sending MIDI message from MIDI input to current instrument</string>
+          <string>MIDI input: Only use MIDI messages with the same MIDI channel as the current track.</string>
          </property>
          <property name="checked">
           <bool>true</bool>
@@ -7811,8 +7811,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>
