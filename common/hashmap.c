@@ -731,11 +731,14 @@ hash_t *HASH_load(disk_t *file){
     version = 3;
     vector_t v = {0};
     int try_anyway = VECTOR_push_back(&v, "Try anyway (on your own risk)");
-    (void)try_anyway;
     int ok = VECTOR_push_back(&v, "Ok");
+
     int res = GFX_Message(&v, "Need a newer version or Radium to load this file");
-    if (res==ok)
+
+    if (res!=try_anyway)
       return NULL;
+    (void)ok;
+
   } else {
     GFX_Message(NULL, "Trying to load something which is not a hash map. First line: \"%s\"",STRING_get_chars(line));
     return NULL;

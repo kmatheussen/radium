@@ -314,12 +314,12 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
     
     int ignore = VECTOR_push_back(&v, "Try to run anyway");
     int kill = VECTOR_push_back(&v, "Stop the jack process! (Strongly recommended)");
+    (void)kill;
     
     message = "There is a problem with the jack server: " + message;
     int hmmm = GFX_Message(&v, "%s", message.toUtf8().constData());
-    (void)ignore;
     
-    if (hmmm==kill){
+    if (hmmm!=ignore){
       kill_jackd();
       GFX_Message(NULL, "We have now run several commands that should have stopped the jack process.<p>Now you need to start Jack one more time, and after that start Radium again.");
       return true;

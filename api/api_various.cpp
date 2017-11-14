@@ -2437,7 +2437,7 @@ void testCrashreporterInAudioThread(void){
 }
 
 void testErrorMessage(void){
-  SYSTEM_show_message("Error message seems to work");
+  SYSTEM_show_error_message("Error message seems to work");
 }
 
 void startAutotestingMode(void){
