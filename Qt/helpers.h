@@ -41,6 +41,9 @@ static inline bool can_internal_data_be_accessed_questionmark_safer(void){
 #define RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2(...) if(can_internal_data_be_accessed_questionmark_safer()==false) return __VA_ARGS__;
 
 
+extern void register_modal_qwidget(QWidget *widget);
+extern bool a_modal_widget_is_open(void);
+
 extern void set_editor_focus(void);
 
 extern QVector<QWidget*> g_static_toplevel_widgets;
@@ -327,15 +330,18 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
       )
   {
 
-    if (window->windowModality()!=Qt::ApplicationModal)
+    if (window->windowModality()!=Qt::ApplicationModal){
       window->setWindowModality(Qt::ApplicationModal);
-    
+      register_modal_qwidget(window);
+    }
+
     return !(modality==radium::IS_MODAL);
     
   } else {
     
-    if (modality!=radium::IS_MODAL && window->windowModality()!=Qt::NonModal) // We may have forcefully turned on modality in a previous call. Turn it off now.
+    if (modality!=radium::IS_MODAL && window->windowModality()!=Qt::NonModal){ // We may have forcefully turned on modality in a previous call. Turn it off now.
       window->setWindowModality(Qt::NonModal);
+    }
     
     return false;
     
@@ -511,6 +517,8 @@ struct MyQMessageBox : public QMessageBox {
   MyQMessageBox(bool is_going_to_run_custom_exec, QWidget *parent_ = NULL)
     : QMessageBox(parent_!=NULL ? parent_ : get_current_parent(NULL, is_going_to_run_custom_exec))
   {
+    register_modal_qwidget(this);
+
     setWindowTitle("Radium message");
     //printf("            PAERENT: %p. visible: %d\n",parent(),dynamic_cast<QWidget*>(parent())==NULL ? 0 : dynamic_cast<QWidget*>(parent())->isVisible());
     if(dynamic_cast<QWidget*>(parent())==NULL || dynamic_cast<QWidget*>(parent())->isVisible()==false){

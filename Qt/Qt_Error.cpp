@@ -22,25 +22,30 @@
 
 
 /*
-  g++ Qt_Error.cpp `pkg-config --cflags --libs QtGui` -DCOMPILE_EXECUTABLE -o ../bin/radium_error_message && ../bin/radium_error_message gakkgakk1
-  g++ Qt_Error.cpp `pkg-config --cflags --libs QtGui` -DTEST_MAIN -o test_radium_error_message && ./test_radium_error_message gakkgakk2
+  g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DCOMPILE_EXECUTABLE -o ../bin/radium_error_message `cat ../buildtype.opt` `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11 && ../bin/radium_error_message gakkgakk1
+  g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DTEST_MAIN -o test_radium_error_message `cat ../buildtype.opt` `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11 &&  ./test_radium_error_message gakkgakk2
+
+both:
+  g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DCOMPILE_EXECUTABLE -o ../bin/radium_error_message `cat ../buildtype.opt` `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11 && g++ Qt_Error.cpp `pkg-config --cflags --libs Qt5Gui Qt5Widgets` -DTEST_MAIN -o test_radium_error_message `cat ../buildtype.opt` `cat ../flagopts.opt` -DFOR_LINUX -I. -fPIC -std=gnu++11 &&  ./test_radium_error_message gakkgakk2
+
  */
 
 
 #ifdef COMPILE_EXECUTABLE
 
 
-static int show_message(const char *message){
+static int show_message(QString message, const QVector<QString> &menu_strings){
 
   //QPointer<MyQMessageBox> msgBox = MyQMessageBox::create();
   ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
   
-  msgBox->setText(QString(message));
+  msgBox->setText(message);
 
-  QPushButton *continue_button = msgBox->addButton("continue", QMessageBox::AcceptRole);
-  QPushButton *quit_button     = msgBox->addButton("quit", QMessageBox::AcceptRole);
-  QPushButton *ignore1_button  = msgBox->addButton("ignore warnings and errors for two seconds", QMessageBox::AcceptRole);
-  QPushButton *ignore2_button  = msgBox->addButton("ignore warnings and errors for the rest of the program", QMessageBox::AcceptRole);
+  QVector<QPushButton*> buttons;
+  for(QString menu_string : menu_strings){
+    QPushButton *button = msgBox->addButton(menu_string, QMessageBox::AcceptRole);
+    buttons.push_back(button);
+  }
 
   msgBox->show();
   msgBox->raise();
@@ -53,15 +58,13 @@ static int show_message(const char *message){
       
   QAbstractButton *clicked_button = msgBox->clickedButton();
 
-  if(clicked_button->text()==continue_button->text())
-    return 0;
-  if(clicked_button==quit_button)
-    return 1;
-  if(clicked_button==ignore1_button)
-    return 2;
-  if(clicked_button==ignore2_button)
-    return 3;
-  
+  int i = 0;
+  for(QString menu_string : menu_strings){
+    if(clicked_button->text()==menu_string)
+      return i;
+    i++;
+  }
+
   fprintf(stderr,"what?\n");
   return -1;
 }
@@ -80,7 +83,8 @@ QWidget *MIXERSTRIPS_get_curr_widget(void){
 bool MIXERSTRIPS_has_mouse_pointer(void){  // used by helpers.h
   return false;
 }
-
+void register_modal_qwidget(QWidget *widget){
+}
 
 int main(int argc, char **argv){
 #if FOR_LINUX
@@ -93,6 +97,12 @@ int main(int argc, char **argv){
 #else
   QCoreApplication::setLibraryPaths(QStringList());
 #endif
+
+  QString message = QByteArray::fromBase64(argv[1]);
+
+  QVector<QString> menu_strings;
+  for(int i=2 ; i<argc;i++)
+    menu_strings.push_back(QByteArray::fromBase64(argv[i]));
 
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
@@ -107,7 +117,7 @@ int main(int argc, char **argv){
   }
 #endif
 
-  int ret = show_message(argv[1]);
+  int ret = show_message(message, menu_strings);
   printf("ret: %d\n",ret);
   return ret;
 }
@@ -121,15 +131,8 @@ int main(int argc, char **argv){
 extern bool g_qt_is_running;
 
 extern "C" {
-int SYSTEM_show_message(const char *message){
 
-  static bool ignore_forever = false;
-  static double ignore_until = -1;
-  static double last_time = -1;
-  double time_now = TIME_get_ms();
-
-  if (time_now <= ignore_until || ignore_forever)
-    return 0;
+int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *message){
 
   if (g_qt_is_running==false){
     fprintf(stderr,"\n\n\n   === %s ===\n\n\n", message);
@@ -141,13 +144,25 @@ int SYSTEM_show_message(const char *message){
     
 
 #if FOR_WINDOWS
-  QString program = OS_get_full_program_file_path("radium_error_message.exe");
+  QString program = QString::fromWCharArray(OS_get_full_program_file_path(L"radium_error_message.exe"));
 #else
-  QString program = OS_get_full_program_file_path("radium_error_message");
+  QString program = QString::fromWCharArray(OS_get_full_program_file_path(L"radium_error_message"));
 #endif
   
   QStringList arguments;
-  arguments << message;
+  arguments << QString(QString(message).toUtf8().toBase64().constData());
+
+  if(options==NULL) {
+
+    arguments << QString(QString("OK").toUtf8().toBase64().constData());
+
+  }else {
+
+    VECTOR_FOR_EACH(const char*, menu_string, options){
+      arguments << QString(QString(menu_string).toUtf8().toBase64().constData());
+    }END_VECTOR_FOR_EACH;
+
+  }
 
   QProcess *myProcess = new QProcess();
   myProcess->connect(myProcess, SIGNAL(finished(int)), myProcess, SLOT(deleteLater()));
@@ -168,7 +183,7 @@ int SYSTEM_show_message(const char *message){
     //abort();
 
     GL_unlock();
-    return 0;
+    return -1;
   }
 
   GL_unlock();
@@ -184,33 +199,97 @@ int SYSTEM_show_message(const char *message){
     return -1;
   }
   
-  last_time = TIME_get_ms();
-
   R_ASSERT_RETURN_IF_FALSE2(myProcess->exitStatus()==QProcess::NormalExit, -1);
   
       
-  int status = myProcess->exitCode();
+  return myProcess->exitCode();
+}
 
-  if (status==1){
+int SYSTEM_show_error_message(const char *message){
+  static bool ignore_forever = false;
+  static double ignore_until = -1;
+  static double last_time = -1;
+  double time_now = TIME_get_ms();
+
+  if (time_now <= ignore_until || ignore_forever)
+    return 0;
+
+  last_time = TIME_get_ms();
+
+  vector_t v = {};
+  int continue_ = VECTOR_push_back(&v, "continue"); (void)continue_;
+  int quit = VECTOR_push_back(&v, "quit");
+  int ignore1 = VECTOR_push_back(&v, "ignore warnings and errors for two seconds");
+  int ignore2 = VECTOR_push_back(&v, "ignore warnings and errors for the rest of the program");
+
+  int ret = SYSTEM_show_message_menu(&v, message);
+
+  if (ret==quit){
     exit(-1);
     abort();
   }
     
-  if (status==2)
+  if (ret==ignore1)
     ignore_until = last_time + 2000;
-  else if (status==3)
+  else if (ret==ignore2)
     ignore_forever = true;
 
-  return status;
+  return ret;
 }
 }
 
 
 
 #ifdef TEST_MAIN
+
+double TIME_get_ms(void){
+  return 0;
+}
+
+bool g_qt_is_running = true;
+extern "C"{
+wchar_t *OS_get_full_program_file_path(const wchar_t *w){
+  QString ret = QString("../bin/") + QString::fromWCharArray(w);
+  wchar_t * ch = (wchar_t*)calloc(sizeof(wchar_t), ret.size()+1);
+  ret.toWCharArray(ch);
+  return ch;
+}
+}
+
+void GL_lock(void){
+}
+void GL_unlock(void){
+}
+
+void GFX_ShowProgress(void){
+}
+void GFX_HideProgress(void){
+}
+
+void *talloc__(int size, const char *filename, int linenumber){
+  return calloc(1, size);
+}
+
+void *talloc_realloc__(void *v, int new_size, const char *filename, int linenumber){
+  return realloc(v, new_size);
+}
+
+extern "C"{
+  void CRASHREPORTER_send_assert_message(Crash_Type tye, const char *message, ...){
+    abort();
+  }
+}
+
 int main(int argc, char **argv){
   QApplication app(argc,argv);
-  int ret = SYSTEM_show_message(argv[1]);
+  int ret = SYSTEM_show_error_message(argv[1]);
+  printf("ret: %d\n",ret);
+
+  vector_t menu = {};
+  VECTOR_push_back(&menu, "Option 1/3 øæå ååå");
+  VECTOR_push_back(&menu, "Option 2/3 øæå ååå");
+  VECTOR_push_back(&menu, "Option 3/3 øæå ååå");
+  ret = SYSTEM_show_message_menu(&menu, "HELLO!");
   printf("ret: %d\n",ret);
   return 0;
 }

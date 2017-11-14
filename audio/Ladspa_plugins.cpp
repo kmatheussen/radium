@@ -556,7 +556,7 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
 
         vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
         
-        VECTOR_push_back(&v,"Init LADSPA plugins first");
+        int init_ladspa_first = VECTOR_push_back(&v,"Init LADSPA plugins first");
         VECTOR_push_back(&v,"Continue without loading this plugin library.");
         
         int result = GFX_Message(&v,
@@ -571,7 +571,7 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
                                  "In case you want to try this, press the \"Init LADSPA plugins first\" button below and start radium again.\n",
                                  qlibrary->fileName().toUtf8().constData()
                                  );
-        if (result==0)
+        if (result==init_ladspa_first)
           PR_set_init_ladspa_first();
 
       } else {

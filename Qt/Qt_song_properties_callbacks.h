@@ -63,6 +63,7 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     send_swing_to_plugins->setChecked(song->plugins_should_receive_swing_tempo);
     mixer_comments_visible->setChecked(mixerStripCommentsVisible());
     swing_along->setChecked(song->editor_should_swing_along);
+    embed_samples->setChecked(g_curr_song_contains_embedded_samples);
   }
   
   void set_linear_accelerando_and_ritardando(bool linear_accelerando, bool linear_ritardando){
@@ -134,6 +135,9 @@ public slots:
     this->hide();
   }
 
+  void on_embed_samples_toggled(bool val){
+    g_curr_song_contains_embedded_samples = val;
+  }
 };
 
 }

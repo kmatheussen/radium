@@ -2919,6 +2919,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       setSupportedSchemes(FileRequester::get_postfixes_filter(filetypename, postfixes).split(";;"));
       */
       
+      register_modal_qwidget(this);
+      
       if (for_loading)
         setAcceptMode(QFileDialog::AcceptOpen);
       else
@@ -4704,9 +4706,13 @@ void gui_setModal(int64_t guinum, bool set_modal){
   if (gui==NULL)
     return;
 
-  gui->_modality = set_modal ? radium::IS_MODAL : radium::NOT_MODAL;
+  bool was_modal = gui->_widget->isModal();
 
+  gui->_modality = set_modal ? radium::IS_MODAL : radium::NOT_MODAL;
   gui->_widget->setWindowModality(set_modal ? Qt::ApplicationModal : Qt::NonModal);
+
+  if(set_modal && !was_modal)
+    register_modal_qwidget(gui->_widget);
 }
 
 bool gui_isModal(int64_t guinum){

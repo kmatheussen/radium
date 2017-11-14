@@ -61,7 +61,7 @@ static void show_message(int type, char *message){
   if (ret==-1)
     ret = SYSTEM_show_message(full_message);
 #else
-  int ret = SYSTEM_show_message(full_message);
+  int ret = SYSTEM_show_error_message(full_message);
 #endif
       
   switch(ret){

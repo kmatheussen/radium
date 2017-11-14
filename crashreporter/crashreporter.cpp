@@ -427,6 +427,8 @@ QWidget *MIXERSTRIPS_get_curr_widget(void){
 bool MIXERSTRIPS_has_mouse_pointer(void){  // used by helpers.h
   return false;
 }
+void register_modal_qwidget(QWidget *widget){
+}
 
 int main(int argc, char **argv){
 
@@ -538,7 +540,7 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
     char *temp = (char*)malloc(program.size()+arg1.size()+1024);
     sprintf(temp, "Couldn't launch crashreporter: \"%s\" \"%s\"\n",program.toUtf8().constData(), arg1.toUtf8().constData());
     fprintf(stderr,temp);
-    SYSTEM_show_message(strdup(temp));
+    SYSTEM_show_error_message(strdup(temp));
     Sleep(3000);
   }
 
@@ -556,7 +558,7 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
   if(system(command)==-1) {
     char *temp = (char*)malloc(strlen(command)+10);
     sprintf(temp, "Couldn't start crashreporter. command: -%s-\n",command);
-    SYSTEM_show_message(strdup(temp));
+    SYSTEM_show_error_message(strdup(temp));
   }
 
 #else
@@ -592,7 +594,7 @@ static bool string_to_file(QString s, QTemporaryFile *file, bool save_mixer_tree
   bool ret = false;
   
   if (!file->open()){
-    SYSTEM_show_message("Unable to create temporary file. Disk may be full");
+    SYSTEM_show_error_message("Unable to create temporary file. Disk may be full");
     return false;
   }
 
@@ -600,14 +602,14 @@ static bool string_to_file(QString s, QTemporaryFile *file, bool save_mixer_tree
   int64_t bytesWritten = file->write(data);
     
   if (bytesWritten==0){
-    SYSTEM_show_message("Unable to write to temporary file. Disk may be full");
+    SYSTEM_show_error_message("Unable to write to temporary file. Disk may be full");
     goto exit;
   }
 
   ret = true;
   
   if (bytesWritten != data.size())
-    SYSTEM_show_message("Unable to write everything to temporary file. Disk may be full");
+    SYSTEM_show_error_message("Unable to write everything to temporary file. Disk may be full");
 
   if (save_mixer_tree)
     SP_write_mixer_tree_to_disk(file);
@@ -823,7 +825,7 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
   if (g_crashreporter_file!=NULL) {
 
     if (!g_crashreporter_file->open()){
-      SYSTEM_show_message("Unable to create temprary file. Disk may be full");
+      SYSTEM_show_error_message("Unable to create temprary file. Disk may be full");
       send_crash_message_to_server(message, get_plugin_names(), NOEMERGENCYSAVE, crash_type);
       goto exit;
     }

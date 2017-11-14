@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-namespace{
+namespace radium{
   
 
 #include "SampleInterpolator.cpp"
@@ -206,31 +206,28 @@ struct SincResampler : public Resampler{
 
 
 
-void *RESAMPLER_create(src_callback_t callback, int num_channels, void *arg, enum ResamplerType type){
-  Resampler *resampler;
+struct radium::Resampler *RESAMPLER_create(src_callback_t callback, int num_channels, void *arg, enum ResamplerType type){
+  radium::Resampler *resampler;
 
   R_ASSERT(num_channels = 1);
 
   if(type==RESAMPLER_CUBIC) {
-    resampler = new InterpolatingResampler(callback, arg);
+    resampler = new radium::InterpolatingResampler(callback, arg);
   } else
-    resampler = new SincResampler(callback, num_channels, arg, type);
+    resampler = new radium::SincResampler(callback, num_channels, arg, type);
   
   return resampler;
 }
 
-void RESAMPLER_delete(void *res){
-  Resampler *resampler = static_cast<Resampler*>(res);
+void RESAMPLER_delete(struct radium::Resampler *resampler){
   delete resampler;
 }
 
-int RESAMPLER_read(void *res,double ratio,int num_frames, float *out){
-  Resampler *resampler = static_cast<Resampler*>(res);
+int RESAMPLER_read(struct radium::Resampler *resampler,double ratio,int num_frames, float *out){
   return resampler->read(ratio,num_frames,out);
 }
 
-void RESAMPLER_reset(void *res){
-  Resampler *resampler = static_cast<Resampler*>(res);
+void RESAMPLER_reset(struct radium::Resampler *resampler){
   return resampler->reset();
 }
 

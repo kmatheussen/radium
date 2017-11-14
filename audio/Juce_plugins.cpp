@@ -1358,12 +1358,12 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     if (String(plugin_type->name)=="Moody Sampler" && (type_data->description.version=="V5.0" || type_data->description.version=="0.5.0")){
       vector_t v = {};
 
-      VECTOR_push_back(&v, "Yes");
-      int no = VECTOR_push_back(&v, "No");
+      int yes = VECTOR_push_back(&v, "Yes");
+      int no = VECTOR_push_back(&v, "No");(void)no;
       
       int ret = GFX_Message(&v,
                             "Warning, this plugin (\"Moody Sampler\") has been marked as unstable.<p>Reason: Crashes program when deleted.<p>Load it anyway?");
-      if (ret==no)
+      if (ret!=yes)
         return NULL;
     }
   }
@@ -1700,24 +1700,30 @@ static enum PopulateContainerResult launch_program_calling_write_container_descr
   
   while(process.waitForProcessToFinish(s*1000)==false){
     vector_t v = {};
+
     int w3 = VECTOR_push_back(&v, "Wait 3 seconds more");
     int w20 = VECTOR_push_back(&v, "Wait 20 seconds more");
-    VECTOR_push_back(&v, "Cancel");
+    int cancel = VECTOR_push_back(&v, "Cancel");
+
     int blacklist = VECTOR_push_back(&v, "Cancel, and add to blacklist");
     fprintf(stderr, "Openinig requester\n");
+
     int ret = GFX_Message2(&v, true, "Waited more than %d seconds for \"%s\" to load\n", s, STRING_get_chars(container_filename));
     fprintf(stderr, "Got answer from requester\n");
+
     if (ret==w3)
       s = 3;
-    else if (ret==w20 || ret==-1) // ret==-1 is a quick hack to fix loading of slow-loading plugins when loading song. The real fix is to fix SYSTEM_show_message (which really must be done).
+    else if (ret==w20)
       s = 20;
-    else {
+    else if (ret==cancel){
       process.kill();
-      if(ret==blacklist)
-        return POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED;
-      else
-        return POPULATE_RESULT_OTHER_ERROR;
+      return POPULATE_RESULT_OTHER_ERROR;
     }
+    else if (ret==blacklist){
+      process.kill();
+      return POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED;
+    } else
+      s = 3; // timeout, for instance.
   }
 
   return POPULATE_RESULT_IS_OKAY; // as far as we know. (ChildProcess doesn't have an hasCrashed() function).
@@ -1797,6 +1803,7 @@ static enum PopulateContainerResult populate(SoundPluginTypeContainer *container
 
   container->is_populated = true;
   container->num_types = 0;
+  //return POPULATE_RESULT_OTHER_ERROR;
 
   ContainerData *data = (ContainerData*)container->data;
 

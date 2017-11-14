@@ -223,9 +223,11 @@ static enum PopulateResult populate(SoundPluginTypeContainer* container){
     vector_t v = {};
     int load_it = VECTOR_push_back(&v, "Open anyway");
     int cancel = VECTOR_push_back(&v, "Cancel");
+    (void)cancel;
+
     int hmm=GFX_Message(&v, "Warning: The plugin file \"%s\" crashed last time we tried to open it.", STRING_get_chars(container->filename));
-    (void) load_it;
-    if (hmm==cancel)
+
+    if (hmm != load_it)
       return PR_POPULATE_CANCELLED;
     
   } else {

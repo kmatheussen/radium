@@ -248,6 +248,7 @@ extern bool g_user_interaction_enabled; // Used for testing. If this one is fals
 
 static inline bool is_playing(void);
 
+struct vector_t_;
 
 #include "debug_proc.h"
 #include "atomic.h"
@@ -255,6 +256,7 @@ static inline bool is_playing(void);
 #include "OS_Player_proc.h"
 #include "memory_proc.h"
 #include "nsmtracker_events.h"
+
 #include "OS_error_proc.h"
 #include "OS_Semaphores.h"
 #include "keyboard_focus_proc.h"
@@ -597,11 +599,13 @@ struct ListHeaderP{
 	vector.h
 *********************************************************************/
 
-typedef struct{
+struct vector_t_{
   int num_elements;
   int num_elements_allocated; // private
   void **elements;
-} vector_t;
+};
+
+typedef struct vector_t_ vector_t;
 
 #include "vector_proc.h"
 
@@ -2455,6 +2459,7 @@ struct Looping{
   DEFINE_ATOMIC(int64_t, end);   // abstime
 };
 
+
 struct Song{
 	struct Tracker_Windows *tracker_windows;
 	struct Blocks *blocks;
@@ -2478,6 +2483,10 @@ struct Song{
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.
 };
+
+extern LANGSPEC void SONGPROPERTIES_update(struct Song *song);
+
+
 
 /*********************************************************************
 	root.h

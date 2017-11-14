@@ -317,13 +317,12 @@ class Sample_requester_widget : public QWidget
           remove = VECTOR_push_back(&v, "Remove bookmark");
 
         int ok = VECTOR_push_back(&v, "Ok");
-        (void)ok;
 
         int ret = GFX_Message(&v, "Bookmarked sample directory \"%s\" doesn't exist anymore",name.toUtf8().constData());
 
         if (ret==remove){
           SETTINGS_remove(settings_key.toUtf8().constData());
-        } else {
+        } else if(ret==ok){
           already_warned_about.insert(name);
         }
       }
