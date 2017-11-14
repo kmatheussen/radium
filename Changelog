@@ -1,3 +1,41 @@
+Changes 5.2.7 -> 5.2.9:
+* Song properties: Add option to enable/disable embedding
+  audio files in the song properties window.
+* Menus: Add "Save As, with embedded audio files" to the
+  file menu.
+* Change "Save As" to keep the same embedding audio files
+  status, not to save without embedded audio files.
+* GUI: Let the song properties window and the song comment
+  window have normal check boxes.
+* Pluginmanager: Clear search string after finished rescanning
+  all plugins.
+* Gui: Fix possible freeze when showing message window while
+  a modal widget is open.
+* Demo songs: Added "Concrete Vox" by Nikos Levantis.
+* Load song: Fix loading of plugins that uses more than
+  3 seconds to initialize. Reaktor is one such plugin.
+* Blocklist GUI: A table to show and edit things in
+  all blocks.
+* Instrumentlist GUI: A GUI similar to the blocklist GUI,
+  but for instruments.
+* Mixer strips: Display dB value in status bar when changing
+  volume of non-wide strips.
+* Block properties: Create undo entry when changing the name
+  of a block.
+* Mixer strips: Fix showing the mixer strip of an instrument
+  after undoing deletion or redoing creation.
+* Modulator GUI: Don't display strange content if changing
+  anything while sorting is enabled.
+* Modulator GUI: Fix sorting the "Enabled" column.
+* MIDI: Fix crash that could happen if receiving external MIDI
+  while loading song
+* Modulator: Add "LFO" to the LFO modulator names.
+* API: setBlockName, showBlocklistGui,
+  getBlockUsageInSequencer, showInstrumentListGui,
+  gui_addFocusInCallback, saveWithoutEmbeddedSamples
+
+
+
 Changes 5.2.5 -> 5.2.7:
 * Audio: Don't show an error message when undoing the deletion
   of an instrument that was soloing.
