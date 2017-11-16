@@ -1,3 +1,14 @@
+Changes 5.2.9 -> 5.3.0:
+* Editor GFX: Show all of the orange horizontal+vertical
+  node indicator lines (when moving something). Don't
+  hide everything to the left of the first normal track.
+* Swing: Fix assertion (and sometimes crash) if adding
+  signature change to a block with swing.
+* Editor: Some fixes when navigating the cursor in the
+  tempo/timing tracks and not all of them are visible.
+  (Crash/assertion fix.)
+
+
 Changes 5.2.7 -> 5.2.9:
 * Song properties: Add option to enable/disable embedding
   audio files in the song properties window.
