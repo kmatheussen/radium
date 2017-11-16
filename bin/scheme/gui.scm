@@ -96,7 +96,7 @@
 (define (gui-create-layout create-layout-func layout-args . guis)
   (define layout (apply create-layout-func layout-args))
   (for-each (lambda (gui)
-              (c-display "Adding" gui "to layout" layout)
+              ;;(c-display "Adding" gui "to layout" layout)
               (<ra> :gui_add layout gui))
             (flatten guis))
   layout)

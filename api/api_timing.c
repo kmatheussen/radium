@@ -571,6 +571,8 @@ dyn_t API_getAllBeats(const struct Beats *beats){
     HASH_put_int(hash, ":barnum", beat->bar_num);
     HASH_put_int(hash, ":beatnum", beat->beat_num);
 
+    //printf("API_getAllBeats: %s\n", p_ToString(beat->l.p));
+    
     DYNVEC_push_back(&ret, DYN_create_hash(hash));
 
     beat = NextBeat(beat);

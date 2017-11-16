@@ -1002,7 +1002,7 @@ static dyn_t get_timings_from_scheme(const struct Blocks *block, const dyn_t dyn
   if (g_create_block_timings==NULL)
     g_create_block_timings=s7extra_get_func_from_funcname_for_storing("create-block-timings");
 #else
-  g_create_block_timings=s7extra_get_func_from_funcname("create-block-timings");
+  g_create_block_timings=s7extra_get_func_from_funcname("create-block-timings"); // Reload symbol every time so that we can redefine the function during runtime.
 #endif
   
   return S7CALL(dyn_int_int_int_dyn_dyn_dyn_dyn_dyn,g_create_block_timings,
@@ -1103,6 +1103,8 @@ static void postprocess_swing_changes(const struct Beats *beats, struct STimeCha
   // Iterate over all beats. When we hit a bar ("if (new_bar)"), we do our things.
   do{
     beats = NextBeat(beats);
+
+    R_ASSERT_RETURN_IF_FALSE(changepos1 < num_swing_changes);
     
     bool new_bar = false;
     Place p2;
@@ -1122,6 +1124,8 @@ static void postprocess_swing_changes(const struct Beats *beats, struct STimeCha
 
       double float_p2 = GetDoubleFromPlace(&p2);
 
+      //printf("p2: %s. nonswing: %f. float_p2: %f. changepos1: %d\n", p_ToString(p2), nonswing_t2, float_p2, changepos1);
+    
       int changepos2 = changepos1;
 
       bool contains_gliding_swing = false;
@@ -1169,8 +1173,8 @@ static void postprocess_swing_changes(const struct Beats *beats, struct STimeCha
       changepos1 = changepos2;
       nonswing_t1 = nonswing_t2;
     }    
-    
-  }while(beats!=NULL);
+
+  }while(beats!=NULL); //  && changepos1 < num_swing_changes
   
 }
 
@@ -1220,7 +1224,9 @@ static struct STimes *create_stimes(const struct Blocks *block,
                                     const struct STimes *nonswing_stimes,
                                     int default_bpm, int default_lpb)
 {  
+  //printf("LENGTH dynbeats: %d\n", dynbeats.array->num_elements);
   dyn_t timings = get_timings_from_scheme(block, dynbeats, filledout_swings, default_bpm, default_lpb);
+  //printf("LENGTH timings: %d\n", timings.array->num_elements);
   
   if (timings.type!=ARRAY_TYPE){
     GFX_Message(NULL, "Error. timings function returned faulty data. Expected an array, got %s\n", DYN_type_name(timings.type));
@@ -1285,8 +1291,10 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
   {
     for(int i=0;i<num_blocks;i++){
       beats[i] = update_beats ? Beats_get(blocks[i], default_signature, default_lpb) : blocks[i]->beats;
-      if (!only_update_beats[i])
+      if (!only_update_beats[i]){
+        D(printf("   Getting DynBeats for %d\n", i));
         dynbeats[i] = API_getAllBeats(beats[i]);
+      }
     }
   }
 
@@ -1342,6 +1350,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
         if (!has_block_swings)
           stimes_with_global_swings[i] = stimes_without_global_swings[i];
         else{
+          D(printf("  Calling create_stimes for %d\n", i));
           stimes_with_global_swings[i] = create_stimes(blocks[i], dynbeats[i], beats[i], filledout_swingss[i], stimes_without_global_swings[i], default_bpm, default_lpb);
           R_ASSERT(stimes_with_global_swings[i][num_lines].time == blocklen);
         }

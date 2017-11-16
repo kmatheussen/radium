@@ -310,7 +310,8 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
                            "<br>"
                            "<b>Note: Sometimes it is virtually impossible to fix the bug without a recipe on how to reproduce the bug</b><br>"
                            "<br>"
-                           "In case you provide an email address, please let me know if you want to get informed when bug is fixed."
+                           "Also remember that the report is sent anonymously. If you want feedback or want to help further to track down the<br>"
+                           "bug, please include an email address below."
                            );
     text_edit_label.setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
  

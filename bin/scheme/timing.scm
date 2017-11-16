@@ -724,26 +724,22 @@ The duration will almost double though, but not exactly.
   (define swing-barnum (and bar-swing (bar-swing :barnum)))
                           
   (define line (and bar (get-first-line-in-bar bar)))
-  ;;(c-display "line: " line bar-barnum swing-barnum ", bar:\n" (pp bar) ", bar-swing:\n" (pp bar-swing))
 
   (cond ((and (not bar)
               (not bar-swing))
          '())
         
-        ((not bar-swing)
-         (list (make-tempo-multiplier :y1 line :x1 1
-                                      :y2 num-lines :x2 1)))
-        ((not bar)
-         (assert #f))
-
-        ((< bar-barnum swing-barnum)
-         (assert (not (null? (cdr bars))))
-         (cons (make-tempo-multiplier :y1 line :x1 1
-                                      :y2 (get-first-line-in-bar (cadr bars)) :x2 1)
-               (create-tempo-multipliers-from-swings (cdr bars)
-                                                     bar-swings
-                                                     num-lines)))
-
+        ((or (not bar-swing)
+             (< bar-barnum swing-barnum))
+         (let* ((next-bar (cl-cadr bars))
+                (next-line (or (and next-bar
+                                    (get-first-line-in-bar next-bar))
+                               num-lines)))
+           (cons (make-tempo-multiplier :y1 line :x1 1
+                                        :y2 next-line :x2 1)
+                 (create-tempo-multipliers-from-swings (cdr bars)
+                                                       bar-swings
+                                                       num-lines))))
         (else
          (assert (= bar-barnum swing-barnum)) 
          (append (create-tempo-multipliers-from-swing line bar-swing)
@@ -751,7 +747,47 @@ The duration will almost double though, but not exactly.
                                                        (cdr bar-swings)
                                                        num-lines)))))
 
+
+;; Check that it creates tempo-multipliers for all bars. When there is swing in a block, there must be tempo multipliers aligned with all bars.
+(***assert*** (let ((bars (list (hash-table '(:barnum . 0)
+                                            '(:beats . ((0 0) (4 1) (8 2) (12 3))))
+                                (hash-table '(:barnum . 1)
+                                            '(:beats . ((16 0) (20 1))))
+                                (hash-table '(:barnum . 2)
+                                            '(:beats . ((24 0) (28 1))))))
+                    (bar-swings (list
+                                 (hash-table '(:num-lines . 16)
+                                             '(:swings . #(#(0 4 201 #t) #(8 1 201)))
+                                             '(:barnum . 0)
+                                             '(:auto-generated . #t)))))
+                (create-tempo-multipliers-from-swings bars bar-swings 32)
+                )
+              (list (hash-table
+                     '(:y1 . 0)
+                     '(:x1 . 5/8)
+                     '(:y2 . 8)
+                     '(:x2 . 5/8))
+                    (hash-table
+                     '(:y1 . 8)
+                     '(:x1 . 5/2)
+                     '(:y2 . 16)
+                     '(:x2 . 5/2))
+                    (hash-table
+                     '(:y1 . 16)
+                     '(:x1 . 1)
+                     '(:y2 . 24)
+                     '(:x2 . 1))
+                    (hash-table
+                     '(:y1 . 24)
+                     '(:x1 . 1)
+                     '(:y2 . 32)
+                     '(:x2 . 1))))
+              
+
+
 #!!
+
+
 (pp (create-tempo-multipliers-from-swings (list (make-bar :barnum 0 :beats (list (create-beat 0 0)))
                                                 (make-bar :barnum 1 :beats (list (create-beat 2 0))))
                                           (list (make-bar-swing :barnum 1 :swings (list (create-swing 0 1 0)
@@ -1321,19 +1357,28 @@ The duration will almost double though, but not exactly.
 
 
 (define (create-block-timings num-lines main-bpm main-lpb bpms lpbs temponodes beats swings)
+  ;;(c-display "CREATEBLOCK1. beats: " (pp beats))
+  
   (define tempo-multipliers (merge-tempo-multipliers (bpms-to-tempo-multipliers main-bpm (vector->list bpms) num-lines)
                                                      (lpbs-to-tempo-multipliers main-lpb (vector->list lpbs) num-lines)
                                                      num-lines))
 
+  ;;(c-display "CREATEBLOCK1. tempo multipliers1: " (pp tempo-multipliers))
+  
   (set! tempo-multipliers (merge-tempo-multipliers tempo-multipliers
                                                    (temponodes-to-tempo-multipliers (vector->list temponodes))
                                                    num-lines))
 
-  ;;(c-display "BEF:" (pp (to-list swings)))
+  ;;(c-display "CREATEBLOCK1. tempo multipliers2: " (pp tempo-multipliers))
+  
+  ;;(c-display "SWINGS:" (pp (to-list swings)))
   (define swing-multipliers (create-tempo-multipliers-from-swings (get-bars-from-beats beats)
                                                                   (to-list swings)
                                                                   num-lines))
 
+  ;;(c-display "CREATEBLOCK1. swing multipliers: " (pp swing-multipliers))
+  ;;(c-display "CREATEBLOCK1. bars-from-beats: " (pp (get-bars-from-beats beats)))
+  
   ;;(c-display "\nAFT:" (pp swing-multipliers))
   
   ;;(c-display "SWINGS:" (pp (get-bars-from-beats beats)) "\n" swings "\n" (pp swing-multipliers))
@@ -1344,6 +1389,8 @@ The duration will almost double though, but not exactly.
                                                    swing-multipliers
                                                    num-lines))
   ;;(c-display "AFT:" (pp tempo-multipliers) "\n")
+
+  ;;(c-display "CREATEBLOCK1. tempo multipliers4: " (pp tempo-multipliers))
   
   (create-block-timings2 main-bpm main-lpb tempo-multipliers num-lines))
 
@@ -1360,6 +1407,10 @@ The duration will almost double though, but not exactly.
                         ))
 
 
+
+
+
+
 #||
 
 (when *is-initializing*
@@ -1373,6 +1424,7 @@ The duration will almost double though, but not exactly.
 
 
 ||#
+
 
 
 
