@@ -179,7 +179,7 @@ static void draw_text_num(
 static void draw_node_indicator(float x,
                                 float y)
 {  
-  GE_Context *c = GE_color_alpha_z(AUTOMATION_INDICATOR_COLOR_NUM, 0.6, GE_Conf(Z_MAX_SCROLLTRANSFORM, NOMASK_Y));
+  GE_Context *c = GE_color_alpha_z(AUTOMATION_INDICATOR_COLOR_NUM, 0.6, GE_Conf(Z_MAX_SCROLLTRANSFORM, NOMASK_Y, NO_SCISSORS));
   
   float away1 = 1024;
   float away2 = 5;
