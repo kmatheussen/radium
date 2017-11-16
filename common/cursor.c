@@ -209,15 +209,15 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
                 if (window->curr_track==LPBTRACK && window->show_lpb_track==false)
                   ATOMIC_INC(window->curr_track, 1);
 
-                if (window->curr_track==SWINGTRACK && window->show_swing_track==false)
-                  ATOMIC_INC(window->curr_track, 1);
-                
                 if (window->curr_track==SIGNATURETRACK && window->show_signature_track==false)
                   ATOMIC_INC(window->curr_track, 1);
                 
                 if (window->curr_track==LINENUMBTRACK)
                   ATOMIC_INC(window->curr_track, 1);
 
+                if (window->curr_track==SWINGTRACK && window->show_swing_track==false)
+                  ATOMIC_INC(window->curr_track, 1);
+                
                 if (window->curr_track==TEMPONODETRACK && window->show_reltempo_track==false)
                   ATOMIC_INC(window->curr_track, 1);
 
@@ -245,27 +245,33 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 	}
 }
 
-static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *window){
-  if (false)
-    printf("what?\n");
-  
-  else if (window->show_bpm_track==true) {
-    ATOMIC_WRITE(window->curr_track, TEMPOTRACK);
-    window->curr_othertrack_sub = 0;
+static int get_leftmost_legal_track(const struct Tracker_Windows *window){
+  if (window->show_bpm_track==true)
+    return TEMPOTRACK;
     
-  } else if (window->show_lpb_track==true)
-    ATOMIC_WRITE(window->curr_track, LPBTRACK);
+  else if (window->show_lpb_track==true)
+    return LPBTRACK;
   
   else if (window->show_signature_track==true)
-    ATOMIC_WRITE(window->curr_track, SIGNATURETRACK);
+    return SIGNATURETRACK;
   
   else if (window->show_swing_track==true)
-    ATOMIC_WRITE(window->curr_track, SWINGTRACK);
+    return SWINGTRACK;
   
   else if (window->show_reltempo_track==true)
-    ATOMIC_WRITE(window->curr_track, TEMPONODETRACK);
-  
-  else {
+    return TEMPONODETRACK;
+
+  else
+    return 0;
+}
+
+static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *window){
+  int leftmost = get_leftmost_legal_track(window);
+
+  if (leftmost < 0){
+    ATOMIC_WRITE(window->curr_track, leftmost);
+    window->curr_othertrack_sub = 0;
+  } else {
     const struct WTracks *wtrack = get_leftmost_visible_wtrack(window->wblock);
     if (wtrack==NULL)
       ATOMIC_WRITE(window->curr_track, 0);
@@ -274,6 +280,7 @@ static void set_curr_track_to_leftmost_legal_track(struct Tracker_Windows *windo
     window->curr_track_sub = -1;
   }
 }
+
 
 int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
   struct WTracks *wtrack = wblock->wtrack;
@@ -360,22 +367,24 @@ int CursorLeft(struct Tracker_Windows *window,struct WBlocks *wblock){
           window->curr_othertrack_sub--;
           return 1;
           
+          //  Om LPB-track er synlig, og BPM-track er usynlig, så: venstre venstre venstre venstre
+          
 	}else{
-                
-                if (window->curr_track==TEMPOTRACK)
+
+               if (window->curr_track==get_leftmost_legal_track(window))
                   return 0;
-                
+
 		ATOMIC_INC(window->curr_track, -1);
 
                 if (window->curr_track==TEMPONODETRACK && window->show_reltempo_track==false)
                   ATOMIC_INC(window->curr_track, -1);
 
-                if (window->curr_track==LINENUMBTRACK)
-                  ATOMIC_INC(window->curr_track, -1);
-
                 if (window->curr_track==SWINGTRACK && window->show_swing_track==false)
                   ATOMIC_INC(window->curr_track, -1);
                 
+                if (window->curr_track==LINENUMBTRACK)
+                  ATOMIC_INC(window->curr_track, -1);
+
                 if (window->curr_track==SIGNATURETRACK && window->show_signature_track==false)
                   ATOMIC_INC(window->curr_track, -1);
                 

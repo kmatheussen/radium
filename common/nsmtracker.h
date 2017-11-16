@@ -2170,7 +2170,6 @@ struct Tracker_Windows{
 
 	struct Slider bottomslider;
 	struct Slider leftslider;
-	struct Slider rightslider;
 
         bool track_slider_is_moving; // If true, draw bottomslider in a different color.
         bool scrollbar_is_moving; // If true, draw leftslider in a different color.
