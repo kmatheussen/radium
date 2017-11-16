@@ -913,7 +913,7 @@ double Place2STime_from_times2(
   //printf("  %f: Found %f -> %f. (%f -> %f)", place_as_float, time_change->y1, time_change->y2, time_change->t1/pc->pfreq, time_change->t2/pc->pfreq);
   double ret = time_change->t1 + get_stime_from_stimechange(time_change, place_as_float, true);
 
-  R_ASSERT_NON_RELEASE(ret < time_change->t2 + 10);
+  R_ASSERT_NON_RELEASE(ret < time_change->t2 + 300);
 
   if (ret > time_change->t2)
     return time_change->t2; // Could happen due to rounding errors.
@@ -1134,7 +1134,7 @@ static void postprocess_swing_changes(const struct Beats *beats, struct STimeCha
       do{
         struct STimeChange *swing_change = &swing_changes[changepos2];
         if (swing_change->y1+0.00001 >= float_p2){
-          R_ASSERT_NON_RELEASE(swing_change->y1 == float_p2); // I guess this assertion could fail in some situations without anything being wrong. (probably not in debug mode on an intel cpu though)
+          R_ASSERT_NON_RELEASE(swing_change->y1 == float_p2); // I guess this assertion could fail in some situations without anything being wrong. (probably not in debug mode on an intel cpu though) Note: did get an assertion once with these numbers: y1=35.626262626262623, float_p2=35.62626262626263.
           break;
         }
         
