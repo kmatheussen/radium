@@ -1676,7 +1676,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int x1,y1,x2,y2;
     get_note_indicator_coordinates(x1,y1,x2,y2);
 
-    int intencity = ATOMIC_GET(patch->visual_note_intencity);
+    int intencity = ATOMIC_GET_RELAXED(patch->visual_note_intencity);
     if(intencity>0){      
       //c = mix_colors(c,QColor(168,35,35),::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
       //QColor c = mix_colors(background_color,g_editor->colors[12],::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));

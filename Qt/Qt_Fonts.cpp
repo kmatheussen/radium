@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_Fonts_proc.h"
 
 static bool can_fit(const QFont &font, const QString &text, int flags, int width, int height){
+  
   QFontMetrics fm(font);
 
   // Not an optimization. Seems like this test sometimes returns true even if the code below returns false.

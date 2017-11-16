@@ -1707,8 +1707,8 @@ namespace{
               
               if(patch!=NULL){
                 
-                if(ATOMIC_GET(patch->visual_note_intencity) > 0) {
-                  ATOMIC_ADD_RETURN_OLD(patch->visual_note_intencity, -1);
+                if(ATOMIC_GET_RELAXED(patch->visual_note_intencity) > 0) {
+                  ATOMIC_ADD_RETURN_OLD_RELAXED(patch->visual_note_intencity, -1);
                   //printf("intencity: %d\n",intencity);
                   int x1,y1,x2,y2;
                   CHIP_get_note_indicator_coordinates(x1,y1,x2,y2);

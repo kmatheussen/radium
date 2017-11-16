@@ -154,6 +154,9 @@ static inline bool atomic_compare_and_set_float(float *variable, float old_value
 #define ATOMIC_ADD_RETURN_OLD(name, how_much)                           \
   __atomic_fetch_add (&ATOMIC_NAME(name), how_much, __ATOMIC_SEQ_CST)
 
+#define ATOMIC_ADD_RETURN_OLD_RELAXED(name, how_much)                           \
+  __atomic_fetch_add (&ATOMIC_NAME(name), how_much, __ATOMIC_RELAXED)
+
 #define ATOMIC_ADD_ARRAY_RETURN_OLD(name, pos, how_much)                 \
   __atomic_fetch_add (&ATOMIC_NAME(name)[pos], how_much, __ATOMIC_SEQ_CST)
 
