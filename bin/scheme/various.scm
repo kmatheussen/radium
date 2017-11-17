@@ -208,8 +208,9 @@
                                                                           ;;(c-display "ROW_CONTENT:" row-content row-num)
                                                                           (define blocknum (to-integer (string->number (first row-content))))
                                                                           (when (not (= blocknum (<ra> :current-block)))
-                                                                            (<ra> :select-block blocknum)
-                                                                            (update-rows!)
+                                                                            (when (not (<ra> :is-playing-song))
+                                                                              (<ra> :select-block blocknum)
+                                                                              (update-rows!))
                                                                             ;;(c-display (integer? blocknum) blocknum "row num" row-num "selected. Content:" row-content)
                                                                             )))))
                                                                         
@@ -220,20 +221,25 @@
     (<gui> :set-layout-spacing gui 0 2 2 2 2)
     (<gui> :add table-parent table))
 
-  (define (create-name blocknum curr)
+  (define (create-name blocknum curr rownum)
     (define ret (<gui> :line curr
                        (lambda (value)
                          (when doit
-                           ;;(c-display "VALUE:" value)
-                           (when (not (string=? value curr))
+                           ;;(c-display "BLOCKNAME. New VALUE:" value)
+                           (when (not (string=? value (<ra> :get-block-name blocknum)))
                              (<ra> :add-undo-block blocknum)
                              (<ra> :set-block-name value blocknum)
                              (update-rows!))))))
 
     (<gui> :add-focus-in-callback ret (lambda ()
-                                        (<ra> :select-block blocknum)
-                                        (update-rows!)
-                                        ))
+                                        (if (not (<ra> :is-playing-song))
+                                            (begin
+                                              (<ra> :select-block blocknum)
+                                              (update-rows))
+                                            (begin
+                                              (<gui> :enable-table-sorting table #f)
+                                              (<gui> :set-value table rownum)
+                                              (<gui> :enable-table-sorting table #t)))))
 
     (define color (<gui> :mix-colors
                          (<ra> :get-block-color blocknum)
@@ -288,7 +294,7 @@
 
     (<gui> :add-table-int-cell table usage 1 rownum)
 
-    (define blocknamegui (create-name blocknum blockname))
+    (define blocknamegui (create-name blocknum blockname rownum))
     (<gui> :add-table-gui-cell table blocknamegui 2 rownum)
     (define time3 (time))
 
@@ -319,6 +325,7 @@
           (keep identity
                 (map (lambda (blocknum)
                        (define blockname (<ra> :get-block-name blocknum))
+                       ;;(c-display "BLOCKNAME" blocknum "\"" blockname "\"")
                        (and (or (string=? search-string "")
                                 (string-case-insensitive-contains? blockname search-string))
                             (list blocknum
