@@ -243,7 +243,7 @@ void Block_Properties(
 }
 
 void Block_set_name(struct Blocks *block, const char *new_name){
-  block->name=new_name;
+  block->name=talloc_strdup(new_name);
   BS_UpdateBlockList();
   BS_UpdatePlayList();
 }
