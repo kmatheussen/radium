@@ -151,8 +151,6 @@ int addVelocity(float value, Place place, dyn_t dynnote, int tracknum, int block
     return -1;
   }
 
-  ADD_UNDO(Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline));
-
   int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
 
   if (ret==-1){

@@ -153,8 +153,6 @@ int addPitch(float value, Place place, dyn_t dynnote, int tracknum, int blocknum
     return -1;
   }
 
-  ADD_UNDO(Notes(window,wblock->block,wtrack->track,window->wblock->curr_realline));
-
   struct Pitches *pitch = AddPitch(window, wblock, wtrack, note, &place, value);
   if (pitch==NULL){
     //handleError("addPitch: Can not create new pitch with the same position as another pitch");
