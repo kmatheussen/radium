@@ -195,7 +195,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 
                 window->curr_othertrack_sub++;
                    
-        } else if (window->curr_track==LPBTRACK && window->curr_othertrack_sub<2) {
+        } else if (window->curr_track==LPBTRACK && window->curr_othertrack_sub<1) {
 
                 window->curr_othertrack_sub++;
                    
