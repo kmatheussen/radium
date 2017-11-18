@@ -1215,6 +1215,11 @@ static void positionSeqblock2(int64_t start_abstime, int64_t end_abstime, int se
   VALIDATE_TIME2(start_abstime,);
   VALIDATE_TIME2(end_abstime,);
 
+  if(end_abstime <= start_abstime){
+    handleError("positionSeqblock: Illegal start and endtimes. start: %d. end: %d", (int)start_abstime, (int)end_abstime);
+    return;
+  }
+  
   int64_t start_seqtime;
   int64_t end_seqtime;
 
