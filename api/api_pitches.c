@@ -144,18 +144,18 @@ int addPitch(float value, Place place, dyn_t dynnote, int tracknum, int blocknum
 
   if (PlaceLessOrEqual(&place, &note->l.p)) {
     //if (dynnote>0)
-    //  handleError("addPitch: placement before note start for note #%d", dynnote);
+    handleError("addPitch: placement before note start for note. pitch: %s. note: %s", p_ToString(place), p_ToString(note->l.p));
     return -1;
   }
 
-  if (PlaceGreaterOrEqual(&place, &note->end)) {
-    //handleError("addPitch: placement after note end for note #%d", dynnote);
+  if (PlaceGreaterThan(&place, &note->end)) {
+    handleError("addPitch: placement after note end for note. pitch: %s. note end: %s", p_ToString(place), p_ToString(note->end));
     return -1;
   }
 
   struct Pitches *pitch = AddPitch(window, wblock, wtrack, note, &place, value);
   if (pitch==NULL){
-    //handleError("addPitch: Can not create new pitch with the same position as another pitch");
+    handleError("addPitch: Can not create new pitch with the same position as another pitch");
     return -1;
   }
 

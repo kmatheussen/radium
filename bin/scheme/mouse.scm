@@ -2501,6 +2501,7 @@
                                                                        (<ra> :get-subtrack-x1 *current-subtrack-num* *current-track-num*)
                                                                        (<ra> :get-subtrack-x2 *current-subtrack-num* *current-track-num*)
                                                                        0 1))
+                                                  (<ra> :undo-notes *current-track-num*)
                                                   (define Num (<ra> :add-velocity Value Place *current-note-num* *current-track-num*))
                                                   (if (= -1 Num)
                                                       #f

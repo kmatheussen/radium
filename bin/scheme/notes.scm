@@ -540,12 +540,13 @@
      (for-each (lambda (pitch)
                  (define place (+ (pitch :place)
                                   (note :place)))
+                 ;;(c-display "PLACE:" place ". note-place:" (note :place) ". pitch-place:" (pitch :place) ". notenum:" notenum ". note-pitches:" (pp (note :pitches)))
                  (if (< place num-lines)
                      (let ((pitchnum (<ra> :add-pitch
                                            (pitch :value)
                                            place
                                            notenum tracknum blocknum)))
-                       (assert (> pitchnum 0))
+                       ;;(c-display "PITCHNUM:" pitchnum ". place:" place ". notenum:" notenum ". num notes:" (<ra> :get-num-notes tracknum blocknum))
                        (<ra> :set-pitch-logtype (pitch :logtype) pitchnum notenum tracknum blocknum))))
                (cdr (butlast (note :pitches))))
      
@@ -570,8 +571,7 @@
                                               (velocity :value)
                                               place
                                               notenum tracknum blocknum)))
-                       ;;(c-display "place/value:" place (velocity :value))
-                       (assert (> velocitynum 0))
+                       ;;(c-display "place/value:" place (velocity :value) velocitynum)
                        (<ra> :set-velocity-logtype (velocity :logtype) velocitynum notenum tracknum blocknum))))
                (cdr (butlast (note :velocities))))
      

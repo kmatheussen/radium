@@ -143,10 +143,12 @@ int addVelocity(float value, Place place, dyn_t dynnote, int tracknum, int block
   if (PlaceLessOrEqual(&place, &note->l.p)) {
     //if (dynnote>0)
     //  handleError("addVelocity: placement before note start for note #%d", dynnote);
+    handleError("addVelocity: placement before note start for note. velocity: %s. note: %s", p_ToString(place), p_ToString(note->l.p));
     return -1;
   }
 
-  if (PlaceGreaterOrEqual(&place, &note->end)) {
+  if (PlaceGreaterThan(&place, &note->end)) {
+    handleError("addVelocity: placement after note end for note. velocity: %s. note end: %s", p_ToString(place), p_ToString(note->end));
     //handleError("addVelocity: placement after note end for note #%d", dynnote);
     return -1;
   }
@@ -154,7 +156,7 @@ int addVelocity(float value, Place place, dyn_t dynnote, int tracknum, int block
   int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
 
   if (ret==-1){
-    //handleError("addVelocity: Can not create new velocity with the same position as another velocity");
+    handleError("addVelocity: Can not create new velocity with the same position as another velocity");
     return -1;
   }
 
