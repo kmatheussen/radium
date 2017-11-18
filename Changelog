@@ -1,3 +1,15 @@
+Changes 5.3.0 -> 5.3.1:
+* Editor: Fix moving the cursor to the right when it's
+  positioned at the rightmost legal LPB subtrack.
+* Edit: Fix too many undos being created in the
+  operations in the "randomize/shuffle" tab for notes
+  with pitch changes or velocities.
+* Blocklist GUI: Don't play block when clicking if playing
+  song
+* Blocklist GUI: Fix memory corruption when setting name
+  of block.
+
+
 Changes 5.2.9 -> 5.3.0:
 * Editor GFX: Show all of the orange horizontal+vertical
   node indicator lines (when moving something). Don't
