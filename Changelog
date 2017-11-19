@@ -1,3 +1,10 @@
+Changes 5.3.1 -> 5.3.2:
+* Disk: Show the "Error. Unable to save file ..." error message in the message log window instead of a message window.
+* MIDI: Don't show assertion reporter when receiving MIDI in some situations right after starting to play.
+* Crashreporter: Include time since last received MIDI message.
+
+
+
 Changes 5.3.0 -> 5.3.1:
 * Editor: Fix moving the cursor to the right when it's
   positioned at the rightmost legal LPB subtrack.
@@ -10,6 +17,7 @@ Changes 5.3.0 -> 5.3.1:
   of block.
 
 
+
 Changes 5.2.9 -> 5.3.0:
 * Editor GFX: Show all of the orange horizontal+vertical
   node indicator lines (when moving something). Don't
@@ -19,6 +27,7 @@ Changes 5.2.9 -> 5.3.0:
 * Editor: Some fixes when navigating the cursor in the
   tempo/timing tracks and not all of them are visible.
   (Crash/assertion fix.)
+
 
 
 Changes 5.2.7 -> 5.2.9:
