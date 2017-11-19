@@ -32,6 +32,8 @@ enum Crash_Type{
 
 extern double g_rt_set_bus_descendant_types_duration;
 
+extern double g_last_midi_receive_time;
+
 #ifdef __cplusplus
 extern "C"{
 #endif

@@ -192,6 +192,8 @@ extern bool g_initing_starting_to_play_song;
 
 extern bool g_user_interaction_enabled; // Used for testing. If this one is false, all user interaction will be done automatically, randomly.
 
+#include "atomic.h"
+
 #include "../crashreporter/crashreporter_proc.h"
 
 
@@ -251,7 +253,6 @@ static inline bool is_playing(void);
 struct vector_t_;
 
 #include "debug_proc.h"
-#include "atomic.h"
 #include "threading.h"
 #include "OS_Player_proc.h"
 #include "memory_proc.h"

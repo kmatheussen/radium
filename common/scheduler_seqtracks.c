@@ -217,8 +217,10 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
   PLAYER_lock();{
 
     pc->playtype = playtype;
-        
-    R_ASSERT(SCHEDULER_num_events(RT_get_curr_seqtrack()->scheduler)==0);
+
+    // Commented out. This can happen when receiving from MIDI input.
+    // Play to an instrument that has delayed start of notes (or perhaps sending to an instrument that is delayed because of plugin delay compensation).
+    //R_ASSERT(SCHEDULER_num_events(RT_get_curr_seqtrack()->scheduler)==0);
 
     SCHEDULER_set_seqtrack_timing(root->song->block_seqtrack, 0, 0);
     RT_LPB_call_when_start_playing(root->song->block_seqtrack);
@@ -296,8 +298,11 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
     printf("  Scheduling start-playing event at 0. Seqtrack: %p\n", RT_get_curr_seqtrack());
 #endif
 
-    R_ASSERT(SCHEDULER_num_events(seqtrack->scheduler)==0);
 
+    // Commented out. This can happen when receiving from MIDI input.
+    // Play to an instrument that has delayed start of notes (or perhaps sending to an instrument that is delayed because of plugin delay compensation).
+    //R_ASSERT(SCHEDULER_num_events(seqtrack->scheduler)==0);
+    
     atomic_pointer_write_relaxed((void**)&seqtrack->curr_seqblock, NULL);
     
     static struct SeqBlock seqblock = {0};

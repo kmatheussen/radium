@@ -851,11 +851,15 @@ void Patch_removePlayingVoice(linked_note_t **rootp, int64_t note_id, struct Seq
 
 #if !defined(RELEASE)
   if (linked_note==NULL && is_playing())
-    printf("Warning. Unable to find voice with note_id %d when removing playing note. Num playing: %d\n",(int)note_id,num_linked_notes(*rootp)); // think there are legitimate situations where this can happen
+    printf("Warning. Unable to find voice with note_id %d when removing playing note. Num playing: %d\n",(int)note_id,num_linked_notes(*rootp)); // think there are legitimate situations where this can happen.
 #endif
 
   if (linked_note!=NULL){
-    R_ASSERT_NON_RELEASE(linked_note->seqtrack==seqtrack); // Think there are legitimate situations where this can happen
+    
+    // Commented out. For instance, if start-note was created from MIDI input while not playing,
+    // and stop-note was created while playing song. Then seqtrack would be song-seqtrack, while linked_note->seqtrack would be block-seqtrack.
+    //R_ASSERT_NON_RELEASE(linked_note->seqtrack==seqtrack);
+    
     remove_linked_note(rootp, linked_note);
     add_linked_note(&g_unused_linked_notes, linked_note);
     linked_note->seqtrack = NULL;

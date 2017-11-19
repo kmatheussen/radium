@@ -129,6 +129,7 @@ static const char *g_event_log[NUM_EVENTS] = {""};
 static double g_time_log[NUM_EVENTS] = {0.0};
 static DEFINE_ATOMIC(int, g_event_pos) = 0;
 
+
 void EVENTLOG_add_event(const char *log_entry){
  R_ASSERT(THREADING_is_main_thread());
 
@@ -485,6 +486,8 @@ int main(int argc, char **argv){
 #define MAX_NUM_PLUGIN_NAMES 100
 static DEFINE_ATOMIC(int, g_plugin_name_pos) = 0;
 
+double g_last_midi_receive_time = 0;
+
 static DEFINE_ATOMIC(const char *, g_plugin_names)[MAX_NUM_PLUGIN_NAMES]={g_no_plugin_name};
 //static QString g_plugin_name=g_no_plugin_name;
 
@@ -653,7 +656,8 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "Running plugins: " + plugin_names + "\n\n";
   tosend += "Running time: " + QString::number(time/1000.0) + " seconds.\n\n";
   tosend += "Last painter: " + QString(g_qt_is_painting_where) + "\n\n";
-  tosend += "Last g_rt_set_bus_descendant_types_duration: " + QString::number(g_rt_set_bus_descendant_types_duration) + "ms\n\n";  
+  tosend += "Last g_rt_set_bus_descendant_types_duration: " + QString::number(g_rt_set_bus_descendant_types_duration) + "ms\n\n";
+  tosend += "Time since last received MIDI message: " + QString::number(time - g_last_midi_receive_time) + "ms\n\n";
   tosend += "\n\n";
 
   for(int i=0;i<num_messages;i++)

@@ -53,6 +53,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/Queue.hpp"
 #include "../common/Vector.hpp"
 
+#include "../crashreporter/crashreporter_proc.h"
+
 #include "../audio/Mixer_proc.h"
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
@@ -772,6 +774,8 @@ void RT_MIDI_handle_play_buffer(void){
 
   play_buffer_event_t event;
 
+  bool has_set_midi_receive_time = false;
+  
   while(g_play_buffer.pop(event)==true){
 
     uint32_t msg = event.msg;
@@ -787,6 +791,11 @@ void RT_MIDI_handle_play_buffer(void){
       }
       uint8_t byte[3] = {byte1, (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
 
+      if (has_set_midi_receive_time==false){
+        g_last_midi_receive_time = TIME_get_ms();
+        has_set_midi_receive_time = true;
+      }
+      
       RT_MIDI_send_msg_to_patch(RT_get_curr_seqtrack(), (struct Patch*)through_patch, byte, 3, RT_get_curr_seqtrack()->start_time);
     }
     
@@ -853,7 +862,7 @@ void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data
   int len = MIDI_msg_len(msg);
   if (len<1 || len>3)
     return;
-  
+
   add_event_to_play_buffer(port_name, msg);
 
   if (g_record_accurately_while_playing && isplaying) {
