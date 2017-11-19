@@ -26,7 +26,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/Mutex.hpp"
 
+#include "../api/api_proc.h"
+
 #include "../common/OS_disk_proc.h"
+
 
 
 #define SUPPORT_TEMP_WRITING_FUNCTIONS 0
@@ -212,7 +215,7 @@ public:
 
     bool ret = QFile::copy(temporary_write_file->fileName(), filename);
     if (ret==false){
-      GFX_Message(NULL, "Error. Unable to save file \"%s\".%s", filename.toUtf8().constData(), is_renamed==false?"":(QString(" (The old file was renamed to \"")+backup_filename+"\").").toUtf8().constData());
+      addMessage(talloc_format("Error. Unable to save file \"%s\".%s", filename.toUtf8().constData(), is_renamed==false?"":(QString(" (The old file was renamed to \"")+backup_filename+"\").").toUtf8().constData()));
     }
     
     return ret;
