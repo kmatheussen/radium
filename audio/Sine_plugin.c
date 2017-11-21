@@ -43,13 +43,6 @@ static double hz_to_radians(double hz, double sample_rate){
   return hz*((2*3.1415926535897932384626433832795)/sample_rate);
 }
 
-static double midi_to_hz(int midi){
-  if(midi<=0)
-    return 0;
-  else
-    return 8.17579891564*(expf(.0577622650*midi));
-}
-
 static double midi_to_radians(int midi, double sample_rate){
   return hz_to_radians(midi_to_hz(midi),sample_rate);
 }

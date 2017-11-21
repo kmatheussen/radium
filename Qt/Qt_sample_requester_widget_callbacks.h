@@ -495,18 +495,22 @@ class Sample_requester_widget : public QWidget
   }  
 
   void update_sf2_file_list(hash_t *name_list){
+    
     file_list->clear();
     file_list->setSortingEnabled(true);
 
     file_list->addItem("../");
-
-    for(int i=0;i<HASH_get_array_size(name_list, "key");i++){
-      QString name = STRING_get_qstring(HASH_get_string_at(name_list,"key",i));
-      if(_file_chooser_state == IN_SF2)
-        name = name + "/";
-
-      file_list->addItem(name);
-      printf("Adding \"%s\"\n",name.toUtf8().constData());
+    
+    R_ASSERT(name_list!=NULL);
+    if(name_list!=NULL){
+      for(int i=0;i<HASH_get_array_size(name_list, "key");i++){
+        QString name = STRING_get_qstring(HASH_get_string_at(name_list,"key",i));
+        if(_file_chooser_state == IN_SF2)
+          name = name + "/";
+        
+        file_list->addItem(name);
+        printf("Adding \"%s\"\n",name.toUtf8().constData());
+      }
     }
 
     file_list->setCurrentRow(0);
@@ -525,20 +529,20 @@ class Sample_requester_widget : public QWidget
 
   hash_t *get_bank(const wchar_t *filename, QString bank_name){
     hash_t *info = SF2_get_info(filename);
-    R_ASSERT(info!=NULL);
-    if (info==NULL)
-      return NULL;
+    R_ASSERT_RETURN_IF_FALSE2(info!=NULL, NULL);
+    
     hash_t *menu = HASH_get_hash(info,"menu");
-    R_ASSERT(menu!=NULL);
-    if (menu==NULL)
-      return NULL;
+    R_ASSERT_RETURN_IF_FALSE2(menu!=NULL, NULL);
+    
     hash_t *bank = HASH_get_hash(menu,bank_name.toUtf8().constData());
+    R_ASSERT_RETURN_IF_FALSE2(bank!=NULL, NULL);
+    
     return bank;
   }
 
   void handle_sf2_preset_pressed(QString item_text){
-    printf("preset: Pressed \"%s\"\n",item_text.toUtf8().constData());
-
+    EVENTLOG_add_event(talloc_format("preset: Pressed \"%s\"\n",item_text.toUtf8().constData()));
+                       
     if(item_text == "../"){
       _file_chooser_state = IN_SF2;
       update_sf2_file_list(get_bank_names(STRING_create(_sf2_file)));
@@ -546,13 +550,19 @@ class Sample_requester_widget : public QWidget
     }
 
     hash_t *bank       = get_bank(STRING_create(_sf2_file),_sf2_bank);
+    if (bank==NULL)
+      return; // assertions in get_bank.
+    
     hash_t *preset     = HASH_get_hash(bank,item_text.toUtf8().constData());
+    R_ASSERT_RETURN_IF_FALSE(preset!=NULL);
+    
     int     bank_num   = HASH_get_int32(preset,"bank");
     int     preset_num = HASH_get_int32(preset,"num");
     int     preset_bag = HASH_get_int32(preset,"bag");
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
+    R_ASSER_RETURN_IF_FALSE(plugin!=NULL);
+    
     ADD_UNDO(PluginState_CurrPos(_patch));
 
     bool successfully_selected = false;

@@ -117,14 +117,6 @@ static void put_slice(RecordingSlice *slice){
 
 namespace{
 
-static double midi_to_hz(double midi){
-  if(midi<=0)
-    return 0;
-  else
-    //  return 1;
-    return 8.17579891564*(expf(.0577622650*midi));
-}
-
 struct RecordingFile{
   struct Patch *patch = NULL;
   SNDFILE *sndfile = NULL;
@@ -311,7 +303,7 @@ struct SampleRecorderThread : public QThread {
   SampleRecorderThread(const SampleRecorderThread&) = delete;
   SampleRecorderThread& operator=(const SampleRecorderThread&) = delete;
 
-  radium::Queue<RecordingFile*, 128> recorded_files; // 128 is not the limit on the number of files that can be recorded simultaneously. It's just the queue size. The recording thread will wait until there's more space available if it is full when adding new entry.
+  radium::Queue<RecordingFile*, 128> recorded_files; // 128 is NOT the limit on the number of files that can be recorded simultaneously. It's just the queue size. The recording thread will wait until there's more space available if it is full when adding new entry.
   radium::Vector<RecordingFile*>     recording_files;
   
 public:

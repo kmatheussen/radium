@@ -39,14 +39,6 @@ static float velocity2gain(float val){
 }
 
 
-static double midi_to_hz(float midi){
-  if(midi<=0)
-    return 0;
-  else
-    //  return 1;
-  return 8.17579891564*(expf(.0577622650*midi));
-}
-
 #if 0
 // For some reason, it won't compile with the usual min/max macros.
 template<typename T> static inline T min(T a,T b){return a<b ? a : b;}

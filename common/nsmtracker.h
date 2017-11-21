@@ -323,6 +323,16 @@ static inline float scale(float x, float x1, float x2, float y1, float y2){
                 );
 }
 
+#ifdef	_MATH_H
+static inline double midi_to_hz(double midi){
+  if(midi<=0)
+    return 0;
+  else
+    //  return 1;
+  return 8.17579891564*(exp(.0577622650*midi));
+}
+#endif
+
 typedef struct{
   const char *filename;
   const char *function_name;

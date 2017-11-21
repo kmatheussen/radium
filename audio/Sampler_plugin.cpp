@@ -274,14 +274,6 @@ struct Data{
 };
 
 
-static double midi_to_hz(double midi){
-  if(midi<=0)
-    return 0;
-  else
-    //  return 1;
-  return 8.17579891564*(expf(.0577622650*midi));
-}
-
 #if 0
 static double get_ratio(int sample_note_num, int play_note_num){
   return midi_to_hz(sample_note_num) / midi_to_hz(play_note_num);

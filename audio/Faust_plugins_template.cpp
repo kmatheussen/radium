@@ -6,6 +6,8 @@
 
 // We use faust1 here.
 
+#include <math.h>
+
 struct Meta
 {
     void declare (const char* key, const char* value) { }
