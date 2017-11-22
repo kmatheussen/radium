@@ -561,7 +561,7 @@ class Sample_requester_widget : public QWidget
     int     preset_bag = HASH_get_int32(preset,"bag");
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    R_ASSER_RETURN_IF_FALSE(plugin!=NULL);
+    R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
     
     ADD_UNDO(PluginState_CurrPos(_patch));
 
