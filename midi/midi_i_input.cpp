@@ -322,22 +322,22 @@ public:
       {
         radium::ScopedMutex lock(g_midi_event_mutex);
         
-      // Schedule "Seq" painting
-      if (ATOMIC_GET(root->song_state_is_locked) == true){ // not totally tsan proof, but we use the _r0 versions of ListFindElement below, so it's pretty safe.
-        struct Blocks *block = (struct Blocks*)ListFindElement1_r0(&root->song->blocks->l, event.timepos.blocknum);
-        if (block != NULL){          
-          struct Tracks *track = (struct Tracks*)ListFindElement1_r0(&block->tracks->l, event.timepos.tracknum);
-          if (track != NULL){
-            if (ATOMIC_GET(track->is_recording) == false){
-              GFX_ScheduleEditorRedrawIfCurrentBlockIsVisible();
-              ATOMIC_SET(track->is_recording, true);
+        // Schedule "Seq" painting
+        if (ATOMIC_GET(root->song_state_is_locked) == true){ // not totally tsan proof, but we use the _r0 versions of ListFindElement below, so it's pretty safe.
+          struct Blocks *block = (struct Blocks*)ListFindElement1_r0(&root->song->blocks->l, event.timepos.blocknum);
+          if (block != NULL){          
+            struct Tracks *track = (struct Tracks*)ListFindElement1_r0(&block->tracks->l, event.timepos.tracknum);
+            if (track != NULL){
+              if (ATOMIC_GET(track->is_recording) == false){
+                GFX_ScheduleEditorRedrawIfCurrentBlockIsVisible();
+                ATOMIC_SET(track->is_recording, true);
+              }
             }
           }
         }
-      }
 
-      // Send event to the main thread
-      g_recorded_midi_events.push_back(event);
+        // Send event to the main thread
+        g_recorded_midi_events.push_back(event);
       }
     
     }

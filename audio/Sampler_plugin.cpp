@@ -1348,7 +1348,7 @@ static void update_peaks(SoundPlugin *plugin){
 #endif
 
 #if USE_OPENGL
-  GFX_ScheduleEditorRedrawIfCurrentBlockIsVisible();
+  GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const_cast<Patch*>(plugin->patch));
 
 #else
   if(plugin->patch!=NULL)

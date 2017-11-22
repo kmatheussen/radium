@@ -123,21 +123,45 @@ extern DEFINE_ATOMIC(bool, atomic_must_redraw_editor);
 extern DEFINE_ATOMIC(struct Patch*, atomic_must_redraw_instrument);
 extern DEFINE_ATOMIC(bool, atomic_must_calculate_coordinates);
 
+// RT function.
 static inline void GFX_ScheduleRedraw(void){
   ATOMIC_SET(atomic_must_redraw, true);
 }
 
+// RT function.
 static inline void GFX_ScheduleEditorRedraw(void){
   ATOMIC_SET(atomic_must_redraw_editor, true);
 }
 
+// RT function.
 static inline void GFX_ScheduleEditorRedrawIfCurrentBlockIsVisible(void){
   if(RT_get_curr_visible_block() != NULL)
     ATOMIC_SET(atomic_must_redraw_editor, true);
 }
 
+// RT function.
+static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struct Patch *patch){
+  if (ATOMIC_GET(atomic_must_redraw_editor)==true)
+    return;
+
+  const struct Blocks *block = ATOMIC_GET(g_curr_block);
+  if (block==NULL)
+    return;
+
+  const struct Tracks *track = block->tracks;
+  while(track != NULL){
+    if (track->patch==patch && track->notes!=NULL){
+      ATOMIC_SET(atomic_must_redraw_editor, true);
+      //printf("Updating\n");
+      return;
+    }
+    track=NextTrack(track);
+  }
+}
+
 extern struct Patch *g_currpatch;
 
+// RT function.
 static inline void GFX_ScheduleInstrumentRedraw(struct Patch *patch){
   if (patch==g_currpatch)
     ATOMIC_SET(atomic_must_redraw_instrument, patch);
