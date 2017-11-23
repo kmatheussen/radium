@@ -1982,7 +1982,7 @@ static void generate_peaks(Data *data){
     if(sample.sound!=NULL && sample.sound != prev){
       prev = sample.sound;
 
-      sample.peaks.create(0, sample.sound, sample.num_frames);
+      sample.peaks.add_samples(sample.sound, sample.num_frames, radium::Peaks::THIS_IS_THE_LAST_CALL);
     }
   }
 }

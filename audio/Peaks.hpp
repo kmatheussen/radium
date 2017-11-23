@@ -116,7 +116,7 @@ class Peaks{
   QVector<Peak> _peaks; // array index is in block pos (i.e. frame pos / SAMPLES_PER_PEAK)
 
   Peaks *_up = NULL;
-
+  
 public:
   
   ~Peaks(){
@@ -192,9 +192,14 @@ private:
   }
   
 private:
-  int64_t _last_create_end_time = 0;
+  int64_t _creation_time = 0;
   
 public:
+
+  enum Add_Samples_Type{
+    MORE_IS_COMING_LATER,
+    THIS_IS_THE_LAST_CALL
+  };
   
   // This function must be called sequentially. E.g.:
   //   create(0, samples, 128)
@@ -205,27 +210,23 @@ public:
   //   create(128, samples, 64)
   //   create(0, samples, 128)
   //   etc.
-  void create(int64_t start_time, float *samples, int num_samples){ // num_samples can only be non-dividable by SAMPLES_PER_PEAK in the last call to this function.
-    R_ASSERT(_last_create_end_time==start_time);
-    
-    R_ASSERT_RETURN_IF_FALSE( (start_time % SAMPLES_PER_PEAK) == 0);
+  void add_samples(float *samples, int num_samples, Add_Samples_Type add_samples_type){ // num_samples can only be non-dividable by SAMPLES_PER_PEAK if add_samples_type==THIS_IS_THE_LAST_CALL.
+    R_ASSERT_RETURN_IF_FALSE(add_samples_type==THIS_IS_THE_LAST_CALL || (num_samples % SAMPLES_PER_PEAK) == 0);
       
     R_ASSERT_NON_RELEASE(num_samples > 0);
 
-    const int64_t end_time = start_time + num_samples;
-    
-    for(int64_t time = start_time ; time < end_time ; time += SAMPLES_PER_PEAK){
+    for(int64_t time = 0 ; time < num_samples ; time += SAMPLES_PER_PEAK){
+      int duration = R_MIN(num_samples-time, SAMPLES_PER_PEAK);
       float min,max;
-      int duration = R_MIN(SAMPLES_PER_PEAK, end_time-time);
       JUCE_get_min_max_val(&samples[time], duration, &min, &max);
       add(Peak(min, max));
     }
 
-    _last_create_end_time = end_time;
+    _creation_time += num_samples;
   }
 
   
-  Peak get(int64_t start_time, int64_t end_time) const {
+  const Peak get(int64_t start_time, int64_t end_time) const {
     //printf("Peak.get: %d -> %d (%d)\n", (int)start_time, (int)end_time, (int)(end_time-start_time));
 
     Peak peak;
@@ -238,7 +239,8 @@ public:
 
     // Asked for so little data that the indexes are the same.
     if (start>=end){
-      R_ASSERT_RETURN_IF_FALSE(start>=0, peak);
+      R_ASSERT_RETURN_IF_FALSE2(start>=0, peak);
+      R_ASSERT_RETURN_IF_FALSE2(start==end, peak);
       return _peaks.at(start);
     }
     
