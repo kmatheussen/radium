@@ -17,32 +17,6 @@
 (get-randomly-distributed-units 5 7)
 !!#
 
-(define (unit-ceiling value unit)
-  (* unit (ceiling (/ value unit))))
-
-(***assert*** (unit-ceiling 5 5)
-              5)
-(***assert*** (unit-ceiling 10 10)
-              10)
-(***assert*** (unit-ceiling 5.2 1)
-              6)
-(***assert*** (unit-ceiling 5.2 2)
-              6)
-(***assert*** (unit-ceiling 5.2 3)
-              6)
-(***assert*** (unit-ceiling 5.2 4)
-              8)
-(***assert*** (unit-ceiling 5.2 5)
-              10)
-(***assert*** (unit-ceiling 5.2 6)
-              6)
-
-(define (unit-floor value unit)
-  (* unit (floor (/ value unit))))
-
-(define (unit-round value unit)
-  (* unit (round (/ value unit))))
-
 
 (define (get-min-duration-of-note note)
   (max ((second-last (note :pitches)) :place)

@@ -260,12 +260,12 @@ bool load_xi_instrument(Data *data,const wchar_t *filename, bool set_loop_on_off
     int sample_num;
 
     for(sample_num=0;sample_num<data->num_different_samples;sample_num++){
-      Sample *sample = (Sample *)&data->samples[sample_num];
+      Sample &sample = data->samples[sample_num];
 
-      sample->ch = -1;
-      sample->volume = xi_get_sample_volume(file,sample_num);
+      sample.ch = -1;
+      sample.volume = xi_get_sample_volume(file,sample_num);
 
-      sample->num_frames   = xi_get_num_frames(file,sample_num);
+      sample.num_frames   = xi_get_num_frames(file,sample_num);
 
       set_legal_loop_points(sample,-1,-1, set_loop_on_off); // By default, loop all.
 
@@ -277,14 +277,14 @@ bool load_xi_instrument(Data *data,const wchar_t *filename, bool set_loop_on_off
                               );
       }
 
-      sample->sound = xi_get_sample(file, sample_num);
+      sample.sound = xi_get_sample(file, sample_num);
       
-      if(sample->sound==NULL)
+      if(sample.sound==NULL)
         goto exit;
 
       int note;
       for(note=0;note<128;note++){
-        sample->frequency_table[note] = xi_get_frequency(file, note, sample_num);
+        sample.frequency_table[note] = xi_get_frequency(file, note, sample_num);
       }      
     }
   }

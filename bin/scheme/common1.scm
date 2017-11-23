@@ -403,6 +403,50 @@
 (make-assoc-from-flat-list (list "a" 50 "b" 90 "c" 100))
 ||#
 
+(define (take l how-many)
+  (assert (>= how-many 0))
+  (let loop ((l l)
+             (how-many how-many))
+    (if (= 0 how-many)
+        '()
+        (cons (car l)
+              (loop (cdr l)
+                    (1- how-many))))))
+
+(define (sublist l start end)
+  (if (> start 0)
+      (sublist (cdr l) (1- start) (1- end))
+      (take l end)))
+
+(***assert*** (sublist '() 0 0)
+              '())
+
+(***assert*** (sublist '(1 2 3) 0 0)
+              '())
+
+(***assert*** (sublist '(1 2 3) 0 1)
+              '(1))
+
+(***assert*** (sublist '(1 2 3) 0 2)
+              '(1 2))
+
+(***assert*** (sublist '(1 2 3) 0 3)
+              '(1 2 3))
+
+(***assert*** (sublist '(1 2 3) 1 1)
+              '())
+
+(***assert*** (sublist '(1 2 3) 1 2)
+              '(2))
+
+(***assert*** (sublist '(1 2 3) 1 3)
+              '(2 3))
+
+(***assert*** (sublist '(1 2 3) 2 2)
+              '())
+
+(***assert*** (sublist '(1 2 3) 2 3)
+              '(3))
 
 ;; string
 

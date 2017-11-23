@@ -174,7 +174,7 @@ static int find_cue_id_for_label(disk_t *file, const char *label){
   return -1;
 }
 
-static bool set_wav_loop_points_using_cues(Sample *sample, disk_t *file, bool set_loop_on_off){
+static bool set_wav_loop_points_using_cues(Sample &sample, disk_t *file, bool set_loop_on_off){
   int cue_id_loop_start=find_cue_id_for_label(file, "Loop Start");
   int cue_id_loop_end=find_cue_id_for_label(file, "Loop End");
 
@@ -216,7 +216,7 @@ static int get_bytes_per_frame_in_wav(disk_t *file){
 }
 #endif
 
-static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, disk_t *file, bool set_loop_on_off){
+static bool set_wav_loop_points_using_smpl_chunk(Sample &sample, disk_t *file, bool set_loop_on_off){
   if(spool_to_wav_chunk(file, "smpl", 0)==false)
     return false;
 
@@ -250,7 +250,7 @@ static bool set_wav_loop_points_using_smpl_chunk(Sample *sample, disk_t *file, b
   return true;
 }
 
-static void set_wav_loop_points(Sample *sample, const wchar_t *filename, bool set_loop_on_off){
+static void set_wav_loop_points(Sample &sample, const wchar_t *filename, bool set_loop_on_off){
   
   disk_t *file = DISK_open_binary_for_reading(filename);
   
