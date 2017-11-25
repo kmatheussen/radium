@@ -277,7 +277,7 @@ static void set_curr_realline_from_place(const struct Tracker_Windows *window, s
     if (PlaceEqual(curr_place, curr_place2))
       return;
     
-    set_curr_realline(wblock, FindRealLineFor(wblock, 0, curr_place));
+    set_curr_realline(wblock, roundf(FindReallineForF(wblock, 0, curr_place)));
   }
 }
 
