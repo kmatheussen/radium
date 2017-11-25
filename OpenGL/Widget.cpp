@@ -643,7 +643,6 @@ public:
 
   float last_scroll_pos;
   double last_current_realline_while_playing;
-  int last_curr_realline;
   
   bool sleep_when_not_painting = true;  //SETTINGS_read_bool("opengl_sleep_when_not_painting", false))
 
@@ -666,7 +665,6 @@ public:
       //, painting_data(NULL)
     , last_scroll_pos(-1.0f)
     , last_current_realline_while_playing(-1.0f)
-    , last_curr_realline(-1)
   {
     ATOMIC_SET(_main_window_is_exposed, false);
     
@@ -914,6 +912,9 @@ private:
     if (sv->block_is_visible==false && is_playing)
       is_playing = false; // I.e. we are not rendering the block that is currently playing (if any).
 
+    if (new_t2_data!=NULL)// && !is_playing)
+      GE_set_curr_realline(sv->curr_realline);
+      
     double blocktime = 0.0;
 
     int playing_blocknum = -1;
@@ -1131,7 +1132,6 @@ private:
     
     last_scroll_pos = scroll_pos;
     last_current_realline_while_playing = current_realline_while_playing;
-    last_curr_realline = ATOMIC_GET(g_curr_realline);
 
     return true;
   }

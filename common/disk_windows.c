@@ -264,7 +264,8 @@ if(window==NULL) return;
 		UpdateReallinesDependens(window,window->wblock);
 	}
 
-        GE_set_curr_realline(window->wblock->curr_realline);
+        // Not necessary since current opengl realline is set when rendering.
+        //GE_set_curr_realline(window->wblock->curr_realline);
 
 DLoadWindows(newroot,NextWindow(window));
 }

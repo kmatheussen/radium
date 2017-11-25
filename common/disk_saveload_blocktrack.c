@@ -213,7 +213,8 @@ void LoadBlockFromDisk(const char *filename_c){
     BS_UpdateBlockList();
     BS_UpdatePlayList();
 
-    GE_set_curr_realline(window->wblock->curr_realline);
+    // Not necessary since current opengl realline is set when rendering.
+    //GE_set_curr_realline(window->wblock->curr_realline);
   }PC_StopPause(NULL);
   
   window->must_redraw = true;

@@ -265,7 +265,9 @@ static const struct LocalZooms **get_shrinked_reallines(const struct Tracker_Win
 static void set_curr_realline(struct WBlocks *wblock, int new_curr_realline){
   //printf("new_curr_realline: %d, num_reallines: %d\n",new_curr_realline,wblock->num_reallines);
   wblock->curr_realline = R_BOUNDARIES(0, new_curr_realline, wblock->num_reallines - 1);
-  GE_set_curr_realline(wblock->curr_realline);
+
+  // Not necessary anymore since current opengl realline is set when rendering now. (this call also causes flickering)
+  //GE_set_curr_realline(wblock->curr_realline);
 }
 
 static void set_curr_realline_from_place(const struct Tracker_Windows *window, struct WBlocks *wblock, const Place *curr_place){
@@ -629,9 +631,9 @@ void LineZoomBlock_internal(struct Tracker_Windows *window, struct WBlocks *wblo
           ((struct LocalZooms *)localzoom)->uplevel = NULL;
       localzoom = NextLocalZoom(localzoom);
     }
-    
+
     UpdateRealLines_internal(window,wblock,update_curr_realline);
-    
+
     for(realline = wblock->num_reallines - 1; realline>=0 ; realline--){
       const struct LocalZooms *localzoom=wblock->reallines[realline];
       
@@ -642,7 +644,7 @@ void LineZoomBlock_internal(struct Tracker_Windows *window, struct WBlocks *wblo
     }
 
     UpdateRealLines_internal(window,wblock,update_curr_realline);
-
+    
     //UpdateWBlockCoordinates(window, wblock);
     //SetZoomLevelAreaWidth(window,wblock);
 

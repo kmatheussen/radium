@@ -210,9 +210,13 @@ public:
   //   create(128, samples, 64)
   //   create(0, samples, 128)
   //   etc.
-  void add_samples(float *samples, int num_samples, Add_Samples_Type add_samples_type){ // num_samples can only be non-dividable by SAMPLES_PER_PEAK if add_samples_type==THIS_IS_THE_LAST_CALL.
+  //
+  // The 'num_samples' argument can only be non-dividable by SAMPLES_PER_PEAK if add_samples_type==THIS_IS_THE_LAST_CALL.
+  void add_samples(float *samples, int num_samples, Add_Samples_Type add_samples_type){
+    R_ASSERT_RETURN_IF_FALSE(_creation_time >= 0);
+    R_ASSERT_RETURN_IF_FALSE((_creation_time % SAMPLES_PER_PEAK) == 0);
     R_ASSERT_RETURN_IF_FALSE(add_samples_type==THIS_IS_THE_LAST_CALL || (num_samples % SAMPLES_PER_PEAK) == 0);
-      
+    
     R_ASSERT_NON_RELEASE(num_samples > 0);
 
     for(int64_t time = 0 ; time < num_samples ; time += SAMPLES_PER_PEAK){
@@ -222,7 +226,10 @@ public:
       add(Peak(min, max));
     }
 
-    _creation_time += num_samples;
+    if (add_samples_type==THIS_IS_THE_LAST_CALL)
+      _creation_time = -1;
+    else
+      _creation_time += num_samples;
   }
 
   
