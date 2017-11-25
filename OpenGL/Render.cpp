@@ -134,6 +134,7 @@ static void draw_bordered_text(
   QColor qc2 = GE_qcolor(LOW_BACKGROUND_COLOR_NUM).darker(113);
   GE_Context *c2 = GE_gradient_z(qc1, qc2, GE_Conf(z, y)); //GE_get_rgb(9), GE_get_rgb(11), z);
 
+  
   GE_gradient_triangle_start(GradientType::HORIZONTAL);
   GE_gradient_triangle_add(c2, x,  y+0.75 - 0.5);
   GE_gradient_triangle_add(c2, x2, y+0.75 - 0.5);
@@ -1904,13 +1905,14 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
                          x1, y0,
                          x2, y1
                          );
-            
-            GE_trianglestrip_start();
 
-            GE_trianglestrip_add(c,dx1,y1);
-            GE_trianglestrip_add(c,dx2,y1);
-            GE_trianglestrip_add(c,x,y2);
-            GE_trianglestrip_end(c);
+            {
+              GE_ScopedTrianglestrip trianglestrip;
+              
+              trianglestrip.add(c,dx1,y1);
+              trianglestrip.add(c,dx2,y1);
+              trianglestrip.add(c,x,y2);
+            }
 
             // Connecting lines between the two objects
             GE_line(border_color,
@@ -1991,19 +1993,18 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                                          );
     
 
-  
+  const float min_width = R_MAX(0.5, (float)window->fontheight / 31.0f);
+  const float num_lines_per_peak = R_MAX(1.01, (float)window->fontheight / 13.0f);
+
   GE_Context *c = NULL;
   
   //GE_Context *c = Black_color(); //GE_mix_alpha_z(GE_get_rgb(0), Black_rgb(), 100, 0.7, Z_ZERO);
   //GE_Context *c = GE_mix_alpha_z(GE_get_rgb(0), GE_get_rgb(2), 250, 0.9, Z_ZERO);
 
-#define NUM_LINES_PER_PEAK 1
 
   for(int ch=0;ch<num_channels;ch++){
 
-    GE_Context *last_c = NULL;
-    
-    GE_trianglestrip_start();
+    GE_ScopedTrianglestrip trianglestrip;
 
     for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
       int logtype = ns->logtype;
@@ -2012,58 +2013,47 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
       float y1 = ns->y1;
       float y2 = ns->y2;
 
+      //printf("y1/y2: %f, %f\n", y1, y2);
+      
       c = c!=NULL ? GE_y(c, y1) : GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM), GE_get_rgb(WAVEFORM_COLOR_NUM), 100, GE_Conf(Z_ABOVE(Z_ZERO), y1));
 
-      if (c != last_c){
-        if (last_c != NULL) 
-          GE_trianglestrip_end(last_c);
-
-        GE_trianglestrip_start();
-
-        last_c = c;
-      }
-      
       const STime time1 = Place2STime(wblock->block, &ns->element1->p) - note_time;
       const STime time2 = Place2STime(wblock->block, &ns->element2->p) - note_time;
 
-      if (time1==time2)
+      R_ASSERT_NON_RELEASE(time2 >= time1);
+      
+      if (time1>=time2)
         continue;
-          
-      if (time2 < time1){
-#if !defined(RELEASE)
-        abort();
-#endif
-        continue;
-      }
           
       float velocity1 = scale(x1, subtrack_x1, subtrack_x2, 0, 1);
       float velocity2 = scale(x2, subtrack_x1, subtrack_x2, 0, 1);
       
-      int num_peaks = R_MAX(1, (y2-y1) / NUM_LINES_PER_PEAK);
-      
-      if(num_peaks<0){
-        
-        RWarning("num_peaks<0: %d",num_peaks);
-        continue;
-        
-      }
+      int num_peaks = R_MAX(2, (y2-y1) / num_lines_per_peak); // Must have at least two points in time to draw a waveform.
 
-      for(int n=0;;n+=NUM_LINES_PER_PEAK){
+      int64_t last_end_time = time1;
+                                
+      for(int n=0; n < num_peaks ; n++){
 
         float min,max;
+        
+        int64_t start_time = last_end_time;
 
-        int64_t start_time = scale(n,
-                                   0,num_peaks,
-                                   time1,time2
+        int64_t end_time   = R_MIN(time2,
+                                   scale(n+1,
+                                         0, num_peaks-1+1,
+                                         time1, time2)
                                    );
+        
+        
+        //printf("  %d/%d: %d -> %d (diff: %d) (full: %d -> %d)\n", n, num_peaks, (int)start_time, (int)end_time, (int)(end_time-start_time), (int)time1, (int)time2);
 
-        int64_t end_time   = scale(R_MIN(num_peaks-1, n+NUM_LINES_PER_PEAK),
-                                   0,num_peaks,
-                                   time1,time2
-                                   );
+        R_ASSERT_NON_RELEASE(end_time >= start_time);
 
-        if (start_time>=end_time)
-          break;
+        int64_t reltempo_start_time = start_time / reltempo;
+        int64_t reltempo_end_time = start_time / reltempo;
+        
+        if (reltempo_start_time>=reltempo_end_time)
+          continue; // Playing too fast. No audio data. (note that the current value of 'last_end_time' is kept in the next iteration)
         
         //if (n==0)
         //printf("start_time: %d, time1: %d. end_time: %d, time2: %d\n",(int)start_time, (int)time1, (int)end_time, (int)time2);
@@ -2073,25 +2063,34 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                         note->note,
                         ch,
                         wtrack->track,
-                        start_time / reltempo,
-                        end_time / reltempo,
+                        reltempo_start_time,
+                        reltempo_end_time,
                         &min,
                         &max);
 
-        float velocity = (float)scale(n,0,num_peaks,velocity1, velocity2);
+        float velocity = (float)scale(n,
+                                      0,num_peaks-1,
+                                      velocity1, velocity2);
 
-        float bound_x1 = scale(scale(ch,0,num_channels,0.0f,velocity),
+        float bound_x1 = scale(scale(ch,
+                                     0,num_channels,
+                                     0.0f,velocity),
                                0, 1,
                                subtrack_x1, subtrack_x2);
-        float bound_x2 = scale(scale(ch+1,0,num_channels,0.0f,velocity),
+        float bound_x2 = scale(scale(ch+1,
+                                     0,num_channels,
+                                     0.0f,velocity),
                                0, 1,
                                subtrack_x1, subtrack_x2);
 
         float x1 = scale(min*track_volume, -1,1, bound_x1, bound_x2);
         float x2 = scale(max*track_volume, -1,1, bound_x1, bound_x2);
           
-        float y = y1 + n*NUM_LINES_PER_PEAK;
-
+        //float y = y1 + n*NUM_LINES_PER_PEAK;
+        float y = scale(n,
+                        0, num_peaks-1,
+                        y1, y2);
+                        
 #if 0
         printf("Adding %f,%f at %f. min/max: %f/%f. vel1/vel2: %f/%f. time1/time2: %f/%f\n",x1,x2,y,min,max,
                scale(n,0,num_peaks,velocity1->velocity, velocity2->velocity),
@@ -2100,22 +2099,15 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
                scale(n+NUM_LINES_PER_PEAK,0,num_peaks,time1,time2) / reltempo);
 #endif
 
-        if(fabsf(x1-x2) < 0.5) {
-          GE_trianglestrip_end(c);
-          float x = (x1+x2)/2.0f;
-          GE_line(c, x, y, x, y+NUM_LINES_PER_PEAK, 1.0);
-          GE_trianglestrip_start();
-        }else{
-          GE_trianglestrip_add(c, x1, y);
-          GE_trianglestrip_add(c, x2, y);
-        }
-
+        //printf("   tr.y: %f\n", y);
+        trianglestrip.add(c, R_MAX(subtrack_x1, x1-min_width), y); // Subtract a little bit (min_width) so that we see a thin line instead of nothing when there's no sound
+        trianglestrip.add(c, R_MIN(subtrack_x2, x2+min_width), y); // Same here.
+        
+        last_end_time = end_time;
+        
       } // end num peaks iteration
 
     } // end node iteration
-
-    if (last_c != NULL)
-      GE_trianglestrip_end(last_c);
 
   } // end ch iteration
 }
@@ -2278,8 +2270,10 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
 
     if(paint_vertical_velocity_gradient==false && note->pitches==NULL){
 
-      GE_Context *last_c = NULL;      
+      // we are never here.
       
+      GE_ScopedTrianglestrip trianglestrip;
+    
       for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
         int logtype = ns->logtype;
         float x1 = ns->x1;
@@ -2287,24 +2281,11 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
 
         GE_Context *c = get_note_background(note->note, false, ns->y1);
 
-        if (c != last_c) {
-          if (last_c != NULL){
-            GE_trianglestrip_end(last_c);
-          }
-          
-          GE_trianglestrip_start();
-
-          last_c = c;
-        }
-        
-        GE_trianglestrip_add(c, subtrack_x1, ns->y1);
-        GE_trianglestrip_add(c, x1, ns->y1);
-        GE_trianglestrip_add(c, subtrack_x1, ns->y2);
-        GE_trianglestrip_add(c, x2, ns->y2);
+        trianglestrip.add(c, subtrack_x1, ns->y1);
+        trianglestrip.add(c, x1, ns->y1);
+        trianglestrip.add(c, subtrack_x1, ns->y2);
+        trianglestrip.add(c, x2, ns->y2);
       }
-
-      if (last_c != NULL)
-        GE_trianglestrip_end(last_c);
 
     }else{
       TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);

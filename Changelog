@@ -1,7 +1,11 @@
 Changes 5.3.1 -> 5.3.2:
-* Disk: Show the "Error. Unable to save file ..." error message in the message log window instead of a message window.
-* MIDI: Don't show assertion reporter when receiving MIDI in some situations right after starting to play.
-* Crashreporter: Include time since last received MIDI message.
+* Disk: Show the "Error. Unable to save file ..." error
+  message in the message log window instead of a message
+  window.
+* MIDI: Don't show assertion reporter when receiving MIDI
+  in some situations right after starting to play.
+* Crashreporter: Include time since last received MIDI
+  message.
 
 
 

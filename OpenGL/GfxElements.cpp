@@ -1193,6 +1193,51 @@ void GE_unset_x_scissor(void){
   has_x_scissor=false;
 }
 
+static void GE_line_lowlevel(GE_Context *c, std::vector<vl::dvec2> &triangles, float x1, float y1, float x2, float y2, float pen_width){
+  // Code below mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
+
+  float dx = x2-x1;
+  float dy = y2-y1;
+ 
+  float length = sqrtf( dx*dx + dy*dy );   
+ 
+  // perp
+  float perp_x = -dy;
+  float perp_y = dx;
+  if ( length ){
+    // Normalize the perp
+    perp_x /= length;
+    perp_y /= length;
+  }
+ 
+  float h = pen_width;//.125*length;
+  
+  // since perp defines how wide our quad is, scale it
+  perp_x *= h;
+  perp_y *= h;
+ 
+  float v1x = x1 + perp_x*.5;
+  float v1y = y1 + perp_y*.5;
+  
+  float v2x = x2 + perp_x*.5;
+  float v2y = y2 + perp_y*.5;
+ 
+  float v3x = x2 - perp_x*.5;
+  float v3y = y2 - perp_y*.5;
+ 
+  float v4x = x1 - perp_x*.5;
+  float v4y = y1 - perp_y*.5;
+
+  triangles.push_back(vl::dvec2(v1x, c->y(v1y)));
+  triangles.push_back(vl::dvec2(v2x, c->y(v2y)));
+  triangles.push_back(vl::dvec2(v3x, c->y(v3y)));
+
+  triangles.push_back(vl::dvec2(v1x, c->y(v1y)));
+  triangles.push_back(vl::dvec2(v3x, c->y(v3y)));
+  triangles.push_back(vl::dvec2(v4x, c->y(v4y)));
+}
+
+
 #define SWAPFLOAT(a,b) \
   do{                      \
     float c = a;           \
@@ -1247,47 +1292,7 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
 #endif
 
 
-  // Code below mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
-
-  float dx = x2-x1;
-  float dy = y2-y1;
- 
-  float length = sqrt( dx*dx + dy*dy );   
- 
-  // perp
-  float perp_x = -dy;
-  float perp_y = dx;
-  if ( length ){
-    // Normalize the perp
-    perp_x /= length;
-    perp_y /= length;
-  }
- 
-  float h = pen_width;//.125*length;
-  
-  // since perp defines how wide our quad is, scale it
-  perp_x *= h;
-  perp_y *= h;
- 
-  float v1x = x1 + perp_x*.5;
-  float v1y = y1 + perp_y*.5;
-  
-  float v2x = x2 + perp_x*.5;
-  float v2y = y2 + perp_y*.5;
- 
-  float v3x = x2 - perp_x*.5;
-  float v3y = y2 - perp_y*.5;
- 
-  float v4x = x1 - perp_x*.5;
-  float v4y = y1 - perp_y*.5;
-
-  c->triangles.push_back(vl::dvec2(v1x, c->y(v1y)));
-  c->triangles.push_back(vl::dvec2(v2x, c->y(v2y)));
-  c->triangles.push_back(vl::dvec2(v3x, c->y(v3y)));
-
-  c->triangles.push_back(vl::dvec2(v1x, c->y(v1y)));
-  c->triangles.push_back(vl::dvec2(v3x, c->y(v3y)));
-  c->triangles.push_back(vl::dvec2(v4x, c->y(v4y)));
+  GE_line_lowlevel(c, c->triangles, x1, y1, x2, y2, pen_width);
 }
 #endif
 
@@ -1383,15 +1388,15 @@ void GE_trianglestrip_end(GE_Context *c){
 
 static int num_trianglestrips;
 
-void GE_trianglestrip_start(){
-  num_trianglestrips = 0;
+void GE_trianglestrip_start(void){
+  R_ASSERT(num_trianglestrips==0);
 }
 void GE_trianglestrip_add(GE_Context *c, float x, float y){
   static float y2,y1;
   static float x2,x1;
 
   num_trianglestrips++;
-  
+
   if(num_trianglestrips>=3){
     c->triangles.push_back(vl::dvec2(x, c->y(y)));
     c->triangles.push_back(vl::dvec2(x1, c->y(y1)));
@@ -1401,7 +1406,15 @@ void GE_trianglestrip_add(GE_Context *c, float x, float y){
   y2 = y1;  y1 = y;
   x2 = x1;  x1 = x;
 }
+
+/*
+void GE_trianglestrip_add_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+  GE_line_lowlevel(c, c->triangles, x1, y1, x2, y2, pen_width);
+}
+*/
+
 void GE_trianglestrip_end(GE_Context *c){
+  num_trianglestrips = 0;
 }
 
 

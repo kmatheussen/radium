@@ -260,9 +260,66 @@ void GE_polyline(GE_Context *c, int num_points, const APoint *points, float pen_
 //void GE_polygon(GE_Context *c, int num_points, const APoint *points);
 void GE_trianglestrip(GE_Context *c, int num_points, const APoint *points);
 
-void GE_trianglestrip_start();
+void GE_trianglestrip_start(void);
 void GE_trianglestrip_add(GE_Context *c, float x, float y);
 void GE_trianglestrip_end(GE_Context *c);
+
+#if __cplusplus
+namespace{
+  class GE_ScopedTrianglestrip{
+
+    GE_Context *_c = NULL;
+
+  public:
+    
+    GE_ScopedTrianglestrip()
+    {
+    }
+
+    ~GE_ScopedTrianglestrip(){
+      maybe_paint();
+    }
+
+    void maybe_paint(void){
+      if (_c != NULL){
+        GE_trianglestrip_end(_c);
+        _c = NULL;
+      }
+    }
+
+  private:
+    
+    void change_context(GE_Context *c){
+      R_ASSERT_RETURN_IF_FALSE(c != NULL);
+      
+      if(_c != c){
+        
+        maybe_paint();
+
+        _c = c;
+
+        GE_trianglestrip_start();
+      }
+    }
+    
+  public:
+
+    /*
+    void add_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+      change_context(c);
+
+      GE_trianglestrip_add_line(c, x1, y1, x2, y2, pen_width);
+    }
+    */
+    
+    void add(GE_Context *c, float x, float y){
+      change_context(c);
+      
+      GE_trianglestrip_add(c, x, y);
+    }
+  };
+}
+#endif
 
 struct GradientType {
   enum Type {
