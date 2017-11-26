@@ -131,7 +131,7 @@ int getNumVelocities(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   return 2+ListFindNumElements3(&note->velocities->l);
 }
 
-int addVelocity(float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+static int addVelocity2(float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum, bool show_errors){
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -140,23 +140,33 @@ int addVelocity(float value, Place place, dyn_t dynnote, int tracknum, int block
   if (note==NULL)
     return -1;
 
-  if (PlaceLessOrEqual(&place, &note->l.p)) {
-    //if (dynnote>0)
-    //  handleError("addVelocity: placement before note start for note #%d", dynnote);
+  if (PlaceLessThan(&place, &note->l.p)) {
     handleError("addVelocity: placement before note start for note. velocity: %s. note: %s", p_ToString(place), p_ToString(note->l.p));
+    return -1;
+  }
+
+  if (PlaceEqual(&place, &note->l.p)) {
+    if (show_errors)
+      handleError("addVelocity: placement at note start for note. velocity: %s. note: %s", p_ToString(place), p_ToString(note->l.p));
+    return -1;
+  }
+
+  if (PlaceEqual(&place, &note->end)) {
+    if (show_errors)
+      handleError("addVelocity: placement at note end for note. velocity: %s. note end: %s", p_ToString(place), p_ToString(note->end));
     return -1;
   }
 
   if (PlaceGreaterThan(&place, &note->end)) {
     handleError("addVelocity: placement after note end for note. velocity: %s. note end: %s", p_ToString(place), p_ToString(note->end));
-    //handleError("addVelocity: placement after note end for note #%d", dynnote);
     return -1;
   }
 
   int ret = AddVelocity(value*MAX_VELOCITY, &place, note);
 
   if (ret==-1){
-    handleError("addVelocity: Can not create new velocity with the same position as another velocity");
+    if (show_errors)
+      handleError("addVelocity: Can not create new velocity with the same position as another velocity");
     return -1;
   }
 
@@ -166,6 +176,13 @@ int addVelocity(float value, Place place, dyn_t dynnote, int tracknum, int block
   return ret+1;
 }
 
+int addVelocity(float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  return addVelocity2(value, place, dynnote, tracknum, blocknum, windownum, true);
+}
+int addVelocityDontDisplayErrors(float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  return addVelocity2(value, place, dynnote, tracknum, blocknum, windownum, false);
+}
+  
 int addVelocityF(float value, float floatplace, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   if (floatplace < 0){
     handleError("Place can not be negative: %f", floatplace);
