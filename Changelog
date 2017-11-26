@@ -1,3 +1,28 @@
+Changes 5.3.2 -> 5.3.3:
+* Audio: Don't show assertion reporter when clicking "R"
+  in the sample browser in the fluidsynth instrument.
+* Demos: Added "Dance of Hypocrisy" by Nikos Levantis.
+* Editor/Player: Make sure displaying the track on/off
+  status are always updated when playing song.
+* Demos: Added "The Elf" by Nikos Levantis.
+* Editor/Mouse: Don't display error message when trying
+  to create a velocity at the same position as another
+  velocity.
+* Editor: Optimize displaying waveforms.
+* Editor: Fix current line being changed too much upwards
+  when changing LZ value.
+* Editor: Remove flickering that sometimes happened when
+  changing LZ value.
+* Editor: Don't leave one or two empty pixels at the end
+  of waveforms.
+* Editor: Clean up and optimize waveform rendering.
+* Editor: Fix updating waveforms immediately when the value
+  of position/attack/finetune/etc./etc. are changed.
+* Sample requester: Some work to prevent and track
+  down a rare crash.
+* API: addVelocityDontDisplayErrors
+
+
 Changes 5.3.1 -> 5.3.2:
 * Disk: Show the "Error. Unable to save file ..." error
   message in the message log window instead of a message
