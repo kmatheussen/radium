@@ -323,7 +323,8 @@ static inline float scale(float x, float x1, float x2, float y1, float y2){
                 );
 }
 
-#ifdef	_MATH_H
+#if defined(_MATH_H) || defined(__MATH_H__) || defined(_MATH_H_)
+//          ^ linux             ^ osx                  ^ windows
 static inline double midi_to_hz(double midi){
   if(midi<=0)
     return 0;

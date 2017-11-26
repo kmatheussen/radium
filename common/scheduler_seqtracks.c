@@ -165,8 +165,6 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
   printf("     RT_scheduled_seqblock called. time: %f\n", (double)seqtime/MIXER_get_sample_rate());
 #endif
 
-  const struct Blocks *block = seqblock->block;
-
   bool new_block = seqtrack->curr_seqblock != seqblock;
   
   if (new_block) {
@@ -174,11 +172,12 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
     
     // Any value less than -10 will delay rendering the new block. Instead we wait until player.c is called and a proper player_time value is calculated.
     // To avoid jumpy graphics.
-    ATOMIC_DOUBLE_SET(block->player_time, -100.0);
+    ATOMIC_DOUBLE_SET(seqblock->block->player_time, -100.0);
   }
   
   // Manually call GFX_ScheduleEditorRedraw() if playing the same block again but with settings in the the seqblocks that would cause editor to be rendered differently.
   if (prev_seqblock != NULL && seqblock!=prev_seqblock){
+    const struct Blocks *block = seqblock->block;
     const struct Blocks *prev_block = prev_seqblock->block;
     if (block == prev_block){
       const bool *prev_disabled = prev_seqblock->track_is_disabled;

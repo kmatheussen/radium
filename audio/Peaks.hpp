@@ -212,7 +212,7 @@ public:
   //   etc.
   //
   // The 'num_samples' argument can only be non-dividable by SAMPLES_PER_PEAK if add_samples_type==THIS_IS_THE_LAST_CALL.
-  void add_samples(float *samples, int num_samples, Add_Samples_Type add_samples_type){
+  void add_samples(float *samples, int64_t num_samples, Add_Samples_Type add_samples_type){
     R_ASSERT_RETURN_IF_FALSE(_creation_time >= 0);
     R_ASSERT_RETURN_IF_FALSE((_creation_time % SAMPLES_PER_PEAK) == 0);
     R_ASSERT_RETURN_IF_FALSE(add_samples_type==THIS_IS_THE_LAST_CALL || (num_samples % SAMPLES_PER_PEAK) == 0);
@@ -220,7 +220,7 @@ public:
     R_ASSERT_NON_RELEASE(num_samples > 0);
 
     for(int64_t time = 0 ; time < num_samples ; time += SAMPLES_PER_PEAK){
-      int duration = R_MIN(num_samples-time, SAMPLES_PER_PEAK);
+      int duration = int(R_MIN(num_samples-time, SAMPLES_PER_PEAK));
       float min,max;
       JUCE_get_min_max_val(&samples[time], duration, &min, &max);
       add(Peak(min, max));
@@ -238,15 +238,17 @@ public:
 
     Peak peak;
 
-    int start = start_time / SAMPLES_PER_PEAK;
-    if(start >= _peaks.size())
+    R_ASSERT_RETURN_IF_FALSE2(start_time >= 0, peak);
+    
+    int start = int(start_time / SAMPLES_PER_PEAK);
+    if(start >= _peaks.size() || start<0)
       return peak;
-       
-    int end = R_MIN(_peaks.size(), end_time / SAMPLES_PER_PEAK);
+
+    int end_temp = int(end_time / SAMPLES_PER_PEAK);
+    int end = end_temp < 0 ? _peaks.size() : R_MIN(_peaks.size(), end_temp);
 
     // Asked for so little data that the indexes are the same.
     if (start>=end){
-      R_ASSERT_RETURN_IF_FALSE2(start>=0, peak);
       R_ASSERT_RETURN_IF_FALSE2(start==end, peak);
       return _peaks.at(start);
     }
