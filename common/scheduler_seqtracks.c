@@ -4,13 +4,15 @@
 #include "playerclass.h"
 #include "placement_proc.h"
 #include "seqtrack_proc.h"
+#include "visual_proc.h"
+
 #include "../audio/Mixer_proc.h"
 
 #include "scheduler_proc.h"
 
 #define DO_DEBUG 0
 
-#define G_NUM_ARGS 4
+#define G_NUM_ARGS 5
 
 static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);
 
@@ -30,20 +32,10 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
 
   R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
 
+  const struct Blocks *block = seqblock->block;
+      
   Place place;
 
-  struct Blocks *block = seqblock->block;
-
-  bool new_block = seqtrack->curr_seqblock != seqblock;
-
-  if (new_block) {
-    atomic_pointer_write_relaxed((void**)&seqtrack->curr_seqblock, seqblock); // bang!
-
-    // Any value less than -10 will delay rendering the new block. Instead we wait until player.c is called and a proper player_time value is calculated.
-    // To avoid jumpy graphics.
-    ATOMIC_DOUBLE_SET(block->player_time, -100.0);
-  }
-  
   if (playtype==PLAYBLOCK) {
 
     R_ASSERT_RETURN_IF_FALSE(place_pointer != NULL);
@@ -82,7 +74,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
 
     // Send new track pan values to patches (also assert that all tracks have track->times
     //
-    struct Tracks *track=block->tracks;
+    const struct Tracks *track=block->tracks;
     while(track!=NULL){
       R_ASSERT_RETURN_IF_FALSE(track->times!=NULL);
       if(track->panonoff && track->patch!=NULL){
@@ -142,7 +134,8 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
       args[1].int_num       = next_time;
       args[2].const_pointer = &first_place;
       args[3].int32_num     = playtype;
-
+      args[4].const_pointer = seqblock;
+      
 #if DO_DEBUG
       printf("  2. Scheduling RT_scheduled_seqblock at %f. Curr_time: %f\n",next_time/MIXER_get_sample_rate(), seqtime/MIXER_get_sample_rate());
 #endif
@@ -166,10 +159,42 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
   int64_t                block_start_time = args[1].int_num;
   const Place           *place            = args[2].const_pointer;
   int                    playtype         = args[3].int32_num;
+  const struct SeqBlock *prev_seqblock    = args[4].const_pointer;
 
 #if DO_DEBUG
   printf("     RT_scheduled_seqblock called. time: %f\n", (double)seqtime/MIXER_get_sample_rate());
 #endif
+
+  const struct Blocks *block = seqblock->block;
+
+  bool new_block = seqtrack->curr_seqblock != seqblock;
+  
+  if (new_block) {
+    atomic_pointer_write_relaxed((void**)&seqtrack->curr_seqblock, seqblock); // bang!
+    
+    // Any value less than -10 will delay rendering the new block. Instead we wait until player.c is called and a proper player_time value is calculated.
+    // To avoid jumpy graphics.
+    ATOMIC_DOUBLE_SET(block->player_time, -100.0);
+  }
+  
+  // Manually call GFX_ScheduleEditorRedraw() if playing the same block again but with settings in the the seqblocks that would cause editor to be rendered differently.
+  if (prev_seqblock != NULL && seqblock!=prev_seqblock){
+    const struct Blocks *prev_block = prev_seqblock->block;
+    if (block == prev_block){
+      const bool *prev_disabled = prev_seqblock->track_is_disabled;
+      const bool *disabled = seqblock->track_is_disabled;
+      if (prev_disabled!=NULL && disabled!=NULL){
+        for(int i=0;i<block->num_tracks;i++){
+          if(prev_disabled[i] != disabled[i]){
+            printf("   RT_scheduled_seqblock: Calling GFX_ScheduleEditorRedraw\n");
+            GFX_ScheduleEditorRedraw();
+            break;
+          }
+        }
+      }
+    }
+  }
+  
   RT_schedule_new_seqblock(seqtrack, seqblock, seqtime, block_start_time, place, playtype);
 
   return DONT_RESCHEDULE;
@@ -250,7 +275,8 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
           args[1].int_num       = seqblock->time;
           args[2].const_pointer = startdata->seqblock==seqblock ? &static_place : NULL;
           args[3].int_num       = PLAYSONG;
-
+          args[4].const_pointer = NULL;
+          
           int64_t seqtime = R_MAX(seqblock_start_time, seq_start_time);
 #if DO_DEBUG
           printf("  Song: Scheduling RT_scheduled_seqblock at %f. seqtrack->start_time: %f\n",(double)seqtime/MIXER_get_sample_rate(), (double)seqtrack->start_time/MIXER_get_sample_rate());
@@ -314,7 +340,8 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
     args[1].int_num = seqblock.time;
     args[2].const_pointer = &static_place;
     args[3].int32_num = PLAYBLOCK;
-
+    args[4].const_pointer = &seqblock;
+ 
 #if DO_DEBUG
     printf("  Scheduling RT_scheduled_seqblock at %d. seqtrack->start_time: %d\n",(int)seq_start_time, (int)seqtrack->start_time);
 #endif
