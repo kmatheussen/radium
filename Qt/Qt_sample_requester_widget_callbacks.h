@@ -209,7 +209,7 @@ class Sample_requester_widget : public QWidget
 
   QString _sf2_file;
   QString _sf2_bank;
-
+  
   int _preview_octave;
 
   QLabel *_sample_name_label;
@@ -540,6 +540,16 @@ class Sample_requester_widget : public QWidget
     return bank;
   }
 
+  int get_bank_num(const wchar_t *filename, QString bank_name){
+    hash_t *bank = get_bank(filename, bank_name);
+    R_ASSERT_RETURN_IF_FALSE2(bank!=NULL, -1);
+
+    hash_t *preset  = HASH_get_hash(bank,bank_name.toUtf8().constData());
+    R_ASSERT_RETURN_IF_FALSE2(preset!=NULL, -1);
+    
+    return HASH_get_int32(preset, "bank");
+  }
+  
   void handle_sf2_preset_pressed(QString item_text){
     EVENTLOG_add_event(talloc_format("preset: Pressed \"%s\"\n",item_text.toUtf8().constData()));
                        
@@ -731,8 +741,38 @@ public slots:
 
   void on_random_button_clicked(bool){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    ADD_UNDO(PluginState_CurrPos(_patch));
-    SAMPLER_set_random_sample(plugin, STRING_create(_dir.absolutePath()));
+    
+    if(_is_sample_player) {
+      
+      ADD_UNDO(PluginState_CurrPos(_patch));
+      SAMPLER_set_random_sample(plugin, STRING_create(_dir.absolutePath()));
+
+    } else if (_sf2_file != "" && _sf2_bank != ""){
+
+      // TODO: Fix code below.
+        
+      /*
+      ADD_UNDO(PluginState_CurrPos(_patch));
+      
+      wchar_t *filename = STRING_create(_sf2_file);
+
+      hash_t *bank = get_bank(filename, _sf2_bank);
+
+      int bank_num = get_bank_num(filename, _sf2_bank);
+
+      if (bank_num >= 0){
+        hash_t *preset_names = HASH_get_keys_in_hash(bank);
+
+        int num_presets = HASH_get_array_size(preset_names, "key");
+        
+        if (num_presets > 0){
+          int preset_num = qrand() % num_presets;
+          FLUIDSYNTH_set_new_preset(plugin, filename, bank_num, preset_num);
+          //update_sample_name_label(_sf2_file,bank_num,preset_num);
+        }
+      }
+      */
+    }
   }
   
   void on_up_clicked(bool){
