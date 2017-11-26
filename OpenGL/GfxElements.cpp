@@ -645,7 +645,7 @@ public:
   }
   */
 
-  _GE_Context(const Color _color, const GE_Conf &conf, int slice)
+  _GE_Context(const Color &_color, const GE_Conf &conf, int slice)
     : textbitmaps(false)
     , textbitmaps_halfsize(true)
       //, has_scissor(false)
@@ -1017,7 +1017,7 @@ static int get_slice_from_y(const int y){
   return y/g_painting_data->slice_size;
 }
 
-static GE_Context *get_context(const GE_Context::Color color, const GE_Conf &conf){
+static GE_Context *get_context(const GE_Context::Color &color, const GE_Conf &conf){
   int slice = get_slice_from_y(conf.y);
 
   if(g_painting_data->contexts[conf.z][slice][conf.use_scissors].contains(color.key))
@@ -1389,12 +1389,16 @@ void GE_trianglestrip_end(GE_Context *c){
 static int num_trianglestrips;
 
 void GE_trianglestrip_start(void){
-  R_ASSERT(num_trianglestrips==0);
+  //R_ASSERT(num_trianglestrips==0);
+  num_trianglestrips = 0;
 }
-void GE_trianglestrip_add(GE_Context *c, float x, float y){
+
+void GE_trianglestrip_add(GE_Context *new_c, float x, float y){
   static float y2,y1;
   static float x2,x1;
 
+  static GE_Context *c = new_c;
+    
   num_trianglestrips++;
 
   if(num_trianglestrips>=3){
@@ -1402,6 +1406,8 @@ void GE_trianglestrip_add(GE_Context *c, float x, float y){
     c->triangles.push_back(vl::dvec2(x1, c->y(y1)));
     c->triangles.push_back(vl::dvec2(x2, c->y(y2)));
   }
+
+  c = new_c;
   
   y2 = y1;  y1 = y;
   x2 = x1;  x1 = x;
@@ -1414,7 +1420,6 @@ void GE_trianglestrip_add_line(GE_Context *c, float x1, float y1, float x2, floa
 */
 
 void GE_trianglestrip_end(GE_Context *c){
-  num_trianglestrips = 0;
 }
 
 

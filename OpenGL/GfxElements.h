@@ -274,34 +274,14 @@ namespace{
     
     GE_ScopedTrianglestrip()
     {
+      GE_trianglestrip_start();
     }
 
     ~GE_ScopedTrianglestrip(){
-      maybe_paint();
-    }
-
-    void maybe_paint(void){
-      if (_c != NULL){
+      if (_c != NULL)
         GE_trianglestrip_end(_c);
-        _c = NULL;
-      }
     }
 
-  private:
-    
-    void change_context(GE_Context *c){
-      R_ASSERT_RETURN_IF_FALSE(c != NULL);
-      
-      if(_c != c){
-        
-        maybe_paint();
-
-        _c = c;
-
-        GE_trianglestrip_start();
-      }
-    }
-    
   public:
 
     /*
@@ -313,8 +293,7 @@ namespace{
     */
     
     void add(GE_Context *c, float x, float y){
-      change_context(c);
-      
+      _c = c;
       GE_trianglestrip_add(c, x, y);
     }
   };

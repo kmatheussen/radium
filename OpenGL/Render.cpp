@@ -2050,7 +2050,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
         R_ASSERT_NON_RELEASE(end_time >= start_time);
 
         int64_t reltempo_start_time = start_time / reltempo;
-        int64_t reltempo_end_time = start_time / reltempo;
+        int64_t reltempo_end_time = end_time / reltempo;
         
         if (reltempo_start_time>=reltempo_end_time)
           continue; // Playing too fast. No audio data. (note that the current value of 'last_end_time' is kept in the next iteration)
@@ -2090,7 +2090,16 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
         float y = scale(n,
                         0, num_peaks-1,
                         y1, y2);
-                        
+
+        //auto *old_c = c;
+
+        c = GE_y(c, y); // Optimization. Split waveforms into several slices.
+
+        /*
+        if (c != old_c){
+          printf("Changing C at %f\n", y);
+        }
+        */
 #if 0
         printf("Adding %f,%f at %f. min/max: %f/%f. vel1/vel2: %f/%f. time1/time2: %f/%f\n",x1,x2,y,min,max,
                scale(n,0,num_peaks,velocity1->velocity, velocity2->velocity),
