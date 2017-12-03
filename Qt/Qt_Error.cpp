@@ -144,9 +144,9 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
     
 
 #if FOR_WINDOWS
-  QString program = QString::fromWCharArray(OS_get_full_program_file_path(L"radium_error_message.exe"));
+  QString program = OS_get_full_program_file_path(QString("radium_error_message.exe"));
 #else
-  QString program = QString::fromWCharArray(OS_get_full_program_file_path(L"radium_error_message"));
+  QString program = OS_get_full_program_file_path(QString("radium_error_message"));
 #endif
   
   QStringList arguments;
