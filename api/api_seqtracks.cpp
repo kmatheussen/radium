@@ -14,11 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include "../common/includepython.h"
+
 #define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 
-
-#include "../common/includepython.h"
 
 #include "../common/nsmtracker.h"
 #include "../common/seqtrack_proc.h"
@@ -106,7 +106,7 @@ void setSequencerGridType(int grid_type){
     handleError("setSequencerGridType: Illegal grid type %d", grid_type);
     return;
   }
-  SEQUENCER_set_grid_type(grid_type);
+  SEQUENCER_set_grid_type((GridType)grid_type);
 }
 
 void setSequencerSelectionRectangle(float x1, float y1, float x2, float y2){
@@ -1040,9 +1040,10 @@ dyn_t getBlockUsageInSequencer(void){
   int ret[num_blocks];
   memset(ret, 0, sizeof(int)*num_blocks);
 
-  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
-    VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
-      ret[seqblock->block->l.num]++;
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+      if (seqblock->block != NULL)
+        ret[seqblock->block->l.num]++;
     }END_VECTOR_FOR_EACH;
   }END_VECTOR_FOR_EACH;
 
@@ -1371,8 +1372,8 @@ void selectSeqblock(int seqblocknum, int seqtracknum){
 
 int getNumSelectedSeqblocks(void){
   int ret = 0;
-  VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
-    VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
       if (seqblock->is_selected)
         ret++;
     }END_VECTOR_FOR_EACH;
