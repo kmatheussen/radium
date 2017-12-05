@@ -200,7 +200,7 @@ else
 #		DEBUG_BUILD_OPTS += -Wshadow # gcc 4 has too many unnecessary positives
 #	endif	
 
-	CPUOPT += -Og	
+	CPUOPT += -Og	 # BEWARE: -Og DOES indeed very much destroy debug capabilites. (<optimized out>)
 endif
 
 ifneq (,$(findstring FOR_LINUX,$(OS_OPTS)))
@@ -386,8 +386,11 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 OBJ_VL=GfxElements.o T2.o Render.o Widget.o
 # Qt${RADIUM_QT_VERSION}Widget.o moc_Qt${RADIUM_QT_VERSION}Widget.o
 
+SNDLIBFILES=libsndfile_objectfiles/headers.o libsndfile_objectfiles/audio.o libsndfile_objectfiles/io.o libsndfile_objectfiles/sound.o libsndfile_objectfiles/xen.o libsndfile_objectfiles/vct.o libsndfile_objectfiles/clm.o libsndfile_objectfiles/sndlib2xen.o libsndfile_objectfiles/clm2xen.o
+
+
 #Embedded scheme
-OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o s7webserver.o radium_s7_wrap.o qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o http_parser.o
+OBJ_ES=scheme.o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o $(SNDLIBFILES) s7webserver.o radium_s7_wrap.o qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o http_parser.o
 
 OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7) $(OBJ8) $(OBJ9) $(OBJ10) $(OBJ11) $(OBJ13) $(OBJ_POSIX) $(OBJ_X11) $(OBJ_WIN) $(OBJ_MACOSX) $(OBJ14) $(OBJ_FAUST) $(OBJ_AUDIO) $(OBJ_MIXER) $(OBJ_VL)
 
@@ -419,8 +422,9 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe bin/radium_plugin_scanner bin/radium_plugin_scanner.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt* $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe bin/radium_plugin_scanner bin/radium_plugin_scanner.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp libsndfile_built libsndfile_objectfiles/*
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
+	cd bin/packages/sndlib && $(MAKE) clean && rm -f libsndfile.a libsndfile.so
 
 dependencies_ok: check_dependencies.sh #Makefile
 	bash check_dependencies.sh `./find_python_path.sh` $(MOC) $(UIC) test_build
@@ -1608,8 +1612,8 @@ api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.c $(API)radium_pr
 api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.c $(API)radium_proc.h
 	$(CC)  $(API)api_mouse.c $(OPT)
 
-api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.c $(API)radium_proc.h
-	$(CC)  $(API)api_seqtracks.c $(OPT)
+api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.cpp $(API)radium_proc.h
+	$(CCC)  $(API)api_seqtracks.cpp $(QTOPT)
 
 api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp $(API)radium_proc.h Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
@@ -2241,10 +2245,37 @@ ifeq ($(BUILDTYPE), DEBUG)
 endif
 
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
-	$(GCC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
+	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
 
 # -Wno-absolute-value
 #-DDEBUGGING=1
+
+libsndfile_objectfiles/headers.o: libsndfile_built
+	cp bin/packages/sndlib/headers.o libsndfile_objectfiles/
+libsndfile_objectfiles/io.o: libsndfile_built
+	cp bin/packages/sndlib/io.o libsndfile_objectfiles/
+libsndfile_objectfiles/audio.o: libsndfile_built
+	cp bin/packages/sndlib/audio.o libsndfile_objectfiles/
+libsndfile_objectfiles/sound.o: libsndfile_built
+	cp bin/packages/sndlib/sound.o libsndfile_objectfiles/
+libsndfile_objectfiles/xen.o: libsndfile_built
+	cp bin/packages/sndlib/xen.o libsndfile_objectfiles/
+libsndfile_objectfiles/vct.o: libsndfile_built
+	cp bin/packages/sndlib/vct.o libsndfile_objectfiles/
+libsndfile_objectfiles/sndlib2xen.o: libsndfile_built
+	cp bin/packages/sndlib/sndlib2xen.o libsndfile_objectfiles/
+libsndfile_objectfiles/clm2xen.o: libsndfile_built
+	cp bin/packages/sndlib/clm2xen.o libsndfile_objectfiles/
+libsndfile_objectfiles/clm.o: libsndfile_built
+	cp bin/packages/sndlib/clm.o libsndfile_objectfiles/
+libsndfile_built:
+	cd bin/packages/sndlib && CC="$(CC)" CFLAGS="$(SNDLIBFLAGS)" ./configure --without-alsa --without-audio --without-forth --without-gsl --without-jack --without-oss --without-portaudio --without-ruby --without-s7 && $(MAKE) -j3
+	mkdir -p libsndfile_objectfiles
+	echo 1 >libsndfile_built
+
+#clm.o: audio/clm.h audio/clm.c audio/sndlib.h audio/_sndlib.h audio/xen.h audio/vct.h
+#	$(CC) $(OPT) audio/clm.c -Iembedded_scheme -I/home/kjetil/snd-17/
+
 
 s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp
 	$(CCC) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++11
