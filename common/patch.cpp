@@ -1398,6 +1398,8 @@ void FX_treat_fx(struct FX *fx,int val,int skip){
 // Send out FX values for what they would have been at time 'time' if playing block from the beginning.
 void FX_call_me_before_starting_to_play_song(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, STime start_time){
   const struct Blocks *block = seqblock->block;
+  if(block==NULL)
+    return;
   
   struct Tracks *track = block->tracks;
   while(track != NULL){

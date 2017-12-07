@@ -14,6 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#define __STDC_FORMAT_MACROS 1
+
+#include <inttypes.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -126,13 +130,21 @@ struct Sample{
 
   //float *min_peaks = NULL;
   //float *max_peaks = NULL;
-  radium::Peaks peaks;
+  radium::Peaks *peaks = new radium::Peaks();
+
+#if !defined(RELEASE)
+  const wchar_t *filename = NULL;
+#endif
 
   double frequency_table[128] = {};
 
   Data *data = NULL;
 
   Sample(){
+  }
+
+  ~Sample(){
+    delete peaks;
   }
 };
 
@@ -1192,7 +1204,7 @@ static radium::Peak get_peak_from_sample(const Sample *sample, int64_t start_tim
   int64_t end_time = start_time + duration_now;
 
   //printf("    Calculating %d -> %d (%d frames)\n", (int)start_time, (int)(end_time), (int)(duration_now));
-  peak = sample->peaks.get(start_time, end_time);
+  peak = sample->peaks->get(start_time, end_time);
 
   int64_t duration_left = duration - duration_now;
   
@@ -1931,6 +1943,10 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, boo
         if(ch<2){
           Sample &sample=data->samples[ch];
           sample.sound[i] = samples[interleaved_pos];
+#if !defined(RELEASE)
+          sample.filename = filename;
+          sample.ch = ch;
+#endif
         }
         interleaved_pos++;
       }
@@ -1982,8 +1998,22 @@ static void generate_peaks(Data *data){
     if(sample.sound!=NULL && sample.sound != prev){
       prev = sample.sound;
 
-      sample.peaks.add_samples(sample.sound, sample.num_frames, radium::Peaks::THIS_IS_THE_LAST_CALL);
+      sample.peaks->add_samples(sample.sound, sample.num_frames, radium::Peaks::THIS_IS_THE_LAST_CALL);
+
+#if !defined(RELEASE)
+      if (sample.filename!=NULL){
+        radium::DiskPeaks *disk_peaks = new radium::DiskPeaks(sample.filename);
+        if(disk_peaks->is_valid()==false)
+          abort();
+        disk_peaks->wait();
+        sample.peaks = disk_peaks->_peaks[sample.ch==-1 ? 0 : sample.ch];
+      }
+#endif
+
     }
+
+
+
   }
 }
 

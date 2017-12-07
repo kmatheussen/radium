@@ -492,6 +492,7 @@ void RT_PD_set_realline(int64_t time, int64_t time_nextsubline, const Place *p){
 }
 
 // called from radium
+/*
 void RT_PD_set_line(int64_t time, int64_t time_nextline, int line){
 
   if(g_instances != NULL) {
@@ -516,6 +517,7 @@ void RT_PD_set_line(int64_t time, int64_t time_nextline, int line){
     }
   }
 }
+*/
 
 // called from radium
 static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when) {
@@ -855,8 +857,8 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
 
           if (curr_seqblock != NULL) {
             struct Blocks *block = curr_seqblock->block;
-          
-            if (tempo != ATOMIC_DOUBLE_GET(block->reltempo)){
+
+            if (block!=NULL && tempo != ATOMIC_DOUBLE_GET(block->reltempo)){
               ATOMIC_DOUBLE_SET(block->reltempo, tempo);
               GFX_ScheduleRedraw();
               //printf("   SCHEDULING redraw\n");

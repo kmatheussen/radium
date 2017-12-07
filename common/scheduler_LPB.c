@@ -240,6 +240,8 @@ void RT_schedule_LPBs_newblock(struct SeqTrack *seqtrack,
                                const struct SeqBlock *seqblock,
                                const Place start_place)
 {
+  R_ASSERT_RETURN_IF_FALSE(seqblock->block != NULL);
+    
   LPB_Iterator *iterator = &seqtrack->lpb_iterator;
 
   // Null out all fields, except num_beats_played_so_far.

@@ -119,84 +119,84 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
 
   R_ASSERT(g_assert_not_stopping_player==0);
   
-    if (stop_jack_transport_as_well)
-      if (useJackTransport()){
-        MIXER_TRANSPORT_stop();
-        // We can not exit here. Some code depends on the player to have stopped when PlayStopReally returns.
-      }
+  if (stop_jack_transport_as_well)
+    if (useJackTransport()){
+      MIXER_TRANSPORT_stop();
+      // We can not exit here. Some code depends on the player to have stopped when PlayStopReally returns.
+    }
+  
+  g_player_was_stopped_manually = true;
+  
+  //ATOMIC_SET(pc->isplaying, false);
+  //ATOMIC_SET(pc->initplaying, false);
+  //ATOMIC_SET(pc->playertask_has_been_called, false);
+  
+  if (ATOMIC_GET(is_starting_up))
+    return;
+  
+  if(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED) {
+    PLAYER_lock();
+    clear_scheduler_and_stop_player_and_releases_player_lock(); // must clear, and it doesn't hurt to stop player one more time.
+    return;
+  }
+  
+  PLAYER_lock();{
     
-    g_player_was_stopped_manually = true;
+    StopAllInstruments();
     
-        //ATOMIC_SET(pc->isplaying, false);
-	//ATOMIC_SET(pc->initplaying, false);
-        //ATOMIC_SET(pc->playertask_has_been_called, false);
-
-        if (ATOMIC_GET(is_starting_up))
-          return;
-
-        if(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED) {
-          PLAYER_lock();
-          clear_scheduler_and_stop_player_and_releases_player_lock(); // must clear, and it doesn't hurt to stop player one more time.
-          return;
-        }
-        
-        PLAYER_lock();{
-        
-          StopAllInstruments();
-
-        }clear_scheduler_and_stop_player_and_releases_player_lock();
-        
-        
-        R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
-
-        //R_ASSERT(is_playing()==false);
-                
+  }clear_scheduler_and_stop_player_and_releases_player_lock();
+  
+  
+  R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
+  
+  //R_ASSERT(is_playing()==false);
+  
 #if !USE_OPENGL
-	if(doit) (*Ptask2MtaskCallBack)();
+  if(doit) (*Ptask2MtaskCallBack)();
 #endif
-
-        ATOMIC_ADD(pc->play_id, 1);
-
-        struct Tracker_Windows *window = root->song->tracker_windows;
-        struct WBlocks *wblock = window->wblock;
-
-        ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
-
-        R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
-                
+  
+  ATOMIC_ADD(pc->play_id, 1);
+  
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  struct WBlocks *wblock = window->wblock;
+  
+  ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
+  
+  R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
+  
 #if !USE_OPENGL
-        DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
-        UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
+  DrawWBlockSpesific(window,wblock,wblock->curr_realline,wblock->curr_realline); // clear cursor shade.
+  UpdateAllWTracks(window,wblock,wblock->curr_realline,wblock->curr_realline); // same here.
 #endif
-        
+  
 #if STOP_GC_WHILE_PLAYING
-        printf("[hb gakkgakk: %d\n",GC_dont_gc);
+  printf("[hb gakkgakk: %d\n",GC_dont_gc);
 #endif
 
-        R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
-                
+  R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
+  
 #if STOP_GC_WHILE_PLAYING
 #error "must make gc_dont_gc thread safe"
-        //while(GC_is_disabled())
-        while(GC_dont_gc>0)
-          Threadsafe_GC_enable();
+  //while(GC_is_disabled())
+  while(GC_dont_gc>0)
+    Threadsafe_GC_enable();
 #endif
-        
-        MIDI_insert_recorded_midi_events();
-
-        R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
-        
-        //InitPEQmempool(); // Clean memory used by player so it can be freed by the garbage collector.
-
-        // Clean all seqtrack->curr_seqblock values
-        PLAYER_lock();{
-          ALL_SEQTRACKS_FOR_EACH(){
-            atomic_pointer_write((void**)&seqtrack->curr_seqblock, NULL);
-          }END_ALL_SEQTRACKS_FOR_EACH;
-        }PLAYER_unlock();
-
-
-        R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
+  
+  MIDI_insert_recorded_midi_events();
+  
+  R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
+  
+  //InitPEQmempool(); // Clean memory used by player so it can be freed by the garbage collector.
+  
+  // Clean all seqtrack->curr_seqblock values
+  PLAYER_lock();{
+    ALL_SEQTRACKS_FOR_EACH(){
+      atomic_pointer_write((void**)&seqtrack->curr_seqblock, NULL);
+    }END_ALL_SEQTRACKS_FOR_EACH;
+  }PLAYER_unlock();
+  
+  
+  R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
 }
 
 static void play_stop(bool called_from_jack_transport){
@@ -610,6 +610,8 @@ void PlaySongCurrPos(void){
     place=&wblock->reallines[wblock->curr_realline]->l.p;
   }
 
+  R_ASSERT_RETURN_IF_FALSE(seqblock->block!=NULL);
+  
   int64_t stime = Place2STime(seqblock->block, place);
   int64_t seqtime = seqblock->time + blocktime_to_seqtime(seqblock, stime);
   int64_t abstime = get_abstime_from_seqtime(seqtrack, seqblock, seqtime);

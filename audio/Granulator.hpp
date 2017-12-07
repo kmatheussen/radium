@@ -1,5 +1,5 @@
 
-#include "clm.h"
+#include "../bin/packages/sndlib/clm.h"
 
 namespace radium{
 
@@ -9,8 +9,6 @@ public:
 
   virtual ~GranulatorCallback() = default; // Crazy c++ stuff.
 };
-
-#define RINGBUFFER_SIZE (8*32*1024)
 
 namespace{
   
@@ -23,25 +21,25 @@ public:
 
 private:
 
-  struct Buffer{
+  class Buffer{
     float *_samples;
-    int _num_frames = 0;
-    int _pos = 0;
+    int _num_frames;
+    int _pos;
 
     int _ch;
     GranulatorCallback *_callback;
+
+  public:
     
     void init(int ch, GranulatorCallback *callback){
       _ch = ch;
       _callback = callback;
-    }
-    
-    bool has_more_data(void){
-      return _pos < _num_frames;
+      _num_frames = 0;
+      _pos = 0;
     }
     
     float get_sample(void){
-      if (has_more_data()==false){
+      if (_pos==_num_frames){
         _samples = _callback->get_next_sample_block(_ch, _num_frames);
         _pos = 0;
       }
@@ -99,12 +97,15 @@ public:
                                                 NULL,
                                                 &_buffers[ch]);
 
-      mus_set_location(_clm_granulators[ch], seed); // make sure all channels uses the same random seed.
+      mus_set_location(_clm_granulators[ch], seed); // make sure all channels use the same random seed.
     }
     
   }
 
   ~Granulator(){
+    for(int ch=0;ch<_num_ch;ch++)
+      mus_free(_clm_granulators[ch]);
+    
     delete[] _buffers;
   }
       

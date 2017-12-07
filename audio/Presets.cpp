@@ -23,6 +23,7 @@
 #include "SoundPlugin.h"
 #include "SoundPluginRegistry_proc.h"
 #include "audio_instrument_proc.h"
+#include "Seqtrack_plugin_proc.h"
 
 #include "../api/api_gui_proc.h"
 
@@ -333,6 +334,11 @@ static bool valid_patches(const vector_t *patches){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     if (!strcmp(plugin->type->type_name,"Bus")){
       GFX_addMessage("Can not cut, copy, delete, or save a Bus preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
+      return false;
+    }
+    
+    if (!strcmp(plugin->type->type_name,SEQTRACKPLUGIN_NAME)){
+      GFX_addMessage("Can not cut, copy, delete, or save a Seqtrack preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
       return false;
     }
     

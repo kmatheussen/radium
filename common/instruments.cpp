@@ -106,6 +106,18 @@ int get_type_from_instrument(struct Instruments *instrument){
   return NO_INSTRUMENT_TYPE;
 }
 
+void RT_StopAllInstruments(void){
+        struct Instruments *instrument=g_instruments;
+
+        while(instrument!=NULL){
+
+          if (instrument->RT_StopPlaying!=NULL)
+            instrument->RT_StopPlaying(instrument);
+          
+          instrument=NextInstrument(instrument);
+        }
+}
+
 void StopAllInstruments(void){
         struct Instruments *instrument=g_instruments;
 

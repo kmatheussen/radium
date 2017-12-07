@@ -6,15 +6,25 @@
 
 struct SoundPlugin;
 
-extern LANGSPEC void RT_SEQTRACKPLUGIN_called_per_block(SoundPlugin *plugin, const struct SeqTrack *seqtrack);
-extern LANGSPEC void SEQTRACKPLUGIN_prepare_to_play(SoundPlugin *plugin, const struct SeqTrack *seqtrack, int64_t seqtime);
+extern LANGSPEC void RT_SEQTRACKPLUGIN_called_per_block(struct SoundPlugin *plugin, const struct SeqTrack *seqtrack);
 
-extern LANGSPEC int64_t SEQTRACKPLUGIN_add_sample(SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock);
-extern LANGSPEC void SEQTRACKPLUGIN_remove_sample(SoundPlugin *plugin, int64_t id);
+extern LANGSPEC void SEQTRACKPLUGIN_called_very_often(struct SoundPlugin *plugin);
 
-extern LANGSPEC int64_t SEQTRACKPLUGIN_get_num_channels(const SoundPlugin *plugin, int64_t id);
-extern LANGSPEC int64_t SEQTRACKPLUGIN_get_num_frames(const SoundPlugin *plugin, int64_t id);
-extern LANGSPEC const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t id);
+#if __cplusplus
+namespace radium{
+  class FutureSignalTrackingSemaphore;
+}
+extern LANGSPEC void SEQTRACKPLUGIN_prepare_to_play(struct SoundPlugin *plugin, const struct SeqTrack *seqtrack, int64_t seqtime, radium::FutureSignalTrackingSemaphore *gotit);
+#endif
+
+extern LANGSPEC int64_t SEQTRACKPLUGIN_add_sample(struct SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock);
+extern LANGSPEC void SEQTRACKPLUGIN_remove_sample(struct SoundPlugin *plugin, int64_t id);
+extern LANGSPEC int SEQTRACKPLUGIN_get_num_samples(struct SoundPlugin *plugin);
+
+extern LANGSPEC int64_t SEQTRACKPLUGIN_get_num_channels(const struct SoundPlugin *plugin, int64_t id);
+extern LANGSPEC int64_t SEQTRACKPLUGIN_get_num_frames(const struct SoundPlugin *plugin, int64_t id);
+extern LANGSPEC const wchar_t *SEQTRACKPLUGIN_get_sample_name(const struct SoundPlugin *plugin, int64_t id, bool full_path);
+extern LANGSPEC unsigned int SEQTRACKPLUGIN_get_sample_color(const struct SoundPlugin *plugin, int64_t id);
 
 #ifdef __cplusplus
 namespace radium{

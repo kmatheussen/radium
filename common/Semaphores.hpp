@@ -122,8 +122,30 @@ class Semaphore{
     }
 };
 
+// Same as Semaphore, except that it keeps track of the number of times signal() is going to be called in the future
+// with the function 'is_going_to_be_signalled_another_time_in_the_future'.
+//
+// Used for instance if sending a message to another thread that will do something and call signal() when finished.
+//
+// Note that the methods 'is_going_to_be_signalled_another_time_in_the_future' and 'wait_for_all_future_signals' are not thread safe.
+class FutureSignalTrackingSemaphore : public Semaphore{
 
+  int number_of_future_signals = 0;
 
+public:
+  void is_going_to_be_signalled_another_time_in_the_future(void){
+    number_of_future_signals++;
+  }
+
+  void wait_for_all_future_signals(void){
+    if (number_of_future_signals > 0){
+      wait(number_of_future_signals);
+      number_of_future_signals = 0;
+    }
+  }
+};
+
+  
 //---------------------------------------------------------
 // SpinlockSemaphore
 //---------------------------------------------------------

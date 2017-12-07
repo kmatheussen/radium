@@ -180,6 +180,10 @@ static inline bool is_playing_song(void){
   return is_playing() && pc->playtype==PLAYSONG;
 }
 
+static inline bool is_really_playing_song(void){
+  return is_really_playing() && pc->playtype==PLAYSONG;
+}
+
 static inline void init_player_state(void){
   ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);
 }

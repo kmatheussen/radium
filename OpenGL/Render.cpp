@@ -2576,7 +2576,7 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
     if (is_playing() && pc->playtype==PLAYSONG){
       struct SeqBlock *seqblock = RT_get_curr_seqblock();
       
-      if(seqblock!=NULL){
+      if(seqblock!=NULL && seqblock->block!=NULL){
         
         R_ASSERT_NON_RELEASE(seqblock->track_is_disabled!=NULL);
         

@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "threading.h"
 #include "OS_Player_proc.h"
 #include "OS_visual_input.h"
-#include "seqtrack_automation_proc.h"
+#include "seqtrack_proc.h"
 #include "../audio/Mixer_proc.h"
 
 #include "scheduler_proc.h"
@@ -244,7 +244,7 @@ int SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
   g_RT_curr_scheduling_seqtrack = seqtrack;
 
   SCHEDULER_set_seqtrack_timing(seqtrack, seqtrack->end_time, seqtrack->end_time + reltime);
-  RT_SEQTRACK_AUTOMATION_called_per_block(seqtrack);
+  RT_SEQTRACK_called_per_block(seqtrack);
 
   scheduler_t *scheduler = seqtrack->scheduler;
 

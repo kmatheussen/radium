@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "scheduler_proc.h"
 #include "seqtrack_proc.h"
 #include "seqtrack_automation_proc.h"
+#include "instruments_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -80,12 +81,15 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
           SCHEDULER_reset_all_timing();
 
           if (SCHEDULER_clear_all(max_audio_cycle_fraction)) {
+
             ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);  // Finished. SCHEDULER_clear() cleared everything.
             //RT_BACKUP_reset_timer(); // Don't want to take backup right after stopping to play. It's quite annoying. (we handle this directly in Qt_AutoBackups instead)
             
             player_state = PLAYER_STATE_STOPPED;
             //printf("************ PlayerTask finished clearing. fraction: %f. Max fraction: %f\n", MIXER_get_curr_audio_block_cycle_fraction(), max_audio_cycle_fraction);
-                        
+
+            RT_StopAllInstruments();
+            
           } else {
 #if !defined(RELEASE)
             printf("************ PlayerTask not finished clearing yet. fraction: %f. Max fraction: %f\n", MIXER_get_curr_audio_block_cycle_fraction(), max_audio_cycle_fraction);

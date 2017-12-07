@@ -57,7 +57,8 @@ void RT_schedule_Signature_newblock(struct SeqTrack *seqtrack,
                                     const struct SeqBlock *seqblock,
                                     const Place start_place)
 {
-
+  R_ASSERT_RETURN_IF_FALSE(seqblock->block != NULL);
+  
   Signature_Iterator *iterator = &seqtrack->signature_iterator;
   memset(iterator, 0, sizeof(Signature_Iterator));
   iterator->signature_value = root->signature;

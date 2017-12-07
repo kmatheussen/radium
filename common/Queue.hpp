@@ -78,7 +78,7 @@ private:  // Rather not expose this messy (and unsafe) API unless it's needed.
   // Must NOT be called without first calling wait()
   T get_withoutWaiting(){
     T ret;
-    memset(&ret, 0, sizeof(T));
+    memset(&ret, 0, sizeof(T)); // why?
     
     R_ASSERT(queue.pop(ret));
 

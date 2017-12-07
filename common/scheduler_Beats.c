@@ -149,7 +149,8 @@ void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
                                 const struct SeqBlock *seqblock,
                                 const Place start_place)
 {
-
+  R_ASSERT_RETURN_IF_FALSE(seqblock->block != NULL);
+  
   Beat_Iterator *iterator = &seqtrack->beat_iterator;
   memset(iterator, 0, sizeof(Beat_Iterator));
   iterator->last_played_metronome_note_num = -1;

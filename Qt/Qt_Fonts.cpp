@@ -43,19 +43,23 @@ static bool can_fit(const QFont &font, const QString &text, int flags, int width
   QRect rect = fm.boundingRect(0, 0, width, height, flags, text);
 
   // subtract 10 to get some borders.
-  if (rect.width() >= width-10)
+  if (rect.width() >= width-10){
+    //printf("F1: %d >= %d. ", rect.width(),width-10);
     return false;
+  }
   
   // "height-fm.height()" seems to work perfectly. Could be coincidental though. Must subtract a little bit, if not the text is just cut off. (the boundingRect function doesn't seem to work perfectly)
-  if (rect.height() >= height-fm.height())
+  if (rect.height() >= height-fm.height()){
+    //printf("F2: ");
     return false;
+  }
 
   return true;
 }
 
-QFont GFX_getFittingFont(QString text, int flags, int width, int height){
+QFont GFX_getFittingFont(const QString &text, int flags, int width, int height){
   static QFont font;
-
+  
   auto key = QPair<QString,QPair<int, QPair<int,int>>>(text,QPair<int,QPair<int,int>>(flags, QPair<int,int>(width,height))); // good code
 
   static QHash< QPair< QString , QPair< int, QPair<int,int> > > , QFont> fonts;

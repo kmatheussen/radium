@@ -35,6 +35,33 @@ static inline int32_t get_le_32 (unsigned char *src)
 #endif
 }
 
+static inline void put_le_32 (unsigned char *src, int32_t value)
+{
+#if IS_LITTLE_ENDIAN
+  memcpy(src, &value, 4);
+#else
+#error "not implemented"
+#endif
+}
+
+static inline int64_t get_le_64 (unsigned char *src)
+{
+#if IS_LITTLE_ENDIAN
+    return *(int64_t*)src;
+#else
+#error "not implemented"
+#endif
+}
+
+static inline void put_le_64 (unsigned char *src, int64_t value)
+{
+#if IS_LITTLE_ENDIAN
+  memcpy(src, &value, 8);
+#else
+#error "not implemented"
+#endif
+}
+
 static inline uint32_t get_le_u32 (unsigned char *src)
 {
 #if IS_LITTLE_ENDIAN

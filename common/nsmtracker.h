@@ -287,6 +287,14 @@ static inline bool int_to_bool(int value){
   return true;
 }
 
+#define R_SCALE(x__,x1__,x2__,y1__,y2__) \
+  (                                      \
+   y1__ + ( ((x__-x1__)*(y2__-y1__))     \
+            /                            \
+            (x2__-x1__)                  \
+            )                            \
+  )   
+
 static inline int64_t scale_int64(int64_t x, int64_t x1, int64_t x2, int64_t y1, int64_t y2){
   int64_t diff = x2-x1;
   
@@ -333,6 +341,7 @@ static inline double midi_to_hz(double midi){
   return 8.17579891564*(exp(.0577622650*midi));
 }
 #endif
+
 
 typedef struct{
   const char *filename;
@@ -1317,6 +1326,7 @@ struct Instruments{
 	//void (*treatSpecialCommand)(char *command,struct Tracks *track);
 	void (*CloseInstrument)(struct Instruments *instrument);
 	void (*StopPlaying)(struct Instruments *instrument);
+        void (*RT_StopPlaying)(struct Instruments *instrument); // Called from the player thread. StopPlaying is called from the main thread, and only if it apparently wasn't playing before. This function is always called right after the player has set player_state to PLAYER_STATE_STOPPED
         void (*PP_Update)(struct Instruments *instrument,struct Patch *patch, bool is_loading);
 	void *(*CopyInstrumentData)(const struct Tracks *track);		//Necesarry for undo.
 
@@ -2352,8 +2362,8 @@ struct SeqBlock{
   int64_t gfx_time2; // (see gfx_time)
 
   
-  int64_t block_duration; // Usually has value Place2Stime(end_place)-Place2Stime(start_place). Also used to set the stretch value.
-  int64_t gfx_block_duration;
+  int64_t default_duration; // Usually has value Place2Stime(end_place)-Place2Stime(start_place). Also used to set the stretch value.
+  int64_t gfx_default_duration;
 
 
   Place start_place; // usually {0,0,1} (not used yet)
@@ -2370,8 +2380,9 @@ struct SeqBlock{
   double stretch;
   double gfx_stretch; // (see gfx_time)
 
-  struct Blocks *block;
+  struct Blocks *block; // If NULL, then the seqblock holds a sample.
 
+  int64_t sample_id; // Has valid value if block==NULL.
   
   bool *track_is_disabled; // Is NULL in the seqblock used when playing block.
   
@@ -2415,7 +2426,7 @@ struct SeqTrack{
   double start_time; // Current seqtime. Can only be accessed from the player thread.
   double end_time;   // Same here.
 
-  // These two variables are here only for convenience so that we don't have to do atomic operations on start_time and end_time in the player thread.
+  // These two variables are here only for convenience (and maybe a little bit of efficency) so that we don't have to do atomic operations on start_time and end_time in the player thread.
   // They contain the same values as 'start_time" and 'end_time' above.
   DEFINE_ATOMIC(double, start_time_nonrealtime);
   DEFINE_ATOMIC(double, end_time_nonrealtime);
@@ -2428,6 +2439,8 @@ struct SeqTrack{
 
   struct SeqtrackAutomation *seqtrackautomation;
 
+  struct Patch *patch; // A "Sequencer audio file recorder/player" audio plugin.
+  
   scheduler_t *scheduler;
 };
 
@@ -2438,18 +2451,21 @@ static inline double get_seqtrack_reltempo(struct SeqTrack *seqtrack){
   
   struct SeqBlock *seqblock = seqtrack->curr_seqblock;
   if (seqblock==NULL)
-    return 0.0f;
+    return 1.0f; // <--- NOTE: Changed this value from 0.0f to 1.0f. Seems wrong that it should be 0.0f.
 
+  if (seqblock->block==NULL)
+    return 1.0;
+  
   return ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
 }
 
 
 #ifndef __cplusplus
-static inline struct SeqBlock *get_next_seqblock(const struct SeqTrack *seqtrack, int64_t start_time){
+static inline struct SeqBlock *get_next_seqblock_block(const struct SeqTrack *seqtrack, int64_t start_time){
   
   VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
 
-    if (seqblock->time > start_time)
+    if (seqblock->block!=NULL && seqblock->time > start_time)
       return seqblock;
      
   }END_VECTOR_FOR_EACH;

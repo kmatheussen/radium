@@ -115,7 +115,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
       
     } else {
       
-      next_seqblock = get_next_seqblock(seqtrack, seqblock->time);
+      next_seqblock = get_next_seqblock_block(seqtrack, seqblock->time);
       if (next_seqblock != NULL)
         next_time = next_seqblock->time;
       else
@@ -161,6 +161,8 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
   int                    playtype         = args[3].int32_num;
   const struct SeqBlock *prev_seqblock    = args[4].const_pointer;
 
+  R_ASSERT_RETURN_IF_FALSE2(seqblock->block!=NULL, DONT_RESCHEDULE);
+  
 #if DO_DEBUG
   printf("     RT_scheduled_seqblock called. time: %f\n", (double)seqtime/MIXER_get_sample_rate());
 #endif
@@ -262,6 +264,9 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
       
       // Schedule the first seqblock in each seqtrack.
       VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+
+        if (seqblock->block == NULL)
+          continue;
         
         int64_t seqblock_start_time = seqblock->time;
         int64_t seqblock_end_time   = SEQBLOCK_get_seq_endtime(seqblock);

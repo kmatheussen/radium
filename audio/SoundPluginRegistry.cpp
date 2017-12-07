@@ -626,6 +626,7 @@ void PR_add_plugin_container(SoundPluginTypeContainer *container){
 
 //extern "C" void create_sine_plugin(void);
 extern void create_bus_plugins(void);
+extern void create_seqtrack_plugin(void);
 extern void create_timeskew_plugin(void);
 extern void create_patchbay_plugin(void);
 #include "VST_plugins_proc.h"
@@ -761,6 +762,7 @@ void PR_init_plugin_types(void){
   PR_add_menu_entry(PluginMenuEntry::separator());
 
   create_bus_plugins();
+  create_seqtrack_plugin();
   create_timeskew_plugin();
   create_patchbay_plugin();
   create_midimessages_plugin();

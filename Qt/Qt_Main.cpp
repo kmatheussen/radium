@@ -72,6 +72,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #endif
 
+#define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
+
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
 #include "../common/disk_load_proc.h"
@@ -114,6 +116,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Faust_plugins_proc.h"
 #include "../audio/SampleRecorder_proc.h"
 #include "../audio/AudioMeterPeaks_proc.h"
+#include "../audio/SampleReader_proc.h"
 
 
 #ifdef __linux__
@@ -1990,6 +1993,8 @@ protected:
 
     API_call_very_often();
 
+    SEQTRACK_call_me_very_often();
+
 #if 0
     // Update graphics when playing
     {
@@ -2005,11 +2010,27 @@ bool RT_message_will_be_sent(void){
   return ATOMIC_GET(rt_message_status)==RT_MESSAGE_READY;
 }
 
+
+// TODO: Show in log window instead. At least when we can't show the message.
 void RT_message_internal(const char *fmt,...){
   va_list argp;
 
-  if (!atomic_compare_and_set_int(&ATOMIC_NAME(rt_message_status), RT_MESSAGE_READY, RT_MESSAGE_FILLING_UP))
+  if (!atomic_compare_and_set_int(&ATOMIC_NAME(rt_message_status), RT_MESSAGE_READY, RT_MESSAGE_FILLING_UP)){
+#if 0 //!defined(RELEASE)
+    static DEFINE_ATOMIC(int, curr_num_messages) = 0;
+    int num_messages = ATOMIC_ADD_RETURN_NEW(curr_num_messages, 1);
+    if (num_messages < 10){
+      char *message = (char*)calloc(1, rt_message_length + 1);
+      va_start(argp,fmt);
+      /*	vfprintf(stderr,fmt,argp); */
+      vsnprintf(message,rt_message_length-1,fmt,argp);
+      va_end(argp);
+      SYSTEM_show_message_menu(NULL, message);
+      ATOMIC_ADD_RETURN_OLD(curr_num_messages, -1);
+    }
+#endif
     return;
+  }
   
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
@@ -2808,6 +2829,10 @@ int radium_main(char *arg){
 #endif
 
   fprintf(stderr,"          ENDING 8\n");
+  
+  SAMPLEREADER_shut_down();
+  
+  fprintf(stderr,"          ENDING 9\n");
 
   //V_shutdown();
   
@@ -2816,7 +2841,7 @@ int radium_main(char *arg){
   // Give various stuff some time to exit
   OS_WaitForAShortTime(100);
 
-  fprintf(stderr,"          ENDING 9\n");
+  fprintf(stderr,"          ENDING 10\n");
   
   return 0;
 

@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextStream>
 #include <QTemporaryFile>
 #include <QDir>
+#include <QDateTime>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -37,6 +38,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 const wchar_t *DISK_get_absolute_file_path(const wchar_t *wfilename){
   QFileInfo info(STRING_get_qstring(wfilename));
   return STRING_create(info.absoluteFilePath());
+}
+
+int64_t DISK_get_creation_time(const wchar_t *wfilename){
+  QFileInfo info(STRING_get_qstring(wfilename));
+  return info.created().toMSecsSinceEpoch();
 }
 
 bool DISK_file_exists(const wchar_t *wfilename){
@@ -157,7 +163,7 @@ public:
     
     if (type==WRITE) {
       
-      R_ASSERT(is_binary==false); // not supported yet
+      //R_ASSERT(is_binary==false); // not supported yet
       
       temporary_write_file = new QTemporaryFile();
       if (temporary_write_file->open()==false)
@@ -176,8 +182,10 @@ public:
       }      
     }
 
-    stream = new QTextStream(file());
-    stream->setCodec("UTF-8");
+    if (is_binary==false){
+      stream = new QTextStream(file());
+      stream->setCodec("UTF-8");
+    }
 
     return true;
 
@@ -215,7 +223,11 @@ public:
 
     bool ret = QFile::copy(temporary_write_file->fileName(), filename);
     if (ret==false){
-      addMessage(talloc_format("Error. Unable to save file \"%s\".%s", filename.toUtf8().constData(), is_renamed==false?"":(QString(" (The old file was renamed to \"")+backup_filename+"\").").toUtf8().constData()));
+      QString message("Error. Unable to save file \"" + filename + "\"" + (is_renamed==false?"":(QString(" (The old file was renamed to \"")+backup_filename+"\").")));
+      if (THREADING_is_main_thread())
+        addMessage(message.toUtf8().constData());
+      else
+        RT_message(message.toUtf8().constData());
     }
     
     return ret;
@@ -285,8 +297,8 @@ public:
 };
 
 
-disk_t *DISK_open_for_writing(QString filename){
-  disk_t *disk = new disk_t(filename, disk_t::WRITE);
+static disk_t *open_for_writing(QString filename, bool is_binary){
+  disk_t *disk = new disk_t(filename, disk_t::WRITE, is_binary);
   
   if (disk->open()==false){
     delete disk;
@@ -296,9 +308,22 @@ disk_t *DISK_open_for_writing(QString filename){
   return disk;
 }
 
+disk_t *DISK_open_for_writing(QString filename){
+  return open_for_writing(filename, false);
+}
+
+disk_t *DISK_open_binary_for_writing(QString filename){
+  return open_for_writing(filename, true);
+}
+
 disk_t *DISK_open_for_writing(const wchar_t *wfilename){
   QString filename = STRING_get_qstring(wfilename);
   return DISK_open_for_writing(filename);
+}
+
+disk_t *DISK_open_binary_for_writing(const wchar_t *wfilename){
+  QString filename = STRING_get_qstring(wfilename);
+  return DISK_open_binary_for_writing(filename);
 }
 
 #if SUPPORT_TEMP_WRITING_FUNCTIONS
@@ -454,8 +479,8 @@ bool DISK_is_binary(disk_t *disk){
 }
 
 int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes){
-  R_ASSERT(disk->is_binary==true);
-  R_ASSERT(disk->type==disk_t::READ);
+  R_ASSERT_RETURN_IF_FALSE2(disk->is_binary==true, -1);
+  R_ASSERT_RETURN_IF_FALSE2(disk->type==disk_t::READ, -1);
 
   disk->has_set_pos_without_reading = false;
   
@@ -464,6 +489,23 @@ int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes){
   if (ret==-1)
     GFX_addMessage("Failed reading from %s. Error code: %d.\n(The error codes are listed at http://doc.qt.io/qt-5/qfiledevice.html#error)",
                    disk->filename.toUtf8().constData(),
+                   (int)disk->file()->error()
+                   );
+  
+  return ret;
+}
+
+int64_t DISK_write_binary(disk_t *disk, const void *source, int64_t num_bytes){
+  R_ASSERT_RETURN_IF_FALSE2(disk->is_binary==true, -1);
+  R_ASSERT_RETURN_IF_FALSE2(disk->type==disk_t::WRITE, -1);
+
+  int64_t ret = disk->file()->write((const char*)source, num_bytes);
+  
+  if (ret!=num_bytes)
+    GFX_addMessage("Failed writing to %s. Number of bytes written: %d, excpected %d. Error code: %d.\n(The error codes are listed at http://doc.qt.io/qt-5/qfiledevice.html#error)",
+                   disk->filename.toUtf8().constData(),
+                   (int)ret,
+                   (int)num_bytes,
                    (int)disk->file()->error()
                    );
   

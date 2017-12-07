@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/Mixer_proc.h"
 #include "../audio/SoundPlugin.h"
+#include "../audio/SampleReader_proc.h"
 
 #include "api_common_proc.h"
 
@@ -958,10 +959,14 @@ static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
     return;
   }
 
-  double reltempo = ATOMIC_DOUBLE_GET(block->reltempo);
-  
-  if (reltempo==1.0) {
+  double reltempo = 1.0;
+  if (block != NULL)
+    reltempo = ATOMIC_DOUBLE_GET(block->reltempo);
+
+  if (block==NULL || reltempo==1.0) {
+    
     *end_seqtime = get_seqtime_from_abstime(seqtrack, seqblock, end_abstime);
+    
   } else { 
     double blocklen = getBlockSTimeLength(block);      
     int64_t startseqtime = (*start_seqtime)==-1 ? seqblock->time : (*start_seqtime);
@@ -1000,24 +1005,48 @@ int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
   return SEQTRACK_insert_block(seqtrack, block, start_seqtime, end_seqtime);
 }
 
-int createGfxGfxSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
+int createGfxGfxSeqblock(int seqtracknum, dyn_t blocknum_or_sample, int64_t pos, int64_t endpos){
   VALIDATE_TIME(pos, -1);
   
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
 
-  struct Blocks *block = getBlockFromNum(blocknum);
-  if (block==NULL)
+  struct Blocks *block = NULL;
+  const wchar_t *w_filename = NULL;
+  
+  if (blocknum_or_sample.type==INT_TYPE) {
+    int blocknum = (int)blocknum_or_sample.int_number;
+    block = getBlockFromNum(blocknum);
+    if (block==NULL)
+      return -1;
+  } else if (blocknum_or_sample.type==STRING_TYPE) {
+    w_filename = w_path_to_path(blocknum_or_sample.string);
+  } else {
+    handleError("createGfxGfxSeqblock: Expected integer or string as second argument, found %s\n", DYN_type_name(blocknum_or_sample));
     return -1;
-
+  }
+  
   int64_t start_seqtime;
   int64_t end_seqtime;
 
   get_seqblock_start_and_end_seqtime(seqtrack, NULL, block, pos, endpos, &start_seqtime, &end_seqtime);
-  
-  return SEQTRACK_insert_gfx_gfx_block(seqtrack, block, start_seqtime, end_seqtime);
+
+  return SEQTRACK_insert_gfx_gfx_block(seqtrack, seqtracknum, block, w_filename, start_seqtime, end_seqtime);
 }
+
+int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, int64_t endpos){
+  VALIDATE_TIME(pos, -1);
+  
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  ADD_UNDO(Sequencer());
+
+  return SEQTRACK_insert_sample(seqtrack, seqtracknum, w_path_to_path(w_filename), pos, endpos);
+}
+
 
 // seqblocks
 
@@ -1354,8 +1383,38 @@ int getSeqblockBlocknum(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return 0;
 
+  if (seqblock->block==NULL){
+    handleError("getSeqblockBlocknum: Seqblock %d in Seqtrack %d holds a sample and not a block", seqblocknum, seqtracknum);
+    return -1;
+  }
+
   return seqblock->block->l.num;
 }
+
+const_char* getSeqblockSample(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return "";
+  if (seqblock->block!=NULL){
+    handleError("getSeqblockSampleId: Seqblock %d in seqtrack %d holds a block and not a sample", seqblocknum, seqtracknum);
+    return "";
+  }
+
+  const wchar_t *samplename = get_seqblock_sample_name(seqtrack, seqblock, true);
+  return path_to_w_path(samplename); // <- to base64 (s7 doesn't support wide char).
+}
+
+int64_t getSampleLength(const_char* w_filename){
+  const wchar_t *path = w_path_to_path(w_filename);
+  int64_t length = SAMPLEREADER_get_sample_duration(path);
+  if (length < 0)
+    handleError("Sample \"%s\" not found", STRING_get_chars(path));
+
+  return length;
+}
+
+
 
 /*
 void selectSeqblock(int seqblocknum, int seqtracknum){
@@ -1414,6 +1473,11 @@ bool isSeqblockTrackEnabled(int tracknum, int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return false;
 
+  if (seqblock->block==NULL){
+    handleError("getSeqblockBlocknum: Seqblock %d in Seqtrack %d is not a block seqblock", seqblocknum, seqtracknum);
+    return false;
+  }
+
   return !seqblock->track_is_disabled[tracknum];
 }
 
@@ -1429,12 +1493,33 @@ void setSeqblockTrackEnabled(bool is_enabled, int tracknum, int seqblocknum, int
   if (seqblock==NULL)
     return;
 
+  if (seqblock->block==NULL){
+    handleError("getSeqblockBlocknum: Seqblock %d in Seqtrack %d is not a block seqblock", seqblocknum, seqtracknum);
+    return;
+  }
+
   if (seqblock->track_is_disabled[tracknum] == is_enabled){
     PC_Pause();{
       seqblock->track_is_disabled[tracknum] = !is_enabled;
     }PC_StopPause(NULL);
     SEQUENCER_update();
   }
+}
+
+bool seqblockHoldsBlock(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return false;
+  return seqblock->block != NULL;
+}
+
+bool seqblockHoldsSample(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return false;
+  return seqblock->block==NULL;
 }
 
 void cutSelectedSeqblocks(void){

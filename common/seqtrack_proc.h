@@ -7,6 +7,10 @@
 #include <math.h>
 
 
+#include "../audio/Seqtrack_plugin_proc.h"
+
+
+
 #define SEQNAV_SIZE_HANDLE_WIDTH 50
 #define SEQUENCER_EXTRA_SONG_LENGTH 30.0 // sequencer gui always shows 30 seconds more than the song length
 
@@ -67,7 +71,9 @@ static inline int64_t blocktime_to_seqtime(const struct SeqBlock *seqblock, cons
 extern LANGSPEC int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int64_t seqtime); // Result is rounded down to nearest integer. 'seqblock' may be NULL.
 extern LANGSPEC int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime); // Result is rounded down to nearest integer.
 
-extern LANGSPEC void SONG_call_me_before_starting_to_play_song_MIDDLE(int64_t abstime);
+extern LANGSPEC void SEQTRACK_call_me_very_often(void);
+
+extern LANGSPEC void SONG_call_me_before_starting_to_play_song(int64_t abstime);
 
 // 'seqblock' must be nulled out before calling.
 extern LANGSPEC void SEQBLOCK_init(struct SeqBlock *seqblock, struct Blocks *block, bool *track_is_disabled, int64_t time);
@@ -176,7 +182,7 @@ extern LANGSPEC float SEQBLOCK_get_right_stretch_y2(int seqblocknum, int seqtrac
 extern LANGSPEC void SEQTRACK_update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_update_all_seqblock_gfx_start_and_end_times(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQUENCER_update_all_seqblock_positions(void);
-extern LANGSPEC void SEQUENCER_update(void);
+extern LANGSPEC void SEQUENCER_update(void); // Can be called from a different thread than the main thread. That thread might have to be QThread though.
 
   
 // seqtrack
@@ -191,6 +197,8 @@ extern LANGSPEC bool SEQTRACK_set_seqblock_start_and_stop(struct SeqTrack *seqtr
 extern LANGSPEC void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 extern LANGSPEC void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 
+extern LANGSPEC void RT_SEQTRACK_called_per_block(const struct SeqTrack *seqtrack);
+
 extern LANGSPEC void SEQUENCER_timing_has_changed(void);
 
 //extern LANGSPEC void SEQTRACK_move_gfx_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_abs_time);
@@ -198,7 +206,8 @@ extern LANGSPEC void SEQUENCER_timing_has_changed(void);
 extern LANGSPEC void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t length);
 extern LANGSPEC int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime, int64_t end_seqtime);
 extern LANGSPEC int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime, int64_t end_seqtime);
-extern LANGSPEC int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime, int64_t end_seqtime);
+extern LANGSPEC int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int seqtracknum, struct Blocks *block, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime);
+extern LANGSPEC int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime);
 extern LANGSPEC double SEQTRACK_get_length(struct SeqTrack *seqtrack);
 extern LANGSPEC double SEQTRACK_get_gfx_length(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQTRACK_init(struct SeqTrack *seqtrack, const hash_t *automation_state);
@@ -228,6 +237,47 @@ extern LANGSPEC void SONG_init(void);
 // automation state
 extern LANGSPEC hash_t *SEQUENCER_get_automations_state(void);
 extern LANGSPEC void SEQUENCER_create_automations_from_state(hash_t *state);
+
+static inline const wchar_t *get_seqblock_sample_name(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool full_path){
+  R_ASSERT_RETURN_IF_FALSE2(seqblock->block==NULL, L"");
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, L"");
+
+  const struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;
+
+  if (plugin==NULL)
+    return L"";
+  //R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, L"");
+    
+  return SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, full_path);
+}
+
+
+#if defined(USE_QT4) && defined(QSTRING_H)
+
+struct SoundPlugin;
+
+static inline QString get_seqblock_name(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, QString separator = ": ", bool right_justify = false){
+
+  if (seqblock->block==NULL) {
+
+    return STRING_get_qstring(get_seqblock_sample_name(seqtrack, seqblock, false));
+    
+  } else {
+
+    const struct Blocks *block = seqblock->block;
+    
+    if (right_justify){
+      int justify_blocklist = log10(root->song->num_blocks) + 1;
+      return QString::number(block->l.num).rightJustified(justify_blocklist, ' ') + separator + QString(block->name);
+    } else {
+      return QString::number(block->l.num) + separator + QString(block->name);
+    }
+  }
+
+  return "";
+}
+
+#endif
 
 #endif
 

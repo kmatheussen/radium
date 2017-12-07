@@ -100,6 +100,8 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
 
 
 void RT_schedule_reallines_in_block(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const Place place){
+  R_ASSERT_RETURN_IF_FALSE(seqblock->block != NULL);
+
   struct WBlocks *wblock=(struct WBlocks *)ListFindElement1(&root->song->tracker_windows->wblocks->l,seqblock->block->l.num);
 
   int realline=FindRealLineFor(wblock,0,&place);

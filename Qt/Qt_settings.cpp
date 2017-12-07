@@ -135,6 +135,7 @@ const wchar_t *STRING_get_sha1(const wchar_t *string){
 
 // TODO: Rename to STRING_create_chars. It doesn't return a constant string which is available somewhere.
 char* STRING_get_chars(const wchar_t *string){
+  R_ASSERT(THREADING_is_main_thread());
   QString s = STRING_get_qstring(string);
   return talloc_strdup(s.toLocal8Bit().constData());
 }

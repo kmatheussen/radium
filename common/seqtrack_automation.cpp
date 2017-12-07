@@ -736,11 +736,9 @@ void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqT
 }
   
 
-// Called from scheduler.c
-void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack){
-
-  if (!is_playing() || pc->playtype!=PLAYSONG)
-    return;
+// Called from seqtrack.cpp
+void RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
+  R_ASSERT_NON_RELEASE(is_playing() && pc->playtype==PLAYSONG);
 
   int64_t seqtime = seqtrack->end_time; // use end_time instead of start_time to ensure automation is sent out before note start. (causes slightly inaccurate automation, but it probably doesn't matter)
     
@@ -762,7 +760,7 @@ void RT_SEQTRACK_AUTOMATION_called_per_block(struct SeqTrack *seqtrack){
       double latency = RT_SP_get_input_latency(plugin->sp);
       if (latency!=0){
         struct SeqBlock *seqblock = seqtrack->curr_seqblock;
-        if (seqblock != NULL){
+        if (seqblock != NULL && seqblock->block!=NULL){
           latency *= ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
           latency = ceil(latency); // Ensure automation is sent out before note start. (probably not necessary)
         }

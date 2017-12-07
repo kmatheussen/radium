@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC bool OpenInstruments(void);
 extern LANGSPEC void CloseAllInstruments(void);
 extern LANGSPEC void StopAllInstruments(void);
+extern LANGSPEC void RT_StopAllInstruments(void);
 extern LANGSPEC void InitAllInstrumentsWhenPlayingSong(int64_t abstime);
 
 extern LANGSPEC struct Instruments *get_all_instruments(void);

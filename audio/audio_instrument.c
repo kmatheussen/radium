@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPlugin_proc.h"
 #include "SoundPluginRegistry_proc.h"
 #include "SoundProducer_proc.h"
+#include "Seqtrack_plugin_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../mixergui/QM_chip.h"
@@ -954,12 +955,24 @@ static void AUDIO_CloseInstrument(struct Instruments *instrument){}
 static void AUDIO_StopPlaying(struct Instruments *instrument){
   R_ASSERT(PLAYER_current_thread_has_lock());
   
-  VECTOR_FOR_EACH(struct Patch *patch, &get_audio_instrument()->patches){
+  VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
     SoundPlugin *plugin = patch->patchdata;
     if (plugin!=NULL && plugin->type->player_is_stopped != NULL){
       PLAYER_maybe_pause_lock_a_little_bit(iterator666);
       plugin->type->player_is_stopped(plugin);
     }
+  }END_VECTOR_FOR_EACH;
+}
+
+static void AUDIO_RT_StopPlaying(struct Instruments *instrument){
+  R_ASSERT(PLAYER_current_thread_has_lock());
+  
+  VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
+    
+    SoundPlugin *plugin = patch->patchdata;
+    if (plugin!=NULL && plugin->type->RT_player_is_stopped != NULL)
+      plugin->type->RT_player_is_stopped(plugin);
+    
   }END_VECTOR_FOR_EACH;
 }
 
@@ -994,7 +1007,7 @@ static void AUDIO_PlaySongHook(struct Instruments *instrument, int64_t abstime){
   }END_VECTOR_FOR_EACH;
 
   
-  SONG_call_me_before_starting_to_play_song_MIDDLE(abstime); // calls PLUGIN_call_me_before_starting_to_play_song_MIDDLE
+  SONG_call_me_before_starting_to_play_song(abstime); // calls PLUGIN_call_me_before_starting_to_play_song_MIDDLE (and other things).
 
   
   VECTOR_FOR_EACH(struct Patch *patch,&instrument->patches){
@@ -1171,7 +1184,13 @@ bool AUDIO_is_permanent_patch(struct Patch *patch){
     return true;
   else if (!strcmp(plugin->type->type_name,"Bus"))
     return true;
-  else
+  else if (!strcmp(plugin->type->type_name,SEQTRACKPLUGIN_NAME)){
+    printf("NUM samples: %d\n", SEQTRACKPLUGIN_get_num_samples(plugin));
+    if (SEQTRACKPLUGIN_get_num_samples(plugin) > 0)
+      return true;
+    else
+      return false;
+  }else
     return false;
 }
 
@@ -1222,6 +1241,7 @@ int AUDIO_initInstrumentPlugIn(struct Instruments *instrument){
   instrument->CloseInstrument     = AUDIO_CloseInstrument;
   //instrument->InitTrack           = AUDIO_InitTrack;
   instrument->StopPlaying         = AUDIO_StopPlaying;
+  instrument->RT_StopPlaying      = AUDIO_RT_StopPlaying;
 
   instrument->CopyInstrumentData = AUDIO_CopyInstrumentData;
   instrument->PlaySongHook       = AUDIO_PlaySongHook;

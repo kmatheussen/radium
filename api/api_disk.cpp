@@ -54,15 +54,6 @@ static int64_t g_curr_disknum = 0;
 static QHash<int64_t,disk_t*> g_disks;
 
 
-static QString w_to_qstring(const_char* w_path){
-  return STRING_get_qstring(STRING_fromBase64(STRING_create(w_path)));
-}
-
-static const_char* qstring_to_w(const QString path){
-  return talloc_strdup(path.toUtf8().toBase64().constData());
-}
-
-
 const_char* getPath(const_char *path_string){
   return toBase64(path_string);
 }

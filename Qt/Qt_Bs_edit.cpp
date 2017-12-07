@@ -843,7 +843,7 @@ public slots:
         seqtime = seqblock->time;
       }      
 
-      if (!is_playing() || pc->playtype==PLAYBLOCK) {
+      if ((!is_playing() || pc->playtype==PLAYBLOCK) && seqblock->block!=NULL) {
         
         struct Tracker_Windows *window=getWindowFromNum(-1);
         struct WBlocks *wblock=getWBlockFromNum(-1,seqblock->block->l.num);
@@ -934,7 +934,7 @@ void BS_UpdatePlayList(void){
   //SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
 
   int justify_playlist = log10(seqtrack->seqblocks.num_elements) + 1;
-  int justify_blocklist = log10(root->song->num_blocks) + 1;
+  //int justify_blocklist = log10(root->song->num_blocks) + 1;
   
   QVector<PlaylistElement> elements = get_playlist_elements();
 
@@ -943,10 +943,8 @@ void BS_UpdatePlayList(void){
     if (pe.is_pause())
       bs->playlist.insertItem(" pause: "+radium::get_time_string(pe.get_pause()));
     else {
-      struct Blocks *block = pe.seqblock->block;
-      bs->playlist.insertItem(QString::number(pos).rightJustified(justify_playlist, ' ')
-                              +": "+QString::number(block->l.num).rightJustified(justify_blocklist, ' ')
-                              +"/"+QString(block->name));
+      QString seqblockname = get_seqblock_name(seqtrack, pe.seqblock, "/", true);
+      bs->playlist.insertItem(QString::number(pos).rightJustified(justify_playlist, ' ') + ": " + seqblockname);
       pos++;
     }
   }
@@ -1019,10 +1017,12 @@ struct SeqBlock *BS_GetSeqBlockFromPos(int pos){
   return bs->get_seqblock_from_pos(pos);
 }
 
+/*
 struct Blocks *BS_GetBlockFromPos(int pos){
   ScopedVisitors v;
   return bs->get_block_from_pos(pos);
 }
+*/
 
 int BS_GetCurrPlaylistPos(void){
   ScopedVisitors v;

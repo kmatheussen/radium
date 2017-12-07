@@ -6,6 +6,7 @@
 
 // Some helper functions. The file API in Qt is quite often ridiculous.
 extern LANGSPEC const wchar_t *DISK_get_absolute_file_path(const wchar_t *wfilename);
+extern LANGSPEC int64_t DISK_get_creation_time(const wchar_t *wfilename);
 extern LANGSPEC bool DISK_file_exists(const wchar_t *filename);
 extern LANGSPEC bool DISK_dir_exists(const wchar_t *dirname);
 extern LANGSPEC bool DISK_create_dir(const wchar_t *wdirname);
@@ -18,6 +19,7 @@ extern LANGSPEC const wchar_t *DISK_create_non_existant_filename(const wchar_t *
 extern LANGSPEC disk_t *DISK_open_for_writing(const wchar_t *filename);
 extern LANGSPEC disk_t *DISK_open_for_reading(const wchar_t *filename);
 extern LANGSPEC disk_t *DISK_open_binary_for_reading(const wchar_t *filename);
+extern LANGSPEC disk_t *DISK_open_binary_for_writing(const wchar_t *wfilename);
 
 extern LANGSPEC disk_t *DISK_open_temp_for_writing(void);
 extern LANGSPEC wchar_t *DISK_close_temp_for_writing(disk_t *disk);
@@ -47,6 +49,8 @@ extern LANGSPEC int64_t DISK_pos(disk_t *disk); // File must have been opened wi
 extern LANGSPEC bool DISK_is_binary(disk_t *disk);
 extern LANGSPEC int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes); // return actual number of bytes read. File must have been opened with 'DISK_open_binary_for_reading'.
 
+// WRITE BINARY
+extern LANGSPEC int64_t DISK_write_binary(disk_t *disk, const void *source, int64_t num_bytes);
 
 // CLOSE
 extern LANGSPEC bool DISK_close_and_delete(disk_t *disk);
