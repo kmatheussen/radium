@@ -348,7 +348,7 @@ public:
   //
   // Can not be mixed with parallel use of 'ensure_there_is_room_for_more_without_having_to_allocate_memory' or 'push_back_in_realtime_safe_manner'.
   //
-  void reserve_in_realtime_safe_manner(int new_num_elements_max) {
+  void reserve_in_realtime_safe_manner(int new_num_elements_max, bool do_lock = true) {
     R_ASSERT(PLAYER_current_thread_has_lock()==false);
 
     R_ASSERT(next_elements == NULL);
@@ -359,7 +359,7 @@ public:
         return;
     }
     
-    reserve_internal(new_num_elements_max, true);
+    reserve_internal(new_num_elements_max, do_lock);
   }
   
   // NOT RT safe

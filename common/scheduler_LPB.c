@@ -99,6 +99,11 @@ void RT_LPB_set_beat_position(struct SeqTrack *seqtrack, int audioblocksize){
   if (seqtrack->curr_seqblock==NULL)
     return;
   
+  if (seqtrack->curr_seqblock->block==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+  
   bool curr_num_beats_is_valid = true; // Might become false when switching block. If false, we must not set new curr_bpm value.
 
   LPB_Iterator *iterator = &seqtrack->lpb_iterator;

@@ -742,8 +742,8 @@ public:
         
         double x1 = rect.x();
         double x2 = rect.x() + rect.width();
-        int64_t time1 = 0;
-        int64_t time2 = num_frames;
+        int64_t time1 = seqblock->interior_start;
+        int64_t time2 = seqblock->interior_end;
         
         if (x1 < t_x1) { // if seqblock starts before visible area
           x1 = t_x1;

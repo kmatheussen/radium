@@ -271,9 +271,9 @@ extern LANGSPEC void handleError_internal(const char *fmt,...) FORMAT_ATTRIBUTE(
 #define handleError(...) ((void)donothing(0 && printf(__VA_ARGS__)), handleError_internal(__VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
 
 
-#include "validatemem_proc.h"
-
 extern LANGSPEC void msleep(int ms);
+
+#include "validatemem_proc.h"
 
 static inline int bool_to_int(bool val){
   return val==true ? 1 : 0;
@@ -2366,12 +2366,15 @@ struct SeqBlock{
   int64_t gfx_default_duration;
 
 
-  Place start_place; // usually {0,0,1} (not used yet)
-  Place gfx_start_place; // (not used yet)
+  Place start_place; // usually {0,0,1} (not used yet). Only used if block!=NULL
+  Place gfx_start_place; // (not used yet). Only used if block!=NULL
 
   Place end_place;   // usually {num_lines,0,1} (not used yet)
   Place gfx_end_place; // (not used yet)
 
+  bool is_looping;
+  int64_t interior_start; // seqtime version of start_place
+  int64_t interior_end;   // seqtime version of end_place
   
   // stretch = (end_time-time) / getBlockSTimeLength(seqblock->block)
   // 1.0 = no stretch. 0.5 = double tempo. 2.0 = half tempo.
@@ -2422,6 +2425,7 @@ struct SeqTrack{
   vector_t gfx_gfx_seqblocks; // Just for graphics. Player does not have to be stopped when modifying this variable
 
   struct SeqBlock *curr_seqblock; // curr_seqblock->block and curr_seqblock->time contains the same values as pc->block and pc->seqtime did before introducing seqtrack/seqblock.
+  struct SeqBlock *curr_sample_seqblock; // Currently only used for displaying audiofile name in the editor.
   
   double start_time; // Current seqtime. Can only be accessed from the player thread.
   double end_time;   // Same here.
@@ -2579,12 +2583,26 @@ static inline struct SeqTrack *RT_get_aux_seqtrack(void){
   return root->song->block_seqtrack;
 }
 
-static inline struct SeqBlock *RT_get_curr_seqblock(void){
-  struct SeqTrack *curr_seqtrack = RT_get_curr_seqtrack();
+static inline struct SeqBlock *RT_get_curr_seqblock2(struct SeqTrack *curr_seqtrack){
   if (curr_seqtrack==NULL)
     return NULL;
   else
     return (struct SeqBlock*)atomic_pointer_read_relaxed((void**)&curr_seqtrack->curr_seqblock);
+}
+
+static inline struct SeqBlock *RT_get_curr_seqblock(void){
+  return RT_get_curr_seqblock2(RT_get_curr_seqtrack());
+}
+
+static inline struct SeqBlock *RT_get_curr_sample_seqblock2(struct SeqTrack *curr_seqtrack){
+  if (curr_seqtrack==NULL)
+    return NULL;
+  else
+    return (struct SeqBlock*)atomic_pointer_read_relaxed((void**)&curr_seqtrack->curr_sample_seqblock);
+}
+
+static inline struct SeqBlock *RT_get_curr_sample_seqblock(void){
+  return RT_get_curr_seqblock2(RT_get_curr_seqtrack());
 }
 
 static inline struct Blocks *RT_get_curr_visible_block(void){

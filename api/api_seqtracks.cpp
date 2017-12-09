@@ -1044,7 +1044,10 @@ int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, i
 
   ADD_UNDO(Sequencer());
 
-  return SEQTRACK_insert_sample(seqtrack, seqtracknum, w_path_to_path(w_filename), pos, endpos);
+  {
+    radium::ScopedIgnoreUndo ignore_undo;
+    return SEQTRACK_insert_sample(seqtrack, seqtracknum, w_path_to_path(w_filename), pos, endpos);
+  }
 }
 
 
@@ -1351,6 +1354,55 @@ void moveSeqblockGfxGfx(int seqblocknum, int64_t abstime, int seqtracknum, int n
   SEQTRACK_move_gfx_gfx_seqblock(seqtrack, seqblock, abstime);
 }
 */
+
+bool setSeqblockInteriorStart(int64_t interior_start, int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return false;
+
+  int64_t interior_end = seqblock->interior_end;
+  if (interior_start < 0 || interior_start >= interior_end){
+    handleError("setSeqblockInteriorStart: Illegal interior_start value: %d. Must be between 0 (inclusive) and %d.", (int)interior_start, (int)interior_end);
+    return false;
+  }
+  
+  return SEQBLOCK_set_interior_start(seqtrack, seqblock, interior_start);  
+}
+
+bool setSeqblockInteriorEnd(int64_t interior_end, int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return false;
+
+  int64_t interior_start = seqblock->interior_start;
+  int64_t default_duration = seqblock->default_duration;
+  if (interior_end <= interior_start || interior_end > default_duration){
+    handleError("setSeqblockInteriorEnd: Illegal interior_start value: %d. Must be between %d and %d (inclusive).", (int)interior_end, (int)interior_start, (int)default_duration);
+    return false;
+  }
+  
+  return SEQBLOCK_set_interior_end(seqtrack, seqblock, interior_end);
+}
+
+int64_t getSeqblockInteriorStart(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 0;
+
+  return seqblock->interior_start;
+}
+
+int64_t getSeqblockInteriorEnd(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 0;
+
+  return seqblock->interior_start;
+}
 
 void deleteSeqblock(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;

@@ -50,6 +50,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/LPB_proc.h"
 #include "../common/tempos_proc.h"
 #include "../common/notestext_proc.h"
+#include "../common/seqtrack_proc.h"
+
 #include "../Qt/Qt_instruments_proc.h"
 
 #include "GfxElements.h"
@@ -2809,12 +2811,33 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
     }
 
     {
-      const char *message = window->message;
-      if (message==NULL && block_is_visible==false)
-        message = "Current sequencer track is pausing.";
+      static const char *is_pausing_message = "Current sequencer track is pausing.";
+      const char *old_message = window->message;
+      const char *new_message = window->message;
+      
+      if ((old_message==NULL || old_message==is_pausing_message) && block_is_visible==false) {
 
-      if (message != NULL)
-        create_message(window, message);
+        SeqTrack *curr_seqtrack = RT_get_curr_seqtrack();
+        
+#if !defined(RELEASE)
+        {
+          const SeqBlock *curr_seqblock = RT_get_curr_seqblock2(curr_seqtrack);
+          if (curr_seqblock!=NULL)
+            if (curr_seqblock->block==NULL)
+              abort();
+        }
+#endif
+
+        const SeqBlock *curr_sample_seqblock = RT_get_curr_sample_seqblock2(curr_seqtrack);
+
+        if (curr_sample_seqblock != NULL)
+          new_message = talloc_format("Playing %s.", STRING_get_chars(get_seqblock_sample_name(curr_seqtrack, curr_sample_seqblock, false)));
+        else
+          new_message = is_pausing_message;
+      }
+      
+      if (new_message != NULL)
+        create_message(window, new_message);
     }
     
     create_lacking_keyboard_focus_greyed_out(window);

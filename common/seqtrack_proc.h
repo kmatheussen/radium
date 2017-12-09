@@ -197,7 +197,10 @@ extern LANGSPEC bool SEQTRACK_set_seqblock_start_and_stop(struct SeqTrack *seqtr
 extern LANGSPEC void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 extern LANGSPEC void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 
-extern LANGSPEC void RT_SEQTRACK_called_per_block(const struct SeqTrack *seqtrack);
+extern LANGSPEC bool SEQBLOCK_set_interior_start(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_start); // returns true if something was changed
+extern LANGSPEC bool SEQBLOCK_set_interior_end(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_end); // returns true if something was changed
+
+extern LANGSPEC void RT_SEQTRACK_called_per_block(struct SeqTrack *seqtrack); // Sets seqtrack->curr_sample_seqblock when starting/stopping playing audio file.
 
 extern LANGSPEC void SEQUENCER_timing_has_changed(void);
 

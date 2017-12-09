@@ -6,7 +6,10 @@
 
 struct SoundPlugin;
 
-extern LANGSPEC void RT_SEQTRACKPLUGIN_called_per_block(struct SoundPlugin *plugin, const struct SeqTrack *seqtrack);
+extern LANGSPEC void SEQTRACKPLUGIN_set_interior_start(struct SoundPlugin *plugin, int64_t id, int64_t interior_start);
+extern LANGSPEC void SEQTRACKPLUGIN_set_interior_end(struct SoundPlugin *plugin, int64_t id, int64_t interior_end);
+
+extern LANGSPEC void RT_SEQTRACKPLUGIN_called_per_block(struct SoundPlugin *plugin, struct SeqTrack *seqtrack);  // Sets seqtrack->curr_sample_seqblock when starting/stopping playing audio file.
 
 extern LANGSPEC void SEQTRACKPLUGIN_called_very_often(struct SoundPlugin *plugin);
 
@@ -18,7 +21,7 @@ extern LANGSPEC void SEQTRACKPLUGIN_prepare_to_play(struct SoundPlugin *plugin, 
 #endif
 
 extern LANGSPEC int64_t SEQTRACKPLUGIN_add_sample(struct SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock);
-extern LANGSPEC void SEQTRACKPLUGIN_remove_sample(struct SoundPlugin *plugin, int64_t id);
+extern LANGSPEC void SEQTRACKPLUGIN_request_remove_sample(struct SoundPlugin *plugin, int64_t id);
 extern LANGSPEC int SEQTRACKPLUGIN_get_num_samples(struct SoundPlugin *plugin);
 
 extern LANGSPEC int64_t SEQTRACKPLUGIN_get_num_channels(const struct SoundPlugin *plugin, int64_t id);

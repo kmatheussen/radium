@@ -61,6 +61,7 @@ extern "C" {
 
 #if !defined(VALIDATE_MEM)
 
+
 static inline void* my_calloc(size_t size1,size_t size2){
   size_t size = size1*size2;
 
@@ -68,7 +69,11 @@ static inline void* my_calloc(size_t size1,size_t size2){
   //
 
   char*  ret  = (char*)malloc(size);
-
+  if (ret==NULL){
+    R_ASSERT(false);
+    msleep(10000);
+    return NULL;
+  }
   
   // 2. Ensure the memory is physically available.
   //

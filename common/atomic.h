@@ -239,11 +239,11 @@ static inline void *atomic_pointer_read_relaxed(void **p){
   return __atomic_load_n(p, __ATOMIC_RELAXED);
 }
 
-static inline void atomic_pointer_write(void **p, void *v){
+static inline void atomic_pointer_write(void **p, const void *v){
   __atomic_store_n(p, v, __ATOMIC_SEQ_CST);
 }
 
-static inline void atomic_pointer_write_relaxed(void **p, void *v){
+static inline void atomic_pointer_write_relaxed(void **p, const void *v){
   __atomic_store_n(p, v, __ATOMIC_RELAXED);
 }
 

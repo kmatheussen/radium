@@ -332,6 +332,8 @@ static void default_duration_changed(struct SeqBlock *seqblock, int64_t default_
   
   seqblock->default_duration = default_duration;
   seqblock->gfx_default_duration = default_duration;
+
+  seqblock->interior_end = default_duration;
 }
 
 void SEQBLOCK_init(struct SeqBlock *seqblock, struct Blocks *block, bool *track_is_disabled, int64_t time){
@@ -941,7 +943,7 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
 
   if (seqblock->block==NULL){
     SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-    SEQTRACKPLUGIN_remove_sample(plugin, seqblock->sample_id);
+    SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id);
   }
 
   {
@@ -1132,8 +1134,80 @@ void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqb
   SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, get_seqtime_from_abstime(seqtrack, seqblock, new_abs_time), -1, true);
 }
 
+bool SEQBLOCK_set_interior_start(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_start){
+  R_ASSERT_RETURN_IF_FALSE2(new_interior_start >= 0, false);
+  R_ASSERT_RETURN_IF_FALSE2(new_interior_start < seqblock->interior_end, false);
+
+  int64_t old_interior_start = seqblock->interior_start;
+  
+  // TODO: If decreasing interior_start, check that we don't overlap previous seqblock. (OR: Just allow overlapping. It's not a big problem fixing the note scheduler. TODO: The note scheduler should have hanging state variables to stop notes instead of seeking forward to find out when note should be stopped.)
+
+  int64_t old_start_time_wo_interior = seqblock->time - old_interior_start;
+    
+  int64_t new_start_time = old_start_time_wo_interior + new_interior_start;
+  
+  if (new_start_time < 0){    
+    new_interior_start = -old_start_time_wo_interior;
+    new_start_time = 0;
+  }
+
+  if (new_interior_start==old_interior_start)
+    return false;
+
+    
+  {
+    radium::PlayerPause pause; // TODO: Incorporate these things into SEQTRACK_set_seqblock_start_and_stop so we won't pause this much.
+
+    if (seqblock->block==NULL){
+      R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, false);
+      R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch->patchdata!=NULL, false);
+      SoundPlugin *plugin = (SoundPlugin*)seqtrack->patch->patchdata;
+      SEQTRACKPLUGIN_set_interior_start(plugin, seqblock->sample_id, new_interior_start);
+    }
+
+    seqblock->interior_start = new_interior_start;
+
+    SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, new_start_time, -1, false);
+  }
+  
+  return true;
+}
+
+bool SEQBLOCK_set_interior_end(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_end){
+  R_ASSERT_RETURN_IF_FALSE2(new_interior_end > seqblock->interior_start, false);
+  R_ASSERT_RETURN_IF_FALSE2(new_interior_end <= seqblock->default_duration, false);
+  
+  int64_t old_interior_end = seqblock->interior_end;
+
+  int64_t old_start_time_wo_interior = seqblock->time - seqblock->interior_start;
+  int64_t old_end_time_wo_interior = old_start_time_wo_interior + seqblock->default_duration;
+  
+  int64_t new_end_time = old_end_time_wo_interior + new_interior_end;
+  
+  if (old_interior_end==new_interior_end)
+    return false;
+
+  {
+    radium::PlayerPause pause; // TODO: Incorporate these things into SEQTRACK_set_seqblock_start_and_stop so we won't pause this much.
+
+    if (seqblock->block==NULL){
+      R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, false);
+      R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch->patchdata!=NULL, false);
+      SoundPlugin *plugin = (SoundPlugin*)seqtrack->patch->patchdata;
+      SEQTRACKPLUGIN_set_interior_end(plugin, seqblock->sample_id, new_interior_end);
+    }
+
+    seqblock->interior_end = new_interior_end;
+
+    SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, -1, new_end_time, false);
+  }
+  
+  return true;
+}
+
+    
 // Called from scheduler.c
-void RT_SEQTRACK_called_per_block(const struct SeqTrack *seqtrack){
+void RT_SEQTRACK_called_per_block(struct SeqTrack *seqtrack){
 
   if (is_really_playing_song())
     RT_SEQTRACK_AUTOMATION_called_per_block(seqtrack);
@@ -1543,6 +1617,25 @@ void SEQUENCER_create_from_state(hash_t *state){
 
   {
     SEQUENCER_ScopedGfxDisable gfx_disable;
+
+    // Remove all sequencer samples from the seqtrack plugin.
+    {
+      ALL_SEQTRACKS_FOR_EACH(){
+        VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+          if (seqblock->block==NULL){
+            if (seqtrack->patch == NULL)
+              R_ASSERT(false);
+            else {
+              SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+              if (plugin==NULL){
+                R_ASSERT_NON_RELEASE(false); // this might happen legally. Not sure.
+              }else
+                SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id);
+            }
+          }
+        }END_VECTOR_FOR_EACH;
+      }END_ALL_SEQTRACKS_FOR_EACH;
+    }
     
     //printf("        CREATING FROM STATE\n");
 

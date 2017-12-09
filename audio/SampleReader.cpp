@@ -614,6 +614,12 @@ public:
   }
 
   bool RT_request_finished_for_now(SampleProviderClient *client, radium::FutureSignalTrackingSemaphore *gotit){
+    if (client->_sndfile == NULL)
+      return true;
+
+    if(gotit != NULL)
+      gotit->is_going_to_be_signalled_another_time_in_the_future();
+    
     Command command = {SampleProviderThread::Command::Type::FINISHED_FOR_NOW, client, -1, -1, gotit};
     return _queue.tryPut(command);
   }
@@ -664,10 +670,9 @@ public:
 
     radium::FutureSignalTrackingSemaphore gotit;
     
-    while(RT_release_all_cached_data2(&gotit)==false)
-      msleep(10);
-
-    gotit.wait();
+    RT_release_all_cached_data2(&gotit, true);
+    
+    gotit.wait_for_all_future_signals();
     
     _provider->dec_users();
 
@@ -718,23 +723,36 @@ private:
 
   }
 
-  bool RT_release_all_cached_data2(radium::FutureSignalTrackingSemaphore *gotit){
-    if(g_spt.RT_request_release_slices(this, _requested_slice_start, _requested_slice_end)==false){
-      RT_message("Queue full 3");
-      return false; // Queue full. Not a problem though. Unneded cached data will be automatically released later.
+  bool RT_release_all_cached_data2(radium::FutureSignalTrackingSemaphore *gotit, bool sleep_if_queue_is_full){
+    while(g_spt.RT_request_release_slices(this, _requested_slice_start, _requested_slice_end)==false){
+      if (sleep_if_queue_is_full){
+        wait_for_queue();
+      }else{
+        RT_message("Queue full 3");
+        return false;
+      }
     }
-    
-    printf("   << RT_RELEASE: %d -> %d ===> %d %d. %p\n", (int)_requested_slice_start, (int)_requested_slice_end, (int)_requested_slice_start, (int)_requested_slice_start, this);
-    _requested_slice_end = _requested_slice_start;
 
-    return g_spt.RT_request_finished_for_now(this, gotit);
+    //printf("   << RT_RELEASE: %d -> %d ===> %d %d. %p\n", (int)_requested_slice_start, (int)_requested_slice_end, (int)_requested_slice_start, (int)_requested_slice_start, this);
+    _requested_slice_end = _requested_slice_start;
+    
+    while(g_spt.RT_request_finished_for_now(this, gotit)==false){
+      if (sleep_if_queue_is_full)
+        wait_for_queue();
+      else{
+        RT_message("Queue full 4");
+        return false;
+      }
+    }
+
+    return true;
   }
   
 public:
 
   bool RT_release_all_cached_data(void){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
-    return RT_release_all_cached_data2(NULL);
+    return RT_release_all_cached_data2(NULL, false);
   }
     
 
@@ -1043,8 +1061,8 @@ void SAMPLEREADER_prepare_to_play(SampleReader *reader, int64_t pos, int64_t how
   reader->prepare_to_play(pos, how_much_to_prepare, gotit);
 }
 
-void RT_SAMPLEREADER_release_all_cached_data(SampleReader *reader){
-  reader->RT_release_all_cached_data();
+bool RT_SAMPLEREADER_release_all_cached_data(SampleReader *reader){
+  return reader->RT_release_all_cached_data();
 }
 
 void RT_SAMPLEREADER_called_per_block(SampleReader *reader, const int64_t how_much_to_prepare_for_next_time){

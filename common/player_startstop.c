@@ -603,20 +603,25 @@ void PlaySongCurrPos(void){
   if (seqblock==NULL)
     return;
 
-  const Place *place;
-  if (wblock->block != seqblock->block){
-    place=PlaceGetFirstPos();
-  }else{
-    place=&wblock->reallines[wblock->curr_realline]->l.p;
+  if (seqblock->block==NULL){
+    
+    PlaySong(ATOMIC_DOUBLE_GET(pc->song_abstime));
+    
+  } else {
+    
+    const Place *place;
+    if (wblock->block != seqblock->block){
+      place=PlaceGetFirstPos();
+    }else{
+      place=&wblock->reallines[wblock->curr_realline]->l.p;
+    }
+    
+    int64_t stime = Place2STime(seqblock->block, place);
+    int64_t seqtime = seqblock->time + blocktime_to_seqtime(seqblock, stime);
+    int64_t abstime = get_abstime_from_seqtime(seqtrack, seqblock, seqtime);
+  
+    PlaySong(abstime);
   }
-
-  R_ASSERT_RETURN_IF_FALSE(seqblock->block!=NULL);
-  
-  int64_t stime = Place2STime(seqblock->block, place);
-  int64_t seqtime = seqblock->time + blocktime_to_seqtime(seqblock, stime);
-  int64_t abstime = get_abstime_from_seqtime(seqtrack, seqblock, seqtime);
-  
-  PlaySong(abstime);
 }
 
 void PlaySongFromStart(void){
