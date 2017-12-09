@@ -593,21 +593,30 @@ struct Mixer{
     SoundPlugin **new_g_click_plugins = NULL;
     Patch **new_g_click_patches = NULL;
     int new_num_allocated_click_plugins = g_num_allocated_click_plugins;
-    
+
+    SoundPlugin **old_g_click_plugins = g_click_plugins;
+    Patch **old_g_click_patches = g_click_patches;
+
     if (!strcmp(plugin->type->type_name,"Sample Player")) {
       if(!strcmp(plugin->type->name,g_click_name)) {
-        if (g_num_allocated_click_plugins >= g_num_click_plugins) {
-          if (g_num_allocated_click_plugins<=0)
-            new_num_allocated_click_plugins = 16;
-          else
-            new_num_allocated_click_plugins = g_num_allocated_click_plugins * 2;
+
+        if (g_num_allocated_click_plugins<=0){
+          R_ASSERT(g_num_allocated_click_plugins==0);
+          new_num_allocated_click_plugins = 16;
+        }
+        
+        while (new_num_allocated_click_plugins < (1+g_num_click_plugins))
+          new_num_allocated_click_plugins = new_num_allocated_click_plugins * 2;
+        
+        if (new_num_allocated_click_plugins > g_num_allocated_click_plugins) {
           new_g_click_plugins = (SoundPlugin **)V_calloc(sizeof(SoundPlugin*), new_num_allocated_click_plugins);
           new_g_click_patches = (Patch **)V_calloc(sizeof(Patch*), new_num_allocated_click_plugins);
         }
+        
         is_click_patch = true;
       }
     }
-    
+
     _sound_producers.ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
 
     PLAYER_lock();{
@@ -617,8 +626,10 @@ struct Mixer{
 
       if (is_click_patch) {
         if (new_g_click_plugins != NULL) {
+          
           if (g_num_allocated_click_plugins > 0)
             memcpy(new_g_click_plugins, g_click_plugins, sizeof(SoundPlugin*)*g_num_allocated_click_plugins);
+          
           g_click_plugins = new_g_click_plugins;
           
           g_click_patches = new_g_click_patches;
@@ -645,6 +656,11 @@ struct Mixer{
     }PLAYER_unlock();
 
     _sound_producers.post_add();
+
+    if (new_g_click_plugins != NULL) {
+      V_free(old_g_click_plugins);
+      V_free(old_g_click_patches);
+    }
   }
 
   // Called from MIXER_remove_SoundProducer, which is called from ~SoundProducer
