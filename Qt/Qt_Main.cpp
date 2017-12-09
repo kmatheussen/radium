@@ -1748,16 +1748,18 @@ protected:
 
     // Force full keyboard focus to the main window after startup. This seems to be the only reliable way. (if you think this is unnecessary, see if left alt works to start navigating menues after startup while using the fvwm window manager)
     {
-      static MyQMessageBox *gakkbox = NULL;
+      static QPointer<MyQMessageBox> gakkbox = NULL; // gakkbox could, perhaps, be deleted by itself if radium finds a strange parent. (got a crash once where gakkbox was deleted before explicitly calling delete below.)
 
       if(num_calls_at_this_point==100/interval){
         gakkbox = MyQMessageBox::create(false, NULL);
         gakkbox->setText("Forcing focus");
         safeShow(gakkbox);
-        gakkbox->lower(); // doesn't work, at least on linux. Normally I struggle to keep window on top, now it's the opposite. Should probably change Radium to use QMdiArea. It should solve all of the window manager problems.
+        if (gakkbox != NULL)
+          gakkbox->lower(); // doesn't work, at least on linux. Normally I struggle to keep window on top, now it's the opposite. Should probably change Radium to use QMdiArea. It should solve all of the window manager problems.
       }
       if(num_calls_at_this_point==105/interval){
-        gakkbox->hide();
+        if (gakkbox != NULL)
+          gakkbox->hide();
       }
       if(num_calls_at_this_point==150/interval){
         delete gakkbox;
