@@ -2345,10 +2345,39 @@ typedef struct {
 
 #define MAX_DISABLED_SEQBLOCK_TRACKS 512
 
+struct SeqBlockTimings{
+  int64_t time;
+  
+  // End seqtime.
+  // When seqblock is NOT stretched, end_time = time + getBlockSTimeLength(seqblock->block).
+  int64_t time2;
+
+  
+  int64_t default_duration; // Usually has value Place2Stime(end_place)-Place2Stime(start_place). Also used to set the stretch value.
+
+  
+  Place start_place; // usually {0,0,1} (not used yet). Only used if block!=NULL
+
+  Place end_place;   // usually {num_lines,0,1} (not used yet)
+
+  bool is_looping;
+  int64_t interior_start; // seqtime version of start_place
+  int64_t interior_end;   // seqtime version of end_place
+  
+  // stretch = (end_time-time) / getBlockSTimeLength(seqblock->block)
+  // 1.0 = no stretch. 0.5 = double tempo. 2.0 = half tempo.
+  // Only used for converting stime -> seqtime a little bit faster. Updated when the result of end_time-time or getBlockSTimeLength(seqblock->block) changes.
+  // Must not be used to find seqblock duration (i.e end_time-time).
+  double stretch;
+};
+
 struct SeqBlock{
   int seqblocknum; // Must be unique. Can change value when player is stopped.
 
-  
+  struct SeqBlockTimings t;
+  struct SeqBlockTimings gfx;
+
+  /*
   // Start seqtime.
   // Player must be stopped when modifying this variable.
   // Note that because of tempo multipliers (block->reltempo), the 'start_time' and 'end_time' fields does not correspond linearly to this value.
@@ -2382,7 +2411,8 @@ struct SeqBlock{
   // Must not be used to find seqblock duration (i.e end_time-time).
   double stretch;
   double gfx_stretch; // (see gfx_time)
-
+  */
+  
   struct Blocks *block; // If NULL, then the seqblock holds a sample.
 
   int64_t sample_id; // Has valid value if block==NULL.
@@ -2469,7 +2499,7 @@ static inline struct SeqBlock *get_next_seqblock_block(const struct SeqTrack *se
   
   VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
 
-    if (seqblock->block!=NULL && seqblock->time > start_time)
+    if (seqblock->block!=NULL && seqblock->t.time > start_time)
       return seqblock;
      
   }END_VECTOR_FOR_EACH;

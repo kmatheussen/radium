@@ -358,10 +358,12 @@ public:
   void dec_users(void){
     R_ASSERT(THREADING_is_main_thread());
     
-    R_ASSERT(_num_users>0);
+    R_ASSERT_RETURN_IF_FALSE(_num_users>0);
     _num_users--;
-    if (_num_users == 0)
-      delete this;
+
+    // Not much point. Commented out so that the color doesn't change if deleting and adding later.
+    //if (_num_users == 0)
+    //  delete this;
   }
 
   void SPT_fill_slice(SNDFILE *sndfile, Slice &slice, int64_t slice_num){
@@ -873,6 +875,7 @@ public:
           RT_message("Queue full 1b");
         else
           _requested_slice_end = new_slice_end;
+        //printf("   <<>> CALL per block. New slice_end: %d\n", (int)new_slice_end);
       }
     }
 
@@ -896,6 +899,8 @@ public:
   float *RT_get_buffer(const int ch, int &num_frames){
     int64_t slice_num = _ch_pos[ch] / SLICE_SIZE;
 
+    //printf("   ,,pIcking up slice %d\n", (int)slice_num);
+
     _ch_pos_used = true;
     
     if(slice_num >= _provider->_num_slices)
@@ -912,7 +917,7 @@ public:
       
     // Assert that we have requested the data before calling.
     if (has_waited_for_queue==false){
-      if (slice_num < _requested_slice_start){
+      if (slice_num < _requested_slice_start || slice_num >= _requested_slice_end){
         R_ASSERT(false);
         return RT_return_empty2(num_frames);
       }
@@ -959,7 +964,7 @@ public:
         return RT_return_empty(samples, num_frames, do_add);
       }
     */
-    
+
     // Assert that we have requested the data before calling.
     if (has_waited_for_queue==false){
       if (slice_num < _requested_slice_start){

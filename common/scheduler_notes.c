@@ -96,7 +96,7 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
 
       VECTOR_FOR_EACH(struct SeqBlock *seqblock2, &seqtrack->seqblocks){
               
-        if (seqblock2->time > seqblock->time) {
+        if (seqblock2->t.time > seqblock->t.time) {
 
           seqblock = seqblock2;
                 

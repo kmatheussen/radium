@@ -802,6 +802,8 @@ void setIsJackTimebaseMaster(bool doit){
 
 
 int64_t getSeqGriddedTime(int64_t pos, int seqtracknum, const_char* type){
+  R_ASSERT_NON_RELEASE(seqtracknum==0);
+  
   if (!strcmp(type, "no"))
     return pos;
   
@@ -969,11 +971,11 @@ static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
     
   } else { 
     double blocklen = getBlockSTimeLength(block);      
-    int64_t startseqtime = (*start_seqtime)==-1 ? seqblock->time : (*start_seqtime);
+    int64_t startseqtime = (*start_seqtime)==-1 ? seqblock->t.time : (*start_seqtime);
     double stretch;
     
     if (start_abstime==-1) {
-      stretch = seqblock->stretch;
+      stretch = seqblock->t.stretch;
     } else {
       int64_t nonstretched_abs_duration = blocklen / reltempo;      
       int64_t stretched_abs_duration = end_abstime-start_abstime;
@@ -1177,6 +1179,66 @@ float getSeqblockY2(int seqblocknum, int seqtracknum){
 }
 
 
+// seqblock left interior area
+
+float getSeqblockLeftInteriorX1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_interior_x1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftInteriorY1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_interior_y1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftInteriorX2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_interior_x2(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftInteriorY2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_interior_y2(seqblocknum, seqtracknum);
+}
+
+// seqblock right interior area
+
+float getSeqblockRightInteriorX1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_interior_x1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightInteriorY1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_interior_y1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightInteriorX2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_interior_x2(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightInteriorY2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_interior_y2(seqblocknum, seqtracknum);
+}
+
 // seqblock left stretch area
 
 float getSeqblockLeftStretchX1(int seqblocknum, int seqtracknum){
@@ -1319,7 +1381,7 @@ double getSeqblockStretch(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return 1;
 
-  return seqblock->stretch;
+  return seqblock->t.stretch;
 }
 
 double getSeqblockStretchGfx(int seqblocknum, int seqtracknum){
@@ -1328,7 +1390,7 @@ double getSeqblockStretchGfx(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return 1;
 
-  return seqblock->gfx_stretch;
+  return seqblock->gfx.stretch;
 }
 
 
@@ -1355,35 +1417,55 @@ void moveSeqblockGfxGfx(int seqblocknum, int64_t abstime, int seqtracknum, int n
 }
 */
 
+static bool set_interior_start(int64_t interior_start, int seqblocknum, int seqtracknum, bool is_gfx){  
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return false;
+  
+  const SeqBlockTimings &timing = is_gfx ? seqblock->gfx : seqblock->t;
+    
+  int64_t interior_end = timing.interior_end;
+  if (interior_start < 0 || interior_start >= interior_end){
+    handleError("Illegal interior_start value: %d. Must be between 0 (inclusive) and %d.", (int)interior_start, (int)interior_end);
+    return false;
+  }
+  
+  return SEQBLOCK_set_interior_start(seqtrack, seqblock, interior_start, is_gfx);  
+}
+
 bool setSeqblockInteriorStart(int64_t interior_start, int seqblocknum, int seqtracknum){
+  return set_interior_start(interior_start, seqblocknum, seqtracknum, false);
+}
+
+bool setSeqblockInteriorStartGfx(int64_t interior_start, int seqblocknum, int seqtracknum){
+  return set_interior_start(interior_start, seqblocknum, seqtracknum, true);
+}
+
+bool set_interior_end(int64_t interior_end, int seqblocknum, int seqtracknum, bool is_gfx){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
     return false;
 
-  int64_t interior_end = seqblock->interior_end;
-  if (interior_start < 0 || interior_start >= interior_end){
-    handleError("setSeqblockInteriorStart: Illegal interior_start value: %d. Must be between 0 (inclusive) and %d.", (int)interior_start, (int)interior_end);
+  const SeqBlockTimings &timing = is_gfx ? seqblock->gfx : seqblock->t;
+
+  int64_t interior_start = timing.interior_start;
+  int64_t default_duration = timing.default_duration;
+  if (interior_end <= interior_start || interior_end > default_duration){
+    handleError("Illegal interior_start value: %d. Must be between %d and %d (inclusive).", (int)interior_end, (int)interior_start, (int)default_duration);
     return false;
   }
   
-  return SEQBLOCK_set_interior_start(seqtrack, seqblock, interior_start);  
+  return SEQBLOCK_set_interior_end(seqtrack, seqblock, interior_end, is_gfx);
 }
 
 bool setSeqblockInteriorEnd(int64_t interior_end, int seqblocknum, int seqtracknum){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
-  if (seqblock==NULL)
-    return false;
+  return set_interior_end(interior_end, seqblocknum, seqtracknum, false);
+}
 
-  int64_t interior_start = seqblock->interior_start;
-  int64_t default_duration = seqblock->default_duration;
-  if (interior_end <= interior_start || interior_end > default_duration){
-    handleError("setSeqblockInteriorEnd: Illegal interior_start value: %d. Must be between %d and %d (inclusive).", (int)interior_end, (int)interior_start, (int)default_duration);
-    return false;
-  }
-  
-  return SEQBLOCK_set_interior_end(seqtrack, seqblock, interior_end);
+bool setSeqblockInteriorEndGfx(int64_t interior_end, int seqblocknum, int seqtracknum){
+  return set_interior_end(interior_end, seqblocknum, seqtracknum, true);
 }
 
 int64_t getSeqblockInteriorStart(int seqblocknum, int seqtracknum){
@@ -1392,7 +1474,16 @@ int64_t getSeqblockInteriorStart(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return 0;
 
-  return seqblock->interior_start;
+  return seqblock->t.interior_start;
+}
+
+int64_t getSeqblockInteriorStartGfx(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 0;
+
+  return seqblock->gfx.interior_start;
 }
 
 int64_t getSeqblockInteriorEnd(int seqblocknum, int seqtracknum){
@@ -1401,7 +1492,16 @@ int64_t getSeqblockInteriorEnd(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return 0;
 
-  return seqblock->interior_start;
+  return seqblock->t.interior_end;
+}
+
+int64_t getSeqblockInteriorEndGfx(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 0;
+
+  return seqblock->gfx.interior_end;
 }
 
 void deleteSeqblock(int seqblocknum, int seqtracknum){

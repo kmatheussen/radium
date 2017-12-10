@@ -156,7 +156,7 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
                   set_player_time = true;
                   
                 if (set_player_time)
-                  ATOMIC_DOUBLE_SET(block->player_time, seqtrack->start_time - curr_seqblock->time);
+                  ATOMIC_DOUBLE_SET(block->player_time, seqtrack->start_time - curr_seqblock->t.time);
                 //else ATOMIC_DOUBLE_SET(block->player_time, -100); // Not necessary (-100 is set in scheduler_seqtrack.c when switching block), and we also need to check if we are playing block, etc.
               }
               

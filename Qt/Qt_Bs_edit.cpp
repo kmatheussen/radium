@@ -235,18 +235,18 @@ QVector<PlaylistElement> get_playlist_elements(void){
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
 
-    int64_t next_last_end_seq_time = seqblock->gfx_time2;
+    int64_t next_last_end_seq_time = seqblock->gfx.time2;
         
-    int64_t pause_time = seqblock->gfx_time - last_end_seq_time;
+    int64_t pause_time = seqblock->gfx.time - last_end_seq_time;
 
     if (pause_time > 0) {
-      bool is_current = current_seq_time >= last_end_seq_time && current_seq_time < seqblock->gfx_time;
+      bool is_current = current_seq_time >= last_end_seq_time && current_seq_time < seqblock->gfx.time;
       PlaylistElement pe = PlaylistElement::pause(iterator666, seqblock, pause_time, is_current);
       ret.push_back(pe);
     }
     
     {
-      bool is_current = current_seq_time >= seqblock->gfx_time && current_seq_time < next_last_end_seq_time;
+      bool is_current = current_seq_time >= seqblock->gfx.time && current_seq_time < next_last_end_seq_time;
       PlaylistElement pe = PlaylistElement::block(iterator666, seqblock, is_current);
       ret.push_back(pe);
     }
@@ -653,7 +653,7 @@ public slots:
 
       // Insert block
       
-      int64_t seqtime = pe.seqblock->time;
+      int64_t seqtime = pe.seqblock->t.time;
       
       if (pe.is_pause())
         seqtime -= pe.get_pause();
@@ -707,11 +707,11 @@ public slots:
         
     if (element2.is_pause()){
       
-      SEQTRACK_move_seqblock(seqtrack, seqblock1, seqblock1->time + element2.get_pause());
+      SEQTRACK_move_seqblock(seqtrack, seqblock1, seqblock1->t.time + element2.get_pause());
       
     } else if (element1.is_pause()){
 
-      SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock2->time - element1.get_pause());
+      SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock2->t.time - element1.get_pause());
       
     } else {
 
@@ -721,7 +721,7 @@ public slots:
         radium::PlayerPause pause; // Only restart the player once.
 
         SEQTRACK_delete_seqblock(seqtrack, seqblock1);
-        SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock1->time);
+        SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock1->t.time);
         SEQTRACK_insert_seqblock(seqtrack, seqblock1, SEQBLOCK_get_seq_endtime(seqblock2), -1);
       }
 
@@ -840,7 +840,7 @@ public slots:
         }
       } else {
         abstime = seqblock->start_time * MIXER_get_sample_rate();
-        seqtime = seqblock->time;
+        seqtime = seqblock->t.time;
       }      
 
       if ((!is_playing() || pc->playtype==PLAYBLOCK) && seqblock->block!=NULL) {

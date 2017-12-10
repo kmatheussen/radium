@@ -617,7 +617,7 @@ void PlaySongCurrPos(void){
     }
     
     int64_t stime = Place2STime(seqblock->block, place);
-    int64_t seqtime = seqblock->time + blocktime_to_seqtime(seqblock, stime);
+    int64_t seqtime = seqblock->t.time + blocktime_to_seqtime(seqblock, stime);
     int64_t abstime = get_abstime_from_seqtime(seqtrack, seqblock, seqtime);
   
     PlaySong(abstime);

@@ -26,27 +26,27 @@ enum GridType{
 
 
 static inline int64_t SEQBLOCK_get_seq_duration(const struct SeqBlock *seqblock){
-  return seqblock->time2 - seqblock->time;
+  return seqblock->t.time2 - seqblock->t.time;
 }
 
 static inline int64_t SEQBLOCK_get_seq_endtime(const struct SeqBlock *seqblock){
-  return seqblock->time2;
+  return seqblock->t.time2;
 }
 
 
 static inline double seqtime_to_blocktime_double(const struct SeqBlock *seqblock, double seqtime){
-  if(seqblock->stretch==1.0)
+  if(seqblock->t.stretch==1.0)
     return seqtime;
   else
-    return seqtime / seqblock->stretch;
+    return seqtime / seqblock->t.stretch;
 }
 
 
 static inline int64_t seqtime_to_blocktime(const struct SeqBlock *seqblock, int64_t seqtime){
-  if(seqblock->stretch==1.0)
+  if(seqblock->t.stretch==1.0)
     return seqtime;
   else
-    return round((double)seqtime / seqblock->stretch);
+    return round((double)seqtime / seqblock->t.stretch);
 }
 
 static inline double blocktime_to_seqtime_double(const double stretch, const double blocktime){
@@ -64,7 +64,7 @@ static inline int64_t blocktime_to_seqtime2(const double stretch, const int64_t 
 }
 
 static inline int64_t blocktime_to_seqtime(const struct SeqBlock *seqblock, const int64_t blocktime){
-  return blocktime_to_seqtime2(seqblock->stretch, blocktime);
+  return blocktime_to_seqtime2(seqblock->t.stretch, blocktime);
 }
 
 
@@ -166,6 +166,18 @@ extern LANGSPEC float SEQBLOCK_get_x2(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_y1(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum);
 
+// seqblock left interior
+extern LANGSPEC float SEQBLOCK_get_left_interior_x1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_interior_y1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_interior_x2(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_interior_y2(int seqblocknum, int seqtracknum);
+
+// seqblock right interior
+extern LANGSPEC float SEQBLOCK_get_right_interior_x1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_interior_y1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_interior_x2(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_interior_y2(int seqblocknum, int seqtracknum);
+
 // seqblock left stretch
 extern LANGSPEC float SEQBLOCK_get_left_stretch_x1(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_left_stretch_y1(int seqblocknum, int seqtracknum);
@@ -197,8 +209,8 @@ extern LANGSPEC bool SEQTRACK_set_seqblock_start_and_stop(struct SeqTrack *seqtr
 extern LANGSPEC void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 extern LANGSPEC void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 
-extern LANGSPEC bool SEQBLOCK_set_interior_start(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_start); // returns true if something was changed
-extern LANGSPEC bool SEQBLOCK_set_interior_end(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_end); // returns true if something was changed
+extern LANGSPEC bool SEQBLOCK_set_interior_start(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_start, bool is_gfx); // returns true if something was changed
+extern LANGSPEC bool SEQBLOCK_set_interior_end(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_end, bool is_gfx); // returns true if something was changed
 
 extern LANGSPEC void RT_SEQTRACK_called_per_block(struct SeqTrack *seqtrack); // Sets seqtrack->curr_sample_seqblock when starting/stopping playing audio file.
 

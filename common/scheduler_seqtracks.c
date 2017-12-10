@@ -43,13 +43,13 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     place = *place_pointer;
     
     int64_t duration = SEQBLOCK_get_seq_duration(seqblock);
-    seqblock->time = block_start_time; // We can not set seqblock->time before scheduling since seqblock->time is used various places when playing a block.
-    seqblock->time2 = seqblock->time + duration;
+    seqblock->t.time = block_start_time; // We can not set seqblock->time before scheduling since seqblock->time is used various places when playing a block.
+    seqblock->t.time2 = seqblock->t.time + duration;
 
   } else {
 
     if (place_pointer==NULL)
-      place = STime2Place(block, seqtime_to_blocktime(seqblock, seqtime - seqblock->time));
+      place = STime2Place(block, seqtime_to_blocktime(seqblock, seqtime - seqblock->t.time));
     else
       place = *place_pointer;
   }
@@ -93,7 +93,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
   // Schedule end block
   {
     union SuperType args[1];
-    SCHEDULER_add_event(seqtrack, seqblock->time2, RT_scheduled_end_of_seqblock, &args[0], 0, SCHEDULER_ENDBLOCK_PRIORITY);
+    SCHEDULER_add_event(seqtrack, seqblock->t.time2, RT_scheduled_end_of_seqblock, &args[0], 0, SCHEDULER_ENDBLOCK_PRIORITY);
   }
     
 
@@ -110,14 +110,14 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
         next_time = 0;
       } else {
         next_seqblock = seqblock;
-        next_time = seqblock->time2;
+        next_time = seqblock->t.time2;
       }
       
     } else {
       
-      next_seqblock = get_next_seqblock_block(seqtrack, seqblock->time);
+      next_seqblock = get_next_seqblock_block(seqtrack, seqblock->t.time);
       if (next_seqblock != NULL)
-        next_time = next_seqblock->time;
+        next_time = next_seqblock->t.time;
       else
         next_time = 0; // To avoid faulty gcc warning.
     }
@@ -227,7 +227,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
       R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
       R_ASSERT_RETURN_IF_FALSE(block!=NULL);
       STime block_stime = Place2STime(block, &startdata->place);
-      seqtime = seqblock->time + blocktime_to_seqtime(seqblock, block_stime);
+      seqtime = seqblock->t.time + blocktime_to_seqtime(seqblock, block_stime);
       abs_start_time = get_abstime_from_seqtime(startdata->seqtrack, seqblock, seqtime);
     }
   
@@ -268,7 +268,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
         if (seqblock->block == NULL)
           continue;
         
-        int64_t seqblock_start_time = seqblock->time;
+        int64_t seqblock_start_time = seqblock->t.time;
         int64_t seqblock_end_time   = SEQBLOCK_get_seq_endtime(seqblock);
         
         if (seq_start_time < seqblock_end_time){
@@ -276,7 +276,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
           union SuperType args[G_NUM_ARGS];
           
           args[0].pointer       = seqblock;
-          args[1].int_num       = seqblock->time;
+          args[1].int_num       = seqblock->t.time;
           args[2].const_pointer = startdata->seqblock==seqblock ? &static_place : NULL;
           args[3].int_num       = PLAYSONG;
           args[4].const_pointer = NULL;
@@ -341,7 +341,7 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
     union SuperType args[G_NUM_ARGS];
     
     args[0].pointer = &seqblock;
-    args[1].int_num = seqblock.time;
+    args[1].int_num = seqblock.t.time;
     args[2].const_pointer = &static_place;
     args[3].int32_num = PLAYBLOCK;
     args[4].const_pointer = &seqblock;

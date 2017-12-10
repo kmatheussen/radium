@@ -738,25 +738,25 @@ public:
       const radium::DiskPeaks *disk_peaks = SEQTRACKPLUGIN_get_peaks(plugin, seqblock->sample_id);
       if (disk_peaks != NULL){
         int num_ch = SEQTRACKPLUGIN_get_num_channels(plugin, seqblock->sample_id);
-        int64_t num_frames = SEQTRACKPLUGIN_get_num_frames(plugin, seqblock->sample_id);
+        //int64_t num_frames = SEQTRACKPLUGIN_get_num_frames(plugin, seqblock->sample_id);
         
         double x1 = rect.x();
         double x2 = rect.x() + rect.width();
-        int64_t time1 = seqblock->interior_start;
-        int64_t time2 = seqblock->interior_end;
+        int64_t time1 = seqblock->gfx.interior_start;
+        int64_t time2 = seqblock->gfx.interior_end;
         
         if (x1 < t_x1) { // if seqblock starts before visible area
           x1 = t_x1;
           time1 = R_SCALE(x1,
                           rect.x(), rect.x()+rect.width(),
-                          0, num_frames);
+                          time1, time2);
         }
         
         if (x2 > t_x2){ // if seqblock ends after visible area
           x2 = t_x2;
           time2 = R_SCALE(x2,
                           rect.x(), rect.x()+rect.width(),
-                          0, num_frames);
+                          time1, time2);
         }
 
         R_ASSERT_NON_RELEASE(time2 >= time1);
@@ -767,8 +767,10 @@ public:
         const double pixels_per_peak = 1.3;
         double width = x2-x1;
 
-        int num_points = R_MAX(2, width / pixels_per_peak);
-
+        int num_points = R_MAX(4, width / pixels_per_peak);
+        if ((num_points % 2) != 0)
+          num_points++;
+        
         for(int ch=0;ch<num_ch;ch++){
 
           double y1 = rect.y() + header_height + scale_double(ch, 0, num_ch, 0, rect.height()-header_height);
@@ -776,7 +778,7 @@ public:
         
           QPointF points[num_points*2];
 
-          int64_t end_time = 0;
+          int64_t last_used_end_time = time1;
 
           const float m = 0.3f; // half minimum waveform height (to avoid silence not showing)
           
@@ -788,13 +790,13 @@ public:
 
             if (has_data){
               
-              int64_t start_time = end_time;
-              end_time = R_BOUNDARIES(start_time,
-                                      scale_int64(i,
-                                                  0, num_points,
-                                                  time1, time2),
-                                      time2);
-
+              int64_t start_time = last_used_end_time;
+              int64_t end_time = R_BOUNDARIES(start_time,
+                                              scale_int64(i,
+                                                          0, num_points,
+                                                          time1, time2),
+                                              time2);
+              
               R_ASSERT_NON_RELEASE(end_time >= start_time);
 
               if (end_time > start_time) {
@@ -815,6 +817,7 @@ public:
                 min_y = scale_double(min, -1, 1, y1+m, y2   ) - m;
                 max_y = scale_double(max, -1, 1, y1,   y2-m ) + m;
 
+                last_used_end_time = end_time;
               }
               
             }
@@ -970,16 +973,14 @@ public:
 
 #define INTERFACE_IS_READY 0
     
-#if INTERFACE_IS_READY
     double ysplit1 = get_seqblock_ysplit1(y1, y2);
-#endif
     double ysplit2 = get_seqblock_ysplit2(y1, y2);
         
     QPen pen(QColor(0, 200 ,0, 200));
     pen.setWidthF(2.3);
     painter->setPen(pen);
 
-#if INTERFACE_IS_READY
+#if 0
     // xsplit1 vertical line, left
     QLineF line1(xsplit1,y1+border,xsplit1,y2-border);
     painter->drawLine(line1);
@@ -990,17 +991,17 @@ public:
 #else
     
     // xsplit1 vertical line 2, left
-    QLineF line1b(xsplit1,ysplit2,xsplit1,y2-border);
+    QLineF line1b(xsplit1,ysplit1,xsplit1,y2-border);
     painter->drawLine(line1b);
 
     // xsplit1 vertical line 2, right
-    QLineF line2b(xsplit2,ysplit2,xsplit2,y2-border);
+    QLineF line2b(xsplit2,ysplit1,xsplit2,y2-border);
     painter->drawLine(line2b);
 
 
 #endif
 
-#if INTERFACE_IS_READY
+#if 1 //INTERFACE_IS_READY
     // ysplit1 horizontal line, left
     QLineF line3a(x1+border, ysplit1, xsplit1-border, ysplit1);
     painter->drawLine(line3a);
@@ -1572,10 +1573,10 @@ struct Timeline_widget : public MouseTrackerQWidget {
           const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[i];
           const struct SeqBlock *next_seqblock = (struct SeqBlock *)(i==seqtrack->seqblocks.num_elements-1 ? NULL : seqtrack->seqblocks.elements[i+1]);
           
-          int64_t start_blockseqtime = seqblock->time;
+          int64_t start_blockseqtime = seqblock->gfx.time;
           int64_t end_blockseqtime = SEQBLOCK_get_seq_endtime(seqblock);
 
-          int64_t start_nextblockseqtime = next_seqblock==NULL ? -1 : next_seqblock->time;
+          int64_t start_nextblockseqtime = next_seqblock==NULL ? -1 : next_seqblock->gfx.time;
           
           if (next_seqblock!=NULL) {
             if (start_nextblockseqtime <= start_seqtime)
@@ -2540,6 +2541,64 @@ float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum){
 
 // seqblock left stretch
 
+#define SEQBLOCK_handles(Name, Yfunc1, Yfunc2)                        \
+                                                                        \
+  float SEQBLOCK_get_left_##Name##_x1(int seqblocknum, int seqtracknum){ \
+    return SEQBLOCK_get_x1(seqblocknum, seqtracknum);                   \
+  }                                                                     \
+                                                                        \
+  float SEQBLOCK_get_left_##Name##_y1(int seqblocknum, int seqtracknum){ \
+    return Yfunc1(seqblocknum, seqtracknum);\
+  }                                                                     \
+                                                                        \
+  float SEQBLOCK_get_left_##Name##_x2(int seqblocknum, int seqtracknum){ \
+    return get_seqblock_xsplit1(SEQBLOCK_get_x1(seqblocknum, seqtracknum), \
+                                SEQBLOCK_get_x2(seqblocknum, seqtracknum) \
+                                );                                      \
+  }                                                                     \
+                                                                        \
+  float SEQBLOCK_get_left_##Name##_y2(int seqblocknum, int seqtracknum){ \
+    return Yfunc2(seqblocknum, seqtracknum);                   \
+  }                                                                     \
+                                                                        \
+                                                                        \
+                                                                        \
+  float SEQBLOCK_get_right_##Name##_x1(int seqblocknum, int seqtracknum){ \
+    return get_seqblock_xsplit2(SEQBLOCK_get_x1(seqblocknum, seqtracknum), \
+                                SEQBLOCK_get_x2(seqblocknum, seqtracknum) \
+                                );                                      \
+  }                                                                     \
+                                                                        \
+  float SEQBLOCK_get_right_##Name##_y1(int seqblocknum, int seqtracknum){ \
+    return SEQBLOCK_get_left_##Name##_y1(seqblocknum, seqtracknum);      \
+  }                                                                     \
+                                                                        \
+  float SEQBLOCK_get_right_##Name##_x2(int seqblocknum, int seqtracknum){ \
+    return SEQBLOCK_get_x2(seqblocknum, seqtracknum);                   \
+  }                                                                     \
+                                                                        \
+  float SEQBLOCK_get_right_##Name##_y2(int seqblocknum, int seqtracknum){ \
+    return SEQBLOCK_get_left_##Name##_y2(seqblocknum, seqtracknum);      \
+  }
+
+
+static float yfunc_ysplit1(int seqblocknum, int seqtracknum){
+  return get_seqblock_ysplit1(SEQBLOCK_get_y1(seqblocknum, seqtracknum) + get_block_header_height(),
+                              SEQBLOCK_get_y2(seqblocknum, seqtracknum)
+                              );
+}
+
+static float yfunc_ysplit2(int seqblocknum, int seqtracknum){
+  return get_seqblock_ysplit2(SEQBLOCK_get_y1(seqblocknum, seqtracknum) + get_block_header_height(),
+                              SEQBLOCK_get_y2(seqblocknum, seqtracknum)
+                              );
+}
+
+SEQBLOCK_handles(interior, yfunc_ysplit1, yfunc_ysplit2);
+SEQBLOCK_handles(stretch, yfunc_ysplit2, SEQBLOCK_get_y2);
+
+
+/*
 float SEQBLOCK_get_left_stretch_x1(int seqblocknum, int seqtracknum){
   return SEQBLOCK_get_x1(seqblocknum, seqtracknum);
 }
@@ -2553,11 +2612,11 @@ float SEQBLOCK_get_left_stretch_y1(int seqblocknum, int seqtracknum){
 float SEQBLOCK_get_left_stretch_x2(int seqblocknum, int seqtracknum){
   return get_seqblock_xsplit1(SEQBLOCK_get_x1(seqblocknum, seqtracknum),
                               SEQBLOCK_get_x2(seqblocknum, seqtracknum)
-                              );                              
+                              );                              \
 }
 
 float SEQBLOCK_get_left_stretch_y2(int seqblocknum, int seqtracknum){
-  return SEQBLOCK_get_y2(seqblocknum, seqtracknum);
+  return SEQBLOCK_get_y2(seqblocknum, seqtracknum);\
 }
 
 // seqblock right stretch
@@ -2579,6 +2638,8 @@ float SEQBLOCK_get_right_stretch_x2(int seqblocknum, int seqtracknum){
 float SEQBLOCK_get_right_stretch_y2(int seqblocknum, int seqtracknum){
   return SEQBLOCK_get_left_stretch_y2(seqblocknum, seqtracknum);
 }
+*/
+
 
 
 // seqtracks

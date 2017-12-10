@@ -31,6 +31,10 @@
 #  define FADE_IN_MS 2
 #endif
 
+
+//#define HOW_MUCH_NONSTRETCHED_TO_PREPARE (0.05 * 0.015
+//#define HOW_MUCH_NONSTRETCHED_TO_PREPARE_BEFORE_STARTING 0.2
+
 #define HOW_MUCH_TO_PREPARE 2 // in seconds. TODO: We need to slowly increase the buffer from 0.1 to 2. TODO2: Make these two numbers configurable.
 #define HOW_MUCH_TO_PREPARE_BEFORE_STARTING 2 //in seconds
 
@@ -227,6 +231,11 @@ public:
     // TODO: This number should be dynamically calculated somehow depending on how long time it takes to read from disk.
     int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE_BEFORE_STARTING) * (double)pc->pfreq / stretch;
 
+    for(int ch=0;ch<_num_ch;ch++)
+      how_much_to_prepare = R_MAX(how_much_to_prepare,
+                                  2 * mus_granulate_grain_max_length(_granulator._clm_granulators[ch]));
+                                        
+
     {
       LOCKASSERTER_EXCLUSIVE(&lockAsserter);
       
@@ -382,22 +391,29 @@ struct Sample{
     R_ASSERT_RETURN_IF_FALSE(is_playing()==false);
     R_ASSERT_RETURN_IF_FALSE(_curr_reader==NULL);
 
-    if (seqtime >= _seqblock->time2)
+    if (seqtime >= _seqblock->t.time2)
       return;
 
-    int64_t sample_start_pos = scale_int64(seqtime,
-                                           _seqblock->time, _seqblock->time2,
-                                           _interior_start, _interior_end);
-                                           //0, _num_frames); //R_MAX(0, double(seqtime - _seqblock->time) / _seqblock->stretch);
+    int64_t sample_start_pos;
 
-    if (sample_start_pos < 0)
-      sample_start_pos = 0;
+    if(seqtime <= _seqblock->t.time)
+      sample_start_pos = _interior_start;
+    else
+      sample_start_pos = scale_int64(seqtime,
+                                     _seqblock->t.time, _seqblock->t.time2,
+                                     _interior_start, _interior_end);
     
-    if (sample_start_pos >= _interior_end){
-      R_ASSERT_NON_RELEASE(false);
+    if (sample_start_pos < 0){
+      R_ASSERT(false);
       return;
     }
     
+    if (sample_start_pos >= _interior_end){
+      R_ASSERT(false);
+      return;
+    }
+
+    //printf("  PREPARE TO PLAY. Time: %f. sample_start_pos: %f\n", (double)seqtime / (double)pc->pfreq, (double)sample_start_pos / (double)pc->pfreq);
     
     MyReader *allocated_reader;
 
@@ -437,7 +453,7 @@ struct Sample{
       
     }
 
-    reader->prepare_for_playing(sample_start_pos, _seqblock->stretch, gotit);
+    reader->prepare_for_playing(sample_start_pos, _seqblock->t.stretch, gotit);
 
     {
       //radium::PlayerLock lock(i_am_playing); // I don't think it's necessary to lock here. We are not playing song now, and _curr_reader is not accessed by the player threads when fading out.
@@ -472,15 +488,15 @@ struct Sample{
         // Probably best if fadeout keeps old stretch.
       for(auto *fade_out_reader : _fade_out_readers){
         for(int ch=0;ch<_num_ch;ch++)
-          mus_set_increment(fade_out_reader->_granulator._clm_granulators[ch], _seqblock->stretch);
+          mus_set_increment(fade_out_reader->_granulator._clm_granulators[ch], _seqblock->t.stretch);
       }
       */
 
       if (_curr_reader != NULL)
         for(int ch=0;ch<_num_ch;ch++)
-          mus_set_increment(_curr_reader->_granulator._clm_granulators[ch], _seqblock->stretch);
+          mus_set_increment(_curr_reader->_granulator._clm_granulators[ch], _seqblock->t.stretch);
 
-      //printf("Stretch: %f\n", _seqblock->stretch);
+      //printf("Stretch: %f\n", _seqblock->t.stretch);
     }
     
     // fade out
@@ -545,7 +561,12 @@ struct Sample{
     }
     
     if (_curr_reader != NULL){
-      int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE) * (double)pc->pfreq / _seqblock->stretch;
+      int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE) * (double)pc->pfreq / _seqblock->t.stretch;
+
+      for(int ch=0;ch<_num_ch;ch++)
+        how_much_to_prepare = R_MAX(how_much_to_prepare,
+                                    2 * mus_granulate_grain_max_length(_curr_reader->_granulator._clm_granulators[ch]));
+      
       RT_SAMPLEREADER_called_per_block(_curr_reader->_reader, how_much_to_prepare);
     }
   }
@@ -561,7 +582,7 @@ struct Sample{
     
     //printf("   RT_called_per_block %d -> %d (%d)\n", (int)curr_start_time, (int)curr_end_time, int(curr_end_time-curr_start_time));
     
-    bool inside = curr_start_time >= _seqblock->time && curr_start_time < _seqblock->time2;
+    bool inside = curr_start_time >= _seqblock->t.time && curr_start_time < _seqblock->t.time2;
 
     if (inside==_is_playing)
       return;
@@ -569,11 +590,14 @@ struct Sample{
     if (inside) {
       
       //printf("   Play. RT_called_per_block %d -> %d (%d). Seqblock start/end: %d / %d\n", (int)curr_start_time, (int)curr_end_time, int(curr_end_time-curr_start_time), (int)_seqblock->time, (int)_seqblock->time2);
+      //printf(" PLAYING SAMPLE. Time: %f\n", (double)curr_start_time / (double)pc->pfreq);
+      
       atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, _seqblock); // bang!
       GFX_ScheduleEditorRedraw();
       
       _is_playing = true;
-            
+
+      // Don't do this if starting to play from the beginning.
       _click_avoidance_fade_in = FADE_IN_MS * pc->pfreq / 1000;
       
     } else {

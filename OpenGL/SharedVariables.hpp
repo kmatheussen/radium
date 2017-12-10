@@ -130,7 +130,7 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
     if(seqblock==NULL)
       sv->seqblock_stretch = 1.0;
     else
-      sv->seqblock_stretch = seqblock->stretch;
+      sv->seqblock_stretch = seqblock->t.stretch;
   }
 
   

@@ -915,7 +915,7 @@ struct Mixer{
         ATOMIC_SET(jackblock_last_frame_stime, jack_last_frame_time(_rjack_client));
 
         if (curr_seqblock != NULL && curr_seqblock->block!=NULL) {
-          ATOMIC_SET(jackblock_seqtime, curr_seqblock->time);
+          ATOMIC_SET(jackblock_seqtime, curr_seqblock->t.time);
           ATOMIC_SET(jackblock_block, curr_seqblock->block);
         } else {
           ATOMIC_SET(jackblock_seqtime, 0);
