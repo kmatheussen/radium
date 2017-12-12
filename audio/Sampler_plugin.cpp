@@ -150,53 +150,53 @@ struct Sample{
 
 // A voice object points to only one sample. Stereo-files uses two voice objects. Soundfonts using x sounds to play a note, need x voice objects to play that note.
 struct Voice{
-  Voice *prev;
-  Voice *next;
+  Voice *prev = NULL;
+  Voice *next = NULL;
 
-  float last_finetune_value;
+  float last_finetune_value = 0;
 
-  float note_num;
-  int64_t note_id;
-  const struct SeqBlock *seqblock; // Not quite sure, but this variable could perhaps be gc-ed while its here, so it should only be used for comparison. (pretty sure it can not be gc-ed though)
+  float note_num = 0;
+  int64_t note_id = 0;
+  const struct SeqBlock *seqblock = NULL; // Not quite sure, but this variable could perhaps be gc-ed while its here, so it should only be used for comparison. (pretty sure it can not be gc-ed though)
   
   // These two variables are used when setting velocity after a note has started playing.
-  float start_volume;
-  float end_volume;
+  float start_volume = 0;
+  float end_volume = 0;
   //double gain;
 
-  float crossfade_buffer[CROSSFADE_BUFFER_LENGTH];
+  float crossfade_buffer[CROSSFADE_BUFFER_LENGTH] = {};
 
   // Same for pitch
-  float pitch;
+  float pitch = 0;
   //float start_pitch;
-  float end_pitch;
-  float pitch_inc; // For portamento.
-  int portamento_channel;
-  bool set_last_end_pitch; // true for all new voices, but is set false after player has been stopped.
+  float end_pitch = 0;
+  float pitch_inc = 0; // For portamento.
+  int portamento_channel = 0;
+  bool set_last_end_pitch = 0; // true for all new voices, but is set false after player has been stopped.
   
-  Panvals pan;
+  Panvals pan = {};
 
-  int64_t pos;
+  int64_t pos = 0;
 
-  bool reverse;
+  bool reverse = 0;
   
-  radium::Resampler *resampler;
-  void *adsr;
+  radium::Resampler *resampler = NULL;
+  void *adsr = NULL;
 
-  int delta_pos_at_start; // Within the current block. Set when starting a note.
-  int delta_pos_at_end; // Within the current block. Set when stopping a note.
+  int delta_pos_at_start = 0; // Within the current block. Set when starting a note.
+  int delta_pos_at_end = 0; // Within the current block. Set when stopping a note.
 
-  bool is_fading_out;
-  int fading_pos;
-  int fading_len;
+  bool is_fading_out = false;
+  int fading_pos = 0;
+  int fading_len = 0;
 
-  int num_samples;
-  const Sample *sample;
+  int num_samples = 0;
+  const Sample *sample = NULL;
 };
 
 struct Note{
-  int num_samples;
-  const Sample *samples[MAX_NUM_SAMPLES];
+  int num_samples = 0;
+  const Sample *samples[MAX_NUM_SAMPLES] = {};
 };
 
 // The part of "Data" that can be memcpy-ed when creating a new Data from old Data.
@@ -236,62 +236,70 @@ enum{
 
 struct Data{
 
-  CopyData p;
+  CopyData p = {};
 
-  bool use_sample_file_middle_note; // Set to true by default now, but not included (or set to false) in the state of older states. Without this flag, loading older sounds could sound wrong.
+  bool use_sample_file_middle_note = false; // Set to true by default now, but not included (or set to false) in the state of older states. Without this flag, loading older sounds could sound wrong.
 
   // Should loop start/length be placed in CopyData?
-  int64_t loop_start;
-  int64_t loop_length;   // if 0, use loop data in sample file instead, if there is any. (loop_start has no meaning if loop_length is 0)
+  int64_t loop_start = 0;
+  int64_t loop_length = 0;   // if 0, use loop data in sample file instead, if there is any. (loop_start has no meaning if loop_length is 0)
 
-  struct SoundPlugin *tremolo;
+  struct SoundPlugin *tremolo = NULL;
   
-  float samplerate; // The system samplerate. I.e. the jack samplerate, not soundfile samplerate.
+  float samplerate = 0; // The system samplerate. I.e. the jack samplerate, not soundfile samplerate.
 
-  enum ResamplerType org_resampler_type; // Used to remember the original resampler type when rendering soundfile.
-  enum ResamplerType resampler_type;
-  const wchar_t *filename;
-  int instrument_number;
-  bool using_default_sound;
+  enum ResamplerType org_resampler_type = RESAMPLER_NON; // Used to remember the original resampler type when rendering soundfile.
+  enum ResamplerType resampler_type = RESAMPLER_NON;
+  const wchar_t *filename = NULL;
+  int instrument_number = 0;
+  bool using_default_sound = false;
   
   //int num_channels; // not used for anything, I think.
 
   const Note notes[128] = {};
 
-  Voice *voices_playing;
-  Voice *voices_not_playing;
-  float last_end_pitch[NUM_PATCH_VOICES << 4];
+  Voice *voices_playing = NULL;
+  Voice *voices_not_playing = NULL;
+  float last_end_pitch[NUM_PATCH_VOICES << 4] = {};
   
-  int num_different_samples;  // not used for anything (important).
+  int num_different_samples = 0;  // not used for anything (important).
 
-  Voice voices[POLYPHONY];
-  Sample samples[MAX_NUM_SAMPLES];
+  Voice voices[POLYPHONY] = {};
+  Sample samples[MAX_NUM_SAMPLES] = {};
 
   // These two are used when switching sound on the fly
-  DEFINE_ATOMIC(struct Data *, new_data);
-  RSemaphore *signal_from_RT;
+  DEFINE_ATOMIC(struct Data *, new_data) = NULL;
+  RSemaphore *signal_from_RT = NULL;
 
   DEFINE_ATOMIC(wchar_t*, recording_path) = NULL; // allocated using malloc
-  DEFINE_ATOMIC(int, num_recording_channels);
-  DEFINE_ATOMIC(int, recording_status);
-  int recording_start_frame;
-  DEFINE_ATOMIC(bool, recording_from_main_input);
-  DEFINE_ATOMIC(int, recording_note);
-  int64_t recording_note_id;
-  const struct SeqBlock *recording_seqblock;
+  DEFINE_ATOMIC(int, num_recording_channels) = 0;
+  DEFINE_ATOMIC(int, recording_status) = 0;
+  int recording_start_frame = 0;
+  DEFINE_ATOMIC(bool, recording_from_main_input) = false;
+  DEFINE_ATOMIC(int, recording_note) = 0;
+  int64_t recording_note_id = 0;
+  const struct SeqBlock *recording_seqblock = NULL;
   
   // No need to clear these two fields after usage (to save some memory) since plugin->data is reloaded after recording.
   radium::Vector<float> min_recording_peaks[2];
   radium::Vector<float> max_recording_peaks[2];
 
   // There should be a compiler option in c++ to make this the default behavior. It would automatically eliminate a billion bugs in the world.
+  /*
+    Commented out. Doesn't work with gcc 7.
   void *operator new(size_t size) {
     void *mem = ::operator new(size);
     memset(mem, 0, size);
     return mem;
   }
-
+  */
+  
   Data(){
+    R_ASSERT(voices_playing==NULL);
+    R_ASSERT(voices_not_playing==NULL);
+    R_ASSERT(p.crossfade_length==0);
+    R_ASSERT(voices[0].next==NULL);
+    R_ASSERT(samples[0].sound==NULL);
   }
 };
 
@@ -2062,7 +2070,7 @@ static void free_tremolo(SoundPlugin *tremolo){
 
 static Data *create_data(float samplerate, Data *old_data, const wchar_t *filename, int instrument_number, enum ResamplerType resampler_type, bool use_sample_file_middle_note, bool is_loading){
   Data *data = new Data;
- 
+  
   data->signal_from_RT = RSEMAPHORE_create(0);
 
   data->tremolo = create_tremolo(is_loading);
