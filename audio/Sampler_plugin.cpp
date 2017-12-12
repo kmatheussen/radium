@@ -927,7 +927,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
     voice->note_num = note2.pitch;
     voice->note_id = note2.id;
     voice->seqblock = note2.seqblock;
-    voice->portamento_channel = note2.midi_channel * 16 + note2.voicenum;
+    voice->portamento_channel = portamento_channel; //note2.midi_channel * 16 + note2.voicenum;
     
     voice->start_volume = velocity2gain(note2.velocity);
     voice->end_volume = voice->start_volume;
