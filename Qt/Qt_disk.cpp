@@ -227,7 +227,7 @@ public:
       if (THREADING_is_main_thread())
         addMessage(message.toUtf8().constData());
       else
-        RT_message(message.toUtf8().constData());
+        RT_message("%s", message.toUtf8().constData());
     }
     
     return ret;

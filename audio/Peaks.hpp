@@ -548,7 +548,7 @@ private:
 
     for(int64_t i = 0 ; ; i += SAMPLES_PER_PEAK){
       
-      int num_read = sf_readf_float(sndfile, interleaved_samples, SAMPLES_PER_PEAK);
+      int num_read = (int)sf_readf_float(sndfile, interleaved_samples, SAMPLES_PER_PEAK);
       
       if (num_read==0) {
         QString s = STRING_get_qstring(_filename); 
@@ -562,7 +562,7 @@ private:
       total_frames_read += num_read;
 
       {
-        int percentage_read = 100*total_frames/total_frames_read;
+        int percentage_read = int(100*total_frames/total_frames_read);
         
         if (percentage_read != last_percentage_read){
           ATOMIC_SET(_percentage_read, percentage_read);

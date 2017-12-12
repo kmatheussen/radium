@@ -31,7 +31,13 @@
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+
 #include "../bin/packages/faust2/architecture/faust/gui/faustqt.h"
+
+#pragma clang diagnostic pop
+
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif

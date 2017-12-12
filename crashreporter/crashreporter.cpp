@@ -816,16 +816,19 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
   char message[1000];
   va_list argp;
 
+#if !defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-attribute=format"
-
+#endif
+  
   va_start(argp,fmt);
   /*	vfprintf(stderr,fmt,argp); */
   vsnprintf(message,998,fmt,argp);
   va_end(argp);
-
-#  pragma GCC diagnostic pop
   
+#if !defined(__clang__)
+#  pragma GCC diagnostic pop
+#endif
 
   if (g_crashreporter_file!=NULL) {
 

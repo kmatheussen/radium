@@ -48,7 +48,13 @@
 **
 ****************************************************************************/
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+
 #include <QtWidgets>
+
+#pragma clang diagnostic pop
+
 
 #include "flowlayout.h"
 FlowLayout::FlowLayout(QWidget *parent, int margin, int hSpacing, int vSpacing)

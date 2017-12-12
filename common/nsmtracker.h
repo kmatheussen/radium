@@ -127,11 +127,22 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #include <stdbool.h>
 
 #if USE_QT4
+#if !defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-attribute=const"
+#endif
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+
 #include <QList>
 #include <QMap>
+
+#pragma clang diagnostic pop
+
+#if !defined(__clang__)
 #  pragma GCC diagnostic pop
+#endif
 #endif
 
 #if defined(__clang__)

@@ -29,7 +29,13 @@ struct Meta
 
   #include "../common/nsmtracker.h"
   #include "../Qt/FocusSniffers.h"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+
   #include <faust/gui/faustqt.h>
+
+#pragma clang diagnostic pop
 
 #endif
 

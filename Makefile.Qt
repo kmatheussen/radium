@@ -1224,7 +1224,7 @@ $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
 Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h $(P)Qt_seqtrack_widget.h $(P)Qt_seqtrack_widget_callbacks.h Qt/helpers.h
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
-	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(IS_LINUX_BINARY) # -Wno-deprecated-declarations -Wno-shadow 
+	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) # -Wno-deprecated-declarations -Wno-shadow 
 
 Qt_visual.o:  $(BUILD_DEPENDENCIES) $(P)Qt_visual.cpp $(P)EditorWidget.h $(CD)visual_op_queue_proc.h
 	$(CCC) $(P)Qt_visual.cpp $(QTOPT)
@@ -1785,7 +1785,7 @@ SampleReader.o: audio/SampleReader.cpp
 	$(CCC) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
 
 Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/Granulator.hpp audio/Peaks.hpp
-	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp
+	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT)
 
 FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 	$(CC) $(OPT) $(CPUOPT) audio/FluidSynth_plugin.c

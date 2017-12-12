@@ -277,7 +277,7 @@ struct Sample{
   float _pitch = 1.0;
   
   const int _num_ch;
-  const int _num_frames;
+  const int64_t _num_frames;
   const unsigned int _color;
   const wchar_t *_filename_without_path;
   
@@ -592,7 +592,7 @@ struct Sample{
       //printf("   Play. RT_called_per_block %d -> %d (%d). Seqblock start/end: %d / %d\n", (int)curr_start_time, (int)curr_end_time, int(curr_end_time-curr_start_time), (int)_seqblock->time, (int)_seqblock->time2);
       //printf(" PLAYING SAMPLE. Time: %f\n", (double)curr_start_time / (double)pc->pfreq);
       
-      atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, _seqblock); // bang!
+      atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, (void*)_seqblock); // bang!
       GFX_ScheduleEditorRedraw();
       
       _is_playing = true;
@@ -725,7 +725,7 @@ int SEQTRACKPLUGIN_get_num_samples(SoundPlugin *plugin){
   return data->_samples.size();
 }
 
-int64_t SEQTRACKPLUGIN_get_num_channels(const SoundPlugin *plugin, int64_t id){
+int SEQTRACKPLUGIN_get_num_channels(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
   
   Sample *sample = get_sample(plugin, id);

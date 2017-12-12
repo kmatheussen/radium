@@ -15,7 +15,7 @@ extern LANGSPEC int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename
 
 namespace radium{
   class FutureSignalTrackingSemaphore;
-  struct SampleReader;
+  class SampleReader;
 }
 
 extern radium::SampleReader *SAMPLEREADER_create(const wchar_t *filename);

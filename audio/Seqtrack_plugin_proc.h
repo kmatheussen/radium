@@ -24,7 +24,7 @@ extern LANGSPEC int64_t SEQTRACKPLUGIN_add_sample(struct SoundPlugin *plugin, co
 extern LANGSPEC void SEQTRACKPLUGIN_request_remove_sample(struct SoundPlugin *plugin, int64_t id);
 extern LANGSPEC int SEQTRACKPLUGIN_get_num_samples(struct SoundPlugin *plugin);
 
-extern LANGSPEC int64_t SEQTRACKPLUGIN_get_num_channels(const struct SoundPlugin *plugin, int64_t id);
+extern LANGSPEC int SEQTRACKPLUGIN_get_num_channels(const struct SoundPlugin *plugin, int64_t id);
 extern LANGSPEC int64_t SEQTRACKPLUGIN_get_num_frames(const struct SoundPlugin *plugin, int64_t id);
 extern LANGSPEC const wchar_t *SEQTRACKPLUGIN_get_sample_name(const struct SoundPlugin *plugin, int64_t id, bool full_path);
 extern LANGSPEC unsigned int SEQTRACKPLUGIN_get_sample_color(const struct SoundPlugin *plugin, int64_t id);

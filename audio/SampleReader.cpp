@@ -979,7 +979,7 @@ public:
       return RT_return_empty(samples, num_frames, do_add);
     }
 
-    int slice_frame_pos = _pos - (slice_num * SLICE_SIZE);
+    int slice_frame_pos = int(_pos - (slice_num * SLICE_SIZE));
 
     int ret = R_MIN(SLICE_SIZE - slice_frame_pos, num_frames);
     int frames_left = num_frames - ret;
