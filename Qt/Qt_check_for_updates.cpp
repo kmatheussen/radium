@@ -117,8 +117,8 @@ namespace{
     }
 
     void run() override {
-      ATOMIC_SET(gakk, JUCE_download("http://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
-      ATOMIC_SET(gakk2, JUCE_download("http://users.notam02.no/~kjetism/radium/demos/unstable/"));
+      ATOMIC_SET(gakk, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
+      ATOMIC_SET(gakk2, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/unstable/"));
     }
 
     bool got_gakk1 = false;
