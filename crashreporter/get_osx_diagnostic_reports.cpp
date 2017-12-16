@@ -36,12 +36,11 @@ static QString get_latest_diagnostic_report(void){
   QString ret="";
   
   QDateTime start_time = QDateTime::currentDateTime();
-  QDateTime start_time_plus_40_seconds = QDateTime(start_time).addSecs(40); // we only wait 40 seconds for the file to be created
+  QDateTime start_time_plus_40_seconds = QDateTime(start_time).addSecs(140); // we only wait 140 seconds for the file to be created
+
+  QDateTime start_time_minus_30_seconds = QDateTime(start_time).addSecs(-30);
 
   while(QDateTime::currentDateTime() < start_time_plus_40_seconds) {
-
-    QDateTime now = QDateTime::currentDateTime();
-    QDateTime now_minus_30_seconds = QDateTime(now).addSecs(-30);
 
     QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
 
@@ -79,13 +78,13 @@ static QString get_latest_diagnostic_report(void){
       
       QDateTime file_time = file_info.created();
       
-      if (file_time < now_minus_30_seconds)
+      if (file_time < start_time_minus_30_seconds)
         continue;
 
       //ret += "5\n";
       
-      if (file_time > now)
-        continue;
+      //if (file_time > now)
+      //  continue;
 
       QString file_path = file_info.absoluteFilePath();
       
