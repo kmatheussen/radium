@@ -297,6 +297,8 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
 
  exit:
 
+        //fprintf(stderr,"Got here2 (loading finished)\n");
+        
         if(0){
           Threadsafe_GC_enable();
         }
@@ -306,10 +308,14 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
           mmp2filename=NULL;
         }
 
+        //fprintf(stderr,"Got here3 (loading finished)\n");
+        
         if (ret)
           ResetUndo();
 
         g_is_loading = false;
+
+        //fprintf(stderr,"Got here4 (loading finished)\n");
         
         return ret;
 }
@@ -329,8 +335,8 @@ void NewSong_CurrPos(struct Tracker_Windows *window){
 
   Load_CurrPos_org(window, OS_get_full_program_file_path(STRING_create("sounds/new_song.rad")));
 
-  
   GFX_SetWindowTitle(root->song->tracker_windows, STRING_create("Radium - New song."));
+  
   dc.filename=NULL;
 }
 

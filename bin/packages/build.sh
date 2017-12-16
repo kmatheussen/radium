@@ -85,11 +85,11 @@ rm -fr Visualization-Library-master
 tar xvzf Visualization-Library-master.tar.gz 
 cd Visualization-Library-master/
 #sed -i s/"VL_ACTOR_USER_DATA 0"/"VL_ACTOR_USER_DATA 1"/ src/vlCore/config.hpp
-export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g"
-MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g"
+export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g" #  -D_GLIBCXX_USE_CXX11_ABI=0
+MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g" #  -D_GLIBCXX_USE_CXX11_ABI=0
 echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt
 # previously used build type: RelWithDebInfo. Unfortunately, this one enable _DEBUG and various runtime checks.
-CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
+CFLAGS="$MYFLAGS" CPPFLAGS="$MYFLAGS" CC="gcc" CXX="g++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="g++ $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
 VERBOSE=1 make -j `nproc`
 cd ..
 
@@ -198,9 +198,9 @@ fi
 # Build faust last since we reset the build flags.
 
 # faust, debug
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -Wno-misleading-indentation -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -Wno-misleading-indentation -fPIC  -fno-strict-aliasing" # -D_GLIBCXX_USE_CXX11_ABI=0
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC  -fno-strict-aliasing" # -D_GLIBCXX_USE_CXX11_ABI=0
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O0 -fsanitize=address -g -fPIC  -fno-strict-aliasing" # -D_GLIBCXX_USE_CXX11_ABI=0
 export LDFLAGS="-fsanitize=address"
 cd faust2
 make -j `nproc`
@@ -209,9 +209,9 @@ make clean
 cd ..
 
 #faust, release
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -Wno-misleading-indentation -fPIC  -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC  -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC  -D_GLIBCXX_USE_CXX11_ABI=0 -fno-strict-aliasing"
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -Wno-misleading-indentation -fPIC   -fno-strict-aliasing" # -D_GLIBCXX_USE_CXX11_ABI=0
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC   -fno-strict-aliasing" # -D_GLIBCXX_USE_CXX11_ABI=0
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -O2 -g -fPIC  -fno-strict-aliasing" #  -D_GLIBCXX_USE_CXX11_ABI=0
 export LDFLAGS=""
 cd faust2
 make -j `nproc`

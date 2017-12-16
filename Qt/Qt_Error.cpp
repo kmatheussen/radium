@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QProcess>
 #include <QDir>
+#include <qfontdatabase.h>
 
 #include "../common/nsmtracker.h"
 
@@ -106,6 +107,15 @@ int main(int argc, char **argv){
 
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
+
+  /*
+  {
+    QFontDatabase::addApplicationFont(QCoreApplication::applicationDirPath() + QDir::separator() + "fonts" + QDir::separator() + "Lato-Black.ttf");
+    QFont font;
+    font.fromString("Lato,8,-1,5,87,0,0,0,0,0");
+    QApplication::setFont(font);
+  }
+  */
 
 #if FOR_LINUX
   if(faulty_installation){

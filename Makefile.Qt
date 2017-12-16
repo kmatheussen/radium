@@ -267,8 +267,8 @@ ifeq ($(BUILDTYPE), DEBUG)
 	CPPOPT += -std=gnu++11 -Woverloaded-virtual
 	ifneq (,$(findstring g++,$(CCC)))
 		ifeq ($(shell test $(QT_MINOR) -gt 8; echo $$?),0)  # Turn off suggest-override if using Qt before 5.9. Almost all c++ files uses qt now.
-			CPPOPT += -Wsuggest-override
-			WNO_SUGGEST_OVERRIDE += -Wno-suggest-override
+#			CPPOPT += -Wsuggest-override
+#			WNO_SUGGEST_OVERRIDE += -Wno-suggest-override
 		endif
 	endif
 else
@@ -2274,8 +2274,11 @@ libsndfile_objectfiles/clm2xen.o: libsndfile_built
 	cp bin/packages/sndlib/clm2xen.o libsndfile_objectfiles/
 libsndfile_objectfiles/clm.o: libsndfile_built
 	cp bin/packages/sndlib/clm.o libsndfile_objectfiles/
+
+SNDLIBCONF ?=
+
 libsndfile_built:
-	cd bin/packages/sndlib && CC="$(CC)" CFLAGS="$(SNDLIBFLAGS)" ./configure --without-alsa --without-audio --without-forth --without-gsl --without-jack --without-oss --without-portaudio --without-ruby --without-s7 && $(MAKE) -j3
+	cd bin/packages/sndlib && CC="$(CC)" CFLAGS="$(SNDLIBFLAGS)" ./configure --without-alsa --without-audio --without-forth --without-gsl --without-jack --without-oss --without-portaudio --without-ruby --without-s7 $(SNDLIBCONF) && $(MAKE) -j3
 	mkdir -p libsndfile_objectfiles
 	echo 1 >libsndfile_built
 

@@ -81,9 +81,13 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 #endif
     
 #ifdef USE_QT5
-    static bool have_failed = false;
-    static QStyle *style = QStyleFactory::create("cleanlooks");
+    
+    static QStyle *style = NULL;
 
+#if !defined(FOR_MACOSX) // Didn't bother compiling it up, and it looks okay without it. I guess cleanlooks style is not needed in Qt 5.10.
+    static bool have_failed = false;
+    style = QStyleFactory::create("cleanlooks");
+    
     //GFX_Message(NULL, QStyleFactory::keys().join(", ").toUtf8().constData());
     
     if (have_failed == false){
@@ -93,8 +97,10 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       }else
         setStyle(style);
     }
+#endif
+    
 #else
-    QStyle *style = &_cleanlooksStyle;
+    QStyle *style = NULL; //&_cleanlooksStyle;
 #endif
     
     if (style != NULL){
