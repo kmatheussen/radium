@@ -971,25 +971,19 @@ public:
     double xsplit1 = get_seqblock_xsplit1(x1, x2);
     double xsplit2 = get_seqblock_xsplit2(x1, x2);
 
-#define INTERFACE_IS_READY 0
-    
+#define INCLUDE_STRETCH_INTERFACE 0
+
+#if INCLUDE_STRETCH_INTERFACE
     double ysplit1 = get_seqblock_ysplit1(y1, y2);
+#endif
     double ysplit2 = get_seqblock_ysplit2(y1, y2);
         
     QPen pen(QColor(0, 200 ,0, 200));
     pen.setWidthF(2.3);
     painter->setPen(pen);
 
-#if 0
-    // xsplit1 vertical line, left
-    QLineF line1(xsplit1,y1+border,xsplit1,y2-border);
-    painter->drawLine(line1);
+#if INCLUDE_STRETCH_INTERFACE
 
-    // xsplit2 vertical line, right
-    QLineF line2(xsplit2,y1+border,xsplit2,y2-border);
-    painter->drawLine(line2);
-#else
-    
     // xsplit1 vertical line 2, left
     QLineF line1b(xsplit1,ysplit1,xsplit1,y2-border);
     painter->drawLine(line1b);
@@ -998,10 +992,19 @@ public:
     QLineF line2b(xsplit2,ysplit1,xsplit2,y2-border);
     painter->drawLine(line2b);
 
+#else
+
+    // xsplit1 vertical line 2, left
+    QLineF line1b(xsplit1,ysplit2,xsplit1,y2-border);
+    painter->drawLine(line1b);
+
+    // xsplit1 vertical line 2, right
+    QLineF line2b(xsplit2,ysplit2,xsplit2,y2-border);
+    painter->drawLine(line2b);
 
 #endif
 
-#if 1 //INTERFACE_IS_READY
+#if INCLUDE_STRETCH_INTERFACE
     // ysplit1 horizontal line, left
     QLineF line3a(x1+border, ysplit1, xsplit1-border, ysplit1);
     painter->drawLine(line3a);

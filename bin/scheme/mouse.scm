@@ -1025,12 +1025,12 @@
                              ((inside-box (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y)
                               (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
-                             ((inside-box (<ra> :get-box seqblock-left-interior seqblocknum seqtracknum) X Y)
-                              (set-left-interior-status-bar seqblocknum seqtracknum)
-                              (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
-                             ((inside-box (<ra> :get-box seqblock-right-interior seqblocknum seqtracknum) X Y)
-                              (set-right-interior-status-bar seqblocknum seqtracknum)
-                              (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+                             ;;((inside-box (<ra> :get-box seqblock-left-interior seqblocknum seqtracknum) X Y)
+                             ;; (set-left-interior-status-bar seqblocknum seqtracknum)
+                             ;; (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+                             ;;((inside-box (<ra> :get-box seqblock-right-interior seqblocknum seqtracknum) X Y)
+                             ;; (set-right-interior-status-bar seqblocknum seqtracknum)
+                             ;; (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              (else
                               (<ra> :set-statusbar-text (two-decimal-string (/ (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
                                                                                (<ra> :get-sample-rate))))
@@ -3813,7 +3813,7 @@
 
 
 ;; left handle
-(add-node-mouse-handler :Get-area-box (lambda()
+'(add-node-mouse-handler :Get-area-box (lambda()
                                         (and *current-seqblock-info*
                                              (let ((box (<ra> :get-box seqblock-left-interior (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))))
                                                ;;(c-display "BOX:" (box-to-string box))
@@ -3892,7 +3892,7 @@
                         )
 
 ;; right handle
-(add-node-mouse-handler :Get-area-box (lambda()
+'(add-node-mouse-handler :Get-area-box (lambda()
                                         (and *current-seqblock-info*
                                              (let ((box (<ra> :get-box seqblock-right-interior (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))))
                                                ;;(c-display "BOX:" (box-to-string box))
@@ -5068,12 +5068,12 @@
                                                                                       (<ra> :create-seqblock seqtracknum num-blocks pos))))
                                           "--------------------"
                                           
-                                          "Insert new audio file" (lambda ()
-                                                                    (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                                                      (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong.wav") pos)))
-                                                                      ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
-                                          
-                                          "--------------------"
+                                          ;;"Insert new audio file" (lambda ()
+                                          ;;                          (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
+                                          ;;                            (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong.wav") pos)))
+                                          ;;                            ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
+                                          ;;
+                                          ;;"--------------------"
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
                                                     "Copy sequencer blocks"
