@@ -823,8 +823,13 @@ void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect
 
   } else {
 
-    new_modulator_id = modulators[command-2]->_id;
-
+    int modulator_num = command-2;
+    if (modulator_num < 0 || modulator_num >= (int)modulators.size()){
+      RError("Illegal modulator_num: %d. (command: %d)", modulator_num, command); // Shouldn't be possible, bug got a crash report for the 'new_modulator_id = modulators[command-2]->_id;' line.
+      return;
+    }
+    
+    new_modulator_id = modulators[modulator_num]->_id;
   }
 
   if(old_modulator_id >= 0)
