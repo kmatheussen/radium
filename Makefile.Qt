@@ -1802,7 +1802,8 @@ FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_
 FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual
 
 ifeq ($(GCC_MAJOR),7)
-	FAUST_OPTS += -D_GLIBCXX_USE_CXX11_ABI=0 -fno-sanitize=signed-integer-overflow
+	FAUST_OPTS += -fno-sanitize=signed-integer-overflow
+# -D_GLIBCXX_USE_CXX11_ABI=0 
 endif	
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
