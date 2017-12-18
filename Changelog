@@ -1,3 +1,46 @@
+Changes 5.3.3 -> 5.4.0:
+* Compile Linux and Windows binaries with GCC 7.20 (upgraded
+  from 5.40).
+* Compile macOS binaries with Clang 5.0 (upgraded from
+  Clang 3.6 or thereabout).
+* Upgrade Qt to 5.10 for all three platforms.
+* Linux: Fix keyboard release detection. Proper release
+  detection is needed when playing sounds with the computer
+  keyboard, but it hasn't been possible before since Qt5
+  didn't support it before Qt 5.10.
+* audio/Modulators: Prevent a crash when assigning modulator
+  to a plugin parameter.
+* OSX/crashreporter: Try to increase the chance of including
+  the system diagnostics log in the crash report.
+* Check for updates: Use https and not http when requesting
+  latest version. OSX complained about this, and the update
+  checker might not have worked before on OSX.
+* Audio: Fix memory corruption when playing note on MIDI
+  channel 8 or above. (This change may have fixed a lot of
+  strange behaviors.)
+* Audio: Fix running out of memory (and sometimes crash)
+  when there's more than a few click instruments.
+* Audio: Fix crash when there's more than 16 click
+  instruments.
+* Error message: Fix assertion reporter popping up when when
+  reporting an error from a different thread than the main
+  thread.
+* Audio: Started work implementing recording and playback of
+  audio files to and from disk in the sequencer.
+* Upgraded S7 scheme.
+* API: setSeqblockInteriorStart, setSeqblockInteriorEnd,
+  getSeqblockInteriorStart, getSeqblockInteriorEnd,
+  createSampleSeqblock, getSeqblockSample,
+  getSampleLength, seqblockHoldsBlock,
+  seqblockHoldsSample, getSeqblockLeftInteriorX1,
+  getSeqblockLeftInteriorY1, getSeqblockLeftInteriorX2,
+  getSeqblockLeftInteriorY2, getSeqblockRightInteriorX1,
+  getSeqblockRightInteriorY1, getSeqblockRightInteriorX2,
+  getSeqblockRightInteriorY2, setSeqblockInteriorStartGfx,
+  setSeqblockInteriorEndGfx, getSeqblockInteriorStartGfx,
+  getSeqblockInteriorEndGfx
+
+
 Changes 5.3.2 -> 5.3.3:
 * Audio: Don't show assertion reporter when clicking "R"
   in the sample browser in the fluidsynth instrument.
