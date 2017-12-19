@@ -954,27 +954,16 @@ public slots:
     VECTOR_push_back(&v, "--------------");
     VECTOR_push_back(&v, "<set new name>");
 
-#if 1 //FOR_MACOSX Although we don't have to run this code in linux and windows, we do it anyway. If not, this code path won't be tested that much. There isn't a painting problem anymore either.
-#define DOSYNC 1
-#else
-#define DOSYNC 0
-#endif
-    
-#if DOSYNC
-    // clang didn't like the lambda stuff below.
-    int num = GFX_Menu(root->song->tracker_windows, NULL, "", v, true);
-#else
     IsAlive is_alive(this);
 
     GFX_Menu3(v,
 
               [is_alive,num_presets,type,plugin,this](int num, bool onoff){
                 
-                if (!is_alive)
+                if (!is_alive || _patch->patchdata==NULL)
                   return;
                 
                 printf("I'm here, actually\n");
-#endif
                 
                 if (num == num_presets+1) {
                   char *new_name = GFX_GetString(NULL, NULL, "new name: ", true);
@@ -986,13 +975,9 @@ public slots:
                   type->set_current_preset(plugin, num);
                   update_widget();
                 }
-#if !DOSYNC
               });
-#endif
   }
-  
-#undef DOSYNC
-  
+    
   void on_preset_selector_editingFinished(){
     int num = preset_selector->value() - 1;
     printf("num: %d\n",num);

@@ -4,6 +4,8 @@ Changes 5.3.3 -> 5.4.0:
 * Compile macOS binaries with Clang 5.0 (upgraded from
   Clang 3.6 or thereabout).
 * Upgrade Qt to 5.10 for all three platforms.
+* Editor: Don't crash when pasting a track containing
+  a deleted instrument.
 * Linux: Fix keyboard release detection. Proper release
   detection is needed when playing sounds with the computer
   keyboard, but it hasn't been possible before since Qt5

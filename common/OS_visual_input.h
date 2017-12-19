@@ -86,8 +86,7 @@ extern LANGSPEC char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqt
 #include <functional>
 void GFX_Menu3(
                const vector_t &v,
-               std::function<void(int,bool)> callback,
-               bool program_state_is_valid
+               std::function<void(int,bool)> callback
                );
 #endif
 
