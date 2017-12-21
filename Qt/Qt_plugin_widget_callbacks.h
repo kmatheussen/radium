@@ -942,7 +942,6 @@ public slots:
   void on_preset_button_clicked(){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
-
     int num_presets = type->get_num_presets(plugin);
       
     vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
@@ -962,7 +961,9 @@ public slots:
                 
                 if (!is_alive || _patch->patchdata==NULL)
                   return;
-                
+
+                R_ASSERT_RETURN_IF_FALSE(_patch->patchdata==plugin);
+
                 printf("I'm here, actually\n");
                 
                 if (num == num_presets+1) {
