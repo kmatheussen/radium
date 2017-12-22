@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QApplication>
 #include <QMainWindow>
-#include <QSplitter>
+//#include <QSplitter>
 #include <QCloseEvent>
 #include <QStatusBar>
 #include <QMenuBar>

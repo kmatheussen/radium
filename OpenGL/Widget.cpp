@@ -65,6 +65,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/MovingAverage.hpp"
 #include "../common/player_proc.h"
 
+#include "../Qt/Timer.hpp"
+
 #include "../audio/Juce_plugins_proc.h"
 
 #define GE_DRAW_VL
@@ -233,7 +235,12 @@ static const bool USE_GL_LOCK = false; // Seems like this is safe... (the lock i
 static const bool USE_GL_LOCK = true;
 #endif
 
+#define USE_SWAP_MUTEX 0 // For debugging. Lowers gfx performance significantly.
+
 static radium::Mutex mutex;
+#if USE_SWAP_MUTEX
+static radium::Mutex swap_mutex;
+#endif
 static radium::Mutex make_current_mutex;
 static radium::Mutex draw_mutex(true); // recursive mutex
 
@@ -648,6 +655,25 @@ public:
 
   DEFINE_ATOMIC(bool, _main_window_is_exposed);
 
+#if USE_SWAP_MUTEX
+  struct MyTimer : public radium::Timer {
+    MyTimer()
+      : radium::Timer(5)
+    {
+      swap_mutex.lock();
+    }
+
+    void calledFromTimer(void) override {
+      swap_mutex.unlock();
+      msleep(5);
+      swap_mutex.lock();
+    }
+      
+  };
+
+  MyTimer mytimer;
+#endif
+  
   // Main thread
   MyQtThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
 #if USE_QT5
@@ -1187,6 +1213,10 @@ private:
     if (USE_GL_LOCK)
       mutex.lock();
 
+#if USE_SWAP_MUTEX
+    radium::ScopedMutex swap_mutex_lock(swap_mutex);
+#endif
+    
     void *juce_lock = NULL;
 
     if (doLockJuceWhenSwappingOpenGL())
@@ -1365,6 +1395,10 @@ public:
           bool must_swap;
           
           {
+            
+#if USE_SWAP_MUTEX            
+            //radium::ScopedMutex swap_mutex_lock(swap_mutex);
+#endif
             radium::ScopedMutex lock(draw_mutex);
 
             if (canDraw()) {
@@ -1548,6 +1582,7 @@ return SETTINGS_read_double("vblank", -1.0) > 0.0;
 #endif
 
 static double get_refresh_rate(void){
+  
   static bool has_started_t2_thread = false;
   
   QWindow *qwindow = widget->windowHandle();

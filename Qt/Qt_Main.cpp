@@ -2509,12 +2509,12 @@ int radium_main(char *arg){
 
     {
 
-      struct XSplitter : public QSplitter { public:
+      struct XSplitter : public radium::Splitter { public:
         
         bool _strip_on_left_side;
 
         XSplitter(bool strip_on_left_side)
-          : QSplitter(Qt::Horizontal)
+          : radium::Splitter(Qt::Horizontal)
           , _strip_on_left_side(strip_on_left_side)
         {}
 
@@ -2573,7 +2573,7 @@ int radium_main(char *arg){
         createInstrumentsWidget();
       }
 
-      QSplitter *ysplitter = dynamic_cast<QSplitter*>(API_get_main_ysplitter()); //new QSplitter(Qt::Vertical, main_window);
+      radium::Splitter *ysplitter = dynamic_cast<radium::Splitter*>(API_get_main_ysplitter()); //new radium::Splitter(Qt::Vertical, main_window);
       ysplitter->setHandleWidth(0);
       
       main_window->setCentralWidget(ysplitter);
