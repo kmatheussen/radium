@@ -1,3 +1,12 @@
+Changes 5.4.0 -> 5.4.1:
+* OSX: Fix various crashes, especially notable in 10.13 but
+  also sometimes in 10.12. It was caused by setting the
+  Qt::WA_MacAlwaysShowToolWindow flag on a window.
+* Block list: Fix changing block name.
+* Instrument widget: Display the preset menu async. Might
+  fix reported difficulties on OSX.
+
+
 Changes 5.3.3 -> 5.4.0:
 * Compile Linux and Windows binaries with GCC 7.20 (upgraded
   from 5.40).
