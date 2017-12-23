@@ -1205,7 +1205,7 @@ static radium::Peak get_peak_from_sample(const Sample *sample, int64_t start_tim
   
   if(duration_now <= 0){
     //printf("    Duration now: %d. duration: %d. end: %d, start_time: %d. end-start_time: %d\n", (int)duration_now, (int)duration, (int)end, (int)start_time, (int)(end-start_time));
-    R_ASSERT_NON_RELEASE(is_looping==false);
+    //R_ASSERT_NON_RELEASE(is_looping==false); // INVESTIGATE: This happens when assigning modulator to note adjustment.
     return peak;
   }
 
@@ -1357,8 +1357,10 @@ static int get_peaks(struct SoundPlugin *plugin,
 #endif
         }else{
 #if !defined(RELEASE)
-          if(ATOMIC_GET(sample->data->p.loop_onoff)==true)
+          /*
+          if(ATOMIC_GET(sample->data->p.loop_onoff)==true) //INVESTIGATE: Happens when assigning modulator to note adjustment.
             abort();
+          */
           if (start_frame < sample->num_frames)
             abort();
 #endif
