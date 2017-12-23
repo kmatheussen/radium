@@ -899,6 +899,16 @@ void GE_draw_vl(T2_data *t2_data){
     vg->setPointSmoothing(false); // images are drawn using drawPoint.
     //vg->setTextureMode(vl::TextureMode_Repeat 	); // Note: MAY FIX gradient triangle non-overlaps.
 
+    /*
+    vl::EBlendFactor src_rgb;
+    vl::EBlendFactor dst_rgb;
+    vl::EBlendFactor src_alpha;
+    vl::EBlendFactor dst_alpha;
+    vg->getBlendFunc(src_rgb,dst_rgb,src_alpha,dst_alpha);
+    
+    vg->setBlendFunc(src_rgb, dst_rgb, vl::BF_ONE_MINUS_SRC_ALPHA, vl::BF_ONE_MINUS_DST_ALPHA);
+    */
+    
       for (const auto hepp : painting_data->contexts) {
         
         for (const auto contexts : hepp) {

@@ -1801,7 +1801,7 @@ static void setup_widget(QWidget *parent){
   vl::OpenGLContextFormat vlFormat;
   vlFormat.setDoubleBuffer(true);
   //vlFormat.setDoubleBuffer(false);
-  vlFormat.setRGBABits( 8,8,8,8 );
+  vlFormat.setRGBABits( 8,8,8,0 );
   vlFormat.setDepthBufferBits(24);
   vlFormat.setFullscreen(false);
   vlFormat.setMultisampleSamples(GL_get_multisample()); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
