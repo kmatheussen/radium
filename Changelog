@@ -1,3 +1,8 @@
+Changes 5.4.1 -> 5.4.2:
+* Modulators: Added Random type.
+* Editor: Fixes window see-through problem on OSX.
+
+
 Changes 5.4.0 -> 5.4.1:
 * OSX: Fix various crashes, especially notable in 10.13 but
   also sometimes in 10.12. It was caused by setting the
