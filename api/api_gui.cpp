@@ -71,6 +71,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/flowlayout.h"
 #include "../Qt/lzqlineedit.h"
 #include "../Qt/Timer.hpp"
+#include "../Qt/MySplitter.hpp"
 
 #include "../common/visual_proc.h"
 #include "../common/seqtrack_proc.h"
@@ -3030,13 +3031,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   };
 
 
-  struct Splitter : QSplitter, Gui{
+  struct Splitter : radium::Splitter, Gui{
     Q_OBJECT;
     
   public:
     
     Splitter(bool horizontal, bool childrenCollappsible)
-      : QSplitter(horizontal ? Qt::Horizontal : Qt::Vertical)
+      : radium::Splitter(horizontal ? Qt::Horizontal : Qt::Vertical)
       , Gui(this)
     {
       setChildrenCollapsible(childrenCollappsible);
@@ -3049,7 +3050,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return currentWidget()->sizeHint();
     }
     */
-    OVERRIDERS(QSplitter);
+    OVERRIDERS(radium::Splitter);
   };
 
   // QRubberBand doesn't work. I've also searched the internet, and no one seems to have made it work.
@@ -3783,9 +3784,11 @@ int64_t gui_getSplitterHandle(int64_t splitter_guinum, int pos){
   if (gui==NULL)
     return -1;
 
-  QSplitter *splitter = gui->mycast<QSplitter>(__FUNCTION__);
-  if (splitter==NULL)
+  QSplitter *splitter = dynamic_cast<QSplitter*>(gui->_widget.data());
+  if (splitter==NULL){
+    handleError("gui_getSplitterHandle: Gui is not a splitter");
     return -1;
+  }
 
   if (pos < 0 || pos >= splitter->count()){
     handleError("No splitter handle %d in splitter #%d", pos, (int)splitter_guinum);
@@ -4334,7 +4337,7 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
   }
 #endif
   
-  QSplitter *splitter = dynamic_cast<QSplitter*>(parent);
+  radium::Splitter *splitter = dynamic_cast<radium::Splitter*>(parent);
   
   QLayout *layout = parent->getLayout();
 
@@ -4864,7 +4867,7 @@ void gui_setSize(int64_t guinum, int width, int height){
 
   gui->_have_set_size = true;
 
-  QSplitter *splitter = dynamic_cast<QSplitter*>(gui->_widget->parent());
+  radium::Splitter *splitter = dynamic_cast<radium::Splitter*>(gui->_widget->parent());
   if(splitter != NULL){
     
     int count = splitter->count();

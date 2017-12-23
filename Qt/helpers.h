@@ -154,7 +154,7 @@ static inline QWidget *find_modal_childwindow_to_be_parent(QWidget *widget, bool
 
 // Can only return a widget that is a member of g_static_toplevel_widgets.
 static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_custom_exec, bool may_return_current_parent_before_qmenu_opened = true){
-
+  
   if (child != NULL){
     if (g_static_toplevel_widgets.contains(child)){
 #if !defined(RELEASE)
@@ -306,7 +306,7 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
       f = Qt::Window | Qt::Tool | DEFAULT_WINDOW_FLAGS;
       
       // Qt::Tool windows dissapear on OSX if the application is not active. (At least according to Qt documentation. I haven't tested it.)
-      window->setAttribute(Qt::WA_MacAlwaysShowToolWindow, true);
+      //window->setAttribute(Qt::WA_MacAlwaysShowToolWindow, true); // Warning: Causes program to crash.
       
     } else if (modality != radium::NOT_MODAL)
       force_modal=true; // Qt::Tool doesn't work for levels larger than 1 (it doesn't work if the parent is a Qt::Tool window), so we work around it by using modal windows. Modal windows seems to always be on top of parent window.

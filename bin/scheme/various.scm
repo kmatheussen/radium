@@ -235,7 +235,7 @@
                                         (if (not (<ra> :is-playing-song))
                                             (begin
                                               (<ra> :select-block blocknum)
-                                              (update-rows))
+                                              (update-rows!))
                                             (begin
                                               (<gui> :enable-table-sorting table #f)
                                               (<gui> :set-value table rownum)

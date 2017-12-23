@@ -2008,7 +2008,7 @@ static void generate_peaks(Data *data){
 
       sample.peaks->add_samples(sample.sound, sample.num_frames, radium::Peaks::THIS_IS_THE_LAST_CALL);
 
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
       if (sample.filename!=NULL){
         radium::DiskPeaks *disk_peaks = new radium::DiskPeaks(sample.filename);
         if(disk_peaks->is_valid()==false)

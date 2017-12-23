@@ -152,7 +152,11 @@ void FAUST_set_qtguistyle(QDialog *gui){
 }
 #endif
 
-
+#ifndef WITH_FAUST_DEV
+static Data *GET_DATA_FROM_PLUGIN(SoundPlugin *plugin){
+  return (Data*)plugin->data;
+}
+#endif
 
 #ifdef WITH_FAUST_DEV
 

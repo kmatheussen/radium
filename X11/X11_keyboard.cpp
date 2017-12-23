@@ -436,49 +436,112 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   
   if ( (event->response_type & ~0x80) == XCB_KEY_PRESS){
     
-    xcb_key_press_event_t *key_event = (xcb_key_press_event_t *)void_event;
-    int ret = TR_KEYBOARD;
+    struct Stuff{
+      xcb_key_release_event_t *key_event;
+      int ret;
+    };
+    
+    Stuff stuff = {
+      (xcb_key_press_event_t *)void_event,
+      TR_KEYBOARD
+    };
+
+    /*
+    auto peeker_callback = [](xcb_generic_event_t *next_event, void *peekerData) {
+      Stuff *stuff = (Stuff*)peekerData;
+      if ( (next_event->response_type & ~0x80) == XCB_KEY_PRESS){
+        xcb_key_release_event_t *next_key = (xcb_key_release_event_t *)next_event;
+        printf("A Press in Queue. %d %d (%d %d)\n", next_key->time, stuff->key_event->time, next_key->detail, stuff->key_event->detail);
+        if (next_key->detail == stuff->key_event->detail && next_key->time == stuff->key_event->time)
+          stuff->ret = TR_AUTOREPEAT;
+        return true;
+      }else{
+        printf("Not a Press in Queue\n");
+      }
+      
+      return false;
+    };
+    
+    QX11Info::peekEventQueue(peeker_callback, &stuff);
+    */
     
     //printf(">>> Keypress %d\n",last_key_press.detail);
     //printf("     down: keynum: %d. Time: %d\n", key_event->detail, key_event->time);
     
     if (last_event_was_key_release &&
-        last_key_release.time == key_event->time &&
-        last_key_release.detail == key_event->detail)
+        last_key_release.time == stuff.key_event->time &&
+        last_key_release.detail == stuff.key_event->detail)
       {
         //        if (ignore_autorepeat){// && !event_is_arrow2(get_sym(key_event))) {
           //printf("   Autorepeat 1\n");
-          ret = TR_AUTOREPEAT;
+        stuff.ret = TR_AUTOREPEAT;
           //        }
       }
         
-    last_key_press = *key_event;
+    last_key_press = *stuff.key_event;
     last_event_was_key_press = true;
     last_event_was_key_release = false;
     
-    return ret;
+    return stuff.ret;
   }
   
   else if ( (event->response_type & ~0x80) == XCB_KEY_RELEASE){
     
-    xcb_key_release_event_t *key_event = (xcb_key_release_event_t *)void_event;
-    int ret = TR_KEYBOARDUP;
+    struct Stuff{
+      xcb_key_release_event_t *key_event;
+      int ret;
+    };
+    
+    Stuff stuff = {
+      (xcb_key_release_event_t *)void_event,
+      TR_KEYBOARDUP
+    };
 
+    
+#if QT_VERSION_MAJOR >= 5 && QT_VERSION_MINOR >= 10  // Proper autorepeat detection. (Requires 5.10 or newer)
+
+    auto peeker_callback = [](xcb_generic_event_t *next_event, void *peekerData) {
+      
+      Stuff *stuff = static_cast<Stuff*>(peekerData);
+      
+      if ( (next_event->response_type & ~0x80) == XCB_KEY_PRESS){
+        
+        xcb_key_release_event_t *next_key = (xcb_key_release_event_t *)next_event;
+        //printf("A Release+Press in Queue. %d %d (%d %d)\n", next_key->time, stuff->key_event->time, next_key->detail, stuff->key_event->detail);
+        
+        if (next_key->detail == stuff->key_event->detail && next_key->time == stuff->key_event->time)
+          stuff->ret = TR_AUTOREPEAT;
+        
+        return true;
+        
+      }else{
+        
+        //printf("Not a Release+Press in Queue\n");
+        
+      }
+      
+      return false;
+    };
+    
+    QX11Info::peekEventQueue(peeker_callback, &stuff);
+    
+#endif
+    
     //printf("       up: keynum: %d. Time: %d\n", key_event->detail, key_event->time);
     //printf(">>> Keyrelease %d/%d   -  %d/%d    (%d)\n",key_event->time, last_key_press.time, key_event->detail, last_key_press.detail, last_event_was_key_press);
 
-    if (last_event_was_key_release && last_key_release.detail==key_event->detail){ // sometimes happens when autorepeating (why didn't xcb add autorepeat flag? It's a very new api.)
+    if (last_event_was_key_release && last_key_release.detail==stuff.key_event->detail){ // sometimes happens when autorepeating (why didn't xcb add autorepeat flag? It's a very new api.)
       //if (ignore_autorepeat)
-        ret = TR_AUTOREPEAT;
-        //else
-        //  ret = TR_KEYBOARD;
+      stuff.ret = TR_AUTOREPEAT;
+      //else
+      //  ret = TR_KEYBOARD;
     } else {
-      last_key_release = *key_event;
+      last_key_release = *stuff.key_event;
       last_event_was_key_press = false;
       last_event_was_key_release = true;
     }
           
-    return ret;
+    return stuff.ret;
   }
   
   else
