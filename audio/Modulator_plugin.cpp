@@ -364,7 +364,7 @@ struct RandomGenerator : public OscillatorGenerator {
     if (phase < _last_phase){
       _last_int_value = (_last_int_value + 12345) * 1103515245;
       _last_value = (double)_last_int_value / 2147483647.0;
-      printf("  Val: %f\n", _last_value);
+      //printf("  Val: %f\n", _last_value);
     }
 
     _last_phase = phase;
