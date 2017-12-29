@@ -27,6 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QPainter>
 
+#include "../Qt/Qt_mix_colors.h"
+
+
 namespace radium{
 
 template <typename T> class SeqAutomation{
@@ -384,6 +387,14 @@ private:
 
 public:
 
+  void print(void){
+    for(int i = 0 ; i < _automation.size()-1 ; i++){
+      const T &node1 = _automation.at(i);
+      const T &node2 = _automation.at(i+1);
+      printf("%d: %f -> %f. (%f -> %f)\n", i, node1.value, node2.value, node1.time, node2.time);
+    }
+  }
+
   void paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time, const QColor &color,
              float (*get_y)(const T &node, float y1, float y2),
              float (*get_x)(const T &node, double start_time, double end_time, float x1, float x2, void *data) = NULL,
@@ -391,7 +402,7 @@ public:
              ) const {
   
     QPen pen(color);
-    pen.setWidthF(2.3);
+    pen.setWidthF(_paint_nodes ? root->song->tracker_windows->systemfontheight / 3 : root->song->tracker_windows->systemfontheight / 6);
     
     for(int i = 0 ; i < _automation.size()-1 ; i++){
       const T &node1 = _automation.at(i);
