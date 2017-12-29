@@ -169,6 +169,15 @@ else
 	UNDEFINED_SANITIZE_OPTS=
 endif
 
+ifeq ($(GCC_MAJOR),7)
+	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+#	UNDEFINED_SANITIZE_OPTS=
+else
+	UNDEFINED_SANITIZE_OPTS=
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=
+endif
+
 # clang:
 #UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer
 #UNDEFINED_SANITIZE_OPTS=
@@ -1797,17 +1806,13 @@ FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 Pd_plugin.o: audio/Pd_plugin.cpp
 	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
+
 Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
-	$(CCC) $(QTOPT) audio/Modulator_plugin.cpp -fno-sanitize=signed-integer-overflow
+	$(CCC) $(QTOPT) audio/Modulator_plugin.cpp $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW)
 
 
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual
-
-ifeq ($(GCC_MAJOR),7)
-	FAUST_OPTS += -fno-sanitize=signed-integer-overflow
-# -D_GLIBCXX_USE_CXX11_ABI=0 
-endif	
+FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW)
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
