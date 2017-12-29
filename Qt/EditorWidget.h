@@ -69,9 +69,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#define XOFFSET 5
 //#define YOFFSET 2
 
+#include "MySplitter.hpp"
+
 
 class QMainWindow;
-class QSplitter;
 class Upperleft_widget;
 
 #if USE_QIMAGE_BUFFER
@@ -132,7 +133,7 @@ public:
     //QFrame *status_frame;
     //QVector<QLabel*> status_labels;
 
-    QSplitter *xsplitter;
+    radium::Splitter *xsplitter;
     //QSplitter *ysplitter;
 
     int get_editor_width(){

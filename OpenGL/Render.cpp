@@ -2926,6 +2926,7 @@ void GL_create(const struct Tracker_Windows *window){
 DEFINE_ATOMIC(bool, g_is_creating_all_GL_blocks) = false;
 
 void GL_create_all(const struct Tracker_Windows *window){
+
   struct WBlocks *wblock = window->wblocks;
 
   ATOMIC_SET(g_is_creating_all_GL_blocks, true);
@@ -2943,4 +2944,5 @@ void GL_create_all(const struct Tracker_Windows *window){
     
   g_is_creating_all_GL_blocks = false;
   ATOMIC_SET(g_is_creating_all_GL_blocks, false);
+
 }

@@ -1039,7 +1039,7 @@ void BS_call_very_often(void){
 static void set_widget_width(int width){
   QWidget *main_window = static_cast<QWidget*>(root->song->tracker_windows->os_visual.main_window);
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-  QSplitter *splitter = editor->xsplitter;
+  radium::Splitter *splitter = editor->xsplitter;
 
   QValueList<int> currentSizes = splitter->sizes();
   bs->last_shown_width = currentSizes[1];
@@ -1063,7 +1063,7 @@ void GFX_PlayListWindowToFront(void){
   
 #if 0
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
-  QSplitter *splitter = editor->xsplitter;
+  radium::Splitter *splitter = editor->xsplitter;
   splitter->addWidget(bs);
 #endif
 

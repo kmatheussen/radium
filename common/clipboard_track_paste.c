@@ -77,21 +77,28 @@ static void make_patches_usable(struct Tracks *track){
     struct Patch *new_patch = old_patch;
     
     if (!old_patch->is_usable) {
-      R_ASSERT(old_patch->instrument == get_audio_instrument()); // Only audio instruments may not be usable.
 
-      printf("PERMANENT_ID for %s: %d\n",old_patch->name,old_patch->permanent_id);
-      
-      if (old_patch->permanent_id != 0)
-        new_patch = AUDIO_get_the_replacement_for_old_permanent_patch(old_patch);
-      else {
-        new_patch = PATCH_create_audio(NULL, NULL, old_patch->name, old_patch->state, 0, 0);
-        connectAudioInstrumentToMainPipe(new_patch->id);
+      if (old_patch->instrument != get_audio_instrument()) { // is_usable is not supposed to be false for MIDI instrument.
+        
+        R_ASSERT(false);
+        
+      } else {
+
+        printf("PERMANENT_ID for %s: %d\n",old_patch->name,old_patch->permanent_id);
+        
+        if (old_patch->permanent_id != 0)
+          new_patch = AUDIO_get_the_replacement_for_old_permanent_patch(old_patch);
+        else {
+          new_patch = PATCH_create_audio(NULL, NULL, old_patch->name, old_patch->state, 0, 0);
+          connectAudioInstrumentToMainPipe(new_patch->id);
+        }
+
       }
       
       track->patch = new_patch;
     }
     
-    R_ASSERT(track->patch->patchdata != NULL);
+    R_ASSERT_RETURN_IF_FALSE(track->patch->patchdata != NULL);
 
     VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
       struct FX *fx = fxs->fx;
@@ -99,12 +106,19 @@ static void make_patches_usable(struct Tracks *track){
       if (fx->patch == old_patch)
         fx->patch = new_patch;
       else if (!fx->patch->is_usable){
-        R_ASSERT(old_patch->instrument == get_audio_instrument()); // Only audio instruments may not be usable.
         
-        if (fx->patch->permanent_id != 0)
-          fx->patch = AUDIO_get_the_replacement_for_old_permanent_patch(fx->patch);
-        else
-          fx->patch = PATCH_create_audio(NULL, NULL, fx->patch->name, fx->patch->state, 0, 0);
+        if (old_patch->instrument != get_audio_instrument()) {
+          
+          R_ASSERT(false); // Only audio instruments may not be usable.
+          
+        } else {
+
+          if (fx->patch->permanent_id != 0)
+            fx->patch = AUDIO_get_the_replacement_for_old_permanent_patch(fx->patch);
+          else
+            fx->patch = PATCH_create_audio(NULL, NULL, fx->patch->name, fx->patch->state, 0, 0);
+        }
+        
       }
     }END_VECTOR_FOR_EACH;
     
