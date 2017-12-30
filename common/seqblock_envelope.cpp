@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#define DO_DEBUG 0
 
 
 #include "nsmtracker.h"
@@ -118,7 +119,8 @@ struct Automation{
   }
 
   Automation(const hash_t *state){
-    automation.create_from_state(state, create_node_from_state);
+    if (state != NULL)
+      automation.create_from_state(state, create_node_from_state);
   }
 
   ~Automation(){
@@ -149,20 +151,18 @@ public:
   SeqblockEnvelope(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const hash_t *state = NULL)
     : _seqtrack(seqtrack)
     , _seqblock(seqblock)
+    , _automation(state)
   {
     SEQBLOCK_ENVELOPE_cancel_curr_automation();
-          
-    if (state != NULL) {
 
-      _automation = Automation(state);
-    
-    } else {
+    if (state == NULL) {
 
-      add_automation(0.0, 1.0, LOGTYPE_LINEAR,
-                     1.0, 0.0);
+      double duration = seqblock->t.default_duration;
 
-      _automation.automation.add_node(create_node(0.2, 0.1, LOGTYPE_LINEAR));
-      _automation.automation.add_node(create_node(0.7, 1.0, LOGTYPE_LINEAR));
+      _automation.automation.add_node(create_node(0, 0.9, LOGTYPE_LINEAR));
+      _automation.automation.add_node(create_node(duration/4, 0.8, LOGTYPE_LINEAR));
+      _automation.automation.add_node(create_node(duration/2, 0.8, LOGTYPE_LINEAR));
+      _automation.automation.add_node(create_node(duration, 0.0, LOGTYPE_LINEAR));
     }
   }
 
@@ -184,16 +184,6 @@ public:
   hash_t *get_state(void) const {
     return _automation.get_state();
   }
-
-  int add_automation(double seqtime1, double value1, int logtype, double seqtime2, double value2){
-    _automation.automation.add_node(create_node(seqtime1, value1, logtype));
-
-    int ret = _automation.automation.add_node(create_node(seqtime2, value2, logtype));
-    
-    SEQTRACK_update(_seqtrack);
-    
-    return ret;
-  }
 };
  
 
@@ -203,10 +193,6 @@ struct SeqblockEnvelope *SEQBLOCK_ENVELOPE_create(struct SeqTrack *seqtrack, str
 
 void SEQBLOCK_ENVELOPE_free(struct SeqblockEnvelope *seqblockenvelope){
   delete seqblockenvelope;
-}
-
-int SEQBLOCK_ENVELOPE_add_automation(struct SeqblockEnvelope *seqblockenvelope, double seqtime1, double value1, int logtype, double seqtime2, double value2){
-  return seqblockenvelope->add_automation(seqtime1, value1, logtype, seqtime2, value2);
 }
 
 int SEQBLOCK_ENVELOPE_get_num_automations(struct SeqblockEnvelope *seqblockenvelope){
@@ -226,7 +212,7 @@ double SEQBLOCK_ENVELOPE_get_seqtime(struct SeqblockEnvelope *seqblockenvelope, 
   struct Automation &automation = seqblockenvelope->_automation;
   R_ASSERT_RETURN_IF_FALSE2(automation.islegalnodenum(nodenum), 0.5);
 
-  return automation.automation.at(nodenum).time + get_seqblock_noninterior_start(seqblockenvelope->seqblock);
+  return automation.automation.at(nodenum).time + get_seqblock_noninterior_start(seqblockenvelope->_seqblock);
 }
 
 int SEQBLOCK_ENVELOPE_get_logtype(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
@@ -248,14 +234,18 @@ int SEQBLOCK_ENVELOPE_add_node(struct SeqblockEnvelope *seqblockenvelope, double
   if (seqtime < 0)
     seqtime = 0;
 
+  auto *seqblock = seqblockenvelope->_seqblock;
+
   struct Automation &automation = seqblockenvelope->_automation;
 
   value = R_BOUNDARIES(0.0, value, 1.0);
 
-  double time = R_BOUNDARIES(0,
-                             seqtime - get_seqblock_noninterior_start(seqblock),
-                             SEQBLOCK_get_seq_duration(seqblock)
-                             );
+  double time =
+    R_BOUNDARIES(0,
+                 (seqtime - get_seqblock_noninterior_start(seqblock)),
+                 SEQBLOCK_get_seq_duration(seqblock)
+                 )
+    / seqblock->t.stretch;
 
   int ret = automation.automation.add_node(create_node(time, value, logtype));
   
@@ -365,13 +355,14 @@ void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock,
   const AutomationNode *next = nodenum==size-1 ? NULL : &automation.automation.at(nodenum+1);
 
   double mintime = prev==NULL ? 0 : prev->time; //next==NULL ? R_MAX(R_MAX(node.time, seqtime), SONG_get_length()) : prev->time;
-  double maxtime = next==NULL ? SEQBLOCK_get_seq_duration(seqblock) : next->time;
+  double maxtime = next==NULL ? SEQBLOCK_get_seq_duration(seqblock) / seqblock->t.stretch : next->time;
 
   //printf("       mintime: %f, seqtime: %f, maxtime: %f\n",mintime,seqtime,maxtime);
   double time = R_BOUNDARIES(mintime,
-                             seqtime - get_seqblock_noninterior_start(seqblock),
-                             maxtime);
-  
+                             (seqtime - get_seqblock_noninterior_start(seqblock)) / seqblock->t.stretch,
+                             maxtime
+                             );
+
   value = R_BOUNDARIES(0.0, value, 1.0);
 
   node.time = time;
@@ -422,7 +413,6 @@ static void RT_handle_seqblock_volume_automation(linked_note_t *linked_notes, st
           RT_PATCH_change_velocity(linked_note->seqtrack,
                                    patch,
                                    create_note_t(seqblock,
-                                                 editor_note,
                                                  note.id,
                                                  note.pitch,
                                                  note.velocity * volume_automation_value,
@@ -502,17 +492,15 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
       struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
 
       double s1 = get_seqblock_noninterior_start(seqblock);
-      double s2 = get_seqblock_noninterior_end(seqtrack, seqblock);
-
-      double pos = scale_double(start_time,
-                                s1, s2,
-                                0, 1);
+      double pos = (start_time-s1) / seqblock->t.stretch;
 
       double new_volume;
       seqblockenvelope->_automation.automation.RT_get_value(pos, new_volume);
+#if DO_DEBUG
       seqblockenvelope->_automation.automation.print();
       printf("new_volume: %f. Pos: %f\n\n", new_volume, pos);
-      
+#endif
+
       if (new_volume != seqblock->last_envelope_volume){        
         seqblock->last_envelope_volume = new_volume;
         seqblock->envelope_volume = new_volume;
@@ -527,7 +515,7 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
 
 
 // Called from player.c
-*void RT_SEQBLOCK_ENVELOPE_called_before_scheduler(void){
+void RT_SEQBLOCK_ENVELOPE_called_before_scheduler(void){
   if (is_playing_song()==false)
     return;
   
@@ -565,7 +553,7 @@ void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void){
       seqblockenvelope->_automation.last_value = -1.0;
 
       seqblock->last_envelope_volume = -1;
-      seqblock->envelope_volume = -1;
+      seqblock->envelope_volume = -1; // WARNING: When enabling the Seqtrack_plugin, ensure that we don't use seqblock->envelope_volume when player is stopped. If we do, it could be hard to hear since the only thing we do is to invert the phase, at least when there's no envelope volume.
 
     }END_VECTOR_FOR_EACH;
 
@@ -574,16 +562,22 @@ void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void){
 
 
 
-hash_t *SEQBLOCK_ENVELOPE_get_state(struct SeqblockEnvelope *seqblockenvelope){
+hash_t *SEQBLOCK_ENVELOPE_get_state(const struct SeqblockEnvelope *seqblockenvelope){
   return seqblockenvelope->get_state();
+}
+
+void SEQBLOCK_ENVELOPE_apply_state(struct SeqblockEnvelope *seqblockenvelope, const hash_t *envelope_state){
+  seqblockenvelope->_automation.automation.create_from_state(envelope_state, create_node_from_state);
+  SEQTRACK_update(seqblockenvelope->_seqtrack);
 }
 
 
 static float get_node_x2(const struct SeqblockEnvelope *seqblockenvelope, const AutomationNode &node, double start_time, double end_time, float x1, float x2){
   //int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, node.time);
 
-  //printf("      GET_NODE_X2 returned %f - %f. start_time: %f, end_time: %f\n",abstime/48000.0, scale(abstime, start_time, end_time, x1, x2), start_time/48000.0, end_time/48000.0);
-  return scale(node.time, 0, 1, x1, x2);
+  //printf("      GET_NODE_X2 returned %f - %f. start_time: %f, end_time: %f\n",abstime/48000.0, scale(abstime, start_time, end_time, x1, x2), start_time/48000.0, end_time/48000.0);  
+  double duration = seqblockenvelope->_seqblock->t.default_duration;
+  return scale(node.time, 0, duration, x1, x2);
 }
 
 static float get_node_x(const AutomationNode &node, double start_time, double end_time, float x1, float x2, void *data){
@@ -628,5 +622,5 @@ void SEQBLOCK_ENVELOPE_paint(QPainter *p, const struct SeqBlock *seqblock, float
   
   //automation.automation.set_do_paint_nodes(paint_nodes);
 
-  automation.automation.paint(p, x1, y1, x2, y2, 0, 1, QColor("white"), get_node_y, NULL, seqblockenvelope); //get_node_y, get_node_x, seqblockenvelope);
+  automation.automation.paint(p, x1, y1, x2, y2, 0, 1, QColor("white"), get_node_y, get_node_x, seqblockenvelope); //get_node_y, get_node_x, seqblockenvelope);
 }

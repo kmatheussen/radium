@@ -14,7 +14,7 @@ static void RT_schedule_velocity(struct SeqTrack *seqtrack,
                                  int64_t current_time,
                                  const struct SeqBlock *seqblock,
                                  const struct Tracks *track,
-                                 const struct Notes *note,
+                                 struct Notes *note,
                                  const struct Velocities *velocity1,
                                  bool first_val_has_been_sent
                                  );
@@ -23,7 +23,7 @@ static void RT_scheduled_hold_velocity_do(struct SeqTrack *seqtrack,
                                           int64_t time,
                                           const struct SeqBlock *seqblock,
                                           const struct Tracks *track,
-                                          const struct Notes *note,
+                                          struct Notes *note,
                                           const struct Velocities *velocity1,
                                           bool first_val_has_been_sent)
 {
@@ -40,6 +40,11 @@ static void RT_scheduled_hold_velocity_do(struct SeqTrack *seqtrack,
     printf("  Sending HOLD velocity %x at %d\n",val,(int)time);
 #endif
     
+    if (seqblock->envelope_volume >= 0)
+      val *= seqblock->envelope_volume;
+  
+    note->has_sent_seqblock_volume_automation_this_block = true;
+
     RT_PATCH_change_velocity(seqtrack,
                              patch,
                              create_note_t(seqblock,
@@ -63,7 +68,7 @@ static void RT_scheduled_hold_velocity_do(struct SeqTrack *seqtrack,
 static int64_t RT_scheduled_hold_velocity(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   const struct SeqBlock   *seqblock  = args[0].const_pointer;
   const struct Tracks     *track     = args[1].const_pointer;
-  const struct Notes      *note      = args[2].pointer;
+  struct Notes      *note      = args[2].pointer;
   const struct Velocities *velocity1 = args[3].pointer;
 
   RT_scheduled_hold_velocity_do(seqtrack, time, seqblock, track, note, velocity1, false);
@@ -75,7 +80,7 @@ static int64_t RT_scheduled_hold_velocity(struct SeqTrack *seqtrack, int64_t tim
 static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   const struct SeqBlock   *seqblock  = args[0].const_pointer;
   const struct Tracks     *track     = args[1].const_pointer;
-  const struct Notes      *note      = args[2].pointer;
+  struct Notes      *note      = args[2].pointer;
   const struct Velocities *velocity1 = args[3].pointer;
   int64_t                  time1     = args[4].int_num;
   int64_t                  time2     = args[5].int_num;
@@ -103,6 +108,11 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
     
   int val = time1==time2 ? val2 : scale(time, time1, time2, val1, val2); // We get divide by zero in scale() if time1==time2
     
+  if (seqblock->envelope_volume >= 0)
+    val *= seqblock->envelope_volume;
+  
+  note->has_sent_seqblock_volume_automation_this_block = true;
+
   if (val != last_val) {
 #if DO_DEBUG
     printf("  Sending velocity %x at %d\n",val,(int)time);
@@ -143,7 +153,7 @@ static void RT_schedule_velocity(struct SeqTrack *seqtrack,
                                  int64_t current_time,
                                  const struct SeqBlock *seqblock,
                                  const struct Tracks *track,
-                                 const struct Notes *note,
+                                 struct Notes *note,
                                  const struct Velocities *velocity1,
                                  bool first_val_has_been_sent
                               )
@@ -221,7 +231,7 @@ void RT_schedule_velocities_newnote(int64_t current_time,
                                     struct SeqTrack *seqtrack,
                                     const struct SeqBlock *seqblock,
                                     const struct Tracks *track,
-                                    const struct Notes *note)
+                                    struct Notes *note)
 {
   if (track->patch==NULL)
     return;

@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../embedded_scheme/scheme_proc.h"
 #include "../common/seqtrack_automation_proc.h"
 #include "../common/song_tempo_automation_proc.h"
+#include "../common/seqblock_envelope_proc.h"
 #include "../common/tracks_proc.h"
 
 #include "../audio/Mixer_proc.h"
@@ -503,38 +504,46 @@ public:
   }
   */
   
-  double get_seqblock_x1(struct SeqBlock *seqblock, double start_time, double end_time) const {
+  double get_seqblock_x1(const struct SeqBlock *seqblock, double start_time, double end_time) const {
     return scale_double(seqblock->start_time, start_time, end_time, t_x1, t_x2);
   }
   
-  double get_seqblock_x2(struct SeqBlock *seqblock, double start_time, double end_time) const {
+  double get_seqblock_x2(const struct SeqBlock *seqblock, double start_time, double end_time) const {
     return scale_double(seqblock->end_time, start_time, end_time, t_x1, t_x2);
+  }
+
+  double get_seqblock_x1(const struct SeqBlock *seqblock) const {
+    SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
+    double start_time = _start_time / MIXER_get_sample_rate();
+    double end_time = _end_time / MIXER_get_sample_rate();
+    return get_seqblock_x1(seqblock, start_time, end_time);
   }
 
   double get_seqblock_x1(int seqblocknum) const {
     R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, 0);
 
     // This can happen while the sequencer is updated.
-    if (seqblocknum >= _seqtrack->seqblocks.num_elements)
+    if (seqblocknum >= gfx_seqblocks(_seqtrack)->num_elements)
       return 0;
     
+    return get_seqblock_x1((struct SeqBlock*)gfx_seqblocks(_seqtrack)->elements[seqblocknum]);
+  }
+
+  double get_seqblock_x2(const struct SeqBlock *seqblock) const {
     SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
     double start_time = _start_time / MIXER_get_sample_rate();
     double end_time = _end_time / MIXER_get_sample_rate();
-    return get_seqblock_x1((struct SeqBlock*)_seqtrack->seqblocks.elements[seqblocknum], start_time, end_time);
+    return get_seqblock_x2(seqblock, start_time, end_time);
   }
 
   double get_seqblock_x2(int seqblocknum) const {
     R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, 0);
 
     // This can happen while the sequencer is updated.
-    if (seqblocknum >= _seqtrack->seqblocks.num_elements)
+    if (seqblocknum >= gfx_seqblocks(_seqtrack)->num_elements)
       return 100;
 
-    SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
-    double start_time = _start_time / MIXER_get_sample_rate();
-    double end_time = _end_time / MIXER_get_sample_rate();
-    return get_seqblock_x2((struct SeqBlock*)_seqtrack->seqblocks.elements[seqblocknum], start_time, end_time);
+    return get_seqblock_x2((struct SeqBlock*)gfx_seqblocks(_seqtrack)->elements[seqblocknum]);
   }
 
   void set_seqblocks_is_selected(const QRect &selection_rect){
@@ -546,12 +555,12 @@ public:
     double start_time = _start_time / sample_rate;
     double end_time = _end_time / sample_rate;
 
-    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &_seqtrack->seqblocks){
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(_seqtrack)){
 
       if (seqblock->start_time < end_time && seqblock->end_time >= start_time) {
         double x1 = get_seqblock_x1(seqblock, start_time, end_time);
         double x2 = get_seqblock_x2(seqblock, start_time, end_time);
-        
+
         QRect rect(x1,t_y1+1,x2-x1,height-2);
         
         seqblock->is_selected = rect.intersects(selection_rect);
@@ -962,7 +971,14 @@ public:
 
   }
   
-  void draw_interface(QPainter *painter, QRectF _blury_areaF){
+  void draw_volume_envelope(QPainter *painter, const QRectF &rect, const struct SeqBlock *seqblock){
+    qreal x1,y1,x2,y2;
+    rect.getCoords(&x1, &y1, &x2, &y2);
+
+    SEQBLOCK_ENVELOPE_paint(painter, seqblock, x1, y1, x2, y2, seqblock==g_curr_seqblock);
+  }
+
+  void draw_interface(QPainter *painter, const QRectF &_blury_areaF){
     qreal x1,y1,x2,y2;
     _blury_areaF.getCoords(&x1, &y1, &x2, &y2);
 
@@ -1023,7 +1039,6 @@ public:
     painter->drawLine(line4b);
     
     //myDrawText(*painter, _blury_areaF, "hello");
-    
   }
 
   void paintSelected(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
@@ -1055,13 +1070,14 @@ public:
   void paintSeqBlock(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
     //QPoint mousep = _sequencer_widget->mapFromGlobal(QCursor::pos());
 
+    int header_height = get_block_header_height();
+    const QRectF rect_without_header = rect.adjusted(0, header_height, 0, 0);
+
     if(seqblock != g_curr_seqblock){ //!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
 
       paintSeqBlockElements(p, rect, seqblock, is_gfx);
 
     } else {
-
-      int header_height = get_block_header_height();
 
 #if USE_BLURRED
       
@@ -1077,7 +1093,7 @@ public:
       // todo: must fill background image of image before painting.
       
       QRectF rect2(0, 0, rwidth, rheight);
-      QRect blur_rect = rect2.toRect().adjusted(0, header_height, 0, 0);
+      QRect blur_rect = rect_without_header.toRect();
 
       {
         QPainter ptr(&image);
@@ -1101,9 +1117,10 @@ public:
       
 #endif
       
-      draw_interface(&p, rect.adjusted(0, header_height, 0, 0));
-            
+      draw_interface(&p, rect_without_header);
     }
+
+    draw_volume_envelope(&p, rect_without_header, seqblock);
   }
   
   void paint(const QRect &update_rect, QPainter &p) { // QPaintEvent * ev ) override {
@@ -1122,12 +1139,14 @@ public:
     double end_time = _end_time / sample_rate;
 
     for(int i=0;i<2;i++){
-      vector_t *seqblocks = i==0 ? &_seqtrack->seqblocks : &_seqtrack->gfx_gfx_seqblocks ;
+      const vector_t *seqblocks = i==0 ? gfx_seqblocks(_seqtrack) : &_seqtrack->gfx_gfx_seqblocks ;
 
       VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
-        
-        //printf("      PAINTING BLOCK %f / %f, seqtrack/seqblock: %p / %p\n", seqblock->start_time, seqblock->end_time, _seqtrack, seqblock);
 
+        if (seqblock->block == NULL){
+          printf("      PAINTING BLOCK %p (gfx: %d). start/end: %f / %f. interior start/end: %d %d. seqtrack/seqblock: %p / %p\n", seqblock, _seqtrack->gfx_seqblocks!=NULL, seqblock->start_time, seqblock->end_time, (int)seqblock->gfx.interior_start, (int)seqblock->gfx.interior_end, _seqtrack, seqblock);
+        }
+        
         if (seqblock->start_time < end_time && seqblock->end_time >= start_time) {
           
           double x1 = get_seqblock_x1(seqblock, start_time, end_time);
@@ -1177,9 +1196,9 @@ public:
   
   void call_very_often(void){
     
-    if (_last_num_seqblocks != _seqtrack->seqblocks.num_elements) {
+    if (_last_num_seqblocks != gfx_seqblocks(_seqtrack)->num_elements) {
       SEQUENCER_update();
-      _last_num_seqblocks = _seqtrack->seqblocks.num_elements;
+      _last_num_seqblocks = gfx_seqblocks(_seqtrack)->num_elements;
     }
 
 #if UPDATE_EVERY_5_SECONDS
@@ -1400,7 +1419,7 @@ public:
     }
   }
 
-  Seqtrack_widget *get_seqtrack_widget(struct SeqTrack *seqtrack){
+  Seqtrack_widget *get_seqtrack_widget(const struct SeqTrack *seqtrack){
     for(auto *seqtrack_widget : _seqtrack_widgets)
       if (seqtrack_widget->_seqtrack==seqtrack)
         return seqtrack_widget;
@@ -1564,17 +1583,17 @@ struct Timeline_widget : public MouseTrackerQWidget {
       int barnum = 1;
 
       const struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[0];
-      if (seqtrack->seqblocks.num_elements > 0) {
+      if (gfx_seqblocks(seqtrack)->num_elements > 0) {
 
         int64_t start_seqtime = get_seqtime_from_abstime(seqtrack, NULL, _start_time);
         int64_t end_seqtime = get_seqtime_from_abstime(seqtrack, NULL, _end_time);
         
-        //const struct SeqBlock *first_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[0];
+        //const struct SeqBlock *first_seqblock = (struct SeqBlock*)gfx_seqblocks(seqtrack).elements[0];
 
-        for(int i = 0 ; i < seqtrack->seqblocks.num_elements ; i++){
+        for(int i = 0 ; i < gfx_seqblocks(seqtrack)->num_elements ; i++){
 
-          const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[i];
-          const struct SeqBlock *next_seqblock = (struct SeqBlock *)(i==seqtrack->seqblocks.num_elements-1 ? NULL : seqtrack->seqblocks.elements[i+1]);
+          const struct SeqBlock *seqblock = (struct SeqBlock *)gfx_seqblocks(seqtrack)->elements[i];
+          const struct SeqBlock *next_seqblock = (struct SeqBlock *)(i==gfx_seqblocks(seqtrack)->num_elements-1 ? NULL : gfx_seqblocks(seqtrack)->elements[i+1]);
           
           int64_t start_blockseqtime = seqblock->gfx.time;
           int64_t end_blockseqtime = SEQBLOCK_get_seq_endtime(seqblock);
@@ -1798,7 +1817,7 @@ public:
         //double start_time = _start_time / MIXER_get_sample_rate();
         //double end_time = _end_time / MIXER_get_sample_rate();
 
-        VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+        VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
 
           QColor seqblock_color = get_seqblock_color(seqtrack, seqblock);
           
@@ -2258,7 +2277,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   
-  Seqtrack_widget *get_seqtrack_widget(struct SeqTrack *seqtrack){
+  Seqtrack_widget *get_seqtrack_widget(const struct SeqTrack *seqtrack){
     return _seqtracks_widget.get_seqtrack_widget(seqtrack);
   }
   
@@ -2512,6 +2531,16 @@ float SEQBLOCK_get_x1(int seqblocknum, int seqtracknum){
   return mapToEditorX(g_sequencer_widget, 0) + w.get_seqblock_x1(seqblocknum);
 }
 
+float SEQBLOCK_get_x1(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  auto *w0 = g_sequencer_widget->get_seqtrack_widget(seqtrack);
+  if (w0==NULL)
+    return 0.0;
+  
+  const auto &w = w0->_seqblocks_widget;
+
+  return mapToEditorX(g_sequencer_widget, 0) + w.get_seqblock_x1(seqblock);
+}
+
 float SEQBLOCK_get_x2(int seqblocknum, int seqtracknum){
   auto *w0 = g_sequencer_widget->get_seqtrack_widget(seqtracknum);
   if (w0==NULL)
@@ -2522,6 +2551,16 @@ float SEQBLOCK_get_x2(int seqblocknum, int seqtracknum){
   return mapToEditorX(g_sequencer_widget, 0) + w.get_seqblock_x2(seqblocknum);
 }
 
+float SEQBLOCK_get_x2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  auto *w0 = g_sequencer_widget->get_seqtrack_widget(seqtrack);
+  if (w0==NULL)
+    return 0.0;
+  
+  const auto &w = w0->_seqblocks_widget;
+
+  return mapToEditorX(g_sequencer_widget, 0) + w.get_seqblock_x2(seqblock);
+}
+
 float SEQBLOCK_get_y1(int seqblocknum, int seqtracknum){
   auto *w0 = g_sequencer_widget->get_seqtrack_widget(seqtracknum);
   if (w0==NULL)
@@ -2530,6 +2569,10 @@ float SEQBLOCK_get_y1(int seqblocknum, int seqtracknum){
   const auto &w = w0->_seqblocks_widget;
 
   return mapToEditorY(g_sequencer_widget, w.t_y1);
+}
+
+float SEQBLOCK_get_header_height(void){
+  return get_block_header_height();
 }
 
 float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum){

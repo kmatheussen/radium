@@ -48,6 +48,12 @@ private:
 
   AtomicPointerStorage _rt;
 
+
+  // Double free / using data after free, if trying to copy data.
+  SeqAutomation(const SeqAutomation&) = delete;
+  SeqAutomation& operator=(const SeqAutomation&) = delete;
+
+
 public:
 
   SeqAutomation()

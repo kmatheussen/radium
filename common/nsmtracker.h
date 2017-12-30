@@ -249,6 +249,25 @@ extern bool g_user_interaction_enabled; // Used for testing. If this one is fals
   #define R_ASSERT_NON_RELEASE2(a, returnvalue) R_ASSERT_RETURN_IF_FALSE2(a, returnvalue)
 #endif
 
+enum ShowAssertionOrThrowAPIException{
+  SHOW_ASSERTION,
+  THROW_API_EXCEPTION
+};
+
+#define R_ASSERT_RETURN_IF_FALSE3(Test, Handle_Error_Type, Return, Fmt, ...) \
+  do{                                                                   \
+    if(!(Test)){                                                        \
+      if(Handle_Error_Type==SHOW_ASSERTION)                             \
+        RError(Fmt, __VA_ARGS__);                                       \
+      else                                                              \
+        handleError(Fmt, __VA_ARGS__);                                  \
+      return Return;                                                    \
+    }                                                                   \
+  }while(0)
+    
+
+
+
 #if 1 //defined(USE_CUSTOM_NUM_FRAMES)
 #  define R_NUM_FRAMES_DECL int radium_num_frames___,
 #  define R_NUM_FRAMES radium_num_frames___
@@ -1078,6 +1097,10 @@ struct Notes{
 
 	int noend;
 
+        bool has_sent_seqblock_volume_automation_this_block;
+#if !defined(RELEASE)
+        bool has_automatically_sent_seqblock_volume_automation_this_block;
+#endif
         int64_t id;
 };
 #define NextNote(a) ((struct Notes *)((a)->l.next))
@@ -1165,8 +1188,10 @@ static inline int64_t NotenumId(float notenum){
 typedef struct _linked_note_t{
   struct _linked_note_t *next;
   struct _linked_note_t *prev;
-  note_t note;
+  note_t note;  
+  struct Notes *editor_note;
   struct SeqTrack *seqtrack;
+  int play_id;
 } linked_note_t;
 
 
@@ -2372,8 +2397,11 @@ struct SeqBlockTimings{
   Place end_place;   // usually {num_lines,0,1} (not used yet)
 
   bool is_looping;
-  int64_t interior_start; // seqtime version of start_place
-  int64_t interior_end;   // seqtime version of end_place
+  int64_t interior_start; // seqtime version of start_place (non-stretched value)
+  int64_t interior_end;   // seqtime version of end_place (non-stretched value)
+
+  //int64_t noninterior_start; // The seqtime start if interior_start==0
+  //int64_t noninterior_end; // The seqtime end if interior_end==0
   
   // stretch = (end_time-time) / getBlockSTimeLength(seqblock->block)
   // 1.0 = no stretch. 0.5 = double tempo. 2.0 = half tempo.
@@ -2382,9 +2410,12 @@ struct SeqBlockTimings{
   double stretch;
 };
 
+struct SeqblockEnvelope;
+
 struct SeqBlock{
   int seqblocknum; // Must be unique. Can change value when player is stopped.
 
+  // FIX: Don't need two of these anymore. Pretty sure they never differ now.
   struct SeqBlockTimings t;
   struct SeqBlockTimings gfx;
 
@@ -2427,12 +2458,17 @@ struct SeqBlock{
   struct Blocks *block; // If NULL, then the seqblock holds a sample.
 
   int64_t sample_id; // Has valid value if block==NULL.
-  
+  const wchar_t *sample_filename;
+  const wchar_t *sample_filename_without_path;
+
   bool *track_is_disabled; // Is NULL in the seqblock used when playing block.
   
   
   bool is_selected;
 
+  float envelope_volume;
+  double last_envelope_volume;
+  struct SeqblockEnvelope *envelope;
   
   // 'start_time' and 'end_time' are absolute times.
   // They are only used the main thread.
@@ -2462,11 +2498,12 @@ typedef struct _scheduler_t scheduler_t;
 struct SeqtrackAutomation;
 
 struct SeqTrack{
-  vector_t seqblocks; // Player must be stopped when modifying this variable
+  vector_t seqblocks; // Player must be stopped when modifying this variable. Also used for displaying if gfx_seqblocks != NULL.
+  vector_t *gfx_seqblocks; // Used for displaying. Might have the same content as this->seqblocks (points to).
   vector_t gfx_gfx_seqblocks; // Just for graphics. Player does not have to be stopped when modifying this variable
 
   struct SeqBlock *curr_seqblock; // curr_seqblock->block and curr_seqblock->time contains the same values as pc->block and pc->seqtime did before introducing seqtrack/seqblock.
-  struct SeqBlock *curr_sample_seqblock; // Currently only used for displaying audiofile name in the editor.
+  struct SeqBlock *curr_sample_seqblock; // Currently only used for displaying audiofile name in the editor. Note that curr_sample_seqblock->sample_id might not always be valid.
   
   double start_time; // Current seqtime. Can only be accessed from the player thread.
   double end_time;   // Same here.

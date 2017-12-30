@@ -12,7 +12,6 @@ extern LANGSPEC void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void);
 
 struct SeqblockEnvelope *SEQBLOCK_ENVELOPE_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const hash_t *automation_state);
 void SEQBLOCK_ENVELOPE_free(struct SeqblockEnvelope *seqblockenvelope);
-int SEQBLOCK_ENVELOPE_add_automation(struct SeqblockEnvelope *seqblockenvelope, double seqtime1, double value1, int logtype, double seqtime2, double value2);
 int SEQBLOCK_ENVELOPE_get_num_automations(struct SeqblockEnvelope *seqblockenvelope);
 double SEQBLOCK_ENVELOPE_get_value(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
 double SEQBLOCK_ENVELOPE_get_seqtime(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
@@ -32,7 +31,8 @@ void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock,
 
 void RT_SEQBLOCK_ENVELOPE_called_after_editor_and_before_audio(const struct SeqTrack *seqtrack, int64_t seqblock_time);
 void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void);
-hash_t *SEQBLOCK_ENVELOPE_get_state(struct SeqblockEnvelope *seqblockenvelope);
+hash_t *SEQBLOCK_ENVELOPE_get_state(const struct SeqblockEnvelope *seqblockenvelope);
+void SEQBLOCK_ENVELOPE_apply_state(struct SeqblockEnvelope *seqblockenvelope, const hash_t *envelope_state);
 float SEQBLOCK_ENVELOPE_get_node_x(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
 float SEQBLOCK_ENVELOPE_get_node_y(struct SeqblockEnvelope *seqblockenvelope, int seqtracknum, int nodenum);
 void SEQBLOCK_ENVELOPE_paint(QPainter *p, const struct SeqBlock *seqblock, float x1, float y1, float x2, float y, bool paint_nodes);

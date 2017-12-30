@@ -46,7 +46,7 @@ void ADD_UNDO_FUNC(Sequencer(void)){
            window->wblock->l.num,
            window->curr_track,
            window->wblock->curr_realline,
-           SEQUENCER_get_state(),
+           SEQUENCER_get_state(false),
            Undo_Do_Sequencer,
            "Sequencer"
            );
@@ -59,9 +59,9 @@ static void *Undo_Do_Sequencer(
 	int realline,
 	void *pointer
 ){
-  hash_t *ret = SEQUENCER_get_state();
+  hash_t *ret = SEQUENCER_get_state(false);
 
-  SEQUENCER_create_from_state(pointer);
+  SEQUENCER_create_from_state(pointer, root->song);
 
   return ret;
 }
@@ -106,6 +106,47 @@ static void *Undo_Do_SeqAutomations(
   hash_t *ret = SEQUENCER_get_automations_state();
 
   SEQUENCER_create_automations_from_state(pointer);
+
+  return ret;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// 3. Just block envelope. (doesn't require player to pause when modified) //
+/////////////////////////////////////////////////////////////////////////////
+
+static void *Undo_Do_SeqEnvelopes(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+);
+
+void ADD_UNDO_FUNC(SeqEnvelopes(void)){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             window->wblock->l.num,
+                             window->curr_track,
+                             window->wblock->curr_realline,
+                             SEQUENCER_get_envelopes_state(),
+                             Undo_Do_SeqEnvelopes,
+                             "SeqEnvelopes"
+                             );
+}
+
+static void *Undo_Do_SeqEnvelopes(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+){
+  hash_t *ret = SEQUENCER_get_envelopes_state();
+
+  SEQUENCER_create_envelopes_from_state(pointer);
 
   return ret;
 }

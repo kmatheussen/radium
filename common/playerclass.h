@@ -143,7 +143,7 @@ typedef struct{
 	STime pausetime;
 	bool nowpausing;
 
-        DEFINE_ATOMIC(int, play_id); // A counter. Increased each time the program starts playing, and stops playing.
+        DEFINE_ATOMIC(int, play_id); // A counter. Increased each time the program starts playing, and stops playing. It's atomic since it can be read and written by the main thread and the opengl thread at the same time. The player thread (and the main thread) can use RELAXED read access since it is never written and read simultaneously between the main thread and the player thread.
 
 }PlayerClass;
 

@@ -148,14 +148,14 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
 static void RT_schedule_note(struct SeqTrack *seqtrack,
                              const struct SeqBlock *seqblock,
                              const struct Tracks *track,
-                             const struct Notes *note,
+                             struct Notes *note,
                              int64_t curr_time
                              );
 
 static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   const struct SeqBlock *seqblock = args[0].const_pointer;
   const struct Tracks *track = args[1].const_pointer;
-  const struct Notes *note = args[2].const_pointer;
+  struct Notes *note = args[2].pointer;
   int64_t note_time = args[3].int_num;
 
   struct Patch *patch = track->patch;
@@ -198,8 +198,10 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
                                  sample_pos
                                  );
 
+    // Note: envelope volume is applied in RT_PATCH_play_note, not here. (Not quite sure why, but it's probably complicated)
+
     //printf("  scheduler_notes.c. Playing note at %d\n",(int)time);
-    RT_PATCH_play_note(seqtrack, patch,note2,time);
+    RT_PATCH_play_note(seqtrack, patch, note2, note, time);
 
     bool schedule_pitches_and_velocities = true;
     if (sample_pos>0 && (patch->instrument==get_audio_instrument() && ATOMIC_GET(((SoundPlugin*)patch->patchdata)->enable_sample_seek)==false))
@@ -223,7 +225,7 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
 static void RT_schedule_note(struct SeqTrack *seqtrack,
                              const struct SeqBlock *seqblock,
                              const struct Tracks *track,
-                             const struct Notes *note,
+                             struct Notes *note,
                              int64_t curr_time
                              )
 {
@@ -232,7 +234,7 @@ static void RT_schedule_note(struct SeqTrack *seqtrack,
   union SuperType args[num_args];
   args[0].const_pointer = seqblock;
   args[1].const_pointer = track;
-  args[2].const_pointer = note;
+  args[2].pointer = note;
 
   int64_t note_time = get_seqblock_place_time2(seqblock, track, note->l.p);
   args[3].int_num = note_time;

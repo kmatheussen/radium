@@ -811,7 +811,7 @@ static bool Patch_is_voice_playing_questionmark(struct Patch *patch, int64_t voi
   return false;
 }
 
-bool Patch_addPlayingVoice(linked_note_t **rootp, const note_t note, struct SeqTrack *seqtrack){
+static bool add_linked_note(linked_note_t **rootp, const note_t note, struct Notes *editor_note, struct SeqTrack *seqtrack){
   R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
 
 #if 0
@@ -822,8 +822,6 @@ bool Patch_addPlayingVoice(linked_note_t **rootp, const note_t note, struct SeqT
 
   R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
 
-  R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
-  
   linked_note_t *linked_note = g_unused_linked_notes;
   
   if (linked_note==NULL){
@@ -834,11 +832,17 @@ bool Patch_addPlayingVoice(linked_note_t **rootp, const note_t note, struct SeqT
   remove_linked_note(&g_unused_linked_notes, linked_note);
 
   linked_note->note = note;
+  linked_note->editor_note = editor_note;
   linked_note->seqtrack = seqtrack;
-  
+  linked_note->play_id = ATOMIC_GET_RELAXED(pc->play_id);
+
   add_linked_note(rootp, linked_note);
 
   return true;
+}
+
+bool Patch_addPlayingVoice(linked_note_t **rootp, const note_t note, struct SeqTrack *seqtrack){
+  return add_linked_note(rootp, note, NULL, seqtrack);
 }
 
 
@@ -866,43 +870,12 @@ void Patch_removePlayingVoice(linked_note_t **rootp, int64_t note_id, struct Seq
   }
 }
 
-static bool Patch_addPlayingNote(struct Patch *patch, const note_t note, struct SeqTrack *seqtrack){
-  R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
-  
-  linked_note_t *linked_note = g_unused_linked_notes;
-
-  if (linked_note==NULL){
-    RT_message("Error. Reached max number of notes it's possible to play.\n");
-    return false;
-  }
-
-  remove_linked_note(&g_unused_linked_notes, linked_note);
-
-  linked_note->note = note;
-  linked_note->seqtrack = seqtrack;
-  
-  add_linked_note(&patch->playing_notes, linked_note);
-
-  return true;
+static bool Patch_addPlayingNote(struct Patch *patch, const note_t note, struct Notes *editor_note, struct SeqTrack *seqtrack){
+  return add_linked_note(&patch->playing_notes, note, editor_note, seqtrack);
 }
 
 static void Patch_removePlayingNote(struct Patch *patch, int64_t note_id, struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
-  R_ASSERT_RETURN_IF_FALSE(seqtrack!=NULL);
-  
-  linked_note_t *linked_note = find_linked_note(patch->playing_notes, note_id, seqblock);
-
-  
-#if !defined(RELEASE)
-  if (linked_note==NULL && is_playing())
-    printf("Warning. Unable to find note with note_id %d when removing playing note\n",(int)note_id); // think there are legitimate situations where this can happen
-#endif
-  
-  if (linked_note!=NULL){
-    //R_ASSERT(linked_note->seqtrack==seqtrack); // There are legitimate situations where this can happen
-    remove_linked_note(&patch->playing_notes, linked_note);
-    add_linked_note(&g_unused_linked_notes, linked_note);
-    linked_note->seqtrack = NULL;
-  }
+  Patch_removePlayingVoice(&patch->playing_notes, note_id, seqtrack, seqblock);
 }
 
 static float get_voice_velocity(struct PatchVoice *voice){
@@ -921,7 +894,7 @@ void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patc
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];
     R_ASSERT_RETURN_IF_FALSE(receiver!=patch); // unnecessary. We detect recursions when creating connections. (Not just once (which should have been enough) but both here and in SoundProducer.cpp)
-    RT_PATCH_play_note(seqtrack, receiver, note, time);
+    RT_PATCH_play_note(seqtrack, receiver, note, NULL, time);
   }
 }
 
@@ -933,7 +906,7 @@ static void RT_play_voice(struct SeqTrack *seqtrack, struct Patch *patch, const 
   if (!Patch_addPlayingVoice(&patch->playing_voices, note, seqtrack))
     return;
 
-  patch->playnote(seqtrack, patch,note,time);
+  patch->playnote(seqtrack, patch, note, time);
 
   ATOMIC_SET_RELAXED(patch->visual_note_intencity, MAX_NOTE_INTENCITY);
 
@@ -966,10 +939,22 @@ static int rnd(int max){
   return rand() % max;
 }
 
-int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
+// DOES add envelope volume
+int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, struct Notes *editor_note, STime time){
   //printf("\n\nRT_PATCH_PLAY_NOTE. ___Starting note %f, time: %d, id: %d. block_reltempo: %f\n\n",note.pitch,(int)time,(int)note.id,note.block_reltempo);
 
-  if (!Patch_addPlayingNote(patch, note, seqtrack))
+  float envelope_volume = 1.0;
+
+  if (editor_note != NULL){
+    if (note.seqblock != NULL){
+      if (note.seqblock->envelope_volume >= 0)
+        envelope_volume = note.seqblock->envelope_volume;
+    }else
+      R_ASSERT(false);
+    editor_note->has_sent_seqblock_volume_automation_this_block = true;
+  }
+
+  if (!Patch_addPlayingNote(patch, note, editor_note, seqtrack))
     return note.id;
 
   float sample_rate = MIXER_get_sample_rate();
@@ -986,7 +971,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
 
       float voice_notenum = note.pitch + voice->transpose;
       if (voice_notenum > 0) {
-        float voice_velocity = note.velocity * get_voice_velocity(voice);
+        float voice_velocity = note.velocity * get_voice_velocity(voice) * envelope_volume;
         int64_t voice_id = note.id + i;
         
         args[1].float_num = voice_notenum;
@@ -1020,7 +1005,7 @@ int64_t PATCH_play_note(struct Patch *patch, const note_t note){
   int64_t ret;
   
   PLAYER_lock();{
-    ret = RT_PATCH_play_note(RT_get_curr_seqtrack(), patch, note, RT_get_curr_seqtrack()->start_time);
+    ret = RT_PATCH_play_note(RT_get_curr_seqtrack(), patch, note, NULL, RT_get_curr_seqtrack()->start_time);
   }PLAYER_unlock();
 
   return ret;
@@ -1058,6 +1043,7 @@ static void RT_stop_voice(struct SeqTrack *seqtrack, struct Patch *patch, const 
   
   if (voice_is_playing) {
     Patch_removePlayingVoice(&patch->playing_voices, note.id, seqtrack, note.seqblock);
+
     patch->stopnote(seqtrack, patch, note, time);
   }
   
@@ -1182,6 +1168,7 @@ static int64_t RT_scheduled_change_voice_velocity(struct SeqTrack *seqtrack, int
   return DONT_RESCHEDULE;
 }
 
+// Does NOT add envelope volume
 void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   //printf("111. vel: %f\n",note.velocity);
 
@@ -1543,7 +1530,8 @@ static void RT_PATCH_turn_voice_off(struct SeqTrack *seqtrack, struct Patch *pat
       if (voice_notenum > 0)
         RT_stop_voice(seqtrack,
                       patch,
-                      create_note_t(note.seqblock, note.id + voicenum,
+                      create_note_t(note.seqblock,
+                                    note.id + voicenum,
                                     voice_notenum,
                                     note.velocity,
                                     note.pan,

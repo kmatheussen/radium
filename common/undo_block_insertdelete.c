@@ -60,7 +60,7 @@ void ADD_UNDO_FUNC(Block_Insert(NInt blockpos)){
 	struct Undo_Block_InsertDelete *ubi=talloc(sizeof(struct Undo_Block_InsertDelete));
 	ubi->blockpos=blockpos;
 	ubi->wblock=NULL;
-        ubi->sequencer_state=SEQUENCER_get_state();
+        ubi->sequencer_state=SEQUENCER_get_state(false);
 
 	Undo_Add(
 		window->l.num,
@@ -81,7 +81,7 @@ void ADD_UNDO_FUNC(Block_Delete(NInt blockpos)){
 	struct Undo_Block_InsertDelete *ubi=talloc(sizeof(struct Undo_Block_InsertDelete));
 	ubi->blockpos=blockpos;
 	ubi->wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,blockpos);
-        ubi->sequencer_state=SEQUENCER_get_state();
+        ubi->sequencer_state=SEQUENCER_get_state(false);
 
 	Undo_Add(
 		window->l.num,
@@ -105,10 +105,10 @@ void *Undo_Do_Block_Insert(
 	struct Undo_Block_InsertDelete *ubi=(struct Undo_Block_InsertDelete *)pointer;
 
 	if(ubi->wblock!=NULL){
-		return Undo_Do_Block_Delete(window,wblock,wtrack,realline,pointer);
+          return Undo_Do_Block_Delete(window,wblock,wtrack,realline,pointer);
 	}
 
-        SEQUENCER_create_from_state(ubi->sequencer_state);
+        SEQUENCER_create_from_state(ubi->sequencer_state, root->song);
 
 	ubi->wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,ubi->blockpos);
 	DeleteBlock(ubi->blockpos);
@@ -136,7 +136,7 @@ void *Undo_Do_Block_Delete(
 	ListAddElement1(&root->song->blocks,&ubi->wblock->block->l);
 	ListAddElement1(&window->wblocks,&ubi->wblock->l);
 
-        SEQUENCER_create_from_state(ubi->sequencer_state);
+        SEQUENCER_create_from_state(ubi->sequencer_state, root->song);
         
 	BS_UpdateBlockList();
 	BS_UpdatePlayList();

@@ -131,8 +131,9 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
   //ATOMIC_SET(pc->initplaying, false);
   //ATOMIC_SET(pc->playertask_has_been_called, false);
   
-  if (ATOMIC_GET(is_starting_up))
+  if (ATOMIC_GET_RELAXED(is_starting_up)){
     return;
+  }
   
   if(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED) {
     PLAYER_lock();

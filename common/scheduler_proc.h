@@ -92,7 +92,7 @@ static inline note_t create_note_from_args(const union SuperType *args){
   char    voicenum     = channel & 0xff;
   const struct SeqBlock *seqblock = (struct SeqBlock*)args[5].const_pointer;
   int64_t sample_pos   = args[6].int_num;
-      
+
   return create_note_t_plain(seqblock, note_id, notenum, velocity, pan, midi_channel, voicenum, sample_pos);
 }
 
@@ -120,7 +120,7 @@ extern LANGSPEC void RT_schedule_pitches_newnote(int64_t current_time,
                                                  struct SeqTrack *seqtrack,
                                                  const struct SeqBlock *seqblock,
                                                  const struct Tracks *track,
-                                                 const struct Notes *note);
+                                                 struct Notes *note);
 
 // scheduler_velocities_proc.h
 
@@ -128,7 +128,7 @@ void RT_schedule_velocities_newnote(int64_t current_time,
                                     struct SeqTrack *seqtrack,
                                     const struct SeqBlock *seqblock,
                                     const struct Tracks *track,
-                                    const struct Notes *note);
+                                    struct Notes *note);
 
 // scheduler_fxs_proc.h
 

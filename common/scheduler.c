@@ -244,7 +244,7 @@ int SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
   g_RT_curr_scheduling_seqtrack = seqtrack;
 
   SCHEDULER_set_seqtrack_timing(seqtrack, seqtrack->end_time, seqtrack->end_time + reltime);
-  RT_SEQTRACK_called_per_block(seqtrack);
+  RT_SEQTRACK_called_before_editor(seqtrack);
 
   scheduler_t *scheduler = seqtrack->scheduler;
 

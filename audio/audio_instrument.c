@@ -86,7 +86,7 @@ static int64_t RT_scheduled_send_play_note_to_plugin(struct SeqTrack *seqtrack, 
   return DONT_RESCHEDULE;
 }
 
-static void AUDIO_playnote(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time){
+static void AUDIO_playnote(struct SeqTrack *seqtrack, struct Patch *patch, note_t note, STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL || plugin->type->play_note == NULL)
@@ -1182,14 +1182,14 @@ bool AUDIO_is_permanent_patch(struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   if(plugin==get_main_pipe())
     return true;
+
   else if (!strcmp(plugin->type->type_name,"Bus"))
     return true;
+
   else if (!strcmp(plugin->type->type_name,SEQTRACKPLUGIN_NAME)){
     printf("NUM samples: %d\n", SEQTRACKPLUGIN_get_num_samples(plugin));
-    if (SEQTRACKPLUGIN_get_num_samples(plugin) > 0)
-      return true;
-    else
-      return false;
+    return SEQTRACKPLUGIN_can_be_deleted(plugin);
+
   }else
     return false;
 }

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/seqtrack_proc.h"
 #include "../common/seqtrack_automation_proc.h"
+#include "../common/seqblock_envelope_proc.h"
 #include "../common/song_tempo_automation_proc.h"
 #include "../common/time_proc.h"
 #include "../common/undo_sequencer_proc.h"
@@ -64,7 +65,11 @@ float getSequencerY2(void){
   return SEQUENCER_get_y2();
 }
 
-void undoSequencerAutomation(void){
+void undoSequencerEnvelopes(void){
+  ADD_UNDO(SeqEnvelopes());
+}
+
+void undoSequencerAutomations(void){
   ADD_UNDO(SeqAutomations());
 }
 
@@ -264,7 +269,7 @@ int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, i
     return -1;
   }
   
-  undoSequencerAutomation();
+  undoSequencerAutomations();
 
   int64_t seqtime1 = get_seqtime_from_abstime(seqtrack, NULL, time1);
   int64_t seqtime2 = get_seqtime_from_abstime(seqtrack, NULL, time2);
@@ -281,7 +286,7 @@ void replaceAllSeqAutomation(int64_t old_instrument, int64_t new_instrument){
   if(new_patch==NULL)
     return;
 
-  undoSequencerAutomation();
+  undoSequencerAutomations();
 
   SEQTRACK_AUTOMATION_replace_all_automations(old_patch, new_patch);
 }
@@ -396,7 +401,7 @@ int addSeqAutomationNode(int64_t time, float value, int logtype, int automationn
   VALIDATE_AUTOMATIONNUM(-1);
   VALIDATE_TIME(time, -1)
     
-  undoSequencerAutomation();
+  undoSequencerAutomations();
 
   int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
   return SEQTRACK_AUTOMATION_add_node(seqtrack->seqtrackautomation, automationnum, seqtime, value, logtype);
@@ -410,7 +415,7 @@ void deleteSeqAutomationNode(int nodenum, int automationnum, int seqtracknum){
   VALIDATE_AUTOMATIONNUM();
   VALIDATE_NODENUM();
 
-  undoSequencerAutomation();
+  undoSequencerAutomations();
 
   SEQTRACK_AUTOMATION_delete_node(seqtrack->seqtrackautomation, automationnum, nodenum);
 }
@@ -514,6 +519,177 @@ float getSeqAutomationNodeY(int nodenum, int automationnum, int seqtracknum){
 
   return SEQTRACK_AUTOMATION_get_node_y(seqtrack->seqtrackautomation, seqtracknum, automationnum, nodenum);
 }
+
+
+
+
+// Sequencer block volume envelope
+//////////////////////////////////
+
+#define VALIDATE_ENV_NODENUM(ret)                                           \
+  if (nodenum < 0 || nodenum >= SEQBLOCK_ENVELOPE_get_num_nodes(seqblock->envelope)){ \
+    handleError("There is no node #%d in sequencer block #%d in sequencer track #%d", nodenum, seqblocknum, seqtracknum); \
+    return ret;                                                          \
+  }
+
+#define VALIDATE_ENV_TIME(time,ret)                                 \
+  if (time < 0){                                                \
+    handleError("Time can not be negative: %d", (int)time);     \
+    return ret;                                                 \
+  }
+
+#define VALIDAT_ENV_TIME2(time,ret)                                 \
+  if (time < -1){                                                \
+    handleError("Time can not be less than -1: %d", (int)time);     \
+    return ret;                                                 \
+  }
+
+float getSeqblockEnvelopeValue(int nodenum, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return -1;
+
+  VALIDATE_ENV_NODENUM(-1);
+
+  return SEQBLOCK_ENVELOPE_get_value(seqblock->envelope, nodenum);
+}
+
+int64_t getSeqblockEnvelopeTime(int nodenum, int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return -1;
+
+  VALIDATE_ENV_NODENUM(-1);
+
+  int64_t seqtime = SEQBLOCK_ENVELOPE_get_seqtime(seqblock->envelope, nodenum);
+
+  return get_abstime_from_seqtime(seqtrack, NULL, seqtime);
+}
+
+int getSeqblockEnvelopeLogtype(int nodenum, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return -1;
+
+  VALIDATE_ENV_NODENUM(-1);
+
+  return SEQBLOCK_ENVELOPE_get_logtype(seqblock->envelope, nodenum);
+}
+
+int getNumSeqblockEnvelopeNodes(int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return -1;
+
+  return SEQBLOCK_ENVELOPE_get_num_nodes(seqblock->envelope);
+}
+
+int addSeqblockEnvelopeNode(int64_t time, float value, int logtype, int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return -1;
+
+  VALIDATE_ENV_TIME(time, -1)
+    
+  undoSequencerEnvelopes();
+
+  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
+  return SEQBLOCK_ENVELOPE_add_node(seqblock->envelope, seqtime, value, logtype);
+}
+
+void deleteSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);;
+  if (seqblock==NULL)
+    return;
+
+  if (nodenum==0 || nodenum==SEQBLOCK_ENVELOPE_get_num_nodes(seqblock->envelope)-1){
+    SEQBLOCK_ENVELOPE_set(seqtrack,
+                          seqblock,
+                          nodenum,
+                          SEQBLOCK_ENVELOPE_get_seqtime(seqblock->envelope, nodenum),
+                          1.0,
+                          SEQBLOCK_ENVELOPE_get_logtype(seqblock->envelope, nodenum)
+                          );
+    return;
+  }
+
+
+  VALIDATE_ENV_NODENUM();
+
+  undoSequencerEnvelopes();
+
+  SEQBLOCK_ENVELOPE_delete_node(seqblock->envelope, nodenum);
+}
+
+void setCurrSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return;
+
+  VALIDATE_ENV_NODENUM();
+
+  SEQBLOCK_ENVELOPE_set_curr_node(seqblock->envelope, nodenum);
+}
+
+void cancelCurrSeqblockEnvelopeNode(int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return;
+
+  SEQBLOCK_ENVELOPE_cancel_curr_node(seqblock->envelope);
+}
+
+void setCurrSeqblockEnvelope(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  SEQBLOCK_ENVELOPE_set_curr_automation(seqtrack, seqblock);
+}
+
+void cancelCurrSeqblockEnvelope(void){
+  //printf("   cancelCurrSeqblockEnvelope called\n");
+  SEQBLOCK_ENVELOPE_cancel_curr_automation();
+}
+
+void setSeqblockEnvelopeNode(int64_t abstime, float value, int logtype, int nodenum, int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  VALIDATE_ENV_NODENUM();
+  VALIDATE_ENV_TIME(abstime,)
+    
+  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, abstime);
+  SEQBLOCK_ENVELOPE_set(seqtrack, seqblock, nodenum, seqtime, R_BOUNDARIES(0, value, 1), logtype);
+}
+
+float getSeqblockEnvelopeNodeX(int nodenum, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return 0;
+
+  VALIDATE_ENV_NODENUM(0);
+
+  return SEQBLOCK_ENVELOPE_get_node_x(seqblock->envelope, nodenum);
+}
+
+float getSeqblockEnvelopeNodeY(int nodenum, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return 0;
+
+  VALIDATE_ENV_NODENUM(0);
+
+  return SEQBLOCK_ENVELOPE_get_node_y(seqblock->envelope, seqtracknum, nodenum);
+}
+
+
 
 
 
@@ -803,7 +979,9 @@ void setIsJackTimebaseMaster(bool doit){
 
 
 int64_t getSeqGriddedTime(int64_t pos, int seqtracknum, const_char* type){
-  R_ASSERT_NON_RELEASE(seqtracknum==0);
+  //R_ASSERT_NON_RELEASE(seqtracknum==0);
+  if (seqtracknum != 0)
+    seqtracknum=0;
   
   if (!strcmp(type, "no"))
     return pos;
@@ -1051,6 +1229,36 @@ int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, i
     radium::ScopedIgnoreUndo ignore_undo;
     return SEQTRACK_insert_sample(seqtrack, seqtracknum, w_path_to_path(w_filename), pos, endpos);
   }
+}
+
+dyn_t getSeqblocksState(int seqtracknum){
+  const struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL){
+    handleError("getSeqblocksState: No sequencer track %d", seqtracknum);
+    return g_empty_dynvec;
+  }
+
+  return SEQTRACK_get_seqblocks_state(seqtrack);
+}
+
+void createGfxSeqblocksFromState(dyn_t seqblocks_state, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL){
+    handleError("createGfxSeqblocksFromState: No sequencer track %d", seqtracknum);
+    return;
+  }
+
+  SEQTRACK_create_gfx_seqblocks_from_state(seqblocks_state, seqtrack, seqtracknum, THROW_API_EXCEPTION);
+}
+
+void applyGfxSeqblocks(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL){
+    handleError("applyGfxSeqblocks: No sequencer track %d", seqtracknum);
+    return;
+  }
+
+  SEQTRACK_apply_gfx_seqblocks(seqtrack, seqtracknum, true);
 }
 
 

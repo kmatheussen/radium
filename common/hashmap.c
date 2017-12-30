@@ -231,7 +231,6 @@ dynvec_t HASH_get_values(const hash_t *hash){
   return vector; 
 }
 
-
 bool HASH_remove_at(hash_t *hash, const char *raw_key, int i){
   const char *key = STRING_get_utf8_chars(raw_key);
   unsigned int index = oat_hash(key,i) % hash->elements_size;
@@ -485,6 +484,14 @@ static dyn_t get_dyn(const hash_t *hash, const char *key, int i){
   return element->a;
 }
 
+enum DynType HASH_get_type_at(const hash_t *hash, const char *raw_key, int i){
+  return get_dyn(hash, raw_key, i).type;
+}
+
+enum DynType HASH_get_type(const hash_t *hash, const char *raw_key){
+  return HASH_get_type_at(hash, raw_key, 0);
+}
+
 static const wchar_t *get_string(const hash_t *hash, const char *key, int i){
   hash_element_t *element = HASH_get(hash,key,i,STRING_TYPE);
   if(element==NULL)
@@ -528,7 +535,7 @@ static bool get_bool(const hash_t *hash, const char *key, int i){
       return true;
   }
 
-  RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested BOOL_TYPE, found %d.",key,i,element->a.type);
+  RWarning("HASH_get. Element \"%s\"/%d is found, but is wrong type. Requested BOOL_TYPE, found %s.",key,i,DYN_type_name(element->a.type));
 
   return false;
 }
