@@ -490,7 +490,7 @@ public:
 
         float x_a = points[i].x();
         float y_a = points[i].y();
-        paint_node(p, x_a, y_a, i, color);
+        paint_node(p, x_a, y_a, node_pos, color);
 
         if (node.logtype==LOGTYPE_HOLD)
           i++;
