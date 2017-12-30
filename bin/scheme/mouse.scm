@@ -143,8 +143,11 @@
                            (- y2 y1))))
                 dist-1-to-2)))))
 
-(define (get-distance-vertical x y x1 y1 x2 y2)
-  (get-distance y x y1 x1 y2 x2))
+(define (get-distance-vertical x y x1 y1 x2 y2 logtype)
+  (if (= logtype *logtype-hold*)
+      (min (get-distance y x y1 x1 y1 x2)
+           (get-distance y x y1 x2 y2 x2))
+      (get-distance y x y1 x1 y2 x2)))
 
 #||
 (test (get-distance 0 0
@@ -4597,7 +4600,8 @@
                     (<= X (+ X2 *seqnode-min-distance*))
                     (make-seqautomation/distance :seqtrack *current-seqtrack-num*
                                                  :automation-num Automation-Num
-                                                 :distance (let ((dist (get-distance-vertical X Y X1 Y1 X2 Y2)))
+                                                 :distance (let ((dist (get-distance-vertical X Y X1 Y1 X2 Y2
+                                                                                              (<ra> :get-seq-automation-logtype (- Nodenum 2) Automation-Num *current-seqtrack-num*))))
                                                              (c-display " Dist seqaut:" dist)
                                                              dist))))
 
@@ -4642,7 +4646,7 @@
                  (<= x x2)))
         (let* ((y1 (<ra> :get-seqblock-envelope-node-y (1- n) seqblocknum seqtracknum))
                (y2 (<ra> :get-seqblock-envelope-node-y n seqblocknum seqtracknum))
-               (dist (get-distance-vertical x y x1 y1 x2 y2)))
+               (dist (get-distance-vertical x y x1 y1 x2 y2 (<ra> :get-seqblock-envelope-logtype (1- n) seqblocknum seqtracknum))))
           (and (<= dist *seqnode-min-distance*)
                (make-seqautomation/distance :seqtrack *current-seqtrack-num*
                                             :automation-num #f

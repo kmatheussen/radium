@@ -622,5 +622,5 @@ void SEQBLOCK_ENVELOPE_paint(QPainter *p, const struct SeqBlock *seqblock, float
   
   //automation.automation.set_do_paint_nodes(paint_nodes);
 
-  automation.automation.paint(p, x1, y1, x2, y2, 0, 1, QColor("white"), get_node_y, get_node_x, seqblockenvelope); //get_node_y, get_node_x, seqblockenvelope);
+  automation.automation.paint(p, x1, y1, x2, y2, 0, 1, QColor("white"), get_node_y, get_node_x, seqblockenvelope, QColor(80,20,200,50)); //get_node_y, get_node_x, seqblockenvelope);
 }
