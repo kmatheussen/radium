@@ -1388,6 +1388,66 @@ float getSeqblockY2(int seqblocknum, int seqtracknum){
 }
 
 
+// seqblock left fade area
+
+float getSeqblockLeftFadeX1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_fade_x1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftFadeY1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_fade_y1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftFadeX2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_fade_x2(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftFadeY2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_fade_y2(seqblocknum, seqtracknum);
+}
+
+// seqblock right fade area
+
+float getSeqblockRightFadeX1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_fade_x1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightFadeY1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_fade_y1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightFadeX2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_fade_x2(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightFadeY2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_fade_y2(seqblocknum, seqtracknum);
+}
+
 // seqblock left interior area
 
 float getSeqblockLeftInteriorX1(int seqblocknum, int seqtracknum){
@@ -1507,6 +1567,81 @@ float getSeqblockRightStretchY2(int seqblocknum, int seqtracknum){
   
   return SEQBLOCK_get_right_stretch_y2(seqblocknum, seqtracknum);
 }
+
+
+// seqblock select box
+
+void setSeqblockSelectedBox(int which_one, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+  if (seqblock==NULL)
+    return;
+
+  enum SeqblockBoxSelected old = seqblock->selected_box;
+  enum SeqblockBoxSelected new_ = (enum SeqblockBoxSelected)which_one;
+
+  if (old != new_){
+    seqblock->selected_box = new_;
+    SEQUENCER_update();
+  }
+  
+}
+
+
+
+// seqblock fade in/out
+
+double getSeqblockFadeIn(int64_t seqblocknum, int64_t seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+  if (seqblock==NULL)
+    return 0.0;
+
+  return seqblock->fadein;
+}
+
+double getSeqblockFadeOut(int64_t seqblocknum, int64_t seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+  if (seqblock==NULL)
+    return 0.0;
+
+  return seqblock->fadeout;
+}
+
+void setSeqblockFadeIn(double fadein, int64_t seqblocknum, int64_t seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+  if (seqblock==NULL)
+    return;
+
+  if(fadein < 0 || fadein > 1){
+    handleError("setSeqblockFadeIn: Illegal fade value: %f", fadein);
+    return;
+  }
+
+  if (fadein != seqblock->fadein){
+    radium::PlayerLock(is_playing_song());
+    seqblock->fadein = fadein;
+  }
+
+  SEQUENCER_update();
+}
+
+void setSeqblockFadeOut(double fadeout, int64_t seqblocknum, int64_t seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+  if (seqblock==NULL)
+    return;
+
+  if(fadeout < 0 || fadeout > 1){
+    handleError("setSeqblockFadeOut: Illegal fade value: %f", fadeout);
+    return;
+  }
+
+  if (fadeout != seqblock->fadeout){
+    radium::PlayerLock(is_playing_song());
+    seqblock->fadeout = fadeout;
+  }
+
+  SEQUENCER_update();
+}
+
 
 // move seqblock / set stretch
 

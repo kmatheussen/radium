@@ -2412,6 +2412,16 @@ struct SeqBlockTimings{
 
 struct SeqblockEnvelope;
 
+enum SeqblockBoxSelected{
+  SB_NO_SELECTED,
+  SB_FADE_LEFT,
+  SB_FADE_RIGHT,
+  SB_STRETCH_LEFT,
+  SB_STRETCH_RIGHT,
+  SB_INTERIOR_LEFT,
+  SB_INTERIOR_RIGHT
+};
+
 struct SeqBlock{
   int seqblocknum; // Must be unique. Can change value when player is stopped.
 
@@ -2465,6 +2475,11 @@ struct SeqBlock{
   
   
   bool is_selected;
+
+  enum SeqblockBoxSelected selected_box;
+
+  double fadein; // value between 0 and 1
+  double fadeout; // value between 0 and 1
 
   float envelope_volume;
   double last_envelope_volume;

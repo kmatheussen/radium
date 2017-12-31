@@ -484,10 +484,11 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
   R_ASSERT_NON_RELEASE(is_playing_song());
 
   const int64_t start_time = seqtrack->start_time;
+  const int64_t end_time = seqtrack->end_time;
 
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
 
-    if (seqtrack->end_time >= seqblock->t.time && seqtrack->start_time <= seqblock->t.time2){
+    if (end_time >= seqblock->t.time && start_time <= seqblock->t.time2){
 
       struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
 
@@ -500,6 +501,42 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
       seqblockenvelope->_automation.automation.print();
       printf("new_volume: %f. Pos: %f\n\n", new_volume, pos);
 #endif
+
+      if (seqblock->fadein > 0.0 || seqblock->fadeout > 0.0){
+
+        int64_t seqblock_pos = start_time - seqblock->t.time;
+
+        if (seqblock_pos > 0){
+
+          int64_t seqblock_duration = seqblock->t.time2 - seqblock->t.time;          
+                    
+          double scaled_pos = (double)seqblock_pos / (double)seqblock_duration;
+
+          if (scaled_pos < 0 || scaled_pos > 1){
+
+            R_ASSERT_NON_RELEASE(false);
+
+          } else {
+
+            if (scaled_pos < seqblock->fadein){
+              double fadein = scale_double(scaled_pos,
+                                           0, seqblock->fadein,
+                                           0, 1);
+              //printf("fadein: %f\n", fadein);
+              new_volume *= fadein;
+            }
+            
+            if (scaled_pos > (1.0-seqblock->fadeout)) {
+              double fadeout = scale_double(scaled_pos,
+                                            1.0-seqblock->fadeout, 1,
+                                            1, 0);
+              //printf("fadeout: %f\n", fadeout);
+              new_volume *= fadeout;
+            }
+            
+          }
+        }
+      }
 
       if (new_volume != seqblock->last_envelope_volume){        
         seqblock->last_envelope_volume = new_volume;

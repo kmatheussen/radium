@@ -235,6 +235,18 @@ float SEQBLOCK_get_x1(const struct SeqTrack *seqtrack, const struct SeqBlock *se
 float SEQBLOCK_get_x2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 #endif
 
+// seqblock left fade
+extern LANGSPEC float SEQBLOCK_get_left_fade_x1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_fade_y1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_fade_x2(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_fade_y2(int seqblocknum, int seqtracknum);
+
+// seqblock right fade
+extern LANGSPEC float SEQBLOCK_get_right_fade_x1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_fade_y1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_fade_x2(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_fade_y2(int seqblocknum, int seqtracknum);
+
 // seqblock left interior
 extern LANGSPEC float SEQBLOCK_get_left_interior_x1(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_left_interior_y1(int seqblocknum, int seqtracknum);

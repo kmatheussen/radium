@@ -978,7 +978,7 @@ public:
     SEQBLOCK_ENVELOPE_paint(painter, seqblock, x1, y1, x2, y2, seqblock==g_curr_seqblock);
   }
 
-  void draw_interface(QPainter *painter, const QRectF &_blury_areaF){
+  void draw_interface(QPainter *painter, const struct SeqBlock *seqblock, const QRectF &_blury_areaF){
     qreal x1,y1,x2,y2;
     _blury_areaF.getCoords(&x1, &y1, &x2, &y2);
 
@@ -989,19 +989,27 @@ public:
 
 #define INCLUDE_STRETCH_INTERFACE 0
 
-#if INCLUDE_STRETCH_INTERFACE
     double ysplit1 = get_seqblock_ysplit1(y1, y2);
-#endif
     double ysplit2 = get_seqblock_ysplit2(y1, y2);
-        
-    QPen pen(QColor(0, 200 ,0, 200));
-    pen.setWidthF(2.3);
-    painter->setPen(pen);
+
+    double width = root->song->tracker_windows->systemfontheight / 4;
+    double sel_width = width*2;
+
+    QColor color(0,200,0,200);
+    QColor fill_color(color);
+    fill_color.setAlpha(80);
+
+    QPen pen(color);
+    pen.setWidthF(width);
+
+    QPen sel_pen(color);
+    sel_pen.setWidthF(sel_width);
 
 #if INCLUDE_STRETCH_INTERFACE
 
-    // xsplit1 vertical line 2, left
+    // xsplit1 vertical line 1, left
     QLineF line1b(xsplit1,ysplit1,xsplit1,y2-border);
+    pen.setWidthF(2.3);
     painter->drawLine(line1b);
 
     // xsplit1 vertical line 2, right
@@ -1010,35 +1018,72 @@ public:
 
 #else
 
-    // xsplit1 vertical line 2, left
-    QLineF line1b(xsplit1,ysplit2,xsplit1,y2-border);
-    painter->drawLine(line1b);
+    // xsplit1 vertical line 0, left
+    if (seqblock->selected_box==SB_FADE_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+    QLineF line1a(xsplit1, y1 + border,
+                  xsplit1, ysplit1);
+    painter->drawLine(line1a);
 
-    // xsplit1 vertical line 2, right
-    QLineF line2b(xsplit2,ysplit2,xsplit2,y2-border);
-    painter->drawLine(line2b);
+    // xsplit1 vertical line 2, left
+    if (seqblock->selected_box==SB_STRETCH_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+    QLineF line1c(xsplit1,ysplit2,xsplit1,y2-border);
+    painter->drawLine(line1c);
+
+    // xsplit2 vertical line 0, right
+    if (seqblock->selected_box==SB_FADE_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+    QLineF line2a(xsplit2,y1 + border,xsplit2,ysplit1);
+    painter->drawLine(line2a);
+
+    // xsplit2 vertical line 2, right
+    if (seqblock->selected_box==SB_STRETCH_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+    QLineF line2c(xsplit2,ysplit2,xsplit2,y2-border);
+    painter->drawLine(line2c);
 
 #endif
 
-#if INCLUDE_STRETCH_INTERFACE
     // ysplit1 horizontal line, left
+    if (seqblock->selected_box==SB_FADE_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
     QLineF line3a(x1+border, ysplit1, xsplit1-border, ysplit1);
     painter->drawLine(line3a);
     
     // ysplit1 horizontal line, right
+    if (seqblock->selected_box==SB_FADE_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
     QLineF line3b(xsplit2+border, ysplit1, x2-border, ysplit1);
     painter->drawLine(line3b);
-#endif
-    
+
     // ysplit2 horizontal line
+    if (seqblock->selected_box==SB_STRETCH_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
     QLineF line4a(x1+border, ysplit2, xsplit1-border, ysplit2);
     painter->drawLine(line4a);
     
     // ysplit2 horizontal line
+    if (seqblock->selected_box==SB_STRETCH_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
     QLineF line4b(xsplit2+border, ysplit2, x2-border, ysplit2);
     painter->drawLine(line4b);
     
     //myDrawText(*painter, _blury_areaF, "hello");
+
+    if (seqblock->selected_box==SB_STRETCH_LEFT){
+      myFillRect(*painter,
+                 QRectF(QPointF(x1+border, ysplit2),
+                        QPointF(xsplit1, y2-border)),
+                 fill_color);
+    } else if (seqblock->selected_box==SB_STRETCH_RIGHT){
+      myFillRect(*painter,
+                 QRectF(QPointF(xsplit2, ysplit2),
+                        QPointF(x2-border, y2-border)),
+                 fill_color);
+    } else if (seqblock->selected_box==SB_FADE_LEFT){
+      myFillRect(*painter,
+                 QRectF(QPointF(x1+border, y1+border),
+                        QPointF(xsplit1, ysplit1)),
+                 fill_color);
+    } else if (seqblock->selected_box==SB_FADE_RIGHT){
+      myFillRect(*painter,
+                 QRectF(QPointF(xsplit2, y1+border),
+                        QPointF(x2-border, ysplit1)),
+                 fill_color);
+    }
   }
 
   void paintSelected(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
@@ -1055,8 +1100,51 @@ public:
     }
   }
       
+  void draw_fades(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock){
+    QColor color = get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM); //mix_colors(QColor(50,50,50,200), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM), 0.52f);
+    color.setAlpha(180);
+    //QColor color(50,50,50,200);
 
-  void paintSeqBlockElements(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
+    QColor border_color(150,150,160);
+
+    QPen pen(border_color);
+    pen.setWidth(root->song->tracker_windows->systemfontheight / 8);
+
+    QPen sel_pen(border_color);
+    sel_pen.setWidthF(root->song->tracker_windows->systemfontheight / 3);
+
+    if (seqblock->fadein > 0){
+      double x = scale_double(seqblock->fadein, 0, 1, rect.left(), rect.right());
+      QPointF points[3] = {
+        QPointF(rect.left(),
+                rect.top()),
+        QPointF(x,
+                rect.top()),
+        QPointF(rect.left(),
+                rect.bottom())
+      };
+      myFilledPolygon(p, points, 3, color);
+      if (seqblock->selected_box==SB_FADE_LEFT) p.setPen(sel_pen);  else  p.setPen(pen);
+      p.drawLine(points[1], points[2]);
+    }
+
+    if (seqblock->fadeout > 0){
+      double x = scale_double(seqblock->fadeout, 0, 1, rect.right(), rect.left());
+      QPointF points[3] = {
+        QPointF(rect.right(),
+                rect.top()),
+        QPointF(x,
+                rect.top()),
+        QPointF(rect.right(),
+                rect.bottom())
+      };
+      myFilledPolygon(p, points, 3, color);
+      if (seqblock->selected_box==SB_FADE_RIGHT) p.setPen(sel_pen);  else  p.setPen(pen);
+      p.drawLine(points[1], points[2]);
+    }
+  }
+
+  void paintSeqBlockElements(QPainter &p, const QRectF &rect, const QRectF &rect_without_header, const struct SeqBlock *seqblock, bool is_gfx){
     if (seqblock->block==NULL)
       paintSampleGraphics(p, rect, seqblock, is_gfx);
     else
@@ -1065,6 +1153,8 @@ public:
     paintSelected(p, rect, seqblock, is_gfx);
     
     paintSeqblockHeader(p, rect, seqblock, is_gfx);
+
+    draw_fades(p, rect_without_header, seqblock);
   }
   
   void paintSeqBlock(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
@@ -1075,7 +1165,7 @@ public:
 
     if(seqblock != g_curr_seqblock){ //!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
 
-      paintSeqBlockElements(p, rect, seqblock, is_gfx);
+      paintSeqBlockElements(p, rect, rect_without_header, seqblock, is_gfx);
 
     } else {
 
@@ -1113,11 +1203,11 @@ public:
       
 #else
 
-      paintSeqBlockElements(p, rect, seqblock, is_gfx);
+      paintSeqBlockElements(p, rect, rect_without_header, seqblock, is_gfx);
       
 #endif
       
-      draw_interface(&p, rect_without_header);
+      draw_interface(&p, seqblock, rect_without_header);
     }
 
     draw_volume_envelope(&p, rect_without_header, seqblock);
@@ -2628,6 +2718,10 @@ float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum){
   }
 
 
+static float yfunc_ysplit0(int seqblocknum, int seqtracknum){
+  return SEQBLOCK_get_y1(seqblocknum, seqtracknum) + get_block_header_height();
+}
+
 static float yfunc_ysplit1(int seqblocknum, int seqtracknum){
   return get_seqblock_ysplit1(SEQBLOCK_get_y1(seqblocknum, seqtracknum) + get_block_header_height(),
                               SEQBLOCK_get_y2(seqblocknum, seqtracknum)
@@ -2640,51 +2734,10 @@ static float yfunc_ysplit2(int seqblocknum, int seqtracknum){
                               );
 }
 
+SEQBLOCK_handles(fade, yfunc_ysplit0, yfunc_ysplit1);
 SEQBLOCK_handles(interior, yfunc_ysplit1, yfunc_ysplit2);
 SEQBLOCK_handles(stretch, yfunc_ysplit2, SEQBLOCK_get_y2);
 
-
-/*
-float SEQBLOCK_get_left_stretch_x1(int seqblocknum, int seqtracknum){
-  return SEQBLOCK_get_x1(seqblocknum, seqtracknum);
-}
-
-float SEQBLOCK_get_left_stretch_y1(int seqblocknum, int seqtracknum){
-  return get_seqblock_ysplit2(SEQBLOCK_get_y1(seqblocknum, seqtracknum) + get_block_header_height(),
-                              SEQBLOCK_get_y2(seqblocknum, seqtracknum)
-                              );
-}
-
-float SEQBLOCK_get_left_stretch_x2(int seqblocknum, int seqtracknum){
-  return get_seqblock_xsplit1(SEQBLOCK_get_x1(seqblocknum, seqtracknum),
-                              SEQBLOCK_get_x2(seqblocknum, seqtracknum)
-                              );                              \
-}
-
-float SEQBLOCK_get_left_stretch_y2(int seqblocknum, int seqtracknum){
-  return SEQBLOCK_get_y2(seqblocknum, seqtracknum);\
-}
-
-// seqblock right stretch
-
-float SEQBLOCK_get_right_stretch_x1(int seqblocknum, int seqtracknum){
-  return get_seqblock_xsplit2(SEQBLOCK_get_x1(seqblocknum, seqtracknum),
-                              SEQBLOCK_get_x2(seqblocknum, seqtracknum)
-                              );                              
-}
-
-float SEQBLOCK_get_right_stretch_y1(int seqblocknum, int seqtracknum){
-  return SEQBLOCK_get_left_stretch_y1(seqblocknum, seqtracknum);
-}
-
-float SEQBLOCK_get_right_stretch_x2(int seqblocknum, int seqtracknum){
-  return SEQBLOCK_get_x2(seqblocknum, seqtracknum);
-}
-
-float SEQBLOCK_get_right_stretch_y2(int seqblocknum, int seqtracknum){
-  return SEQBLOCK_get_left_stretch_y2(seqblocknum, seqtracknum);
-}
-*/
 
 
 
