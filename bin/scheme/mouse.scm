@@ -4633,6 +4633,8 @@
 
 
 (define (get-closest-volume-envelope x y)
+  (define width/2 (<ra> :get-half-of-node-width))
+
   (define seqtracknum (*current-seqblock-info* :seqtracknum))
   (define seqblocknum (*current-seqblock-info* :seqblocknum))
   (define total-nodes (<ra> :get-num-seqblock-envelope-nodes seqblocknum seqtracknum))
@@ -4641,22 +4643,31 @@
              (x1 (<ra> :get-seqblock-envelope-node-x 0 seqblocknum seqtracknum))
              (x2 (<ra> :get-seqblock-envelope-node-x 1 seqblocknum seqtracknum)))
     (c-display "N:" n total-nodes x1 x2)
-    (if (or (= n (1- total-nodes))
-            (and (>= x x1)
-                 (<= x x2)))
-        (let* ((y1 (<ra> :get-seqblock-envelope-node-y (1- n) seqblocknum seqtracknum))
-               (y2 (<ra> :get-seqblock-envelope-node-y n seqblocknum seqtracknum))
-               (dist (get-distance-vertical x y x1 y1 x2 y2 (<ra> :get-seqblock-envelope-logtype (1- n) seqblocknum seqtracknum))))
-          (and (<= dist *seqnode-min-distance*)
-               (make-seqautomation/distance :seqtrack *current-seqtrack-num*
-                                            :automation-num #f
-                                            :distance (begin
-                                                        (c-display " DIST volume envelope:" dist)
-                                                        dist)
-                                            :seqblock seqblocknum)))
-        (loop (1+ n)
-              x2
-              (<ra> :get-seqblock-envelope-node-x (1+ n) seqblocknum seqtracknum)))))
+    (define (next)
+      (if (< n (1- total-nodes))
+          (loop (1+ n)
+                x2
+                (<ra> :get-seqblock-envelope-node-x (1+ n) seqblocknum seqtracknum))
+          #f))
+    (cond ((or (= n (1- total-nodes))
+               (and (>= x (- x1 width/2))
+                    (<= x (+ x2 width/2))))
+           (let* ((y1 (<ra> :get-seqblock-envelope-node-y (1- n) seqblocknum seqtracknum))
+                  (y2 (<ra> :get-seqblock-envelope-node-y n seqblocknum seqtracknum))
+                  (dist (get-distance-vertical x y x1 y1 x2 y2 (<ra> :get-seqblock-envelope-logtype (1- n) seqblocknum seqtracknum))))
+             (if (<= dist *seqnode-min-distance*)
+                 (min-seqautomation/distance (make-seqautomation/distance :seqtrack *current-seqtrack-num*
+                                                                          :automation-num #f
+                                                                          :distance (begin
+                                                                                      (c-display " DIST volume envelope:" dist)
+                                                                                      dist)
+                                                                          :seqblock seqblocknum)
+                                             (next))
+                 (next))))
+          ;((> x (+ x2) width/2)
+          ; #f)
+          (else
+           (next)))))
 
 
 (define (get-closest-seqautomation X Y)
@@ -4688,13 +4699,13 @@
                          (instrument-name (<ra> :get-instrument-name instrument-id))
                          (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
                          (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
-                    (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
+                    ;;(<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
                     (<ra> :set-statusbar-text (<-> instrument-name "/" effect-name))
                     (<ra> :set-curr-seq-automation (*current-seqautomation/distance* :automation-num)
                           (*current-seqautomation/distance* :seqtrack))))
 
                  ((*current-seqautomation/distance* :seqblock)
-                  (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
+                  ;;(<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
                   (<ra> :set-statusbar-text "Volume envelope")
                   (<ra> :set-curr-seqblock-envelope (*current-seqautomation/distance* :seqblock) (*current-seqautomation/distance* :seqtrack)))
 
@@ -4810,7 +4821,8 @@
                                           (existing-box Num Box) :> Num
                                           A                      :> #f))
                        (if (<ra> :shift-pressed)
-                           (<ra> :delete-seq-automation-node Num automationnum seqtracknum)
+                           (if Num
+                               (<ra> :delete-seq-automation-node Num automationnum seqtracknum))
                            (popup-menu (list "Delete"
                                              :enabled Num
                                              (lambda ()
@@ -4962,7 +4974,8 @@
                                           (existing-box Num Box) :> Num
                                           A                      :> #f))
                        (if (<ra> :shift-pressed)
-                           (<ra> :delete-seqblock-envelope-node Num seqblocknum seqtracknum)
+                           (if Num
+                               (<ra> :delete-seqblock-envelope-node Num seqblocknum seqtracknum))
                            (popup-menu (list "Delete"
                                              :enabled Num
                                              (lambda ()
@@ -4979,8 +4992,9 @@
                                                      seqblocknum
                                                      seqtracknum)))
                                        (list "Glide to next break point"
-                                             :check (and Num (= (<ra> :get-seqblock-envelope-logtype Num seqblocknum seqtracknum)
-                                                                *logtype-linear*))
+                                             :check (and Num
+                                                         (= (<ra> :get-seqblock-envelope-logtype Num seqblocknum seqtracknum)
+                                                            *logtype-linear*))
                                              :enabled Num
                                              (lambda (maybe)
                                                (<ra> :undo-sequencer-envelopes)
