@@ -74,6 +74,7 @@ static void RT_play_note(struct SeqTrack *seqtrack, Beat_Iterator *iterator, int
                                      0,
                                      0
                                      ),
+                       NULL,
                        time);
   }
   iterator->last_played_metronome_note_num = note_num;

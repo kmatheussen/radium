@@ -48,6 +48,7 @@ extern "C"{
 #define MIN_DB_THRESHOLD -35 // "gain_value" = 0.01778279410038923. Between MIN_DB and MIN_DB_THRESHOLD, we do linear gain<->db conversion. "scaled effect value" = 0.06666666666666667.
 #define MAX_DB 35            // "gain value" = 56.23413251903491. "scaled effect value" = 1.0.
   
+#define MAX_DB_GAIN 56.23413251903491 // = powf(10, MAX_DB/20.0f);
 #define THRESHOLD_GAIN 0.01778279410038923 // = powf(10, MIN_DB_THRESHOLD / 20.0f);
   
 static inline float gain2db(float gain){

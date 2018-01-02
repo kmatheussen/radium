@@ -64,6 +64,9 @@ static inline void HASH_put_string(hash_t *hash, const char *key, const QString 
 }
 #endif
 
+extern LANGSPEC enum DynType HASH_get_type_at(const hash_t *hash, const char *raw_key, int i);
+extern LANGSPEC enum DynType HASH_get_type(const hash_t *hash, const char *raw_key);
+
 extern LANGSPEC dyn_t HASH_get_dyn(const hash_t *hash, const char *key);
 extern LANGSPEC const wchar_t *HASH_get_string(const hash_t *hash, const char *key);
 extern LANGSPEC const char *HASH_get_chars(const hash_t *hash, const char *key);

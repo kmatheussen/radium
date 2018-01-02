@@ -7,6 +7,7 @@
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
 #include "../common/nsmtracker.h"
+#include "../common/SeqAutomation.hpp"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -64,7 +65,9 @@ struct MyReader : public radium::GranulatorCallback{
   radium::LockAsserter lockAsserter;
 
 private:
-  
+
+  float _volume = 1.0f;
+
   float _curr_fade_volume;
   
   float _fadeout_inc;
@@ -135,6 +138,13 @@ public:
     } else {
       RT_get_samples_from_disk(num_frames, outputs, do_add);
     }
+
+    float volume = _volume;
+    for(int ch=0;ch<_num_ch;ch++){
+      float *output = outputs[ch];
+      for(int i=0;i<num_frames;i++)
+        output[i] *= volume;
+    }
   }
   
 private:
@@ -154,15 +164,15 @@ private:
         outputs[ch][i] += _curr_fade_volume * outputs2[ch][i];
       
       _curr_fade_volume += _fadein_inc;
-      if (_curr_fade_volume > 1.0f)
-        _curr_fade_volume = 1.0f;
-    }    
+      if (_curr_fade_volume > 1.0)
+        _curr_fade_volume = 1.0;
+    }
   }
   
 public:
   
   void RT_add_samples(int num_frames, float **outputs){
-    if (_curr_fade_volume < 1.0f)
+    if (_curr_fade_volume < _volume)
       RT_add_fade_in_samples(num_frames, outputs);
     else
       RT_get_samples2(num_frames, outputs, true);
@@ -206,13 +216,17 @@ public:
   void prepare_for_fadein(void){
     _curr_fade_volume = 0.0;
     double fadein_duration = (double)FADE_IN_MS * (double)pc->pfreq / 1000.0;
-    _fadein_inc = 1.0 / fadein_duration;
+    _fadein_inc = 1.0 / fadein_duration; // I think this number probably should be recalculated each block.
   }
   
   void prepare_for_fadeout(void){
     int fadeout_duration = (double)FADE_OUT_MS * (double)pc->pfreq / 1000.0;
     _fadeout_inc = 1.0 / fadeout_duration;
     _fadeout_countdown = fadeout_duration + 16; // Add a little bit to avoid tiny tiny chance that the fade curve doesn't quite reach 0.
+  }
+
+  void set_volume(float new_volume){
+    _volume = new_volume;
   }
 
   int get_fadeout_duration(){
@@ -249,7 +263,8 @@ public:
     return _fadeout_countdown == 0;
   }
 };
- 
+
+
 struct Sample{
   int64_t _id = g_id++;
   const wchar_t *_filename;
@@ -268,7 +283,7 @@ struct Sample{
   DEFINE_ATOMIC(bool, _is_fading_out) = false;
   
   int _num_readers = 0; // Only read/written by the main thread.
-  
+
   radium::DiskPeaks *_peaks;
 
   const struct SeqBlock *_seqblock;
@@ -318,17 +333,23 @@ struct Sample{
       _fade_out_readers.reserve(_num_readers);
 #endif
     }
-    
+
   }
 
   ~Sample(){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
-    R_ASSERT_NON_RELEASE(_curr_reader==NULL);
-    R_ASSERT_NON_RELEASE(_fade_out_readers.size()==0);
-    R_ASSERT_NON_RELEASE(ATOMIC_GET(_is_fading_out)==false);
-    R_ASSERT_NON_RELEASE(_free_readers.size()==_num_readers);
     
+    R_ASSERT(ATOMIC_GET(_state)!=State::RUNNING);
+
+    R_ASSERT_NON_RELEASE(_curr_reader==NULL);
+
+    if(ATOMIC_GET(_state)==State::READY_FOR_DELETION){
+      R_ASSERT_NON_RELEASE(_fade_out_readers.size()==0);
+      R_ASSERT_NON_RELEASE(ATOMIC_GET(_is_fading_out)==false);
+      R_ASSERT_NON_RELEASE(_free_readers.size()==_num_readers);
+    }
+
     delete _curr_reader;
 
     for(auto *reader : _fade_out_readers){
@@ -391,6 +412,9 @@ struct Sample{
     R_ASSERT_RETURN_IF_FALSE(is_playing()==false);
     R_ASSERT_RETURN_IF_FALSE(_curr_reader==NULL);
 
+    if (ATOMIC_GET(_state)!=State::RUNNING)
+      return;
+      
     if (seqtime >= _seqblock->t.time2)
       return;
 
@@ -551,6 +575,7 @@ struct Sample{
 
     if (_curr_reader != NULL){
       LOCKASSERTER_EXCLUSIVE(&_curr_reader->lockAsserter);
+      _curr_reader->set_volume(_volume);
       _curr_reader->RT_add_samples(num_frames, outputs);
     }
 
@@ -569,6 +594,7 @@ struct Sample{
       
       RT_SAMPLEREADER_called_per_block(_curr_reader->_reader, how_much_to_prepare);
     }
+
   }
 
   // Called after scheduler and before audio processing.
@@ -623,6 +649,12 @@ struct Data{
     :_sample_rate(sample_rate)
   {
   }
+
+  ~Data(){
+    for(auto *sample : _samples){
+      delete sample;
+    }
+  }
   
   void RT_called_per_block(struct SeqTrack *seqtrack){
     int64_t start_time = seqtrack->start_time;
@@ -672,12 +704,15 @@ struct Data{
 static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqBlock *seqblock){
   radium::SampleReader *reader1 = SAMPLEREADER_create(filename);
 
-  if(reader1==NULL)
+  if(reader1==NULL){
+    //abort();
     return -1;
+  }
 
   radium::SampleReader *reader2 = SAMPLEREADER_create(filename);
 
   if(reader2==NULL){
+    //abort();
     SAMPLEREADER_delete(reader1);
     return -1;
   }
@@ -685,6 +720,9 @@ static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqB
   Sample *sample = new Sample(filename, reader1, reader2, seqblock);
 
   data->_samples.push_back_in_realtime_safe_manner(sample);
+
+  //if(sample->_id==-1)
+  //  abort();
 
   return sample->_id;
 }
@@ -717,6 +755,17 @@ void SEQTRACKPLUGIN_request_remove_sample(SoundPlugin *plugin, int64_t id){
 
   R_ASSERT_RETURN_IF_FALSE(ATOMIC_GET(sample->_state)==Sample::State::RUNNING);
   ATOMIC_SET(sample->_state, Sample::State::RT_REQUEST_DELETION);
+}
+
+bool SEQTRACKPLUGIN_can_be_deleted(SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+
+  for(auto *sample : data->_samples){
+    if (ATOMIC_GET(sample->_state) == Sample::State::RUNNING)
+      return false;
+  }
+
+  return true;
 }
 
 int SEQTRACKPLUGIN_get_num_samples(SoundPlugin *plugin){

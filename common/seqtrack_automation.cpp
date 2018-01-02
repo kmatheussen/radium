@@ -76,7 +76,6 @@ struct AutomationNode{
   double time; // seqtime format
   double value;
   int logtype;
-
 };
 
 static AutomationNode create_node(double seqtime, double value, int logtype){

@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 5.4.1
+VERSION = 5.4.2
 
 
 #----------------USER SETTINGS-------------------------------
@@ -169,6 +169,15 @@ else
 	UNDEFINED_SANITIZE_OPTS=
 endif
 
+ifeq ($(GCC_MAJOR),7)
+	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+#	UNDEFINED_SANITIZE_OPTS=
+else
+	UNDEFINED_SANITIZE_OPTS=
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=
+endif
+
 # clang:
 #UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer
 #UNDEFINED_SANITIZE_OPTS=
@@ -331,7 +340,7 @@ OBJ5= debug.o memory.o validatemem.o placement.o t_gc.o cursor.o cursor_updown.o
 
 OBJ6= realline_calc.o gfx_subtrack.o LPB.o Signature.o Beats.o gfx_wtrackheaders.o gfx_wtrackheader_volpan.o gfx_slider.o reallines_insert.o gfx_shrink.o gfx_shrink_t.o gfx_request.o
 
-OBJ7= instruments.o patch.o undo_audio_patch_addremove.o fxlines.o fxlines_legalize.o seqtrack.o seqtrack_automation.o song_tempo_automation.o scroll_play.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o Semaphores.o stacktoucher.o
+OBJ7= instruments.o patch.o undo_audio_patch_addremove.o fxlines.o fxlines_legalize.o seqtrack.o seqtrack_automation.o song_tempo_automation.o seqblock_envelope.o scroll_play.o crashreporter.o crashreporter_posix.o crashreporter_windows.o error.o  threading.o Semaphores.o stacktoucher.o
 
 #Tempos and time
 OBJ8= reltempo.o temponodes.o tempos.o time.o temponodes_legalize.o swing.o
@@ -822,6 +831,9 @@ seqtrack_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack_automation.cpp $(CD)
 
 song_tempo_automation.o:  $(BUILD_DEPENDENCIES) $(CD)song_tempo_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h
 	$(CCC) $(CD)song_tempo_automation.cpp $(QTOPT) -Wno-unknown-pragmas
+
+seqblock_envelope.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_envelope.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h
+	$(CCC) $(CD)seqblock_envelope.cpp $(QTOPT) -Wno-unknown-pragmas
 
 time.o:  $(BUILD_DEPENDENCIES) $(CD)time.c
 	$(CC) $(CD)time.c $(OPT) 
@@ -1794,17 +1806,13 @@ FluidSynth_plugin.o: audio/FluidSynth_plugin.c
 Pd_plugin.o: audio/Pd_plugin.cpp
 	$(CCC) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
+
 Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
-	$(CCC) $(QTOPT) audio/Modulator_plugin.cpp
+	$(CCC) $(QTOPT) audio/Modulator_plugin.cpp $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW)
 
 
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual
-
-ifeq ($(GCC_MAJOR),7)
-	FAUST_OPTS += -fno-sanitize=signed-integer-overflow
-# -D_GLIBCXX_USE_CXX11_ABI=0 
-endif	
+FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW)
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp

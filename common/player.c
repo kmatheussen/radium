@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "seqtrack_proc.h"
 #include "seqtrack_automation_proc.h"
 #include "instruments_proc.h"
+#include "seqblock_envelope_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -118,7 +119,7 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
 
         bool is_finished = true;
         
-
+        RT_SEQBLOCK_ENVELOPE_called_before_scheduler();
         
         ALL_SEQTRACKS_FOR_EACH(){
 
@@ -163,13 +164,14 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
             }
           
         }END_ALL_SEQTRACKS_FOR_EACH;
-
         
+        RT_SEQBLOCK_ENVELOPE_called_after_scheduler_and_before_audio();        
         
         if (player_state==PLAYER_STATE_STOPPED) {
           RSEMAPHORE_signal_all(g_player_stopped_semaphore);
             
           RT_SEQTRACK_AUTOMATION_called_when_player_stopped();
+          RT_SEQBLOCK_ENVELOPE_called_when_player_stopped();
           return;
         }
 

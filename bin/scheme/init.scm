@@ -480,6 +480,8 @@
     FROM_C-create-modulator-gui
     FROM_C-create-blocks-table-gui
     FROM_C-create-instruments-table-gui
+    ra:request-load-instrument-preset
+    ra:request-load-preset-instrument-description
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

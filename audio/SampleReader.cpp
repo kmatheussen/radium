@@ -293,6 +293,8 @@ public:
     return create_sndfile2(&sf_info);
   }
 
+  // Note: Probably no need to optimize this constructor (by lazily allocating what we need).
+  // (This is the Provider (shared between readers), not the Reader.)
   SampleProvider(const wchar_t *filename)
     : _filename(wcsdup(filename))
   {

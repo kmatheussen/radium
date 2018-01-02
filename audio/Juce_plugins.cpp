@@ -832,7 +832,7 @@ static void RT_MIDI_send_msg_to_patch2(struct SeqTrack *seqtrack, struct Patch *
                                 0,
                                 0);
 
-    RT_PATCH_play_note(seqtrack, patch, note, seq_time);
+    RT_PATCH_play_note(seqtrack, patch, note, NULL, seq_time);
   
   } else if (message.isNoteOff()) {
     note_t note = create_note_t(NULL,

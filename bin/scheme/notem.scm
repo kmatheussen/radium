@@ -463,7 +463,7 @@
 
   (define moduloskew-notes-layout (create-notem-layout (<gui> :vertical-layout
                                                               (create-keybinding-button "Range Up" "ra:eval-scheme" '("(moduloskew-range -1)"))
-                                                              (create-keybinding-button "Range Down" "ra:eval-scheme" '("(moduloskew-range 1")))
+                                                              (create-keybinding-button "Range Down" "ra:eval-scheme" '("(moduloskew-range 1)")))
                                                        (<gui> :vertical-layout
                                                               (create-keybinding-button "Track Up" "ra:eval-scheme" '("(moduloskew-track -1)"))
                                                               (create-keybinding-button "Track Down" "ra:eval-scheme" '("(moduloskew-track 1)")))

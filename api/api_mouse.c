@@ -3289,6 +3289,7 @@ void setNormalMousePointer(int64_t guinum){
     handleError("guinum for cursor must be 0 or larger");
     return;
   }
+  //printf("a) api_mouse: Set NORMAL  mouse %d\n", (int)guinum);
     SetNormalPointer(guinum);
 }
 void setPointingMousePointer(int64_t guinum){
@@ -3296,6 +3297,7 @@ void setPointingMousePointer(int64_t guinum){
     handleError("guinum for cursor must be 0 or larger");
     return;
   }
+  //printf("b) api_mouse: Set POINTING mouse %d\n", (int)guinum);
     SetPointingPointer(guinum);
 }
 void setOpenHandMousePointer(int64_t guinum){
@@ -3303,6 +3305,7 @@ void setOpenHandMousePointer(int64_t guinum){
     handleError("guinum for cursor must be 0 or larger");
     return;
   }
+  //printf("c) api_mouse: Set OPEN mouse %d\n", (int)guinum);
     SetOpenHandPointer(guinum);
 }
 void setClosedHandMousePointer(int64_t guinum){
