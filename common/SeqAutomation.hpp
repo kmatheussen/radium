@@ -412,7 +412,7 @@ public:
     QPointF points[_automation.size()*2];
 
     int start_i = -1;
-    bool num_after_end = 0;
+    int num_after_end = 0;
     bool next_is_hold = false;
 
     // 1. find x+y points in the gfx coordinate system

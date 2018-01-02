@@ -2481,8 +2481,9 @@ struct SeqBlock{
   double fadein; // value between 0 and 1
   double fadeout; // value between 0 and 1
 
-  float envelope_volume;
-  double last_envelope_volume;
+  bool envelope_enabled;
+  float envelope_volume; // gain
+  float envelope_db;     // db
   struct SeqblockEnvelope *envelope;
   
   // 'start_time' and 'end_time' are absolute times.

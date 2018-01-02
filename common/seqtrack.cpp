@@ -356,8 +356,8 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
     R_ASSERT(true==PLAYER_current_thread_has_lock());
   }
 
-  seqblock->last_envelope_volume = -1;
-  seqblock->envelope_volume = -1;
+  seqblock->envelope_volume = -1.0;
+  seqblock->envelope_db = MIN_DB - 1;
 }
 
 static struct SeqBlock *SEQBLOCK_create(struct SeqTrack *seqtrack, struct Blocks *block, hash_t *envelope, int64_t time){
@@ -804,6 +804,10 @@ static hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct 
     }
   }
 
+  HASH_put_float(state, ":fade-in", seqblock->fadein);
+  HASH_put_float(state, ":fade-out", seqblock->fadeout);
+
+  HASH_put_bool(state, ":envelope-enabled", seqblock->envelope_enabled);
   HASH_put_hash(state, ":envelope", SEQBLOCK_ENVELOPE_get_state(seqblock->envelope));
 
   return state;
@@ -848,9 +852,16 @@ static hash_t *get_new_seqblock_state_from_old(const hash_t *old, const struct S
 
   HASH_put_dyn(new_state, ":tracks-disabled", DYN_create_array(track_disabled));
 
-  if (HASH_has_key(old, ":envelope"))
+  if (HASH_has_key(old, ":envelope")){
+    HASH_put_bool(new_state, ":envelope-enabled", HASH_get_bool(old, ":envelope-enabled"));
     HASH_put_hash(new_state, ":envelope", HASH_get_hash(old, ":envelope"));
+  }
 
+  if (HASH_has_key(old, ":fade-in")){
+    HASH_put_float(new_state, ":fade-in", HASH_get_float(old, ":fade-in"));
+    HASH_put_float(new_state, ":fade-out", HASH_get_float(old, ":fade-out"));
+  }
+  
   return new_state;
 }
 
@@ -884,7 +895,11 @@ static hash_t *get_old_seqblock_state_from_new(const hash_t *new_state){
       HASH_put_bool_at(old, "track_disabled", i, track_disabled->elements[i].bool_number);
   }
 
+  HASH_put_bool(old, ":envelope-enabled", HASH_get_bool(new_state, ":envelope-enabled"));
   HASH_put_hash(old, ":envelope", HASH_get_hash(new_state, ":envelope"));
+
+  HASH_put_float(old, ":fade-in", HASH_get_float(new_state, ":fade-in"));
+  HASH_put_float(old, ":fade-out", HASH_get_float(new_state, ":fade-out"));
 
   return old;
 }
@@ -970,7 +985,6 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
   if (HASH_has_key(state, ":envelope"))
     envelope = HASH_get_hash(state, ":envelope");
 
-
   struct SeqBlock *seqblock;
 
   if (HASH_has_key(state, ":blocknum")){
@@ -1042,6 +1056,14 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     for(int i=0;i<MAX_DISABLED_SEQBLOCK_TRACKS;i++){
       seqblock->track_is_disabled[i] = vec->elements[i].bool_number;
     }
+  }
+
+  if (HASH_has_key(state, ":envelope-enabled"))
+    seqblock->envelope_enabled = HASH_get_bool(state, ":envelope-enabled");
+
+  if (HASH_has_key(state, ":fade-in")){
+    seqblock->fadein = HASH_get_float(state, ":fade-in");
+    seqblock->fadeout = HASH_get_float(state, ":fade-out");
   }
 
   return seqblock;

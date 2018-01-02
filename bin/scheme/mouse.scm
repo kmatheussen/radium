@@ -4843,7 +4843,7 @@
                          (instrument-name (<ra> :get-instrument-name instrument-id))
                          (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
                          (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
-                    ;;(<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
+                    (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
                     (<ra> :set-statusbar-text (<-> instrument-name "/" effect-name))
                     (<ra> :set-curr-seq-automation (*current-seqautomation/distance* :automation-num)
                           (*current-seqautomation/distance* :seqtrack))))
@@ -4851,7 +4851,7 @@
                  ((*current-seqautomation/distance* :seqblock)
                   (<ra> :cancel-curr-seq-automation)
                   (set-seqblock-selected-box 0 -1 -1)
-                  ;;(<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
+                  (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
                   (<ra> :set-statusbar-text "Volume envelope")
                   (<ra> :set-curr-seqblock-envelope (*current-seqautomation/distance* :seqblock) (*current-seqautomation/distance* :seqtrack)))
 
@@ -5025,9 +5025,12 @@
 (define (set-seqblock-envelope-node-statusbar-text Num)
   (let* ((seqblocknum (*current-seqautomation/distance* :seqblock))
          (seqtracknum (*current-seqautomation/distance* :seqtrack)))
-    (<ra> :set-statusbar-text (<-> "Volume: "
-                                   (db-to-text (<ra> :get-seqblock-envelope-value Num seqblocknum seqtracknum) #t)))))
-  
+    (<ra> :set-statusbar-text (<-> "Volume: "                                   
+                                   (let ((db (<ra> :get-seqblock-envelope-db Num seqblocknum seqtracknum)))
+                                     (<-> ;(<ra> :get-seqblock-envelope-db Num seqblocknum seqtracknum)
+                                          ;" : "
+                                          (db-to-text db #t)))))))
+
 
 ;; move and create seqblock volume envelope
 (add-node-mouse-handler :Get-area-box (lambda ()
@@ -5072,8 +5075,9 @@
                                              (define PositionTime (if (<ra> :control-pressed)
                                                                       Time
                                                                       (<ra> :get-seq-gridded-time (floor Time) 0 (<ra> :get-seq-automation-grid-type))))
-                                             (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
-                                             (define Num (<ra> :add-seqblock-envelope-node (floor PositionTime) Value *logtype-linear* seqblocknum seqtracknum))
+                                             (define db (scale Y (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) *max-mixer-db* *min-db*))
+                                             (c-display "db1" db ". Y:" Y)
+                                             (define Num (<ra> :add-seqblock-envelope-node (floor PositionTime) db *logtype-linear* seqblocknum seqtracknum))
                                              (if (= -1 Num)
                                                #f
                                                (begin
@@ -5084,12 +5088,15 @@
                         :Move-node (lambda (Num Time Y)
                                      (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
                                            (seqtracknum (*current-seqautomation/distance* :seqtrack)))
-                                       (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
+                                       (define db (between *min-db*
+                                                           (scale Y (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) *max-mixer-db* *min-db*)
+                                                           *max-mixer-db*))
                                        (define logtype (<ra> :get-seqblock-envelope-logtype Num seqblocknum seqtracknum))
                                        (set! Time (floor Time))
                                        (if (not (<ra> :control-pressed))
                                            (set! Time (<ra> :get-seq-gridded-time Time 0 (<ra> :get-seq-automation-grid-type))))
-                                       (<ra> :set-seqblock-envelope-node Time Value logtype Num seqblocknum seqtracknum)
+                                       (c-display "db" db ". Y:" Y)
+                                       (<ra> :set-seqblock-envelope-node Time db logtype Num seqblocknum seqtracknum)
                                        ;;(c-display "NUM:" Num ", Time:" (/ Time 48000.0) ", Value:" Value)
                                        Num))
                         :Publicize (lambda (Num)
@@ -5146,7 +5153,7 @@
                                                (<ra> :undo-sequencer-envelopes)
                                                (<ra> :set-seqblock-envelope-node
                                                      (<ra> :get-seqblock-envelope-time Num seqblocknum seqtracknum)
-                                                     (<ra> :get-seqblock-envelope-value Num seqblocknum seqtracknum)
+                                                     (<ra> :get-seqblock-envelope-db Num seqblocknum seqtracknum)
                                                      (if maybe *logtype-linear* *logtype-hold*)
                                                      Num
                                                      seqblocknum
@@ -5589,6 +5596,12 @@
                                                   (<ra> :color-dialog (<ra> :get-block-color blocknum) -1
                                                         (lambda (color)
                                                           (<ra> :set-block-color color blocknum)))))
+
+                                          (list "Enable envelope"
+                                                :enabled seqblocknum
+                                                :check (and seqblocknum (<ra> :get-seqblock-envelope-enabled seqblocknum seqtracknum))
+                                                (lambda (enable)
+                                                  (<ra> :set-seqblock-envelope-enabled enable seqblocknum seqtracknum)))
 
                                           (list "Enable/disable tracks"
                                                 :enabled seqblocknum

@@ -544,14 +544,37 @@ float getSeqAutomationNodeY(int nodenum, int automationnum, int seqtracknum){
     return ret;                                                 \
   }
 
-float getSeqblockEnvelopeValue(int nodenum, int seqblocknum, int seqtracknum){
+bool getSeqblockEnvelopeEnabled( int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return -1;
+
+  return seqblock->envelope_enabled;
+}
+void setSeqblockEnvelopeEnabled(bool is_enabled, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return;
+
+  if (seqblock->envelope_enabled==is_enabled)
+    return;
+  
+  {
+    radium::PlayerLock lock(is_playing_song());
+    seqblock->envelope_enabled = is_enabled;
+  }
+
+  SEQUENCER_update();
+}
+
+float getSeqblockEnvelopeDb(int nodenum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)
     return -1;
 
   VALIDATE_ENV_NODENUM(-1);
 
-  return SEQBLOCK_ENVELOPE_get_value(seqblock->envelope, nodenum);
+  return SEQBLOCK_ENVELOPE_get_db(seqblock->envelope, nodenum);
 }
 
 int64_t getSeqblockEnvelopeTime(int nodenum, int seqblocknum, int seqtracknum){
@@ -585,7 +608,7 @@ int getNumSeqblockEnvelopeNodes(int seqblocknum, int seqtracknum){
   return SEQBLOCK_ENVELOPE_get_num_nodes(seqblock->envelope);
 }
 
-int addSeqblockEnvelopeNode(int64_t time, float value, int logtype, int seqblocknum, int seqtracknum){
+int addSeqblockEnvelopeNode(int64_t time, float db, int logtype, int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
@@ -596,7 +619,7 @@ int addSeqblockEnvelopeNode(int64_t time, float value, int logtype, int seqblock
   undoSequencerEnvelopes();
 
   int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
-  return SEQBLOCK_ENVELOPE_add_node(seqblock->envelope, seqtime, value, logtype);
+  return SEQBLOCK_ENVELOPE_add_node(seqblock->envelope, seqtime, db, logtype);
 }
 
 void deleteSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
@@ -656,7 +679,7 @@ void cancelCurrSeqblockEnvelope(void){
   SEQBLOCK_ENVELOPE_cancel_curr_automation();
 }
 
-void setSeqblockEnvelopeNode(int64_t abstime, float value, int logtype, int nodenum, int seqblocknum, int seqtracknum){
+void setSeqblockEnvelopeNode(int64_t abstime, float db, int logtype, int nodenum, int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
@@ -666,7 +689,7 @@ void setSeqblockEnvelopeNode(int64_t abstime, float value, int logtype, int node
   VALIDATE_ENV_TIME(abstime,)
     
   int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, abstime);
-  SEQBLOCK_ENVELOPE_set(seqtrack, seqblock, nodenum, seqtime, R_BOUNDARIES(0, value, 1), logtype);
+  SEQBLOCK_ENVELOPE_set(seqtrack, seqblock, nodenum, seqtime, db, logtype);
 }
 
 float getSeqblockEnvelopeNodeX(int nodenum, int seqblocknum, int seqtracknum){
@@ -1387,6 +1410,10 @@ float getSeqblockY2(int seqblocknum, int seqtracknum){
   return SEQBLOCK_get_y2(seqblocknum, seqtracknum);
 }
 
+
+float getSeqblockHeaderY2(int seqblocknum, int seqtracknum){
+  return getSeqblockLeftFadeY1(seqblocknum, seqtracknum);
+}
 
 // seqblock left fade area
 

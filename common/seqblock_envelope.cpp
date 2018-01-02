@@ -44,7 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 // g_curr_seqblock_envelope_seqtrack is set to NULL by ~SeqblockEnvelope or SEQBLOCK_ENVELOPE_cancel_curr_automation.
-// Note that it not possible for a seqtrack to be valid, and its seqtrack->seqblockenvelope value to be invalid, or
+// Note that it not possible for a seqtrack to be valid, and its seqtrack->seqblockenvelope gain to be invalid, or
 // vice versa, so it's fine using the SeqblockEnvelope destructor for setting this value to NULL when the seqtrack is deleted.
 static struct SeqTrack *g_curr_seqblock_envelope_seqtrack = NULL;
 static struct SeqBlock *g_curr_seqblock_envelope_seqblock = NULL;
@@ -75,10 +75,10 @@ struct AutomationNode{
   int logtype;
 };
 
-static AutomationNode create_node(double seqtime, double value, int logtype){
+static AutomationNode create_node(double seqtime, double db, int logtype){
   AutomationNode node = {
     .time = seqtime,
-    .value = value,
+    .value = db,
     .logtype = logtype
   };
   return node;
@@ -87,23 +87,22 @@ static AutomationNode create_node(double seqtime, double value, int logtype){
 static hash_t *get_node_state(const AutomationNode &node){
   hash_t *state = HASH_create(5);
   
-  HASH_put_float(state, "seqtime", node.time);
-  HASH_put_float(state, "value", node.value);
-  HASH_put_int(state, "logtype", node.logtype);
+  HASH_put_float(state, ":seqtime", node.time);
+  HASH_put_float(state, ":db", node.value);
+  HASH_put_int(state, ":logtype", node.logtype);
 
   return state;
 }
 
 static AutomationNode create_node_from_state(hash_t *state){
-  return create_node(HASH_get_float(state, "seqtime"),
-                     HASH_get_float(state, "value"),
-                     HASH_get_int32(state, "logtype"));
+  return create_node(HASH_get_float(state, ":seqtime"),
+                     HASH_get_float(state, ":db"),
+                     HASH_get_int32(state, ":logtype"));
 }
 
 
 struct Automation{
   radium::SeqAutomation<AutomationNode> automation;
-  double last_value = -1.0;
 
   bool islegalnodenum(int nodenum){
     return nodenum>=0 && (nodenum<=automation.size()-1);
@@ -159,10 +158,10 @@ public:
 
       double duration = seqblock->t.default_duration;
 
-      _automation.automation.add_node(create_node(0, 0.9, LOGTYPE_LINEAR));
-      _automation.automation.add_node(create_node(duration/4, 0.8, LOGTYPE_LINEAR));
-      _automation.automation.add_node(create_node(duration/2, 0.8, LOGTYPE_LINEAR));
-      _automation.automation.add_node(create_node(duration, 0.0, LOGTYPE_LINEAR));
+      _automation.automation.add_node(create_node(0, 1.0, LOGTYPE_LINEAR));
+      //_automation.automation.add_node(create_node(duration/4, 0.8, LOGTYPE_LINEAR));
+      //_automation.automation.add_node(create_node(duration/2, 0.8, LOGTYPE_LINEAR));
+      _automation.automation.add_node(create_node(duration, 1.0, LOGTYPE_LINEAR));
     }
   }
 
@@ -199,7 +198,7 @@ int SEQBLOCK_ENVELOPE_get_num_automations(struct SeqblockEnvelope *seqblockenvel
   return seqblockenvelope->_automation.automation.size();
 }
 
-double SEQBLOCK_ENVELOPE_get_value(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
+double SEQBLOCK_ENVELOPE_get_db(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
 
   struct Automation &automation = seqblockenvelope->_automation;
   R_ASSERT_RETURN_IF_FALSE2(automation.islegalnodenum(nodenum), 0.5);
@@ -230,7 +229,7 @@ int SEQBLOCK_ENVELOPE_get_num_nodes(struct SeqblockEnvelope *seqblockenvelope){
 }
   
 
-int SEQBLOCK_ENVELOPE_add_node(struct SeqblockEnvelope *seqblockenvelope, double seqtime, double value, int logtype){
+int SEQBLOCK_ENVELOPE_add_node(struct SeqblockEnvelope *seqblockenvelope, double seqtime, double db, int logtype){
   if (seqtime < 0)
     seqtime = 0;
 
@@ -238,7 +237,7 @@ int SEQBLOCK_ENVELOPE_add_node(struct SeqblockEnvelope *seqblockenvelope, double
 
   struct Automation &automation = seqblockenvelope->_automation;
 
-  value = R_BOUNDARIES(0.0, value, 1.0);
+  db = R_BOUNDARIES(MIN_DB, db, MAX_DB);
 
   double time =
     R_BOUNDARIES(0,
@@ -247,7 +246,7 @@ int SEQBLOCK_ENVELOPE_add_node(struct SeqblockEnvelope *seqblockenvelope, double
                  )
     / seqblock->t.stretch;
 
-  int ret = automation.automation.add_node(create_node(time, value, logtype));
+  int ret = automation.automation.add_node(create_node(time, db, logtype));
   
   SEQTRACK_update(seqblockenvelope->_seqtrack);
   
@@ -342,7 +341,7 @@ void SEQBLOCK_ENVELOPE_cancel_curr_automation(void){
 }
 
 
-void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int nodenum, double seqtime, double value, int logtype){
+void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int nodenum, double seqtime, double db, int logtype){
   struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
 
   struct Automation &automation = seqblockenvelope->_automation;
@@ -363,10 +362,10 @@ void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock,
                              maxtime
                              );
 
-  value = R_BOUNDARIES(0.0, value, 1.0);
+  db = R_BOUNDARIES(MIN_DB, db, MAX_DB);
 
   node.time = time;
-  node.value = value;
+  node.value = db;
   node.logtype = logtype;
 
   automation.automation.replace_node(nodenum, node);
@@ -406,16 +405,16 @@ static void RT_handle_seqblock_volume_automation(linked_note_t *linked_notes, st
 
       } else {
 
-        float volume_automation_value =  seqblock->envelope_volume;
-
-        if (volume_automation_value >= 0){
+        double seqblock_automation_volume =  seqblock->envelope_volume;
+        
+        if (seqblock_automation_volume >= 0.0){
 
           RT_PATCH_change_velocity(linked_note->seqtrack,
                                    patch,
                                    create_note_t(seqblock,
                                                  note.id,
                                                  note.pitch,
-                                                 note.velocity * volume_automation_value,
+                                                 note.velocity * seqblock_automation_volume,
                                                  0,
                                                  note.midi_channel,
                                                  0,
@@ -495,11 +494,13 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
       double s1 = get_seqblock_noninterior_start(seqblock);
       double pos = (start_time-s1) / seqblock->t.stretch;
 
-      double new_volume;
-      seqblockenvelope->_automation.automation.RT_get_value(pos, new_volume);
+      double new_db = 0.0;
+      if (seqblock->envelope_enabled)
+        seqblockenvelope->_automation.automation.RT_get_value(pos, new_db);
+
 #if DO_DEBUG
       seqblockenvelope->_automation.automation.print();
-      printf("new_volume: %f. Pos: %f\n\n", new_volume, pos);
+      printf("new_db: %f. Pos: %f\n\n", new_db, pos);
 #endif
 
       if (seqblock->fadein > 0.0 || seqblock->fadeout > 0.0){
@@ -521,26 +522,32 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
             if (scaled_pos < seqblock->fadein){
               double fadein = scale_double(scaled_pos,
                                            0, seqblock->fadein,
-                                           0, 1);
+                                           MIN_DB, 0);
               //printf("fadein: %f\n", fadein);
-              new_volume *= fadein;
+              new_db += fadein;
             }
             
             if (scaled_pos > (1.0-seqblock->fadeout)) {
               double fadeout = scale_double(scaled_pos,
                                             1.0-seqblock->fadeout, 1,
-                                            1, 0);
+                                            0, MIN_DB);
               //printf("fadeout: %f\n", fadeout);
-              new_volume *= fadeout;
+              new_db += fadeout;
             }
             
           }
         }
       }
 
-      if (new_volume != seqblock->last_envelope_volume){        
-        seqblock->last_envelope_volume = new_volume;
-        seqblock->envelope_volume = new_volume;
+      if (new_db != seqblock->envelope_db){        
+
+        seqblock->envelope_db = new_db;
+
+        if (new_db==0.0)
+          seqblock->envelope_volume = 1.0; // Note: Need volume smoothing in Seqtrack_plugin.o.
+        else
+          seqblock->envelope_volume = db2gain(new_db); // Note: Need volume smoothing in Seqtrack_plugin.o.
+
       } else {
         seqblock->envelope_volume = -1;
       }
@@ -586,10 +593,7 @@ void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void){
 
       struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
       
-      seqblockenvelope->_automation.last_value = -1.0;
-      seqblockenvelope->_automation.last_value = -1.0;
-
-      seqblock->last_envelope_volume = -1;
+      seqblock->envelope_db = MIN_DB - 1;
       seqblock->envelope_volume = -1; // WARNING: When enabling the Seqtrack_plugin, ensure that we don't use seqblock->envelope_volume when player is stopped. If we do, it could be hard to hear since the only thing we do is to invert the phase, at least when there's no envelope volume.
 
     }END_VECTOR_FOR_EACH;
@@ -638,7 +642,8 @@ float SEQBLOCK_ENVELOPE_get_node_x(struct SeqblockEnvelope *seqblockenvelope, in
 }
 
 static float get_node_y(const AutomationNode &node, float y1, float y2){
-  return scale(node.value, 0, 1, y2, y1);
+  return scale(node.value, MIN_DB, 6, y2, y1);
+  //return scale(gain2db(node.value), MIN_DB, 6, y2, y1);
 }
 
 float SEQBLOCK_ENVELOPE_get_node_y(struct SeqblockEnvelope *seqblockenvelope, int seqtracknum, int nodenum){

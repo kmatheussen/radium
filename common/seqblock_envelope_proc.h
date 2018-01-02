@@ -13,11 +13,11 @@ extern LANGSPEC void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void);
 struct SeqblockEnvelope *SEQBLOCK_ENVELOPE_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const hash_t *automation_state);
 void SEQBLOCK_ENVELOPE_free(struct SeqblockEnvelope *seqblockenvelope);
 int SEQBLOCK_ENVELOPE_get_num_automations(struct SeqblockEnvelope *seqblockenvelope);
-double SEQBLOCK_ENVELOPE_get_value(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
+double SEQBLOCK_ENVELOPE_get_db(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
 double SEQBLOCK_ENVELOPE_get_seqtime(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
 int SEQBLOCK_ENVELOPE_get_logtype(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
 int SEQBLOCK_ENVELOPE_get_num_nodes(struct SeqblockEnvelope *seqblockenvelope);
-int SEQBLOCK_ENVELOPE_add_node(struct SeqblockEnvelope *seqblockenvelope, double seqtime, double value, int logtype);
+int SEQBLOCK_ENVELOPE_add_node(struct SeqblockEnvelope *seqblockenvelope, double seqtime, double db, int logtype);
 void SEQBLOCK_ENVELOPE_delete_node(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
 void SEQBLOCK_ENVELOPE_set_curr_node(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
 void SEQBLOCK_ENVELOPE_cancel_curr_node(struct SeqblockEnvelope *seqblockenvelope);
@@ -25,7 +25,7 @@ void SEQBLOCK_ENVELOPE_set_curr_automation(struct SeqTrack *seqtrack, struct Seq
 
 // May be called if it there is no current automation.
 void SEQBLOCK_ENVELOPE_cancel_curr_automation(void);
-void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int nodenum, double seqtime, double value, int lotype);
+void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int nodenum, double seqtime, double db, int lotype);
 
 ////////////////////////
 

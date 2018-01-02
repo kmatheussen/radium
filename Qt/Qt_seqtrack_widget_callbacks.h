@@ -972,10 +972,13 @@ public:
   }
   
   void draw_volume_envelope(QPainter *painter, const QRectF &rect, const struct SeqBlock *seqblock){
-    qreal x1,y1,x2,y2;
-    rect.getCoords(&x1, &y1, &x2, &y2);
+    if (seqblock->envelope_enabled){
 
-    SEQBLOCK_ENVELOPE_paint(painter, seqblock, x1, y1, x2, y2, seqblock==g_curr_seqblock);
+      qreal x1,y1,x2,y2;
+      rect.getCoords(&x1, &y1, &x2, &y2);
+      
+      SEQBLOCK_ENVELOPE_paint(painter, seqblock, x1, y1, x2, y2, seqblock==g_curr_seqblock);
+    }
   }
 
   void draw_interface(QPainter *painter, const struct SeqBlock *seqblock, const QRectF &_blury_areaF){
