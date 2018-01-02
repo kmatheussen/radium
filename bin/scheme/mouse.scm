@@ -4816,6 +4816,7 @@
   (and *current-seqtrack-num*
        (min-seqautomation/distance (get-closest-seqautomation-0 0 (<ra> :get-num-seq-automations *current-seqtrack-num*) X Y)
                                    (and *current-seqblock-info*
+                                        (<ra> :get-seqblock-envelope-enabled (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
                                         (get-closest-volume-envelope X Y)))))
 
 

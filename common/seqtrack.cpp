@@ -345,8 +345,8 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
   seqblock->t.stretch = 1.0;
   seqblock->gfx.stretch = 1.0;
 
-  seqblock->fadein = 0.2;
-  seqblock->fadeout = 0.3;
+  seqblock->fadein = 0;
+  seqblock->fadeout = 0;
 
   if(seqtrack != NULL){
     R_ASSERT(false==PLAYER_current_thread_has_lock());
