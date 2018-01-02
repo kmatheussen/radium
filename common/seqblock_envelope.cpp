@@ -591,8 +591,6 @@ void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void){
 
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
 
-      struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
-      
       seqblock->envelope_db = MIN_DB - 1;
       seqblock->envelope_volume = -1; // WARNING: When enabling the Seqtrack_plugin, ensure that we don't use seqblock->envelope_volume when player is stopped. If we do, it could be hard to hear since the only thing we do is to invert the phase, at least when there's no envelope volume.
 
