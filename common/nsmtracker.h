@@ -2379,6 +2379,7 @@ typedef struct {
   Ratio signature_value; // = {4,4};
 } Signature_Iterator;
 
+#define MAX_SEQBLOCK_VOLUME_ENVELOPE_DB 6
 #define MAX_DISABLED_SEQBLOCK_TRACKS 512
 
 struct SeqBlockTimings{

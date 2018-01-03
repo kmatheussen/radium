@@ -468,6 +468,9 @@
     shuffle-range
     shuffle-track
     shuffle-block
+    randomly-delete-range
+    randomly-delete-track
+    randomly-delete-block
     fullshuffle-range
     fullshuffle-track
     fullshuffle-block
@@ -482,6 +485,7 @@
     FROM_C-create-instruments-table-gui
     ra:request-load-instrument-preset
     ra:request-load-preset-instrument-description
+    FROM_C-update-seqblock-track-on-off-configuration
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

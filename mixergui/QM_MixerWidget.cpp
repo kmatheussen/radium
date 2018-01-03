@@ -2791,7 +2791,9 @@ static hash_t *create_ab_state(void){
   }
 
   HASH_put_hash(state, "plugin_ab_states", plugin_ab_states);
-  
+
+  HASH_put_dyn(state, "mixer_strips_configuration", MW_get_mixer_strips_state());
+
   return state;
 }
 
@@ -2922,7 +2924,11 @@ static void apply_ab_state(hash_t *state, hash_t *curr_state){
                               );
     
     apply_ab_connections_state(HASH_get_hash(state, "connections"));
+
   }UNDO_CLOSE();
+
+  if (HASH_has_key(state, "mixer_strips_configuration"))
+    MW_apply_mixer_strips_state(HASH_get_dyn(state, "mixer_strips_configuration"));
 }
 
 void MW_change_ab(int ab_num){
