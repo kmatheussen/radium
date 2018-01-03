@@ -951,10 +951,11 @@ static char *strip_whitespace(const char *s){
   while(isspace(ret[0]))
     ret++;
 
+  int len = (int)strlen(ret);
 
   // strip after
-  int pos=(int)strlen(ret)-1;
-  while(isspace(ret[pos])){
+  int pos=(int)len-1;
+  while(pos>0 && isspace(ret[pos])){
     ret[pos]=0;
     pos--;
   }
