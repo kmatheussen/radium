@@ -3,6 +3,7 @@
 (define-constant *min-db* (<ra> :get-min-db))
 (define-constant *max-db* (<ra> :get-max-db))
 (define-constant *max-mixer-db* 6)
+(define-constant *max-volume-envelope-db* (<ra> :get-seqblock-envelope-max-db))
 
 
 

@@ -640,7 +640,7 @@ float SEQBLOCK_ENVELOPE_get_node_x(struct SeqblockEnvelope *seqblockenvelope, in
 }
 
 static float get_node_y(const AutomationNode &node, float y1, float y2){
-  return scale(node.value, MIN_DB, 6, y2, y1);
+  return scale(node.value, MIN_DB, MAX_SEQBLOCK_VOLUME_ENVELOPE_DB, y2, y1);
   //return scale(gain2db(node.value), MIN_DB, 6, y2, y1);
 }
 

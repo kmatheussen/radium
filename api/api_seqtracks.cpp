@@ -567,6 +567,10 @@ void setSeqblockEnvelopeEnabled(bool is_enabled, int seqblocknum, int seqtracknu
   SEQUENCER_update();
 }
 
+float getSeqblockEnvelopeMaxDb(void){
+  return MAX_SEQBLOCK_VOLUME_ENVELOPE_DB;
+}
+
 float getSeqblockEnvelopeDb(int nodenum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)

@@ -5076,7 +5076,7 @@
                                              (define PositionTime (if (<ra> :control-pressed)
                                                                       Time
                                                                       (<ra> :get-seq-gridded-time (floor Time) 0 (<ra> :get-seq-automation-grid-type))))
-                                             (define db (scale Y (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) *max-mixer-db* *min-db*))
+                                             (define db (scale Y (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) *max-volume-envelope-db* *min-db*))
                                              (c-display "db1" db ". Y:" Y)
                                              (define Num (<ra> :add-seqblock-envelope-node (floor PositionTime) db *logtype-linear* seqblocknum seqtracknum))
                                              (if (= -1 Num)
@@ -5090,8 +5090,8 @@
                                      (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
                                            (seqtracknum (*current-seqautomation/distance* :seqtrack)))
                                        (define db (between *min-db*
-                                                           (scale Y (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) *max-mixer-db* *min-db*)
-                                                           *max-mixer-db*))
+                                                           (scale Y (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) *max-volume-envelope-db* *min-db*)
+                                                           *max-volume-envelope-db*))
                                        (define logtype (<ra> :get-seqblock-envelope-logtype Num seqblocknum seqtracknum))
                                        (set! Time (floor Time))
                                        (if (not (<ra> :control-pressed))
