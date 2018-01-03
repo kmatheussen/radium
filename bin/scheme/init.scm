@@ -468,9 +468,9 @@
     shuffle-range
     shuffle-track
     shuffle-block
-    randomly-delete-range
-    randomly-delete-track
-    randomly-delete-block
+    randomly-delete-notes-range
+    randomly-delete-notes-track
+    randomly-delete-notes-block
     fullshuffle-range
     fullshuffle-track
     fullshuffle-block
@@ -486,6 +486,9 @@
     ra:request-load-instrument-preset
     ra:request-load-preset-instrument-description
     FROM_C-update-seqblock-track-on-off-configuration
+    randomly-delete-notes-range
+    randomly-delete-notes-track
+    randomly-delete-notes-block
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
