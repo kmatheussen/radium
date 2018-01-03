@@ -309,9 +309,22 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void set_chance(int voicenum){
     int chance=get_c(voicenum)->value();
     if(_voices[voicenum].chance != chance){
+      
+      SoundPlugin *plugin = NULL;
+      if (_patch->instrument==get_audio_instrument())
+        plugin = (SoundPlugin*)_patch->patchdata;
+
       ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
-      safe_float_write(&_voices[voicenum].chance, chance);
+      
+      if (plugin != NULL){
+        float value = scale_double(R_BOUNDARIES(0, chance, 256), 0, 256, 0, 1);
+        PLUGIN_set_effect_value(plugin, 0, EFFNUM_CHANCE1 + voicenum, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+      } else {
+        R_ASSERT_NON_RELEASE(_patch->instrument==get_MIDI_instrument());
+        safe_float_write(&_voices[voicenum].chance, chance);
+      }        
     }
+    
     set_editor_focus();
     update_peaks();
   }
