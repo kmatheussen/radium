@@ -447,6 +447,7 @@ def addIt(keyhandles, parser, command):
         putCode(keyhandles, parser, command, [])
 
 
+
 class KeyHandler:
 
     def __init__(self):
@@ -538,6 +539,13 @@ def get_file_handles():
 
     return infilehandle, infilehandle2, outfilehandle
 
+def clean_generated_keybinding_file():
+    filehandle, filehandle2, outfilehandle = get_file_handles()
+    if outfilehandle:
+        outfilehandle.close()
+
+clean_generated_keybinding_file() # If not, we will run previous keybinding in the next line. If it contained e.g. "*exit()*", radium wouldn't start. But it could also create other types of confusion.
+import generated_keybinding_code as keybinding
 
 def parse():
     global keyhandles
@@ -624,15 +632,20 @@ def parse():
             
         if outfilehandle:
             outfilehandle.close()
+           
     except:
         print "Could not close file. Out of disk space?"
         #sys.exit(3)
 
+    reload(keybinding) # i.e re-do "import generated_keybinding_code as keybinding"
 
     #sys.exit(1)
     
     #print "BBBBBB",radium._keybindingsdict
     return True
+
+
+
 
 
 def parse_and_show_errors():
