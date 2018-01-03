@@ -449,6 +449,47 @@
 
 
 
+
+;; randomly-delete
+;;;;;;;;;;;;;;;;;;;
+ 
+(define *default-randomly-delete-chance* 0.2)
+
+;; lengthen notes?
+(define (randomly-delete-notes notes chance)  
+  (let loop ((notes notes))
+    (cond ((null? notes)
+           notes)
+          ((< (myrand 0 1) chance)
+           (loop (cdr notes)))
+          (else
+           (cons (car notes)
+                 (loop (cdr notes)))))))
+
+
+(define (randomly-delete-notes! area chance)
+  (undo-editor-area area)
+  (define start-place (area :start-place))
+  (define end-place (area :end-place))
+  (replace-notes! (map (lambda (track-notes)
+                         (randomly-delete-notes track-notes chance))
+                       (get-area-notes area :include-starting-before #f))
+                  area))
+
+(delafina (randomly-delete-notes-range :chance *default-randomly-delete-chance* :blocknum -1)
+  (if (not (<ra> :has-range blocknum))
+      (show-async-message :text "No range in block. Select range by using Left Meta + b")
+      (randomly-delete-notes! (get-ranged-editor-area blocknum) chance)))
+
+(delafina (randomly-delete-notes-track :chance *default-randomly-delete-chance* :tracknum -1 :blocknum -1)
+  (randomly-delete-notes! (get-track-editor-area tracknum blocknum) chance))
+
+(delafina (randomly-delete-notes-block :chance *default-randomly-delete-chance* :blocknum -1)
+  (randomly-delete-notes! (get-block-editor-area blocknum) chance))
+
+
+
+
 ;; Randomize/skew/shuffle tab
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (create-randomize/skew-notem)
@@ -496,9 +537,21 @@
                                                              (<gui> :vertical-layout
                                                                     (create-keybinding-button "Block" "ra:eval-scheme" '("(randomize-note-durations-block)")))))
   
+  (define randomly-delete-notes-layout (create-notem-layout (<gui> :horizontal-int-slider "chance %: "
+                                                                   0 (floor (* 100 *default-randomly-delete-chance*)) 100
+                                                                   (lambda (val)
+                                                                     (set! *default-randomly-delete-chance* (/ val 100))))
+                                                            (<gui> :vertical-layout
+                                                                   (create-keybinding-button "Range" "ra:eval-scheme" '("(randomly-delete-notes-range)")))
+                                                            (<gui> :vertical-layout
+                                                                   (create-keybinding-button "Track" "ra:eval-scheme" '("(randomly-delete-notes-track)")))
+                                                            (<gui> :vertical-layout
+                                                                   (create-keybinding-button "Block" "ra:eval-scheme" '("(randomly-delete-notes-block)")))))
+  
   (define ret (create-notem-flow-layout (<gui> :group "Randomize pitch" random-layout)
                                         (<gui> :group "Randomize velocities" random-velocities-layout)
                                         (<gui> :group "Randomize note positions and durations" randomize-note-durations-layout)
+                                        (<gui> :group "Randomly delete notes" randomly-delete-notes-layout)
                                         (<gui> :group "Modulo skew" moduloskew-notes-layout)
                                         (<gui> :group "Lightly shuffle pitches" shuffle-notes-layout)
                                         (<gui> :group "Heavily shuffle pitches" fullshuffle-notes-layout)
