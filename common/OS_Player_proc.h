@@ -88,11 +88,14 @@ namespace radium{
 
 namespace{  
 
-struct PlayerLock{
-  const bool _enable;
+class PlayerLock{
 
   PlayerLock(const PlayerLock&) = delete;
   PlayerLock& operator=(const PlayerLock&) = delete;
+
+public:
+
+  const bool _enable;
 
   PlayerLock(const bool enable = true)
     : _enable(enable)
