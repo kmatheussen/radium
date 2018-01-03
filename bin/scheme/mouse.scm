@@ -991,12 +991,12 @@
 (define *old-selected-box-seqblocknum* -1)
 (define *old-selected-box-seqtracknum* -1)
 (define (set-seqblock-selected-box which-one seqblocknum seqtracknum)
-  (c-display "   setting " which-one seqblocknum seqtracknum " old: " *old-selected-box-seqblocknum* *old-selected-box-seqtracknum*)
+  ;;(c-display "   setting " which-one seqblocknum seqtracknum " old: " *old-selected-box-seqblocknum* *old-selected-box-seqtracknum*)
   (when (and (>= *old-selected-box-seqtracknum* 0)
              (< *old-selected-box-seqtracknum* (<ra> :get-num-seqtracks))
              (>= *old-selected-box-seqblocknum* 0)
              (< *old-selected-box-seqblocknum* (<ra> :get-num-seqblocks *old-selected-box-seqtracknum*)))    
-    (c-display "UNSETTING")
+    ;;(c-display "UNSETTING")
     (<ra> :set-seqblock-selected-box 0 *old-selected-box-seqblocknum* *old-selected-box-seqtracknum*))
   
   (set! *old-selected-box-seqblocknum* seqblocknum)
@@ -1095,7 +1095,7 @@
                               (set-seqblock-selected-box 0 seqblocknum seqtracknum)
                               (c-display "setting open hand")
                               (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))))
-                       (c-display "hepp")
+                       ;;(c-display "hepp")
                        )
                       ((inside-box (get-seqnav-move-box) X Y)
                        (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))
@@ -1105,7 +1105,7 @@
                       ((inside-box (<ra> :get-box seqnav-right-size-handle) X Y)
                        (set-mouse-pointer ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                       (else
-                       (c-display "normal1" *current-seqblock-info*)
+                       ;;(c-display "normal1" *current-seqblock-info*)
                        (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui)))))
                
                ((inside-box (<ra> :get-box track-slider) X Y)
