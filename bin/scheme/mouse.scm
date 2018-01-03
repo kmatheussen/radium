@@ -3251,7 +3251,7 @@
                       (or (not (<ra> :pianoroll-visible *current-track-num*))
                           (not (inside-box (<ra> :get-box track-pianoroll *current-track-num*) X Y))))
                  (begin
-                   (c-display "normal3")
+                   ;;(c-display "normal3")
                    (<ra> :set-normal-mouse-pointer (<gui> :get-editor-gui)))))
          result))
 
