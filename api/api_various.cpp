@@ -652,7 +652,7 @@ void openToolsDialog(void){
 }
 
 void openPluginManager(void){
-  evalScheme("(pmg-start (make-instrument-conf) #f)");
+  evalScheme("(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (create-instrument (ra:create-new-instrument-conf) descr)))");
 }
 
 void openMidiLearnPreferencesDialog(void){
