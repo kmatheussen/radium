@@ -1007,18 +1007,18 @@
 
 (define (set-fade-status-bar is-left seqblocknum seqtracknum)
   (define (get-displayable-string value)
-    (cond ((= value 0)
-           "0.00")
-          ((= value 1)
-           "1.00")
-          (else
-           (let ((s (two-decimal-string value)))
-             (cond ((string=? s "0.00")
-                    "0.01")
-                   ((string=? s "1.00")
-                    "0.99")
-                   (else
-                    s))))))
+    (<-> (if (= value 0)
+             "0.00"
+             (let* ((ms (* 1000
+                           (/ (* value (- (<ra> :get-seqblock-end-time seqblocknum seqtracknum)
+                                          (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                              (<ra> :get-sample-rate))))
+                    (sms (two-decimal-string ms)))
+               (if (string=? sms "0.00")
+                   "0.01"
+                   sms)))
+         "ms"))
+
   (if is-left
       (begin
         (set-seqblock-selected-box 1 seqblocknum seqtracknum)
