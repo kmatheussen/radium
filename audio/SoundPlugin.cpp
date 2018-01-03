@@ -978,9 +978,9 @@ static float get_voice_onoff(struct SoundPlugin *plugin, int num){
 static void set_chance(struct SoundPlugin *plugin, int num, float value){
   if (plugin->patch != NULL) {
     if (value>=1)
-      plugin->patch->voices[num].chance = 256;
+      safe_float_write(&plugin->patch->voices[num].chance, 256);
     else
-      plugin->patch->voices[num].chance = R_BOUNDARIES(0, round(scale_double(value, 0, 1, 0, 256)), 256);
+      safe_float_write(&plugin->patch->voices[num].chance, R_BOUNDARIES(0, round(scale_double(value, 0, 1, 0, 256)), 256));
     
     update_instrument_gui(plugin);
   }
@@ -988,7 +988,7 @@ static void set_chance(struct SoundPlugin *plugin, int num, float value){
                       
 static float get_chance(struct SoundPlugin *plugin, int num){
   if (plugin->patch != NULL) {
-    return round(scale_double(plugin->patch->voices[num].chance, 0, 256, 0, 1));
+    return scale_double(plugin->patch->voices[num].chance, 0, 256, 0, 1);
   } else
     return 1;
 }

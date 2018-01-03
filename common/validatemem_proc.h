@@ -116,7 +116,10 @@ static inline void *V_calloc(size_t n, size_t size){
 #include <malloc.h>
 static inline void V_free(void *ptr){
   R_ASSERT(!PLAYER_current_thread_has_lock());
-  memset(ptr, -1, malloc_usable_size(ptr)); // for debugging. Crashes faster if something is wrong.
+#if !defined(RELEASE)
+  if (ptr != NULL)
+    memset(ptr, -1, malloc_usable_size(ptr)); // for debugging. Crashes faster if something is wrong.
+#endif
   free(ptr);
 }
 static inline void *V_realloc(void *ptr, size_t size){
