@@ -113,12 +113,19 @@ static inline void *V_calloc(size_t n, size_t size){
   R_ASSERT(!PLAYER_current_thread_has_lock());
   return my_calloc(n,size);
 }
+
+
+#ifndef __clang__
 #include <malloc.h>
+#endif
+
 static inline void V_free(void *ptr){
   R_ASSERT(!PLAYER_current_thread_has_lock());
+#ifndef __clang__
 #if !defined(RELEASE)
   if (ptr != NULL)
     memset(ptr, -1, malloc_usable_size(ptr)); // for debugging. Crashes faster if something is wrong.
+#endif
 #endif
   free(ptr);
 }

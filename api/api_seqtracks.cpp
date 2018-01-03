@@ -1641,7 +1641,7 @@ void setSeqblockSelectedBox(int which_one, int seqblocknum, int seqtracknum){
 
 // seqblock fade in/out
 
-double getSeqblockFadeIn(int64_t seqblocknum, int64_t seqtracknum){
+double getSeqblockFadeIn(int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return 0.0;
@@ -1649,7 +1649,7 @@ double getSeqblockFadeIn(int64_t seqblocknum, int64_t seqtracknum){
   return seqblock->fadein;
 }
 
-double getSeqblockFadeOut(int64_t seqblocknum, int64_t seqtracknum){
+double getSeqblockFadeOut(int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return 0.0;
@@ -1657,7 +1657,7 @@ double getSeqblockFadeOut(int64_t seqblocknum, int64_t seqtracknum){
   return seqblock->fadeout;
 }
 
-void setSeqblockFadeIn(double fadein, int64_t seqblocknum, int64_t seqtracknum){
+void setSeqblockFadeIn(double fadein, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return;
@@ -1668,14 +1668,14 @@ void setSeqblockFadeIn(double fadein, int64_t seqblocknum, int64_t seqtracknum){
   }
 
   if (fadein != seqblock->fadein){
-    radium::PlayerLock(is_playing_song());
+    radium::PlayerLock lock(is_playing_song());
     seqblock->fadein = fadein;
   }
 
   SEQUENCER_update();
 }
 
-void setSeqblockFadeOut(double fadeout, int64_t seqblocknum, int64_t seqtracknum){
+void setSeqblockFadeOut(double fadeout, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return;
@@ -1686,7 +1686,7 @@ void setSeqblockFadeOut(double fadeout, int64_t seqblocknum, int64_t seqtracknum
   }
 
   if (fadeout != seqblock->fadeout){
-    radium::PlayerLock(is_playing_song());
+    radium::PlayerLock lock(is_playing_song());
     seqblock->fadeout = fadeout;
   }
 
