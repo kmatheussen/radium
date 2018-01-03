@@ -961,13 +961,13 @@
                (new (get-seqblock-info X Y)))
            ;;(c-display "old/new seqblock-info" old new)
            (cond ((and old (not new))
-                  (<ra> :cancel-curr-seqblock)
+                  (<ra> :cancel-curr-seqblock-under-mouse)
                   (set! *current-seqblock-info* #f))
                  ((or (and new (not old))
                       (not (morally-equal? new old)))
                   ;;(c-display "set-normal")
                   ;;(<ra> :set-normal-mouse-pointer)
-                  (<ra> :set-curr-seqblock (new :seqblocknum) (new :seqtracknum))
+                  (<ra> :set-curr-seqblock-under-mouse (new :seqblocknum) (new :seqtracknum))
                   (set! *current-seqblock-info* new))
                  (else
                   #f)))))
@@ -4322,7 +4322,7 @@
                        (<ra> :delete-seqblock seqblocknum seqtracknum)
                        (define new-seqblocknum (apply-seqblock seqblock))
                        (<ra> :select-seqblock #t new-seqblocknum new-seqtracknum)
-                       (<ra> :set-curr-seqblock new-seqblocknum new-seqtracknum)
+                       (<ra> :set-curr-seqblock-under-mouse new-seqblocknum new-seqtracknum)
                        (make-seqblock-info :seqtracknum new-seqtracknum
                                            :seqblocknum new-seqblocknum))))
 
@@ -4471,7 +4471,7 @@
                                                             (apply-seqblock (move-seqblock seqblock1 new-pos1))
                                                             (apply-seqblock (move-seqblock seqblock2 new-pos2))
                                                             (<ra> :select-seqblock #t ret-seqblocknum new-seqtracknum)
-                                                            (<ra> :set-curr-seqblock ret-seqblocknum new-seqtracknum)
+                                                            (<ra> :set-curr-seqblock-under-mouse ret-seqblocknum new-seqtracknum)
                                                             (make-seqblock-info :seqtracknum new-seqtracknum
                                                                                 :seqblocknum ret-seqblocknum))))
 
@@ -5332,9 +5332,13 @@
         (iota (length all-instruments))
         all-instruments)))
 
+(define *curr-seqblock-track-on-off-window* #f)
+(define *curr-seqblock-track-on-off-gui* #f)
+
 (define (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)
   (define starting #t)
   (define gui (<gui> :vertical-layout))
+
   (for-each (lambda (tracknum)
               (<gui> :add gui
                      (<gui> :checkbox
@@ -5348,21 +5352,48 @@
                                 )))))
             (iota (<ra> :get-num-tracks blocknum)))
   
+  (define window (or *curr-seqblock-track-on-off-window*
+                     (<gui> :horizontal-layout)))
+
   (define close-button (<gui> :button "Close" (lambda ()
-                                                (<gui> :close gui))))
+                                                (c-display "CLOSING")
+                                                (<gui> :close window)
+                                                (set! *curr-seqblock-track-on-off-window* #f)
+                                                (set! *curr-seqblock-track-on-off-gui* #f))))
+
   (<gui> :add gui close-button)
   
-  (<gui> :set-takes-keyboard-focus gui #f)
-  (<gui> :set-parent gui -1)
-  (<gui> :show gui)  
-  (set! starting #f)
+  (if *curr-seqblock-track-on-off-gui*
+      (begin
+        (<gui> :replace window *curr-seqblock-track-on-off-gui* gui)
+        (<gui> :close *curr-seqblock-track-on-off-gui*))
+      (<gui> :add window gui))
 
-  gui
+  (set! *curr-seqblock-track-on-off-gui* gui)
+
+  (if *curr-seqblock-track-on-off-window*
+      (<gui> :raise window)
+      (begin      
+        (<gui> :set-takes-keyboard-focus window #f)
+        (<gui> :set-parent window -1)
+        (<gui> :show window)
+        (set! *curr-seqblock-track-on-off-window* window)))
+
+  (set! starting #f)
+  window
   )
 
 #!!
 (show-seqblock-track-on-off-configuration 0 0 0)
 !!#
+
+(define (FROM_C-update-seqblock-track-on-off-configuration seqtracknum seqblocknum)
+  (if (and *curr-seqblock-track-on-off-window*
+           (>= seqtracknum 0)
+           (>= seqblocknum 0)
+           (<ra> :seqblock-holds-block seqblocknum seqtracknum))
+      (show-seqblock-track-on-off-configuration seqtracknum seqblocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))))
+  
 
 (define (get-original-seqblock-duration seqblocknum seqtracknum)
   (if (<ra> :seqblock-holds-block seqblocknum seqtracknum)
