@@ -567,6 +567,10 @@ void setSeqblockEnvelopeEnabled(bool is_enabled, int seqblocknum, int seqtracknu
   SEQUENCER_update();
 }
 
+float getSeqblockEnvelopeMaxDb(void){
+  return MAX_SEQBLOCK_VOLUME_ENVELOPE_DB;
+}
+
 float getSeqblockEnvelopeDb(int nodenum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)
@@ -1287,17 +1291,37 @@ void applyGfxSeqblocks(int seqtracknum){
 
 // seqblocks
 
-void setCurrSeqblock(int seqblocknum, int seqtracknum){
+static int g_curr_seqblocknum_under_mouse = -1;
+static int g_curr_seqtracknum_under_mouse = -1;
+
+void setCurrSeqblockUnderMouse(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
     return;
+
+  g_curr_seqblocknum_under_mouse = seqblocknum;
+  g_curr_seqtracknum_under_mouse = seqtracknum;
+
   g_curr_seqblock = seqblock;
+
+  evalScheme(talloc_format("(FROM_C-update-seqblock-track-on-off-configuration %d %d)", seqtracknum, seqblocknum));
+
   SEQUENCER_update();
 }
 
-void cancelCurrSeqblock(void){
+int getCurrSeqblockUnderMouse(void){
+  return g_curr_seqblocknum_under_mouse;
+}
+
+int getCurrSeqtrackUnderMouse(void){
+  return g_curr_seqtracknum_under_mouse;
+}
+
+void cancelCurrSeqblockUnderMouse(void){
   g_curr_seqblock = NULL;
+  g_curr_seqblocknum_under_mouse = -1;
+  g_curr_seqtracknum_under_mouse = -1;
   SEQUENCER_update();
 }
 

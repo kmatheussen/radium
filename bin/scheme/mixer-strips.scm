@@ -518,7 +518,7 @@
                                          (if (<ra> :instrument-is-open-and-audio instrument-id) ;; When loading older songs, settings can include id of deleted instruments
                                              (set-conf-var! instrument-id :is-enabled (conf :is-enabled))))
                                        (to-list (settings :instrument-settings)))
-                             (remake :non-are-valid)))
+                             (remake '())));;:non-are-valid)))
                   (else
                    (error (<-> "Unknown keyword1 " keyword)))))
               (lambda (keyword first-arg . rest-args)
