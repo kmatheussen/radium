@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/player_pause_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "../audio/Mixer_proc.h"
 #include "../audio/SoundPlugin.h"
 #include "../audio/SampleReader_proc.h"
@@ -1305,7 +1307,13 @@ void setCurrSeqblockUnderMouse(int seqblocknum, int seqtracknum){
 
   g_curr_seqblock = seqblock;
 
-  evalScheme(talloc_format("(FROM_C-update-seqblock-track-on-off-configuration %d %d)", seqtracknum, seqblocknum));
+  static func_t *func = NULL;
+  if (func==NULL){
+    func = s7extra_get_func_from_funcname("FROM_C-update-seqblock-track-on-off-configuration");
+    s7extra_protect(func);
+  }
+  
+  S7CALL(void_int_int, func, seqtracknum, seqblocknum);
 
   SEQUENCER_update();
 }
