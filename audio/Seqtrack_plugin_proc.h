@@ -9,7 +9,8 @@ struct SoundPlugin;
 extern LANGSPEC void SEQTRACKPLUGIN_set_interior_start(struct SoundPlugin *plugin, int64_t id, int64_t interior_start);
 extern LANGSPEC void SEQTRACKPLUGIN_set_interior_end(struct SoundPlugin *plugin, int64_t id, int64_t interior_end);
 
-extern LANGSPEC void RT_SEQTRACKPLUGIN_called_per_block(struct SoundPlugin *plugin, struct SeqTrack *seqtrack);  // Sets seqtrack->curr_sample_seqblock when starting/stopping playing audio file.
+// Returns true if there is more to play
+extern LANGSPEC bool RT_SEQTRACKPLUGIN_called_per_block(struct SoundPlugin *plugin, struct SeqTrack *seqtrack);  // Sets seqtrack->curr_sample_seqblock when starting/stopping playing audio file.
 
 extern LANGSPEC void SEQTRACKPLUGIN_called_very_often(struct SoundPlugin *plugin);
 

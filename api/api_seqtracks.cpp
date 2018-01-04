@@ -1308,10 +1308,8 @@ void setCurrSeqblockUnderMouse(int seqblocknum, int seqtracknum){
   g_curr_seqblock = seqblock;
 
   static func_t *func = NULL;
-  if (func==NULL){
-    func = s7extra_get_func_from_funcname("FROM_C-update-seqblock-track-on-off-configuration");
-    s7extra_protect(func);
-  }
+  if (func==NULL)
+    func = s7extra_get_func_from_funcname_for_storing("FROM_C-update-seqblock-track-on-off-configuration");
   
   S7CALL(void_int_int, func, seqtracknum, seqblocknum);
 

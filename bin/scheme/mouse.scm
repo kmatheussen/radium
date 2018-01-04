@@ -981,9 +981,11 @@
                                                                   (<ra> :get-sample-rate))))))
 
 (define (set-left-interior-status-bar seqblocknum seqtracknum)
+  (set-seqblock-selected-box 5 seqblocknum seqtracknum)
   (set-left-interior-status-bar2 (<ra> :get-seqblock-interior-start-gfx seqblocknum seqtracknum)))
 
 (define (set-right-interior-status-bar seqblocknum seqtracknum)
+  (set-seqblock-selected-box 6 seqblocknum seqtracknum)  
   (<ra> :set-statusbar-text (<-> "|----: " (two-decimal-string (/ (- (get-original-seqblock-duration seqblocknum seqtracknum)
                                                                      (<ra> :get-seqblock-interior-end-gfx seqblocknum seqtracknum))
                                                                   (<ra> :get-sample-rate))))))
@@ -1083,12 +1085,12 @@
                               (set-seqblock-selected-box 3 seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
-                             ;;((inside-box (<ra> :get-box seqblock-left-interior seqblocknum seqtracknum) X Y)
-                             ;; (set-left-interior-status-bar seqblocknum seqtracknum)
-                             ;; (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
-                             ;;((inside-box (<ra> :get-box seqblock-right-interior seqblocknum seqtracknum) X Y)
-                             ;; (set-right-interior-status-bar seqblocknum seqtracknum)
-                             ;; (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+                             ((inside-box (<ra> :get-box seqblock-left-interior seqblocknum seqtracknum) X Y)
+                              (set-left-interior-status-bar seqblocknum seqtracknum)
+                              (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+                             ((inside-box (<ra> :get-box seqblock-right-interior seqblocknum seqtracknum) X Y)
+                              (set-right-interior-status-bar seqblocknum seqtracknum)
+                              (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              (else                              
                               (<ra> :set-statusbar-text (two-decimal-string (/ (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
                                                                                (<ra> :get-sample-rate))))
