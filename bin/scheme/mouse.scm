@@ -5353,13 +5353,16 @@
             (iota (<ra> :get-num-tracks blocknum)))
   
   (define window (or *curr-seqblock-track-on-off-window*
-                     (<gui> :horizontal-layout)))
+                     (let ((window (<gui> :horizontal-layout)))
+                       (<gui> :add-deleted-callback window (lambda x
+                                                             (c-display " Deleted")
+                                                             ;;(<gui> :close window)
+                                                             (set! *curr-seqblock-track-on-off-window* #f)
+                                                             (set! *curr-seqblock-track-on-off-gui* #f)))
+                       window)))
 
   (define close-button (<gui> :button "Close" (lambda ()
-                                                (c-display "CLOSING")
-                                                (<gui> :close window)
-                                                (set! *curr-seqblock-track-on-off-window* #f)
-                                                (set! *curr-seqblock-track-on-off-gui* #f))))
+                                                (<gui> :close window))))
 
   (<gui> :add gui close-button)
   
@@ -5635,7 +5638,7 @@
                                                 (lambda (enable)
                                                   (<ra> :set-seqblock-envelope-enabled enable seqblocknum seqtracknum)))
 
-                                          (list "Enable/disable tracks"
+                                          (list "Enable/disable editor tracks"
                                                 :enabled seqblocknum
                                                 (lambda ()
                                                   (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))
