@@ -59,8 +59,7 @@ extern struct SeqTrack *g_RT_curr_scheduling_seqtrack;
 
 extern LANGSPEC void SCHEDULER_add_event(struct SeqTrack *seqtrack, int64_t time_into_the_future, SchedulerCallback callback, union SuperType *args, int num_args, enum SchedulerPriority priority);
 
-extern LANGSPEC int SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime); // returns the number of events left in the queue.
-//extern LANGSPEC bool SCHEDULER_called_per_block(double reltime);
+extern LANGSPEC bool SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime); // Returns true if there is more to play.
 
 extern LANGSPEC int SCHEDULER_num_events(scheduler_t *scheduler);
 extern LANGSPEC bool SCHEDULER_clear(scheduler_t *scheduler, float max_audio_cycle_fraction);

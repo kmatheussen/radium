@@ -4,6 +4,8 @@
 
 #include <math.h>
 
+#include <QFileInfo>
+
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
 #include "../common/nsmtracker.h"
@@ -319,6 +321,12 @@ struct Sample{
   {
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
+#if !defined(RELEASE)
+    QFileInfo info(STRING_get_qstring(_filename));
+    if (!info.isAbsolute())
+      abort();
+#endif
+    
     // prepare readers.
     {
       _free_readers.push_back(new MyReader(reader1));
@@ -339,9 +347,9 @@ struct Sample{
   ~Sample(){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
-    
-    R_ASSERT(ATOMIC_GET(_state)!=State::RUNNING);
 
+    R_ASSERT(ATOMIC_GET(_state)!=State::RUNNING);
+    
     R_ASSERT_NON_RELEASE(_curr_reader==NULL);
 
     if(ATOMIC_GET(_state)==State::READY_FOR_DELETION){
@@ -598,43 +606,45 @@ struct Sample{
   }
 
   // Called after scheduler and before audio processing.
-  void RT_called_per_block(struct SeqTrack *seqtrack, int64_t curr_start_time, int64_t curr_end_time){ // (end_time-start_time is usually RADIUM_BLOCKSIZE.)
+  bool RT_called_per_block(struct SeqTrack *seqtrack, int64_t curr_start_time, int64_t curr_end_time){ // (end_time-start_time is usually RADIUM_BLOCKSIZE.)
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
     if (is_really_playing_song()==false){
       //_is_playing = false;
-      return;
+      return false;
     }
     
     //printf("   RT_called_per_block %d -> %d (%d)\n", (int)curr_start_time, (int)curr_end_time, int(curr_end_time-curr_start_time));
     
     bool inside = curr_start_time >= _seqblock->t.time && curr_start_time < _seqblock->t.time2;
 
-    if (inside==_is_playing)
-      return;
+    if (inside != _is_playing) {
     
-    if (inside) {
-      
-      //printf("   Play. RT_called_per_block %d -> %d (%d). Seqblock start/end: %d / %d\n", (int)curr_start_time, (int)curr_end_time, int(curr_end_time-curr_start_time), (int)_seqblock->time, (int)_seqblock->time2);
-      //printf(" PLAYING SAMPLE. Time: %f\n", (double)curr_start_time / (double)pc->pfreq);
-      
-      atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, (void*)_seqblock); // bang!
-      GFX_ScheduleEditorRedraw();
-      
-      _is_playing = true;
-
-      // Don't do this if starting to play from the beginning.
-      _click_avoidance_fade_in = FADE_IN_MS * pc->pfreq / 1000;
-      
-    } else {
-      
-      if (atomic_pointer_read_relaxed((void**)&seqtrack->curr_sample_seqblock)==_seqblock){
-        atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, NULL);
+      if (inside) {
+        
+        //printf("   Play. RT_called_per_block %d -> %d (%d). Seqblock start/end: %d / %d\n", (int)curr_start_time, (int)curr_end_time, int(curr_end_time-curr_start_time), (int)_seqblock->time, (int)_seqblock->time2);
+        //printf(" PLAYING SAMPLE. Time: %f\n", (double)curr_start_time / (double)pc->pfreq);
+        
+        atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, (void*)_seqblock); // bang!
         GFX_ScheduleEditorRedraw();
+        
+        _is_playing = true;
+        
+        // Don't do this if starting to play from the beginning.
+        _click_avoidance_fade_in = FADE_IN_MS * pc->pfreq / 1000;
+        
+      } else {
+        
+        if (atomic_pointer_read_relaxed((void**)&seqtrack->curr_sample_seqblock)==_seqblock){
+          atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, NULL);
+          GFX_ScheduleEditorRedraw();
+        }
+        
+        RT_stop_playing();
       }
-      
-      RT_stop_playing();
     }
+
+    return _is_playing || _seqblock->t.time > curr_start_time;
   }
 
 };
@@ -652,16 +662,26 @@ struct Data{
 
   ~Data(){
     for(auto *sample : _samples){
+      ATOMIC_SET(sample->_state, Sample::State::RT_REQUEST_DELETION); // To avoid assertion hit.
+      
+      R_ASSERT_NON_RELEASE(sample->_curr_reader==NULL);
+      sample->RT_stop_playing(); // just in case _curr_reader!=NULL.
+      
       delete sample;
     }
   }
   
-  void RT_called_per_block(struct SeqTrack *seqtrack){
+  bool RT_called_per_block(struct SeqTrack *seqtrack){
     int64_t start_time = seqtrack->start_time;
     int64_t end_time = seqtrack->end_time;
+
+    bool more_to_play = false;
     
     for(auto *sample : _samples)
-      sample->RT_called_per_block(seqtrack, start_time, end_time);
+      if (sample->RT_called_per_block(seqtrack, start_time, end_time)==true)
+        more_to_play = true;
+
+    return more_to_play;
   }
 
   void called_very_often(void){
@@ -802,6 +822,14 @@ const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t
   if (sample==NULL)
     return L"";
 
+#if !defined(RELEASE)
+  if (full_path){
+    QFileInfo info(STRING_get_qstring(sample->_filename));
+    if (!info.isAbsolute())
+      abort();
+  }
+#endif
+
   if (full_path)
     return sample->_filename;
   else
@@ -868,10 +896,11 @@ void RT_HDSAMPLE_set_sample_playing(SoundPlugin *plugin, int64_t id, bool is_pla
 }
 */
 
-void RT_SEQTRACKPLUGIN_called_per_block(struct SoundPlugin *plugin, struct SeqTrack *seqtrack){
+// returns true if there is more to play
+bool RT_SEQTRACKPLUGIN_called_per_block(struct SoundPlugin *plugin, struct SeqTrack *seqtrack){
   Data *data = (Data*)plugin->data;
 
-  data->RT_called_per_block(seqtrack);
+  return data->RT_called_per_block(seqtrack);
 }
 
 void SEQTRACKPLUGIN_prepare_to_play(SoundPlugin *plugin, const struct SeqTrack *seqtrack, int64_t seqtime, radium::FutureSignalTrackingSemaphore *gotit){

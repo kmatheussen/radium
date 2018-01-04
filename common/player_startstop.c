@@ -81,7 +81,9 @@ static void clear_scheduler_and_stop_player_and_releases_player_lock(void){
   PLAYER_unlock();
 
   if (is_clear){
-    R_ASSERT(is_playing()==false);
+    
+    // R_ASSERT(is_playing()==false); // We are still playing if there are samples left in the sequencer.
+    
     //printf("          IS_CLEAR\n");
     //return;
   }

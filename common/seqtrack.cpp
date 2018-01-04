@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 #include <gc.h>
 
+#include <QFileInfo>
+
 #include "nsmtracker.h"
 #include "player_proc.h"
 #include "vector_proc.h"
@@ -777,10 +779,17 @@ static hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct 
     else
       R_ASSERT(false);
     HASH_put_string(state, ":sample", filename);
+
+#if !defined(RELEASE)
+    QFileInfo info(STRING_get_qstring(filename));
+    if (!info.isAbsolute())
+      abort();
+#endif
+
   }
   
   HASH_put_int(state, ":start-time", seqblock->t.time);
-  HASH_put_int(state, ":end-time", (seqblock_has_stretch(seqtrack, seqblock, false) || always_get_real_end_time) ? seqblock->t.time2 : -1); // time2 = -1 if there is no stretch. If not, we could artificially create stretch if loading the song with a different sample rate.
+  HASH_put_int(state, ":end-time", (seqblock_has_stretch(seqtrack, seqblock, false) || always_get_real_end_time) ? seqblock->t.time2 : -1); // time2 = -1 if there is no stretch. If not, we may set stretch by mistake if loading the song with a different sample rate.
 
   HASH_put_int(state, ":interior-start", seqblock->t.interior_start);
   HASH_put_int(state, ":interior-end", seqblock->t.interior_end);
@@ -1583,7 +1592,8 @@ bool SEQBLOCK_set_interior_end(struct SeqTrack *seqtrack, struct SeqBlock *seqbl
 
     
 // Called from scheduler.c, before scheduling editor things.
-void RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
+// Returns true if there is more to play.
+bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
 
   if (is_really_playing_song())
     RT_SEQTRACK_AUTOMATION_called_per_block(seqtrack);
@@ -1591,13 +1601,13 @@ void RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
   RT_SEQBLOCK_ENVELOPE_called_before_editor(seqtrack);
   
   if (seqtrack->patch==NULL)
-    return;
+    return false;
 
   SoundPlugin *plugin = (SoundPlugin*)seqtrack->patch->patchdata;
   if (plugin==NULL)
-    return;
+    return false;
   
-  RT_SEQTRACKPLUGIN_called_per_block(plugin, seqtrack);
+  return RT_SEQTRACKPLUGIN_called_per_block(plugin, seqtrack);
 }
 
 
