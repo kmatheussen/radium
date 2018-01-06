@@ -405,12 +405,14 @@ class SetSeveralAtomicVariables{
     ATOMIC_ADD(generation, 1);
   }
 
+  // Returns the argument for read_end.
   int read_start(void){
     while(ATOMIC_GET(is_writing)==true);
     
     return ATOMIC_GET(generation);
   }
 
+  // Returns true if reading was successful.
   bool read_end(int read_start_generation){
     while(ATOMIC_GET(is_writing)==true);
     

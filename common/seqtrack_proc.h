@@ -74,42 +74,14 @@ extern LANGSPEC int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack
 
 struct SoundPlugin;
 
-static inline int64_t get_seqblock_stime_default_duration(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool is_gfx){
-#if 0
-  const struct Blocks *block = seqblock->block;
-  double start_stime = Place2STime(block, is_gfx ? &seqblock->gfx.start_place : &seqblock->start_place);
-  double end_stime = Place2STime(block, is_gfx ? &seqblock->gfx.end_place : &seqblock->end_place);
-  return end_stime - start_stime;
-#else
-  if (seqblock->block==NULL) {
-    
-    R_ASSERT_RETURN_IF_FALSE2(seqblock->sample_id>=0, pc->pfreq);
-    R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, pc->pfreq);
-    
-    struct SoundPlugin *plugin = (struct SoundPlugin*) seqtrack->patch->patchdata;
-    R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, pc->pfreq);
-    
-    int64_t num_frames = SEQTRACKPLUGIN_get_num_frames(plugin, seqblock->sample_id);
-    R_ASSERT_RETURN_IF_FALSE2(num_frames>0, pc->pfreq);
-    
-    return num_frames;
-    
-  } else {
-    
-    return getBlockSTimeLength(seqblock->block);
-    
-  }
-#endif
-}
-
-static inline double get_seqblock_noninterior_start(const struct SeqBlock *seqblock){
-  double t1 = seqblock->t.time;
-  double i1 = seqblock->t.interior_start;
+static inline double get_seqblock_noninterior_start2(const struct SeqBlockTimings *timing){
+  double t1 = timing->time;
+  double i1 = timing->interior_start;
   
   if (i1==0)
     return t1;
 
-  double stretch = seqblock->t.stretch;
+  double stretch = timing->stretch;
 
   if (stretch==1.0)
     return t1 - i1;
@@ -118,20 +90,32 @@ static inline double get_seqblock_noninterior_start(const struct SeqBlock *seqbl
   return s1;
 }
 
-static inline double get_seqblock_noninterior_end(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
-  double t2 = seqblock->t.time2;
-  double i2 = get_seqblock_stime_default_duration(seqtrack, seqblock, false) - seqblock->t.interior_end;
+static inline double get_seqblock_noninterior_start(const struct SeqBlock *seqblock){
+  return get_seqblock_noninterior_start2(&seqblock->t);
+}
+
+static inline double get_seqblock_noninterior_end2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool is_gfx){
+  const struct SeqBlockTimings *timing = is_gfx ? &seqblock->gfx : &seqblock->t;
+  if (timing==NULL)
+    timing = &seqblock->t;
+  
+  double t2 = timing->time2;
+  double i2 = timing->default_duration - timing->interior_end;
 
   if(i2==0)
     return t2;
 
-  double stretch = seqblock->t.stretch;
+  double stretch = timing->stretch;
 
   if (stretch==1.0)
     return t2 + i2;
 
   double s2 = t2 + (i2*stretch);
   return s2;
+}
+
+static inline double get_seqblock_noninterior_end(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  return get_seqblock_noninterior_end2(seqtrack, seqblock, false);
 }
 
 extern LANGSPEC void SEQTRACK_call_me_very_often(void);
@@ -290,10 +274,13 @@ extern LANGSPEC bool SEQTRACK_set_seqblock_start_and_stop(struct SeqTrack *seqtr
 extern LANGSPEC void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 extern LANGSPEC void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 
+/*
+Too inconvenient. Use apply_gfx_seqblocks instead of these two functions.
 extern LANGSPEC bool SEQBLOCK_set_interior_start(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_start, bool is_gfx); // returns true if something was changed
 extern LANGSPEC bool SEQBLOCK_set_interior_end(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_end, bool is_gfx); // returns true if something was changed
+*/
 
-extern LANGSPEC void RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack); // Sets seqtrack->curr_sample_seqblock when starting/stopping playing audio file.
+extern LANGSPEC bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack); // Sets seqtrack->curr_sample_seqblock when starting/stopping playing audio file.
 
 extern LANGSPEC void SEQUENCER_timing_has_changed(void);
 
@@ -313,6 +300,7 @@ extern LANGSPEC struct SeqTrack *SEQTRACK_create_from_playlist(const int *playli
 
 extern LANGSPEC void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struct SeqTrack *seqtrack, const int seqtracknum, enum ShowAssertionOrThrowAPIException error_type);
 extern LANGSPEC dyn_t SEQTRACK_get_seqblocks_state(const struct SeqTrack *seqtrack);
+extern LANGSPEC void SEQTRACK_cancel_gfx_seqblocks(struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtracknum, bool seqtrack_is_live);
 
 
@@ -362,7 +350,10 @@ static inline const wchar_t *get_seqblock_sample_name(const struct SeqTrack *seq
   */
   
   //return SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, full_path);
-  return seqblock->sample_filename_without_path;
+  if (full_path)
+    return seqblock->sample_filename;
+  else
+    return seqblock->sample_filename_without_path;
 }
 
 

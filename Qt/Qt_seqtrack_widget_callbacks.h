@@ -747,25 +747,48 @@ public:
       const radium::DiskPeaks *disk_peaks = SEQTRACKPLUGIN_get_peaks(plugin, seqblock->sample_id);
       if (disk_peaks != NULL){
         int num_ch = SEQTRACKPLUGIN_get_num_channels(plugin, seqblock->sample_id);
-        //int64_t num_frames = SEQTRACKPLUGIN_get_num_frames(plugin, seqblock->sample_id);
         
-        double x1 = rect.x();
-        double x2 = rect.x() + rect.width();
-        int64_t time1 = seqblock->gfx.interior_start;
-        int64_t time2 = seqblock->gfx.interior_end;
-        
-        if (x1 < t_x1) { // if seqblock starts before visible area
-          x1 = t_x1;
-          time1 = R_SCALE(x1,
-                          rect.x(), rect.x()+rect.width(),
-                          time1, time2);
+        double x1;
+        double x2;
+        int64_t time1;
+        int64_t time2;
+
+        if (seqblock==g_curr_seqblock){
+          
+          time1 = 0;
+          time2 = seqblock->gfx.default_duration;
+          
+          double noninterior_start = get_seqblock_noninterior_start2(&seqblock->gfx);
+          double noninterior_end = get_seqblock_noninterior_end2(_seqtrack, seqblock, true);
+          
+          x1 = scale(noninterior_start,
+                     _start_time, _end_time,
+                     t_x1, t_x2);
+          x2 = scale(noninterior_end,
+                     _start_time, _end_time,
+                     t_x1, t_x2);
+
+        } else {
+          
+          x1 = rect.x();
+          x2 = rect.x() + rect.width();
+          time1 = seqblock->gfx.interior_start;
+          time2 = seqblock->gfx.interior_end;
+          
         }
         
-        if (x2 > t_x2){ // if seqblock ends after visible area
-          x2 = t_x2;
-          time2 = R_SCALE(x2,
-                          rect.x(), rect.x()+rect.width(),
+        if (x1 < t_x1) { // if seqblock starts before visible area
+          time1 = R_SCALE(t_x1,
+                          x1, x2,
                           time1, time2);
+          x1 = t_x1;
+        }
+          
+        if (x2 > t_x2){ // if seqblock ends after visible area
+          time2 = R_SCALE(t_x2,
+                          x1, x2, //rect.x(), rect.x()+rect.width(),
+                          time1, time2);
+          x2 = t_x2;
         }
 
         R_ASSERT_NON_RELEASE(time2 >= time1);
@@ -990,7 +1013,7 @@ public:
     double xsplit1 = get_seqblock_xsplit1(x1, x2);
     double xsplit2 = get_seqblock_xsplit2(x1, x2);
 
-#define INCLUDE_STRETCH_INTERFACE 0
+#define INCLUDE_STRETCH_INTERFACE 1
 
     double ysplit1 = get_seqblock_ysplit1(y1, y2);
     double ysplit2 = get_seqblock_ysplit2(y1, y2);
@@ -1008,18 +1031,23 @@ public:
     QPen sel_pen(color);
     sel_pen.setWidthF(sel_width);
 
+    /* Vertical lines */
+    
 #if INCLUDE_STRETCH_INTERFACE
 
     // xsplit1 vertical line 1, left
-    QLineF line1b(xsplit1,ysplit1,xsplit1,y2-border);
-    pen.setWidthF(2.3);
+    if (seqblock->selected_box==SB_INTERIOR_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+    QLineF line1b(xsplit1,ysplit1,
+                  xsplit1,ysplit2);
     painter->drawLine(line1b);
 
     // xsplit1 vertical line 2, right
-    QLineF line2b(xsplit2,ysplit1,xsplit2,y2-border);
+    if (seqblock->selected_box==SB_INTERIOR_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+    QLineF line2b(xsplit2,ysplit1,
+                  xsplit2,ysplit2);
     painter->drawLine(line2b);
 
-#else
+#endif
 
     // xsplit1 vertical line 0, left
     if (seqblock->selected_box==SB_FADE_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
@@ -1042,25 +1070,26 @@ public:
     QLineF line2c(xsplit2,ysplit2,xsplit2,y2-border);
     painter->drawLine(line2c);
 
-#endif
 
+    /* Horizontal lines */
+    
     // ysplit1 horizontal line, left
-    if (seqblock->selected_box==SB_FADE_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+    if (seqblock->selected_box==SB_FADE_LEFT || seqblock->selected_box==SB_INTERIOR_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
     QLineF line3a(x1+border, ysplit1, xsplit1-border, ysplit1);
     painter->drawLine(line3a);
     
     // ysplit1 horizontal line, right
-    if (seqblock->selected_box==SB_FADE_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+    if (seqblock->selected_box==SB_FADE_RIGHT || seqblock->selected_box==SB_INTERIOR_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
     QLineF line3b(xsplit2+border, ysplit1, x2-border, ysplit1);
     painter->drawLine(line3b);
 
     // ysplit2 horizontal line
-    if (seqblock->selected_box==SB_STRETCH_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+    if (seqblock->selected_box==SB_STRETCH_LEFT || seqblock->selected_box==SB_INTERIOR_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
     QLineF line4a(x1+border, ysplit2, xsplit1-border, ysplit2);
     painter->drawLine(line4a);
     
     // ysplit2 horizontal line
-    if (seqblock->selected_box==SB_STRETCH_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+    if (seqblock->selected_box==SB_STRETCH_RIGHT || seqblock->selected_box==SB_INTERIOR_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
     QLineF line4b(xsplit2+border, ysplit2, x2-border, ysplit2);
     painter->drawLine(line4b);
     
@@ -1075,6 +1104,16 @@ public:
       myFillRect(*painter,
                  QRectF(QPointF(xsplit2, ysplit2),
                         QPointF(x2-border, y2-border)),
+                 fill_color);
+    } else if (seqblock->selected_box==SB_INTERIOR_LEFT){
+      myFillRect(*painter,
+                 QRectF(QPointF(x1+border, ysplit1),
+                        QPointF(xsplit1, ysplit2)),
+                 fill_color);
+    } else if (seqblock->selected_box==SB_INTERIOR_RIGHT){
+      myFillRect(*painter,
+                 QRectF(QPointF(xsplit2, ysplit1),
+                        QPointF(x2-border, ysplit2)),
                  fill_color);
     } else if (seqblock->selected_box==SB_FADE_LEFT){
       myFillRect(*painter,
@@ -1237,7 +1276,7 @@ public:
       VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
 
         if (seqblock->block == NULL){
-          printf("      PAINTING BLOCK %p (gfx: %d). start/end: %f / %f. interior start/end: %d %d. seqtrack/seqblock: %p / %p\n", seqblock, _seqtrack->gfx_seqblocks!=NULL, seqblock->start_time, seqblock->end_time, (int)seqblock->gfx.interior_start, (int)seqblock->gfx.interior_end, _seqtrack, seqblock);
+          //printf("      PAINTING BLOCK %p (gfx: %d). start/end: %f / %f. interior start/end: %d %d. seqtrack/seqblock: %p / %p\n", seqblock, _seqtrack->gfx_seqblocks!=NULL, seqblock->start_time, seqblock->end_time, (int)seqblock->gfx.interior_start, (int)seqblock->gfx.interior_end, _seqtrack, seqblock);
         }
         
         if (seqblock->start_time < end_time && seqblock->end_time >= start_time) {
@@ -1280,8 +1319,9 @@ public:
     
   }
 
+
 #define UPDATE_EVERY_5_SECONDS 0
-#define UPDATE_EVERY_5_SECONDS 0
+
 #if UPDATE_EVERY_5_SECONDS
   QTime _time;
 #endif

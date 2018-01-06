@@ -240,11 +240,12 @@ static int get_priority(event_t *event){
 
 struct SeqTrack *g_RT_curr_scheduling_seqtrack;
 
-int SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
+// returns true if there is more to play.
+bool SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
   g_RT_curr_scheduling_seqtrack = seqtrack;
 
   SCHEDULER_set_seqtrack_timing(seqtrack, seqtrack->end_time, seqtrack->end_time + reltime);
-  RT_SEQTRACK_called_before_editor(seqtrack);
+  bool seqtrack_has_more_things_to_do = RT_SEQTRACK_called_before_editor(seqtrack);
 
   scheduler_t *scheduler = seqtrack->scheduler;
 
@@ -299,7 +300,7 @@ int SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
   //  g_RT_curr_scheduling_seqtrack = NULL;
 #endif
   
-  return scheduler->queue_size;
+  return scheduler->queue_size > 0 || seqtrack_has_more_things_to_do;
 }
 
 // Calls SCHEDULER_called_per_block for all seqtracks.
