@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 #include <gc.h>
 
+#include <QFileInfo>
+
 #include "nsmtracker.h"
 #include "player_proc.h"
 #include "vector_proc.h"
@@ -45,6 +47,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Seqtrack_plugin_proc.h"
 
 #include "seqtrack_proc.h"
+
+static int64_t get_seqblock_stime_default_duration(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool is_gfx){
+  if (seqblock->block==NULL) {
+    
+    R_ASSERT_RETURN_IF_FALSE2(seqblock->sample_id>=0, pc->pfreq);
+    R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, pc->pfreq);
+    
+    struct SoundPlugin *plugin = (struct SoundPlugin*) seqtrack->patch->patchdata;
+    R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, pc->pfreq);
+    
+    int64_t num_frames = SEQTRACKPLUGIN_get_total_num_frames_in_sample(plugin, seqblock->sample_id);
+    R_ASSERT_RETURN_IF_FALSE2(num_frames>0, pc->pfreq);
+    
+    return num_frames;
+    
+  } else {
+    
+    return getBlockSTimeLength(seqblock->block);
+    
+  }
+}
+
 
 static inline int64_t get_seqblock_endtime(const struct SeqBlock *seqblock, bool is_gfx){
   if (is_gfx)
@@ -340,6 +364,8 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
     
     seqblock->t.end_place = p_Create(block->num_lines,0,1);
     seqblock->gfx.end_place = seqblock->t.end_place;
+  }else{
+    default_duration_changed(seqblock, 48000);
   }
   
   seqblock->t.stretch = 1.0;
@@ -360,7 +386,7 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
   seqblock->envelope_db = MIN_DB - 1;
 }
 
-static struct SeqBlock *SEQBLOCK_create(struct SeqTrack *seqtrack, struct Blocks *block, hash_t *envelope, int64_t time){
+static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct Blocks *block, hash_t *envelope, int64_t time){
   struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
   SEQBLOCK_init(seqtrack,
                 seqblock,
@@ -379,7 +405,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
                 NULL,
                 envelope,
                 NULL,
-                seqtime
+                seqtime 
                 );
 
   seqblock->sample_filename = STRING_copy(filename);
@@ -410,7 +436,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
 
   seqblock->sample_filename_without_path = STRING_copy(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, false));
     
-  default_duration_changed(seqblock, SEQTRACKPLUGIN_get_num_frames(plugin, seqblock->sample_id));
+  default_duration_changed(seqblock, SEQTRACKPLUGIN_get_total_num_frames_in_sample(plugin, seqblock->sample_id));
   
   return seqblock;
 }
@@ -777,10 +803,17 @@ static hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct 
     else
       R_ASSERT(false);
     HASH_put_string(state, ":sample", filename);
+
+#if !defined(RELEASE)
+    QFileInfo info(STRING_get_qstring(filename));
+    if (!info.isAbsolute())
+      abort();
+#endif
+
   }
   
   HASH_put_int(state, ":start-time", seqblock->t.time);
-  HASH_put_int(state, ":end-time", (seqblock_has_stretch(seqtrack, seqblock, false) || always_get_real_end_time) ? seqblock->t.time2 : -1); // time2 = -1 if there is no stretch. If not, we could artificially create stretch if loading the song with a different sample rate.
+  HASH_put_int(state, ":end-time", (seqblock_has_stretch(seqtrack, seqblock, false) || always_get_real_end_time) ? seqblock->t.time2 : -1); // time2 = -1 if there is no stretch. If not, we may set stretch by mistake if loading the song with a different sample rate.
 
   HASH_put_int(state, ":interior-start", seqblock->t.interior_start);
   HASH_put_int(state, ":interior-end", seqblock->t.interior_end);
@@ -827,15 +860,27 @@ static hash_t *get_new_seqblock_state_from_old(const hash_t *old, const struct S
   else
     HASH_put_int(new_state, ":end-time", -1);
 
-  int blocknum = HASH_get_int32(old, "blocknum");
-  HASH_put_int(new_state, ":blocknum", blocknum);
+  int blocknum=-1;
+  
+  if (HASH_has_key(old, "blocknum")){
+    blocknum = HASH_get_int32(old, "blocknum");
+    HASH_put_int(new_state, ":blocknum", blocknum);
+  }
+
+  const wchar_t *sample = NULL;
+  
+  if (HASH_has_key(old, ":sample")){
+    sample = HASH_get_string(old, ":sample");
+    HASH_put_string(new_state, ":sample", sample);
+  }
 
   HASH_put_int(new_state, ":interior-start", 0);
-  struct Blocks *block = (struct Blocks*)ListFindElement1(&song->blocks->l, blocknum);
-  if (block==NULL){
+  
+  if (blocknum==-1){
     R_ASSERT(false);
     HASH_put_int(new_state, ":interior-end", 192345);
   }else{
+    struct Blocks *block = (struct Blocks*)ListFindElement1(&song->blocks->l, blocknum);
     HASH_put_int(new_state, ":interior-end", getBlockSTimeLength(block));
   }
   
@@ -878,9 +923,15 @@ static hash_t *get_old_seqblock_state_from_new(const hash_t *new_state){
   else
     HASH_put_int(old, "time2", -1);
 
-  int blocknum = HASH_get_int32(new_state, ":blocknum");
-  HASH_put_int(old, "blocknum", blocknum);
+  if (HASH_has_key(new_state, ":blocknum")){
+    int blocknum = HASH_get_int32(new_state, ":blocknum");
+    HASH_put_int(old, "blocknum", blocknum);
+  }
 
+  if (HASH_has_key(new_state, ":sample")){
+    HASH_put_string(old, ":sample", HASH_get_string(new_state, ":sample"));
+  }
+  
   if (HASH_has_key(new_state, ":tracks-disabled")){
 
     dyn_t dyn = HASH_get_dyn(new_state, ":tracks-disabled");
@@ -996,7 +1047,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     R_ASSERT_RETURN_IF_FALSE3(block!=NULL, error_type, NULL,
                               "Block %d not found", blocknum);
 
-    seqblock = SEQBLOCK_create(seqtrack, block, envelope, time);
+    seqblock = SEQBLOCK_create_block(seqtrack, block, envelope, time);
 
   } else {
     
@@ -1142,7 +1193,6 @@ void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struc
     R_ASSERT_RETURN_IF_FALSE(dyn.type==HASH_TYPE);
     struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, dyn.hash, error_type);
     if (seqblock != NULL){
-      fprintf(stderr,"8b. %d / %d\n",(int)seqblock->gfx.interior_start, (int)seqblock->t.interior_start);
       R_ASSERT(seqblock->t.interior_start==seqblock->gfx.interior_start);
       VECTOR_push_back(seqtrack->gfx_seqblocks, seqblock);
       seqblocknum++;
@@ -1160,6 +1210,12 @@ dyn_t SEQTRACK_get_seqblocks_state(const struct SeqTrack *seqtrack){
   }END_VECTOR_FOR_EACH;
 
   return DYN_create_array(vec);
+}
+
+void SEQTRACK_cancel_gfx_seqblocks(struct SeqTrack *seqtrack){
+  seqtrack->gfx_seqblocks = NULL;
+
+  RT_SEQUENCER_update_sequencer_and_playlist();
 }
 
 void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtracknum, bool seqtrack_is_live){
@@ -1263,10 +1319,10 @@ struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
     
   for(int pos=0;pos<len;pos++)
     VECTOR_push_back(&seqblocks,
-                     SEQBLOCK_create(seqtrack,
-                                     (struct Blocks *)ListFindElement1(&root->song->blocks->l,playlist[pos]),
-                                     NULL,
-                                     -1));
+                     SEQBLOCK_create_block(seqtrack,
+                                           (struct Blocks *)ListFindElement1(&root->song->blocks->l,playlist[pos]),
+                                           NULL,
+                                           -1));
   
   seqtrack->seqblocks = seqblocks;
 
@@ -1480,6 +1536,10 @@ void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqb
   SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, get_seqtime_from_abstime(seqtrack, seqblock, new_abs_time), -1, true);
 }
 
+/*
+
+Too inconvenient. Use apply_gfx_seqblocks instead of these two functions. (These things are calculated in bin/scheme/mouse.scm instead. It's faster to programme complicated things like this without having to recompile and start the program again when changing the code.)
+
 bool SEQBLOCK_set_interior_start(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_start, bool is_gfx){
   const SeqBlockTimings &timing = is_gfx ? seqblock->gfx : seqblock->t;
   const SeqBlockTimings &t_timing = seqblock->t;
@@ -1580,10 +1640,12 @@ bool SEQBLOCK_set_interior_end(struct SeqTrack *seqtrack, struct SeqBlock *seqbl
   
   return true;
 }
+*/
 
     
 // Called from scheduler.c, before scheduling editor things.
-void RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
+// Returns true if there is more to play.
+bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
 
   if (is_really_playing_song())
     RT_SEQTRACK_AUTOMATION_called_per_block(seqtrack);
@@ -1591,13 +1653,13 @@ void RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
   RT_SEQBLOCK_ENVELOPE_called_before_editor(seqtrack);
   
   if (seqtrack->patch==NULL)
-    return;
+    return false;
 
   SoundPlugin *plugin = (SoundPlugin*)seqtrack->patch->patchdata;
   if (plugin==NULL)
-    return;
+    return false;
   
-  RT_SEQTRACKPLUGIN_called_per_block(plugin, seqtrack);
+  return RT_SEQTRACKPLUGIN_called_per_block(plugin, seqtrack);
 }
 
 
@@ -1725,7 +1787,7 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
 }
 
 int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime, int64_t end_seqtime){
-  struct SeqBlock *seqblock = SEQBLOCK_create(seqtrack, block, NULL, -1);
+  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, block, NULL, -1);
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime, end_seqtime);
 }
 
@@ -1736,7 +1798,7 @@ int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int seqtracknum, st
   struct SeqBlock *seqblock;
 
   if (block != NULL)
-    seqblock = SEQBLOCK_create(seqtrack, block, NULL, seqtime);
+    seqblock = SEQBLOCK_create_block(seqtrack, block, NULL, seqtime);
   else
     seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, STRING_copy(filename), NULL, -1);
   
@@ -1956,7 +2018,7 @@ void SONG_init(void){
   
   VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
   
-  struct SeqBlock *seqblock = SEQBLOCK_create(seqtrack, root->song->blocks, NULL, -1);
+  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, root->song->blocks, NULL, -1);
 
   SEQUENCER_init(root->song);
   

@@ -138,7 +138,7 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
                    
             pc->is_treating_editor_events = true; {
               
-              if (SCHEDULER_called_per_block(seqtrack, seqreltime) > 0)
+              if (SCHEDULER_called_per_block(seqtrack, seqreltime)==true)
                 is_finished = false;
               
             } pc->is_treating_editor_events = false;

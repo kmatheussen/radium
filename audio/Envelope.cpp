@@ -170,6 +170,11 @@ void ENVELOPE_unfreeze(void *env){
   envelope->unfreeze();
 }
 
+void ENVELOPE_reset(void *env){
+  Envelope *envelope=(Envelope*)env;
+  envelope->reset();
+}
+
 // envelope_length is the number of frames the envelope covers:
 // start <= end <= envelope_length
 int ENVELOPE_apply(void *env, float **buf, int num_channels, int num_frames){

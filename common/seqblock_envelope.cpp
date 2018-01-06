@@ -505,17 +505,22 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
 
       if (seqblock->fadein > 0.0 || seqblock->fadeout > 0.0){
 
-        int64_t seqblock_pos = start_time - seqblock->t.time;
+        int64_t seqblock_start_pos = start_time - seqblock->t.time;
+        int64_t seqblock_end_pos = end_time - seqblock->t.time;
 
-        if (seqblock_pos > 0){
+        if (seqblock_end_pos > 0){
 
           int64_t seqblock_duration = seqblock->t.time2 - seqblock->t.time;          
                     
-          double scaled_pos = (double)seqblock_pos / (double)seqblock_duration;
+          double scaled_pos = (double)seqblock_start_pos / (double)seqblock_duration;
 
-          if (scaled_pos < 0 || scaled_pos > 1){
-
+          if (scaled_pos > 1){
+            
             R_ASSERT_NON_RELEASE(false);
+            
+          } else if (scaled_pos < 0){
+
+
 
           } else {
 
@@ -523,7 +528,7 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
               double fadein = scale_double(scaled_pos,
                                            0, seqblock->fadein,
                                            MIN_DB, 0);
-              //printf("fadein: %f\n", fadein);
+              //printf("fadein: %f. Pos: %f\n", fadein, pos);
               new_db += fadein;
             }
             

@@ -200,7 +200,7 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
 
     // Note: envelope volume is applied in RT_PATCH_play_note, not here. (Not quite sure why, but it's probably complicated)
 
-    //printf("  scheduler_notes.c. Playing note at %d\n",(int)time);
+    //printf("  scheduler_notes.c. Playing note at %d. Velocity: %f. Pitch: %f. Sample pos: %d\n",(int)time, note2.velocity, note2.pitch, (int)sample_pos);
     RT_PATCH_play_note(seqtrack, patch, note2, note, time);
 
     bool schedule_pitches_and_velocities = true;
@@ -249,8 +249,10 @@ static void RT_schedule_note(struct SeqTrack *seqtrack,
     time = curr_time;
 
   
-  if (note->chance==0)
+  if (note->chance==0){
     time++;
+    args[3].int_num++;
+  }
   
 
   //printf(" Scheduling note at %d. seqblock->time: %d, track %d\n",(int)time, (int)seqblock->time, track->l.num);

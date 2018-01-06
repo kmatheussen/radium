@@ -512,13 +512,36 @@ struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct Se
   return (*seqtrack)->seqblocks.elements[seqblocknum];
 }
 
+struct SeqBlock *getGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack){
+  (*seqtrack) = getSeqtrackFromNum(seqtracknum);
+  if ((*seqtrack)==NULL)
+    return NULL;
+
+  vector_t *seqblocks = (*seqtrack)->gfx_seqblocks;
+  if (seqblocks==NULL)
+    seqblocks = &(*seqtrack)->seqblocks;
+  
+  if (seqblocknum < 0 || seqblocknum >= seqblocks->num_elements){
+    handleError("Sequencer gfx block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+    return NULL;
+  }
+
+  return seqblocks->elements[seqblocknum];
+}
+
+struct SeqBlock *getGfxSeqblockFromNum(int seqblocknum, int seqtracknum){  
+  struct SeqTrack *seqtrack;
+  return getGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+}
+
+
 struct SeqBlock *getGfxGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack){
   (*seqtrack) = getSeqtrackFromNum(seqtracknum);
   if ((*seqtrack)==NULL)
     return NULL;
 
   if (seqblocknum < 0 || seqblocknum >= (*seqtrack)->gfx_gfx_seqblocks.num_elements){
-    handleError("Sequencer gfx block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+    handleError("Sequencer gfx gfx block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
     return NULL;
   }
 

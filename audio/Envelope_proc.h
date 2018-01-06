@@ -22,7 +22,8 @@ extern LANGSPEC void ENVELOPE_setBreaks(void *env, int len, double *x, double *y
 
 extern LANGSPEC void ENVELOPE_set_freeze_breakpoint(void *env,int breakpoint);
 
-extern LANGSPEC void ENVELOPE_set_freezed_samples_left(void *env,int num_freezed_samples_left);
+extern LANGSPEC void ENVELOPE_unfreeze(void *env);
+extern LANGSPEC void ENVELOPE_reset(void *env); // RT safe function. Call before starting to apply envelope from the start.
 
 extern LANGSPEC int ENVELOPE_apply(void *env, float **buf, int num_channels, int num_frames);
 

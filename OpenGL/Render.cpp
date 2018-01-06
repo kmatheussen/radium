@@ -2830,9 +2830,14 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
 
         const SeqBlock *curr_sample_seqblock = RT_get_curr_sample_seqblock2(curr_seqtrack);
 
-        if (curr_sample_seqblock != NULL)
-          new_message = talloc_format("Playing %s.", STRING_get_chars(get_seqblock_sample_name(curr_seqtrack, curr_sample_seqblock, false)));
-        else
+        if (curr_sample_seqblock != NULL){
+          const wchar_t *filename = get_seqblock_sample_name(curr_seqtrack, curr_sample_seqblock, false);
+          if (filename==NULL){
+            R_ASSERT(false);
+            new_message = "error";
+          }else
+            new_message = talloc_format("Playing %s.", STRING_get_chars(filename));
+        }else
           new_message = is_pausing_message;
       }
       

@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/player_pause_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "../audio/Mixer_proc.h"
 #include "../audio/SoundPlugin.h"
 #include "../audio/SampleReader_proc.h"
@@ -1278,6 +1280,16 @@ void createGfxSeqblocksFromState(dyn_t seqblocks_state, int seqtracknum){
   SEQTRACK_create_gfx_seqblocks_from_state(seqblocks_state, seqtrack, seqtracknum, THROW_API_EXCEPTION);
 }
 
+void cancelGfxSeqblocks(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL){
+    handleError("applyGfxSeqblocks: No sequencer track %d", seqtracknum);
+    return;
+  }
+
+  SEQTRACK_cancel_gfx_seqblocks(seqtrack);
+}
+
 void applyGfxSeqblocks(int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL){
@@ -1296,7 +1308,7 @@ static int g_curr_seqtracknum_under_mouse = -1;
 
 void setCurrSeqblockUnderMouse(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  struct SeqBlock *seqblock = getGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
     return;
 
@@ -1305,7 +1317,11 @@ void setCurrSeqblockUnderMouse(int seqblocknum, int seqtracknum){
 
   g_curr_seqblock = seqblock;
 
-  evalScheme(talloc_format("(FROM_C-update-seqblock-track-on-off-configuration %d %d)", seqtracknum, seqblocknum));
+  static func_t *func = NULL;
+  if (func==NULL)
+    func = s7extra_get_func_from_funcname_for_storing("FROM_C-update-seqblock-track-on-off-configuration");
+  
+  S7CALL(void_int_int, func, seqtracknum, seqblocknum);
 
   SEQUENCER_update();
 }
@@ -1623,7 +1639,7 @@ float getSeqblockRightStretchY2(int seqblocknum, int seqtracknum){
 // seqblock select box
 
 void setSeqblockSelectedBox(int which_one, int seqblocknum, int seqtracknum){
-  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+  struct SeqBlock *seqblock = getGfxSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return;
 
@@ -1641,7 +1657,7 @@ void setSeqblockSelectedBox(int which_one, int seqblocknum, int seqtracknum){
 
 // seqblock fade in/out
 
-double getSeqblockFadeIn(int64_t seqblocknum, int64_t seqtracknum){
+double getSeqblockFadeIn(int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return 0.0;
@@ -1649,7 +1665,7 @@ double getSeqblockFadeIn(int64_t seqblocknum, int64_t seqtracknum){
   return seqblock->fadein;
 }
 
-double getSeqblockFadeOut(int64_t seqblocknum, int64_t seqtracknum){
+double getSeqblockFadeOut(int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return 0.0;
@@ -1657,7 +1673,7 @@ double getSeqblockFadeOut(int64_t seqblocknum, int64_t seqtracknum){
   return seqblock->fadeout;
 }
 
-void setSeqblockFadeIn(double fadein, int64_t seqblocknum, int64_t seqtracknum){
+void setSeqblockFadeIn(double fadein, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return;
@@ -1668,14 +1684,14 @@ void setSeqblockFadeIn(double fadein, int64_t seqblocknum, int64_t seqtracknum){
   }
 
   if (fadein != seqblock->fadein){
-    radium::PlayerLock(is_playing_song());
+    radium::PlayerLock lock(is_playing_song());
     seqblock->fadein = fadein;
   }
 
   SEQUENCER_update();
 }
 
-void setSeqblockFadeOut(double fadeout, int64_t seqblocknum, int64_t seqtracknum){
+void setSeqblockFadeOut(double fadeout, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return;
@@ -1686,7 +1702,7 @@ void setSeqblockFadeOut(double fadeout, int64_t seqblocknum, int64_t seqtracknum
   }
 
   if (fadeout != seqblock->fadeout){
-    radium::PlayerLock(is_playing_song());
+    radium::PlayerLock lock(is_playing_song());
     seqblock->fadeout = fadeout;
   }
 
@@ -1812,6 +1828,9 @@ void moveSeqblockGfxGfx(int seqblocknum, int64_t abstime, int seqtracknum, int n
 }
 */
 
+/*
+Too inconvenient. Use apply_gfx_seqblocks instead of these two functions. (These things are calculated in bin/scheme/mouse.scm instead. It's faster to programme complicated things like this without having to recompile and start the program again when changing the code.)
+
 static bool set_interior_start(int64_t interior_start, int seqblocknum, int seqtracknum, bool is_gfx){  
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
@@ -1862,6 +1881,7 @@ bool setSeqblockInteriorEnd(int64_t interior_end, int seqblocknum, int seqtrackn
 bool setSeqblockInteriorEndGfx(int64_t interior_end, int seqblocknum, int seqtracknum){
   return set_interior_end(interior_end, seqblocknum, seqtracknum, true);
 }
+*/
 
 int64_t getSeqblockInteriorStart(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
@@ -1874,7 +1894,7 @@ int64_t getSeqblockInteriorStart(int seqblocknum, int seqtracknum){
 
 int64_t getSeqblockInteriorStartGfx(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  struct SeqBlock *seqblock = getGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
     return 0;
 
@@ -1892,7 +1912,7 @@ int64_t getSeqblockInteriorEnd(int seqblocknum, int seqtracknum){
 
 int64_t getSeqblockInteriorEndGfx(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  struct SeqBlock *seqblock = getGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
     return 0;
 
