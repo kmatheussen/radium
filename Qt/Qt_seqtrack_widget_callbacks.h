@@ -747,7 +747,6 @@ public:
       const radium::DiskPeaks *disk_peaks = SEQTRACKPLUGIN_get_peaks(plugin, seqblock->sample_id);
       if (disk_peaks != NULL){
         int num_ch = SEQTRACKPLUGIN_get_num_channels(plugin, seqblock->sample_id);
-        //int64_t num_frames = SEQTRACKPLUGIN_get_num_frames(plugin, seqblock->sample_id);
         
         double x1;
         double x2;
@@ -757,7 +756,7 @@ public:
         if (seqblock==g_curr_seqblock){
           
           time1 = 0;
-          time2 = SEQTRACKPLUGIN_get_num_frames(plugin, seqblock->sample_id);;
+          time2 = seqblock->gfx.default_duration;
           
           double noninterior_start = get_seqblock_noninterior_start2(&seqblock->gfx);
           double noninterior_end = get_seqblock_noninterior_end2(_seqtrack, seqblock, true);

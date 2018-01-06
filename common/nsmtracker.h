@@ -2413,6 +2413,7 @@ struct SeqBlockTimings{
 
 struct SeqblockEnvelope;
 
+// Note: The values 0,1,2,3,4,5,6 are used directly in bin/scheme/mouse.scm. Probably simplest not to change any of the types, and just append new types to the end.
 enum SeqblockBoxSelected{
   SB_NO_SELECTED,
   SB_FADE_LEFT,
