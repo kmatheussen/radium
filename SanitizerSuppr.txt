@@ -1,6 +1,6 @@
-leak:OS_getmem
-leak:talloc_realloc__
-leak:PR_init_plugin_types
+#leak:OS_getmem
+#leak:talloc_realloc__
+#leak:PR_init_plugin_types
 
 # allow reading and writing floats from various threads simultaneously:
 race:safe_float_write
