@@ -1,3 +1,20 @@
+/* Copyright 2017 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
 
 #include "../bin/packages/sndlib/clm.h"
 
@@ -109,17 +126,39 @@ public:
     delete[] _buffers;
   }
       
-  void RT_process(float **output2, int num_frames, bool do_add){
+  void RT_process(float **output2, int num_frames, bool do_add, bool add_to_ch1_too, float volume) const {
 
-    for(int ch=0;ch<_num_ch;ch++){
-      float *output = output2[ch];
+    if (_num_ch==1 && do_add && add_to_ch1_too) {
+      
+      float *output0 = output2[0];
+      float *output1 = output2[1];
+      
+      for(int i=0;i<num_frames;i++){
+        auto sample = volume * mus_granulate(_clm_granulators[0], NULL);
+        output0[i] += sample;
+        output1[i] += sample;
+      }
+      
+    } else {
+      
+      for(int ch=0;ch<_num_ch;ch++){
+        float *output = output2[ch];
 
-      if (do_add)
-        for(int i=0;i<num_frames;i++)
-          output[i] += mus_granulate(_clm_granulators[ch], NULL);
-      else
-        for(int i=0;i<num_frames;i++)
-          output[i] = mus_granulate(_clm_granulators[ch], NULL);
+        if (do_add) {
+          
+          for(int i=0;i<num_frames;i++){
+            auto sample = volume * mus_granulate(_clm_granulators[ch], NULL);
+            output[i] += sample;
+          }
+          
+        } else {
+          
+          for(int i=0;i<num_frames;i++)
+            output[i] = volume * mus_granulate(_clm_granulators[ch], NULL);
+          
+        }
+
+      }
       
     }
 

@@ -407,7 +407,12 @@ public:
              void *data = NULL,
              const QColor fill_color = QColor()
              ) const {
-  
+
+    if (_automation.size()==0){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+    
     int size = 0;
     QPointF points[_automation.size()*2];
 

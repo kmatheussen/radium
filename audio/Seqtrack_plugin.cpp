@@ -1,3 +1,21 @@
+/* Copyright 2017-2018 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
+
 #define __STDC_FORMAT_MACROS 1
 
 #include <inttypes.h>
@@ -68,14 +86,14 @@ struct MyReader : public radium::GranulatorCallback{
 
 private:
 
-  float _volume = 1.0f;
-
   float _curr_fade_volume;
   
   float _fadeout_inc;
   float _fadein_inc;
-  int _fadeout_countdown; // Only used to find out how much to prepare for.
+  int _fadeout_countdown;
 
+  float _volume = 1.0;
+  
 public:
 
   radium::SampleReader *_reader;
@@ -96,25 +114,31 @@ public:
 
   ~MyReader(){
     SAMPLEREADER_delete(_reader);
+    _reader = NULL;
   }
 
 private:
   
-  void RT_get_samples_from_disk(int num_frames, float **outputs, bool do_add){
-    float *outputs2[_num_ch];
+  void RT_get_samples_from_disk(int num_frames, float **outputs, bool do_add, bool add_to_ch1_too, float volume) const {
+    R_ASSERT_RETURN_IF_FALSE(_reader != NULL);
+
+    int num_ch = _num_ch;
+    
+    if (do_add && add_to_ch1_too && num_ch==1)
+      num_ch = 2;
+    
+    float *outputs2[num_ch];
 
     int total_read = 0;
 
     while(total_read < num_frames){
 
-      for(int ch = 0 ; ch < _num_ch ; ch++)
+      for(int ch = 0 ; ch < num_ch ; ch++)
         outputs2[ch] = &outputs[ch][total_read];
 
-      int num_frames_left = num_frames - total_read;
+      const int num_frames_left = num_frames - total_read;
       
-      int num_read;
-
-      num_read = RT_SAMPLEREADER_read(_reader, outputs2, num_frames_left, do_add);
+      const int num_read = RT_SAMPLEREADER_read(_reader, outputs2, num_frames_left, do_add, add_to_ch1_too, volume);
 
       R_ASSERT_RETURN_IF_FALSE(num_read>0);
 
@@ -131,53 +155,84 @@ public:
     return RT_SAMPLEREADER_get_buffer(_reader, ch, num_frames);
   }
 
-  void RT_get_samples2(int num_frames, float **outputs, bool do_add){
+  void RT_get_samples2(int num_frames, float **outputs, bool do_add, bool add_to_ch1_too) const {
     //bool do_granulate = false;
     //bool do_granulate = true; //;
     
     if (_do_granulate){
-      _granulator.RT_process(outputs, num_frames, do_add);      
+      _granulator.RT_process(outputs, num_frames, do_add, add_to_ch1_too, _volume);
     } else {
-      RT_get_samples_from_disk(num_frames, outputs, do_add);
+      RT_get_samples_from_disk(num_frames, outputs, do_add, add_to_ch1_too, _volume);
     }
 
+    //printf("volume: %f. _num_ch: %d. num_frames: %d\n", _volume, _num_ch, num_frames);
+    /*
+    // This is not correct when adding.
     float volume = _volume;
     for(int ch=0;ch<_num_ch;ch++){
       float *output = outputs[ch];
       for(int i=0;i<num_frames;i++)
         output[i] *= volume;
     }
+    */
   }
   
 private:
   
   void RT_add_fade_in_samples(int num_frames, float **outputs){
     float outputs_buffer[_num_ch * num_frames];
-    float *outputs2[_num_ch];
+    float *inputs[_num_ch];
     
     for(int ch = 0 ; ch < _num_ch ; ch++)
-      outputs2[ch] = &outputs_buffer[ch*num_frames];
+      inputs[ch] = &outputs_buffer[ch*num_frames];
 
-    RT_get_samples2(num_frames, outputs2, false);
+    RT_get_samples2(num_frames, inputs, false, false);
 
-    for(int i=0;i<num_frames;i++){
+#define INC_FADE_VOLUME()                       \
+    _curr_fade_volume += _fadein_inc;           \
+    if (_curr_fade_volume > 1.0)                \
+      _curr_fade_volume = 1.0;
+    
+    if (_num_ch == 1) {
+
+      float *input0 = inputs[0];
+      float *output0 = outputs[0];
+      float *output1 = outputs[0];
       
-      for(int ch = 0 ; ch < _num_ch ; ch++)
-        outputs[ch][i] += _curr_fade_volume * outputs2[ch][i];
+      for(int i=0;i<num_frames;i++){
+        
+        float sample = _curr_fade_volume * input0[i];
+        output0[i] += sample;
+        output1[i] += sample;
+
+        INC_FADE_VOLUME();
+        
+      }
       
-      _curr_fade_volume += _fadein_inc;
-      if (_curr_fade_volume > 1.0)
-        _curr_fade_volume = 1.0;
+    } else {
+    
+      for(int i=0;i<num_frames;i++){
+        
+        for(int ch = 0 ; ch < _num_ch ; ch++){
+          float sample = _curr_fade_volume * inputs[ch][i];
+          outputs[ch][i] += sample;
+        }
+
+        INC_FADE_VOLUME();
+      }
     }
+
+#undef INC_FADE_VOLUME
+    
   }
   
 public:
   
   void RT_add_samples(int num_frames, float **outputs){
-    if (_curr_fade_volume < _volume)
+    if (_curr_fade_volume < 1.0)
       RT_add_fade_in_samples(num_frames, outputs);
     else
-      RT_get_samples2(num_frames, outputs, true);
+      RT_get_samples2(num_frames, outputs, true, true);
   }
 
   void RT_add_fade_out_samples(int num_frames, float **outputs){
@@ -188,26 +243,44 @@ public:
     int num_fade_out_frames = R_MIN(num_frames, _fadeout_countdown);
     
     float outputs_buffer[_num_ch * num_fade_out_frames];
-    float *outputs2[_num_ch];
+    float *inputs[_num_ch];
     
     for(int ch = 0 ; ch < _num_ch ; ch++)
-      outputs2[ch] = &outputs_buffer[ch*num_fade_out_frames];
+      inputs[ch] = &outputs_buffer[ch*num_fade_out_frames];
     
     //printf("Fading out %p. Countdown: %d\n", _reader, _fadeout_countdown);
     
-    RT_get_samples2(num_fade_out_frames, outputs2, false);
-    
+    RT_get_samples2(num_fade_out_frames, inputs, false, false);
+
     for(int i=0;i<num_fade_out_frames;i++){
-      
-      for(int ch = 0 ; ch < _num_ch ; ch++) {
-        float *from = outputs2[ch];
-        float *to = outputs[ch];
-        to[i] += _curr_fade_volume * from[i];
+
+      float volume = _curr_fade_volume;
+
+      if (_num_ch == 1){
+        
+        float *from = inputs[0];
+        float *to0 = outputs[0];
+        float *to1 = outputs[1];
+        float sample = volume * from[i];
+        to0[i] += sample;
+        to1[i] += sample;
+        
+      } else {
+        
+        for(int ch = 0 ; ch < _num_ch ; ch++) {
+          float *from = inputs[ch];
+          float *to = outputs[ch];
+          float sample = volume * from[i];
+          to[i] += sample;
+        }
+        
       }
 
+      
       _curr_fade_volume -= _fadeout_inc;
       if (_curr_fade_volume <= 0){
         _fadeout_countdown = 0;
+        _curr_fade_volume = 0.0; // should not be necessary.
         return;
       }
     }
@@ -218,7 +291,7 @@ public:
   void prepare_for_fadein(void){
     _curr_fade_volume = 0.0;
     double fadein_duration = (double)FADE_IN_MS * (double)pc->pfreq / 1000.0;
-    _fadein_inc = 1.0 / fadein_duration; // I think this number probably should be recalculated each block.
+    _fadein_inc = 1.0 / fadein_duration;
   }
   
   void prepare_for_fadeout(void){
@@ -290,19 +363,16 @@ struct Sample{
 
   const struct SeqBlock *_seqblock;
 
-  float _volume = 1.0;
   float _pitch = 1.0;
   
   const int _num_ch;
-  const int64_t _num_frames;
+  const int64_t _total_num_frames_in_sample;
   const unsigned int _color;
   const wchar_t *_filename_without_path;
   
   bool _is_playing = false;
   int _click_avoidance_fade_in = 0; // frames left while fading in.
 
-  int64_t _interior_start = 0;
-  int64_t _interior_end;
   bool _do_looping = false;
 
   radium::LockAsserter lockAsserter;
@@ -314,10 +384,9 @@ struct Sample{
     , _peaks(new radium::DiskPeaks(filename))
     , _seqblock(seqblock)
     , _num_ch(SAMPLEREADER_get_num_channels(reader1))
-    , _num_frames(SAMPLEREADER_get_num_frames(reader1))
+    , _total_num_frames_in_sample(SAMPLEREADER_get_total_num_frames_in_sample(reader1))
     , _color(SAMPLEREADER_get_sample_color(reader1))
     , _filename_without_path(wcsdup(SAMPLEREADER_get_sample_name(reader1)))
-    , _interior_end(_num_frames)
   {
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
@@ -429,18 +498,20 @@ struct Sample{
     int64_t sample_start_pos;
 
     if(seqtime <= _seqblock->t.time)
-      sample_start_pos = _interior_start;
+      sample_start_pos = _seqblock->t.interior_start;
     else
       sample_start_pos = scale_int64(seqtime,
                                      _seqblock->t.time, _seqblock->t.time2,
-                                     _interior_start, _interior_end);
+                                     _seqblock->t.interior_start, _seqblock->t.interior_end);
+    //printf("sample_start_pos: %d. _interior_start: %d. _seqblock->t.time: %d. %d vs. %d\n",int(sample_start_pos), int(_seqblock->t.interior_start), int(_seqblock->t.time), int(_seqblock->t.time2-_seqblock->t.time), int(_seqblock->t.interior_end-_seqblock->t.interior_start));
+    //sample_start_pos = _interior_start + seqtime - _seqblock->t.time;
     
     if (sample_start_pos < 0){
       R_ASSERT(false);
       return;
     }
     
-    if (sample_start_pos >= _interior_end){
+    if (sample_start_pos >= _seqblock->t.interior_end){
       R_ASSERT(false);
       return;
     }
@@ -500,17 +571,20 @@ struct Sample{
     }
   }
 
-
+  /*
   void set_interior_start(int64_t interior_start){
     radium::PlayerLock lock;
-    _interior_start = interior_start;
+    _seqblock->t.interior_start = interior_start;
+    _seqblock->gfx.interior_start = interior_start;
   }
 
   void set_interior_end(int64_t interior_end){
     radium::PlayerLock lock;
-    _interior_end = interior_end;
+    _seqblock->t.interior_end = interior_end;
+    _seqblock->gfx.interior_end = interior_end;
   }
-
+  */
+  
   void RT_process(int num_frames, float **outputs){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
@@ -539,7 +613,7 @@ struct Sample{
         fade_out_reader->RT_add_fade_out_samples(num_frames, outputs);
 
       // remove finished fade-out readers.
-      {        
+      {
       again:
 
         for(auto *fade_out_reader : _fade_out_readers){
@@ -574,7 +648,7 @@ struct Sample{
       if (_fade_out_readers.size()==0)
         ATOMIC_SET(_state, State::READY_FOR_DELETION);
     }
-    
+
     if (is_really_playing_song()==false)
       return;
 
@@ -583,7 +657,9 @@ struct Sample{
 
     if (_curr_reader != NULL){
       LOCKASSERTER_EXCLUSIVE(&_curr_reader->lockAsserter);
-      _curr_reader->set_volume(_volume);
+      
+      _curr_reader->set_volume(_seqblock->envelope_volume);
+      
       _curr_reader->RT_add_samples(num_frames, outputs);
     }
 
@@ -602,7 +678,6 @@ struct Sample{
       
       RT_SAMPLEREADER_called_per_block(_curr_reader->_reader, how_much_to_prepare);
     }
-
   }
 
   // Called after scheduler and before audio processing.
@@ -804,15 +879,15 @@ int SEQTRACKPLUGIN_get_num_channels(const SoundPlugin *plugin, int64_t id){
   return sample->_num_ch;
 }
 
-int64_t SEQTRACKPLUGIN_get_num_frames(const SoundPlugin *plugin, int64_t id){
+int64_t SEQTRACKPLUGIN_get_total_num_frames_in_sample(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
   
   Sample *sample = get_sample(plugin, id);
   if (sample==NULL)
     return -1;
 
-  //  return sample->_num_frames;
-  return sample->_interior_end - sample->_interior_start;
+  return sample->_total_num_frames_in_sample;
+  //return sample->_interior_end - sample->_interior_start;
 }
 
 const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t id, bool full_path){
@@ -856,6 +931,7 @@ const radium::DiskPeaks *SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int
   return sample->_peaks;
 }
 
+/*
 void SEQTRACKPLUGIN_set_interior_start(struct SoundPlugin *plugin, int64_t id, int64_t interior_start){
   R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
   
@@ -875,6 +951,7 @@ void SEQTRACKPLUGIN_set_interior_end(struct SoundPlugin *plugin, int64_t id, int
   
   sample->set_interior_end(interior_end);
 }
+*/
 
 /*
 void RT_HDSAMPLER_start_playing_sample(SoundPlugin *plugin, int64_t id){

@@ -1280,6 +1280,16 @@ void createGfxSeqblocksFromState(dyn_t seqblocks_state, int seqtracknum){
   SEQTRACK_create_gfx_seqblocks_from_state(seqblocks_state, seqtrack, seqtracknum, THROW_API_EXCEPTION);
 }
 
+void cancelGfxSeqblocks(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL){
+    handleError("applyGfxSeqblocks: No sequencer track %d", seqtracknum);
+    return;
+  }
+
+  SEQTRACK_cancel_gfx_seqblocks(seqtrack);
+}
+
 void applyGfxSeqblocks(int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL){
@@ -1298,7 +1308,7 @@ static int g_curr_seqtracknum_under_mouse = -1;
 
 void setCurrSeqblockUnderMouse(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  struct SeqBlock *seqblock = getGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
     return;
 
@@ -1629,7 +1639,7 @@ float getSeqblockRightStretchY2(int seqblocknum, int seqtracknum){
 // seqblock select box
 
 void setSeqblockSelectedBox(int which_one, int seqblocknum, int seqtracknum){
-  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+  struct SeqBlock *seqblock = getGfxSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return;
 
@@ -1818,6 +1828,9 @@ void moveSeqblockGfxGfx(int seqblocknum, int64_t abstime, int seqtracknum, int n
 }
 */
 
+/*
+Too inconvenient. Use apply_gfx_seqblocks instead of these two functions. (These things are calculated in bin/scheme/mouse.scm instead. It's faster to programme complicated things like this without having to recompile and start the program again when changing the code.)
+
 static bool set_interior_start(int64_t interior_start, int seqblocknum, int seqtracknum, bool is_gfx){  
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
@@ -1868,6 +1881,7 @@ bool setSeqblockInteriorEnd(int64_t interior_end, int seqblocknum, int seqtrackn
 bool setSeqblockInteriorEndGfx(int64_t interior_end, int seqblocknum, int seqtracknum){
   return set_interior_end(interior_end, seqblocknum, seqtracknum, true);
 }
+*/
 
 int64_t getSeqblockInteriorStart(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
@@ -1880,7 +1894,7 @@ int64_t getSeqblockInteriorStart(int seqblocknum, int seqtracknum){
 
 int64_t getSeqblockInteriorStartGfx(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  struct SeqBlock *seqblock = getGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
     return 0;
 
@@ -1898,7 +1912,7 @@ int64_t getSeqblockInteriorEnd(int seqblocknum, int seqtracknum){
 
 int64_t getSeqblockInteriorEndGfx(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  struct SeqBlock *seqblock = getGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
     return 0;
 

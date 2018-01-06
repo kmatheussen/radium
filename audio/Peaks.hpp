@@ -343,7 +343,7 @@ public:
     
     ATOMIC_SET(_is_valid, true);
 
-    printf("... Has valid: %d\n", has_valid_peaks_on_disk());
+    //printf("... Has valid: %d\n", has_valid_peaks_on_disk());
  
     if (has_valid_peaks_on_disk())
       read_peaks_from_disk();
