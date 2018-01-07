@@ -203,7 +203,11 @@ bool STRING_is_local8Bit_compatible(QString s){
   return true;
   */
 }
-    
+
+wchar_t *STRING_trim(const wchar_t *string){
+  QString s = STRING_get_qstring(string);
+  return STRING_create(s.trimmed());
+}
 
 // TODO: Rename to OS_get_program_path
 const wchar_t *OS_get_program_path2(void){
