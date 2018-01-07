@@ -41,12 +41,25 @@ DiskClass dc;
               SAVE FUNCTIONS
 *************************************************************/
 static const char *emptystringstring = "_________empty__________";
+static const char *onlyspacestringstring = "_________onlyspaces__________";
 
+static bool string_only_contains_spaces(const char *string){
+  return 0==strlen(STRING_get_chars(STRING_trim(STRING_create(string))));
+}
+                 
 void DC_SaveCleanString(const char *string){
   if(strlen(string)==0){
+    
     if(DISK_printf(dc.file,"%s",emptystringstring)<0) dc.success=false;
+    
+  } else if (strcmp(string, "\n") && string_only_contains_spaces(string)) {
+
+    if(DISK_printf(dc.file,"%s",onlyspacestringstring)<0) dc.success=false;
+    
   }else{
+    
     if(DISK_printf(dc.file,"%s",string)<0) dc.success=false;
+    
   }
 }
 
@@ -240,6 +253,10 @@ char *DC_LoadS(void){
         if(!strcmp(dc.ret, emptystringstring)){
           ret=DC_alloc_atomic(1);
           ret[0]='\0';
+        } else if(!strcmp(dc.ret, onlyspacestringstring)){
+          ret=DC_alloc_atomic(2);
+          ret[0]=' ';
+          ret[1]='\0';
         }else{
           ret=DC_alloc_atomic((int)strlen(dc.ret)+1);
           strcpy(ret,dc.ret);
