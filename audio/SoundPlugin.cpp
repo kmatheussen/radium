@@ -981,7 +981,8 @@ static void set_chance(struct SoundPlugin *plugin, int num, float value){
       safe_float_write(&plugin->patch->voices[num].chance, 256);
     else
       safe_float_write(&plugin->patch->voices[num].chance, R_BOUNDARIES(0, round(scale_double(value, 0, 1, 0, 256)), 256));
-    
+
+    //printf("3. Chance %d: %f\n", num, plugin->patch->voices[num].chance);
     update_instrument_gui(plugin);
   }
 }
