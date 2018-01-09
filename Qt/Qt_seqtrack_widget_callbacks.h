@@ -2045,6 +2045,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     , _navigator_widget(this, _start_time, _end_time, _seqtracks_widget)
       //, _main_reltempo(this)
   {
+    setAcceptDrops(true);
+    
     _timeline_widget.show();
     _seqtracks_widget.show();
     _navigator_widget.show();
@@ -2089,6 +2091,51 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     printf("End_time: %d\n",(int)_end_time);
   }
   */
+
+  void dragEnterEvent(QDragEnterEvent *e) override {
+    printf("               GOT Drag\n");
+    e->acceptProposedAction();
+  }
+  
+
+  int getSeqtrackNumFromY(float y){
+    for(int seqtracknum=0;seqtracknum<root->song->seqtracks.num_elements;seqtracknum++){
+      //printf("y: %f. %d: %f\n", y, seqtracknum, getSeqtrackY1(seqtracknum));
+      if (y < getSeqtrackY2(seqtracknum))
+        return seqtracknum;
+    }
+
+    return root->song->seqtracks.num_elements-1;
+  }
+
+  void dropEvent(QDropEvent *event) override {
+    printf("               GOT DOP\n");
+    if (event->mimeData()->hasUrls())
+      {
+        foreach (QUrl url, event->mimeData()->urls())
+          {
+            QPoint point = mapToEditor(this, event->pos());
+            
+            float x = point.x();
+            float y = point.y();
+            
+            printf("File: -%s-. Y: %f\n", url.toLocalFile().toUtf8().constData(), y);
+            int seqtracknum = getSeqtrackNumFromY(y);
+            //struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+            int64_t pos = round(scale_double(x,
+                                             getSequencerX1(), getSequencerX2(),
+                                             getSequencerVisibleStartTime(), getSequencerVisibleEndTime()
+                                             )
+                                );
+            createSampleSeqblock(seqtracknum,
+                                 STRING_get_chars(STRING_toBase64(STRING_create(url.toLocalFile()))),
+                                 getSeqGriddedTime(pos, seqtracknum, getSeqBlockGridType()),
+                                 -1
+                                 );
+          }
+      }
+  }
+
 
   void wheelEvent(QWheelEvent *e) override {
     handle_wheel_event(e, 0, width(), _start_time, _end_time);

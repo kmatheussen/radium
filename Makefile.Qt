@@ -164,13 +164,6 @@ FULL_VERSION ?= 1
 
 ifeq ($(GCC_MAJOR),7)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
-#	UNDEFINED_SANITIZE_OPTS=
-else
-	UNDEFINED_SANITIZE_OPTS=
-endif
-
-ifeq ($(GCC_MAJOR),7)
-	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 #	UNDEFINED_SANITIZE_OPTS=
 else
@@ -183,11 +176,11 @@ endif
 #UNDEFINED_SANITIZE_OPTS=
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
-# "-Og" very often destroys debugging (it's not supposed to, but it's a very new option), but without it things are too slow (well, it's already too slow, but -Og helps a lot).
+# "-Og" very often destroys debugging (although it's not supposed to), but without it things are too slow (well, it's already too slow, but -Og helps a lot).
 #THREAD_SANITIZE_OPTS=-Og -fsanitize=thread #-DDISABLE_BDWGC
 THREAD_SANITIZE_OPTS=
 
-ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common -DDISABLE_BDWGC
+ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common #-DDISABLE_BDWGC
 #ADDRESS_SANITIZE_OPTS=
 
 
