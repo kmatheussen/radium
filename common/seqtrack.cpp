@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Semaphores.hpp"
 #include "Dynvec_proc.h"
 #include "instruments_proc.h"
+#include "visual_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -1645,6 +1646,9 @@ bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
 
 
 void SEQUENCER_timing_has_changed(void){
+  R_ASSERT_NON_RELEASE(false==PLAYER_current_thread_has_lock());
+
+  bool isplayingsong = is_playing_song();
 
   ALL_SEQTRACKS_FOR_EACH(){
 
@@ -1653,15 +1657,22 @@ void SEQUENCER_timing_has_changed(void){
         const int64_t default_duration = get_seqblock_stime_default_duration(seqtrack, seqblock, false);
         
         if (seqblock->t.default_duration != default_duration){
-          double stretch = seqblock->t.stretch;
-          if (stretch==1.0)
-            seqblock->t.time2 = seqblock->t.time + default_duration;
-          else
-            seqblock->t.time2 = seqblock->t.time + round(stretch*(double)default_duration);
-          seqblock->gfx.time2 = seqblock->t.time2;        
-          
-          seqblock->t.default_duration = default_duration;
-          seqblock->gfx.default_duration = default_duration;
+
+          {
+            radium::PlayerLock lock(isplayingsong);
+            
+            double stretch = seqblock->t.stretch;
+            if (stretch==1.0)
+              seqblock->t.time2 = seqblock->t.time + default_duration;
+            else
+              seqblock->t.time2 = seqblock->t.time + round(stretch*(double)default_duration);
+            seqblock->gfx.time2 = seqblock->t.time2;        
+            
+            seqblock->t.default_duration = default_duration;
+            seqblock->gfx.default_duration = default_duration;
+          }
+
+          SEQBLOCK_ENVELOPE_duration_changed(seqtrack, seqblock, default_duration);
         }
       }
     }END_VECTOR_FOR_EACH;

@@ -26,6 +26,7 @@ void SEQBLOCK_ENVELOPE_set_curr_automation(struct SeqTrack *seqtrack, struct Seq
 // May be called if it there is no current automation.
 void SEQBLOCK_ENVELOPE_cancel_curr_automation(void);
 void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int nodenum, double seqtime, double db, int lotype);
+void SEQBLOCK_ENVELOPE_duration_changed(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_duration);
 
 ////////////////////////
 
