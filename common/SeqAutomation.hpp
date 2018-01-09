@@ -103,6 +103,15 @@ public:
     return _automation.size();
   }
 
+  T* begin() {
+    return _automation.begin();
+    //return &_automation[0];
+  }
+
+  T* end() {
+    return _automation.end();
+  }
+
   const T &at(int n) const {
     return _automation.at(n);
   }

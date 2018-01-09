@@ -373,6 +373,48 @@ void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock,
   SEQTRACK_update(seqtrack);
 }
   
+void SEQBLOCK_ENVELOPE_duration_changed(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_duration){
+  R_ASSERT_NON_RELEASE(false==PLAYER_current_thread_has_lock());
+
+  struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
+
+  struct Automation &automation = seqblockenvelope->_automation;
+
+  AutomationNode *last_node = NULL;
+  int new_size = 0;
+  bool reduced = false;
+
+  int i = 0;
+  for(AutomationNode &node : automation.automation){
+    last_node = &node;
+    new_size = i + 1;
+
+    if (node.time > new_duration){
+      reduced = true;
+      //printf("   1. Setting last node time to %d. (old: %d)\n", (int)new_duration, (int)last_node->time);
+      last_node->time = new_duration;
+      break;
+    }
+    i++;
+  }
+
+  if (reduced==true){
+
+    R_ASSERT_RETURN_IF_FALSE(new_size >= 2);
+
+    while(automation.automation.size() > new_size){
+      //printf("   Remoing node %d\n", automation.automation.size()-1);
+      automation.automation.delete_node(automation.automation.size()-1);      
+    }
+
+  } else {
+
+    R_ASSERT_RETURN_IF_FALSE(last_node!=NULL);
+    //printf("   2. Setting last node time to %d. (old: %d)\n", (int)new_duration, (int)last_node->time);
+    last_node->time = new_duration;
+
+  }
+}
 
 static void RT_handle_seqblock_volume_automation(linked_note_t *linked_notes, struct Patch *patch, struct SoundPlugin *plugin, const int play_id){
   R_ASSERT_NON_RELEASE(is_playing_song());
