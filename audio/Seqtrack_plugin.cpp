@@ -486,7 +486,7 @@ struct Sample{
     //printf("   PREPARE_TO_PLAY called %f. _curr_reader: %p\n", TIME_get_ms() / 1000.0, _curr_reader);
     
     R_ASSERT_RETURN_IF_FALSE(is_playing()==false);
-    R_ASSERT_RETURN_IF_FALSE(_is_playing==false);
+    //R_ASSERT_RETURN_IF_FALSE(_is_playing==false);
     R_ASSERT_RETURN_IF_FALSE(_curr_reader==NULL);
 
     if (ATOMIC_GET(_state)!=State::RUNNING)
