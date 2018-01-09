@@ -1013,8 +1013,6 @@ public:
     double xsplit1 = get_seqblock_xsplit1(x1, x2);
     double xsplit2 = get_seqblock_xsplit2(x1, x2);
 
-#define INCLUDE_STRETCH_INTERFACE 1
-
     double ysplit1 = get_seqblock_ysplit1(y1, y2);
     double ysplit2 = get_seqblock_ysplit2(y1, y2);
 
@@ -1033,21 +1031,19 @@ public:
 
     /* Vertical lines */
     
-#if INCLUDE_STRETCH_INTERFACE
-
     // xsplit1 vertical line 1, left
-    if (seqblock->selected_box==SB_INTERIOR_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-    QLineF line1b(xsplit1,ysplit1,
-                  xsplit1,ysplit2);
-    painter->drawLine(line1b);
-
-    // xsplit1 vertical line 2, right
-    if (seqblock->selected_box==SB_INTERIOR_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-    QLineF line2b(xsplit2,ysplit1,
-                  xsplit2,ysplit2);
-    painter->drawLine(line2b);
-
-#endif
+    if (seqblock->block==NULL){
+      if (seqblock->selected_box==SB_INTERIOR_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line1b(xsplit1,ysplit1,
+                    xsplit1,ysplit2);
+      painter->drawLine(line1b);
+      
+      // xsplit1 vertical line 2, right
+      if (seqblock->selected_box==SB_INTERIOR_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line2b(xsplit2,ysplit1,
+                    xsplit2,ysplit2);
+      painter->drawLine(line2b);
+    }
 
     // xsplit1 vertical line 0, left
     if (seqblock->selected_box==SB_FADE_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
