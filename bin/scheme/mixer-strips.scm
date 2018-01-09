@@ -1482,7 +1482,7 @@
          (<ra> :gain-to-db (<ra> :get-audio-connection-gain source-id target-id))))
 
   (define (set-db-value db)
-    ;;(c-display "setting db to" db)
+    ;;(c-display "setting db to" db (<ra> :db-to-gain db))
     (<ra> :set-audio-connection-gain source-id target-id (<ra> :db-to-gain db) #t)
     (for-each (lambda (send-callback)
                 (send-callback gui source-id target-id db))

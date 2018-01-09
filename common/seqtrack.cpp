@@ -1162,23 +1162,28 @@ hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack, bool get_old_format)
   return state;
 }
 
+static void remove_all_gfx_samples(struct SeqTrack *seqtrack){
+  SoundPlugin *plugin = NULL;
+
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqtrack->gfx_seqblocks){
+    if (seqblock->block == NULL){ 
+      if (plugin==NULL){
+        R_ASSERT_RETURN_IF_FALSE(seqtrack->patch!=NULL);
+        R_ASSERT_RETURN_IF_FALSE(seqtrack->patch->patchdata!=NULL);
+        plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+        R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+      }        
+      SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, true);
+    }
+  }END_VECTOR_FOR_EACH;
+}
+
 void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struct SeqTrack *seqtrack, const int seqtracknum, enum ShowAssertionOrThrowAPIException error_type){
   R_ASSERT_RETURN_IF_FALSE(seqblocks_state.type==ARRAY_TYPE);
 
-  SoundPlugin *plugin = NULL;
-
   if (seqtrack->gfx_seqblocks != NULL){
-    
-    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqtrack->gfx_seqblocks){
-      if (seqblock->block == NULL){ 
-        if (plugin==NULL){
-          R_ASSERT_RETURN_IF_FALSE(seqtrack->patch!=NULL);
-          R_ASSERT_RETURN_IF_FALSE(seqtrack->patch->patchdata!=NULL);
-          plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-          R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
-        }        
-      }
-    }END_VECTOR_FOR_EACH;
+
+    remove_all_gfx_samples(seqtrack);
     
     VECTOR_clean(seqtrack->gfx_seqblocks);
     
@@ -1213,6 +1218,8 @@ dyn_t SEQTRACK_get_seqblocks_state(const struct SeqTrack *seqtrack){
 }
 
 void SEQTRACK_cancel_gfx_seqblocks(struct SeqTrack *seqtrack){
+  remove_all_gfx_samples(seqtrack);
+
   seqtrack->gfx_seqblocks = NULL;
 
   RT_SEQUENCER_update_sequencer_and_playlist();

@@ -728,6 +728,26 @@
 !!#
 
 
+
+;; File requester
+;;;;;;;;;;;;;;;;;
+
+;; Includes some qt problem workarounds.
+(define (create-file-requester header-text dir filetype-name postfixes for-loading is-modal parent callback)
+  (let ((gui (<gui> :file-requester header-text dir filetype-name postfixes for-loading
+                    (lambda (filename)
+                      (<gui> :update parent) ;; (not sure this makes any difference)
+                      (<ra> :schedule 50 ;; Give some time to update graphics after closing the file requester (not always enough)
+                            (lambda ()
+                              (callback filename)
+                              #f))))))
+    (if is-modal
+        (<gui> :set-modal gui #t))
+    
+    (<gui> :set-parent gui parent)
+    (<gui> :show gui)))
+
+
 ;; Table
 ;;;;;;;;;;;;;;;;;;;;;;
 

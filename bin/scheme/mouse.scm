@@ -398,7 +398,7 @@
 (define2 mouse-pointer-has-been-set boolean? #f)
 (define2 mouse-pointer-guinum number? -4)
 (define (set-mouse-pointer func guinum)
-  ;;(c-display "setting to" func)
+  ;;(c-display "  setting mouse func to" func)
   (set! mouse-pointer-has-been-set #t)
   (set! mouse-pointer-guinum guinum)
   (func guinum)
@@ -5662,13 +5662,22 @@
                                                                                   (if (not (= num-blocks (<ra> :get-num-blocks)))
                                                                                       (<ra> :create-seqblock seqtracknum num-blocks pos))))
                                           "--------------------"
-                                          
+                                          (if (<ra> :release-mode)
+                                              '()
+                                              (list                                          
+                                                "Insert my soundfile" (lambda ()
+                                                                        (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
+                                                                          (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong.wav") pos))))
+                                                                         ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
+                                                                       ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
+                                              )
+                                          ;;
                                           "Insert new audio file" (lambda ()
                                                                     (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                                                      ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong.wav") pos)))
-                                                                      (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos)))
-                                          ;;                            ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
-                                          ;;
+                                                                      (create-file-requester "Choose audio file" "" "audio files" "*" #t #f -1
+                                                                                             (lambda (filename)
+                                                                                               (<ra> :create-sample-seqblock seqtracknum filename pos)))))
+                              
                                           "--------------------"
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
@@ -5812,8 +5821,8 @@
                                                           (<ra> :set-block-color color blocknum)))))
 
                                           (list "Enable envelope"
-                                                :enabled seqblocknum
                                                 :check (and seqblocknum (<ra> :get-seqblock-envelope-enabled seqblocknum seqtracknum))
+                                                :enabled seqblocknum
                                                 (lambda (enable)
                                                   (<ra> :set-seqblock-envelope-enabled enable seqblocknum seqtracknum)))
 
