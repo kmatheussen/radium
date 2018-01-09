@@ -403,7 +403,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
 #if 1 // defined(RELEASE)
   static bool has_shown_message = false;
   if (has_shown_message==false){
-    GFX_Message(NULL, "This is a technology preview. Use on your own risk. Please don't send crash messages.");
+    GFX_Message(NULL, "This is a technology preview. Use at your own risk. Please don't send crash messages. No need to report bugs yet.");
     has_shown_message = true;
   }
 #endif
