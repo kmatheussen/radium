@@ -423,7 +423,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
     
     void fileSelected(const QString &file){
-      S7CALL(void_charpointer,_func, file.toUtf8().constData());
+      S7CALL(void_charpointer,_func, path_to_w_path(STRING_create(file)));
     }
 
     void currentChanged(int index){

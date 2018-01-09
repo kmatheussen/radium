@@ -5765,7 +5765,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (<ra> :reset-undo)
   (<ra> :load-song "sounds/mod_song_template.rad")
 
-  (<ra> :open-progress-window (<-> "Please wait, loading " filename))
+  (<ra> :open-progress-window (<-> "Please wait, loading " (<ra> :from-base64 filename)))
   
   (try-finally :try (lambda ()
                       (<ra> :start-ignoring-undo)
@@ -5775,7 +5775,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                       
                       (set! *playlist* #f)
                       
-                      (<ra> :eval-python (<-> "import_mod2.import_mod(\"" (<ra> :to-base64 filename) "\")"))
+                      (<ra> :eval-python (<-> "import_mod2.import_mod(\"" filename "\")"))
                       
                       (let* ((stuff (process-events *playlist*
                                                     *instrumentlist*
@@ -5803,32 +5803,13 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (<ra> :internal_update-all-block-graphics)
   )
   
-
+  
 (delafina (async-load-protracker-module :filename "")
   (<ra> :schedule 1
         (lambda ()
           (when (<ra> :ask-are-you-sure-song-has-changed)
             (if (string=? "" filename)
-                (let ((gui (<gui> :file-requester "Choose MOD file" "" "Mod files" "*.mod *.MOD mod.* MOD.*" #t
-                                  (lambda (filename)
-                                    (<gui> :update -1) ;; -1 is the main window. (not sure this makes any difference)
-                                    (<ra> :schedule 50 ;; Give some time to update graphics after closing the file requester (not always enough)
-                                          (lambda ()
-                                            (load-protracker-module filename)
-                                            #f))))))
-                  (<gui> :add-deleted-callback gui (lambda (radium-runs-custom-exec)
-                                                     (c-display "    RELEASING   ")
-                                                     ;;(<ra> :release-keyboard-focus)
-                                                     #t))
-                  (<gui> :set-modal gui #t)
-                  (<gui> :set-parent gui -1)
-                  ;;(<gui> :activate gui)
-                  ;;(<ra> :obtain-keyboard-focus gui) ;; Must obtain keyboard focus before showing the gui. If not, the qlineedit widget in the filedialog loses focus.
-                  ;;(<gui> :activate gui)
-                  (c-display "    OBTAINING   ")
-                  ;;(<gui> :activate gui) ;; Seems like it's impossible to give focus to a new window. Qt is crap.
-                  (<gui> :show gui)
-                  )
+                (create-file-requester "Choose MOD file" "" "Mod files" "*.mod *.MOD mod.* MOD.*" #t #t -1 load-protracker-module)
                 (load-protracker-module filename)))
           #f)))
 

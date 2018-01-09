@@ -227,7 +227,9 @@ struct TextBitmaps{
 
     if(!imageholders->contains(c)) {
 #if !defined(RELEASE)
-      RWarning("TextBitmaps.hpp: '%c' was not precomputed\n",c);
+      // Soundfile names are displayed now.
+      //RWarning("TextBitmaps.hpp: '%c' was not precomputed\n",c);
+      printf("\n\n ******** TextBitmaps.hpp: '%c' was not precomputed ******** \n\n\n",c);
 #endif
       char chars[2];
       chars[0] = c;

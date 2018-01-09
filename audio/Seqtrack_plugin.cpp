@@ -416,7 +416,6 @@ struct Sample{
   ~Sample(){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
-
     R_ASSERT(ATOMIC_GET(_state)!=State::RUNNING);
     
     R_ASSERT_NON_RELEASE(_curr_reader==NULL);
@@ -487,7 +486,7 @@ struct Sample{
     //printf("   PREPARE_TO_PLAY called %f. _curr_reader: %p\n", TIME_get_ms() / 1000.0, _curr_reader);
     
     R_ASSERT_RETURN_IF_FALSE(is_playing()==false);
-    R_ASSERT_RETURN_IF_FALSE(_is_playing=false);
+    R_ASSERT_RETURN_IF_FALSE(_is_playing==false);
     R_ASSERT_RETURN_IF_FALSE(_curr_reader==NULL);
 
     if (ATOMIC_GET(_state)!=State::RUNNING)
@@ -831,7 +830,11 @@ int64_t SEQTRACKPLUGIN_add_sample(SoundPlugin *plugin, const wchar_t *filename, 
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
   
   Data *data = (Data*)plugin->data;
-  return add_sample(data, filename, seqblock, is_gfx);
+  int64_t ret = add_sample(data, filename, seqblock, is_gfx);
+
+  printf("   ADD (is_gfx: %d). NUM samples: %d.  NUM gfx samples: %d\n", is_gfx, data->_samples.size(), data->_gfx_samples.size());
+
+  return ret;
 }
 
 void SEQTRACKPLUGIN_apply_gfx_samples(SoundPlugin *plugin, bool seqtrack_is_live){
@@ -857,9 +860,11 @@ void SEQTRACKPLUGIN_apply_gfx_samples(SoundPlugin *plugin, bool seqtrack_is_live
     }
     
     data->_samples.post_add();
+
+    data->_gfx_samples.clear();
   }
-  
-  data->_gfx_samples.clear();
+
+  printf("   APPLY. NUM samples: %d.  NUM gfx samples: %d\n", data->_samples.size(), data->_gfx_samples.size());
 }
   
 static Sample *get_sample(const SoundPlugin *plugin, int64_t id, bool search_non_gfx, bool search_gfx){
@@ -896,7 +901,9 @@ void SEQTRACKPLUGIN_request_remove_sample(SoundPlugin *plugin, int64_t id, bool 
     
     Data *data = (Data*)plugin->data;
     data->_gfx_samples.remove(sample);
-    
+    ATOMIC_SET_RELAXED(sample->_state, Sample::State::READY_FOR_DELETION);
+    delete sample;
+
   } else {
   
     if (ATOMIC_GET(sample->_state)==Sample::State::RUNNING)
