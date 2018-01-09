@@ -400,6 +400,14 @@ static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct 
 }
 
 static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, hash_t *envelope, int64_t seqtime, bool is_gfx){
+#if 1 // defined(RELEASE)
+  static bool has_shown_message = false;
+  if (has_shown_message==false){
+    GFX_Message(NULL, "This is a technology preview. Use on your own risk. Please don't send crash messages.");
+    has_shown_message = true;
+  }
+#endif
+
   struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
   SEQBLOCK_init(seqtrack,
                 seqblock,

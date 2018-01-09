@@ -1107,6 +1107,8 @@
                        (define seqblock-info *current-seqblock-info*)
                        (define seqtracknum (seqblock-info :seqtracknum))
                        (define seqblocknum (seqblock-info :seqblocknum))
+                       (define holds-block (<ra> :seqblock-holds-block seqblocknum seqtracknum))
+                       (define holds-sample (not holds-block))
                        (cond ((inside-box (<ra> :get-box seqblock-left-fade seqblocknum seqtracknum) X Y)
                               (set-fade-status-bar #t seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
@@ -1123,10 +1125,12 @@
                               (set-seqblock-selected-box 3 seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
-                             ((inside-box (<ra> :get-box seqblock-left-interior seqblocknum seqtracknum) X Y)
+                             ((and holds-sample
+                                   (inside-box (<ra> :get-box seqblock-left-interior seqblocknum seqtracknum) X Y))
                               (set-left-interior-status-bar seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
-                             ((inside-box (<ra> :get-box seqblock-right-interior seqblocknum seqtracknum) X Y)
+                             ((and holds-sample
+                                   (inside-box (<ra> :get-box seqblock-right-interior seqblocknum seqtracknum) X Y))
                               (set-right-interior-status-bar seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              (else                              
@@ -4092,9 +4096,12 @@
 ;; left handle
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (and *current-seqblock-info*
-                                             (let ((box (<ra> :get-box seqblock-left-interior (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))))
-                                               ;;(c-display "BOX:" (box-to-string box) (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
-                                               box)))
+                                             (let ((seqblocknum (*current-seqblock-info* :seqblocknum))
+                                                   (seqtracknum (*current-seqblock-info* :seqtracknum)))
+                                               (and (not (<ra> :seqblock-holds-block seqblocknum seqtracknum))
+                                                    (let ((box (<ra> :get-box seqblock-left-interior seqblocknum seqtracknum)))
+                                                      ;;(c-display "BOX:" (box-to-string box) (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
+                                                      box)))))
                         
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (define seqblock-info *current-seqblock-info*)
@@ -4194,9 +4201,12 @@
 ;; right handle
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (and *current-seqblock-info*
-                                             (let ((box (<ra> :get-box seqblock-right-interior (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))))
-                                               ;;(c-display "BOX2:" (box-to-string box) (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
-                                               box)))
+                                             (let ((seqblocknum (*current-seqblock-info* :seqblocknum))
+                                                   (seqtracknum (*current-seqblock-info* :seqtracknum)))
+                                               (and (not (<ra> :seqblock-holds-block seqblocknum seqtracknum))
+                                                    (let ((box (<ra> :get-box seqblock-right-interior seqblocknum seqtracknum)))
+                                                      ;;(c-display "BOX2:" (box-to-string box) (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
+                                                      box)))))
                         
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (define seqblock-info *current-seqblock-info*)
@@ -5672,11 +5682,13 @@
                                                                        ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
                                               )
                                           ;;
-                                          "Insert new audio file" (lambda ()
-                                                                    (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                                                      (create-file-requester "Choose audio file" "" "audio files" "*" #t #f -1
-                                                                                             (lambda (filename)
-                                                                                               (<ra> :create-sample-seqblock seqtracknum filename pos)))))
+                                          (list
+                                           "Insert new audio file (technology preview)"
+                                           (lambda ()
+                                             (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
+                                               (create-file-requester "Choose audio file" "" "audio files" "*" #t #f -1
+                                                                      (lambda (filename)
+                                                                        (<ra> :create-sample-seqblock seqtracknum filename pos))))))
                               
                                           "--------------------"
                                           
