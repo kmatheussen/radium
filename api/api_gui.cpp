@@ -1406,6 +1406,36 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     }
 
     // Try to put as much as possible in here, since GUIs created from ui files does not use the subclasses
+    virtual void appendGuiValue(dyn_t val){
+      {
+        QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget.data());
+        if (text_edit!=NULL){ 
+          if(val.type==STRING_TYPE){
+            
+            QString s = STRING_get_chars(val.string);
+            text_edit->moveCursor(QTextCursor::End);
+            
+            if (text_edit->isReadOnly()){
+              text_edit->insertHtml(s);
+            } else
+              text_edit->insertPlainText(s);
+            
+          }else {
+            
+            handleError("Text->setValue received %s, expected STRING_TYPE", DYN_type_name(val.type));
+            
+          }
+          
+          if (text_edit->isReadOnly())
+            text_edit->moveCursor(QTextCursor::End);
+          return;
+        }
+      }
+
+      handleError("Gui #%d does not have an appendValue method", (int)_gui_num);
+    }
+    
+    // Try to put as much as possible in here, since GUIs created from ui files does not use the subclasses
     virtual void setGuiValue(dyn_t val){
 
       {
@@ -1480,8 +1510,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         if (text_edit!=NULL){ 
           if(val.type==STRING_TYPE){
             QString s = STRING_get_chars(val.string);
-            if (text_edit->isReadOnly())
+            if (text_edit->isReadOnly()){
               text_edit->setText(s);
+            }
             else
               text_edit->setPlainText(s);
           }else
@@ -4310,6 +4341,14 @@ void gui_setValue(int64_t guinum, dyn_t value){
     return;
 
   gui->setGuiValue(value);
+}
+
+void gui_appendValue(int64_t guinum, dyn_t value){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+  
+  gui->appendGuiValue(value);
 }
 
 dyn_t gui_getValue(int64_t guinum){
