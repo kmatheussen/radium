@@ -499,8 +499,9 @@
                          "<html><head>" 
                          "</head><body>"                                                 
                          html-message
-                         "<br>"                                                 
-                         "</body></html>\n")))
+                         "<br>"                 
+                         "</body></html>\n"
+                         )))
 
 #!!
 (add-message-window-message "hello")
