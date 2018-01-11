@@ -301,7 +301,12 @@ public:
   }
 
   void set_volume(float new_volume){
-    _volume = new_volume;
+    if (new_volume >= 0){
+      if (new_volume==1.0){
+        printf("Volume set to %f\n", new_volume);
+      }
+      _volume = new_volume;
+    }
   }
 
   int get_fadeout_duration(){
@@ -309,13 +314,17 @@ public:
     return (_fadeout_countdown / stretch);
   }
 
-  void prepare_for_playing(int64_t sample_start_pos, double stretch, radium::FutureSignalTrackingSemaphore *gotit){
+  void prepare_for_playing(int64_t sample_start_pos, double stretch, bool do_fade_in, radium::FutureSignalTrackingSemaphore *gotit){
     _do_granulate = fabs(stretch - 1.0) > 0.001;
     
     for(int ch=0;ch<_num_ch;ch++)
       mus_reset(_granulator._clm_granulators[ch]);
-    
-    prepare_for_fadein();
+
+    if (do_fade_in==false){
+      //printf("No fadein\n");
+      _curr_fade_volume = 1.0;
+    }else
+      prepare_for_fadein();
 
     // TODO: This number should be dynamically calculated somehow depending on how long time it takes to read from disk.
     int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE_BEFORE_STARTING) * (double)pc->pfreq / stretch;
@@ -458,20 +467,28 @@ struct Sample{
   }
   */
 
-  void RT_stop_playing(void){    
+  void RT_stop_playing(bool do_fade_out){    
     //printf("   player_is_stopped called %f. _curr_reader: %p\n", TIME_get_ms() / 1000.0, _curr_reader);
   
     if (_curr_reader!=NULL) {
 
       LOCKASSERTER_EXCLUSIVE(&_curr_reader->lockAsserter);
       
-      //printf("    ==== RT_stop_playing stopping player: %p\n", _curr_reader);
+      printf("    ==== RT_stop_playing stopping player. Fading out: %d\n", do_fade_out);
 
-      _curr_reader->prepare_for_fadeout();
-      
-      _fade_out_readers.push_back(_curr_reader);
-      ATOMIC_SET(_is_fading_out, true);
+      if(do_fade_out){
         
+        _curr_reader->prepare_for_fadeout();
+        
+        _fade_out_readers.push_back(_curr_reader);
+        ATOMIC_SET(_is_fading_out, true);
+        
+      } else {
+
+        _free_readers.push_back(_curr_reader);
+        
+      }
+      
       _curr_reader = NULL;
       _is_playing = false;
     }
@@ -556,7 +573,8 @@ struct Sample{
       
     }
 
-    reader->prepare_for_playing(sample_start_pos, _seqblock->t.stretch, gotit);
+    bool do_fade_in = sample_start_pos > _seqblock->t.interior_start;
+    reader->prepare_for_playing(sample_start_pos, _seqblock->t.stretch, do_fade_in, gotit);
 
     {
       _curr_reader = reader; // Don't need player lock here since _is_playing==false now.
@@ -632,7 +650,7 @@ struct Sample{
     //
     {
       if (ATOMIC_GET(_state)==State::RT_REQUEST_DELETION){
-        RT_stop_playing();
+        RT_stop_playing(true);
         if (_fade_out_readers.size()==0)
           ATOMIC_SET(_state, State::READY_FOR_DELETION);
       }
@@ -718,7 +736,7 @@ struct Sample{
           GFX_ScheduleEditorRedraw();
         }
         
-        RT_stop_playing();
+        RT_stop_playing(false);
       }
     }
 
@@ -744,7 +762,7 @@ struct Data{
       ATOMIC_SET(sample->_state, Sample::State::RT_REQUEST_DELETION); // To avoid assertion hit.
       
       R_ASSERT_NON_RELEASE(sample->_curr_reader==NULL);
-      sample->RT_stop_playing(); // just in case _curr_reader!=NULL.
+      sample->RT_stop_playing(false); // just in case _curr_reader!=NULL.
       
       delete sample;
     }
@@ -846,7 +864,7 @@ void SEQTRACKPLUGIN_apply_gfx_samples(SoundPlugin *plugin, bool seqtrack_is_live
   }
 
   if(data->_gfx_samples.size()==0){
-    R_ASSERT_NON_RELEASE(false);
+    //R_ASSERT_NON_RELEASE(false); // Happens when redoing deletion of sample seqblock. (and perhaps other situations)
     return;
   }
 
@@ -1076,7 +1094,7 @@ static void RT_player_is_stopped(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
 
   for(Sample *sample : data->_samples)
-    sample->RT_stop_playing();
+    sample->RT_stop_playing(true);
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
