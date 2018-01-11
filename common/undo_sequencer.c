@@ -46,7 +46,7 @@ void ADD_UNDO_FUNC(Sequencer(void)){
            window->wblock->l.num,
            window->curr_track,
            window->wblock->curr_realline,
-           SEQUENCER_get_state(false),
+           SEQUENCER_get_state(),
            Undo_Do_Sequencer,
            "Sequencer"
            );
@@ -59,7 +59,7 @@ static void *Undo_Do_Sequencer(
 	int realline,
 	void *pointer
 ){
-  hash_t *ret = SEQUENCER_get_state(false);
+  hash_t *ret = SEQUENCER_get_state();
 
   SEQUENCER_create_from_state(pointer, root->song);
 

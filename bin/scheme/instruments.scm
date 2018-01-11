@@ -951,7 +951,7 @@
 
                                  
 #!!
-(create-instrument-popup-menu (make-instrument-conf))
+ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (create-instrument (ra:create-new-instrument-conf) descr)))"
 !!#
 
 

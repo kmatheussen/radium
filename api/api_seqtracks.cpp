@@ -1215,36 +1215,6 @@ int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
   return SEQTRACK_insert_block(seqtrack, block, start_seqtime, end_seqtime);
 }
 
-int createGfxGfxSeqblock(int seqtracknum, dyn_t blocknum_or_sample, int64_t pos, int64_t endpos){
-  VALIDATE_TIME(pos, -1);
-  
-  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
-  if (seqtrack==NULL)
-    return -1;
-
-  struct Blocks *block = NULL;
-  const wchar_t *w_filename = NULL;
-  
-  if (blocknum_or_sample.type==INT_TYPE) {
-    int blocknum = (int)blocknum_or_sample.int_number;
-    block = getBlockFromNum(blocknum);
-    if (block==NULL)
-      return -1;
-  } else if (blocknum_or_sample.type==STRING_TYPE) {
-    w_filename = w_path_to_path(blocknum_or_sample.string);
-  } else {
-    handleError("createGfxGfxSeqblock: Expected integer or string as second argument, found %s\n", DYN_type_name(blocknum_or_sample));
-    return -1;
-  }
-  
-  int64_t start_seqtime;
-  int64_t end_seqtime;
-
-  get_seqblock_start_and_end_seqtime(seqtrack, NULL, block, pos, endpos, &start_seqtime, &end_seqtime);
-
-  return SEQTRACK_insert_gfx_gfx_block(seqtrack, seqtracknum, block, w_filename, start_seqtime, end_seqtime);
-}
-
 int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, int64_t endpos){
   VALIDATE_TIME(pos, -1);
   
@@ -1258,6 +1228,66 @@ int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, i
     radium::ScopedIgnoreUndo ignore_undo;
     return SEQTRACK_insert_sample(seqtrack, seqtracknum, w_path_to_path(w_filename), pos, endpos);
   }
+}
+
+int createGfxGfxSeqblock(dyn_t state){
+  if (state.type != HASH_TYPE){
+    handleError("createGfxGfxSeqblockNew: Expected hash table as first argument, found %s\n", DYN_type_name(state));
+    return -1;
+  }
+  
+  const hash_t *hash = state.hash;
+  
+  if (HASH_has_key(hash, ":seqtracknum")==false){
+    handleError("createGfxGfxSeqblockNew: Could not find \"seqtracknum\" key in state");
+    return -1;
+  }
+
+  int seqtracknum = HASH_get_int(hash, ":seqtracknum");
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  return SEQTRACK_insert_gfx_gfx_block(seqtrack, seqtracknum, hash, THROW_API_EXCEPTION);
+}
+
+int createSeqblockFromState(dyn_t state){
+  if (state.type != HASH_TYPE){
+    handleError("createSeqblockFromState: Expected hash table as first argument, found %s\n", DYN_type_name(state));
+    return -1;
+  }
+
+  const hash_t *hash = state.hash;
+
+  if (HASH_has_key(hash, ":seqtracknum")==false){
+    handleError("createSeqblockFromState: Could not find \"seqtracknum\" key in state");
+    return -1;
+  }
+
+  int seqtracknum = HASH_get_int(hash, ":seqtracknum");
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+  
+  struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, THROW_API_EXCEPTION, false);
+  if (seqblock==NULL)
+    return -1;
+
+  return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqblock->t.time, seqblock->t.time2);
+}
+
+dyn_t getSeqblockState(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return DYN_create_bool(false);
+  
+  hash_t *state = SEQBLOCK_get_state(seqtrack, seqblock, true);
+  R_ASSERT_RETURN_IF_FALSE2(state!=NULL, DYN_create_bool(false));
+
+  HASH_put_int(state, ":seqtracknum", seqtracknum);
+
+  return DYN_create_hash(state);
 }
 
 dyn_t getSeqblocksState(int seqtracknum){
@@ -1283,10 +1313,15 @@ void createGfxSeqblocksFromState(dyn_t seqblocks_state, int seqtracknum){
 void cancelGfxSeqblocks(int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL){
-    handleError("applyGfxSeqblocks: No sequencer track %d", seqtracknum);
+    handleError("cancelGfxSeqblocks: No sequencer track %d", seqtracknum);
     return;
   }
 
+  if (seqtrack->gfx_seqblocks==NULL){
+    //handleError("cancelGfxSeqblocks: No gfx seqtracks in sequencer track %d\n", seqtracknum); // Might happen for good reasons. Also, calling cancelGfxSeqblocks is only done inside an error catcher, and throwing exception inside an exception handler just leads to confusion.
+    return;
+  }
+  
   SEQTRACK_cancel_gfx_seqblocks(seqtrack);
 }
 

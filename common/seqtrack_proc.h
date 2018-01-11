@@ -123,7 +123,7 @@ extern LANGSPEC void SEQTRACK_call_me_very_often(void);
 extern LANGSPEC void SONG_call_me_before_starting_to_play_song(int64_t abstime);
 
 // 'seqblock' must be nulled out before calling.
-extern LANGSPEC void SEQBLOCK_init(struct SeqTrack *from_seqtrack, struct SeqBlock *seqblock, struct Blocks *block, hash_t *envelope, bool *track_is_disabled, int64_t time);
+extern LANGSPEC void SEQBLOCK_init(struct SeqTrack *from_seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const dyn_t envelope, bool *track_is_disabled, int64_t time);
   
 // sequencer gfx
 #ifdef USE_QT4
@@ -289,11 +289,15 @@ extern LANGSPEC void SEQUENCER_timing_has_changed(void);
 extern LANGSPEC void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t length);
 extern LANGSPEC int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime, int64_t end_seqtime);
 extern LANGSPEC int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime, int64_t end_seqtime);
-extern LANGSPEC int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int seqtracknum, struct Blocks *block, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime);
+extern LANGSPEC int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type);
 extern LANGSPEC int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime);
 extern LANGSPEC double SEQTRACK_get_length(struct SeqTrack *seqtrack);
 extern LANGSPEC double SEQTRACK_get_gfx_length(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQTRACK_init(struct SeqTrack *seqtrack, const hash_t *automation_state);
+
+extern LANGSPEC hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool always_get_real_end_time);
+extern LANGSPEC struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type, bool is_gfx);
+
 extern LANGSPEC struct SeqTrack *SEQTRACK_create(const hash_t *automation_state);
 extern LANGSPEC struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len);
 
@@ -309,7 +313,7 @@ extern LANGSPEC void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block)
 extern LANGSPEC int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_seqtime);
 extern LANGSPEC int64_t SEQUENCER_find_closest_beat_start(int seqtracknum, int64_t pos_abstime);
 extern LANGSPEC int64_t SEQUENCER_find_closest_line_start(int seqtracknum, int64_t pos_abstime);
-extern LANGSPEC hash_t *SEQUENCER_get_state(bool get_old_format);
+extern LANGSPEC hash_t *SEQUENCER_get_state(void /*bool get_old_format*/);
 extern LANGSPEC void SEQUENCER_create_from_state(hash_t *state, struct Song *song);
 extern LANGSPEC void SEQUENCER_update_all_seqblock_start_and_end_times(void);
 extern LANGSPEC void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos);
