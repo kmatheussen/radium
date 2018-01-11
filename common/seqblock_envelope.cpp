@@ -108,7 +108,7 @@ struct Automation{
     return nodenum>=0 && (nodenum<=automation.size()-1);
   }
 
-  hash_t *get_state(void) const {
+  dyn_t get_state(void) const {
     return automation.get_state(get_node_state);
   }
 
@@ -117,8 +117,8 @@ struct Automation{
     SEQBLOCK_ENVELOPE_cancel_curr_automation();
   }
 
-  Automation(const hash_t *state){
-    if (state != NULL)
+  Automation(const dyn_t state){
+    if (state.type != UNINITIALIZED_TYPE)
       automation.create_from_state(state, create_node_from_state);
   }
 
@@ -147,14 +147,14 @@ public:
 
   Automation _automation;
   
-  SeqblockEnvelope(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const hash_t *state = NULL)
+  SeqblockEnvelope(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t state = g_uninitialized_dyn)
     : _seqtrack(seqtrack)
     , _seqblock(seqblock)
     , _automation(state)
   {
     SEQBLOCK_ENVELOPE_cancel_curr_automation();
 
-    if (state == NULL) {
+    if (state.type == UNINITIALIZED_TYPE) {
 
       double duration = seqblock->t.default_duration;
 
@@ -180,13 +180,13 @@ public:
     assert_no_curr_seqtrack();
   }
   
-  hash_t *get_state(void) const {
+  dyn_t get_state(void) const {
     return _automation.get_state();
   }
 };
  
 
-struct SeqblockEnvelope *SEQBLOCK_ENVELOPE_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const hash_t *automation_state){
+struct SeqblockEnvelope *SEQBLOCK_ENVELOPE_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t automation_state){
   return new SeqblockEnvelope(seqtrack, seqblock, automation_state);
 }
 
@@ -648,11 +648,11 @@ void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void){
 
 
 
-hash_t *SEQBLOCK_ENVELOPE_get_state(const struct SeqblockEnvelope *seqblockenvelope){
+dyn_t SEQBLOCK_ENVELOPE_get_state(const struct SeqblockEnvelope *seqblockenvelope){
   return seqblockenvelope->get_state();
 }
 
-void SEQBLOCK_ENVELOPE_apply_state(struct SeqblockEnvelope *seqblockenvelope, const hash_t *envelope_state){
+void SEQBLOCK_ENVELOPE_apply_state(struct SeqblockEnvelope *seqblockenvelope, const dyn_t envelope_state){
   seqblockenvelope->_automation.automation.create_from_state(envelope_state, create_node_from_state);
   SEQTRACK_update(seqblockenvelope->_seqtrack);
 }

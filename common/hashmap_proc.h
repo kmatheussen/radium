@@ -102,7 +102,7 @@ extern LANGSPEC void HASH_put_ratio_at(hash_t *hash, const char *key, int i, con
 extern LANGSPEC void HASH_put_hash_at(hash_t *hash, const char *key, int i, hash_t *val);
 extern LANGSPEC void HASH_put_array_at(hash_t *hash, const char *key, int i, const dynvec_t val);
 
-extern LANGSPEC dyn_t HASH_get_dyn_at(hash_t *hash, const char *key, int i);
+extern LANGSPEC dyn_t HASH_get_dyn_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC const wchar_t *HASH_get_string_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC const char *HASH_get_chars_at(const hash_t *hash, const char *key, int i);
 extern LANGSPEC int64_t HASH_get_int_at(const hash_t *hash, const char *key, int i);

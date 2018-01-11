@@ -78,7 +78,7 @@ DC_start("SONG");
 	//SavePlayList(song->playlist,song->length);
 
         DC_start("SEQUENCER");{
-          HASH_save(SEQUENCER_get_state(true), dc.file); // save old format so we can load songs into old versions of the program.
+          HASH_save(SEQUENCER_get_state(), dc.file);
         }DC_end();
         
         // Patchdata for audio patches are saved here, not in disk_patches.

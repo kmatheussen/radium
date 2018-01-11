@@ -515,25 +515,45 @@ public:
   }
 
 
-  void create_from_state(const hash_t *state, T (*create_node_from_state)(hash_t *state)){
-    int size = HASH_get_array_size(state, "node");
-    
+  void create_from_state(const dyn_t &dynstate, T (*create_node_from_state)(hash_t *state)){
     _automation.clear();
-    
-    for(int i = 0 ; i < size ; i++)
-      add_node(create_node_from_state(HASH_get_hash_at(state, "node", i)));
+
+    if (dynstate.type==HASH_TYPE) {
+
+      // Old format. When loading old songs.
+      
+      R_ASSERT(g_is_loading==true);
+      
+      const hash_t *state = dynstate.hash;
+      int size = HASH_get_array_size(state, "node");
+      
+      for(int i = 0 ; i < size ; i++)
+        add_node(create_node_from_state(HASH_get_hash_at(state, "node", i)));
+
+    } else if (dynstate.type==ARRAY_TYPE) {
+
+      const dynvec_t *vec = dynstate.array;
+      
+      for(const dyn_t &dyn : vec)
+        add_node(create_node_from_state(dyn.hash));
+
+    } else {
+      
+      R_ASSERT(false);
+      
+    }
   }
   
 
-  hash_t *get_state(hash_t *(*get_node_state)(const T &node)) const {
+  dyn_t get_state(hash_t *(*get_node_state)(const T &node)) const {
     int size = _automation.size();
     
-    hash_t *state = HASH_create(size);
+    dynvec_t ret = {0};
     
     for(int i = 0 ; i < size ; i++)
-      HASH_put_hash_at(state, "node", i, get_node_state(_automation.at(i)));
+      DYNVEC_push_back(ret, DYN_create_hash(get_node_state(_automation.at(i))));
     
-    return state;
+    return DYN_create_array(ret);
   }
 
 };

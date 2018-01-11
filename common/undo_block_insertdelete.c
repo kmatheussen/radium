@@ -60,7 +60,7 @@ void ADD_UNDO_FUNC(Block_Insert(NInt blockpos)){
 	struct Undo_Block_InsertDelete *ubi=talloc(sizeof(struct Undo_Block_InsertDelete));
 	ubi->blockpos=blockpos;
 	ubi->wblock=NULL;
-        ubi->sequencer_state=SEQUENCER_get_state(false);
+        ubi->sequencer_state=SEQUENCER_get_state();
 
 	Undo_Add(
 		window->l.num,
@@ -81,7 +81,7 @@ void ADD_UNDO_FUNC(Block_Delete(NInt blockpos)){
 	struct Undo_Block_InsertDelete *ubi=talloc(sizeof(struct Undo_Block_InsertDelete));
 	ubi->blockpos=blockpos;
 	ubi->wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,blockpos);
-        ubi->sequencer_state=SEQUENCER_get_state(false);
+        ubi->sequencer_state=SEQUENCER_get_state();
 
 	Undo_Add(
 		window->l.num,

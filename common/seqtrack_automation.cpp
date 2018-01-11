@@ -121,7 +121,7 @@ struct Automation{
     hash_t *state = HASH_create(3);
     HASH_put_int(state, "patch", patch->id);
     HASH_put_chars(state, "effect_name", effect_num==-1 ? "<effect not found>" : PLUGIN_get_effect_name(plugin, effect_num));
-    HASH_put_hash(state, "automation", automation.get_state(get_node_state));
+    HASH_put_dyn(state, "automation", automation.get_state(get_node_state));
     return state;
   }
 
@@ -144,7 +144,7 @@ struct Automation{
 
   Automation(hash_t *state){
     patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
-    automation.create_from_state(HASH_get_hash(state, "automation"), create_node_from_state);
+    automation.create_from_state(HASH_get_dyn(state, "automation"), create_node_from_state);
 
     const char *effect_name = HASH_get_chars(state, "effect_name");
 

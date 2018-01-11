@@ -610,7 +610,7 @@ dynvec_t HASH_get_array(const hash_t *hash, const char *key){
   return get_array(hash, key, 0);
 }
 
-dyn_t HASH_get_dyn_at(hash_t *hash, const char *key, int i){
+dyn_t HASH_get_dyn_at(const hash_t *hash, const char *key, int i){
   return get_dyn(hash, key, i);
 }
 
