@@ -59,7 +59,7 @@
        (let* ((val1 (one-decimal-string db))
               (val (if (string=? val1 "-0.0") "0.0" val1)))
          (if add-dB-string
-             (<-> val "dB")
+             (<-> val " dB")
              val))))
 
 
