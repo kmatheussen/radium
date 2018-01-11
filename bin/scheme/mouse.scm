@@ -3672,17 +3672,17 @@
 (define (move-seqblock seqblock new-start-time)
   (define duration (- (seqblock :end-time)
                       (seqblock :start-time)))
-  (copy-seqblock seqblock
-                 :start-time new-start-time
-                 :end-time (+ new-start-time duration)))
+  (copy-hash seqblock
+             :start-time new-start-time
+             :end-time (+ new-start-time duration)))
 
 (define (move-seqblock2 seqblock delta-time delta-tracknum)
   (define duration (- (seqblock :end-time)
                       (seqblock :start-time)))
-  (copy-seqblock seqblock
-                 :start-time (+ (seqblock :start-time) delta-time)
-                 :end-time (+ (seqblock :end-time) delta-time)
-                 :seqtracknum (+ (seqblock :seqtracknum) delta-tracknum)))
+  (copy-hash seqblock
+             :start-time (+ (seqblock :start-time) delta-time)
+             :end-time (+ (seqblock :end-time) delta-time)
+             :seqtracknum (+ (seqblock :seqtracknum) delta-tracknum)))
 
 (define2 *current-seqtrack-num* (curry-or not integer?) #f)
 
@@ -4450,8 +4450,8 @@
   (ignore-undo-block (lambda ()
                        ;;(c-display "bef:" (/ (<ra> :get-seqblock-start-time (1+ seqblocknum) seqtracknum) 44100.0))
                        (set! *current-seqblock-info* #f)
-                       (define seqblock (copy-seqblock (<ra> :get-seqblock-state seqblocknum seqtracknum)
-                                                       :seqtracknum new-seqtracknum))
+                       (define seqblock (copy-hash (<ra> :get-seqblock-state seqblocknum seqtracknum)
+                                                   :seqtracknum new-seqtracknum))
                        ;;(c-display "seqblock:" seqblock)
                        (<ra> :delete-seqblock seqblocknum seqtracknum)
                        (define new-seqblocknum (<ra> :create-seqblock-from-state seqblock))
