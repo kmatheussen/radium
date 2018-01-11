@@ -587,7 +587,7 @@
            (<gui> :filled-box label color 0 0 width height)
            (if is-minimized
                (<gui> :draw-vertical-text label *text-color* name 2 7 (+ width 0) height #t #f #t)
-               (<gui> :draw-text label *text-color* name 5 0 width height #f #f #f))
+               (<gui> :draw-text label *text-color* name 5 0 width height #f #f #f 0 #t #t))
            (<gui> :draw-box label "#202020" 0 0 width height 1.0 2 2)))
   
   (add-safe-mouse-callback label (lambda (button state x y)
@@ -1757,6 +1757,12 @@
            "black"
            text
            3 2 (- width 3) (- height 2)
+           #f
+           #f
+           #f
+           0
+           #t
+           #t
            )
     
     (<gui> :draw-box
@@ -1868,7 +1874,7 @@
 
 (define (create-mixer-strip-volume instrument-id meter-instrument-id strips-config background-color is-minimized)
   (define fontheight (get-fontheight))
-  (define voltext-height fontheight)
+  (define voltext-height (floor (* 1.0 fontheight)))
 
   (define horizontal-spacing 4) ;; must be an even number.
   (define horizontal-spacing/2 (/ horizontal-spacing 2))
@@ -1930,7 +1936,7 @@
         (<gui> :filled-box gui col1 0 0 width height 5 5))
     
     ;; text
-    (<gui> :draw-text gui *text-color* text 2 2 (- width 2) (- height 2)))
+    (<gui> :draw-text gui *text-color* text 2 2 (- width 2) (- height 2) #t #f #f 0 #f #t))
 
     
   (when show-voltext

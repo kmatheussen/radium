@@ -1323,14 +1323,16 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       myupdate(x1, y1, x2, y2);
     }
 
-    void drawText(const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate) {
+    void drawText(const_char* color, const_char *chartext, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
       QPainter *painter = get_painter();
 
+      QString text = QString(chartext); //.replace(" ", "\n");
+      
       QRectF rect(x1, y1, x2-x1, y2-y1);
 
       setPen(color);
       
-      int flags = Qt::TextWordWrap;
+      int flags = 0; //wrap_lines ? Qt::TextWrapAnywhere : 0;
 
       if(align_top)
         flags |= Qt::AlignTop;
@@ -1342,10 +1344,42 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       else
         flags |= Qt::AlignHCenter;
 
-      if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
-        painter->setFont(GFX_getFittingFont(text, flags, y2-y1, x2-x1));
-      else
-        painter->setFont(GFX_getFittingFont(text, flags, x2-x1, y2-y1));
+
+      
+      QFont font;
+        
+      if (scale_font_size) {
+
+        if (cut_text_to_fit){
+        
+          if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
+            font = GFX_getFittingFont(text, flags, 4096, x2-x1);
+          else
+            font = GFX_getFittingFont(text, flags, 4096, y2-y1);
+          
+        } else {
+
+          if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
+            font = GFX_getFittingFont(text, flags, y2-y1, x2-x1);
+          else
+            font = GFX_getFittingFont(text, flags, x2-x1, y2-y1);
+
+        }
+
+        painter->setFont(font);
+      }
+
+        
+      QString draw_text = text;
+      
+      if (cut_text_to_fit) {
+        
+        if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
+          draw_text = GFX_getFittingText(font, text, flags, wrap_lines, y2-y1, x2-x1); // vertical
+        else
+          draw_text = GFX_getFittingText(font, text, flags, wrap_lines, x2-x1, y2-y1); // horizontal
+        
+      }
       
       if (rotate != 0) {
 
@@ -1363,13 +1397,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         }
         
         QRect rect2(0,0,rect.height(),rect.width());
-        painter->drawText(rect2, flags, text);
+        painter->drawText(rect2, flags, draw_text);
 
         painter->restore();
 
       } else {
 
-        painter->drawText(rect, flags, text);
+        painter->drawText(rect, flags, draw_text);
       
       }
 
@@ -5492,12 +5526,12 @@ void gui_drawEllipse(int64_t guinum, const_char* color, float x1, float y1, floa
   gui->drawEllipse(color, x1, y1, x2, y2, width);
 }
 
-void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate) {
+void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, rotate);
+  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, rotate, cut_text_to_fit, scale_font_size);
 }
 
 void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left) {
@@ -5505,7 +5539,7 @@ void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, f
   if (gui==NULL)
     return;
 
-  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, 90);
+  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, 90, true, true);
 }
 
 

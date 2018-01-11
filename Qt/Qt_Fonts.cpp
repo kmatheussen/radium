@@ -42,15 +42,11 @@ static bool can_fit(const QFont &font, const QString &text, int flags, int width
 
   QRect rect = fm.boundingRect(0, 0, width, height, flags, text);
 
-  // subtract 10 to get some borders.
-  if (rect.width() >= width-10){
-    //printf("F1: %d >= %d. ", rect.width(),width-10);
+  if (rect.width() >= width){
     return false;
   }
   
-  // "height-fm.height()" seems to work perfectly. Could be coincidental though. Must subtract a little bit, if not the text is just cut off. (the boundingRect function doesn't seem to work perfectly)
-  if (rect.height() >= height-fm.height()){
-    //printf("F2: ");
+  if (rect.height() >= height){
     return false;
   }
 
@@ -60,7 +56,12 @@ static bool can_fit(const QFont &font, const QString &text, int flags, int width
 QFont GFX_getFittingFont(const QString &text, int flags, int width, int height){
   static QFont font;
   
-  auto key = QPair<QString,QPair<int, QPair<int,int>>>(text,QPair<int,QPair<int,int>>(flags, QPair<int,int>(width,height))); // good code
+  auto key = QPair<QString,
+                   QPair<int,
+                         QPair<int,int>
+                         >
+                   >
+    (text,QPair<int,QPair<int,int>>(flags, QPair<int,int>(width,height))); // good code
 
   static QHash< QPair< QString , QPair< int, QPair<int,int> > > , QFont> fonts;
 
@@ -76,6 +77,8 @@ QFont GFX_getFittingFont(const QString &text, int flags, int width, int height){
 
   QFont the_font(font);
 
+  //return the_font;
+  
   for(int size = pointSize; size > 3; size--){
     if(size!=pointSize)
       the_font.setPointSize(size);
@@ -89,9 +92,94 @@ QFont GFX_getFittingFont(const QString &text, int flags, int width, int height){
   return the_font;
 }
 
+static QString split_text_by_lineshift(QString text, int num_splits, int num_possible_splits){
+  if (num_splits==0)
+    return text;
+  
+  const QChar space(' ');
+  const int size = text.size();
+
+  double inc = (double)num_possible_splits / (1.0 + num_splits);
+
+  for(double fpos = floor(inc) ; fpos < num_possible_splits ; fpos += inc){
+    int pos = round(fpos);
+
+    int pos2 = 0;
+    for(int i=0;i<size;i++){
+      if (text.at(i) == space){
+        if(pos2==pos){
+          text = text.replace(i, 1, "\n");
+          break;
+        }
+        pos2++;
+      }
+    }    
+  }
+
+  return text;
+}
+
+QString GFX_getFittingText(const QFont &font, const QString &text, const int flags, bool wrap_lines, const int width, const int height){
+
+  if (can_fit(font, text, flags, width, height))
+    return text;
+
+  int n = 1;
+
+  QString org(text);
+  QString ret = org;
+
+
+  // Wrap manually. Qt::TextWrapAnywhere behaves weird.
+  if (wrap_lines){
+    int max_possible_lineshifts = text.count(" ");
+
+    QFontMetrics fm(font);
+    QRectF rect = fm.boundingRect(0, 0, width, height, flags, QString(org).replace("\n", " "));
+    
+    int max_num_lineshifts = R_MIN(max_possible_lineshifts, height / ceil(rect.height()));
+    
+    for(int i = 1 ; i < max_num_lineshifts ; i++){
+      ret = split_text_by_lineshift(org, i, max_possible_lineshifts);
+      //printf(" Split %d: -%s-\n", i, ret.toUtf8().constData());
+      if (can_fit(font, ret, flags, width, height))
+        return ret;
+    }
+
+    org = ret;
+  }
+  
+  int safety = 1000;
+
+  do{
+    if (n>=text.size()+1)
+      break;
+    
+    if ((safety--)==0){
+      printf("org: -%s-. ret: -%s-. n: %d\n", text.toUtf8().constData(), ret.toUtf8().constData(), n);
+#if !defined(RELEASE)
+      abort();
+#endif
+      break;
+    }
+    
+    ret = QString(org).remove(text.size()-n,n) + "..";
+    if (ret.size()==2)
+      break;
+
+    //printf("org: \"%s\". ret: \"%s\". n: %d\n", text.toUtf8().constData(), ret.toUtf8().constData(), n);
+
+    n++;
+    
+  }while(false==can_fit(font, ret, flags, width, height));
+  
+  return ret;
+}
+
 
 void setFontValues(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+
 
 #if !USE_OPENGL    
   editor->cursorbuffer_painter->setFont(editor->font);
