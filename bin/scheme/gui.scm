@@ -449,9 +449,10 @@
 
             (<gui> :add-close-callback gui
                    (lambda (radium-runs-custom-exec)
-                     (set! *message-gui* #f)
+                     ;;(set! *message-gui* #f)
                      (c-display "              GAKK GAKK GAKK")
-                     #t)) ;; close it.
+                     (<gui> :hide *message-gui*)
+                     #f)) ;; close it.
                    
             (set! *message-gui* gui))
           
@@ -465,7 +466,7 @@
           ;;   Letting both the current modal window, plus the message window, react to mouse and keyboard. Need to test this on Windows and OSX too though.
           ;;
           
-          (<gui> :set-value *message-gui-text-edit* message)
+          (<gui> :append-value *message-gui-text-edit* message)
                  
           #f)))
 
@@ -490,18 +491,14 @@
 !!#
 ;;||#
 
-(define *g-complete-message* #f)
 (define (add-message-window-message message)
   ;;(maybe-start-debug-pulse)
-  (set! *g-complete-message* (<-> (if (not (string? *g-complete-message*))
-                                      ""
-                                      (<-> *g-complete-message* "<p><br>\n"))
-                                  "<h4>" (<ra> :get-date-string) " " (<ra> :get-time-string) ":</h4>"
-                                  "<blockquote>" message "</blockquote>"))
+  (define html-message (<-> "<h4>" (<ra> :get-date-string) " " (<ra> :get-time-string) ":</h4>"
+                            "<blockquote>" message "</blockquote>"))
   (show-message-gui (<-> "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd\">"
                          "<html><head>" 
                          "</head><body>"                                                 
-                         *g-complete-message*                                                 
+                         html-message
                          "<br>"                                                 
                          "</body></html>\n")))
 
