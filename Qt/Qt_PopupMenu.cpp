@@ -83,7 +83,32 @@ namespace{
     }
   };
 
-  class CheckableAction : public QWidgetAction
+  
+  /*
+
+   Old code to manually create checkableaction from qwidgets. Not sure why I used this code before. Replaced 2018-01 since it doesn't highlight entry when mouse hovers over it.
+
+  struct CheckboxMenuWidget : public QWidget {
+    
+    QCheckBox *checkBox;
+    
+    CheckboxMenuWidget(QString text, MQMenu *qmenu){
+      QHBoxLayout *layout = new QHBoxLayout;
+      layout->setSpacing(0);
+      layout->setContentsMargins(0,0,0,0);
+      
+      layout->addItem(new QSpacerItem(gui_textWidth("F"), 10, QSizePolicy::Fixed, QSizePolicy::MinimumExpanding));
+      
+      checkBox = new QCheckBox(text, qmenu);
+      checkBox->setChecked(is_on);
+      
+      layout->addWidget(checkBox);
+      
+      widget->setLayout(layout);
+    }
+  };
+  
+  class CheckableAction_old : public QWidgetAction
   {
     Q_OBJECT
 
@@ -109,22 +134,67 @@ namespace{
       , callback(callback_b)
       , callback3(callback3_b)
     {
-      QWidget *widget = new QWidget;
-      QHBoxLayout *layout = new QHBoxLayout;
-      layout->setSpacing(0);
-      layout->setContentsMargins(0,0,0,0);
-
-      layout->addItem(new QSpacerItem(gui_textWidth("F"), 10, QSizePolicy::Fixed, QSizePolicy::MinimumExpanding));
-      
-      QCheckBox *checkBox = new QCheckBox(text, qmenu);
-      checkBox->setChecked(is_on);
-
-      layout->addWidget(checkBox);
-            
-      widget->setLayout(layout);
+      auto *widget = new CheckboxMenuWidget(text, qmenu);
       setDefaultWidget(widget);
 
-      connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));      
+      connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
+      connect(this, SIGNAL(hovered()), this, SLOT(hovered()));
+    }
+
+  public slots:
+    void toggled(bool checked){
+    //void clicked(bool checked){
+      printf("CLICKED %d\n",checked);
+      
+      if (callback!=NULL)
+        S7CALL(void_int_bool,callback, num, checked);
+      
+      if (callback3)
+        callback3(num, checked);
+
+      if (!is_async)
+        MyQMenu_g_num = num; // workaround
+
+      //if (is_async)
+        qmenu->close();
+      //delete parent;
+    }
+
+    void hovered(){
+      printf("Hovered\n");
+    }
+  };
+  */
+  
+  class CheckableAction : public QAction
+  {
+    Q_OBJECT
+
+    QString text;
+    MyQMenu *qmenu;
+    int num;
+    bool is_async;
+    func_t *callback;
+    std::function<void(int,bool)> callback3;
+
+  public:
+
+    ~CheckableAction(){
+      //printf("I was deleted: %s\n",text.toUtf8().constData());
+    }
+    
+    CheckableAction(const QString & text_b, bool is_on, MyQMenu *qmenu_b, int num_b, bool is_async, func_t *callback_b, std::function<void(int,bool)> callback3_b)
+      : QAction(text_b, qmenu_b)
+      , text(text_b)
+      , qmenu(qmenu_b)
+      , num(num_b)
+      , is_async(is_async)
+      , callback(callback_b)
+      , callback3(callback3_b)
+    {
+      setCheckable(true);
+      setChecked(is_on);
+      connect(this, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
     }
 
   public slots:
@@ -245,10 +315,15 @@ static QMenu *create_qmenu(
       
       if (text.startsWith("[check ")){
         
-        if (text.startsWith("[check on]"))
-          action = new CheckableAction(text.right(text.size() - 10), true, menu, i, is_async, callback2, callback3);
-        else
-          action = new CheckableAction(text.right(text.size() - 11), false, menu, i, is_async, callback2, callback3);
+        bool is_on = text.startsWith("[check on]");
+        
+        int right_subtract = 10;
+        if (!is_on)
+          right_subtract = 11;
+
+        QString text2 = text.right(text.size() - right_subtract);
+                                   
+        action = new CheckableAction(text2, is_on, menu, i, is_async, callback2, callback3);
         
       } else if (text.startsWith("[submenu start]")){
         
