@@ -81,6 +81,97 @@ namespace{
         _has_keyboard_focus = false;
       }
     }
+
+    void keyPressEvent(QKeyEvent *event) override{
+      //printf("KEY press event. Num actions: %d\n", actions().size());
+      
+      bool custom_treat
+        = ((event->modifiers() & Qt::ShiftModifier) && (event->key()==Qt::Key_Up || event->key()==Qt::Key_Down))
+        || (event->key()==Qt::Key_PageUp || event->key()==Qt::Key_PageDown)
+        || (event->key()==Qt::Key_Home || event->key()==Qt::Key_End);
+      
+      if (custom_treat && actions().size() > 0) {
+
+        bool is_down = event->key()==Qt::Key_Down || event->key()==Qt::Key_PageDown;
+        int inc = is_down ? 1 : -1;
+        
+        auto *curr_action = activeAction();
+        QAction *new_action = NULL;
+
+        if (event->key()==Qt::Key_Home) {
+          
+          new_action = actions().first();
+          
+        } else if (event->key()==Qt::Key_End) {
+          
+          new_action = actions().last();
+          
+        } else if (is_down && curr_action==actions().last()) {
+
+          new_action = actions().first();
+
+        } else if (!is_down && curr_action==actions().first()) {
+
+          new_action = actions().last();
+            
+        } else {
+            
+          int pos = 0;
+            
+          if (curr_action!=NULL) {
+              
+            for(auto *action : actions()){
+              //printf("%d: %p (%p)\n", pos, action, curr_action);
+                
+              if (curr_action==action)
+                break;
+                
+              pos++;
+            }
+          }
+
+          int new_pos = pos + inc*10;
+          //printf("new_pos: %d. size: %d\n", new_pos, actions().size());
+
+          int safety = 0;
+          do{
+            
+            if (new_pos >= actions().size())
+              new_action = actions().last();
+              
+            else if (new_pos < 0)
+              new_action = actions().first();
+            
+            else
+              new_action = actions().at(new_pos);
+
+            //printf("new_pos: %d. is_enabled: %d (%p). Curr enabled: %d\n", new_pos, new_action!=NULL && new_action->isEnabled(), new_action, curr_action->isEnabled());
+            
+            new_pos += inc;
+            
+            if (new_pos > actions().size())
+              new_pos = 0;
+            if (new_pos < 0)
+              new_pos = actions().size();
+            
+            safety++;
+            if (safety > 1000)
+              break;
+            
+          }while(new_action==NULL || new_action->isVisible()==false || new_action->isSeparator()==true || new_action->isEnabled()==false);
+          
+        }
+
+        if (new_action!=NULL)
+          setActiveAction(new_action);
+        
+        event->accept();
+
+        return;
+      }
+      
+      QMenu::keyPressEvent(event);
+    }
   };
 
   
@@ -359,6 +450,9 @@ static QMenu *create_qmenu(
       n_submenues++;
     }
   }
+
+  if (menu->actions().size() > 0)
+    menu->setActiveAction(menu->actions().at(0));
   
   return menu;
 }
