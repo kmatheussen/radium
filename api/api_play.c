@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/time_proc.h"
+#include "../common/seqtrack_proc.h"
 #include "../audio/Mixer_proc.h"
 
 #include "api_common_proc.h"
@@ -67,6 +68,21 @@ void playRangeFromCurrent(int windownum){
   if(window==NULL) return;
 
   PlayRangeCurrPos(window);
+}
+
+void setSongPos(int64_t pos){
+  if (is_playing_song())
+    PlaySong(pos);
+  else{
+    ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
+    SEQUENCER_update();
+    if (useJackTransport())
+      MIXER_TRANSPORT_set_pos(pos);
+  }
+}
+
+void playSongFromPos(int64_t pos){
+  PlaySong(pos);
 }
 
 void playStop(void){
