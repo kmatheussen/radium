@@ -3562,7 +3562,7 @@
 
 
 
-;; sequencer looping
+;; sequencer timeline
 ;;
 
 
@@ -3577,8 +3577,10 @@
          (<ra> :get-seqtimeline-area-x1) (<ra> :get-seqtimeline-area-x2)))
 
 
+(define gakkgakk-seqloop-handler-num-moves 0)
+(define gakkgakk-seqloop-handler-start-X #f)
 
-
+;; Set loop start and end and set cursor pos
 (define (create-seqloop-handler Type)
   (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                               (and (inside-box (<ra> :get-box seqtimeline-area) X Y)
@@ -3586,6 +3588,8 @@
                                                           (end-x (get-seqloop-end-x))
                                                           (mid (average start-x end-x)))
                                                      (set-grid-type #t)
+                                                     (set! gakkgakk-seqloop-handler-num-moves 0)
+                                                     (set! gakkgakk-seqloop-handler-start-X X)
                                                      (if (eq? Type 'start)
                                                          (and (< X mid)
                                                               (<ra> :get-seqlooping-start))
@@ -3602,10 +3606,22 @@
                           :Get-value (lambda (Value)
                                        Value)
                           :Release (lambda ()
-                                     (set-grid-type #f))
+                                     (set-grid-type #f)
+                                     (when (= 1 gakkgakk-seqloop-handler-num-moves)
+                                       (c-display "Released " gakkgakk-seqloop-handler-start-X)
+                                       (define time (scale gakkgakk-seqloop-handler-start-X
+                                                           (<ra> :get-seqtimeline-area-x1)
+                                                           (<ra> :get-seqtimeline-area-x2)
+                                                           (<ra> :get-sequencer-visible-start-time)
+                                                           (<ra> :get-sequencer-visible-end-time)))
+                                       (if (not (<ra> :control-pressed))
+                                           (set! time (<ra> :get-seq-gridded-time (floor time) 0 (<ra> :get-seq-loop-grid-type))))
+                                       (<ra> :play-song-from-pos (floor time))))
                           :Make-undo (lambda (_)
                                        50)
                           :Move (lambda (_ Value)
+                                  (c-display "Value: " Value)
+                                  (inc! gakkgakk-seqloop-handler-num-moves 1)
                                   (set! Value (floor Value))
                                   (if (not (<ra> :control-pressed))
                                       (set! Value (<ra> :get-seq-gridded-time Value 0 (<ra> :get-seq-loop-grid-type))))
@@ -3622,6 +3638,7 @@
 
 (create-seqloop-handler 'start)
 (create-seqloop-handler 'end)
+
 
 (define (set-statusbar-loop-info Type)
   (if (eq? Type 'start)
