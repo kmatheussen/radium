@@ -736,6 +736,7 @@
                                   :Use-Place #t
                                   :Mouse-pointer-func #f
                                   :Get-guinum (lambda () (<gui> :get-editor-gui))
+                                  :Forgiving-box #t
                                   )
   
   (define-struct node
@@ -748,7 +749,9 @@
          (let ((area-box (Get-area-box)))
            ;;(c-display X Y "area-box" (and area-box (box-to-string area-box)) (and area-box (inside-box-forgiving area-box X Y)) (box-to-string (<ra> :get-box reltempo-slider)))
            (and area-box
-                (inside-box-forgiving area-box X Y)))
+                (if Forgiving-box
+                    (inside-box-forgiving area-box X Y)
+                    (inside-box area-box X Y))))
          (Get-existing-node-info X
                                  Y
                                  (lambda (Node-info Value Node-y)
@@ -920,6 +923,7 @@
                                                              (Get-min-value (Info :handler-data)))))
                           :Mouse-pointer-func Mouse-pointer-func
                           :Get-guinum Get-guinum
+                          :Forgiving-box #f
                           ))
                                   
 
@@ -1278,12 +1282,10 @@
                                         (<ra> :get-box track-slider))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   ;;(c-display "hep" X Y (box-to-string (<ra> :get-box editor-scrollbar-scroller)) (inside-box (<ra> :get-box editor-scrollbar-scroller) X Y))
-                                                  (and (inside-box (<ra> :get-box track-slider) X Y)
-                                                       (begin
-                                                         (<ra> :set-track-slider-is-moving #t)
-                                                         (callback (<ra> :get-track-slider-pos)
-                                                                   (<ra> :get-track-slider-pos)
-                                                                   0))))
+                                                  (<ra> :set-track-slider-is-moving #t)
+                                                  (callback (<ra> :get-track-slider-pos)
+                                                            (<ra> :get-track-slider-pos)
+                                                            0))
                         :Get-min-value (lambda (_) 0)
                         :Get-max-value (lambda (_) 1)
                                         ;:Get-x (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-x1) (<ra> :get-editor-scrollbar-scroller-x2)))
@@ -1308,6 +1310,7 @@
                         :Use-Place #f
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
                         :Get-pixels-per-value-unit #f ;;(lambda (_)
+                        :Forgiving-box #f
                         ;;1)
                         )
 
@@ -1320,12 +1323,10 @@
                                         (<ra> :get-box editor-scrollbar))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   ;;(c-display "hep" X Y (box-to-string (<ra> :get-box editor-scrollbar-scroller)) (inside-box (<ra> :get-box editor-scrollbar-scroller) X Y))
-                                                  (and (inside-box (<ra> :get-box editor-scrollbar) X Y)
-                                                       (begin
-                                                         (<ra> :set-editor-scrollbar-is-moving #t)
-                                                         (callback (<ra> :get-curr-realline)
-                                                                   (<ra> :get-curr-realline)
-                                                                   0))))
+                                                  (<ra> :set-editor-scrollbar-is-moving #t)
+                                                  (callback (<ra> :get-curr-realline)
+                                                            (<ra> :get-curr-realline)
+                                                            0))
                         :Get-min-value (lambda (_) 0)
                         :Get-max-value (lambda (_) 1)
                         ;:Get-x (lambda (Num) (average (<ra> :get-editor-scrollbar-scroller-x1) (<ra> :get-editor-scrollbar-scroller-x2)))
@@ -1353,7 +1354,8 @@
                         :Use-Place #f
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
                         :Get-pixels-per-value-unit #f ;;(lambda (_)
-                                                     ;;1)
+                        ;;1)
+                        :Forgiving-box #f
                         )                        
 
 
@@ -1685,11 +1687,9 @@
          
 (add-node-mouse-handler :Get-area-box (lambda () (and (<ra> :reltempo-track-visible) (<ra> :get-box temponode-area)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (and (<ra> :reltempo-track-visible)
-                                                       (inside-box-forgiving (<ra> :get-box temponode-area) X Y)
-                                                       (match (list (find-node X Y get-temponode-box (<ra> :get-num-temponodes)))
-                                                              (existing-box Num Box) :> (callback Num (temponodeval->01 (<ra> :get-temponode-value Num)) (Box :y))
-                                                              _                      :> #f)))
+                                                  (match (list (find-node X Y get-temponode-box (<ra> :get-num-temponodes)))
+                                                         (existing-box Num Box) :> (callback Num (temponodeval->01 (<ra> :get-temponode-value Num)) (Box :y))
+                                                         _                      :> #f))
                         :Get-min-value (lambda (_) 0);(- (1- (<ra> :get-temponode-max))))
                         :Get-max-value (lambda (_) 1);(1- (<ra> :get-temponode-max)))
                         :Get-x (lambda (Num)
@@ -2091,9 +2091,6 @@
                                              (<ra> :get-box track-pianoroll *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (and *current-track-num*
-                                                       (<ra> :pianoroll-visible *current-track-num*)
-                                                       (<ra> :get-box track-pianoroll *current-track-num*)
-                                                       (inside-box (<ra> :get-box track-pianoroll *current-track-num*) X Y)
                                                        (let ((info (get-pianonote-info X Y *current-track-num*)))
                                                          ;;(and info
                                                          ;;     (c-display "        NUM " (info :pianonotenum) " type: " (info :move-type)))
@@ -2194,6 +2191,8 @@
                                                      (<ra> :get-pianoroll-low-key *current-track-num*)
                                                      (<ra> :get-pianoroll-high-key *current-track-num*)
                                                      (<ra> :get-half-of-node-width))
+
+                        :Forgiving-box #f
                         )
 
 
@@ -2598,13 +2597,12 @@
                                         (and *current-track-num*
                                              (<ra> :get-box track-fx *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (and *current-track-num*
-                                                       (let ((velocity-info (get-velocity-info X Y *current-track-num*)))
-                                                         ;;(c-display "vel-info:" velocity-info)
-                                                         (and velocity-info
-                                                              (callback velocity-info
-                                                                        (velocity-info :value)
-                                                                        (velocity-info :y))))))
+                                                  (let ((velocity-info (get-velocity-info X Y *current-track-num*)))
+                                                    ;;(c-display "vel-info:" velocity-info)
+                                                    (and velocity-info
+                                                         (callback velocity-info
+                                                                   (velocity-info :value)
+                                                                   (velocity-info :y)))))
                         :Get-min-value (lambda (_) 0.0)
                         :Get-max-value (lambda (_) 1.0)
                         :Get-x (lambda (info)
@@ -3026,10 +3024,9 @@
                                         (and *current-track-num*
                                              (<ra> :get-box track-fx *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (and *current-track-num*
-                                                       (let ((fxnode-info (get-fxnode-info X Y *current-track-num*)))
-                                                         (and fxnode-info
-                                                              (callback fxnode-info (fxnode-info :value) (fxnode-info :y))))))
+                                                  (let ((fxnode-info (get-fxnode-info X Y *current-track-num*)))
+                                                    (and fxnode-info
+                                                         (callback fxnode-info (fxnode-info :value) (fxnode-info :y)))))
                         :Get-min-value (lambda (fxnode-info)
                                          (<ra> :get-fx-min-value (fxnode-info :fxnum)))
                         :Get-max-value (lambda (fxnode-info)
@@ -3420,17 +3417,15 @@
                                         (and (<ra> :seqtempo-visible)
                                              (<ra> :get-box seqtempo-area)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (and (<ra> :seqtempo-visible)
-                                                       (inside-box-forgiving (<ra> :get-box seqtempo-area) X Y)
-                                                       (match (list (find-node-horizontal X Y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
-                                                              (existing-box Num Box) :> (begin
-                                                                                          ;;(c-display "EXISTING " Num)
-                                                                                          (define Time (scale X
-                                                                                                              (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2)
-                                                                                                              (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
-                                                                                          (set-grid-type #t)
-                                                                                          (callback Num Time Y))
-                                                              _                      :> #f)))
+                                                  (match (list (find-node-horizontal X Y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
+                                                         (existing-box Num Box) :> (begin
+                                                                                     ;;(c-display "EXISTING " Num)
+                                                                                     (define Time (scale X
+                                                                                                         (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2)
+                                                                                                         (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                                                                                     (set-grid-type #t)
+                                                                                     (callback Num Time Y))
+                                                         _                      :> #f))
                         :Get-min-value (lambda (_)
                                          (<ra> :get-sequencer-visible-start-time))
                         :Get-max-value (lambda (_)
@@ -3608,7 +3603,7 @@
                           :Release (lambda ()
                                      (set-grid-type #f)
                                      (when (= 1 gakkgakk-seqloop-handler-num-moves)
-                                       (c-display "Released " gakkgakk-seqloop-handler-start-X)
+                                       ;;(c-display "Released " gakkgakk-seqloop-handler-start-X)
                                        (define time (scale gakkgakk-seqloop-handler-start-X
                                                            (<ra> :get-seqtimeline-area-x1)
                                                            (<ra> :get-seqtimeline-area-x2)
@@ -3620,7 +3615,7 @@
                           :Make-undo (lambda (_)
                                        50)
                           :Move (lambda (_ Value)
-                                  (c-display "Value: " Value)
+                                  ;;(c-display "Value: " Value)
                                   (inc! gakkgakk-seqloop-handler-num-moves 1)
                                   (set! Value (floor Value))
                                   (if (not (<ra> :control-pressed))
@@ -3848,10 +3843,12 @@
                                                (let ((box (if is-left
                                                               (<ra> :get-box seqblock-left-fade (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
                                                               (<ra> :get-box seqblock-right-fade (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum)))))
-                                                 ;;(c-display "BOX:" (box-to-string box))
+                                                 ;;(c-display "Gakk-BOX:" (box-to-string box))
                                                  ;;(<ra> :set-curr-seqblock seqblocknum seqtracknum)
                                                  box)))
                           :Get-existing-node-info (lambda (X Y callback)
+                                                    ;;(c-display "Y:" Y)
+                                                    
                                                     (define seqblock-info *current-seqblock-info*)
                                                     (define seqtracknum (seqblock-info :seqtracknum))
                                                     (define seqblocknum (seqblock-info :seqblocknum))
@@ -3913,6 +3910,7 @@
                           :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
                           
                           :Get-guinum (lambda() (<gui> :get-sequencer-gui))
+                          :Forgiving-box #f
                           ))
 
 (create-fade-handler #f)
@@ -4059,6 +4057,7 @@
 ;; left handle
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (and *current-seqblock-info*
+                                             (not *current-seqautomation/distance*)
                                              (let ((seqblocknum (*current-seqblock-info* :seqblocknum))
                                                    (seqtracknum (*current-seqblock-info* :seqtracknum)))
                                                (and (not (<ra> :seqblock-holds-block seqblocknum seqtracknum))
@@ -4152,6 +4151,8 @@
                         :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
                         
                         :Get-guinum (lambda() (<gui> :get-sequencer-gui))
+
+                        :Forgiving-box #f
                         )
 
 #!!
@@ -4164,6 +4165,7 @@
 ;; right handle
 (add-node-mouse-handler :Get-area-box (lambda()
                                         (and *current-seqblock-info*
+                                             (not *current-seqautomation/distance*)
                                              (let ((seqblocknum (*current-seqblock-info* :seqblocknum))
                                                    (seqtracknum (*current-seqblock-info* :seqtracknum)))
                                                (and (not (<ra> :seqblock-holds-block seqblocknum seqtracknum))
@@ -4260,6 +4262,8 @@
                         :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
                         
                         :Get-guinum (lambda() (<gui> :get-sequencer-gui))
+
+                        :Forgiving-box #f
                         )
 
 
@@ -4382,6 +4386,8 @@
                         :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
                         
                         :Get-guinum (lambda() (<gui> :get-sequencer-gui))
+
+                        :Forgiving-box #f
                         )
 
 
@@ -4452,6 +4458,8 @@
                         :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
                         
                         :Get-guinum (lambda() (<gui> :get-sequencer-gui))
+
+                        :Forgiving-box #f
                         )
 
 
@@ -4682,6 +4690,8 @@
                         
                         :Get-pixels-per-value-unit (lambda (seqblock-info)
                                                      (get-sequencer-pixels-per-value-unit))
+
+                        :Forgiving-box #f
                         )
 
 
@@ -4817,6 +4827,7 @@
                                                         (- (<ra> :get-sequencer-visible-end-time)
                                                            (<ra> :get-sequencer-visible-start-time))))
 
+                        :Forgiving-box #f
                         )
 
 ;; selection rectangle
@@ -5206,6 +5217,7 @@
                                          (<ra> :get-sequencer-visible-start-time))
                         :Get-max-value (lambda (_)
                                          (<ra> :get-sequencer-visible-end-time))
+                        
                         :Get-x (lambda (Num)
                                  (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
                                        (seqtracknum (*current-seqautomation/distance* :seqtrack)))
