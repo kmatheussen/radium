@@ -183,7 +183,8 @@ private:
 
 public:
 
-  bool RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL){
+  // Note: Value is not set if rt->num_nodes==0, even if always_set_value==true.  
+  bool RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL, bool always_set_value = false){
 
     R_ASSERT_NON_RELEASE(last_search_pos > 0);
 
@@ -192,20 +193,38 @@ public:
     const struct RT *rt = (const struct RT*)rt_pointer.get_pointer();
 
     if (rt!=NULL) {
-
-      if (rt->num_nodes<=1)
-        return false;
       
-      if (time < rt->nodes[0].time)
+      if (rt->num_nodes==0)
         return false;
+                
+      if (rt->num_nodes==1){
+        
+        if (always_set_value)
+          value = rt->nodes[0].value;
+        
+        return false;
+      }
+      
+      if (time < rt->nodes[0].time){
+        
+        if (always_set_value)
+          value = rt->nodes[0].value;
+        
+        return false;
+      }
       
       if (time == rt->nodes[0].time){
         value = rt->nodes[0].value;
         return true;
       }
 
-      if (time > rt->nodes[rt->num_nodes-1].time)
+      if (time > rt->nodes[rt->num_nodes-1].time){
+
+        if (always_set_value)
+          value = rt->nodes[rt->num_nodes-1].value;
+
         return false;
+      }
       
       const T *node1;
       const T *node2;

@@ -241,10 +241,9 @@ int SEQBLOCK_ENVELOPE_add_node(struct SeqblockEnvelope *seqblockenvelope, double
 
   double time =
     R_BOUNDARIES(0,
-                 (seqtime - get_seqblock_noninterior_start(seqblock)),
-                 SEQBLOCK_get_seq_duration(seqblock)
-                 )
-    / seqblock->t.stretch;
+                 (seqtime - get_seqblock_noninterior_start(seqblock)) / seqblock->t.stretch,
+                 seqblock->t.default_duration
+                 );
 
   int ret = automation.automation.add_node(create_node(time, db, logtype));
   
@@ -354,14 +353,14 @@ void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock,
   const AutomationNode *next = nodenum==size-1 ? NULL : &automation.automation.at(nodenum+1);
 
   double mintime = prev==NULL ? 0 : prev->time; //next==NULL ? R_MAX(R_MAX(node.time, seqtime), SONG_get_length()) : prev->time;
-  double maxtime = next==NULL ? SEQBLOCK_get_seq_duration(seqblock) / seqblock->t.stretch : next->time;
+  double maxtime = next==NULL ? seqblock->t.default_duration : next->time;
 
-  //printf("       mintime: %f, seqtime: %f, maxtime: %f\n",mintime,seqtime,maxtime);
+  //printf("     nodenum: %d.  mintime: %f, seqtime: %f, maxtime: %f. next: %p\n",nodenum,mintime,(seqtime - get_seqblock_noninterior_start(seqblock)),maxtime,NULL);
   double time = R_BOUNDARIES(mintime,
                              (seqtime - get_seqblock_noninterior_start(seqblock)) / seqblock->t.stretch,
                              maxtime
                              );
-
+  
   db = R_BOUNDARIES(MIN_DB, db, MAX_DB);
 
   node.time = time;
@@ -447,10 +446,10 @@ static void RT_handle_seqblock_volume_automation(linked_note_t *linked_notes, st
 
       } else {
 
-        double seqblock_automation_volume =  seqblock->envelope_volume;
-        
-        if (seqblock_automation_volume >= 0.0){
+        if (seqblock->envelope_volume_changed_this_block){
 
+          double seqblock_automation_volume = seqblock->envelope_volume;
+          
           RT_PATCH_change_velocity(linked_note->seqtrack,
                                    patch,
                                    create_note_t(seqblock,
@@ -538,7 +537,7 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
 
       double new_db = 0.0;
       if (seqblock->envelope_enabled)
-        seqblockenvelope->_automation.automation.RT_get_value(pos, new_db);
+        seqblockenvelope->_automation.automation.RT_get_value(pos, new_db, NULL, true);
 
 #if DO_DEBUG
       seqblockenvelope->_automation.automation.print();
@@ -586,8 +585,11 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
         }
       }
 
-      if (new_db != seqblock->envelope_db){        
+      if (fabs(new_db-seqblock->envelope_db) > 0.0001){
 
+        //printf("new db: %f. Old: %f (old gain: %f)\n", new_db, seqblock->envelope_db, seqblock->envelope_volume);
+
+        seqblock->envelope_volume_changed_this_block = true;
         seqblock->envelope_db = new_db;
 
         if (new_db==0.0)
@@ -596,7 +598,11 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
           seqblock->envelope_volume = db2gain(new_db); // Note: Need volume smoothing in Seqtrack_plugin.o.
 
       } else {
-        seqblock->envelope_volume = -1;
+
+        seqblock->envelope_volume_changed_this_block = false;
+
+        //printf("new db: xxx\n");
+        
       }
       
     }
@@ -632,6 +638,7 @@ void RT_SEQBLOCK_ENVELOPE_called_after_scheduler_and_before_audio(void){
 
 // Called from player.c
 void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void){
+#if 0
   ALL_SEQTRACKS_FOR_EACH(){
 
     //fprintf(stderr, "seqiterator: %d, num_seqtracks: %d\n", seqiterator666, root->song->seqtracks.num_elements);
@@ -644,6 +651,7 @@ void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void){
     }END_VECTOR_FOR_EACH;
 
   }END_ALL_SEQTRACKS_FOR_EACH;
+#endif
 }
 
 
@@ -678,8 +686,18 @@ float SEQBLOCK_ENVELOPE_get_node_x(struct SeqblockEnvelope *seqblockenvelope, in
   double start_time = SEQUENCER_get_visible_start_time();
   double end_time = SEQUENCER_get_visible_end_time();
 
-  float x1 = SEQBLOCK_get_x1(seqblockenvelope->_seqtrack, seqblockenvelope->_seqblock);
-  float x2 = SEQBLOCK_get_x2(seqblockenvelope->_seqtrack, seqblockenvelope->_seqblock);
+  double noninterior_start = get_seqblock_noninterior_start2(&seqblockenvelope->_seqblock->gfx);
+  double noninterior_end = get_seqblock_noninterior_end2(seqblockenvelope->_seqtrack, seqblockenvelope->_seqblock, true);
+
+  double t_x1 = SEQUENCER_get_x1();
+  double t_x2 = SEQUENCER_get_x2();
+  
+  float x1 = scale_double(noninterior_start,
+                          start_time, end_time,
+                          t_x1, t_x2);
+  float x2 = scale_double(noninterior_end,
+                          start_time, end_time,
+                          t_x1, t_x2);
   
   const AutomationNode &node = automation.automation.at(nodenum);
 

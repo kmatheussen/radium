@@ -40,8 +40,7 @@ static void RT_scheduled_hold_velocity_do(struct SeqTrack *seqtrack,
     printf("  Sending HOLD velocity %x at %d\n",val,(int)time);
 #endif
     
-    if (seqblock->envelope_volume >= 0)
-      val *= seqblock->envelope_volume;
+    val *= seqblock->envelope_volume;
   
     note->has_sent_seqblock_volume_automation_this_block = true;
 
@@ -108,8 +107,7 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
     
   int val = time1==time2 ? val2 : scale(time, time1, time2, val1, val2); // We get divide by zero in scale() if time1==time2
     
-  if (seqblock->envelope_volume >= 0)
-    val *= seqblock->envelope_volume;
+  val *= seqblock->envelope_volume;
   
   note->has_sent_seqblock_volume_automation_this_block = true;
 

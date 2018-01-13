@@ -382,7 +382,7 @@ public:
         
         MyQSlider *slider = c->value_slider;
         if (slider != NULL){
-          SLIDERPAINTER_call_regularly(slider->_painter);
+          SLIDERPAINTER_call_regularly(slider->_painter, -1);
         }
       }
     }

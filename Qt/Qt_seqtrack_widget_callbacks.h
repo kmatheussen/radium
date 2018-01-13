@@ -731,142 +731,172 @@ public:
     return half_alpha(c, is_gfx);
   }
 
+  void drawWaveform(QPainter &p, const SoundPlugin *plugin, const radium::DiskPeaks *disk_peaks, const struct SeqBlock *seqblock, bool is_gfx, const QColor &color, int64_t time1, int64_t time2, double x1, double x2, double w_y1, double w_y2){
+
+    if (x1 >= t_x2)
+      return;
+
+    if (x2 < t_x1)
+      return;
+    
+    if (x1 < t_x1) { // if seqblock starts before visible area
+      time1 = R_SCALE(t_x1,
+                      x1, x2,
+                      time1, time2);
+      x1 = t_x1;
+    }
+          
+    if (x2 > t_x2){ // if seqblock ends after visible area
+      time2 = R_SCALE(t_x2,
+                      x1, x2,
+                      time1, time2);
+      x2 = t_x2;
+    }
+
+    R_ASSERT_NON_RELEASE(time2 >= time1);
+        
+    if (time2 <= time1)
+      return;
+
+    const double pixels_per_peak = 1.3;
+    double width = x2-x1;
+
+    int num_ch = SEQTRACKPLUGIN_get_num_channels(plugin, seqblock->sample_id);
+
+    int num_points = R_MAX(4, width / pixels_per_peak);
+    if ((num_points % 2) != 0)
+      num_points++;
+
+    for(int ch=0;ch<num_ch;ch++){
+
+      double y1 = scale_double(ch, 0, num_ch, w_y1, w_y2);
+      double y2 = scale_double(ch+1, 0, num_ch, w_y1, w_y2);
+
+      QPointF points[num_points*2];
+
+      int64_t last_used_end_time = time1;
+
+      const float m = 0.3f; // half minimum waveform height (to avoid silence not showing)
+          
+      bool has_data = true;
+      double min_y = 0.0;
+      double max_y = 0.0;
+
+      for(int i=1;i<=num_points;i++){
+
+        if (has_data){
+              
+          int64_t start_time = last_used_end_time;
+          int64_t end_time = R_BOUNDARIES(start_time,
+                                          scale_int64(i,
+                                                      0, num_points,
+                                                      time1, time2),
+                                          time2);
+              
+          R_ASSERT_NON_RELEASE(end_time >= start_time);
+
+          if (end_time > start_time) {
+                
+            const radium::Peak peak = disk_peaks->_peaks[ch]->get(start_time, end_time);
+
+            double min,max;
+                
+            if (peak.has_data()==true) {
+              min = peak.get_min();
+              max = peak.get_max();
+            } else {
+              min = 0.0f;
+              max = 0.0f;
+              has_data = false; // I.e. waveform is not finished loading. (SEQUENCER_update() is called often while loading, and when finished loading).
+            }
+
+            min_y = scale_double(min, -1, 1, y1+m, y2   ) - m;
+            max_y = scale_double(max, -1, 1, y1,   y2-m ) + m;
+
+            last_used_end_time = end_time;
+          }
+              
+        }
+
+        double x = scale_double(i,
+                                1,num_points,
+                                x1, x2);
+            
+        points[i-1].setX(x);
+        points[i-1].setY(min_y);
+
+        points[num_points*2-i].setX(x);
+        points[num_points*2-i].setY(max_y);
+      }
+
+      myFilledPolygon(p, points, num_points*2, color);
+    }
+  }
+  
   void paintSampleGraphics(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
     const int header_height = get_block_header_height();
 
     QColor waveform_color = get_block_qcolor(WAVEFORM_COLOR_NUM, is_gfx);
     QColor background_color = is_gfx ? get_block_qcolor(SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, true) : half_alpha(QColor(0xddddff), is_gfx);
     
-    SoundPlugin *plugin = (SoundPlugin*) _seqtrack->patch->patchdata;
+    const SoundPlugin *plugin = (SoundPlugin*) _seqtrack->patch->patchdata;
     //    R_ASSERT(plugin!=NULL); // Commented out. Plugin can be NULL during loading.
 
     if (plugin != NULL){
 
       myFillRect(p, rect, background_color);
+
+      // Solution: Paint 3 waveforms:
+      // 1. Interior start (in a lot more transparent color)
+      // 2. The thing
+      // 3. Interior end (in a lot more transparent color)
       
       const radium::DiskPeaks *disk_peaks = SEQTRACKPLUGIN_get_peaks(plugin, seqblock->sample_id);
       if (disk_peaks != NULL){
-        int num_ch = SEQTRACKPLUGIN_get_num_channels(plugin, seqblock->sample_id);
         
-        double x1;
-        double x2;
-        int64_t time1;
-        int64_t time2;
+        const double x1 = rect.x();
+        const double x2 = rect.x() + rect.width();
+        const int64_t time1 = seqblock->gfx.interior_start;
+        const int64_t time2 = seqblock->gfx.interior_end;
+
+        const double y1 = rect.y() + header_height;
+        const double y2 = rect.y() + rect.height();
 
         if (seqblock==g_curr_seqblock){
-          
-          time1 = 0;
-          time2 = seqblock->gfx.default_duration;
-          
-          double noninterior_start = get_seqblock_noninterior_start2(&seqblock->gfx);
-          double noninterior_end = get_seqblock_noninterior_end2(_seqtrack, seqblock, true);
-          
-          x1 = scale(noninterior_start,
-                     _start_time, _end_time,
-                     t_x1, t_x2);
-          x2 = scale(noninterior_end,
-                     _start_time, _end_time,
-                     t_x1, t_x2);
 
-        } else {
+          QColor interior_waveform_color = waveform_color;
+          interior_waveform_color.setAlpha(70);
           
-          x1 = rect.x();
-          x2 = rect.x() + rect.width();
-          time1 = seqblock->gfx.interior_start;
-          time2 = seqblock->gfx.interior_end;
+          const double interior_start_length = seqblock->gfx.interior_start * seqblock->gfx.stretch;
+          const double noninterior_start = seqblock->start_time*pc->pfreq - interior_start_length;
+
+          const double interior_end_length = (seqblock->gfx.default_duration - seqblock->gfx.interior_end) * seqblock->gfx.stretch;
+          const double noninterior_end = seqblock->end_time*pc->pfreq + interior_end_length;
+
+          const double i1_x1 = scale_double(noninterior_start,
+                                            _start_time, _end_time,
+                                            t_x1, t_x2);
           
-        }
-        
-        if (x1 < t_x1) { // if seqblock starts before visible area
-          time1 = R_SCALE(t_x1,
-                          x1, x2,
-                          time1, time2);
-          x1 = t_x1;
-        }
+          drawWaveform(p, plugin, disk_peaks, seqblock, is_gfx, interior_waveform_color,
+                       0, time1,
+                       i1_x1, rect.x(),
+                       y1, y2);
           
-        if (x2 > t_x2){ // if seqblock ends after visible area
-          time2 = R_SCALE(t_x2,
-                          x1, x2, //rect.x(), rect.x()+rect.width(),
-                          time1, time2);
-          x2 = t_x2;
+          const double i2_x2 = scale_double(noninterior_end,
+                                            _start_time, _end_time,
+                                            t_x1, t_x2);
+
+          drawWaveform(p, plugin, disk_peaks, seqblock, is_gfx, interior_waveform_color,
+                       time2, seqblock->gfx.default_duration,
+                       x2, i2_x2,
+                       y1, y2);
         }
 
-        R_ASSERT_NON_RELEASE(time2 >= time1);
-        
-        if (time2 <= time1)
-          return;
-
-        const double pixels_per_peak = 1.3;
-        double width = x2-x1;
-
-        int num_points = R_MAX(4, width / pixels_per_peak);
-        if ((num_points % 2) != 0)
-          num_points++;
-        
-        for(int ch=0;ch<num_ch;ch++){
-
-          double y1 = rect.y() + header_height + scale_double(ch, 0, num_ch, 0, rect.height()-header_height);
-          double y2 = rect.y() + header_height + scale_double(ch+1, 0, num_ch, 0, rect.height()-header_height);
-        
-          QPointF points[num_points*2];
-
-          int64_t last_used_end_time = time1;
-
-          const float m = 0.3f; // half minimum waveform height (to avoid silence not showing)
-          
-          bool has_data = true;
-          double min_y = 0.0;
-          double max_y = 0.0;
-
-          for(int i=1;i<=num_points;i++){
-
-            if (has_data){
-              
-              int64_t start_time = last_used_end_time;
-              int64_t end_time = R_BOUNDARIES(start_time,
-                                              scale_int64(i,
-                                                          0, num_points,
-                                                          time1, time2),
-                                              time2);
-              
-              R_ASSERT_NON_RELEASE(end_time >= start_time);
-
-              if (end_time > start_time) {
-                
-                const radium::Peak peak = disk_peaks->_peaks[ch]->get(start_time, end_time);
-
-                double min,max;
-                
-                if (peak.has_data()==true) {
-                  min = peak.get_min();
-                  max = peak.get_max();
-                } else {
-                  min = 0.0f;
-                  max = 0.0f;
-                  has_data = false; // I.e. waveform is not finished loading. (SEQUENCER_update() is called often while loading, and when finished loading).
-                }
-
-                min_y = scale_double(min, -1, 1, y1+m, y2   ) - m;
-                max_y = scale_double(max, -1, 1, y1,   y2-m ) + m;
-
-                last_used_end_time = end_time;
-              }
-              
-            }
-
-            double x = scale_double(i,
-                                    1,num_points,
-                                    x1, x2);
-            
-            points[i-1].setX(x);
-            points[i-1].setY(min_y);
-
-            points[num_points*2-i].setX(x);
-            points[num_points*2-i].setY(max_y);
-          }
-
-          myFilledPolygon(p, points, num_points*2, waveform_color);
-        }
+        drawWaveform(p, plugin, disk_peaks, seqblock, is_gfx, waveform_color,
+                     time1, time2,
+                     x1, x2,
+                     y1, y2);
+     
       }
     }
   }
@@ -999,6 +1029,16 @@ public:
 
       qreal x1,y1,x2,y2;
       rect.getCoords(&x1, &y1, &x2, &y2);
+
+      double noninterior_start = get_seqblock_noninterior_start2(&seqblock->gfx);
+      double noninterior_end = get_seqblock_noninterior_end2(_seqtrack, seqblock, true);
+
+      x1 = scale_double(noninterior_start,
+                        _start_time, _end_time,
+                        t_x1, t_x2);
+      x2 = scale_double(noninterior_end,
+                        _start_time, _end_time,
+                        t_x1, t_x2);
       
       SEQBLOCK_ENVELOPE_paint(painter, seqblock, x1, y1, x2, y2, seqblock==g_curr_seqblock);
     }
