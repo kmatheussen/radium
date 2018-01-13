@@ -1243,7 +1243,7 @@ int createGfxGfxSeqblock(dyn_t state){
     return -1;
   }
 
-  int seqtracknum = HASH_get_int(hash, ":seqtracknum");
+  int seqtracknum = HASH_get_int32(hash, ":seqtracknum");
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
@@ -1264,7 +1264,7 @@ int createSeqblockFromState(dyn_t state){
     return -1;
   }
 
-  int seqtracknum = HASH_get_int(hash, ":seqtracknum");
+  int seqtracknum = HASH_get_int32(hash, ":seqtracknum");
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;

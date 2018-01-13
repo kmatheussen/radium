@@ -618,6 +618,7 @@ struct Sample{
   void RT_process(int num_frames, float **outputs){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
+    //printf("RT_Process. _curr_reader: %p. Volume: %f. is1: %d. is2: %d\n", _curr_reader, _seqblock->envelope_volume, is_really_playing_song(), _is_playing);
     
     // Playing Fadeouters
     //
@@ -659,6 +660,7 @@ struct Sample{
     }
 
     
+    
     // Various
     //
     {
@@ -675,7 +677,6 @@ struct Sample{
         return;
     }
 
-    
     // Playing Current
     //
     if (_curr_reader != NULL){
@@ -731,7 +732,6 @@ struct Sample{
     
       if (inside) {
         
-        //printf("   Play. RT_called_per_block %d -> %d (%d). Seqblock start/end: %d / %d\n", (int)curr_start_time, (int)curr_end_time, int(curr_end_time-curr_start_time), (int)_seqblock->time, (int)_seqblock->time2);
         //printf(" PLAYING SAMPLE. Time: %f\n", (double)curr_start_time / (double)pc->pfreq);
         
         atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, (void*)_seqblock); // bang!
@@ -804,7 +804,7 @@ struct Data{
         PLAYER_lock();{
           _samples.remove(sample);
         }PLAYER_unlock();
-        
+        printf("    REMOVING Sample\n");        
         delete sample;
         set_num_visible_outputs(plugin);
 
@@ -1116,6 +1116,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   //if (is_really_playing_song()==false)
   //  return;
+
+  //printf("Num samples: %d\n", data->_samples.size());
   
   // Read samples
   for(Sample *sample : data->_samples)
@@ -1189,6 +1191,8 @@ void create_seqtrack_plugin(void){
   plugin_type->get_effect_value = get_effect_value;
   plugin_type->get_display_value_string = get_display_value_string;
 
+  plugin_type->will_never_autosuspend = true; // TODO: Touch plugin manually instead.
+  
   PR_add_plugin_type_no_menu(plugin_type);
   //PR_add_plugin_type(plugin_type);
 }
