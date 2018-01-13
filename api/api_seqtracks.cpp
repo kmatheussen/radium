@@ -639,7 +639,7 @@ void deleteSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
                           seqblock,
                           nodenum,
                           SEQBLOCK_ENVELOPE_get_seqtime(seqblock->envelope, nodenum),
-                          1.0,
+                          0.0,
                           SEQBLOCK_ENVELOPE_get_logtype(seqblock->envelope, nodenum)
                           );
     return;
