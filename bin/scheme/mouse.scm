@@ -5289,7 +5289,7 @@
                                                (<ra> :undo-sequencer-envelopes)
                                                (<ra> :set-seqblock-envelope-node
                                                      (<ra> :get-seqblock-envelope-time Num seqblocknum seqtracknum)
-                                                     1.0
+                                                     0.0
                                                      (<ra> :get-seqblock-envelope-logtype Num seqblocknum seqtracknum)
                                                      Num
                                                      seqblocknum
