@@ -5651,8 +5651,8 @@
                                               (list                                          
                                                 "Insert my soundfile" (lambda ()
                                                                         (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                                                          ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong.wav") pos))))
-                                                                          (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
+                                                                          (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong.wav") pos))))
+                                                                          ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
                                                                        ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
                                               )
                                           ;;
