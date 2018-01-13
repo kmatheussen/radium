@@ -131,7 +131,7 @@ struct MyQSlider : public QSlider {
         }
     }
 
-    SLIDERPAINTER_call_regularly(_painter);
+    SLIDERPAINTER_call_regularly(_painter, -1);
   }
   
   void hideEvent ( QHideEvent * event_ ) override {

@@ -946,15 +946,16 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
   float envelope_volume = 1.0;
 
   if (editor_note != NULL){
+    
     if (note.seqblock != NULL){
-      if (note.seqblock->envelope_volume >= 0)
-        envelope_volume = note.seqblock->envelope_volume;
+      envelope_volume = note.seqblock->envelope_volume;
     }else
       R_ASSERT(false);
+    
     editor_note->has_sent_seqblock_volume_automation_this_block = true;
   }
 
-  //printf("Envelope_volume: %f (%f)\n", envelope_volume, note.seqblock==NULL ? -1000 : note.seqblock->envelope_volume);
+  //printf("RT_PATCH_play_note. Envelope_volume: %f (%f)\n", envelope_volume, note.seqblock==NULL ? -1000 : note.seqblock->envelope_volume);
   
   if (!Patch_addPlayingNote(patch, note, editor_note, seqtrack))
     return note.id;

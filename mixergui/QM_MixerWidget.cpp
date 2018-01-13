@@ -1775,10 +1775,10 @@ namespace{
 
                 
                 if (chip->_input_slider != NULL)
-                  SLIDERPAINTER_call_regularly(chip->_input_slider);
+                  SLIDERPAINTER_call_regularly(chip->_input_slider, -1);
                 
                 if (chip->_output_slider != NULL)
-                  SLIDERPAINTER_call_regularly(chip->_output_slider);
+                  SLIDERPAINTER_call_regularly(chip->_output_slider, plugin->num_visible_outputs);
               }
             }
           }

@@ -116,7 +116,7 @@ static void set_seqblock_stretch(const struct SeqTrack *seqtrack, struct SeqBloc
   }
 }
 
-                          
+
 // 'seqblock_where_time_is' can be NULL, but it works faster if it is not null. (Not quite sure if that is the whole difference)
 int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_where_time_is, int64_t seqtime){
   int64_t last_seq_end_time = 0;
@@ -383,8 +383,8 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
     R_ASSERT(true==PLAYER_current_thread_has_lock());
   }
 
-  seqblock->envelope_volume = -1.0;
-  seqblock->envelope_db = MIN_DB - 1;
+  seqblock->envelope_volume = 1.0;
+  seqblock->envelope_db = 0.0;
 }
 
 static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct Blocks *block, const dyn_t envelope, int64_t time){
@@ -694,6 +694,7 @@ static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64
   int64_t lastdiff = mindiff;
   
   int64_t maybe = ret + interval_length;
+  
   while(maybe < maxtime){
     int64_t diff = R_ABS(maybe-seqtime);
     if (diff > lastdiff)

@@ -2487,6 +2487,7 @@ struct SeqBlock{
   float envelope_volume; // gain
   float envelope_db;     // db
   struct SeqblockEnvelope *envelope;
+  bool envelope_volume_changed_this_block;
   
   // 'start_time' and 'end_time' are absolute times.
   // They are only used the main thread.

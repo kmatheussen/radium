@@ -385,6 +385,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   SoundPlugin *plugin = (SoundPlugin*)V_calloc(1,sizeof(SoundPlugin));
   plugin->type = plugin_type;
 
+  plugin->num_visible_outputs = -1;
+  
   ATOMIC_SET(plugin->auto_suspend_behavior, DEFAULT_AUTOSUSPEND_BEHAVIOR);
   PLUGIN_touch(plugin);
     

@@ -40,13 +40,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Seqtrack_plugin_proc.h"
 
+// FIX!! Don't fade-in when playing sample from seqblock->t.interior_start
+
 
 #define NUM_INPUTS 8
 #define NUM_OUTPUTS 8
 
 #if 1
 #  define FADE_OUT_MS 100
-#  define FADE_IN_MS 2
+#  define FADE_IN_MS 4
 #else
 #  define FADE_OUT_MS 2
 #  define FADE_IN_MS 2
@@ -73,6 +75,8 @@ enum{
 };
 
 
+static void set_num_visible_outputs(SoundPlugin *plugin);
+  
 namespace{
 
 static int64_t g_id = 0;
@@ -192,7 +196,9 @@ private:
     _curr_fade_volume += _fadein_inc;           \
     if (_curr_fade_volume > 1.0)                \
       _curr_fade_volume = 1.0;
-    
+
+    //printf("Fade in %f\n", _curr_fade_volume);
+
     if (_num_ch == 1) {
 
       float *input0 = inputs[0];
@@ -302,10 +308,10 @@ public:
 
   void set_volume(float new_volume){
     if (new_volume >= 0){
-      if (new_volume==1.0){
-        printf("Volume set to %f\n", new_volume);
-      }
+      //printf("Seqtrackplugin volume set to %f\n", new_volume);
       _volume = new_volume;
+    }else{
+      R_ASSERT_NON_RELEASE(false);
     }
   }
 
@@ -476,7 +482,7 @@ struct Sample{
       
       printf("    ==== RT_stop_playing stopping player. Fading out: %d\n", do_fade_out);
 
-      if(do_fade_out){
+      if(do_fade_out && _is_playing){
         
         _curr_reader->prepare_for_fadeout();
         
@@ -485,7 +491,14 @@ struct Sample{
         
       } else {
 
-        _free_readers.push_back(_curr_reader);
+        int available_space = _free_readers.free_space();
+
+        RT_SAMPLEREADER_release_all_cached_data(_curr_reader->_reader);
+        
+        if (available_space > 0)
+          _free_readers.push_back(_curr_reader);
+        else
+          R_ASSERT(false);
         
       }
       
@@ -758,10 +771,13 @@ struct Data{
   }
 
   ~Data(){
+    
+    R_ASSERT(g_is_loading || _samples.size()==0);
+    
     for(auto *sample : _samples){
       ATOMIC_SET(sample->_state, Sample::State::RT_REQUEST_DELETION); // To avoid assertion hit.
       
-      R_ASSERT_NON_RELEASE(sample->_curr_reader==NULL);
+      //R_ASSERT_NON_RELEASE(sample->_curr_reader==NULL);
       sample->RT_stop_playing(false); // just in case _curr_reader!=NULL.
       
       delete sample;
@@ -781,14 +797,17 @@ struct Data{
     return more_to_play;
   }
 
-  void called_very_often(void){
+  void called_very_often(SoundPlugin *plugin){
   again:
     for(auto *sample : _samples){
       if (ATOMIC_GET(sample->_state)==Sample::State::READY_FOR_DELETION){
         PLAYER_lock();{
           _samples.remove(sample);
         }PLAYER_unlock();
+        
         delete sample;
+        set_num_visible_outputs(plugin);
+
         goto again;
       }
     }
@@ -816,6 +835,18 @@ struct Data{
     }
   }
 };
+}
+
+static void set_num_visible_outputs(SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+
+  //int old_visible_channels = plugin->num_visible_outputs;
+  
+  int new_visible_channels = 2; // Need at least two visible output channels in case user has changed stereo.
+  for(auto *sample : data->_samples)
+    new_visible_channels = R_MAX(new_visible_channels, sample->_num_ch);
+
+  plugin->num_visible_outputs = new_visible_channels;
 }
 
 static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqBlock *seqblock, bool is_gfx){
@@ -850,8 +881,11 @@ int64_t SEQTRACKPLUGIN_add_sample(SoundPlugin *plugin, const wchar_t *filename, 
   Data *data = (Data*)plugin->data;
   int64_t ret = add_sample(data, filename, seqblock, is_gfx);
 
-  printf("   ADD (is_gfx: %d). NUM samples: %d.  NUM gfx samples: %d\n", is_gfx, data->_samples.size(), data->_gfx_samples.size());
+  //printf("   ADD (is_gfx: %d). NUM samples: %d.  NUM gfx samples: %d\n", is_gfx, data->_samples.size(), data->_gfx_samples.size());
 
+  if (!is_gfx)
+    set_num_visible_outputs(plugin);
+    
   return ret;
 }
 
@@ -1069,7 +1103,7 @@ void SEQTRACKPLUGIN_prepare_to_play(SoundPlugin *plugin, const struct SeqTrack *
 void SEQTRACKPLUGIN_called_very_often(SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
 
-  data->called_very_often();
+  data->called_very_often(plugin);
 }
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){

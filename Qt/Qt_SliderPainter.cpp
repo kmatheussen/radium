@@ -100,20 +100,31 @@ public:
 
   int ch;
   int num_ch;
-
+  
   bool is_automation;
   bool single_line_style;
   
 };
 }
 
-static float DATA_get_y1(AutomationOrPeakData *data, int height){
+static float DATA_get_y1(AutomationOrPeakData *data, int height, int num_channels){
   R_ASSERT(data->num_ch>0);
-  return scale(data->ch,0,data->num_ch,1,height-1);
+  
+  if (num_channels==-1 || data->is_automation)
+    num_channels = data->num_ch;
+  else
+    num_channels = R_MIN(num_channels, data->num_ch);
+  
+  return scale(data->ch,0,num_channels,1,height-1);
 }
 
-static float DATA_get_y2(AutomationOrPeakData *data, int height){
-  return scale(data->ch+1,0,data->num_ch,1,height-1);
+static float DATA_get_y2(AutomationOrPeakData *data, int height, int num_channels){
+  if (num_channels==-1 || data->is_automation)
+    num_channels = data->num_ch;
+  else
+    num_channels = R_MIN(num_channels, data->num_ch);
+
+  return scale(data->ch+1,0,num_channels,1,height-1);
 }
 
 struct SliderPainter{
@@ -141,7 +152,8 @@ struct SliderPainter{
   QString _display_string;
 
   int _num_channels;
-
+  int _last_num_channels;
+  
   bool _auto_updater_has_started;
 
 
@@ -250,13 +262,20 @@ struct SliderPainter{
       delete _data.at(i);
   }
 
-  void call_regularly(void){
+  void call_regularly(int num_channels){
     for(int i=0;i<(int)_data.size();i++){
       AutomationOrPeakData *data = _data.at(i);
 
+      bool doit = data->is_automation
+        || num_channels == -1
+        || data->ch < num_channels;
+      
+      if (!doit)
+        continue;
+
       float value = data->get_automation_or_peak_value();
 
-      if (value != data->last_value) {
+      if (value != data->last_value || _last_num_channels!=num_channels) {
 
         float gain;
 
@@ -283,19 +302,18 @@ struct SliderPainter{
                                       0.0f,(float)width());
           
         
-        if(data->last_drawn_pos != data->requested_pos){
+        if(data->last_drawn_pos != data->requested_pos || _last_num_channels!=num_channels){
           
           //printf("Painting. Last drawn: %d. requested: %d\n",data->last_drawn_pos,data->requested_pos);
-          
-          
-          float y1 = DATA_get_y1(data,height());
+
+          float y1 = DATA_get_y1(data,height(),num_channels);
           y1 = floor(y1);
           
-          float y2 = DATA_get_y2(data,height());
+          float y2 = DATA_get_y2(data,height(),num_channels);
           y2 = ceil(y2);
           
           int height = R_MAX(1, y2-y1);
-        
+          
           //printf("y1: %d, y2: %d, height: %d. req: %d, last: %d\n",y1,y2,height,data->requested_pos,data->last_drawn_pos);
           if (data->single_line_style) {
             
@@ -307,7 +325,7 @@ struct SliderPainter{
                    6,height+1);
             
           } else {
-
+            
             float x1 = R_MIN(data->last_drawn_pos-1, data->requested_pos-1);
             float x2 = R_MAX(data->last_drawn_pos-1+6, data->requested_pos-1+6);
             update(x1,    y1,
@@ -322,6 +340,8 @@ struct SliderPainter{
       data->last_value = value;
 
     }
+
+    _last_num_channels = num_channels;      
   }
 
   AutomationOrPeakData *create_automation_data(float *value = NULL){
@@ -337,7 +357,7 @@ struct SliderPainter{
 
     data->ch     = 0;
     data->num_ch = 1;
-
+    
     data->is_automation = true;
     data->single_line_style = true;
     
@@ -408,15 +428,20 @@ struct SliderPainter{
   }
   
   void paint_automation_or_peaks(QPainter *p, bool single_line_style){
+    
     for(int i=0;i<(int)_data.size();i++){
       AutomationOrPeakData *data = _data.at(i);
 
-      if ( (data->single_line_style==single_line_style) && data->last_value >= -100.0f){
+      bool doit = data->is_automation
+        || _last_num_channels == -1
+        || data->ch < _last_num_channels;
+      
+      if (doit && (data->single_line_style==single_line_style) && data->last_value >= -100.0f){
         
         //printf("%s: sp: %p, i: %d, size: %d (%d/%d)\n",_display_string.toUtf8().constData(),this,(int)i,(int)_data.size(),sizeof(float),sizeof(float*));
         
-        float y1 = DATA_get_y1(data,height());
-        float y2 = DATA_get_y2(data,height());
+        float y1 = DATA_get_y1(data,height(), _last_num_channels);
+        float y2 = DATA_get_y2(data,height(), _last_num_channels);
         float height = y2-y1;
 
         if (data->single_line_style) {
@@ -527,8 +552,8 @@ void SLIDERPAINTER_set_automation_value_pointer(SliderPainter *painter, enum Col
   painter->set_automation_value_pointer(color_num, pointer);
 }
 
-void SLIDERPAINTER_call_regularly(SliderPainter *painter){
-  painter->call_regularly();
+void SLIDERPAINTER_call_regularly(SliderPainter *painter, int num_channels){
+  painter->call_regularly(num_channels);
 }
 
 // Used for chips where the slider controls input volume instead of output volume.

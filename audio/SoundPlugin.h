@@ -410,6 +410,8 @@ typedef struct SoundPlugin{
   // Data used by the plugin (the value returned by 'create_plugin_data')
   void *data;
 
+  int num_visible_outputs; // Used by the peak meters. Must never be higher than num_outputs. If the value is -1, it is ignored. Only used by the main thread.
+
   // Data below handled by Radium.
 
   //const char *name; // Used to autocreate instance name. Sometime the type_name is not specific enough. (plugin containers). Can be NULL.

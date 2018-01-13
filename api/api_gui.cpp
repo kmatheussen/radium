@@ -297,8 +297,10 @@ static bool g_delayed_resizing_timer_active = false;
 static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one, if present. We could have used QPointer<Gui> instead, but that would make it harder to check if gui is already scheduled for later resizing.
 
 struct VerticalAudioMeter;
+  
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
+  
   struct Callback : QObject {
     Q_OBJECT;
 
@@ -1965,9 +1967,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         peaks.peaks[ch] = -100;
     }
 
-    void get_x1_x2(int ch, float &x1, float &x2) const {
-      
-      int num_borders = _num_channels + 1;
+    void get_x1_x2(int ch, float &x1, float &x2, const int num_channels) const {
+
+      int num_borders = num_channels + 1;
       float border_width = 0;
 
       float meter_area_width = width() - 2;
@@ -1975,7 +1977,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       float total_meter_space = meter_area_width - num_borders * border_width;
 
-      float meter_width = total_meter_space / _num_channels;
+      float meter_width = total_meter_space / num_channels;
 
       x1 = start_x + border_width + (ch * (border_width+meter_width));
       x2 = start_x + border_width + (ch * (border_width+meter_width)) + meter_width;
@@ -1998,6 +2000,22 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     const float falloff_height = 1.5;
 
+    int get_num_visible_channels(void) const {
+      int num_channels = _num_channels;
+      
+      if (_is_output){
+        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+        if (plugin != NULL){
+          if (plugin->num_visible_outputs >= 0)
+            num_channels = R_MIN(num_channels, plugin->num_visible_outputs);
+        } else {
+          //R_ASSERT_NON_RELEASE(false); // Happens when loading song. (more accurately, right after, so can't assert g_is_loading_song)
+        }
+      }
+
+      return num_channels;
+    }
+    
     // NOTE. This function can be called from a custom exec().
     // This means that _patch->plugin might be gone, and the same goes for soundproducer.
     // (_patch is never gone, never deleted)
@@ -2012,8 +2030,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         return;
 
       const AudioMeterPeaks &peaks = get_audio_meter_peaks();
+
+      R_ASSERT_NON_RELEASE(plugin->num_visible_outputs <= _num_channels);
       
-      for(int ch=0 ; ch < R_MIN(peaks.num_channels, _num_channels) ; ch++){
+      int num_channels = R_MIN(peaks.num_channels, get_num_visible_channels());
+
+      for(int ch=0 ; ch < num_channels ; ch++){
         float prev_pos = _pos[ch];
         float prev_falloff_pos = _falloff_pos[ch];
 
@@ -2034,7 +2056,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         _pos[ch] = pos;
 
         float x1,x2;
-        get_x1_x2(ch, x1,x2);
+        get_x1_x2(ch, x1,x2, num_channels);
 
         if (pos < prev_pos){
           update(x1-1,      floorf(pos)-1,
@@ -2083,10 +2105,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       float pos4db = db2linear(4, get_pos_y1(), get_pos_y2());
 
       p.setPen(Qt::NoPen);
-        
-      for(int ch=0 ; ch < _num_channels ; ch++){
+
+      int num_channels = get_num_visible_channels();
+      
+      for(int ch=0 ; ch < num_channels ; ch++){
         float x1,x2;
-        get_x1_x2(ch, x1,x2);
+        get_x1_x2(ch, x1,x2, num_channels);
 
         float pos = _pos[ch];
 
