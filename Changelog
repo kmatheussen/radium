@@ -1,3 +1,31 @@
+Changes 5.4.6 -> 5.4.7:
+* Mouse handling: Fix various minor issues.
+* Sequencer: Reset envelope node values to 0.0 dB,
+  not 1.0 dB.
+* GUI: Enable same keybindings to navigate popup menus as
+  in the main menu.
+* GUI: Fix menu highlighting when mouse hovers over a
+  checkable entry.
+* Sequencer: Start playing from mouse position when clicking
+  in the timeline.
+* Sequencer: Various improvements to the audio file support.
+* Mixer strips: Add a space before "dB".
+* Mixer strips: Don't scale down font size when it doesn't
+  fit. (Make text easier to read)
+* Mixer strips: Minor tweaks.
+* GUI: Improve message window performance
+* Sequencer: Keep envelope and fades when pasting blocks.
+* Sequencer: Keep envelope and fades when moving blocks
+  between tracks.
+* Sequencer: Keep envelope and fades when moving more than
+  one seqblock.
+* Sequencer: Keep envelope and fades when swapping blocks.
+* Upgrade s7.
+* API: createSeqblockFromState, getSeqblockState,
+  gui_appendValue, setSongPos, playSongFromPos
+
+
+
 Changes 5.4.4 -> 5.4.6:
 * Windows: The included Jack (and qjackctl) now supports ASIO.
 * Windows: Include missing liblzma-5.dll file in 32 bit builds.
