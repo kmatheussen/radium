@@ -28,6 +28,10 @@ extern LANGSPEC bool OS_WINDOWS_is_key_window(void *maybewin);
 extern LANGSPEC void OS_WINDOWS_set_always_on_top(void *child_handle);
 //extern LANGSPEC void OS_WINDOWS_set_on_top_of_everything(void *child_handle);
 
+#ifdef __cplusplus
+void OS_GFX_close_embedded_native_window(void *daswidget);
+void *OS_GFX_create_embedded_native_window(void *child_handle, int x, int y, int width, int height, std::function<void(void*)> delete_child_handle_func);
+#endif
 
 extern LANGSPEC uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch);
   

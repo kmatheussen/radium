@@ -1436,6 +1436,149 @@ MyApplication::MyApplication(int &argc,char **argv)
   connect(this, SIGNAL(applicationStateChanged(Qt::ApplicationState)), this, SLOT(applicationStateChanged(Qt::ApplicationState)));
 }
 
+#if 0
+#include "Timer.hpp"
+
+namespace{
+  struct MyTime : public radium::Timer{
+    QWidget *widget;
+    QWindow *window;
+    MyTime(QWidget *widget, QWindow *window)
+      : Timer(100)
+      , widget(widget)
+      , window(window)
+    {
+    }
+
+    void calledFromTimer(void) override {
+      printf("   ADJUSTING %d %d\n",window->width(), window->height());
+      widget->resize(window->size());
+    }
+  };
+}
+#endif
+
+namespace{
+  class EmbeddedNativeWindow : public QWidget{
+
+    void *_child_handle;
+    std::function<void(void*)> _delete_child_handle_func;
+    
+  public:
+
+    bool _child_is_deleted = false;
+
+    EmbeddedNativeWindow(QWidget *widget, void *child_handle, std::function<void(void*)> delete_child_handle_func)
+      : _child_handle(child_handle)
+      , _delete_child_handle_func(delete_child_handle_func)
+    {
+#if 1
+      widget->setParent(this);
+      widget->move(0,0);
+#else
+      QVBoxLayout *layout = new QVBoxLayout(this);
+      layout->setSpacing(0);
+      layout->setContentsMargins(0,0,0,0);
+      
+      setLayout(layout);
+      
+      layout->addWidget(widget);
+#endif
+    }
+
+    void closeEvent(QCloseEvent *event) override {
+      if (_child_is_deleted==false){
+        _child_is_deleted = true;
+        _delete_child_handle_func(_child_handle);
+      }
+      event->accept();
+    }
+  };
+}
+
+
+void OS_GFX_close_embedded_native_window(void *daswidget){
+  R_ASSERT_RETURN_IF_FALSE(daswidget != NULL);
+  
+  EmbeddedNativeWindow *widget = static_cast<EmbeddedNativeWindow*>(daswidget);
+  
+  widget->_child_is_deleted = true;
+  widget->close();
+}
+  
+void *OS_GFX_create_embedded_native_window(void *child_handle, int x, int y, int width, int height, std::function<void(void*)> delete_child_handle_func){
+  QWindow *window = QWindow::fromWinId((WId)child_handle);
+  R_ASSERT_RETURN_IF_FALSE2(window!=NULL, NULL);
+
+  QWidget *widget = QWidget::createWindowContainer(window, NULL, Qt::ForeignWindow);
+  R_ASSERT_RETURN_IF_FALSE2(widget!=NULL, NULL);
+
+  QWidget *main_widget;
+  
+#if 0
+  
+  main_widget = widget;
+  
+#else
+  
+  main_widget = new EmbeddedNativeWindow(widget, child_handle, delete_child_handle_func);
+  
+#endif
+
+  set_window_parent(main_widget, g_main_window, radium::NOT_MODAL);
+
+  for(int height2=height + 2, i=0 ; height2 >= height ; height2--, i++){
+    
+    std::function<void(void)> adjust_size = [main_widget, x, y, width, height2] {
+      printf("   ADJUSTING %d %d\n", width, height2);
+      main_widget->setGeometry(x, y, width, height2);
+    };
+
+    R_ASSERT(i<=2);
+    
+    const int times[] = {100,1000,2000};
+    const int time = times[R_MIN(i, 2)];
+    
+    QTimer::singleShot(time, adjust_size); // Workaround for non-updated bottom graphics in VST gui. (might be a Qt bug. Developed this code in Qt 5.9)
+  }
+  
+  main_widget->setGeometry(x, y, width, height+3); // Add 3 to avoid the resize call in singleshot and this one doesn't have the same parameters.
+  safeShow(main_widget);
+
+  return main_widget;
+  
+  //new MyTime(widget, window);
+  /*
+  widget->adjustSize();
+
+  std::function<void(void)> adjust = [widget, window, adjust] {
+    printf("   ADJUSTING %d %d\n",window->width(), window->height());
+    widget->resize(window->size());
+    QTimer::singleShot(1000, adjust);
+  };
+
+  QTimer::singleShot(1000, adjust);
+  */
+  
+  /*
+  RememberGeometryQDialog *dialog = new RememberGeometryQDialog(g_main_window, radium::NOT_MODAL);
+
+  QVBoxLayout *layout = new QVBoxLayout(dialog);
+  layout->setSpacing(0);
+  layout->setContentsMargins(0,0,0,0);
+  
+  dialog->setLayout(layout);
+
+  layout->addWidget(widget);
+  //layout->adjustLayout();
+  dialog->adjustSize();
+  
+  safeShow(dialog);
+  */
+
+  //layout->adjustLayout();
+  //dialog->adjustSize();
+}
 
 void *OS_GFX_get_native_main_window(void){
   R_ASSERT_RETURN_IF_FALSE2(g_is_starting_up==false, NULL);
