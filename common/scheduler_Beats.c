@@ -110,7 +110,8 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
   Beat_Iterator *iterator = &seqtrack->beat_iterator;
 
   const struct Beats *beat = iterator->next_beat;
-  
+  R_ASSERT_RETURN_IF_FALSE2(beat!=NULL, DONT_RESCHEDULE);
+                         
   iterator->last_valid_signature = beat->valid_signature;
 #if !defined(RELEASE)
   if (iterator->last_valid_signature.denominator==0)
