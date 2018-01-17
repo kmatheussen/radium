@@ -176,10 +176,11 @@ static GlyphpathAndWidth getGlyphpathAndWidth(const QFont &font, const QChar c){
   return g;
 }
 
-// QPainter::drawText doesn't have floating point precision.
-//
 static void myDrawText(QPainter &painter, QRectF rect, QString text, QTextOption option = QTextOption(Qt::AlignLeft | Qt::AlignTop)){
   if (is_playing() && pc->playtype==PLAYSONG && smooth_scrolling()){
+
+    // Paint glyphs manually. QPainter::drawText doesn't have floating point precision.
+
     int len=text.length();
 
     double x = rect.x();
