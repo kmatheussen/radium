@@ -1587,6 +1587,25 @@ void *OS_GFX_get_native_main_window(void){
   return (void*)main_window->winId();
 }
 
+void *OS_GFX_get_mixer_toplevel_window_if_visible(void){
+  QWidget *w = get_qwidget(g_mixer_widget);
+  if (w->isWindow())
+    return (void*)w->effectiveWinId();
+  else
+    return NULL;
+}
+  
+void *OS_GFX_get_native_toplevel_window(int toplevelwindow_num){
+  if (OS_GFX_get_num_toplevel_windows() > toplevelwindow_num)
+    return (void*)QGuiApplication::topLevelWindows().at(toplevelwindow_num)->winId();
+  else
+    return NULL;
+}
+
+int OS_GFX_get_num_toplevel_windows(void){
+  return QGuiApplication::topLevelWindows().size();
+}
+
 // Warning: Does not always work on windows.
 //
 // Maybe this test is better: QWidget::find(GetForegroundWindow()) != NULL

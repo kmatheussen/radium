@@ -33,6 +33,10 @@ void OS_GFX_close_embedded_native_window(void *daswidget);
 void *OS_GFX_create_embedded_native_window(void *child_handle, int x, int y, int width, int height, std::function<void(void*)> delete_child_handle_func);
 #endif
 
+extern LANGSPEC int OS_GFX_get_num_toplevel_windows(void);
+extern LANGSPEC void *OS_GFX_get_native_toplevel_window(int toplevelwindow_num);
+extern LANGSPEC void *OS_GFX_get_mixer_toplevel_window_if_visible(void);
+
 extern LANGSPEC uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch);
   
 //extern LANGSPEC bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *event);

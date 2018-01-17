@@ -48,9 +48,27 @@ void OS_WINDOWS_set_always_on_top(void *child_handle){
   SetWindowPos(hwnd, HWND_TOP, 100, 100, 1000, 1000, SWP_SHOWWINDOW);
 #else
   HWND child_hwnd = (HWND)child_handle;
+#if 1
   HWND parent_hwnd = (HWND)OS_GFX_get_native_main_window();
-
   SetWindowLongPtr(child_hwnd, -8, (LONG_PTR)parent_hwnd);
+#elif 0
+  // doesn't work.
+  int num_toplevelwindows = OS_GFX_get_num_toplevel_windows();
+ printf("   NUM_TOP: %d\n", num_toplevelwindows);
+  for(int i=0;i<num_toplevelwindows;i++){
+    HWND parent_hwnd = (HWND)OS_GFX_get_native_toplevel_window(i);
+    printf("parent_hwnd %d: %p\n", i, parent_hwnd);
+    if (parent_hwnd != NULL)
+      SetWindowLongPtr(child_hwnd, -8, (LONG_PTR)parent_hwnd);
+  }
+#else
+  // doesn't work
+  HWND parent_hwnd = (HWND)OS_GFX_get_mixer_toplevel_window_if_visible();
+  printf("Mixer hwnd: %p\n", parent_hwnd);
+  if (parent_hwnd==NULL)
+    parent_hwnd = (HWND)OS_GFX_get_native_main_window();
+  SetWindowLongPtr(child_hwnd, -8, (LONG_PTR)parent_hwnd);
+#endif
 #endif
 }
 
