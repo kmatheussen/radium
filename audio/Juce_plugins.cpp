@@ -35,6 +35,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../pluginhost/JuceLibraryCode/JuceHeader.h"
 
+#define USE_EMBEDDED_NATIVE_WINDOW 0
+
+  
 
 #if JUCE_LINUX
   #define FOR_LINUX 1
@@ -477,6 +480,8 @@ namespace{
     
     AudioProcessorEditor* const editor;
 
+    void *_embedded_native_window = NULL;
+    
     virtual void 	buttonClicked (Button *) override {
     }
 
@@ -636,15 +641,17 @@ namespace{
       main_component.addChildComponent(editor);
       editor->setTopLeftPosition(0, button_height);
       
+      main_component.setSize(editor->getWidth(), editor->getHeight() + button_height);
+
       if (data->x <= 0 || data->y <= 0) {
         this->centreWithSize (getWidth(), getHeight());
       } else {
         this->setTopLeftPosition(data->x, data->y);
       }
 
+
       this->setVisible(true);
 
-      main_component.setSize(editor->getWidth(), editor->getHeight() + button_height);
 
 #if defined(RELEASE) && FOR_LINUX
       bypass_button.setTopLeftPosition(main_component.getWidth()-bypass_button.getWidth(), 0);
@@ -656,14 +663,36 @@ namespace{
 
       startTimer(100);
 
+      auto closeit = [this] (void *handle){
+        printf("CLOSEIT called\n");
+#if CUSTOM_MM_THREAD
+        const MessageManagerLock mmLock;
+#endif
+        _embedded_native_window = NULL; // It's not valid anymore.
+        delete this;
+      };
+
+      {
+        this->setOpaque(true);
+        this->addToDesktop(getDesktopWindowStyleFlags());
+#if USE_EMBEDDED_NATIVE_WINDOW
+        _embedded_native_window = OS_GFX_create_embedded_native_window(this->getWindowHandle(), this->getX(), this->getY(), main_component.getWidth(), main_component.getHeight(), closeit);
+#endif
+      }                                          
+
 #if FOR_WINDOWS
       if(vstGuiIsAlwaysOnTop()) {
         OS_WINDOWS_set_always_on_top(this->getWindowHandle());
       }
 #endif
+
+      g_num_visible_plugin_windows++;
     }
 
     ~PluginWindow(){
+      
+      g_num_visible_plugin_windows--;
+      
       GL_lock();{
 
         radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
@@ -678,6 +707,11 @@ namespace{
         ATOMIC_SET(plugin->auto_suspend_suspended, false);
 
       }GL_unlock();
+
+      if (_embedded_native_window != NULL){
+        OS_GFX_close_embedded_native_window(_embedded_native_window);
+        _embedded_native_window = NULL;
+      }
     }
 
     /*
@@ -1170,9 +1204,7 @@ static void show_gui(struct SoundPlugin *plugin){
       if (editor != NULL) {
 
         const char *title = V_strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
-        data->window = new PluginWindow(title, data, editor);
-
-        g_num_visible_plugin_windows++;
+        data->window = new PluginWindow(title, data, editor);        
         
       }
 
@@ -1191,8 +1223,6 @@ static void hide_gui(struct SoundPlugin *plugin){
   
   Data *data = (Data*)plugin->data;
 
-  g_num_visible_plugin_windows--;
-  
   //data->window->setVisible(false);
   delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
   //OS_WINDOWS_move_main_window_to_front();

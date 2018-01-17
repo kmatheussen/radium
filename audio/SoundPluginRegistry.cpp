@@ -339,7 +339,7 @@ SoundPluginTypeContainer *PR_get_populated_container(const char *container_name,
   if(usable_containers.size() > 1 && !GFX_Message_ignore_questionmark()){
     QString x = QString("Warning: ") + QString::number(usable_containers.size()) + " different usable plugin files for " + container_name + " was loaded.<br><br>";
     
-    x += QString("If there are overlaps in the plugins that these two files provide,<br>") +
+    x += QString("If there are overlaps in the plugins that these files provide,<br>") +
       "plugins from \"" + STRING_get_qstring(usable_containers[0]->filename) + "\" will be used.<br>";
 
     x += "<UL>Files:";
