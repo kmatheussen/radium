@@ -683,7 +683,7 @@ static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64
     if (last_barorbeat==NULL)
       block_interval_length = blocklen; // no bars in the seqblock
     else
-      block_interval_length = blocklen - Place2STime(block, &last_barorbeat->l.p);
+      block_interval_length = blocklen - Place2STime(block, &last_barorbeat->l.p); // this is arguable not correct if the block stops before the beat should have ended...
   }
 
   int64_t interval_length = blocktime_to_seqtime(seqblock, block_interval_length / ATOMIC_DOUBLE_GET(block->reltempo));
