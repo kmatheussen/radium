@@ -1653,6 +1653,180 @@ struct SongTempoAutomation_widget { //: public MouseTrackerQWidget {
 
 };
 
+#if 1
+
+#include <functional>
+
+namespace{
+  enum class WhatToFind{
+    NOTHING,
+    LINE,
+    BEAT,
+    BAR
+  };
+}
+
+// Return true if continuing.
+static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtrack,
+                                                   int &barnum,
+                                                   int64_t start_seqtime, int64_t end_seqtime,
+                                                   WhatToFind what_to_find,
+                                                   int64_t end_blockseqtime, int64_t next_blockstarttime,
+                                                   int64_t last_barseqtime, int64_t last_beatseqtime,
+                                                   std::function<bool(int64_t,int,int)> callback
+                                                   )
+{
+    int64_t bar_seqlength = end_blockseqtime - last_barseqtime;
+    int64_t beat_seqlength = end_blockseqtime - last_beatseqtime;
+
+    //printf("last_x: %d, width: %d. bar_length: %d. next: %f, end_seqtime: %f\n", (int)last_x, width(),(int)bar_length,((double)end_blockseqtime + bar_length)/44100.0, (double)end_seqtime/44100.0);
+
+    int beatnum = 1;
+    int64_t bar_seqtime = end_blockseqtime;
+
+    if (bar_seqlength <= 0){
+      R_ASSERT(false);
+      return false;
+    }
+
+    if (beat_seqlength <= 0){
+      R_ASSERT(false);
+      return false;
+    }
+
+    
+
+    for(;;){
+
+      if (next_blockstarttime != -1 && R_ABS(bar_seqtime-next_blockstarttime) < 20)
+        return true;
+
+      if (bar_seqtime >= end_seqtime)
+        return false;
+
+      barnum++;
+      beatnum = 1;
+      callback(bar_seqtime, barnum, 0);
+
+
+      if (what_to_find==WhatToFind::BEAT) {
+
+        int64_t next_bartime = bar_seqtime + bar_seqlength;
+
+        for(int64_t beat_seqtime = bar_seqtime ; beat_seqtime < next_bartime ; beat_seqtime += beat_seqlength){
+
+          if (next_blockstarttime != -1 && R_ABS(beat_seqtime-next_blockstarttime) < 20)
+            return true;
+
+          if (beat_seqtime >= end_seqtime)
+            return false;
+
+          if (callback(beat_seqtime, barnum, beatnum)==false)
+            return false;
+
+          beatnum++;
+        }
+      }
+
+      //printf("  after. abstime: %f\n",(double)abstime/44100.0);
+
+      bar_seqtime += bar_seqlength;
+    }
+
+    return true;
+}
+
+// Next seqblock when ignoring audio seqblocks.
+int get_next_block_seqblocknum(const struct SeqTrack *seqtrack, int seqtracknum){
+  seqtracknum++;
+
+  if(seqtracknum >= (seqtrack->seqblocks.num_elements)){
+    R_ASSERT(seqtracknum==(seqtrack->seqblocks.num_elements));
+    return -1;
+  }
+
+  const struct SeqBlock *seqblock = (const struct SeqBlock *)seqtrack->seqblocks.elements[seqtracknum];
+
+  if (seqblock->block==NULL)
+    return get_next_block_seqblocknum(seqtrack, seqtracknum+1);
+  else
+    return seqtracknum;
+}
+
+// If callback returns false, we stop iterating.
+static inline void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, WhatToFind what_to_find, std::function<bool(int64_t,int,int)> callback){
+  int barnum = 0;
+    
+  const struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[0];
+  if (seqtrack->seqblocks.num_elements==0)
+    return;
+        
+  int next_seqblocknum = get_next_block_seqblocknum(seqtrack, -1);
+
+  while(next_seqblocknum != -1){
+    int seqblocknum = next_seqblocknum;
+    next_seqblocknum = get_next_block_seqblocknum(seqtrack, seqblocknum);
+
+    const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[seqblocknum];
+    const struct SeqBlock *next_seqblock = next_seqblocknum==-1 ? NULL : (struct SeqBlock *)seqtrack->seqblocks.elements[next_seqblocknum];
+
+    int64_t start_blockseqtime = seqblock->t.time;
+    int64_t end_blockseqtime = seqblock->t.time2;
+
+    int64_t next_blockstarttime = next_seqblock==NULL ? -1 : next_seqblock->t.time;
+          
+    if (next_seqblock!=NULL) {
+      if (next_blockstarttime <= start_seqtime)
+        continue;
+    } else {
+      if (end_blockseqtime <= start_seqtime)
+        continue;
+    }
+
+    if (start_blockseqtime >= end_seqtime)
+      return;
+
+    const struct Blocks *block = seqblock->block;
+    const struct Beats *beat = block->beats;
+          
+    int64_t last_barseqtime = -1;
+    int64_t last_beatseqtime = -1;
+    //Ratio *last_signature = NULL;
+
+    while(beat!=NULL){
+      //last_signature = &beat->valid_signature;
+
+      int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime(block, &beat->l.p));
+
+      last_beatseqtime = seqtime;
+
+      if (beat->beat_num==1){
+        last_barseqtime = seqtime;
+        
+        barnum++;
+      }
+
+      if (what_to_find==WhatToFind::BEAT){
+        if (callback(seqtime, barnum, beat->beat_num)==false)
+          return;
+      }
+      
+      beat = NextBeat(beat);
+    }
+
+    if (iterate_beats_between_seqblocks(seqtrack,
+                                        barnum,
+                                        start_seqtime, end_seqtime,
+                                        what_to_find,
+                                        end_blockseqtime, next_blockstarttime,
+                                        last_barseqtime, last_beatseqtime,
+                                        callback)
+        == false)
+      return;
+  }
+}
+#endif
+
 struct Timeline_widget : public MouseTrackerQWidget {
   const double &_start_time;
   const double &_end_time;
@@ -1718,7 +1892,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
     QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
     QColor text_color_alpha = text_color;
     text_color_alpha.setAlpha(20);
-    
+
     p.setPen(text_color);
         
     const QFontMetrics fn = QFontMetrics(QApplication::font());
@@ -1746,99 +1920,61 @@ struct Timeline_widget : public MouseTrackerQWidget {
 
     if (showBarsInTimeline()){
 
+      QColor bar_color(text_color);
+      bar_color.setAlpha(50);
+      
       //double x1 = _seqtracks_widget.t_x1;
       //double x2 = _seqtracks_widget.t_x2;
-      double width_ = width(); //x2-x1;
+      const double width_ = width(); //x2-x1;
       double last_x = -10000;
-      int barnum = 1;
+      //int barnum = 1;
 
+      //p.setPen("red");
+      
       const struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[0];
-      if (gfx_seqblocks(seqtrack)->num_elements > 0) {
+      int64_t start_seqtime = get_seqtime_from_abstime(seqtrack, NULL, _start_time);
+      int64_t end_seqtime = get_seqtime_from_abstime(seqtrack, NULL, _end_time);
 
-        int64_t start_seqtime = get_seqtime_from_abstime(seqtrack, NULL, _start_time);
-        int64_t end_seqtime = get_seqtime_from_abstime(seqtrack, NULL, _end_time);
-        
-        //const struct SeqBlock *first_seqblock = (struct SeqBlock*)gfx_seqblocks(seqtrack).elements[0];
-
-        for(int i = 0 ; i < gfx_seqblocks(seqtrack)->num_elements ; i++){
-
-          const struct SeqBlock *seqblock = (struct SeqBlock *)gfx_seqblocks(seqtrack)->elements[i];
-          const struct SeqBlock *next_seqblock = (struct SeqBlock *)(i==gfx_seqblocks(seqtrack)->num_elements-1 ? NULL : gfx_seqblocks(seqtrack)->elements[i+1]);
+      auto callback = [&last_x, &p, &bar_color, &text_color, width_, this, seqtrack, min_pixels_between_text]
+        (int64_t seqtime, int barnum, int beatnum)
+        {
+                                               
+          int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, seqtime);
           
-          int64_t start_blockseqtime = seqblock->gfx.time;
-          int64_t end_blockseqtime = SEQBLOCK_get_seq_endtime(seqblock);
-
-          int64_t start_nextblockseqtime = next_seqblock==NULL ? -1 : next_seqblock->gfx.time;
+          double x = scale_double(abstime, _start_time, _end_time, 0, width_);
+          if (x >= width_)
+            return false;
           
-          if (next_seqblock!=NULL) {
-            if (start_nextblockseqtime <= start_seqtime)
-              continue;
-          } else {
-            if (end_blockseqtime <= start_seqtime)
-              continue;
-          }
-
-          if (start_blockseqtime >= end_seqtime)
-            break;
-
-          if (seqblock->block==NULL)
-            continue;
           
-          const struct Blocks *block = seqblock->block;
-          const struct Beats *beat = block->beats;
-
-#define paintbarnum() {                                                 \
-            double x = scale_double(abstime, _start_time, _end_time, 0, width_); \
-                                                                        \
-            if (x >= 0 && x > last_x + min_pixels_between_text) {       \
-                                                                        \
-              QRectF rect(x + 2, 2, width(), height());                 \
-              myDrawText(p, rect, QString::number(barnum));             \
-                                                                        \
-              last_x = x;                                               \
-            }                                                           \
-                                                                        \
-            barnum++;                                                   \
-          }
-          
-          int64_t last_barseqtime = -1;
-          
-          while(beat!=NULL){
+          {
+            p.setPen(bar_color);
             
-            if (beat->beat_num==1){
-              int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime(block, &beat->l.p));
-              int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, seqtime);
-              last_barseqtime = seqtime;
-
-              paintbarnum();
-            }
+            double y1 = 2;
+            double y2 = height()/2;
+            if(beatnum==1)
+              y2=height() - 2;
+            QLineF line(x, y1, x, y2);
+            p.drawLine(line);
+            if (beatnum!=1)
+              return true;
+          }
+          
+          //printf("%d: %d/%d.\n", (int)seqtime, barnum, beatnum);
+          
+          if (x >= 0 && x > last_x + min_pixels_between_text) {
+            p.setPen(text_color);
             
-            beat = NextBeat(beat);
+            QRectF rect(x + 2, 2, width_, height());                 
+            myDrawText(p, rect, QString::number(barnum));             
+            
+            last_x = x;
           }
-
-          if (last_x >= width())
-            break;
-
-          int64_t bar_seqlength = end_blockseqtime - last_barseqtime;
           
-          //printf("last_x: %d, width: %d. bar_length: %d. next: %f, end_seqtime: %f\n", (int)last_x, width(),(int)bar_length,((double)end_blockseqtime + bar_length)/44100.0, (double)end_seqtime/44100.0);
-          
-          for(int64_t seqtime = end_blockseqtime ; seqtime < end_seqtime ; seqtime += bar_seqlength){
-            if (next_seqblock!=NULL) {
-              if (seqtime >= start_nextblockseqtime)
-                break;
-            }
-
-            int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, seqtime);
-            //printf("  after. abstime: %f\n",(double)abstime/44100.0);
-            paintbarnum();
-          }
-#undef paintbarnum
-        }
-        
-        
-      }
-
+          return true;
+        };
+    
+      SEQUENCER_iterate_time(start_seqtime, end_seqtime, WhatToFind::BEAT, callback);
+                             
       
     } else {
 

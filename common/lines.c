@@ -151,9 +151,11 @@ void InsertLines(
             List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);
             LegalizeNotes(block,track);
             List_InsertLines3(&track->stops,&track->stops->l,line,toinsert,NULL);
+            
             VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
               List_InsertLines3(&fxs->fxnodelines,&fxs->fxnodelines->l,line,toinsert,NULL);
             }END_VECTOR_FOR_EACH;
+            
             LegalizeFXlines(block,track);
             track=NextTrack(track);
           }
