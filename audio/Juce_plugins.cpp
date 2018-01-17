@@ -681,7 +681,7 @@ namespace{
       }                                          
 
 #if FOR_WINDOWS
-      if(vstGuiIsAlwaysOnTop()) {
+      if(vstGuiIsAlwaysOnTop() && OS_GFX_get_num_toplevel_windows()==1) {
         OS_WINDOWS_set_always_on_top(this->getWindowHandle());
       }
 #endif
@@ -1947,7 +1947,7 @@ namespace{
       //progress_bar->setLookAndFeel(new LookAndFeel_V2);
         
       //addAndMakeVisible(progress_bar);
-        
+        
       //this->setAlwaysOnTop(true);
       //this->setSize (600, 20);
       this->setUsingNativeTitleBar(true);
