@@ -1077,14 +1077,24 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
   int64_t default_duration = get_seqblock_stime_default_duration(seqtrack, seqblock, false);
   if (interior_end > default_duration){
     
-    if (seqblock->block==NULL){
-      R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL && seqtrack->patch->patchdata!=NULL, NULL);
-      SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-      SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, is_gfx);
+    if (error_type==THROW_API_EXCEPTION){
+
+      if (seqblock->block==NULL){
+        R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL && seqtrack->patch->patchdata!=NULL, NULL);
+        SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+        SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, is_gfx);
+      }
+
+      handleError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
+      return NULL;
+      
+    } else {
+      
+      RError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
+      interior_end = default_duration;
+      
     }
     
-    R_ASSERT_RETURN_IF_FALSE3(false, error_type, NULL,
-                              "interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
   }
 
   if (time2==-1)
@@ -1685,6 +1695,9 @@ void SEQUENCER_timing_has_changed(void){
             
             seqblock->t.default_duration = default_duration;
             seqblock->gfx.default_duration = default_duration;
+
+            seqblock->t.interior_end = default_duration;
+            seqblock->gfx.interior_end = default_duration;
           }
 
           SEQBLOCK_ENVELOPE_duration_changed(seqtrack, seqblock, default_duration);
