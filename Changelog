@@ -6,9 +6,6 @@ Changes 5.4.7 -> 5.4.8:
 * Windows: Partly fix always-on-top VST GUIs. They will stay
   on top of the main window and the last opened currently
   visible window, but not on top of the other windows.
-* Windows: Don't set VST GUI always-on-top if there are more
-  than one toplevel window open at the same time. This prevents
-  the VST GUI from being stuck under a mixer window.
 * Audio: Try to prevent and track down a bug reported by the
   crash reporter.
 * VST: Minor fix for keyboard grabbing in the GUI.
