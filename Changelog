@@ -5,7 +5,7 @@ Changes 5.4.7 -> 5.4.8:
   platform to make windows stay on top of the main window.
 * Windows: Partly fix always-on-top VST GUIs. They will stay
   on top of the main window and the last opened currently
-  visible window, but not on top of the other windows.
+  visible window, but not on top of other windows.
 * Audio: Try to prevent and track down a bug reported by the
   crash reporter.
 * VST: Minor fix for keyboard grabbing in the GUI.
