@@ -239,8 +239,8 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
 
 #undef D
 
-
-#define DEFAULT_WINDOW_FLAGS (Qt::CustomizeWindowHint | Qt::WindowFullscreenButtonHint | Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint | Qt::WindowStaysOnTopHint)
+//   We normally don't want to set Qt::WindowStaysOnTopHint since VST plugin GUIs will appear behind.
+#define DEFAULT_WINDOW_FLAGS (Qt::CustomizeWindowHint | Qt::WindowFullscreenButtonHint | Qt::WindowCloseButtonHint | Qt::WindowMinMaxButtonsHint) // | Qt::WindowStaysOnTopHint)
 
 namespace radium{
   enum Modality{
@@ -303,7 +303,11 @@ static inline bool set_window_parent_andor_flags(QWidget *window, QWidget *paren
     if (parent==g_main_window) {
 
       // On OSX, you can't create an "on-top-of hierarchy" by setting the windows parent. But for level 1, we can work around this by setting the Qt::Tool flag.
+#if defined(FOR_WINDOWS)
+      f = Qt::Window | DEFAULT_WINDOW_FLAGS; // Remove Qt::Tool since it's not needed. Qt::Tool is just a workaround on OSX, and possibly Linux.
+#else
       f = Qt::Window | Qt::Tool | DEFAULT_WINDOW_FLAGS;
+#endif
       
       // Qt::Tool windows dissapear on OSX if the application is not active. (At least according to Qt documentation. I haven't tested it.)
       //window->setAttribute(Qt::WA_MacAlwaysShowToolWindow, true); // Warning: Causes program to crash.
