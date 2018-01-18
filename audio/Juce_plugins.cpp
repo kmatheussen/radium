@@ -564,16 +564,19 @@ namespace{
 
       struct SoundPlugin *plugin = data->_plugin;
       ATOMIC_SET(plugin->auto_suspend_suspended, true);
-        
-#if !FOR_WINDOWS
+
+      this->setOpaque(true);
+      this->addToDesktop();//getDesktopWindowStyleFlags());
+
+#if !FOR_WINDOWS // We have a more reliable way to do this on Windows (done at the end of this function)
       if(vstGuiIsAlwaysOnTop()) {
         this->setAlwaysOnTop(true);
       }
 #endif
-      //this->setAlwaysOnTop(true);
       
       this->setSize (400, 300);
       this->setUsingNativeTitleBar(true);
+      //this->setUsingNativeTitleBar(false);
 
       int button_height = root->song->tracker_windows->fontheight * 3 / 2;
       
@@ -673,15 +676,13 @@ namespace{
       };
 
       {
-        this->setOpaque(true);
-        this->addToDesktop(getDesktopWindowStyleFlags());
 #if USE_EMBEDDED_NATIVE_WINDOW
         _embedded_native_window = OS_GFX_create_embedded_native_window(this->getWindowHandle(), this->getX(), this->getY(), main_component.getWidth(), main_component.getHeight(), closeit);
 #endif
       }                                          
 
 #if FOR_WINDOWS
-      if(vstGuiIsAlwaysOnTop() && OS_GFX_get_num_toplevel_windows()==1) {
+      if(vstGuiIsAlwaysOnTop()) {// && OS_GFX_get_num_toplevel_windows()==1) {
         OS_WINDOWS_set_always_on_top(this->getWindowHandle());
       }
 #endif
