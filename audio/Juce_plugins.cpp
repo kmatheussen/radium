@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 #include <string.h>
 
+#include <map>
+
 #include "../pluginhost/JuceLibraryCode/AppConfig.h"
 
 #include "../pluginhost/JuceLibraryCode/JuceHeader.h"
@@ -398,9 +400,13 @@ namespace{
     int num_input_channels;
     int num_output_channels;
 
+    /*
     int x;
     int y;
-
+    */
+    std::map<int64_t, int> xs; // key is parentgui. (Juce::HashMap has a better API, but it didn't compile with gcc7.)
+    std::map<int64_t, int> ys; // key is parentgui. (Juce::HashMap has a better API, but it didn't compile with gcc7.)
+    
     /*
     bool is_vst2(void){
       return ::is_vst2(audio_instance);
@@ -423,8 +429,6 @@ namespace{
       , listener(plugin)
       , num_input_channels(num_input_channels)
       , num_output_channels(num_output_channels)
-      , x(-1)
-      , y(-1)
     {
       audio_instance->addListener(&listener);
       midi_buffer.ensureSize(1024*16);
@@ -480,6 +484,8 @@ namespace{
     
     AudioProcessorEditor* const editor;
 
+    int64_t parentgui;
+    
 #if USE_EMBEDDED_NATIVE_WINDOW
     void *_embedded_native_window = NULL;
 #endif
@@ -562,6 +568,7 @@ namespace{
       , data(data)
       , title(title)
       , editor(editor)
+      , parentgui(parentgui)
     {
 
       struct SoundPlugin *plugin = data->_plugin;
@@ -648,10 +655,33 @@ namespace{
       
       main_component.setSize(editor->getWidth(), editor->getHeight() + button_height);
 
-      if (data->x <= 0 || data->y <= 0) {
-        this->centreWithSize (getWidth(), getHeight());
-      } else {
-        this->setTopLeftPosition(data->x, data->y);
+      {
+        int num_x = data->xs.count(parentgui);
+        int num_y = data->ys.count(parentgui);
+        
+        R_ASSERT(num_x==0 || num_x==1);
+        R_ASSERT(num_y==0 || num_y==1);
+        
+        bool has_x = num_x==1;
+        bool has_y = num_y==1;
+        
+        R_ASSERT(has_x==has_y);
+
+        int x = -1;
+        int y = -1;
+        
+        if (has_x)
+          x = data->xs[parentgui];
+        
+        if (has_y)
+          y = data->ys[parentgui];
+                
+        if (x <= 0 || y <= 0) {
+          this->centreWithSize (getWidth(), getHeight());
+        } else {
+          this->setTopLeftPosition(x, y);
+        }
+
       }
 
 
@@ -760,8 +790,8 @@ namespace{
     }
 
     void moved() override {
-      data->x = getX();
-      data->y = getY();
+      data->xs[parentgui] = getX();
+      data->ys[parentgui] = getY();
     }
 
   };
@@ -1381,12 +1411,14 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
       audio_instance->setCurrentProgramStateInformation(sourceData.getData(), sourceData.getSize());
     }
   }
-  
+
+  /*
   if (HASH_has_key(state, "x_pos"))
     data->x = HASH_get_int(state, "x_pos");
   
   if (HASH_has_key(state, "y_pos"))
     data->y = HASH_get_int(state, "y_pos");
+  */
 }
 
 
@@ -1483,9 +1515,11 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 
   HASH_put_int(state, "audio_instance_current_program", audio_instance->getCurrentProgram());
 
+  /*
   HASH_put_int(state, "x_pos", data->x);
   HASH_put_int(state, "y_pos", data->y);
-
+  */
+  
   TypeData *type_data = (struct TypeData*)plugin->type->data;
 
   HASH_put_chars(state, "identifier_string", type_data->description.createIdentifierString().toRawUTF8());
