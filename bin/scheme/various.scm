@@ -507,10 +507,10 @@
     (define has-gui (<ra> :has-native-instrument-gui instrument-id))
     (if (not has-gui)
         #f
-        (mid-horizontal-layout (<gui> :checkbox "" (<ra> :instrument-gui-is-visible instrument-id)
+        (mid-horizontal-layout (<gui> :checkbox "" (<ra> :instrument-gui-is-visible instrument-id #f)
                (lambda (onoff)
                  (if onoff
-                     (<ra> :show-instrument-gui instrument-id)
+                     (<ra> :show-instrument-gui instrument-id gui)
                      (<ra> :hide-instrument-gui instrument-id)))))))
 
   (define (create-delete instrument-id)

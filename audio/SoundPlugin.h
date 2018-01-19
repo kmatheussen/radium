@@ -312,7 +312,7 @@ typedef struct SoundPluginType{
   float (*get_effect_value)(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format);
 
   bool (*gui_is_visible)(struct SoundPlugin *plugin); // May be NULL
-  void (*show_gui)(struct SoundPlugin *plugin); // If NULL, the "GUI" button will not show.
+  bool (*show_gui)(struct SoundPlugin *plugin, int64_t parentgui); // If NULL, the "GUI" button will not show. Returns true if gui was opened.
   void (*hide_gui)(struct SoundPlugin *plugin);
 
   void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state, bool is_loading); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called AFTER the effect values have been set. It makes sense to to set dont_send_effect_values_from_state_into_plugin==true if 'recreate_from_state' creates and recreates all effects.
@@ -433,8 +433,9 @@ typedef struct SoundPlugin{
   
   linked_note_t *playing_voices; // To keep track of voices scheduled into the future because of latency compensation
 
-  bool editor_is_on;
-
+  // bool editor_is_on;
+  int64_t gui_parentgui; // Only one GUI can be opened at the same time. If trying to open on a different parentgui, the old gui will first be closed before the new one is opened.
+  
   DEFINE_ATOMIC(bool, solo_is_on);
 
   struct SoundProducer *sp; // SoundProducer is a helper object for the mixer. It's actually the soundproducer that holds the plugin, and not the other way, but the sp variable is referenced here since we need to access the soundproducer outside of the mixer to get input latency for a plugin and other things. This value is NULL if the plugin is not currently running in the mixer (but use the SP_is_plugin_running function to check for that).

@@ -833,7 +833,7 @@ static const char *get_effect_description(struct SoundPlugin *plugin, int effect
 }
 
 
-static void show_gui2(Data* data, SoundPlugin *plugin){
+static bool show_gui2(Data* data, SoundPlugin *plugin, int64_t parentgui){
   printf("   Showing gui %p\n",data->qtgui);
   
   safeShow(data->qtgui_parent);
@@ -842,11 +842,13 @@ static void show_gui2(Data* data, SoundPlugin *plugin){
     data->qtgui_parent->restoreGeometry(data->qtgui_geometry);
 
   data->qtgui->run();
+
+  return true;
 }
 
-static void show_gui(struct SoundPlugin *plugin){
+static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
   Data *data = (Data*)plugin->data;
-  show_gui2(data, plugin);
+  return show_gui2(data, plugin, parentgui);
 }
 
 static void hide_gui2(Data *data){

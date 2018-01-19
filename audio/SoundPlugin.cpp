@@ -379,6 +379,8 @@ static void release_system_filter(SystemFilter *filter, int num_channels){
   V_free(filter->plugins);
 }
 
+static void reset_gui_parentgui(SoundPlugin *plugin);
+
 SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, bool is_loading){
   printf("PLUGIN_create called\n");
   
@@ -386,6 +388,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   plugin->type = plugin_type;
 
   plugin->num_visible_outputs = -1;
+
+  reset_gui_parentgui(plugin);
   
   ATOMIC_SET(plugin->auto_suspend_behavior, DEFAULT_AUTOSUSPEND_BEHAVIOR);
   PLUGIN_touch(plugin);
@@ -1961,6 +1965,69 @@ hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
 #endif
   
   return effects;
+}
+
+#define NON_GUI_PARENTGUI -1000
+
+static void reset_gui_parentgui(SoundPlugin *plugin){
+  plugin->gui_parentgui = NON_GUI_PARENTGUI;
+}
+
+// Only necessary to call if closed on its own, but its safe to call from 'plugin->type->hide_gui()'. Can be called right before, or right after, the GUI actually closes.
+void PLUGIN_call_me_when_gui_closes(SoundPlugin *plugin){
+  reset_gui_parentgui(plugin);
+}
+
+bool PLUGIN_gui_is_visible(SoundPlugin *plugin, int64_t parentgui){
+  
+  if (plugin->type->gui_is_visible!=NULL)
+    if (plugin->type->gui_is_visible(plugin)==false){
+      R_ASSERT_NON_RELEASE(plugin->gui_parentgui == NON_GUI_PARENTGUI); // The plugin must call PLUGIN_call_me_after_gui_has_closed if the GUI is closed on its own.
+      reset_gui_parentgui(plugin); // In case PLUGIN_call_me_after_gui_has_closed wasn't called.
+      return false;
+    }
+
+  parentgui = gui_getParentWindow(parentgui);
+
+  if (gui_getParentWindow(parentgui) != plugin->gui_parentgui)
+    return false;
+
+  return true;
+}
+
+void PLUGIN_close_gui(SoundPlugin *plugin){
+  if (plugin->type->hide_gui != NULL)
+    plugin->type->hide_gui(plugin);
+
+  if (plugin->gui_parentgui >= 0){
+    if (plugin->patch != NULL)
+      API_remove_child_plugin_gui(plugin->gui_parentgui, const_cast<struct Patch*>(plugin->patch));
+    else
+      R_ASSERT(false);
+  }
+
+  PLUGIN_call_me_when_gui_closes(plugin);
+}
+
+bool PLUGIN_open_gui(SoundPlugin *plugin, int64_t parentgui){
+  parentgui = gui_getParentWindow(parentgui);
+                      
+  if (parentgui != plugin->gui_parentgui)
+    PLUGIN_close_gui(plugin);
+
+  if (plugin->type->show_gui != NULL){
+    bool is_opened = plugin->type->show_gui(plugin, parentgui);
+    if (is_opened){
+      plugin->gui_parentgui = parentgui;
+      if (plugin->patch != NULL)
+        API_add_child_plugin_gui(parentgui, const_cast<struct Patch*>(plugin->patch));
+      else
+        R_ASSERT(false);
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /*

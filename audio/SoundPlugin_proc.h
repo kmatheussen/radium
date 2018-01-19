@@ -50,6 +50,11 @@ extern LANGSPEC const char *PLUGIN_get_effect_name(SoundPlugin *plugin, int effe
 extern LANGSPEC const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_type, int effect_num);
 extern LANGSPEC void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
 
+extern LANGSPEC void PLUGIN_call_me_when_gui_closes(SoundPlugin *plugin); // Only necessary to call if closed on its own, but its safe to call from plugin::type::hide_gui() (although that call won't do anything). Can be called right before, or right after, the GUI actually closes.
+extern LANGSPEC bool PLUGIN_gui_is_visible(SoundPlugin *plugin, int64_t parentgui);
+extern LANGSPEC void PLUGIN_close_gui(SoundPlugin *plugin);
+extern LANGSPEC bool PLUGIN_open_gui(SoundPlugin *plugin, int64_t parentgui);
+
 extern LANGSPEC void PLUGIN_call_me_before_starting_to_play_song_END(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_call_me_before_starting_to_play_song_MIDDLE(SoundPlugin *plugin, int64_t abstime, int effect_num, float value, FX_when when, enum ValueFormat value_format);
 extern LANGSPEC void PLUGIN_call_me_before_starting_to_play_song_START(SoundPlugin *plugin);

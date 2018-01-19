@@ -1061,10 +1061,11 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
 
 (define (show/hide-instrument-gui)
+  (define parentgui -2) ;; current window
   (let ((id (ra:get-current-instrument)))
     (when (not (= -1 id))
       (if (ra:has-native-instrument-gui id)
-          (if (ra:instrument-gui-is-visible id)
+          (if (ra:instrument-gui-is-visible id parentgui)
               (ra:hide-instrument-gui id)
-              (ra:show-instrument-gui id))
+              (ra:show-instrument-gui id parentgui))
           (show-async-message -2 (<-> "Instrument #" id " (" (<ra> :get-instrument-name id) ") doesn't have a GUI"))))))

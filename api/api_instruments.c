@@ -1933,7 +1933,7 @@ bool hasNativeInstrumentGui(int64_t instrument_id){
   return false;
 }
 
-bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not_visible){
+bool showInstrumentGui(int64_t instrument_id, int64_t parentgui, bool show_instrument_window_if_not_visible){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1954,8 +1954,7 @@ bool showInstrumentGui(int64_t instrument_id, bool show_instrument_window_if_not
     
     if(plugin->type->show_gui != NULL) {
     
-      plugin->type->show_gui(plugin);
-      return true;
+      return PLUGIN_open_gui(plugin, parentgui);
       
     } else {
 
@@ -2006,7 +2005,7 @@ bool hideInstrumentGui(int64_t instrument_id){
   return false;
 }
 
-bool instrumentGuiIsVisible(int64_t instrument_id){
+bool instrumentGuiIsVisible(int64_t instrument_id, int64_t parentgui){
 
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -2019,16 +2018,10 @@ bool instrumentGuiIsVisible(int64_t instrument_id){
   //instrument->PP_Update(instrument,patch,false);
   
   struct SoundPlugin *plugin = patch->patchdata;
-  if (plugin != NULL){
-    
-    if(plugin->type->gui_is_visible != NULL) {
-    
-      return plugin->type->gui_is_visible(plugin);
-      
-    }
-  }
-
-  return false;
+  if (plugin != NULL)
+    return PLUGIN_gui_is_visible(plugin, parentgui);
+  else
+    return false;
 }
 
 int64_t getCurrentInstrument(void){
