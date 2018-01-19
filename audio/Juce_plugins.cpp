@@ -629,7 +629,7 @@ namespace{
       {
         bypass_button.setButtonText("Bypass");
         
-        bypass_button.setToggleState(vstGuiIsAlwaysOnTop(), dontSendNotification);
+        bypass_button.setToggleState(!ATOMIC_GET(plugin->effects_are_on), dontSendNotification);
         bypass_button.setSize(400, button_height);
         bypass_button.changeWidthToFitText();
         
