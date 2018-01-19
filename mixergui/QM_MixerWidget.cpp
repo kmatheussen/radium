@@ -1232,7 +1232,10 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int unsolo_all = -1;
   int mute_all = -1;
   int unmute_all = -1;
-
+  int show_gui = -1;
+  
+  int64_t parentgui = API_get_gui_from_existing_widget(g_mixer_widget->window());
+  
   bool has_sampler_instrument = false;
   VECTOR_FOR_EACH(struct Patch *,patch,&patches){
     struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
@@ -1317,6 +1320,19 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
     save = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Save preset" : "Save preset (.rec)");
     config_color = VECTOR_push_back(&v, "Configure color");
+
+    VECTOR_push_back(&v, "--------");
+
+    bool is_enabled = hasNativeInstrumentGui(patch->id);
+    bool is_visible = is_enabled && instrumentGuiIsVisible(patch->id, parentgui);
+
+    if (!is_enabled)
+      show_gui = VECTOR_push_back(&v, "[disabled][check off]Show GUI");
+    else if (is_visible)
+      show_gui = VECTOR_push_back(&v, "[check on]Show GUI");
+    else
+      show_gui = VECTOR_push_back(&v, "[check off]Show GUI");
+    
     instrument_info = VECTOR_push_back(&v, "Show info");
   }
 
@@ -1407,6 +1423,16 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
     showInstrumentInfo(DYN_create_int(CHIP_get_patch(chip_under)->id), parentguinum);
 
+  } else if (sel==show_gui) {
+
+    struct Patch *patch = CHIP_get_patch(chip_under);
+    struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    
+    if (instrumentGuiIsVisible(patch->id, parentgui))
+      PLUGIN_close_gui(plugin);
+    else
+      PLUGIN_open_gui(plugin, parentgui);
+        
   } else if (sel==random) {
 
     setRandomSampleForAllSelectedInstruments();
