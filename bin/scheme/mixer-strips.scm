@@ -798,7 +798,7 @@
               (list "Show GUI"
                     :enabled (<ra> :has-native-instrument-gui instrument-id)
                     (lambda ()
-                      (<ra> :show-instrument-gui instrument-id #f)))
+                      (<ra> :show-instrument-gui instrument-id parentgui #f)))
               "----------"
               (list "Wide mode"
                     :check (<ra> :has-wide-instrument-strip parent-instrument-id)
@@ -1053,7 +1053,7 @@
                                                  (begin
                                                    (c-display " Double clicking" button)
                                                    ;;(<ra> :cancel-last-undo) ;; Undo the added undo made at th mouse callback above. (now we wait until slider is moved before making undo)
-                                                   (<ra> :show-instrument-gui instrument-id (<ra> :show-instrument-widget-when-double-clicking-sound-object))
+                                                   (<ra> :show-instrument-gui instrument-id widget (<ra> :show-instrument-widget-when-double-clicking-sound-object))
                                                    )))))
 
   ;;(paintit (<gui> :width widget)

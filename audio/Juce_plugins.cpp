@@ -480,7 +480,9 @@ namespace{
     
     AudioProcessorEditor* const editor;
 
+#if USE_EMBEDDED_NATIVE_WINDOW
     void *_embedded_native_window = NULL;
+#endif
     
     virtual void 	buttonClicked (Button *) override {
     }
@@ -552,7 +554,7 @@ namespace{
       //this->setAlwaysOnTop(vstGuiIsAlwaysOnTop());
     }
     
-    PluginWindow(const char *title, Data *data, AudioProcessorEditor* const editor)
+    PluginWindow(const char *title, Data *data, AudioProcessorEditor* const editor, int64_t parentgui)
       : DocumentWindow (title,
                         Colours::lightgrey,
                         DocumentWindow::closeButton, //allButtons,
@@ -666,15 +668,18 @@ namespace{
 
       startTimer(100);
 
+#if USE_EMBEDDED_NATIVE_WINDOW
       auto closeit = [this] (void *handle){
         printf("CLOSEIT called\n");
 #if CUSTOM_MM_THREAD
         const MessageManagerLock mmLock;
 #endif
         _embedded_native_window = NULL; // It's not valid anymore.
+        
         delete this;
       };
-
+#endif
+      
       {
 #if USE_EMBEDDED_NATIVE_WINDOW
         _embedded_native_window = OS_GFX_create_embedded_native_window(this->getWindowHandle(), this->getX(), this->getY(), main_component.getWidth(), main_component.getHeight(), closeit);
@@ -683,7 +688,13 @@ namespace{
 
 #if FOR_WINDOWS
       if(vstGuiIsAlwaysOnTop()) {// && OS_GFX_get_num_toplevel_windows()==1) {
-        OS_WINDOWS_set_always_on_top(this->getWindowHandle());
+        //OS_WINDOWS_set_always_on_top(this->getWindowHandle());
+        void *parent = API_get_native_gui_handle(parentgui);
+        if (parent != NULL)
+          OS_WINDOWS_set_window_on_top_of(parent, this->getWindowHandle());
+        else{
+          R_ASSERT(false);
+        }
       }
 #endif
 
@@ -709,10 +720,14 @@ namespace{
 
       }GL_unlock();
 
+      PLUGIN_call_me_when_gui_closes(data->_plugin);
+
+#if USE_EMBEDDED_NATIVE_WINDOW
       if (_embedded_native_window != NULL){
         OS_GFX_close_embedded_native_window(_embedded_native_window);
-        _embedded_native_window = NULL;
+        _embedded_native_window = NULL;        
       }
+#endif
     }
 
     /*
@@ -1187,11 +1202,13 @@ static bool gui_is_visible(struct SoundPlugin *plugin){
 
 radium::Mutex JUCE_show_hide_gui_lock;
 
-static void show_gui(struct SoundPlugin *plugin){
+static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 #if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;
 #endif
 
+  bool ret = false;
+  
   Data *data = (Data*)plugin->data;
 
   if (data->window==NULL) {
@@ -1205,14 +1222,16 @@ static void show_gui(struct SoundPlugin *plugin){
       if (editor != NULL) {
 
         const char *title = V_strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
-        data->window = new PluginWindow(title, data, editor);        
-        
+        data->window = new PluginWindow(title, data, editor, parentgui);
+
+        ret = true;
       }
 
     }GL_unlock();
 
   }
-  
+
+  return ret;
 }
 
 //void OS_WINDOWS_move_main_window_to_front(void);

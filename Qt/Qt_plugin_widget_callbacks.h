@@ -315,10 +315,12 @@ public:
   
   // only called when visible
   void calledRegularlyByParent(void){
+    _is_initing = true;
+
 #ifdef WITH_FAUST_DEV
     if (_faust_plugin_widget!=NULL)
       _faust_plugin_widget->calledRegularlyByParent();
-#endif
+#endif    
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     
@@ -333,11 +335,16 @@ public:
       
       if(type->gui_is_visible!=NULL){
         bool checkbox = show_gui_checkbox->isChecked();
-        bool gui = type->gui_is_visible(plugin);
-        if (checkbox==false && gui==true)
-          show_gui_checkbox->setChecked(true);
-        else if(checkbox==true && gui==false)
-          show_gui_checkbox->setChecked(false);
+        bool gui = PLUGIN_gui_is_visible(plugin, API_get_gui_from_widget(this));
+        
+        _ignore_checkbox_stateChanged=true;{
+          
+          if (checkbox==false && gui==true)
+            show_gui_checkbox->setChecked(true);
+          else if(checkbox==true && gui==false)
+            show_gui_checkbox->setChecked(false);
+          
+        }_ignore_checkbox_stateChanged=false;
       }
       
       update_preset_widgets();
@@ -359,6 +366,8 @@ public:
       
     }
 #endif
+
+    _is_initing = false;
   }
 
   void callSliderpainterUpdateCallbacks(void){
@@ -645,6 +654,9 @@ public slots:
   */
   
   void on_ab_reset_clicked(){
+    if (_is_initing)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     PLUGIN_reset_ab(plugin,-1);
     update_ab_buttons();
@@ -652,12 +664,18 @@ public slots:
   }
 
   void on_ab_a_toggled(bool val){
+    if (_is_initing)
+      return;
+    
     if (val && _ignore_checkbox_stateChanged==false)
       AUDIOWIDGET_set_ab(_patch, 0);
     update_ab_buttons();
   }
 
   void on_ab_b_toggled(bool val){
+    if (_is_initing)
+      return;
+    
     if (val && _ignore_checkbox_stateChanged==false)
       AUDIOWIDGET_set_ab(_patch, 1);
     update_ab_buttons();
@@ -666,6 +684,9 @@ public slots:
   // auto-bypass
   //
   void on_auto_bypass_menu_button_released() {
+    if (_is_initing)
+      return;
+    
     _auto_suspend_menu.myExec();
     update_widget();
   }
@@ -673,6 +694,9 @@ public slots:
   // sample-seek
 
   void on_enable_sample_seek_toggled(bool val){
+    if (_is_initing)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     ATOMIC_SET(plugin->enable_sample_seek, val);
   }
@@ -690,6 +714,9 @@ public slots:
 #endif
 
   void on_faust_revert_button_released(){
+    if (_is_initing)
+      return;
+    
 #ifdef WITH_FAUST_DEV
     if (_faust_plugin_widget != NULL)
       _faust_plugin_widget->revert_to_latest_working_version();
@@ -697,6 +724,9 @@ public slots:
   }
 
   void on_faust_load_button_released(){
+    if (_is_initing)
+      return;
+    
 #ifdef WITH_FAUST_DEV
     if (_faust_plugin_widget != NULL){
 
@@ -723,6 +753,9 @@ public slots:
   }
     
   void on_faust_save_button_released(){
+    if (_is_initing)
+      return;
+    
 #ifdef WITH_FAUST_DEV
     if (_faust_plugin_widget != NULL){
 
@@ -750,6 +783,9 @@ public slots:
   }
 
   void on_faust_show_button_toggled(bool val){
+    if (_is_initing)
+      return;
+    
 #ifdef WITH_FAUST_DEV
     if (_faust_plugin_widget != NULL){
       if (val)
@@ -761,6 +797,9 @@ public slots:
   }
 
   void on_faust_options_button_toggled(bool val){
+    if (_is_initing)
+      return;
+    
 #ifdef WITH_FAUST_DEV
     if (_faust_plugin_widget != NULL){
       if (val)
@@ -772,6 +811,9 @@ public slots:
   }
 
   void on_half_checkbox_toggled(bool val){
+    if (_is_initing)
+      return;
+    
     //addMessage(talloc_format("Half %d\n", val));
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin==NULL)
@@ -787,6 +829,9 @@ public slots:
   }
     
   void on_max_checkbox_toggled(bool val){
+    if (_is_initing)
+      return;
+    
     //addMessage(talloc_format("Full %d\n", val));
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin==NULL)
@@ -806,16 +851,22 @@ public slots:
   // pd
   //
   void on_new_pd_controller_button_released() {
+    if (_is_initing)
+      return;
+    
     ADD_UNDO(PdControllers_CurrPos(_patch));
     _pd_plugin_widget->new_controller();  
   }
 
   // general
   void on_show_gui_checkbox_toggled(bool val){
+    if (_is_initing)
+      return;
+    
     if (_ignore_checkbox_stateChanged==false) {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       if (val){
-        plugin->type->show_gui(plugin);
+        PLUGIN_open_gui(plugin, API_get_gui_from_widget(this));
       }else{
         plugin->type->hide_gui(plugin);
       }
@@ -823,6 +874,9 @@ public slots:
   }
   
     void on_limiter_bypass_button_toggled(bool val){
+      if (_is_initing)
+        return;
+    
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       int effect_num = PLUGIN_get_effect_num(plugin, "Limiter Bypass", NULL);
       R_ASSERT_RETURN_IF_FALSE(effect_num != -1);
@@ -833,12 +887,18 @@ public slots:
     }
 
     void on_interpolation_type_currentIndexChanged( int val){
+      if (_is_initing)
+        return;
+
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
       printf("Setting resampler type to %d\n",val);
       SAMPLER_set_resampler_type(plugin, (enum ResamplerType)val);
     }
 
   void on_fxbp_button_clicked(){
+    if (_is_initing)
+      return;
+
     vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
     VECTOR_push_back(&v, "Load FXB or FXP file");
     VECTOR_push_back(&v, "Save FXB (standard VST bank format)");
@@ -853,6 +913,9 @@ public slots:
   }
 
   void on_record_button_clicked(){
+    if (_is_initing)
+      return;
+
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
     vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
@@ -907,26 +970,41 @@ public slots:
   }
   
   void on_save_button_clicked(){
+    if (_is_initing)
+      return;
+
     vector_t patches = {};
     VECTOR_push_back(&patches, _patch);
     PRESET_save(&patches, true, API_get_gui_from_existing_widget(this->window()));
   }
 
   void on_load_button_clicked(){      
+    if (_is_initing)
+      return;
+    
     requestLoadInstrumentPreset(_patch->id, "", API_get_gui_from_existing_widget(this->window()));
   }
 
   void on_replace_button_clicked(){
+    if (_is_initing)
+      return;
+    
     requestReplaceInstrument(_patch->id, "", API_get_gui_from_existing_widget(this->window()));
   }
     
   void on_reset_button_clicked(){
+    if (_is_initing)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     PLUGIN_reset(plugin);
     GFX_update_instrument_widget(_patch);
   }
 
   void on_random_button_clicked(){
+    if (_is_initing)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     PLUGIN_random(plugin);
 
@@ -934,12 +1012,18 @@ public slots:
   }
 
   void on_info_button_clicked(){
+    if (_is_initing)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL)
       PLUGIN_show_info_window(plugin->type, plugin, API_get_gui_from_existing_widget(this->window()));
   }
 
   void on_preset_button_clicked(){
+    if (_is_initing)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     const SoundPluginType *type = plugin->type;
     int num_presets = type->get_num_presets(plugin);
@@ -980,6 +1064,9 @@ public slots:
   }
     
   void on_preset_selector_editingFinished(){
+    if (_is_initing)
+      return;
+    
     int num = preset_selector->value() - 1;
     printf("num: %d\n",num);
       
@@ -994,6 +1081,9 @@ public slots:
 
 #if SHOW_SOLO_BUTTON
   void on_solo_checkbox_toggled(bool val){
+    if (_is_initing)
+      return;
+    
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin != NULL){
       int num_effects = plugin->type->num_effects;
@@ -1009,6 +1099,8 @@ public slots:
 
 }
 
+
+// These two functions can probably be deleted. The GUI polls constantly now.
 
 void PLUGINWIDGET_gui_is_hidden(void *w){
   Plugin_widget *plugin_widget = static_cast<Plugin_widget*>(w);

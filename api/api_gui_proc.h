@@ -8,6 +8,11 @@ extern LANGSPEC bool MIXERSTRIPS_has_mouse_pointer(void);
 
 //extern LANGSPEC bool API_gui_is_painting(void);
 
+extern LANGSPEC void API_add_child_plugin_gui(int64_t guinum, struct Patch *patch);
+extern LANGSPEC void API_remove_child_plugin_gui(int64_t guinum, struct Patch *patch);
+
+
+
 #ifdef __cplusplus
 #if USE_QT5
 class QWidget;
@@ -17,6 +22,9 @@ QWidget *API_gui_get_widget(int64_t guinum);
 QWidget *API_gui_get_parentwidget(QWidget *child, int64_t guinum); // child can be NULL. It's only used when guinum=-2.
 int64_t API_get_gui_from_widget(QWidget *widget);
 int64_t API_get_gui_from_existing_widget(QWidget *widget);
+
+void *API_get_native_gui_handle(int guinum);
+
 
 QWidget *API_get_main_ysplitter(void);
 QWidget *API_get_lowertabs(void);

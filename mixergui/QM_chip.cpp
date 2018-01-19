@@ -88,6 +88,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_colors_proc.h"
 
 #include "../api/api_common_proc.h"
+#include "../api/api_gui_proc.h"
 
 #include "../common/patch_proc.h"
 
@@ -1786,7 +1787,8 @@ bool Chip::myMouseDoubleClickEvent (float x, float y) {
 
   if(x>x1 && x<x2 && y>y1 && y<y2){
     struct Patch *patch = CHIP_get_patch(this);
-    return showInstrumentGui(patch->id, showInstrumentWidgetWhenDoubleClickingSoundObject());
+    int64_t gui = API_get_gui_from_existing_widget(get_qwidget(g_mixer_widget));
+    return showInstrumentGui(patch->id, gui, showInstrumentWidgetWhenDoubleClickingSoundObject());
   }
 
   //QGraphicsItem::mouseDoubleClickEvent(event);

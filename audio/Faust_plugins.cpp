@@ -24,6 +24,8 @@
 
 #include "../common/nsmtracker.h"
 
+#include "../api/api_gui_proc.h"
+
 #include "../Qt/FocusSniffers.h"
 //}
 
@@ -179,7 +181,7 @@ struct Devdata{
 
   bool is_compiling; // <-- Can only be trusted if sending one request at a time. (used by the Faust_Plugin_widget constructor)
 
-  QDialog *qtgui_parent;
+  QPointer<QDialog> qtgui_parent;
   
   Devdata()
     : id(g_id++)
@@ -191,7 +193,7 @@ struct Devdata{
   }
 
   ~Devdata(){
-    delete qtgui_parent;
+    delete qtgui_parent.data();
   }
 };
 }
@@ -393,21 +395,30 @@ static bool dev_effect_is_visible(struct SoundPlugin *plugin, int effect_num){
     return true;
 }
 
-static void dev_show_gui(struct SoundPlugin *plugin){
+static bool dev_show_gui(struct SoundPlugin *plugin, int64_t parentgui){
   Devdata *devdata = (Devdata*)plugin->data;
   Data *data = devdata->reply.data;
 
-  if (data!=NULL) {
-    safeShow(devdata->qtgui_parent);
+  if (data!=NULL && devdata->qtgui_parent.data()!=NULL) {
+    
+    QWidget *parent = API_gui_get_parentwidget(NULL, parentgui);
+    if (parent != NULL)
+      set_window_parent(devdata->qtgui_parent.data(), parent, radium::NOT_MODAL);
+    
+    safeShow(devdata->qtgui_parent.data());
     data->qtgui->run();
+    
+    return true;
   }
+
+  return false;
 }
 
 static void dev_hide_gui(struct SoundPlugin *plugin){
   Devdata *devdata = (Devdata*)plugin->data;
   Data *data = devdata->reply.data;
 
-  if (devdata->qtgui_parent != NULL){
+  if (devdata->qtgui_parent.data() != NULL){
     devdata->qtgui_parent->hide();
   }
   
@@ -417,7 +428,7 @@ static void dev_hide_gui(struct SoundPlugin *plugin){
 
 static bool dev_gui_is_visible(struct SoundPlugin *plugin){
   Devdata *devdata = (Devdata*)plugin->data;
-  if (devdata->qtgui_parent==NULL)
+  if (devdata->qtgui_parent.data()==NULL)
     return false;
   else
     return devdata->qtgui_parent->isVisible();
@@ -557,7 +568,7 @@ static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &
 
   // handle gui
   {
-    if (devdata->qtgui_parent == NULL)
+    if (devdata->qtgui_parent.data() == NULL)
       devdata->qtgui_parent = FAUST_create_qdialog();
     
     if (old_reply.data != NULL && old_reply.data->qtgui!=NULL){
@@ -565,7 +576,7 @@ static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &
       devdata->qtgui_parent->layout()->removeWidget(old_reply.data->qtgui);
     }
 
-    create_gui(devdata->qtgui_parent, reply.data, plugin);
+    create_gui(devdata->qtgui_parent.data(), reply.data, plugin);
 
     if (devdata->qtgui_parent->isVisible())
       reply.data->qtgui->run();    

@@ -60,6 +60,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "../common/nsmtracker.h"
+#include "../common/patch_proc.h"
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/AudioMeterPeaks_proc.h"
@@ -602,6 +603,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     QVector<func_t*> _deleted_callbacks;
 
     RememberGeometry remember_geometry;
+
+    QSet<int64_t> _child_plugin_gui_patch_ids; // Plugins that have been opened with this GUI as parent. We identify the plugin by using Patch::id since Patch::id requires less bookkeeping (no need to do anything when patch or plugin is deleted).
     
     bool is_full_screen(void) const {
       //return _is_full_screen;
@@ -669,6 +672,26 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       if(g_static_toplevel_widgets.contains(_widget)){
         R_ASSERT_NON_RELEASE(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
+      }
+
+      // Close plugin GUI children
+      {
+        QList<int64_t> patch_ids = _child_plugin_gui_patch_ids.toList(); // Work on a copy since elements are removed while iterating.
+        
+        for(int64_t patch_id : patch_ids){
+        
+          struct Patch *patch = PATCH_get_from_id(patch_id);
+          if (patch->instrument==get_audio_instrument()){
+            if (patch!=NULL){
+              SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+              if (plugin!=NULL){
+                PLUGIN_close_gui(plugin);
+              }
+            }
+          } else {
+            R_ASSERT(false);
+          }
+        }
       }
       
       //printf("Deleting Gui %p (%d) (classname: %s)\n",this,(int)get_gui_num(), _class_name.toUtf8().constData());
@@ -3367,6 +3390,59 @@ static void perhaps_collect_a_little_bit_of_gui_garbage(int num_guis_to_check){
   }
 }
 
+void *API_get_native_gui_handle(int guinum){
+  Gui *gui = get_gui(guinum);
+  
+  if (gui==NULL)
+    return NULL;
+
+  return (void*)gui->_widget->effectiveWinId();
+}
+
+
+void API_add_child_plugin_gui(int64_t guinum, struct Patch *patch){
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
+    
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(plugin->type->show_gui!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(plugin->type->hide_gui!=NULL);
+
+  Gui *gui = get_gui(guinum);
+  
+  if (gui==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+
+  gui->_child_plugin_gui_patch_ids << patch->id;
+}
+
+void API_remove_child_plugin_gui(int64_t guinum, struct Patch *patch){
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
+  
+  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(plugin->type->show_gui!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(plugin->type->hide_gui!=NULL);
+
+  Gui *gui = get_gui(guinum);
+  
+  if (gui==NULL){
+    printf("API_remove_child_plugin_gui. Note: No GUI #%d. Perhaps it has been closed? (Patch: %s)\n", (int)guinum, patch->name);
+    //R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+
+  if(gui->_child_plugin_gui_patch_ids.remove(patch->id)==false){
+    printf("API_remove_child_plugin_gui. Note: No patch %s in gui #%d\n", patch->name, (int)guinum);
+    R_ASSERT_NON_RELEASE(false);
+  }
+}
+  
+
 // Widget can have been created any type of way. Both using one of the gui_* functions, or other places.
 // A new Gui will be created if the widget is not included in g_guis/etc. already.
 int64_t API_get_gui_from_widget(QWidget *widget){
@@ -5642,7 +5718,7 @@ static QWidget *get_parentwidget(QWidget *child, int64_t parentnum, bool must_be
   if (parent != NULL && must_be_window) {
     QWidget *window = parent->window();
     if (parent != window){
-      printf("API_gui_get_parentwidget: #%d is not a window gui. (automatically fixed)\n", (int)parentnum);
+      //printf("API_gui_get_parentwidget: #%d is not a window gui. (automatically fixed)\n", (int)parentnum); // Remove printf since this function is sometimes called quite often.
       parent = window;
     }
   }
@@ -5690,7 +5766,7 @@ void API_hideInstrumentGui(void){
   S7CALL2(void_void, "FROM-C-hide-instrument-gui");
 }
 
-// Returns true if the instrument widget is the current tab in the lower tabs.
+// Returns true if the instrument widget is the current tab in the lower tabs. NOT the same as 'instrumentGuiIsVisible'
 bool API_instrumentGuiIsVisibleInLowerTab(void){
   return S7CALL2(bool_void, "FROM-C-instrument-gui-is-visible");
 }

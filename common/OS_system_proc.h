@@ -25,6 +25,8 @@ extern LANGSPEC void OS_WINDOWS_set_key_window(void *win);
 extern LANGSPEC bool OS_OSX_is_key_window(void *void_nsview);
 extern LANGSPEC bool OS_WINDOWS_is_key_window(void *maybewin);
 
+extern LANGSPEC void OS_WINDOWS_set_window_on_top_of(void *parent_handle, void *child_handle);
+  
 extern LANGSPEC void OS_WINDOWS_set_always_on_top(void *child_handle);
 //extern LANGSPEC void OS_WINDOWS_set_on_top_of_everything(void *child_handle);
 

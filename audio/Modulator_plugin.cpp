@@ -1374,24 +1374,31 @@ static bool gui_is_visible(struct SoundPlugin *plugin){
   return false;
 }
 
-static void show_gui(struct SoundPlugin *plugin){
+static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
   const volatile struct Patch *modulator_patch = plugin->patch;
   if(modulator_patch==NULL){
     R_ASSERT_NON_RELEASE(false);
-    return;
+    return false;
   }
 
   Modulator *modulator = static_cast<Modulator*>(plugin->data);
 
   if (modulator->gui >= 0 && gui_isOpen(modulator->gui)){
     gui_raise(modulator->gui);
-    return;
+    return true;
   }
   
   modulator->gui = S7CALL2(int_int, "FROM_C-create-modulator-gui", modulator_patch->id);
 
   if (modulator->gui>=0){
+    
     gui_show(modulator->gui);
+    return true;
+    
+  } else {
+    
+    return false;
+    
   }
 }
 

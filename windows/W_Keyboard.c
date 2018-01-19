@@ -42,6 +42,10 @@ static unsigned int g_last_keyswitch;
 
 #ifndef RUN_TEST
 
+void OS_WINDOWS_set_window_on_top_of(void *parent_handle, void *child_handle){
+  SetWindowLongPtr((LONG_PTR)child_handle, -8, (LONG_PTR)parent_handle);
+}
+  
 void OS_WINDOWS_set_always_on_top(void *child_handle){
 #if 0
   //SetWindowPos(main_handle, hwnd, 100, 100, 1000, 1000, SWP_SHOWWINDOW);
@@ -52,7 +56,7 @@ void OS_WINDOWS_set_always_on_top(void *child_handle){
   // Set it on top of the main window.
   HWND parent_hwnd = (HWND)OS_GFX_get_native_main_window();
   SetWindowLongPtr(child_hwnd, -8, (LONG_PTR)parent_hwnd);
-#elif 0
+#elif 1
   // Set it on top of all open toplevel windows.
   int num_toplevelwindows = OS_GFX_get_num_toplevel_windows();
   printf("   NUM_TOP: %d\n", num_toplevelwindows);

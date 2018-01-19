@@ -589,12 +589,14 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 }
 
 // called from radium
-static void show_gui(struct SoundPlugin *plugin){
+static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
   Data *data = (Data*)plugin->data;
   //printf("####################################################### Showing Pd gui\n");
   PLAYER_lock();{
     libpds_show_gui(data->pd);
   }PLAYER_unlock();
+
+  return true;
 }
 
 // called from radium
