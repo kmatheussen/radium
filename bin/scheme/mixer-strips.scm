@@ -576,8 +576,11 @@
 
   (define label (<gui> :widget))
 
+  (define (show-name-tool-tip)
+    (<gui> :set-tool-tip label name))
+  
   (if is-minimized
-      (<gui> :set-tool-tip label name))
+      (show-name-tool-tip))
   
   (if is-minimized
       (<gui> :set-min-height label (* 2 (<gui> :get-system-fontheight))))
@@ -587,7 +590,9 @@
            (<gui> :filled-box label color 0 0 width height)
            (if is-minimized
                (<gui> :draw-vertical-text label *text-color* name 2 7 (+ width 0) height #t #f #t)
-               (<gui> :draw-text label *text-color* name 5 0 width height #f #f #f 0 #t #t))
+               (if (not (<gui> :draw-text label *text-color* name 5 0 width height #f #f #f 0 #t #t))
+                   (show-name-tool-tip)
+                   (<gui> :set-tool-tip label "")))
            (<gui> :draw-box label "#202020" 0 0 width height 1.0 2 2)))
   
   (add-safe-mouse-callback label (lambda (button state x y)
