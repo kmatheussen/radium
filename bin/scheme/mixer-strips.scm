@@ -797,8 +797,12 @@
                                   (show-instrument-color-dialog parentgui instrument-id))
               (list "Show GUI"
                     :enabled (<ra> :has-native-instrument-gui instrument-id)
-                    (lambda ()
-                      (<ra> :show-instrument-gui instrument-id parentgui #f)))
+                    :check (<ra> :instrument-gui-is-visible instrument-id parentgui)
+                    (lambda (enabled)
+                      (if enabled
+                          (<ra> :show-instrument-gui instrument-id parentgui #f)
+                          (<ra> :hide-instrument-gui instrument-id))))
+              
               "----------"
               (list "Wide mode"
                     :check (<ra> :has-wide-instrument-strip parent-instrument-id)
