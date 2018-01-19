@@ -1993,13 +1993,10 @@ bool hideInstrumentGui(int64_t instrument_id){
   
   struct SoundPlugin *plugin = patch->patchdata;
   if (plugin != NULL){
-    
-    if(plugin->type->hide_gui != NULL) {
-    
-      plugin->type->hide_gui(plugin);
-      return true;
-      
-    }
+
+    PLUGIN_close_gui(plugin);
+
+    return true;
   }
 
   return false;

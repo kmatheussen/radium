@@ -868,7 +868,7 @@ public slots:
       if (val){
         PLUGIN_open_gui(plugin, API_get_gui_from_widget(this));
       }else{
-        plugin->type->hide_gui(plugin);
+        PLUGIN_close_gui(plugin);
       }
     }
   }
