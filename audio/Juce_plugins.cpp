@@ -687,7 +687,7 @@ namespace{
       }                                          
 
 #if FOR_WINDOWS
-      if(vstGuiIsAlwaysOnTop()) {// && OS_GFX_get_num_toplevel_windows()==1) {
+      {
         //OS_WINDOWS_set_always_on_top(this->getWindowHandle());
         void *parent = API_get_native_gui_handle(parentgui);
         if (parent != NULL)

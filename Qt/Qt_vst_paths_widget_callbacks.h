@@ -67,8 +67,12 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
     
 #endif
 
-    updateWidgets();
+#if FOR_WINDOWS
+    always_on_top->hide();
+#endif
     
+    updateWidgets();
+
     initing = false;
   }
 
