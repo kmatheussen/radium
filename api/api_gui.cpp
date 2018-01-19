@@ -1348,7 +1348,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       myupdate(x1, y1, x2, y2);
     }
 
-    void drawText(const_char* color, const_char *chartext, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
+    bool drawText(const_char* color, const_char *chartext, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
       QPainter *painter = get_painter();
 
       QString text = QString(chartext); //.replace(" ", "\n");
@@ -1394,7 +1394,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         painter->setFont(font);
       }
 
-        
+      QString org_text = text;
       QString draw_text = text;
       
       if (cut_text_to_fit) {
@@ -1433,6 +1433,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
 
       myupdate(x1, y1, x2, y2);
+
+      return org_text==draw_text;
     }
 
 
@@ -5626,12 +5628,12 @@ void gui_drawEllipse(int64_t guinum, const_char* color, float x1, float y1, floa
   gui->drawEllipse(color, x1, y1, x2, y2, width);
 }
 
-void gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
+bool gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
-    return;
+    return false;
 
-  gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, rotate, cut_text_to_fit, scale_font_size);
+  return gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, rotate, cut_text_to_fit, scale_font_size);
 }
 
 void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left) {
