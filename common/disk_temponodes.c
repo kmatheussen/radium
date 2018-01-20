@@ -55,6 +55,9 @@ DC_end();
 }
 
 static void checkTempoNodeCompatibility(struct TempoNodes *temponodes){
+  if (dc.has_warned_about_acc_rit)
+    return;
+  
   double prev = temponodes->reltempo;
 
   temponodes = NextTempoNode(temponodes);
@@ -66,6 +69,7 @@ static void checkTempoNodeCompatibility(struct TempoNodes *temponodes){
                   "Earlier versions of Radium calculated accelerando and ritardando differently.\n\n"
                   "You might need to adjust tempos manually here and there to ensure sample loops align properly, and so forth.\n"
                   );
+      dc.has_warned_about_acc_rit = true;
       return;
     }
 

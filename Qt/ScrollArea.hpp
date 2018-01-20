@@ -17,7 +17,7 @@
 #include <QPushButton>
 #endif
 
-bool g_pause_scroll_area_updates_when_resizing = false;
+extern bool g_pause_scroll_area_updates_when_resizing;
 
 namespace radium{
 
@@ -217,7 +217,6 @@ class ScrollArea : public QWidget {
 
   MyTimer _mytimer;
 #endif
-
 
   void pauseUpdatesALittleBit(void){
     if(g_pause_scroll_area_updates_when_resizing)

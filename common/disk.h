@@ -55,6 +55,8 @@ typedef struct{
 
 	bool colorize;
 	int startcolor;
+
+        bool has_warned_about_acc_rit;
 }DiskClass;
 
 //Types for ls:
