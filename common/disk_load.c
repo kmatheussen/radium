@@ -67,7 +67,9 @@ bool g_is_loading = false;
 bool Load_Initialize(const wchar_t *filename, const char *type){
   
         dc.success=true;
-
+        
+        dc.has_warned_about_acc_rit = false;
+        
         curr_disk_line = 0;
 
 	dc.file=DISK_open_for_reading(filename);
