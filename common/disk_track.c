@@ -113,6 +113,8 @@ var2:
           track->patch->instrument = get_instrument_from_type(MIDI_INSTRUMENT_TYPE); // To support songs without instrument_type. (old songs)
         }
 	track->patch->id=DC_LoadN();
+        if (disk_load_version < 0.67 && track->patch->id==0) // These songs only contained MIDI instruments, and the ID started at 0. id=0 is the main patch.
+          track->patch->id = 500;
 	goto start;
 var3:
 	track->volume=DC_LoadI();

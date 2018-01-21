@@ -127,7 +127,7 @@ static vector_t *get_all_patches(void){
 }
 
 int64_t PATCH_get_new_id(void){
-  static int64_t id = 0;
+  static int64_t id = 1; // Start at 1. id=0 is the main pipe, and we don't use PATCH_get_new_id() when creating the main pipe.
   id++;
   
   // When we load a song, the songs also contains patch id number, so we need to check that the id is not already used.
@@ -268,9 +268,9 @@ void PATCH_set_name(struct Patch *patch, const char *name){
   remakeMixerStrips(-1);
 }
 
-static struct Patch *create_new_patch(const char *name){
+static struct Patch *create_new_patch(const char *name, bool is_main_pipe){
   struct Patch *patch = PATCH_alloc();
-  patch->id = PATCH_get_new_id();
+  patch->id = is_main_pipe ? 0 : PATCH_get_new_id();
   patch->forward_events = true;
 
   PATCH_set_name(patch, name);
@@ -408,10 +408,10 @@ void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state) {
 }
 
 // Either type_name and plugin_name is NULL, or state==NULL
-struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y) {
+static struct Patch *create_audio_patch(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y, bool is_main_pipe) {
   printf("PATCH_create_audio called\n");
   
-  struct Patch *patch = create_new_patch(name);
+  struct Patch *patch = create_new_patch(name, is_main_pipe);
 
   patch->instrument=get_audio_instrument();
 
@@ -424,8 +424,17 @@ struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name,
   return patch;
 }
 
+struct Patch *PATCH_create_main_pipe(void) {
+  R_ASSERT(g_is_loading);
+  return create_audio_patch(talloc_strdup("Pipe"), talloc_strdup("Pipe"), talloc_strdup("Main Pipe"), NULL, 0, 0, true);
+}
+  
+struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y) {
+  return create_audio_patch(type_name, plugin_name, name, state, x, y, false);
+}
+
 struct Patch *PATCH_create_midi(const char *name){
-  struct Patch *patch = create_new_patch(name);
+  struct Patch *patch = create_new_patch(name, false);
   
   MIDI_InitPatch(patch);
 

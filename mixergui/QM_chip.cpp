@@ -661,6 +661,10 @@ namespace{
       , _must_set_enabled(must_set_enabled)
       , _is_enabled(is_enabled)
     {
+      if (from!=NULL && to!=NULL){
+        R_ASSERT(from!=NULL);
+        R_ASSERT(to!=NULL);
+      }
       if(volume >= 0){
         _volume = volume;
         _must_set_volume = true;
@@ -669,7 +673,8 @@ namespace{
 
     Parm(Chip *from, Chip *to)
       : Parm(from, to, -1.0, false, true)
-    {}
+    {
+    }
 
     // QVector requires an empty constructor in Parms::add
     Parm()
