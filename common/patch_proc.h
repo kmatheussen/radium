@@ -37,6 +37,7 @@ extern LANGSPEC bool PATCH_make_active_audio(struct Patch *patch, const char *ty
 extern LANGSPEC void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state);
 extern LANGSPEC struct Patch *PATCH_alloc(void);
 extern LANGSPEC void PATCH_set_name(struct Patch *patch, const char *name);
+extern LANGSPEC struct Patch *PATCH_create_main_pipe(void);
 extern LANGSPEC struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y);
 extern LANGSPEC struct Patch *PATCH_create_midi(const char *name);
 extern LANGSPEC void PATCH_make_inactive(struct Patch *patch);

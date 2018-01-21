@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mixergui/QM_MixerWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
 #include "../audio/audio_instrument_proc.h"
+#include "../audio/Presets_proc.h"
 #include "../midi/midi_i_input_proc.h"
 
 #include "../api/api_proc.h"
@@ -246,6 +247,14 @@ void DLoadSong(struct Root *newroot,struct Song *song){
 	DLoadWindows(newroot,song->tracker_windows);
 
         GFX_ShowProgressMessage("Creating instruments");
+
+        /*
+        if(song->mixerwidget_state==NULL){
+          disk_t *disk = DISK_open_for_reading(STRING_create("/home/kjetil/radium/bin/sounds/clean_mixer.hash"));
+          song->mixerwidget_state = HASH_load(disk);
+          DISK_close_and_delete(disk);
+        }
+        */
         
         if(song->mixerwidget_state!=NULL)
           MW_create_full_from_state(song->mixerwidget_state, true); // In addition, all audio plugins are created here and put into the patch->patchdata field.
@@ -253,8 +262,6 @@ void DLoadSong(struct Root *newroot,struct Song *song){
           MW_create_plain(); // older song.
           gui_resetAllMixerStrips();
         }
-
-        song->mixerwidget_state=NULL; // release memory.
 
         DLoadAudioInstrument(); // Sets correct effect_num for fx, since mapping between fx name and effect_num was not available when loading fx. (The MIDI instrument doesn't map between name and number since the MIDI standard is not going to change, and therefore it's safe to use the numbers directly.)
 
@@ -270,6 +277,20 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         //  recreate_instrument_widget_order_from_state(song->instrument_widget_order_state);
         song->instrument_widget_order_state=NULL; // release memory
 
+        if (song->mixerwidget_state==NULL){
+          
+          //PRESET_load(STRING_create("/home/kjetil/radium/bin/clean_mixer.mrec_internal"), NULL, false, 0, 0);
+          for(int busnum=0;busnum<NUM_BUSES;busnum++) {            
+            createAudioInstrument(talloc_strdup("Bus"), talloc_format("Bus %d", busnum+1), talloc_format("Aux %d Bus", busnum+1), 0, 0);
+          }
+          PATCH_create_main_pipe();
+          
+        } else {
+
+          song->mixerwidget_state=NULL; // release memory.
+
+        }
+        
         BS_UpdateBlockList();
         BS_UpdatePlayList();
           
