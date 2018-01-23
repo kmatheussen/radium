@@ -195,7 +195,7 @@ typedef struct _midi_event_t{
 static radium::Mutex g_midi_event_mutex;
 static radium::Vector<midi_event_t> g_recorded_midi_events;
 
-static radium::Queue<midi_event_t, 8000> g_midi_event_queue; // 8000 is not the maximum size that can be recorded totally, but the maximum size that can be recorded until the recording queue pull thread has a chance to pick it up. In other words: 8000 should be plenty enough as long as the CPU is not too busy.
+static radium::Queue<midi_event_t, 8000> *g_midi_event_queue; // 8000 is not the maximum size that can be recorded totally, but the maximum size that can be recorded until the recording queue pull thread has a chance to pick it up. In other words: 8000 should be plenty enough as long as the CPU is not too busy.
 
   
 // Called from a MIDI input thread. Only called if playing
@@ -228,7 +228,7 @@ static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
           if (midi_learn->RT_get_automation_recording_data(&midi_event.plugin, &midi_event.effect_num)){
 
             // Send event to the pull thread
-            if (!g_midi_event_queue.tryPut(midi_event))
+            if (!g_midi_event_queue->tryPut(midi_event))
               RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, "
                          "or your MIDI input and output ports are connected recursively, please report this incident.");
           }
@@ -243,7 +243,7 @@ static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
       midi_event.msg       = msg;
 
       // Send event to the pull thread
-      if (!g_midi_event_queue.tryPut(midi_event))
+      if (!g_midi_event_queue->tryPut(midi_event))
         RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, "
                    "or your MIDI input and output ports are connected recursively, please report this incident.");
     }
@@ -285,7 +285,7 @@ void MIDI_add_automation_recording_event(SoundPlugin *plugin, int effect_num, fl
     midi_event.plugin = plugin;
     midi_event.effect_num = effect_num;
     
-    if (!g_midi_event_queue.tryPut(midi_event))
+    if (!g_midi_event_queue->tryPut(midi_event))
       RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, "
                  "or your MIDI input and output ports are connected recursively, please report this incident.");
   }
@@ -307,7 +307,7 @@ public:
   ~RecordingQueuePullThread(){
     ATOMIC_SET(is_running, false);
     midi_event_t event = {};
-    g_midi_event_queue.put(event);
+    g_midi_event_queue->put(event);
     wait(5000);
   }
   
@@ -315,7 +315,7 @@ public:
 
     while(true){
     
-      midi_event_t event = g_midi_event_queue.get();
+      midi_event_t event = g_midi_event_queue->get();
       if(ATOMIC_GET(is_running)==false)
         return;
             
@@ -505,7 +505,7 @@ static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblo
 
 // Called from the main thread after the player has stopped
 void MIDI_insert_recorded_midi_events(void){
-  while(g_midi_event_queue.size() > 0) // Wait til the recording_queue_pull_thread is finished draining the queue.
+  while(g_midi_event_queue->size() > 0) // Wait til the recording_queue_pull_thread is finished draining the queue.
     msleep(5);
 
   ATOMIC_SET(root->song_state_is_locked, false);
@@ -918,8 +918,10 @@ void MIDI_HandleInputMessage(void){
  *************************************************************/
 
 void MIDI_input_init(void){
-  radium::ScopedMutex lock(g_midi_event_mutex);
-    
+  radium::ScopedMutex lock(g_midi_event_mutex); // Should have a comment here why we need to lock this mutex, if it is really necessary to lock it.
+
+  g_midi_event_queue = new radium::Queue<midi_event_t, 8000>;
+
   MIDI_set_record_accurately(SETTINGS_read_bool("record_midi_accurately", true));
   MIDI_set_record_velocity(SETTINGS_read_bool("always_record_midi_velocity", false));
 
