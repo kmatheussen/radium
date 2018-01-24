@@ -2010,8 +2010,28 @@ void PLUGIN_close_gui(SoundPlugin *plugin){
 }
 
 bool PLUGIN_open_gui(SoundPlugin *plugin, int64_t parentgui){
+#if !defined(RELEASE)
+  int64_t p2 = parentgui;
+#endif
+  
   parentgui = gui_getParentWindow(parentgui);
-                      
+
+#if !defined(RELEASE)
+  {
+    auto *widget = API_gui_get_widget(p2);
+    auto *window = widget->window();
+    int64_t p3 = API_get_gui_from_existing_widget(window);
+    if (p3 != p2){
+      printf("  GAKKAGKKAKK org parentgui: %d. parentgui: %d. windowgui: %d. widgetgui: %d\n",
+             (int)p2, (int)parentgui,
+             (int)p3, (int)API_get_gui_from_existing_widget(widget));
+      fflush(stdout);
+      getchar();
+      abort();
+    }
+  }
+#endif
+  
   if (parentgui != plugin->gui_parentgui)
     PLUGIN_close_gui(plugin);
 
