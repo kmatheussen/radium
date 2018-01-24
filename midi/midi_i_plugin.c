@@ -643,20 +643,38 @@ void MIDI_init_track(struct Tracks *track){
 }
 
 void MIDIStopPlaying(struct Instruments *instrument){
+  /*
+  double times[R_MAX(1, instrument->patches.num_elements)];
+  int i=0;
+  double time = TIME_get_ms();
+  */
+  
   VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
-
     struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
     struct MidiPort *midi_port = patchdata->midi_port;
     int ch;
 
     for(ch=0;ch<16;ch++){
+      
+      PLAYER_maybe_pause_lock_a_little_bit(ch);
+      
       int notenum;
       for(notenum=0;notenum<128;notenum++)
-        while(midi_port->num_ons[ch][notenum] > 0)
+        while(midi_port->num_ons[ch][notenum] > 0){
+          //printf("%p/%d: Sending stop to note %d\n", patch, ch, notenum);
           R_PutMidi3(midi_port,0x80|ch,notenum,0x00);
+        }
     }
-
+    /*
+    times[i++] = TIME_get_ms();
+    */
   }END_VECTOR_FOR_EACH;
+
+  /*
+  for(int i=0;i<instrument->patches.num_elements;i++){
+    printf("%d: %f\n", i, times[i]-time);
+  }
+  */
 }
 
 static void handle_fx_when_patch_is_replaced(struct Blocks *block,
