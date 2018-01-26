@@ -1171,7 +1171,7 @@ Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Sem
 	$(CCC) $(CD)Semaphores.cpp $(QTOPT)
 
 stacktoucher.o: $(CD)stacktoucher.c
-	$(CC) -O0 $(CD)stacktoucher.c -c -O0
+	$(CC) -O0 $(CD)stacktoucher.c -c -O0 -std=c99 -g -Wall -Werror
 
 
 X11_Main.o:  $(BUILD_DEPENDENCIES) $(P)X11_Main.c 

@@ -62,6 +62,7 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     set_linear_accelerando_and_ritardando(song->linear_accelerando, song->linear_ritardando);
     send_swing_to_plugins->setChecked(song->plugins_should_receive_swing_tempo);
     mixer_comments_visible->setChecked(mixerStripCommentsVisible());
+    mute_automation->setChecked(song->mute_editor_automation_when_track_is_muted);
     swing_along->setChecked(song->editor_should_swing_along);
     embed_samples->setChecked(g_curr_song_contains_embedded_samples);
   }
@@ -113,6 +114,16 @@ public slots:
       return;
 
     setMixerStripCommentsVisible(val);
+  }
+  
+  void on_mute_automation_toggled(bool val){
+    if (_initing==true)
+      return;
+
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
+      root->song->mute_editor_automation_when_track_is_muted = val;
+    }
   }
   
   void on_send_swing_to_plugins_toggled(bool val){

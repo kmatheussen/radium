@@ -104,7 +104,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	static char *vars[9]={
+	static char *vars[10]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -113,9 +113,12 @@ struct Song *LoadSong(void){
                 "linear_ritardando",
                 "plugins_should_receive_swing_tempo",
                 "editor_should_swing_along",
-                "mixer_comments_visible"
+                "mixer_comments_visible",
+                "mute_editor_automation_when_track_is_muted"
 	};
 	struct Song *song=SONG_create();
+
+        song->mute_editor_automation_when_track_is_muted = false; // Compatibility with older songs.
 
         MIDI_SetThroughPatch(NULL);
           
@@ -140,7 +143,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
         
-        GENERAL_LOAD(7,9)
+        GENERAL_LOAD(7,10)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -208,10 +211,13 @@ var7:
         goto start;
 
 var8:
-        root->song->mixer_comments_visible = DC_LoadB();
+        song->mixer_comments_visible = DC_LoadB();
         goto start;
         
 var9:
+        song->mute_editor_automation_when_track_is_muted = DC_LoadB();
+        goto start;
+
 var10:
 var11:
 var12:

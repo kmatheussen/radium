@@ -60,6 +60,7 @@ bool NewSong(void){
 struct Song *SONG_create(void){
   struct Song *song=talloc(sizeof(struct Song));
   song->editor_should_swing_along = true;
+  song->mute_editor_automation_when_track_is_muted = true;
   
   VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL));
 

@@ -2525,7 +2525,7 @@ struct SeqTrack{
   struct SeqBlock *curr_sample_seqblock; // Currently only used for displaying audiofile name in the editor. Note that curr_sample_seqblock->sample_id might not always be valid.
   
   double start_time; // Current seqtime. Can only be accessed from the player thread.
-  double end_time;   // Same here.
+  double end_time;   // Same here. (should be the same as start_time + RADIUM_BLOCKSIZE)
 
   // These two variables are here only for convenience (and maybe a little bit of efficency) so that we don't have to do atomic operations on start_time and end_time in the player thread.
   // They contain the same values as 'start_time" and 'end_time' above.
@@ -2607,7 +2607,8 @@ struct Song{
         bool editor_should_swing_along;
 
         bool mixer_comments_visible;
-  
+        bool mute_editor_automation_when_track_is_muted;
+
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.
 };
