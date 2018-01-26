@@ -98,6 +98,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include "../midi/midi_proc.h"
+#include "../api/api_gui_proc.h"
 
 
 #include "../midi/midi_juce.cpp"
@@ -554,7 +555,9 @@ namespace{
         if (new_state != is_bypass)
           bypass_button.setToggleState(is_bypass, dontSendNotification);
       }
-      
+
+      //printf("Width: %d\n", editor->getWidth());
+             
       //if (isAlwaysOnTop() != vstGuiIsAlwaysOnTop())
       //  delete this;
       //this->setAlwaysOnTop(vstGuiIsAlwaysOnTop());

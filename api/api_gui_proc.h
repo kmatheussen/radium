@@ -14,6 +14,10 @@ extern LANGSPEC void API_remove_child_plugin_gui(int64_t guinum, struct Patch *p
 
 
 #ifdef __cplusplus
+
+void *API_get_native_gui_handle(int guinum);
+
+
 #if USE_QT5
 class QWidget;
 QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void);
@@ -22,9 +26,6 @@ QWidget *API_gui_get_widget(int64_t guinum);
 QWidget *API_gui_get_parentwidget(QWidget *child, int64_t guinum); // child can be NULL. It's only used when guinum=-2.
 int64_t API_get_gui_from_widget(QWidget *widget);
 int64_t API_get_gui_from_existing_widget(QWidget *widget);
-
-void *API_get_native_gui_handle(int guinum);
-
 
 QWidget *API_get_main_ysplitter(void);
 QWidget *API_get_lowertabs(void);

@@ -1031,8 +1031,8 @@ public:
       qreal x1,y1,x2,y2;
       rect.getCoords(&x1, &y1, &x2, &y2);
 
-      double noninterior_start = get_seqblock_noninterior_start2(&seqblock->gfx);
-      double noninterior_end = get_seqblock_noninterior_end2(_seqtrack, seqblock, true);
+      double noninterior_start = get_abstime_from_seqtime(_seqtrack, NULL, get_seqblock_noninterior_start2(&seqblock->gfx));
+      double noninterior_end = get_abstime_from_seqtime(_seqtrack, NULL, get_seqblock_noninterior_end2(_seqtrack, seqblock, true));
 
       x1 = scale_double(noninterior_start,
                         _start_time, _end_time,
