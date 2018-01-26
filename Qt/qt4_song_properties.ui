@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>315</width>
-    <height>464</height>
+    <width>582</width>
+    <height>304</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,11 +19,27 @@
   <property name="windowTitle">
    <string>Song Properties</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_3" rowstretch="0,0,0,0,0,0" columnstretch="0">
+  <layout class="QGridLayout" name="gridLayout_3" rowstretch="0,0,0,0,0,0" columnstretch="0,0,0">
    <property name="bottomMargin">
     <number>2</number>
    </property>
-   <item row="5" column="0">
+   <item row="2" column="2">
+    <widget class="QGroupBox" name="groupBox_6">
+     <property name="title">
+      <string>Editor automation</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QCheckBox" name="mute_automation">
+        <property name="text">
+         <string>Mute automation if track is muted</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="5" column="1">
     <widget class="QWidget" name="widget" native="true">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -51,7 +67,7 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="0">
+   <item row="2" column="1">
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string>Swing</string>
@@ -74,25 +90,7 @@
      </layout>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QGroupBox" name="groupBox_5">
-     <property name="title">
-      <string>Audio files</string>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QCheckBox" name="embed_samples">
-        <property name="text">
-         <string>Embed audio files in song file</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-     <zorder>embed_samples</zorder>
-     <zorder>groupBox</zorder>
-    </widget>
-   </item>
-   <item row="0" column="0">
+   <item row="0" column="1">
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
       <string>Accelerando behavior</string>
@@ -118,23 +116,7 @@
      </layout>
     </widget>
    </item>
-   <item row="4" column="0">
-    <widget class="QGroupBox" name="groupBox_4">
-     <property name="title">
-      <string>Mixer</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="mixer_comments_visible">
-        <property name="text">
-         <string>Show comments</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="1" column="0">
+   <item row="0" column="2">
     <widget class="QGroupBox" name="groupBox_3">
      <property name="title">
       <string>Ritardando behavior</string>
@@ -154,6 +136,38 @@
         </property>
         <property name="checked">
          <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="2">
+    <widget class="QGroupBox" name="groupBox_5">
+     <property name="title">
+      <string>Audio files</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QCheckBox" name="embed_samples">
+        <property name="text">
+         <string>Embed audio files in song file</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QGroupBox" name="groupBox_4">
+     <property name="title">
+      <string>Mixer</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="mixer_comments_visible">
+        <property name="text">
+         <string>Show comments</string>
         </property>
        </widget>
       </item>

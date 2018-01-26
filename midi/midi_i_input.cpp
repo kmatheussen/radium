@@ -533,7 +533,7 @@ void MIDI_insert_recorded_midi_events(void){
     
     hash_t *track_set = HASH_create(8);
 
-    for(int i = 0 ; i < g_recorded_midi_events.size(); i++) { // end note events can be removed from g_recorded_midi_events inside this loop
+    for(int i = 0 ; i < g_recorded_midi_events.size(); i++) { // Note: end note events can be removed from g_recorded_midi_events inside this loop
       
       auto midi_event = g_recorded_midi_events[i];
 
