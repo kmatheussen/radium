@@ -1,3 +1,34 @@
+Changes 5.4.8 -> 5.4.9:
+* Audio: Fix possible audio glitch that could happen when
+  stopping to play in a song that has many MIDI instruments.
+* Sequencer: Fix some envelope interface issues when a
+  previous block in the same sequencer track had tempo
+  multiplier not set to 1.0.
+* Mouse: Fix pointer flickering in the sequencer when
+  hovering over envelope or automation.
+* Load: Don't crash if creating a new audio instrument after
+  loading a song that was saved before audio was supported.
+* Load: Only show one warning window about different way to
+  calculate ritardando/accelerando in new songs.
+* Mixer strips: Show instrument name in tool tip if
+  instrument name was too long to fit.
+* VST/AU: Remember GUI positions separately for each parent
+  window.
+* Mixer: Add "Show GUI" checkbox to the popup menu in the
+  modular mixer.
+* Mixer: Change "Show GUI" entry in the popup menu into a
+  checkbox.
+* VST: Fix some minor issues when closing GUI.
+* Windows: Remove the "Always on top" option for plugins since
+  it made no sense to disable it on that platform.
+* VST: Bind native GUI to the window it was opened from. On
+  Windows, this means that the GUI will be put in front of the
+  window you would expect it to be put in front of, and not a
+  random window, which was the case in 5.4.8.
+* Windows: Fix opening VST GUI in the modular mixer.
+
+
+
 Changes 5.4.7 -> 5.4.8:
 * GUI: Don't start new windows in "Window Stays On Top" mode
   since these windows will cover VST GUIs. Also remove

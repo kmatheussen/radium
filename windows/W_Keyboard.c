@@ -43,7 +43,7 @@ static unsigned int g_last_keyswitch;
 #ifndef RUN_TEST
 
 void OS_WINDOWS_set_window_on_top_of(void *parent_handle, void *child_handle){
-  SetWindowLongPtr((LONG_PTR)child_handle, -8, (LONG_PTR)parent_handle);
+  SetWindowLongPtr(child_handle, -8, (LONG_PTR)parent_handle);
 }
   
 void OS_WINDOWS_set_always_on_top(void *child_handle){

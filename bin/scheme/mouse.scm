@@ -1104,7 +1104,8 @@
                 (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
                 (<ra> :set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
 
-               ((inside-box (<ra> :get-box sequencer) X Y)
+               ((and (inside-box (<ra> :get-box sequencer) X Y)
+                     (not *current-seqautomation/distance*))
                 (if (not *current-seqblock-info*)
                     (set-seqblock-selected-box 0 -1 -1))
                 (cond (*current-seqblock-info*
@@ -1116,6 +1117,7 @@
                        (cond ((inside-box (<ra> :get-box seqblock-left-fade seqblocknum seqtracknum) X Y)
                               (set-fade-status-bar #t seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+                             
                              ((inside-box (<ra> :get-box seqblock-right-fade seqblocknum seqtracknum) X Y)
                               (set-fade-status-bar #f seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
@@ -1124,6 +1126,7 @@
                               (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
                               (set-seqblock-selected-box 4 seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+                             
                              ((inside-box (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y)
                               (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
                               (set-seqblock-selected-box 3 seqblocknum seqtracknum)
@@ -1133,10 +1136,12 @@
                                    (inside-box (<ra> :get-box seqblock-left-interior seqblocknum seqtracknum) X Y))
                               (set-left-interior-status-bar seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+                             
                              ((and holds-sample
                                    (inside-box (<ra> :get-box seqblock-right-interior seqblocknum seqtracknum) X Y))
                               (set-right-interior-status-bar seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+                             
                              (else                              
                               (<ra> :set-statusbar-text (two-decimal-string (/ (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
                                                                                (<ra> :get-sample-rate))))
