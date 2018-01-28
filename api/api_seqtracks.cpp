@@ -560,6 +560,8 @@ void setSeqblockEnvelopeEnabled(bool is_enabled, int seqblocknum, int seqtracknu
 
   if (seqblock->envelope_enabled==is_enabled)
     return;
+
+  undoSequencer();
   
   {
     radium::PlayerLock lock(is_playing_song());
