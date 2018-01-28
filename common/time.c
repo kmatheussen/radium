@@ -1485,7 +1485,6 @@ void TIME_block_signatures_have_changed(struct Blocks *block){
 }
 
 void TIME_block_num_lines_have_changed(struct Blocks *block){
-  
   update_block(block, root->tempo, root->lpb, root->signature, root->song->plugins_should_receive_swing_tempo, false, true, true);
 }
 
