@@ -1218,8 +1218,6 @@ hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_old_for
     HASH_put_hash_at(state, "seqblock", i, seqblock_state);
   }
 
-  HASH_put_float(state, "samplerate", pc->pfreq);
-  
   HASH_put_hash(state, "automation", SEQTRACK_AUTOMATION_get_state(seqtrack->seqtrackautomation));
 
   if (seqtrack->patch != NULL){
@@ -1320,15 +1318,11 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
   RT_SEQUENCER_update_sequencer_and_playlist();
 }
 
-struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state, int seqtracknum, enum ShowAssertionOrThrowAPIException error_type, struct Song *song){
+static struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state, double state_samplerate, int seqtracknum, enum ShowAssertionOrThrowAPIException error_type, struct Song *song){
   const hash_t *automation_state = NULL;
   if (HASH_has_key(state, "automation"))
     automation_state = HASH_get_hash(state, "automation");
 
-  double state_samplerate = -1.0;
-  if (HASH_has_key(state, "samplerate"))
-    state_samplerate = HASH_get_float(state, "samplerate");
-  
   struct SeqTrack *seqtrack = SEQTRACK_create(automation_state, state_samplerate);
 
   if (HASH_has_key(state, "patch_id")){
@@ -2169,6 +2163,8 @@ void SONG_init(void){
 hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
   hash_t *state = HASH_create(root->song->seqtracks.num_elements);
 
+  HASH_put_float(state, "samplerate", pc->pfreq);
+  
   VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
     hash_t *seqtrack_state = SEQTRACK_get_state(seqtrack /*, get_old_format */);
     HASH_put_hash_at(state, "seqtracks", iterator666, seqtrack_state);
@@ -2188,6 +2184,11 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
 }
 
 void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
+
+  double state_samplerate = -1.0;
+  if (HASH_has_key(state, "samplerate"))
+    state_samplerate = HASH_get_float(state, "samplerate");
+  
 
   {
     SEQUENCER_ScopedGfxDisable gfx_disable;
@@ -2215,8 +2216,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
 
     // Need to do this first since widgets are not positioned correctly if it's done last. Not quite sure why.
     if(HASH_has_key(state, "song_tempo_automation"))
-      TEMPOAUTOMATION_create_from_state(HASH_get_hash(state, "song_tempo_automation"));
-
+      TEMPOAUTOMATION_create_from_state(HASH_get_hash(state, "song_tempo_automation"), state_samplerate);
     
     vector_t seqtracks = {0};
   
@@ -2224,7 +2224,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     R_ASSERT_RETURN_IF_FALSE(num_seqtracks > 0);
     
     for(int i = 0 ; i < num_seqtracks ; i++){
-      struct SeqTrack *seqtrack = SEQTRACK_create_from_state(HASH_get_hash_at(state, "seqtracks", i), i, SHOW_ASSERTION, song);
+      struct SeqTrack *seqtrack = SEQTRACK_create_from_state(HASH_get_hash_at(state, "seqtracks", i), state_samplerate, i, SHOW_ASSERTION, song);
       VECTOR_push_back(&seqtracks, seqtrack);
     }
     
