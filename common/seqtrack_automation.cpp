@@ -97,8 +97,9 @@ static hash_t *get_node_state(const AutomationNode &node){
   return state;
 }
 
-static AutomationNode create_node_from_state(hash_t *state){
-  return create_node(HASH_get_float(state, "seqtime"),
+static AutomationNode create_node_from_state(hash_t *state, double state_samplerate){
+  double time = HASH_get_float(state, "seqtime");
+  return create_node(state_samplerate < 0 ? time : time*(double)pc->pfreq/state_samplerate,
                      HASH_get_float(state, "value"),
                      HASH_get_int32(state, "logtype"));
 }
@@ -142,9 +143,9 @@ struct Automation{
     color = get_qcolor(get_effect_color(plugin, effect_num));
   }
 
-  Automation(hash_t *state){
+  Automation(hash_t *state, double state_samplerate){
     patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
-    automation.create_from_state(HASH_get_dyn(state, "automation"), create_node_from_state);
+    automation.create_from_state(HASH_get_dyn(state, "automation"), create_node_from_state, state_samplerate);
 
     const char *effect_name = HASH_get_chars(state, "effect_name");
 
@@ -193,7 +194,7 @@ public:
   struct SeqTrack *_seqtrack;
   radium::Vector<Automation*> _automations;
   
-  SeqtrackAutomation(struct SeqTrack *seqtrack, const hash_t *state = NULL)
+  SeqtrackAutomation(struct SeqTrack *seqtrack, double state_samplerate, const hash_t *state = NULL)
     :_seqtrack(seqtrack)
   {
     SEQTRACK_AUTOMATION_cancel_curr_automation();
@@ -202,7 +203,7 @@ public:
       int size = HASH_get_array_size(state, "automation");
       
       for(int i = 0 ; i < size ; i++){
-        Automation *automation = new Automation(HASH_get_hash_at(state, "automation", i));
+        Automation *automation = new Automation(HASH_get_hash_at(state, "automation", i), state_samplerate);
         if (automation->effect_num >= 0)
           _automations.push_back(automation);
       }
@@ -426,8 +427,8 @@ public:
 };
  
 
-struct SeqtrackAutomation *SEQTRACK_AUTOMATION_create(struct SeqTrack *seqtrack, const hash_t *automation_state){
-  return new SeqtrackAutomation(seqtrack, automation_state);
+struct SeqtrackAutomation *SEQTRACK_AUTOMATION_create(struct SeqTrack *seqtrack, const hash_t *automation_state, double state_samplerate){
+  return new SeqtrackAutomation(seqtrack, state_samplerate, automation_state);
 }
 
 void SEQTRACK_AUTOMATION_free(struct SeqtrackAutomation *seqtrackautomation){

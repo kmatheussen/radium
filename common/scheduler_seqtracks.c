@@ -336,7 +336,7 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
     atomic_pointer_write_relaxed((void**)&seqtrack->curr_seqblock, NULL);
     
     static struct SeqBlock seqblock = {0};
-    SEQBLOCK_init(NULL, &seqblock, block, g_uninitialized_dyn, NULL, 0);
+    SEQBLOCK_init(NULL, &seqblock, block, g_uninitialized_dyn, -1, NULL, 0);
       
     union SuperType args[G_NUM_ARGS];
     

@@ -62,7 +62,7 @@ struct Song *SONG_create(void){
   song->editor_should_swing_along = true;
   song->mute_editor_automation_when_track_is_muted = true;
   
-  VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL));
+  VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL, -1));
 
   SEQUENCER_init(song);
   

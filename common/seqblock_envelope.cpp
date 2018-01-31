@@ -94,8 +94,9 @@ static hash_t *get_node_state(const AutomationNode &node){
   return state;
 }
 
-static AutomationNode create_node_from_state(hash_t *state){
-  return create_node(HASH_get_float(state, ":seqtime"),
+static AutomationNode create_node_from_state(hash_t *state, double state_samplerate){
+  double time = HASH_get_float(state, ":seqtime");
+  return create_node(state_samplerate < 0 ? time : time*(double)pc->pfreq/state_samplerate,
                      HASH_get_float(state, ":db"),
                      HASH_get_int32(state, ":logtype"));
 }
@@ -117,9 +118,9 @@ struct Automation{
     SEQBLOCK_ENVELOPE_cancel_curr_automation();
   }
 
-  Automation(const dyn_t state){
+  Automation(const dyn_t state, double state_samplerate){
     if (state.type != UNINITIALIZED_TYPE)
-      automation.create_from_state(state, create_node_from_state);
+      automation.create_from_state(state, create_node_from_state, state_samplerate);
   }
 
   ~Automation(){
@@ -147,10 +148,10 @@ public:
 
   Automation _automation;
   
-  SeqblockEnvelope(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t state = g_uninitialized_dyn)
+  SeqblockEnvelope(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, double state_samplerate, const dyn_t state = g_uninitialized_dyn)
     : _seqtrack(seqtrack)
     , _seqblock(seqblock)
-    , _automation(state)
+    , _automation(state, state_samplerate)
   {
     SEQBLOCK_ENVELOPE_cancel_curr_automation();
 
@@ -186,8 +187,8 @@ public:
 };
  
 
-struct SeqblockEnvelope *SEQBLOCK_ENVELOPE_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t automation_state){
-  return new SeqblockEnvelope(seqtrack, seqblock, automation_state);
+struct SeqblockEnvelope *SEQBLOCK_ENVELOPE_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t automation_state, double state_samplerate){
+  return new SeqblockEnvelope(seqtrack, seqblock, state_samplerate, automation_state);
 }
 
 void SEQBLOCK_ENVELOPE_free(struct SeqblockEnvelope *seqblockenvelope){
@@ -660,8 +661,8 @@ dyn_t SEQBLOCK_ENVELOPE_get_state(const struct SeqblockEnvelope *seqblockenvelop
   return seqblockenvelope->get_state();
 }
 
-void SEQBLOCK_ENVELOPE_apply_state(struct SeqblockEnvelope *seqblockenvelope, const dyn_t envelope_state){
-  seqblockenvelope->_automation.automation.create_from_state(envelope_state, create_node_from_state);
+void SEQBLOCK_ENVELOPE_apply_state(struct SeqblockEnvelope *seqblockenvelope, const dyn_t envelope_state, double state_samplerate){
+  seqblockenvelope->_automation.automation.create_from_state(envelope_state, create_node_from_state, state_samplerate);
   SEQTRACK_update(seqblockenvelope->_seqtrack);
 }
 

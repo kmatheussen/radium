@@ -534,7 +534,7 @@ public:
   }
 
 
-  void create_from_state(const dyn_t &dynstate, T (*create_node_from_state)(hash_t *state)){
+  void create_from_state(const dyn_t &dynstate, T (*create_node_from_state)(hash_t *,double), double state_samplerate){
     _automation.clear();
 
     if (dynstate.type==HASH_TYPE) {
@@ -547,14 +547,14 @@ public:
       int size = HASH_get_array_size(state, "node");
       
       for(int i = 0 ; i < size ; i++)
-        add_node(create_node_from_state(HASH_get_hash_at(state, "node", i)));
+        add_node(create_node_from_state(HASH_get_hash_at(state, "node", i), state_samplerate));
 
     } else if (dynstate.type==ARRAY_TYPE) {
 
       const dynvec_t *vec = dynstate.array;
       
       for(const dyn_t &dyn : vec)
-        add_node(create_node_from_state(dyn.hash));
+        add_node(create_node_from_state(dyn.hash, state_samplerate));
 
     } else {
       
