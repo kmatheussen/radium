@@ -367,7 +367,7 @@ static void default_duration_changed(struct SeqBlock *seqblock, int64_t default_
   seqblock->gfx.interior_end = default_duration;
 }
 
-void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const dyn_t envelope_state, bool *track_is_disabled, int64_t time){
+void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const dyn_t envelope_state, double state_samplerate, bool *track_is_disabled, int64_t time){
   seqblock->block = block;
   seqblock->sample_id = -1;
   seqblock->track_is_disabled = track_is_disabled;
@@ -395,7 +395,7 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
 
   if(seqtrack != NULL){
     R_ASSERT(false==PLAYER_current_thread_has_lock());
-    seqblock->envelope = SEQBLOCK_ENVELOPE_create(seqtrack, seqblock, envelope_state);
+    seqblock->envelope = SEQBLOCK_ENVELOPE_create(seqtrack, seqblock, envelope_state, state_samplerate);
     GC_register_finalizer(seqblock, seqblockgcfinalizer, seqblock, NULL, NULL);
   }else{
     R_ASSERT(true==PLAYER_current_thread_has_lock());
@@ -405,19 +405,20 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
   seqblock->envelope_db = 0.0;
 }
 
-static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct Blocks *block, const dyn_t envelope, int64_t time){
+static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct Blocks *block, const dyn_t envelope_state, double state_samplerate, int64_t time){
   struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
   SEQBLOCK_init(seqtrack,
                 seqblock,
                 block,
-                envelope,
+                envelope_state,
+                state_samplerate,
                 (bool*)talloc_atomic_clean(sizeof(bool)*MAX_DISABLED_SEQBLOCK_TRACKS),
                 time
                 );
   return seqblock;
 }
 
-static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, const dyn_t envelope, int64_t seqtime, bool is_gfx){
+static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, const dyn_t envelope_state, double state_samplerate, int64_t seqtime, bool is_gfx){
 #if 1 // defined(RELEASE)
   static bool has_shown_message = false;
   if (has_shown_message==false){
@@ -430,7 +431,8 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
   SEQBLOCK_init(seqtrack,
                 seqblock,
                 NULL,
-                envelope,
+                envelope_state,
+                state_samplerate,
                 NULL,
                 seqtime 
                 );
@@ -1026,15 +1028,19 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
   //R_ASSERT(is_gfx==true);
   
   double adjust_for_samplerate = 1.0;
-
+  double state_samplerate = -1.0;
+  
   if (HASH_has_key(state, ":samplerate")){
-    double state_samplerate;
-    if (get_value(state, ":samplerate", FLOAT_TYPE, HASH_get_float, error_type, state_samplerate)==false)
+    double maybe_state_samplerate;
+    if (get_value(state, ":samplerate", FLOAT_TYPE, HASH_get_float, error_type, maybe_state_samplerate)==false)
       return NULL;
 
-    double samplerate = MIXER_get_sample_rate();
-    if (fabs(state_samplerate-samplerate)<1)
-      adjust_for_samplerate = samplerate/state_samplerate;    
+    double samplerate = pc->pfreq;
+    
+    if (fabs(maybe_state_samplerate-samplerate)>1){
+      state_samplerate = maybe_state_samplerate;
+      adjust_for_samplerate = samplerate/state_samplerate;
+    }
   }
 
   int64_t time,time2;
@@ -1050,6 +1056,12 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
                             NULL,
                             "Illegal sequencer block start-time and end-time values. Start: %d. End: %d", (int)time, (int)time2
                             );
+
+  if (adjust_for_samplerate != 1.0){
+    time = round(double(time) * adjust_for_samplerate);
+    if (time2 != -1)
+      time2 = round(double(time2) * adjust_for_samplerate);
+  }
 
   int64_t interior_start, interior_end;
   
@@ -1079,7 +1091,7 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
     R_ASSERT_RETURN_IF_FALSE3(block!=NULL, error_type, NULL,
                               "Block %d not found", blocknum);
 
-    seqblock = SEQBLOCK_create_block(seqtrack, block, envelope, time);
+    seqblock = SEQBLOCK_create_block(seqtrack, block, envelope, state_samplerate, time);
 
     // The interior_start/interior_end values maps to sample rate for block-seqblocks.
     if (adjust_for_samplerate != 1.0 && seqblock->block!=NULL){
@@ -1093,7 +1105,7 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
     if (get_value(state, ":sample", STRING_TYPE, HASH_get_string, error_type, filename)==false)
       return NULL;
 
-    seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, envelope, time, is_gfx);
+    seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, envelope, state_samplerate, time, is_gfx);
     if (seqblock==NULL)
       return NULL;
   }
@@ -1129,13 +1141,10 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
     
   }
 
+  R_ASSERT(seqblock->t.time==time);
+
   if (time2==-1)
     time2 = time + default_duration;
-  
-  if (adjust_for_samplerate != 1.0){
-    time = round(double(time) * adjust_for_samplerate);
-    time2 = round(double(time2) * adjust_for_samplerate);
-  }
 
   seqblock->t.time2 = time2;
   seqblock->gfx.time2 = seqblock->t.time2;
@@ -1183,13 +1192,13 @@ static void seqtrackgcfinalizer(void *actual_mem_start, void *user_data){
   SEQTRACK_AUTOMATION_free(seqtrack->seqtrackautomation);
 }
 
-struct SeqTrack *SEQTRACK_create(const hash_t *automation_state){
+struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_samplerate){
   struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
   //memset(seqtrack, 0, sizeof(struct SeqTrack));
 
   seqtrack->scheduler = SCHEDULER_create();
 
-  auto *seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, automation_state);
+  auto *seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, automation_state, state_samplerate);
   seqtrack->seqtrackautomation = seqtrackautomation;
   
   GC_register_finalizer(seqtrack, seqtrackgcfinalizer, seqtrack, NULL, NULL);
@@ -1209,6 +1218,8 @@ hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_old_for
     HASH_put_hash_at(state, "seqblock", i, seqblock_state);
   }
 
+  HASH_put_float(state, "samplerate", pc->pfreq);
+  
   HASH_put_hash(state, "automation", SEQTRACK_AUTOMATION_get_state(seqtrack->seqtrackautomation));
 
   if (seqtrack->patch != NULL){
@@ -1314,7 +1325,11 @@ struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state, int seqtracknum
   if (HASH_has_key(state, "automation"))
     automation_state = HASH_get_hash(state, "automation");
 
-  struct SeqTrack *seqtrack = SEQTRACK_create(automation_state);
+  double state_samplerate = -1.0;
+  if (HASH_has_key(state, "samplerate"))
+    state_samplerate = HASH_get_float(state, "samplerate");
+  
+  struct SeqTrack *seqtrack = SEQTRACK_create(automation_state, state_samplerate);
 
   if (HASH_has_key(state, "patch_id")){
     int64_t patch_id = HASH_get_int(state, "patch_id");
@@ -1354,13 +1369,14 @@ struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state, int seqtracknum
 struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
   vector_t seqblocks = {0};
   
-  struct SeqTrack *seqtrack = SEQTRACK_create(NULL);
+  struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1);
     
   for(int pos=0;pos<len;pos++)
     VECTOR_push_back(&seqblocks,
                      SEQBLOCK_create_block(seqtrack,
                                            (struct Blocks *)ListFindElement1(&root->song->blocks->l,playlist[pos]),
                                            g_uninitialized_dyn,
+                                           -1,
                                            -1));
   
   seqtrack->seqblocks = seqblocks;
@@ -1914,7 +1930,7 @@ int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqbloc
 }
 
 int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime, int64_t end_seqtime){
-  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, block, g_uninitialized_dyn, -1);
+  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, block, g_uninitialized_dyn, -1, -1);
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime, end_seqtime);
 }
 
@@ -1943,7 +1959,7 @@ int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wch
   if (end_seqtime != -1)
     R_ASSERT_RETURN_IF_FALSE2(end_seqtime > seqtime, -1);
 
-  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, g_uninitialized_dyn, -1, false);
+  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, g_uninitialized_dyn, -1, -1, false);
   if (seqblock==NULL)
     return -1;
 
@@ -2010,7 +2026,7 @@ void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
 void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos){
 
   if (new_seqtrack==NULL)
-    new_seqtrack = SEQTRACK_create(NULL);
+    new_seqtrack = SEQTRACK_create(NULL, -1);
   
   VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
 
@@ -2115,7 +2131,7 @@ double SONG_get_gfx_length(void){
 // Called from SONG_create()
 void SEQUENCER_init(struct Song *song){
   TEMPOAUTOMATION_reset();
-  song->block_seqtrack = SEQTRACK_create(NULL);
+  song->block_seqtrack = SEQTRACK_create(NULL, -1);
   song->looping.start = 0;
 
   if (g_is_starting_up)
@@ -2126,13 +2142,13 @@ void SEQUENCER_init(struct Song *song){
 
 // Only called during program startup
 void SONG_init(void){
-  struct SeqTrack *seqtrack = SEQTRACK_create(NULL);
+  struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1);
 
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
   
   VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
   
-  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, root->song->blocks, g_uninitialized_dyn, -1);
+  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, root->song->blocks, g_uninitialized_dyn, -1, -1);
 
   SEQUENCER_init(root->song);
   
@@ -2252,6 +2268,8 @@ hash_t *SEQUENCER_get_automations_state(void){
 }
 
 void SEQUENCER_create_automations_from_state(hash_t *state){
+  R_ASSERT_NON_RELEASE(g_is_loading==false);
+  
   int num_seqtracks = HASH_get_array_size(state, "seqtrackautomations");
   R_ASSERT_RETURN_IF_FALSE(num_seqtracks > 0);
   R_ASSERT_RETURN_IF_FALSE(num_seqtracks == root->song->seqtracks.num_elements);
@@ -2260,7 +2278,7 @@ void SEQUENCER_create_automations_from_state(hash_t *state){
     struct SeqTrack *seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[i];
 
     auto *old_seqtrackautomation = seqtrack->seqtrackautomation;
-    auto *new_seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, HASH_get_hash_at(state, "seqtrackautomations", i));
+    auto *new_seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, HASH_get_hash_at(state, "seqtrackautomations", i), -1);
 
     {
       radium::PlayerLock lock;
@@ -2292,18 +2310,23 @@ hash_t *SEQUENCER_get_envelopes_state(void){
     
     hash_t *seqtrack_state = get_envelopes_state(seqtrack);
     HASH_put_hash_at(state, "seqtrackenvelopes", iterator666, seqtrack_state);
+    
   }END_VECTOR_FOR_EACH;
 
   return state;
 }
 
 static void apply_envelopes_state(const struct SeqTrack *seqtrack, const hash_t *envelopes){
+  R_ASSERT_NON_RELEASE(g_is_loading==false);
+  
   int num_seqblocks = HASH_get_array_size(envelopes, "seqblockenvelope");
   R_ASSERT_RETURN_IF_FALSE(num_seqblocks == seqtrack->seqblocks.num_elements);
 
   VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+    
     const dyn_t envelope = HASH_get_dyn_at(envelopes, "seqblockenvelope", iterator666);
-    SEQBLOCK_ENVELOPE_apply_state(seqblock->envelope, envelope);
+    SEQBLOCK_ENVELOPE_apply_state(seqblock->envelope, envelope, -1);
+    
   }END_VECTOR_FOR_EACH;  
 }
 

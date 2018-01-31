@@ -123,7 +123,7 @@ extern LANGSPEC void SEQTRACK_call_me_very_often(void);
 extern LANGSPEC void SONG_call_me_before_starting_to_play_song(int64_t abstime);
 
 // 'seqblock' must be nulled out before calling.
-extern LANGSPEC void SEQBLOCK_init(struct SeqTrack *from_seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const dyn_t envelope, bool *track_is_disabled, int64_t time);
+extern LANGSPEC void SEQBLOCK_init(struct SeqTrack *from_seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const dyn_t envelope, double state_samplerate, bool *track_is_disabled, int64_t time);
   
 // sequencer gfx
 #ifdef USE_QT4
@@ -298,7 +298,7 @@ extern LANGSPEC double SEQTRACK_get_gfx_length(struct SeqTrack *seqtrack);
 extern LANGSPEC hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool always_get_real_end_time);
 extern LANGSPEC struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type, bool is_gfx);
 
-extern LANGSPEC struct SeqTrack *SEQTRACK_create(const hash_t *automation_state);
+extern LANGSPEC struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_samplerate);
 extern LANGSPEC struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len);
 
 
