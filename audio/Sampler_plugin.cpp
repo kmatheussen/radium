@@ -58,7 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define POLYPHONY 256
 #define MAX_NUM_SAMPLES 256
 #define CROSSFADE_BUFFER_LENGTH 128
-#define MAX_CROSSFADE_LENGTH (48000*5) // in samples.
+#define MAX_CROSSFADE_LENGTH (48000*5) // in samples. (By using samples instead of e.g. milliseconds or seconds, we ensure that loops sound the same if changing sample rate. There are probably disadvantages too though.)
 
 #define MAX_PORTAMENTO 1000
 

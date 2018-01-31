@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "hashmap_proc.h"
 #include "list_proc.h"
+#include "disk.h"
 #include "OS_Player_proc.h"
 #include "scheduler_proc.h"
 #include "../audio/Mixer_proc.h"
@@ -2183,12 +2184,31 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
   return state;
 }
 
-void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
-
-  double state_samplerate = -1.0;
-  if (HASH_has_key(state, "samplerate"))
-    state_samplerate = HASH_get_float(state, "samplerate");
+static double find_samplerate_in_old_song_state(hash_t *song_state){
+  int num_seqtracks = HASH_get_array_size(song_state, "seqtracks");
+  R_ASSERT_RETURN_IF_FALSE2(num_seqtracks > 0, -1);
   
+  for(int i = 0 ; i < num_seqtracks ; i++){
+    hash_t *seqtrack_state = HASH_get_hash_at(song_state, "seqtracks", i);
+
+    int num_seqblocks = HASH_get_array_size(seqtrack_state, "seqblock");
+
+    for(int i=0;i<num_seqblocks;i++){
+      hash_t *seqblock_state = HASH_get_hash_at(seqtrack_state, "seqblock", i);
+      
+      if (HASH_has_key(seqblock_state, ":samplerate"))
+        return HASH_get_float(seqblock_state, ":samplerate");
+        
+      if (HASH_has_key(seqblock_state, "samplerate"))
+        return HASH_get_float(seqblock_state, "samplerate");
+    }
+
+  }
+
+  return -1.0;
+}
+
+void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
 
   {
     SEQUENCER_ScopedGfxDisable gfx_disable;
@@ -2214,6 +2234,36 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     
     //printf("        CREATING FROM STATE\n");
 
+    
+    double state_samplerate;
+    
+    if (HASH_has_key(state, "samplerate"))
+      state_samplerate = HASH_get_float(state, "samplerate");
+    else
+      state_samplerate = find_samplerate_in_old_song_state(state);
+    
+    if (state_samplerate > 0){
+      
+      double samplerate = pc->pfreq;
+      
+      if (fabs(state_samplerate-samplerate)>1){
+        
+        R_ASSERT_NON_RELEASE(g_is_loading);
+        
+        if(g_is_loading && false==STRING_starts_with2(dc.filename_with_full_path, OS_get_program_path2()))
+          GFX_addMessage("Warning, the song was saved with a samplerate of %dHz, while we are using a samplerate of %dHz. The song might not sound the same, and some instruments and effects may behave differently.\n",
+                         (int)state_samplerate,
+                         pc->pfreq
+                         );
+      } else {
+        
+        state_samplerate = -1.0;
+        
+      }      
+    }
+
+
+  
     // Need to do this first since widgets are not positioned correctly if it's done last. Not quite sure why.
     if(HASH_has_key(state, "song_tempo_automation"))
       TEMPOAUTOMATION_create_from_state(HASH_get_hash(state, "song_tempo_automation"), state_samplerate);

@@ -145,7 +145,12 @@ char* STRING_get_utf8_chars(const char* s){
   return talloc_strdup(qstring.toLocal8Bit().constData());
 }
 
-bool STRING_starts_with(const wchar_t *string, const char *endswith){
+bool STRING_starts_with2(const wchar_t *string, const wchar_t *endswith){
+  QString s = STRING_get_qstring(string);
+  return s.startsWith(STRING_get_qstring(endswith));
+}
+
+bool STRING_starts_with(const wchar_t *string, const char *endswith){  
   QString s = STRING_get_qstring(string);
   return s.startsWith(endswith);
 }

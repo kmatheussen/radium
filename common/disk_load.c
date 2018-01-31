@@ -78,6 +78,8 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
           return false;
 	}
 
+        dc.filename_with_full_path = DISK_get_absolute_file_path(filename);
+        
 	DC_fgets();
         if (dc.success==false) {
           GFX_Message2(NULL,true,"Loading failed. File too short. (1)\n");
@@ -178,7 +180,8 @@ static bool Load(const wchar_t *filename){
 	newroot=LoadRoot();
         
         DISK_close_and_delete(dc.file);
-
+        dc.file = NULL;
+        
 	if(!dc.success){
           GFX_Message(NULL, "Loading failed.\n");
           //EndProgram();
