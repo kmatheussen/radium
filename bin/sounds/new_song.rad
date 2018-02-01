@@ -72,10 +72,13 @@ SONG
 ?mixer_comments_visible
 0
 
+?mute_editor_automation_when_track_is_muted
+1
+
 \
 COMMENT
 >> HASH MAP V3 BEGIN
-62
+64
 author
 0
 STRING_TYPE
@@ -316,6 +319,14 @@ comment
 58
 STRING_TYPE
 
+comment
+59
+STRING_TYPE
+
+comment
+60
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -338,7 +349,7 @@ TRACKER_WINDOW
 0
 
 ?width
-556
+557
 
 ?height
 500
@@ -1079,7 +1090,7 @@ RELTEMPO
 \
 SEQUENCER
 >> HASH MAP V3 BEGIN
-6
+7
 curr_seqtracknum
 0
 INT_TYPE
@@ -1096,6 +1107,10 @@ looping_enabled
 0
 BOOL_TYPE
 0
+samplerate
+0
+FLOAT_TYPE
+44100
 seqtracks
 0
 HASH_TYPE
@@ -1156,7 +1171,7 @@ INT_TYPE
 :seqtime
 0
 FLOAT_TYPE
-384000
+352800
 << HASH MAP V3 END
 << DYNVEC END
 :envelope-enabled
@@ -1174,7 +1189,7 @@ FLOAT_TYPE
 :interior-end
 0
 INT_TYPE
-384000
+352800
 :interior-start
 0
 INT_TYPE
@@ -1182,7 +1197,7 @@ INT_TYPE
 :samplerate
 0
 FLOAT_TYPE
-48000
+44100
 :start-time
 0
 INT_TYPE
