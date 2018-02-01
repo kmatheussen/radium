@@ -1470,8 +1470,8 @@ static int64_t find_skew(const struct SeqTrack *seqtrack, struct SeqBlock *seqbl
   if (next_seqblock==NULL)
     return 0;
 
-  int org_seqtime1 = seqblock->gfx.time;
-  int org_seqtime2 = seqblock->gfx.time2;
+  int64_t org_seqtime1 = seqblock->gfx.time;
+  int64_t org_seqtime2 = seqblock->gfx.time2;
   
   
   int64_t org_abstime_next_seqblock = get_abstime_from_seqtime2(seqtrack, NULL, next_seqblock->t.time, false);
@@ -1557,7 +1557,7 @@ bool SEQTRACK_set_seqblock_start_and_stop(struct SeqTrack *seqtrack, struct SeqB
 
   }
 
-  int skew = 0;
+  int64_t skew = 0;
 
   if (want_to_change_stretch){
     skew = find_skew(seqtrack, seqblock, next_seqblock, new_start_time, new_end_time);
