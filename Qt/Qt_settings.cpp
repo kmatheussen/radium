@@ -182,6 +182,13 @@ wchar_t *STRING_append(const wchar_t *s1, const char *s2){
   return STRING_create(STRING_get_qstring(s1) + s2);
 }
 
+wchar_t *STRING_to_upper(const wchar_t *string){
+  return STRING_create(STRING_get_qstring(string).toUpper());
+}
+wchar_t *STRING_to_lower(const wchar_t *string){
+  return STRING_create(STRING_get_qstring(string).toLower());
+}
+
 wchar_t *STRING_toBase64(const wchar_t *s){
   QString s2 = STRING_get_qstring(s);
   QString encoded = s2.toLocal8Bit().toBase64();

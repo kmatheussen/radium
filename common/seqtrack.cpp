@@ -2250,7 +2250,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
         
         R_ASSERT_NON_RELEASE(g_is_loading);
         
-        if(g_is_loading && false==STRING_starts_with2(dc.filename_with_full_path, OS_get_program_path2()))
+        if(g_is_loading && false==STRING_starts_with2(STRING_to_upper(dc.filename_with_full_path), STRING_to_upper(OS_get_program_path2())))
           GFX_addMessage("Warning, the song was saved with a samplerate of %dHz, while we are using a samplerate of %dHz. The song might not sound the same, and some instruments and effects may behave differently.\n",
                          (int)state_samplerate,
                          pc->pfreq

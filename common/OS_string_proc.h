@@ -13,7 +13,7 @@ extern LANGSPEC wchar_t *STRING_copy(const wchar_t *s);
 
 extern LANGSPEC char* STRING_get_chars(const wchar_t *string);
 extern LANGSPEC char* STRING_get_utf8_chars(const char* s);
-  
+
 extern LANGSPEC bool STRING_starts_with(const wchar_t *string, const char *startswith);
 extern LANGSPEC bool STRING_starts_with2(const wchar_t *string, const wchar_t *startswith);
 extern LANGSPEC bool STRING_ends_with(const wchar_t *string, const char *endswiths);
@@ -31,6 +31,10 @@ static inline double STRING_get_double(const wchar_t *string){
   return OS_get_double_from_string(STRING_get_chars(string));
 }
 extern LANGSPEC wchar_t *STRING_append(const wchar_t *s1, const wchar_t *w2);
+
+extern LANGSPEC wchar_t *STRING_to_upper(const wchar_t *string);
+extern LANGSPEC wchar_t *STRING_to_lower(const wchar_t *string);
+
 
 extern LANGSPEC wchar_t *STRING_toBase64(const wchar_t *s);
 extern LANGSPEC wchar_t *STRING_fromBase64(const wchar_t *encoded);
