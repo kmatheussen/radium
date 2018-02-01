@@ -67,8 +67,9 @@ DC_start("SONG");
         DC_SSB("plugins_should_receive_swing_tempo", song->plugins_should_receive_swing_tempo);
         DC_SSB("editor_should_swing_along", song->editor_should_swing_along);
 
-        DC_SSB("mixer_comments_visible", root->song->mixer_comments_visible);
-        
+        DC_SSB("mixer_comments_visible", song->mixer_comments_visible);
+        DC_SSB("mute_editor_automation_when_track_is_muted", song->mute_editor_automation_when_track_is_muted);
+                
         DC_start("COMMENT");{
           HASH_save(COMMENT_get_state(), dc.file);
         }DC_end();
