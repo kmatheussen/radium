@@ -28,8 +28,10 @@ import("math.lib");
 
 system_lowshelf = low_shelf(level, freq) with {
 
-  freq = vslider("[0] Lowshelf Freq [unit:Hz]",
-       315, 40.0, 2000.0, 1);
+  freq = min(SR/2-1,
+             vslider("[0] Lowshelf Freq [unit:Hz]",
+                     315, 40.0, 2000.0, 1)
+             );
 
   level = vslider("[1] Level [unit:dB]",
                   0.0, -35.0, 35.0, 0.1);// : smooth(0.999);
