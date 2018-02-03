@@ -27,8 +27,10 @@ import("math.lib");
 
 system_highshelf = high_shelf(level, freq) with {
 
-  freq = vslider("[0] Freq [unit:Hz]",
-                 315, 40.0, 2000.0, 1);
+  freq = min(SR/2-1,
+             vslider("[0] Freq [unit:Hz]",
+                     315, 40.0, 2000.0, 1)
+             );
 
   level = vslider("[1] Level [unit:dB]",
                   0, -35, 35, 0.1);
