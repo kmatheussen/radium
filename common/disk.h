@@ -42,6 +42,7 @@ struct PatchNumHolder{
 typedef struct{
 	disk_t *file;
 	const wchar_t *filename;
+        const wchar_t *filename_with_full_path;
 	const wchar_t *embedded_files_dirname;
         bool has_shown_embedded_files_dirname_warning;
         bool has_deleted_files_in_embedded_dir;

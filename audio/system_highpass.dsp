@@ -20,6 +20,8 @@ import("filter_smoothing.lib");
 // Using a 2nd order Butterworth filter. The 'lowpass' function is implemented by Julius O. Smith III.
 
 process = highpass(2,fc) with{
-  fc = vslider("[1] Hp. Freq [unit:Hz] [style:knob]",
-               315, 40, 20000, 1);
+  fc = min(SR/2-1,
+           vslider("[1] Hp. Freq [unit:Hz] [style:knob]",
+                   315, 40, 20000, 1)
+          );
 };

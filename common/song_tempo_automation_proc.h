@@ -17,7 +17,7 @@ extern LANGSPEC int64_t TEMPOAUTOMATION_get_absabstime(double abstime);
 extern LANGSPEC double TEMPOAUTOMATION_get_abstime_from_absabstime(int64_t absabstime);
 
 extern LANGSPEC hash_t *TEMPOAUTOMATION_get_state(void);
-extern LANGSPEC void TEMPOAUTOMATION_create_from_state(hash_t *state);
+extern LANGSPEC void TEMPOAUTOMATION_create_from_state(hash_t *state, double state_samplerate);
 
 extern LANGSPEC double TEMPOAUTOMATION_get_max_tempo(void);
 extern LANGSPEC void TEMPOAUTOMATION_set_max_tempo(double new_max_tempo);

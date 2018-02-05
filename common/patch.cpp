@@ -85,16 +85,24 @@ static vector_t g_unused_patches; // <-- patches are never deleted, but they are
 
 // Called when loading new song
 static void PATCH_clean_unused_patches(void){
-  // Too dangerous. We clean the content instead.
-  //VECTOR_clean(&g_unused_patches);
+
+  // <strike>Too dangerous. We clean the content instead.</strike>
+  //
+  // Must do this instead. We can not clean the content, since an unused patch can be referenced from the clipboard.
+  VECTOR_clean(&g_unused_patches);
 
   MIDI_SetThroughPatch(NULL);
   g_currpatch = NULL;
-  
+
+#if 0
   // Release memory. We keep the patches themselves though, since they are stored various places.
+  //
+  // We can not clean the content, since an unused patch can be referenced from the clipboard.
+  //
   VECTOR_FOR_EACH(struct Patch *, patch, &g_unused_patches){
     memset(patch, 0, sizeof(struct Patch));
   }END_VECTOR_FOR_EACH;
+#endif
 }
 
 void PATCH_remove_from_instrument(struct Patch *patch){
