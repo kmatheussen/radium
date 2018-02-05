@@ -1,3 +1,27 @@
+Changes 5.4.9 -> 5.5.0:
+* Editor: Fix crash when pasting track or block from an old
+  song into a new song.
+* Load: Show warning if loading song saved with a different
+  jack samplerate since they can sound slightly different.
+* Sequencer: Fix automation when loading song saved with
+  a different jack sample rate.
+* Sequencer: Fix volume envelope when loading song saved
+  with a different jack sample rate.
+* Sequencer: Fix song tempo automation when loading song
+  saved with a different jack sample rate.
+* Sequencer: Fix undo/redo for enable/disable envelope.
+* Sequencer: Fix failure to load some recent songs saved
+  with a different jack samplerate.
+* Sequencer: Fix positions of subsequent blocks when
+  changing stretch of a block with a custom tempo multiplier
+  value.
+* Editor: Also mute FX automation when track is muted. And
+  in addition, add option to not mute FX automation when
+  track is muted to keep compatibility with older songs.
+* Load: Fix mixer comment on/off status.
+
+
+
 Changes 5.4.8 -> 5.4.9:
 * Audio: Fix possible audio glitch that could happen when
   stopping to play in a song that has many MIDI instruments.

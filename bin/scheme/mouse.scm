@@ -4909,7 +4909,7 @@
                                                  :automation-num Automation-Num
                                                  :distance (let ((dist (get-distance-vertical X Y X1 Y1 X2 Y2
                                                                                               (<ra> :get-seq-automation-logtype (- Nodenum 2) Automation-Num *current-seqtrack-num*))))
-                                                             (c-display " Dist seqaut:" dist)
+                                                             ;;(c-display " Dist seqaut:" dist)
                                                              dist))))
 
   (define next (and (< Nodenum Total-Nodes)
@@ -4966,7 +4966,7 @@
                  (min-seqautomation/distance (make-seqautomation/distance :seqtrack *current-seqtrack-num*
                                                                           :automation-num #f
                                                                           :distance (begin
-                                                                                      (c-display " DIST volume envelope:" dist)
+                                                                                      ;;(c-display " DIST volume envelope:" dist)
                                                                                       dist)
                                                                           :seqblock seqblocknum)
                                              (next))

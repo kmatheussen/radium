@@ -56,7 +56,7 @@ static void *Undo_Do_SongTempoAutomation(
 ){
   hash_t *ret = TEMPOAUTOMATION_get_state();
 
-  TEMPOAUTOMATION_create_from_state(pointer);
+  TEMPOAUTOMATION_create_from_state(pointer, -1);
 
   return ret;
 }

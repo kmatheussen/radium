@@ -446,16 +446,17 @@ double TEMPOAUTOMATION_get_abstime_from_absabstime(int64_t absabstime){
   return BinarySearch_abstime(absabstime, low, high);
 }
 
-static TempoAutomationNode create_node_from_state(hash_t *state){
-  return create_node(HASH_get_float(state, "abstime"),
+static TempoAutomationNode create_node_from_state(hash_t *state, double state_samplerate){
+  double time = HASH_get_float(state, "abstime");
+  return create_node(state_samplerate < 0 ? time : time*(double)pc->pfreq/state_samplerate,
                      HASH_get_float(state, "value"),
                      HASH_get_int32(state, "logtype"));
 }
 
 
-void TEMPOAUTOMATION_create_from_state(hash_t *state){
+void TEMPOAUTOMATION_create_from_state(hash_t *state, double state_samplerate){
   g_max_tempo = HASH_get_float(state, "max_tempo");
-  g_tempo_automation.create_from_state(HASH_get_dyn(state, "nodes"), create_node_from_state);
+  g_tempo_automation.create_from_state(HASH_get_dyn(state, "nodes"), create_node_from_state, state_samplerate);
   SEQTEMPO_set_visible(HASH_get_bool(state, "is_visible"));
   SEQUENCER_update();
 }

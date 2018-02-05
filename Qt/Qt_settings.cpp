@@ -145,7 +145,12 @@ char* STRING_get_utf8_chars(const char* s){
   return talloc_strdup(qstring.toLocal8Bit().constData());
 }
 
-bool STRING_starts_with(const wchar_t *string, const char *endswith){
+bool STRING_starts_with2(const wchar_t *string, const wchar_t *endswith){
+  QString s = STRING_get_qstring(string);
+  return s.startsWith(STRING_get_qstring(endswith));
+}
+
+bool STRING_starts_with(const wchar_t *string, const char *endswith){  
   QString s = STRING_get_qstring(string);
   return s.startsWith(endswith);
 }
@@ -175,6 +180,13 @@ wchar_t *STRING_append(const wchar_t *s1, const wchar_t *s2){
 
 wchar_t *STRING_append(const wchar_t *s1, const char *s2){
   return STRING_create(STRING_get_qstring(s1) + s2);
+}
+
+wchar_t *STRING_to_upper(const wchar_t *string){
+  return STRING_create(STRING_get_qstring(string).toUpper());
+}
+wchar_t *STRING_to_lower(const wchar_t *string){
+  return STRING_create(STRING_get_qstring(string).toLower());
 }
 
 wchar_t *STRING_toBase64(const wchar_t *s){

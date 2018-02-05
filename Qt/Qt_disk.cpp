@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 const wchar_t *DISK_get_absolute_file_path(const wchar_t *wfilename){
   QFileInfo info(STRING_get_qstring(wfilename));
-  return STRING_create(info.absoluteFilePath());
+  return STRING_create(QDir::toNativeSeparators(info.absoluteFilePath()));
 }
 
 int64_t DISK_get_creation_time(const wchar_t *wfilename){
