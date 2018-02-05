@@ -433,7 +433,8 @@ public:
              float (*get_y)(const T &node, float y1, float y2),
              float (*get_x)(const T &node, double start_time, double end_time, float x1, float x2, void *data) = NULL,
              void *data = NULL,
-             const QColor fill_color = QColor()
+             const QColor fill_color = QColor(),
+             float fill_x1 = -1, float fill_x2 = -1
              ) const {
 
     if (_automation.size()==0){
@@ -442,7 +443,7 @@ public:
     }
     
     int size = 0;
-    QPointF points[_automation.size()*2];
+    QPointF points[4 + _automation.size()*2];
 
     int start_i = -1;
     int num_after_end = 0;
@@ -493,8 +494,24 @@ public:
     // 2. Background fill
     if (fill_color.isValid() && size >= 2) {      
 
-      points[size]   = QPointF(points[size-1].x(), y2);
-      points[size+1] = QPointF(points[0     ].x(), y2);
+      float first_x = points[0].x();
+      float first_y = points[0].y();
+      float last_x = points[size-1].x();
+      float last_y = points[size-1].y();
+
+      int fill_size;
+
+      if (fill_x1 == -1){
+        points[size]   = QPointF(last_x, y2);
+        points[size+1] = QPointF(first_x, y2);
+        fill_size = size+2;
+      } else {
+        points[size]   = QPointF(x2, last_y);
+        points[size+1] = QPointF(x2, y2);
+        points[size+2] = QPointF(x1, y2);
+        points[size+3] = QPointF(x1, first_y);
+        fill_size = size+4;
+      }
 
       //for(int i=0 ; i < size+2 ; i++)
       //  printf("  %d/%d: %d , %d  (y1: %f, y2: %f)\n", i, size, (int)points[i].x(), (int)points[i].y(), y1, y2);
@@ -502,7 +519,7 @@ public:
       p->setPen(Qt::NoPen);
       p->setBrush(fill_color);
       
-      p->drawPolygon(points, size+2);
+      p->drawPolygon(points, fill_size);
 
       p->setBrush(Qt::NoBrush);
     }
