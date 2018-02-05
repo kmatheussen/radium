@@ -561,7 +561,7 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
             
           } else if (scaled_pos < 0){
 
-
+            // why no assertion here? (missing comment)
 
           } else {
 
@@ -721,7 +721,7 @@ float SEQBLOCK_ENVELOPE_get_node_y(struct SeqblockEnvelope *seqblockenvelope, in
   return get_node_y(automation.automation.at(nodenum), y1, y2);
 }
 
-void SEQBLOCK_ENVELOPE_paint(QPainter *p, const struct SeqBlock *seqblock, float x1, float y1, float x2, float y2, bool paint_nodes){
+void SEQBLOCK_ENVELOPE_paint(QPainter *p, const struct SeqBlock *seqblock, float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2){
 
   struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
 
@@ -729,5 +729,5 @@ void SEQBLOCK_ENVELOPE_paint(QPainter *p, const struct SeqBlock *seqblock, float
   
   //automation.automation.set_do_paint_nodes(paint_nodes);
 
-  automation.automation.paint(p, x1, y1, x2, y2, 0, 1, QColor("white"), get_node_y, get_node_x, seqblockenvelope, QColor(80,20,200,50)); //get_node_y, get_node_x, seqblockenvelope);
+  automation.automation.paint(p, x1, y1, x2, y2, 0, 1, QColor("white"), get_node_y, get_node_x, seqblockenvelope, QColor(80,20,200,50), seqblock_x1, seqblock_x2); //get_node_y, get_node_x, seqblockenvelope);
 }

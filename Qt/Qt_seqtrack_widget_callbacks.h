@@ -1041,7 +1041,7 @@ public:
                         _start_time, _end_time,
                         t_x1, t_x2);
       
-      SEQBLOCK_ENVELOPE_paint(painter, seqblock, x1, y1, x2, y2, seqblock==g_curr_seqblock);
+      SEQBLOCK_ENVELOPE_paint(painter, seqblock, x1, y1, x2, y2, seqblock==g_curr_seqblock, t_x1, t_x2);
     }
   }
 
