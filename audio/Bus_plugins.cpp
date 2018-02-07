@@ -36,6 +36,7 @@ static SoundPluginType bus_type3 = {};
 static SoundPluginType bus_type4 = {};
 static SoundPluginType bus_type5 = {};
 static SoundPluginType pipe_type = {};
+static SoundPluginType pipe_type8 = {};
 
 static SoundPluginType left_in_type = {};
 static SoundPluginType right_in_type = {};
@@ -178,6 +179,21 @@ static SoundPluginType pipe_type = {
  data                     : NULL
 };
 
+static SoundPluginType pipe_type = {
+ name                     : "Pipe8",
+ num_inputs               : 8,
+ num_outputs              : 8,
+ is_instrument            : false,
+ num_effects              : 0,
+ create_plugin_data       : create_plugin_data,
+ cleanup_plugin_data      : cleanup_plugin_data,
+
+ RT_process               : RT_pipe_process,
+ RT_get_audio_tail_length : RT_get_audio_tail_length,
+ 
+ data                     : NULL
+};
+
 
 
 #endif
@@ -301,6 +317,25 @@ void create_bus_plugins(void){
 
   if (has_inited==false)
   {
+    pipe_type8.type_name                = "Pipe8";
+    pipe_type8.name                     = "Pipe8";
+    pipe_type8.info                     = "A pipe sends the sound through unmodified.";
+    pipe_type8.num_inputs               = 8;
+    pipe_type8.num_outputs              = 8;
+    pipe_type8.is_instrument            = false;
+    pipe_type8.num_effects              = 0;
+    pipe_type8.will_always_autosuspend  = true,
+    pipe_type8.create_plugin_data       = create_plugin_data;
+    pipe_type8.cleanup_plugin_data      = cleanup_plugin_data;
+    
+    pipe_type8.RT_process               = RT_pipe_process;
+    pipe_type8.RT_get_audio_tail_length = RT_get_audio_tail_length;
+    
+    pipe_type8.data                     = NULL;
+  }
+
+  if (has_inited==false)
+  {
     left_in_type.type_name                = "2ch -> 1ch";
     left_in_type.name                     = "Keep Left channel only";
     left_in_type.info                     = "Receives a stereo sound. Sends out the left channel.";
@@ -367,6 +402,7 @@ void create_bus_plugins(void){
   PR_add_plugin_type(&bus_type4);
   PR_add_plugin_type(&bus_type5);
   PR_add_plugin_type(&pipe_type);
+  PR_add_plugin_type(&pipe_type8);
 
   PR_add_plugin_type_no_menu(&left_in_type);
   PR_add_plugin_type_no_menu(&right_in_type);
