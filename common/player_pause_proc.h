@@ -14,6 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef _RADIUM_COMMON_PLAYER_PAUSE_PROC_H
+#define _RADIUM_COMMON_PLAYER_PAUSE_PROC_H
+
+
 extern int g_pausing_level;
 
 extern LANGSPEC void PC_Pause_set_pos(int blocknum, int realline);
@@ -46,18 +50,22 @@ namespace{
 struct PlayerPauseOnlyIfNeeded{
   bool has_paused = false;
 
+  bool do_it;
+
   void need_it(void){
-    if (has_paused==false){
+    if (has_paused==false && do_it){
       PC_Pause();
       has_paused = true;
     }
   }
 
-  PlayerPauseOnlyIfNeeded(const PlayerLockOnlyIfNeeded&) = delete;
-  PlayerPauseOnlyIfNeeded& operator=(const PlayerLockOnlyIfNeeded&) = delete;
+  PlayerPauseOnlyIfNeeded(const PlayerPauseOnlyIfNeeded&) = delete;
+  PlayerPauseOnlyIfNeeded& operator=(const PlayerPauseOnlyIfNeeded&) = delete;
 
   
-  PlayerPauseOnlyIfNeeded(){
+  PlayerPauseOnlyIfNeeded(bool do_it = true)
+  : do_it(do_it)
+  {
   }
   
   ~PlayerPauseOnlyIfNeeded(){
@@ -67,4 +75,6 @@ struct PlayerPauseOnlyIfNeeded{
 };
 
 }
+#endif
+
 #endif

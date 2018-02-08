@@ -334,6 +334,8 @@ extern LANGSPEC void SEQUENCER_create_automations_from_state(hash_t *state);
 extern LANGSPEC hash_t *SEQUENCER_get_envelopes_state(void);
 extern LANGSPEC void SEQUENCER_create_envelopes_from_state(hash_t *state);
 
+extern LANGSPEC void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double new_tempo_multiplier, bool is_gfx);
+
 
 static inline const vector_t *gfx_seqblocks(const struct SeqTrack *seqtrack){
   if(seqtrack->gfx_seqblocks != NULL)

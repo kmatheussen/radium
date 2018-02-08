@@ -110,16 +110,25 @@ static bool seqblock_has_stretch(const struct SeqTrack *seqtrack, const struct S
 }
 
 static void set_seqblock_stretch(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, bool is_gfx){
-  seqblock->gfx.stretch = (double)(seqblock->gfx.time2-seqblock->gfx.time) / (double)(seqblock->gfx.interior_end - seqblock->gfx.interior_start);
+  double reltempo = seqblock->block==NULL ? 1.0 : ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+
+  seqblock->gfx.stretch = (double)get_seqblock_duration(seqblock, true) / (double)(seqblock->gfx.interior_end - seqblock->gfx.interior_start);
+  if (reltempo != 1.0)
+    seqblock->gfx.stretch_without_tempo_multiplier = seqblock->gfx.stretch * reltempo;
   
   if(!is_gfx){
-    seqblock->t.stretch = (double)(seqblock->t.time2-seqblock->t.time) / (double)(seqblock->t.interior_end - seqblock->t.interior_start);
+    seqblock->t.stretch = (double)get_seqblock_duration(seqblock, false) / (double)(seqblock->t.interior_end - seqblock->t.interior_start);
+    if (reltempo != 1.0)
+      seqblock->t.stretch_without_tempo_multiplier = seqblock->t.stretch * reltempo;
   }
+
 }
 
 
 // 'seqblock_where_time_is' can be NULL, but it works faster if it is not null. (Not quite sure if that is the whole difference)
 static int64_t get_abstime_from_seqtime2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_where_time_is, int64_t seqtime, bool is_gfx){
+  return seqtime;
+
   int64_t last_seq_end_time = 0;
   double last_abs_end_time = 0; // Is double because of reltempo multiplication.
 
@@ -190,11 +199,15 @@ static int64_t get_abstime_from_seqtime2(const struct SeqTrack *seqtrack, const 
 }
 
 int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_where_time_is, int64_t seqtime){
+  return seqtime;
+
   return get_abstime_from_seqtime2(seqtrack, seqblock_where_time_is, seqtime, false);
 }
   
 // Returns in frame format, not in seconds. (int64_t is usually in frames, double is usually in seconds)
 static int64_t get_seqtime_from_abstime2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime, bool is_gfx){
+  return abstime;
+
   //int64_t last_seq_start_time = 0;
   int64_t last_seq_end_time = 0;
   //double last_abs_start_time = 0;
@@ -239,6 +252,8 @@ static int64_t get_seqtime_from_abstime2(const struct SeqTrack *seqtrack, const 
 }
 
 int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime){
+  return abstime;
+  
   return get_seqtime_from_abstime2(seqtrack, seqblock_to_ignore, abstime, false);
 }
 
@@ -391,6 +406,9 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
   seqblock->t.stretch = 1.0;
   seqblock->gfx.stretch = 1.0;
 
+  seqblock->t.stretch_without_tempo_multiplier = 1.0;
+  seqblock->gfx.stretch_without_tempo_multiplier = 1.0;
+
   seqblock->fadein = 0;
   seqblock->fadeout = 0;
 
@@ -519,8 +537,8 @@ static void update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack, c
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
 
     double reltempo = 1.0;
-    if (seqblock->block != NULL)
-      reltempo = ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+    //if (seqblock->block != NULL)
+    //  reltempo = ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
 
     int64_t seq_block_start = is_gfx ? seqblock->gfx.time : seqblock->t.time;
     
@@ -707,7 +725,7 @@ static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64
       block_interval_length = blocklen - Place2STime(block, &last_barorbeat->l.p); // this is arguable not correct if the block stops before the beat should have ended...
   }
 
-  int64_t interval_length = blocktime_to_seqtime(seqblock, block_interval_length / ATOMIC_DOUBLE_GET(block->reltempo));
+  int64_t interval_length = blocktime_to_seqtime(seqblock, block_interval_length); // / ATOMIC_DOUBLE_GET(block->reltempo));
   //printf("  ... interval_length: %f\n", (double)interval_length / 44100.0);
   
   int64_t ret = SEQBLOCK_get_seq_endtime(seqblock);
@@ -2394,3 +2412,51 @@ void SEQUENCER_create_envelopes_from_state(hash_t *state){
   SEQUENCER_update();
 }
 
+// When playing song, block->tempo_multiplier is ignored. Instead seqblocks are stretched.
+void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double new_tempo_multiplier, bool is_gfx){
+  radium::PlayerPauseOnlyIfNeeded pause(is_playing_song());
+  radium::PlayerLockOnlyIfNeeded lock(is_playing_song());
+
+  ALL_SEQTRACKS_FOR_EACH(){
+    int64_t skew = 0;
+
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+
+      int64_t add_skew = 0;
+
+      if (seqblock->block == block){
+
+        lock.lock();
+
+        double nonstretched_seqblock_duration = seqblock->t.interior_end - seqblock->t.interior_start;
+
+        double stretch_without_tempo_multiplier = seqblock->t.stretch_without_tempo_multiplier;
+
+        seqblock->t.stretch = stretch_without_tempo_multiplier / new_tempo_multiplier;
+
+        int64_t new_time2 = seqblock->t.time + (nonstretched_seqblock_duration * seqblock->t.stretch);
+        if (new_time2 < seqblock->t.time + 64){
+          //R_ASSERT_NON_RELEASE(new_time2 > seqblock->t.time);
+          R_ASSERT_NON_RELEASE(false);
+          new_time2 = seqblock->t.time + 64;
+        }
+
+        add_skew = new_time2-seqblock->t.time2;
+
+        seqblock->t.time2 = new_time2;
+        seqblock->gfx.time2 = new_time2;
+
+      }
+      
+      if (skew != 0){
+        seqblock->t.time += skew;
+        seqblock->t.time2 += skew;
+        seqblock->gfx.time = seqblock->t.time;
+        seqblock->gfx.time2 = seqblock->t.time2;
+      }
+
+      skew += add_skew;
+      
+    }END_VECTOR_FOR_EACH;
+  }END_ALL_SEQTRACKS_FOR_EACH;
+}

@@ -2403,6 +2403,8 @@ struct SeqBlockTimings{
 
   //int64_t noninterior_start; // The seqtime start if interior_start==0
   //int64_t noninterior_end; // The seqtime end if interior_end==0
+
+  double stretch_without_tempo_multiplier;
   
   // stretch = (end_time-time) / getBlockSTimeLength(seqblock->block)
   // 1.0 = no stretch. 0.5 = double tempo. 2.0 = half tempo.
@@ -2484,8 +2486,8 @@ struct SeqBlock{
   double fadeout; // value between 0 and 1
 
   bool envelope_enabled;
-  float envelope_volume; // gain
-  float envelope_db;     // db
+  float envelope_volume; // gain (current envelope_volume calculated from envelope+fadein+fadeout, updated each block)
+  float envelope_db;     // db version of envelope_volume
   struct SeqblockEnvelope *envelope;
   bool envelope_volume_changed_this_block;
   

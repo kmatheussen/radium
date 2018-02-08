@@ -128,7 +128,7 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
             struct SeqBlock *curr_seqblock = seqtrack->curr_seqblock;
             struct Blocks *block = curr_seqblock==NULL ? NULL : curr_seqblock->block;
             
-            if(block!=NULL)
+            if(block!=NULL && pc->playtype==PLAYBLOCK)
               reltempo = ATOMIC_DOUBLE_GET(block->reltempo);
             
             double seqreltime  = (double)reltime * reltempo;
