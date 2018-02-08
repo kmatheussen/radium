@@ -354,6 +354,10 @@ int64_t createAudioInstrumentFromPreset(const char *filename, const_char *name, 
   return PRESET_load(STRING_create(filename), name, false, x, y);
 }
 
+const char *getAudioInstrumentDescription(const_char* container_name, const_char* type_name, const_char* plugin_name){
+  return talloc_format("1%s:%s:%s", container_name, type_name, plugin_name);
+}
+
 bool get_type_name_from_description(const char *instrument_description, const char **container_name, const char **type_name, const char **plugin_name){
   if (instrument_description[0]=='1'){
 
@@ -1040,6 +1044,9 @@ bool instrumentIsBusDescendant(int64_t instrument_id){
 }
 
 bool instrumentIsPermanent(int64_t instrument_id){  
+  if (g_is_replacing_main_pipe==true) // hack
+    return false;
+
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
@@ -1766,6 +1773,22 @@ void deleteInstrument(int64_t instrument_id){
   }UNDO_CLOSE();
 
   root->song->tracker_windows->must_redraw=true;
+
+}
+
+void internalReplaceMainPipe(int64_t new_main_pipe_id){
+  if (g_is_replacing_main_pipe==false){
+    handleError("Can not call this function like this");
+    return;
+  }
+  
+  struct Patch *patch = PATCH_get_from_id(new_main_pipe_id);
+  if (patch != NULL)
+    PATCH_replace_main_pipe(patch);
+  else
+    R_ASSERT(false);
+
+  g_is_replacing_main_pipe = false;
 }
 
 bool instrumentIsOpenAndAudio(int64_t instrument_id){

@@ -317,7 +317,7 @@ void create_bus_plugins(void){
 
   if (has_inited==false)
   {
-    pipe_type8.type_name                = "Pipe8";
+    pipe_type8.type_name                = "Pipe";
     pipe_type8.name                     = "Pipe8";
     pipe_type8.info                     = "A pipe sends the sound through unmodified.";
     pipe_type8.num_inputs               = 8;

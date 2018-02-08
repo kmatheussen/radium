@@ -204,6 +204,75 @@ static inline T replace_gc_root(T old_root, T new_root){
   return new_root;
 }
 
+
+#include "LockAsserter.hpp"
+
+namespace radium{
+  template <typename T> 
+  class Vector_t {
+
+    vector_t *v;
+    
+    LockAsserter lockAsserter;
+
+  public:
+    
+    Vector_t(vector_t *v)
+      : v(v)
+    {
+      LOCKASSERTER_EXCLUSIVE(&lockAsserter);
+    }
+
+    T *operator[](int i) const {
+      return at(i);
+    }
+    
+    T *at(int i) const {
+      LOCKASSERTER_SHARED(&lockAsserter);
+      
+      return at_internal(i);
+    }
+    
+private:
+  
+    T *at_internal(int i) const {
+      R_ASSERT_RETURN_IF_FALSE2(i>=0, v->elements[0]);
+      R_ASSERT_RETURN_IF_FALSE2(i<v->num_elements, v->elements[0]);
+      
+      return (T*)v->elements[i];
+    }
+
+public:
+
+    const T* begin() const {
+      LOCKASSERTER_SHARED(&lockAsserter);
+      
+      return (T*)&v->elements[0];
+    }
+    
+    // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
+    const T* end() const {
+      LOCKASSERTER_SHARED(&lockAsserter);
+      
+      return (T*)&v->elements[v->num_elements];
+    }
+    
+    int size(void) const {
+      LOCKASSERTER_SHARED(&lockAsserter);
+      
+      return v->num_elements;
+    }
+
+    void push_back(T *t){
+      LOCKASSERTER_EXCLUSIVE(&lockAsserter);
+      VECTOR_push_back(t);
+    }
+
+  };
+
+//#define V_t Vector_t
+}
+
 #else
 
 static inline void *add_gc_root(void *root){

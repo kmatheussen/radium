@@ -61,7 +61,8 @@ struct Song *SONG_create(void){
   struct Song *song=talloc(sizeof(struct Song));
   song->editor_should_swing_along = true;
   song->mute_editor_automation_when_track_is_muted = true;
-  
+  song->num_channels_in_main_pipe = 2;
+
   VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL, -1));
 
   SEQUENCER_init(song);
