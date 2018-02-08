@@ -1155,6 +1155,10 @@ static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
                                                int64_t start_abstime, int64_t end_abstime,
                                                int64_t *start_seqtime, int64_t *end_seqtime)
 {
+  *start_seqtime = start_abstime;
+  *end_seqtime = end_abstime;
+  return;
+  
   if(start_abstime==-1){
     if(seqblock==NULL){
       *start_seqtime = 0;

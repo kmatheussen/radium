@@ -312,6 +312,8 @@ void setReltempo(double reltempo){
   //update_statusbar(window);
   //DrawBlockRelTempo(window,wblock);
 
+  SEQUENCER_block_changes_tempo_multiplier(wblock->block, new_reltempo, false);
+
   SEQUENCER_update();
 
   window->must_redraw = true;

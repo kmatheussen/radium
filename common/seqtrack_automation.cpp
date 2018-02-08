@@ -761,7 +761,8 @@ void RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
       if (latency!=0){
         struct SeqBlock *seqblock = seqtrack->curr_seqblock;
         if (seqblock != NULL && seqblock->block!=NULL){
-          latency *= ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+          if (pc->playtype==PLAYSONG)
+            latency *= ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
           latency = ceil(latency); // Ensure automation is sent out before note start. (probably not necessary)
         }
       }

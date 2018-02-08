@@ -131,20 +131,22 @@ struct PlayerRecursiveLock{
  
 } // End anon. namespace
   
-  
 // TODO: Go through all use of PlayerRecursiveLock and see if it can be replaced with PlayerLockOnlyIfNeeded.
 struct PlayerLockOnlyIfNeeded{
   bool gotit = false;
 
+  bool do_lock;
+
   void lock(){
     if (gotit==false){
-      PLAYER_lock();
+      if(do_lock)
+        PLAYER_lock();
       gotit = true;
     }
   }
 
   void maybe_pause(int i){
-    if (gotit)
+    if (gotit && do_lock)
       PLAYER_maybe_pause_lock_a_little_bit(i);
   }
 
@@ -157,12 +159,16 @@ struct PlayerLockOnlyIfNeeded{
   PlayerLockOnlyIfNeeded& operator=(const PlayerLockOnlyIfNeeded&) = delete;
 
   
-  PlayerLockOnlyIfNeeded(){
+  PlayerLockOnlyIfNeeded(bool do_lock = true)
+    : do_lock(do_lock)
+  {
   }
   
   ~PlayerLockOnlyIfNeeded(){
-    if (gotit)
-      PLAYER_unlock();
+    if (gotit){
+      if(do_lock)
+        PLAYER_unlock();
+    }
   }  
 };
  

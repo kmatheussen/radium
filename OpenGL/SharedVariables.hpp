@@ -98,7 +98,7 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   sv->num_lines     = block->num_lines;
 
-  sv->reltempo       = ATOMIC_DOUBLE_GET(block->reltempo);
+  sv->reltempo       = is_playing_song() ? 1.0 : ATOMIC_DOUBLE_GET(block->reltempo);
   sv->block_duration = getBlockSTimeLength(block);
 
   sv->scrollbar_height          = get_scrollbar_y2(window,wblock) - get_scrollbar_y1(window,wblock);
