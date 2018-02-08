@@ -97,7 +97,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
       GFX_Message(NULL, "Error. Could not register jack port.\n");
   }
 
-  if(!strcmp(plugin_type->name,"System Out")){
+  if(!strcmp(plugin_type->name,"System Out") || !strcmp(plugin_type->name,"System Out 8")){
     int ch;
     const char **inportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsInput);
     for (ch=0;inportnames && inportnames[ch]!=NULL && ch<num_inputs;ch++){
@@ -109,7 +109,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
 		       inportnames[ch]
 		       )
 	  )
-        GFX_Message(NULL, "Warning. Cannot connect to jack playback port %d: \"%s\".\n",ch,inportnames[ch]);
+        GFX_addMessage("Warning. Cannot connect to jack playback port %d: \"%s\".\n",ch,inportnames[ch]);
     }
     jack_free(inportnames);
   }
@@ -135,6 +135,9 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   if(MIXER_is_saving()){
 
     if(!strcmp(type->name,"System Out"))
+      SOUNDFILESAVER_write(inputs, num_frames);
+
+    else if(!strcmp(type->name,"System Out 8"))
       SOUNDFILESAVER_write(inputs, num_frames);
 
   }
@@ -199,10 +202,14 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   int i;
   Data *data = plugin->data;
 
-  if(!strcmp(plugin->type->name,"System Out")) {
-
+  if(!strcmp(plugin->type->name,"System Out") || !strcmp(plugin->type->name,"System Out 8")){
     struct SoundPlugin *other_system_out = MIXER_get_soundplugin("Jack", "System Out");
-    GFX_OS_set_system_volume_plugin(other_system_out);
+    if (other_system_out != NULL){
+      GFX_OS_set_system_volume_plugin(other_system_out);
+    } else {
+      struct SoundPlugin *other_system_out = MIXER_get_soundplugin("Jack", "System Out 8");
+      GFX_OS_set_system_volume_plugin(other_system_out);
+    }
   }
 
   for(i=0;i<plugin->type->num_outputs;i++)
@@ -221,11 +228,11 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
   if(plugin->type->num_outputs>0) {
-    HASH_put_chars_at(state, "input_portname", 0, JACK_get_name(plugin,0));
-    HASH_put_chars_at(state, "input_portname", 1, JACK_get_name(plugin,1));
+    for(int i=0 ; i<plugin->type->num_outputs ; i++)
+      HASH_put_chars_at(state, "input_portname", i, JACK_get_name(plugin,i));
   } else {
-    HASH_put_chars_at(state, "output_portname", 0, JACK_get_name(plugin,0));
-    HASH_put_chars_at(state, "output_portname", 1, JACK_get_name(plugin,1));
+    for(int i=0 ; i<plugin->type->num_inputs ; i++)
+      HASH_put_chars_at(state, "output_portname", i, JACK_get_name(plugin,i));
   }
 }
 
@@ -339,6 +346,35 @@ static SoundPluginType system_out_type = {
  data                     : NULL
 };
 
+static SoundPluginType system_out_type8 = {
+ type_name                : "Jack",
+ name                     : "System Out 8",
+ num_inputs               : 8,
+ num_outputs              : 0,
+ is_instrument            : false,
+ note_handling_is_RT      : false,
+ num_effects              : 0,
+ will_never_autosuspend   : true,
+ get_effect_format        : NULL,
+ get_effect_name          : NULL,
+ get_display_value_string : NULL,
+ effect_is_RT             : NULL,
+ create_plugin_data       : create_plugin_data,
+ cleanup_plugin_data      : cleanup_plugin_data,
+
+ called_after_plugin_has_been_created : called_after_system_out_has_been_created,
+ 
+ create_state        : create_state,
+
+ RT_process       : RT_process,
+ play_note        : NULL,
+ set_note_volume  : NULL,
+ stop_note        : NULL,
+ set_effect_value : NULL,
+
+ data                     : NULL
+};
+
 extern jack_client_t *g_jack_client;
 
 void create_jack_plugins(void){
@@ -353,6 +389,9 @@ void create_jack_plugins(void){
 
   system_out_type.data = g_jack_client;
   PR_add_plugin_type(&system_out_type);
+
+  system_out_type8.data = g_jack_client;
+  PR_add_plugin_type(&system_out_type8);
 }
 
 const char *JACK_get_name(SoundPlugin *plugin, int portnum){

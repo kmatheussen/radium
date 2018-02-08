@@ -38,25 +38,91 @@ public:
   ~Jack_Plugin_widget() {
   }
 
-  void update_gui(void){
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    port1Edit->setText(JACK_get_name(plugin, 0));
-    port2Edit->setText(JACK_get_name(plugin, 1));
+  QLineEdit *get_line_edit(int num){
+    switch(num){
+    case 0: return port1Edit;
+    case 1: return port2Edit;
+    case 2: return port3Edit;
+    case 3: return port4Edit;
+    case 4: return port5Edit;
+    case 5: return port6Edit;
+    case 6: return port7Edit;
+    case 7: return port8Edit;
+    }
+    return NULL;
+  }
+  
+  QLabel *get_label(int num){
+    switch(num){
+    case 0: return label_1;
+    case 1: return label_2;
+    case 2: return label_3;
+    case 3: return label_4;
+    case 4: return label_5;
+    case 5: return label_6;
+    case 6: return label_7;
+    case 7: return label_8;
+    }
+    return NULL;
   }
 
+  bool has_removed_unused_widgets = false;
+  
+  void update_gui(void){    
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    
+    int num_ports = plugin->type->num_inputs;
+    if (num_ports==0)
+      num_ports = plugin->type->num_outputs;
+    
+    for(int i=0;i<8;i++){
+      QLineEdit *line_edit = get_line_edit(i);
+      R_ASSERT_RETURN_IF_FALSE(line_edit!=NULL);
+      if (i < num_ports)
+        line_edit->setText(JACK_get_name(plugin, i));
+      else if(has_removed_unused_widgets==false){
+        QLabel *label = get_label(i);
+        R_ASSERT_RETURN_IF_FALSE(label!=NULL);
+        label->hide();
+        line_edit->hide();
+      }
+    }
+
+    has_removed_unused_widgets = true;
+  }
+
+  void editing_finished(int portnum){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    QLineEdit *line_edit = get_line_edit(portnum);
+    JACK_set_name(plugin, portnum, line_edit->text().toUtf8().constData());
+    update_gui();
+    set_editor_focus();
+  }
+  
 public slots:
 
   void on_port1Edit_editingFinished(){
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    JACK_set_name(plugin, 0, port1Edit->text().toUtf8().constData());
-    update_gui();
-    set_editor_focus();
+    editing_finished(0);
   }
-
   void on_port2Edit_editingFinished(){
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    JACK_set_name(plugin, 1, port2Edit->text().toUtf8().constData());
-    update_gui();
-    set_editor_focus();
+    editing_finished(1);
+  }
+  void on_port3Edit_editingFinished(){
+    editing_finished(2);
+  }
+  void on_port4Edit_editingFinished(){
+    editing_finished(3);
+  }
+  void on_port5Edit_editingFinished(){
+    editing_finished(4);
+  }
+  void on_port6Edit_editingFinished(){
+    editing_finished(5);
+  }
+  void on_port7Edit_editingFinished(){
+    editing_finished(6);
+  }
+  void on_port8Edit_editingFinished(){
+    editing_finished(7);
   }
 };
