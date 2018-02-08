@@ -393,6 +393,9 @@ void handleDropEvent(QString filename, float x){
     else if (filename.endsWith(".rec"))
       instrument_id = createAudioInstrumentFromPreset(filename.toUtf8().constData(), NULL, 0, 0);
     
+    else if (filename.endsWith(".mrec"))
+      instrument_id = createAudioInstrumentFromPreset(filename.toUtf8().constData(), NULL, 0, 0);
+    
     else if (file_could_be_a_sample(filename) || filename.endsWith(".sf2")){
       struct Patch *patch = PATCH_create_audio("Sample Player", "Sample Player", NULL, NULL, 0, 0);
       instrument_id = patch->id;
