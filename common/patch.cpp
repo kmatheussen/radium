@@ -601,10 +601,7 @@ static void make_inactive(struct Patch *patch, bool force_removal){
   */
   
   if(force_removal==false && !is_midi_instrument && AUDIO_is_permanent_patch(patch)==true){
-    if (force_removal)
-      GFX_Message(NULL, "Instrument \"%s\" can not be deleted", patch->name);
-    else
-      GFX_addMessage("Instrument \"%s\" can not be deleted", patch->name);  // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
+    GFX_addMessage("Instrument \"%s\" can not be deleted", patch->name);  // Using GFX_addMessage instead of GFX_message as a workaround for a Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
     return;
   }
 
@@ -637,6 +634,13 @@ void PATCH_force_make_inactive(struct Patch *patch){
   make_inactive(patch, true);
 }
   
+void PATCH_replace_main_pipe(struct Patch *new_main_pipe){
+  PATCH_force_make_inactive(getPatchFromNum(0));
+
+  PATCH_remove_from_instrument(new_main_pipe);
+  new_main_pipe->id = 0;
+  PATCH_add_to_instrument(new_main_pipe);
+}
 
 static bool has_recursive_event_connection(struct Patch *patch, struct Patch *start_patch){
   if(start_patch==patch)

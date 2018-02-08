@@ -42,6 +42,7 @@ extern LANGSPEC struct Patch *PATCH_create_audio(const char *type_name, const ch
 extern LANGSPEC struct Patch *PATCH_create_midi(const char *name);
 extern LANGSPEC void PATCH_make_inactive(struct Patch *patch);
 extern LANGSPEC void PATCH_force_make_inactive(struct Patch *patch);
+extern LANGSPEC void PATCH_replace_main_pipe(struct Patch *new_main_pipe);
 extern LANGSPEC void PATCH_call_very_often(void);
 extern LANGSPEC void PATCH_reset(void);
 extern LANGSPEC void PATCH_init(void);

@@ -493,7 +493,11 @@
 (define (replace-instrument-in-mixer id-old-instrument id-new-instrument)
   (define x (+ 0 (<ra> :get-instrument-x id-old-instrument)))
   (define y (+ 0 (<ra> :get-instrument-y id-old-instrument)))
-  (<ra> :delete-instrument id-old-instrument)
+  (if (= 0 id-old-instrument)
+      (begin
+        (<ra> :internal-replace-main-pipe id-new-instrument)
+        (set! id-new-instrument 0))
+      (<ra> :delete-instrument id-old-instrument))      
   (<ra> :set-instrument-position x y id-new-instrument)
   )
 
@@ -520,16 +524,24 @@
              ;;(replace-instrument-in-all-tracks! id-old-instrument id-new-instrument)
              (replace-instrument-in-mixer id-old-instrument id-new-instrument)
              )))))
-    
-  (if (<ra> :instrument-is-permanent id-old-instrument)
-      (show-async-message (instrconf :parentgui) "Can not be replaced")
-      (if (or (not description)
-              (string=? description ""))
-          (start-instrument-popup-menu instrconf replace)
-          (<ra> :schedule 0 ;; We do this since the function is specified to return immediately. I.e. the caller expects the instrument configuration to be the same when we return.
-                (lambda ()
-                  (replace description)
-                  #f)))))
+
+  (cond ((= 0 id-old-instrument)
+         (<ra> :schedule 0 ;; We do this since the function is specified to return immediately. I.e. the caller expects the instrument configuration to be the same when we return.
+               (lambda ()
+                 (ignore-undo-block
+                  (lambda ()
+                    (replace description)
+                    #f)))))
+        ((<ra> :instrument-is-permanent id-old-instrument)
+         (show-async-message (instrconf :parentgui) "Can not be replaced"))
+        ((or (not description)
+             (string=? description ""))
+         (start-instrument-popup-menu instrconf replace))
+        (else
+         (<ra> :schedule 0 ;; We do this since the function is specified to return immediately. I.e. the caller expects the instrument configuration to be the same when we return.
+               (lambda ()
+                 (replace description)
+                 #f)))))
 
 (define (request-select-instrument-preset parentgui callback)
   (define (use-file-requester)
@@ -788,12 +800,7 @@
   (define type (entry :type))
   (cond ((or (string=? type "NORMAL")
              (string=? type "NUM_USED_PLUGIN"))
-         (callback (<-> "1"
-                        (<ra> :to-base64 (entry :container-name))
-                        ":"
-                        (<ra> :to-base64 (entry :type-name))
-                        ":"
-                        (<ra> :to-base64 (entry :name)))))
+         (callback (<ra> :get-audio-instrument-description (entry :container-name) (entry :type-name) (entry :name) )))
         ((string=? type "CONTAINER")
          (define new-entries (<ra> :populate-plugin-container entry))
          ;;(c-display "new-entries:" (pp new-entries))

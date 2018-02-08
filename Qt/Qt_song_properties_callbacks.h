@@ -26,6 +26,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_string_proc.h"
 #include "../common/OS_Player_proc.h"
 
+#include "../mixergui/QM_MixerWidget.h"
+
+#include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
 
 //namespace{
@@ -35,6 +38,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "helpers.h"
 
 #include "Qt_song_properties.h"
+
+bool g_is_replacing_main_pipe = false;
 
 namespace{
   
@@ -61,9 +66,12 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     
     set_linear_accelerando_and_ritardando(song->linear_accelerando, song->linear_ritardando);
     send_swing_to_plugins->setChecked(song->plugins_should_receive_swing_tempo);
-    mixer_comments_visible->setChecked(mixerStripCommentsVisible());
     mute_automation->setChecked(song->mute_editor_automation_when_track_is_muted);
     swing_along->setChecked(song->editor_should_swing_along);
+
+    mixer_comments_visible->setChecked(mixerStripCommentsVisible());
+    two_channels_in_main_pipe->setChecked(song->num_channels_in_main_pipe==2);
+    
     embed_samples->setChecked(g_curr_song_contains_embedded_samples);
   }
   
@@ -77,6 +85,23 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
       rit_linear->setChecked(true);
     else
       rit_slower_and_slower->setChecked(true);
+  }
+
+  void set_num_channels_in_main_pipe(int num_channels){
+    R_ASSERT_RETURN_IF_FALSE(num_channels==2 || num_channels==8);
+    if (num_channels == root->song->num_channels_in_main_pipe)
+      return;
+
+    struct SoundPlugin *plugin = get_main_pipe();
+    auto *patch = plugin->patch;
+
+    const_char *description = getAudioInstrumentDescription(toBase64(""), toBase64("Pipe"), toBase64(num_channels==2 ? "Pipe" : "Pipe8"));
+
+    g_is_replacing_main_pipe = true;
+    {
+      requestReplaceInstrument(patch->id, description, API_get_gui_from_existing_widget(this));
+    }
+    // g_is_replacing_main_pipe is set to false in internalReplaceMainPipe in api/api_instruments.c
   }
 
 public slots:
@@ -107,6 +132,13 @@ public slots:
     TIME_global_tempos_have_changed();
     
     root->song->tracker_windows->must_redraw_editor = true;
+  }
+
+  void on_two_channels_in_main_pipe_toggled(bool val){
+    if (_initing==true)
+      return;
+
+    set_num_channels_in_main_pipe(val==true ? 2 : 8);
   }
 
   void on_mixer_comments_visible_toggled(bool val){

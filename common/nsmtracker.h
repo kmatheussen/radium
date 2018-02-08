@@ -2610,6 +2610,7 @@ struct Song{
 
         bool mixer_comments_visible;
         bool mute_editor_automation_when_track_is_muted;
+        int num_channels_in_main_pipe;
 
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.
@@ -2654,6 +2655,7 @@ extern struct Root *root;
 // these two contains the same value, but g_is_starting_up can only be accessed from the main thread.
 extern DEFINE_ATOMIC(bool, is_starting_up);
 extern bool g_is_starting_up;
+extern bool g_is_replacing_main_pipe;
 
 extern bool g_embed_samples;
 extern bool g_curr_song_contains_embedded_samples;

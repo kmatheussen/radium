@@ -411,7 +411,7 @@ typedef struct SoundPlugin{
   void *data;
 
   int num_visible_outputs; // Used by the peak meters. Must never be higher than num_outputs. If the value is -1, it is ignored. Only used by the main thread.
-
+  
   // Data below handled by Radium.
 
   //const char *name; // Used to autocreate instance name. Sometime the type_name is not specific enough. (plugin containers). Can be NULL.
@@ -562,7 +562,7 @@ typedef struct SoundPlugin{
   
 } SoundPlugin;
 
-
+  
 static inline enum ColorNums get_effect_color(const SoundPlugin *plugin, int effect_num){
   const int start = AUTOMATION1_COLOR_NUM;
   const int end = AUTOMATION8_COLOR_NUM;
