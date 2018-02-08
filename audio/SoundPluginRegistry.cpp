@@ -625,7 +625,7 @@ void PR_add_plugin_container(SoundPluginTypeContainer *container){
 }
 
 //extern "C" void create_sine_plugin(void);
-extern void create_bus_plugins(void);
+extern void create_bus_plugins(bool only_pipe);
 extern void create_seqtrack_plugin(void);
 extern void create_timeskew_plugin(void);
 extern void create_patchbay_plugin(void);
@@ -754,14 +754,24 @@ void PR_init_plugin_types(void){
     create_stk_voice_form_plugin();
   }
   PR_add_menu_entry(PluginMenuEntry::level_down());
-    
+
+
+  
   PR_add_menu_entry(PluginMenuEntry::separator());
 
+  create_bus_plugins(true);
+
+  PR_add_menu_entry(PluginMenuEntry::level_up("Pipes, inputs and outputs"));
   create_jack_plugins();
+  PR_add_menu_entry(PluginMenuEntry::separator());
+  create_bus_plugins(false);
+  
+  PR_add_menu_entry(PluginMenuEntry::level_down());
 
+
+  
   PR_add_menu_entry(PluginMenuEntry::separator());
 
-  create_bus_plugins();
   create_seqtrack_plugin();
   create_timeskew_plugin();
   create_patchbay_plugin();

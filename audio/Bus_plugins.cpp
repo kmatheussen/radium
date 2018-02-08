@@ -198,7 +198,7 @@ static SoundPluginType pipe_type = {
 
 #endif
 
-void create_bus_plugins(void){
+void create_bus_plugins(bool only_pipe){
   static bool has_inited = false;
 
   if (has_inited==false)
@@ -300,7 +300,7 @@ void create_bus_plugins(void){
   {
     pipe_type.type_name                = "Pipe";
     pipe_type.name                     = "Pipe";
-    pipe_type.info                     = "A pipe sends the sound through unmodified.\n";
+    pipe_type.info                     = "A pipe sends the sound through unmodified.";
     pipe_type.num_inputs               = 2;
     pipe_type.num_outputs              = 2;
     pipe_type.is_instrument            = false;
@@ -395,17 +395,20 @@ void create_bus_plugins(void){
   }
 
   has_inited = true;
-  
-  PR_add_plugin_type(&bus_type1);
-  PR_add_plugin_type(&bus_type2);
-  PR_add_plugin_type(&bus_type3);
-  PR_add_plugin_type(&bus_type4);
-  PR_add_plugin_type(&bus_type5);
-  PR_add_plugin_type(&pipe_type);
-  PR_add_plugin_type(&pipe_type8);
 
-  PR_add_plugin_type_no_menu(&left_in_type);
-  PR_add_plugin_type_no_menu(&right_in_type);
-  PR_add_plugin_type_no_menu(&left_out_type);
-  PR_add_plugin_type_no_menu(&right_out_type);
+  if (only_pipe) {
+    PR_add_plugin_type(&pipe_type);
+  } else {
+    PR_add_plugin_type(&bus_type1);
+    PR_add_plugin_type(&bus_type2);
+    PR_add_plugin_type(&bus_type3);
+    PR_add_plugin_type(&bus_type4);
+    PR_add_plugin_type(&bus_type5);
+    PR_add_plugin_type(&pipe_type8);
+    
+    PR_add_plugin_type_no_menu(&left_in_type);
+    PR_add_plugin_type_no_menu(&right_in_type);
+    PR_add_plugin_type_no_menu(&left_out_type);
+    PR_add_plugin_type_no_menu(&right_out_type);
+  }
 }
