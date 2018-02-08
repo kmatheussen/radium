@@ -800,7 +800,7 @@
   (define type (entry :type))
   (cond ((or (string=? type "NORMAL")
              (string=? type "NUM_USED_PLUGIN"))
-         (callback (<ra> :get-audio-instrument-description (entry :container-name) (entry :type-name) (entry :name) )))
+         (callback (<ra> :get-audio-instrument-description (<ra> :to-base64 (entry :container-name)) (<ra> :to-base64 (entry :type-name)) (<ra> :to-base64 (entry :name) ))))
         ((string=? type "CONTAINER")
          (define new-entries (<ra> :populate-plugin-container entry))
          ;;(c-display "new-entries:" (pp new-entries))
