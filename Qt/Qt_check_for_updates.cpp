@@ -117,16 +117,20 @@ namespace{
     }
 
     void run() override {
+#if 0 //defined(FOR_MACOSX)
       ATOMIC_SET(gakk, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
       ATOMIC_SET(gakk2, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/unstable/"));
+#else
+      ATOMIC_SET(gakk, JUCE_download("http://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
+      ATOMIC_SET(gakk2, JUCE_download("http://users.notam02.no/~kjetism/radium/demos/unstable/"));
+#endif
     }
 
     bool got_gakk1 = false;
     bool got_gakk2 = false;
 
     void timerEvent(QTimerEvent * e) override {
-      //printf("Timerthread called %s\n", ATOMIC_GET(gakk));
-
+      
       const char* text = ATOMIC_GET(gakk);
 
       if(text != NULL && got_gakk1==false){
@@ -152,6 +156,9 @@ namespace{
 
 
       const char* text2 = ATOMIC_GET(gakk2);
+
+      //printf("Timerthread called -%s- -%s- -%s-\n", text, text2, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
+      //getchar();
 
       if(text2 != NULL && got_gakk2==false){
 
