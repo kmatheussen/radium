@@ -3874,8 +3874,8 @@
                           :Get-x (lambda (info) #f)
                           :Get-y (lambda (info) #f)
 
-                          :Make-undo (lambda (_)
-                                       #f)
+                          :Make-undo (lambda (seqblock-info)
+                                       (<ra> :undo-seqblock-fades (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))
                           
                           :Create-new-node (lambda (X seqtracknum callback)
                                              (assert #f)

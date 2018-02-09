@@ -151,3 +151,99 @@ static void *Undo_Do_SeqEnvelopes(
   return ret;
 }
 
+
+
+/////////////////////////////////////////////////////////////////////////////////
+// 4. Just block fade in/out. (doesn't require player to pause when modified) //
+///////////////////////////////////////////////////////////////////////////////
+
+static void *Undo_Do_SeqblockFades(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+);
+
+struct SeqFades{
+  int seqtracknum;
+  int seqblocknum;
+  double fadein;
+  double fadeout;
+};
+
+static struct SeqBlock *get_seqblock(int seqtracknum, int seqblocknum){
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum>=0, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum<root->song->seqtracks.num_elements, NULL);
+  
+  struct SeqTrack *seqtrack = root->song->seqtracks.elements[seqtracknum];
+  
+  R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(seqblocknum<seqtrack->seqblocks.num_elements, NULL);
+
+  return seqtrack->seqblocks.elements[seqblocknum];
+}
+
+static struct SeqFades *get_seqfades(int seqtracknum, int seqblocknum){
+  struct SeqBlock *seqblock = get_seqblock(seqtracknum, seqblocknum);
+  if (seqblock==NULL)
+    return NULL;
+  
+  struct SeqFades *seq_fades = talloc(sizeof(struct SeqFades));
+
+  seq_fades->seqtracknum = seqtracknum;
+  seq_fades->seqblocknum = seqblocknum;
+
+  seq_fades->fadein = seqblock->fadein;
+  seq_fades->fadeout = seqblock->fadeout;
+  
+  return seq_fades;
+}
+
+void ADD_UNDO_FUNC(SeqblockFades(int seqtracknum, int seqblocknum)){
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  
+  struct SeqFades *seq_fades = get_seqfades(seqtracknum, seqblocknum);
+  if (seq_fades==NULL)
+    return;
+  
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             window->wblock->l.num,
+                             window->curr_track,
+                             window->wblock->curr_realline,
+                             seq_fades,
+                             Undo_Do_SeqblockFades,
+                             "SeqEnvelopes"
+                             );
+}
+
+static void *Undo_Do_SeqblockFades(
+	struct Tracker_Windows *window,
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	int realline,
+	void *pointer
+){
+  struct SeqFades *seq_fades = pointer;
+  int seqtracknum = seq_fades->seqtracknum;
+  int seqblocknum = seq_fades->seqblocknum;
+
+  struct SeqFades *ret = get_seqfades(seqtracknum, seqblocknum);
+  if (ret==NULL)
+    return seq_fades; // Something is seriously wrong (assertion window was shown above), but I'm not sure if we can return NULL from this function so we return seq_fades instead.
+
+  struct SeqBlock *seqblock = get_seqblock(seqtracknum, seqblocknum);
+  
+  bool needlock = is_playing_song();
+  
+  if(needlock) PLAYER_lock();
+  {
+    seqblock->fadein = seq_fades->fadein;
+    seqblock->fadeout = seq_fades->fadeout;
+  }
+  if(needlock) PLAYER_unlock();
+
+  return ret;
+}
+
