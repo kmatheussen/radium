@@ -2189,6 +2189,8 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
     HASH_put_hash_at(state, "seqtracks", iterator666, seqtrack_state);
   }END_VECTOR_FOR_EACH;
 
+  HASH_put_bool(state, "contains_seqtime", false); // Earlier, the sequencer had two types if time formats, seqtime and abstime, which complicated things extremely.
+
   HASH_put_int(state, "curr_seqtracknum", ATOMIC_GET(root->song->curr_seqtracknum));
 
   // I'm not 100% sure, but I think we need this one since song tempo automation automatically changes length when the song changes length.
@@ -2317,7 +2319,12 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       SEQUENCER_set_looping(false);
     }
   }
-
+  
+  if (false==HASH_has_key(state, "contains_seqtime")){
+    R_ASSERT_NON_RELEASE(g_is_loading);
+    SEQUENCER_block_changes_tempo_multiplier(NULL, -1, false); // Remove seqtime.
+  }
+  
   BS_UpdatePlayList();
   SEQUENCER_update();
 }
@@ -2417,6 +2424,11 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
   radium::PlayerPauseOnlyIfNeeded pause(is_playing_song());
   radium::PlayerLockOnlyIfNeeded lock(is_playing_song());
 
+  if (block==NULL)
+    R_ASSERT_RETURN_IF_FALSE(g_is_loading==true);
+
+  bool is_loading_old_song = block==NULL;
+  
   ALL_SEQTRACKS_FOR_EACH(){
     int64_t skew = 0;
 
@@ -2424,13 +2436,18 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
 
       int64_t add_skew = 0;
 
-      if (seqblock->block == block){
+      if (seqblock->block == block || is_loading_old_song){
 
+        if (is_loading_old_song)
+          new_tempo_multiplier = ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+
+        //printf("new_tempo_multiplier: %f\n", new_tempo_multiplier);
+        
         lock.lock();
 
         double nonstretched_seqblock_duration = seqblock->t.interior_end - seqblock->t.interior_start;
 
-        double stretch_without_tempo_multiplier = seqblock->t.stretch_without_tempo_multiplier;
+        double stretch_without_tempo_multiplier = is_loading_old_song ? 1.0 : seqblock->t.stretch_without_tempo_multiplier;
 
         seqblock->t.stretch = stretch_without_tempo_multiplier / new_tempo_multiplier;
 
