@@ -1118,7 +1118,8 @@ void autopositionInstrument(int64_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
-  
+
+  ADD_UNDO(ChipPos_CurrPos(patch));
   CHIP_autopos(patch);
 }
 
