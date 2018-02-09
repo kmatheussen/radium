@@ -67,6 +67,14 @@ float getSequencerY2(void){
   return SEQUENCER_get_y2();
 }
 
+void undoSeqblockFades(int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+  if (seqblock==NULL)
+    return;
+
+  ADD_UNDO(SeqblockFades(seqtracknum, seqblocknum));
+}
+
 void undoSequencerEnvelopes(void){
   ADD_UNDO(SeqEnvelopes());
 }
@@ -547,14 +555,14 @@ float getSeqAutomationNodeY(int nodenum, int automationnum, int seqtracknum){
   }
 
 bool getSeqblockEnvelopeEnabled( int seqblocknum, int seqtracknum){
-  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return -1;
 
   return seqblock->envelope_enabled;
 }
 void setSeqblockEnvelopeEnabled(bool is_enabled, int seqblocknum, int seqtracknum){
-  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return;
 
