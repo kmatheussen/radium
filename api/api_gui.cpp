@@ -1957,6 +1957,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     AudioMeterPeaks _fallback_peaks = {0};
 
     AudioMeterPeaks &get_audio_meter_peaks(void){
+      if(_patch->instrument==get_MIDI_instrument()){
+#if !defined(RELEASE)
+        abort(); // want to know if this can happen.
+#endif
+        return _fallback_peaks;
+      }
+        
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
       if(plugin==NULL)
@@ -2029,6 +2036,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       int num_channels = _num_channels;
       
       if (_is_output){
+        if(_patch->instrument==get_MIDI_instrument()){
+#if !defined(RELEASE)
+          abort(); // want to know if this can happen.
+#endif
+          return 0;
+        }
+        
         SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
         if (plugin != NULL){
           if (plugin->num_visible_outputs >= 0)
@@ -2048,6 +2062,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       if (_widget.data()==NULL){ // Don't think this is possible though since this class is a subclass of QWidget, and therefore gui->_widget==this.
         R_ASSERT_NON_RELEASE(false);
         return;
+      }
+
+      if(_patch->instrument==get_MIDI_instrument()){
+#if !defined(RELEASE)
+          abort(); // want to know if this can happen.
+#endif
+          return;
       }
             
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
