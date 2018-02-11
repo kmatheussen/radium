@@ -2114,6 +2114,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     
     void paintEvent(QPaintEvent *ev) override {
       TRACK_PAINT();
+
+      if(_patch->instrument==get_MIDI_instrument()){
+#if !defined(RELEASE)
+        abort(); // Not necessarily anything wrong. Just want to know if this can happen.
+#endif
+        return;
+      }
       
       QPainter p(this);
 
