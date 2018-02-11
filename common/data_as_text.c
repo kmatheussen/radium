@@ -257,7 +257,7 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
 
   int realline = wblock->curr_realline;
   if (realline < 0 || realline >= wblock->num_reallines){
-    EVENTLOG_add_event("curr_realline: %d (%d)", wblock->realline, wblock->num_reallines);
+    EVENTLOG_add_event(strdup(talloc_format("curr_realline: %d (%d)", wblock->curr_realline, wblock->num_reallines)));
     R_ASSERT(false);
     return false;
   }
