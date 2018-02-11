@@ -89,7 +89,8 @@ static void PATCH_clean_unused_patches(void){
   // <strike>Too dangerous. We clean the content instead.</strike>
   //
   // Must do this instead. We can not clean the content, since an unused patch can be referenced from the clipboard.
-  VECTOR_clean(&g_unused_patches);
+  // No, we can not do this. patches are supposed to live forever.
+  //VECTOR_clean(&g_unused_patches);
 
   MIDI_SetThroughPatch(NULL);
   g_currpatch = NULL;
