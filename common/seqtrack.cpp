@@ -483,9 +483,12 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
     return NULL;
 
   seqblock->sample_filename_without_path = STRING_copy(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, false));
-    
-  default_duration_changed(seqblock, SEQTRACKPLUGIN_get_total_num_frames_in_sample(plugin, seqblock->sample_id));
+
+  int64_t duration = SEQTRACKPLUGIN_get_total_num_frames_in_sample(plugin, seqblock->sample_id);
   
+  default_duration_changed(seqblock, duration);  
+  SEQBLOCK_ENVELOPE_duration_changed(seqtrack, seqblock, duration);
+ 
   return seqblock;
 }
 
