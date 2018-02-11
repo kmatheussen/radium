@@ -256,8 +256,11 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
     return true;
 
   int realline = wblock->curr_realline;
-  R_ASSERT_NON_RELEASE(realline > 0);
-  R_ASSERT_NON_RELEASE(realline < wblock->num_reallines);
+  if (realline < 0 || realline >= wblock->num_reallines){
+    EVENTLOG_add_event("curr_realline: %d (%d)", wblock->realline, wblock->num_reallines);
+    R_ASSERT(false);
+    return false;
+  }
   
   const Place *place = &wblock->reallines[realline]->l.p;
 
