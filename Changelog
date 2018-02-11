@@ -1,3 +1,30 @@
+Changes 5.5.0 -> 5.5.1:
+* Load song: Fix semi-rare crash introduced in 5.5.0.
+* Editor: Try to track down a rare bug happening when deleting
+  a velocity text entry.
+* Sequencer: Fix initial envelope duration for audio files.
+* Sequencer: Fix undo/redo for fade in / fade out.
+* Mixer: Fix mixer object position in the modular mixer after
+  redoing adding instrument.
+* Update checker: Fix update checker. Broken since
+  around 4.4.0.
+* Sequencer: Internal simplification. This also fixes some
+  minor bugs.
+* Audio: Support drag-and-drop of .mrec files.
+* Audio: Add option to let main pipe have 8 channels. 
+* Audio: Add 8 channel versions of System Out, System In,
+  Pipe, Jack In, and Jack Out.
+* Sequencer: Paint all of the sequencer block area affected
+  by the envelope. I.e. from start to end of block, not just
+  below the envelope.
+* Audio: Fix equalizer blowing up when frequencies are set
+  higher than samplerate/2. Fixes for lowpass, lowshelf,
+  highshelf, and higpass.
+* API: getAudioInstrumentDescription, internalReplaceMainPipe,
+  undoSeqblockFades
+
+
+
 Changes 5.4.9 -> 5.5.0:
 * Editor: Fix crash when pasting track or block from an old
   song into a new song.
