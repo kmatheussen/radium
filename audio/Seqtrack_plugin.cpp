@@ -369,6 +369,8 @@ struct Sample{
   MyReader *_curr_reader = NULL; // Currently playing reader.
   radium::Vector<MyReader*> _fade_out_readers; // Currently playing fade-out readers
   radium::Vector<MyReader*> _free_readers;
+  
+  radium::SampleReader *_reader_holding_permanent_samples;
 
   DEFINE_ATOMIC(bool, _is_fading_out) = false;
   
@@ -396,11 +398,12 @@ struct Sample{
     : _filename(wcsdup(filename))
       //, _reader(NULL) //new MyReader(reader))
       //, _fade_out_reader(new MyReader(fade_out_reader))
-    , _peaks(new radium::DiskPeaks(filename))
+    , _reader_holding_permanent_samples(SAMPLEREADER_create(filename))
+    , _peaks(DISKPEAKS_get(filename))
     , _seqblock(seqblock)
     , _num_ch(SAMPLEREADER_get_num_channels(reader1))
     , _total_num_frames_in_sample(SAMPLEREADER_get_total_num_frames_in_sample(reader1))
-    , _color(SAMPLEREADER_get_sample_color(reader1))
+    , _color(SAMPLEREADER_get_sample_color(filename))
     , _filename_without_path(wcsdup(SAMPLEREADER_get_sample_name(reader1)))
   {
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
@@ -426,6 +429,7 @@ struct Sample{
 #endif
     }
 
+    interior_start_may_have_changed();
   }
 
   ~Sample(){
@@ -450,11 +454,19 @@ struct Sample{
       delete reader;
     }
     
-    delete _peaks;
+    SAMPLEREADER_delete(_reader_holding_permanent_samples);
+    _reader_holding_permanent_samples = NULL;
+    
+    DISKPEAKS_remove(_peaks);
     
     free((void*)_filename);
     free((void*)_filename_without_path);
   }
+
+  void interior_start_may_have_changed(void){
+    SAMPLEREADER_set_permanent_samples(_reader_holding_permanent_samples, _seqblock->t.interior_start, _seqblock->t.interior_start + (HOW_MUCH_TO_PREPARE_BEFORE_STARTING*pc->pfreq));
+  }
+
 
   /*
   void set_playing(bool is_playing){
@@ -553,7 +565,7 @@ struct Sample{
     {
       radium::SampleReader *samplereader = SAMPLEREADER_create(_filename); // light operation
       if (samplereader==NULL)
-        return;    
+        return;
       allocated_reader = new MyReader(samplereader); // light operation
     }
     
@@ -810,6 +822,8 @@ struct Data{
 
         goto again;
       }
+
+      sample->interior_start_may_have_changed(); // light operation.
     }
   }
 

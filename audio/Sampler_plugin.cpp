@@ -2012,7 +2012,7 @@ static void generate_peaks(Data *data){
 
 #if 0 //!defined(RELEASE)
       if (sample.filename!=NULL){
-        radium::DiskPeaks *disk_peaks = new radium::DiskPeaks(sample.filename);
+        radium::DiskPeaks *disk_peaks = DISKPEAKS_get(sample.filename);
         if(disk_peaks->is_valid()==false)
           abort();
         disk_peaks->wait();

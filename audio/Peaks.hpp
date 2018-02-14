@@ -50,6 +50,8 @@ static inline int unit_floor(int value, int unit){
 
 namespace radium{
 
+extern radium::Mutex g_peak_read_lock; // We don't want to generate peaks for more than one file at the time
+  
 struct Peak{
 
 private:
@@ -302,11 +304,8 @@ public:
 
 namespace radium{
   
-static radium::Mutex g_peak_read_lock; // We don't want to generate peaks for more than one file at the time
-
 class DiskPeaks : public QThread{
 
-  const wchar_t *_filename;
   const wchar_t *_peak_filename;
 
   DEFINE_ATOMIC(bool, _is_valid) = false;
@@ -318,9 +317,13 @@ public:
   int _num_ch = -1;
   Peaks **_peaks = NULL;
 
+  const wchar_t *_filename;
+  int num_visitors = 1;
+
+  // Use DISKPEAKS_get instead.
   DiskPeaks(const wchar_t *filename)
-    : _filename(wcsdup(filename))
-    , _peak_filename(wcsdup(STRING_append(filename, ".radium_peaks")))
+    : _peak_filename(wcsdup(STRING_append(filename, ".radium_peaks")))
+    , _filename(wcsdup(filename))
   {
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
     SNDFILE *sndfile = radium_sf_open(_filename,SFM_READ,&sf_info);
@@ -351,7 +354,10 @@ public:
       start();
   }
 
+  // Use DISKPEAKS_remove instead.
   ~DiskPeaks(){
+    R_ASSERT(num_visitors==0);
+    
     wait();
 
     for(int ch=0;ch<_num_ch;ch++)
@@ -375,15 +381,7 @@ public:
     QThread::wait();
   }
 
-private:
-
-  void run() override {
-    radium::ScopedMutex lock(g_peak_read_lock); // We don't want to generate/read peaks for more than one file at the time
-    printf("   Reading peaks from file\n");
-    read_peaks_from_sample_file();
-  }
-
-  bool has_valid_peaks_on_disk(void){
+  bool has_valid_peaks_on_disk(void) const {
     if (DISK_file_exists(_peak_filename)==false)
       return false;
     
@@ -391,6 +389,14 @@ private:
     int64_t sample_creation_time = DISK_get_creation_time(_filename);
 
     return peaks_creation_time > sample_creation_time;
+  }
+
+private:
+
+  void run() override {
+    radium::ScopedMutex lock(g_peak_read_lock); // We don't want to generate/read peaks for more than one file at the time
+    printf("   Reading peaks from file\n");
+    read_peaks_from_sample_file();
   }
 
   void read_peaks_from_disk(void){
@@ -600,6 +606,11 @@ private:
 };
 
 }
+
+
+radium::DiskPeaks *DISKPEAKS_get(const wchar_t *wfilename);
+void DISKPEAKS_remove(radium::DiskPeaks *diskpeaks);
+
 
 #endif
  
