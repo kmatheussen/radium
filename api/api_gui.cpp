@@ -1896,6 +1896,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     {
       R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
 
+      add_gc_root(_patch); // Just in case. Probably not necessary though since patch deletion is delayed by 30 seconds when loading song (that's the only time we delete a patch).
+
       /*
       // autofill black bacground color
       setAutoFillBackground(true);
@@ -1933,6 +1935,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       R_ASSERT(g_active_vertical_audio_meters.removeOne(this));
       if (_peak_callback!=NULL)
         s7extra_unprotect(_peak_callback);
+
+      remove_gc_root(_patch);
+
       free(_pos);
       free(_falloff_pos);
     }
