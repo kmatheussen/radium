@@ -1034,14 +1034,43 @@ public:
       double noninterior_start = get_abstime_from_seqtime(_seqtrack, NULL, get_seqblock_noninterior_start2(&seqblock->gfx));
       double noninterior_end = get_abstime_from_seqtime(_seqtrack, NULL, get_seqblock_noninterior_end2(_seqtrack, seqblock, true));
 
-      x1 = scale_double(noninterior_start,
-                        _start_time, _end_time,
-                        t_x1, t_x2);
-      x2 = scale_double(noninterior_end,
-                        _start_time, _end_time,
-                        t_x1, t_x2);
+      qreal ni_x1 = scale_double(noninterior_start,
+                                 _start_time, _end_time,
+                                 t_x1, t_x2);
+      qreal ni_x2 = scale_double(noninterior_end,
+                                 _start_time, _end_time,
+                                 t_x1, t_x2);
       
-      SEQBLOCK_ENVELOPE_paint(painter, seqblock, x1, y1, x2, y2, seqblock==g_curr_seqblock, t_x1, t_x2);
+      bool draw_all = seqblock->gfx.interior_start==0 && seqblock->gfx.interior_end==seqblock->gfx.default_duration;
+      bool is_current = seqblock==g_curr_seqblock;
+      //printf("draw_all: %d. is_current: %d. x1: %f, x1: %f, x2: %f, x2: %f\n", draw_all, is_current, x1, ni_x1, x2, ni_x2);
+
+      // 1. (before start_interior and after end_interior)
+      if(is_current && !draw_all){
+        QRegion clip(ni_x1, y1, x1-ni_x1, rect.height());
+        clip = clip.united(QRect(x2, y1, ni_x2-x2, rect.height()));
+        painter->setClipRegion(clip);
+        painter->setClipping(true);
+
+        painter->setOpacity(0.05);
+        SEQBLOCK_ENVELOPE_paint(painter, seqblock, ni_x1, y1, ni_x2, y2, true, x1, x2);
+        painter->setOpacity(1.0);
+
+        painter->setClipping(false);
+      }
+
+      // 2. (rect)
+      {
+        if(!draw_all){
+          painter->setClipRect(rect);
+          painter->setClipping(true);
+        }
+
+        SEQBLOCK_ENVELOPE_paint(painter, seqblock, ni_x1, y1, ni_x2, y2, is_current, x1, x2);
+
+        if(!draw_all)
+          painter->setClipping(false);
+      }
     }
   }
 
