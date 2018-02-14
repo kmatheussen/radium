@@ -19,6 +19,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdio.h>
 #include <stdint.h>
 
+#if defined(RELEASE)
+#  define DO_DEBUG_PRINTING 0
+#else
+#  define DO_DEBUG_PRINTING 1
+#endif
+
 namespace{
 struct RemoveAdd{
   // a_ = request add
@@ -203,9 +209,14 @@ int main(){
 #include "../common/OS_visual_input.h"
 #include "../common/LockAsserter.hpp"
 
+#include "../Qt/Qt_colors_proc.h"
+
 #include "Peaks.hpp"
 
 #include "SampleReader_proc.h"
+
+static void SAMPLEREADER_really_delete(radium::SampleReader *reader);
+
 
 namespace radium {
 
@@ -262,19 +273,21 @@ struct Slice{
 
  
 
-
+// Note: The destructor is called from the g_spt thread.
 struct SampleProviderClient{
 
   SampleProvider *_provider;
   
   SNDFILE *_sndfile = NULL; // Only used by the SPT thread (no one else are allowed to access it). We keep a separate sndfile instance for each reader in case sndfile (or something deeper down) caches forward.
 
-  SampleProviderClient(SampleProvider *provider)
-    :_provider(provider)
+  SampleReader *_reader;
+  
+  SampleProviderClient(SampleProvider *provider, SampleReader *reader)
+    : _provider(provider)
+    , _reader(reader)
   {}
 };
     
-
  
 
 
@@ -292,7 +305,7 @@ public:
                       
 private:
 
-  int _num_users = 0;
+  DEFINE_ATOMIC(int, _num_users) = 0;
 
   Slice *_slices;
 
@@ -369,16 +382,12 @@ public:
   }
 
   void inc_users(void){
-    R_ASSERT(THREADING_is_main_thread());
-    
-    _num_users++;
+    ATOMIC_ADD(_num_users, 1);
   }
 
   void dec_users(void){
-    R_ASSERT(THREADING_is_main_thread());
-    
-    R_ASSERT_RETURN_IF_FALSE(_num_users>0);
-    _num_users--;
+    R_ASSERT_RETURN_IF_FALSE(ATOMIC_GET(_num_users)>0);
+    ATOMIC_ADD(_num_users, -1);
 
     // Not much point. Commented out so that the color doesn't change if deleting and adding later.
     //if (_num_users == 0)
@@ -387,6 +396,8 @@ public:
 
   void SPT_fill_slice(SNDFILE *sndfile, Slice &slice, int64_t slice_num){
     int64_t pos = slice_num*SLICE_SIZE;
+
+    //printf("Obtaining slice %d\n", (int)slice_num);
     
     R_ASSERT_RETURN_IF_FALSE(pos>=0);
     R_ASSERT_RETURN_IF_FALSE(pos<_num_frames);
@@ -456,6 +467,11 @@ public:
     R_ASSERT_RETURN_IF_FALSE(slice_end <= _num_slices);
     R_ASSERT_RETURN_IF_FALSE(slice_end > slice_start);
 
+#if DO_DEBUG_PRINTING
+    int64_t read_slice_start=-1;
+    int64_t read_slice_end=-1;
+#endif
+    
     for(int64_t slice_num = slice_start ; slice_num < slice_end ; slice_num++){
       Slice &slice = _slices[slice_num];
 
@@ -472,6 +488,12 @@ public:
 
       if (slice.num_users==1){
         R_ASSERT_NON_RELEASE(ATOMIC_GET(slice.slicebuffers)==NULL);
+
+#if DO_DEBUG_PRINTING
+        if (read_slice_start==-1)
+          read_slice_start = slice_num;
+        read_slice_end = slice_num;
+#endif
         
         if (client->_sndfile==NULL){
           client->_sndfile = client->_provider->create_sndfile();
@@ -483,8 +505,13 @@ public:
       }
     }
 
+#if DO_DEBUG_PRINTING
+    if (read_slice_start != -1)
+      printf("  %S: Read audio data from %f to %f\n", client->_provider->_filename_without_path, double(read_slice_start*SLICE_SIZE)/pc->pfreq, double((1+read_slice_end)*SLICE_SIZE)/pc->pfreq);
+#endif
+    
     if (gotit!=NULL){
-      fprintf(stderr, "SIGNALLING %p\n", gotit);
+      //fprintf(stderr, "SIGNALLING %p\n", gotit);
       gotit->signal();
     }
   }
@@ -535,7 +562,6 @@ static SampleProvider *get_sample_provider(const wchar_t *filename){
 }
 
 
-
 class SampleProviderThread : public QThread {
 
   SampleProviderThread(const SampleProviderThread&) = delete;
@@ -546,7 +572,8 @@ class SampleProviderThread : public QThread {
       SHUT_DOWN,
       OBTAIN,
       RELEASE_,
-      FINISHED_FOR_NOW,
+      CLOSE_SNDFILE_,
+      DELETE_,
     } type;
     SampleProviderClient *client;
     int64_t slice_start;
@@ -554,11 +581,15 @@ class SampleProviderThread : public QThread {
     radium::FutureSignalTrackingSemaphore *gotit;
   };
 
-  radium::Queue<Command, 4096> _queue;
+  radium::Queue<Command, 4096> _queue; // Should have more than one queue.
 
 public:
 
   SampleProviderThread(){
+  }
+
+  int size(void){
+    return _queue.size();
   }
 
 private:
@@ -577,19 +608,30 @@ private:
         break;
 
       case Command::Type::RELEASE_:
+        //printf("Release %p (%d -> %d)\n", command.client, (int)command.slice_start, (int)command.slice_end);
         command.client->_provider->SPT_release_slices(command.slice_start, command.slice_end);
         break;
 
-      case Command::Type::FINISHED_FOR_NOW:
-        if (command.client->_sndfile != NULL)
-          sf_close(command.client->_sndfile); // Lower the number of simultaneously open file handlers.
-        
-        command.client->_sndfile = NULL;
+      case Command::Type::CLOSE_SNDFILE_:
+      case Command::Type::DELETE_:
+        //printf("Finished for now %p. gotit: %p\n", command.client, command.gotit);
+
+        if (command.client->_sndfile != NULL){
+          sf_close(command.client->_sndfile); // Lower the number of simultaneously open file handlers.        
+          command.client->_sndfile = NULL;
+        }
         
         if (command.gotit!=NULL){
-          fprintf(stderr, "FINISHED_FOR_NOW SIGNALLING %p\n", command.gotit);
+          fprintf(stderr, "CLOSE_SNDFILE_ SIGNALLING %p\n", command.gotit);
           command.gotit->signal();
         }
+
+        if (command.type==Command::Type::DELETE_){
+          R_ASSERT(command.gotit==NULL);
+          
+          SAMPLEREADER_really_delete(command.client->_reader);
+        }
+        
         break;
       }
     }
@@ -627,18 +669,24 @@ public:
     
     R_ASSERT_NON_RELEASE(slice_end>slice_start);
     
+    //printf("Req release %p\n", client);
     Command command = {SampleProviderThread::Command::Type::RELEASE_, client, slice_start, slice_end, NULL};
     return _queue.tryPut(command);
   }
 
-  bool RT_request_finished_for_now(SampleProviderClient *client, radium::FutureSignalTrackingSemaphore *gotit){
-    if (client->_sndfile == NULL)
-      return true;
+  bool RT_request_close_sndfile(SampleProviderClient *client, radium::FutureSignalTrackingSemaphore *gotit){
+    //if (client->_sndfile == NULL)
+    //  return true;
 
-    if(gotit != NULL)
-      gotit->is_going_to_be_signalled_another_time_in_the_future();
-    
-    Command command = {SampleProviderThread::Command::Type::FINISHED_FOR_NOW, client, -1, -1, gotit};
+    //printf("Req clear_cache %p\n", client);
+    R_ASSERT_RETURN_IF_FALSE2(gotit!=NULL, true);
+
+    Command command = {SampleProviderThread::Command::Type::CLOSE_SNDFILE_, client, -1, -1, gotit};
+    return _queue.tryPut(command);
+  }
+
+  bool RT_request_delete(SampleProviderClient *client){
+    Command command = {SampleProviderThread::Command::Type::DELETE_, client, -1, -1, NULL};
     return _queue.tryPut(command);
   }
 };
@@ -649,10 +697,14 @@ public:
 static SampleProviderThread g_spt;
 
 
+// Note: The destructor is called from the g_spt thread.
 class SampleReader : public SampleProviderClient{
 
   int64_t _pos;
   int64_t *_ch_pos;
+
+  int64_t _first_slice = 0;
+  int64_t _first_slice2 = 0;
 
   bool _pos_used = false;
   bool _ch_pos_used = false;
@@ -662,13 +714,14 @@ class SampleReader : public SampleProviderClient{
   
   LockAsserter lockAsserter;
 
-  
 public:
 
+  bool _has_requested_deletion = false;
+  
   const int _num_ch;
 
   SampleReader(SampleProvider *provider)
-    : SampleProviderClient(provider)
+    : SampleProviderClient(provider, this)
     , _ch_pos((int64_t*)V_calloc(provider->_num_ch, sizeof(int64_t)))
     , _num_ch(provider->_num_ch)
   {
@@ -683,20 +736,32 @@ public:
     _provider->inc_users();
   }
 
+  // Called from the g_spt thread.
   ~SampleReader(){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
-
-    radium::FutureSignalTrackingSemaphore gotit;
     
-    RT_release_all_cached_data2(&gotit, true);
-    
-    gotit.wait_for_all_future_signals();
-    
+    R_ASSERT(_has_requested_deletion);
+  
     _provider->dec_users();
 
     V_free((void*)_ch_pos);
   }
 
+  // Called from the main thread.
+  void request_deletion(void){
+    {
+      LOCKASSERTER_EXCLUSIVE(&lockAsserter);
+      
+      release_permanent_slices();
+      
+      release_all_cached_data(true);
+
+      _has_requested_deletion=true; // Must do this before calling "g_spt.RT_request_delete" since 'this' can be deleted at any time after that call.
+    }
+    
+    g_spt.RT_request_delete(this);  // Moved outside LOCKASSERTER_EXCLUSIVE since, theoretically, the desctructor can be called before 'request_deletion' has finished.
+  }
+  
 private:
 
   bool has_waited_for_queue = false;
@@ -741,7 +806,10 @@ private:
 
   }
 
-  bool RT_release_all_cached_data2(radium::FutureSignalTrackingSemaphore *gotit, bool sleep_if_queue_is_full){
+  bool release_all_cached_data(bool sleep_if_queue_is_full){
+    if (_requested_slice_start == _requested_slice_end)
+      return false;
+
     while(g_spt.RT_request_release_slices(this, _requested_slice_start, _requested_slice_end)==false){
       if (sleep_if_queue_is_full){
         wait_for_queue();
@@ -754,29 +822,61 @@ private:
     //printf("   << RT_RELEASE: %d -> %d ===> %d %d. %p\n", (int)_requested_slice_start, (int)_requested_slice_end, (int)_requested_slice_start, (int)_requested_slice_start, this);
     _requested_slice_end = _requested_slice_start;
     
-    while(g_spt.RT_request_finished_for_now(this, gotit)==false){
-      if (sleep_if_queue_is_full)
-        wait_for_queue();
-      else{
-        RT_message("Queue full 4");
-        return false;
-      }
-    }
-
     return true;
   }
-  
+
 public:
 
   bool RT_release_all_cached_data(void){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
-    return RT_release_all_cached_data2(NULL, false);
+    return release_all_cached_data(false);
   }
+  
     
+private:
+  
+  bool release_permanent_slices(void){
+    if(_first_slice==_first_slice2)
+      return false;
+
+    while(g_spt.RT_request_release_slices(this, _first_slice, _first_slice2)==false)
+      wait_for_queue();    
+    
+    _first_slice = 0;
+    _first_slice2 = 0;
+
+    return true;
+  }
+
+public:
+  
+  // Called very often
+  void set_and_obtain_first_slice(int64_t new_first_slice, int64_t new_first_slice2){
+
+    if(new_first_slice==_first_slice && new_first_slice2==_first_slice2)
+      return;
+
+    const RemoveAdd x(new_first_slice, new_first_slice2, _first_slice, _first_slice2);
+
+    request_obtain(x.a_slice_start,       x.a_slice_end,       false,          NULL);
+    request_obtain(x.a_extra_slice_start, x.a_extra_slice_end, false,          NULL);
+
+
+    while(g_spt.RT_request_release_slices(this, x.r_slice_start, x.r_slice_end)==false)
+      wait_for_queue();
+
+    while(g_spt.RT_request_release_slices(this, x.r_extra_slice_start, x.r_extra_slice_end)==false)
+      wait_for_queue();
+
+    _first_slice = new_first_slice;
+    _first_slice2 = new_first_slice2;
+  }
+
 
   // This function is either called from the main thread when preparing to play
   //
   void prepare_to_play(int64_t pos, int64_t how_much_to_prepare, radium::FutureSignalTrackingSemaphore *gotit){ // TODO: Remove "how_much_to_prepare". We only need "how_much_to_wait_for". Extra buffering happens in RT_read anyway.
+
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
     //bool called_by_preparation_thread;
@@ -1053,6 +1153,19 @@ public:
 
 using namespace radium;
 
+// Called very often
+void SAMPLEREADER_set_permanent_samples(SampleReader *reader, int64_t first_sample, int64_t first_sample2){
+
+  // TODO: Have two queues, one high priority, and one low priority. This data would be put on the low priority queue, and then we could remove "if(is_playing_song()==true) return;".
+  // Now the user has to stop playing for a while in order to cache the start of the sample, which isn't ideal.
+  
+  if(is_playing_song()==true)
+    return; // Don't cache start of sample while playing other audio files.
+
+  int64_t first_slice = first_sample / SLICE_SIZE;
+  int64_t first_slice2 = 1 + (first_sample2 / SLICE_SIZE);
+  reader->set_and_obtain_first_slice(first_slice, first_slice2);
+}
 
 SampleReader *SAMPLEREADER_create(const wchar_t *filename){  
   SampleProvider *provider = get_sample_provider(filename);
@@ -1076,10 +1189,19 @@ int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename){
   return provider->_num_frames;
 }
 
+
+//#include "Juce_plugins_proc.h"
 void SAMPLEREADER_delete(SampleReader *reader){
-  delete reader;
+  //printf("Delete:\n%s\n", JUCE_get_backtrace());
+  R_ASSERT_RETURN_IF_FALSE(reader->_has_requested_deletion==false);
+  
+  reader->request_deletion();
 }
 
+static void SAMPLEREADER_really_delete(SampleReader *reader){
+  delete reader;
+}
+  
 int SAMPLEREADER_get_num_channels(SampleReader *reader){
   return reader->_num_ch;
 }
