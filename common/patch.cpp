@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QHash>
 #include <QUuid>
 #include <QSet>
+#include <QTimer>
 
 #include "nsmtracker.h"
 #include "visual_proc.h"
@@ -92,6 +93,15 @@ static void PATCH_clean_unused_patches(void){
   // No, we can not do this. patches are supposed to live forever.
   //VECTOR_clean(&g_unused_patches);
 
+  vector_t *delayed_released_patches = (vector_t*)tcopy(&g_unused_patches, sizeof(vector_t));
+  add_gc_root(delayed_released_patches);
+  VECTOR_clean(&g_unused_patches);
+
+  QTimer::singleShot(30000, [delayed_released_patches] { // Wait 30 seconds so that various Qt GUI elements holding a "_patch" are updated, hopefully.
+      remove_gc_root(delayed_released_patches);
+    });
+
+   
   MIDI_SetThroughPatch(NULL);
   g_currpatch = NULL;
 
