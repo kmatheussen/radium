@@ -72,6 +72,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mixergui/QM_MixerWidget.h"
 #include "../embedded_scheme/s7extra_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
+#include "../Qt/Qt_comment_dialog_proc.h"
 
 #include "../common/PriorityQueue.hpp"
 
