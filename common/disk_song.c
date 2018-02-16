@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
+#include "../Qt/Qt_comment_dialog_proc.h"
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/Presets_proc.h"
 #include "../midi/midi_i_input_proc.h"
@@ -45,11 +46,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "disk_song_proc.h"
 
-
-
-extern hash_t *COMMENT_get_state(void);
-extern void COMMENT_reset(void);
-extern void COMMENT_set_state(hash_t *state);
 
 static hash_t *g_sequencer_state = NULL;
 
