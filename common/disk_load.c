@@ -320,6 +320,9 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
 
         g_is_loading = false;
 
+        if (ret)
+          PATCH_clean_unused_patches();
+
         //fprintf(stderr,"Got here4 (loading finished)\n");
         
         return ret;
