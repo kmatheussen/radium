@@ -44,13 +44,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_disk_proc.h"
 #include "undo.h"
 #include "player_proc.h"
+#include "patch_proc.h"
+
+#include "../Qt/Qt_comment_dialog_proc.h"
 
 #include "../config/config.h"
 
 #include "disk_load_proc.h"
-
-void COMMENTDIALOG_open(void);
-bool COMMENT_show_after_loading(void);
 
 
 extern struct Root *root;
@@ -319,6 +319,9 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
           ResetUndo();
 
         g_is_loading = false;
+
+        if (ret)
+          PATCH_clean_unused_patches();
 
         //fprintf(stderr,"Got here4 (loading finished)\n");
         

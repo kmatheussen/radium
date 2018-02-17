@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_COMMON_PATCH_PROC_H
 #define _RADIUM_COMMON_PATCH_PROC_H
 
+extern LANGSPEC void PATCH_clean_unused_patches(void);
 
 extern LANGSPEC void PATCH_remove_from_instrument(struct Patch *patch);
 extern LANGSPEC void PATCH_add_to_instrument(struct Patch *patch);
