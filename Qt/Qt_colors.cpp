@@ -1110,7 +1110,11 @@ void GFX_ResetColor(enum ColorNums colornum){
   window->must_redraw = true;
 }
 
-void GFX_SaveColors(void){
+void GFX_SaveColors(const wchar_t *filename){
+  if (filename != NULL){
+    SETTINGS_set_custom_configfile(STRING_get_qstring(filename));
+  }
+  
   for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++) {
     const char *colorname = get_color_config((enum ColorNums)i).config_name;
     
@@ -1119,6 +1123,9 @@ void GFX_SaveColors(void){
 
     SETTINGS_write_string(colorname, get_qcolor((enum ColorNums)i).name(QColor::HexArgb));
   }
+
+  if (filename != NULL)
+    SETTINGS_unset_custom_configfile();
 }
   
 

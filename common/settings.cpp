@@ -96,7 +96,8 @@ static QVector<QString> get_lines(const char* key){
 
   //const char *filename = custom_configuration_filename==NULL ? OS_get_config_filename(key) : custom_configuration_filename;
   QString filename = custom_configuration_filename=="" ? OS_get_config_filename(key) : custom_configuration_filename;
-
+  //printf("Filename: -%s-. custom: -%s-\n", filename.toUtf8().constData(), custom_configuration_filename.toUtf8().constData());
+  
   QFile file(filename);
 
   if(file.open(QIODevice::ReadOnly | QIODevice::Text)==false){
