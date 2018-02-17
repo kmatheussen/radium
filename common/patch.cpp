@@ -82,10 +82,12 @@ struct Patch *g_currpatch=NULL;
 static linked_note_t *g_unused_linked_notes = NULL;
 
 
-static vector_t g_unused_patches; // <-- patches are never deleted, but they are removed from the instruments. In order for the gc to find the removed patches (when stored some place where the gc can't find them, for instance in a C++ object), we put them here. (There shouldn't be any situation where this might happen, but we do it anyway, just in case, because GC bugs are so hard to find.)
+static vector_t g_unused_patches = {}; // <-- patches are never deleted, but they are removed from the instruments. In order for the gc to find the removed patches (when stored some place where the gc can't find them, for instance in a C++ object), we put them here. (There shouldn't be any situation where this might happen, but we do it anyway, just in case, because GC bugs are so hard to find.)
 
-// Called when loading new song
-static void PATCH_clean_unused_patches(void){
+// Called after finished loading new song
+void PATCH_clean_unused_patches(void){
+
+  R_ASSERT(g_is_loading==false); // If called while loading, data could be released before loading is finished.
 
   // <strike>Too dangerous. We clean the content instead.</strike>
   //
@@ -97,14 +99,11 @@ static void PATCH_clean_unused_patches(void){
   add_gc_root(delayed_released_patches);
   VECTOR_clean(&g_unused_patches);
 
-  QTimer::singleShot(30000, [delayed_released_patches] { // Wait 30 seconds so that various Qt GUI elements holding a "_patch" are updated, hopefully.
+  QTimer::singleShot(30000, [delayed_released_patches] { // Wait 30 seconds so that various Qt GUI elements holding a "_patch" have a chance to update, hopefully.
       remove_gc_root(delayed_released_patches);
     });
 
    
-  MIDI_SetThroughPatch(NULL);
-  g_currpatch = NULL;
-
 #if 0
   // Release memory. We keep the patches themselves though, since they are stored various places.
   //
@@ -753,7 +752,11 @@ static void reset_unused_linked_notes(void);
   
 // Called when loading new song
 void PATCH_reset(void){
-  PATCH_clean_unused_patches();
+  //PATCH_clean_unused_patches();
+
+  MIDI_SetThroughPatch(NULL);
+  g_currpatch = NULL;
+
   reset_unused_linked_notes();
 }
 
