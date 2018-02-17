@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>7</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -4993,7 +4993,7 @@ you should check this box.
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>829</width>
+            <width>614</width>
             <height>564</height>
            </rect>
           </property>
@@ -5040,7 +5040,21 @@ you should check this box.
            <item>
             <widget class="QPushButton" name="color_save_button">
              <property name="text">
-              <string>Save</string>
+              <string>Save permanent</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="load_color_file">
+             <property name="text">
+              <string>Load from file</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="save_color_file">
+             <property name="text">
+              <string>Save to file</string>
              </property>
             </widget>
            </item>
@@ -7811,8 +7825,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>
