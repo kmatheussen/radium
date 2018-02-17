@@ -5804,13 +5804,18 @@
                                                   (<ra> :select-block blocknum)
                                                   (<ra> :config-block)))
                                           
-                                          (list "Configure block color"
-                                                :enabled (and blocknum seqblock-info)
+                                          (list "Change color"
+                                                :enabled seqblock-info
                                                 (lambda ()
-                                                  (<ra> :color-dialog (<ra> :get-block-color blocknum) -1
-                                                        (lambda (color)
-                                                          (<ra> :set-block-color color blocknum)))))
-
+                                                  (if blocknum
+                                                      (<ra> :color-dialog (<ra> :get-block-color blocknum) -1
+                                                            (lambda (color)
+                                                              (<ra> :set-block-color color blocknum)))
+                                                  (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
+                                                    (<ra> :color-dialog (<ra> :get-audiofile-color filename) -1
+                                                          (lambda (color)
+                                                            (<ra> :set-audiofile-color color filename)))))))
+                                          
                                           (list "Enable envelope"
                                                 :check (and seqblocknum (<ra> :get-seqblock-envelope-enabled seqblocknum seqtracknum))
                                                 :enabled seqblocknum

@@ -336,6 +336,7 @@ public:
     {
       QColor color(GFX_MakeRandomColor());
       color = color.lighter();
+      //QColor color = get_qcolor(SEQUENCER_BLOCK_DEFAULT_AUDIO_FILE_COLOR_NUM);
       _color = color.rgb();
     }
     
@@ -1214,8 +1215,24 @@ const wchar_t *SAMPLEREADER_get_sample_name(SampleReader *reader){
   return reader->_provider->_filename_without_path;
 }
 
-unsigned int SAMPLEREADER_get_sample_color(SampleReader *reader){
-  return reader->_provider->_color;
+unsigned int SAMPLEREADER_get_sample_color(const wchar_t *filename){
+  SampleProvider *provider = get_sample_provider(filename);
+  if (provider==NULL){
+    GFX_addMessage("Error: No audio file \"%s\" in the system.\n", STRING_get_chars(filename));
+    return 0;
+  }
+
+  return provider->_color;
+}
+
+void SAMPLEREADER_set_sample_color(const wchar_t *filename, unsigned int color){
+  SampleProvider *provider = get_sample_provider(filename);
+  if (provider==NULL){
+    GFX_addMessage("Error: No audio file \"%s\" in the system.\n", STRING_get_chars(filename));
+    return;
+  }
+
+  provider->_color = color;
 }
 
 void SAMPLEREADER_prepare_to_play(SampleReader *reader, int64_t pos, int64_t how_much_to_prepare, radium::FutureSignalTrackingSemaphore *gotit){
