@@ -1039,16 +1039,6 @@ const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t
     return sample->_filename_without_path;
 }
 
-unsigned int SEQTRACKPLUGIN_get_sample_color(const SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 0x505050);
-  
-  Sample *sample = get_sample(plugin, id, true, true);
-  if (sample==NULL)
-    return 0x505050;
-
-  return sample->_color;
-}
-
 const radium::DiskPeaks *SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
   
