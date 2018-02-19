@@ -744,7 +744,7 @@ static Modulator *get_modulator(int64_t modulator_patch_id){
       return modulator;
   }
 
-  R_ASSERT(false);
+  //R_ASSERT(false);
   return NULL;
 }
                                 
