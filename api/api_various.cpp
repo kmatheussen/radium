@@ -66,9 +66,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
 #include "../common/OS_string_proc.h"
+
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/Faust_plugins_proc.h"
+#include "../audio/SampleReader_proc.h"
+
 #include "../mixergui/QM_MixerWidget.h"
 #include "../embedded_scheme/s7extra_proc.h"
 #include "../crashreporter/crashreporter_proc.h"
@@ -946,6 +949,21 @@ const char *getBlockColor(int blocknum, int windownum){
 
   return GFX_get_colorname_from_color(wblock->block->color);
 }
+
+const_char* getAudiofileColor(const_char* w_audiofilename){
+  unsigned int color = SAMPLEREADER_get_sample_color(w_path_to_path(w_audiofilename));
+
+  return GFX_get_colorname_from_color(color);
+}
+
+void setAudiofileColor(const_char* colorname, const_char* w_audiofilename){
+  unsigned int color = GFX_get_color_from_colorname(colorname);
+
+  SAMPLEREADER_set_sample_color(w_path_to_path(w_audiofilename), color);
+
+  SEQUENCER_update();
+}
+
 
 void showBlocklistGui(void){
   evalScheme("(FROM_C-create-blocks-table-gui)");

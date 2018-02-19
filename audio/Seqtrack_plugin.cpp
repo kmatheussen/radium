@@ -379,7 +379,8 @@ struct Sample{
   radium::DiskPeaks *_peaks;
 
   const struct SeqBlock *_seqblock;
-
+  bool _is_gfx;
+  
   float _pitch = 1.0;
   
   const int _num_ch;
@@ -394,13 +395,14 @@ struct Sample{
 
   radium::LockAsserter lockAsserter;
   
-  Sample(const wchar_t *filename, radium::SampleReader *reader1, radium::SampleReader *reader2, const struct SeqBlock *seqblock)
+  Sample(const wchar_t *filename, radium::SampleReader *reader1, radium::SampleReader *reader2, const struct SeqBlock *seqblock, bool is_gfx)
     : _filename(wcsdup(filename))
       //, _reader(NULL) //new MyReader(reader))
       //, _fade_out_reader(new MyReader(fade_out_reader))
     , _reader_holding_permanent_samples(SAMPLEREADER_create(filename))
     , _peaks(DISKPEAKS_get(filename))
     , _seqblock(seqblock)
+    , _is_gfx(is_gfx)
     , _num_ch(SAMPLEREADER_get_num_channels(reader1))
     , _total_num_frames_in_sample(SAMPLEREADER_get_total_num_frames_in_sample(reader1))
     , _color(SAMPLEREADER_get_sample_color(filename))
@@ -429,7 +431,8 @@ struct Sample{
 #endif
     }
 
-    interior_start_may_have_changed();
+    if(!is_gfx)
+      interior_start_may_have_changed();
   }
 
   ~Sample(){
@@ -879,7 +882,7 @@ static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqB
     return -1;
   }
 
-  Sample *sample = new Sample(filename, reader1, reader2, seqblock);
+  Sample *sample = new Sample(filename, reader1, reader2, seqblock, is_gfx);
 
   if (is_gfx)
     data->_gfx_samples.push_back(sample);
@@ -1037,16 +1040,6 @@ const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t
     return sample->_filename;
   else
     return sample->_filename_without_path;
-}
-
-unsigned int SEQTRACKPLUGIN_get_sample_color(const SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 0x505050);
-  
-  Sample *sample = get_sample(plugin, id, true, true);
-  if (sample==NULL)
-    return 0x505050;
-
-  return sample->_color;
 }
 
 const radium::DiskPeaks *SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id){

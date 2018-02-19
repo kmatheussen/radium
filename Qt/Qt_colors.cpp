@@ -184,6 +184,8 @@ static const ColorConfig g_colorconfig[] = {
   {SEQUENCER_BLOCK_BAR_COLOR_NUM, "sequencer_block_bar_color", "Sequencer block bar color"},
   {SEQUENCER_BLOCK_BEAT_COLOR_NUM, "sequencer_block_beat_color", "Sequencer block beat color"},
   {SEQUENCER_BLOCK_SELECTED_COLOR_NUM, "sequencer_block_selected_color", "Sequencer block selected color"},
+  {SEQUENCER_BLOCK_INTERFACE_COLOR_NUM, "sequencer_block_interface_color", "Sequencer block interface color"},
+  {SEQUENCER_BLOCK_AUDIO_FILE_BACKGROUND_COLOR_NUM, "sequencer_block_audio_file_background_color", "Sequencer: Audio file background color"},
 
   {SEQUENCER_GRID_COLOR_NUM, "sequencer_grid_color", "Sequencer grid color"},
   {SEQUENCER_TRACK_BORDER1_COLOR_NUM, "sequencer_track_border1_color", "Sequencer track border color (first)"},
@@ -290,6 +292,8 @@ static ReplacementColor g_replacement_color[] = {
   {SEQUENCER_BLOCK_BEAT_COLOR_NUM, QColor("#460a1e17")},
   {SEQUENCER_BLOCK_SELECTED_COLOR_NUM, QColor("#5400801d")},
   {SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, QColor("#ffff4811")},
+  {SEQUENCER_BLOCK_INTERFACE_COLOR_NUM, QColor("#ff041ae0")},
+  {SEQUENCER_BLOCK_AUDIO_FILE_BACKGROUND_COLOR_NUM, QColor("#ffeeeeee")},
 
   {SEQUENCER_GRID_COLOR_NUM, QColor("#99281980")},
   {SEQUENCER_TRACK_BORDER1_COLOR_NUM, QColor("#ff141414")},
@@ -1106,7 +1110,11 @@ void GFX_ResetColor(enum ColorNums colornum){
   window->must_redraw = true;
 }
 
-void GFX_SaveColors(void){
+void GFX_SaveColors(const wchar_t *filename){
+  if (filename != NULL){
+    SETTINGS_set_custom_configfile(STRING_get_qstring(filename));
+  }
+  
   for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++) {
     const char *colorname = get_color_config((enum ColorNums)i).config_name;
     
@@ -1115,6 +1123,9 @@ void GFX_SaveColors(void){
 
     SETTINGS_write_string(colorname, get_qcolor((enum ColorNums)i).name(QColor::HexArgb));
   }
+
+  if (filename != NULL)
+    SETTINGS_unset_custom_configfile();
 }
   
 

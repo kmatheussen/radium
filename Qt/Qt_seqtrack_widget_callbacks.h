@@ -319,9 +319,13 @@ static QColor get_block_color(const struct Blocks *block){
 static QColor get_sample_color(const SeqTrack *seqtrack, const SeqBlock *seqblock){
   if (seqtrack->patch!=NULL && seqtrack->patch->patchdata!=NULL){
     SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-    return QColor(SEQTRACKPLUGIN_get_sample_color(plugin, seqblock->sample_id));
+    //return QColor(SEQTRACKPLUGIN_get_sample_color(plugin, seqblock->sample_id));
+    return QColor(SAMPLEREADER_get_sample_color(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, true)));
   } else {
-    return QColor("white");
+#if !defined(RELEASE)
+    printf("Qt_seqtrack_widget_callbacks.h: Warning: Could not find patch or patchdata for sample\n");
+#endif
+    return get_qcolor(SEQUENCER_BLOCK_AUDIO_FILE_BACKGROUND_COLOR_NUM); //QColor("white");
   }
 }
 
@@ -838,7 +842,7 @@ public:
     const int header_height = get_block_header_height();
 
     QColor waveform_color = get_block_qcolor(WAVEFORM_COLOR_NUM, is_gfx);
-    QColor background_color = is_gfx ? get_block_qcolor(SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, true) : half_alpha(QColor(0xddddff), is_gfx);
+    QColor background_color = is_gfx ? get_block_qcolor(SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, is_gfx) : get_block_qcolor(SEQUENCER_BLOCK_AUDIO_FILE_BACKGROUND_COLOR_NUM, is_gfx);
     
     const SoundPlugin *plugin = (SoundPlugin*) _seqtrack->patch->patchdata;
     //    R_ASSERT(plugin!=NULL); // Commented out. Plugin can be NULL during loading.
@@ -1089,7 +1093,7 @@ public:
     double width = root->song->tracker_windows->systemfontheight / 4;
     double sel_width = width*2;
 
-    QColor color(0,200,0,200);
+    QColor color = get_qcolor(SEQUENCER_BLOCK_INTERFACE_COLOR_NUM);
     QColor fill_color(color);
     fill_color.setAlpha(80);
 
@@ -1765,9 +1769,9 @@ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtra
     return true;
 }
 
-// Next seqblock when ignoring audio seqblocks.
+// Next (or current) seqblock when ignoring audio seqblocks.
 int get_next_block_seqblocknum(const struct SeqTrack *seqtrack, int seqtracknum){
-  seqtracknum++;
+  //printf("Seqtracknum: %d (%d)\n", seqtracknum, seqtrack->seqblocks.num_elements);
 
   if(seqtracknum >= (seqtrack->seqblocks.num_elements)){
     R_ASSERT(seqtracknum==(seqtrack->seqblocks.num_elements));
@@ -1790,11 +1794,11 @@ static inline void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seq
   if (seqtrack->seqblocks.num_elements==0)
     return;
         
-  int next_seqblocknum = get_next_block_seqblocknum(seqtrack, -1);
+  int next_seqblocknum = get_next_block_seqblocknum(seqtrack, 0);
 
   while(next_seqblocknum != -1){
     int seqblocknum = next_seqblocknum;
-    next_seqblocknum = get_next_block_seqblocknum(seqtrack, seqblocknum);
+    next_seqblocknum = get_next_block_seqblocknum(seqtrack, seqblocknum + 1);
 
     const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[seqblocknum];
     const struct SeqBlock *next_seqblock = next_seqblocknum==-1 ? NULL : (struct SeqBlock *)seqtrack->seqblocks.elements[next_seqblocknum];

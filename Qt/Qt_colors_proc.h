@@ -36,6 +36,6 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much);
 
 void GFX_ResetColor(enum ColorNums colornum);
 void GFX_ResetColors(void);
-void GFX_SaveColors(void);
+void GFX_SaveColors(const wchar_t *filename); // if filename==NULL, save to ~/.radium/colors.
 
 #endif
