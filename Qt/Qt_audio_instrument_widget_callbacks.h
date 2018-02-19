@@ -47,7 +47,7 @@ public:
 
   bool is_starting;
   
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
 
   Patch_widget *_patch_widget;
   Plugin_widget *_plugin_widget;
@@ -138,7 +138,7 @@ public:
     /*
     if(!strcmp(plugin->type->type_name,"Jack") && !strcmp(plugin->type->name,"System Out")){
       _i_am_system_out = true;
-      BottomBar_set_system_audio_instrument_widget_and_patch(this, _patch);
+      BottomBar_set_system_audio_instrument_widget_and_patch(this, _patch.data());
     }
     */
     
@@ -168,13 +168,13 @@ public:
 
 #if 0
     //instrument->effects_frame->addWidget(PluginWidget_create(NULL, plugin), 0, 3, 2, 1);
-    _plugin_widget=PluginWidget_create(NULL, _patch);
+    _plugin_widget=PluginWidget_create(NULL, _patch.data());
     if(_plugin_widget->_param_widgets.size() > 0){
       delete(pipe_label);
       pipe_label = NULL;
     }
 #else
-    _plugin_widget = new Plugin_widget(this,_patch);
+    _plugin_widget = new Plugin_widget(this,_patch.data());
 
     delete(pipe_label);
     pipe_label = NULL;
@@ -186,7 +186,7 @@ public:
     
 
     if(plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Sample Player") || plugin->type==PR_get_plugin_type_by_name(NULL, "Sample Player","Click") || plugin->type==PR_get_plugin_type_by_name(NULL, "FluidSynth","FluidSynth")){
-      _sample_requester_widget = new Sample_requester_widget(this, _patch_widget->name_widget, _plugin_widget->sample_name_label, _patch);
+      _sample_requester_widget = new Sample_requester_widget(this, _patch_widget->name_widget, _plugin_widget->sample_name_label, _patch.data());
       effects_layout->insertWidget(3,_sample_requester_widget);
       show_browser->setFixedWidth(browserArrow->width());
 
@@ -392,7 +392,7 @@ public:
 
     SLIDERPAINTER_set_recording_color(slider->_painter, PLUGIN_is_recording_automation(plugin, effect_num));
     
-    QString p = get_parameter_prepend_text(_patch, effect_num);
+    QString p = get_parameter_prepend_text(_patch.data(), effect_num);
     
     char buf[64]={0};
     PLUGIN_get_display_value_string(plugin, effect_num, buf, 64);
@@ -695,14 +695,14 @@ public:
       if(slider!=NULL){
         int effect_num = type->num_effects + system_effect;
         slider->_effect_num = effect_num;
-        slider->_patch = _patch;
+        slider->_patch.set(_patch.data());
       }
 
       MyQCheckBox *checkbox = get_system_checkbox(system_effect);
       if(checkbox!=NULL){
         int effect_num = type->num_effects + system_effect;
         checkbox->_effect_num = effect_num;
-        checkbox->_patch = _patch;
+        checkbox->_patch.set(_patch.data());
       }
 
       if(slider!=NULL && checkbox!=NULL)
@@ -1188,7 +1188,7 @@ public slots:
     if(_patch->patchdata != NULL) { // temp fix
       set_plugin_value(val, EFFNUM_INPUT_VOLUME);
 
-      if (GFX_OS_patch_is_system_out(_patch))
+      if (GFX_OS_patch_is_system_out(_patch.data()))
         OS_GFX_SetVolume(val);
 
       CHIP_update((SoundPlugin*)_patch->patchdata);

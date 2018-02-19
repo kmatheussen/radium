@@ -398,7 +398,7 @@ public:
   
   PluginWidget *_plugin_widget;
   QLabel *_faust_compilation_status;
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
   FaustResultWebView *web;
 #if !USE_QWEBENGINE
   QWebFrame *_last_web_frame;
@@ -606,7 +606,7 @@ public:
         _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
 #endif
         PluginWidget *old = _plugin_widget;
-        _plugin_widget=PluginWidget_create(this, _patch, SIZETYPE_NORMAL);
+        _plugin_widget=PluginWidget_create(this, _patch.data(), SIZETYPE_NORMAL);
 
         if (_size_type != SIZETYPE_NORMAL){
           
@@ -831,7 +831,7 @@ public slots:
         if (new_code != ""){ // <-- QScintilla sometimes gives us empty string in _faust_editor->text() (when there shouldn't be).
           QString old_code = FAUST_get_code(plugin);
           start_compilation(new_code);
-          ADD_UNDO(FaustDev_CurrPos(_patch, old_code, _prev_cursor_line, _prev_cursor_index)); // note: _prev_cursor_pos is not correct when pasting something.
+          ADD_UNDO(FaustDev_CurrPos(_patch.data(), old_code, _prev_cursor_line, _prev_cursor_index)); // note: _prev_cursor_pos is not correct when pasting something.
         }
       }
     }

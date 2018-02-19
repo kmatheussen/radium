@@ -33,7 +33,7 @@ class Pd_Controller_Config_dialog : public RememberGeometryQDialog, public Ui::P
   Q_OBJECT;
 
 public:
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
   int _controller_num;
   bool _is_updating_gui;
 
@@ -179,7 +179,7 @@ public:
 
     UNDO_OPEN();{
 
-      ADD_UNDO(PdControllers_CurrPos(_patch));
+      ADD_UNDO(PdControllers_CurrPos(_patch.data()));
 
       float old_min = controller->min_value;
       float old_max = controller->max_value;
@@ -187,7 +187,7 @@ public:
       controller->min_value = new_min;
       controller->max_value = new_max;
 
-      FX_min_max_have_changed_for_patch(_patch, controller->num, old_min, old_max, new_min, new_max);
+      FX_min_max_have_changed_for_patch(_patch.data(), controller->num, old_min, old_max, new_min, new_max);
 
     }UNDO_CLOSE();
   }
@@ -230,7 +230,7 @@ public slots:
 
     if(_is_updating_gui==false)
       if(val!=controller->type) {
-        ADD_UNDO(PdControllers_CurrPos(_patch));
+        ADD_UNDO(PdControllers_CurrPos(_patch.data()));
         controller->type = val;
         update_gui();
       }
@@ -261,7 +261,7 @@ public slots:
       printf("name: -%s-\n",name_widget->text().toUtf8().constData());
       QString name = name_widget->text();
       if(name != controller->name) {
-        ADD_UNDO(PdControllers_CurrPos(_patch));
+        ADD_UNDO(PdControllers_CurrPos(_patch.data()));
         PD_set_controller_name(plugin, controller->num, STRING_create(name));
       }
       //set_editor_focus();

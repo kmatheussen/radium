@@ -117,8 +117,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       //SLIDERPAINTER_set_recording_color(this->system_volume_slider->_painter, PLUGIN_is_recording_automation(g_system_out_plugin, effect_num));
     }
     
-    this->system_volume_slider->_patch = g_system_out_patch;
-    if (this->system_volume_slider->_patch != NULL)
+    this->system_volume_slider->_patch.set(g_system_out_patch);
+    if (this->system_volume_slider->_patch.data() != NULL)
       this->system_volume_slider->calledRegularlyByParent();
     
     //SLIDERPAINTER_call_regularly(this->system_volume_slider->_painter);
@@ -458,7 +458,7 @@ extern "C"{
       
       auto *system_volume_slider = bottom_bar_widget->system_volume_slider;
       
-      system_volume_slider->_patch = NULL;
+      system_volume_slider->_patch.set(NULL);
       system_volume_slider->_effect_num = EFFNUM_INPUT_VOLUME;
       
       if (plugin == NULL){

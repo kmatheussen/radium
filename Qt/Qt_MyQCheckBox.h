@@ -152,7 +152,7 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
 
 struct MyQCheckBox : public QCheckBox{
   bool _has_mouse;
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
   int _effect_num;
   bool _is_patchvoice_onoff_button;
   bool _add_undo_when_clicked = true;
@@ -162,7 +162,7 @@ struct MyQCheckBox : public QCheckBox{
 
   void init(){
     _has_mouse=false;
-    _patch = NULL;
+    _patch.set(NULL);
     _effect_num = 0;
     _is_patchvoice_onoff_button = false;
     _is_a_pd_slider = false;
@@ -173,7 +173,7 @@ struct MyQCheckBox : public QCheckBox{
 
   void mousePressEvent ( QMouseEvent * event ) override
   {
-    if(_patch!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
+    if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
       return;
 
     if (event->button() == Qt::LeftButton){      
@@ -181,14 +181,14 @@ struct MyQCheckBox : public QCheckBox{
 #ifdef COMPILING_RADIUM
       if (_add_undo_when_clicked){
         if(_is_patchvoice_onoff_button==true)
-          ADD_UNDO(PatchVoice_CurrPos(_patch,_effect_num));
-        else if(_patch!=NULL  && _patch->instrument==get_audio_instrument())
-          ADD_UNDO(AudioEffect_CurrPos(_patch, _effect_num));
+          ADD_UNDO(PatchVoice_CurrPos(_patch.data(),_effect_num));
+        else if(_patch.data()!=NULL  && _patch->instrument==get_audio_instrument())
+          ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num));
       }
 #endif
       //handle_mouse_event(event);
       _has_mouse = true;
-      printf("Got it %p %d. Checked: %d\n",_patch,_effect_num,!isChecked());
+      printf("Got it %p %d. Checked: %d\n",_patch.data(),_effect_num,!isChecked());
       setChecked(!isChecked());
 
     }else{
@@ -197,7 +197,7 @@ struct MyQCheckBox : public QCheckBox{
         return;
 
       //printf("patch: %p, patchdata: %p\n",_patch,_patch==NULL?NULL:_patch->patchdata);
-      if(_patch==NULL || _patch->instrument!=get_audio_instrument() || _patch->patchdata == NULL) {
+      if(_patch.data()==NULL || _patch->instrument!=get_audio_instrument() || _patch->patchdata == NULL) {
         emit clicked();//rightClicked();
         return;
       }
@@ -209,7 +209,7 @@ struct MyQCheckBox : public QCheckBox{
 
       bool has_midi_learn = PLUGIN_has_midi_learn(plugin, _effect_num);
       bool doing_random_change = PLUGIN_get_random_behavior(plugin, _effect_num);
-      int64_t modulator_id = MODULATOR_get_id(_patch, _effect_num);
+      int64_t modulator_id = MODULATOR_get_id(_patch.data(), _effect_num);
       
       int delete_pd = -10;
       int reset = -10;
@@ -267,7 +267,7 @@ struct MyQCheckBox : public QCheckBox{
       
       int command = GFX_Menu(root->song->tracker_windows, NULL, "", options, true);
 
-      //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
+      //printf("command: %d, _patch.data(): %p, is_audio: %d\n",command, _patch.data(), _patch.data()!=NULL && _patch->instrument==get_audio_instrument());
 
       if (command==delete_pd)
         PD_delete_controller(plugin, _effect_num);
@@ -292,16 +292,16 @@ struct MyQCheckBox : public QCheckBox{
         PLUGIN_add_midi_learn(plugin, _effect_num);
       }
       else if (command==remove_modulator){
-        MODULATOR_remove_target(modulator_id, _patch, _effect_num);
+        MODULATOR_remove_target(modulator_id, _patch.data(), _effect_num);
         
       }else if (command==replace_modulator){
-        MODULATOR_maybe_create_and_add_target(_patch, _effect_num, true);
+        MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, true);
         
       }else if (command==add_modulator){
-        MODULATOR_maybe_create_and_add_target(_patch, _effect_num, false);
+        MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, false);
       }
 
-      GFX_update_instrument_widget(_patch);
+      GFX_update_instrument_widget(_patch.data());
       
 #endif // COMPILING_RADIUM
 
@@ -322,8 +322,8 @@ struct MyQCheckBox : public QCheckBox{
 
     QString text2 = vertical_text!="" ? vertical_text : text();
 
-    if(_patch!=NULL && _patch->patchdata != NULL && _is_patchvoice_onoff_button==false)
-      text2 = get_parameter_prepend_text(_patch, _effect_num) + text2;
+    if(_patch.data()!=NULL && _patch->patchdata != NULL && _is_patchvoice_onoff_button==false)
+      text2 = get_parameter_prepend_text(_patch.data(), _effect_num) + text2;
     
     CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2, _is_implicitly_on);
   }

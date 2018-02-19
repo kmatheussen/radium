@@ -37,7 +37,7 @@ class ParamWidget : public QWidget {
   Q_OBJECT;
  public:
 
-  struct Patch *_patch; // Pointer to a patch never changes, but the patch's plugin might. That's why we store the patch and not the plugin, although we only use the plugin.
+  radium::GcHolder<struct Patch> _patch; // Pointer to a patch never changes, but the patch's plugin might. That's why we store the patch and not the plugin, although we only use the plugin.
   int _effect_num;
   const SoundPluginType *_type;
 
@@ -91,7 +91,7 @@ class ParamWidget : public QWidget {
         _check_button = new MyQCheckBox(this);
         _check_button->setCheckable(true);
 
-        _check_button->_patch = patch;
+        _check_button->_patch.set(patch);
         _check_button->_effect_num = effect_num;
 
         QSizePolicy sizePolicy5(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -110,7 +110,7 @@ class ParamWidget : public QWidget {
         grid_layout->addWidget(_check_button, 1,1,1,1);
       } else {
         _slider = new MyQSlider(this);
-        _slider->_patch = patch;
+        _slider->_patch.set(patch);
         _slider->_effect_num = effect_num;
 
         _slider->setOrientation(Qt::Horizontal);
@@ -300,7 +300,7 @@ class ParamWidget : public QWidget {
     char buf[64]={0};
     PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
 
-    return get_parameter_prepend_text(_patch, _effect_num) + _name + ": " + QString::fromUtf8(buf);
+    return get_parameter_prepend_text(_patch.data(), _effect_num) + _name + ": " + QString::fromUtf8(buf);
   }
   
   void set_slider_string(void){
@@ -320,7 +320,7 @@ class ParamWidget : public QWidget {
 
     void checkBoxPressed(){
       printf("checkbox pressed\n");
-      ADD_UNDO(AudioEffect_CurrPos(_patch, _effect_num)); // Undo for sliders is taken care of in MyQSlider.h.
+      ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num)); // Undo for sliders is taken care of in MyQSlider.h.
     }
 
     void checkBoxValueToggled(bool toggle){
@@ -335,7 +335,7 @@ class ParamWidget : public QWidget {
 
 
 struct PluginWidget : public QWidget{
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
   QTabWidget  *pTabWidget = NULL;
   
   radium::Vector<ParamWidget*> _param_widgets;

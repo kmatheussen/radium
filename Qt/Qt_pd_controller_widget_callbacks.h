@@ -109,11 +109,11 @@ public:
     setupUi(this);
 
     value_slider->_is_a_pd_slider = true;
-    value_slider->_patch = (struct Patch*)plugin->patch;
+    value_slider->_patch.set((struct Patch*)plugin->patch);
     value_slider->_effect_num = controller_num;
 
     onoff_widget->_is_a_pd_slider = true;
-    onoff_widget->_patch = (struct Patch*)plugin->patch;
+    onoff_widget->_patch.set((struct Patch*)plugin->patch);
     onoff_widget->_effect_num = controller_num;
 
     //SLIDERPAINTER_start_auto_updater(value_slider->_painter);

@@ -39,7 +39,7 @@ class Pd_Plugin_widget : public QWidget, public Ui::Pd_Plugin_widget{
   Q_OBJECT;
 
 public:
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
   DEFINE_ATOMIC(bool, _gui_is_visible);
 
   int _num_controllers;
