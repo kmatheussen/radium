@@ -7,7 +7,7 @@ class Auto_Suspend_Menu : public QDialog, public Ui::Auto_Suspend_Menu{
  public:
   bool _initing;
   bool _is_updating_widget = false;
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
   radium::ASMTimer _timer;
   
   Auto_Suspend_Menu(QWidget *parent, struct Patch *patch)

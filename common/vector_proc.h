@@ -183,26 +183,7 @@ static inline void VECTOR_delete_last(vector_t *v){
 
 
 
-extern vector_t g_global_roots;
-
 #ifdef __cplusplus
-
-template<typename T> 
-static inline T add_gc_root(T root){
-  VECTOR_push_back(&g_global_roots, root);
-  return root;
-}
-
-static inline void remove_gc_root(void *root){
-  VECTOR_remove(&g_global_roots, root);
-}
-
-template<typename T>
-static inline T replace_gc_root(T old_root, T new_root){
-  remove_gc_root(old_root);
-  add_gc_root(new_root);
-  return new_root;
-}
 
 
 #include "LockAsserter.hpp"
@@ -271,23 +252,6 @@ public:
   };
 
 //#define V_t Vector_t
-}
-
-#else
-
-static inline void *add_gc_root(void *root){
-  VECTOR_push_back(&g_global_roots, root);
-  return root;
-}
-
-static inline void remove_gc_root(void *root){
-  VECTOR_remove(&g_global_roots, root);
-}
-
-static inline void *replace_gc_root(void *old_root, void *new_root){
-  remove_gc_root(old_root);
-  add_gc_root(new_root);
-  return new_root;
 }
 
 #endif

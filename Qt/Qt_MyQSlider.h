@@ -66,7 +66,7 @@ static int g_minimum_height = 0;
 struct MyQSlider : public QSlider {
 
  public:
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
   int _effect_num;
   bool _is_recording;
   
@@ -79,7 +79,7 @@ struct MyQSlider : public QSlider {
   void init(){
     _has_mouse=false;
 
-    _patch = NULL;
+    _patch.set(NULL);
     _effect_num = 0;
     _is_recording = false;
     
@@ -114,11 +114,11 @@ struct MyQSlider : public QSlider {
     SLIDERPAINTER_delete(_painter);
     
     _painter = NULL; // quicker to discover memory corruption
-    _patch = NULL;
+    _patch.set(NULL);
   }
 
   void calledRegularlyByParent(void){
-    R_ASSERT_RETURN_IF_FALSE(_patch != NULL);
+    R_ASSERT_RETURN_IF_FALSE(_patch.data() != NULL);
       
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
@@ -200,15 +200,15 @@ struct MyQSlider : public QSlider {
   // mousePressEvent 
   void mousePressEvent ( QMouseEvent * event_ ) override
   {
-    if(_patch!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
+    if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
       return;
     
     //printf("Got mouse pres event_ %d / %d\n",(int)event_->x(),(int)event_->y());
     if (event_->button() == Qt::LeftButton){
 
 #ifdef COMPILING_RADIUM
-      if(_patch!=NULL && _patch->instrument==get_audio_instrument()){
-        ADD_UNDO(AudioEffect_CurrPos(_patch, _effect_num));
+      if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument()){
+        ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num));
         //handle_system_delay(true);
       }
 #endif
@@ -223,7 +223,7 @@ struct MyQSlider : public QSlider {
 
     }else{
 
-      if(_patch==NULL || _patch->patchdata == NULL) //  _patch->instrument!=get_audio_instrument() 
+      if(_patch.data()==NULL || _patch->patchdata == NULL) //  _patch->instrument!=get_audio_instrument() 
         return;
       
       bool is_audio_instrument = _patch->instrument==get_audio_instrument() ;
@@ -237,7 +237,7 @@ struct MyQSlider : public QSlider {
       bool has_midi_learn = is_audio_instrument && PLUGIN_has_midi_learn(plugin, _effect_num);
       bool is_recording_automation = is_audio_instrument && PLUGIN_is_recording_automation(plugin, _effect_num);
       bool doing_random_change = is_audio_instrument && PLUGIN_get_random_behavior(plugin, _effect_num);
-      int64_t modulator_id = MODULATOR_get_id(_patch, _effect_num);
+      int64_t modulator_id = MODULATOR_get_id(_patch.data(), _effect_num);
       
       int pd_delete=-10;
       int reset=-10;
@@ -342,13 +342,13 @@ struct MyQSlider : public QSlider {
         PLUGIN_add_midi_learn(plugin, _effect_num);
 
       else if (command==remove_modulator){
-        MODULATOR_remove_target(modulator_id, _patch, _effect_num);
+        MODULATOR_remove_target(modulator_id, _patch.data(), _effect_num);
       
       }else if (command==replace_modulator){
-        MODULATOR_maybe_create_and_add_target(_patch, _effect_num, true);
+        MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, true);
 
       }else if (command==add_modulator){
-        MODULATOR_maybe_create_and_add_target(_patch, _effect_num, false);
+        MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, false);
       
       }else if (command==record)
         PLUGIN_set_recording_automation(plugin, _effect_num, true);
@@ -371,7 +371,7 @@ struct MyQSlider : public QSlider {
       
        
         
-      GFX_update_instrument_widget(_patch);
+      GFX_update_instrument_widget(_patch.data());
         
 #if 0
       else if(command==1){
@@ -385,14 +385,14 @@ struct MyQSlider : public QSlider {
 
 #else
 #if 0
-      else if(command==1 && _patch!=NULL && _patch->instrument==get_audio_instrument()){
+      else if(command==1 && _patch.data()!=NULL && _patch->instrument==get_audio_instrument()){
         SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
         char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
         if(s!=NULL){
           float value = OS_get_double_from_string(s);
-          ADD_UNDO(AudioEffect_CurrPos(_patch, _effect_num));
+          ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num));
           PLUGIN_set_effect_value(plugin, -1, _effect_num, value, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-          GFX_update_instrument_widget(_patch);
+          GFX_update_instrument_widget(_patch.data());
         }
       }
 #endif
@@ -416,7 +416,7 @@ struct MyQSlider : public QSlider {
     //printf("Got mouse release event %d / %d\n",(int)event_->x(),(int)event_->y());
     if (_has_mouse){
 #if 0
-      if(_patch!=NULL && _patch->instrument==get_audio_instrument()){
+      if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument()){
         handle_system_delay(false);
       }
 #endif

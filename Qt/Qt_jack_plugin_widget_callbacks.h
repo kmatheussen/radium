@@ -25,7 +25,7 @@ class Jack_Plugin_widget : public QWidget, public Ui::Jack_Plugin_widget{
 
 public:
 
-  Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
 
   Jack_Plugin_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent)

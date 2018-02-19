@@ -201,7 +201,7 @@ class Sample_requester_widget : public QWidget
   
 
   //SoundPlugin *_plugin; // Nope, this value can not be stored. SoundPlugin objects must be used from the patch: (SoundPlugin*)patch->patchdata;
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
 
   QDir _dir;
   QLineEdit *_instrument_name_widget;
@@ -573,7 +573,7 @@ class Sample_requester_widget : public QWidget
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
     
-    ADD_UNDO(PluginState_CurrPos(_patch));
+    ADD_UNDO(PluginState_CurrPos(_patch.data()));
 
     bool successfully_selected = false;
 
@@ -650,7 +650,7 @@ class Sample_requester_widget : public QWidget
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-    ADD_UNDO(PluginState_CurrPos(_patch));
+    ADD_UNDO(PluginState_CurrPos(_patch.data()));
 
     if(SAMPLER_set_new_sample(plugin,STRING_create(filename),file_list->currentRow()-1)==true){
       if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED){
@@ -744,7 +744,7 @@ public slots:
     
     if(_is_sample_player) {
       
-      ADD_UNDO(PluginState_CurrPos(_patch));
+      ADD_UNDO(PluginState_CurrPos(_patch.data()));
       SAMPLER_set_random_sample(plugin, STRING_create(_dir.absolutePath()));
 
     } else if (_sf2_file != "" && _sf2_bank != ""){
@@ -752,7 +752,7 @@ public slots:
       // TODO: Fix code below.
         
       /*
-      ADD_UNDO(PluginState_CurrPos(_patch));
+      ADD_UNDO(PluginState_CurrPos(_patch.data()));
       
       wchar_t *filename = STRING_create(_sf2_file);
 

@@ -31,13 +31,13 @@ extern void set_editor_focus(void);
   
 struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
   bool _has_mouse;
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
   int _effect_num;
   bool _is_patchvoice_spinbox;
 
   void init(){
     _has_mouse=false;
-    _patch = NULL;
+    _patch.set(NULL);
     _effect_num = 0;
     _is_patchvoice_spinbox = false;
   }
@@ -75,9 +75,9 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
     if (event->button() == Qt::LeftButton){      
       //setSliderDown(true);    
       if(_is_patchvoice_spinbox==true)
-        ADD_UNDO(PatchVoice_CurrPos(_patch,_effect_num));
+        ADD_UNDO(PatchVoice_CurrPos(_patch.data(),_effect_num));
 
-      printf("Got it %p %d\n",_patch,_effect_num);
+      printf("Got it %p %d\n",_patch.data(),_effect_num);
       //setChecked(!isChecked());
     }
 

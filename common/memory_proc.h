@@ -88,5 +88,4 @@ extern LANGSPEC char *talloc_format_internal(const char *fmt,...) FORMAT_ATTRIBU
 #endif
 
 
-
 #endif

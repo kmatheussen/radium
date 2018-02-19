@@ -32,7 +32,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
  public:
   bool initing;
 
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
   struct PatchVoice *_voices;
 
 #ifndef USE_QT5
@@ -221,7 +221,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       const PatchVoice &voice=_patch->voices[i];
 
       get_o(i)->setChecked(voice.is_on);
-      get_o(i)->_patch = _patch;
+      get_o(i)->_patch.set(_patch.data());
       get_o(i)->_effect_num = i;
       get_o(i)->_is_patchvoice_onoff_button = true;
 
@@ -250,18 +250,18 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     
 #if !USE_OPENGL
     struct Tracker_Windows *window=root->song->tracker_windows;
-    TRACKREALLINES_update_peak_tracks(window,_patch);
+    TRACKREALLINES_update_peak_tracks(window,_patch.data());
     struct WBlocks *wblock=window->wblock;
-    DrawUpAllPeakWTracks(window,wblock,_patch);
+    DrawUpAllPeakWTracks(window,wblock,_patch.data());
 #endif
   }
 
   void onoff_toggled(int voicenum,bool val){
     printf("%d set to %d\n",voicenum,val);
     if(val==true)
-      PATCH_turn_voice_on(_patch, voicenum);
+      PATCH_turn_voice_on(_patch.data(), voicenum);
     else
-      PATCH_turn_voice_off(_patch, voicenum);
+      PATCH_turn_voice_off(_patch.data(), voicenum);
 
     update_peaks();
   }
@@ -269,8 +269,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void set_transpose(int voicenum){
     float transpose=get_t(voicenum)->value();
     if(transpose!=_voices[voicenum].transpose){
-      ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
-      PATCH_change_voice_transpose(_patch, voicenum, transpose);
+      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
+      PATCH_change_voice_transpose(_patch.data(), voicenum, transpose);
     }
     set_editor_focus();
     update_peaks();
@@ -279,7 +279,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void set_volume(int voicenum){
     float volume=get_v(voicenum)->value();
     if(_voices[voicenum].volume != volume){
-      ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
+      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
       _voices[voicenum].volume = volume;
     }
     set_editor_focus();
@@ -289,7 +289,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void set_start(int voicenum){
     float start=get_s(voicenum)->value();
     if(_voices[voicenum].start != start){
-      ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
+      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
       _voices[voicenum].start = start;
     }
     set_editor_focus();
@@ -299,7 +299,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void set_length(int voicenum){
     float length=get_l(voicenum)->value();
     if(_voices[voicenum].length != length){
-      ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
+      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
       _voices[voicenum].length = length;
     }
     set_editor_focus();
@@ -314,7 +314,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       if (_patch->instrument==get_audio_instrument())
         plugin = (SoundPlugin*)_patch->patchdata;
 
-      ADD_UNDO(PatchVoice_CurrPos(_patch,voicenum));
+      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
       
       if (plugin != NULL){
         float value = scale_double(R_BOUNDARIES(0, chance, 256), 0, 256, 0, 1);
@@ -439,10 +439,10 @@ public slots:
 
     printf("Calling Undo patchname. Old name: %s. New name: %s\n",_patch->name,new_name.toUtf8().constData());
 
-    ADD_UNDO(PatchName_CurrPos(_patch));
+    ADD_UNDO(PatchName_CurrPos(_patch.data()));
 
     {
-      PATCH_set_name(_patch, new_name.toUtf8().constData());
+      PATCH_set_name(_patch.data(), new_name.toUtf8().constData());
       g_currpatch->name_is_edited = true;
 
       struct Tracker_Windows *window = root->song->tracker_windows;
@@ -452,7 +452,7 @@ public slots:
     
     if(_patch->instrument==get_audio_instrument()){
       CHIP_update((SoundPlugin*)_patch->patchdata);
-      GFX_update_instrument_widget(_patch);
+      GFX_update_instrument_widget(_patch.data());
     }
 
     set_editor_focus();
@@ -460,7 +460,7 @@ public slots:
 
   void on_through_onoff_toggled(bool val){
     if(val != _patch->forward_events) {
-      ADD_UNDO(PatchName_CurrPos(_patch));
+      ADD_UNDO(PatchName_CurrPos(_patch.data()));
       _patch->forward_events = val;
     }
   }

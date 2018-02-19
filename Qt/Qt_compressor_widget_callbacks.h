@@ -102,7 +102,7 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
  public:
   bool initing;
   cvs::Comp *comp;
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
 
  Compressor_widget(struct Patch *patch, QWidget *parent=NULL)
     : QWidget(parent)
@@ -127,11 +127,11 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
     // Enable MyQSlider and MyQCheckBox to take care of undo/redo.
     {
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      attack_slider->_patch = patch;
+      attack_slider->_patch.set(patch);
       attack_slider->_effect_num = plugin->type->num_effects+EFFNUM_COMP_ATTACK;
-      release_slider->_patch = patch;
+      release_slider->_patch.set(patch);
       release_slider->_effect_num = plugin->type->num_effects+EFFNUM_COMP_RELEASE;
-      enable_checkbox->_patch = patch;
+      enable_checkbox->_patch.set(patch);
       enable_checkbox->_effect_num = plugin->type->num_effects+EFFNUM_COMP_ONOFF;
     }
 #endif
@@ -169,8 +169,8 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
 
   void update_gui(){
     comp->set_gui_parameters();
-    attack_slider->setValue(get_exp_inverted_value(get_compressor_parameter(_patch, COMP_EFF_ATTACK),1000,0,max_attack_release));
-    release_slider->setValue(get_exp_inverted_value(get_compressor_parameter(_patch, COMP_EFF_RELEASE),1000,0,max_attack_release));
+    attack_slider->setValue(get_exp_inverted_value(get_compressor_parameter(_patch.data(), COMP_EFF_ATTACK),1000,0,max_attack_release));
+    release_slider->setValue(get_exp_inverted_value(get_compressor_parameter(_patch.data(), COMP_EFF_RELEASE),1000,0,max_attack_release));
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     enable_checkbox->setChecked(ATOMIC_GET(plugin->comp.is_on));
@@ -195,13 +195,13 @@ class Compressor_widget : public QWidget, public Ui::Compressor_widget{
       return;
     }
     
-    set_compressor_parameter(_patch, COMP_EFF_RATIO,read_float(file)); // ratio
-    set_compressor_parameter(_patch, COMP_EFF_THRESHOLD,read_float(file)); // threshold
-    set_compressor_parameter(_patch, COMP_EFF_ATTACK,read_float(file)); // attack
-    set_compressor_parameter(_patch, COMP_EFF_RELEASE,read_float(file)); // release
+    set_compressor_parameter(_patch.data(), COMP_EFF_RATIO,read_float(file)); // ratio
+    set_compressor_parameter(_patch.data(), COMP_EFF_THRESHOLD,read_float(file)); // threshold
+    set_compressor_parameter(_patch.data(), COMP_EFF_ATTACK,read_float(file)); // attack
+    set_compressor_parameter(_patch.data(), COMP_EFF_RELEASE,read_float(file)); // release
     //set_compressor_parameter(INPUT_VOLUME,read_float(file)); // input volume (currently not used)
     read_float(file); // input volume (currently not used)
-    set_compressor_parameter(_patch, COMP_EFF_OUTPUT_VOLUME,read_float(file)); // output volume
+    set_compressor_parameter(_patch.data(), COMP_EFF_OUTPUT_VOLUME,read_float(file)); // output volume
 
     fclose(file);
 
@@ -224,7 +224,7 @@ void on_enable_checkbox_toggled(bool val){
 
   void on_attack_slider_valueChanged(int val){
     float attack = get_exp_value(val,1000,0,max_attack_release);
-    set_compressor_parameter(_patch, COMP_EFF_ATTACK,attack);
+    set_compressor_parameter(_patch.data(), COMP_EFF_ATTACK,attack);
     char temp[512];
     sprintf(temp,"Attack: %.2fms",attack);
     SLIDERPAINTER_set_string(attack_slider->_painter, temp);
@@ -232,7 +232,7 @@ void on_enable_checkbox_toggled(bool val){
 
   void on_release_slider_valueChanged(int val){
     float release = get_exp_value(val,1000,0,max_attack_release);
-    set_compressor_parameter(_patch, COMP_EFF_RELEASE,release);
+    set_compressor_parameter(_patch.data(), COMP_EFF_RELEASE,release);
     char temp[512];
     sprintf(temp,"Release: %.2fms",release);
     SLIDERPAINTER_set_string(release_slider->_painter, temp);
@@ -240,7 +240,7 @@ void on_enable_checkbox_toggled(bool val){
 
   void on_bypass_toggled(bool val){
     printf("bypass: %d\n",(int)val);
-    set_compressor_parameter(_patch, COMP_EFF_BYPASS,val==true?1.0f:0.0f);
+    set_compressor_parameter(_patch.data(), COMP_EFF_BYPASS,val==true?1.0f:0.0f);
   }
 
   void on_load_button_clicked(void){
@@ -285,13 +285,13 @@ void on_enable_checkbox_toggled(bool val){
     }
 
     fprintf(file,"%f\n%f\n%f\n%f\n%f\n%f\n",
-            get_compressor_parameter(_patch, COMP_EFF_RATIO),
-            get_compressor_parameter(_patch, COMP_EFF_THRESHOLD),
-            get_compressor_parameter(_patch, COMP_EFF_ATTACK),
-            get_compressor_parameter(_patch, COMP_EFF_RELEASE),
+            get_compressor_parameter(_patch.data(), COMP_EFF_RATIO),
+            get_compressor_parameter(_patch.data(), COMP_EFF_THRESHOLD),
+            get_compressor_parameter(_patch.data(), COMP_EFF_ATTACK),
+            get_compressor_parameter(_patch.data(), COMP_EFF_RELEASE),
             //get_compressor_parameter(INPUT_VOLUME),
             0.0f, // input volume (in dB)
-            get_compressor_parameter(_patch, COMP_EFF_OUTPUT_VOLUME)
+            get_compressor_parameter(_patch.data(), COMP_EFF_OUTPUT_VOLUME)
             );
 
     fclose(file);

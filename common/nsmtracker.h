@@ -664,6 +664,95 @@ typedef struct vector_t_ vector_t;
 
 
 
+
+
+/*********************************************************************
+	global roots
+*********************************************************************/
+
+extern vector_t g_global_roots;
+
+
+#ifdef __cplusplus
+namespace radium{
+  template <typename T>
+  struct GcHolder{
+
+  private:
+    T *t;
+
+    GcHolder(const GcHolder&) = delete;
+    GcHolder& operator=(const GcHolder&) = delete;
+
+  public:
+    GcHolder(T *t = NULL)
+      : t(t)
+    {  
+      if(t!=NULL)
+        add_gc_root(t);
+    }
+    ~GcHolder(){
+      if(t!=NULL)
+        remove_gc_root(t);
+    }
+    T *operator->() const {
+      return t;
+    }
+    void set(T *new_t){
+      replace_gc_root(t, new_t);
+      t = new_t;
+    }
+    T *data(void) const {
+      return t;
+    }
+  };
+}
+
+template<typename T> 
+static inline T add_gc_root(T root){
+  if(root != NULL)
+    VECTOR_push_back(&g_global_roots, root);
+  return root;
+}
+
+static inline void remove_gc_root(void *root){
+  if(root != NULL)
+    VECTOR_remove(&g_global_roots, root);
+}
+
+template<typename T>
+static inline T replace_gc_root(T old_root, T new_root){
+  if(old_root != NULL)
+    remove_gc_root(old_root);
+  if(new_root!=NULL)
+    add_gc_root(new_root);
+  return new_root;
+}
+
+#else
+
+static inline void *add_gc_root(void *root){
+  if(root!=NULL)
+    VECTOR_push_back(&g_global_roots, root);
+  return root;
+}
+
+static inline void remove_gc_root(void *root){
+  if(root!=NULL)
+    VECTOR_remove(&g_global_roots, root);
+}
+
+static inline void *replace_gc_root(void *old_root, void *new_root){
+  if(old_root!=NULL)
+    remove_gc_root(old_root);
+  if(new_root!=NULL)
+    add_gc_root(new_root);
+  return new_root;
+}
+
+#endif
+
+
 /*********************************************************************
 	ratio.h
 *********************************************************************/

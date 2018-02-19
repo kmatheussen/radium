@@ -332,7 +332,7 @@ static void updateMidiPortsWidget(MIDI_instrument_widget *instrument){
 static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, struct Patch *patch){
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   MIDI_instrument_widget *instrument = new MIDI_instrument_widget(editor->main_window,patch);
-    instrument->patch = patch;
+  instrument->patch.set(patch);
 
     struct PatchData *patchdata = (struct PatchData*)patch->patchdata;
     instrument->patchdata = patchdata;
@@ -344,7 +344,7 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
       for(int y=0;y<8;y++){
         for(int x=0;x<1;x++){
           Control_change_widget *cc = new Control_change_widget(instrument, "hepp");
-          cc->value_slider->_patch = patch;
+          cc->value_slider->_patch.set(patch);
           cc->value_slider->_effect_num = patchdata->cc[ccnum];
 
           for(int i=0;i<128;i++){
@@ -615,7 +615,7 @@ static MIDI_instrument_widget *get_midi_instrument_widget(struct Patch *patch){
 
   for(int i=0;i<tabs->count();i++){
     MIDI_instrument_widget *instrument = dynamic_cast<MIDI_instrument_widget*>(tabs->widget(i));
-    if(instrument!=NULL && instrument->patch==patch)
+    if(instrument!=NULL && instrument->patch.data()==patch)
       return instrument;
   }
 
@@ -641,7 +641,7 @@ Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch){
 
   for(int i=0;i<tabs->count();i++){
     Audio_instrument_widget *instrument = dynamic_cast<Audio_instrument_widget*>(tabs->widget(i));
-    if(instrument!=NULL && instrument->_patch==patch)
+    if(instrument!=NULL && instrument->_patch.data()==patch)
       return instrument;
   }
 
@@ -679,7 +679,7 @@ static void update_midi_instrument_widget(MIDI_instrument_widget *instrument, st
     cc->onoff->setChecked(patchdata->ccsonoff[ccnum]);
     cc->cctype->setCurrentIndex(patchdata->cc[ccnum]);
 
-    cc->value_slider->_patch = patch;
+    cc->value_slider->_patch.set(patch);
     cc->value_slider->_effect_num = patchdata->cc[ccnum];
     printf("Update effectnum for %d to %d\n",ccnum,patchdata->cc[ccnum]);
   }
@@ -736,12 +736,12 @@ void GFX_update_all_instrument_widgets(void){
     if(midi_instrument!=NULL){
 
       if(midi_instrument->patch->patchdata!=NULL)
-        update_midi_instrument_widget(midi_instrument,midi_instrument->patch);
+        update_midi_instrument_widget(midi_instrument,midi_instrument->patch.data());
 
     }else if(audio_instrument!=NULL){
 
       if(audio_instrument->_patch->patchdata!=NULL)
-        update_audio_instrument_widget(audio_instrument,audio_instrument->_patch);
+        update_audio_instrument_widget(audio_instrument,audio_instrument->_patch.data());
 
     }
   }
@@ -885,9 +885,9 @@ static void tab_selected(){
     return;
 
   if(midi_instrument!=NULL){
-    g_currpatch = midi_instrument->patch;
+    g_currpatch = midi_instrument->patch.data();
   }else
-    g_currpatch = audio_instrument->_patch;
+    g_currpatch = audio_instrument->_patch.data();
 
 #if 0
 
@@ -913,7 +913,7 @@ static void tab_selected(){
     updateMidiPortsWidget(midi_instrument);
     //update_midi_instrument_widget(midi_instrument,midi_instrument->patch);
   }else if(audio_instrument!=NULL){
-    //update_audio_instrument_widget(audio_instrument,audio_instrument->_patch);
+    //update_audio_instrument_widget(audio_instrument,audio_instrument->_patch.t);
   }
 }
 #endif
@@ -927,13 +927,13 @@ struct Patch *get_current_instruments_gui_patch(void){
   {
     MIDI_instrument_widget *instrument = dynamic_cast<MIDI_instrument_widget*>(tabs->currentWidget());
     if(instrument!=NULL)
-      return instrument->patch;
+      return instrument->patch.data();
   }
 
   {
     Audio_instrument_widget *instrument = dynamic_cast<Audio_instrument_widget*>(tabs->currentWidget());
     if(instrument!=NULL)
-      return instrument->_patch;
+      return instrument->_patch.data();
   }
 
   //RError("Current widget is not a known instrument: %p",tabs->currentWidget());

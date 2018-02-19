@@ -252,22 +252,11 @@ namespace{
   };
   */
 
-  class MyAction : public QAction{
-  public:
-    int num;
-    int *result;
-
-    MyAction(int num, int *result, const QString &text, MyQMenu *menu)
-      : QAction(text, menu)
-      , num(num)
-      , result(result)
-    {}
-  };
-
-  class CheckableAction : public MyAction
-  {
+  class CheckableAction : public QAction {
     Q_OBJECT
 
+    int num;
+    int *result;
     QString text;
     MyQMenu *qmenu;
     bool is_async;
@@ -281,7 +270,9 @@ namespace{
     }
     
     CheckableAction(const QString & text_b, bool is_on, MyQMenu *qmenu_b, int num_b, bool is_async, func_t *callback_b, std::function<void(int,bool)> callback3_b, int *result)
-      : MyAction(num, result, text_b, qmenu_b)
+      : QAction(text_b, qmenu_b)
+      , num(num_b)
+      , result(result)
       , text(text_b)
       , qmenu(qmenu_b)
       , is_async(is_async)
@@ -313,10 +304,12 @@ namespace{
     }
   };
 
-  class ClickableAction : public MyAction
+  class ClickableAction : public QAction
   {
     Q_OBJECT
 
+    int num;
+    int *result;
     QString text;
     MyQMenu *qmenu;
     bool is_async;
@@ -330,7 +323,9 @@ namespace{
     }
     
     ClickableAction(const QString & text, MyQMenu *qmenu, int num, bool is_async, func_t *callback, std::function<void(int,bool)> callback3, int *result)
-      : MyAction(num, result, text, qmenu)
+      : QAction(text, qmenu)
+      , num(num)
+      , result(result)
       , text(text)
       , qmenu(qmenu)
       , is_async(is_async)

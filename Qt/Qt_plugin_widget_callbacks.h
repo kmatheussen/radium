@@ -51,7 +51,7 @@ class Plugin_widget : public QWidget, public Ui::Plugin_widget{
   Q_OBJECT;
 
 public:
-  struct Patch *_patch;
+  radium::GcHolder<struct Patch> _patch;
   Pd_Plugin_widget *_pd_plugin_widget;
   Jack_Plugin_widget *_jack_plugin_widget;
 #ifdef WITH_FAUST_DEV
@@ -84,7 +84,7 @@ public:
       //, _last_height(10)
     , _auto_suspend_menu(this, patch)
   {
-    R_ASSERT(_patch!=NULL);
+    R_ASSERT(patch!=NULL);
     
     _is_initing = true;
     
@@ -175,7 +175,7 @@ public:
 
     //   Pd:
     if(!strcmp(plugin->type->type_name, "Pd")) {
-      _pd_plugin_widget = new Pd_Plugin_widget(this,_patch);
+      _pd_plugin_widget = new Pd_Plugin_widget(this,_patch.data());
       vertical_layout->insertWidget(1,_pd_plugin_widget);
       faust_load_button->hide();
       faust_save_button->hide();
@@ -197,16 +197,16 @@ public:
       save_button->hide();
       reset_button->hide();
       random_button->hide();
-      _jack_plugin_widget = new Jack_Plugin_widget(this,_patch);
+      _jack_plugin_widget = new Jack_Plugin_widget(this,_patch.data());
       vertical_layout->insertWidget(1,_jack_plugin_widget);
 
 #ifdef WITH_FAUST_DEV
       // Faust:
     }else if(!strcmp(plugin->type->type_name, "Faust Dev")) {
       new_pd_controller_button->hide();
-      _faust_plugin_widget = new Faust_Plugin_widget(this, faust_compilation_status, _patch);
+      _faust_plugin_widget = new Faust_Plugin_widget(this, faust_compilation_status, _patch.data());
       vertical_layout->insertWidget(1,_faust_plugin_widget);
-      //_plugin_widget=PluginWidget_create(this, _patch);
+      //_plugin_widget=PluginWidget_create(this, _patch.data());
 #endif
 
       // Others:
@@ -218,7 +218,7 @@ public:
       faust_revert_button->hide();
       faust_show_button->hide();
       faust_options_button->hide();
-      _plugin_widget=PluginWidget_create(this, _patch, SIZETYPE_NORMAL);
+      _plugin_widget=PluginWidget_create(this, _patch.data(), SIZETYPE_NORMAL);
       vertical_layout->insertWidget(1,_plugin_widget);
     }
 
@@ -564,7 +564,7 @@ private:
     
     PLUGINHOST_load_fxbp(plugin, STRING_create(filename));
     
-    GFX_update_instrument_widget((struct Patch*)_patch);
+    GFX_update_instrument_widget(_patch.data());
   }
 
   void change_height(SizeType type){
@@ -578,7 +578,7 @@ private:
 
     _size_type=type;
     
-    AUDIOWIDGET_change_height(_patch, type);
+    AUDIOWIDGET_change_height(_patch.data(), type);
 
 #ifdef WITH_FAUST_DEV
     if (_faust_plugin_widget != NULL)
@@ -590,7 +590,7 @@ private:
     // ?? This code was enabled before.
       {
         delete _plugin_widget;
-        _plugin_widget=PluginWidget_create(this, _patch, type);
+        _plugin_widget=PluginWidget_create(this, _patch.data(), type);
         vertical_layout->insertWidget(1,_plugin_widget);
       }
 #endif
@@ -634,7 +634,7 @@ public:
     if (simplePopupMenu(talloc_format("%sReset",curr==num?"[disabled]":""))==0){
       PLUGIN_reset_ab(plugin, num);
       update_ab_buttons();
-      AUDIOWIDGET_redraw_ab(_patch);
+      AUDIOWIDGET_redraw_ab(_patch.data());
     }
   }
 
@@ -660,7 +660,7 @@ public slots:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     PLUGIN_reset_ab(plugin,-1);
     update_ab_buttons();
-    AUDIOWIDGET_redraw_ab(_patch);
+    AUDIOWIDGET_redraw_ab(_patch.data());
   }
 
   void on_ab_a_toggled(bool val){
@@ -668,7 +668,7 @@ public slots:
       return;
     
     if (val && _ignore_checkbox_stateChanged==false)
-      AUDIOWIDGET_set_ab(_patch, 0);
+      AUDIOWIDGET_set_ab(_patch.data(), 0);
     update_ab_buttons();
   }
 
@@ -677,7 +677,7 @@ public slots:
       return;
     
     if (val && _ignore_checkbox_stateChanged==false)
-      AUDIOWIDGET_set_ab(_patch, 1);
+      AUDIOWIDGET_set_ab(_patch.data(), 1);
     update_ab_buttons();
   }
 
@@ -854,7 +854,7 @@ public slots:
     if (_is_initing)
       return;
     
-    ADD_UNDO(PdControllers_CurrPos(_patch));
+    ADD_UNDO(PdControllers_CurrPos(_patch.data()));
     _pd_plugin_widget->new_controller();  
   }
 
@@ -932,7 +932,7 @@ public slots:
 
     if (saveRecordedAudioFilesInBrowserPath() || dc.filename == NULL){
 
-      auto *sample_requester_widget = AUDIOWIDGET_get_sample_requester_widget(_patch);
+      auto *sample_requester_widget = AUDIOWIDGET_get_sample_requester_widget(_patch.data());
       //printf("dir: %p\n", sample_requester_widget->_dir);
       pathdir = STRING_create(sample_requester_widget->_dir.absolutePath());
 
@@ -974,7 +974,7 @@ public slots:
       return;
 
     vector_t patches = {};
-    VECTOR_push_back(&patches, _patch);
+    VECTOR_push_back(&patches, _patch.data());
     PRESET_save(&patches, true, API_get_gui_from_existing_widget(this->window()));
   }
 
@@ -998,7 +998,7 @@ public slots:
     
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     PLUGIN_reset(plugin);
-    GFX_update_instrument_widget(_patch);
+    GFX_update_instrument_widget(_patch.data());
   }
 
   void on_random_button_clicked(){
@@ -1008,7 +1008,7 @@ public slots:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     PLUGIN_random(plugin);
 
-    GFX_update_instrument_widget(_patch);
+    GFX_update_instrument_widget(_patch.data());
   }
 
   void on_info_button_clicked(){

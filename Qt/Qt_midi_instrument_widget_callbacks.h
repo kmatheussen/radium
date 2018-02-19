@@ -26,7 +26,7 @@ public:
   Patch_widget *_patch_widget;
   Control_change_widget *cc_widgets[8];
   struct PatchData *patchdata;
-  struct Patch *patch;
+  radium::GcHolder<struct Patch> patch;
 
   MIDI_instrument_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent)
@@ -37,10 +37,10 @@ public:
     _patch_widget = new Patch_widget(this,patch);
     main_layout->insertWidget(0,_patch_widget);
 
-    panning_slider->_patch = patch;
+    panning_slider->_patch.set(patch);
     panning_slider->_effect_num = 10;
 
-    volume_slider->_patch = patch;
+    volume_slider->_patch.set(patch);
     volume_slider->_effect_num = 7;
   }
   
@@ -224,7 +224,7 @@ public slots:
 
       GFX_CloseReq(window,reqtype);
     }else
-      MIDISetPatchData(patch, (char*)"port", (char*)portname.toUtf8().constData(), true);
+      MIDISetPatchData(patch.data(), (char*)"port", (char*)portname.toUtf8().constData(), true);
 
     fprintf(stderr, "Setting new port: \"%s\"\n",(char*)portname.toUtf8().constData());
 
