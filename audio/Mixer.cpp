@@ -745,6 +745,9 @@ struct Mixer{
     if(_sample_rate<100.0)
       GFX_Message(NULL, "Sample rate value is strange: %f",(float)_sample_rate);
 
+    //if (_sample_rate < 30000)
+    //  GFX_addMessage("Warning. Jack runs with a low sample rate (%d). Some effects may misbehave.\n", (int)_sample_rate);
+    
     pc->pfreq = _sample_rate; // bang!
 
     jack_set_buffer_size_callback(_rjack_client,RT_rjack_buffer_size_changed,this);

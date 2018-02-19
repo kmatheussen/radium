@@ -588,6 +588,12 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       native_file_requesters->setChecked(useNativeFileRequesters());
 #endif
     }
+
+    // Colors
+    {
+      save_color_file->hide();
+      load_color_file->hide();
+    }
     
     // MIDI
     {
@@ -1083,7 +1089,20 @@ public slots:
   }
 
   void on_color_save_button_clicked(){
-    GFX_SaveColors();
+    GFX_SaveColors(NULL);
+  }
+
+
+  void on_save_color_file_clicked(){
+    const wchar_t *filename = GFX_GetSaveFileName(root->song->tracker_windows,
+                                                  NULL,
+                                                  "Select file",
+                                                  NULL,
+                                                  NULL,
+                                                  NULL,
+                                                  true);
+    if (filename != NULL)
+      GFX_SaveColors(filename);
   }
 
 

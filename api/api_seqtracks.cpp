@@ -2030,8 +2030,6 @@ int64_t getSampleLength(const_char* w_filename){
   return length;
 }
 
-
-
 /*
 void selectSeqblock(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
