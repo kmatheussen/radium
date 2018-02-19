@@ -798,12 +798,14 @@ void MODULATOR_add_target(int64_t modulator_id, const struct Patch *patch, int e
 void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect_num, bool do_replace){
   radium::ScopedUndo scoped_undo;
 
-  int64_t old_modulator_id = MODULATOR_get_id(patch, effect_num);
-
-  if(do_replace)
-    R_ASSERT(old_modulator_id >= 0);
-  else
-    R_ASSERT(old_modulator_id==-1);
+  {
+    int64_t old_modulator_id = MODULATOR_get_id(patch, effect_num);
+    
+    if(do_replace)
+      R_ASSERT(old_modulator_id >= 0);
+    else
+      R_ASSERT(old_modulator_id==-1);
+  }
 
   vector_t v = {0};
 
@@ -819,56 +821,69 @@ void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect
     VECTOR_push_back(&v, talloc_format("%s: %s", patch==NULL ? "" : patch->name, MODULATOR_get_description(modulator->_id)));
   }
 
-  int64_t new_modulator_id;
+  GFX_Menu3(v,
 
-  int command = GFX_Menu(root->song->tracker_windows, NULL, "", v, true);
-  if (command < 0)
-    return;
+            [create_new, modulators, patch, effect_num](int command, bool onoff){
 
+              if (PATCH_get_from_id(patch->id)==NULL){
+                R_ASSERT_NON_RELEASE(false);
+                return; // patch was deleted.
+              }
 
-  if (command==create_new){
+              int64_t new_modulator_id;
 
-    struct Patch *curr_patch = g_currpatch;
+              if (command==create_new){
 
-    int64_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0);
-    if (instrument_id==-1)
-      return;
+                struct Patch *curr_patch = g_currpatch;
 
-    if (curr_patch != NULL)
-      GFX_PP_Update(curr_patch, false); // Set back current instrument.
+                int64_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0);
+                if (instrument_id==-1)
+                  return;
 
-    const struct Patch *modulator_patch = PATCH_get_from_id(instrument_id);
+                if (curr_patch != NULL)
+                  GFX_PP_Update(curr_patch, false); // Set back current instrument.
 
-    ADD_UNDO(ChipPos_CurrPos(modulator_patch));
-    autopositionInstrument(instrument_id);
+                const struct Patch *modulator_patch = PATCH_get_from_id(instrument_id);
 
-    SoundPlugin *plugin = static_cast<SoundPlugin*>(modulator_patch->patchdata);
-    if(plugin==NULL){        
-      R_ASSERT_NON_RELEASE(false);
-      return;        
-    }
+                ADD_UNDO(ChipPos_CurrPos(modulator_patch));
+                autopositionInstrument(instrument_id);
 
-    Modulator *modulator = static_cast<Modulator*>(plugin->data);
+                SoundPlugin *plugin = static_cast<SoundPlugin*>(modulator_patch->patchdata);
+                if(plugin==NULL){        
+                  R_ASSERT_NON_RELEASE(false);
+                  return;        
+                }
+
+                Modulator *modulator = static_cast<Modulator*>(plugin->data);
     
-    new_modulator_id = modulator->_id;
+                new_modulator_id = modulator->_id;
 
-  } else {
+              } else {
 
-    int modulator_num = command-2;
-    if (modulator_num < 0 || modulator_num >= (int)modulators.size()){
-      RError("Illegal modulator_num: %d. (command: %d)", modulator_num, command); // Shouldn't be possible, bug got a crash report for the 'new_modulator_id = modulators[command-2]->_id;' line.
-      return;
-    }
+                int modulator_num = command-2;
+                if (modulator_num < 0 || modulator_num >= (int)modulators.size()){
+                  RError("Illegal modulator_num: %d. (command: %d)", modulator_num, command); // Shouldn't be possible, but got a crash report for the 'new_modulator_id = modulators[command-2]->_id;' line. (think this was a bug in GFX_Menu actually)
+                  return;
+                }
     
-    new_modulator_id = modulators[modulator_num]->_id;
-  }
+                new_modulator_id = modulators[modulator_num]->_id;
 
-  if(old_modulator_id >= 0)
-    MODULATOR_remove_target(old_modulator_id, patch, effect_num);
-  else
-    ADD_UNDO(MixerConnections_CurrPos());
+                if (g_modulators.contains(new_modulator_id)==false){
+                  R_ASSERT_NON_RELEASE(false);
+                  return; // modulator was deleted while showing popup menu.
+                }
+              }
 
-  MODULATOR_add_target(new_modulator_id, patch, effect_num);
+              int64_t old_modulator_id = MODULATOR_get_id(patch, effect_num); // Call MODULATOR_get_id another time inside the callback. In case the old value had changed while showing the menu.
+
+              if(old_modulator_id >= 0)
+                MODULATOR_remove_target(old_modulator_id, patch, effect_num);
+              else
+                ADD_UNDO(MixerConnections_CurrPos());
+
+              MODULATOR_add_target(new_modulator_id, patch, effect_num);
+
+            });
 }
 
 void MODULATOR_remove_target(int64_t modulator_id, const struct Patch *patch, int effect_num){
