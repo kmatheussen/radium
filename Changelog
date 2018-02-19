@@ -1,3 +1,26 @@
+Changes 5.5.1 -> 5.5.2:
+* Modulators: Fix assertion window sometimes popping up when
+  loading song when a modulator GUI is open
+* GUI: Fix rare popup menu bug that could cause wrong entry
+  to be selected, or program to crash.
+* Sequencer: Configurable interface color.
+* Sequencer: Configurable audio file background color.
+* Load: Fix memory leak when loading song. (Fix for known bug
+  introduced in 5.5.1.)
+* Sequencer: Paint envelope before start and after end with
+  a lower opacity.
+* Sequencer: Only paint envelope before start and after end if
+  mouse pointer is above it.
+* Sequencer: Faster to change interior start and end values in
+  audio files.
+* Sequencer: Cache peak data so we don't have to read peak files
+  from disk as often.
+* Sequencer: Always try to cache first 2 seconds from the start
+  position of all audio files to lower time starting to play.
+* API: getAudiofileColor, setAudiofileColor
+
+
+
 Changes 5.5.0 -> 5.5.1:
 * Load song: Fix semi-rare crash introduced in 5.5.0.
 * Editor: Try to track down a rare bug happening when deleting
