@@ -5663,7 +5663,7 @@
                                               )
                                           ;;
                                           (list
-                                           "Insert new audio file (technology preview)"
+                                           "Insert new audio file"
                                            (lambda ()
                                              (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
                                                (create-file-requester "Choose audio file" "" "audio files" "*" #t #f -1
