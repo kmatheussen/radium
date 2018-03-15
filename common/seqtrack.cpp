@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/SoundPlugin.h"
 #include "../audio/Seqtrack_plugin_proc.h"
+#include "../audio/Juce_plugins_proc.h"
 
 #include "seqtrack_proc.h"
 
@@ -1144,6 +1145,9 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
       }
 
       handleError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
+#if 0 //!defined(RELEASE)
+      printf("Backtrace:\n%s\n", JUCE_get_backtrace());
+#endif
       return NULL;
       
     } else {

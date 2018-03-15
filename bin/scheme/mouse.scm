@@ -5594,7 +5594,40 @@
                                                   (<ra> :position-seqblock start-time (+ start-time duration) seqblocknum seqtracknum))))
                               #t)))))))
 
+(define (split-sample-seqblock pos seqtracknum seqblocknum)
+  (define seqblocks-state (to-list (<ra> :get-seqblocks-state seqtracknum)))
+  (define seqblock (seqblocks-state seqblocknum))
 
+  (define stretch (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
+  (define t1 (seqblock :start-time))
+  (define i1 (seqblock :interior-start))
+  (define i2 (seqblock :interior-end))
+  (define s1 (- t1 (* i1 stretch)))
+  
+  (define interior-split (to-integer (/ (- pos s1) stretch)))
+
+  (define seqblock1 (copy-hash seqblock
+                               :end-time pos
+                               :interior-end interior-split))
+  
+  (define seqblock2 (copy-hash seqblock
+                               :start-time pos
+                               :interior-start interior-split))
+  
+  (define new-seqblocks-state (append (if (= 0 seqblocknum)
+                                          '()
+                                          (take seqblocks-state seqblocknum))
+                                      (list seqblock1 seqblock2)
+                                      (if (= (1- (length seqblocks-state)) seqblocknum)
+                                          '()
+                                          (sublist seqblocks-state (1+ seqblocknum) (length seqblocks-state)))))
+                   
+  (try-finally :try (lambda ()                   
+                      (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
+                      (<ra> :undo-sequencer)
+                      (<ra> :apply-gfx-seqblocks seqtracknum))
+               :failure (lambda ()
+                          (<ra> :cancel-gfx-seqblocks seqtracknum))))
 
 ;; seqblock menu
 (add-mouse-cycle
@@ -5669,7 +5702,14 @@
                                                (create-file-requester "Choose audio file" "" "audio files" "*" #t #f -1
                                                                       (lambda (filename)
                                                                         (<ra> :create-sample-seqblock seqtracknum filename pos))))))
-                              
+                                          (list
+                                           "Split audio file (S)"
+                                           :enabled (and seqblocknum
+                                                         (not blocknum))
+                                           (lambda ()
+                                             (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
+                                               (split-sample-seqblock pos seqtracknum seqblocknum))))
+                                          
                                           "--------------------"
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
