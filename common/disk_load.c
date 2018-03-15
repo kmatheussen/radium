@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mmd2loader/mmd2load_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
+#include "../audio/Seqtrack_plugin_proc.h"
 #include "OS_Player_proc.h"
 
 #ifdef _AMIGA
@@ -161,6 +162,8 @@ static bool Load(const wchar_t *filename){
           //goto exit;
           return false;
 	}
+
+        SEQTRACKPLUGIN_clear_resampler_warning_hashmap();
 
         g_curr_song_contains_embedded_samples = false; // Might be set to true during loading.
         

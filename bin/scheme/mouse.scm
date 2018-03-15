@@ -4016,7 +4016,7 @@
   (define seqtracknum (seqblock-info :seqtracknum))
   (define seqblocknum (seqblock-info :seqblocknum))
   (define samples-per-pixel (seqblock-info :samples-per-pixel))
-  
+
   (define seqblock (*current-seqblocks-state* seqblocknum))
 
   (define not-use-grid (or (<ra> :control-pressed)
@@ -5566,7 +5566,8 @@
 (define (get-original-seqblock-duration seqblocknum seqtracknum)
   (if (<ra> :seqblock-holds-block seqblocknum seqtracknum)
       (<ra> :get-block-length (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
-      (<ra> :get-sample-length (<ra> :get-seqblock-sample seqblocknum seqtracknum))))
+      (* (<ra> :get-seqblock-resample-ratio seqblocknum seqtracknum)
+         (<ra> :get-sample-length (<ra> :get-seqblock-sample seqblocknum seqtracknum)))))
       
 (define (get-nonstretched-seqblock-duration seqblocknum seqtracknum)
   (- (<ra> :get-seqblock-interior-end-gfx seqblocknum seqtracknum)
@@ -5656,8 +5657,8 @@
                                               (list                                          
                                                 "Insert my soundfile" (lambda ()
                                                                         (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                                                          (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong.wav") pos))))
-                                                                          ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
+                                                                          ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong_24000.wav") pos))))
+                                                                          (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
                                                                        ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
                                               )
                                           ;;

@@ -59,7 +59,7 @@ static int64_t get_seqblock_stime_default_duration(const struct SeqTrack *seqtra
     struct SoundPlugin *plugin = (struct SoundPlugin*) seqtrack->patch->patchdata;
     R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, pc->pfreq);
     
-    int64_t num_frames = SEQTRACKPLUGIN_get_total_num_frames_in_sample(plugin, seqblock->sample_id);
+    int64_t num_frames = SEQTRACKPLUGIN_get_total_num_frames_for_sample(plugin, seqblock->sample_id);
     R_ASSERT_RETURN_IF_FALSE2(num_frames>0, pc->pfreq);
     
     return num_frames;
@@ -484,7 +484,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
 
   seqblock->sample_filename_without_path = STRING_copy(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, false));
 
-  int64_t duration = SEQTRACKPLUGIN_get_total_num_frames_in_sample(plugin, seqblock->sample_id);
+  int64_t duration = SEQTRACKPLUGIN_get_total_num_frames_for_sample(plugin, seqblock->sample_id);
   
   default_duration_changed(seqblock, duration);  
   SEQBLOCK_ENVELOPE_duration_changed(seqtrack, seqblock, duration);

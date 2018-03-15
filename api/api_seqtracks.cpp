@@ -1853,6 +1853,23 @@ double getSeqblockStretchGfx(int seqblocknum, int seqtracknum){
   return seqblock->gfx.stretch;
 }
 
+double getSeqblockResampleRatio(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 1;
+
+  if (seqblock->block != NULL){
+    handleError("getSeqblockResampleRatio: Seqblock %d in Seqtrack %d holds a block and not a sample", seqblocknum, seqtracknum);
+    return 1.0;
+  }
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, 1.0);
+
+  return SEQTRACKPLUGIN_get_resampler_ratio(plugin, seqblock->sample_id);
+}
+
 
 /*
 void moveSeqblockGfxGfx(int seqblocknum, int64_t abstime, int seqtracknum, int new_seqtracknum){
@@ -2029,6 +2046,7 @@ int64_t getSampleLength(const_char* w_filename){
 
   return length;
 }
+
 
 /*
 void selectSeqblock(int seqblocknum, int seqtracknum){

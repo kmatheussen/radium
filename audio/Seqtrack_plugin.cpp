@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 
 #include <QFileInfo>
+#include <QSet>
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
@@ -34,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Peaks.hpp"
 #include "SampleReader_proc.h"
 #include "Granulator.hpp"
+#include "Resampler_proc.h"
 
 #include "SoundPluginRegistry_proc.h"
 
@@ -61,6 +63,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define HOW_MUCH_TO_PREPARE 2 // in seconds. TODO: We need to slowly increase the buffer from 0.1 to 2. TODO2: Make these two numbers configurable.
 #define HOW_MUCH_TO_PREPARE_BEFORE_STARTING 2 //in seconds
 
+#define RESAMPLER_BUFFER_SIZE 1024
+
 // This is the instrument that is bounded to ONE track in the sequencer.
 
 /*
@@ -76,15 +80,14 @@ enum{
 
 
 static void set_num_visible_outputs(SoundPlugin *plugin);
+
+static QSet<QString> g_resampler_warnings;
+
   
 namespace{
 
 static int64_t g_id = 0;
 
-
-// TODO: Always keep start of sample from disk in memory to lower the time needed to start playing when there's lots of samples.
-// Then we only need to read in audio for those samples that starts playing in the middle.
- 
 struct MyReader : public radium::GranulatorCallback{
   radium::LockAsserter lockAsserter;
 
@@ -107,18 +110,85 @@ public:
   radium::Granulator _granulator;
 
   bool _do_granulate = false;
-  
+
+  struct ResamplerData{
+    int _ch;
+    float *_buffer;
+    radium::Resampler *_resampler;
+    radium::SampleReader *_reader;
+
+    ResamplerData(int ch, radium::SampleReader *reader)
+      : _ch(ch)
+      , _reader(reader)
+    {
+      _resampler = RESAMPLER_create(ResamplerData::RT_src_callback, 1, this, RESAMPLER_SINC1);
+      _buffer = (float*)calloc(sizeof(float), RESAMPLER_BUFFER_SIZE);
+    }
+
+    ~ResamplerData(){
+      RESAMPLER_delete(_resampler);
+      free(_buffer);
+    }
+
+    // samplerater callback
+    static long RT_src_callback(void *cb_data, float **out_data){
+      ResamplerData *data = static_cast<ResamplerData*>(cb_data);
+      
+      int num_frames;
+      *out_data = RT_SAMPLEREADER_get_buffer(data->_reader, data->_ch, num_frames);
+      
+      return num_frames;
+    }
+
+  };
+
+  ResamplerData **_resamplers;
+  bool _do_resampling = false;
+  double _resampler_ratio = 1.0; // Note: Must be set between processing buffers so that channels aren't resampled differently.
+
+
   MyReader(radium::SampleReader *reader)
     : _reader(reader)
     , _num_ch(SAMPLEREADER_get_num_channels(reader))
     , _granulator(_num_ch, this)
   {
+    _resamplers = (ResamplerData**)calloc(sizeof(ResamplerData*), _num_ch);
+    for(int ch=0 ; ch<_num_ch ; ch++)
+      _resamplers[ch] = new ResamplerData(ch, reader);
+
+    double samplerate = SAMPLEREADER_get_samplerate(reader);
+
+    if (fabs(samplerate-pc->pfreq) > 1){
+
+      const wchar_t *filename = SAMPLEREADER_get_filename(reader);
+      QString qfilename = STRING_get_qstring(filename);
+
+      if (g_resampler_warnings.contains(qfilename)==false){
+        GFX_addMessage("Warning: \"%S\" has a samplerate of %d, while radium runs at %d\n. To compensate the difference, Radium will perform high quality samplerate conversion during runtime, which will use a bit CPU.",
+                       SAMPLEREADER_get_sample_name(reader),
+                       (int)samplerate,
+                       (int)pc->pfreq);                     
+        g_resampler_warnings.insert(qfilename);
+      }
+
+      _resampler_ratio = (double)pc->pfreq / samplerate;
+      _do_resampling = true;
+    }
   }
     
 
   ~MyReader(){
-    SAMPLEREADER_delete(_reader);
-    _reader = NULL;
+    {
+      for(int ch=0 ; ch<_num_ch ; ch++)
+        delete _resamplers[ch];
+      free(_resamplers);
+      _resamplers=NULL;
+    }
+
+    {      
+      SAMPLEREADER_delete(_reader);
+      _reader = NULL;
+    }
   }
 
 private:
@@ -141,7 +211,8 @@ private:
         outputs2[ch] = &outputs[ch][total_read];
 
       const int num_frames_left = num_frames - total_read;
-      
+
+      // Note: Both RT_SAMPLEREADER_read and RT_SAMPLEREADER_get_buffer are used, but not in the same play session.
       const int num_read = RT_SAMPLEREADER_read(_reader, outputs2, num_frames_left, do_add, add_to_ch1_too, volume);
 
       R_ASSERT_RETURN_IF_FALSE(num_read>0);
@@ -151,22 +222,72 @@ private:
     }
   }
 
-public:
-
   // granulator callback
-  virtual float *get_next_sample_block(const int ch, int &num_frames) override {
+  float *get_next_granulator_sample_block(const int ch, int &num_frames) override {
     //printf("   ************************** ASKING for %d frames\n", num_frames);
-    return RT_SAMPLEREADER_get_buffer(_reader, ch, num_frames);
+    if (_do_resampling){
+
+      num_frames = RESAMPLER_read(_resamplers[ch]->_resampler, _resampler_ratio, RESAMPLER_BUFFER_SIZE, _resamplers[ch]->_buffer);
+
+      return _resamplers[ch]->_buffer;
+
+    } else {
+
+      return RT_SAMPLEREADER_get_buffer(_reader, ch, num_frames);
+
+    }
   }
 
+  void RT_only_resample_not_granulate(float **output2, int num_frames, bool do_add, bool add_to_ch1_too, float volume) const {
+
+
+    for(int ch = 0 ; ch < _num_ch ; ch++){
+      int samples_left = num_frames;
+      float *output = output2[ch];
+      while (samples_left > 0){
+
+        int num_frames_read;
+        if (do_add){
+
+          float *buffer = _resamplers[ch]->_buffer;
+          num_frames_read = RESAMPLER_read(_resamplers[ch]->_resampler, _resampler_ratio, R_MIN(samples_left, RESAMPLER_BUFFER_SIZE), buffer);
+          for(int i=0;i<num_frames_read;i++)
+            output[i] += volume * buffer[i];
+
+        } else {
+
+          num_frames_read = RESAMPLER_read(_resamplers[ch]->_resampler, _resampler_ratio, samples_left, output);
+          for(int i=0;i<num_frames_read;i++)
+            output[i] *= volume;
+
+        }
+
+        output += num_frames_read;
+        samples_left -= num_frames_read;
+      }
+    }
+
+    if (do_add && add_to_ch1_too && _num_ch==1)
+      for(int i=0;i<num_frames;i++)
+        output2[1] = output2[0];
+  }
+
+public:
+
   void RT_get_samples2(int num_frames, float **outputs, bool do_add, bool add_to_ch1_too) const {
-    //bool do_granulate = false;
-    //bool do_granulate = true; //;
     
     if (_do_granulate){
+
       _granulator.RT_process(outputs, num_frames, do_add, add_to_ch1_too, _volume);
+
+    } else if (_do_resampling){
+
+      RT_only_resample_not_granulate(outputs, num_frames, do_add, add_to_ch1_too, _volume);
+
     } else {
+
       RT_get_samples_from_disk(num_frames, outputs, do_add, add_to_ch1_too, _volume);
+
     }
 
     //printf("volume: %f. _num_ch: %d. num_frames: %d\n", _volume, _num_ch, num_frames);
@@ -320,11 +441,14 @@ public:
     return (_fadeout_countdown / stretch);
   }
 
+
   void prepare_for_playing(int64_t sample_start_pos, double stretch, bool do_fade_in, radium::FutureSignalTrackingSemaphore *gotit){
     _do_granulate = fabs(stretch - 1.0) > 0.001;
     
-    for(int ch=0;ch<_num_ch;ch++)
+    for(int ch=0;ch<_num_ch;ch++){
       mus_reset(_granulator._clm_granulators[ch]);
+      RESAMPLER_reset(_resamplers[ch]->_resampler);
+    }
 
     if (do_fade_in==false){
       //printf("No fadein\n");
@@ -333,7 +457,7 @@ public:
       prepare_for_fadein();
 
     // TODO: This number should be dynamically calculated somehow depending on how long time it takes to read from disk.
-    int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE_BEFORE_STARTING) * (double)pc->pfreq / stretch;
+    int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE_BEFORE_STARTING) * (double)pc->pfreq / (stretch * _resampler_ratio);
 
     for(int ch=0;ch<_num_ch;ch++)
       how_much_to_prepare = R_MAX(how_much_to_prepare,
@@ -343,7 +467,7 @@ public:
     {
       LOCKASSERTER_EXCLUSIVE(&lockAsserter);
       
-      SAMPLEREADER_prepare_to_play(_reader, sample_start_pos, how_much_to_prepare, gotit);
+      SAMPLEREADER_prepare_to_play(_reader, sample_start_pos / _resampler_ratio, how_much_to_prepare, gotit);
     }
 
     //printf("      ====   %p has now been prepared\n", this);
@@ -359,12 +483,12 @@ struct Sample{
   int64_t _id = g_id++;
   const wchar_t *_filename;
 
-  enum State{
+  enum class State{
     RUNNING,
     RT_REQUEST_DELETION,
     READY_FOR_DELETION
   };
-  DEFINE_ATOMIC(enum State, _state) = RUNNING;
+  DEFINE_ATOMIC(enum State, _state) = State::RUNNING;
 
   MyReader *_curr_reader = NULL; // Currently playing reader.
   radium::Vector<MyReader*> _fade_out_readers; // Currently playing fade-out readers
@@ -385,6 +509,9 @@ struct Sample{
   
   const int _num_ch;
   const int64_t _total_num_frames_in_sample;
+  bool _do_resampling;
+  double _resampler_ratio;
+
   const unsigned int _color;
   const wchar_t *_filename_without_path;
   
@@ -431,6 +558,10 @@ struct Sample{
 #endif
     }
 
+    MyReader *myreader = _free_readers.at(0);
+    _do_resampling = myreader->_do_resampling;
+    _resampler_ratio = myreader->_resampler_ratio;
+
     if(!is_gfx)
       interior_start_may_have_changed();
   }
@@ -467,7 +598,23 @@ struct Sample{
   }
 
   void interior_start_may_have_changed(void){
-    SAMPLEREADER_set_permanent_samples(_reader_holding_permanent_samples, _seqblock->t.interior_start, _seqblock->t.interior_start + (HOW_MUCH_TO_PREPARE_BEFORE_STARTING*pc->pfreq));
+    double start = _seqblock->t.interior_start;
+    double end = _seqblock->t.interior_start + ((double)HOW_MUCH_TO_PREPARE_BEFORE_STARTING * (double)pc->pfreq / _seqblock->t.stretch);
+
+    start /= _resampler_ratio;
+    start = R_MAX(0, start-1); // subtract 1 in case floating point inaccuracy caused number (for some reason) to be one higher.
+
+    end /= _resampler_ratio;
+    end++; // add 1 in case floating point inaccuracy caused number (for some reason) to be one higher.
+    end = R_MIN(end, 1 + (_seqblock->t.interior_end / _seqblock->t.stretch));
+    end = R_MIN(end, _total_num_frames_in_sample);
+
+    if (start >= end){
+      R_ASSERT_NON_RELEASE(start-16 < end);
+      return;
+    }
+
+    SAMPLEREADER_set_permanent_samples(_reader_holding_permanent_samples, start, end);
   }
 
 
@@ -819,7 +966,7 @@ struct Data{
         PLAYER_lock();{
           _samples.remove(sample);
         }PLAYER_unlock();
-        printf("    REMOVING Sample\n");        
+        //printf("    REMOVING Sample. Reader: %p\n", sample->_reader_holding_permanent_samples);        
         delete sample;
         set_num_visible_outputs(plugin);
 
@@ -852,6 +999,10 @@ struct Data{
     }
   }
 };
+}
+
+void SEQTRACKPLUGIN_clear_resampler_warning_hashmap(void){
+  g_resampler_warnings.clear();
 }
 
 static void set_num_visible_outputs(SoundPlugin *plugin){
@@ -1010,6 +1161,26 @@ int SEQTRACKPLUGIN_get_num_channels(const SoundPlugin *plugin, int64_t id){
   return sample->_num_ch;
 }
 
+int64_t SEQTRACKPLUGIN_get_total_num_frames_for_sample(const SoundPlugin *plugin, int64_t id){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
+  
+  Sample *sample = get_sample(plugin, id, true, true);
+  if (sample==NULL)
+    return -1;
+
+  int64_t num_frames = sample->_total_num_frames_in_sample;
+  
+  bool do_resampling = sample->_do_resampling;
+
+  if (!do_resampling)
+    return num_frames;
+
+  double resampler_ratio = sample->_resampler_ratio;
+  
+  return (double)num_frames * resampler_ratio;
+  //return sample->_interior_end - sample->_interior_start;
+}
+
 int64_t SEQTRACKPLUGIN_get_total_num_frames_in_sample(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
   
@@ -1050,6 +1221,16 @@ const radium::DiskPeaks *SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int
     return NULL;
 
   return sample->_peaks;
+}
+
+double SEQTRACKPLUGIN_get_resampler_ratio(const SoundPlugin *plugin, int64_t id){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 1.0);
+  
+  Sample *sample = get_sample(plugin, id, true, true);
+  if (sample==NULL)
+    return 1.0;
+
+  return sample->_resampler_ratio;
 }
 
 /*

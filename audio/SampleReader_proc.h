@@ -47,7 +47,9 @@ extern void SAMPLEREADER_prepare_to_play(radium::SampleReader *reader, int64_t p
 extern int64_t SAMPLEREADER_get_total_num_frames_in_sample(radium::SampleReader *reader);
 extern void SAMPLEREADER_set_permanent_samples(radium::SampleReader *reader, int64_t first_sample, int64_t first_sample2);
 extern int SAMPLEREADER_get_num_channels(radium::SampleReader *reader);
+extern double SAMPLEREADER_get_samplerate(radium::SampleReader *reader);
 extern const wchar_t *SAMPLEREADER_get_sample_name(radium::SampleReader *reader);
+extern const wchar_t *SAMPLEREADER_get_filename(radium::SampleReader *reader);
 
 extern bool RT_SAMPLEREADER_release_all_cached_data(radium::SampleReader *reader);
 extern float *RT_SAMPLEREADER_get_buffer(radium::SampleReader *reader, const int ch, int &num_frames);

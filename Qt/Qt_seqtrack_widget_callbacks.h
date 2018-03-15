@@ -743,7 +743,12 @@ public:
 
     if (x2 < t_x1)
       return;
-    
+
+    if (time1 >= time2){
+      R_ASSERT_NON_RELEASE(time1-2 <= time2);
+      return;
+    }
+
     if (x1 < t_x1) { // if seqblock starts before visible area
       time1 = R_SCALE(t_x1,
                       x1, x2,
@@ -781,7 +786,7 @@ public:
 
       int64_t last_used_end_time = time1;
 
-      const float m = 0.3f; // half minimum waveform height (to avoid silence not showing)
+      const float m = 0.3f; // half minimum waveform height (to avoid blank gfx for silent audio)
           
       bool has_data = true;
       double min_y = 0.0;
@@ -812,7 +817,7 @@ public:
             } else {
               min = 0.0f;
               max = 0.0f;
-              has_data = false; // I.e. waveform is not finished loading. (SEQUENCER_update() is called often while loading, and when finished loading).
+              has_data = false; // I.e. waveform is not finished loading. (SEQUENCER_update() is called often while loading, and also when finished loading).
             }
 
             min_y = scale_double(min, -1, 1, y1+m, y2   ) - m;
@@ -858,11 +863,13 @@ public:
       
       const radium::DiskPeaks *disk_peaks = SEQTRACKPLUGIN_get_peaks(plugin, seqblock->sample_id);
       if (disk_peaks != NULL){
-        
+
+        const double resample_ratio = SEQTRACKPLUGIN_get_resampler_ratio(plugin, seqblock->sample_id);
+          
         const double x1 = rect.x();
         const double x2 = rect.x() + rect.width();
-        const int64_t time1 = seqblock->gfx.interior_start;
-        const int64_t time2 = seqblock->gfx.interior_end;
+        const int64_t time1 = seqblock->gfx.interior_start / resample_ratio;
+        const int64_t time2 = seqblock->gfx.interior_end / resample_ratio;
 
         const double y1 = rect.y() + header_height;
         const double y2 = rect.y() + rect.height();
@@ -892,7 +899,7 @@ public:
                                             t_x1, t_x2);
 
           drawWaveform(p, plugin, disk_peaks, seqblock, is_gfx, interior_waveform_color,
-                       time2, seqblock->gfx.default_duration,
+                       time2, seqblock->gfx.default_duration / resample_ratio,
                        x2, i2_x2,
                        y1, y2);
         }
