@@ -26,12 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 //extern int errno;
 
-struct PlayListHolder{
-	struct ListHeader1 l;
-	NInt listnum;
-};
-#define NextPlayListHolder(a) ((struct PlayListHolder *)((a)->l.next))
-
 struct PatchNumHolder{
 	struct ListHeader1 l;
 	NInt blocknum;

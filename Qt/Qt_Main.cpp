@@ -251,25 +251,25 @@ void obtain_keyboard_focus_without_greying(void){
 }
 
 void obtain_keyboard_focus(void){
-  printf("OBTAIN_KEYBOARD_FOCUS called.... ");
+  //printf("OBTAIN_KEYBOARD_FOCUS called.... ");
   if (g_radium_runs_custom_exec==false){
-    printf("... Got it\n");
+    //printf("... Got it\n");
     editor_has_keyboard = false;
     set_grey_editor(!editor_has_keyboard_focus());
   }else{
-    printf("... Failed\n");
+    //printf("... Failed\n");
   }
   //root->song->tracker_windows->must_redraw_editor = true;
 }
 
 void release_keyboard_focus(void){
-  printf("  RELEASE keyboard focus called.... ");
+  //printf("  RELEASE keyboard focus called.... ");
   if (g_radium_runs_custom_exec==false){
-    printf("... Got it\n");
+    //printf("... Got it\n");
     editor_has_keyboard = true;
     set_grey_editor(!editor_has_keyboard_focus());
   }else{
-    printf("... Failed\n");
+    //printf("... Failed\n");
   }
   //root->song->tracker_windows->must_redraw_editor = true;
 }

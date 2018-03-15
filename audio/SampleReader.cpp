@@ -43,6 +43,8 @@ struct RemoveAdd{
   int64_t r_extra_slice_end = -1;
   
   RemoveAdd(int64_t new_start, int64_t new_end, int64_t old_start, int64_t old_end){
+    //printf("%d %d\n", new_end <= old_start, old_end <= new_start);
+
     if (new_end <= old_start || old_end <= new_start ) {
       /*       oooo
        *   nnnn
@@ -55,9 +57,10 @@ struct RemoveAdd{
       a_slice_end = new_end;
       r_slice_start = old_start;
       r_slice_end = old_end;
+
     } else if (new_start < old_start) {
     
-      if (new_end > old_end){
+      if (new_end >= old_end){
         /*     ooo
          *   nnnnnnn
          */
@@ -67,7 +70,7 @@ struct RemoveAdd{
         
         a_extra_slice_start = old_end;
         a_extra_slice_end = new_end;
-      } else if (old_end > old_start) {
+      } else if (old_end >= old_start) {
         /*     oooooo
          *   nnnnn
          */
@@ -79,9 +82,9 @@ struct RemoveAdd{
         r_slice_end = old_end;
       }
       
-    } else if (old_start < new_start) {
+    } else if (old_start <= new_start) {
 
-      if (old_end > new_end ) {
+      if (old_end >= new_end ) {
         /*   ooooooo
          *     nnn
          */
@@ -91,7 +94,7 @@ struct RemoveAdd{
         
         r_extra_slice_start = new_end;
         r_extra_slice_end = old_end;
-      } else if (new_end > old_end) {
+      } else if (new_end >= old_end) {
         /*   ooooooo
          *     nnnnnnnn
          */
@@ -111,7 +114,7 @@ struct RemoveAdd{
 
 #if defined(TEST_MAIN)
 
-// g++ SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++11 && ./a.out 
+// g++ SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++11 -g && ./a.out 
 
 #include <stdio.h>
 #include <assert.h>
@@ -188,6 +191,32 @@ int main(){
     assert(x.a_extra_slice_start==x.a_extra_slice_end);
     assert(x.r_extra_slice_start==x.r_extra_slice_end);
   }
+
+  {RemoveAdd x(0,2,0,1);
+    assert(x.r_slice_start==x.r_slice_end);
+    assert(x.a_slice_start==1);
+    assert(x.a_slice_end==2);
+    assert(x.a_extra_slice_start==x.a_extra_slice_end);
+    assert(x.r_extra_slice_start==x.r_extra_slice_end);}
+  {RemoveAdd x(0,2,1,2);
+    assert(x.r_slice_start==x.r_slice_end);
+    assert(x.a_slice_start==0);
+    assert(x.a_slice_end==1);
+    assert(x.a_extra_slice_start==x.a_extra_slice_end);
+    assert(x.r_extra_slice_start==x.r_extra_slice_end);}
+
+  {RemoveAdd x(0,1,0,2);
+    assert(x.a_slice_start==x.a_slice_end);
+    assert(x.r_extra_slice_start==1);
+    assert(x.r_extra_slice_end==2);
+    assert(x.a_extra_slice_start==x.a_extra_slice_end);
+    assert(x.r_slice_start==x.r_slice_end);}
+  {RemoveAdd x(1,2,0,2);
+    assert(x.a_slice_start==x.a_slice_end);
+    assert(x.r_slice_start==0);
+    assert(x.r_slice_end==1);
+    assert(x.a_extra_slice_start==x.a_extra_slice_end);
+    assert(x.r_extra_slice_start==x.r_extra_slice_end);}
 
   return 0;
 }
@@ -296,6 +325,7 @@ class SampleProvider{
 public:
 
   int _num_ch;
+  double _samplerate;
   int64_t _num_slices;
   int64_t _num_frames;
 
@@ -350,6 +380,7 @@ public:
     sf_close(sndfile);
 
     _num_ch = sf_info.channels;
+    _samplerate = sf_info.samplerate;
     _num_frames = sf_info.frames;
     _num_slices = _num_frames / SLICE_SIZE;
 
@@ -508,7 +539,7 @@ public:
 
 #if DO_DEBUG_PRINTING
     if (read_slice_start != -1)
-      printf("  %S: Read audio data from %f to %f\n", client->_provider->_filename_without_path, double(read_slice_start*SLICE_SIZE)/pc->pfreq, double((1+read_slice_end)*SLICE_SIZE)/pc->pfreq);
+      printf("     >>>> %S: Obtain audio data from %f to %f (slice %d -> %d (%d -> %d))\n", client->_provider->_filename_without_path, double(read_slice_start*SLICE_SIZE)/pc->pfreq, double((1+read_slice_end)*SLICE_SIZE)/pc->pfreq, (int)read_slice_start, (int)read_slice_end, (int)slice_start, (int)slice_end);
 #endif
     
     if (gotit!=NULL){
@@ -517,14 +548,22 @@ public:
     }
   }
 
-  void SPT_release_slices(int64_t slice_start, int64_t slice_end){
+  void SPT_release_slices(SampleProviderClient *client, int64_t slice_start, int64_t slice_end){
     R_ASSERT_RETURN_IF_FALSE(slice_start >= 0);
     R_ASSERT_RETURN_IF_FALSE(slice_end <= _num_slices);
     R_ASSERT_RETURN_IF_FALSE(slice_end > slice_start);
 
+#if DO_DEBUG_PRINTING
+    printf("      <<<< %S: Release audio data from %f to %f (slice %d -> %d)\n",  client->_provider->_filename_without_path, double(slice_start*SLICE_SIZE)/pc->pfreq, double((1+slice_end)*SLICE_SIZE)/pc->pfreq, (int)slice_start, (int)slice_end);
+#endif
+
     for(int64_t slice_num = slice_start ; slice_num < slice_end ; slice_num++){
       Slice &slice = _slices[slice_num];
 
+#if !defined(RELEASE)
+      if(slice.num_users==0)
+        abort();
+#endif
       R_ASSERT_RETURN_IF_FALSE(slice.num_users > 0);
 
       slice.num_users--;
@@ -609,8 +648,7 @@ private:
         break;
 
       case Command::Type::RELEASE_:
-        //printf("Release %p (%d -> %d)\n", command.client, (int)command.slice_start, (int)command.slice_end);
-        command.client->_provider->SPT_release_slices(command.slice_start, command.slice_end);
+        command.client->_provider->SPT_release_slices(command.client, command.slice_start, command.slice_end);
         break;
 
       case Command::Type::CLOSE_SNDFILE_:
@@ -659,8 +697,12 @@ public:
       return true;
     
     R_ASSERT_NON_RELEASE(slice_end>slice_start);
+    R_ASSERT_NON_RELEASE(slice_end<=client->_provider->_num_slices);
     
     Command command = {SampleProviderThread::Command::Type::OBTAIN, client, slice_start, slice_end, gotit};
+#if DO_DEBUG_PRINTING
+    printf("..........Req.Obtain %p (%d -> %d)\n", command.client, (int)command.slice_start, (int)command.slice_end);
+#endif
     return _queue.tryPut(command);
   }
 
@@ -671,7 +713,11 @@ public:
     R_ASSERT_NON_RELEASE(slice_end>slice_start);
     
     //printf("Req release %p\n", client);
+
     Command command = {SampleProviderThread::Command::Type::RELEASE_, client, slice_start, slice_end, NULL};
+#if DO_DEBUG_PRINTING
+    printf("..........Req.Release %p (%d -> %d)\n%s\n", command.client, (int)command.slice_start, (int)command.slice_end, "");//JUCE_get_backtrace());
+#endif
     return _queue.tryPut(command);
   }
 
@@ -720,11 +766,13 @@ public:
   bool _has_requested_deletion = false;
   
   const int _num_ch;
+  const double _samplerate;
 
   SampleReader(SampleProvider *provider)
     : SampleProviderClient(provider, this)
     , _ch_pos((int64_t*)V_calloc(provider->_num_ch, sizeof(int64_t)))
     , _num_ch(provider->_num_ch)
+    , _samplerate(provider->_samplerate)
   {
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     
@@ -754,8 +802,12 @@ public:
       LOCKASSERTER_EXCLUSIVE(&lockAsserter);
       
       release_permanent_slices();
-      
-      release_all_cached_data(true);
+
+      if(release_all_cached_data(true)){
+#if DO_DEBUG_PRINTING
+        printf("    request_deletion for %p\n", this);
+#endif
+      }
 
       _has_requested_deletion=true; // Must do this before calling "g_spt.RT_request_delete" since 'this' can be deleted at any time after that call.
     }
@@ -853,11 +905,22 @@ public:
   
   // Called very often
   void set_and_obtain_first_slice(int64_t new_first_slice, int64_t new_first_slice2){
+    if (new_first_slice2 > _provider->_num_slices){
+      R_ASSERT_NON_RELEASE(new_first_slice2 - 2 <= _provider->_num_slices);
+      new_first_slice2 = _provider->_num_slices;
+    }
+
+    R_ASSERT_RETURN_IF_FALSE(new_first_slice >= 0);
+    R_ASSERT_RETURN_IF_FALSE(new_first_slice2 >= new_first_slice);
 
     if(new_first_slice==_first_slice && new_first_slice2==_first_slice2)
       return;
 
     const RemoveAdd x(new_first_slice, new_first_slice2, _first_slice, _first_slice2);
+
+#if DO_DEBUG_PRINTING
+    printf("                 set_and_obtain %p.   Old: %d -> %d.  New: %d -> %d. a: %d -> %d. x: %d -> %d\n", this, (int)_first_slice, (int)_first_slice2, (int)new_first_slice, (int)new_first_slice2, (int)x.a_slice_start, (int)x.a_slice_end, (int)x.a_extra_slice_start, (int)x.a_extra_slice_end);
+#endif
 
     request_obtain(x.a_slice_start,       x.a_slice_end,       false,          NULL);
     request_obtain(x.a_extra_slice_start, x.a_extra_slice_end, false,          NULL);
@@ -1207,12 +1270,20 @@ int SAMPLEREADER_get_num_channels(SampleReader *reader){
   return reader->_num_ch;
 }
 
+double SAMPLEREADER_get_samplerate(SampleReader *reader){
+  return reader->_samplerate;
+}
+
 int64_t SAMPLEREADER_get_total_num_frames_in_sample(SampleReader *reader){
   return reader->_provider->_num_frames;
 }
 
 const wchar_t *SAMPLEREADER_get_sample_name(SampleReader *reader){
   return reader->_provider->_filename_without_path;
+}
+
+const wchar_t *SAMPLEREADER_get_filename(SampleReader *reader){
+  return reader->_provider->_filename;
 }
 
 unsigned int SAMPLEREADER_get_sample_color(const wchar_t *filename){

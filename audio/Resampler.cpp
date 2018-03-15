@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TEST_MAIN
 
   #include "../common/nsmtracker.h"
+  #include "../common/OS_visual_input.h"
+
   #include "Resampler_proc.h"
 
 #else
@@ -44,7 +46,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   #define R_MIN(a,b) (((a)<(b))?(a):(b))
 
 #endif
-
 
 
 
@@ -186,17 +187,20 @@ struct SincResampler : public Resampler{
     int ret = (int)src_callback_read(_src_state, ratio, num_frames, out);
 
     if(ret==0){
+#if !defined(RELEASE)
       if(src_error(_src_state)!=0)
-        printf("Error? %d: \"%s\". ratio: %f\n",
-               src_error(_src_state),
-               src_strerror(src_error(_src_state)),
-               ratio);
+        RT_message("Error? %d: \"%s\". ratio: %f\n",
+                   src_error(_src_state),
+                   src_strerror(src_error(_src_state)),
+                   ratio);
+#endif
       return 0;
     }else
       return ret;
   }
 
   void reset() override {
+    _last_ratio = -1.0;
     src_reset(_src_state);
   }
 };

@@ -22,7 +22,7 @@ namespace radium{
 
 class GranulatorCallback{
 public:
-  virtual float *get_next_sample_block(const int ch, int &num_frames) = 0;
+  virtual float *get_next_granulator_sample_block(const int ch, int &num_frames) = 0;
 
   virtual ~GranulatorCallback() = default; // Crazy c++ stuff.
 };
@@ -57,7 +57,7 @@ private:
     
     float get_sample(void){
       if (_pos==_num_frames){
-        _samples = _callback->get_next_sample_block(_ch, _num_frames);
+        _samples = _callback->get_next_granulator_sample_block(_ch, _num_frames);
         _pos = 0;
       }
       
