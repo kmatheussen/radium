@@ -2047,6 +2047,20 @@ int64_t getSampleLength(const_char* w_filename){
   return length;
 }
 
+/*
+void splitSeqblock(int64_t pos, int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
+  if (seqblock->block!=NULL){
+    handleError("splitSeqblock: Splitting editor block is not supported yet");
+    return;
+  }
+
+  evalScheme(talloc_format("(FROM_C-cut-all-selected-seqblocks %d " "%" PRId64 " %" PRId64 ")", pos, seqblocknum, seqtracknum));
+}
+*/
 
 /*
 void selectSeqblock(int seqblocknum, int seqtracknum){

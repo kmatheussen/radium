@@ -489,6 +489,8 @@
     randomly-delete-notes-range
     randomly-delete-notes-track
     randomly-delete-notes-block
+    FROM_C-split-sample-seqblock-under-mouse
+    if
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

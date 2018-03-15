@@ -5595,40 +5595,63 @@
                               #t)))))))
 
 (define (split-sample-seqblock pos seqtracknum seqblocknum)
-  (define seqblocks-state (to-list (<ra> :get-seqblocks-state seqtracknum)))
-  (define seqblock (seqblocks-state seqblocknum))
+  (call-with-exit
+   (lambda (return)
+     (define seqblocks-state (to-list (<ra> :get-seqblocks-state seqtracknum)))
+     (define seqblock (seqblocks-state seqblocknum))
+     
+     (define stretch (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
+     (define t1 (seqblock :start-time))
+     (define i1 (seqblock :interior-start))
+     (define i2 (seqblock :interior-end))
+     (define s1 (- t1 (* i1 stretch)))
+     
+     (define interior-split (to-integer (/ (- pos s1) stretch)))
+     
+     (if (<= interior-split i1)
+         (return #f))
+     (if (>= interior-split i2)
+         (return #f))
 
-  (define stretch (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
-  (define t1 (seqblock :start-time))
-  (define i1 (seqblock :interior-start))
-  (define i2 (seqblock :interior-end))
-  (define s1 (- t1 (* i1 stretch)))
-  
-  (define interior-split (to-integer (/ (- pos s1) stretch)))
+     (define seqblock1 (copy-hash seqblock
+                                  :end-time pos
+                                  :interior-end interior-split))
+     
+     (define seqblock2 (copy-hash seqblock
+                                  :start-time pos
+                                  :interior-start interior-split))
+     
+     (define new-seqblocks-state (append (if (= 0 seqblocknum)
+                                             '()
+                                             (take seqblocks-state seqblocknum))
+                                         (list seqblock1 seqblock2)
+                                         (if (= (1- (length seqblocks-state)) seqblocknum)
+                                             '()
+                                             (sublist seqblocks-state (1+ seqblocknum) (length seqblocks-state)))))
+     
+     (try-finally :try (lambda ()                   
+                         (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
+                         (<ra> :undo-sequencer)
+                         (<ra> :apply-gfx-seqblocks seqtracknum))
+                  :failure (lambda ()
+                             (<ra> :cancel-gfx-seqblocks seqtracknum)))
+     #t)))
 
-  (define seqblock1 (copy-hash seqblock
-                               :end-time pos
-                               :interior-end interior-split))
+(define (FROM_C-split-sample-seqblock-under-mouse use-grid)
+  (let ((seqtracknum *current-seqtrack-num*))
+    (and seqtracknum
+         (let ((seqblock-info *current-seqblock-info*))
+           (and seqblock-info          
+                (let ((seqblocknum (seqblock-info :seqblocknum)))
+                  (and (not (<ra> :seqblock-holds-block seqblocknum seqtracknum))
+                       (let* ((X (<ra> :get-mouse-pointer-x))
+                              (seqpos (get-sequencer-pos-from-x X))
+                              (pos (if use-grid
+                                       (<ra> :get-seq-gridded-time seqpos seqtracknum (<ra> :get-seq-block-grid-type))
+                                       seqpos)))
+                         (split-sample-seqblock pos seqtracknum seqblocknum)
+                         #t))))))))
   
-  (define seqblock2 (copy-hash seqblock
-                               :start-time pos
-                               :interior-start interior-split))
-  
-  (define new-seqblocks-state (append (if (= 0 seqblocknum)
-                                          '()
-                                          (take seqblocks-state seqblocknum))
-                                      (list seqblock1 seqblock2)
-                                      (if (= (1- (length seqblocks-state)) seqblocknum)
-                                          '()
-                                          (sublist seqblocks-state (1+ seqblocknum) (length seqblocks-state)))))
-                   
-  (try-finally :try (lambda ()                   
-                      (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
-                      (<ra> :undo-sequencer)
-                      (<ra> :apply-gfx-seqblocks seqtracknum))
-               :failure (lambda ()
-                          (<ra> :cancel-gfx-seqblocks seqtracknum))))
-
 ;; seqblock menu
 (add-mouse-cycle
  (make-mouse-cycle
