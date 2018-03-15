@@ -438,7 +438,7 @@ static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct 
 }
 
 static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, const dyn_t envelope_state, double state_samplerate, int64_t seqtime, bool is_gfx){
-#if 1 // defined(RELEASE)
+#if 0 // defined(RELEASE)
   static bool has_shown_message = false;
   if (has_shown_message==false){
     GFX_Message(NULL, "This is a technology preview. Use at your own risk. Please don't send crash messages. No need to report bugs yet.");
