@@ -727,7 +727,7 @@ struct Sample{
     bool i_am_playing = I_am_playing();
     
     {
-      radium::PlayerLock lock(i_am_playing);
+      radium::PlayerLock lock; // Must lock even if playing since RT_process (which sometimes pushes to _free_readers) is called when not playing.
       
       LOCKASSERTER_EXCLUSIVE(&lockAsserter);
       
@@ -879,12 +879,14 @@ struct Sample{
 
   // Called after scheduler and before audio processing.
   bool RT_called_per_block(struct SeqTrack *seqtrack, int64_t curr_start_time, int64_t curr_end_time){ // (end_time-start_time is usually RADIUM_BLOCKSIZE.)
-    LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
     if (is_really_playing_song()==false){
       //_is_playing = false;
       return false;
     }
+
+    // Must place this line after the is_really_playing_song() check. If not, we sometimes (quite rarely) gets lockAsserter hit here and in prepare_to_play.
+    LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     
     //printf("   RT_called_per_block %d -> %d (%d)\n", (int)curr_start_time, (int)curr_end_time, int(curr_end_time-curr_start_time));
     
