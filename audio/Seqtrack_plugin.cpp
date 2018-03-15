@@ -600,14 +600,14 @@ struct Sample{
   void interior_start_may_have_changed(void){
     double start = _seqblock->t.interior_start;
     double end = _seqblock->t.interior_start + ((double)HOW_MUCH_TO_PREPARE_BEFORE_STARTING * (double)pc->pfreq / _seqblock->t.stretch);
+    //printf("o: %f / %f\n", start, end);
+    end = R_MIN(end, _seqblock->t.interior_end);
 
     start /= _resampler_ratio;
     start = R_MAX(0, start-1); // subtract 1 in case floating point inaccuracy caused number (for some reason) to be one higher.
 
     end /= _resampler_ratio;
-    end++; // add 1 in case floating point inaccuracy caused number (for some reason) to be one higher.
-    end = R_MIN(end, 1 + (_seqblock->t.interior_end / _seqblock->t.stretch));
-    end = R_MIN(end, _total_num_frames_in_sample);
+    end = R_MIN(end+1, _total_num_frames_in_sample); // add 1 in case floating point inaccuracy caused number (for some reason) to be one higher.
 
     if (start >= end){
       R_ASSERT_NON_RELEASE(start-16 < end);
