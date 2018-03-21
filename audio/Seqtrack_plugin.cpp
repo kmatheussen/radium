@@ -238,7 +238,7 @@ private:
     }
   }
 
-  void RT_only_resample_not_granulate(float **output2, int num_frames, bool do_add, bool add_to_ch1_too, float volume) const {
+  void RT_only_resample_not_granulate(float **output2, const int num_frames, const bool do_add, const bool add_to_ch1_too, const float volume) const {
 
 
     for(int ch = 0 ; ch < _num_ch ; ch++){
@@ -251,8 +251,20 @@ private:
 
           float *buffer = _resamplers[ch]->_buffer;
           num_frames_read = RESAMPLER_read(_resamplers[ch]->_resampler, _resampler_ratio, R_MIN(samples_left, RESAMPLER_BUFFER_SIZE), buffer);
-          for(int i=0;i<num_frames_read;i++)
-            output[i] += volume * buffer[i];
+
+          if (add_to_ch1_too && ch==0 && _num_ch==1) {
+
+            for(int i=0;i<num_frames_read;i++){
+              output[0] += volume * buffer[i];
+              output[1] += volume * buffer[i];
+            }
+
+          } else {
+
+            for(int i=0;i<num_frames_read;i++)
+              output[i] += volume * buffer[i];
+
+          }
 
         } else {
 
@@ -266,10 +278,6 @@ private:
         samples_left -= num_frames_read;
       }
     }
-
-    if (do_add && add_to_ch1_too && _num_ch==1)
-      for(int i=0;i<num_frames;i++)
-        memcpy(output2[1], output2[0], sizeof(float)*num_frames);
   }
 
 public:
