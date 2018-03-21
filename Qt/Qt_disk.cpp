@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFile>
 #include <QTextStream>
 #include <QTemporaryFile>
+#include <QSaveFile>
 #include <QDir>
 #include <QDateTime>
 
@@ -117,7 +118,7 @@ struct _radium_os_disk {
 private:
   
   QFile *read_file;
-  QTemporaryFile *temporary_write_file;
+  QSaveFile *save_file; //temporary_write_file;
 
 public:
   
@@ -131,7 +132,7 @@ public:
   _radium_os_disk(QString filename, enum Type type, bool is_binary=false)
     : filename(filename)
     , read_file(NULL)
-    , temporary_write_file(NULL)
+    , save_file(NULL)
     , type(type)
     , is_binary(is_binary)
     , stream(NULL)
@@ -143,14 +144,14 @@ public:
       delete stream;
     if (read_file!=NULL)
       delete read_file;
-    if (temporary_write_file!=NULL)
-      delete temporary_write_file;
+    if (save_file!=NULL)
+      delete save_file;
   }
 
-  QFile *file(void){
+  QFileDevice *file(void){
     if (type==WRITE){
-      R_ASSERT(temporary_write_file!=NULL);
-      return temporary_write_file;
+      R_ASSERT(save_file!=NULL);
+      return save_file;
     } else {
       R_ASSERT(read_file!=NULL);
       return read_file;
@@ -158,17 +159,21 @@ public:
   }
   
   bool open(void){
-    R_ASSERT(temporary_write_file==NULL);
+    R_ASSERT(save_file==NULL);
     R_ASSERT(read_file==NULL);
     
     if (type==WRITE) {
       
-      //R_ASSERT(is_binary==false); // not supported yet
-      
-      temporary_write_file = new QTemporaryFile();
-      if (temporary_write_file->open()==false)
-        goto failed;
-      
+      save_file = new QSaveFile(filename);
+
+      if (is_binary) {
+        if (save_file->open(QIODevice::WriteOnly)==false)
+          goto failed;
+      } else {
+        if (save_file->open(QIODevice::WriteOnly | QIODevice::Text)==false)
+          goto failed;
+      }
+
     } else {
       
       read_file = new QFile(filename);
@@ -191,9 +196,9 @@ public:
 
     
   failed:
-    if (temporary_write_file!=NULL) {
-      delete temporary_write_file;
-      temporary_write_file = NULL;
+    if (save_file!=NULL) {
+      delete save_file;
+      save_file = NULL;
     }
     if (read_file!=NULL) {
       delete read_file;
@@ -205,7 +210,7 @@ public:
 
   bool transfer_temporary_file_to_file(void){
     R_ASSERT(type==WRITE);
-    R_ASSERT(temporary_write_file != NULL);
+    R_ASSERT(save_file != NULL);
 
 #if SUPPORT_TEMP_WRITING_FUNCTIONS
     if (filename=="")
@@ -213,15 +218,17 @@ public:
 #endif
 
     QString backup_filename = filename + ".bak";
-    if (QFile::exists(backup_filename))
-      QFile::remove(backup_filename);
-
     bool is_renamed = false;
-    
-    if (QFile::exists(filename))
-      is_renamed = QFile::rename(filename, backup_filename);
 
-    bool ret = QFile::copy(temporary_write_file->fileName(), filename);
+    if (QFile::exists(filename)) {
+
+      if (QFile::exists(backup_filename))
+        QFile::remove(backup_filename);
+
+      is_renamed = QFile::copy(filename, backup_filename);
+    }
+
+    bool ret = save_file->commit(); //QFile::copy(temporary_write_file->fileName(), filename);
     if (ret==false){
       QString message("Error. Unable to save file \"" + filename + "\"" + (is_renamed==false?"":(QString(" (The old file was renamed to \"")+backup_filename+"\").")));
       if (THREADING_is_main_thread())
@@ -263,18 +270,22 @@ public:
   bool close(void){
     bool ret = true;
 
-    file()->close();
-    
-    QFile::FileError error = file()->error();
-    if (error != 0) {
-      GFX_Message(NULL, "Error %s file: %s",type==WRITE ? "writing to" : "reading from", error_to_string(error).toUtf8().constData());
-      ret = false;
-    }
+    if (type==READ) {
 
-    if (type==WRITE) {
+      file()->close();
+    
+      QFile::FileError error = file()->error();
+      if (error != 0) {
+        GFX_Message(NULL, "Error %s file: %s",type==WRITE ? "writing to" : "reading from", error_to_string(error).toUtf8().constData());
+        ret = false;
+      }
+
+    } else {
+
       bool copyret = transfer_temporary_file_to_file();
       if (copyret==false)
         ret = false;
+
     }
 
     return ret;
