@@ -244,6 +244,7 @@ private:
     for(int ch = 0 ; ch < _num_ch ; ch++){
       int samples_left = num_frames;
       float *output = output2[ch];
+      int pos = 0;
       while (samples_left > 0){
 
         int num_frames_read;
@@ -254,14 +255,14 @@ private:
 
           if (add_to_ch1_too && ch==0 && _num_ch==1) {
 
-            for(int i=0;i<num_frames_read;i++){
-              output[0] += volume * buffer[i];
-              output[1] += volume * buffer[i];
+            for(int i=pos;i<pos+num_frames_read;i++){
+              output2[0][i] += volume * buffer[i];
+              output2[1][i] += volume * buffer[i];
             }
 
           } else {
 
-            for(int i=0;i<num_frames_read;i++)
+            for(int i=pos;i<pos+num_frames_read;i++)
               output[i] += volume * buffer[i];
 
           }
@@ -274,7 +275,7 @@ private:
 
         }
 
-        output += num_frames_read;
+        pos += num_frames_read;
         samples_left -= num_frames_read;
       }
     }
