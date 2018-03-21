@@ -269,7 +269,7 @@ private:
 
     if (do_add && add_to_ch1_too && _num_ch==1)
       for(int i=0;i<num_frames;i++)
-        output2[1] = output2[0];
+        memcpy(output2[1], output2[0], sizeof(float)*num_frames);
   }
 
 public:
