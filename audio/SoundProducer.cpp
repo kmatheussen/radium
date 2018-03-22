@@ -562,11 +562,11 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
 
 #if !defined(RELEASE)
     // assert that inputs and outputs are not changed by the plugin. (is there any way to mark the first layer of a 2d array as const, but not the second layer)
-    float *inputs_check[R_MAX(1, plugin->num_inputs)];
-    float *outputs_check[R_MAX(1, plugin->num_outputs)];
-    for(int i=0;i<plugin->num_inputs;i++)
+    float *inputs_check[R_MAX(1, plugin->type->num_inputs)];
+    float *outputs_check[R_MAX(1, plugin->type->num_outputs)];
+    for(int i=0;i<plugin->type->num_inputs;i++)
       inputs_check[i]=inputs[i];
-    for(int i=0;i<plugin->num_outputs;i++)
+    for(int i=0;i<plugin->type->num_outputs;i++)
       outputs_check[i]=outputs[i];
 #endif
 
@@ -574,9 +574,9 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
 
 #if !defined(RELEASE)
     // assert that inputs and outputs are not changed by the plugin.
-    for(int i=0;i<plugin->num_inputs;i++)
+    for(int i=0;i<plugin->type->num_inputs;i++)
       R_ASSERT(inputs_check[i]==inputs[i]);
-    for(int i=0;i<plugin->num_outputs;i++)
+    for(int i=0;i<plugin->type->num_outputs;i++)
       R_ASSERT(outputs_check[i]=outputs[i]);
 #endif
 
