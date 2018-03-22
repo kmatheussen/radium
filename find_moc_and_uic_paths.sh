@@ -10,6 +10,9 @@ if which $1 >/dev/null 2>/dev/null ; then
     elif $1 -v 2>&1 | grep qt$RADIUM_QT_VERSION >/dev/null ; then
         echo $1
         exit 0
+    elif $1 -v 2>&1 | grep $1\ $RADIUM_QT_VERSION >/dev/null ; then
+        echo $1
+        exit 0
     fi
 fi
 
