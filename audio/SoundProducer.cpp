@@ -559,8 +559,26 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
       memset(outputs[ch], 0, sizeof(float)*num_frames);
     
   } else {
-  
+
+#if !defined(RELEASE)
+    // assert that inputs and outputs are not changed by the plugin. (is there any way to mark the first layer of a 2d array as const, but not the second layer)
+    float *inputs_check[R_MAX(1, plugin->num_inputs)];
+    float *outputs_check[R_MAX(1, plugin->num_outputs)];
+    for(int i=0;i<plugin->num_inputs;i++)
+      inputs_check[i]=inputs[i];
+    for(int i=0;i<plugin->num_outputs;i++)
+      outputs_check[i]=outputs[i];
+#endif
+
     plugin->type->RT_process(plugin, time, num_frames, inputs, outputs);
+
+#if !defined(RELEASE)
+    // assert that inputs and outputs are not changed by the plugin.
+    for(int i=0;i<plugin->num_inputs;i++)
+      R_ASSERT(inputs_check[i]==inputs[i]);
+    for(int i=0;i<plugin->num_outputs;i++)
+      R_ASSERT(outputs_check[i]=outputs[i]);
+#endif
 
     const char *abnormal_signal_type = RT_check_abnormal_signal(plugin, num_frames, outputs);
 
@@ -689,10 +707,10 @@ struct SoundProducer {
 
   LatencyCompensatorDelay *_dry_sound_latencycompensator_delays;
   
-  float **_output_sound;
-
   float *_input_peaks;
   float *_volume_peaks;
+
+  float **_output_sound;
 
   // Scheduling, start
   //
@@ -895,8 +913,10 @@ public:
   
   void free_sound_buffers(){
 
-    for(int ch=0;ch<_num_outputs;ch++)
+    for(int ch=0;ch<_num_outputs;ch++){
+      //printf("  ----------------------- Soundproducer::free_sound_buffers: %p. %p[%d]: %p\n", this, _output_sound, ch, _output_sound[ch]);
       V_free(_output_sound[ch]);
+    }
 
     V_free(_output_sound);
   }
@@ -944,8 +964,9 @@ public:
     R_ASSERT(num_frames==RADIUM_BLOCKSIZE);
     
     _output_sound = (float**)(V_calloc(sizeof(float*),_num_outputs));
-    for(int ch=0;ch<_num_outputs;ch++)
+    for(int ch=0;ch<_num_outputs;ch++){
       _output_sound[ch] = (float*)V_calloc(sizeof(float),num_frames);
+    }
   }
 
   // Traverse graph backwards and see if we end up in the same position as we started.
