@@ -23,11 +23,11 @@ mywhich $PYTHONEXE
 #which guile-1.8
 mywhich guile
 
-if [ $4 == "test_packages" ] ; then
+if [[ $4 == "test_packages" ]] ; then
     echo "testing packages"
 fi
 
-if [ $4 == "test_build" ] ; then
+if [[ $4 == "test_build" ]] ; then
     echo "testing build"
 fi
 
@@ -38,7 +38,7 @@ if $1 -c "import sys ; sys.exit(sys.version[:1] == \"2\")" ; then
     exit 5
 fi
 
-if [ $4 == "test_build" ] ; then
+if [[ $4 == "test_build" ]] ; then
 
     if ! which $MOC ; then
         echo "Can not find moc. Make sure QTDIR and/or MOC is set correctly in the Makefile".
@@ -144,7 +144,7 @@ if [[ ! -f ~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/aeffect.h && ! -f ~/SDKs/"VST3
 fi
 
 
-if [ $4 == "test_build" ] ; then
+if [[ $4 == "test_build" ]] ; then
     if [ `uname` == "Linux" ] ; then
         if [ ! -f bin/packages/deletemetorebuild ] ; then
 	    echo
