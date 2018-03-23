@@ -5073,6 +5073,9 @@
                         )
 
 
+(define2 gakkgakk-last-value (curry-or not number? list?) #f) ;; TODO: Fix.
+(define2 gakkgakk-start-pos (curry-or number? list?) 0)
+(define2 gakkgakk-was-selected boolean? #f)
 
 (define2 gakkgakk-startseqtracknum integer? 0)
 (define2 gakkgakk-startseqblocknum integer? 0)
@@ -5108,7 +5111,6 @@
                                                                     (cond ((> (<ra> :get-num-selected-seqblocks) 1)
                                                                            (set-grid-type #t)
                                                                            
-                                                                           (set! gakkgakk-has-made-undo #f)                                                                    
                                                                            (set! gakkgakk-start-pos 0);;(<ra> :get-seqblock-start-time seqblocknum seqtracknum))
                                                                            (set! gakkgakk-was-selected is-selected)
                                                                            (set! gakkgakk-startseqtracknum seqtracknum)
@@ -5138,8 +5140,8 @@
                                          ;;(if (or #t (= 0 seqblocknum))
                                          ;;    0
                                          ;;    (<ra> :get-seqblock-end-time (1- seqblocknum) seqtracknum)))
-                        :Get-max-value (lambda (seqblock-infos)
-                                         100000000000)
+                        ;;:Get-max-value (lambda (seqblock-infos)
+                        ;;                 100000000000)
                                          ;;(define seqtracknum (seqblock-info :seqtracknum))
                                          ;;(define seqblocknum (seqblock-info :seqblocknum))
                                          ;;(define num-seqblocks (<ra> :get-num-seqblocks (seqblock-info :seqtracknum)))
