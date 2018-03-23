@@ -651,7 +651,7 @@ struct Sample{
 
       LOCKASSERTER_EXCLUSIVE(&_curr_reader->lockAsserter);
       
-      printf("    ==== RT_stop_playing stopping player. Fading out: %d\n", do_fade_out);
+      //printf("    ==== RT_stop_playing stopping player. Fading out: %d\n", do_fade_out);
 
       if(do_fade_out && _is_playing){
         
