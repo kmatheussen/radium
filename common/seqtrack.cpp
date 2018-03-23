@@ -2057,6 +2057,8 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos){
     VECTOR_insert(&root->song->seqtracks, new_seqtrack, pos);
   }
 
+  evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements+1));
+
   RT_SEQUENCER_update_sequencer_and_playlist();
 }
 
@@ -2093,7 +2095,8 @@ void SEQUENCER_delete_seqtrack(int pos){
     
     RT_SEQUENCER_update_sequencer_and_playlist();      
   }
-  
+
+  evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements-1));  
 }
 
 void SEQUENCER_set_looping(bool do_loop){
@@ -2183,6 +2186,8 @@ void SONG_init(void){
     set_plain_seqtrack_timing_no_pauses(seqtrack);
 
   }PLAYER_unlock();
+
+  evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements));
 }
 
 
@@ -2315,6 +2320,8 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
 
       ATOMIC_SET(root->song->curr_seqtracknum, new_curr_seqtracknum);
     }
+
+    evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements));
 
     if(HASH_has_key(state, "loop_start")) {
       root->song->looping.start = HASH_get_int(state, "loop_start");
