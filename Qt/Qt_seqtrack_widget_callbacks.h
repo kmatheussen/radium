@@ -847,7 +847,10 @@ public:
     const int header_height = get_block_header_height();
 
     QColor waveform_color = get_block_qcolor(WAVEFORM_COLOR_NUM, is_gfx);
-    QColor background_color = is_gfx ? get_block_qcolor(SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, is_gfx) : get_block_qcolor(SEQUENCER_BLOCK_AUDIO_FILE_BACKGROUND_COLOR_NUM, is_gfx);
+    QColor background_color = get_sample_color(_seqtrack, seqblock).lighter(250);
+    background_color.setAlpha(128);
+    if (is_gfx)
+      background_color = half_alpha(mix_colors(background_color, get_qcolor(SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM), 0.5), true);
     
     const SoundPlugin *plugin = (SoundPlugin*) _seqtrack->patch->patchdata;
     //    R_ASSERT(plugin!=NULL); // Commented out. Plugin can be NULL during loading.
