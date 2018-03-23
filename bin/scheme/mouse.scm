@@ -981,6 +981,11 @@
 
 (define2 *current-seqblock-info* (curry-or not hash-table?) #f)
 
+(define (FROM_C-call-me-when-num-seqtracks-might-have-changed new-num-seqtracks)
+  (if (and *current-seqtrack-num*
+           (>= *current-seqtrack-num* new-num-seqtracks))
+      (set! *current-seqtrack-num* #f)))
+
 ;;(define (update-current-seqblock-info!) )
   
 (add-mouse-move-handler
