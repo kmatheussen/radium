@@ -159,6 +159,35 @@ static inline void VECTOR_delete_last(vector_t *v){
   v->elements[v->num_elements]=NULL;
 }
 
+#ifdef _GNU_SOURCE
+typedef  int (*vector_sort_callback_t) (const void *a, const void *b);
+
+static inline int VECTOR_sort_comp(const void *a, const void *b, void *arg){
+  const struct SeqBlock *s1 = ((const struct SeqBlock **)a)[0];
+  const struct SeqBlock *s2 = ((const struct SeqBlock **)b)[0];
+  vector_sort_callback_t callback = (vector_sort_callback_t)arg;
+  return callback(s1, s2);
+}
+
+static inline void VECTOR_sort(vector_t *v, vector_sort_callback_t comp){
+  if(v->num_elements==0) // v->elements can be NULL when this happens, and qsort expects first argument to be !=NULL.
+    return;
+  
+  qsort_r(v->elements, v->num_elements, sizeof(void*), VECTOR_sort_comp, (void*)comp);
+}
+
+// Might be more efficient if there's a good chance v is sorted already, depending on the implementation of qsort.
+static inline void VECTOR_sort2(vector_t *v, vector_sort_callback_t comp){
+  for(int i=0;i<v->num_elements-1;i++)
+    if (comp(v->elements[i], v->elements[i+1]) > 0){
+      //printf("   NEEDS SORTING\n");
+      VECTOR_sort(v, comp);
+      return;
+    }
+}
+#endif
+
+
 #ifdef __cplusplus
 #define VECTOR_FOR_EACH(type,varname,vector) {                          \
   int iterator666;                                                      \
@@ -184,7 +213,6 @@ static inline void VECTOR_delete_last(vector_t *v){
 
 
 #ifdef __cplusplus
-
 
 #include "LockAsserter.hpp"
 
