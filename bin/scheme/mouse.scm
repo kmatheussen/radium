@@ -4540,8 +4540,12 @@
 
   :publicize ()
   (begin
-    (define stretch (/ (- (seqblock :end-time)
-                          curr-pos)
+    (define stretch (/ (- (if is-right
+                              curr-pos
+                              (seqblock :end-time))
+                          (if is-left
+                              curr-pos
+                              (seqblock :start-time)))
                        (- (seqblock :interior-end)
                           (seqblock :interior-start))))
     (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string stretch))))
@@ -4596,119 +4600,72 @@
     (maybe-make-undo)
     (<ra> :apply-gfx-seqblocks seqtracknum)))
 
-;; left handle
-(add-node-mouse-handler :Get-area-box (lambda()
-                                        (and *current-seqblock-info*
-                                             (not *current-seqautomation/distance*)
-                                             (let ((box (<ra> :get-box seqblock-left-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))))
-                                               ;;(c-display "BOX:" (box-to-string box))
-                                               box)))
-                        :Get-existing-node-info (lambda (X Y callback)
-                                                  (define seqblock-info *current-seqblock-info*)
-                                                  (define seqtracknum (seqblock-info :seqtracknum))
-                                                  (define seqblocknum (seqblock-info :seqblocknum))
-                                                  (define set-stretch (<new> :set-seqblock-stretch seqtracknum seqblocknum #t))
-                                                  (callback set-stretch (<ra> :get-seqblock-start-time seqblocknum seqtracknum) Y))
+(define (create-seqblock-stretch-handler is-left)
+  (add-node-mouse-handler :Get-area-box (lambda()
+                                          (and *current-seqblock-info*
+                                               (not *current-seqautomation/distance*)
+                                               (let ((box (if is-left
+                                                              (<ra> :get-box seqblock-left-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
+                                                              (<ra> :get-box seqblock-right-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum)))))
+                                                 ;;(c-display "BOX:" (box-to-string box))
+                                                 box)))
+                          :Get-existing-node-info (lambda (X Y callback)
+                                                    (define seqblock-info *current-seqblock-info*)
+                                                    (define seqtracknum (seqblock-info :seqtracknum))
+                                                    (define seqblocknum (seqblock-info :seqblocknum))
+                                                    (define set-stretch (<new> :set-seqblock-stretch seqtracknum seqblocknum is-left))
+                                                    (callback set-stretch
+                                                              (if is-left
+                                                                  (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
+                                                                  (<ra> :get-seqblock-end-time seqblocknum seqtracknum))
+                                                              Y))
+                          
+                          :Get-min-value (lambda (set-stretch)
+                                           (if is-left
+                                               0 ;; The move-seqblock-stretch-left class takes care of finding more accurate minimum value.
+                                               (set-stretch :min-value)))
+                          
+                          :Get-max-value (lambda (set-stretch)
+                                           (if is-left
+                                               (set-stretch :max-value)
+                                               #f))
+                          
+                          :Get-x (lambda (info) #f)
+                          :Get-y (lambda (info) #f)
+                          
+                          :Make-undo (lambda (_)
+                                       #f)
+                          
+                          :Create-new-node (lambda (X seqtracknum callback)
+                                             (assert #f)
+                                             #f)
+                          
+                          :Release-node (lambda (set-stretch)
+                                          (set-stretch :release))
+                          ;;(apply-seqblock-gfx-position seqblock-info #t))
+                          
+                          :Move-node (lambda (set-stretch Value Y)
+                                       (set-stretch :move Value Y)
+                                       set-stretch)
+                          
+                          
+                          :Publicize (lambda (set-stretch)
+                                       (set-stretch :publicize))
 
-                        :Get-min-value (lambda (set-stretch)
-                                         0) ;; The move-seqblock-stretch-left class takes care of finding more accurate minimum value.
-                        
-                        :Get-max-value (lambda (set-stretch)
-                                         (set-stretch :max-value))
-                        
-                        :Get-x (lambda (info) #f)
-                        :Get-y (lambda (info) #f)
+                          :Get-pixels-per-value-unit (lambda (set-stretch)
+                                                       (get-sequencer-pixels-per-value-unit))
+                          
+                          :Use-Place #f
+                          
+                          :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
+                          
+                          :Get-guinum (lambda() (<gui> :get-sequencer-gui))
+                          
+                          :Forgiving-box #f
+                          ))
 
-                        :Make-undo (lambda (_)
-                                     #f)
-                        
-                        :Create-new-node (lambda (X seqtracknum callback)
-                                           (assert #f)
-                                           #f)
-
-                        :Release-node (lambda (set-stretch)
-                                        (set-stretch :release))
-                                       ;;(apply-seqblock-gfx-position seqblock-info #t))
-
-                        :Move-node (lambda (set-stretch Value Y)
-                                     (set-stretch :move Value Y)
-                                     set-stretch)
-
-
-                        :Publicize (lambda (set-stretch)
-                                     (define seqblock (set-stretch :seqblock))
-                                     (define stretch (/ (- (seqblock :end-time)
-                                                           (set-stretch :curr-pos))
-                                                        (- (seqblock :interior-end)
-                                                           (seqblock :interior-start))))
-                                     (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string stretch)))
-                                     #t
-                                     )
-                        
-                        :Get-pixels-per-value-unit (lambda (set-stretch)
-                                                     (get-sequencer-pixels-per-value-unit))
-                        
-                        :Use-Place #f
-
-                        :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
-                        
-                        :Get-guinum (lambda() (<gui> :get-sequencer-gui))
-
-                        :Forgiving-box #f
-                        )
-
-;; right handle
-(add-node-mouse-handler :Get-area-box (lambda()
-                                        (and *current-seqblock-info* ;;(get-current-seqblock-info)
-                                             (not *current-seqautomation/distance*)
-                                             (let ((box (<ra> :get-box seqblock-right-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))))
-                                               ;;(c-display "BOX:" (box-to-string box))
-                                               ;;(<ra> :set-curr-seqblock seqblocknum seqtracknum)
-                                               box)))
-                        :Get-existing-node-info (lambda (X Y callback)
-                                                  (define seqblock-info *current-seqblock-info*)
-                                                  (define seqtracknum (seqblock-info :seqtracknum))
-                                                  (define seqblocknum (seqblock-info :seqblocknum))
-                                                  (define set-stretch (<new> :set-seqblock-stretch seqtracknum seqblocknum #f))
-                                                  (callback set-stretch (<ra> :get-seqblock-end-time seqblocknum seqtracknum) Y))
-
-                        :Get-min-value (lambda (set-stretch)
-                                         (set-stretch :min-value))
-                        
-                        :Get-x (lambda (info) #f)
-                        :Get-y (lambda (info) #f)
-
-                        :Make-undo (lambda (_)
-                                     #f)
-                        
-                        :Create-new-node (lambda (X seqtracknum callback)
-                                           (assert #f)
-                                           #f)
-
-                        :Release-node (lambda (set-stretch)
-                                        (set-stretch :release))
-                                       ;;(apply-seqblock-gfx-position seqblock-info #t))
-
-                        :Move-node (lambda (set-stretch Value Y)
-                                     (set-stretch :move Value Y)
-                                     set-stretch)
-
-                        :Publicize (lambda (set-stretch)
-                                     (set-stretch :publicize))
-
-                        :Get-pixels-per-value-unit (lambda (set-stretch)
-                                                     (get-sequencer-pixels-per-value-unit))
-                        
-                        :Use-Place #f
-
-                        :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
-                        
-                        :Get-guinum (lambda() (<gui> :get-sequencer-gui))
-
-                        :Forgiving-box #f
-                        )
-
-
+(create-seqblock-stretch-handler #t)
+(create-seqblock-stretch-handler #f)
 
 
 ;; seqblock move
