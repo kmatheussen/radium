@@ -51,6 +51,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "seqtrack_proc.h"
 
+static int seqblocks_comp(const void *a, const void *b){
+  const struct SeqBlock *s1 = (const struct SeqBlock *)a;
+  const struct SeqBlock *s2 = (const struct SeqBlock *)b;
+  
+  //R_ASSERT_NON_RELEASE(s1->t.time==s1->gfx.time);
+  //R_ASSERT_NON_RELEASE(s2->t.time==s2->gfx.time);
+
+  if (s1->t.time < s2->t.time)
+    return -1;
+  else if (s1->t.time > s2->t.time)
+    return 1;
+  else
+    return 0;
+}
+
+
 static int64_t get_seqblock_stime_default_duration(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool is_gfx){
   if (seqblock->block==NULL) {
     
@@ -497,30 +513,33 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
 // Ensures that two seqblocks doesn't overlap, and that a seqblock doesn't start before 0.
 // Preserves original pause times.
 static void legalize_seqtrack_timing(struct SeqTrack *seqtrack, bool is_gfx){
+  printf("Legalizing timing\n");
 
 #if !defined(RELEASE)
-  if (!is_gfx)
-    R_ASSERT(PLAYER_current_thread_has_lock());
+  //if (!is_gfx)
+  //  R_ASSERT(PLAYER_current_thread_has_lock()); (not true when creating from state. I.e. creating new seqtrack that isn't live yet)
 #endif
-  
+
   int64_t last_end_time = 0;
   int64_t time_to_add = 0;
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-    int64_t seq_block_start = (is_gfx ? seqblock->gfx.time : seqblock->t.time) + time_to_add;
-
-    if (seq_block_start < last_end_time) {
-      time_to_add += (last_end_time - seq_block_start);
-      seq_block_start = last_end_time;
+    if (seqblock->block != NULL){
+      int64_t seq_block_start = (is_gfx ? seqblock->gfx.time : seqblock->t.time) + time_to_add;
+      
+      if (seq_block_start < last_end_time) {
+        time_to_add += (last_end_time - seq_block_start);
+        seq_block_start = last_end_time;
+      }
+      
+      if (seq_block_start != seqblock->t.time) 
+        move_seqblock(seqblock, seq_block_start, is_gfx);
+      
+      last_end_time = is_gfx ? seqblock->gfx.time2 : seqblock->t.time2;
     }
-
-    if (seq_block_start != seqblock->t.time) 
-      move_seqblock(seqblock, seq_block_start, is_gfx);
-
-    last_end_time = is_gfx ? seqblock->gfx.time2 : seqblock->t.time2;
-    
   }END_VECTOR_FOR_EACH;
 
+  //VECTOR_sort(&seqtrack->seqblocks, seqblocks_comp);
 }
 
 void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack){
@@ -1168,6 +1187,7 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
   }
 
   R_ASSERT(seqblock->t.time==time);
+  R_ASSERT(seqblock->gfx.time==time);
 
   if (time2==-1)
     time2 = time + default_duration;
@@ -1271,6 +1291,7 @@ static void remove_all_gfx_samples(struct SeqTrack *seqtrack){
   }END_VECTOR_FOR_EACH;
 }
 
+
 void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struct SeqTrack *seqtrack, const int seqtracknum, enum ShowAssertionOrThrowAPIException error_type){
   R_ASSERT_RETURN_IF_FALSE(seqblocks_state.type==ARRAY_TYPE);
 
@@ -1297,6 +1318,21 @@ void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struc
     }
   }
 
+  VECTOR_sort2(seqtrack->gfx_seqblocks, seqblocks_comp);
+
+#if 0
+  // Assert that there are no pauses, and all blocks are in order.
+  printf("\n\n");
+  int64_t prev_end = 0;
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqtrack->gfx_seqblocks){
+    printf("%d: %d -> %d. (%d)\n", iterator666, (int)seqblock->t.time, (int)seqblock->t.time2, (int)seqblock->gfx.time);
+    if (llabs(prev_end-seqblock->t.time) > 500)
+      abort();
+    prev_end = seqblock->t.time2;
+  }END_VECTOR_FOR_EACH;
+  printf("\n\n");
+#endif
+
   RT_SEQUENCER_update_sequencer_and_playlist();
 }
 
@@ -1322,6 +1358,10 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
 
   R_ASSERT_RETURN_IF_FALSE(seqtrack->gfx_seqblocks != NULL);
   
+  int len1 = seqtrack->gfx_seqblocks->num_elements;
+
+  //printf("Apply len gfx: %d. Len: %d\n", len1, seqtrack->seqblocks.num_elements);
+
   SoundPlugin *plugin = NULL;
 
   if (seqtrack->patch != NULL && seqtrack->patch->patchdata!=NULL)
@@ -1338,12 +1378,17 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
     
       seqtrack->seqblocks = *seqtrack->gfx_seqblocks;
       seqtrack->gfx_seqblocks = NULL;
+
+      legalize_seqtrack_timing(seqtrack, false);
     }
   }
 
+  R_ASSERT(len1==seqtrack->seqblocks.num_elements);
   RT_SEQUENCER_update_sequencer_and_playlist();
+  R_ASSERT(len1==seqtrack->seqblocks.num_elements);
 }
 
+  
 static struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state, double state_samplerate, int seqtracknum, enum ShowAssertionOrThrowAPIException error_type, struct Song *song){
   const hash_t *automation_state = NULL;
   if (HASH_has_key(state, "automation"))
@@ -1378,9 +1423,9 @@ static struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state, double s
     VECTOR_push_back(seqtrack->gfx_seqblocks, SEQBLOCK_create_from_state(seqtrack, seqtracknum, seqblock_state, error_type, true));
   }
 
+  //VECTOR_sort(seqtrack->gfx_seqblocks, seqblocks_comp);
+  
   SEQTRACK_apply_gfx_seqblocks(seqtrack, seqtracknum, false);
-
-  RT_legalize_seqtrack_timing(seqtrack); // Block length may change slightly between versions due to different ways to calculate timings.
 
   return seqtrack;
 }
@@ -1462,14 +1507,20 @@ static const struct SeqBlock *get_prev_seqblock(const struct SeqTrack *seqtrack,
     return (struct SeqBlock*)seqtrack->seqblocks.elements[pos-1];
 }
 
-static const struct SeqBlock *get_next_seqblock(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+static const struct SeqBlock *get_next_seqblock(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool is_gfx){
   int pos = VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
   R_ASSERT_RETURN_IF_FALSE2(pos!=-1, NULL);
   
-  if (pos==seqtrack->seqblocks.num_elements-1)
-    return NULL;
-  else
-    return (struct SeqBlock*)seqtrack->seqblocks.elements[pos+1];
+  const SeqBlockTimings &timing = (false && is_gfx) ? seqblock->gfx : seqblock->t;
+  
+  for(int i=pos+1;i<seqtrack->seqblocks.num_elements;i++){
+    struct SeqBlock *seqblock2 = (struct SeqBlock*)seqtrack->seqblocks.elements[i];
+    const SeqBlockTimings &timing2 = (false && is_gfx) ? seqblock2->gfx : seqblock2->t;
+    if (timing2.time >= timing.time2)
+      return seqblock2;
+  }
+
+  return NULL;
 }
 
 // 'how_much' can be negative.
@@ -1561,7 +1612,7 @@ bool SEQTRACK_set_seqblock_start_and_stop(struct SeqTrack *seqtrack, struct SeqB
     
   bool want_to_change_stretch = old_duration != new_duration;
 
-  const struct SeqBlock *next_seqblock = get_next_seqblock(seqtrack, seqblock);
+  const struct SeqBlock *next_seqblock = get_next_seqblock(seqtrack, seqblock, is_gfx);
 
   int64_t boundary_min = 0;
   
@@ -2082,7 +2133,7 @@ void SEQUENCER_delete_seqtrack(int pos){
   R_ASSERT_RETURN_IF_FALSE(pos >= 0);
   R_ASSERT_RETURN_IF_FALSE(root->song->seqtracks.num_elements > 1); // There must always be a seqtrack
   R_ASSERT_RETURN_IF_FALSE(pos < root->song->seqtracks.num_elements);
-  
+
   {
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;

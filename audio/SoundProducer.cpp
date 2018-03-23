@@ -1155,12 +1155,12 @@ public:
         howmanys[input_linkvector] = howmanys.value(input_linkvector) + 1;
         howmanys[output_linkvector] = howmanys.value(output_linkvector) + 1;
         
-        printf("..Adding 1 to %p (%d)\n", input_linkvector, howmanys.value(input_linkvector));
-        printf("..Adding 1 to %p (%d)\n", output_linkvector, howmanys.value(output_linkvector));
+        //printf("..Adding 1 to %p (%d)\n", input_linkvector, howmanys.value(input_linkvector));
+        //printf("..Adding 1 to %p (%d)\n", output_linkvector, howmanys.value(output_linkvector));
       }
 
       for(auto *linkvector : howmanys.keys()){
-        printf("...Asking %p to ensure room for %d new\n", linkvector, howmanys.value(linkvector));
+        //printf("...Asking %p to ensure room for %d new\n", linkvector, howmanys.value(linkvector));
         linkvector->ensure_there_is_room_for_more_without_having_to_allocate_memory(howmanys.value(linkvector));
       }
     }

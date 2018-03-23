@@ -654,7 +654,7 @@ struct ListHeaderP{
 
 struct vector_t_{
   int num_elements;
-  int num_elements_allocated; // private
+  int num_elements_allocated; // Private. Holds allocated size of 'elements'
   void **elements;
 };
 

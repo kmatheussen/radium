@@ -74,6 +74,14 @@
         (else
          (list l))))
 
+(define (list-position list is-this-it?)
+  (let loop ((n 0)
+             (l list))
+    (if (is-this-it? (car l))
+        n
+        (loop (1+ n)
+              (cdr l)))))
+  
 (define (get-bool something)
   (if something
       #t

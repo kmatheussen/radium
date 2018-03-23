@@ -1321,6 +1321,12 @@ void createGfxSeqblocksFromState(dyn_t seqblocks_state, int seqtracknum){
     return;
   }
 
+  if(seqblocks_state.type!=ARRAY_TYPE){
+    handleError("createGfxSeqblocksFromState: Expected first argument to be an array. found %s\n", DYN_type_name(seqblocks_state));
+    return;
+  }
+
+
   SEQTRACK_create_gfx_seqblocks_from_state(seqblocks_state, seqtrack, seqtracknum, THROW_API_EXCEPTION);
 }
 
@@ -1343,6 +1349,11 @@ void applyGfxSeqblocks(int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL){
     handleError("applyGfxSeqblocks: No sequencer track %d", seqtracknum);
+    return;
+  }
+
+  if (seqtrack->gfx_seqblocks==NULL){
+    //handleError("cancelGfxSeqblocks: No gfx seqtracks in sequencer track %d\n", seqtracknum); // No big point showing error message.
     return;
   }
 

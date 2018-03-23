@@ -491,6 +491,7 @@
     randomly-delete-notes-block
     FROM_C-split-sample-seqblock-under-mouse
     if
+    FROM_C-call-me-when-num-seqtracks-might-have-changed
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*
