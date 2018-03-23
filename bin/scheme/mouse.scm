@@ -4778,7 +4778,7 @@
   ;;(c-display "\n\n------------" swap-forward start1 start2)
 
   (define new-start2 (if swap-forward
-                         (- start2 length1)
+                         (max 0 (- start2 length1))
                          start1))
 
   (define new-start1 (+ new-start2 length2))
@@ -4790,7 +4790,9 @@
   (define new-seqblock2 (copy-hash seqblock2
                                    :start-time new-start2
                                    :end-time (+ new-start2 length2)))
-  
+
+  ;;(c-display "start1:" start1 ". new-start1:" new-start1 ". new-start2:" new-start2 ". length2:" length2)
+
   (define ret (copy seqblocks))
   (set! (ret seqblocknum2) new-seqblock1) ;; keep sorted
   (set! (ret seqblocknum1) new-seqblock2) ;; keep sorted
@@ -4933,6 +4935,8 @@
         (let loop ((has-changed #f))
           (define seqblocknum2 (find-seqblock-to-forward-autoswap-with seqblocks seqblocknum new-pos-nongridded))
           (cond (seqblocknum2
+                 ;;(c-display "BEFORE swap:::")
+                 ;;(pretty-print seqblocks)(newline)
                  (set-new-seqblocks! (swap-seqblocks seqblocks seqblocknum seqblocknum2 #t) seqblocknum2)
                  ;;(c-display "   swapped forward")
                  (loop #t))
