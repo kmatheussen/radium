@@ -969,14 +969,14 @@
 
 (define (get-seqblock seqtracknum X Y)
   (define num-seqblocks (<ra> :get-num-seqblocks seqtracknum))
-  (let loop ((seqblocknum 0))
-    (cond ((= seqblocknum num-seqblocks)
+  (let loop ((seqblocknum (1- num-seqblocks)))
+    (cond ((= seqblocknum -1)
            #f)
           ((inside-box (ra:get-box2 seqblock seqblocknum seqtracknum) X Y)
            (make-seqblock-info2 seqtracknum seqblocknum))
           (else
            ;;(c-display X Y (box-to-string (ra:get-box2 seqblock seqblocknum seqtracknum)))
-           (loop (1+ seqblocknum))))))
+           (loop (1- seqblocknum))))))
 
 (define (get-seqblock-info X Y)
   (let ((seqtracknum *current-seqtrack-num*))
