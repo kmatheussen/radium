@@ -70,7 +70,7 @@ struct VBlankEstimator{
     }
   }
 
-  Result get(){
+  const Result get(void) {
     double time_now = time.elapsed();
     double interval = (time_now - last_time)*1000.0;
     int num_periods = (interval+(base_interval/2.0)) / base_interval;
@@ -169,7 +169,7 @@ struct TimeEstimator{
   }
   
   double get(double approx_correct, double period_multiplier){
-    VBlankEstimator::Result vblank=_vblank_estimator.get();
+    const VBlankEstimator::Result vblank=_vblank_estimator.get();
 
     //return approx_correct;
 
