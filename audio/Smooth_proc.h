@@ -94,6 +94,7 @@ static inline Panvals get_pan_vals_vector(float pan, int num_source_channels){
 extern LANGSPEC void SMOOTH_init(Smooth *smooth, float value, int blocksize);
 extern LANGSPEC void SMOOTH_new_blocksize(Smooth *smooth, int blockframes);
 extern LANGSPEC void SMOOTH_release(Smooth *smooth);
+extern LANGSPEC void SMOOTH_force_target_value(Smooth *smooth, float value);
 extern LANGSPEC void SMOOTH_set_target_value(Smooth *smooth, float value);
 extern LANGSPEC float SMOOTH_get_target_value(const Smooth *smooth);
 extern LANGSPEC void SMOOTH_update_target_audio_will_be_modified_value(Smooth *smooth);
@@ -104,6 +105,7 @@ extern LANGSPEC void SMOOTH_copy_sound(const Smooth *smooth, float *dst, const f
 extern LANGSPEC void SMOOTH_mix_sounds_raw(float *target, const float *source, int num_frames, float start_volume, float end_volume);
 extern LANGSPEC bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(const Smooth *smooth);
 extern LANGSPEC void SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source, int num_frames);
+extern LANGSPEC void SMOOTH_mix_sounds_from_mono_to_stereo(const Smooth *smooth, float *target_ch0, float *target_ch1, const float *source, int num_frames);
 extern LANGSPEC void SMOOTH_mix_sounds_using_inverted_values(const Smooth *smooth, float *target, const float *source, int num_frames);
 extern LANGSPEC void SMOOTH_apply_pan(const Smooth *smooth, float **sound, int num_channels, int num_frames);
 

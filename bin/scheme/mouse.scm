@@ -434,6 +434,7 @@
                           (when *current-seqblock-info*
                             (c-display "\n\n\n  ************** CANCELLING **********\n\n\n\n")
                             (<ra> :cancel-gfx-seqblocks (*current-seqblock-info* :seqtracknum))
+                            (delete-all-gfx-gfx-seqblocks)
                             (set! *current-seqblock-info* #f))
                           
                           ;; We also used to rethrow the error here. Don't know why. Seems like the wrong thing to do.
