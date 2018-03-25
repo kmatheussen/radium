@@ -1006,10 +1006,9 @@ public:
     _requested_slice_end = new_slice_end;
   }
 
-  int RT_return_empty(float **samples, const int num_frames, const bool do_add){
-    if (do_add==false)
-      for(int ch=0 ; ch<_num_ch ; ch++)
-        memset(samples[ch], 0, num_frames*sizeof(float));
+  int RT_return_empty(float **samples, const int num_frames){
+    for(int ch=0 ; ch<_num_ch ; ch++)
+      memset(samples[ch], 0, num_frames*sizeof(float));
     
     return num_frames;
   }
@@ -1126,7 +1125,7 @@ public:
 
   // Fills in samples and returns the number of samples that was filled in.
   // Can probably not be used at the same time as RT_get_buffer
-  int RT_read(float **samples, const int num_frames, const bool do_add, const bool add_to_ch1_too, const float volume){    
+  int RT_read(float **samples, const int num_frames){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
     _pos_used = true;
@@ -1134,7 +1133,7 @@ public:
     int64_t slice_num = _pos / SLICE_SIZE;
 
     if(slice_num >= _provider->_num_slices)
-      return RT_return_empty(samples, num_frames, do_add);
+      return RT_return_empty(samples, num_frames);
 
     // Check this one after slice_num >= _provider->_num_slices, since _sndfile is supposed to be NULL when that happens.
     /*
@@ -1149,14 +1148,14 @@ public:
     if (has_waited_for_queue==false){
       if (slice_num < _requested_slice_start){
         R_ASSERT(false);
-        return RT_return_empty(samples, num_frames, do_add);
+        return RT_return_empty(samples, num_frames);
       }
     }
     
     SliceBuffer *slicebuffers = _provider->RT_get_slicebuffers(slice_num);
     if (slicebuffers==NULL){
       RT_message("Couldn't read from disk fast enough. Try increasing the disk buffer.");
-      return RT_return_empty(samples, num_frames, do_add);
+      return RT_return_empty(samples, num_frames);
     }
 
     const int slice_frame_pos = int(_pos - (slice_num * SLICE_SIZE));
@@ -1164,46 +1163,20 @@ public:
     const int ret = R_MIN(SLICE_SIZE - slice_frame_pos, num_frames);
     const int frames_left = num_frames - ret;
 
-    if (_num_ch==1 && do_add && add_to_ch1_too) {
-
-      float *from = &slicebuffers->samples[slice_frame_pos];
+    SliceBuffer *sb = slicebuffers;
+    
+    for(int ch=0 ; ch<_num_ch ; ch++){
       
-      float *samples0 = samples[0];
-      float *samples1 = samples[1];
+      R_ASSERT_RETURN_IF_FALSE2(sb!=NULL, num_frames);
 
-      for(int i=0;i<ret;i++){
-        float sample = volume * from[i];
-        samples0[i] += sample;
-        samples1[i] += sample;
-      }
-
-      R_ASSERT_NON_RELEASE(slicebuffers->next==NULL);
+      memcpy(samples[ch], &sb->samples[slice_frame_pos], ret * sizeof(float));
       
-    } else {
+      if (frames_left > 0)
+        memset(&samples[ch][ret], 0, frames_left * sizeof(float));
       
-      SliceBuffer *sb = slicebuffers;
-
-      for(int ch=0 ; ch<_num_ch ; ch++){
-        
-        R_ASSERT_RETURN_IF_FALSE2(sb!=NULL, num_frames);
-        
-        float *from = &sb->samples[slice_frame_pos];
-        
-        if (do_add)
-          for(int i=0;i<ret;i++)
-            samples[ch][i] += volume * from[i]; // TODO: Juce probably has optimized routine for this.
-        else {
-          for(int i=0;i<ret;i++)
-            samples[ch][i] = volume * from[i]; // TODO: Juce probably has optimized routine for this.
-          if (frames_left > 0)
-            memset(&samples[ch][ret], 0, frames_left * sizeof(float));
-        }
-        
-        sb = sb->next;
-        if (ch==_num_ch-1)
-          R_ASSERT(sb==NULL);
-      }
-
+      sb = sb->next;
+      if (ch==_num_ch-1)
+        R_ASSERT(sb==NULL);
     }
     
     _pos += ret;
@@ -1322,8 +1295,8 @@ float *RT_SAMPLEREADER_get_buffer(SampleReader *reader, const int ch, int &num_f
   return reader->RT_get_buffer(ch, num_frames);
 }
     
-int RT_SAMPLEREADER_read(SampleReader *reader, float **samples, int num_frames, bool do_add, bool add_to_ch1_too, float volume){
-  return reader->RT_read(samples, num_frames, do_add, add_to_ch1_too, volume);
+int RT_SAMPLEREADER_read(SampleReader *reader, float **samples, int num_frames){
+  return reader->RT_read(samples, num_frames);
 }
 
 void SAMPLEREADER_shut_down(void){
