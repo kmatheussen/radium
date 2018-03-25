@@ -126,42 +126,14 @@ public:
     delete[] _buffers;
   }
       
-  void RT_process(float **output2, int num_frames, bool do_add, bool add_to_ch1_too, float volume) const {
+  void RT_process(float **output2, int num_frames) const {
 
-    if (_num_ch==1 && do_add && add_to_ch1_too) {
-      
-      float *output0 = output2[0];
-      float *output1 = output2[1];
-      
-      for(int i=0;i<num_frames;i++){
-        auto sample = volume * mus_granulate(_clm_granulators[0], NULL);
-        output0[i] += sample;
-        output1[i] += sample;
-      }
-      
-    } else {
-      
-      for(int ch=0;ch<_num_ch;ch++){
-        float *output = output2[ch];
-
-        if (do_add) {
-          
-          for(int i=0;i<num_frames;i++){
-            auto sample = volume * mus_granulate(_clm_granulators[ch], NULL);
-            output[i] += sample;
-          }
-          
-        } else {
-          
-          for(int i=0;i<num_frames;i++)
-            output[i] = volume * mus_granulate(_clm_granulators[ch], NULL);
-          
-        }
-
-      }
-      
+    for(int ch=0;ch<_num_ch;ch++){
+      float *output = output2[ch];
+      for(int i=0;i<num_frames;i++)
+        output[i] = mus_granulate(_clm_granulators[ch], NULL);
     }
-
+    
   }
   
 };

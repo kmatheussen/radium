@@ -8,18 +8,22 @@
 void SMOOTH_init(Smooth *smooth, float value, int blocksize){
 
   memset(smooth, 0, sizeof(Smooth));
-  
-  safe_volatile_float_write(&smooth->next_target_value, value);
-  smooth->target_value = value;
-  smooth->value = value;
 
   smooth->target_audio_will_be_modified = true;      
 
   smooth->num_values = blocksize;
   smooth->values = V_calloc(sizeof(float), blocksize);
 
+  SMOOTH_force_target_value(smooth, value);
+}
+
+void SMOOTH_force_target_value(Smooth *smooth, float value){
+  safe_volatile_float_write(&smooth->next_target_value, value);
+  smooth->target_value = value;
+  smooth->value = value;
+
   int i;
-  for(i=0;i<blocksize;i++)
+  for(i=0;i<smooth->num_values;i++)
     smooth->values[i] = value;
 }
 
@@ -105,7 +109,7 @@ void SMOOTH_apply_volume(const Smooth *smooth, float *sound, int num_frames){
       sound[i] *= values[i];
     }
   }else{
-    float volume = smooth->value; // might be a click here if volume is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen.
+    float volume = smooth->value; // might be a click here if volume is changed between the is_smoothing test and here, but I guess it is extremely unlikely to happen. (edited much later: I guess "target_value" was introduced to eliminate this possibility, and perhaps also because "value" is not an atomic variable.)
     if(volume != 1.0f)
       for(i=0;i<num_frames;i++)
         sound[i] *= volume;
@@ -205,6 +209,37 @@ void SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source,
     else if(volume > 0.0f)
       for(i=0;i<num_frames;i++)
         target[i] += source[i] * volume;
+  }
+}
+
+void SMOOTH_mix_sounds_from_mono_to_stereo(const Smooth *smooth, float *target_ch0, float *target_ch1, const float *source, int num_frames){
+  R_ASSERT(smooth->target_audio_will_be_modified==true);
+  
+  int i;
+  if(is_smoothing_necessary(smooth)==true){
+    float *values = smooth->values;
+    for(i=0;i<num_frames;i++){
+      float sample = source[i] * values[i];
+      target_ch0[i] += sample;
+      target_ch1[i] += sample;
+    }
+  }else{
+    //printf("%p smooth->get: %f, smooth->set: %f. start: %f, end: %f\n",smooth,smooth->get,smooth->set,smooth->start_value,smooth->end_value);
+    float volume = smooth->value;
+    
+    if(volume == 1.0f)
+      for(i=0;i<num_frames;i++){
+        float sample = source[i];
+        target_ch0[i] += sample;
+        target_ch1[i] += sample;
+      }
+    
+    else if(volume > 0.0f)
+      for(i=0;i<num_frames;i++){
+        float sample = source[i] * volume;
+        target_ch0[i] += sample;
+        target_ch1[i] += sample;
+      }
   }
 }
 

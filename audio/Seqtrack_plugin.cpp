@@ -99,7 +99,7 @@ private:
   float _fadein_inc;
   int _fadeout_countdown;
 
-  float _volume = 1.0;
+  Smooth _volume;
   
 public:
 
@@ -152,6 +152,9 @@ public:
     , _num_ch(SAMPLEREADER_get_num_channels(reader))
     , _granulator(_num_ch, this)
   {
+    
+    SMOOTH_init(&_volume, 0.0f, MIXER_get_buffer_size());
+    
     _resamplers = (ResamplerData**)calloc(sizeof(ResamplerData*), _num_ch);
     for(int ch=0 ; ch<_num_ch ; ch++)
       _resamplers[ch] = new ResamplerData(ch, reader);
@@ -189,31 +192,28 @@ public:
       SAMPLEREADER_delete(_reader);
       _reader = NULL;
     }
+
+    SMOOTH_release(&_volume);
   }
 
 private:
   
-  void RT_get_samples_from_disk(int num_frames, float **outputs, bool do_add, bool add_to_ch1_too, float volume) const {
+  void RT_get_samples_from_disk(float **outputs, int num_frames) const {
     R_ASSERT_RETURN_IF_FALSE(_reader != NULL);
 
-    int num_ch = _num_ch;
-    
-    if (do_add && add_to_ch1_too && num_ch==1)
-      num_ch = 2;
-    
-    float *outputs2[num_ch];
+    float *outputs2[_num_ch];
 
     int total_read = 0;
 
     while(total_read < num_frames){
 
-      for(int ch = 0 ; ch < num_ch ; ch++)
+      for(int ch = 0 ; ch < _num_ch ; ch++)
         outputs2[ch] = &outputs[ch][total_read];
 
       const int num_frames_left = num_frames - total_read;
 
       // Note: Both RT_SAMPLEREADER_read and RT_SAMPLEREADER_get_buffer are used, but not in the same play session.
-      const int num_read = RT_SAMPLEREADER_read(_reader, outputs2, num_frames_left, do_add, add_to_ch1_too, volume);
+      const int num_read = RT_SAMPLEREADER_read(_reader, outputs2, num_frames_left);
 
       R_ASSERT_RETURN_IF_FALSE(num_read>0);
 
@@ -238,43 +238,18 @@ private:
     }
   }
 
-  void RT_only_resample_not_granulate(float **output2, const int num_frames, const bool do_add, const bool add_to_ch1_too, const float volume) const {
-
+  void RT_only_resample_not_granulate(float **output2, const int num_frames) const {
 
     for(int ch = 0 ; ch < _num_ch ; ch++){
       int samples_left = num_frames;
-      float *output = output2[ch];
+
       int pos = 0;
       while (samples_left > 0){
 
-        int num_frames_read;
-        if (do_add){
+        int num_frames_read = RESAMPLER_read(_resamplers[ch]->_resampler, _resampler_ratio, samples_left, &output2[ch][pos]);
 
-          float *buffer = _resamplers[ch]->_buffer;
-          num_frames_read = RESAMPLER_read(_resamplers[ch]->_resampler, _resampler_ratio, R_MIN(samples_left, RESAMPLER_BUFFER_SIZE), buffer);
-
-          if (add_to_ch1_too && ch==0 && _num_ch==1) {
-
-            for(int i=pos;i<pos+num_frames_read;i++){
-              output2[0][i] += volume * buffer[i];
-              output2[1][i] += volume * buffer[i];
-            }
-
-          } else {
-
-            for(int i=pos;i<pos+num_frames_read;i++)
-              output[i] += volume * buffer[i];
-
-          }
-
-        } else {
-
-          num_frames_read = RESAMPLER_read(_resamplers[ch]->_resampler, _resampler_ratio, samples_left, output);
-          for(int i=0;i<num_frames_read;i++)
-            output[i] *= volume;
-
-        }
-
+        R_ASSERT_RETURN_IF_FALSE(num_frames_read > 0);
+        
         pos += num_frames_read;
         samples_left -= num_frames_read;
       }
@@ -283,20 +258,56 @@ private:
 
 public:
 
-  void RT_get_samples2(int num_frames, float **outputs, bool do_add, bool add_to_ch1_too) const {
+  void RT_get_samples_with_volume_applied(int num_frames, float **outputs, bool do_add, bool add_to_ch1_too) const {
+
+    R_ASSERT_NON_RELEASE(num_frames<=RADIUM_BLOCKSIZE);
+
+    // 1. Set up temporary buffers
+    //
+    float temp_buffer_sound[_num_ch*num_frames];
     
+    float *temp_buffers[_num_ch];
+    for(int ch=0;ch<_num_ch;ch++)
+      temp_buffers[ch] = &temp_buffer_sound[ch*num_frames];
+
+    
+    // 2. Get samples
+    //
     if (_do_granulate){
 
-      _granulator.RT_process(outputs, num_frames, do_add, add_to_ch1_too, _volume);
+      _granulator.RT_process(do_add ? temp_buffers : outputs, num_frames);
 
     } else if (_do_resampling){
 
-      RT_only_resample_not_granulate(outputs, num_frames, do_add, add_to_ch1_too, _volume);
+      RT_only_resample_not_granulate(do_add ? temp_buffers : outputs, num_frames);
 
     } else {
 
-      RT_get_samples_from_disk(num_frames, outputs, do_add, add_to_ch1_too, _volume);
+      RT_get_samples_from_disk(do_add ? temp_buffers : outputs, num_frames);
 
+    }
+
+
+    // 3. Apply volume
+    //
+    if (do_add){
+        
+      if (add_to_ch1_too && _num_ch==1) {
+        
+        SMOOTH_mix_sounds_from_mono_to_stereo(&_volume, outputs[0], outputs[1], temp_buffers[0], num_frames);
+        
+      } else {
+
+        for(int ch=0;ch<_num_ch;ch++)
+          SMOOTH_mix_sounds(&_volume, outputs[ch], temp_buffers[ch], num_frames);
+        
+      }
+      
+    } else {
+
+      for(int ch=0;ch<_num_ch;ch++)
+        SMOOTH_apply_volume(&_volume, outputs[ch], num_frames);
+      
     }
 
     //printf("volume: %f. _num_ch: %d. num_frames: %d\n", _volume, _num_ch, num_frames);
@@ -320,7 +331,7 @@ private:
     for(int ch = 0 ; ch < _num_ch ; ch++)
       inputs[ch] = &outputs_buffer[ch*num_frames];
 
-    RT_get_samples2(num_frames, inputs, false, false);
+    RT_get_samples_with_volume_applied(num_frames, inputs, false, false);
 
 #define INC_FADE_VOLUME()                       \
     _curr_fade_volume += _fadein_inc;           \
@@ -365,15 +376,19 @@ private:
 public:
   
   void RT_add_samples(int num_frames, float **outputs){
+    SMOOTH_called_per_block(&_volume);
+    
     if (_curr_fade_volume < 1.0)
       RT_add_fade_in_samples(num_frames, outputs);
     else
-      RT_get_samples2(num_frames, outputs, true, true);
+      RT_get_samples_with_volume_applied(num_frames, outputs, true, true);
   }
 
   void RT_add_fade_out_samples(int num_frames, float **outputs){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
-    
+
+    SMOOTH_called_per_block(&_volume);
+      
     R_ASSERT_RETURN_IF_FALSE(_fadeout_countdown > 0);
 
     int num_fade_out_frames = R_MIN(num_frames, _fadeout_countdown);
@@ -386,7 +401,7 @@ public:
     
     //printf("Fading out %p. Countdown: %d\n", _reader, _fadeout_countdown);
     
-    RT_get_samples2(num_fade_out_frames, inputs, false, false);
+    RT_get_samples_with_volume_applied(num_fade_out_frames, inputs, false, false);
 
     for(int i=0;i<num_fade_out_frames;i++){
 
@@ -436,10 +451,18 @@ public:
     _fadeout_countdown = fadeout_duration + 16; // Add a little bit to avoid tiny tiny chance that the fade curve doesn't quite reach 0.
   }
 
+  bool _has_set_volume = false;
+  
   void set_volume(float new_volume){
     if (new_volume >= 0){
+      
       //printf("Seqtrackplugin volume set to %f\n", new_volume);
-      _volume = new_volume;
+      if (_has_set_volume==false) {
+        SMOOTH_force_target_value(&_volume, new_volume);
+        _has_set_volume = true;
+      } else
+        SMOOTH_set_target_value(&_volume, new_volume);
+      
     }else{
       R_ASSERT_NON_RELEASE(false);
     }
