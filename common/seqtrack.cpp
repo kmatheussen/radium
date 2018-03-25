@@ -1153,37 +1153,45 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
   }
 
   int64_t default_duration = get_seqblock_stime_default_duration(seqtrack, seqblock, false);
-  if (interior_end > default_duration){
     
-    if (error_type==THROW_API_EXCEPTION){
+  if (interior_end > default_duration){
 
-      if (seqblock->block==NULL){
-        R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL && seqtrack->patch->patchdata!=NULL, NULL);
-        SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-        SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, is_gfx);
-      }
-
-      handleError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
-#if 0 //!defined(RELEASE)
-      printf("Backtrace:\n%s\n", JUCE_get_backtrace());
-#endif
-      return NULL;
-      
-    } else {
-
-      bool show_rerror = seqblock->block==NULL;
-#if defined(RELEASE)
-      if (show_rerror==true && fabs(interior_end-default_duration) < 16)
-        show_rerror = false;  // Don't show error if it's caused by a rounding error.
-#endif
-      
-      if (show_rerror)
-        RError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
+    if (llabs(interior_end-default_duration) < 16) { // Avoid minor rounding errors
       
       interior_end = default_duration;
+
+    } else {
+      
+      if (error_type==THROW_API_EXCEPTION){
+
+        if (seqblock->block==NULL){
+          R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL && seqtrack->patch->patchdata!=NULL, NULL);
+          SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+          SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, is_gfx);
+        }
+        
+        handleError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
+#if 0 //!defined(RELEASE)
+        printf("Backtrace:\n%s\n", JUCE_get_backtrace());
+#endif
+        return NULL;
+        
+      } else {
+        
+        bool show_rerror = seqblock->block==NULL;
+#if defined(RELEASE)
+        if (show_rerror==true && fabs(interior_end-default_duration) < 16)
+          show_rerror = false;  // Don't show error if it's caused by a rounding error.
+#endif
+        
+        if (show_rerror)
+          RError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
+        
+        interior_end = default_duration;
+        
+      }
       
     }
-    
   }
 
   R_ASSERT(seqblock->t.time==time);
