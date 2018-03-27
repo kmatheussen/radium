@@ -401,10 +401,13 @@ static void default_duration_changed(struct SeqBlock *seqblock, int64_t default_
 }
 
 static int64_t g_seqblock_id = 0;
+static int64_t new_seqblock_id(void){
+  return g_seqblock_id++;
+}
 
 void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const dyn_t envelope_state, double state_samplerate, bool *track_is_disabled, int64_t time){
   
-  seqblock->id = g_seqblock_id++;
+  seqblock->id = new_seqblock_id();
   
   seqblock->block = block;
   seqblock->sample_id = -1;
@@ -2112,6 +2115,10 @@ QVector<struct SeqBlock*> SEQTRACK_get_seqblocks_in_z_order(const struct SeqTrac
   // Create a hash table to avoid O(n^2) when adding the ordered seqblocks.
   QHash<int64_t, struct SeqBlock*> seqblocks_hash;
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
+    if(seqblocks_hash.contains(seqblock->id)){
+      R_ASSERT(false);
+      seqblock->id = new_seqblock_id();
+    }
     seqblocks_hash[seqblock->id] = seqblock;
   }END_VECTOR_FOR_EACH;
   
