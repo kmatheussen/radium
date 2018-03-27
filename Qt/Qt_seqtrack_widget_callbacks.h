@@ -1011,7 +1011,9 @@ public:
 
       // background
       QRectF rect1(x1, y1, x2-x1, header_height);
-      myFillRect(p, rect1, half_alpha(get_seqblock_color(_seqtrack, seqblock), is_gfx_gfx));
+      QColor header_color = get_seqblock_color(_seqtrack, seqblock);
+      header_color.setAlpha(128);
+      myFillRect(p, rect1, half_alpha(header_color, is_gfx_gfx));
 
       // horizontal line
       p.setPen(header_border_pen);
