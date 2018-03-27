@@ -1271,7 +1271,7 @@ int createSeqblockFromState(dyn_t state){
     return -1;
   }
 
-  const hash_t *hash = state.hash;
+  hash_t *hash = state.hash;
 
   if (HASH_has_key(hash, ":seqtracknum")==false){
     handleError("createSeqblockFromState: Could not find \"seqtracknum\" key in state");
@@ -1282,6 +1282,8 @@ int createSeqblockFromState(dyn_t state){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
+
+  HASH_put_bool(hash, ":new-block", true); // To avoid two seqblocks with the same id.
   
   struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, THROW_API_EXCEPTION, false);
   if (seqblock==NULL)
@@ -1880,6 +1882,95 @@ double getSeqblockResampleRatio(int seqblocknum, int seqtracknum){
 
   return SEQTRACKPLUGIN_get_resampler_ratio(plugin, seqblock->sample_id);
 }
+
+int64_t getSeqblockId(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 0;
+
+  return seqblock->id;
+}
+
+static void remove_unused_seqblocks_from_seqblocks_z_order(struct SeqTrack *seqtrack){
+
+  QSet<int64_t> used;
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+    used << seqblock->id;
+  }END_VECTOR_FOR_EACH;
+
+  dynvec_t &order = seqtrack->seqblocks_z_order;
+
+  int dec = 0;
+
+  for(int i=0;i<order.num_elements;i++){
+    const dyn_t &dyn = order.elements[i];
+    if (false==used.contains(dyn.int_number))
+      dec++;
+    else if (dec>0){
+      R_ASSERT_RETURN_IF_FALSE(i-dec >= 0);
+      order.elements[i-dec] = dyn;
+    }
+  }
+
+  order.num_elements -= dec;
+}
+
+dyn_t getSeqblocknumZOrder(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return g_empty_dynvec;
+
+  // Create a hash table to avoid O(n^2) when adding the ordered seqblocks.
+  QHash<int64_t, int> seqblocks_hash;
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+    seqblocks_hash[seqblock->id] = iterator666;
+  }END_VECTOR_FOR_EACH;
+  
+  QVector<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
+
+  dynvec_t ret = {};
+  for(const struct SeqBlock *seqblock : seqblocks)
+    DYNVEC_push_back(&ret, DYN_create_int(seqblocks_hash[seqblock->id]));
+
+  return DYN_create_array(ret);
+}
+
+dyn_t getSeqblockZOrder(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return g_empty_dynvec;
+
+  // clean up
+  remove_unused_seqblocks_from_seqblocks_z_order(seqtrack);
+
+  QVector<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
+
+  dynvec_t ret = {};
+  for(const struct SeqBlock *seqblock : seqblocks)
+    DYNVEC_push_back(&ret, DYN_create_int(seqblock->id));
+
+  return DYN_create_array(ret);
+}
+
+void setSeqblockZOrder(dyn_t zorder, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  if (zorder.type != ARRAY_TYPE){
+    handleError("setSequencerZOrder: Expected array as first argument, found %s\n", DYN_type_name(zorder));
+    return;
+  }
+
+  // clean up
+  remove_unused_seqblocks_from_seqblocks_z_order(seqtrack);
+
+  seqtrack->seqblocks_z_order = *zorder.array;
+
+  SEQUENCER_update();
+}
+
 
 
 /*

@@ -448,6 +448,21 @@
 (***assert*** (sublist '(1 2 3) 2 3)
               '(3))
 
+(define (delete el l comp)
+  (if (comp el (car l))
+      (cdr l)
+      (cons (car el)
+            (delete el (cdr l) comp))))
+      
+(define (delete-maybe el l comp)
+  (cond ((null? l)
+         '())
+        ((comp el (car l))
+         (cdr l))
+        (else
+         (cons (car l)
+               (delete-maybe el (cdr l) comp)))))
+      
 ;; string
 
 (define (string-split string ch)

@@ -969,15 +969,13 @@
   ret)
 
 (define (get-seqblock seqtracknum X Y)
-  (define num-seqblocks (<ra> :get-num-seqblocks seqtracknum))
-  (let loop ((seqblocknum (1- num-seqblocks)))
-    (cond ((= seqblocknum -1)
+  (let loop ((seqblocknums (to-list (<ra> :get-seqblocknum-z-order seqtracknum))))
+    (cond ((null? seqblocknums)
            #f)
-          ((inside-box (ra:get-box2 seqblock seqblocknum seqtracknum) X Y)
-           (make-seqblock-info2 seqtracknum seqblocknum))
+          ((inside-box (ra:get-box2 seqblock (car seqblocknums) seqtracknum) X Y)
+           (make-seqblock-info2 seqtracknum (car seqblocknums)))
           (else
-           ;;(c-display X Y (box-to-string (ra:get-box2 seqblock seqblocknum seqtracknum)))
-           (loop (1- seqblocknum))))))
+           (loop (cdr seqblocknums))))))
 
 (define (get-seqblock-info X Y)
   (let ((seqtracknum *current-seqtrack-num*))
@@ -1008,7 +1006,7 @@
                       (not (morally-equal? new old)))
                   ;;(c-display "set-normal")
                   ;;(<ra> :set-normal-mouse-pointer)
-                  (<ra> :set-curr-seqblock-under-mouse (new :seqblocknum) (new :seqtracknum))
+                  (<ra> :set-curr-seqblock-under-mouse (new :seqblocknum) (new :seqtracknum))                  
                   (set! *current-seqblock-info* new))
                  (else
                   #f)))))
@@ -3873,6 +3871,7 @@
                                                     (define start-pos (if is-left
                                                                           (<ra> :get-seqblock-fade-in seqblocknum seqtracknum)
                                                                           (<ra> :get-seqblock-fade-out seqblocknum seqtracknum)))
+                                                    (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                     (if is-left                                                        
                                                         (callback seqblock-info start-pos Y)
                                                         (callback seqblock-info (- 1 start-pos) Y)))
@@ -4095,6 +4094,8 @@
                                                   ;;(c-display "START:" (pp *current-seqblocks-state*))
                                                   (define seqblock (*current-seqblocks-state* seqblocknum))
 
+                                                  (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
+
                                                   (callback seqblock-info (seqblock :interior-start) Y))
 
                         :Get-min-value (lambda (seqblock-info)
@@ -4201,6 +4202,8 @@
                                                   ;;(c-display "START:" (pp *current-seqblocks-state*))
                                                   
                                                   (define seqblock (*current-seqblocks-state* seqblocknum))
+
+                                                  (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
 
                                                   (callback seqblock-info (seqblock :interior-end) Y))
 
@@ -4615,6 +4618,7 @@
                                                     (define seqtracknum (seqblock-info :seqtracknum))
                                                     (define seqblocknum (seqblock-info :seqblocknum))
                                                     (define set-stretch (<new> :set-seqblock-stretch seqtracknum seqblocknum is-left))
+                                                    (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                     (callback set-stretch
                                                               (if is-left
                                                                   (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
@@ -4671,6 +4675,18 @@
 
 ;; seqblock move
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;; sequencer block order
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (push-seqblock-to-top! seqtracknum id)
+  (define old-order (to-list (<ra> :get-seqblock-z-order seqtracknum)))
+  (define new-order (cons id (delete-maybe id old-order =)))
+  ;;(c-display "id:" id "old:" old-order ". new-order: " new-order)
+  (<ra> :set-seqblock-z-order
+        new-order
+        seqtracknum))
 
 
 ;; swap sequencer blocks
@@ -4832,6 +4848,8 @@
   (define seqblock (seqblocks seqblocknum))
   ;;(pretty-print seqblock)
   (set! *current-seqblocks-state* seqblocks)
+
+  (push-seqblock-to-top! seqtracknum (seqblock :id))
 
   (define curr-pos (seqblock :start-time))
 
@@ -5022,8 +5040,8 @@
                                                                                   )
                                                                                  )
                                                                            
-                                                                           (set-grid-type #t)
-                                                                           
+                                                                           (set-grid-type #t)                                                                           
+
                                                                            (define move-single-block (<new> :move-single-block-class seqtracknum seqblocknum X Y))
 
                                                                            (callback move-single-block (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
@@ -5216,6 +5234,7 @@
 (add-mouse-cycle
  (let* ((*selection-rectangle-start-x* #f)
         (*selection-rectangle-start-y* #f))
+   
    (define (set-rect! $x $y)
      (define min-x (min $x *selection-rectangle-start-x*))
      (define min-y (min $y *selection-rectangle-start-y*))
@@ -5224,23 +5243,23 @@
      ;;(c-display min-x min-y max-x max-y)
      (<ra> :set-sequencer-selection-rectangle min-x min-y max-x max-y))
 
- (make-mouse-cycle
-  :press-func (lambda ($button $x $y)
-                ;;(c-display "in-sequencer: " (inside-box (<ra> :get-box sequencer) $x $y) (< $y (<ra> :get-seqnav-y1)))
-                (and (= $button *left-button*)
-                     (inside-box (<ra> :get-box sequencer) $x $y)
-                     (< $y (<ra> :get-seqnav-y1))
-                     (begin
-                       (set! *selection-rectangle-start-x* $x)
-                       (set! *selection-rectangle-start-y* $y)
-                       #t)))
-
-  :drag-func  (lambda ($button $x $y)
-                (set-rect! $x $y))
-
-  :release-func (lambda ($button $x $y)
-                  (set-rect! $x $y)
-                  (<ra> :unset-sequencer-selection-rectangle)))))
+   (make-mouse-cycle
+    :press-func (lambda ($button $x $y)
+                  ;;(c-display "in-sequencer: " (inside-box (<ra> :get-box sequencer) $x $y) (< $y (<ra> :get-seqnav-y1)))
+                  (and (= $button *left-button*)
+                       (inside-box (<ra> :get-box sequencer) $x $y)
+                       (< $y (<ra> :get-seqnav-y1))
+                       (begin
+                         (set! *selection-rectangle-start-x* $x)
+                         (set! *selection-rectangle-start-y* $y)
+                         #t)))
+    
+    :drag-func  (lambda ($button $x $y)
+                  (set-rect! $x $y))
+    
+    :release-func (lambda ($button $x $y)
+                    (set-rect! $x $y)
+                    (<ra> :unset-sequencer-selection-rectangle)))))
 
 
 
@@ -5593,6 +5612,7 @@
                                                                                                            (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
                                                                                                            (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
                                                                                        (set-grid-type #t)
+                                                                                       (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                                                        (callback Num Time Y))
                                                            _                      :> #f)))
                         :Get-min-value (lambda (_)
@@ -5626,6 +5646,7 @@
                                                #f
                                                (begin
                                                  (set-grid-type #t)
+                                                 (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                  (callback Num Time)))))
                         :Release-node (lambda (Num)
                                         (set-grid-type #f))
@@ -5653,7 +5674,6 @@
                         :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         :Get-pixels-per-value-unit #f
                         )         
-
 
 ;; delete block volume envelope node / popupmenu
 (add-mouse-cycle

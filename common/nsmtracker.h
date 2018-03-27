@@ -2518,7 +2518,7 @@ enum SeqblockBoxSelected{
 };
 
 struct SeqBlock{
-  int seqblocknum; // Must be unique. Can change value when player is stopped.
+  int64_t id;
 
   // FIX: Don't need two of these anymore. Pretty sure they never differ now.
   struct SeqBlockTimings t;
@@ -2612,8 +2612,10 @@ struct SeqtrackAutomation;
 struct SeqTrack{
   vector_t seqblocks; // Player must be stopped when modifying this variable. Also used for displaying if gfx_seqblocks != NULL.
   vector_t *gfx_seqblocks; // Used for displaying. Might have the same content as this->seqblocks (points to).
-  vector_t gfx_gfx_seqblocks; // Just for graphics. Player does not have to be stopped when modifying this variable
+  vector_t gfx_gfx_seqblocks; // When moving several seqblocks. Just for graphics. Player does not have to be stopped when modifying this variable
 
+  dynvec_t seqblocks_z_order; // Used when painting seqblocks. Contains an array of indexes to gfx_seqblocks. Might not be constantly updated, so must check validity when using.
+  
   struct SeqBlock *curr_seqblock; // curr_seqblock->block and curr_seqblock->time contains the same values as pc->block and pc->seqtime did before introducing seqtrack/seqblock.
   struct SeqBlock *curr_sample_seqblock; // Currently only used for displaying audiofile name in the editor. Note that curr_sample_seqblock->sample_id might not always be valid.
   

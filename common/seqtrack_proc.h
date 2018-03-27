@@ -295,6 +295,11 @@ extern LANGSPEC double SEQTRACK_get_length(struct SeqTrack *seqtrack);
 extern LANGSPEC double SEQTRACK_get_gfx_length(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQTRACK_init(struct SeqTrack *seqtrack, const hash_t *automation_state);
 
+#if defined(__cplusplus) && defined(QVECTOR_H)
+// The returned vector contains the vector to paint last first, and vice versa.
+QVector<struct SeqBlock*> SEQTRACK_get_seqblocks_in_z_order(const struct SeqTrack *seqtrack, bool is_gfx_gfx);
+#endif
+
 extern LANGSPEC hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool always_get_real_end_time);
 extern LANGSPEC struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type, bool is_gfx);
 
