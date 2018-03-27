@@ -4326,7 +4326,16 @@
   (define end1 (seqblock1 :end-time))
   (define end2 (seqblock2 :end-time))
 
-  ;;(c-display seqblocknum1 seqblocknum2 ":" start1 end1 "---" start2 end2)
+  ;(c-display ":" start1 end1 "---" start2 end2 "\n"
+  ;           (and (>= start1 start2)
+  ;                (< start1 end2))
+  ;           (and (>= start2 start1)
+  ;                (< start2 end1))
+  ;           
+  ;           (and (<= start1 start2)
+  ;                (> end1 start2))
+  ;           (and (<= start2 start1)
+  ;                (> end2 start1)))
   
   (or (and (>= start1 start2)
            (< start1 end2))
@@ -4343,11 +4352,16 @@
                                                                :seqblocknum
                                                                :new-start
                                                                :new-end #f)
+  (set! new-start (or new-start
+                      (seqblocks seqblocknum :start-time)))
+
   (define seqblock1 (copy-hash (seqblocks seqblocknum)
-                               :start-time (or new-start
-                                               (seqblocks seqblocknum :start-time))
+                               :start-time new-start
                                :end-time (or new-end
-                                             (seqblocks seqblocknum :end-time))))
+                                             (let ((length (- (seqblocks seqblocknum :end-time)
+                                                              (seqblocks seqblocknum :start-time))))
+                                               (+ new-start
+                                                  length)))))
   (define num-seqblocks (length seqblocks))
   (let loop ((n 0))
     (if (>= n num-seqblocks)
@@ -4712,10 +4726,11 @@
         (define end1 (+ start1 length1))
         (define end2 (+ start2 length2))
 
-        '(c-display (> start1 (seqblock1 :start-time))
-                   (seqblocks-overlap? seqblocks seqblocknum1 seqblocknum2 :start1 start1 :start2 start2)
-                   (> (twofifths start1 end1)
-                      start2))
+        ;(c-display "forward-swap?"
+        ;           (> start1 (seqblock1 :start-time))
+        ;           ;(seqblocks-overlap? seqblocks seqblocknum1 seqblocknum2 :start1 start1 :start2 start2)
+        ;           (>= end1 ;; if the end of block1 points 1/2 into block2.
+        ;               (average start2 end2)))
 
         (and (> start1 (seqblock1 :start-time))
              ;;(> end1 start2)
@@ -4742,12 +4757,12 @@
         
         (define end1 (+ start1 length1))
         (define end2 (+ start2 length2))
-
-        '(c-display seqblocknum1 seqblocknum2 ":"
-                   (< start2 (seqblock2 :start-time))
-                   (seqblocks-overlap? seqblocks seqblocknum1 seqblocknum2 :start1 start1 :start2 start2)
-                   (< (threefifths start2 end2)
-                      end1))
+        
+        ;(c-display seqblocknum1 seqblocknum2 ":"
+        ;           (< start2 (seqblock2 :start-time))
+        ;           ;(seqblocks-overlap? seqblocks seqblocknum1 seqblocknum2 :start1 start1 :start2 start2)
+        ;           (< start2 ;; if the start of block2 points 1/2 into block1
+        ;              (average start1 end1)))
 
         (and (< start2 (seqblock2 :start-time))
              ;;(< start2 end1)
@@ -4978,7 +4993,9 @@
                  (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
                  (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
                  ))))
-    
+
+    ;;(c-display "overlapping?" (seqblock-is-overlapping-with-another-block-seqblock seqblocks seqblocknum new-pos))
+
     (when (or is-sample
               (not (seqblock-is-overlapping-with-another-block-seqblock seqblocks seqblocknum new-pos)))
       (define diff (- new-pos
