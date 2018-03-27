@@ -725,18 +725,18 @@ public:
       
   }
   
-  QColor half_alpha(QColor c, bool is_gfx) const {
-    if (is_gfx)
+  QColor half_alpha(QColor c, bool is_gfx_gfx) const {
+    if (is_gfx_gfx)
       c.setAlpha(c.alpha() / 4);      
     return c;
   }
 
-  QColor get_block_qcolor(enum ColorNums colornum, bool is_gfx) const {
+  QColor get_block_qcolor(enum ColorNums colornum, bool is_gfx_gfx) const {
     QColor c = get_qcolor(colornum);
-    return half_alpha(c, is_gfx);
+    return half_alpha(c, is_gfx_gfx);
   }
 
-  void drawWaveform(QPainter &p, const SoundPlugin *plugin, const radium::DiskPeaks *disk_peaks, const struct SeqBlock *seqblock, bool is_gfx, const QColor &color, int64_t time1, int64_t time2, double x1, double x2, double w_y1, double w_y2){
+  void drawWaveform(QPainter &p, const SoundPlugin *plugin, const radium::DiskPeaks *disk_peaks, const struct SeqBlock *seqblock, bool is_gfx_gfx, const QColor &color, int64_t time1, int64_t time2, double x1, double x2, double w_y1, double w_y2){
 
     if (x1 >= t_x2)
       return;
@@ -843,13 +843,13 @@ public:
     }
   }
   
-  void paintSampleGraphics(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
+  void paintSampleGraphics(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx_gfx){
     const int header_height = get_block_header_height();
 
-    QColor waveform_color = get_block_qcolor(WAVEFORM_COLOR_NUM, is_gfx);
+    QColor waveform_color = get_block_qcolor(WAVEFORM_COLOR_NUM, is_gfx_gfx);
     QColor background_color = get_sample_color(_seqtrack, seqblock).lighter(250);
     background_color.setAlpha(128);
-    if (is_gfx)
+    if (is_gfx_gfx)
       background_color = half_alpha(mix_colors(background_color, get_qcolor(SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM), 0.5), true);
     
     const SoundPlugin *plugin = (SoundPlugin*) _seqtrack->patch->patchdata;
@@ -892,7 +892,7 @@ public:
                                             _start_time, _end_time,
                                             t_x1, t_x2);
           
-          drawWaveform(p, plugin, disk_peaks, seqblock, is_gfx, interior_waveform_color,
+          drawWaveform(p, plugin, disk_peaks, seqblock, is_gfx_gfx, interior_waveform_color,
                        0, time1,
                        i1_x1, rect.x(),
                        y1, y2);
@@ -901,13 +901,13 @@ public:
                                             _start_time, _end_time,
                                             t_x1, t_x2);
 
-          drawWaveform(p, plugin, disk_peaks, seqblock, is_gfx, interior_waveform_color,
+          drawWaveform(p, plugin, disk_peaks, seqblock, is_gfx_gfx, interior_waveform_color,
                        time2, seqblock->gfx.default_duration / resample_ratio,
                        x2, i2_x2,
                        y1, y2);
         }
 
-        drawWaveform(p, plugin, disk_peaks, seqblock, is_gfx, waveform_color,
+        drawWaveform(p, plugin, disk_peaks, seqblock, is_gfx_gfx, waveform_color,
                      time1, time2,
                      x1, x2,
                      y1, y2);
@@ -916,14 +916,14 @@ public:
     }
   }
 
-  void paintBlockGraphics(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
+  void paintBlockGraphics(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx_gfx){
     R_ASSERT(seqblock->block != NULL);
     
     const struct Blocks *block = seqblock->block;
 
     const int header_height = get_block_header_height();
     
-    QColor track_border_color  = get_block_qcolor(SEQUENCER_TRACK_BORDER2_COLOR_NUM, is_gfx);
+    QColor track_border_color  = get_block_qcolor(SEQUENCER_TRACK_BORDER2_COLOR_NUM, is_gfx_gfx);
 
     QPen track_border_pen(track_border_color);
 
@@ -951,7 +951,7 @@ public:
         }
         
         // Draw track
-        paintEditorTrack(p, x1, t_y1, x2, t_y2, seqblock, block, track, blocklen, is_gfx);
+        paintEditorTrack(p, x1, t_y1, x2, t_y2, seqblock, block, track, blocklen, is_gfx_gfx);
         
         track = NextTrack(track);
       }
@@ -960,8 +960,8 @@ public:
     // Bar and beats
     if(1){
       const struct Beats *beat = block->beats;
-      QColor bar_color = get_block_qcolor(SEQUENCER_BLOCK_BAR_COLOR_NUM, is_gfx);
-      QColor beat_color = get_block_qcolor(SEQUENCER_BLOCK_BEAT_COLOR_NUM, is_gfx);
+      QColor bar_color = get_block_qcolor(SEQUENCER_BLOCK_BAR_COLOR_NUM, is_gfx_gfx);
+      QColor beat_color = get_block_qcolor(SEQUENCER_BLOCK_BEAT_COLOR_NUM, is_gfx_gfx);
       QPen bar_pen(bar_color);
       QPen beat_pen(beat_color);
 
@@ -993,12 +993,12 @@ public:
     }
   }
 
-  void paintSeqblockHeader(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
+  void paintSeqblockHeader(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx_gfx){
     const int header_height = get_block_header_height();
 
-    QColor text_color = get_block_qcolor(SEQUENCER_TEXT_COLOR_NUM, is_gfx);
-    QColor header_border_color = get_block_qcolor(SEQUENCER_TRACK_BORDER1_COLOR_NUM, is_gfx);
-    QColor border_color = get_block_qcolor(SEQUENCER_BLOCK_BORDER_COLOR_NUM, is_gfx);
+    QColor text_color = get_block_qcolor(SEQUENCER_TEXT_COLOR_NUM, is_gfx_gfx);
+    QColor header_border_color = get_block_qcolor(SEQUENCER_TRACK_BORDER1_COLOR_NUM, is_gfx_gfx);
+    QColor border_color = get_block_qcolor(SEQUENCER_BLOCK_BORDER_COLOR_NUM, is_gfx_gfx);
 
     QPen header_border_pen(header_border_color);
     header_border_pen.setWidthF(2.3);
@@ -1011,7 +1011,7 @@ public:
 
       // background
       QRectF rect1(x1, y1, x2-x1, header_height);
-      myFillRect(p, rect1, half_alpha(get_seqblock_color(_seqtrack, seqblock), is_gfx));
+      myFillRect(p, rect1, half_alpha(get_seqblock_color(_seqtrack, seqblock), is_gfx_gfx));
 
       // horizontal line
       p.setPen(header_border_pen);
@@ -1027,7 +1027,7 @@ public:
       bool is_current_block = seqblock->block!=NULL && seqblock->block == root->song->tracker_windows->wblock->block;
 
       if (is_current_block){
-        QColor c = get_block_qcolor(CURSOR_EDIT_ON_COLOR_NUM, is_gfx);
+        QColor c = get_block_qcolor(CURSOR_EDIT_ON_COLOR_NUM, is_gfx_gfx);
         c.setAlpha(150);      
         p.setPen(QPen(c, 4));
       } else {
@@ -1208,10 +1208,10 @@ public:
     }
   }
 
-  void paintSelected(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
+  void paintSelected(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx_gfx){
     //printf("Seqblock: %p, %d\n", seqblock, seqblock->is_selected);
     if (seqblock->is_selected){
-      QColor grayout_color = get_block_qcolor(SEQUENCER_BLOCK_SELECTED_COLOR_NUM, is_gfx);
+      QColor grayout_color = get_block_qcolor(SEQUENCER_BLOCK_SELECTED_COLOR_NUM, is_gfx_gfx);
       
       p.setPen(Qt::NoPen);
       p.setBrush(grayout_color);
@@ -1266,28 +1266,53 @@ public:
     }
   }
 
-  void paintSeqBlockElements(QPainter &p, const QRectF &rect, const QRectF &rect_without_header, const struct SeqBlock *seqblock, bool is_gfx){
+  void paintSeqBlockElements(QPainter &p, const QRectF &rect, const QRectF &rect_without_header, const struct SeqBlock *seqblock, bool is_gfx_gfx){
     if (seqblock->block==NULL)
-      paintSampleGraphics(p, rect, seqblock, is_gfx);
+      paintSampleGraphics(p, rect, seqblock, is_gfx_gfx);
     else
-      paintBlockGraphics(p, rect, seqblock, is_gfx);
+      paintBlockGraphics(p, rect, seqblock, is_gfx_gfx);
     
-    paintSelected(p, rect, seqblock, is_gfx);
+    paintSelected(p, rect, seqblock, is_gfx_gfx);
     
-    paintSeqblockHeader(p, rect, seqblock, is_gfx);
+    paintSeqblockHeader(p, rect, seqblock, is_gfx_gfx);
 
     draw_fades(p, rect_without_header, seqblock);
   }
   
-  void paintSeqBlock(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx){
+  bool paintSeqBlock(QPainter &p, const QRectF &update_rect, const struct SeqBlock *seqblock, bool is_gfx_gfx){
     //QPoint mousep = _sequencer_widget->mapFromGlobal(QCursor::pos());
+
+    QRectF rect;
+
+    // First check if we need to paint it.
+    {
+      double sample_rate = MIXER_get_sample_rate();
+      
+      double start_time = _start_time / sample_rate;
+      double end_time = _end_time / sample_rate;
+      
+      if (seqblock->start_time >= end_time)
+        return false;
+      if (seqblock->end_time < start_time)
+        return false;
+      
+      double x1 = get_seqblock_x1(seqblock, start_time, end_time);
+      double x2 = get_seqblock_x2(seqblock, start_time, end_time);
+      //if (i==1)
+      //  printf("   %d: %f, %f. %f %f\n", iterator666, x1, x2, seqblock->start_time / 44100.0, seqblock->end_time / 44100.0);
+      
+      rect = QRectF(x1,t_y1+1,x2-x1,height-2);
+      
+      if (false==update_rect.intersects(rect.toAlignedRect()))
+        return false;
+    }
 
     int header_height = get_block_header_height();
     const QRectF rect_without_header = rect.adjusted(0, header_height, 0, 0);
 
     if(seqblock != g_curr_seqblock){ //!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
 
-      paintSeqBlockElements(p, rect, rect_without_header, seqblock, is_gfx);
+      paintSeqBlockElements(p, rect, rect_without_header, seqblock, is_gfx_gfx);
 
     } else {
 
@@ -1310,7 +1335,7 @@ public:
       {
         QPainter ptr(&image);
         ptr.setRenderHints(QPainter::Antialiasing,true);
-        paintBlockGraphics(ptr, rect2, seqblock, is_gfx);
+        paintBlockGraphics(ptr, rect2, seqblock, is_gfx_gfx);
         ptr.setRenderHints(QPainter::Antialiasing,false);
       }
 
@@ -1325,7 +1350,7 @@ public:
       
 #else
 
-      paintSeqBlockElements(p, rect, rect_without_header, seqblock, is_gfx);
+      paintSeqBlockElements(p, rect, rect_without_header, seqblock, is_gfx_gfx);
       
 #endif
       
@@ -1333,6 +1358,8 @@ public:
     }
 
     draw_volume_envelope(&p, rect_without_header, seqblock);
+
+    return true;
   }
   
   void paint(const QRect &update_rect, QPainter &p) { // QPaintEvent * ev ) override {
@@ -1342,38 +1369,17 @@ public:
 
     myFillRect(p, _rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
       
-    double sample_rate = MIXER_get_sample_rate();
     //double song_length = get_visible_song_length()*sample_rate;
   
     SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
 
-    double start_time = _start_time / sample_rate;
-    double end_time = _end_time / sample_rate;
-
     for(int i=0;i<2;i++){
-      const vector_t *seqblocks = i==0 ? gfx_seqblocks(_seqtrack) : &_seqtrack->gfx_gfx_seqblocks ;
+      bool is_gfx_gfx = i==1;
 
-      VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
+      QVector<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(_seqtrack, is_gfx_gfx);
 
-        if (seqblock->block == NULL){
-          //printf("      PAINTING BLOCK %p (gfx: %d). start/end: %f / %f. interior start/end: %d %d. seqtrack/seqblock: %p / %p\n", seqblock, _seqtrack->gfx_seqblocks!=NULL, seqblock->start_time, seqblock->end_time, (int)seqblock->gfx.interior_start, (int)seqblock->gfx.interior_end, _seqtrack, seqblock);
-        }
-        
-        if (seqblock->start_time < end_time && seqblock->end_time >= start_time) {
-          
-          double x1 = get_seqblock_x1(seqblock, start_time, end_time);
-          double x2 = get_seqblock_x2(seqblock, start_time, end_time);
-          //if (i==1)
-          //  printf("   %d: %f, %f. %f %f\n", iterator666, x1, x2, seqblock->start_time / 44100.0, seqblock->end_time / 44100.0);
-
-          QRectF rect(x1,t_y1+1,x2-x1,height-2);
-          
-          if (update_rect.intersects(rect.toAlignedRect()))
-            paintSeqBlock(p, rect, seqblock, seqblocks==&_seqtrack->gfx_gfx_seqblocks);
-          
-        }
-        
-      }END_VECTOR_FOR_EACH;
+      for(int i=seqblocks.size()-1 ; i>=0 ; i--)
+        paintSeqBlock(p, update_rect, seqblocks.at(i), is_gfx_gfx);
     }
 
     // Automation

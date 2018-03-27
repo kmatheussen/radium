@@ -400,7 +400,12 @@ static void default_duration_changed(struct SeqBlock *seqblock, int64_t default_
   seqblock->gfx.interior_end = default_duration;
 }
 
+static int64_t g_seqblock_id = 0;
+
 void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const dyn_t envelope_state, double state_samplerate, bool *track_is_disabled, int64_t time){
+  
+  seqblock->id = g_seqblock_id++;
+  
   seqblock->block = block;
   seqblock->sample_id = -1;
   seqblock->track_is_disabled = track_is_disabled;
@@ -513,7 +518,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
 // Ensures that two seqblocks doesn't overlap, and that a seqblock doesn't start before 0.
 // Preserves original pause times.
 static void legalize_seqtrack_timing(struct SeqTrack *seqtrack, bool is_gfx){
-  printf("Legalizing timing\n");
+  //printf("Legalizing timing\n");
 
 #if !defined(RELEASE)
   //if (!is_gfx)
@@ -864,6 +869,8 @@ static void set_plain_seqtrack_timing_no_pauses(struct SeqTrack *seqtrack){
 
 hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool always_get_real_end_time){
   hash_t *state = HASH_create(2);
+
+  HASH_put_int(state, ":id", seqblock->id);
   
   if(seqblock->block != NULL) {
     HASH_put_int(state, ":blocknum", seqblock->block->l.num);
@@ -1217,6 +1224,11 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
 
   R_ASSERT(seqblock->t.stretch > 0);
 
+  if (HASH_has_key(state, ":id") && false==HASH_has_key(state, ":new-block")){
+    seqblock->id = HASH_get_int(state, ":id");
+    g_seqblock_id = R_MAX(g_seqblock_id, seqblock->id);
+  }
+
   if (HASH_has_key(state, ":tracks-disabled")){
     dyn_t dyn;
     if (get_value(state, ":tracks-disabled", ARRAY_TYPE, HASH_get_dyn, error_type, dyn)==false)
@@ -1428,6 +1440,9 @@ static struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state, double s
     hash_t *seqblock_state = HASH_get_hash_at(state, "seqblock", i);
     if(HASH_has_key(seqblock_state, "time"))
       seqblock_state = get_new_seqblock_state_from_old(HASH_get_hash_at(state, "seqblock", i), song);
+
+    HASH_put_bool(seqblock_state, ":new-block", true);  // To avoid two seqblocks with the same id.
+
     VECTOR_push_back(seqtrack->gfx_seqblocks, SEQBLOCK_create_from_state(seqtrack, seqtracknum, seqblock_state, error_type, true));
   }
 
@@ -2077,6 +2092,43 @@ double SEQTRACK_get_gfx_length(struct SeqTrack *seqtrack){
   struct SeqBlock *last_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[num_seqblocks-1];
 
   return last_seqblock->end_time;
+}
+
+// The returned vector contains the vector to paint last first, and vice versa.
+QVector<struct SeqBlock*> SEQTRACK_get_seqblocks_in_z_order(const struct SeqTrack *seqtrack, bool is_gfx_gfx){
+
+  QVector<struct SeqBlock*> ret;
+  
+  const vector_t *seqblocks = is_gfx_gfx ? &seqtrack->gfx_gfx_seqblocks : gfx_seqblocks(seqtrack);
+
+  if(seqblocks->num_elements==0)
+    return ret;
+
+  // Create a hash table to avoid O(n^2) when adding the ordered seqblocks.
+  QHash<int64_t, struct SeqBlock*> seqblocks_hash;
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
+    seqblocks_hash[seqblock->id] = seqblock;
+  }END_VECTOR_FOR_EACH;
+  
+      
+  QSet<int64_t> already_added;
+  
+  // Add ordered seqblocks.
+  for(const dyn_t &dyn : seqtrack->seqblocks_z_order){
+    struct SeqBlock *seqblock = seqblocks_hash[dyn.int_number];
+    if (seqblock!=NULL){ // seqblocks_z_order is not required to be up to date.
+      ret.push_back(seqblock);
+      already_added << seqblock->id;
+    }
+  }
+  
+  // Add unordered seqblocks.
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
+    if (false==already_added.contains(seqblock->id))
+      ret.push_back(seqblock);
+  }END_VECTOR_FOR_EACH;
+  
+  return ret;
 }
 
 void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
