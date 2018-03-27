@@ -1334,15 +1334,23 @@ void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struc
     seqtrack->gfx_seqblocks = (vector_t*)talloc(sizeof(vector_t));
     
   }
+
+  QSet<int64_t> used;
   
-  int seqblocknum = 0;
   for(const dyn_t dyn : seqblocks_state.array){    
     R_ASSERT_RETURN_IF_FALSE(dyn.type==HASH_TYPE);
     struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, dyn.hash, error_type, true);
     if (seqblock != NULL){
       R_ASSERT(seqblock->t.interior_start==seqblock->gfx.interior_start);
+
+      if(used.contains(seqblock->id)){        
+        SHOW_ERROR(false , "List of new Gfx seqblocks contains two seqblocks with the same id: %d", (int)seqblock->id);
+        seqblock->id = new_seqblock_id();
+      }
+      
+      used << seqblock->id;
+        
       VECTOR_push_back(seqtrack->gfx_seqblocks, seqblock);
-      seqblocknum++;
     }
   }
 
