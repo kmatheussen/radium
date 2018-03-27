@@ -3810,7 +3810,7 @@
                  (set! skew (- new-pos2 new-pos))
                  (set! gakkgakk-really-last-inc-time (- new-pos2 start-time)))
                
-               (define new-start-time (+ skew new-pos))
+               (define new-start-time (max 0 (+ skew new-pos)))
 
                (copy-hash seqblock
                           :seqtracknum new-seqtracknum
