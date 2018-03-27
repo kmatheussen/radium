@@ -515,7 +515,7 @@ struct Sample{
   int64_t _id = g_id++;
   const wchar_t *_filename;
 
-  enum class State{
+  enum State{ // clang doesn't allow enum class here.
     RUNNING,
     RT_REQUEST_DELETION,
     READY_FOR_DELETION
