@@ -4866,7 +4866,8 @@
 (define-class (<move-single-block-class> :seqtracknum
                                          :seqblocknum
                                          :start-x
-                                         :start-y)
+                                         :start-y
+                                         :has-made-undo #f)
 
   (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
   (define seqblock (seqblocks seqblocknum))
@@ -4885,7 +4886,6 @@
   (define seqblock-length (- (seqblock :end-time)
                              (seqblock :start-time)))
                              
-  (define has-made-undo #f)
   (define (maybe-make-undo)
     (when (not has-made-undo)
       (<ra> :undo-sequencer)
@@ -5068,14 +5068,16 @@
                                                                            
                                                                            (set-grid-type #t)                                                                           
 
+                                                                           (define has-made-undo #f)
+                                                                           
                                                                            ;; Make a copy if holding shift.
                                                                            (when (<ra> :shift-pressed)
-                                                                             (c-display "old:" seqblocknum)
+                                                                             (<ra> :undo-sequencer)
+                                                                             (set! has-made-undo #t)
                                                                              (set! seqblocknum (<ra> :create-seqblock-from-state (<ra> :get-seqblock-state seqblocknum seqtracknum)))
-                                                                             (c-display "new:" seqblocknum)
                                                                              (set! *current-seqblock-info* (make-seqblock-info2 seqtracknum seqblocknum)))
                                                                       
-                                                                           (define move-single-block (<new> :move-single-block-class seqtracknum seqblocknum X Y))
+                                                                           (define move-single-block (<new> :move-single-block-class seqtracknum seqblocknum X Y has-made-undo))
 
                                                                            (callback move-single-block (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
                                                                                      Y))
