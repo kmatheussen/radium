@@ -400,30 +400,32 @@ private:
   }
 
   void read_peaks_from_disk(void){
+    bool success = false;
+
     disk_t *disk = DISK_open_binary_for_reading(_peak_filename);
     if (disk==NULL){
       GFX_Message(NULL, "Unable to open %s for reading", STRING_get_qstring(_peak_filename).toUtf8().constData());
-      goto failed;
+      goto exit;
     }
 
     {
       char source[8] = {};
       if (DISK_read_binary(disk, source, 8)==-1)
-        goto failed;
+        goto exit;
       if(strncmp(source, "RADIUM0", 8)){
         GFX_Message(NULL, "Unable to read %s. Expected \"RADUIM0\", found something else.", STRING_get_qstring(_peak_filename).toUtf8().constData());
-        goto failed;
+        goto exit;
       }
     }
 
     {
       unsigned char source[4];
       if (DISK_read_binary(disk, source, 4)==-1)
-        goto failed;
+        goto exit;
       int num_ch = get_le_32(source);
       if (num_ch != _num_ch){
         GFX_Message(NULL, "%s is not correct. It contains peaks for %d channels, but soundfile contains %d channels.", STRING_get_qstring(_peak_filename).toUtf8().constData(), num_ch, _num_ch);
-        goto failed;
+        goto exit;
       }
     }
     
@@ -431,11 +433,11 @@ private:
       {
         unsigned char source[4];
         if (DISK_read_binary(disk, source, 4)==-1)
-          goto failed;
+          goto exit;
         int samples_per_peak = get_le_32(source);
         if (samples_per_peak != SAMPLES_PER_PEAK){
           GFX_Message(NULL, "Something is wrong with %s (1)", STRING_get_qstring(_peak_filename).toUtf8().constData());
-          goto failed;
+          goto exit;
         }
       }
 
@@ -444,22 +446,22 @@ private:
       {
         unsigned char source[4];
         if (DISK_read_binary(disk, source, 4)==-1)
-          goto failed;
+          goto exit;
         num_peaks = get_le_32(source);        
         if (num_peaks <= 0){
           GFX_Message(NULL, "Something is wrong with %s (2)", STRING_get_qstring(_peak_filename).toUtf8().constData());
-          goto failed;
+          goto exit;
         }
       }
       
       {
         unsigned char source[8];
         if (DISK_read_binary(disk, source, 8)==-1)
-          goto failed;
+          goto exit;
         int64_t total_frames = get_le_64(source);
         if (total_frames != _total_frames){
           GFX_Message(NULL, "Something is wrong with %s. Expected %" PRId64 " frames, found %" PRId64 "", STRING_get_qstring(_peak_filename).toUtf8().constData(), _total_frames, total_frames);
-          goto failed;          
+          goto exit;          
         }
       }
 
@@ -467,20 +469,23 @@ private:
       for(int i = 0 ; i<num_peaks ; i++){
         float min,max;
         if (DISK_read_binary(disk, &min, 4)==-1)
-          goto failed;
+          goto exit;
         if (DISK_read_binary(disk, &max, 4)==-1)
-          goto failed;
+          goto exit;
         _peaks[ch]->add(Peak(min,max));
       }
     
     }
 
+    success = true;
+
+  exit:
+
     DISK_close_and_delete(disk);
-    return;
-    
-  failed:
-    DISK_close_and_delete(disk);
-    start();
+
+    if (success==true)
+      start();
+
     return;
   }
 
