@@ -6049,6 +6049,7 @@
                                   :interior-end interior-split))
      
      (define seqblock2 (copy-hash seqblock
+                                  :id -1
                                   :start-time pos
                                   :interior-start interior-split))
      
