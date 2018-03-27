@@ -159,10 +159,13 @@ static inline void VECTOR_delete_last(vector_t *v){
   v->elements[v->num_elements]=NULL;
 }
 
-#ifdef _GNU_SOURCE
+//#ifdef _GNU_SOURCE
 typedef  int (*vector_sort_callback_t) (const void *a, const void *b);
 
-static inline int VECTOR_sort_comp(const void *a, const void *b, void *arg){
+static void *g_sort_arg;
+
+static inline int VECTOR_sort_comp(const void *a, const void *b){
+  void *arg = g_sort_arg;
   const struct SeqBlock *s1 = ((const struct SeqBlock **)a)[0];
   const struct SeqBlock *s2 = ((const struct SeqBlock **)b)[0];
   vector_sort_callback_t callback = (vector_sort_callback_t)arg;
@@ -170,10 +173,14 @@ static inline int VECTOR_sort_comp(const void *a, const void *b, void *arg){
 }
 
 static inline void VECTOR_sort(vector_t *v, vector_sort_callback_t comp){
+  R_ASSERT(THREADING_is_main_thread());
+  
   if(v->num_elements==0) // v->elements can be NULL when this happens, and qsort expects first argument to be !=NULL.
     return;
+
+  g_sort_arg = (void*)comp;
   
-  qsort_r(v->elements, v->num_elements, sizeof(void*), VECTOR_sort_comp, (void*)comp);
+  qsort(v->elements, v->num_elements, sizeof(void*), VECTOR_sort_comp);
 }
 
 // Might be more efficient if there's a good chance v is sorted already, depending on the implementation of qsort.
@@ -185,7 +192,7 @@ static inline void VECTOR_sort2(vector_t *v, vector_sort_callback_t comp){
       return;
     }
 }
-#endif
+//#endif
 
 
 #ifdef __cplusplus

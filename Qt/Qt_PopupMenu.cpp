@@ -259,7 +259,6 @@ namespace{
     int *result;
     QString text;
     MyQMenu *qmenu;
-    bool is_async;
     func_t *callback;
     std::function<void(int,bool)> callback3;
 
@@ -275,7 +274,6 @@ namespace{
       , result(result)
       , text(text_b)
       , qmenu(qmenu_b)
-      , is_async(is_async)
       , callback(callback_b)
       , callback3(callback3_b)
     {
@@ -312,7 +310,7 @@ namespace{
     int *result;
     QString text;
     MyQMenu *qmenu;
-    bool is_async;
+    //bool is_async;
     func_t *callback;
     std::function<void(int,bool)> callback3;
 
@@ -328,7 +326,7 @@ namespace{
       , result(result)
       , text(text)
       , qmenu(qmenu)
-      , is_async(is_async)
+        //, is_async(is_async)
       , callback(callback)
       , callback3(callback3)
     {
