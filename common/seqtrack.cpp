@@ -1225,8 +1225,13 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
   R_ASSERT(seqblock->t.stretch > 0);
 
   if (HASH_has_key(state, ":id") && false==HASH_has_key(state, ":new-block")){
-    seqblock->id = HASH_get_int(state, ":id");
-    g_seqblock_id = R_MAX(g_seqblock_id, seqblock->id);
+    int64_t id = HASH_get_int(state, ":id");
+    if(id >= 0){
+      seqblock->id = id;
+      g_seqblock_id = R_MAX(g_seqblock_id, seqblock->id);
+    }else{
+      R_ASSERT(id==-1);
+    }
   }
 
   if (HASH_has_key(state, ":tracks-disabled")){
