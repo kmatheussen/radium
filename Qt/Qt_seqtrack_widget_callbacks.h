@@ -846,7 +846,7 @@ public:
   void paintSampleGraphics(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, bool is_gfx_gfx){
     const int header_height = get_block_header_height();
 
-    QColor waveform_color = get_block_qcolor(WAVEFORM_COLOR_NUM, is_gfx_gfx);
+    QColor waveform_color = get_block_qcolor(SEQUENCER_WAVEFORM_COLOR_NUM, is_gfx_gfx);
     QColor background_color = get_sample_color(_seqtrack, seqblock).lighter(250);
     background_color.setAlpha(128);
     if (is_gfx_gfx)
@@ -1011,7 +1011,7 @@ public:
 
       // background
       QRectF rect1(x1, y1, x2-x1, header_height);
-      QColor header_color = get_seqblock_color(_seqtrack, seqblock);
+      QColor header_color = get_seqblock_color(_seqtrack, seqblock).lighter(150);
       header_color.setAlpha(128);
       myFillRect(p, rect1, half_alpha(header_color, is_gfx_gfx));
 
@@ -2176,7 +2176,8 @@ public:
 
         VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
 
-          QColor seqblock_color = get_seqblock_color(seqtrack, seqblock);
+          QColor seqblock_color = get_seqblock_color(seqtrack, seqblock).lighter(150);
+          seqblock_color.setAlpha(128);
           
           //printf("\n\n\n Start/end: %f / %f. Seqtrack/seqblock %p / %p\n\n", seqblock->start_time, seqblock->end_time, seqtrack, seqblock);
           

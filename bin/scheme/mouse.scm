@@ -237,8 +237,10 @@
              ((cycle :press-func) $button $x $y))
            *mouse-cycles*))
 
+(define *check-mouse-shift-key* #t)
 (define (only-y-direction)
-  (<ra> :shift-pressed))
+  (and *check-mouse-shift-key*
+       (<ra> :shift-pressed)))
 
 (define (only-x-direction)
   (<ra> :control2-pressed))
@@ -430,7 +432,8 @@
                :failure (lambda ()
                           
                           (set! *current-mouse-cycle* #f)
-                          
+                          (set! *check-mouse-shift-key* #t)
+
                           (when *current-seqblock-info*
                             (c-display "\n\n\n  ************** CANCELLING **********\n\n\n\n")
                             (<ra> :cancel-gfx-seqblocks (*current-seqblock-info* :seqtracknum))
@@ -504,8 +507,11 @@
            (run-mouse-move-handlers $button $x $y)
            (cancel-current-stuff)
            ;;(<ra> :set-normal-mouse-pointer)
+           (set! *check-mouse-shift-key* #t)
            #t)
-         #f))))
+         (begin
+           (set! *check-mouse-shift-key* #t)
+           #f)))))
 
 
 #||
@@ -738,6 +744,7 @@
                                   :Mouse-pointer-func #f
                                   :Get-guinum (lambda () (<gui> :get-editor-gui))
                                   :Forgiving-box #t
+                                  :Check-shift #t
                                   )
   
   (define-struct node
@@ -746,6 +753,7 @@
     :y)
 
   (define (press-existing-node Button X Y)
+    (set! *check-mouse-shift-key* Check-shift)
     (and (select-button Button)
          (let ((area-box (Get-area-box)))
            ;;(c-display X Y "area-box" (and area-box (box-to-string area-box)) (and area-box (inside-box-forgiving area-box X Y)) (box-to-string (<ra> :get-box reltempo-slider)))
@@ -775,6 +783,7 @@
                 (inside-box area-box X Y)))))
     
   (define (press-and-create-new-node Button X Y)
+    (set! *check-mouse-shift-key* Check-shift)
     (and (can-create Button X Y)
          (Create-new-node X
                           (if Use-Place
@@ -5059,6 +5068,13 @@
                                                                            
                                                                            (set-grid-type #t)                                                                           
 
+                                                                           ;; Make a copy if holding shift.
+                                                                           (when (<ra> :shift-pressed)
+                                                                             (c-display "old:" seqblocknum)
+                                                                             (set! seqblocknum (<ra> :create-seqblock-from-state (<ra> :get-seqblock-state seqblocknum seqtracknum)))
+                                                                             (c-display "new:" seqblocknum)
+                                                                             (set! *current-seqblock-info* (make-seqblock-info2 seqtracknum seqblocknum)))
+                                                                      
                                                                            (define move-single-block (<new> :move-single-block-class seqtracknum seqblocknum X Y))
 
                                                                            (callback move-single-block (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
@@ -5106,6 +5122,7 @@
                                                      (get-sequencer-pixels-per-value-unit))
 
                         :Forgiving-box #f
+                        :Check-shift #f
                         )
 
 
