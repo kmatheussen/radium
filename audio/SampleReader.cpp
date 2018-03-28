@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if defined(RELEASE)
 #  define DO_DEBUG_PRINTING 0
 #else
-#  define DO_DEBUG_PRINTING 1
+#  define DO_DEBUG_PRINTING 0
 #endif
 
 namespace{
@@ -1097,7 +1097,12 @@ public:
     // Assert that we have requested the data before calling.
     if (has_waited_for_queue==false){
       if (slice_num < _requested_slice_start || slice_num >= _requested_slice_end){
-        R_ASSERT(false);
+
+        if (slice_num < _requested_slice_start)
+          R_ASSERT(false);
+        if(slice_num >= _requested_slice_end+17) // add 17 to avoid slightly wrong value caused by rounding errors.
+          R_ASSERT(false);
+
         return RT_return_empty2(num_frames);
       }
     }
