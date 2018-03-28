@@ -549,6 +549,13 @@ static void PlayHandleSequencerLoop(void){
   }
 }
 
+bool PlayerIsCurrentlyPlayingLoop(void){
+  if (SEQUENCER_is_looping() || pc->is_playing_range==true)
+    if(g_player_was_stopped_manually==false)
+      return true;
+
+  return false;
+}
 
 // called very often
 void PlayCallVeryOften(void){

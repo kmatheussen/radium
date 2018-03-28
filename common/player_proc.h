@@ -26,6 +26,7 @@ extern LANGSPEC void PlayRangeCurrPos(struct Tracker_Windows *window);
 extern LANGSPEC void PlayRangeCurrPos2(struct Tracker_Windows *window, const Place *place);
 extern LANGSPEC void Play_set_curr_playing_realline(int realline, int blocknum);
 extern LANGSPEC void Play_get_curr_playing_realline(int *realline, int *blocknum);
+extern LANGSPEC bool PlayerIsCurrentlyPlayingLoop(void);
 extern LANGSPEC void PlayCallVeryOften(void);
 extern LANGSPEC void PlaySongCurrPos(void);
 extern LANGSPEC void PlaySong(double abstime);
