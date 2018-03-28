@@ -1129,6 +1129,12 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
                             "Illegal sequencer block interior-start and interior-end values. Start: %d. End: %d", (int)interior_start, (int)interior_end
                             );
 
+
+  if (adjust_for_samplerate != 1.0){
+    interior_start = round(double(interior_start) * adjust_for_samplerate);
+    interior_end   = round(double(interior_end) * adjust_for_samplerate);
+  }
+
   dyn_t envelope = g_uninitialized_dyn;
   if (HASH_has_key(state, ":envelope"))
     envelope = HASH_get_dyn(state, ":envelope");
@@ -1161,15 +1167,26 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
     seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, envelope, state_samplerate, time, is_gfx);
     if (seqblock==NULL)
       return NULL;
+
   }
 
   int64_t default_duration = get_seqblock_stime_default_duration(seqtrack, seqblock, false);
-    
+
   if (interior_end > default_duration){
 
     if (llabs(interior_end-default_duration) < 16) { // Avoid minor rounding errors
+
+      int64_t diff = interior_end-interior_start;
       
       interior_end = default_duration;
+
+      // In case interior_start and interior_end are very crammed together.
+      if (interior_start >= interior_end){
+        interior_start -= diff;
+        if (interior_start < 0)
+          interior_start = 0;
+      }
+  
 
     } else {
       
