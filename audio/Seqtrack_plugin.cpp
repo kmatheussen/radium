@@ -864,8 +864,14 @@ struct Sample{
           ATOMIC_SET(_state, State::READY_FOR_DELETION);
       }
       
-      if (is_really_playing_song()==false)
-        return;
+
+      /*
+        This test should not be necessary since rt_stop_playing should always be called when stopping to play.
+        The test also causes a click when _curr_reader is being transferred into _fade_out_readers. We lose one block then.
+
+        if (is_really_playing_song()==false)
+          return;
+      */
       
       if (_is_playing==false)
         return;

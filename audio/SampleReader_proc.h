@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_AUDIO_SAMPLEREADER_PROC_H
 #define _RADIUM_AUDIO_SAMPLEREADER_PROC_H
 
-#if defined(RELEASE)
+#if 1 //defined(RELEASE)
 #  define SLICE_SIZE 4096 // in frames
 #else
 #  define SLICE_SIZE 3
