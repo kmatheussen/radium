@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <gc.h>
 
 #include <QFileInfo>
+#include <QSet>
 
 #include "nsmtracker.h"
 #include "player_proc.h"
