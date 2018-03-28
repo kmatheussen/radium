@@ -497,7 +497,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 
       BS_SelectBlock(wblock->block);
       
-      if( ! is_playing()){
+      if(false==is_playing() && false==PlayerIsCurrentlyPlayingLoop()){
         GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
       }
       
