@@ -15,7 +15,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-
 #include <stdio.h>
 #include <stdint.h>
 
@@ -1098,11 +1097,13 @@ public:
     if (has_waited_for_queue==false){
       if (slice_num < _requested_slice_start || slice_num >= _requested_slice_end){
 
-        if (slice_num < _requested_slice_start)
-          R_ASSERT(false);
-        if(slice_num >= _requested_slice_end+17) // add 17 to avoid slightly wrong value caused by rounding errors.
-          R_ASSERT(false);
+        R_ASSERT(slice_num >=  _requested_slice_start);
 
+#if defined(RELEASE)
+        R_ASSERT(slice_num < _requested_slice_end+17); // add 17 to avoid slightly wrong value caused by rounding errors.
+#else
+        R_ASSERT(slice_num < _requested_slice_end+1); // add 1 to avoid slightly wrong value caused by rounding errors.
+#endif
         return RT_return_empty2(num_frames);
       }
     }
