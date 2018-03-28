@@ -869,17 +869,26 @@ struct Sample{
         This test should not be necessary since rt_stop_playing should always be called when stopping to play.
         The test also causes a click when _curr_reader is being transferred into _fade_out_readers. We lose one block then.
 
+        In short: _curr_reader must always be played when it is there.
+        In addition: If we return here, we risk not preparing enough data for the fade out readers since RT_SAMPLEREADER_called_per_block is not called.
+
         if (is_really_playing_song()==false)
           return;
       */
-      
-      if (_is_playing==false)
-        return;
+
+      /*
+        Not sure if we can have this test either. It could seem like _is_playing might be false even when fading out, and then RT_SAMPLEREADER_called_per_block wouldn't be called.
+
+        if (_is_playing==false)
+          return;
+      */
     }
+
+    bool is_playing = _is_playing;
 
     // Playing Current
     //
-    if (_curr_reader != NULL){
+    if (_curr_reader != NULL && is_playing){ // move the _is_playing test above here instead.
       LOCKASSERTER_EXCLUSIVE(&_curr_reader->lockAsserter);
 
       // Set expansion (stretch/expansion has probably not changed since last time, but this is a light operation)
@@ -904,7 +913,7 @@ struct Sample{
     
     // Request reading from disk for Current
     //
-    if (_curr_reader != NULL){
+    if (_curr_reader != NULL && is_playing){
       int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE) * (double)pc->pfreq / _seqblock->t.stretch;
 
       for(int ch=0;ch<_num_ch;ch++)
