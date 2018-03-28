@@ -1,3 +1,46 @@
+Changes 5.5.2 -> 5.5.4:
+* Player: Don't switch current instrument when starting to
+  play from the beginning of a sequencer or range loop
+* Linux: Include missing libraries used by the Pure Data
+  instrument. Fix for computers missing libfftw, libogg,
+  libvorbis, etc.
+* Sequencer: Fix sequencer block start value sometimes having
+  negative value when moving more than one sequencer block at
+  the same time
+* Sequencer: Copy sequencer block when pressing shift and
+  drag mouse.
+* Sequencer: Let the background color of a sequencer block
+  header be halfly transparent
+* Sequencer: Maintain logical Z order of sequencer blocks. I.e.
+  the last used sequencer block is displayed at top, and
+  so forth.
+* Sequencer: Smooth the volume+fade values before applying to
+  audio files.
+* Sequencer: Avoid the "interior-end value is larger than the
+  default block duration" error sometimes popping up due to
+  floating point rounding errors.
+* Sequencer: Made audio file background halfly transparent,
+  and paint background halfly in the same color as the
+  audio file.
+* Sequencer: Auto-fade in/out audio files when overlapping.
+* Sequencer: Improve sequencer block auto-swap performance.
+* Sequencer: Don't auto-swap audio files with other sequencer
+  blocks.
+* Sequencer: Don't show error message after undoing appending
+  track without moving the mouse.
+* Disk: Make it safer to save files.
+* Build: Fix finding qt tools when uic-qt5/moc-qt5/qmake-qt5
+  doesn't exist.
+* Sequencer: Option to split audiofiles. Press the S key, or use
+  the popup menu.
+* Sequencer: Remove "technology preview" note/warning when
+  inserting audio files. Hopefully it's stable enough for
+  usage now.
+* API: getSeqblockResampleRatio, getSeqblockId,
+  getSeqblocknumZOrder, getSeqblockZOrder, setSeqblockZOrder.
+
+
+
 Changes 5.5.1 -> 5.5.2:
 * Modulators: Fix assertion window sometimes popping up when
   loading song when a modulator GUI is open
