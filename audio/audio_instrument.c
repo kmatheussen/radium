@@ -1188,7 +1188,7 @@ bool AUDIO_is_permanent_patch(struct Patch *patch){
 
   else if (!strcmp(plugin->type->type_name,SEQTRACKPLUGIN_NAME)){
     printf("NUM samples: %d\n", SEQTRACKPLUGIN_get_num_samples(plugin));
-    return SEQTRACKPLUGIN_can_be_deleted(plugin);
+    return false==SEQTRACKPLUGIN_can_be_deleted(plugin);
 
   }else
     return false;
