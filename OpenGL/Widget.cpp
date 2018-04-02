@@ -39,6 +39,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <vlGraphics/OcclusionCullRenderer.hpp>
 #include <vlGraphics/Actor.hpp>
 
+#include <vlCore/Matrix4.hpp>
+
 
 #include <QGLWidget>
 #include <QTextEdit>
@@ -881,11 +883,29 @@ private:
       //_rendering = new vl::Rendering;  
       //_rendering->renderer()->setFramebuffer(openglContext()->framebuffer() );
 
-      _rendering->camera()->viewport()->setWidth(current_width);
-      _rendering->camera()->viewport()->setHeight(current_height);
-      _rendering->camera()->setProjectionOrtho(-0.5f);
+      auto viewport = _rendering->camera()->viewport();
 
-      _rendering->camera()->viewport()->setClearColor(get_vec4(t2_data->background_color));
+      viewport->setWidth(current_width);
+      viewport->setHeight(current_height);
+
+      if(g_opengl_scale_ratio != 1.0){
+
+        _rendering->camera()->setProjectionMatrix( vl::mat4::getOrtho(
+                                                                      -0.5f / g_opengl_scale_ratio, 
+                                                                      (viewport->width() + 0.5f) / g_opengl_scale_ratio, 
+                                                                      0.5f / g_opengl_scale_ratio, 
+                                                                      (viewport ->height() + 0.5f) / g_opengl_scale_ratio, 
+                                                                      -1.0, +1.0),
+                                                   vl::EProjectionMatrixType::PMT_OrthographicProjection
+                                                   );
+      } else {
+
+        _rendering->camera()->setProjectionOrtho(-0.5f);
+
+      }
+
+
+      viewport->setClearColor(get_vec4(t2_data->background_color));
       //glClear(GL_STENCIL_BUFFER_BIT|GL_ACCUM_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT); makes no difference.
       
 #if TEST_TIME
@@ -1462,12 +1482,12 @@ public:
     if (h<32)
       h = 32;
     
-    current_width = w;
-    current_height = h;
+    current_width = w * g_opengl_scale_ratio;
+    current_height = h * g_opengl_scale_ratio;
     
     initEvent();
     
-    GE_set_height(h);
+    GE_set_height(h);// * g_opengl_scale_ratio);
 
     GFX_ScheduleEditorRedraw();
   }
@@ -1587,6 +1607,15 @@ static double get_refresh_rate(void){
   
   QWindow *qwindow = widget->windowHandle();
   if (qwindow!=NULL){
+
+    double ratio = qwindow->devicePixelRatio();
+    if (fabs(ratio-1.0) > 0.01){
+      RT_message("Note: High DPI display detected. Radium has not supported high DPI display very long. If you notice strange graphics, please report it.");
+      g_opengl_scale_ratio = ratio;
+    }
+
+    g_opengl_scale_ratio = 0.5;
+
     QScreen *qscreen = qwindow->screen();
     if (qscreen!=NULL) {
 
