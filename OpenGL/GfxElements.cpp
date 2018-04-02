@@ -34,6 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define USE_FREETYPE 0
 #define RADIUM_DRAW_FONTS_DIRECTLY 0
 
+extern double g_opengl_scale_ratio;
+
 struct PaintingData;
 static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_data);
 #include "TextBitmaps.hpp"
@@ -64,16 +66,20 @@ static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_da
 #define NUM_PREDEFINED_COLORS 16
 
 
+double g_opengl_scale_ratio = 1.0;
+
 static volatile float g_height = 512;
 
 void GE_set_height(int height){
   safe_volatile_float_write(&g_height, height);
 }
 
+/*
 int GE_get_height(void){
   //return root->song->tracker_windows->wblock->t.y2 - root->song->tracker_windows->wblock->t.y1;
   return g_height;
 }
+*/
 
 /*
 int GE_get_tracker_height(){
@@ -664,7 +670,11 @@ public:
     
     if (_scissor.get()==NULL){
       const SharedVariables *shared_variables = GE_get_shared_variables(painting_data);
-      _scissor = new vl::Scissor(shared_variables->wtracks_scissor_x1, 0, shared_variables->wtracks_scissor_x2 - shared_variables->wtracks_scissor_x1, g_height);
+      _scissor = new vl::Scissor(shared_variables->wtracks_scissor_x1 * g_opengl_scale_ratio,
+                                 0,
+                                 (shared_variables->wtracks_scissor_x2 - shared_variables->wtracks_scissor_x1) * g_opengl_scale_ratio,
+                                 g_height*g_opengl_scale_ratio
+                                 );
     }
 
     return _scissor.get();
@@ -678,10 +688,17 @@ public:
 
   static float y(float y){
     float height = safe_volatile_float_read(&g_height);
-    return scale(y,
-                 0,height,
-                 height,0
-                 );
+    float ret = scale(y,
+                      0,height,
+                      height,0
+                      );
+
+    //if (g_opengl_scale_ratio > 1.0)
+    //  ret -= height/g_opengl_scale_ratio;
+    //else if (g_opengl_scale_ratio < 1.0)
+    //  ret += height/2.0;
+
+    return ret;
   }
 
   vl::Transform *get_transform(T2_data *t2_data, bool &is_scroll_transform) const {
@@ -717,9 +734,14 @@ GE_Rgb GE_get_rgb(const GE_Context *c){
 /* Drawing */
 
 static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_data){
-  int height = safe_volatile_float_read(&g_height);
-  int y1 = scale(actor->boundingBox().maxCorner().y(), height, 0, 0, height);
-  int y2 = scale(actor->boundingBox().minCorner().y(), height, 0, 0, height);
+  int height = safe_volatile_float_read(&g_height);// * g_opengl_scale_ratio;
+  int y1 = scale(actor->boundingBox().maxCorner().y(),
+                 height, 0,
+                 0, height);
+  int y2 = scale(actor->boundingBox().minCorner().y(),
+                 height, 0,
+                 0, height
+                 );
 
   //printf("  y1: %d, y2: %d. mask: %x\n",y1,y2,getMask(y1,y2));
   actor->setEnableMask(getMask(y1, y2, GE_get_slice_size(painting_data)));

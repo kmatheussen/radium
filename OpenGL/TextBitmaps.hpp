@@ -187,8 +187,12 @@ static inline void set_halfsize_font(void){
   g_qfont_halfsize = g_qfont;
   g_imageholders_halfsize = g_imageholders;
 }
- 
-static inline void GE_set_new_font(const QFont &font){
+
+static inline void GE_set_new_font(const QFont &nonscaled_font){
+  QFont font(nonscaled_font);
+  if(g_opengl_scale_ratio != 1.0)
+    font.setPointSize(font.pointSize() * g_opengl_scale_ratio);
+
   g_qfont = font;
 
   g_imageholders = add_new_font(font);
@@ -244,10 +248,14 @@ struct TextBitmaps{
       //float x2 = x + image->width()-1;
       //float y2 = y + image->height()-1;
       
-      points[c].push_back(vl::dvec2(x+holder.width,y-image->height()/2.0));//(y+y2)/2));
+      points[c].push_back(vl::dvec2(x + holder.width/g_opengl_scale_ratio,
+                                    y - image->height()/g_opengl_scale_ratio/2.0
+                                    )
+                          );
     }
 
-    return x + holder.width;
+    // return x + holder.width;
+    return x + holder.width/g_opengl_scale_ratio;
   }
 
   // called from Main thread
