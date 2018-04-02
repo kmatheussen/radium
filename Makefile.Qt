@@ -2195,7 +2195,7 @@ bin/radium_crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
 	@echo
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) -o crashbin.o
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -o crashbin.o
 	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm crashbin.o
 
@@ -2207,7 +2207,7 @@ crashreporter.o: crashreporter/crashreporter.cpp
 	@echo "Changed (crashreporter.o):"
 	@echo $?
 	@echo
-	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DVERSION=\"$(VERSION)\"
+	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DVERSION=\"$(VERSION)\" $(IS_LINUX_BINARY)
 
 crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
 	if ! $(CC) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS) ; then \

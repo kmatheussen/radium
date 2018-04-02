@@ -185,7 +185,15 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 #else
   message = "FULL VERSION " + message; 
 #endif
-  
+
+#if defined(FOR_LINUX)
+#if defined(IS_LINUX_BINARY)
+  message += "\nLinux binary\n";
+#else
+  message += "\nCustom build\n";
+#endif
+#endif
+    
 #if defined(FOR_MACOSX)
   if (is_crash)
     message = message + "\n\n" + get_latest_diagnostic_report();
