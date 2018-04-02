@@ -885,20 +885,27 @@ private:
 
       auto viewport = _rendering->camera()->viewport();
 
-      viewport->setWidth(current_width);
-      viewport->setHeight(current_height);
+      viewport->setWidth(current_width * g_opengl_scale_ratio);
+      viewport->setHeight(current_height * g_opengl_scale_ratio);
 
       if(g_opengl_scale_ratio != 1.0){
 
-        _rendering->camera()->setProjectionMatrix( vl::mat4::getOrtho(
-                                                                      -0.5f / g_opengl_scale_ratio, 
-                                                                      (viewport->width() + 0.5f) / g_opengl_scale_ratio, 
-                                                                      0.5f / g_opengl_scale_ratio, 
-                                                                      (viewport ->height() + 0.5f) / g_opengl_scale_ratio, 
-                                                                      -1.0, +1.0),
-                                                   vl::EProjectionMatrixType::PMT_OrthographicProjection
-                                                   );
-      } else {
+#if 1
+        // I think this is correct. Not sure.
+        _rendering->camera()->setProjectionOrtho(-0.5f,
+                                                 current_width-0.5f,
+                                                 -0.5f,
+                                                 current_height-0.5f,
+                                                 -1.0, +1.0);
+#else
+        // Alternative way. Might be better. Don't know.
+        _rendering->camera()->setProjectionOrtho(-0.5f / g_opengl_scale_ratio, 
+                                                 (current_width - 0.5f) / g_opengl_scale_ratio, 
+                                                 -0.5f / g_opengl_scale_ratio, 
+                                                 (current_height - 0.5f) / g_opengl_scale_ratio, 
+                                                 -1.0, +1.0);
+#endif
+} else {
 
         _rendering->camera()->setProjectionOrtho(-0.5f);
 
@@ -1482,12 +1489,12 @@ public:
     if (h<32)
       h = 32;
     
-    current_width = w * g_opengl_scale_ratio;
-    current_height = h * g_opengl_scale_ratio;
+    current_width = w;
+    current_height = h;
     
     initEvent();
     
-    GE_set_height(h);// * g_opengl_scale_ratio);
+    GE_set_height(h);
 
     GFX_ScheduleEditorRedraw();
   }
