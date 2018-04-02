@@ -68,6 +68,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 
 #include "../Qt/Timer.hpp"
+#include "../Qt/Qt_Fonts_proc.h"
 
 #include "../audio/Juce_plugins_proc.h"
 
@@ -1616,12 +1617,18 @@ static double get_refresh_rate(void){
   if (qwindow!=NULL){
 
     double ratio = qwindow->devicePixelRatio();
+    //ratio = 0.5;
+      
     if (fabs(ratio-1.0) > 0.01){
       RT_message("Note: High DPI display detected. Radium has not supported high DPI display very long. If you notice strange graphics, please report it.");
       g_opengl_scale_ratio = ratio;
+      
+      // Make sure editor font is scaled.
+      if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL){
+        setFontValues(root->song->tracker_windows);
+      }
+      
     }
-
-    g_opengl_scale_ratio = 0.5;
 
     QScreen *qscreen = qwindow->screen();
     if (qscreen!=NULL) {

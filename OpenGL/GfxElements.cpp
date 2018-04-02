@@ -238,8 +238,8 @@ public:
       uniform_color1->setUniform(color1);
       uniform_color2->setUniform(color2);
       if (type==GradientType::VELOCITY)
-        uniform_height->setUniformF(height);
-      uniform_x->setUniformF(x);
+        uniform_height->setUniformF(height*g_opengl_scale_ratio);
+      uniform_x->setUniformF(x*g_opengl_scale_ratio);
       uniform_width->setUniformF(width);
       
       if (type==GradientType::VELOCITY)
@@ -257,7 +257,7 @@ public:
   // OpenGL thread, except when initializing. During initialization, it's T3 thread.
   void set_y_offset(float y_offset){
     if (glsl_is_valid && type==GradientType::VELOCITY)
-      uniform_y->setUniformF(y + y_offset);
+      uniform_y->setUniformF((y + y_offset)*g_opengl_scale_ratio);
   }
 };
 
