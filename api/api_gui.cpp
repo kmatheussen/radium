@@ -2118,7 +2118,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         float falloff_pos = db2linear(db_falloff, get_pos_y1(), get_pos_y2());
         _falloff_pos[ch] = falloff_pos;
 
-#if 1
+#if 0
         if (falloff_pos != prev_falloff_pos)
           update();
 #else
