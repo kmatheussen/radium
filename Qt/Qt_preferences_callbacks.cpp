@@ -451,19 +451,27 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     // Various
     {
 
-      gcOnOff->setChecked(true);
+      // gc
+      {
+        gcOnOff->setChecked(true);
+        
+        bool incremental_gc = SETTINGS_read_bool("incremental_gc",false);
+        
+        incrementalGcNextTime->setChecked(false);
+        
+        incrementalGc->setChecked(incremental_gc);
+        
+        if (g_gc_is_incremental==false)
+          incrementalGc->setDisabled(true);
+        
+        if (incremental_gc)
+          incrementalGcNextTime->setDisabled(true);
+      }
 
-      bool incremental_gc = SETTINGS_read_bool("incremental_gc",false);
-    
-      incrementalGcNextTime->setChecked(false);
-
-      incrementalGc->setChecked(incremental_gc);
-
-      if (g_gc_is_incremental==false)
-        incrementalGc->setDisabled(true);
-
-      if (incremental_gc)
-        incrementalGcNextTime->setDisabled(true);
+      // audio meter update
+      {
+        cpu_friendly_audio_meter_updates->setChecked(useCPUFriendlyAudiometerUpdates());
+      }
     }
 
     // Audio
@@ -758,6 +766,12 @@ public slots:
   void on_incrementalGc_toggled(bool val){
     if (_initing==false)
       SETTINGS_write_bool("incremental_gc",val);
+  }
+
+  void on_cpu_friendly_audio_meter_updates_toggled(bool val){
+    //printf("val: %d\n",val);
+    if (_initing==false)
+      setUseCPUFriendlyAudiometerUpdates(val);
   }
 
   void on_mma1_toggled(bool val){

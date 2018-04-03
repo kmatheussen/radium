@@ -1764,6 +1764,28 @@ void setLinenumbersVisible(bool doit){
 }
 
 
+// Various
+
+static bool g_cpu_friendly_audio_meter_updates = false;
+
+bool useCPUFriendlyAudiometerUpdates(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_cpu_friendly_audio_meter_updates = SETTINGS_read_bool("cpu_friendly_audio_meter_updates", g_cpu_friendly_audio_meter_updates);
+    has_inited = true;
+  }
+
+  return g_cpu_friendly_audio_meter_updates;
+}
+
+void setUseCPUFriendlyAudiometerUpdates(bool val){
+  g_cpu_friendly_audio_meter_updates = val;
+  SETTINGS_write_bool("g_cpu_friendly_audio_meter_updates", val);
+}
+
+
+
 
 // Disk
 
