@@ -109,8 +109,10 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
 
   Beat_Iterator *iterator = &seqtrack->beat_iterator;
 
+  R_ASSERT_RETURN_IF_FALSE2(iterator->play_id == ATOMIC_GET(pc->play_id), DONT_RESCHEDULE); // Try to track down why the assertion 3 lines down sometimes fail.s.
+
   const struct Beats *beat = iterator->next_beat;
-  R_ASSERT_RETURN_IF_FALSE2(beat!=NULL, DONT_RESCHEDULE);
+  R_ASSERT_RETURN_IF_FALSE2(beat!=NULL, DONT_RESCHEDULE);  // This one fails now and then. Don't know why. (The assertion above was added later.)
                          
   iterator->last_valid_signature = beat->valid_signature;
 #if !defined(RELEASE)
@@ -157,11 +159,13 @@ void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
   memset(iterator, 0, sizeof(Beat_Iterator));
   iterator->last_played_metronome_note_num = -1;
 
+  iterator->play_id = ATOMIC_GET(pc->play_id);
+
   const struct Blocks *block = seqblock->block;
     
   const struct Beats *next_beat = block->beats;
 
-  R_ASSERT_RETURN_IF_FALSE(next_beat!=NULL);  
+  R_ASSERT_RETURN_IF_FALSE(next_beat!=NULL);
 
   iterator->last_valid_signature = next_beat->valid_signature;
       
