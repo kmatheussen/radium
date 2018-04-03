@@ -1844,10 +1844,13 @@ protected:
       return;
 
     g_main_timer_num_calls++; // Must be placed here since 'is_called_every_ms' depends on it.
-    
-    if (is_called_every_ms(15)){
-      AUDIOMETERPEAKS_call_very_often(15);
-      API_gui_call_regularly();
+
+    {
+      int interval = useCPUFriendlyAudiometerUpdates() ? 40 : 20;
+      if (is_called_every_ms(interval)) {
+        AUDIOMETERPEAKS_call_very_often(interval); // light operation
+        API_gui_call_regularly();
+      }
     }
 
     RETURN_IF_DATA_IS_INACCESSIBLE();
