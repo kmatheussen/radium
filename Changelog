@@ -1,3 +1,37 @@
+Changes 5.5.4 -> 5.5.6:
+* GUI: Fix a memory corruption bug in asynchronous popup menus.
+* Mixer: Don't display "[disabled]" for the "Show GUI" option
+  in the mixer strip popup menu.
+* Sequencer: Configurable fade in and fade out shapes. Radium
+  offers the same fade shapes as in Ardour: Linear,
+  Constant Power, Symmetric, Slow, and Fast. The implementation
+  is also based on code from Ardour.
+  Manual: http://manual.ardour.org/editing-and-arranging/create-region-fades-and-crossfades/
+* Scheduler: Add an assertion to try tracking down a rare
+  assertion hit.
+* Audio meters: Add option to update audio meter graphics every
+  other frame instead of each frame. This seems to reduce
+  editor stutter on some computers when the CPU is buzy.
+* Audio meters: Only update dirty graphics. This seems
+  to reduce editor stutter significantly on some computers
+  when the CPU is buzy.
+* Editor: Support high DPI displays. I.e. all available space
+  is used, not just one quarter of it. Made in cooperation with
+  Jarrad Hope. Tested on Linux (KDE) and macOS (retina display).
+* Crashreporter/Linux: Inform whether it's the official binary
+  or a custom build.
+* Sequencer: Don't crash if adding audio file after manually
+  deleting the seqtrack plugin.
+* Seqtrack plugin: Fix whether it can deleted or not. Previously
+  it could only be deleted when it was not safe to delete it,
+  and vice versa
+* API: useCPUFriendlyAudiometerUpdates,
+  setUseCPUFriendlyAudiometerUpdates, getFadeShapes,
+  getSeqblockFadeShape, setSeqblockFadeShape,
+  getFadeShapeIconFilename.
+
+
+
 Changes 5.5.2 -> 5.5.4:
 * Player: Don't switch current instrument when starting to
   play from the beginning of a sequencer or range loop
