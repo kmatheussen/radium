@@ -1927,6 +1927,44 @@ bool SEQBLOCK_set_interior_end(struct SeqTrack *seqtrack, struct SeqBlock *seqbl
 }
 */
 
+bool SEQBLOCK_set_fade_in_shape(struct SeqBlock *seqblock, enum FadeShape shape){
+  auto *old_fade = seqblock->fade_in_envelope;
+  if (old_fade->_shape==shape)
+    return false;
+
+  auto *new_fade = new radium::Envelope(shape, 1.0, true);
+
+  {
+    radium::PlayerLock lock;
+    seqblock->fade_in_envelope = new_fade;
+  }
+
+  delete old_fade;
+
+  SEQUENCER_update();
+
+  return true;
+}
+
+bool SEQBLOCK_set_fade_out_shape(struct SeqBlock *seqblock, enum FadeShape shape){
+  auto *old_fade = seqblock->fade_out_envelope;
+  if (old_fade->_shape==shape)
+    return false;
+
+  auto *new_fade = new radium::Envelope(shape, 1.0, false);
+
+  {
+    radium::PlayerLock lock;
+    seqblock->fade_out_envelope = new_fade;
+  }
+
+  delete old_fade;
+
+  SEQUENCER_update();
+
+  return true;
+}
+
     
 // Called from scheduler.c, before scheduling editor things.
 // Returns true if there is more to play.

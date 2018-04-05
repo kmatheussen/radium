@@ -3942,6 +3942,33 @@
 (create-fade-handler #f)
 (create-fade-handler #t)
 
+;; fade in/out popup menu
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)
+                     (not (<ra> :shift-pressed))
+                     *current-seqblock-info*
+                     (let* ((seqtracknum (*current-seqblock-info* :seqtracknum))
+                            (seqblocknum (*current-seqblock-info* :seqblocknum))
+                            (is-fade-in (inside-box (<ra> :get-box seqblock-left-fade seqblocknum seqtracknum) X Y))
+                            (is-fade-out (inside-box (<ra> :get-box seqblock-right-fade seqblocknum seqtracknum) X Y)))
+                       (and (or is-fade-in
+                                is-fade-out)
+                            (begin
+                              (popup-menu (map (lambda (shape-name)
+                                                 (list (<-> shape-name " shape")
+                                                       :enabled (not (string=? shape-name (if is-fade-in
+                                                                                              (<ra> :get-seqblock-fade-in-shape seqblocknum seqtracknum)
+                                                                                              (<ra> :get-seqblock-fade-out-shape seqblocknum seqtracknum))))
+                                                       (lambda ()
+                                                         (<ra> :undo-sequencer)
+                                                         (if is-fade-in
+                                                             (<ra> :set-seqblock-fade-in-shape shape-name seqblocknum seqtracknum)
+                                                             (<ra> :set-seqblock-fade-out-shape shape-name seqblocknum seqtracknum)))))
+                                               (<ra> :get-fade-shapes)))
+                              #t)))))))
+
 
 
 

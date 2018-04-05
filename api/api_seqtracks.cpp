@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QSet>
 
+#define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
+
 #include "../common/nsmtracker.h"
 #include "../common/seqtrack_proc.h"
 #include "../common/seqtrack_automation_proc.h"
@@ -728,9 +730,6 @@ float getSeqblockEnvelopeNodeY(int nodenum, int seqblocknum, int seqtracknum){
 
   return SEQBLOCK_ENVELOPE_get_node_y(seqblock->envelope, seqtracknum, nodenum);
 }
-
-
-
 
 
 // sequencer tempo automation
@@ -1771,6 +1770,50 @@ void setSeqblockFadeOut(double fadeout, int seqblocknum, int seqtracknum){
 
   SEQUENCER_update();
 }
+
+
+dyn_t getFadeShapes(void){
+  dynvec_t dynvec = {0};
+
+  for(int i = 0 ; i<NUM_FADE_SHAPES ; i++)
+    if (i != FADE_CUSTOM)
+      DYNVEC_push_back(&dynvec, DYN_create_string_from_chars(fade_shape_to_string((enum FadeShape)i)));
+
+  return DYN_create_array(dynvec);
+}
+
+const_char *getSeqblockFadeInShape(int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return "";
+
+  return fade_shape_to_string(seqblock->fade_in_envelope->_shape);
+}
+
+const_char *getSeqblockFadeOutShape(int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return "";
+
+  return fade_shape_to_string(seqblock->fade_out_envelope->_shape);
+}
+
+bool setSeqblockFadeInShape(const_char *shape, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return false;
+
+  return SEQBLOCK_set_fade_in_shape(seqblock, string_to_fade_shape(shape));
+}
+
+bool setSeqblockFadeOutShape(const_char *shape, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return false;
+
+  return SEQBLOCK_set_fade_out_shape(seqblock, string_to_fade_shape(shape));
+}
+
 
 
 // move seqblock / set stretch
