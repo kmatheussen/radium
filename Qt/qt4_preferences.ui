@@ -4296,7 +4296,7 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
          <item row="10" column="1">
           <widget class="QLabel" name="label_20">
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Update meters half as often. This sometimes makes editor scrolling smoother.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Update meters every other frame instead of each frame. This sometimes&lt;br&gt;makes the editor scroll more smoothly when the CPU is buzy.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
