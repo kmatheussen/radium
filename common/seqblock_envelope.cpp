@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define DO_DEBUG 0
 
+#define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
 
 #include "nsmtracker.h"
 #include "hashmap_proc.h"
@@ -29,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundProducer_proc.h"
+//#include "../audio/Envelope.hpp"
 
 #include "song_tempo_automation_proc.h"
 
@@ -41,6 +43,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "seqblock_envelope_proc.h"
+
+
+#if 0 // Very inefficient since Envelope::get_y is not a const method. ('_last_i' will be set back to 1 very often)
+
+radium::Envelope g_linear_fade_in = radium::Envelope(FADE_LINEAR, 1.0, true);
+radium::Envelope g_fast_fade_in = radium::Envelope(FADE_FAST, 1.0, true);
+radium::Envelope g_slow_fade_in = radium::Envelope(FADE_SLOW, 1.0, true);
+radium::Envelope g_constant_power_fade_in = radium::Envelope(FADE_CONSTANT_POWER, 1.0, true);
+radium::Envelope g_symmetric_fade_in = radium::Envelope(FADE_SYMMETRIC, 1.0, true);
+
+radium::Envelope g_linear_fade_out = radium::Envelope(FADE_LINEAR, 1.0, false);
+radium::Envelope g_fast_fade_out = radium::Envelope(FADE_FAST, 1.0, false);
+radium::Envelope g_slow_fade_out = radium::Envelope(FADE_SLOW, 1.0, false);
+radium::Envelope g_constant_power_fade_out = radium::Envelope(FADE_CONSTANT_POWER, 1.0, false);
+radium::Envelope g_symmetric_fade_out = radium::Envelope(FADE_SYMMETRIC, 1.0, false);
+
+#endif
+
+
 
 
 // g_curr_seqblock_envelope_seqtrack is set to NULL by ~SeqblockEnvelope or SEQBLOCK_ENVELOPE_cancel_curr_automation.
@@ -545,6 +566,7 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
       printf("new_db: %f. Pos: %f\n\n", new_db, pos);
 #endif
 
+#if 0
       if (seqblock->fadein > 0.0 || seqblock->fadeout > 0.0){
 
         int64_t seqblock_start_pos = start_time - seqblock->t.time;
@@ -585,7 +607,8 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
           }
         }
       }
-
+#endif
+      
       if (fabs(new_db-seqblock->envelope_db) > 0.0001){
 
         //printf("new db: %f. Old: %f (old gain: %f)\n", new_db, seqblock->envelope_db, seqblock->envelope_volume);
@@ -594,9 +617,9 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
         seqblock->envelope_db = new_db;
 
         if (new_db==0.0)
-          seqblock->envelope_volume = 1.0; // Note: Need volume smoothing in Seqtrack_plugin.o.
+          seqblock->envelope_volume = 1.0;
         else
-          seqblock->envelope_volume = db2gain(new_db); // Note: Need volume smoothing in Seqtrack_plugin.o.
+          seqblock->envelope_volume = db2gain(new_db);
 
       } else {
 
@@ -605,7 +628,64 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
         //printf("new db: xxx\n");
         
       }
-      
+
+      if (seqblock->fadein > 0.0 || seqblock->fadeout > 0.0){
+
+        int64_t seqblock_start_pos = start_time - seqblock->t.time;
+        int64_t seqblock_end_pos = end_time - seqblock->t.time;
+
+        if (seqblock_end_pos > 0){
+
+          int64_t seqblock_duration = seqblock->t.time2 - seqblock->t.time;          
+                    
+          double scaled_pos = (double)seqblock_start_pos / (double)seqblock_duration;
+
+          if (scaled_pos > 1){
+            
+            R_ASSERT_NON_RELEASE(false);
+            
+          } else if (scaled_pos < 0){
+
+            // why no assertion here? (missing comment)
+
+          } else {
+
+            if (scaled_pos < seqblock->fadein){
+
+              double fadein_pos = scale_double(scaled_pos,
+                                               0, seqblock->fadein,
+                                               0, 1);
+              
+              double fadein = seqblock->fade_in_envelope->get_y(fadein_pos);
+              
+              if (seqblock->envelope_volume_changed_this_block)
+                seqblock->envelope_volume *= fadein;
+              else {
+                seqblock->envelope_volume = fadein;
+                seqblock->envelope_volume_changed_this_block = true;
+              }
+            }
+            
+            if (scaled_pos > (1.0-seqblock->fadeout)) {
+              
+              double fadeout_pos = scale_double(scaled_pos,
+                                            1.0-seqblock->fadeout, 1,
+                                            0, 1);
+
+              double fadeout = seqblock->fade_out_envelope->get_y(fadeout_pos);
+
+              if (seqblock->envelope_volume_changed_this_block)
+                seqblock->envelope_volume *= fadeout;
+              else {
+                seqblock->envelope_volume = fadeout;
+                seqblock->envelope_volume_changed_this_block = true;
+              }
+            }
+            
+          }
+        }
+      }
+
     }
 
   }END_VECTOR_FOR_EACH;
@@ -708,8 +788,15 @@ float SEQBLOCK_ENVELOPE_get_node_x(struct SeqblockEnvelope *seqblockenvelope, in
 }
 
 static float get_node_y(const AutomationNode &node, float y1, float y2){
-  return scale(node.value, MIN_DB, MAX_SEQBLOCK_VOLUME_ENVELOPE_DB, y2, y1);
-  //return scale(gain2db(node.value), MIN_DB, 6, y2, y1);
+#if 0
+  return scale(db2gain(node.value),
+               db2gain(MIN_DB), db2gain(MAX_SEQBLOCK_VOLUME_ENVELOPE_DB),
+               y2, y1);
+#else
+  return scale(node.value,
+               MIN_DB, MAX_SEQBLOCK_VOLUME_ENVELOPE_DB,
+               y2, y1);
+#endif
 }
 
 float SEQBLOCK_ENVELOPE_get_node_y(struct SeqblockEnvelope *seqblockenvelope, int seqtracknum, int nodenum){

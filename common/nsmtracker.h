@@ -1114,6 +1114,15 @@ enum{
   LOGTYPE_HOLD = 201          // Like this: f(x) = f(0), [ 0 <= x <= 1 ]. Currently the only understood value, together with LOGTYPE_LINEAR.
 };
 
+// Fade types take from ardour
+enum FadeShape{
+  FADE_CUSTOM = 0,
+  FADE_LINEAR = 1,
+  FADE_FAST = 2,
+  FADE_SLOW = 3,
+  FADE_CONSTANT_POWER = 4,
+  FADE_SYMMETRIC = 5
+};
 
 
 
@@ -2521,6 +2530,10 @@ enum SeqblockBoxSelected{
   SB_INTERIOR_RIGHT
 };
 
+#ifdef RADIUM_ACCESS_SEQBLOCK_ENVELOPE
+#include "../audio/Envelope.hpp"
+#endif
+
 struct SeqBlock{
   int64_t id;
 
@@ -2579,6 +2592,14 @@ struct SeqBlock{
 
   double fadein; // value between 0 and 1
   double fadeout; // value between 0 and 1
+
+#if RADIUM_ACCESS_SEQBLOCK_ENVELOPE
+  radium::Envelope *fade_in_envelope;
+  radium::Envelope *fade_out_envelope;
+#else
+  void *fade_in_envelope; // radium::Envelope instance
+  void *fade_out_envelope; // radium::Envelope instance
+#endif
 
   bool envelope_enabled;
   float envelope_volume; // gain (current envelope_volume calculated from envelope+fadein+fadeout, updated each block)

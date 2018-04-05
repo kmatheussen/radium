@@ -78,6 +78,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
+#define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
 
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
