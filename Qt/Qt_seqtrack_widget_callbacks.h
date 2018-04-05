@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 
 #include "../audio/Peaks.hpp"
+//#include "../audio/Envelope.hpp"
 
 #include "../common/seqtrack_proc.h"
 
@@ -1238,26 +1239,52 @@ public:
     sel_pen.setWidthF(root->song->tracker_windows->systemfontheight / 3);
 
     if (seqblock->fadein > 0){
-      double x = scale_double(seqblock->fadein, 0, 1, rect.left(), rect.right());
-      QPointF points[3] = {
+      double fade_x = scale_double(seqblock->fadein, 0, 1, rect.left(), rect.right());
+#if 0
+      const int num_points = 3;
+      QPointF points[num_points] = {
         QPointF(rect.left(),
                 rect.top()),
-        QPointF(x,
+        QPointF(fade_x,
                 rect.top()),
         QPointF(rect.left(),
                 rect.bottom())
       };
-      myFilledPolygon(p, points, 3, color);
+      myFilledPolygon(p, points, num_points, color);
       if (seqblock->selected_box==SB_FADE_LEFT) p.setPen(sel_pen);  else  p.setPen(pen);
       p.drawLine(points[1], points[2]);
+#else
+      float *xs, *ys;
+      
+      int num_points = seqblock->fade_in_envelope->getPoints2(&xs, &ys);
+      
+      QPointF points[num_points+2];
+      
+      for(int i=0;i<num_points;i++){
+        points[i].setX(scale(xs[i], 0, 1, rect.left(), fade_x));
+        points[i].setY(scale(ys[i], 0, 1, rect.bottom(), rect.top()));
+      }
+      
+      points[num_points].setX(fade_x);
+      points[num_points].setY(rect.top());
+      
+      points[num_points+1].setX(rect.left());
+      points[num_points+1].setY(rect.top());
+      
+      myFilledPolygon(p, points, num_points+2, color);
+      //if (seqblock->selected_box==SB_FADE_LEFT) p.setPen(sel_pen);  else  p.setPen(pen);
+      //p.drawLine(points[1], points[2]);
+#endif
     }
 
+      
     if (seqblock->fadeout > 0){
-      double x = scale_double(seqblock->fadeout, 0, 1, rect.right(), rect.left());
+      double fade_x = scale_double(seqblock->fadeout, 0, 1, rect.right(), rect.left());
+#if 0
       QPointF points[3] = {
         QPointF(rect.right(),
                 rect.top()),
-        QPointF(x,
+        QPointF(fade_x,
                 rect.top()),
         QPointF(rect.right(),
                 rect.bottom())
@@ -1265,6 +1292,28 @@ public:
       myFilledPolygon(p, points, 3, color);
       if (seqblock->selected_box==SB_FADE_RIGHT) p.setPen(sel_pen);  else  p.setPen(pen);
       p.drawLine(points[1], points[2]);
+#else
+      float *xs, *ys;
+      
+      int num_points = seqblock->fade_out_envelope->getPoints2(&xs, &ys);
+      
+      QPointF points[num_points+2];
+      
+      for(int i=0;i<num_points;i++){
+        points[i].setX(scale(xs[i], 0, 1, fade_x, rect.right()));
+        points[i].setY(scale(ys[i], 0, 1, rect.bottom(), rect.top()));
+      }
+      
+      points[num_points].setX(rect.right());
+      points[num_points].setY(rect.top());
+      
+      points[num_points+1].setX(fade_x);
+      points[num_points+1].setY(rect.top());
+      
+      myFilledPolygon(p, points, num_points+2, color);
+      //if (seqblock->selected_box==SB_FADE_LEFT) p.setPen(sel_pen);  else  p.setPen(pen);
+      //p.drawLine(points[1], points[2]);
+#endif
     }
   }
 

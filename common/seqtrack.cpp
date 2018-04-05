@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileInfo>
 #include <QSet>
 
+#define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
+
 #include "nsmtracker.h"
 #include "player_proc.h"
 #include "vector_proc.h"
@@ -386,6 +388,9 @@ static void seqblockgcfinalizer(void *actual_mem_start, void *user_data){
   //printf("FINALIZING seqtrack\n");
   //getchar();
   SEQBLOCK_ENVELOPE_free(seqblock->envelope);
+
+  delete seqblock->fade_in_envelope;
+  delete seqblock->fade_out_envelope;
 }
 
 static void default_duration_changed(struct SeqBlock *seqblock, int64_t default_duration){
@@ -437,6 +442,9 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
 
   seqblock->fadein = 0;
   seqblock->fadeout = 0;
+
+  seqblock->fade_in_envelope = new radium::Envelope(FADE_LINEAR, 1.0, true);
+  seqblock->fade_out_envelope = new radium::Envelope(FADE_LINEAR, 1.0, false);
 
   if(seqtrack != NULL){
     R_ASSERT(false==PLAYER_current_thread_has_lock());
