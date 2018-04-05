@@ -1193,7 +1193,7 @@ FLOAT_TYPE
 :fade-in-shape
 0
 STRING_TYPE
-linear
+Linear
 :fade-out
 0
 FLOAT_TYPE
@@ -1201,7 +1201,7 @@ FLOAT_TYPE
 :fade-out-shape
 0
 STRING_TYPE
-linear
+Linear
 :id
 0
 INT_TYPE

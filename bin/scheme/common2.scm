@@ -1561,6 +1561,7 @@ for .emacs:
                                                             (cdddr args))))))
                      ((eq? :icon arg2)
                       (let ((filename (caddr args)))
+                        ;;(c-display (<-> "stext: -" text "-" " rest:" (cdddr args)))
                         (parse-popup-menu-options (cons (<-> "[icon]" filename " " text)
                                                         (cdddr args)))))
                      ((procedure? arg2)
@@ -1575,7 +1576,21 @@ for .emacs:
                                     (lambda () #t))
                               (parse-popup-menu-options (cddr args))))))))))
 
-#||
+#!!
+(parse-popup-menu-options (list 
+                           "hello6"
+                           :icon (<ra> :to-base64 "<<<<<<<<<<envelope_icon^Constant Power^fadein")
+                           (lambda ()
+                             (c-display "gakk4"))))
+(<ra> :to-base64 "<<<<<<<<<<envelope_icon^Constant Power^fadein")
+
+(parse-popup-menu-options (list "hello1" 
+                                :enabled #f
+                                :icon (<ra> :to-base64 "/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png")
+                                (lambda ()
+                                  6)))
+(<ra> :to-base64 "/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png")
+
 (parse-popup-menu-options (list (list "bbb" (lambda ()
                                               6))
                                 "------"))
@@ -1606,7 +1621,7 @@ for .emacs:
                                                       (c-display "hepp3")))
                                 "hello4" (lambda ()
                                            (c-display "hepp4"))))
-||#
+!!#
 
 (define (get-popup-menu-args args)
   ;;(c-display "aaa")
@@ -1691,7 +1706,12 @@ for .emacs:
             (list 
              "hello5"
              :icon (<ra> :to-base64 "/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png")
-             (lambda (ison)
+             (lambda ()
+               (c-display "gakk4" ison)))
+            (list 
+             "hello6"
+             :icon (<ra> :to-base64 "<<<<<<<<<<envelope_icon^Constant Power^fadein")
+             (lambda ()
                (c-display "gakk4" ison)))
             )
 !!#
