@@ -1124,6 +1124,32 @@ enum FadeShape{
   FADE_SYMMETRIC = 5
 };
 
+static inline const char *fade_shape_to_string(enum FadeShape fade_shape){
+  switch(fade_shape){
+    case FADE_CUSTOM: return "custom";
+    case FADE_LINEAR: return "linear";
+    case FADE_FAST: return "fast";
+    case FADE_SLOW: return "slow";
+    case FADE_CONSTANT_POWER: return "constant_power";
+    case FADE_SYMMETRIC: return "symmetric";
+  }
+
+  R_ASSERT(false);
+  return "linear"; // Fewer assertions than FADE_CUSTOM down the lane
+}
+
+
+static inline enum FadeShape string_to_fade_shape(const char *string){
+  if (!strcmp(string, "custom")) return FADE_CUSTOM;
+  if (!strcmp(string, "linear")) return FADE_LINEAR;
+  if (!strcmp(string, "fast")) return FADE_FAST;
+  if (!strcmp(string, "slow")) return FADE_SLOW;
+  if (!strcmp(string, "constant_power")) return FADE_CONSTANT_POWER;
+  if (!strcmp(string, "symmetric")) return FADE_SYMMETRIC;
+
+  R_ASSERT(false);
+  return FADE_LINEAR;  // Fewer assertions than FADE_CUSTOM down the lane
+}
 
 
 /*********************************************************************

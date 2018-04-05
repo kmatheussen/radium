@@ -931,6 +931,9 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
   HASH_put_float(state, ":fade-in", seqblock->fadein);
   HASH_put_float(state, ":fade-out", seqblock->fadeout);
 
+  HASH_put_chars(state, ":fade-in-shape", fade_shape_to_string(seqblock->fade_in_envelope->_shape));
+  HASH_put_chars(state, ":fade-out-shape", fade_shape_to_string(seqblock->fade_out_envelope->_shape));
+
   HASH_put_bool(state, ":envelope-enabled", seqblock->envelope_enabled);
   HASH_put_dyn(state, ":envelope", SEQBLOCK_ENVELOPE_get_state(seqblock->envelope));
 
@@ -1280,6 +1283,22 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
   if (HASH_has_key(state, ":fade-in")){
     seqblock->fadein = HASH_get_float(state, ":fade-in");
     seqblock->fadeout = HASH_get_float(state, ":fade-out");
+  }
+
+  {
+    delete seqblock->fade_in_envelope;
+    delete seqblock->fade_out_envelope;
+
+    FadeShape inshape = FADE_FAST; // Older songs only had fade fast.
+    FadeShape outshape = FADE_FAST; // Older songs only had fade fast.
+
+    if (HASH_has_key(state, ":fade-in-shape")){
+      inshape = string_to_fade_shape(HASH_get_chars(state, ":fade-in-shape"));
+      outshape = string_to_fade_shape(HASH_get_chars(state, ":fade-out-shape"));
+    }
+
+    seqblock->fade_in_envelope = new radium::Envelope(inshape, 1.0, true);
+    seqblock->fade_out_envelope = new radium::Envelope(outshape, 1.0, false);
   }
 
   return seqblock;
