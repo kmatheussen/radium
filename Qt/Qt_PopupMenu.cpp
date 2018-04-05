@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QWidgetAction>
 #include <QCheckBox>
 #include <QMenu>
-
+#include <QProxyStyle>
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
@@ -37,6 +37,25 @@ namespace{
 
   static bool _has_keyboard_focus = false; // Must be global since more than one QMenu may open simultaneously. (not supposed to happen, but it does happen)
 
+
+
+  class MyProxyStyle: public QProxyStyle {
+    Q_OBJECT
+  public:
+
+    MyProxyStyle(QStyle* style = 0) : QProxyStyle(style) {
+    }
+
+    MyProxyStyle(const QString& key) : QProxyStyle(key) { }
+
+    virtual int pixelMetric(QStyle::PixelMetric metric, const QStyleOption* option = 0, const QWidget* widget = 0 ) const {
+      if (metric==QStyle::PM_SmallIconSize && root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL)
+        return root->song->tracker_windows->fontheight*2;
+      else
+        return QProxyStyle::pixelMetric( metric, option, widget ); // return default values for the rest
+    }
+
+  };
 
   struct MyQMenu : public QMenu{
 
@@ -324,6 +343,7 @@ namespace{
     }
     
     ClickableAction(const QString & text, MyQMenu *qmenu, int num, bool is_async, func_t *callback, std::function<void(int,bool)> callback3, int *result)
+      //: QAction(QIcon("/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png"), text, qmenu)
       : QAction(text, qmenu)
       , num(num)
       , result(result)
@@ -377,7 +397,8 @@ static QMenu *create_qmenu(
 {
   MyQMenu *menu = new MyQMenu(NULL, is_async, callback2);
   menu->setAttribute(Qt::WA_DeleteOnClose);
-  
+  menu->setStyle(new MyProxyStyle);
+
   QMenu *curr_menu = menu;
   
   QStack<QMenu*> parents;

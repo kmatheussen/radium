@@ -280,6 +280,11 @@ extern LANGSPEC bool SEQBLOCK_set_interior_start(struct SeqTrack *seqtrack, stru
 extern LANGSPEC bool SEQBLOCK_set_interior_end(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_interior_end, bool is_gfx); // returns true if something was changed
 */
 
+// return true if shape was changed. (I.e. not equal to old shape)
+bool SEQBLOCK_set_fade_in_shape(struct SeqBlock *seqblock, enum FadeShape shape);
+bool SEQBLOCK_set_fade_out_shape(struct SeqBlock *seqblock, enum FadeShape shape);
+
+
 extern LANGSPEC bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack); // Sets seqtrack->curr_sample_seqblock when starting/stopping playing audio file.
 
 extern LANGSPEC void SEQUENCER_timing_has_changed(void);

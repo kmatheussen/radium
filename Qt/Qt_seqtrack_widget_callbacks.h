@@ -1272,7 +1272,8 @@ public:
       points[num_points+1].setY(rect.top());
       
       myFilledPolygon(p, points, num_points+2, color);
-      //if (seqblock->selected_box==SB_FADE_LEFT) p.setPen(sel_pen);  else  p.setPen(pen);
+      if (seqblock->selected_box==SB_FADE_LEFT) p.setPen(sel_pen);  else  p.setPen(pen);
+      p.drawPolyline(points, num_points);
       //p.drawLine(points[1], points[2]);
 #endif
     }
@@ -1311,7 +1312,8 @@ public:
       points[num_points+1].setY(rect.top());
       
       myFilledPolygon(p, points, num_points+2, color);
-      //if (seqblock->selected_box==SB_FADE_LEFT) p.setPen(sel_pen);  else  p.setPen(pen);
+      if (seqblock->selected_box==SB_FADE_RIGHT) p.setPen(sel_pen);  else  p.setPen(pen);
+      p.drawPolyline(points, num_points);
       //p.drawLine(points[1], points[2]);
 #endif
     }

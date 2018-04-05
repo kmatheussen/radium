@@ -1114,38 +1114,39 @@ enum{
   LOGTYPE_HOLD = 201          // Like this: f(x) = f(0), [ 0 <= x <= 1 ]. Currently the only understood value, together with LOGTYPE_LINEAR.
 };
 
-// Fade types take from ardour
+// Fade types take from ardour. The numbers must start at 0, and increase by 1 so that they can easily be iterated.
 enum FadeShape{
   FADE_CUSTOM = 0,
-  FADE_LINEAR = 1,
-  FADE_FAST = 2,
-  FADE_SLOW = 3,
-  FADE_CONSTANT_POWER = 4,
-  FADE_SYMMETRIC = 5
+  FADE_LINEAR,
+  FADE_FAST,
+  FADE_SLOW,
+  FADE_CONSTANT_POWER,
+  FADE_SYMMETRIC // If not last anymore, update NUM_FADE_SHAPES definition below.
 };
+#define NUM_FADE_SHAPES (FADE_SYMMETRIC+1)
+
 
 static inline const char *fade_shape_to_string(enum FadeShape fade_shape){
   switch(fade_shape){
-    case FADE_CUSTOM: return "custom";
-    case FADE_LINEAR: return "linear";
-    case FADE_FAST: return "fast";
-    case FADE_SLOW: return "slow";
-    case FADE_CONSTANT_POWER: return "constant_power";
-    case FADE_SYMMETRIC: return "symmetric";
+    case FADE_CUSTOM: return "Custom";
+    case FADE_LINEAR: return "Linear";
+    case FADE_FAST: return "Fast";
+    case FADE_SLOW: return "Slow";
+    case FADE_CONSTANT_POWER: return "Constant Power";
+    case FADE_SYMMETRIC: return "Symmetric";
   }
 
   R_ASSERT(false);
-  return "linear"; // Fewer assertions than FADE_CUSTOM down the lane
+  return fade_shape_to_string(FADE_LINEAR); // Fewer assertions than FADE_CUSTOM down the lane
 }
 
 
 static inline enum FadeShape string_to_fade_shape(const char *string){
-  if (!strcmp(string, "custom")) return FADE_CUSTOM;
-  if (!strcmp(string, "linear")) return FADE_LINEAR;
-  if (!strcmp(string, "fast")) return FADE_FAST;
-  if (!strcmp(string, "slow")) return FADE_SLOW;
-  if (!strcmp(string, "constant_power")) return FADE_CONSTANT_POWER;
-  if (!strcmp(string, "symmetric")) return FADE_SYMMETRIC;
+  for(int i = 0 ; i<NUM_FADE_SHAPES ; i++){
+    enum FadeShape shape = (enum FadeShape)i;
+    if (!strcmp(string, fade_shape_to_string(shape)))
+      return shape;
+  }
 
   R_ASSERT(false);
   return FADE_LINEAR;  // Fewer assertions than FADE_CUSTOM down the lane
