@@ -1782,37 +1782,33 @@ dyn_t getFadeShapes(void){
   return DYN_create_array(dynvec);
 }
 
-const_char *getSeqblockFadeInShape(int seqblocknum, int seqtracknum){
+const_char* getFadeShapeIconFilename(const_char* shape, bool is_fadein){
+  radium::Envelope env(string_to_fade_shape(shape), 1.0, is_fadein);
+  return talloc_strdup(env.get_icon_filename().toUtf8().toBase64().constData());
+}
+
+const_char *getSeqblockFadeShape(bool is_fadein, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)
     return "";
 
-  return fade_shape_to_string(seqblock->fade_in_envelope->_shape);
+  if (is_fadein)
+    return fade_shape_to_string(seqblock->fade_in_envelope->_shape);
+  else
+    return fade_shape_to_string(seqblock->fade_out_envelope->_shape);
 }
 
-const_char *getSeqblockFadeOutShape(int seqblocknum, int seqtracknum){
-  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
-  if (seqblock==NULL)
-    return "";
-
-  return fade_shape_to_string(seqblock->fade_out_envelope->_shape);
-}
-
-bool setSeqblockFadeInShape(const_char *shape, int seqblocknum, int seqtracknum){
+bool setSeqblockFadeShape(const_char *shape, bool is_fadein, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)
     return false;
 
-  return SEQBLOCK_set_fade_in_shape(seqblock, string_to_fade_shape(shape));
+  if (is_fadein)
+    return SEQBLOCK_set_fade_in_shape(seqblock, string_to_fade_shape(shape));
+  else
+    return SEQBLOCK_set_fade_out_shape(seqblock, string_to_fade_shape(shape));
 }
 
-bool setSeqblockFadeOutShape(const_char *shape, int seqblocknum, int seqtracknum){
-  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
-  if (seqblock==NULL)
-    return false;
-
-  return SEQBLOCK_set_fade_out_shape(seqblock, string_to_fade_shape(shape));
-}
 
 
 

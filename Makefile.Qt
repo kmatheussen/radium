@@ -816,7 +816,7 @@ nodelines.o:  $(BUILD_DEPENDENCIES) $(CD)nodelines.c
 range.o:  $(BUILD_DEPENDENCIES) $(CD)range.c
 	$(CC) $(CD)range.c $(OPT)
 
-seqtrack.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack.cpp
+seqtrack.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack.cpp audio/Envelope.hpp
 	$(CCC) $(CD)seqtrack.cpp $(QTOPT)
 
 seqtrack_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h
@@ -1240,7 +1240,7 @@ GTK_visual.o:  $(BUILD_DEPENDENCIES) GTK/GTK_visual.c  $(CD)visual_op_queue_proc
 GTK_ReqType.o:  $(BUILD_DEPENDENCIES) GTK/GTK_ReqType.c 
 	$(CC) GTK/GTK_ReqType.c $(OPT) $(GTK_CFLAGS)
 
-GTK_PopupMenu.o:  $(BUILD_DEPENDENCIES) GTK/GTK_PopupMenu.c 
+GTK_PopupMenu.o:  $(BUILD_DEPENDENCIES) GTK/GTK_PopupMenu.c
 	$(CC) GTK/GTK_PopupMenu.c $(OPT) $(GTK_CFLAGS)
 
 
@@ -1274,7 +1274,7 @@ Qt_Fonts.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Fonts.cpp
 Qt_ReqType.o:  $(BUILD_DEPENDENCIES) $(P)Qt_ReqType.cpp
 	$(CCC) $(P)Qt_ReqType.cpp $(QTOPT)
 
-Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cpp 
+Qt_PopupMenu.o:  $(BUILD_DEPENDENCIES) $(P)Qt_PopupMenu.cpp $(P)mQt_PopupMenu.cpp audio/Envelope.hpp
 	$(CCC) $(P)Qt_PopupMenu.cpp $(QTOPT)
 
 $(P)mQt_PopupMenu.cpp: $(P)Qt_PopupMenu.cpp $(BUILD_DEPENDENCIES)
@@ -1617,7 +1617,7 @@ api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.c $(API)radium_pr
 api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.c $(API)radium_proc.h
 	$(CC)  $(API)api_mouse.c $(OPT)
 
-api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.cpp $(API)radium_proc.h
+api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.cpp $(API)radium_proc.h audio/Envelope.hpp
 	$(CCC)  $(API)api_seqtracks.cpp $(QTOPT)
 
 api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp $(API)radium_proc.h Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h

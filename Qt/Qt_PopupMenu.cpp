@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCheckBox>
 #include <QMenu>
 #include <QProxyStyle>
+
+#define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
+
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
@@ -452,8 +455,8 @@ static QMenu *create_qmenu(
         } else {
           QString encoded = text.left(pos);
           icon_filename = QByteArray::fromBase64(encoded.toUtf8());
-          text = text.right(text.size() - pos + 1);
-          printf("  text: -%s-. encoded: -%s-. Filename: -%s-\n", text.toUtf8().constData(), encoded.toUtf8().constData(), icon_filename.toUtf8().constData());
+          text = text.right(text.size() - pos - 1);
+          //printf("  text: -%s-. encoded: -%s-. Filename: -%s-\n", text.toUtf8().constData(), encoded.toUtf8().constData(), icon_filename.toUtf8().constData());
         }
         goto parse_next;
       }
@@ -488,8 +491,15 @@ static QMenu *create_qmenu(
             icon = icon_map[icon_filename];
 
           } else {
+            QColor background(180,180,190,200);
 
-            icon = QIcon(icon_filename);
+            icon
+              = icon_filename.startsWith("<<<<<<<<<<envelope_icon")
+              ? ENVELOPE_get_icon(icon_filename,
+                                  get_system_fontheight()*4, get_system_fontheight()*4,
+                                  background.darker(200), background, QColor(40,20,45,150)
+                                  )
+              : QIcon(icon_filename);
 
             if(icon.isNull())
               handleError("Could not load \"%s\".", icon_filename.toUtf8().constData());

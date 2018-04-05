@@ -2557,6 +2557,8 @@ enum SeqblockBoxSelected{
   SB_INTERIOR_RIGHT
 };
 
+static inline int get_system_fontheight(void);
+
 #ifdef RADIUM_ACCESS_SEQBLOCK_ENVELOPE
 #include "../audio/Envelope.hpp"
 #endif
@@ -2796,6 +2798,13 @@ struct Root{
 };
 
 extern struct Root *root;
+
+static inline int get_system_fontheight(void){
+  if (root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL)
+    return root->song->tracker_windows->systemfontheight;
+  else
+    return 20;
+}
 
 // these two contains the same value, but g_is_starting_up can only be accessed from the main thread.
 extern DEFINE_ATOMIC(bool, is_starting_up);

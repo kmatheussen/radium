@@ -3958,14 +3958,11 @@
                             (begin
                               (popup-menu (map (lambda (shape-name)
                                                  (list (<-> shape-name " shape")
-                                                       :enabled (not (string=? shape-name (if is-fade-in
-                                                                                              (<ra> :get-seqblock-fade-in-shape seqblocknum seqtracknum)
-                                                                                              (<ra> :get-seqblock-fade-out-shape seqblocknum seqtracknum))))
+                                                       :enabled (not (string=? shape-name (<ra> :get-seqblock-fade-shape is-fade-in seqblocknum seqtracknum)))
+                                                       :icon (<ra> :get-fade-shape-icon-filename shape-name is-fade-in)
                                                        (lambda ()
                                                          (<ra> :undo-sequencer)
-                                                         (if is-fade-in
-                                                             (<ra> :set-seqblock-fade-in-shape shape-name seqblocknum seqtracknum)
-                                                             (<ra> :set-seqblock-fade-out-shape shape-name seqblocknum seqtracknum)))))
+                                                         (<ra> :set-seqblock-fade-shape shape-name is-fade-in seqblocknum seqtracknum))))
                                                (<ra> :get-fade-shapes)))
                               #t)))))))
 

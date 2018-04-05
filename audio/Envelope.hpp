@@ -27,6 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include <QVector>
+#include <QIcon>
+#include <QStringList>
+#include <QPen>
+#include <QPainter>
 
 #include "SoundPlugin.h"
 
@@ -69,11 +73,13 @@ private:
 public:
 
   FadeShape _shape;
+  bool _is_fade_in;
 
   Envelope(const Envelope &env)
     : Envelope(env._num_points, env._xs, env._ys)
   {
     _shape = env._shape;
+    _is_fade_in = env._is_fade_in;
   }
 
   
@@ -82,17 +88,19 @@ public:
     , _xs((float*)memcpy(malloc(num_points*sizeof(float)), xs, num_points*sizeof(float)))
     , _ys((float*)memcpy(malloc(num_points*sizeof(float)), ys, num_points*sizeof(float)))
     , _shape(FADE_CUSTOM)
+    , _is_fade_in(true)
   {
     R_ASSERT(num_points >= 2);
   }
 
   Envelope(const QVector<Point> &points)
     : _shape(FADE_CUSTOM)
+    , _is_fade_in(true)
   {
     setPoints(points);
   }
 
-  int getPoints2(float **xs, float **ys){
+  int getPoints2(float **xs, float **ys) const {
     *xs = _xs;
     *ys = _ys;
     return _num_points;
@@ -197,6 +205,7 @@ public:
   // from ardour (code based on)
   Envelope(FadeShape shape, double length, bool want_fade_in)
     : _shape(shape)
+    , _is_fade_in(want_fade_in)
   {
     QVector<Point> env;
     bool env_is_fade_in;
@@ -273,7 +282,66 @@ public:
     free(_xs);
     free(_ys);
   }
-  
+
+  void myFilledPolygon(QPainter &p, QPointF *points, int num_points, const QColor &color) const {
+    QPen pen = p.pen();
+    p.setPen(Qt::NoPen);
+    p.setBrush(color);
+    p.drawPolygon(points, num_points);
+    p.setBrush(Qt::NoBrush);
+    p.setPen(pen);
+  }
+
+  QIcon get_icon(int width, int height, QColor foreground, QColor background, QColor pen_color) const {
+
+    QPixmap pixmap(width, height);
+    pixmap.fill(background);
+
+    {
+      QPainter p(&pixmap);
+      p.setRenderHints(QPainter::Antialiasing,true);
+      
+      float *xs, *ys;
+      int num_points = getPoints2(&xs, &ys);
+      
+      QPointF points[num_points+2];
+      
+      for(int i=0;i<num_points;i++){
+        points[i].setX(scale(xs[i], 0, 1, 0, width));
+        points[i].setY(scale(ys[i], 0, 1, height, 0));
+      }
+
+      if (_is_fade_in) {
+
+        points[num_points].setX(width);
+        points[num_points].setY(0);
+        
+        points[num_points+1].setX(0);
+        points[num_points+1].setY(0);
+
+      } else {
+        points[num_points].setX(width);
+        points[num_points].setY(0);
+        
+        points[num_points+1].setX(0);
+        points[num_points+1].setY(0);
+      }
+
+      myFilledPolygon(p, points, num_points+2, foreground);
+      QPen sel_pen(pen_color);
+      sel_pen.setWidthF(get_system_fontheight() / 3);
+      p.setPen(sel_pen);
+      p.drawPolyline(points, num_points);
+    }
+
+    return QIcon(pixmap);
+  }
+
+  QString get_icon_filename(void) const {
+    R_ASSERT(_shape != FADE_CUSTOM);
+    return QString("<<<<<<<<<<envelope_icon^") + fade_shape_to_string(_shape) + "^" + (_is_fade_in ? "fadein" : "fadeout");
+  }
+
   float get_y(float x) {
     R_ASSERT_RETURN_IF_FALSE2(_num_points > 0, 0.0);
 
@@ -293,6 +361,15 @@ public:
     
 };
   
+}
+
+static inline QIcon ENVELOPE_get_icon(QString text, int width, int height, QColor foreground, QColor background, QColor pen_color){
+  QStringList args = text.split("^");
+  R_ASSERT_RETURN_IF_FALSE2(args.size()==3, QIcon());
+
+  radium::Envelope env(string_to_fade_shape(args[1].toUtf8().constData()), 1.0, args[2]=="fadein");
+
+  return env.get_icon(width, height, foreground, background, pen_color);
 }
 
 #if 0 // Very inefficient since Envelope::get_y is not a const method. ('_last_i' will be set back to 1 very often)
