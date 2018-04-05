@@ -50,6 +50,8 @@ namespace{
 
   static MyProxyStyle g_my_proxy_style;
 
+
+
   struct MyQMenu : public QMenu{
 
     func_t *_callback;
@@ -415,25 +417,32 @@ static QMenu *create_qmenu(
       
       
       bool disabled = false;
-      
+      bool is_checkable = false;
+      bool is_checked = false;
+
+    parse_next:
+
       if (text.startsWith("[disabled]")){
         text = text.right(text.size() - 10);
         disabled = true;
+        goto parse_next;
       }
       
-      if (text.startsWith("[check ")){
-        
-        bool is_on = text.startsWith("[check on]");
-        
-        int right_subtract = 10;
-        if (!is_on)
-          right_subtract = 11;
+      if (text.startsWith("[check on]")){
+        text = text.right(text.size() - 10);
+        is_checkable = true;
+        is_checked = true;
+        goto parse_next;
+      }
 
-        QString text2 = text.right(text.size() - right_subtract);
-                                   
-        action = new CheckableAction(text2, is_on, menu, i, is_async, callback2, callback3, result);
-        
-      } else if (text.startsWith("[submenu start]")){
+      if (text.startsWith("[check off]")){
+        text = text.right(text.size() - 11);
+        is_checkable = true;
+        is_checked = false;
+        goto parse_next;
+      }
+
+      if (text.startsWith("[submenu start]")){
         
         n_submenuess.push(n_submenues);
         n_submenues = 0;
@@ -452,8 +461,10 @@ static QMenu *create_qmenu(
         
       } else {
         
-        action = new ClickableAction(text, menu, i, is_async, callback2, callback3, result);
-        
+        if (is_checkable)
+          action = new CheckableAction(text, is_checked, menu, i, is_async, callback2, callback3, result);
+        else
+          action = new ClickableAction(text, menu, i, is_async, callback2, callback3, result);        
       }
       
       if (action != NULL){

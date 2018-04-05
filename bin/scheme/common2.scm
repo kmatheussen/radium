@@ -1640,6 +1640,7 @@ for .emacs:
               ((get-func n) (car checkboxval))))))
 
 (define (popup-menu-from-args popup-menu-args)
+  ;;(c-display (<-> "ARGS: -" (car popup-menu-args) "-"))
   (apply ra:popup-menu popup-menu-args))
         
 ;; Async only. Use ra:simple-popup-menu for sync.
@@ -1647,7 +1648,7 @@ for .emacs:
   (popup-menu-from-args (get-popup-menu-args args)))
 
 
-#||
+#!!
 (popup-menu (list "Select preset from a different directory"
                   (lambda x
                     x))
@@ -1677,8 +1678,14 @@ for .emacs:
                                    (c-display "gakk2"))
             "hello3" :enabled #f (lambda ()
                                    (c-display "gakk3"))
+            (list 
+             "hello4"
+             :check #t
+             :enabled #f
+             (lambda (ison)
+               (c-display "gakk4" ison)))
             )
-||#
+!!#
             
 #||
 (popup-menu "[check on] gakk1 on" (lambda (ison)

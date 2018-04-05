@@ -801,8 +801,8 @@
               "Configure color" (lambda ()
                                   (show-instrument-color-dialog parentgui instrument-id))
               (list "Show GUI"
-                    :check (<ra> :instrument-gui-is-visible instrument-id parentgui)
                     :enabled (<ra> :has-native-instrument-gui instrument-id)
+                    :check (<ra> :instrument-gui-is-visible instrument-id parentgui)
                     (lambda (enabled)
                       (if enabled
                           (<ra> :show-instrument-gui instrument-id parentgui #f)
