@@ -268,6 +268,11 @@ public:
           env_is_fade_in = false;
         }
         break;
+
+      default:
+        abort();
+        env_is_fade_in = want_fade_in;
+        break;
     }
 
     //fprintf(stderr, "Size2: %d\n", env.size());

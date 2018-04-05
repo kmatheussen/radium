@@ -36,7 +36,13 @@ static inline float db2linear(float db, float y1, float y2){
 }
 
 
-extern LANGSPEC void AUDIOMETERPEAKS_call_very_often(int ms);
+/*
+  what_to_update:
+     -1 => Update all
+      0 => First half
+      1 => Second half
+ */
+extern void AUDIOMETERPEAKS_call_very_often(int ms, int what_to_update);
 
 extern LANGSPEC AudioMeterPeaks AUDIOMETERPEAKS_create(int num_channels);
 extern LANGSPEC void AUDIOMETERPEAKS_delete(AudioMeterPeaks peaks);

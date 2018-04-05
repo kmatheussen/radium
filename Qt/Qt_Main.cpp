@@ -1846,13 +1846,35 @@ protected:
 
     g_main_timer_num_calls++; // Must be placed here since 'is_called_every_ms' depends on it.
 
+
+#if 0 // Not sure whether 0 or 1 is best. In theory 1 should be the best, but I can't see any difference compared to non-cpu friendly operation right now. However, I have seen that 0 has worked before, so I'm fairly confident 0 could work. Whether 1 may work remains to be seen.
     {
-      int interval = useCPUFriendlyAudiometerUpdates() ? 40 : 20;
-      if (is_called_every_ms(interval)) {
-        AUDIOMETERPEAKS_call_very_often(interval); // light operation
-        API_gui_call_regularly();
+      if (is_called_every_ms(20)){
+        API_gui_call_regularly(); // light operation
+        
+        //int interval = useCPUFriendlyAudiometerUpdates() ? 40 : 20;
+
+        static int counter = 0;
+        counter++;
+
+        int what_to_update = -1;
+        if (useCPUFriendlyAudiometerUpdates())
+          what_to_update = (counter % 2) == 0;
+
+        AUDIOMETERPEAKS_call_very_often(20, what_to_update);
       }
     }
+#else
+    {
+      int interval = useCPUFriendlyAudiometerUpdates() ? 40 : 20;
+
+      if (is_called_every_ms(interval)){
+        API_gui_call_regularly();
+        
+        AUDIOMETERPEAKS_call_very_often(interval, -1);
+      }
+    }
+#endif
 
     RETURN_IF_DATA_IS_INACCESSIBLE();
 

@@ -68,8 +68,15 @@ static void call_very_often(SoundPlugin *plugin, bool reset_falloff, int ms){
 
 static const int g_falloff_reset = 5; // 5 seconds between each falloff reset.
 
+/*
+  what_to_update:
+     -1 => Update all
+      0 => First half
+      1 => Second half
+ */
+
 // NOTE. This function can be called from a custom exec().
-void AUDIOMETERPEAKS_call_very_often(int ms){
+void AUDIOMETERPEAKS_call_very_often(int ms, int what_to_update){
   static int counter = 0;
 
   counter+=ms;
@@ -82,11 +89,28 @@ void AUDIOMETERPEAKS_call_very_often(int ms){
   }
 
   vector_t *audio_patches = &(get_audio_instrument()->patches);
-  
+
+  const int num_patches = audio_patches->num_elements;
+
   VECTOR_FOR_EACH(struct Patch *, patch, audio_patches){
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     if(plugin != NULL){
-      call_very_often(plugin, reset_falloff, ms);
+
+      bool doit = true;
+
+      int ms_to_use = what_to_update==-1 ? ms : ms*2;
+
+      if (what_to_update==0 || what_to_update==1){
+        if (what_to_update==0 && iterator666 >= int(num_patches/2))
+          break;
+        if (what_to_update==1 && !(iterator666 >= int(num_patches/2)))
+          doit = false;
+      }
+
+      if (doit){
+        //printf("%d: Updating %d / %d\n", what_to_update, iterator666, num_patches);
+        call_very_often(plugin, reset_falloff, ms_to_use);
+      }
     }
   }END_VECTOR_FOR_EACH;
 }
