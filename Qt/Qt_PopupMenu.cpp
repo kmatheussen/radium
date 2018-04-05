@@ -39,23 +39,16 @@ namespace{
 
 
 
-  class MyProxyStyle: public QProxyStyle {
-    Q_OBJECT
-  public:
-
-    MyProxyStyle(QStyle* style = 0) : QProxyStyle(style) {
-    }
-
-    MyProxyStyle(const QString& key) : QProxyStyle(key) { }
-
+  struct MyProxyStyle: public QProxyStyle {
     virtual int pixelMetric(QStyle::PixelMetric metric, const QStyleOption* option = 0, const QWidget* widget = 0 ) const {
       if (metric==QStyle::PM_SmallIconSize && root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL)
         return root->song->tracker_windows->fontheight*2;
       else
         return QProxyStyle::pixelMetric( metric, option, widget ); // return default values for the rest
-    }
-
+    }    
   };
+
+  static MyProxyStyle g_my_proxy_style;
 
   struct MyQMenu : public QMenu{
 
@@ -397,7 +390,8 @@ static QMenu *create_qmenu(
 {
   MyQMenu *menu = new MyQMenu(NULL, is_async, callback2);
   menu->setAttribute(Qt::WA_DeleteOnClose);
-  menu->setStyle(new MyProxyStyle);
+
+  menu->setStyle(&g_my_proxy_style);
 
   QMenu *curr_menu = menu;
   
