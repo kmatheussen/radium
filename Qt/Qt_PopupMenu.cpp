@@ -42,7 +42,7 @@ namespace{
   struct MyProxyStyle: public QProxyStyle {
     virtual int pixelMetric(QStyle::PixelMetric metric, const QStyleOption* option = 0, const QWidget* widget = 0 ) const {
       if (metric==QStyle::PM_SmallIconSize && root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL)
-        return root->song->tracker_windows->fontheight*2;
+        return root->song->tracker_windows->fontheight*4;
       else
         return QProxyStyle::pixelMetric( metric, option, widget ); // return default values for the rest
     }    
@@ -282,8 +282,8 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    CheckableAction(const QString & text_b, bool is_on, MyQMenu *qmenu_b, int num_b, bool is_async, func_t *callback_b, std::function<void(int,bool)> callback3_b, int *result)
-      : QAction(text_b, qmenu_b)
+    CheckableAction(QIcon icon, const QString & text_b, bool is_on, MyQMenu *qmenu_b, int num_b, bool is_async, func_t *callback_b, std::function<void(int,bool)> callback3_b, int *result)
+      : QAction(icon, text_b, qmenu_b)
       , num(num_b)
       , result(result)
       , text(text_b)
@@ -337,9 +337,9 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    ClickableAction(const QString & text, MyQMenu *qmenu, int num, bool is_async, func_t *callback, std::function<void(int,bool)> callback3, int *result)
+    ClickableAction(QIcon icon, const QString & text, MyQMenu *qmenu, int num, bool is_async, func_t *callback, std::function<void(int,bool)> callback3, int *result)
       //: QAction(QIcon("/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png"), text, qmenu)
-      : QAction(text, qmenu)
+      : QAction(icon, text, qmenu)
       , num(num)
       , result(result)
       , text(text)
@@ -420,6 +420,8 @@ static QMenu *create_qmenu(
       bool is_checkable = false;
       bool is_checked = false;
 
+      QString icon_filename;
+
     parse_next:
 
       if (text.startsWith("[disabled]")){
@@ -442,6 +444,20 @@ static QMenu *create_qmenu(
         goto parse_next;
       }
 
+      if (text.startsWith("[icon]")){
+        text = text.right(text.size() - 6);
+        int pos = text.indexOf(" ");
+        if (pos <= 0){
+          R_ASSERT(false);
+        } else {
+          QString encoded = text.left(pos);
+          icon_filename = QByteArray::fromBase64(encoded.toUtf8());
+          text = text.right(text.size() - pos + 1);
+          printf("  text: -%s-. encoded: -%s-. Filename: -%s-\n", text.toUtf8().constData(), encoded.toUtf8().constData(), icon_filename.toUtf8().constData());
+        }
+        goto parse_next;
+      }
+
       if (text.startsWith("[submenu start]")){
         
         n_submenuess.push(n_submenues);
@@ -454,17 +470,39 @@ static QMenu *create_qmenu(
         
         QMenu *parent = parents.pop();
         if (parent==NULL)
-          RError("parent of [submenu end] is not a QMenu");
+          handleError("parent of [submenu end] is not a QMenu");
         else
           curr_menu = parent;
         n_submenues = n_submenuess.pop();
         
       } else {
+
+        QIcon icon;
+
+        if (icon_filename != ""){
+
+          static QHash<QString, QIcon> icon_map;
+
+          if (icon_map.contains(icon_filename)) {
+
+            icon = icon_map[icon_filename];
+
+          } else {
+
+            icon = QIcon(icon_filename);
+
+            if(icon.isNull())
+              handleError("Could not load \"%s\".", icon_filename.toUtf8().constData());
+            else
+              icon_map[icon_filename] = icon;
+
+          }
+        }
         
         if (is_checkable)
-          action = new CheckableAction(text, is_checked, menu, i, is_async, callback2, callback3, result);
+          action = new CheckableAction(icon, text, is_checked, menu, i, is_async, callback2, callback3, result);
         else
-          action = new ClickableAction(text, menu, i, is_async, callback2, callback3, result);        
+          action = new ClickableAction(icon, text, menu, i, is_async, callback2, callback3, result);        
       }
       
       if (action != NULL){

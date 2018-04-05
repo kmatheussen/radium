@@ -1559,6 +1559,10 @@ for .emacs:
                                                             (cdddr args)))
                             (parse-popup-menu-options (cons (<-> "[disabled]" text)
                                                             (cdddr args))))))
+                     ((eq? :icon arg2)
+                      (let ((filename (caddr args)))
+                        (parse-popup-menu-options (cons (<-> "[icon]" filename " " text)
+                                                        (cdddr args)))))
                      ((procedure? arg2)
                       (cons text
                             (cons arg2
@@ -1682,6 +1686,11 @@ for .emacs:
              "hello4"
              :check #t
              :enabled #f
+             (lambda (ison)
+               (c-display "gakk4" ison)))
+            (list 
+             "hello5"
+             :icon (<ra> :to-base64 "/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png")
              (lambda (ison)
                (c-display "gakk4" ison)))
             )
