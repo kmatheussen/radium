@@ -277,6 +277,9 @@ namespace{
       , callback(callback_b)
       , callback3(callback3_b)
     {
+      if(is_async)
+        R_ASSERT(result==NULL);
+
       setCheckable(true);
       setChecked(is_on);
       connect(this, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
@@ -330,6 +333,8 @@ namespace{
       , callback(callback)
       , callback3(callback3)
     {
+      if(is_async)
+        R_ASSERT(result==NULL);
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
     }
 
@@ -471,7 +476,7 @@ static int GFX_QtMenu(
 
   int result = -1;
   
-  QMenu *menu = create_qmenu(v, is_async,  callback2, callback3, &result);
+  QMenu *menu = create_qmenu(v, is_async,  callback2, callback3, is_async ? NULL : &result);
   //printf("                CREATED menu %p", menu);
   
   if (is_async){
