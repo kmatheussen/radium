@@ -316,21 +316,11 @@ public:
         points[i].setY(scale(ys[i], 0, 1, height, 0));
       }
 
-      if (_is_fade_in) {
-
-        points[num_points].setX(width);
-        points[num_points].setY(0);
+      points[num_points].setX(width);
+      points[num_points].setY(0);
         
-        points[num_points+1].setX(0);
-        points[num_points+1].setY(0);
-
-      } else {
-        points[num_points].setX(width);
-        points[num_points].setY(0);
-        
-        points[num_points+1].setX(0);
-        points[num_points+1].setY(0);
-      }
+      points[num_points+1].setX(0);
+      points[num_points+1].setY(0);
 
       myFilledPolygon(p, points, num_points+2, foreground);
       QPen sel_pen(pen_color);
