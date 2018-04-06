@@ -120,7 +120,11 @@ void PATCH_remove_from_instrument(struct Patch *patch){
 
   API_instrument_call_me_when_instrument_is_deleted(patch); // In this world, "patch" is the same as "instrument" in the API world. "instrument" in this world is either audio or midi.
 
-  VECTOR_remove(&patch->instrument->patches, patch);
+  {
+    radium::PlayerLock lock;
+    VECTOR_remove(&patch->instrument->patches, patch);
+  }
+  
   VECTOR_push_back(&g_unused_patches, patch);
   R_ASSERT(g_patchhash.remove(patch->id)==1);
 }
@@ -130,7 +134,13 @@ void PATCH_add_to_instrument(struct Patch *patch){
 
   if (VECTOR_is_in_vector(&g_unused_patches, patch))
     VECTOR_remove(&g_unused_patches, patch);
-  VECTOR_push_back(&patch->instrument->patches, patch);
+
+  VECTOR_ensure_space_for_one_more_element(&patch->instrument->patches);
+  {
+    radium::PlayerLock lock;
+    VECTOR_push_back(&patch->instrument->patches, patch);
+  }
+  
   g_patchhash[patch->id] = patch;
 }
 
