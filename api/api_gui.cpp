@@ -2055,7 +2055,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
       return num_channels;
     }
+
+    QRectF get_falloff_rect(double x1, double x2, double falloff_pos) const {
+      return QRectF(x1, falloff_pos-falloff_height/2.0,
+                    x2-x1, falloff_height);      
+    }
     
+
     // NOTE. This function can be called from a custom exec().
     // This means that _patch->plugin might be gone, and the same goes for soundproducer.
     // (_patch is never gone, never deleted)
@@ -2106,11 +2112,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         get_x1_x2(ch, x1,x2, num_channels);
 
         if (pos < prev_pos){
-          update(x1-1,      floorf(pos)-1,
-                 x2-x1+3,   floorf(prev_pos-pos)+3);
+          update(x1-2,      floorf(pos)-2,
+                 x2-x1+4,   floorf(prev_pos-pos)+4);
         } else if (pos > prev_pos){
-          update(x1-1,      floorf(prev_pos)-1,
-                 x2-x1+3,   floorf(pos-prev_pos)+3);
+          update(x1-2,      floorf(prev_pos)-2,
+                 x2-x1+4,   floorf(pos-prev_pos)+4);
         }
 
         //update();
@@ -2119,21 +2125,32 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         _falloff_pos[ch] = falloff_pos;
 
 #if 0
+        
         if (falloff_pos != prev_falloff_pos)
           update();
+
+#elif 1
+        if (falloff_pos != prev_falloff_pos){
+          update(get_falloff_rect(x1, x2, prev_falloff_pos).toRect().adjusted(-4,-4,4,4));
+          update(get_falloff_rect(x1, x2, falloff_pos).toRect().adjusted(-4,-4,4,4));
+        }
 #else
+        
+        const int extra = 5;
+        
         // don't know what's wrong here...
         if (falloff_pos < prev_falloff_pos){
-          update(x1-1,      floorf(falloff_pos)-1-falloff_height,
-                 x2-x1+2,   floorf(prev_falloff_pos-falloff_pos)+3+falloff_height*2);
+          update(x1-1,      floorf(falloff_pos)-extra-falloff_height,
+                 x2-x1+2,   floorf(prev_falloff_pos-falloff_pos)+2+extra*2+falloff_height*2);
         } else if (pos > prev_pos){
-          update(x1-1,      floorf(prev_falloff_pos)-1-falloff_height,
-                 x2-x1+2,   floorf(falloff_pos-prev_falloff_pos)+3+falloff_height*2);
+          update(x1-1,      floorf(prev_falloff_pos)-extra-falloff_height,
+                 x2-x1+2,   floorf(falloff_pos-prev_falloff_pos)+2+extra*2+falloff_height*2);
         }
+        
 #endif
       }
     }
-    
+
     void paintEvent(QPaintEvent *ev) override {
       TRACK_PAINT();
 
@@ -2229,10 +2246,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
           
           if (_falloff_pos[ch] < get_pos_y2()){
             float falloff_pos = _falloff_pos[ch];
-            
+            /*
             QRectF falloff_rect(x1, falloff_pos-falloff_height/2.0,
                                 x2-x1, falloff_height);
-
+            */
+            QRectF falloff_rect = get_falloff_rect(x1, x2, falloff_pos);
+            
             if (falloff_pos > posm20db)
               p.setBrush(colordarkgreen);
             else if (falloff_pos > pos0db)
