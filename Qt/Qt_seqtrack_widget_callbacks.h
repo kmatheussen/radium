@@ -1357,7 +1357,7 @@ public:
       rect = QRectF(x1,t_y1+1,x2-x1,height-2);
 
 #if 0
-      // Can not use rect.toAlignedRect() because it returns a QRect, which uses 'int', which is a lot smaller than 'float' which QRectF uses.
+      // Can not use rect.toAlignedRect() because it returns a QRect, which uses 'int', which is a lot smaller than 'double' which QRectF uses.
       // Why was toAlignedRect() used in the first place?
       if (false==update_rect.intersects(rect.toAlignedRect()))
         return false;
