@@ -1106,7 +1106,7 @@ int64_t SEQTRACKPLUGIN_add_sample(SoundPlugin *plugin, const wchar_t *filename, 
   return ret;
 }
 
-void SEQTRACKPLUGIN_apply_gfx_samples(SoundPlugin *plugin, bool seqtrack_is_live){
+void SEQTRACKPLUGIN_apply_gfx_samples(SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
     
   for(auto *sample : data->_samples){
@@ -1123,7 +1123,7 @@ void SEQTRACKPLUGIN_apply_gfx_samples(SoundPlugin *plugin, bool seqtrack_is_live
     data->_samples.ensure_there_is_room_for_more_without_having_to_allocate_memory(data->_gfx_samples.size());
     
     {
-      radium::PlayerLock lock(seqtrack_is_live);
+      radium::PlayerLock lock; // Can not use 'seqtrack_is_live' as argument for radium::PlayerLock here since the plugin might be alive. I.e. data->_samples can be iterated even if the seqtrack isn't live yet.
       for(auto *sample : data->_gfx_samples)
         data->_samples.push_back(sample);
     }

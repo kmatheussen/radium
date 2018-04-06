@@ -1452,7 +1452,7 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
     radium::PlayerPause pause(seqtrack_is_live && is_playing_song());
 
     if (plugin != NULL)
-      SEQTRACKPLUGIN_apply_gfx_samples(plugin, seqtrack_is_live);
+      SEQTRACKPLUGIN_apply_gfx_samples(plugin);
 
     {
       radium::PlayerLock lock(seqtrack_is_live);
