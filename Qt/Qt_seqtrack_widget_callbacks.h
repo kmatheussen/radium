@@ -1353,11 +1353,18 @@ public:
       double x2 = get_seqblock_x2(seqblock, start_time, end_time);
       //if (i==1)
       //  printf("   %d: %f, %f. %f %f\n", iterator666, x1, x2, seqblock->start_time / 44100.0, seqblock->end_time / 44100.0);
-      
+
       rect = QRectF(x1,t_y1+1,x2-x1,height-2);
-      
+
+#if 0
+      // Can not use rect.toAlignedRect() because it returns a QRect, which uses 'int', which is a lot smaller than 'float' which QRectF uses.
+      // Why was toAlignedRect() used in the first place?
       if (false==update_rect.intersects(rect.toAlignedRect()))
         return false;
+#else
+      if (false==update_rect.intersects(rect))
+        return false;
+#endif
     }
 
     int header_height = get_block_header_height();
