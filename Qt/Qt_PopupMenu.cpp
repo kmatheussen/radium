@@ -46,7 +46,7 @@ namespace{
   struct MyProxyStyle: public QProxyStyle {
     MyProxyStyle(){
       static QStyle *base_style = QStyleFactory::create("fusion");
-      setBaseStyle(base_style);
+      setBaseStyle(base_style); // Trying to fix style on OSX and Windows. Not necessary on Linux, for some reason.
     }
 
     virtual int pixelMetric(QStyle::PixelMetric metric, const QStyleOption* option = 0, const QWidget* widget = 0 ) const {
