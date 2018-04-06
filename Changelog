@@ -1,3 +1,16 @@
+Changes 5.5.6 -> 5.5.7:
+* Sequencer: Fix possible strange graphics and crashes when zooming
+  in a lot.
+* GUI: Fix popup menu style in Windows and macOS. The style changed
+  in 5.5.6. Now it's back to normal.
+* Audio: Fix rare bugs related to the sequencer that could happen
+  when creating new instruments.
+* Sequencer: Fix semi-rare crashes and strange behaviors that
+  could happen when moving audio files in some situations.
+* Internal: Fix some minor thread sanitizer hits.
+
+
+
 Changes 5.5.4 -> 5.5.6:
 * GUI: Fix a memory corruption bug in asynchronous popup menus.
 * Mixer: Don't display "[disabled]" for the "Show GUI" option
