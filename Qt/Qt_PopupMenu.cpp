@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCheckBox>
 #include <QMenu>
 #include <QProxyStyle>
+#include <QStyleFactory>
 
 #define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
 
@@ -43,6 +44,11 @@ namespace{
 
 
   struct MyProxyStyle: public QProxyStyle {
+    MyProxyStyle(){
+      static QStyle *base_style = QStyleFactory::create("fusion");
+      setBaseStyle(base_style);
+    }
+
     virtual int pixelMetric(QStyle::PixelMetric metric, const QStyleOption* option = 0, const QWidget* widget = 0 ) const {
       if (metric==QStyle::PM_SmallIconSize && root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL)
         return root->song->tracker_windows->fontheight*4;
