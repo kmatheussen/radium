@@ -3828,7 +3828,7 @@
   (set! gakkgakk-last-inc-time inc-time)
   (set! gakkgakk-last-inc-track inc-track)
   (for-each (lambda (seqblock)
-              (c-display "seqblock:" (pp seqblock))
+              ;;(c-display "seqblock:" (pp seqblock))
               (if seqblock
                   (ra:create-gfx-gfx-seqblock seqblock)))
             (get-data-for-seqblock-moving seqblock-infos inc-time inc-track)))

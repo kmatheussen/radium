@@ -14,7 +14,7 @@ class LockAsserter{
   LockAsserter& operator=(const LockAsserter&) = delete;
 
   const char *writer_track = NULL;
-  const char *reader_track = NULL;
+  DEFINE_ATOMIC(const char *, reader_track) = NULL;
 
 public:
   
@@ -33,7 +33,7 @@ public:
       if(num_writers > 0)
         RError("Exclusive: NUM_WRITERS>0. writers: %d. readers: %d (Used by: %s)", num_writers, num_readers, lockAsserter->writer_track);
       if(num_readers > 0)
-        RError("Exclusive: NUM_REASDERS>0: writers: %d. readers: %d (Used by: %s)", num_writers, num_readers, lockAsserter->reader_track);
+        RError("Exclusive: NUM_REASDERS>0: writers: %d. readers: %d (Used by: %s)", num_writers, num_readers, ATOMIC_GET(lockAsserter->reader_track));
 
       lockAsserter->writer_track = new_writer_track;
       ATOMIC_ADD(lockAsserter->number_of_writers, 1);
@@ -54,7 +54,7 @@ public:
       if(num_writers > 0)
         RError("Shared: NUM_WRITERS>0: %d. (Used by: %s)", num_writers, lockAsserter->writer_track);
 
-      lockAsserter->reader_track = new_reader_track;
+      ATOMIC_SET_RELAXED(lockAsserter->reader_track, new_reader_track);
       ATOMIC_ADD(lockAsserter->number_of_readers, 1);
     }
     

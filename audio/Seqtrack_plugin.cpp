@@ -888,7 +888,7 @@ struct Sample{
 
     // Playing Current
     //
-    if (_curr_reader != NULL && is_playing){ // move the _is_playing test above here instead.
+    if (is_playing && _curr_reader != NULL){ // move the _is_playing test above here instead. Note: Must check 'is_playing' before '_curr_reader' to avoid tsan hit.
       LOCKASSERTER_EXCLUSIVE(&_curr_reader->lockAsserter);
 
       // Set expansion (stretch/expansion has probably not changed since last time, but this is a light operation)
@@ -913,7 +913,7 @@ struct Sample{
     
     // Request reading from disk for Current
     //
-    if (_curr_reader != NULL && is_playing){
+    if (is_playing && _curr_reader){ // Note: Must check 'is_playing' before '_curr_reader' to avoid tsan hit.
       int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE) * (double)pc->pfreq / _seqblock->t.stretch;
 
       for(int ch=0;ch<_num_ch;ch++)

@@ -416,7 +416,7 @@ public:
   bool only_unique_elements(bool (*equal)(const T, const T)) const {
     for(int i1 = 0 ; i1 < num_elements-1 ; i1++)
       for(int i2 = i1+1 ; i2 < num_elements ; i2++){
-        printf("i1: %d, i2: %d\n", i1, i2);
+        //printf("i1: %d, i2: %d\n", i1, i2);
         if (equal(elements[i1], elements[i2]))
           return false;
       }

@@ -180,20 +180,25 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
   bool is_crash = crash_type==CT_CRASH;
 
+  QString premessage;
+  
 #if FULL_VERSION==0
-  message = "DEMO VERSION " + message;
+  premessage = "DEMO VERSION";
 #else
-  message = "FULL VERSION " + message; 
+  premessage = "FULL VERSION";
 #endif
 
 #if defined(FOR_LINUX)
 #if defined(IS_LINUX_BINARY)
-  message += "\nLinux binary\n";
+  premessage += "\nLinux binary\n";
 #else
-  message += "\nCustom build\n";
+  premessage += "\nCustom build\n";
 #endif
 #endif
-    
+
+  message = premessage+message;
+  
+  
 #if defined(FOR_MACOSX)
   if (is_crash)
     message = message + "\n\n" + get_latest_diagnostic_report();
