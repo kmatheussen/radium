@@ -498,7 +498,7 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
     };
 
     
-#if QT_VERSION_MAJOR >= 5 && QT_VERSION_MINOR >= 10  // Proper autorepeat detection. (Requires 5.10 or newer)
+#if QT_VERSION_MAJOR >= 6 || (QT_VERSION_MAJOR == 5 && QT_VERSION_MINOR >= 10)  // Proper autorepeat detection. (Requires 5.10 or newer)
 
     auto peeker_callback = [](xcb_generic_event_t *next_event, void *peekerData) {
       
