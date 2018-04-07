@@ -774,7 +774,13 @@ struct Notes *FindNoteCurrPos(struct Tracker_Windows *window){
   struct Tracks     *track    = wtrack->track;
   const struct LocalZooms *realline = wblock->reallines[wblock->curr_realline];
 
-  return FindNote(track, &realline->l.p);
+  int subtrack=window->curr_track_sub;
+  
+  struct Notes *note = FindNoteOnSubTrack(wtrack, subtrack, &realline->l.p);
+  if (note!=NULL)
+    return note;
+  else
+    return FindNote(track, &realline->l.p);
 }
 
 #endif // TEST_NOTES
