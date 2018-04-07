@@ -508,6 +508,7 @@
            (cancel-current-stuff)
            ;;(<ra> :set-normal-mouse-pointer)
            (set! *check-mouse-shift-key* #t)
+           (set-grid-type #f)
            #t)
          (begin
            (set! *check-mouse-shift-key* #t)
@@ -5131,7 +5132,7 @@
                                      (<ra> :set-statusbar-text (two-decimal-string (/ (move-single :curr-pos)
                                                                                       (<ra> :get-sample-rate)))))
                         
-                        :Release-node (lambda (move-single)
+                        :Release-node (lambda (move-single)                                        
                                         (move-single :release))
                         
                         :Move-node (lambda (move-single Value Y)
