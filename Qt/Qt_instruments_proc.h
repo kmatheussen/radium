@@ -55,7 +55,8 @@ extern LANGSPEC void MIXERSTRIP_call_regularly(void);
 //static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch);
 class Sample_requester_widget;
 extern Sample_requester_widget *AUDIOWIDGET_get_sample_requester_widget(struct Patch *patch);
-
+extern void SAMPLEREQUESTER_set_path(Sample_requester_widget *w, QString new_path);
+extern QString SAMPLEREQUESTER_get_path(Sample_requester_widget *w);
 #endif
 
 extern LANGSPEC void AUDIOWIDGET_change_height(struct Patch *patch, enum SizeType type);

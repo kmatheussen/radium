@@ -300,7 +300,7 @@ class Sample_requester_widget : public QWidget
     QString settings_key = QString("sample_bookmarks")+QString::number(_bookmark);
     QString default_dir = SETTINGS_read_qstring(
                                                 "samples_dir", // "samples_dir" contains last used sample.
-                                                _dir.dirName()
+                                                _dir.absolutePath()
                                                 );
 
     QString path = SETTINGS_read_qstring(settings_key, default_dir);
@@ -623,7 +623,7 @@ class Sample_requester_widget : public QWidget
   void handle_directory_pressed(QString item_text){
     printf("directory: Pressed \"%s\"\n",item_text.toUtf8().constData());
 
-    QString org_directory_name = _dir.dirName();
+    QString org_directory_name = _dir.absolutePath();
 
     _dir.cd(item_text);
     update_file_list(true);
@@ -736,7 +736,22 @@ class Sample_requester_widget : public QWidget
     read_bookmark_and_set_dir();
     update_file_list(false);
   }
-  
+
+  void change_path(QString new_path){
+    printf("new name: %s\n",new_path.toUtf8().constData());
+
+    if(_dir.exists(new_path)){
+      if (_dir.absolutePath() != new_path){
+        _dir.setPath(new_path);
+        update_file_list(false);
+        SETTINGS_write_string("samples_dir",_dir.absolutePath());
+      }
+    }else{
+      path_edit->setText(_dir.absolutePath());
+    }
+    set_editor_focus();
+  }
+
 public slots:
 
   void on_random_button_clicked(bool){
@@ -834,17 +849,7 @@ public slots:
 
   void on_path_edit_editingFinished()
   {
-    QString new_path = path_edit->text();
-    printf("new name: %s\n",new_path.toUtf8().constData());
-
-    if(_dir.exists(new_path)){
-      _dir.setPath(new_path);
-      update_file_list(false);
-      SETTINGS_write_string("samples_dir",_dir.absolutePath());
-    }else{
-      path_edit->setText(_dir.absolutePath());
-    }
-    set_editor_focus();
+    change_path(path_edit->text());
   }
 
   void on_bookmark1_toggled(bool is_on){
@@ -893,3 +898,12 @@ public slots:
   }
   
 };
+
+void SAMPLEREQUESTER_set_path(Sample_requester_widget *w, QString new_path){
+  w->change_path(new_path);
+}
+
+QString SAMPLEREQUESTER_get_path(Sample_requester_widget *w){
+  return w->_dir.absolutePath();
+}
+    
