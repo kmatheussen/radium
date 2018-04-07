@@ -482,6 +482,7 @@
      (get-bool *current-mouse-cycle*))))
 
 (define (radium-mouse-move $button $x $y)
+  ;;(c-display "X:" $x ". seq_x1/x2:" (<ra> :get-sequencer-x1) (<ra> :get-sequencer-x2))
   (handling-nodes
    (lambda()
      ;;(c-display "mouse move2" $button $x $y (<ra> :control-pressed) (<ra> :shift-pressed))
