@@ -203,48 +203,18 @@ void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){
 
         inc = inc * MAX_VELOCITY / 100;
 
-	struct WBlocks *wblock=window->wblock;
-	struct WTracks *wtrack=wblock->wtrack;
+        vector_t notes = FindAllNotesCurrPos(window);
         
-        if(is_track_ranged(wblock,wtrack) && is_realline_ranged(wblock,wblock->curr_realline)){
-
-          vector_t *notes = get_all_ranged_notes(wblock);
-          //printf("num_elements: %d\n",notes->num_elements);
-
-          if(notes->num_elements==0)
-            return;
-
-          ADD_UNDO(Block_CurrPos(window));
-
-          VECTOR_FOR_EACH(struct Notes *, note, notes){
-            increase_note_velocity(note, inc);
-          }END_VECTOR_FOR_EACH;
-
-          window->must_redraw = true;
-
-        } else {
-
-          ADD_UNDO(Notes_CurrPos(window));
-
-          bool has_increased = false;
-          
-          const Trs &trs = TRS_get(wblock, wtrack, wblock->curr_realline);
-          for (const TrackRealline2 &tr2 : trs){
-            if (tr2.note != NULL) {
-              increase_note_velocity(tr2.note, inc);
-              has_increased = true;
-            }
-          }
-
-          if (has_increased == false){
-            struct Notes *note = FindNoteCurrPos(window);
-            
-            if (note != NULL)
-              increase_note_velocity(note, inc);
-            else
-              UNDO_CANCEL_LAST_UNDO();
-          }
-        }
+        if(notes.num_elements==0)
+          return;
+        
+        ADD_UNDO(Block_CurrPos(window));
+        
+        VECTOR_FOR_EACH(struct Notes *, note, &notes){
+          increase_note_velocity(note, inc);
+        }END_VECTOR_FOR_EACH;
+        
+        window->must_redraw = true;
 
 }
 

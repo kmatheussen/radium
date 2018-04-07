@@ -165,20 +165,22 @@ void TransposeNote_CurrPos(
 	struct Tracker_Windows *window,
 	int trans
 ){
-        struct Notes *note = FindNoteCurrPos(window);
-        if (note==NULL)
-          return;
-        
-	ADD_UNDO(Notes_CurrPos(window));
+  vector_t notes = FindAllNotesCurrPos(window);
+  if (notes.num_elements==0)
+    return;
+  
+  ADD_UNDO(Notes_CurrPos(window));
 
-	Transpose_note(note,trans);
-
-	UpdateAndClearSomeTrackReallinesAndGfxWTracks(
-		window,
-		window->wblock,
-		window->wblock->wtrack->l.num,
-		window->wblock->wtrack->l.num
-	);
+  VECTOR_FOR_EACH(struct Notes *note, &notes){
+    Transpose_note(note,trans);
+  }END_VECTOR_FOR_EACH;
+  
+  UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+                                                window,
+                                                window->wblock,
+                                                window->wblock->wtrack->l.num,
+                                                window->wblock->wtrack->l.num
+                                                );
 }
 
 
