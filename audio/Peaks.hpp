@@ -309,7 +309,7 @@ class DiskPeaks : public QThread{
   const wchar_t *_peak_filename;
 
   DEFINE_ATOMIC(bool, _is_valid) = false;
-  DEFINE_ATOMIC(int, _percentage_read) = 0;
+  DEFINE_ATOMIC(int64_t, _percentage_read) = 0;
 
 public:
 
@@ -348,11 +348,7 @@ public:
 
     //printf("... Has valid: %d\n", has_valid_peaks_on_disk());
  
-    if (has_valid_peaks_on_disk())
-      read_peaks_from_disk();
-    else{
-      start();
-    }
+    start();
   }
 
   // Use DISKPEAKS_remove instead.
@@ -374,7 +370,7 @@ public:
     return ATOMIC_GET(_is_valid);
   }
 
-  int percentage_read(void){
+  int64_t percentage_read(void){
     return ATOMIC_GET(_percentage_read);
   }
 
@@ -396,8 +392,14 @@ private:
 
   void run() override {
     radium::ScopedMutex lock(g_peak_read_lock); // We don't want to generate/read peaks for more than one file at the time
-    printf("   Reading peaks from file\n");
-    read_peaks_from_sample_file();
+    
+    printf("   Reading peaks from file %s\n", STRING_get_qstring(_peak_filename).toUtf8().constData());
+
+    if (has_valid_peaks_on_disk())
+      read_peaks_from_disk();
+    else{
+      read_peaks_from_sample_file();
+    }
   }
 
   void read_peaks_from_disk(void){
@@ -466,16 +468,54 @@ private:
         }
       }
 
+#define READ_EVERYTHING_AT_ONCE 1
+      
+#if READ_EVERYTHING_AT_ONCE
       // TODO: Optimize. Read more than one float at the time.
-      for(int i = 0 ; i<num_peaks ; i++){
-        float min,max;
-        if (DISK_read_binary(disk, &min, 4)==-1)
-          goto exit;
-        if (DISK_read_binary(disk, &max, 4)==-1)
-          goto exit;
-        _peaks[ch]->add(Peak(min,max));
+      float *data = new float[num_peaks*2]; // Allocate on heap instead of the stack since it could be very big (even likely to be very big)
+      if (data==NULL){
+        GFX_Message(NULL, "Unable to allocate enough temporary memory when reading Peak file %s. Size: %d.", STRING_get_qstring(_peak_filename).toUtf8().constData(), (int)(num_peaks*2*sizeof(float)));
+        goto exit;
       }
-    
+      
+      if (DISK_read_binary(disk, data, sizeof(float)*2*num_peaks)==-1){
+        GFX_Message(NULL, "Unable to read data from peak file %s.", STRING_get_qstring(_peak_filename).toUtf8().constData());
+        goto exit;
+      }
+#endif
+      
+      int64_t last_percentage_read = -1;
+      
+      for(int i = 0 ; i<num_peaks ; i++){
+#if READ_EVERYTHING_AT_ONCE
+        _peaks[ch]->add(Peak(data[i*2], data[i*2+1]));
+#else
+        float minmax[2];
+        
+        if (DISK_read_binary(disk, &minmax[0], sizeof(float)*2)==-1)
+          goto exit;
+        
+        _peaks[ch]->add(Peak(minmax[0], minmax[1]));
+#endif
+        
+        {
+          int64_t percentage_read = 100*i/num_peaks;
+          
+          if (percentage_read != last_percentage_read){
+            ATOMIC_SET(_percentage_read, percentage_read);
+            SEQUENCER_update(); // SEQUENCER_update can be called from another thread.
+          }
+          
+          last_percentage_read = percentage_read;
+        }
+
+      }
+
+#if READ_EVERYTHING_AT_ONCE
+      delete[] data;
+#endif
+#undef READ_EVERYTHING_AT_ONCE
+      
     }
 
     success = true;
@@ -485,7 +525,8 @@ private:
     DISK_close_and_delete(disk);
 
     if (success==false){
-      start();
+      read_peaks_from_sample_file();
+      //start();
     }
 
     return;
@@ -555,9 +596,9 @@ private:
 
     int64_t total_frames = sf_info.frames;
 
-    int total_frames_read = 0;
+    int64_t total_frames_read = 0;
 
-    int last_percentage_read = -1;
+    int64_t last_percentage_read = -1;
 
     for(int64_t i = 0 ; ; i += SAMPLES_PER_PEAK){
       
@@ -575,7 +616,7 @@ private:
       total_frames_read += num_read;
 
       {
-        int percentage_read = int(100*total_frames/total_frames_read);
+        int64_t percentage_read = 100*total_frames_read/total_frames;
         
         if (percentage_read != last_percentage_read){
           ATOMIC_SET(_percentage_read, percentage_read);
