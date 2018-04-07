@@ -18,4 +18,4 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC bool is_track_ranged(struct WBlocks *wblock, struct WTracks *wtrack);
 extern LANGSPEC bool is_realline_ranged(struct WBlocks *wblock, int realline);
 
-extern LANGSPEC vector_t *get_all_ranged_notes(struct WBlocks *wblock);
+extern LANGSPEC vector_t get_all_ranged_notes(struct WBlocks *wblock);

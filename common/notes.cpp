@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "windows_proc.h"
 #include "visual_proc.h"
 #include "OS_settings_proc.h"
+#include "range_proc.h"
 
 #include "notes_proc.h"
 
@@ -737,6 +738,23 @@ struct Notes *FindNote(
   return note;
 }
 
+vector_t FindAllNotes(
+                      struct Tracks *track,
+                      const Place *placement
+                      )
+{
+  vector_t ret = {0};
+  
+  struct Notes *note = track->notes;
+  while(note != NULL) {
+    if (PlaceIsBetween2(placement, &note->l.p, &note->end))
+      VECTOR_push_back(&ret, note);
+    note = NextNote(note);
+  }
+
+  return ret;
+}
+
 struct Notes *FindNextNote(
                        struct Tracks *track,
                        const Place *placement
@@ -768,19 +786,33 @@ static bool is_at_last_line_of_note(const struct WBlocks *wblock, const struct N
   return false;
 }
 
-struct Notes *FindNoteCurrPos(struct Tracker_Windows *window){
+vector_t FindAllNotesCurrPos(struct Tracker_Windows *window){
   struct WBlocks    *wblock   = window->wblock;
   struct WTracks    *wtrack   = wblock->wtrack;
   struct Tracks     *track    = wtrack->track;
   const struct LocalZooms *realline = wblock->reallines[wblock->curr_realline];
 
+  if(is_track_ranged(wblock,wtrack) && is_realline_ranged(wblock,wblock->curr_realline))
+    return get_all_ranged_notes(wblock);
+  
   int subtrack=window->curr_track_sub;
   
   struct Notes *note = FindNoteOnSubTrack(wtrack, subtrack, &realline->l.p);
-  if (note!=NULL)
-    return note;
+  if (note!=NULL){
+    vector_t ret = {0};
+    VECTOR_push_back(&ret, note);
+    return ret;
+  }
+  
+  return FindAllNotes(track, &realline->l.p);
+}
+
+struct Notes *FindNoteCurrPos(struct Tracker_Windows *window){
+  vector_t notes = FindAllNotesCurrPos(window);
+  if (notes.num_elements==0)
+    return NULL;
   else
-    return FindNote(track, &realline->l.p);
+    return (struct Notes*)notes.elements[0];
 }
 
 #endif // TEST_NOTES

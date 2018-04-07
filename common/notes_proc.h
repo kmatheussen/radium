@@ -93,8 +93,13 @@ extern LANGSPEC struct Notes *FindNote(
                        struct Tracks *track,
                        const Place *placement
                        );
+extern LANGSPEC vector_t FindAllNotes(
+                                      struct Tracks *track,
+                                      const Place *placement
+                                      );
 
 extern LANGSPEC struct Notes *FindNoteCurrPos(struct Tracker_Windows *window);
+extern LANGSPEC vector_t FindAllNotesCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC char *notetext_from_notenum(float notenumf);
 extern LANGSPEC float notenum_from_notetext(const char *notetext);

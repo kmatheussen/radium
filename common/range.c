@@ -37,8 +37,8 @@ bool is_realline_ranged(struct WBlocks *wblock, int realline){
   return wblock->isranged && p_Greater_Or_Equal(p, wblock->rangey1) && p_Less_Or_Equal(p, wblock->rangey2);
 }
 
-vector_t *get_all_ranged_notes(struct WBlocks *wblock){
-  vector_t *v=talloc(sizeof(vector_t));
+vector_t get_all_ranged_notes(struct WBlocks *wblock){
+  vector_t v = {0};
 
   struct WTracks *wtrack = wblock->wtracks;
   while(wtrack!=NULL){
@@ -47,7 +47,7 @@ vector_t *get_all_ranged_notes(struct WBlocks *wblock){
       struct Notes *note = track->notes;
       while(note!=NULL){
         if(IsPlaceRanged(wblock,&note->l.p))
-          VECTOR_push_back(v, note);
+          VECTOR_push_back(&v, note);
         note=NextNote(note);
       }
     }
