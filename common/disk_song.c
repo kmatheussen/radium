@@ -269,9 +269,11 @@ void DLoadSong(struct Root *newroot,struct Song *song){
         DLoadAudioInstrument(); // Sets correct effect_num for fx, since mapping between fx name and effect_num was not available when loading fx. (The MIDI instrument doesn't map between name and number since the MIDI standard is not going to change, and therefore it's safe to use the numbers directly.)
 
         if (disk_load_version>=0.875){
+          GFX_ShowProgressMessage("Setting up sequencer");
           SEQUENCER_create_from_state(g_sequencer_state, song);
           g_sequencer_state = NULL;
-        }
+        }else
+          GFX_ShowProgressMessage("Creating instruments");
 
         DLoadInstrumentGUI(get_MIDI_instrument());
         DLoadInstrumentGUI(get_audio_instrument());

@@ -4546,7 +4546,7 @@
 
   (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
   (define seqblock (seqblocks seqblocknum))
-  (pretty-print seqblock)(newline)
+  ;;(pretty-print seqblock)(newline)
   (set! *current-seqblocks-state* seqblocks)
 
   (define curr-pos (seqblock :start-time))
@@ -4617,9 +4617,10 @@
         (set! new-pos (min (this->max-value) new-pos))
         (set! new-pos (max (this->min-value) new-pos)))
 
-    (set! new-pos (floor new-pos))
+    (set! new-pos (max 0
+                       (floor new-pos)))
 
-    ;;(c-display "new-pos:" new-pos)
+    ;;(c-display "---------new-pos:" new-pos ". Value:" Value "this->max-value:" (this->max-value))
 
     (set-grid-type #t)
     
@@ -4640,6 +4641,8 @@
         ;;                                      (b :start-time)))))
         ;;(assert-seqblocks-state new-seqblocks-state)
         (set! curr-pos new-pos)
+        ;;(if (= 0 seqtracknum)
+        ;;    (c-display "state:" (pp new-seqblocks-state)))
         (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
         (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
         )
