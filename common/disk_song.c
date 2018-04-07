@@ -272,8 +272,8 @@ void DLoadSong(struct Root *newroot,struct Song *song){
           GFX_ShowProgressMessage("Setting up sequencer");
           SEQUENCER_create_from_state(g_sequencer_state, song);
           g_sequencer_state = NULL;
-        }else
           GFX_ShowProgressMessage("Creating instruments");
+        }
 
         DLoadInstrumentGUI(get_MIDI_instrument());
         DLoadInstrumentGUI(get_audio_instrument());
