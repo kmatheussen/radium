@@ -2357,7 +2357,7 @@ WPoint GetPointerPos(struct Tracker_Windows *tvisual){
   else{
     EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
     if (!g_editor->isVisible())
-      pos = QPoint(QCursor::pos().x() - 10000, QCursor::pos().y() - 10000);
+      pos = QPoint(QCursor::pos().x() + 10000, QCursor::pos().y() + 10000);
     else
       pos = editor->mapFromGlobal(QCursor::pos());
   }

@@ -2080,7 +2080,7 @@ QWidget *GL_create_widget(QWidget *parent){
                   "<p>"
                   "Nouveau OpenGL driver detected."
                   "<p>"
-                  "There have been many reports of the Nouveau driver code crashing when running Radium.<br>"
+                  "There have been many reports of the Nouveau driver crashing when running Radium.<br>"
                   "Please don't report any more crashes caused by the Nouveau driver.<br>"
                   "<p>"
                   "The Nouveau driver also performs worse than the Nvidia driver."
