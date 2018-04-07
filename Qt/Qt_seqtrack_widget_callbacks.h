@@ -254,10 +254,11 @@ static double get_seqblock_ysplit2(double seqblock_y1, double seqblock_y2){
 }
 
 static QPoint mapFromEditor(QWidget *widget, QPoint point){
-  if (!g_editor->isVisible())
-    return skewedPoint(widget, point, -10000, -10000);
-      
-  QPoint global = g_editor->mapToGlobal(point);
+  QPoint global = g_editor->isVisible()
+    ? g_editor->mapToGlobal(point)
+    : QPoint(point.x()-10000, point.y()-10000);
+
+  //printf("    G: %d / %d. Mapped: %d / %d\n", global.x(), global.y(), widget->mapFromGlobal(global).x(), widget->mapFromGlobal(global).y());
   return widget->mapFromGlobal(global);
 }
 
@@ -2854,6 +2855,8 @@ void SEQUENCER_set_selection_rectangle(float x1, float y1, float x2, float y2){
   QPoint p1 = mapFromEditor(g_sequencer_widget, QPoint(x1, y1));
   QPoint p2 = mapFromEditor(g_sequencer_widget, QPoint(x2, y2));
 
+  //printf("    P1 x/y: %d / %d.\n", p1.x(), p1.y());
+  
   // legalize values
   //
   int &_x1 = p1.rx();
