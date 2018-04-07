@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 namespace radium{
-  radium::Mutex g_peak_read_lock; // We don't want to generate peaks for more than one file at the time
+  radium::Mutex g_peak_read_lock; // We don't want to generate peaks for more than one file simultaneously
 }
 
 static QHash<QString,radium::DiskPeaks*> g_diskpeaks;
