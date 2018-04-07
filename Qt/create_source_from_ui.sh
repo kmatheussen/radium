@@ -25,7 +25,12 @@ $UIC $UIFILE | sed s/protected/public/ | sed s/QComboBox/FocusSnifferQComboBox/|
 
 #$UIC $UIFILE | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQLineEdit\>://\ \ qlineedit.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: >Qt_$3.h
 
+[ -s Qt_$3.h ] || exit -1
+
+
 $MOC Qt_$3_callbacks.h >mQt_$3_callbacks.h
+
+[ -s mQt_$3_callbacks.h ] || exit -2
 
 
 #echo "class 
