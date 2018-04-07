@@ -1100,8 +1100,7 @@ int64_t SEQTRACKPLUGIN_add_sample(SoundPlugin *plugin, const wchar_t *filename, 
 
   //printf("   ADD (is_gfx: %d). NUM samples: %d.  NUM gfx samples: %d\n", is_gfx, data->_samples.size(), data->_gfx_samples.size());
 
-  if (!is_gfx)
-    set_num_visible_outputs(plugin);
+  set_num_visible_outputs(plugin);
     
   return ret;
 }
