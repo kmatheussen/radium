@@ -3957,7 +3957,7 @@
                                 is-fade-out)
                             (begin
                               (popup-menu (map (lambda (shape-name)
-                                                 (list (<-> shape-name " shape")
+                                                 (list shape-name
                                                        :enabled (not (string=? shape-name (<ra> :get-seqblock-fade-shape is-fade-in seqblocknum seqtracknum)))
                                                        :icon (<ra> :get-fade-shape-icon-filename shape-name is-fade-in)
                                                        (lambda ()
