@@ -934,7 +934,7 @@ public slots:
 
       auto *sample_requester_widget = AUDIOWIDGET_get_sample_requester_widget(_patch.data());
       //printf("dir: %p\n", sample_requester_widget->_dir);
-      pathdir = STRING_create(sample_requester_widget->_dir.absolutePath());
+      pathdir = STRING_create(SAMPLEREQUESTER_get_path(sample_requester_widget));
 
     } else {
 

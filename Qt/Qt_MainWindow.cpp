@@ -401,6 +401,11 @@ void handleDropEvent(QString filename, float x){
       instrument_id = patch->id;
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       SAMPLER_set_new_sample(plugin, STRING_create(filename), 0);
+      Sample_requester_widget *w = AUDIOWIDGET_get_sample_requester_widget(patch);
+      if (w==NULL)
+        R_ASSERT(false);
+      else
+        SAMPLEREQUESTER_set_path(w, QFileInfo(filename).absoluteDir().absolutePath());
     }
     
     if (instrument_id != -1) {
