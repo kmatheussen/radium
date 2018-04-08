@@ -4161,6 +4161,7 @@
                                         (when gakkgakk-has-moved-left-interior
                                           (define seqtracknum (seqblock-info :seqtracknum))
                                           ;;(apply-seqblock-interior-start seqblock-info #t))
+                                          (<ra> :undo-sequencer)
                                           (<ra> :apply-gfx-seqblocks seqtracknum)))
                         
                         :Move-node (lambda (seqblock-info mousex Y)
@@ -4271,6 +4272,7 @@
                         :Release-node (lambda (seqblock-info)
                                         (when gakkgakk-has-moved-right-interior
                                           (define seqtracknum (seqblock-info :seqtracknum))
+                                          (<ra> :undo-sequencer)
                                           (<ra> :apply-gfx-seqblocks seqtracknum)))
                         
                         :Move-node (lambda (seqblock-info mousex Y)
