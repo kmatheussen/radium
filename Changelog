@@ -1,3 +1,57 @@
+Changes 5.5.7 -> 5.5.8:
+* Sequencer: Add undo when changing interior start or end values.
+* Sequencer: Fix loading/undoing/redoing an audio file sequencer
+  block which has non-default interior start or end values and
+  no stretch.
+* Menus: Add "Report bug" entry to the Help menu.
+* Sequencer: Make sure navigator bar is tall enough to show all
+  information when there are many seqtracks.
+* Sequencer: Don't show error message when trying to set an
+  interior start value of an audio sample before the start of
+  a song.
+* Sequencer: Fix various issues when deleting a seqtrack with audio
+  files.
+* Sequencer: Fix so that it doesn't become impossible to move the
+  right sequencer navigator handle if it had been moved as
+  far left as possible. Before, the only way out of this situations
+  was to zoom out using the mouse wheel.
+* Peak files: Read peak files in a separate thread. Reading peak
+  files of very long samples can take a little bit of time. This
+  was especially notable when loading song.
+* Peak files: DO re-generate peak file after failing to read it,
+  and DON'T re-generate peak file after successfully reading it.
+  (Program did the opposite.)
+* Sequencer: Don't show error message happening when zooming out
+  a lot and trying to move left stretch value before song start.
+* Sequencer: Show correct number of audio meter channels for the
+  Seqtrack instruments after loading song.
+* Sequencer: Fix selection rectangle when editor is not visible.
+* Sequencer: Fix Audio file split using the S key when editor is not
+  visible.
+* Sample player: Update current directory of browser when an audio
+  file has been drag-dropped.
+* Editor: Let RIGHT_ALT+U and RIGHT_ALT+D transpose all notes in a
+  chord if the cursor is placed in the note subtrack, not just the
+  first note of the chord.
+* Editor: Let RIGHT_ALT+LEFT and RIGHT_ALT+RIGHT change velocity of
+  all notes in a chord if the cursor is placed in the note subtrack,
+  not just the first note of the chord.
+* Editor: Let RIGHT_ALT+U and RIGHT_ALT+D transpose ranged notes if
+  cursor is placed inside a range, similar to RIGHT_ALT+LEFT
+  and RIGHT_ALT+RIGHT for changing velocity.
+* Editor: When using polyphonic tracks and the cursor is placed in
+  a velocity subtrack (and not in the note subtrack), the function to
+  transpose single notes (RIGHT_ALT+U/D), and the function to change
+  velocity (RIGHT_ALT+LEFT/RIGHT), will operate on the note in the
+  current velocity subtrack and not the note in the first velocity
+  subtrack.
+* Sequencer: Always hide grid graphics when releasing mouse button.
+* Sequencer: Remove the text "shape" from the fade shape popup menus.
+* Mixer: Fix audio meter graphic update. (Some dirty graphics could
+  sometimes be seen in 5.5.6 and 5.5.7.)
+
+
+
 Changes 5.5.6 -> 5.5.7:
 * Sequencer: Fix possible strange graphics and crashes when zooming
   in a lot.
