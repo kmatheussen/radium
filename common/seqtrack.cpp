@@ -129,6 +129,7 @@ static bool seqblock_has_stretch(const struct SeqTrack *seqtrack, const struct S
   return (timing.interior_end - timing.interior_start) != get_seqblock_duration(seqblock, is_gfx);
 }
 
+
 static void set_seqblock_stretch(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, bool is_gfx){
   double reltempo = seqblock->block==NULL ? 1.0 : ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
 
@@ -1237,7 +1238,7 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
   R_ASSERT(seqblock->gfx.time==time);
 
   if (time2==-1)
-    time2 = time + default_duration;
+    time2 = time + (interior_end-interior_start);
 
   seqblock->t.time2 = time2;
   seqblock->gfx.time2 = seqblock->t.time2;
