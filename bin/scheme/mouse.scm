@@ -4051,9 +4051,9 @@
                           (- i2
                              (max 16 (* *min-seqblock-width* samples-per-pixel)))))
   
-  (define Nt1 (+ s1 (* new-i1 stretch)))
-  (define Ni1 new-i1)
-
+  (define Nt1 (max 0 (+ s1 (* new-i1 stretch))))
+  (define Ni1 (/ (- Nt1 s1) stretch)) ;; I.e. = new-i1, at least when Nt1>=0
+  
   ;;(c-display "mousex:" mousex ", new-start:" Nt1 ", new interior start:" Ni1)
   ;;(c-display "Nt1: " Nt1 ". Ni1:" Ni1 ". stretch:" stretch ". new-i2:" new-i2 ". min-new-i2:" (+ (max 16 (* *min-seqblock-width* samples-per-pixel)) i1))
   
@@ -6411,9 +6411,9 @@
 ;; right size handle in navigator
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                             (define box (<ra> :get-box seqnav-right-size-handle))
-                                            (c-display "  RIGHT box" box
-                                                       (inside-box box X Y)
-                                                       (<ra> :get-seqnav-right-size-handle-x2))
+                                            ;;(c-display "  RIGHT box" box
+                                            ;;           (inside-box box X Y)
+                                            ;;           (<ra> :get-seqnav-right-size-handle-x2))
                                             (and (inside-box box X Y)
                                                  (<ra> :get-seqnav-right-size-handle-x2)))
                         :Get-x1 (lambda (_)
@@ -6453,9 +6453,9 @@
 ;; left size handle in navigator
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
                                             (define box (<ra> :get-box seqnav-left-size-handle))
-                                            (c-display "  LEFT box" box
-                                                       (inside-box box X Y)
-                                                       (<ra> :get-seqnav-left-size-handle-x1))
+                                            ;;(c-display "  LEFT box" box
+                                            ;;           (inside-box box X Y)
+                                            ;;           (<ra> :get-seqnav-left-size-handle-x1))
                                             (and (inside-box box X Y)
                                                  (<ra> :get-seqnav-left-size-handle-x1)))
                         :Get-x1 (lambda (_)
