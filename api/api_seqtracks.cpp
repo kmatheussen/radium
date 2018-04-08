@@ -225,9 +225,11 @@ void deleteSeqtrack(int seqtracknum){
     handleError("Must have at least one sequencer track");
     return;
   }    
-  
-  undoSequencer();
-  SEQUENCER_delete_seqtrack(seqtracknum);
+
+  UNDO_OPEN_REC();{ // SEQUENCER_delete_seqtrack might delete a seqtrack plugin as well.
+    undoSequencer();
+    SEQUENCER_delete_seqtrack(seqtracknum);
+  }UNDO_CLOSE();
 }
 
 void selectSeqtrack(int seqtracknum){

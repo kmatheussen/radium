@@ -983,7 +983,7 @@ struct Data{
 
   ~Data(){
     
-    R_ASSERT(g_is_loading || _samples.size()==0);
+    //R_ASSERT(g_is_loading || _samples.size()==0);
     
     for(auto *sample : _samples){
       ATOMIC_SET(sample->_state, Sample::State::RT_REQUEST_DELETION); // To avoid assertion hit.
