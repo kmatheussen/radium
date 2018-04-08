@@ -2309,7 +2309,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   enum GridType _grid_type = NO_GRID;
 
-  const int bottom_height = 30;
   SongTempoAutomation_widget _songtempoautomation_widget;
   Timeline_widget _timeline_widget;
   Seqtracks_widget _seqtracks_widget;
@@ -2442,13 +2441,15 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     const QWidget *mute_button = _seqtracks_widget._seqtrack_widgets.at(0)->mute_button;
     const QPoint p = mute_button->mapTo(this, mute_button->pos());
 #endif
-    
+
     const int x1 = 0; //p.x() + mute_button->width();
     const int x1_width = width() - x1;
 
     QFontMetrics fm(QApplication::font());
     double systemfontheight = fm.height();
-      
+
+    const int bottom_height = R_BOUNDARIES(30, root->song->seqtracks.num_elements * (systemfontheight/2), height()/3);
+
     const int timeline_widget_height = systemfontheight*1.3 + 2;
  
     int y1 = 0;
@@ -2519,7 +2520,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   bool _song_tempo_automation_was_visible = false;
-
   bool _was_playing_smooth_song = false;
 
   void call_very_often(void){
@@ -2530,7 +2530,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       _song_tempo_automation_was_visible = _songtempoautomation_widget.is_visible;
       position_widgets();
     }
-    
+
     if (is_called_every_ms(15)){  // call each 15 ms. (i.e. more often than vsync)
       _seqtracks_widget.call_very_often();    
       if (g_need_update){
@@ -2554,7 +2554,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       }  
       
       if (do_update){
-        //position_widgets();
+        position_widgets();
         my_update();
         _last_num_seqtracks = _seqtracks_widget._seqtrack_widgets.size();
       }
