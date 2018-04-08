@@ -2279,17 +2279,37 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos){
 void SEQUENCER_append_seqtrack(struct SeqTrack *new_seqtrack){
   SEQUENCER_insert_seqtrack(new_seqtrack, root->song->seqtracks.num_elements);
 }
-  
+
+static void call_me_after_seqtrack_has_been_removed(struct SeqTrack *seqtrack){
+  struct Patch *patch = seqtrack->patch;
+  if (patch != NULL){
+    SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+    R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+    
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+      
+      if (seqblock->block==NULL)
+        SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, false);
+      
+    }END_VECTOR_FOR_EACH;
+
+    deleteInstrument(patch->id);
+  }
+}
+
 void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos){
+  struct SeqTrack *old_seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[pos];
+  
   {
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
-    
+
     VECTOR_set(&root->song->seqtracks, pos, new_seqtrack);
 
     RT_SEQUENCER_update_sequencer_and_playlist();
   }
-  
+
+  call_me_after_seqtrack_has_been_removed(old_seqtrack);
 }
 
 void SEQUENCER_delete_seqtrack(int pos){
@@ -2297,6 +2317,8 @@ void SEQUENCER_delete_seqtrack(int pos){
   R_ASSERT_RETURN_IF_FALSE(root->song->seqtracks.num_elements > 1); // There must always be a seqtrack
   R_ASSERT_RETURN_IF_FALSE(pos < root->song->seqtracks.num_elements);
 
+  struct SeqTrack *old_seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[pos];
+  
   {
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
@@ -2310,6 +2332,7 @@ void SEQUENCER_delete_seqtrack(int pos){
     RT_SEQUENCER_update_sequencer_and_playlist();      
   }
 
+  call_me_after_seqtrack_has_been_removed(old_seqtrack);
   evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements-1));  
 }
 
