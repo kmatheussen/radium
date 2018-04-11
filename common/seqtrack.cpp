@@ -1164,12 +1164,6 @@ struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtr
 
     seqblock = SEQBLOCK_create_block(seqtrack, block, envelope, state_samplerate, time);
 
-    // The interior_start/interior_end values maps to sample rate for block-seqblocks.
-    if (adjust_for_samplerate != 1.0 && seqblock->block!=NULL){
-      interior_start = (double(interior_start) * adjust_for_samplerate);
-      interior_end = (double(interior_end) * adjust_for_samplerate);
-    }
-
   } else {
     
     const wchar_t *filename = L"";

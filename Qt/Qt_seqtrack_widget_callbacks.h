@@ -1799,7 +1799,10 @@ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtra
       return false;
     }
 
+    
     if (beat_seqlength <= 0){
+      fprintf(stderr,"BEAT_seqlength: %d. end_blockseqtime: %d. last_beatseqtime: %d\n", (int)beat_seqlength, (int)end_blockseqtime, (int)last_beatseqtime);
+      //printf("\n\n");
       R_ASSERT_NON_RELEASE(false);
       return false;
     }
@@ -1907,7 +1910,7 @@ static inline void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seq
       //last_signature = &beat->valid_signature;
 
       int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime(block, &beat->l.p));
-
+      //printf("  Beat seqtime: %d. %d/%d\n", (int)seqtime, beat->beat_num, beat->bar_num);
       last_beatseqtime = seqtime;
 
       if (beat->beat_num==1){
