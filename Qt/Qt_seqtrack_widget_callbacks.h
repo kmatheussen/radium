@@ -1795,12 +1795,12 @@ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtra
     int64_t bar_seqtime = end_blockseqtime;
 
     if (bar_seqlength <= 0){
-      R_ASSERT(false);
+      R_ASSERT_NON_RELEASE(false);
       return false;
     }
 
     if (beat_seqlength <= 0){
-      R_ASSERT(false);
+      R_ASSERT_NON_RELEASE(false);
       return false;
     }
 
