@@ -1,3 +1,11 @@
+Changes 5.5.8 -> 5.5.9:
+* Load: Don't adjust for block length samplerate mismatch twice. This
+  bug caused strange bugs when loading a song saved with a different
+  jack samplerate, and it could be very notable if you didn't run
+  jack with a samplerate of 48000 as the samplerate of the default
+  song would mismatch.
+
+
 Changes 5.5.7 -> 5.5.8:
 * Sequencer: Add undo when changing interior start or end values.
 * Sequencer: Fix loading/undoing/redoing an audio file sequencer
