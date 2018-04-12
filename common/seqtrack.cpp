@@ -1014,7 +1014,8 @@ static bool get_value(const hash_t *state,
   return true;
 }
 
-struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type, bool is_gfx){
+// Is static since seqblocks should only be created in this file.
+static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type, bool is_gfx){
   //R_ASSERT(is_gfx==true);
   
   double adjust_for_samplerate = 1.0;
@@ -1223,6 +1224,8 @@ static void seqtrackgcfinalizer(void *actual_mem_start, void *user_data){
   SEQTRACK_AUTOMATION_free(seqtrack->seqtrackautomation);
 }
 
+static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime, int64_t end_seqtime);
+  
 int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowAPIException error_type){
   int seqtracknum = HASH_get_int32(hash, ":seqtracknum");
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements)
@@ -1692,9 +1695,8 @@ static int get_seqblock_pos(vector_t *seqblocks, int64_t seqtime){
   return seqblocks->num_elements;
 }
 
-
-//må gjøres static. Seqblocks bør ikke lages utenfor denne fila.
-int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime, int64_t end_seqtime){
+// Is static since there is no reason to call this from the outside since seqblocks should only be created in this file.
+static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime, int64_t end_seqtime){
   if (end_seqtime != -1)
     R_ASSERT_RETURN_IF_FALSE2(end_seqtime >= seqtime, -1);
 
