@@ -2568,7 +2568,7 @@ struct SeqBlock{
 
   // FIX: Don't need two of these anymore. Pretty sure they never differ now.
   struct SeqBlockTimings t;
-  struct SeqBlockTimings gfx;
+  //struct SeqBlockTimings gfx;
 
   /*
   // Start seqtime.
@@ -2644,8 +2644,10 @@ struct SeqBlock{
   // must be called right before reading any of these two variables.
   // (using these two variables is functional programming in disguise. We could have had a function returning
   //  a vector with all these values instead, but that would have been more inconvenient and slower (although speed probably doesn't matter here).)
+  /*
   double start_time; // in seconds. TODO: Change to frames.
   double end_time; // in seconds. TODO: Change to frames.
+  */
 };
 
 

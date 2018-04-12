@@ -25,7 +25,6 @@ enum GridType{
 #define LAST_LEGAL_GRID BEAT_GRID
 
 
-
 static inline int64_t SEQBLOCK_get_seq_duration(const struct SeqBlock *seqblock){
   return seqblock->t.time2 - seqblock->t.time;
 }
@@ -74,7 +73,9 @@ extern LANGSPEC int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack
 
 struct SoundPlugin;
 
-static inline double get_seqblock_noninterior_start2(const struct SeqBlockTimings *timing){
+static inline double get_seqblock_noninterior_start(const struct SeqBlock *seqblock){
+  const struct SeqBlockTimings *timing = &seqblock->t;
+    
   double t1 = timing->time;
   double i1 = timing->interior_start;
   
@@ -90,14 +91,8 @@ static inline double get_seqblock_noninterior_start2(const struct SeqBlockTiming
   return s1;
 }
 
-static inline double get_seqblock_noninterior_start(const struct SeqBlock *seqblock){
-  return get_seqblock_noninterior_start2(&seqblock->t);
-}
-
-static inline double get_seqblock_noninterior_end2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool is_gfx){
-  const struct SeqBlockTimings *timing = is_gfx ? &seqblock->gfx : &seqblock->t;
-  if (timing==NULL)
-    timing = &seqblock->t;
+static inline double get_seqblock_noninterior_end(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  const struct SeqBlockTimings *timing = &seqblock->t;
   
   double t2 = timing->time2;
   double i2 = timing->default_duration - timing->interior_end;
@@ -114,9 +109,7 @@ static inline double get_seqblock_noninterior_end2(const struct SeqTrack *seqtra
   return s2;
 }
 
-static inline double get_seqblock_noninterior_end(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
-  return get_seqblock_noninterior_end2(seqtrack, seqblock, false);
-}
+extern LANGSPEC void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_start); // Careful, doesn't keep order and doesn't assert that much.
 
 extern LANGSPEC void SEQTRACK_call_me_very_often(void);
 
@@ -256,8 +249,7 @@ extern LANGSPEC float SEQBLOCK_get_right_stretch_x2(int seqblocknum, int seqtrac
 extern LANGSPEC float SEQBLOCK_get_right_stretch_y2(int seqblocknum, int seqtracknum);
 
 // sequencer_gfx
-extern LANGSPEC void SEQTRACK_update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack);
-extern LANGSPEC void SEQTRACK_update_all_seqblock_gfx_start_and_end_times(struct SeqTrack *seqtrack);
+//extern LANGSPEC void SEQTRACK_update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQUENCER_update_all_seqblock_positions(void);
 extern LANGSPEC void SEQUENCER_update(void); // Can be called from a different thread than the main thread. That thread might have to be QThread though.
 
@@ -268,11 +260,6 @@ extern LANGSPEC void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int seqblocknum, int64_t how_much);
 extern LANGSPEC void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 extern LANGSPEC void SEQTRACK_delete_gfx_gfx_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
-
-extern LANGSPEC bool SEQTRACK_set_seqblock_start_and_stop(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_start_time, int64_t new_end_time, const bool is_gfx);
-    
-extern LANGSPEC void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
-extern LANGSPEC void SEQTRACK_move_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_time);
 
 /*
 Too inconvenient. Use apply_gfx_seqblocks instead of these two functions.
@@ -297,7 +284,6 @@ extern LANGSPEC int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Bloc
 extern LANGSPEC int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type);
 extern LANGSPEC int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime);
 extern LANGSPEC double SEQTRACK_get_length(struct SeqTrack *seqtrack);
-extern LANGSPEC double SEQTRACK_get_gfx_length(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQTRACK_init(struct SeqTrack *seqtrack, const hash_t *automation_state);
 
 #if defined(__cplusplus) && defined(QVECTOR_H)
@@ -307,6 +293,7 @@ QVector<struct SeqBlock*> SEQTRACK_get_seqblocks_in_z_order(const struct SeqTrac
 
 extern LANGSPEC hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool always_get_real_end_time);
 extern LANGSPEC struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type, bool is_gfx);
+extern LANGSPEC int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowAPIException error_type);
 
 extern LANGSPEC struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_samplerate);
 extern LANGSPEC struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len);
@@ -325,7 +312,7 @@ extern LANGSPEC int64_t SEQUENCER_find_closest_beat_start(int seqtracknum, int64
 extern LANGSPEC int64_t SEQUENCER_find_closest_line_start(int seqtracknum, int64_t pos_abstime);
 extern LANGSPEC hash_t *SEQUENCER_get_state(void /*bool get_old_format*/);
 extern LANGSPEC void SEQUENCER_create_from_state(hash_t *state, struct Song *song);
-extern LANGSPEC void SEQUENCER_update_all_seqblock_start_and_end_times(void);
+//extern LANGSPEC void SEQUENCER_update_all_seqblock_start_and_end_times(void);
 extern LANGSPEC void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos);
 extern LANGSPEC void SEQUENCER_append_seqtrack(struct SeqTrack *new_seqtrack);
 extern LANGSPEC void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos);
@@ -333,7 +320,6 @@ extern LANGSPEC void SEQUENCER_delete_seqtrack(int pos);
 
 // song
 extern LANGSPEC double SONG_get_length(void);
-extern LANGSPEC double SONG_get_gfx_length(void);
 extern LANGSPEC void SEQUENCER_init(struct Song *song);
 extern LANGSPEC void SONG_init(void);
 
@@ -344,8 +330,15 @@ extern LANGSPEC void SEQUENCER_create_automations_from_state(hash_t *state);
 extern LANGSPEC hash_t *SEQUENCER_get_envelopes_state(void);
 extern LANGSPEC void SEQUENCER_create_envelopes_from_state(hash_t *state);
 
-extern LANGSPEC void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double new_tempo_multiplier, bool is_gfx);
+extern LANGSPEC void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double new_tempo_multiplier);
 
+static inline double get_seqblock_time1_s(const struct SeqBlock *seqblock){
+  return (double)seqblock->t.time / (double)pc->pfreq;
+}
+
+static inline double get_seqblock_time2_s(const struct SeqBlock *seqblock){
+  return (double)seqblock->t.time2 / (double)pc->pfreq;
+}
 
 static inline const vector_t *gfx_seqblocks(const struct SeqTrack *seqtrack){
   if(seqtrack->gfx_seqblocks != NULL)
@@ -372,6 +365,9 @@ static inline const wchar_t *get_seqblock_sample_name(const struct SeqTrack *seq
     return seqblock->sample_filename_without_path;
 }
 
+static inline int get_seqtracknum(const struct SeqTrack *seqtrack){
+  return VECTOR_find_pos(&root->song->seqtracks, seqtrack);
+}
 
 #if defined(USE_QT4) && defined(QSTRING_H)
 

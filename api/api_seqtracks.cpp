@@ -1280,18 +1280,7 @@ int createSeqblockFromState(dyn_t state){
     return -1;
   }
 
-  int seqtracknum = HASH_get_int32(hash, ":seqtracknum");
-  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
-  if (seqtrack==NULL)
-    return -1;
-
-  HASH_put_bool(hash, ":new-block", true); // To avoid two seqblocks with the same id.
-  
-  struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, THROW_API_EXCEPTION, false);
-  if (seqblock==NULL)
-    return -1;
-
-  return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqblock->t.time, seqblock->t.time2);
+  return SEQBLOCK_insert_seqblock_from_state(hash, THROW_API_EXCEPTION);
 }
 
 dyn_t getSeqblockState(int seqblocknum, int seqtracknum){
@@ -1447,9 +1436,9 @@ int64_t getSeqblockStartTime(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return 0;
 
-  SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
+  //SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
     
-  return seqblock->start_time * MIXER_get_sample_rate(); //seqblock->time;
+  return seqblock->t.time;
 }
 
 int64_t getSeqblockEndTime(int seqblocknum, int seqtracknum){
@@ -1458,31 +1447,9 @@ int64_t getSeqblockEndTime(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return 0;
 
-  SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
+  //SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
 
-  return seqblock->end_time * MIXER_get_sample_rate();
-}
-
-int64_t getSeqblockGfxStartTime(int seqblocknum, int seqtracknum){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
-  if (seqblock==NULL)
-    return 0;
-
-  SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
-    
-  return seqblock->start_time * MIXER_get_sample_rate(); //seqblock->time;
-}
-
-int64_t getSeqblockGfxEndTime(int seqblocknum, int seqtracknum){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
-  if (seqblock==NULL)
-    return 0;
-
-  SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
-
-  return seqblock->end_time * MIXER_get_sample_rate();
+  return seqblock->t.time2;
 }
 
 // seqblock area
@@ -1816,80 +1783,6 @@ bool setSeqblockFadeShape(const_char *shape, bool is_fadein, int seqblocknum, in
 
 // move seqblock / set stretch
 
-static void positionSeqblock2(int64_t start_abstime, int64_t end_abstime, int seqblocknum, int seqtracknum, bool is_gfx){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
-  if (seqblock==NULL)
-    return;
-
-  VALIDATE_TIME2(start_abstime,);
-  VALIDATE_TIME2(end_abstime,);
-
-  if(end_abstime <= start_abstime){
-    handleError("positionSeqblock: Illegal start and endtimes. start: %d. end: %d", (int)start_abstime, (int)end_abstime);
-    return;
-  }
-  
-  int64_t start_seqtime;
-  int64_t end_seqtime;
-
-  get_seqblock_start_and_end_seqtime(seqtrack, seqblock, seqblock->block, start_abstime, end_abstime, &start_seqtime, &end_seqtime);
-  
-  //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
-  SEQTRACK_set_seqblock_start_and_stop(seqtrack, seqblock, start_seqtime, end_seqtime, is_gfx);
-}
-
-void positionSeqblock(int64_t start_abstime, int64_t end_abstime, int seqblocknum, int seqtracknum){
-  positionSeqblock2(start_abstime, end_abstime, seqblocknum, seqtracknum, false);
-}
-
-void positionSeqblockGfx(int64_t start_abstime, int64_t end_abstime, int seqblocknum, int seqtracknum){
-  positionSeqblock2(start_abstime, end_abstime, seqblocknum, seqtracknum, true);
-}
-
-void moveSeqblock(int64_t abstime, int seqblocknum, int seqtracknum, int new_seqtracknum){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
-  if (seqblock==NULL)
-    return;
-
-  VALIDATE_TIME(abstime,);
-  
-  if (new_seqtracknum==-1)
-    new_seqtracknum = seqtracknum;
-
-  struct SeqTrack *new_seqtrack = getSeqtrackFromNum(new_seqtracknum);
-  if (new_seqtrack==NULL)
-    return;
-  
-  ATOMIC_SET(root->song->curr_seqtracknum, new_seqtracknum);
-  
-  //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
-  SEQTRACK_move_seqblock(seqtrack, seqblock, abstime);
-}
-
-void moveSeqblockGfx(int64_t abstime, int seqblocknum, int seqtracknum, int new_seqtracknum){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
-  if (seqblock==NULL)
-    return;
-
-  VALIDATE_TIME(abstime,);
-  
-  if (new_seqtracknum==-1)
-    new_seqtracknum = seqtracknum;
-
-  struct SeqTrack *new_seqtrack = getSeqtrackFromNum(new_seqtracknum);
-  if (new_seqtrack==NULL)
-    return;
-  
-  ATOMIC_SET(root->song->curr_seqtracknum, new_seqtracknum);
-  
-  //printf("Trying to move seqblocknum %d/%d to %d\n",seqtracknum,seqblocknum,(int)abstime);
-  SEQTRACK_move_gfx_seqblock(seqtrack, seqblock, abstime);
-}
-
-
 double getSeqblockStretch(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
@@ -1897,15 +1790,6 @@ double getSeqblockStretch(int seqblocknum, int seqtracknum){
     return 1;
 
   return seqblock->t.stretch;
-}
-
-double getSeqblockStretchGfx(int seqblocknum, int seqtracknum){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
-  if (seqblock==NULL)
-    return 1;
-
-  return seqblock->gfx.stretch;
 }
 
 double getSeqblockResampleRatio(int seqblocknum, int seqtracknum){
@@ -2102,15 +1986,6 @@ int64_t getSeqblockInteriorStart(int seqblocknum, int seqtracknum){
   return seqblock->t.interior_start;
 }
 
-int64_t getSeqblockInteriorStartGfx(int seqblocknum, int seqtracknum){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
-  if (seqblock==NULL)
-    return 0;
-
-  return seqblock->gfx.interior_start;
-}
-
 int64_t getSeqblockInteriorEnd(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
@@ -2118,15 +1993,6 @@ int64_t getSeqblockInteriorEnd(int seqblocknum, int seqtracknum){
     return 0;
 
   return seqblock->t.interior_end;
-}
-
-int64_t getSeqblockInteriorEndGfx(int seqblocknum, int seqtracknum){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
-  if (seqblock==NULL)
-    return 0;
-
-  return seqblock->gfx.interior_end;
 }
 
 void deleteSeqblock(int seqblocknum, int seqtracknum){

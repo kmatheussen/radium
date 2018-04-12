@@ -262,7 +262,7 @@ void TEMPOAUTOMATION_set(int nodenum, double abstime, double value, int logtype)
   TempoAutomationNode node = g_tempo_automation.at(nodenum);
   const TempoAutomationNode *next = nodenum==size-1 ? NULL : &g_tempo_automation.at(nodenum+1);
 
-  double mintime = prev==NULL ? 0 : next==NULL ? R_MAX(R_MAX(node.time, abstime), SONG_get_gfx_length()*MIXER_get_sample_rate()) : prev->time;
+  double mintime = prev==NULL ? 0 : next==NULL ? R_MAX(R_MAX(node.time, abstime), SONG_get_length()*MIXER_get_sample_rate()) : prev->time;
   double maxtime = (prev==NULL || next==NULL) ? mintime : next->time;
 
   abstime = R_BOUNDARIES(mintime, abstime, maxtime);
