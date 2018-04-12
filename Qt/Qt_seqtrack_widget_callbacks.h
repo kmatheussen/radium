@@ -383,6 +383,9 @@ public:
 
 };
 
+static double get_visible_song_length(void){
+  return SONG_get_length() + SEQUENCER_EXTRA_SONG_LENGTH;
+}
 
 static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play_time, double end_play_time) {
       
@@ -390,7 +393,7 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
 
     double nav_start_time = SEQUENCER_get_visible_start_time();
     double nav_end_time = SEQUENCER_get_visible_end_time();
-    double visible_song_length = SONG_get_gfx_length() * MIXER_get_sample_rate();
+    double visible_song_length = get_visible_song_length() * MIXER_get_sample_rate();
     double new_start,new_end;
     
     double range = nav_end_time - nav_start_time;
@@ -510,20 +513,25 @@ public:
     handle_wheel_event(e, 0, width(), _start_time, _end_time);
   }
   */
-  
+
+  /*
   double get_seqblock_x1(const struct SeqBlock *seqblock, double start_time, double end_time) const {
-    return scale_double(seqblock->start_time, start_time, end_time, t_x1, t_x2);
+    return scale_double(get_seqblock_time1_s(seqblock), start_time, end_time, t_x1, t_x2);
   }
   
   double get_seqblock_x2(const struct SeqBlock *seqblock, double start_time, double end_time) const {
-    return scale_double(seqblock->end_time, start_time, end_time, t_x1, t_x2);
+    return scale_double(get_seqblock_time1_s(seqblock), start_time, end_time, t_x1, t_x2);
   }
-
+  */
+  
   double get_seqblock_x1(const struct SeqBlock *seqblock) const {
-    SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
+    /*
+    SEQTRACK_update_all_seqblock_start_and_end_times(_seqtrack);
     double start_time = _start_time / MIXER_get_sample_rate();
     double end_time = _end_time / MIXER_get_sample_rate();
     return get_seqblock_x1(seqblock, start_time, end_time);
+    */
+    return scale_double(seqblock->t.time, _start_time, _end_time, t_x1, t_x2);
   }
 
   double get_seqblock_x1(int seqblocknum) const {
@@ -537,10 +545,13 @@ public:
   }
 
   double get_seqblock_x2(const struct SeqBlock *seqblock) const {
-    SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
+    /*
+    SEQTRACK_update_all_seqblock_start_and_end_times(_seqtrack);
     double start_time = _start_time / MIXER_get_sample_rate();
     double end_time = _end_time / MIXER_get_sample_rate();
     return get_seqblock_x2(seqblock, start_time, end_time);
+    */
+    return scale_double(seqblock->t.time2, _start_time, _end_time, t_x1, t_x2);
   }
 
   double get_seqblock_x2(int seqblocknum) const {
@@ -554,19 +565,21 @@ public:
   }
 
   void set_seqblocks_is_selected(const QRect &selection_rect){
+    /*
     double sample_rate = MIXER_get_sample_rate();
     //double song_length = get_visible_song_length()*sample_rate;
   
-    SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
+    SEQTRACK_update_all_seqblock_start_and_end_times(_seqtrack);
 
     double start_time = _start_time / sample_rate;
     double end_time = _end_time / sample_rate;
-
+    */
+    
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(_seqtrack)){
 
-      if (seqblock->start_time < end_time && seqblock->end_time >= start_time) {
-        double x1 = get_seqblock_x1(seqblock, start_time, end_time);
-        double x2 = get_seqblock_x2(seqblock, start_time, end_time);
+      if (seqblock->t.time < _end_time && seqblock->t.time2 >= _start_time) {
+        double x1 = get_seqblock_x1(seqblock);
+        double x2 = get_seqblock_x2(seqblock);
 
         QRect rect(x1,t_y1+1,x2-x1,height-2);
         
@@ -873,8 +886,8 @@ public:
           
         const double x1 = rect.x();
         const double x2 = rect.x() + rect.width();
-        const int64_t time1 = seqblock->gfx.interior_start / resample_ratio;
-        const int64_t time2 = seqblock->gfx.interior_end / resample_ratio;
+        const int64_t time1 = seqblock->t.interior_start / resample_ratio;
+        const int64_t time2 = seqblock->t.interior_end / resample_ratio;
 
         const double y1 = rect.y() + header_height;
         const double y2 = rect.y() + rect.height();
@@ -884,11 +897,11 @@ public:
           QColor interior_waveform_color = waveform_color;
           interior_waveform_color.setAlpha(70);
           
-          const double interior_start_length = seqblock->gfx.interior_start * seqblock->gfx.stretch;
-          const double noninterior_start = seqblock->start_time*pc->pfreq - interior_start_length;
+          const double interior_start_length = seqblock->t.interior_start * seqblock->t.stretch;
+          const double noninterior_start = seqblock->t.time - interior_start_length;
 
-          const double interior_end_length = (seqblock->gfx.default_duration - seqblock->gfx.interior_end) * seqblock->gfx.stretch;
-          const double noninterior_end = seqblock->end_time*pc->pfreq + interior_end_length;
+          const double interior_end_length = (seqblock->t.default_duration - seqblock->t.interior_end) * seqblock->t.stretch;
+          const double noninterior_end = seqblock->t.time2 + interior_end_length;
 
           const double i1_x1 = scale_double(noninterior_start,
                                             _start_time, _end_time,
@@ -904,7 +917,7 @@ public:
                                             t_x1, t_x2);
 
           drawWaveform(p, plugin, disk_peaks, seqblock, is_gfx_gfx, interior_waveform_color,
-                       time2, seqblock->gfx.default_duration / resample_ratio,
+                       time2, seqblock->t.default_duration / resample_ratio,
                        x2, i2_x2,
                        y1, y2);
         }
@@ -1049,8 +1062,8 @@ public:
       qreal x1,y1,x2,y2;
       rect.getCoords(&x1, &y1, &x2, &y2);
 
-      double noninterior_start = get_abstime_from_seqtime(_seqtrack, NULL, get_seqblock_noninterior_start2(&seqblock->gfx));
-      double noninterior_end = get_abstime_from_seqtime(_seqtrack, NULL, get_seqblock_noninterior_end2(_seqtrack, seqblock, true));
+      double noninterior_start = get_abstime_from_seqtime(_seqtrack, NULL, get_seqblock_noninterior_start(seqblock));
+      double noninterior_end = get_abstime_from_seqtime(_seqtrack, NULL, get_seqblock_noninterior_end(_seqtrack, seqblock));
 
       qreal ni_x1 = scale_double(noninterior_start,
                                  _start_time, _end_time,
@@ -1059,7 +1072,7 @@ public:
                                  _start_time, _end_time,
                                  t_x1, t_x2);
       
-      bool draw_all = seqblock->gfx.interior_start==0 && seqblock->gfx.interior_end==seqblock->gfx.default_duration;
+      bool draw_all = seqblock->t.interior_start==0 && seqblock->t.interior_end==seqblock->t.default_duration;
       bool is_current = seqblock==g_curr_seqblock;
       //printf("draw_all: %d. is_current: %d. x1: %f, x1: %f, x2: %f, x2: %f\n", draw_all, is_current, x1, ni_x1, x2, ni_x2);
 
@@ -1340,23 +1353,27 @@ public:
 
     // First check if we need to paint it.
     {
+      /*
       double sample_rate = MIXER_get_sample_rate();
       
       double start_time = _start_time / sample_rate;
       double end_time = _end_time / sample_rate;
+      */
       
-      if (seqblock->start_time >= end_time)
+      if (seqblock->t.time >= _end_time)
         return false;
-      if (seqblock->end_time < start_time)
+      if (seqblock->t.time2 < _start_time)
         return false;
       
-      double x1 = get_seqblock_x1(seqblock, start_time, end_time);
-      double x2 = get_seqblock_x2(seqblock, start_time, end_time);
+      double x1 = get_seqblock_x1(seqblock);
+      double x2 = get_seqblock_x2(seqblock);
       //if (i==1)
       //  printf("   %d: %f, %f. %f %f\n", iterator666, x1, x2, seqblock->start_time / 44100.0, seqblock->end_time / 44100.0);
 
       rect = QRectF(x1,t_y1+1,x2-x1,height-2);
 
+      //printf("%p: Start: %f, End: %f. X1: %f, X2: %f\n", seqblock, start_time, end_time, x1,x2);
+      
 #if 0
       // Can not use rect.toAlignedRect() because it returns a QRect, which uses 'int', which is a lot smaller than 'double' which QRectF uses.
       // Why was toAlignedRect() used in the first place?
@@ -1432,13 +1449,14 @@ public:
       
     //double song_length = get_visible_song_length()*sample_rate;
   
-    SEQTRACK_update_all_seqblock_gfx_start_and_end_times(_seqtrack);
+    //SEQTRACK_update_all_seqblock_start_and_end_times(_seqtrack);
 
     for(int i=0;i<2;i++){
       bool is_gfx_gfx = i==1;
 
       QVector<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(_seqtrack, is_gfx_gfx);
-
+      //printf("  seqblocks size: %d. (%d %d)\n", seqblocks.size(), _seqtrack->seqblocks.num_elements, _seqtrack->gfx_seqblocks==NULL ? -1 : _seqtrack->gfx_seqblocks->num_elements);
+      
       for(int i=seqblocks.size()-1 ; i>=0 ; i--)
         paintSeqBlock(p, update_rect, seqblocks.at(i), is_gfx_gfx);
     }
@@ -2178,7 +2196,7 @@ struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
   }
 
   void wheelEvent(QWheelEvent *e) override {
-    handle_wheel_event(e, 0, width(), 0, SONG_get_gfx_length()*MIXER_get_sample_rate());
+    handle_wheel_event(e, 0, width(), 0, get_visible_song_length()*MIXER_get_sample_rate());
   }
 
 private:
@@ -2191,10 +2209,10 @@ private:
 public:
 
   double get_x1(void){
-    return get_x1(SONG_get_gfx_length()*MIXER_get_sample_rate());
+    return get_x1(get_visible_song_length()*MIXER_get_sample_rate());
   }
   double get_x2(void){
-    return get_x2(SONG_get_gfx_length()*MIXER_get_sample_rate());
+    return get_x2(get_visible_song_length()*MIXER_get_sample_rate());
   }
   
   void paintEvent ( QPaintEvent * ev ) override {
@@ -2204,7 +2222,7 @@ public:
     
     QPainter p(this);
 
-    double total_seconds = SONG_get_gfx_length();
+    double total_seconds = get_visible_song_length();
     double total = total_seconds*MIXER_get_sample_rate();
     
     p.setRenderHints(QPainter::Antialiasing,true);
@@ -2231,11 +2249,13 @@ public:
         
         double y1 = scale_double(seqtracknum,   0, num_seqtracks, 3, height()-3);
         double y2 = scale_double(seqtracknum+1, 0, num_seqtracks, 3, height()-3);
-        
-        SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
+
+        /*
+        SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
         //double start_time = _start_time / MIXER_get_sample_rate();
         //double end_time = _end_time / MIXER_get_sample_rate();
-
+        */
+        
         VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
 
           QColor seqblock_color = get_seqblock_color(seqtrack, seqblock).lighter(150);
@@ -2243,8 +2263,8 @@ public:
           
           //printf("\n\n\n Start/end: %f / %f. Seqtrack/seqblock %p / %p\n\n", seqblock->start_time, seqblock->end_time, seqtrack, seqblock);
           
-          double x1 = scale_double(seqblock->start_time, 0, total_seconds, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x1(seqblock, start_time, end_time);
-          double x2 = scale_double(seqblock->end_time, 0, total_seconds, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x2(seqblock, start_time, end_time);
+          double x1 = scale_double(seqblock->t.time, 0, total, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x1(seqblock, start_time, end_time);
+          double x2 = scale_double(seqblock->t.time2, 0, total, 0, width()); //seqtrack_widget->_seqblocks_widget->get_seqblock_x2(seqblock, start_time, end_time);
           
           QRectF rect(x1,y1+1,x2-x1,y2-y1-2);
           myFillRect(p, rect, seqblock_color);
@@ -2323,7 +2343,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   Sequencer_widget(QWidget *parent)
     : MouseTrackerQWidget(parent)
-    , _end_time(SONG_get_gfx_length()*MIXER_get_sample_rate())
+    , _end_time(get_visible_song_length()*MIXER_get_sample_rate())
     , _samples_per_pixel((_end_time-_start_time) / width())
     , _songtempoautomation_widget(this, _start_time, _end_time)
     , _timeline_widget(this, _start_time, _end_time)
@@ -2357,7 +2377,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   
   void my_update(void){
     D(printf("SEQ: my_update called\n"));
-    int64_t visible_song_length = MIXER_get_sample_rate() * SONG_get_gfx_length();
+    int64_t visible_song_length = MIXER_get_sample_rate() * get_visible_song_length();
     if (_end_time > visible_song_length) {
       _end_time = visible_song_length;
       if (_start_time >= _end_time)
@@ -2550,9 +2570,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       
       if (!do_update) {
         if (is_called_every_ms(1000)) // This is only an insurance. SEQUENCER_update is supposed to be called manually when needed.
-          if (_last_visible_song_length != SONG_get_gfx_length()) {
+          if (_last_visible_song_length != get_visible_song_length()) {
             do_update = true;
-            _last_visible_song_length = SONG_get_gfx_length();
+            _last_visible_song_length = get_visible_song_length();
           }
       }  
       
@@ -2822,7 +2842,7 @@ void SEQUENCER_set_visible_start_and_end_time(int64_t start_time, int64_t end_ti
   R_ASSERT_RETURN_IF_FALSE(end_time > start_time);
   
   g_sequencer_widget->_start_time = R_MAX(start_time, 0);
-  g_sequencer_widget->_end_time = R_MIN(end_time, SONG_get_gfx_length() * MIXER_get_sample_rate());
+  g_sequencer_widget->_end_time = R_MIN(end_time, get_visible_song_length() * MIXER_get_sample_rate());
 
   g_sequencer_widget->legalize_start_end_times();
           
@@ -2842,7 +2862,7 @@ void SEQUENCER_set_visible_start_time(int64_t val){
 void SEQUENCER_set_visible_end_time(int64_t val){
   R_ASSERT_RETURN_IF_FALSE(val > g_sequencer_widget->_start_time);
   
-  g_sequencer_widget->_end_time = R_MIN(val, SONG_get_gfx_length() * MIXER_get_sample_rate());
+  g_sequencer_widget->_end_time = R_MIN(val, get_visible_song_length() * MIXER_get_sample_rate());
 
   g_sequencer_widget->legalize_start_end_times();
     

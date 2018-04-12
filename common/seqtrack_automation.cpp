@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "seqtrack_automation_proc.h"
 
 static double get_seqtrack_song_length(struct SeqTrack *seqtrack){
-  return get_seqtime_from_abstime(seqtrack, NULL, SONG_get_gfx_length()*MIXER_get_sample_rate());
+  return get_seqtime_from_abstime(seqtrack, NULL, SONG_get_length()*MIXER_get_sample_rate());
 }
 
 

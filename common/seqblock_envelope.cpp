@@ -769,8 +769,8 @@ float SEQBLOCK_ENVELOPE_get_node_x(struct SeqblockEnvelope *seqblockenvelope, in
 
   struct SeqTrack *seqtrack = seqblockenvelope->_seqtrack;
   
-  double noninterior_start = get_abstime_from_seqtime(seqtrack, NULL, get_seqblock_noninterior_start2(&seqblockenvelope->_seqblock->gfx));
-  double noninterior_end = get_abstime_from_seqtime(seqtrack, NULL, get_seqblock_noninterior_end2(seqtrack, seqblockenvelope->_seqblock, true));
+  double noninterior_start = get_abstime_from_seqtime(seqtrack, NULL, get_seqblock_noninterior_start(seqblockenvelope->_seqblock));
+  double noninterior_end = get_abstime_from_seqtime(seqtrack, NULL, get_seqblock_noninterior_end(seqtrack, seqblockenvelope->_seqblock));
 
   double t_x1 = SEQUENCER_get_x1();
   double t_x2 = SEQUENCER_get_x2();

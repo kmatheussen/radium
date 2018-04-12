@@ -223,7 +223,7 @@ namespace{
 }
 
 
-QVector<PlaylistElement> get_playlist_elements(void){
+static QVector<PlaylistElement> get_playlist_elements(void){
 
   QVector<PlaylistElement> ret;
     
@@ -825,7 +825,7 @@ public slots:
 
       int64_t abstime, seqtime;
       
-      SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
+      //SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
 
       struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
 
@@ -835,11 +835,11 @@ public slots:
           seqtime = 0;
         } else {
           struct SeqBlock *prev_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum-1];
-          abstime = prev_seqblock->end_time * MIXER_get_sample_rate();
-          seqtime = prev_seqblock->start_time + SEQBLOCK_get_seq_duration(prev_seqblock);
+          abstime = prev_seqblock->t.time2;
+          seqtime = prev_seqblock->t.time2;
         }
       } else {
-        abstime = seqblock->start_time * MIXER_get_sample_rate();
+        abstime = seqblock->t.time;
         seqtime = seqblock->t.time;
       }      
 
