@@ -235,18 +235,18 @@ static QVector<PlaylistElement> get_playlist_elements(void){
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
 
-    int64_t next_last_end_seq_time = seqblock->gfx.time2;
+    int64_t next_last_end_seq_time = seqblock->t.time2;
         
-    int64_t pause_time = seqblock->gfx.time - last_end_seq_time;
+    int64_t pause_time = seqblock->t.time - last_end_seq_time;
 
     if (pause_time > 0) {
-      bool is_current = current_seq_time >= last_end_seq_time && current_seq_time < seqblock->gfx.time;
+      bool is_current = current_seq_time >= last_end_seq_time && current_seq_time < seqblock->t.time;
       PlaylistElement pe = PlaylistElement::pause(iterator666, seqblock, pause_time, is_current);
       ret.push_back(pe);
     }
     
     {
-      bool is_current = current_seq_time >= seqblock->gfx.time && current_seq_time < next_last_end_seq_time;
+      bool is_current = current_seq_time >= seqblock->t.time && current_seq_time < next_last_end_seq_time;
       PlaylistElement pe = PlaylistElement::block(iterator666, seqblock, is_current);
       ret.push_back(pe);
     }
@@ -697,6 +697,11 @@ public slots:
       
     QVector<PlaylistElement> elements = get_playlist_elements();
 
+    R_ASSERT_RETURN_IF_FALSE(pos1 >= 0);
+    R_ASSERT_RETURN_IF_FALSE(pos1 < elements.size());
+    R_ASSERT_RETURN_IF_FALSE(pos2 >= 0);
+    R_ASSERT_RETURN_IF_FALSE(pos2 < elements.size());
+    
     const PlaylistElement &element1 = elements.at(pos1);
     const PlaylistElement &element2 = elements.at(pos2);
 
@@ -717,19 +722,29 @@ public slots:
 
       //printf("Bef: %f %f\n", (double)seqblock1->time/MIXER_get_sample_rate(), (double)seqblock2->time/MIXER_get_sample_rate());
 
+      hash_t *seqblock1_state = SEQBLOCK_get_state(seqtrack, seqblock1, true);
+      HASH_put_int(seqblock1_state, ":seqtracknum", get_seqtracknum(seqtrack));
+      HASH_remove(seqblock1_state, ":start-time");
+      HASH_remove(seqblock1_state, ":end-time");
+      int64_t new_start_time1 = seqblock1->t.time + seqblock2->t.time2-seqblock2->t.time;
+      HASH_put_int(seqblock1_state, ":start-time", new_start_time1);
+      HASH_put_int(seqblock1_state, ":end-time", new_start_time1 + SEQBLOCK_get_seq_duration(seqblock1));
+                   
       {
-        radium::PlayerPause pause; // Only restart the player once.
+        radium::PlayerPause pause; // Not necessary for correct operation, but to avoid restart the player more than once.
 
         SEQTRACK_delete_seqblock(seqtrack, seqblock1);
         SEQTRACK_move_seqblock(seqtrack, seqblock2, seqblock1->t.time);
-        SEQTRACK_insert_seqblock(seqtrack, seqblock1, SEQBLOCK_get_seq_endtime(seqblock2), -1);
+        SEQBLOCK_insert_seqblock_from_state(seqblock1_state, SHOW_ASSERTION);
+        //SEQTRACK_insert_seqblock(seqtrack, seqblock1, SEQBLOCK_get_seq_endtime(seqblock2), -1);
       }
 
       //printf("Aft2: %f %f\n", (double)seqblock1->time/MIXER_get_sample_rate(), (double)seqblock2->time/MIXER_get_sample_rate());
             
-      SEQUENCER_update();
-      BS_UpdatePlayList();
     }
+
+    SEQUENCER_update();
+    BS_UpdatePlayList();
   }
 
   void move_down(void){
@@ -940,9 +955,9 @@ void BS_UpdatePlayList(void){
 
   int pos = 0;
   for(const PlaylistElement &pe : elements){
-    if (pe.is_pause())
+    if (pe.is_pause()){
       bs->playlist.insertItem(" pause: "+radium::get_time_string(pe.get_pause()));
-    else {
+    }else {
       QString seqblockname = get_seqblock_name(seqtrack, pe.seqblock, "/", true);
       bs->playlist.insertItem(QString::number(pos).rightJustified(justify_playlist, ' ') + ": " + seqblockname);
       pos++;
