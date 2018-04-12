@@ -61,7 +61,7 @@ void DeleteTracks(
             goto exit;
           }
           
-          int new_num_tracks=R_MAX(tracknum+1, block->num_tracks-todelete);
+          int new_num_tracks=R_MAX(tracknum, block->num_tracks-todelete);
           
           fprintf(stderr,"delete track. Curr: %d, new_num_tracks: %d, todelete: %d\n",tracknum,new_num_tracks,todelete);
           
