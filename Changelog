@@ -1,3 +1,16 @@
+Changes 5.5.9 -> 5.6.0:
+* Editor: Make it possible to delete last track.
+* Playlist: Fix various bugs that could happen when pressing the
+  arrow up or arrow down buttons in the bottom of the playlist.
+* Sequencer: Remove lots of unused/dead/unnecessary code left from
+  recent refactorings. Might speed up some things.
+* API: Removed the following functions: getSeqblockGfxStartTime,
+  getSeqblockGfxEndTime, positionSeqblock, positionSeqblockGfx,
+  moveSeqblock, moveSeqblockGfx, getSeqblockStretchGfx,
+  getSeqblockInteriorStartGfx, getSeqblockInteriorEndGfx.
+
+
+
 Changes 5.5.8 -> 5.5.9:
 * Load: Don't adjust for block length samplerate mismatch twice. This
   bug caused strange bugs when loading a song saved with a different
