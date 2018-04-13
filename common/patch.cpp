@@ -1490,9 +1490,7 @@ void FX_call_me_before_starting_to_play_song(struct SeqTrack *seqtrack, const st
       R_ASSERT_RETURN_IF_FALSE(value >= fx->min);
       R_ASSERT_RETURN_IF_FALSE(value <= fx->max);
 
-      int64_t abstime = get_abstime_from_seqtime(seqtrack,
-                                                 seqblock,
-                                                 seqblock->t.time + blocktime_to_seqtime(seqblock, time));
+      int64_t abstime = seqblock->t.time + blocktime_to_seqtime(seqblock, time);
                                
       fx->call_me_before_starting_to_play_song_MIDDLE(fxs->fx, value, abstime, when);
       

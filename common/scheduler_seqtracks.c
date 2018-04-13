@@ -209,34 +209,23 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
     
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
-  int64_t abs_start_time;
-  int64_t seq_start_times[root->song->seqtracks.num_elements];
+  int64_t seq_start_time;
 
   {
     const struct SeqBlock *seqblock = startdata->seqblock;
     struct Blocks *block = seqblock==NULL ? NULL : seqblock->block;
 
-    int64_t seqtime = 0;
-
     if (block!=NULL)
       ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Stop gfx rendering since we are soon going to change the values of seqtrack->end_time and friends.
     
     if (startdata->seqtrack == NULL) {
-      abs_start_time = startdata->abstime;
+      seq_start_time = startdata->abstime;
     } else {
       R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
       R_ASSERT_RETURN_IF_FALSE(block!=NULL);
       STime block_stime = Place2STime(block, &startdata->place);
-      seqtime = seqblock->t.time + blocktime_to_seqtime(seqblock, block_stime);
-      abs_start_time = get_abstime_from_seqtime(startdata->seqtrack, seqblock, seqtime);
+      seq_start_time = seqblock->t.time + blocktime_to_seqtime(seqblock, block_stime);
     }
-  
-    VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
-      if (seqtrack==startdata->seqtrack)
-        seq_start_times[iterator666] = seqtime;
-      else
-        seq_start_times[iterator666] = get_seqtime_from_abstime(seqtrack, NULL, abs_start_time); // Ab ab ab. Not quite working if starting to play in the middle of a block, I think.      
-    }END_VECTOR_FOR_EACH;
   }
   
   
@@ -251,13 +240,11 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
     SCHEDULER_set_seqtrack_timing(root->song->block_seqtrack, 0, 0);
     RT_LPB_call_when_start_playing(root->song->block_seqtrack);
         
-    ATOMIC_DOUBLE_SET(pc->song_abstime, abs_start_time);
+    ATOMIC_DOUBLE_SET(pc->song_abstime, seq_start_time);
 
     VECTOR_FOR_EACH(struct SeqTrack *seqtrack, &root->song->seqtracks){
 
       atomic_pointer_write_relaxed((void**)&seqtrack->curr_seqblock, NULL);
-
-      int64_t seq_start_time = seq_start_times[iterator666];
 
       SCHEDULER_set_seqtrack_timing(seqtrack, seq_start_time, seq_start_time);
       RT_LPB_call_when_start_playing(seqtrack);

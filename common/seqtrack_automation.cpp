@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "seqtrack_automation_proc.h"
 
 static double get_seqtrack_song_length(struct SeqTrack *seqtrack){
-  return get_seqtime_from_abstime(seqtrack, NULL, SONG_get_length()*MIXER_get_sample_rate());
+  return SONG_get_length()*MIXER_get_sample_rate();
 }
 
 
@@ -667,9 +667,7 @@ void SEQTRACK_AUTOMATION_set(struct SeqTrack *seqtrack, int automationnum, int n
 }
 
 
-void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqTrack *seqtrack, int64_t abstime){
-
-  double seqtime = get_seqtime_from_abstime(seqtrack, NULL, abstime);// / MIXER_get_sample_rate();
+void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqTrack *seqtrack, int64_t seqtime){
 
   for(auto *automation : seqtrack->seqtrackautomation->_automations){
 
@@ -702,7 +700,7 @@ void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqT
 
       float value = -1;
       FX_when when = FX_middle;
-      int64_t abstime_to_send_to_plugin = abstime;
+      int64_t seqtime_to_send_to_plugin = seqtime;
       
       for(int i = 0 ; i < size-1 ; i++){
         
@@ -717,7 +715,7 @@ void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqT
         if (i+1 == size-1){ // last node
           when = FX_end;
           value = node2.value;
-          abstime_to_send_to_plugin = get_abstime_from_seqtime(seqtrack, NULL, node2.time);
+          seqtime_to_send_to_plugin = node2.time;
           break;
         }
       }
@@ -725,7 +723,7 @@ void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqT
       R_ASSERT(value != -1);
       
       PLUGIN_call_me_before_starting_to_play_song_MIDDLE(plugin,
-                                                         abstime_to_send_to_plugin,
+                                                         seqtime_to_send_to_plugin,
                                                          automation->effect_num,
                                                          value,
                                                          when,
@@ -820,10 +818,8 @@ hash_t *SEQTRACK_AUTOMATION_get_state(struct SeqtrackAutomation *seqtrackautomat
 
 
 static float get_node_x2(const struct SeqTrack *seqtrack, const AutomationNode &node, double start_time, double end_time, float x1, float x2){
-  int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, node.time);
-
   //printf("      GET_NODE_X2 returned %f - %f. start_time: %f, end_time: %f\n",abstime/48000.0, scale(abstime, start_time, end_time, x1, x2), start_time/48000.0, end_time/48000.0);
-  return scale(abstime, start_time, end_time, x1, x2);
+  return scale(node.time, start_time, end_time, x1, x2);
 }
 
 static float get_node_x(const AutomationNode &node, double start_time, double end_time, float x1, float x2, void *data){

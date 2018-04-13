@@ -286,10 +286,7 @@ int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, i
   
   undoSequencerAutomations();
 
-  int64_t seqtime1 = get_seqtime_from_abstime(seqtrack, NULL, time1);
-  int64_t seqtime2 = get_seqtime_from_abstime(seqtrack, NULL, time2);
-
-  return SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, seqtime1, value1, LOGTYPE_LINEAR, seqtime2, value2);
+  return SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, time1, value1, LOGTYPE_LINEAR, time2, value2);
 }
 
 void replaceAllSeqAutomation(int64_t old_instrument, int64_t new_instrument){
@@ -382,9 +379,7 @@ int64_t getSeqAutomationTime(int nodenum, int automationnum, int seqtracknum){
   VALIDATE_AUTOMATIONNUM(-1);
   VALIDATE_NODENUM(-1);
 
-  int64_t seqtime = SEQTRACK_AUTOMATION_get_seqtime(seqtrack->seqtrackautomation, automationnum, nodenum);
-
-  return get_abstime_from_seqtime(seqtrack, NULL, seqtime);
+  return SEQTRACK_AUTOMATION_get_seqtime(seqtrack->seqtrackautomation, automationnum, nodenum);
 }
 
 int getSeqAutomationLogtype(int nodenum, int automationnum, int seqtracknum){
@@ -418,8 +413,7 @@ int addSeqAutomationNode(int64_t time, float value, int logtype, int automationn
     
   undoSequencerAutomations();
 
-  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
-  return SEQTRACK_AUTOMATION_add_node(seqtrack->seqtrackautomation, automationnum, seqtime, value, logtype);
+  return SEQTRACK_AUTOMATION_add_node(seqtrack->seqtrackautomation, automationnum, time, value, logtype);
 }
 
 void deleteSeqAutomationNode(int nodenum, int automationnum, int seqtracknum){
@@ -509,8 +503,7 @@ void setSeqAutomationNode(int64_t time, float value, int logtype, int nodenum, i
   VALIDATE_NODENUM();
   VALIDATE_TIME(time,)
     
-  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
-  SEQTRACK_AUTOMATION_set(seqtrack, automationnum, nodenum, seqtime, R_BOUNDARIES(0, value, 1), logtype);
+  SEQTRACK_AUTOMATION_set(seqtrack, automationnum, nodenum, time, R_BOUNDARIES(0, value, 1), logtype);
 }
 
 float getSeqAutomationNodeX(int nodenum, int automationnum, int seqtracknum){
@@ -606,9 +599,7 @@ int64_t getSeqblockEnvelopeTime(int nodenum, int seqblocknum, int seqtracknum){
 
   VALIDATE_ENV_NODENUM(-1);
 
-  int64_t seqtime = SEQBLOCK_ENVELOPE_get_seqtime(seqblock->envelope, nodenum);
-
-  return get_abstime_from_seqtime(seqtrack, NULL, seqtime);
+  return SEQBLOCK_ENVELOPE_get_seqtime(seqblock->envelope, nodenum);
 }
 
 int getSeqblockEnvelopeLogtype(int nodenum, int seqblocknum, int seqtracknum){
@@ -639,8 +630,7 @@ int addSeqblockEnvelopeNode(int64_t time, float db, int logtype, int seqblocknum
     
   undoSequencerEnvelopes();
 
-  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, time);
-  return SEQBLOCK_ENVELOPE_add_node(seqblock->envelope, seqtime, db, logtype);
+  return SEQBLOCK_ENVELOPE_add_node(seqblock->envelope, time, db, logtype);
 }
 
 void deleteSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
@@ -700,17 +690,16 @@ void cancelCurrSeqblockEnvelope(void){
   SEQBLOCK_ENVELOPE_cancel_curr_automation();
 }
 
-void setSeqblockEnvelopeNode(int64_t abstime, float db, int logtype, int nodenum, int seqblocknum, int seqtracknum){
+void setSeqblockEnvelopeNode(int64_t time, float db, int logtype, int nodenum, int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
     return;
 
   VALIDATE_ENV_NODENUM();
-  VALIDATE_ENV_TIME(abstime,)
+  VALIDATE_ENV_TIME(time,)
     
-  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, abstime);
-  SEQBLOCK_ENVELOPE_set(seqtrack, seqblock, nodenum, seqtime, db, logtype);
+  SEQBLOCK_ENVELOPE_set(seqtrack, seqblock, nodenum, time, db, logtype);
 }
 
 float getSeqblockEnvelopeNodeX(int nodenum, int seqblocknum, int seqtracknum){
@@ -1178,7 +1167,7 @@ static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
     }
   }
   
-  *start_seqtime = start_abstime==-1 ? -1 : get_seqtime_from_abstime(seqtrack, seqblock, start_abstime);
+  *start_seqtime = start_abstime;
 
   if (end_abstime == -1){
     *end_seqtime = -1;
@@ -1191,7 +1180,7 @@ static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
 
   if (block==NULL || reltempo==1.0) {
     
-    *end_seqtime = get_seqtime_from_abstime(seqtrack, seqblock, end_abstime);
+    *end_seqtime = end_abstime;
     
   } else { 
     double blocklen = getBlockSTimeLength(block);      

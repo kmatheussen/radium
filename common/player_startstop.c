@@ -607,8 +607,6 @@ void PlaySongCurrPos(void){
   
   int playlistpos = BS_GetCurrPlaylistPos();
 
-  struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-  
   struct SeqBlock *seqblock = BS_GetSeqBlockFromPos(playlistpos);
   if (seqblock==NULL)
     return;
@@ -628,9 +626,8 @@ void PlaySongCurrPos(void){
     
     int64_t stime = Place2STime(seqblock->block, place);
     int64_t seqtime = seqblock->t.time + blocktime_to_seqtime(seqblock, stime);
-    int64_t abstime = get_abstime_from_seqtime(seqtrack, seqblock, seqtime);
   
-    PlaySong(abstime);
+    PlaySong(seqtime);
   }
 }
 
