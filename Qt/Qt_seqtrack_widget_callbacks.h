@@ -1062,8 +1062,8 @@ public:
       qreal x1,y1,x2,y2;
       rect.getCoords(&x1, &y1, &x2, &y2);
 
-      double noninterior_start = get_abstime_from_seqtime(_seqtrack, NULL, get_seqblock_noninterior_start(seqblock));
-      double noninterior_end = get_abstime_from_seqtime(_seqtrack, NULL, get_seqblock_noninterior_end(_seqtrack, seqblock));
+      double noninterior_start = get_seqblock_noninterior_start(seqblock);
+      double noninterior_end = get_seqblock_noninterior_end(_seqtrack, seqblock);
 
       qreal ni_x1 = scale_double(noninterior_start,
                                  _start_time, _end_time,
@@ -2063,16 +2063,14 @@ struct Timeline_widget : public MouseTrackerQWidget {
       //p.setPen("red");
       
       const struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[0];
-      int64_t start_seqtime = get_seqtime_from_abstime(seqtrack, NULL, _start_time);
-      int64_t end_seqtime = get_seqtime_from_abstime(seqtrack, NULL, _end_time);
+      int64_t start_seqtime = _start_time;
+      int64_t end_seqtime = _end_time;
 
       auto callback = [&last_x, &p, &bar_color, &text_color, width_, this, seqtrack, min_pixels_between_text]
         (int64_t seqtime, int barnum, int beatnum)
         {
                                                
-          int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, seqtime);
-          
-          double x = scale_double(abstime, _start_time, _end_time, 0, width_);
+          double x = scale_double(seqtime, _start_time, _end_time, 0, width_);
           if (x >= width_)
             return false;
           

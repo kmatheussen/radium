@@ -133,135 +133,6 @@ static void set_seqblock_stretch(const struct SeqTrack *seqtrack, struct SeqBloc
 }
 
 
-// 'seqblock_where_time_is' can be NULL, but it works faster if it is not null. (Not quite sure if that is the whole difference)
-static int64_t get_abstime_from_seqtime2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_where_time_is, int64_t seqtime){
-  return seqtime;
-
-  int64_t last_seq_end_time = 0;
-  double last_abs_end_time = 0; // Is double because of reltempo multiplication.
-
-  
-  int64_t block_stime = -1;
-
-  if (seqblock_where_time_is != NULL){
-    block_stime = seqtime_to_blocktime(seqblock_where_time_is, seqtime-seqblock_where_time_is->t.time);
-  }
-    
-  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-
-    double reltempo = 1.0;
-    if (seqblock->block != NULL)
-      reltempo = ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
-
-    int64_t startseqtime = seqblock->t.time;
-    
-    int64_t pause_duration  = startseqtime - last_seq_end_time; // (reltempo is not applied to pauses)
-    
-    int64_t seq_start_time  = startseqtime;
-    double  abs_start_time  = last_abs_end_time + pause_duration;
-
-    if (seqblock_where_time_is == NULL) {
-      if (seqtime < seq_start_time)
-        return last_abs_end_time + (seqtime - last_seq_end_time);
-    }
-    
-    if (seqblock == seqblock_where_time_is)
-      return abs_start_time + blocktime_to_seqtime(seqblock, (double)block_stime / reltempo); // Important that we round down.
-      
-    int64_t seq_block_duration = get_seqblock_duration(seqblock);
-    int64_t abs_block_duration = ((double)seq_block_duration / reltempo);
-    
-    int64_t seq_end_time = seq_start_time + seq_block_duration;
-    double  abs_end_time = abs_start_time + abs_block_duration;
-
-    if (seqblock_where_time_is == NULL){
-      if (seqtime >= seq_start_time && seqtime < seq_end_time)
-        return abs_start_time + ((double) (seqtime-seq_start_time) / reltempo); // Important that we round down.
-    }
-    
-    //last_abs_start_time = abs_start_time;
-    last_seq_end_time   = seq_end_time;
-    last_abs_end_time   = abs_end_time;
-    
-    //printf("  start/end: %f  ->   %f\n",seqblock->start_time,seqblock->end_time);
-  }END_VECTOR_FOR_EACH;
-
-  if (seqblock_where_time_is == NULL)
-    return last_abs_end_time + (seqtime - last_seq_end_time);
-
-  // !!!
-  R_ASSERT(false);
-  // !!!
-
-  // fallback
-  //
-  
-  double reltempo = 1.0;
-  if (seqblock_where_time_is->block != NULL)
-    reltempo = ATOMIC_DOUBLE_GET(seqblock_where_time_is->block->reltempo);
-  
-  return seqblock_where_time_is->t.time + blocktime_to_seqtime(seqblock_where_time_is, ((double)block_stime / reltempo));
-}
-
-int64_t get_abstime_from_seqtime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_where_time_is, int64_t seqtime){
-  return seqtime;
-
-  return get_abstime_from_seqtime2(seqtrack, seqblock_where_time_is, seqtime);
-}
-  
-// Returns in frame format, not in seconds. (int64_t is usually in frames, double is usually in seconds)
-static int64_t get_seqtime_from_abstime2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime){
-  return abstime;
-
-  //int64_t last_seq_start_time = 0;
-  int64_t last_seq_end_time = 0;
-  //double last_abs_start_time = 0;
-  double last_abs_end_time = 0; // Is double because of reltempo multiplication.
-    
-  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-
-    if (seqblock != seqblock_to_ignore) { // seqblock_to_ignore is used when moving a seqblock.
-
-      double reltempo = 1.0;
-      if (seqblock->block != NULL)
-        reltempo = ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
-
-      int64_t seq_start_time  = seqblock->t.time;
-      
-      int64_t pause_duration  = seq_start_time - last_seq_end_time; // (reltempo is not applied to pauses)
-      
-      double  abs_start_time  = last_abs_end_time + pause_duration;
-      
-      if (abstime <= abs_start_time)
-        break;
-      
-      int64_t seq_block_duration = get_seqblock_duration(seqblock);
-      int64_t abs_block_duration = ((double)seq_block_duration / reltempo);
-      
-      int64_t seq_end_time = seq_start_time + seq_block_duration;
-      double  abs_end_time = abs_start_time + abs_block_duration;
-
-      if (abstime <= abs_end_time)
-        return scale(abstime, abs_start_time, abs_end_time, seq_start_time, seq_end_time);
-      
-      //last_abs_start_time = abs_start_time;
-      last_seq_end_time   = seq_end_time;
-      last_abs_end_time   = abs_end_time;
-
-    }
-    
-    //printf("  start/end: %f  ->   %f\n",seqblock->start_time,seqblock->end_time);
-  }END_VECTOR_FOR_EACH;
-
-  return last_seq_end_time + (abstime - last_abs_end_time); // We lose the decimals here. Wonder if this inaccuracy could build up. Maybe using double/seconds everywhere instead would be better...
-}
-
-int64_t get_seqtime_from_abstime(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock_to_ignore, int64_t abstime){
-  return abstime;
-  
-  return get_seqtime_from_abstime2(seqtrack, seqblock_to_ignore, abstime);
-}
-
 static bool plays_same_seqblock_completely_later_in_seqtrack(struct SeqTrack *seqtrack, int pos, int64_t before_seqtime){
   const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[pos];
   const struct Blocks *block = seqblock->block;
@@ -303,16 +174,16 @@ void SEQTRACK_call_me_very_often(void){
 }
 
 
-void SONG_call_me_before_starting_to_play_song(int64_t abstime){
+void SONG_call_me_before_starting_to_play_song(int64_t seqtime){
 
   // Sequencer automation
   //
   // We init sequencer automation before editor automation since sequencer automation is called before editor automation in the player.
   //
-  if (abstime > 0) {
+  if (seqtime > 0) {
     ALL_SEQTRACKS_FOR_EACH(){
       
-      SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(seqtrack, abstime);
+      SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(seqtrack, seqtime);
       
     }END_ALL_SEQTRACKS_FOR_EACH;
   }
@@ -320,8 +191,6 @@ void SONG_call_me_before_starting_to_play_song(int64_t abstime){
   radium::FutureSignalTrackingSemaphore gotit;
     
   ALL_SEQTRACKS_FOR_EACH(){
-
-    int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, abstime);
 
     // Seqtrackplugin (Read some samples from audio files into memory)
     //
@@ -335,7 +204,7 @@ void SONG_call_me_before_starting_to_play_song(int64_t abstime){
 
     // Editor automation
     //
-    if (abstime > 0) {
+    if (seqtime > 0) {
       for(int i=0 ; i < seqtrack->seqblocks.num_elements ; i++){
         
         const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[i];
@@ -362,12 +231,6 @@ void SONG_call_me_before_starting_to_play_song(int64_t abstime){
 }
 
   
-static int64_t convert_seqtime(struct SeqTrack *from_seqtrack, struct SeqTrack *to_seqtrack, int64_t from_seqtime){
-  int64_t abstime = get_abstime_from_seqtime(from_seqtrack, NULL, from_seqtime);
-  //printf("in: %f, abstime: %f. out: %f\n",(double)from_seqtime/44100.0, (double)abstime/44100.0, (double)get_seqtime_from_abstime(to_seqtrack, NULL, abstime)/44100.0);
-  return get_seqtime_from_abstime(to_seqtrack, NULL, abstime);
-}
-
 static void seqblockgcfinalizer(void *actual_mem_start, void *user_data){
   struct SeqBlock *seqblock = (struct SeqBlock*)user_data;
   //printf("FINALIZING seqtrack\n");
@@ -717,14 +580,10 @@ static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64
   return ret;
 }
 
-int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, WhatToFind what){
+int64_t find_closest_barorbeat_start(int seqtracknum, int64_t seqtime, WhatToFind what){
 
   //struct SeqTrack *pos_seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
   struct SeqTrack *seqtrack = find_closest_seqtrack_with_barorbeat_start(seqtracknum);
-
-  //printf("pos_seqtime: %f\n",(double)pos_seqtime/44100.0);
-  //int64_t seqtime = convert_seqtime(pos_seqtrack, seqtrack, pos_seqtime);
-  int64_t seqtime = get_seqtime_from_abstime(seqtrack, NULL, pos_abstime);
                          
   int64_t barorbeat_start_time = 0;
 
@@ -746,7 +605,7 @@ int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, WhatT
     
     if (seqtime < starttime && last_seqblock==NULL) {
       //printf("pos_abstime:  ");
-      return pos_abstime;
+      return seqtime;
       //bar_start_time = pos_seqtime; //find_bar_start_before(seqblock, seqtime);
       //goto gotit;
     }
@@ -762,7 +621,7 @@ int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, WhatT
 
   if (last_seqblock==NULL){
     //printf("pos_abstime2:  ");
-    return pos_abstime;
+    return seqtime;
   } else {
     //printf("after2:  ");
     barorbeat_start_time = find_barorbeat_start_after(last_seqblock, seqtime, INT64_MAX, what);
@@ -772,20 +631,20 @@ int64_t find_closest_barorbeat_start(int seqtracknum, int64_t pos_abstime, WhatT
 
   //printf("Converting %f to %f\n",(double)bar_start_time/44100.0, (double)convert_seqtime(seqtrack, pos_seqtrack, bar_start_time)/44100.0);
   //return convert_seqtime(seqtrack, pos_seqtrack, bar_start_time);
-  return get_abstime_from_seqtime(seqtrack, NULL, barorbeat_start_time);
+  return barorbeat_start_time;
 }
 
-int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_abstime){
-  return find_closest_barorbeat_start(seqtracknum, pos_abstime, WhatToFind::BAR);
+int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t seqtime){
+  return find_closest_barorbeat_start(seqtracknum, seqtime, WhatToFind::BAR);
 }
 
-int64_t SEQUENCER_find_closest_beat_start(int seqtracknum, int64_t pos_abstime){
-  return find_closest_barorbeat_start(seqtracknum, pos_abstime, WhatToFind::BEAT);
+int64_t SEQUENCER_find_closest_beat_start(int seqtracknum, int64_t seqtime){
+  return find_closest_barorbeat_start(seqtracknum, seqtime, WhatToFind::BEAT);
 }
 
 
-int64_t SEQUENCER_find_closest_line_start(int seqtracknum, int64_t pos_abstime){
-  return find_closest_barorbeat_start(seqtracknum, pos_abstime, WhatToFind::LINE);
+int64_t SEQUENCER_find_closest_line_start(int seqtracknum, int64_t seqstime){
+  return find_closest_barorbeat_start(seqtracknum, seqstime, WhatToFind::LINE);
 }
 
 /**
@@ -1472,11 +1331,10 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
   int pos = VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
   R_ASSERT_RETURN_IF_FALSE(pos>=0);
 
-  int64_t abstimes[seqtrack->seqblocks.num_elements];
+  int64_t seqtimes[seqtrack->seqblocks.num_elements];
 
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-    abstimes[iterator666] = get_abstime_from_seqtime(seqtrack, NULL, seqblock->t.time);
-    //printf("bef %d: %f\n", iterator666, abstimes[iterator666] / 44100.0);
+    seqtimes[iterator666] = seqblock->t.time;
   }END_VECTOR_FOR_EACH;
 
   //printf("    SEQTRACK_delete_seqblock\n");
@@ -1496,7 +1354,7 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
 
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
       if (iterator666 >= pos){
-        move_seqblock(seqblock, get_seqtime_from_abstime(seqtrack, seqblock, abstimes[iterator666+1]));
+        move_seqblock(seqblock, seqtimes[iterator666+1]);
         //printf("Skewing %f -> %f\n", (seqblock->t.time-skew) / 44100.0, seqblock->t.time / 44100.0);
       }
     }END_VECTOR_FOR_EACH;
@@ -1710,10 +1568,10 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
     R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&seqtrack_here->seqblocks, seqblock), 0);
   }END_VECTOR_FOR_EACH;
 
-  int64_t abstimes[R_MAX(1, seqtrack->seqblocks.num_elements)]; // Using R_MAX since arrays of size 0 causes ubsan hit
+  int64_t seqtimes[R_MAX(1, seqtrack->seqblocks.num_elements)]; // Using R_MAX since arrays of size 0 causes ubsan hit
 
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-    abstimes[iterator666] = get_abstime_from_seqtime(seqtrack, NULL, seqblock->t.time);
+    seqtimes[iterator666] = seqblock->t.time;
     //printf("bef %d: %f\n", iterator666, abstimes[iterator666] / 44100.0);
   }END_VECTOR_FOR_EACH;
 
@@ -1735,7 +1593,7 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
 
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
       if (iterator666 > pos)
-        move_seqblock(seqblock, get_seqtime_from_abstime(seqtrack, seqblock, abstimes[iterator666-1]));
+        move_seqblock(seqblock, seqtimes[iterator666-1]);
     }END_VECTOR_FOR_EACH;
 
     RT_legalize_seqtrack_timing(seqtrack);
