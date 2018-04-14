@@ -1328,8 +1328,8 @@ static int get_peaks(struct SoundPlugin *plugin,
   //printf("Creating new peak for ch %d, frames %d -> %d\n", ch, (int)start_frame, (int)end_frame);
 
   {
-    int start_frame = time_to_frame(data, start_time, note_num);
-    int end_frame = time_to_frame(data, end_time, note_num);
+    int64_t start_frame = time_to_frame(data, start_time, note_num);
+    int64_t end_frame = time_to_frame(data, end_time, note_num);
     
     if (start_frame==end_frame)
       goto return_empty;
