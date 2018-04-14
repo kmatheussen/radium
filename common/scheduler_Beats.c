@@ -104,19 +104,26 @@ static int64_t RT_scheduled_play_beat_note(struct SeqTrack *seqtrack, int64_t ti
 
 
 static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
-
+  
   const struct SeqBlock *seqblock = args[0].const_pointer;
 
   Beat_Iterator *iterator = &seqtrack->beat_iterator;
+  R_ASSERT_RETURN_IF_FALSE2(iterator->is_active==true, DONT_RESCHEDULE);
 
-  R_ASSERT_RETURN_IF_FALSE2(iterator->play_id == ATOMIC_GET(pc->play_id), DONT_RESCHEDULE); // Try to track down why the assertion 3 lines down sometimes fail.s.
+  if(iterator->play_id != ATOMIC_GET(pc->play_id)){
+    R_ASSERT(false);
+    goto stop_scheduling;
+  }
 
   const struct Beats *beat = iterator->next_beat;
-  R_ASSERT_RETURN_IF_FALSE2(beat!=NULL, DONT_RESCHEDULE);  // This one fails now and then. Don't know why. (The assertion above was added later.)
-                         
+  if (beat==NULL){
+    R_ASSERT(false);
+    goto stop_scheduling;
+  }
+  
   iterator->last_valid_signature = beat->valid_signature;
 #if !defined(RELEASE)
-  if (iterator->last_valid_signature.denominator==0)
+  if (iterator->last_valid_signature.denominator<=0)
     abort();
 #endif
   
@@ -144,8 +151,11 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
   // Schedule next beat
   if (iterator->next_beat != NULL)
     return get_seqblock_place_time(seqblock, iterator->next_beat->l.p);
-  else
-    return DONT_RESCHEDULE;
+
+ stop_scheduling:
+  R_ASSERT(iterator->is_active==true);
+  iterator->is_active = false;
+  return DONT_RESCHEDULE;
 }
 
 
@@ -158,6 +168,8 @@ void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
   Beat_Iterator *iterator = &seqtrack->beat_iterator;
   memset(iterator, 0, sizeof(Beat_Iterator));
   iterator->last_played_metronome_note_num = -1;
+
+  R_ASSERT(iterator->is_active==false);
 
   iterator->play_id = ATOMIC_GET(pc->play_id);
 
@@ -186,7 +198,9 @@ void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
     args[0].const_pointer = seqblock;
     
     int64_t time = get_seqblock_place_time(seqblock, next_beat->l.p);
-    
+
+    R_ASSERT(iterator->is_active==false);
+    iterator->is_active = true;
     SCHEDULER_add_event(seqtrack, time, RT_scheduled_Beat, &args[0], num_args, SCHEDULER_BEAT_PRIORITY);
   }
 }

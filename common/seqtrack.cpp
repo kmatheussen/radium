@@ -1363,6 +1363,12 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
   }
 
   RT_SEQUENCER_update_sequencer_and_playlist();
+
+#if !defined(RELEASE)
+  //memset((void*)seqblock, 0, sizeof(struct SeqBlock));
+  tfree((void*)seqblock);
+#endif
+
 }
 
 void SEQTRACK_delete_gfx_gfx_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
@@ -1801,7 +1807,12 @@ void SEQUENCER_delete_seqtrack(int pos){
   }
 
   call_me_after_seqtrack_has_been_removed(old_seqtrack);
-  evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements-1));  
+  evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements-1));
+
+#if !defined(RELEASE)
+  //memset(old_seqtrack, 0, sizeof(struct SeqTrack));
+  tfree((void*)old_seqtrack);
+#endif
 }
 
 void SEQUENCER_set_looping(bool do_loop){
@@ -2149,7 +2160,7 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
           new_tempo_multiplier = ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
 
         //printf("new_tempo_multiplier: %f\n", new_tempo_multiplier);
-        
+        pause.need_it();
         lock.lock();
 
         double nonstretched_seqblock_duration = seqblock->t.interior_end - seqblock->t.interior_start;

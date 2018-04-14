@@ -353,6 +353,10 @@ bool SCHEDULER_clear_all(float max_audio_cycle_fraction){
   ALL_SEQTRACKS_FOR_EACH(){
     if (SCHEDULER_clear(seqtrack->scheduler, max_audio_cycle_fraction)==false)
       return false;
+    
+    Beat_Iterator *iterator = &seqtrack->beat_iterator;
+    iterator->is_active = true;
+    
   }END_ALL_SEQTRACKS_FOR_EACH;
   
   return true;

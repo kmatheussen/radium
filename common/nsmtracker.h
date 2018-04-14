@@ -2502,6 +2502,8 @@ typedef struct {
 
   int play_id; // for sanity check
 
+  bool is_active; // sanity check
+  
 } Beat_Iterator;
 
 
