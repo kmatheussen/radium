@@ -375,6 +375,7 @@ static void legalize_seqtrack_timing(struct SeqTrack *seqtrack){
 #if !defined(RELEASE)
   //if (!is_gfx)
   //  R_ASSERT(PLAYER_current_thread_has_lock()); (not true when creating from state. I.e. creating new seqtrack that isn't live yet)
+  R_ASSERT(is_playing_song()==false);
 #endif
 
   int64_t last_end_time = 0;
