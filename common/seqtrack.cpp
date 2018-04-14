@@ -2190,5 +2190,9 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
       skew += add_skew;
       
     }END_VECTOR_FOR_EACH;
+
+    if (skew > 0)
+      legalize_seqtrack_timing(seqtrack);
+        
   }END_ALL_SEQTRACKS_FOR_EACH;
 }
