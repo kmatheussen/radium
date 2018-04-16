@@ -1367,7 +1367,7 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
 
 #if !defined(RELEASE)
   //memset((void*)seqblock, 0, sizeof(struct SeqBlock));
-  tfree((void*)seqblock);
+  tfree((void*)seqblock); // 
 #endif
 
 }
@@ -1723,7 +1723,7 @@ void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
 
   if(to_remove.size() > 0){
     radium::PlayerPause pause(is_playing_song());
-    radium::PlayerLock lock;
+    //radium::PlayerLock lock; Commented out since SEQTRACK_delete_seqblock does lots of things.
 
     for(auto pair : to_remove)
       SEQTRACK_delete_seqblock(pair.first, pair.second);
