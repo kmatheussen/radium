@@ -19,9 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define RADIUM_AUDIO_PEAKS_HPP
 
 #if defined(INCLUDE_SNDFILE_OPEN_FUNCTIONS)
-#include <QThread>
 #endif
-
 
 #include "Juce_plugins_proc.h"
 #include "../common/Mutex.hpp"
@@ -50,8 +48,6 @@ static inline int unit_floor(int value, int unit){
 
 namespace radium{
 
-extern radium::Mutex g_peak_read_lock; // We don't want to generate peaks for more than one file at the time
-  
 struct Peak{
 
 private:
@@ -301,10 +297,18 @@ public:
 
 #include "../common/visual_proc.h"
 #include "../common/seqtrack_proc.h"
+#include "../common/Queue.hpp"
+#include "../common/Mutex.hpp"
+
 
 namespace radium{
+
   
-class DiskPeaks : public QThread{
+class DiskPeaks;
+extern radium::Queue<DiskPeaks*, 1024> g_disk_peaks_queue;
+
+  
+class DiskPeaks {
 
   const wchar_t *_peak_filename;
 
@@ -318,7 +322,7 @@ public:
   Peaks **_peaks = NULL;
 
   const wchar_t *_filename;
-  int num_visitors = 1;
+  DEFINE_ATOMIC(int, num_visitors) = 0;
 
   // Use DISKPEAKS_get instead.
   DiskPeaks(const wchar_t *filename)
@@ -347,16 +351,16 @@ public:
     ATOMIC_SET(_is_valid, true);
 
     //printf("... Has valid: %d\n", has_valid_peaks_on_disk());
- 
-    start();
+
+    ATOMIC_ADD(num_visitors, 1); // ensure it's not deleted while reading peaks.
+    g_disk_peaks_queue.put(this);
   }
 
   // Use DISKPEAKS_remove instead.
   ~DiskPeaks(){
-    R_ASSERT(num_visitors==0);
-    
-    wait();
+    R_ASSERT(ATOMIC_GET(num_visitors)==0);
 
+    printf("Deleting DISKPeaks %s\n", STRING_get_qstring(_peak_filename).toUtf8().constData());
     for(int ch=0;ch<_num_ch;ch++)
       delete _peaks[ch];
 
@@ -374,10 +378,6 @@ public:
     return ATOMIC_GET(_percentage_read);
   }
 
-  void wait(void){
-    QThread::wait();
-  }
-
   bool has_valid_peaks_on_disk(void) const {
     if (DISK_file_exists(_peak_filename)==false)
       return false;
@@ -388,10 +388,10 @@ public:
     return peaks_creation_time > sample_creation_time;
   }
 
-private:
-
-  void run() override {
-    radium::ScopedMutex lock(g_peak_read_lock); // We don't want to generate/read peaks for more than one file at the time
+  // Run inside the diskpeaks thread.
+  void run(void) {
+    
+    R_ASSERT(THREADING_is_main_thread()==false);
     
     printf("   Reading peaks from file %s\n", STRING_get_qstring(_peak_filename).toUtf8().constData());
 
@@ -400,7 +400,11 @@ private:
     else{
       read_peaks_from_sample_file();
     }
+
+    ATOMIC_ADD(num_visitors, -1);  // Now it's safe to delete it.
   }
+
+private:
 
   void read_peaks_from_disk(void){
     bool success = false;
@@ -658,7 +662,7 @@ private:
 
 radium::DiskPeaks *DISKPEAKS_get(const wchar_t *wfilename);
 void DISKPEAKS_remove(radium::DiskPeaks *diskpeaks);
-
+void DISKPEAKS_call_very_often(void);
 
 #endif
  

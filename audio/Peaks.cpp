@@ -18,6 +18,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 
+#include <QThread>
+#include <QHash>
+#include <QString>
+
+
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
 #include "../common/nsmtracker.h"
@@ -26,8 +31,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 namespace radium{
-  radium::Mutex g_peak_read_lock; // We don't want to generate peaks for more than one file simultaneously
+  radium::Queue<DiskPeaks*, 1024> g_disk_peaks_queue;
 }
+
+
+namespace{
+class DiskPeaksThread : public QThread{
+public:
+  DiskPeaksThread(){
+    start();
+  }
+private:
+  void run(void) override {
+    while(true){      
+      radium::DiskPeaks *disk_peaks = radium::g_disk_peaks_queue.get();
+      disk_peaks->run();
+    }
+  }
+};
+
+static DiskPeaksThread g_disk_peaks_thread;
+}
+ 
 
 static QHash<QString,radium::DiskPeaks*> g_diskpeaks;
 
@@ -41,17 +66,27 @@ radium::DiskPeaks *DISKPEAKS_get(const wchar_t *wfilename){
     g_diskpeaks[filename] = diskpeaks;
   } 
 
-  diskpeaks->num_visitors++;
+  ATOMIC_ADD(diskpeaks->num_visitors, 1);
   return diskpeaks;
 }
 
-void DISKPEAKS_remove(radium::DiskPeaks *diskpeaks){
-  diskpeaks->num_visitors--;
-
-  if (diskpeaks->num_visitors==0){
+static bool delete_if_empty(radium::DiskPeaks *diskpeaks){
+  if (ATOMIC_GET(diskpeaks->num_visitors)==0){
     g_diskpeaks.remove(STRING_get_qstring(diskpeaks->_filename));
     delete diskpeaks;
-  }
+    return true;
+  } else
+    return false;
+}
+
+void DISKPEAKS_remove(radium::DiskPeaks *diskpeaks){
+  R_ASSERT(ATOMIC_ADD(diskpeaks->num_visitors, -1) > 0);
 }
 
 
+void DISKPEAKS_call_very_often(void){
+  for(auto diskpeaks : g_diskpeaks){
+    if(delete_if_empty(diskpeaks))
+      return; // iterator is (perhaps) not valid anymore, so we just return.
+  }
+}
