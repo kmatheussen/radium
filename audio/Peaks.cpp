@@ -85,8 +85,9 @@ void DISKPEAKS_remove(radium::DiskPeaks *diskpeaks){
 
 
 void DISKPEAKS_call_very_often(void){
+ again:
   for(auto diskpeaks : g_diskpeaks){
     if(delete_if_empty(diskpeaks))
-      return; // iterator is (perhaps) not valid anymore, so we just return.
+      goto again;
   }
 }
