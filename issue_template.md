@@ -1,6 +1,6 @@
 If you are a subscriber requesting a new feature, please make sure I know who you are.
-You do that by emailing me your github user name. Feature requests by non-subscribers
-are likely to be ignored.
+You do that by emailing me your user name. Feature requests by non-subscribers are
+likely to be ignored.
 
 If you are reporting a bug, please use the template below.
 The most important part of the template is the step-by-step
