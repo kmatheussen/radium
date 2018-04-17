@@ -1,14 +1,14 @@
-If you are requesting a new feature, please make sure I know who you are if you are a subscriber.
-You do that by emailing me your github user name. Feature requests by subscribers are prioritized,
-feature requests by non-subscribers are likely to be ignored.
+If you are a subscriber requesting a new feature, please make sure I know who you are.
+You do that by emailing me your github user name. Feature requests by non-subscribers
+are likely to be ignored.
 
 If you are reporting a bug, please use the template below.
 The most important part of the template is the step-by-step
 recipe. When making a step-by-step recipe, you often include
 crucial steps that you wouldn't have thought of otherwise.
 It's hard to know what's relevant, so just describe all steps
-down to the smallest detail. Reporting a bug this way makes
-the job easier both for you and me, and we avoid many follow-up
+down to detail. Reporting a bug this way makes the job
+easier both for you and me, and we avoid many follow-up
 questions.
 
 
