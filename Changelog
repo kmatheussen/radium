@@ -1,3 +1,14 @@
+Changes 5.6.0 -> 5.6.1:
+* Sequencer: Fix possible xruns when deleting sequencer block.
+* Sequencer: Fix peak memory not released when removing audio file.
+* Sequencer: Fix strange things that could happen if deleting audio
+  file immediately after creating it.
+* Sequencer: Fix buggy behaviour in peak rendering if loading
+  songs with lots of audio files (several thousands).
+* Player: Fix changing block tempo multiplier while playing song.
+* Sampler: Fix peak rendering bug when zooming in a lot.
+
+
 Changes 5.5.9 -> 5.6.0:
 * Editor: Make it possible to delete last track.
 * Playlist: Fix various bugs that could happen when pressing the
