@@ -800,6 +800,8 @@
                             (<ra> :show-instrument-info instrument-id parentgui))
               "Configure color" (lambda ()
                                   (show-instrument-color-dialog parentgui instrument-id))
+              "Set random color" (lambda ()
+                                   (<ra> :set-instrument-color (<ra> :generate-new-color 0.9) instrument-id))
               (list "Show GUI"
                     :enabled (<ra> :has-native-instrument-gui instrument-id)
                     :check (<ra> :instrument-gui-is-visible instrument-id parentgui)
