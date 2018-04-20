@@ -1040,7 +1040,7 @@ struct Data{
         }END_VECTOR_FOR_EACH;
         if (num != 1){
           fprintf(stderr,"NUM: %d (%d)\n", num, num != 1);
-          abort();
+          getchar(); //abort();
         }
       }
 #endif
