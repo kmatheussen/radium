@@ -313,6 +313,14 @@ static double getBlockAbsDuration(const struct Blocks *block){
 }
 */
 
+static QColor get_seqtrack_background_color(const SeqTrack *seqtrack){
+  QColor color = get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM);
+  if (seqtrack->patch!=NULL)
+    return mix_colors(color, QColor(seqtrack->patch->color), 0.6);
+  else
+    return color;
+}
+
 static QColor get_block_color(const struct Blocks *block){
   //return mix_colors(QColor(block->color), get_qcolor(SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM), 0.32f);
   return QColor(block->color);
@@ -1240,7 +1248,7 @@ public:
   }
       
   void draw_fades(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock){
-    QColor color = get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM); //mix_colors(QColor(50,50,50,200), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM), 0.52f);
+    QColor color = get_seqtrack_background_color(_seqtrack); //get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM); //mix_colors(QColor(50,50,50,200), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM), 0.52f);
     color.setAlpha(180);
     //QColor color(50,50,50,200);
 
@@ -1445,7 +1453,7 @@ public:
     
     //printf("  PAINTING %d %d -> %d %d\n",t_x1,t_y1,t_x2,t_y2);
 
-    myFillRect(p, _rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
+    myFillRect(p, _rect.adjusted(1,1,-2,-1), get_seqtrack_background_color(_seqtrack));//get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
       
     //double song_length = get_visible_song_length()*sample_rate;
   
