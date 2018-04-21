@@ -5263,6 +5263,13 @@ const_char* gui_getBackgroundColor(int64_t guinum){
   return talloc_strdup(gui->_widget->palette().color(gui->_widget->backgroundRole()).name().toUtf8().constData());
 }
 
+const_char* generateNewColor(float mix_background){
+  return GFX_get_colorname_from_color(GFX_mix_colors(GFX_MakeRandomColor(),
+                                                     GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM),
+                                                     mix_background)
+                                      );
+}
+
 static inline void setStyleSheetRecursively(QWidget *widget, const_char* stylesheet){
   if (widget != NULL){
     widget->setStyleSheet(stylesheet);

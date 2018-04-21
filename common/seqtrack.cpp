@@ -333,6 +333,9 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
   seqblock->sample_filename = STRING_copy(filename);
 
   if (seqtrack->patch == NULL || seqtrack->patch->patchdata==NULL) { // seqtrack->patch == NULL when seqtrack never has played an audio file, and seqtrack->patch->patchdata is null if the seqtrack plugin was deleted manually.
+
+    radium::ScopedIgnoreUndo ignore_undo; // Because we can't delete seqtrack plugin when it has samples.
+
     int64_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, talloc_format("Seqtrack %d", seqtracknum), 0, 0);
     R_ASSERT_RETURN_IF_FALSE2(patch_id >= 0, NULL);
     
