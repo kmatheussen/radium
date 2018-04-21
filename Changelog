@@ -1,3 +1,19 @@
+Changes 5.6.1 -> 5.6.2:
+* Sequencer: Don't create undo when a Seqtrack instrument is
+  automatically created. This operation can't be undone so
+  we previously got an error message when trying to undo.
+* Sequencer: Don't crash when an audio file is placed after an
+  editor block containing a note continuing to play after the block
+  has ended.
+* Sequencer: Options to automatically generate new colors for editor
+  block and audio samples.
+* Mixer: Options to generate new random color for instruments.
+* Sequencer: Halfly use the seqtrack instrument color as background
+  color in the seqtracks, and make the default sequencer background
+  color a little bit more greenish.
+* API: generateNewColor
+
+
 Changes 5.6.0 -> 5.6.1:
 * Sequencer: Fix possible xruns when deleting sequencer block.
 * Sequencer: Fix peak memory not released when removing audio file.
