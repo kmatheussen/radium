@@ -1223,6 +1223,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int save = -1;
   int show_mixer_strips = -1;
   int config_color = -1;
+  int generate_new_color = -1;
   int instrument_info = -1;
   int random = -1;
   int solo = -1;
@@ -1271,6 +1272,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     unmute_all = VECTOR_push_back(&v, "Un-mute all");
     VECTOR_push_back(&v, "--------");
     config_color = VECTOR_push_back(&v, "Configure color");
+    generate_new_color = VECTOR_push_back(&v, "Generate new color");
       
   } else { // i.e. if (patches.num_elements == 1){
 
@@ -1320,7 +1322,8 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     
     save = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Save preset" : "Save preset (.rec)");
     config_color = VECTOR_push_back(&v, "Configure color");
-
+    generate_new_color = VECTOR_push_back(&v, "Generate new color");
+    
     VECTOR_push_back(&v, "--------");
 
     bool is_enabled = hasNativeInstrumentGui(patch->id);
@@ -1417,6 +1420,11 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     command += ")";
     //}UNDO_CLOSE();
 
+    evalScheme(talloc_strdup(command.toUtf8().constData()));
+
+  } else if (sel==generate_new_color) {
+
+    QString command = QString("(ra:set-instrument-color (ra:generate-new-color 0.9) ") + QString::number(CHIP_get_patch(chip_under)->id) + ")";
     evalScheme(talloc_strdup(command.toUtf8().constData()));
 
   } else if (sel==instrument_info) {
