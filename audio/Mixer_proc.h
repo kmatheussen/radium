@@ -34,7 +34,16 @@ extern LANGSPEC void MIXER_get_main_inputs(float **audio);
 //extern LANGSPEC int64_t MIXER_get_time(void);
 
 extern LANGSPEC float MIXER_get_curr_audio_block_cycle_fraction(void);
-extern LANGSPEC int64_t MIXER_get_last_used_time(void);
+// Not quite accurate. Should not be called from the player thread or any other realtime thread.
+
+extern DEFINE_ATOMIC(int64_t, g_last_mixer_time);
+
+// Called very often.
+static inline int64_t MIXER_get_last_used_time(void){
+  return ATOMIC_GET(g_last_mixer_time);
+}
+
+
 extern LANGSPEC bool MIXER_fill_in_time_position(time_position_t *time_position);
 
 #ifdef __cplusplus

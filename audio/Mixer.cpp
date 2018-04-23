@@ -101,7 +101,7 @@ jack_client_t *g_jack_client;
 static int g_jack_client_priority;
 struct CpuUsage g_cpu_usage;
 
-static DEFINE_ATOMIC(int64_t, g_last_mixer_time) = 0;
+DEFINE_ATOMIC(int64_t, g_last_mixer_time) = 0;
 
 static DEFINE_ATOMIC(bool, g_jack_is_running) = true;
 
@@ -1559,11 +1559,6 @@ int64_t MIXER_get_time(void){
 // > ~1 = we will probably get xrun(s)
 float MIXER_get_curr_audio_block_cycle_fraction(void){
   return (float)jack_frames_since_cycle_start(g_jack_client) / (float)g_mixer->_buffer_size;
-}
-
-// Not quite accurate. Should not be called from the player thread or any other realtime thread.
-int64_t MIXER_get_last_used_time(void){
-  return ATOMIC_GET(g_last_mixer_time);
 }
 
 static int get_audioblock_time(STime jack_block_start_time){
