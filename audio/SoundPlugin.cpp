@@ -2021,10 +2021,10 @@ bool PLUGIN_open_gui(SoundPlugin *plugin, int64_t parentgui){
     auto *widget = API_gui_get_widget(p2);
     auto *window = widget->window();
     int64_t p3 = API_get_gui_from_existing_widget(window);
-    if (p3 != p2){
+    if (p3 != parentgui){ // Note: Earlier we tested for p3!=p2 here. I don't know why, and I don't understand why.
       printf("  GAKKAGKKAKK org parentgui: %d. parentgui: %d. windowgui: %d. widgetgui: %d\n",
              (int)p2, (int)parentgui,
-             (int)p3, (int)API_get_gui_from_existing_widget(widget));
+             (int)p3, (int)API_get_gui_from_widget(widget));
       fflush(stdout);
       getchar();
       abort();
