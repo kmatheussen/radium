@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   the main-loop for the player is.
 *******************************************************/
 
+#include <inttypes.h>
 
 
 #include "nsmtracker.h"
@@ -220,19 +221,27 @@ int PLAYER_get_block_delta_time(struct SeqTrack *seqtrack, STime time){
   if(time<seqtrack->start_time || time>seqtrack->end_time) // time may be screwed up if not coming from the player.
     return 0;
 
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack->end_time > seqtrack->start_time, 0);
+
+
   if(is_playing()){
     //int ret = ((time - seqtrack->start_time) * pc->reltime / (seqtrack->end_time - seqtrack->start_time)); // i.e. "scale(time, seqtrack->start_time, seqtrack->end_time, 0, pc->reltime)"
-    int ret = ((time - seqtrack->start_time) * RADIUM_BLOCKSIZE / (seqtrack->end_time - seqtrack->start_time)); // i.e. "scale(time, seqtrack->start_time, seqtrack->end_time, 0, RADIUM_BLOCKSIZE)"
+
+    // Note: We are using int64_t instead of int since some assertion reports have indicated that we might get some kind of integer overflow inside the computation in the line below, or even the result.
+    // I don't understand how that could be though, but the result of 'ret' was -2147483648, or -0x80000000, so at least to get more information about what happens in case it happens again, the type
+    // is changed from int to int64_t.
+    int64_t ret = ((time - seqtrack->start_time) * RADIUM_BLOCKSIZE / (seqtrack->end_time - seqtrack->start_time)); // i.e. "scale(time, seqtrack->start_time, seqtrack->end_time, 0, RADIUM_BLOCKSIZE)"
+
     if(ret<0){
-      RWarning("ret<0: %d",ret);
+      RWarning("ret<0: %" PRId64 ". Time: %" PRId64 ". Start-time: %f. End-time: %f",ret, time, seqtrack->start_time, seqtrack->end_time);
       return 0;
     }
     //if(ret>=pc->reltime){
     if(ret>=RADIUM_BLOCKSIZE){
-      RWarning("ret>pc->reltime: %d > %d",ret,RADIUM_BLOCKSIZE);
+      RWarning("ret>pc->reltime: %" PRId64 " > %d. Time: %" PRId64 ". Start-time: %f. End-time: %f",ret,RADIUM_BLOCKSIZE, time, seqtrack->start_time, seqtrack->end_time);
       return (int)RADIUM_BLOCKSIZE-1;
     }
-    return ret;
+    return (int)ret;
   }else
     return 0;
 }

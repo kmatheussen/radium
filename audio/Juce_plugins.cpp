@@ -285,8 +285,8 @@ namespace{
       //printf("result.bpm: %f\n",result.bpm);
 
       if (result.bpm==0){
-        R_ASSERT_NON_RELEASE(false);
-        result.bpm = 1; // At least one vst plugin crashes if bpm is 0.
+        //R_ASSERT_NON_RELEASE(false); // Note: BPM is supposed to b 0 when playing very slowly so it's not impossible to get a false positive.
+        result.bpm = 1; // Never set bpm to 0. At least one vst plugin crashes if bpm is 0.
       }
       
       Ratio signature = RT_Signature_get_current_Signature(seqtrack);
