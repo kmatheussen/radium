@@ -2070,11 +2070,10 @@ struct Timeline_widget : public MouseTrackerQWidget {
 
       //p.setPen("red");
       
-      const struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[0];
       int64_t start_seqtime = _start_time;
       int64_t end_seqtime = _end_time;
 
-      auto callback = [&last_x, &p, &bar_color, &text_color, width_, this, seqtrack, min_pixels_between_text]
+      auto callback = [&last_x, &p, &bar_color, &text_color, width_, this, min_pixels_between_text]
         (int64_t seqtime, int barnum, int beatnum)
         {
                                                
