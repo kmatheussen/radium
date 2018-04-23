@@ -123,20 +123,19 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
         
         ALL_SEQTRACKS_FOR_EACH(){
 
-            double reltempo = 1.0;
-
             struct SeqBlock *curr_seqblock = seqtrack->curr_seqblock;
             struct Blocks *block = curr_seqblock==NULL ? NULL : curr_seqblock->block;
-            
-            if(block!=NULL && pc->playtype==PLAYBLOCK)
-              reltempo = ATOMIC_DOUBLE_GET(block->reltempo);
-            
-            double seqreltime  = (double)reltime * reltempo;
 
             //if(reltempo!=1.0)
             //  printf("Curr_seqblock: %p. seqrelteim: %f\n", curr_seqblock,seqreltime);
                    
             pc->is_treating_editor_events = true; {
+
+              double reltempo = (block!=NULL && pc->playtype==PLAYBLOCK)
+                ? ATOMIC_DOUBLE_GET(block->reltempo)
+                : 1.0;
+              
+              double seqreltime  = (double)reltime * reltempo;
               
               if (SCHEDULER_called_per_block(seqtrack, seqreltime)==true)
                 is_finished = false;
@@ -146,7 +145,7 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
 
             if (player_state != PLAYER_STATE_STOPPED){
 
-              if (curr_seqblock != NULL) {
+              if (block != NULL) { // <- Earlier we tested for curr_seqblock!=NULL, which was also correct since curr_seqblock is always an editor block and not an audio file, but confusing.
                 
                 bool set_player_time = false;
 
