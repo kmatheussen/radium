@@ -1,3 +1,19 @@
+Changes 5.6.2 -> 5.6.3:
+* Sequencer: Track headers with name, volume sliders, and mute/solo
+  buttons.
+* Sequencer: Buttons to add, remove, and append seqtrack. Faster
+  than using the popup menu.
+* Instruments: Let default instrument colors be more colorful.
+* Sequencer: Fix various bugs when playing samples.
+* Sequencer: Avoid assertion hit about not finding sample.
+* Sequencer: Fix some minor paint bugs.
+* Sequencer: Improve general rendering performance.
+* Sequencer: Draw sample waveforms using less points. Looks better
+  and uses less CPU.
+* Scheduler: Trying to track down rare assertion reports when a VST
+  plugin sends out midi signals.
+
+
 Changes 5.6.1 -> 5.6.2:
 * Sequencer: Don't create undo when a Seqtrack instrument is
   automatically created. This operation can't be undone so
