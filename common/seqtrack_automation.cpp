@@ -826,7 +826,7 @@ static float get_node_x(const AutomationNode &node, double start_time, double en
   return get_node_x2((const struct SeqTrack*)data, node, start_time, end_time, x1, x2);
 }
 
-float SEQTRACK_AUTOMATION_get_node_x(struct SeqtrackAutomation *seqtrackautomation, struct SeqTrack *seqtrack, int automationnum, int nodenum){
+float SEQTRACK_AUTOMATION_get_node_x(struct SeqtrackAutomation *seqtrackautomation, const struct SeqTrack *seqtrack, int automationnum, int nodenum){
   R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0);
 
   struct Automation *automation = seqtrackautomation->_automations[automationnum];
@@ -859,8 +859,8 @@ float SEQTRACK_AUTOMATION_get_node_y(struct SeqtrackAutomation *seqtrackautomati
   return get_node_y(automation->automation.at(nodenum), y1, y2);
 }
 
-void SEQTRACK_AUTOMATION_paint(QPainter *p, struct SeqTrack *seqtrack, float x1, float y1, float x2, float y2, double start_time, double end_time){
+void SEQTRACK_AUTOMATION_paint(QPainter *p, const struct SeqTrack *seqtrack, float x1, float y1, float x2, float y2, double start_time, double end_time){
 
   for(auto *automation : seqtrack->seqtrackautomation->_automations)
-    automation->automation.paint(p, x1, y1, x2, y2, start_time, end_time, automation->color, get_node_y, get_node_x, seqtrack);
+    automation->automation.paint(p, x1, y1, x2, y2, start_time, end_time, automation->color, get_node_y, get_node_x, (void*)seqtrack);
 }

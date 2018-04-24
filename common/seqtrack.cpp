@@ -311,7 +311,7 @@ static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct 
   return seqblock;
 }
 
-static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, const dyn_t envelope_state, double state_samplerate, int64_t seqtime, bool is_gfx){
+static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, const dyn_t envelope_state, double state_samplerate, int64_t seqtime, Seqblock_Type type){
 #if 0 // defined(RELEASE)
   static bool has_shown_message = false;
   if (has_shown_message==false){
@@ -355,7 +355,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
   
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
 
-  seqblock->sample_id = SEQTRACKPLUGIN_add_sample(plugin, filename, seqblock, is_gfx);
+  seqblock->sample_id = SEQTRACKPLUGIN_add_sample(plugin, filename, seqblock, type);
   if (seqblock->sample_id==-1)
     return NULL;
 
@@ -878,7 +878,7 @@ static bool get_value(const hash_t *state,
 }
 
 // Is static since seqblocks should only be created in this file.
-static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type, bool is_gfx){
+static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type, Seqblock_Type type){
   //R_ASSERT(is_gfx==true);
   
   double adjust_for_samplerate = 1.0;
@@ -959,7 +959,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     if (get_value(state, ":sample", STRING_TYPE, HASH_get_string, error_type, filename)==false)
       return NULL;
 
-    seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, envelope, state_samplerate, time, is_gfx);
+    seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, envelope, state_samplerate, time, type);
     if (seqblock==NULL)
       return NULL;
 
@@ -990,7 +990,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
         if (seqblock->block==NULL){
           R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL && seqtrack->patch->patchdata!=NULL, NULL);
           SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-          SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, is_gfx);
+          SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, type);
         }
         
         handleError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
@@ -1098,7 +1098,7 @@ int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowA
 
   HASH_put_bool(hash, ":new-block", true); // To avoid two seqblocks with the same id.
   
-  struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, error_type, false);
+  struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, error_type, Seqblock_Type::REGULAR);
   if (seqblock==NULL)
     return -1;
 
@@ -1153,7 +1153,8 @@ static void remove_all_gfx_samples(struct SeqTrack *seqtrack){
         plugin = (SoundPlugin*) seqtrack->patch->patchdata;
         R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
       }        
-      SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, true);
+      SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, Seqblock_Type::GFX);
+      SEQTRACKPLUGIN_assert_samples(plugin);
     }
   }END_VECTOR_FOR_EACH;
 }
@@ -1175,10 +1176,10 @@ void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struc
   }
 
   QSet<int64_t> used;
-  
+
   for(const dyn_t dyn : seqblocks_state.array){    
     R_ASSERT_RETURN_IF_FALSE(dyn.type==HASH_TYPE);
-    struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, dyn.hash, error_type, true);
+    struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, dyn.hash, error_type, Seqblock_Type::GFX);
     if (seqblock != NULL){
 
       if(used.contains(seqblock->id)){        
@@ -1222,9 +1223,11 @@ dyn_t SEQTRACK_get_seqblocks_state(const struct SeqTrack *seqtrack){
 
 void SEQTRACK_cancel_gfx_seqblocks(struct SeqTrack *seqtrack){
   remove_all_gfx_samples(seqtrack);
-
+  SEQTRACKPLUGIN_assert_samples2(seqtrack);
+  
   seqtrack->gfx_seqblocks = NULL;
-
+  SEQTRACKPLUGIN_assert_samples2(seqtrack);
+  
   RT_SEQUENCER_update_sequencer_and_playlist();
 }
 
@@ -1249,13 +1252,27 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
 
     {
       radium::PlayerLock lock(seqtrack_is_live);
-    
+
+      int bef=seqtrack->seqblocks.num_elements;
+      int bef_gfx = seqtrack->gfx_seqblocks->num_elements;
+      
       seqtrack->seqblocks = *seqtrack->gfx_seqblocks;
       seqtrack->gfx_seqblocks = NULL;
 
+      int aft=seqtrack->seqblocks.num_elements;
+      R_ASSERT(bef_gfx==aft);
+
+      printf("bef: %d. bef_gfx: %d. Aft: %d\n",bef,bef_gfx,aft);
+      
+      SEQTRACKPLUGIN_assert_samples2(seqtrack);
+      
       legalize_seqtrack_timing(seqtrack);
     }
+
+    SEQTRACKPLUGIN_assert_samples2(seqtrack);
   }
+
+  SEQTRACKPLUGIN_assert_samples2(seqtrack);
 
   R_ASSERT(len1==seqtrack->seqblocks.num_elements);
   RT_SEQUENCER_update_sequencer_and_playlist();
@@ -1297,7 +1314,7 @@ static struct SeqTrack *SEQTRACK_create_from_state(const hash_t *state, double s
 
     HASH_put_bool(seqblock_state, ":new-block", true);  // To avoid two seqblocks with the same id.
 
-    VECTOR_push_back(seqtrack->gfx_seqblocks, SEQBLOCK_create_from_state(seqtrack, seqtracknum, seqblock_state, error_type, true));
+    VECTOR_push_back(seqtrack->gfx_seqblocks, SEQBLOCK_create_from_state(seqtrack, seqtracknum, seqblock_state, error_type, Seqblock_Type::GFX));
   }
 
   //VECTOR_sort(seqtrack->gfx_seqblocks, seqblocks_comp);
@@ -1345,7 +1362,7 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
 
   if (seqblock->block==NULL){
     SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-    SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, false);
+    SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, Seqblock_Type::REGULAR);
     if (atomic_pointer_read_relaxed((void**)&seqtrack->curr_sample_seqblock)==seqblock)
       atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, NULL);
   }
@@ -1362,7 +1379,9 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
         //printf("Skewing %f -> %f\n", (seqblock->t.time-skew) / 44100.0, seqblock->t.time / 44100.0);
       }
     }END_VECTOR_FOR_EACH;
-
+    
+    SEQTRACKPLUGIN_assert_samples2(seqtrack);
+    
     RT_legalize_seqtrack_timing(seqtrack);  // Shouldn't be necessary, but we call it just in case.
   }
 
@@ -1606,9 +1625,11 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
         move_seqblock(seqblock, seqtimes[iterator666-1]);
     }END_VECTOR_FOR_EACH;
 
+    SEQTRACKPLUGIN_assert_samples2(seqtrack);
+
     RT_legalize_seqtrack_timing(seqtrack);
   }
-
+  
   RT_SEQUENCER_update_sequencer_and_playlist();
 
   return pos;
@@ -1633,7 +1654,7 @@ int insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
 }
 
 int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type){
-  struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, state, error_type, true);
+  struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, state, error_type, Seqblock_Type::GFX_GFX);
   if (seqblock==NULL)
     return -1;
 
@@ -1644,7 +1665,7 @@ int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wch
   if (end_seqtime != -1)
     R_ASSERT_RETURN_IF_FALSE2(end_seqtime > seqtime, -1);
 
-  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, g_uninitialized_dyn, -1, -1, false);
+  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, g_uninitialized_dyn, -1, -1, Seqblock_Type::REGULAR);
   if (seqblock==NULL)
     return -1;
 
@@ -1767,7 +1788,7 @@ static void call_me_after_seqtrack_has_been_removed(struct SeqTrack *seqtrack){
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
       
       if (seqblock->block==NULL)
-        SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, false);
+        SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, Seqblock_Type::REGULAR);
       
     }END_VECTOR_FOR_EACH;
 
@@ -1965,7 +1986,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
               if (plugin==NULL){
                 R_ASSERT_NON_RELEASE(false); // this might happen legally. Not sure.
               }else
-                SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, false);
+                SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, Seqblock_Type::REGULAR);
             }
           }
         }END_VECTOR_FOR_EACH;
@@ -2027,6 +2048,10 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       root->song->seqtracks = seqtracks;
 
       ATOMIC_SET(root->song->curr_seqtracknum, new_curr_seqtracknum);
+
+      VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+        SEQTRACKPLUGIN_assert_samples2(seqtrack);
+      }END_VECTOR_FOR_EACH;
     }
 
     evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements));

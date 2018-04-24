@@ -126,7 +126,7 @@ static AutomationNode create_node_from_state(hash_t *state, double state_sampler
 struct Automation{
   radium::SeqAutomation<AutomationNode> automation;
 
-  bool islegalnodenum(int nodenum){
+  bool islegalnodenum(int nodenum) const {
     return nodenum>=0 && (nodenum<=automation.size()-1);
   }
 
@@ -759,18 +759,16 @@ static float get_node_x(const AutomationNode &node, double start_time, double en
   return get_node_x2((const struct SeqblockEnvelope*)data, node, start_time, end_time, x1, x2);
 }
 
-float SEQBLOCK_ENVELOPE_get_node_x(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
+float SEQBLOCK_ENVELOPE_get_node_x(const struct SeqblockEnvelope *seqblockenvelope, int nodenum){
 
-  struct Automation &automation = seqblockenvelope->_automation;
+  const struct Automation &automation = seqblockenvelope->_automation;
   R_ASSERT_RETURN_IF_FALSE2(automation.islegalnodenum(nodenum), 0);
 
   double start_time = SEQUENCER_get_visible_start_time();
   double end_time = SEQUENCER_get_visible_end_time();
 
-  struct SeqTrack *seqtrack = seqblockenvelope->_seqtrack;
-  
   double noninterior_start = get_seqblock_noninterior_start(seqblockenvelope->_seqblock);
-  double noninterior_end = get_seqblock_noninterior_end(seqtrack, seqblockenvelope->_seqblock);
+  double noninterior_end = get_seqblock_noninterior_end(seqblockenvelope->_seqblock);
 
   double t_x1 = SEQUENCER_get_x1();
   double t_x2 = SEQUENCER_get_x2();
@@ -799,11 +797,11 @@ static float get_node_y(const AutomationNode &node, float y1, float y2){
 #endif
 }
 
-float SEQBLOCK_ENVELOPE_get_node_y(struct SeqblockEnvelope *seqblockenvelope, int seqtracknum, int nodenum){
+float SEQBLOCK_ENVELOPE_get_node_y(const struct SeqblockEnvelope *seqblockenvelope, int seqtracknum, int nodenum){
   float y1 = SEQTRACK_get_y1(seqtracknum) + SEQBLOCK_get_header_height();
   float y2 = SEQTRACK_get_y2(seqtracknum);
   
-  struct Automation &automation = seqblockenvelope->_automation;
+  const struct Automation &automation = seqblockenvelope->_automation;
   R_ASSERT_RETURN_IF_FALSE2(automation.islegalnodenum(nodenum), 0);
 
   return get_node_y(automation.automation.at(nodenum), y1, y2);
