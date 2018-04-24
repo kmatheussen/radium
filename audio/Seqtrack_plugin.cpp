@@ -535,7 +535,7 @@ struct Sample{
   radium::DiskPeaks *_peaks;
 
   const struct SeqBlock *_seqblock;
-  bool _is_gfx;
+  Seqblock_Type _type;
   
   float _pitch = 1.0;
   
@@ -554,19 +554,21 @@ struct Sample{
 
   radium::LockAsserter lockAsserter;
   
-  Sample(const wchar_t *filename, radium::SampleReader *reader1, radium::SampleReader *reader2, const struct SeqBlock *seqblock, bool is_gfx)
+  Sample(const wchar_t *filename, radium::SampleReader *reader1, radium::SampleReader *reader2, const struct SeqBlock *seqblock, Seqblock_Type type)
     : _filename(wcsdup(filename))
       //, _reader(NULL) //new MyReader(reader))
       //, _fade_out_reader(new MyReader(fade_out_reader))
     , _reader_holding_permanent_samples(SAMPLEREADER_create(filename))
     , _peaks(DISKPEAKS_get(filename))
     , _seqblock(seqblock)
-    , _is_gfx(is_gfx)
+    , _type(type)
     , _num_ch(SAMPLEREADER_get_num_channels(reader1))
     , _total_num_frames_in_sample(SAMPLEREADER_get_total_num_frames_in_sample(reader1))
     , _color(SAMPLEREADER_get_sample_color(filename))
     , _filename_without_path(wcsdup(SAMPLEREADER_get_sample_name(reader1)))
   {
+    R_ASSERT(THREADING_is_main_thread());
+    
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
 #if !defined(RELEASE)
@@ -594,11 +596,13 @@ struct Sample{
     _do_resampling = myreader->_do_resampling;
     _resampler_ratio = myreader->_resampler_ratio;
 
-    if(!is_gfx)
+    if(type==Seqblock_Type::REGULAR)
       interior_start_may_have_changed();
   }
 
   ~Sample(){
+    R_ASSERT(THREADING_is_main_thread());
+    
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
     R_ASSERT(ATOMIC_GET(_state)!=State::RUNNING);
@@ -707,6 +711,8 @@ struct Sample{
   }
   
   void prepare_to_play(int64_t seqtime, radium::FutureSignalTrackingSemaphore *gotit){
+    R_ASSERT(THREADING_is_main_thread());
+    
     //printf("   PREPARE_TO_PLAY called %f. _curr_reader: %p\n", TIME_get_ms() / 1000.0, _curr_reader);
     
     R_ASSERT_RETURN_IF_FALSE(is_playing()==false);
@@ -858,10 +864,15 @@ struct Sample{
     // Various
     //
     {
+      
       if (ATOMIC_GET(_state)==State::RT_REQUEST_DELETION){
+        
         RT_stop_playing(true);
+        R_ASSERT(_curr_reader==NULL);
+        
         if (_fade_out_readers.size()==0)
           ATOMIC_SET(_state, State::READY_FOR_DELETION);
+        
       }
       
 
@@ -926,8 +937,8 @@ struct Sample{
 
   // Called after scheduler and before audio processing.
   bool RT_called_per_block(struct SeqTrack *seqtrack, int64_t curr_start_time, int64_t curr_end_time){ // (end_time-start_time is usually RADIUM_BLOCKSIZE.)
-
-    if (is_really_playing_song()==false){
+  
+    if (ATOMIC_GET(_state)!=Sample::State::RUNNING || is_really_playing_song()==false){
       //_is_playing = false;
       return false;
     }
@@ -969,19 +980,92 @@ struct Sample{
 
 };
 
- 
+
 struct Data{
   radium::Vector<Sample*> _samples;
   radium::Vector<Sample*> _gfx_samples;
+  radium::Vector<Sample*> _gfx_gfx_samples; // used when moving several samples.
 
   float _sample_rate;
+
+#if !defined(RELEASE)
+  struct SeqTrack *get_seqtrack(void) const {
+    VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+      if (seqtrack->patch != NULL){
+        SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;        
+        R_ASSERT(plugin!=NULL);
+        if(plugin->data==this)
+          return seqtrack;
+      }
+    }END_VECTOR_FOR_EACH;
+    return NULL;
+  }
+#endif
+
+#if !defined(RELEASE)
+private:
+  bool wait_for_main_thread_before_asserting_samples = false;
+  radium::Mutex assert_samples_mutex; // Need lock (i.e. atomic variable is not enough) since all of assert_samples needs to be protected, not just access to wait_for_main_thread_before_asserting_samples.
+public:
+#endif
+  
+  void assert_samples(const struct SeqTrack *seqtrack = NULL) {    
+#if !defined(RELEASE)
+    if(THREADING_is_main_thread()==false)  // Too much work to maintain multithreaded sample assertion. _samples can only be modified from main thread anyway.
+      return;
+    
+    radium::ScopedMutex lock(assert_samples_mutex);
+      
+    if(THREADING_is_main_thread()==false){
+      if (wait_for_main_thread_before_asserting_samples==true)
+        return;
+    } else {
+      wait_for_main_thread_before_asserting_samples = false;
+    }
+    
+    if (seqtrack==NULL)
+      seqtrack=get_seqtrack();
+    if(seqtrack==NULL){
+      if (g_is_loading)
+        return;
+      abort();
+    }
+    for(auto *sample : _samples){
+      if (ATOMIC_GET(sample->_state)==Sample::State::RUNNING){
+        int num = 0;
+        VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+          if(seqblock==sample->_seqblock){
+            R_ASSERT(seqblock->block==NULL);
+            R_ASSERT(seqblock->sample_id == sample->_id);
+            num++;
+          }
+        }END_VECTOR_FOR_EACH;
+        if (num != 1){
+          abort();
+          fprintf(stderr,"NUM: %d (%d)\n", num, num != 1);
+          getchar(); //abort();
+        }
+      }
+    }
+#endif
+  }
+
+  void temporarily_suspend_sample_assertions_from_other_threads(void){
+#if !defined(RELEASE)
+    R_ASSERT(THREADING_is_main_thread());
+    radium::ScopedMutex lock(assert_samples_mutex);
+    wait_for_main_thread_before_asserting_samples = true;
+#endif
+  }
 
   Data(float sample_rate)
     :_sample_rate(sample_rate)
   {
+    R_ASSERT(THREADING_is_main_thread());
   }
 
   ~Data(){
+    R_ASSERT(THREADING_is_main_thread());
     
     //R_ASSERT(g_is_loading || _samples.size()==0);
     
@@ -996,25 +1080,32 @@ struct Data{
   }
   
   bool RT_called_per_block(struct SeqTrack *seqtrack){
+    R_ASSERT(PLAYER_current_thread_has_lock());
+    
     int64_t start_time = seqtrack->start_time;
     int64_t end_time = seqtrack->end_time;
 
     bool more_to_play = false;
     
-    for(auto *sample : _samples)
+    for(auto *sample : _samples){
       if (sample->RT_called_per_block(seqtrack, start_time, end_time)==true)
         more_to_play = true;
+      assert_samples(seqtrack);
+    }
 
     return more_to_play;
   }
 
   void called_very_often(SoundPlugin *plugin){
+    R_ASSERT(THREADING_is_main_thread());
+    
   again:
     for(auto *sample : _samples){
       if (ATOMIC_GET(sample->_state)==Sample::State::READY_FOR_DELETION){
         PLAYER_lock();{
           _samples.remove(sample);
         }PLAYER_unlock();
+        assert_samples();
         //printf("    REMOVING Sample. Reader: %p\n", sample->_reader_holding_permanent_samples);        
         delete sample;
         set_num_visible_outputs(plugin);
@@ -1027,25 +1118,16 @@ struct Data{
   }
 
   void prepare_to_play(const struct SeqTrack *seqtrack, int64_t seqtime, radium::FutureSignalTrackingSemaphore *gotit){
+    R_ASSERT(THREADING_is_main_thread());
+
+    assert_samples(seqtrack);
+    
     for(auto *sample : _samples){
-#if !defined(RELEASE)
-      if (ATOMIC_GET(sample->_state)==Sample::State::RUNNING){
-        int num = 0;
-        VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-          if(seqblock==sample->_seqblock){
-            R_ASSERT(seqblock->block==NULL);
-            R_ASSERT(seqblock->sample_id == sample->_id);
-            num++;
-          }
-        }END_VECTOR_FOR_EACH;
-        if (num != 1){
-          fprintf(stderr,"NUM: %d (%d)\n", num, num != 1);
-          getchar(); //abort();
-        }
-      }
-#endif
+      assert_samples(seqtrack);
       sample->prepare_to_play(seqtime, gotit);
     }
+    
+    assert_samples(seqtrack);
   }
 };
 }
@@ -1055,6 +1137,8 @@ void SEQTRACKPLUGIN_clear_resampler_warning_hashmap(void){
 }
 
 static void set_num_visible_outputs(SoundPlugin *plugin){
+  R_ASSERT(THREADING_is_main_thread());
+  
   Data *data = (Data*)plugin->data;
 
   //int old_visible_channels = plugin->num_visible_outputs;
@@ -1066,7 +1150,9 @@ static void set_num_visible_outputs(SoundPlugin *plugin){
   plugin->num_visible_outputs = new_visible_channels;
 }
 
-static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqBlock *seqblock, bool is_gfx){
+static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqBlock *seqblock, enum Seqblock_Type type){
+  R_ASSERT(THREADING_is_main_thread());
+  
   radium::SampleReader *reader1 = SAMPLEREADER_create(filename);
 
   if(reader1==NULL){
@@ -1082,34 +1168,50 @@ static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqB
     return -1;
   }
 
-  Sample *sample = new Sample(filename, reader1, reader2, seqblock, is_gfx);
+  Sample *sample = new Sample(filename, reader1, reader2, seqblock, type);
 
-  if (is_gfx)
-    data->_gfx_samples.push_back(sample);
-  else
+  switch(type){ 
+  case Seqblock_Type::REGULAR:
+    data->temporarily_suspend_sample_assertions_from_other_threads();
     data->_samples.push_back_in_realtime_safe_manner(sample);
+    break;
+  case Seqblock_Type::GFX:
+    data->_gfx_samples.push_back(sample);
+    break;
+  case Seqblock_Type::GFX_GFX:
+    data->_gfx_gfx_samples.push_back(sample);
+    break;
+  }
 
   return sample->_id;
 }
 
-int64_t SEQTRACKPLUGIN_add_sample(SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock, bool is_gfx){
+int64_t SEQTRACKPLUGIN_add_sample(SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock, Seqblock_Type type){
+  R_ASSERT(THREADING_is_main_thread());
+  
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
   
   Data *data = (Data*)plugin->data;
-  int64_t ret = add_sample(data, filename, seqblock, is_gfx);
+  int64_t ret = add_sample(data, filename, seqblock, type);
 
   //printf("   ADD (is_gfx: %d). NUM samples: %d.  NUM gfx samples: %d\n", is_gfx, data->_samples.size(), data->_gfx_samples.size());
 
-  if (!is_gfx)
+  if (type==Seqblock_Type::REGULAR)
     set_num_visible_outputs(plugin);
     
   return ret;
 }
 
 void SEQTRACKPLUGIN_apply_gfx_samples(SoundPlugin *plugin){
+  R_ASSERT(THREADING_is_main_thread());
+
   Data *data = (Data*)plugin->data;
-    
+  
+  int bef = data->_samples.size();
+  int bef_gfx = data->_gfx_samples.size();
+
   for(auto *sample : data->_samples){
+    //data->assert_samples(); Commented out since it fails when creating seqtrack from state. (it seems like a useless place to assert anyway)
     if (ATOMIC_GET(sample->_state)==Sample::State::RUNNING)
       ATOMIC_SET(sample->_state, Sample::State::RT_REQUEST_DELETION);
   }
@@ -1119,13 +1221,16 @@ void SEQTRACKPLUGIN_apply_gfx_samples(SoundPlugin *plugin){
     return;
   }
 
+  data->temporarily_suspend_sample_assertions_from_other_threads();
+
   {
     data->_samples.ensure_there_is_room_for_more_without_having_to_allocate_memory(data->_gfx_samples.size());
     
     {
       radium::PlayerLock lock; // Can not use 'seqtrack_is_live' as argument for radium::PlayerLock here since the plugin might be alive. I.e. data->_samples can be iterated even if the seqtrack isn't live yet.
-      for(auto *sample : data->_gfx_samples)
+      for(auto *sample : data->_gfx_samples){
         data->_samples.push_back(sample);
+      }
     }
     
     data->_samples.post_add();
@@ -1134,58 +1239,110 @@ void SEQTRACKPLUGIN_apply_gfx_samples(SoundPlugin *plugin){
   }
 
   set_num_visible_outputs(plugin);
-  
-  printf("   APPLY. NUM samples: %d.  NUM gfx samples: %d\n", data->_samples.size(), data->_gfx_samples.size());
+
+  int aft = data->_samples.size();
+  int aft_gfx = data->_gfx_samples.size();
+
+  R_ASSERT(aft==bef+bef_gfx);
+  R_ASSERT(aft_gfx==0);
+  printf("   APPLY. NUM samples: %d.  NUM gfx samples: %d. Bef: %d / %d\n", aft, aft_gfx, bef, bef_gfx);
 }
-  
-static Sample *get_sample(const SoundPlugin *plugin, int64_t id, bool search_non_gfx, bool search_gfx){
+
+// For debugging only.
+void SEQTRACKPLUGIN_assert_samples(const SoundPlugin *plugin){
+#if !defined(RELEASE)
   Data *data = (Data*)plugin->data;
+  data->assert_samples();
+#endif
+}
+void SEQTRACKPLUGIN_assert_samples2(const struct SeqTrack *seqtrack){
+#if !defined(RELEASE)
+  if(seqtrack->patch==NULL)
+    return;
+  const SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;        
+  Data *data = (Data*)plugin->data;
+  data->assert_samples(seqtrack);
+#endif
+}
 
-  if (search_gfx){
-    for(auto *sample : data->_gfx_samples){
-      if (sample->_id==id)
-        return sample;
-    }
+static Sample *get_sample2(const radium::Vector<Sample*> &vec, int64_t id, bool must_be_present){
+  for(Sample *sample : vec){
+    if (sample->_id==id)
+      return sample;
   }
 
-  if (search_non_gfx){
-    for(auto *sample : data->_samples){
-      if (sample->_id==id)
-        return sample;
-    }
-  }
-
-  R_ASSERT(false);
+  if(must_be_present)
+    R_ASSERT(false);
+  
   return NULL;
 }
 
-void SEQTRACKPLUGIN_request_remove_sample(SoundPlugin *plugin, int64_t id, bool is_gfx){
+static Sample *get_sample(const SoundPlugin *plugin, int64_t id, bool search_non_gfx, bool search_gfx, bool search_gfx_gfx){
+  R_ASSERT(THREADING_is_main_thread());
+  
+  Data *data = (Data*)plugin->data;
+
+  Sample *sample = NULL;
+  
+  if (search_gfx)
+    sample = get_sample2(data->_gfx_samples, id, false);
+
+  if (sample==NULL && search_gfx_gfx)
+    sample = get_sample2(data->_gfx_gfx_samples, id, false);
+  
+  if (sample==NULL && search_non_gfx)
+    sample = get_sample2(data->_samples, id, false);
+
+  if (sample==NULL)
+    R_ASSERT(false);
+
+  return sample;
+}
+
+void SEQTRACKPLUGIN_request_remove_sample(SoundPlugin *plugin, int64_t id, enum Seqblock_Type type){
+  R_ASSERT(THREADING_is_main_thread());
+  
   R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
   
-  Sample *sample = get_sample(plugin, id, !is_gfx, is_gfx);
-  if (sample==NULL){
-    GFX_addMessage("Warning: Unknown sample id %d requested removed from sequencer track", (int)id);
+  Data *data = (Data*)plugin->data;
+
+  data->temporarily_suspend_sample_assertions_from_other_threads();
+  
+  
+  Sample *sample
+    = type==Seqblock_Type::REGULAR ? get_sample(plugin, id, true, false, false)
+    : type==Seqblock_Type::GFX ? get_sample(plugin, id, false, true, false)
+    : get_sample(plugin, id, false, false, true);
+
+  if(sample==NULL)
+    return;
+
+  if (ATOMIC_GET(sample->_state) != Sample::State::RUNNING){
+    RError("Sample %s has already been requested removed from sequencer track. type: %d", STRING_get_chars(sample->_filename), (int)type);
     return;
   }
-
-  if (is_gfx){
     
-    Data *data = (Data*)plugin->data;
-    data->_gfx_samples.remove(sample);
+  if (type != Seqblock_Type::REGULAR){
+
+    if(type==Seqblock_Type::GFX)
+      data->_gfx_samples.remove(sample);
+    else
+      data->_gfx_gfx_samples.remove(sample);
+    
     ATOMIC_SET_RELAXED(sample->_state, Sample::State::READY_FOR_DELETION);
     delete sample;
 
   } else {
-  
-    if (ATOMIC_GET(sample->_state)==Sample::State::RUNNING)
-      ATOMIC_SET(sample->_state, Sample::State::RT_REQUEST_DELETION);
-    else
-      GFX_addMessage("Warning: Sample %s has already been requested removed from sequencer track", STRING_get_chars(sample->_filename));
+
+    ATOMIC_SET(sample->_state, Sample::State::RT_REQUEST_DELETION);
 
   }
 }
 
+// Called from AUDIO_is_permanent_patch. Returns false if there are any running samples.
 bool SEQTRACKPLUGIN_can_be_deleted(SoundPlugin *plugin){
+  R_ASSERT(THREADING_is_main_thread());
+  
   Data *data = (Data*)plugin->data;
 
   for(auto *sample : data->_samples){
@@ -1197,15 +1354,19 @@ bool SEQTRACKPLUGIN_can_be_deleted(SoundPlugin *plugin){
 }
 
 int SEQTRACKPLUGIN_get_num_samples(SoundPlugin *plugin){
+  R_ASSERT(THREADING_is_main_thread());
+  
   Data *data = (Data*)plugin->data;
 
   return data->_samples.size();
 }
 
 int SEQTRACKPLUGIN_get_num_channels(const SoundPlugin *plugin, int64_t id){
+  R_ASSERT(THREADING_is_main_thread());
+  
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
   
-  Sample *sample = get_sample(plugin, id, true, true);
+  Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
     return -1;
 
@@ -1215,7 +1376,7 @@ int SEQTRACKPLUGIN_get_num_channels(const SoundPlugin *plugin, int64_t id){
 int64_t SEQTRACKPLUGIN_get_total_num_frames_for_sample(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
   
-  Sample *sample = get_sample(plugin, id, true, true);
+  Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
     return -1;
 
@@ -1235,7 +1396,7 @@ int64_t SEQTRACKPLUGIN_get_total_num_frames_for_sample(const SoundPlugin *plugin
 int64_t SEQTRACKPLUGIN_get_total_num_frames_in_sample(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
   
-  Sample *sample = get_sample(plugin, id, true, true);
+  Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
     return -1;
 
@@ -1246,7 +1407,7 @@ int64_t SEQTRACKPLUGIN_get_total_num_frames_in_sample(const SoundPlugin *plugin,
 const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t id, bool full_path){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), L"");
   
-  Sample *sample = get_sample(plugin, id, true, true);
+  Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
     return L"";
 
@@ -1267,7 +1428,7 @@ const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t
 const radium::DiskPeaks *SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
   
-  Sample *sample = get_sample(plugin, id, true, true);
+  Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
     return NULL;
 
@@ -1277,7 +1438,7 @@ const radium::DiskPeaks *SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int
 double SEQTRACKPLUGIN_get_resampler_ratio(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 1.0);
   
-  Sample *sample = get_sample(plugin, id, true, true);
+  Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
     return 1.0;
 

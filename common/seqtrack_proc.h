@@ -88,7 +88,7 @@ static inline double get_seqblock_noninterior_start(const struct SeqBlock *seqbl
   return s1;
 }
 
-static inline double get_seqblock_noninterior_end(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+static inline double get_seqblock_noninterior_end(const struct SeqBlock *seqblock){
   const struct SeqBlockTimings *timing = &seqblock->t;
   
   double t2 = timing->time2;

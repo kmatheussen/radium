@@ -25,12 +25,12 @@ extern LANGSPEC void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MI
 extern LANGSPEC void RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack);
 extern LANGSPEC void RT_SEQTRACK_AUTOMATION_called_when_player_stopped(void);
 extern LANGSPEC hash_t *SEQTRACK_AUTOMATION_get_state(struct SeqtrackAutomation *seqtrackautomation);
-extern LANGSPEC float SEQTRACK_AUTOMATION_get_node_x(struct SeqtrackAutomation *seqtrackautomation, struct SeqTrack *seqtrack, int automationnum, int nodenum);
+extern LANGSPEC float SEQTRACK_AUTOMATION_get_node_x(struct SeqtrackAutomation *seqtrackautomation, const struct SeqTrack *seqtrack, int automationnum, int nodenum);
 extern LANGSPEC float SEQTRACK_AUTOMATION_get_node_y(struct SeqtrackAutomation *seqtrackautomation, int seqtracknum, int automationnum, int nodenum);
 
 #ifdef USE_QT4
 class QPainter;
-extern void SEQTRACK_AUTOMATION_paint(QPainter *p, struct SeqTrack *seqtrack, float x1, float y1, float x2, float y2, double start_time, double end_time);
+extern void SEQTRACK_AUTOMATION_paint(QPainter *p, const struct SeqTrack *seqtrack, float x1, float y1, float x2, float y2, double start_time, double end_time);
 #endif
 
 #endif

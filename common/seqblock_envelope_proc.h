@@ -34,8 +34,8 @@ void RT_SEQBLOCK_ENVELOPE_called_after_editor_and_before_audio(const struct SeqT
 void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void);
 dyn_t SEQBLOCK_ENVELOPE_get_state(const struct SeqblockEnvelope *seqblockenvelope);
 void SEQBLOCK_ENVELOPE_apply_state(struct SeqblockEnvelope *seqblockenvelope, const dyn_t envelope_state, double state_samplerate);
-float SEQBLOCK_ENVELOPE_get_node_x(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
-float SEQBLOCK_ENVELOPE_get_node_y(struct SeqblockEnvelope *seqblockenvelope, int seqtracknum, int nodenum);
+float SEQBLOCK_ENVELOPE_get_node_x(const struct SeqblockEnvelope *seqblockenvelope, int nodenum);
+float SEQBLOCK_ENVELOPE_get_node_y(const struct SeqblockEnvelope *seqblockenvelope, int seqtracknum, int nodenum);
 void SEQBLOCK_ENVELOPE_paint(QPainter *p, const struct SeqBlock *seqblock, float x1, float y1, float x2, float y, bool paint_nodes, float seqblock_x1, float seqblock_x2);
 
 #endif

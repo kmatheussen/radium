@@ -2565,6 +2565,13 @@ static inline int get_system_fontheight(void);
 #include "../audio/Envelope.hpp"
 #endif
 
+enum Seqblock_Type{
+  REGULAR,
+  GFX, // When moving or changing seqblocks.
+  GFX_GFX // When moving a copy of several seqblocks (orange transparent color)
+};
+
+
 struct SeqBlock{
   int64_t id;
 
