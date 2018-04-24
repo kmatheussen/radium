@@ -164,7 +164,7 @@ class Hepp2 : public Hepp{
 extern EditorWidget *g_editor;
 
 
-#include "mQt_seqtrack_widget_callbacks.h"
+#include "Qt_seqtrack_widget_callbacks.h"
 
 
 #include "../GTK/GTK_visual_proc.h"

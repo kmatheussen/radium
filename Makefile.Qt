@@ -1227,7 +1227,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
 
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
-Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h $(P)Qt_seqtrack_widget.h $(P)Qt_seqtrack_widget_callbacks.h Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp
+Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h $(P)Qt_seqtrack_widget_callbacks.h Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) # -Wno-deprecated-declarations -Wno-shadow 
 
@@ -1369,8 +1369,8 @@ $(P)mQt_bottom_bar_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_bottom_bar_
 $(P)mQt_upperleft_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_upperleft_widget.ui $(P)create_source_from_ui.sh $(P)Qt_upperleft_widget_callbacks.h $(P)Qt_MyQButton.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) upperleft_widget
 
-$(P)Qt_seqtrack_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_seqtrack_widget.ui $(P)create_source_from_ui.sh $(P)Qt_seqtrack_widget_callbacks.h $(P)Qt_MyQButton.h
-	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) seqtrack_widget
+#$(P)Qt_seqtrack_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_seqtrack_widget.ui $(P)create_source_from_ui.sh $(P)Qt_seqtrack_widget_callbacks.h $(P)Qt_MyQButton.h
+#	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) seqtrack_widget
 
 
 
