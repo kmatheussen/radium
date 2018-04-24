@@ -251,7 +251,21 @@ int getNumSeqtracks(void){
   return root->song->seqtracks.num_elements;
 }
 
+int64_t getSeqtrackInstrument(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
 
+  if (seqtrack->patch==NULL)
+    return -1;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  //R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, -1);
+  if (plugin==NULL)
+    return -1;
+
+  return seqtrack->patch->id;
+}
 
 
 // Sequencer track automation

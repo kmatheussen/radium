@@ -1621,9 +1621,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
       
       QAbstractButton *button = dynamic_cast<QAbstractButton*>(_widget.data());
-      if (button!=NULL)
-        return DYN_create_bool(button->isChecked());
-
+      if (button!=NULL){
+        if(button->isCheckable())
+          return DYN_create_bool(button->isChecked());
+        else
+          return DYN_create_bool(button->isDown());
+      }
+      
       QAbstractSlider *slider = dynamic_cast<QAbstractSlider*>(_widget.data());
       if (slider!=NULL)
         return DYN_create_int(slider->value());
