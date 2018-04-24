@@ -304,7 +304,7 @@ static struct Patch *create_new_patch(const char *name, bool is_main_pipe){
   PATCH_set_name(patch, name);
   
   //patch->colornum = GFX_MakeRandomCustomColor(-1);
-  patch->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.52f);
+  patch->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.75f);
 
   PATCH_init_voices(patch);
 
