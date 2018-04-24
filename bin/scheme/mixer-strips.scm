@@ -84,6 +84,35 @@
 (define (add-safe-double-click-callback gui callback)
   (add-safe-callback gui ra:gui_add-double-click-callback callback))
 
+(define (get-instrument-popup-entries instrument-id parentgui)
+  (list
+   (list "Set as current instrument"
+         :enabled (not (= (<ra> :get-current-instrument)
+                          instrument-id))
+         (lambda ()
+           (<ra> :set-current-instrument instrument-id #f)))
+   "Rename" (lambda ()
+              (define old-name (<ra> :get-instrument-name instrument-id))
+              (define new-name (<ra> :request-string "New name:" #t old-name))
+              (c-display "NEWNAME" (<-> "-" new-name "-"))
+              (if (and (not (string=? new-name ""))
+                       (not (string=? new-name old-name)))
+                  (<ra> :set-instrument-name new-name instrument-id)))
+   "Show Info" (lambda ()
+                 (<ra> :show-instrument-info instrument-id parentgui))
+   "Configure color" (lambda ()
+                       (show-instrument-color-dialog parentgui instrument-id))
+   "Generate new color" (lambda ()
+                          (<ra> :set-instrument-color (<ra> :generate-new-color 0.9) instrument-id))
+   (list "Show GUI"
+         :enabled (<ra> :has-native-instrument-gui instrument-id)
+         :check (<ra> :instrument-gui-is-visible instrument-id parentgui)
+         (lambda (enabled)
+           (if enabled
+               (<ra> :show-instrument-gui instrument-id parentgui #f)
+               (<ra> :hide-instrument-gui instrument-id))))))
+              
+
 
 (define (get-global-mixer-strips-popup-entries instrument-id strips-config)
   (list
@@ -187,7 +216,8 @@
 
 (define (create-custom-checkbox instrument-id strips-config paint-func value-changed is-selected min-height)
   (define checkbox (<gui> :widget))
-  (<gui> :set-min-height checkbox min-height)
+  (if min-height
+      (<gui> :set-min-height checkbox min-height))
 
   (add-safe-mouse-callback checkbox (lambda (button state x y)
                                         ;;(c-display "state" state)
@@ -195,7 +225,8 @@
                                                  (= state *is-pressing*))
                                             (if (<ra> :shift-pressed)
                                                 (<ra> :delete-instrument instrument-id)
-                                                (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config))))
+                                                (if strips-config
+                                                    (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config)))))
                                         (when (and (= button *left-button*)
                                                    (= state *is-pressing*))
                                           (set! is-selected (not is-selected))
@@ -213,6 +244,7 @@
         checkbox))
 
 
+  
 (define (add-gui-effect-monitor gui instrument-id effect-name monitor-stored monitor-automation callback)
   (let ((effect-monitor (<ra> :add-effect-monitor effect-name instrument-id monitor-stored monitor-automation callback)))
     (<gui> :add-deleted-callback gui
@@ -784,32 +816,7 @@
               ;;                                #t)
 
               "----------"
-              (list "Set as current instrument"
-                    :enabled (not (= (<ra> :get-current-instrument)
-                                     instrument-id))
-                    (lambda ()
-                      (<ra> :set-current-instrument instrument-id #f)))
-              "Rename" (lambda ()
-                         (define old-name (<ra> :get-instrument-name instrument-id))
-                         (define new-name (<ra> :request-string "New name:" #t old-name))
-                         (c-display "NEWNAME" (<-> "-" new-name "-"))
-                         (if (and (not (string=? new-name ""))
-                                  (not (string=? new-name old-name)))
-                             (<ra> :set-instrument-name new-name instrument-id)))
-              "Show Info" (lambda ()
-                            (<ra> :show-instrument-info instrument-id parentgui))
-              "Configure color" (lambda ()
-                                  (show-instrument-color-dialog parentgui instrument-id))
-              "Generate new color" (lambda ()
-                                     (<ra> :set-instrument-color (<ra> :generate-new-color 0.9) instrument-id))
-              (list "Show GUI"
-                    :enabled (<ra> :has-native-instrument-gui instrument-id)
-                    :check (<ra> :instrument-gui-is-visible instrument-id parentgui)
-                    (lambda (enabled)
-                      (if enabled
-                          (<ra> :show-instrument-gui instrument-id parentgui #f)
-                          (<ra> :hide-instrument-gui instrument-id))))
-              
+              (get-instrument-popup-entries instrument-id parentgui)
               "----------"
               (list "Wide mode"
                     :check (<ra> :has-wide-instrument-strip parent-instrument-id)
@@ -842,6 +849,49 @@
                          reset
                          #f
                          gui))
+  
+(define (paint-horizontal-instrument-slider widget instrument-id value text is-enabled is-current get-automation-data text-x1 width height)
+  ;;(c-display "PAINTING SLIDER FOR" instrument-name)
+  (define color (<ra> :get-instrument-color instrument-id))
+  ;;(c-display "value: " value)
+
+  (define pos (scale value 0 1 0 width))
+  (<gui> :filled-box widget (<gui> :get-background-color widget) 0 0 width height)
+  (<gui> :filled-box widget "black" 1 1 (1- width) (1- height) 5 5)
+  (<gui> :filled-box widget color 0 0 pos height 5 5)
+  
+  ;;(if (= (<ra> :get-current-instrument) instrument-id)
+  ;;    (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
+  
+  (define w 1.2)
+  (define w2 (* 2 w))
+  (define w3 (* 3 w))
+  
+  (if get-automation-data
+      (get-automation-data
+       (lambda (value color)
+         (let* ((w (if is-current w3 1))
+                (x (max 0 (scale value 0 1 w (- width w)))))
+           (<gui> :draw-line widget color x w x (- height w) 2.0)))))
+  
+  
+  ;; border
+  (if is-current
+      (<gui> :draw-box widget *current-mixer-strip-border-color* w w (- width w) (- height w) w3 5 5) ;; "#aa111144"
+      (<gui> :draw-box widget "gray"      0 0 width height 0.8 5 5))
+  
+  ;;(if show-tooltip
+  ;;    (set-tooltip-and-statusbar text))
+  
+  (define text-color (if (not is-enabled)
+                         (<gui> :mix-colors *text-color* "#ff000000" 0.5)
+                         *text-color*))
+  
+  (<gui> :draw-text widget text-color text
+         (+ 1 text-x1) 0 (- width 4) height
+         #t ;; wrap-lines
+         #f ;; align top
+         #t)) ;; align left
   
 (define (strip-slider first-instrument-id
                       parent-instrument-id
@@ -895,57 +945,18 @@
   (define (get-slider-text value)
     (<-> instrument-name ": " (get-value-text value)))
   
-  (define (set-tooltip-and-statusbar text)
-    (<ra> :set-statusbar-text text)
-    (<gui> :tool-tip text))
-
   (define (paint-slider x1-on/off width height)
-    ;;(c-display "PAINTING SLIDER FOR" instrument-name)
-    (define color (<ra> :get-instrument-color instrument-id))
     (define value (get-scaled-value))
-    ;;(c-display "value: " value)
-    
-    (define pos (scale value 0 1 0 width))
-    (<gui> :filled-box widget (<gui> :get-background-color widget) 0 0 width height)
-    (<gui> :filled-box widget "black" 1 1 (1- width) (1- height) 5 5)
-    (<gui> :filled-box widget color 0 0 pos height 5 5)
-    
-    ;;(if (= (<ra> :get-current-instrument) instrument-id)
-    ;;    (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
-
-    (define w 1.2)
-    (define w2 (* 2 w))
-    (define w3 (* 3 w))
-
-    (define is-current (= (<ra> :get-current-instrument) instrument-id))
-    
-    (if get-automation-data
-        (get-automation-data
-         (lambda (value color)
-           (let* ((w (if is-current w3 1))
-                  (x (max 0 (scale value 0 1 w (- width w)))))
-             (<gui> :draw-line widget color x w x (- height w) 2.0)))))
-
-
-    ;; border
-    (if is-current
-        (<gui> :draw-box widget *current-mixer-strip-border-color* w w (- width w) (- height w) w3 5 5) ;; "#aa111144"
-        (<gui> :draw-box widget "gray"      0 0 width height 0.8 5 5))
-    
     (define text (get-slider-text value))
-    
-    (if is-changing-value
-        (set-tooltip-and-statusbar text))
-
-    (define text-color (if (is-grayed?)
-                           (<gui> :mix-colors *text-color* "#ff000000" 0.5)
-                           *text-color*))
-
-    (<gui> :draw-text widget text-color text
-           (+ 1 x1-on/off) 0 (- width 4) height
-           #t ;; wrap-lines
-           #f ;; align top
-           #t)) ;; align left
+    (paint-horizontal-instrument-slider widget
+                                        instrument-id
+                                        value
+                                        text
+                                        (is-enabled?)
+                                        (= (<ra> :get-current-instrument) instrument-id)
+                                        get-automation-data
+                                        x1-on/off
+                                        width height))
   
   (define fontheight (get-fontheight))
   
@@ -1022,10 +1033,7 @@
                                               (toggle-enabled))
                                           #t)
                                         (begin
-                                          (if (and (not is-changing-value))
-                                              (<ra> :set-statusbar-text (get-slider-text (get-scaled-value))))
                                           (when is-left-pressing
-                                            (set-tooltip-and-statusbar (get-slider-text(get-scaled-value)))
                                             (set! is-changing-value #t)
                                             (set! has-made-undo #f)
                                             )
@@ -1039,6 +1047,10 @@
                                             (<gui> :tool-tip "")
                                             ;;(c-display "finished")
                                             )
+                                          (let ((status-text (get-slider-text (get-scaled-value))))
+                                            (if is-changing-value
+                                                (set-tooltip-and-statusbar status-text)
+                                                (<ra> :set-statusbar-text status-text)))
                                           (when (and (= button *right-button*)
                                                      (= state *is-pressing*))
                                             (if (<ra> :shift-pressed)
@@ -1748,14 +1760,20 @@
 ;;(define (create-mixer-strip-checkbox text sel-color unsel-color width height callback)
 ;;  (define button (<gui> :widget width height))
 
-(define (create-mixer-strip-mutesolo instrument-id strips-config background-color height is-minimized)
+(delafina (create-mixer-strip-mutesolo :instrument-id 
+                                       :strips-config 
+                                       :background-color 
+                                       :min-height 
+                                       :use-single-letters 
+                                       :stack-horizontally 
+                                       :set-fixed-size #t)
   
   (define (draw-mutesolo checkbox is-selected is-implicitly-selected text color width height)
     (<gui> :filled-box
            checkbox
            background-color
            0 0 width height)
-    (define b (if is-minimized 2 5))
+    (define b (if use-single-letters 2 5))
     (<gui> :filled-box
            checkbox
            (if is-selected
@@ -1772,7 +1790,7 @@
            #f
            #f
            0
-           #t
+           #f
            #t
            )
     
@@ -1816,7 +1834,7 @@
   
   (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id)) ;; Mutable variable
   (define (draw-mute mute is-muted width height)
-    (draw-mutesolo mute is-muted implicitly-muted (if is-minimized "M" "Mute") "green" width height))
+    (draw-mutesolo mute is-muted implicitly-muted (if use-single-letters "M" "Mute") "green" width height))
 
   (define mute (create-custom-checkbox instrument-id strips-config
                                        draw-mute
@@ -1829,7 +1847,7 @@
                                                 (turn-off-all-mute instrument-id))
                                             )))
                                        (get-muted)
-                                       height))
+                                       min-height))
 
   (<ra> :schedule (random 1000) (let ((mute (cadr mute)))
                                   (lambda ()
@@ -1845,7 +1863,7 @@
   
   (define solo (create-custom-checkbox instrument-id strips-config
                                        (lambda (solo is-soloed width height)
-                                         (draw-mutesolo solo is-soloed #f (if is-minimized "S" "Solo") "yellow" width height))
+                                         (draw-mutesolo solo is-soloed #f (if use-single-letters "S" "Solo") "yellow" width height))
                                        (lambda (is-selected)
                                          (undo-block
                                           (lambda ()
@@ -1856,7 +1874,7 @@
                                                 (turn-off-all-solo instrument-id))
                                             )))
                                        (get-soloed)
-                                       height))
+                                       min-height))
   
   (add-gui-effect-monitor (cadr mute) instrument-id volume-on-off-name #t #t
                           (lambda (on/off automation)
@@ -1867,16 +1885,18 @@
                             (c-display "Solo changed for" instrument-id)
                             ((car solo) (get-soloed))))
   
-  (define gui (if is-minimized
-                  (<gui> :vertical-layout)
-                  (<gui> :horizontal-layout)))
+  (define gui (if stack-horizontally
+                  (<gui> :horizontal-layout)
+                  (<gui> :vertical-layout)))
   (<gui> :set-layout-spacing gui 0 0 0 0 0)
-
-  (if is-minimized
-      (begin
-        (set-fixed-height (cadr mute) height)
-        (set-fixed-height (cadr solo) height))
-      (set-fixed-height gui height))
+  
+  (when set-fixed-size
+    (assert min-height)
+    (if (not stack-horizontally)
+        (begin
+          (set-fixed-height (cadr mute) min-height)
+          (set-fixed-height (cadr solo) min-height))
+        (set-fixed-height gui min-height)))
 
   (<gui> :add gui (cadr mute) 1)
   (<gui> :add gui (cadr solo) 1)
@@ -2246,7 +2266,7 @@
 
 
   (<gui> :add gui label 1)
-  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color (get-fontheight) #t))
+  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color (get-fontheight) #t #f))
 
   (define meter-instrument-id (find-meter-instrument-id instrument-id))
 
@@ -2369,7 +2389,7 @@
   (define meter-instrument-id (create-mixer-strip-path mixer-strip-path-gui instrument-id instrument-id strips-config))
 
   (<gui> :add gui (create-mixer-strip-pan instrument-id strips-config system-background-color background-color pan-height))
-  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color mutesolo-height #f))
+  (<gui> :add gui (create-mixer-strip-mutesolo instrument-id strips-config background-color mutesolo-height #f #t))
   (<gui> :add gui (create-mixer-strip-volume instrument-id meter-instrument-id strips-config background-color #f) 1)
 
   (when (<ra> :mixer-strip-comments-visible)
@@ -2764,6 +2784,7 @@
 !!#
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)
+  (recreate-left-part-gui)
   (set-minimum-mixer-strip-widths!)
   ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " (sort list-of-modified-instrument-ids <) (length *mixer-strips-objects*) "\n\n\n")
   ;;(c-display "all:" (sort (get-all-audio-instruments) <))

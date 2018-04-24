@@ -3,6 +3,7 @@
 
 
 (my-require 'notem.scm)
+(my-require 'sequencer.scm)
 
 
 
@@ -55,7 +56,7 @@
   (define handle (<gui> :get-splitter-handle *ysplitter* 1))
   
   (if (string=? (<gui> :tab-name *lowertab-gui* index) *sequencer-gui-tab-name*)
-      (let ((seq (<gui> :get-sequencer-gui)))
+      (begin
         (<gui> :set-enabled handle #t)
         (set! *curr-lowertab-is-sequencer* #t)
         (if *sequencer-gui-height*
@@ -75,7 +76,7 @@
 (define (init-lowertab-gui)
   
   (define instrument-gui (<gui> :get-instrument-gui))
-  (define sequencer-gui (<gui> :get-sequencer-gui))
+  (define sequencer-gui (create-full-sequencer-gui)) ;;(<gui> :get-sequencer-gui))
 
   ;; Try to make tabs have same size
   (<gui> :minimize-as-much-as-possible sequencer-gui)
@@ -113,8 +114,9 @@
 
 
 (define (FROM-C-get-lowertab-gui)
-  (if (< (<gui> :get-tab-pos *lowertab-gui* (<gui> :get-sequencer-gui))
-         0)
+  (if (or (not *g-full-sequencer-gui*)
+          (< (<gui> :get-tab-pos *lowertab-gui* *g-full-sequencer-gui*)
+             0))
       (init-lowertab-gui))
   *lowertab-gui*)
 
@@ -173,13 +175,13 @@
 
 
 (define (FROM-C-sequencer-gui-is-visible)
-  (lowertab-gui-is-visible (<gui> :get-sequencer-gui)))
+  (lowertab-gui-is-visible *g-full-sequencer-gui*))
     
 (define (FROM-C-show-sequencer-gui)
-  (show-lowertab-gui (<gui> :get-sequencer-gui)))
+  (show-lowertab-gui *g-full-sequencer-gui*))
 
 (define (FROM-C-hide-sequencer-gui)
-  (hide-lowertab-gui (<gui> :get-sequencer-gui)))
+  (hide-lowertab-gui *g-full-sequencer-gui*))
 
 
 (define (FROM-C-edit-gui-is-visible)

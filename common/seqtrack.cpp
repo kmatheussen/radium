@@ -158,19 +158,53 @@ static bool plays_same_seqblock_completely_later_in_seqtrack(struct SeqTrack *se
   return false;
 }
 
+
+static bool ensure_seqtrack_has_instrument(struct SeqTrack *seqtrack){
+  if (seqtrack->patch == NULL || seqtrack->patch->patchdata==NULL) { // seqtrack->patch == NULL when seqtrack never has played an audio file, and seqtrack->patch->patchdata is null if the seqtrack plugin was deleted manually.
+    
+    radium::ScopedIgnoreUndo ignore_undo; // Because we can't delete seqtrack plugin when it has samples.
+
+    int seqtracknum = get_seqtracknum(seqtrack);
+    
+    int64_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, talloc_format("Seqtrack %d", seqtracknum), 0, 0);
+    R_ASSERT_RETURN_IF_FALSE2(patch_id >= 0, false);
+    
+    struct Patch *patch = PATCH_get_from_id(patch_id);
+    R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
+    
+    connectAudioInstrumentToMainPipe(patch_id);
+    autopositionInstrument(patch_id);
+
+    {
+      radium::PlayerLock lock;
+      seqtrack->patch = patch;
+    }
+  }
+
+  return true;
+}
+
+
 void SEQTRACK_call_me_very_often(void){
   if (is_called_every_ms(500))
-    ALL_SEQTRACKS_FOR_EACH(){
+    VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+
+      if (ensure_seqtrack_has_instrument(seqtrack)==true){
       
-      if (seqtrack->patch!=NULL){
+        R_ASSERT(seqtrack->patch!=NULL);
         
-        SoundPlugin *plugin = (SoundPlugin*)seqtrack->patch->patchdata;
-        if (plugin !=NULL)
-          SEQTRACKPLUGIN_called_very_often(plugin);
-        
+        if (seqtrack->patch!=NULL){
+          
+          SoundPlugin *plugin = (SoundPlugin*)seqtrack->patch->patchdata;
+          R_ASSERT_NON_RELEASE(plugin!=NULL);
+          
+          if (plugin !=NULL)
+            SEQTRACKPLUGIN_called_very_often(plugin);
+          
+        }
       }
 
-    }END_ALL_SEQTRACKS_FOR_EACH;
+    }END_VECTOR_FOR_EACH;
 }
 
 
@@ -181,16 +215,14 @@ void SONG_call_me_before_starting_to_play_song(int64_t seqtime){
   // We init sequencer automation before editor automation since sequencer automation is called before editor automation in the player.
   //
   if (seqtime > 0) {
-    ALL_SEQTRACKS_FOR_EACH(){
-      
-      SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(seqtrack, seqtime);
-      
-    }END_ALL_SEQTRACKS_FOR_EACH;
+    VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+      SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(seqtrack, seqtime);      
+    }END_VECTOR_FOR_EACH;
   }
 
   radium::FutureSignalTrackingSemaphore gotit;
-    
-  ALL_SEQTRACKS_FOR_EACH(){
+
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
 
     // Seqtrackplugin (Read some samples from audio files into memory)
     //
@@ -224,8 +256,8 @@ void SONG_call_me_before_starting_to_play_song(int64_t seqtime){
         }
       }
     }
-    
-  }END_ALL_SEQTRACKS_FOR_EACH;
+
+  }END_VECTOR_FOR_EACH;
 
   gotit.wait_for_all_future_signals();
 }
@@ -332,24 +364,8 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
 
   seqblock->sample_filename = STRING_copy(filename);
 
-  if (seqtrack->patch == NULL || seqtrack->patch->patchdata==NULL) { // seqtrack->patch == NULL when seqtrack never has played an audio file, and seqtrack->patch->patchdata is null if the seqtrack plugin was deleted manually.
-
-    radium::ScopedIgnoreUndo ignore_undo; // Because we can't delete seqtrack plugin when it has samples.
-
-    int64_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, talloc_format("Seqtrack %d", seqtracknum), 0, 0);
-    R_ASSERT_RETURN_IF_FALSE2(patch_id >= 0, NULL);
-    
-    struct Patch *patch = PATCH_get_from_id(patch_id);
-    R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, NULL);
-    
-    connectAudioInstrumentToMainPipe(patch_id);
-    autopositionInstrument(patch_id);
-
-    {
-      radium::PlayerLock lock;
-      seqtrack->patch = patch;
-    }
-  }
+  if (ensure_seqtrack_has_instrument(seqtrack)==false)
+    return NULL;
   
   SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
   
@@ -1507,7 +1523,7 @@ void SEQUENCER_timing_has_changed(void){
 
   bool isplayingsong = is_playing_song();
 
-  ALL_SEQTRACKS_FOR_EACH(){
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
 
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
       if (seqblock->block != NULL) {
@@ -1534,7 +1550,7 @@ void SEQUENCER_timing_has_changed(void){
       }
     }END_VECTOR_FOR_EACH;
 
-  }END_ALL_SEQTRACKS_FOR_EACH;
+  }END_VECTOR_FOR_EACH;
 }
 
 /*
@@ -1976,7 +1992,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
 
     // Remove all sequencer samples from the seqtrack plugin.
     {
-      ALL_SEQTRACKS_FOR_EACH(){
+      VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
         VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
           if (seqblock->block==NULL){
             if (seqtrack->patch == NULL)
@@ -1990,7 +2006,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
             }
           }
         }END_VECTOR_FOR_EACH;
-      }END_ALL_SEQTRACKS_FOR_EACH;
+      }END_VECTOR_FOR_EACH;
     }
     
     //printf("        CREATING FROM STATE\n");
@@ -2175,8 +2191,8 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
     R_ASSERT_RETURN_IF_FALSE(g_is_loading==true);
 
   bool is_loading_old_song = block==NULL;
-  
-  ALL_SEQTRACKS_FOR_EACH(){
+
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
     int64_t skew = 0;
 
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
@@ -2222,6 +2238,6 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
 
     if (skew > 0)
       legalize_seqtrack_timing(seqtrack);
-        
-  }END_ALL_SEQTRACKS_FOR_EACH;
+
+  }END_VECTOR_FOR_EACH;  
 }

@@ -109,6 +109,37 @@
             args)
   group)
 
+
+(define (mybutton text background-color pressed-color text-color callback)
+  (define button (<gui> :button text callback))
+  (add-safe-paint-callback button
+                           (lambda (width height)
+                             (define is-down (<gui> :get-value button))
+                             (<gui> :filled-box
+                                    button
+                                    background-color
+                                    0 0 width height)
+                             (if is-down
+                                 (<gui> :filled-box
+                                        button
+                                        pressed-color
+                                        2 1 (- width 2) (- height 1)))
+                             (<gui> :draw-text
+                                    button
+                                    text-color
+                                    text
+                                    3 2 (- width 3) (- height 2)
+                                    #f
+                                    #f
+                                    #f
+                                    0)))
+  button)
+
+#!!
+(let ((button (mybutton "hello" "green" "blue" "red" (lambda () (c-display "helo")))))
+  (<gui> :show button))
+!!#
+
 (define (my-gui_tablelayout . args)
   (if (= 1 (length args))
       (apply ra:gui_table-layout (car args))
@@ -124,6 +155,10 @@
                               (iota (- max-num-columns (length row)))))
                   rows)
         table)))
+
+(define (set-tooltip-and-statusbar text)
+  (<ra> :set-statusbar-text text)
+  (<gui> :tool-tip text))
 
 (define (<gui-helper> command . args)
   ;;(c-display "****" command args)
