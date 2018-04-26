@@ -130,8 +130,9 @@ void handleError_internal(const char *fmt,...){
 
   printException(message);
 
+#if !defined(RELEASE)
   printf("HISTORY:\n%s\n",SCHEME_get_history());
-                     
+#endif
 
   vector_t v = {0};
 
