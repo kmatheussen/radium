@@ -482,6 +482,8 @@ public:
       RESAMPLER_reset(_resamplers[ch]->_resampler);
     }
 
+    _has_set_volume = false; // To avoid smoothly gliding from previous volume (the last time we played) to the current.
+      
     if (do_fade_in==false){
       //printf("No fadein\n");
       _curr_fade_volume = 1.0;
