@@ -1,3 +1,14 @@
+Changes 5.6.3 -> 5.6.4:
+* Sequencer: Avoid silent audio when playing an audio file that
+  has fade-out, but no fade-in or envelope, the second time the
+  audio file is played.
+* Sequencer: When starting to play audio file, avoid starting
+  to smoothly gliding between the volume it was set to last
+  time the file was played to the volume it is supposed to play.
+  (This smoothing transition only lasts around 1.5ms though)
+* Instrument list: Fix opening the instrument list window.
+
+
 Changes 5.6.2 -> 5.6.3:
 * Sequencer: Track headers with name, volume sliders, and mute/solo
   buttons.
