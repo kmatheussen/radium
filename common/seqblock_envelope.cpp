@@ -566,49 +566,6 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
       printf("new_db: %f. Pos: %f\n\n", new_db, pos);
 #endif
 
-#if 0
-      if (seqblock->fadein > 0.0 || seqblock->fadeout > 0.0){
-
-        int64_t seqblock_start_pos = start_time - seqblock->t.time;
-        int64_t seqblock_end_pos = end_time - seqblock->t.time;
-
-        if (seqblock_end_pos > 0){
-
-          int64_t seqblock_duration = seqblock->t.time2 - seqblock->t.time;          
-                    
-          double scaled_pos = (double)seqblock_start_pos / (double)seqblock_duration;
-
-          if (scaled_pos > 1){
-            
-            R_ASSERT_NON_RELEASE(false);
-            
-          } else if (scaled_pos < 0){
-
-            // why no assertion here? (missing comment)
-
-          } else {
-
-            if (scaled_pos < seqblock->fadein){
-              double fadein = scale_double(scaled_pos,
-                                           0, seqblock->fadein,
-                                           MIN_DB, 0);
-              //printf("fadein: %f. Pos: %f\n", fadein, pos);
-              new_db += fadein;
-            }
-            
-            if (scaled_pos > (1.0-seqblock->fadeout)) {
-              double fadeout = scale_double(scaled_pos,
-                                            1.0-seqblock->fadeout, 1,
-                                            0, MIN_DB);
-              //printf("fadeout: %f\n", fadeout);
-              new_db += fadeout;
-            }
-            
-          }
-        }
-      }
-#endif
-      
       if (fabs(new_db-seqblock->envelope_db) > 0.0001){
 
         //printf("new db: %f. Old: %f (old gain: %f)\n", new_db, seqblock->envelope_db, seqblock->envelope_volume);
@@ -719,15 +676,16 @@ void RT_SEQBLOCK_ENVELOPE_called_after_scheduler_and_before_audio(void){
 
 // Called from player.c
 void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void){
-#if 0
+#if 1
   ALL_SEQTRACKS_FOR_EACH(){
 
     //fprintf(stderr, "seqiterator: %d, num_seqtracks: %d\n", seqiterator666, root->song->seqtracks.num_elements);
 
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
 
-      seqblock->envelope_db = MIN_DB - 1;
-      seqblock->envelope_volume = -1; // WARNING: When enabling the Seqtrack_plugin, ensure that we don't use seqblock->envelope_volume when player is stopped. If we do, it could be hard to hear since the only thing we do is to invert the phase, at least when there's no envelope volume.
+      seqblock->envelope_db = MIN_DB - 1; // <-- To ensure (fabs(new_db-seqblock->envelope_db) > 0.0001) is true in RT_set_seqblock_volume_automation_values.
+      
+      //seqblock->envelope_volume = -1; // WARNING: When enabling the Seqtrack_plugin, ensure that we don't use seqblock->envelope_volume when player is stopped. If we do, it could be hard to hear since the only thing we do is to invert the phase, at least when there's no envelope volume.
 
     }END_VECTOR_FOR_EACH;
 

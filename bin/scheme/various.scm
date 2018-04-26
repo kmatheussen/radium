@@ -477,7 +477,7 @@
     (<gui> :set-layout-spacing table-parent 0 0 0 0 2)
     (<gui> :set-layout-spacing gui 0 2 2 2 2)
     (<gui> :add table-parent table))
-
+  
   (define (create-name instrument-id curr)
     (define ret (<gui> :line curr
                        (lambda (value)
