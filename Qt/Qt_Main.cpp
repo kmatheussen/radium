@@ -3031,14 +3031,20 @@ int radium_main(char *arg){
   
   fprintf(stderr,"          ENDING 9\n");
 
+  DISKPEAKS_stop();
+  
+  fprintf(stderr,"          ENDING 10\n");
+
   //V_shutdown();
   
   //CRASHREPORTER_close();
 
-  // Give various stuff some time to exit
+  // Give various stuff some time to exit (not supposed to be necessary though, and hopefully it is not necessary either)
+#if defined(RELEASE)
   OS_WaitForAShortTime(100);
-
-  fprintf(stderr,"          ENDING 10\n");
+#endif
+  
+  fprintf(stderr,"          ENDING 11\n");
   
   return 0;
 
