@@ -298,10 +298,10 @@ static bool g_delayed_resizing_timer_active = false;
 static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one, if present. We could have used QPointer<Gui> instead, but that would make it harder to check if gui is already scheduled for later resizing.
 
 struct VerticalAudioMeter;
+
   
 static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
-  
   struct Callback : QObject {
     Q_OBJECT;
 
@@ -366,8 +366,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }GL_unlock();
 
       if (value != _last_int_value){
+        QPointer<Callback> mythis(this);
+        
         S7CALL(void_int, _func, value);
-        _last_int_value = value;
+        if (mythis.isNull()==false)
+          _last_int_value = value;
       }
     }
 
@@ -384,8 +387,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }GL_unlock();
 
       if (value != _last_int_value){
+        QPointer<Callback> mythis(this);
         S7CALL(void_double, _func, value);
-        _last_double_value = value;
+        if (mythis.isNull()==false)
+          _last_double_value = value;
       }
     }
 
@@ -1047,11 +1052,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     void closeEvent(QCloseEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_close_callback!=NULL);
 
+      int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
+      
       if (false==S7CALL(bool_bool,_close_callback, g_radium_runs_custom_exec)){
-        Gui::_has_been_closed = false;
+        if (gui_isOpen(guinum))
+          Gui::_has_been_closed = false;
         event->ignore();
       }else{
-        Gui::_has_been_closed = true;
+        if (gui_isOpen(guinum))
+          Gui::_has_been_closed = true;
         event->accept();
       }
     }
@@ -1074,8 +1083,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 
     void do_the_resize(int width, int height){
       if(gui_isOpen(_gui_num)){ // && _widget->isVisible()){ //  && _widget->width()>0 && _widget->height()>0)
+        int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
         S7CALL(void_int_int,_resize_callback, width, height);
-        if (g_scheme_failed==true)
+        if (g_scheme_failed==true && gui_isOpen(guinum))
           _resize_callback_failed = true;
       }
     }
@@ -1185,12 +1195,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         p.setRenderHints(QPainter::Antialiasing,true);
         
         _current_painter = &p;
+
+        int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
         
         S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
-        if (g_scheme_failed==true)
+        if (g_scheme_failed==true && gui_isOpen(guinum))
           _paint_callback_failed = true;
-        
-        _current_painter = NULL;
+
+        if (gui_isOpen(guinum))
+          _current_painter = NULL;
       }
     }
 
@@ -1695,6 +1708,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     virtual void addGuiCallback(func_t* func){
       Callback *callback = new Callback(func, _widget);
 
+      int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
+
       {
         QTabWidget *tabs = dynamic_cast<QTabWidget*>(_widget.data());
         if (tabs != NULL){
@@ -1817,7 +1832,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       return;
 
     gotit:
-      _callbacks.push_back(callback);
+      if (gui_isOpen(guinum))
+        _callbacks.push_back(callback);
       return;      
     }
   };
