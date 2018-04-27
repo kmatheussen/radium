@@ -843,9 +843,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       _currentButton = getMouseButtonEventID(event);
       const QPoint &point = event->pos();
 
+      int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
+            
       int ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
-      if (g_scheme_failed==true)
+      if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = true;
+      
       return ret;
       
       //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
@@ -863,9 +866,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       
       event->accept();
 
+      int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
+      
       const QPoint &point = event->pos();
       bool ret = S7CALL(bool_int_int_float_float, _mouse_callback, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
-      if (g_scheme_failed==true)
+      if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = true;
       
       _currentButton = 0;
@@ -886,10 +891,13 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       event->accept();
 
       const QPoint &point = event->pos();
+
+      int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
       bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
-      if (g_scheme_failed==true)
+      if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = true;
+      
       return ret;
       
       //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
