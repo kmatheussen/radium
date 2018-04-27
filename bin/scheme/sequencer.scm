@@ -295,11 +295,23 @@
                                  ;;(set-tooltip-and-statusbar "")
                                  (set! is-dragging #f))
                                (when is-dragging
+                                 (define size0 ((<gui> :get-splitter-sizes *ysplitter*) 0))
+                                 (define size1 ((<gui> :get-splitter-sizes *ysplitter*) 1))
+                                 
                                  (define dy (- y start-y))
-                                 ;;(c-display "Y:" y ", start-y:" start-y ". DY:" (- y start-y))                                 
-                                 (<gui> :set-splitter-sizes *ysplitter*
-                                        (list (+ ((<gui> :get-splitter-sizes *ysplitter*) 0) dy)
-                                              (- ((<gui> :get-splitter-sizes *ysplitter*) 1) dy))))
+                                 
+                                 (define new-size0 (+ size0 dy))
+                                 (when (< new-size0 0)
+                                   (set! new-size0 0)
+                                   (set! dy (- size0)))
+                                 
+                                 (define new-size1 (- size1 dy))
+                                 (when (< new-size1 0)
+                                   (set! new-size1 0))
+                                 
+                                 ;;(c-display "Y:" y ", start-y:" start-y ". DY:" (- y start-y))
+                                 (<gui> :set-splitter-sizes *ysplitter* (list new-size0 new-size1)))
+                               
                                is-dragging)))
 
 
