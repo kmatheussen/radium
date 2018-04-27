@@ -1216,7 +1216,7 @@ static radium::Peak get_peak_from_sample(const Sample *sample, int64_t start_tim
   //printf("    Calculating %d -> %d (%d frames)\n", (int)start_time, (int)(end_time), (int)(duration_now));
   peak = sample->peaks->get(start_time, end_time);
 
-  if (is_looping && start_time != sample->loop_start){ // If start_time==sample->loop_start, we would not get hold of any new peaks in the call to get_peak_from_sample below. (it would also stall the program in some situations)
+  if (is_looping && start_time > sample->loop_start){ // If start_time==sample->loop_start, we would not get hold of any new peaks in the call to get_peak_from_sample below. (it would also stall the program in some situations)
     int64_t duration_left = duration - duration_now;
     
     if (duration_left > 0)
