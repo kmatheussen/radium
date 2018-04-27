@@ -946,6 +946,71 @@
                           ))
                                   
 
+(delafina (add-vertical-handler :Get-handler-data
+                                :Get-y1
+                                :Get-y2
+                                :Get-min-value
+                                :Get-max-value
+                                :Get-y #f
+                                :Get-value
+                                :Make-undo #f
+                                :Release #f
+                                :Move
+                                :Publicize #f
+                                :Mouse-pointer-func #f
+                                :Get-guinum (lambda () (<gui> :get-editor-gui)))
+  
+  (define-struct info
+    :handler-data
+    :x)
+
+  (add-node-mouse-handler :Get-area-box (lambda () (make-box2 -1000000 -100000 100000 100000))
+                          :Get-existing-node-info (lambda (X Y callback)
+                                                    (c-display "  vertic: " X Y)
+                                                    (define handler-data (Get-handler-data X Y))
+                                                    (and handler-data
+                                                         (let ((info (make-info :handler-data handler-data
+                                                                                :x X)))
+                                                           (callback info
+                                                                     (Get-value handler-data)
+                                                                     0))))
+                          :Get-min-value (lambda (Info)
+                                           (Get-min-value (Info :handler-data)))
+                          :Get-max-value (lambda (Info)
+                                           (Get-max-value (Info :handler-data)))
+                          :Get-x (lambda (Info)
+                                   (and Get-y
+                                        (Info :y)
+                                        (Get-y (Info :handler-data))))
+                          :Get-y (lambda (Info)
+                                   (and Get-y
+                                        (Get-y (Info :handler-data))))
+                          :Make-undo (lambda (Info)
+                                       (if Make-undo
+                                           (Make-undo (Info :handler-data))))
+                          :Create-new-node (lambda (Value Place callback)
+                                             #f)
+                          :Release-node (lambda x
+                                          (if Release
+                                              (Release)))
+                          :Move-node (lambda (Info Value Place)
+                                       (Move (Info :handler-data)
+                                             Value)
+                                       Info)
+                          :Publicize (lambda (Info)
+                                       (if Publicize
+                                           (Publicize (Info :handler-data))))
+                          :Get-pixels-per-value-unit (lambda (Info)
+                                                       (/ (- (Get-x2 (Info :handler-data))
+                                                             (Get-x1 (Info :handler-data)))
+                                                          (- (Get-max-value (Info :handler-data))
+                                                             (Get-min-value (Info :handler-data)))))
+                          :Mouse-pointer-func Mouse-pointer-func
+                          :Get-guinum Get-guinum
+                          :Forgiving-box #f
+                          ))
+                                  
+
 
 
 ;; Update current seqblock info
@@ -6585,7 +6650,6 @@
                         :Mouse-pointer-func ra:set-closed-hand-mouse-pointer
                         :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         )
-
 
 
 

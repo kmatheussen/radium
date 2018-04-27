@@ -107,7 +107,6 @@
                                (c-display "RELEASE")
                                (<gui> :tool-tip ""))
                              #f))
-
   volume-slider)
 
 (define (create-seqtrack-header-gui instrument-id use-two-rows)
@@ -260,7 +259,7 @@
   (define sequencer-box (<ra> :get-box sequencer))
   (set-fixed-width gui (floor (* 1.5 (<gui> :text-width "S Seqtrack 0.... And M+S|"))))
   ;;(<gui> :set-background-color gui "red")
-
+  
   (define upper-left (<gui> :widget))
   (if (not (<ra> :release-mode))
       (<gui> :set-background-color upper-left "red"))
@@ -269,6 +268,40 @@
                                              0
                                              ((<ra> :get-box seqtempo-area) :height)))))
   (<gui> :add gui upper-left)
+
+  (begin
+    (define background-color (<gui> :get-background-color upper-left))
+    (define border-color (<gui> :mix-colors background-color "black" 0.5))
+    (add-safe-paint-callback upper-left
+                             (lambda (width height)
+                               (<gui> :filled-box upper-left background-color 0 0 width height)
+                               (<gui> :draw-box upper-left border-color 1 1 (- width 1) (- height 1) 1.3 0 0)
+                               (<gui> :draw-text upper-left *text-color* "=" 1 1 (- width 2) (- height 2)
+                                      #f ;; wrap-lines
+                                      #f ;; align top
+                                      #f)))) ;; align left
+
+  (let ((is-dragging #f)
+        (start-y #f))
+    (add-safe-mouse-callback upper-left                           
+                             (lambda (button state x y)
+                               (set-mouse-pointer ra:set-vertical-resize-mouse-pointer upper-left)
+                               (set-tooltip-and-statusbar "Change sequencer height")
+                               (when (and (= state *is-pressing*)
+                                          (= button *left-button*))                                 
+                                 (set! start-y y)                                 
+                                 (set! is-dragging #t))
+                               (when (= state *is-releasing*)
+                                 ;;(set-tooltip-and-statusbar "")
+                                 (set! is-dragging #f))
+                               (when is-dragging
+                                 (define dy (- y start-y))
+                                 ;;(c-display "Y:" y ", start-y:" start-y ". DY:" (- y start-y))                                 
+                                 (<gui> :set-splitter-sizes *ysplitter*
+                                        (list (+ ((<gui> :get-splitter-sizes *ysplitter*) 0) dy)
+                                              (- ((<gui> :get-splitter-sizes *ysplitter*) 1) dy))))
+                               is-dragging)))
+
 
   (define (use-two-rows?)
     (let* ((seqtrack-box (<ra> :get-box seqtrack 0))
@@ -368,6 +401,7 @@
 
 #!!
 (<gui> :height *g-sequencer-left-part-gui*)
+(<gui> :set-size (<gui> :get-sequencer-gui) (<gui> :width (<gui> :get-sequencer-gui)) 400)
 !!#
 
 (define *g-full-sequencer-gui* (if *is-initializing*

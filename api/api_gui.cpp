@@ -4023,6 +4023,80 @@ int64_t gui_getSplitterHandle(int64_t splitter_guinum, int pos){
   return API_get_gui_from_widget(handle);
 }
 
+dyn_t gui_getSplitterSizes(int64_t splitter_guinum){
+  dynvec_t ret = {};
+  
+  const Gui *gui = get_gui(splitter_guinum);
+  if (gui==NULL)
+    goto exit;
+
+  {
+    const QSplitter *splitter = dynamic_cast<QSplitter*>(gui->_widget.data());
+    if (splitter==NULL){
+      handleError("gui_getSplitterSizes: Gui is not a splitter");
+      goto exit;
+    }
+    
+    {
+      const auto &sizes = splitter->sizes();
+      for(int size : sizes){
+        DYNVEC_push_back(&ret, DYN_create_int(size));
+      }
+    }
+  }
+
+ exit:
+  return DYN_create_array(ret);
+}
+
+void gui_setSplitterSizes(int64_t splitter_guinum, dyn_t splitter_sizes){
+  Gui *gui = get_gui(splitter_guinum);
+  if (gui==NULL)
+    return;
+
+  QSplitter *splitter = dynamic_cast<QSplitter*>(gui->_widget.data());
+  if (splitter==NULL){
+    handleError("gui_setSplitterSizes: Gui is not a splitter");
+    return;
+  }
+  
+  if (splitter_sizes.type != ARRAY_TYPE){
+    handleError("gui_table: Argument 'splitter_sizes' must be a list or a vector, found %s", DYN_type_name(splitter_sizes.type));
+    return;
+  }
+
+  const dynvec_t *array = splitter_sizes.array;
+  
+  if (array->num_elements != splitter->sizes().size()){
+    handleError("gui_setSplitterSizes: Expected %d elements in splitter_sizes, found %d", splitter->sizes().size(), array->num_elements);
+    return;
+  }
+  
+  QList<int> sizes;
+
+  int num = 0;
+  for(const dyn_t &el : array){
+    
+    if (DYN_is_number(el)==false){  
+      handleError("gui_setSplitterSizes: Expected a number for splitter_sizes[%d], found %s", num, DYN_type_name(el.type));
+      return;
+    }
+
+    int64_t size = DYN_get_int64_from_number(el);
+
+    if(size < 0 || size > 100000){
+      handleError("gui_setSplitterSizes: Invalid number for splitter_sizes[%d]: %d", num, (int)size);
+      return;      
+    }
+
+    sizes.push_back((int)size);
+    num++;
+  }
+
+  splitter->setSizes(sizes);
+}
+
+
 /*
 int64_t gui_rubberBand(float opacity){
   return (new RubberBand(opacity))->get_gui_num();
@@ -4033,7 +4107,7 @@ int64_t gui_rubberBand(float opacity){
 
 int64_t gui_table(dyn_t header_names){
   if (header_names.type != ARRAY_TYPE){
-    handleError("gui_table: Argument must be a list or vector of strings");
+    handleError("gui_table: Argument must be a list or vector of strings, found %s", DYN_type_name(header_names.type));
     return -1;
   }
 

@@ -27,6 +27,13 @@
   *ysplitter*)
 
 
+#!!
+(<gui> :get-splitter-sizes *ysplitter*)
+(<gui> :set-splitter-sizes *ysplitter*
+       (list (- ((<gui> :get-splitter-sizes *ysplitter*) 0) 100)
+             (+ ((<gui> :get-splitter-sizes *ysplitter*) 1) 100)))
+       
+!!#
 
 ;; Lower tab GUI
 ;;;;;;;;;;;;;;;;;;;;
