@@ -1172,13 +1172,15 @@ static void apply_adsr_to_peak(Data *data, int64_t time, radium::Peak &peak){
 }
 
 
-static radium::Peak get_peak_from_sample(const Sample *sample, int64_t start_time, const int64_t duration){
+static radium::Peak get_peak_from_sample(const Sample *sample, int64_t start_time, const int64_t duration, int rec_level){
+  R_ASSERT(rec_level <= 1); // This function can only be called recursively once; when starting in the middle of a loop and ask for more data than is available in the remainder of the loop.
+  
   radium::Peak peak;
 
   int64_t end;
 
   bool is_looping = ATOMIC_GET(sample->data->p.loop_onoff)==true;
-  
+
   if(is_looping && start_time>=sample->loop_end){
 
     if (sample->loop_end <= sample->loop_start)
@@ -1214,11 +1216,13 @@ static radium::Peak get_peak_from_sample(const Sample *sample, int64_t start_tim
   //printf("    Calculating %d -> %d (%d frames)\n", (int)start_time, (int)(end_time), (int)(duration_now));
   peak = sample->peaks->get(start_time, end_time);
 
-  int64_t duration_left = duration - duration_now;
+  if (is_looping && start_time != sample->loop_start){ // If start_time==sample->loop_start, we would not get hold of any new peaks in the call to get_peak_from_sample below. (it would also stall the program in some situations)
+    int64_t duration_left = duration - duration_now;
+    
+    if (duration_left > 0)
+      peak.merge(get_peak_from_sample(sample, sample->loop_start, duration_left, rec_level+1));
+  }
   
-  if (duration_left > 0 && is_looping)
-    peak.merge(get_peak_from_sample(sample, sample->loop_start, duration_left));
-
   return peak;
 }
 
@@ -1348,7 +1352,7 @@ static int get_peaks(struct SoundPlugin *plugin,
       if(panval>0.0f){
 
         //printf("Asking for peak %d %d (%d). Total sample duration: %d\n", (int)start_frame, (int)end_frame, (int)(end_frame-start_frame), (int)sample->num_frames);
-        radium::Peak new_peak = get_peak_from_sample(sample, start_frame, end_frame-start_frame);
+        radium::Peak new_peak = get_peak_from_sample(sample, start_frame, end_frame-start_frame,0);
         
         if (new_peak.has_data()){
           new_peak.scale(panval);
