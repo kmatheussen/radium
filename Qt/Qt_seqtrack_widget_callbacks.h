@@ -2133,7 +2133,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
 
-    int height = root->song->tracker_windows->systemfontheight*1.3 * 13;
+    int height = root->song->tracker_windows->systemfontheight*1.3 * 2;
     setMinimumHeight(height);
     //setMaximumHeight(height);
   }
