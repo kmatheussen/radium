@@ -659,7 +659,7 @@ private:
 
 }
 
-
+void DISKPEAKS_stop(void);
 radium::DiskPeaks *DISKPEAKS_get(const wchar_t *wfilename);
 void DISKPEAKS_remove(radium::DiskPeaks *diskpeaks);
 void DISKPEAKS_call_very_often(void);

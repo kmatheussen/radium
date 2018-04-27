@@ -45,14 +45,24 @@ private:
   void run(void) override {
     while(true){      
       radium::DiskPeaks *disk_peaks = radium::g_disk_peaks_queue.get();
-      disk_peaks->run();
+      if (isInterruptionRequested()==true)
+        break;
+      if (disk_peaks==NULL)
+        R_ASSERT(false);
+      else
+        disk_peaks->run();
     }
   }
 };
 
 static DiskPeaksThread g_disk_peaks_thread;
 }
- 
+
+void DISKPEAKS_stop(void){
+  g_disk_peaks_thread.requestInterruption();
+  radium::g_disk_peaks_queue.put(NULL);
+  g_disk_peaks_thread.wait(10000);
+}
 
 static QHash<QString,radium::DiskPeaks*> g_diskpeaks;
 
