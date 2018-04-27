@@ -558,7 +558,7 @@ void SetupMainWindow(void){
 
   main_window->resize(1024,550);
   editor->setMinimumWidth(550);
-  editor->setMinimumHeight(400);
+  //editor->setMinimumHeight(100);
 
   main_window->setWindowTitle("Radium editor window");
   main_window->statusBar()->showMessage( "Ready", 2000 );
