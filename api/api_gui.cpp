@@ -3697,7 +3697,7 @@ void gui_updateRecursively(int64_t guinum){
   updateWidgetRecursively(gui->_widget);
 }
 
-void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
+void gui_update(int64_t guinum, double x1, double y1, double x2, double y2){
 
   Gui *gui = get_gui(guinum);
 
@@ -3706,10 +3706,15 @@ void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
 
   R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
 
-  if (x1==-1)
+  if (x1 < 0)
     gui->_widget->update();
-  else
-    gui->_widget->update(x1, y1, x2-x1, y2-y1);
+  else {
+    int x1_i = floor(x1);
+    int y1_i = floor(y1);
+    int x2_i = ceil(x2);
+    int y2_i = ceil(y2);
+    gui->_widget->update(x1_i, y1_i, x2_i - x1_i, y2_i - y2_i);
+  }
 }
 
 
