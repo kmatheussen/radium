@@ -3709,7 +3709,7 @@ void gui_update(int64_t guinum, int x1, int y1, int x2, int y2){
   if (x1==-1)
     gui->_widget->update();
   else
-    gui->_widget->update(x1, x2, x2-x1, y2-y1);
+    gui->_widget->update(x1, y1, x2-x1, y2-y1);
 }
 
 
