@@ -171,6 +171,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
       setNewImage(event->size().width(), event->size().height());       \
     if (_resize_callback!=NULL)                                         \
       Gui::resizeEvent(event);                                          \
+    resizeEvent2(event);                                                \
     classname::resizeEvent(event);                                      \
   }                                                                     
 
@@ -1111,6 +1112,9 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       }
     }
     
+    virtual void resizeEvent2(QResizeEvent *event){
+    }
+
     void resizeEvent(QResizeEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
 
@@ -2089,6 +2093,10 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
                     x2-x1, falloff_height);      
     }
     
+
+    void resizeEvent2(QResizeEvent *event) override {
+      call_regularly();
+    }
 
     // NOTE. This function can be called from a custom exec().
     // This means that _patch->plugin might be gone, and the same goes for soundproducer.
