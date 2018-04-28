@@ -3713,7 +3713,7 @@ void gui_update(int64_t guinum, double x1, double y1, double x2, double y2){
     int y1_i = floor(y1);
     int x2_i = ceil(x2);
     int y2_i = ceil(y2);
-    gui->_widget->update(x1_i, y1_i, x2_i - x1_i, y2_i - y2_i);
+    gui->_widget->update(x1_i, y1_i, x2_i - x1_i, y2_i - y1_i);
   }
 }
 
