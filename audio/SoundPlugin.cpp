@@ -1288,9 +1288,12 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
 #if !defined(RELEASE)
   R_ASSERT(storeit_type==STORE_VALUE || storeit_type==DONT_STORE_VALUE);
 
+  /*
+    // Happens for MIDI learn.
   if (storeit_type==STORE_VALUE)
     if (THREADING_is_player_thread())
       abort(); // This is most likely an error.
+  */
 
   if (storeit_type==DONT_STORE_VALUE)
     if (THREADING_is_main_thread())
