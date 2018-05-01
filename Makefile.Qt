@@ -351,7 +351,7 @@ OBJ11= undo.o undo_notes.o undo_fxs.o undo_temponodes.o undo_tempos.o undo_swing
 #OBJ12= X11_visual.o X11_error.o X11_Ptask2Mtask.o X11_Bs_edit.o X11_Main.o X11_endprogram.o X11_disk.o X11_Player.o X11_memory.o X11_ReqType.o X11_keyboard.o X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= Qt_instruments.o Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_PluginWidget.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog.o Qt_song_properties.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_pianorollheader_callbacks.o Qt_Error.o Qt_progresswindow.o Qt_check_for_updates.o Rational.o Qt_AutoBackups.o flowlayout.o
+OBJ12= Qt_instruments.o Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_EventReceiver.o Qt_colors.o Qt_Menues.o Qt_Fonts.o Qt_ReqType.o Qt_PopupMenu.o Qt_Bs_edit.o Qt_PluginWidget.o Qt_SliderPainter.o Qt_memory.o Qt_path_resolver.o Qt_settings.o Qt_disk.o Qt_MainWindow.o Qt_Time.o Qt_sequencer.o GTK_ReqType.o GTK_PopupMenu.o Qt_soundfilesaver_widget_callbacks.o Qt_comment_dialog.o Qt_song_properties.o Qt_preferences_callbacks.o Qt_tools_callbacks.o Qt_pianorollheader_callbacks.o Qt_Error.o Qt_progresswindow.o Qt_check_for_updates.o Rational.o Qt_AutoBackups.o flowlayout.o
 
 #X11_MidiProperties.o  X11_ClientMessages.o 
 #Qt_Bs_edit.o 
@@ -1227,7 +1227,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
 
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
-Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h $(P)Qt_seqtrack_widget_callbacks.h Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp
+Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) # -Wno-deprecated-declarations -Wno-shadow 
 
@@ -1285,6 +1285,9 @@ Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar
 
 Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
 	$(CCC) $(P)Qt_Time.cpp $(QTOPT)
+
+Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp
+	$(CCC) $(P)Qt_sequencer.cpp $(QTOPT)
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
