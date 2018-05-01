@@ -1996,7 +1996,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
     
 
   const float min_width = R_MAX(0.5, (float)window->fontheight / 31.0f);
-  const float num_lines_per_peak = R_MAX(1.01, (float)window->fontheight / 13.0f);
+  const float num_lines_per_peak = R_MAX(2.7, (float)window->systemfontheight / 6.5f);
 
   GE_Context *c = NULL;
   
