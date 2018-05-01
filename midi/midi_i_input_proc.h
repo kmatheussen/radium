@@ -24,7 +24,8 @@ struct SoundPlugin;
 
 extern LANGSPEC void MIDI_add_automation_recording_event(struct SoundPlugin *plugin, int effect_num, float value);
 
-extern LANGSPEC void MIDI_insert_recorded_midi_events(void);
+extern LANGSPEC bool MIDI_insert_recorded_midi_events(void);
+extern LANGSPEC bool MIDI_insert_recorded_midi_gfx_events(void);
 
 extern LANGSPEC void RT_MIDI_handle_play_buffer(void);
 

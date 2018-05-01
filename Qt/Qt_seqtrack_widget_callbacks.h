@@ -606,7 +606,7 @@ public:
     float track_pitch_max;
     TRACK_get_min_and_max_pitches(track, &track_pitch_min, &track_pitch_max);
     
-    struct Notes *note = track->notes;
+    struct Notes *note = track->gfx_notes!=NULL ? track->gfx_notes : track->notes;
     while(note != NULL){
 
       struct Pitches last_pitch;

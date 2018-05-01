@@ -14,32 +14,32 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-extern void CopyRange_notes(
+extern LANGSPEC void CopyRange_notes(
                             struct Notes **tonote,
                             const struct Notes *fromnote,
                             const Place *p1,
                             const Place *p2
 );
 
-extern void CopyRange_stops(
+extern LANGSPEC void CopyRange_stops(
 	struct Stops **tostop,
 	const struct Stops *fromstop,
 	const Place *p1,
 	const Place *p2
 );
 
-extern void CopyRange_fxs(
+extern LANGSPEC void CopyRange_fxs(
 	vector_t *tofxs,
 	const vector_t *fromfxs,
 	const Place *p1,
 	const Place *p2
 );
 
-extern void CopyRange(
+extern LANGSPEC void CopyRange(
                       struct WBlocks *wblock
 );
 
-extern void CopyRange_CurrPos(
+extern LANGSPEC void CopyRange_CurrPos(
                               struct Tracker_Windows *window
 );
 

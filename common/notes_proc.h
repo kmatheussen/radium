@@ -38,6 +38,14 @@ extern LANGSPEC struct Notes *NOTES_sort_by_pitch(struct Notes *notes);
 
 extern LANGSPEC void NOTE_validate(const struct Blocks *block, struct Tracks *track, struct Notes *note);
 
+extern LANGSPEC struct Notes *InsertGfxNote(struct WBlocks *wblock,
+                                            struct WTracks *wtrack,
+                                            const Place *placement, 
+                                            const Place *end_placement,
+                                            float notenum,
+                                            int velocity
+                                            );
+
 extern LANGSPEC struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,

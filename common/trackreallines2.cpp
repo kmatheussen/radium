@@ -182,7 +182,7 @@ static void TRSS_print(const struct WBlocks *wblock, Trss &trss){
 const Trss TRSS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
   Trss trss;
   
-  struct Notes *note = wtrack->track->notes;
+  struct Notes *note = wtrack->track->gfx_notes!=NULL ? wtrack->track->gfx_notes : wtrack->track->notes;
   while(note!=NULL){
     add_note(wblock, trss, note);
     note = NextNote(note);

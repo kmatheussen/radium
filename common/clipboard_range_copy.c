@@ -84,11 +84,14 @@ void CopyRange_notes(
                      const Place *p1,
                      const Place *p2
 ){
+
 	struct Notes *note;
 
 	if(fromnote==NULL){
 		return;
 	}
+
+        R_ASSERT_RETURN_IF_FALSE(*tonote != fromnote);
 
 	if(PlaceLessThan(&fromnote->l.p,p1)){
 		CopyRange_notes(tonote,NextNote(fromnote),p1,p2);

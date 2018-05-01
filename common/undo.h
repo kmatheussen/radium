@@ -146,24 +146,34 @@ extern int64_t g_curr_undo_generation;
 namespace radium{
   
   struct ScopedUndo{
+    bool doit;
   
-    ScopedUndo(){
-      UNDO_OPEN_REC();
+    ScopedUndo(bool doit = true)
+      : doit(doit)
+    {
+      if(doit)
+        UNDO_OPEN_REC();
     }
     
     ~ScopedUndo(){
-      UNDO_CLOSE();
+      if(doit)
+        UNDO_CLOSE();
     }
   };
 
   struct ScopedIgnoreUndo{
-  
-    ScopedIgnoreUndo(){
-      Undo_start_ignoring_undo_operations();
+    bool doit;
+
+    ScopedIgnoreUndo(bool doit = true)
+      : doit(doit)
+    {
+      if (doit)
+        Undo_start_ignoring_undo_operations();
     }
     
     ~ScopedIgnoreUndo(){
-      Undo_stop_ignoring_undo_operations();
+      if (doit)
+        Undo_stop_ignoring_undo_operations();
     }
   };
 

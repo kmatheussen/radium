@@ -75,7 +75,7 @@ void SetNotePolyphonyAttributes(struct Tracks *track){
 
   track->polyphony = 1;
   
-  struct Notes *note = track->notes;
+  struct Notes *note = track->gfx_notes!=NULL ? track->gfx_notes : track->notes;
   while(note != NULL){
     //printf("**************  Note at: %s\n", PlaceToString(&note->l.p));
     int polyphony_num = FindFirstFreePolyphony_num(&note->l.p);
@@ -415,6 +415,50 @@ void NOTE_validate(const struct Blocks *block, struct Tracks *track, struct Note
 
 
 
+static struct Notes *make_note(const struct Blocks *block,
+                               const struct Tracks *track,
+                               const Place *placement,
+                               const Place *end_placement,
+                               float notenum,
+                               int velocity)
+{
+  struct Notes *note=NewNote();
+  PlaceCopy(&note->l.p,placement);
+  
+  note->note=notenum;
+  note->velocity=velocity;
+  //	note->velocity=(*wtrack->track->instrument->getStandardVelocity)(wtrack->track);
+  note->velocity_end=note->velocity;
+
+  if (end_placement != NULL)
+    PlaceCopy(&note->end, end_placement);
+  else
+    SetEndAttributes(block,track,note);
+
+  return note;
+}
+
+// Note: GfxNotes are always polyphonic.
+struct Notes *InsertGfxNote(struct WBlocks *wblock,
+                            struct WTracks *wtrack,
+                            const Place *placement, 
+                            const Place *end_placement,
+                            float notenum,
+                            int velocity
+                            )
+{
+  struct Blocks *block=wblock->block;
+  struct Tracks *track=wtrack->track;
+
+  struct Notes *note = make_note(block, track, placement, end_placement, notenum, velocity);
+
+  ListAddElement3(&track->gfx_notes,&note->l);
+
+  return note;
+}
+
+
+
 struct Notes *InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -427,16 +471,7 @@ struct Notes *InsertNote(
 	struct Blocks *block=wblock->block;
 	struct Tracks *track=wtrack->track;
 
-	struct Notes *note=NewNote();
-
-        //((char*)note)[-5] = 'b'; // test memory validator
-        
-	PlaceCopy(&note->l.p,placement);
-
-	note->note=notenum;
-	note->velocity=velocity;
-//	note->velocity=(*wtrack->track->instrument->getStandardVelocity)(wtrack->track);
-	note->velocity_end=note->velocity;
+        struct Notes *note = make_note(block, track, placement, end_placement, notenum, velocity);
 
         {
           SCOPED_PLAYER_LOCK_IF_PLAYING();
@@ -445,11 +480,6 @@ struct Notes *InsertNote(
 
           if(polyphonic==false)
             StopAllNotesAtPlace(block,track,placement);
-
-          if (end_placement==NULL)
-            SetEndAttributes(block,track,note);
-          else
-            PlaceCopy(&note->end, end_placement);
 
           track->notes = NOTES_sort_by_pitch(track->notes);
         }
