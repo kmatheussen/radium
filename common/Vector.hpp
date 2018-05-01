@@ -485,6 +485,8 @@ public:
 
     std::vector<T> ret;
 
+    ret.reserve(num_elements);
+
     for(int pos=0 ; pos<num_elements ; pos++)
       ret.push_back(elements[pos]);
 

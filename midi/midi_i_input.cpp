@@ -353,22 +353,19 @@ static RecordingQueuePullThread g_recording_queue_pull_thread; // Must be placed
 
 
 
-static midi_event_t *find_midievent_end_note(int blocknum, int pos, int notenum_to_find, STime starttime_of_note){
-  R_ASSERT(g_midi_event_mutex.is_locked());
-  
-  for(int i = pos ; i < g_recorded_midi_events.size(); i++) {
+static midi_event_t *find_midievent_end_note(std::vector<midi_event_t> &midi_events, int blocknum, int pos, int notenum_to_find, STime starttime_of_note){
 
-    midi_event_t *midi_event = g_recorded_midi_events.ref(i);
-    
-    if (midi_event->timepos.blocknum != blocknum)
+  for(midi_event_t &midi_event : midi_events) {
+
+    if (midi_event.timepos.blocknum != blocknum)
       return NULL;
 
-    uint32_t msg     = midi_event->msg;
+    uint32_t msg     = midi_event.msg;
     int      notenum = MIDI_msg_byte2(msg);
     
     if (msg_is_note_off(msg)){
-      if (notenum==notenum_to_find && midi_event->timepos.blocktime > starttime_of_note)
-        return midi_event;
+      if (notenum==notenum_to_find && midi_event.timepos.blocktime > starttime_of_note)
+        return &midi_event;
     }
   }
 
@@ -388,7 +385,7 @@ static void add_recorded_stp(struct Blocks *block, struct Tracks *track, const S
 }
 
 
-static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int recorded_midi_events_pos, const STime time, const uint32_t msg, bool is_gfx){
+static void add_recorded_note(std::vector<midi_event_t> &midi_events, struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int recorded_midi_events_pos, const STime time, const uint32_t msg, bool is_gfx){
         
   Place place = STime2Place(block,time);
   int notenum = MIDI_msg_byte2(msg);
@@ -397,7 +394,7 @@ static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, stru
   Place endplace;
   Place *endplace_p = NULL; // if NULL, the note doesn't stop in this block.
           
-  midi_event_t *midi_event_endnote = find_midievent_end_note(block->l.num, recorded_midi_events_pos+1, notenum, time);
+  midi_event_t *midi_event_endnote = find_midievent_end_note(midi_events, block->l.num, recorded_midi_events_pos+1, notenum, time);
   if (midi_event_endnote != NULL) {
     endplace = STime2Place(block,midi_event_endnote->timepos.blocktime);
     endplace_p = &endplace;
@@ -425,7 +422,7 @@ static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, stru
 }
 
 
-static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int recorded_midi_events_pos, const midi_event_t &first_event){
+static void add_recorded_fx(std::vector<midi_event_t> &midi_events, struct Tracker_Windows *window, struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int midi_events_pos, const midi_event_t &first_event){
 
   printf("Add recorded fx %s / %d. %x\n",first_event.plugin->patch->name, first_event.effect_num, first_event.msg);
 
@@ -473,27 +470,27 @@ static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblo
     setFxnodeLogtype(LOGTYPE_HOLD, nodenum, fxnum, tracknum, blocknum, -1);
   }
   
-  for(int i = recorded_midi_events_pos+1 ; i < g_recorded_midi_events.size(); i++) {
+  for(int i = midi_events_pos+1 ; i < (int)midi_events.size(); i++) {
     
-    midi_event_t *midi_event = g_recorded_midi_events.ref(i);
+    midi_event_t &midi_event = midi_events.at(i);
 
-    if (midi_event->timepos.blocknum != blocknum)
+    if (midi_event.timepos.blocknum != blocknum)
       break;
     
-    if (midi_event->timepos.tracknum != tracknum)
+    if (midi_event.timepos.tracknum != tracknum)
       continue;
 
-    if (!msg_is_fx(midi_event->msg))
+    if (!msg_is_fx(midi_event.msg))
       continue;
     
-    if (midi_event->plugin != plugin)
+    if (midi_event.plugin != plugin)
       continue;
 
-    if (midi_event->effect_num != effect_num)
+    if (midi_event.effect_num != effect_num)
       continue;
 
-    Place place = STime2Place(block,midi_event->timepos.blocktime);
-    float value = get_msg_fx_value(midi_event->msg);
+    Place place = STime2Place(block,midi_event.timepos.blocktime);
+    float value = get_msg_fx_value(midi_event.msg);
 
     int nodenum;
 
@@ -508,7 +505,7 @@ static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblo
     if (nodenum != -1)
       setFxnodeLogtype(LOGTYPE_HOLD, nodenum, fxnum, tracknum, blocknum, -1);
           
-    midi_event->msg = 0; // don't use again later.
+    midi_event.msg = 0; // don't use again later.
   }
 
   Undo_stop_ignoring_undo_operations();
@@ -528,14 +525,21 @@ static bool insert_recorded_midi_events(bool is_gfx){
 
   struct Tracker_Windows *window = root->song->tracker_windows;
 
-
+  std::vector<midi_event_t> midi_events;
+  
   {
     radium::ScopedMutex lock(g_midi_event_mutex);
+    midi_events = g_recorded_midi_events.to_std_vector();
+    if (!is_gfx)
+      g_recorded_midi_events.clear();
+  }
+
+  {
     radium::ScopedUndo scoped_undo(!is_gfx);
 
-    for(int i = 0 ; i < g_recorded_midi_events.size(); i++) {
+    for(int i = 0 ; i < (int)midi_events.size(); i++) {
       
-      auto midi_event = g_recorded_midi_events[i];
+      auto midi_event = midi_events[i];
 
       //printf("%d / %d: %x\n",midi_event.timepos.blocknum, midi_event.timepos.tracknum, midi_event.msg);
         
@@ -625,21 +629,18 @@ static bool insert_recorded_midi_events(bool is_gfx){
 
         } else if (cc0==0x90) {
 
-          add_recorded_note(wblock, block, wtrack, i, time, msg, is_gfx);
+          add_recorded_note(midi_events, wblock, block, wtrack, i, time, msg, is_gfx);
           ret = true;
 
         } else if (!is_gfx && msg_is_fx(msg)) {
 
-          add_recorded_fx(window, wblock, block, wtrack, i, midi_event);
+          add_recorded_fx(midi_events, window, wblock, block, wtrack, i, midi_event);
           ret = true;
 
         }
       }
 
     }
-
-    if (!is_gfx)
-      g_recorded_midi_events.clear();
 
   } // end of mutex and undo scope
 
