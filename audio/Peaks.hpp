@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if defined(INCLUDE_SNDFILE_OPEN_FUNCTIONS)
 #endif
 
+#include <inttypes.h>
+
 #include "Juce_plugins_proc.h"
 #include "../common/Mutex.hpp"
 #include "../common/read_binary.h"

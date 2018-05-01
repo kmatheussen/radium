@@ -14,29 +14,44 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#define __STDC_FORMAT_MACROS 1
+
 #include <math.h>
 
 #include <QColor>
 #include <QRawFont>
 #include <QApplication>
+#include <QMimeData>
+
+
+#define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
+#define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
+#include "../common/nsmtracker.h"
 
 #include "Qt_MyQCheckBox.h"
 #include "Qt_MyQSlider.h"
-
-#include "Qt_seqtrack_widget.h"
+#include "Qt_Bs_edit_proc.h"
 
 #include "../embedded_scheme/scheme_proc.h"
 #include "../common/seqtrack_automation_proc.h"
 #include "../common/song_tempo_automation_proc.h"
 #include "../common/seqblock_envelope_proc.h"
 #include "../common/tracks_proc.h"
+#include "../common/player_proc.h"
+#include "../common/OS_Bs_edit_proc.h"
+
+#include "../api/api_proc.h"
+#include "../api/api_gui_proc.h"
 
 #include "../audio/Mixer_proc.h"
 
 #include "../audio/Peaks.hpp"
 //#include "../audio/Envelope.hpp"
+#include "../audio/SampleReader_proc.h"
 
 #include "../common/seqtrack_proc.h"
+
+#include "Qt_sequencer_proc.h"
 
 
 // May (probably) experience problems (crash or garbage gfx) if zooming in too much and qreal is just 32 bits.
@@ -2569,6 +2584,19 @@ float SEQUENCER_get_y1(void){
 
 float SEQUENCER_get_y2(void){
   return mapToEditorY2(g_sequencer_widget);
+}
+
+void SEQUENCER_WIDGET_initialize(QWidget *main_window){
+  g_sequencer_widget = new Sequencer_widget(main_window);
+}
+
+void SEQUENCER_WIDGET_call_very_often(void){
+  if (g_sequencer_widget != NULL)
+    g_sequencer_widget->call_very_often();
+}
+
+QWidget *SEQUENCER_WIDGET_get_widget(void){
+  return g_sequencer_widget;
 }
 
 

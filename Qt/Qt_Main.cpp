@@ -77,9 +77,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #endif
 
-#define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
-#define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
 
+#define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
 #include "../common/disk_load_proc.h"
@@ -93,6 +92,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_pause_proc.h"
 #include "../common/gfx_wtrackheaders_proc.h"
 #include "../common/data_as_text_proc.h"
+#include "../common/seqtrack_proc.h"
 
 #include "../api/api_proc.h"
 #include "../api/api_gui_proc.h"
@@ -104,6 +104,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "EditorWidget.h"
 #include "Qt_colors_proc.h"
 #include "Qt_AutoBackups_proc.h"
+#include "Qt_Bs_edit_proc.h"
 
 #include "../common/eventreciever_proc.h"
 #include "../common/control_proc.h"
@@ -123,6 +124,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SampleRecorder_proc.h"
 #include "../audio/AudioMeterPeaks_proc.h"
 #include "../audio/SampleReader_proc.h"
+#include "../audio/Peaks.hpp"
 
 
 #ifdef __linux__
@@ -138,10 +140,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../posix/posix_Player_proc.h"
 #include "../common/OS_Ptask2Mtask_proc.h"
 
-#include "Qt_Bs_edit_proc.h"
 #include "Qt_instruments_proc.h"
 #include "Qt_MainWindow_proc.h"
 #include "Qt_Menues_proc.h"
+#include "Qt_sequencer_proc.h"
+
 
 /*
   Some day I wish gcc or clang would warn about this code:
@@ -159,12 +162,6 @@ class Hepp2 : public Hepp{
 };
 }
 */
-
-
-extern EditorWidget *g_editor;
-
-
-#include "Qt_seqtrack_widget_callbacks.h"
 
 
 #include "../GTK/GTK_visual_proc.h"
@@ -2131,8 +2128,7 @@ protected:
     }
     #endif
 
-    if (g_sequencer_widget != NULL)
-      g_sequencer_widget->call_very_often();
+    SEQUENCER_WIDGET_call_very_often();
 
     BS_call_very_often();
     
@@ -2764,7 +2760,7 @@ int radium_main(char *arg){
       block_selector->resize(100,block_selector->height());
 
       {
-        g_sequencer_widget = new Sequencer_widget(main_window);
+        SEQUENCER_WIDGET_initialize(main_window);
         createInstrumentsWidget();
       }
 
