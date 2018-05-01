@@ -236,7 +236,7 @@ private:
 
   void remove_pos_internal(int pos, bool keep_order){
     R_ASSERT_RETURN_IF_FALSE(pos < num_elements);
-
+    R_ASSERT_RETURN_IF_FALSE(pos >= 0);
 
     if (keep_order) {
       

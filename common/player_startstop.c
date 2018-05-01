@@ -186,7 +186,8 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
 #endif
   
   MIDI_insert_recorded_midi_events();
-  
+  MIXER_set_all_plugins_to_not_recording();
+    
   R_ASSERT_NON_RELEASE(ATOMIC_GET(pc->player_state) == PLAYER_STATE_STOPPED);
   
   //InitPEQmempool(); // Clean memory used by player so it can be freed by the garbage collector.

@@ -1576,6 +1576,8 @@ struct Tracks{
 	struct Stops *stops;
 	int onoff;
 
+        struct Notes *gfx_notes; // Used when recording MIDI notes in sequencer mode.
+
         int polyphony;
   
         const char *trackname; // Contains the value "(click me)" when patch==NULL

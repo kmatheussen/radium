@@ -1752,7 +1752,7 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
   GE_Context *current_note_color = NULL;
   GE_Context *note_color = NULL;
   
-  const struct Notes *note=wtrack->track->notes;
+  const struct Notes *note = wtrack->track->gfx_notes!=NULL ? wtrack->track->gfx_notes : wtrack->track->notes;
   while(note != NULL){
     const struct NodeLine *nodelines = GetPianorollNodeLines(window,
                                                              wblock,
@@ -2504,7 +2504,7 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
 
   // velocities and pitches
   {  
-    const struct Notes *note=wtrack->track->notes;
+    const struct Notes *note=wtrack->track->gfx_notes!=NULL ? wtrack->track->gfx_notes : wtrack->track->notes;
     while(note != NULL){
       if (wtrack->notesonoff==1)
         create_pitches(window, wblock, wtrack, note);

@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/Mutex.hpp"
 #include "../common/Queue.hpp"
 #include "../common/Vector.hpp"
+#include "../common/clipboard_range_copy_proc.h"
 
 #include "../crashreporter/crashreporter_proc.h"
 
@@ -211,43 +212,43 @@ static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
   
   time_position_t timepos;
   
-  if (MIXER_fill_in_time_position(&timepos) == true){ // <-- MIXER_fill_in_time_position returns false if the event was recorded after song end, or program is initializing, or there was an error.
-
-    if (is_fx){
+  if (MIXER_fill_in_time_position(&timepos) == false)
+    return; // <-- MIXER_fill_in_time_position returns false if the event was recorded after song end, or program is initializing, or there was an error.
       
-      radium::ScopedMutex lock(g_midi_learns_mutex); // <- Fix. Timing can be slightly inaccurate if adding/removing midi learn while recording, since MIDI_add/remove_midi_learn obtains the player lock while holding the g_midi_learns_mutex.
+
+  if (is_fx){
     
-      for (auto midi_learn : g_midi_learns) {
+    radium::ScopedMutex lock(g_midi_learns_mutex); // <- Fix. Timing can be slightly inaccurate if adding/removing midi learn while recording, since MIDI_add/remove_midi_learn obtains the player lock while holding the g_midi_learns_mutex.
+    
+    for (auto midi_learn : g_midi_learns) {
+      
+      if (midi_learn->RT_matching(port_name, msg)){
         
-        if (midi_learn->RT_matching(port_name, msg)){
-
-          midi_event_t midi_event;
-          midi_event.timepos = timepos;
-          midi_event.msg = msg;
+        midi_event_t midi_event;
+        midi_event.timepos = timepos;
+        midi_event.msg = msg;
+        
+        if (midi_learn->RT_get_automation_recording_data(&midi_event.plugin, &midi_event.effect_num)){
           
-          if (midi_learn->RT_get_automation_recording_data(&midi_event.plugin, &midi_event.effect_num)){
-
-            // Send event to the pull thread
-            if (!g_midi_event_queue->tryPut(midi_event))
-              RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, "
-                         "or your MIDI input and output ports are connected recursively, please report this incident.");
-          }
-          
+          // Send event to the pull thread
+          if (!g_midi_event_queue->tryPut(midi_event))
+            RT_message("Midi recording buffer full while recording FX.\nUnless your computer was almost halting because of high CPU usage, "
+                       "or your MIDI input and output ports are connected recursively, please report this incident.");
         }
+        
       }
-      
-    } else if (is_note){
-      
-      midi_event_t midi_event;
-      midi_event.timepos = timepos;
-      midi_event.msg       = msg;
-
-      // Send event to the pull thread
-      if (!g_midi_event_queue->tryPut(midi_event))
-        RT_message("Midi recording buffer full.\nUnless your computer was almost halting because of high CPU usage, "
-                   "or your MIDI input and output ports are connected recursively, please report this incident.");
     }
-
+    
+  } else if (is_note){
+    
+    midi_event_t midi_event;
+    midi_event.timepos = timepos;
+    midi_event.msg       = msg;
+    
+    // Send event to the pull thread
+    if (!g_midi_event_queue->tryPut(midi_event))
+      RT_message("Midi recording buffer full while recording Note.\nUnless your computer was almost halting because of high CPU usage, "
+                 "or your MIDI input and output ports are connected recursively, please report this incident.");
   }
 }
 
@@ -387,7 +388,7 @@ static void add_recorded_stp(struct Blocks *block, struct Tracks *track, const S
 }
 
 
-static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int recorded_midi_events_pos, const STime time, const uint32_t msg){
+static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, struct WTracks *wtrack, const int recorded_midi_events_pos, const STime time, const uint32_t msg, bool is_gfx){
         
   Place place = STime2Place(block,time);
   int notenum = MIDI_msg_byte2(msg);
@@ -400,17 +401,27 @@ static void add_recorded_note(struct WBlocks *wblock, struct Blocks *block, stru
   if (midi_event_endnote != NULL) {
     endplace = STime2Place(block,midi_event_endnote->timepos.blocktime);
     endplace_p = &endplace;
-    midi_event_endnote->msg = 0; // don't use this event again later.
+    if(!is_gfx)
+      midi_event_endnote->msg = 0; // don't use this event again later.
   }
-  
-  InsertNote(wblock,
-             wtrack,
-             &place,
-             endplace_p,
-             notenum,
-             (float)volume * MAX_VELOCITY / 127.0f,
-             true
-             );
+
+  if (is_gfx)
+    InsertGfxNote(wblock,
+                  wtrack,
+                  &place,
+                  endplace_p,
+                  notenum,
+                  (float)volume * MAX_VELOCITY / 127.0f
+                  );
+  else
+    InsertNote(wblock,
+               wtrack,
+               &place,
+               endplace_p,
+               notenum,
+               (float)volume * MAX_VELOCITY / 127.0f,
+               true
+               );
 }
 
 
@@ -503,37 +514,26 @@ static void add_recorded_fx(struct Tracker_Windows *window, struct WBlocks *wblo
   Undo_stop_ignoring_undo_operations();
 }
 
+
 // Called from the main thread after the player has stopped
-void MIDI_insert_recorded_midi_events(void){
-  while(g_midi_event_queue->size() > 0) // Wait til the recording_queue_pull_thread is finished draining the queue.
-    msleep(5);
+static bool insert_recorded_midi_events(bool is_gfx){
 
-  ATOMIC_SET(root->song_state_is_locked, false);
-         
-  {
-    radium::ScopedMutex lock(g_midi_event_mutex);
-    //printf("MIDI_insert_recorded_midi_events called. Num events recorded: %d\n", g_recorded_midi_events.size());
-    if (g_recorded_midi_events.size() == 0)
-      goto exit;
-  }
+  bool ret = false;
 
-  
-  msleep(20); // Wait a little bit more for the last event to be transfered into g_recorded_midi_events. (no big deal if we lose it though, CPU is probably so buzy if that happens that the user should expect not everything working as it should. It's also only in theory that we could lose the last event since the transfer only takes some nanoseconds, while here we wait 20 milliseconds.)
+  bool do_split = doSplitIntoMonophonicTracksAfterRecordingFromMidi();
+    
+  QVector<struct WBlocks*> blocks_for_tracks_to_split;
+  QVector<struct WTracks*> tracks_to_split;
+  QSet<struct Tracks*> track_set;
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+
 
   {
     radium::ScopedMutex lock(g_midi_event_mutex);
-    radium::ScopedUndo scoped_undo;
+    radium::ScopedUndo scoped_undo(!is_gfx);
 
-    bool do_split = doSplitIntoMonophonicTracksAfterRecordingFromMidi();
-    
-    QVector<struct WBlocks*> blocks_for_tracks_to_split;
-    QVector<struct WTracks*> tracks_to_split;
-
-    struct Tracker_Windows *window = root->song->tracker_windows;
-    
-    hash_t *track_set = HASH_create(8);
-
-    for(int i = 0 ; i < g_recorded_midi_events.size(); i++) { // Note: end note events can be removed from g_recorded_midi_events inside this loop
+    for(int i = 0 ; i < g_recorded_midi_events.size(); i++) {
       
       auto midi_event = g_recorded_midi_events[i];
 
@@ -544,7 +544,7 @@ void MIDI_insert_recorded_midi_events(void){
         // Find block and track
         //
         struct WBlocks *wblock = (struct WBlocks*)ListFindElement1(&window->wblocks->l, midi_event.timepos.blocknum);
-        R_ASSERT_RETURN_IF_FALSE(wblock!=NULL);
+        R_ASSERT_RETURN_IF_FALSE2(wblock!=NULL, true);
 
         struct WTracks *wtrack;
 
@@ -554,70 +554,142 @@ void MIDI_insert_recorded_midi_events(void){
           wtrack = (struct WTracks*)ListLast1(&wblock->wtracks->l);
         else {
           wtrack = (struct WTracks*)ListFindElement1(&wblock->wtracks->l, midi_event.timepos.tracknum);
-          R_ASSERT_RETURN_IF_FALSE(wtrack!=NULL);
+          R_ASSERT_RETURN_IF_FALSE2(wtrack!=NULL, true);
         }
                     
         struct Blocks *block = wblock->block;
         struct Tracks *track = wtrack->track;
 
-        // Update GFX
-        //
-        ATOMIC_SET(track->is_recording, false);
-
-        // UNDO
-        //
-        char *key = talloc_format("%p",track); // store pointer
-        if (HASH_has_key(track_set, key)==false){
-
-          if (do_split){
-            blocks_for_tracks_to_split.push_back(wblock);
-            tracks_to_split.push_back(wtrack);
-          }
-
-          ADD_UNDO(Notes(window,
-                         block,
-                         track,
-                         wblock->curr_realline
-                         ));
-          
-          HASH_put_int(track_set, key, 1);
-        }
-
-        // Add Data
-        //
         const uint32_t msg = midi_event.msg;
         const int cc0 = MIDI_msg_byte1_remove_channel(msg);
         const int data1 = MIDI_msg_byte2(msg);
         const STime time = midi_event.timepos.blocktime;
 
-        if (cc0==0x80 || (cc0==0x90 && data1==0))
-          add_recorded_stp(block, track, time);
-        
-        else if (cc0==0x90)
-          add_recorded_note(wblock, block, wtrack, i, time, msg);
 
-        else if (msg_is_fx(msg))
+        // Update GFX
+        //
+        if(!is_gfx)
+          ATOMIC_SET(track->is_recording, false);
+
+
+        // Do things that should only be done once for each track.
+        // 
+        if (!is_gfx || cc0==0x90) {
+
+          if (track_set.contains(track)==false){
+            
+            if (is_gfx){
+
+              // GFX
+
+              Place p1,p2;
+
+              PlaceSetFirstPos(&p1);
+              PlaceSetLastPos(wblock->block,&p2);
+
+              track->gfx_notes = NULL;
+              CopyRange_notes(&track->gfx_notes,track->notes,&p1,&p2);
+
+            } else {
+
+              // !GFX
+
+              track->gfx_notes = NULL;
+              
+              if (do_split){
+                blocks_for_tracks_to_split.push_back(wblock);
+                tracks_to_split.push_back(wtrack);
+              }
+              
+              ADD_UNDO(Notes(window,
+                             block,
+                             track,
+                             wblock->curr_realline
+                             ));
+              
+            }
+
+            track_set << track;
+
+          }
+          
+        }
+
+
+        // Add Data
+        //
+        if (!is_gfx && (cc0==0x80 || (cc0==0x90 && data1==0))) {
+
+          add_recorded_stp(block, track, time);
+          ret = true;
+
+        } else if (cc0==0x90) {
+
+          add_recorded_note(wblock, block, wtrack, i, time, msg, is_gfx);
+          ret = true;
+
+        } else if (!is_gfx && msg_is_fx(msg)) {
+
           add_recorded_fx(window, wblock, block, wtrack, i, midi_event);
+          ret = true;
+
+        }
       }
 
     }
 
+    if (!is_gfx)
+      g_recorded_midi_events.clear();
+
+  } // end of mutex and undo scope
+
+
+
+  if (!is_gfx) {    
     if (do_split)
       for(int i = 0 ; i < tracks_to_split.size() ; i++){
         struct WBlocks *wblock = blocks_for_tracks_to_split[i];
         struct WTracks *wtrack = tracks_to_split[i];
-        
+          
         TRACK_split_into_monophonic_tracks(window, wblock, wtrack);
       }
+  }
 
-    g_recorded_midi_events.clear();
 
-  } // end mutex and undo scope
-
- exit:
-  MIXER_set_all_plugins_to_not_recording();
+  return ret;
 }
 
+bool MIDI_insert_recorded_midi_events(void){
+  ATOMIC_SET(root->song_state_is_locked, false);
+
+  while(g_midi_event_queue->size() > 0) // Wait til the recording_queue_pull_thread is finished draining the queue.
+    msleep(5);
+  
+  {
+    radium::ScopedMutex lock(g_midi_event_mutex);
+    //printf("MIDI_insert_recorded_midi_events called. Num events recorded: %d\n", g_recorded_midi_events.size());
+    if (g_recorded_midi_events.size() == 0){
+      return false;
+    }
+  }
+
+  
+  msleep(20); // Wait a little bit more for the last event to be transfered into g_recorded_midi_events. (no big deal if we lose it though, CPU is probably so buzy if that happens that the user should expect not everything working as it should. It's also only in theory that we could lose the last event since the transfer only takes some nanoseconds, while here we wait 20 milliseconds.)
+
+
+  return insert_recorded_midi_events(false);
+}
+
+bool MIDI_insert_recorded_midi_gfx_events(void){
+  if(is_playing_relaxed()==false)
+    return false;
+
+#if 1
+  return insert_recorded_midi_events(true);
+#else
+  return false;
+#endif
+}
 
 /*********************************************************
  *********************************************************

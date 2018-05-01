@@ -169,6 +169,13 @@ static inline bool is_playing(void){
   return state==PLAYER_STATE_STARTING_TO_PLAY || state==PLAYER_STATE_PLAYING;
 }
 
+static inline bool is_playing_relaxed(void){
+  if (pc==NULL)
+    return false;
+  Player_State state = ATOMIC_GET_RELAXED(pc->player_state);
+  return state==PLAYER_STATE_STARTING_TO_PLAY || state==PLAYER_STATE_PLAYING;
+}
+
 static inline bool is_really_playing(void){
   if (pc==NULL)
     return false;

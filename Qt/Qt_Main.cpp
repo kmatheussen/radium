@@ -2191,6 +2191,11 @@ protected:
     SEQTRACK_call_me_very_often();
     if (is_called_every_ms(1000))
       DISKPEAKS_call_very_often();
+
+    if (MIDI_insert_recorded_midi_gfx_events()){
+      window->must_redraw_editor = true;
+      SEQUENCER_update();
+    }
     
 #if 0
     // Update graphics when playing
