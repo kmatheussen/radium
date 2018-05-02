@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 5.6.4
+VERSION = 5.6.5
 
 
 #----------------USER SETTINGS-------------------------------
@@ -1287,7 +1287,7 @@ Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
 	$(CCC) $(P)Qt_Time.cpp $(QTOPT)
 
 Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp
-	$(CCC) $(P)Qt_sequencer.cpp $(QTOPT)
+	$(CCC) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT)
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)

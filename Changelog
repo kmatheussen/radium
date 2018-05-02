@@ -1,3 +1,30 @@
+Changes 5.6.4 -> 5.6.5:
+* Demo songs: Romance by Nikos Levantis.
+* Editor: Incrase distance between peaks when displaying waveforms.
+  This both looks better (although arguably) and uses less CPU.
+* MIDI: Display notes in realtime as they are recorded when
+  recording notes in sequencer mode.
+* Audio meters: Don't show wrong meter values when audio meters
+  are resized.
+* GUI: Don't set mininum height of the editor to 400 pixels.
+* Internal: Fix memory corruptions that could happen if a scheme
+  exception is thrown in code called by a Qt event.
+* Sequencer: Make it possible to change sequencer height by
+  dragging the area above the seqtrack headers. This one is easier
+  to use than the already existing drag handler.
+* Reduce time Radium uses to exit.
+* Editor: Don't re-calculate peak data unnecessarily for looping
+  samples. Fixes stalling when setting block multiplier very low.
+* Menus: Add "Suggest new feature" to the Help menu.
+* API:
+  * Fix a couple of bugs in gui_update and gui_getBackgroundColor
+  * Make gui_update take double as arguments instead of ints, and
+    automatically floor down / ceil up values so that the caller
+    doesn't have care about Qt's mix of integers and floats in
+    their widget system.
+  * New functions: gui_getSplitterSizes, gui_setSplitterSizes.
+
+
 Changes 5.6.3 -> 5.6.4:
 * Sequencer: Avoid silent audio when playing an audio file that
   has fade-out, but no fade-in or envelope, the second time the
