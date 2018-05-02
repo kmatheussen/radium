@@ -582,7 +582,7 @@ PLUGINHOSTOPTS = CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE
 LIBPLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
 
 
-pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h
+pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h common/Vector.hpp
 	rm -f pluginhost/Builds/Linux/build/*/*/Juce_plugins_*.o pluginhost/Builds/Linux/build/*/*/Juce_plugin_scanner.o
 # dryrun
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
@@ -819,13 +819,13 @@ range.o:  $(BUILD_DEPENDENCIES) $(CD)range.c
 seqtrack.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack.cpp audio/Envelope.hpp
 	$(CCC) $(CD)seqtrack.cpp $(QTOPT)
 
-seqtrack_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h
+seqtrack_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h common/Vector.hpp
 	$(CCC) $(CD)seqtrack_automation.cpp $(QTOPT)
 
 song_tempo_automation.o:  $(BUILD_DEPENDENCIES) $(CD)song_tempo_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h
 	$(CCC) $(CD)song_tempo_automation.cpp $(QTOPT) -Wno-unknown-pragmas
 
-seqblock_envelope.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_envelope.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h audio/Envelope.hpp
+seqblock_envelope.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_envelope.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h audio/Envelope.hpp common/Vector.hpp
 	$(CCC) $(CD)seqblock_envelope.cpp $(QTOPT) -Wno-unknown-pragmas
 
 time.o:  $(BUILD_DEPENDENCIES) $(CD)time.c
@@ -1299,7 +1299,7 @@ $(P)mQt_Bs_edit.cpp: $(P)Qt_Bs_edit.cpp $(BUILD_DEPENDENCIES)
 	$(MOC) $(P)Qt_Bs_edit.cpp >$(P)mQt_Bs_edit.cpp
 
 
-INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp
+INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp common/Vector.hpp
 
 
 
@@ -1433,7 +1433,7 @@ $(P)Qt_vst_paths_widget.h: $(P)qt4_vst_paths_widget.ui
 	cd $(P) && $(UIC) qt4_vst_paths_widget.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_vst_paths_widget.h
 
 
-Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h midi/midi_i_input_proc.h
+Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h midi/midi_i_input_proc.h common/Vector.hpp
 	$(CCC) $(P)Qt_tools_callbacks.cpp $(QTOPT)
 
 $(P)Qt_tools.h: $(BUILD_DEPENDENCIES) $(P)qt4_tools.ui $(P)Qt_tools_callbacks.h $(P)lzqlineedit.h
@@ -1447,7 +1447,7 @@ Qt_pianorollheader_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_pianorollheader_cal
 $(P)Qt_pianorollheader.h: $(BUILD_DEPENDENCIES) $(P)qt4_pianorollheader.ui $(P)Qt_pianorollheader_callbacks.h $(P)lzqlineedit.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) pianorollheader
 
-Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h
+Qt_PluginWidget.o: $(BUILD_DEPENDENCIES) $(P)Qt_PluginWidget.cpp $(P)Qt_PluginWidget.h $(P)mQt_PluginWidget.cpp $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_PluginWidget.cpp $(P)Qt_MyQSlider.h common/Vector.hpp
 	$(CCC) $(P)Qt_PluginWidget.cpp $(QTOPT)
 
 $(P)mQt_PluginWidget.cpp: $(P)Qt_PluginWidget.h
@@ -1675,7 +1675,7 @@ midi_playfromstart.o:  $(BUILD_DEPENDENCIES)  midi/midi_playfromstart.c
 	$(CC)  midi/midi_playfromstart.c $(OPT) 
 midi_i_plugin.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_plugin.c
 	$(CC)  midi/midi_i_plugin.c $(OPT) 
-midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.cpp  midi/midi_i_input_proc.h
+midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.cpp  midi/midi_i_input_proc.h common/Vector.hpp
 	$(CCC)  midi/midi_i_input.cpp $(QTOPT) $(JACKOPT)
 midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.c
 	$(CC)  midi/midi_fx.c $(OPT) 
@@ -1735,7 +1735,7 @@ $(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h $(QM)QM_MixerWidget.cpp $(P)Qt_M
 #	$(RCC) $(QM)images.qrc -name images -o $(QM)images.cpp
 #	$(CCC) $(QM)images.cpp  `$(PKG) --libs --cflags QtGui` -c
 
-QM_MixerWidget.o: $(QM)mQM_MixerWidget.cpp $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp Qt/helpers.h
+QM_MixerWidget.o: $(QM)mQM_MixerWidget.cpp $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp Qt/helpers.h common/Vector.hpp
 	$(CCC) $(QM)QM_MixerWidget.cpp $(QTOPT)
 
 QM_view.o: $(QM)QM_view.cpp $(QM)QM_view.h $(QM)QM_chip.h $(QM)mQM_view.cpp $(QM)QM_MixerWidget.h
@@ -2130,7 +2130,7 @@ SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_e
 #	$(CCC) audio/MultiCore.cpp $(QTOPT)
 
 
-SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_proc.h
+SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegistry_proc.h common/Vector.hpp
 	$(CCC) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
 SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h Sine_plugin.o # we add Sine_plugin.o here to make sure it is up to date.
@@ -2231,7 +2231,7 @@ T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/Queue.hpp Op
 Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h
 	$(CCC) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT)
 
-Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp
+Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp
 	$(CCC) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) #-Wno-error=unused-variable
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m

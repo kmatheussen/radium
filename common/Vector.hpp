@@ -25,8 +25,35 @@ template <typename T> struct Vector{
   
 private:
   int num_elements_max;
-  int num_elements;
+
+  class NumElements{
+    int num_elements = 0;
+    DEFINE_ATOMIC(int, num_elements_relaxed) = 0;
+
+  public:
+    int get(void) const{
+      return num_elements;
+    }
+
+    int get_relaxed(void) const{
+      return ATOMIC_GET_RELAXED(num_elements_relaxed);
+    }
+
+    void set(int new_num_elements){
+      num_elements = new_num_elements;
+      ATOMIC_SET_RELAXED(num_elements_relaxed, new_num_elements);
+    }
+
+    void inc(void){
+      set(num_elements+1);
+    }
+    void dec(void){
+      set(num_elements-1);
+    }
+  };
   
+  NumElements num_elements;
+
   T *next_elements;
   
   T *elements_ready_for_freeing;
@@ -47,7 +74,6 @@ public:
   
   Vector()
     : num_elements_max(4)
-    , num_elements(0)
     , next_elements(NULL)
     , elements_ready_for_freeing(NULL)
     , next_num_elements_max(0)
@@ -84,7 +110,7 @@ private:
   
   T at_internal(int i) const {
     R_ASSERT_RETURN_IF_FALSE2(i>=0, elements[0]);
-    R_ASSERT_RETURN_IF_FALSE2(i<num_elements, elements[0]);
+    R_ASSERT_RETURN_IF_FALSE2(i<num_elements.get(), elements[0]);
     
     return elements[i];
   }
@@ -95,7 +121,7 @@ public:
     LOCKASSERTER_SHARED(&lockAsserter);
     
     R_ASSERT(i>=0);
-    R_ASSERT(i<num_elements);
+    R_ASSERT(i<num_elements.get());
     
     return &elements[i];
   }
@@ -111,27 +137,33 @@ public:
   const T* end() const {
     LOCKASSERTER_SHARED(&lockAsserter);
     
-    return &elements[num_elements];
+    return &elements[num_elements.get()];
   }
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
   bool is_empty(void) const {
     LOCKASSERTER_SHARED(&lockAsserter);
     
-    return num_elements == 0;
+    return num_elements.get() == 0;
   }
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
   int size(void) const {
     LOCKASSERTER_SHARED(&lockAsserter);
     
-    return num_elements;
+    return num_elements.get();
+  }
+
+  // Thread safe function to get size. Note that the result value can not be trusted 100% if called from another thread.
+  // Function can be used to find out if size have changed since last time, and it's good enough if the result is correct 99.99% of the time.
+  int size_relaxed(void) const {
+    return num_elements.get_relaxed();
   }
 
   int free_space(void) const {
     LOCKASSERTER_SHARED(&lockAsserter);
 
-    return num_elements_max - num_elements;
+    return num_elements_max - num_elements.get();
   }
 
   // NOT RT safe
@@ -149,7 +181,7 @@ public:
     R_ASSERT(elements_ready_for_freeing == NULL);
     R_ASSERT(next_elements == NULL);
 
-    int new_num_elements = num_elements + how_many;
+    int new_num_elements = num_elements.get() + how_many;
 
     R_ASSERT(num_elements_max > 0);
       
@@ -162,7 +194,7 @@ public:
   }
 
   void ensure2(int n){
-    ensure_there_is_room_for_more_without_having_to_allocate_memory(n - num_elements);
+    ensure_there_is_room_for_more_without_having_to_allocate_memory(n - num_elements.get());
   }
     
   // Must be called after calling 'add' if 'ensure_there_is_room_for_one_more_without_having_to_allocate_memory' was called before 'add'.
@@ -188,7 +220,7 @@ private:
   
   T *create_new_elements(int new_num_elements_max) const {
     T *new_elements = (T*) V_calloc(sizeof(T), new_num_elements_max);
-    memcpy(new_elements, elements, sizeof(T)*num_elements);
+    memcpy(new_elements, elements, sizeof(T)*num_elements.get());
     return new_elements;
   }
   
@@ -224,50 +256,50 @@ private:
   void basic_push_back(T t){    
     R_ASSERT(num_elements_max > 0);
 
-    int new_num_elements = num_elements + 1;
+    int new_num_elements = num_elements.get() + 1;
     
     if (new_num_elements > num_elements_max) 
       reserve_internal(new_num_elements, false);
 
-    elements[num_elements] = t;
+    elements[num_elements.get()] = t;
     
-    num_elements = new_num_elements;
+    num_elements.set(new_num_elements);
   }
 
   void remove_pos_internal(int pos, bool keep_order){
-    R_ASSERT_RETURN_IF_FALSE(pos < num_elements);
+    R_ASSERT_RETURN_IF_FALSE(pos < num_elements.get());
     R_ASSERT_RETURN_IF_FALSE(pos >= 0);
 
     if (keep_order) {
       
       int i;
-      this->num_elements--;
-      
-      for(i=pos;i<this->num_elements;i++)
+      num_elements.dec();
+
+      for(i=pos;i<this->num_elements.get();i++)
         this->elements[i]=this->elements[i+1];
       
     } else {
 
-      if (num_elements==1){
+      if (num_elements.get()==1){
         R_ASSERT(pos==0);
       } else {
-        elements[pos] = elements[num_elements-1];
+        elements[pos] = elements[num_elements.get()-1];
       }
       
-      num_elements--;
+      num_elements.dec();
     }
 
-    memset(&elements[num_elements], 0, sizeof(T)); // for debugging
+    memset(&elements[num_elements.get()], 0, sizeof(T)); // for debugging
   }
 
   int find_pos_internal(const T t) const {
     int pos;
     
-    for(pos=0 ; pos<num_elements ; pos++)
+    for(pos=0 ; pos<num_elements.get() ; pos++)
       if (elements[pos]==t)
         break;
 
-    if (pos<num_elements)
+    if (pos<num_elements.get())
       return pos;
     else
       return -1;
@@ -290,9 +322,9 @@ public:
       
     } else {
 
-      num_elements++;
+      num_elements.inc();
 
-      R_ASSERT(num_elements <= next_num_elements_max);
+      R_ASSERT(num_elements.get() <= next_num_elements_max);
 
       elements_ready_for_freeing = elements;
       
@@ -302,7 +334,7 @@ public:
       next_elements = NULL;
       next_num_elements_max = 0;
 
-      elements[num_elements-1] = t;
+      elements[num_elements.get()-1] = t;
     }
   }
 
@@ -406,7 +438,7 @@ public:
 
   bool intersects(const Vector<T> &ts, bool (*equal)(const T, const T)) const {
     for (const T &t1 : ts)
-      for(int i = 0 ; i < num_elements ; i++)
+      for(int i = 0 ; i < num_elements.get() ; i++)
         if (equal(elements[i], t1))
           return true;
 
@@ -414,8 +446,8 @@ public:
   }
 
   bool only_unique_elements(bool (*equal)(const T, const T)) const {
-    for(int i1 = 0 ; i1 < num_elements-1 ; i1++)
-      for(int i2 = i1+1 ; i2 < num_elements ; i2++){
+    for(int i1 = 0 ; i1 < num_elements.get()-1 ; i1++)
+      for(int i2 = i1+1 ; i2 < num_elements.get() ; i2++){
         //printf("i1: %d, i2: %d\n", i1, i2);
         if (equal(elements[i1], elements[i2]))
           return false;
@@ -470,14 +502,14 @@ public:
   }
 
   T pop_back(void){
-    return pop(num_elements-1, false);
+    return pop(num_elements.get()-1, false);
   }
   
   template <class S>
   void sort(S comp){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     
-    std::sort(&elements[0], &elements[num_elements], comp);
+    std::sort(&elements[0], &elements[num_elements.get()], comp);
   }
     
   std::vector<T> to_std_vector(void) const{
@@ -485,9 +517,9 @@ public:
 
     std::vector<T> ret;
 
-    ret.reserve(num_elements);
+    ret.reserve(num_elements.get());
 
-    for(int pos=0 ; pos<num_elements ; pos++)
+    for(int pos=0 ; pos<num_elements.get() ; pos++)
       ret.push_back(elements[pos]);
 
     return ret;
@@ -500,7 +532,7 @@ public:
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
     R_ASSERT(next_elements == NULL);
-    num_elements = 0;
+    num_elements.set(0);
   }
 
 };
