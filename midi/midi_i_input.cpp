@@ -512,7 +512,6 @@ static void add_recorded_fx(std::vector<midi_event_t> &midi_events, struct Track
 }
 
 
-// Called from the main thread after the player has stopped
 static bool insert_recorded_midi_events(bool is_gfx){
 
   bool ret = false;
@@ -660,9 +659,15 @@ static bool insert_recorded_midi_events(bool is_gfx){
   return ret;
 }
 
+
+static int g_last_recorded_midi_events_size = 0;
+
+// Called from the main thread after the player has stopped.
 bool MIDI_insert_recorded_midi_events(void){
   ATOMIC_SET(root->song_state_is_locked, false);
 
+  g_last_recorded_midi_events_size = 0;
+  
   while(g_midi_event_queue->size() > 0) // Wait til the recording_queue_pull_thread is finished draining the queue.
     msleep(5);
   
@@ -681,15 +686,21 @@ bool MIDI_insert_recorded_midi_events(void){
   return insert_recorded_midi_events(false);
 }
 
+// Called regularly from the main thread.
 bool MIDI_insert_recorded_midi_gfx_events(void){
   if(is_playing_relaxed()==false)
     return false;
 
-#if 1
+  int recorded_midi_events_size = g_recorded_midi_events.size_relaxed();
+
+  if (g_last_recorded_midi_events_size == recorded_midi_events_size)
+    return false;
+
+  g_last_recorded_midi_events_size = recorded_midi_events_size;
+
+  //printf("\n\n\n ********************* Inserting from MIDI. size: %d ****************\n\n\n", recorded_midi_events_size);
+
   return insert_recorded_midi_events(true);
-#else
-  return false;
-#endif
 }
 
 /*********************************************************
