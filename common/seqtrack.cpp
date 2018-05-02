@@ -1269,7 +1269,7 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
     {
       radium::PlayerLock lock(seqtrack_is_live);
 
-      int bef=seqtrack->seqblocks.num_elements;
+      //int bef=seqtrack->seqblocks.num_elements;
       int bef_gfx = seqtrack->gfx_seqblocks->num_elements;
       
       seqtrack->seqblocks = *seqtrack->gfx_seqblocks;
@@ -1278,7 +1278,7 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
       int aft=seqtrack->seqblocks.num_elements;
       R_ASSERT(bef_gfx==aft);
 
-      printf("bef: %d. bef_gfx: %d. Aft: %d\n",bef,bef_gfx,aft);
+      //printf("bef: %d. bef_gfx: %d. Aft: %d\n",bef,bef_gfx,aft);
       
       SEQTRACKPLUGIN_assert_samples2(seqtrack);
       
