@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <boost/lockfree/queue.hpp>
 
 #include <QThread>
+#include <QSet>
 
 
 #include "../api/api_proc.h"
