@@ -298,10 +298,10 @@ static QHash<const FullScreenParent*, Gui*> g_gui_from_full_screen_widgets;
 static bool g_delayed_resizing_timer_active = false;
 static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one, if present. We could have used QPointer<Gui> instead, but that would make it harder to check if gui is already scheduled for later resizing.
 
-struct VerticalAudioMeter;
+struct VerticalAudioMeterPainter;
 
   
-static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
+static QVector<VerticalAudioMeterPainter*> g_active_vertical_audio_meters;
 
   struct Callback : QObject {
     Q_OBJECT;
@@ -1906,9 +1906,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
   };
   */
 
-  struct VerticalAudioMeter : QWidget, Gui{
-    Q_OBJECT;
-
+  class VerticalAudioMeterPainter{    
     radium::GcHolder<struct Patch> _patch;
     float *_pos = NULL;
     float *_falloff_pos = NULL;
@@ -1920,14 +1918,32 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     float _last_peak = -100.0f;
     func_t *_peak_callback = NULL;
 
-  public:
+    QPointer<QWidget> _widget;
+    float _x1, _y1, _x2, _y2;
+    float _width, _height;
     
-    VerticalAudioMeter(struct Patch *patch)
-      : Gui(this)
-      , _patch(patch)
+  public:
+    void setPos(double x1, double y1, double x2, double y2){
+      _x1=x1;
+      _y1=y1;
+      _x2=x2;
+      _y2=y2;
+      _width=x2-x1;
+      _height=y2-y1;
+    }
+    
+    VerticalAudioMeterPainter(struct Patch *patch, QWidget *widget, double x1, double y1, double x2, double y2)
+      : _patch(patch)
+      , _widget(widget)
+      , _x1(x1)
+      , _y1(y1)
+      , _x2(x2)
+      , _y2(y2)
+      , _width(x2-x1)
+      , _height(y2-y1)
     {
       R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
-
+            
       /*
       // autofill black bacground color
       setAutoFillBackground(true);
@@ -1961,7 +1977,7 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       g_active_vertical_audio_meters.push_back(this);
     }
 
-    ~VerticalAudioMeter(){
+    ~VerticalAudioMeterPainter(){
       R_ASSERT(g_active_vertical_audio_meters.removeOne(this));
       if (_peak_callback!=NULL)
         s7extra_unprotect(_peak_callback);
@@ -1969,10 +1985,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       free(_pos);
       free(_falloff_pos);
     }
-    
-    MOUSE_OVERRIDERS(QWidget);
-    DOUBLECLICK_OVERRIDER(QWidget);
-    RESIZE_OVERRIDER(QWidget);
 
     void addPeakCallback(func_t *func, int64_t guinum){
       if (_peak_callback != NULL){
@@ -2037,8 +2049,8 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       int num_borders = num_channels + 1;
       float border_width = 0;
 
-      float meter_area_width = width() - 2;
-      float start_x = 1;
+      float meter_area_width = _width - 2;
+      float start_x = _x1 + 1;
 
       float total_meter_space = meter_area_width - num_borders * border_width;
 
@@ -2052,15 +2064,15 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
     const float down_border = 2;
 
     float get_pos_y1(void) const {
-      return 0; //upper_border - 1;
+      return _y1; //upper_border - 1;
     }
     
     float get_pos_y2(void) const {
-      return height() ; //- down_border + 2;
+      return _y2; //- down_border + 2;
     }
     
     float get_pos_height(void) const {
-      return height() - upper_border - down_border;
+      return _height - upper_border - down_border;
     }
 
     const float falloff_height = 1.5;
@@ -2093,10 +2105,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
                     x2-x1, falloff_height);      
     }
     
-
-    void resizeEvent2(QResizeEvent *event) override {
-      call_regularly();
-    }
 
     // NOTE. This function can be called from a custom exec().
     // This means that _patch->plugin might be gone, and the same goes for soundproducer.
@@ -2148,11 +2156,11 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         get_x1_x2(ch, x1,x2, num_channels);
 
         if (pos < prev_pos){
-          update(x1-2,      floorf(pos)-2,
-                 x2-x1+4,   floorf(prev_pos-pos)+4);
+          _widget->update(x1-2,      floorf(pos)-2,
+                         x2-x1+4,   floorf(prev_pos-pos)+4);
         } else if (pos > prev_pos){
-          update(x1-2,      floorf(prev_pos)-2,
-                 x2-x1+4,   floorf(pos-prev_pos)+4);
+          _widget->update(x1-2,      floorf(prev_pos)-2,
+                         x2-x1+4,   floorf(pos-prev_pos)+4);
         }
 
         //update();
@@ -2163,12 +2171,12 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
 #if 0
         
         if (falloff_pos != prev_falloff_pos)
-          update();
+          _widget->update(_x1, _y1, _width, _height);
 
 #elif 1
         if (falloff_pos != prev_falloff_pos){
-          update(get_falloff_rect(x1, x2, prev_falloff_pos).toRect().adjusted(-4,-4,4,4));
-          update(get_falloff_rect(x1, x2, falloff_pos).toRect().adjusted(-4,-4,4,4));
+          _widget->update(get_falloff_rect(x1, x2, prev_falloff_pos).toRect().adjusted(-4,-4,4,4));
+          _widget->update(get_falloff_rect(x1, x2, falloff_pos).toRect().adjusted(-4,-4,4,4));
         }
 #else
         
@@ -2176,20 +2184,18 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         
         // don't know what's wrong here...
         if (falloff_pos < prev_falloff_pos){
-          update(x1-1,      floorf(falloff_pos)-extra-falloff_height,
-                 x2-x1+2,   floorf(prev_falloff_pos-falloff_pos)+2+extra*2+falloff_height*2);
+          _widget->update(x1-1,      floorf(falloff_pos)-extra-falloff_height,
+                         x2-x1+2,   floorf(prev_falloff_pos-falloff_pos)+2+extra*2+falloff_height*2);
         } else if (pos > prev_pos){
-          update(x1-1,      floorf(prev_falloff_pos)-extra-falloff_height,
-                 x2-x1+2,   floorf(falloff_pos-prev_falloff_pos)+2+extra*2+falloff_height*2);
+          _widget->update(x1-1,      floorf(prev_falloff_pos)-extra-falloff_height,
+                         x2-x1+2,   floorf(falloff_pos-prev_falloff_pos)+2+extra*2+falloff_height*2);
         }
         
 #endif
       }
     }
 
-    void paintEvent(QPaintEvent *ev) override {
-      TRACK_PAINT();
-
+    void paint(QPainter &p){
       if(_patch->instrument==get_MIDI_instrument()){
 #if !defined(RELEASE)
         abort(); // Not necessarily anything wrong. Just want to know if this can happen.
@@ -2197,8 +2203,6 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
         return;
       }
       
-      QPainter p(this);
-
       p.setRenderHints(QPainter::Antialiasing,true);
 
       QColor qcolor1("black");
@@ -2321,6 +2325,42 @@ static QVector<VerticalAudioMeter*> g_active_vertical_audio_meters;
       p.setPen(pen);
       p.drawRoundedRect(0,0,width()-1,height()-1, 5, 5);
 #endif
+    }
+  };
+    
+  struct VerticalAudioMeter : QWidget, public Gui{
+    Q_OBJECT;
+
+  public:
+    
+    VerticalAudioMeterPainter _vamp;
+
+    VerticalAudioMeter(struct Patch *patch)
+      : Gui(this)
+      , _vamp(patch, this, 0, 0, width(), height())
+    {
+    }
+
+    ~VerticalAudioMeter(){
+    }
+
+  private:
+    
+    MOUSE_OVERRIDERS(QWidget);
+    DOUBLECLICK_OVERRIDER(QWidget);
+    RESIZE_OVERRIDER(QWidget);
+
+    void resizeEvent2(QResizeEvent *event) override {
+      _vamp.setPos(0, 0, width(), height());
+      _vamp.call_regularly();
+    }
+
+    void paintEvent(QPaintEvent *ev) override {
+      TRACK_PAINT();
+
+      QPainter p(this);
+
+      _vamp.paint(p);
     }
 
   };
@@ -5616,7 +5656,7 @@ void gui_addAudioMeterPeakCallback(int64_t guinum, func_t* func){
   if (meter==NULL)
     return;
 
-  meter->addPeakCallback(func, guinum);
+  meter->_vamp.addPeakCallback(func, guinum);
 }
 
 void gui_resetAudioMeterPeak(int64_t guinum){
@@ -5628,7 +5668,7 @@ void gui_resetAudioMeterPeak(int64_t guinum){
   if (meter==NULL)
     return;
 
-  meter->resetPeak();
+  meter->_vamp.resetPeak();
 }
 
 
