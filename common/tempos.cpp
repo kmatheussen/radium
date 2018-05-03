@@ -90,7 +90,7 @@ struct Tempos *SetTempo(
     newtempo = 1;
   }
 
-	struct Tempos *tempo = (struct Tempos*)ListFindElement3(&block->tempos->l,place);
+        struct Tempos *tempo = (struct Tempos*)ListFindElement3(LCAST(block->tempos),place);
 
         if(tempo!=NULL && PlaceEqual(&tempo->l.p,place)){
           tempo->tempo=newtempo;

@@ -83,7 +83,8 @@ void NewBlock(
 }
 
 struct Blocks *AppendBlock(void){
-	NInt blocknum=ListFindFirstFreePlace1(&root->song->blocks->l);
+        NInt blocknum = root->song->blocks==NULL ? 0 : ListFindFirstFreePlace1(&root->song->blocks->l);
+
 	struct Blocks *block=talloc(sizeof(struct Blocks));
 
 	block->l.num=blocknum;

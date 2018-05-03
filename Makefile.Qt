@@ -162,7 +162,11 @@ FULL_VERSION ?= 1
 #UNDEFINED_SANITIZE_OPTS= -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=object-size -fsanitize=vptr -fno-sanitize-recover
 #  -fsanitize=alignment
 
-ifeq ($(GCC_MAJOR),7)
+ifeq ($(GCC_MAJOR),8)
+	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+#	UNDEFINED_SANITIZE_OPTS=
+else ifeq ($(GCC_MAJOR),7)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 #	UNDEFINED_SANITIZE_OPTS=
@@ -231,6 +235,7 @@ COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P
 #-Wstrict-overflow=4 -Wsuggest-attribute=format -Wstringop-overflow=4
 #-Wsuggest-final-types -Wsuggest-final-methods
 
+
 #ifeq ($(GCC_MAJOR),7)
 #	COMMONOPT += -fstrong-eval-order # Remove this one until all recent compilers support -fstrong-eval-order
 #endif	
@@ -256,7 +261,10 @@ endif
 # -pg
 
 # CPPOPT is CPP flags
-CPPOPT = $(COMMONOPT) -Wno-unused-function -DNDEBUG # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
+CPPOPT = $(COMMONOPT) -Wno-unused-function -DNDEBUG -Wno-class-memaccess  -Wno-parentheses # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
+# -Wno-class-memaccess added because of Qt.
+# -Wno-parentheses added because of boost.
+
 
 QT_VERSION:=$(shell $(MOC) --version)
 QT_MAJOR:=$(shell echo $(QT_VERSION) | cut -d'.' -f1)
@@ -1634,7 +1642,7 @@ ifeq (,$(findstring clang,$(CC)))
 endif
 
 radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c $(API)radium_proc.h
-	$(CC) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING)
+	$(CC) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING) -Wno-cast-function-type
 
 $(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
 	cd $(API) ; bash makeradiumwrap_c.sh $(PYTHONEXE) ; cd ..
@@ -2304,7 +2312,10 @@ scheme.o: embedded_scheme/scheme.cpp $(API)radium_proc.h
 
 QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT #-fno-sanitize=undefined
 
-ifeq ($(GCC_MAJOR),7)
+ifeq ($(GCC_MAJOR),8)
+	QHTTPCONNECTIONFLAGS= -fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
+	HTTPPARSERFLAGS=-Wno-implicit-fallthrough
+else ifeq ($(GCC_MAJOR),7)
 	QHTTPCONNECTIONFLAGS= -fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
 	HTTPPARSERFLAGS=-Wno-implicit-fallthrough
 else

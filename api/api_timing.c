@@ -76,7 +76,7 @@ int numSignatures(int blocknum, int windownum){
   if(wblock==NULL)
     return 0;
 
-  return ListFindNumElements3(&wblock->block->signatures->l);
+  return ListFindNumElements3((struct ListHeader3*)wblock->block->signatures);
 }
 
 int addSignature(int numerator, int denominator,
@@ -161,7 +161,7 @@ int numLPBs(int blocknum, int windownum){
   if(wblock==NULL)
     return 0;
 
-  return ListFindNumElements3(&wblock->block->lpbs->l);
+  return ListFindNumElements3((struct ListHeader3*)wblock->block->lpbs);
 }
 
 int addLPB(int lpb_value,
@@ -273,7 +273,7 @@ int numBPMs(int blocknum, int windownum){
   if(wblock==NULL)
     return 0;
 
-  return ListFindNumElements3(&wblock->block->tempos->l);
+  return ListFindNumElements3((struct ListHeader3*)wblock->block->tempos);
 }
 
 

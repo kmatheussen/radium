@@ -157,10 +157,10 @@ static void draw_text_num(
 {
   char temp[50];
   char temp2[50];
-  char temp3[60];
+  char temp3[110];
   int length2;
   
-  sprintf(temp,"%d",num);
+  snprintf(temp,49,"%d",num);
 
   length2=length-(int)strlen(temp);  
   if(length2<0)
@@ -172,7 +172,7 @@ static void draw_text_num(
   }else
     temp2[0]=0;
   
-  sprintf(temp3,"%s%s",temp2,temp);
+  snprintf(temp3,109,"%s%s",temp2,temp);
   temp3[length+1]=0;
 
   GE_text(c, temp3, x, y);

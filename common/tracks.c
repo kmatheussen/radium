@@ -187,7 +187,7 @@ static void NewTrack(struct Blocks *block,struct Tracks *track){
 }
 
 void AppendTrack(struct Blocks *block){
-	int tracknum=ListFindFirstFreePlace1(&block->tracks->l);
+        int tracknum = block->tracks==NULL ? 0 : ListFindFirstFreePlace1(&block->tracks->l);
 
 	struct Tracks *temp=talloc(sizeof(struct Tracks));
 
@@ -327,7 +327,7 @@ bool TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
   int i;
   for(i=0;i<num_tracks;i++){
     struct Notes *notes = notesvector.elements[i];
-    printf("  %d: %d\n", i, ListFindNumElements3(&notes->l));
+    printf("  %d: %d\n", i, ListFindNumElements3((struct ListHeader3*)notes));
     while(notes != NULL){
       printf("    %s\n",NotesTexts3[(int)notes->note]);
       notes = NextNote(notes);

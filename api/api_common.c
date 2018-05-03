@@ -323,7 +323,7 @@ struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, 
   if (pitchnum==0)
     return NULL; // pitch 0 is the note itself.
 
-  int num_pitches = ListFindNumElements3(&(*note)->pitches->l);
+  int num_pitches = ListFindNumElements3((struct ListHeader3*)(*note)->pitches);
   if (pitchnum==num_pitches+1)
     return NULL; // last pitch
       
@@ -353,7 +353,7 @@ struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **wi
   if (velocitynum==0)
     return NULL; // velocity 0 is the note itself.
 
-  int num_velocities = ListFindNumElements3(&(*note)->velocities->l);
+  int num_velocities = ListFindNumElements3((struct ListHeader3*)(*note)->velocities);
   if (velocitynum==num_velocities+1)
     return NULL; // last velocity
       

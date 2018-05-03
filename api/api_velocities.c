@@ -128,7 +128,7 @@ int getNumVelocities(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return 0;
 
-  return 2+ListFindNumElements3(&note->velocities->l);
+  return 2+(note->velocities==NULL ? 0 : ListFindNumElements3(&note->velocities->l));
 }
 
 static int addVelocity2(float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum, bool show_errors){

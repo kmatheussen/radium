@@ -144,7 +144,7 @@ void SetEndAttributes(
           nextnote=nextnote->next;
         }
 
-        const struct ListHeader3 *stop= &track->stops->l;
+        const struct ListHeader3 *stop= track->stops==NULL ? NULL : &track->stops->l;
         while(stop!=NULL){
           if(PlaceGreaterThan(&stop->p, earliest)){
             p2 = &stop->p;

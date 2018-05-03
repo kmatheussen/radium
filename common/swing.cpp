@@ -102,7 +102,7 @@ static void legalize_swings(struct Blocks *block, struct Swing **swings){
 void AddSwing(struct Blocks *block, struct Tracks *track, const Place place, int weight, int logtype){
   struct Swing **swings = track==NULL ? &block->swings : &track->swings;
   
-  struct Swing *swing = (struct Swing*)ListFindElement3(&(*swings)->l,&place);
+  struct Swing *swing = (struct Swing*)ListFindElement3(LCAST(*swings),&place);
 
   bool already_there = swing!=NULL && p_Equal(swing->l.p, place);
 

@@ -127,7 +127,7 @@ struct Signatures *SetSignature(
     R_ASSERT(false);
   }
   
-        struct Signatures *signature=(struct Signatures *)ListFindElement3(&block->signatures->l,place);
+        struct Signatures *signature=(struct Signatures *)ListFindElement3(LCAST(block->signatures),place);
 
 	if(signature!=NULL && PlaceEqual(&signature->l.p,place)){
                signature->signature=ratio;
