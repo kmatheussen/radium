@@ -630,7 +630,7 @@ public:
       
       struct Pitches first_pitch;
       first_pitch.l.p = note->l.p;
-      first_pitch.l.next = &note->pitches->l;
+      first_pitch.l.next = note->pitches==NULL ? NULL : &note->pitches->l;
       first_pitch.note = note->note;
       first_pitch.logtype = note->pitch_first_logtype;
       

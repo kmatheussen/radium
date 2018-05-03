@@ -628,6 +628,8 @@ struct ListHeader3{
 	Place p;
 };
 
+#define LCAST(a) ((a)==NULL ? NULL : &(a)->l)
+
 #define Tline l.p.line
 #define Tcounter l.p.counter
 #define Tdividor l.p.dividor

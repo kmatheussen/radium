@@ -100,7 +100,7 @@ struct LPBs *SetLPB(
     RError("Illegal lpb %d at position %s\n",newlpb,PlaceToString(place));
     newlpb = 1;
   }
-        struct LPBs *lpb=(struct LPBs*)ListFindElement3(&block->lpbs->l,place);
+        struct LPBs *lpb=(struct LPBs*)ListFindElement3(LCAST(block->lpbs),place);
 
         PC_Pause();{
           

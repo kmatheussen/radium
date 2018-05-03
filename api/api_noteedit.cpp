@@ -283,7 +283,7 @@ int getNumNotes(int tracknum,int blocknum,int windownum){
 	if(wtrack==NULL) return 0;
 	if(wtrack->track->notes==NULL) return 0;
 
-	return ListFindNumElements3(&wtrack->track->notes->l);
+	return ListFindNumElements3((struct ListHeader3*)wtrack->track->notes);
 }
 
 bool noteContinuesNextBlock(dyn_t dynnote, int tracknum, int blocknum, int windownum){

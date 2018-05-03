@@ -279,7 +279,7 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
 
   struct Pitches *first_pitch = talloc(sizeof(struct Pitches));
   first_pitch->l.p = note->l.p;
-  first_pitch->l.next = &note->pitches->l;
+  first_pitch->l.next = note->pitches==NULL ? NULL : &note->pitches->l;
   first_pitch->note = note->note;
   first_pitch->logtype = note->pitch_first_logtype;
   
@@ -341,7 +341,7 @@ const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *windo
 
   struct Pitches *first_pitch = talloc(sizeof(struct Pitches));
   first_pitch->l.p = note->l.p;
-  first_pitch->l.next = &note->pitches->l;
+  first_pitch->l.next = note->pitches==NULL ? NULL : &note->pitches->l;
   first_pitch->note = note->note;
   first_pitch->logtype = note->pitch_first_logtype;
     
@@ -384,7 +384,7 @@ static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeade
 const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
   struct Velocities *first_velocity = (struct Velocities*)&note->first_velocity;
   first_velocity->l.p = note->l.p;
-  first_velocity->l.next = &note->velocities->l;
+  first_velocity->l.next = note->velocities==NULL ? NULL : &note->velocities->l;
   first_velocity->velocity = note->velocity;
   first_velocity->logtype = note->velocity_first_logtype;
   

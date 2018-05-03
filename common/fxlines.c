@@ -532,7 +532,7 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
 
 void DeleteFxNodeLine(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline){
 
-  int num_elements = ListFindNumElements3(&fxs->fxnodelines->l);
+  int num_elements = ListFindNumElements3((struct ListHeader3*)fxs->fxnodelines);
 
   R_ASSERT(num_elements > 1);
 

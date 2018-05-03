@@ -260,7 +260,7 @@ int getNumBPMs(int blocknum, int windownum){
   if (wblock==NULL)
     return 0;
 
-  return ListFindNumElements3(&wblock->block->tempos->l);
+  return ListFindNumElements3((struct ListHeader3*)wblock->block->tempos);
 }
 
 
@@ -1248,7 +1248,7 @@ int getNumPianonotes(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return 0;
 
-  return 1 + ListFindNumElements3(&note->pitches->l);
+  return 1 + ListFindNumElements3((struct ListHeader3*)note->pitches);
 }
 
 static void MOVE_PLACE(Place *place, float diff){
@@ -1345,7 +1345,7 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, dyn_t dynnote, int trac
       
     ret++;
 
-    ret += ListFindNumElements3(&note2->pitches->l);
+    ret += ListFindNumElements3((struct ListHeader3*)note2->pitches);
 
     if (note2->pitch_end > 0)
       ret++;
@@ -2081,7 +2081,7 @@ static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, 
 
   if (pitch==NULL) {
     if (*is_end_pitch) {
-      note_pitchnum = note->pitches==NULL ? 1 : ListFindNumElements3(&note->pitches->l) + 1;
+      note_pitchnum = note->pitches==NULL ? 1 : ListFindNumElements3((struct ListHeader3*)note->pitches) + 1;
     } else {
       note_pitchnum = 0;
     }
@@ -2155,7 +2155,7 @@ void setIndicatorPitchnum(int num, int tracknum, int blocknum){
 
   if (pitch==NULL) {
     if (is_end_pitch)
-      indicator_pitch_num = 1 + ListFindNumElements3(&note->pitches->l);
+      indicator_pitch_num = 1 + ListFindNumElements3((struct ListHeader3*)note->pitches);
     else
       indicator_pitch_num = 0;
   } else {
@@ -2760,7 +2760,7 @@ int getNumFxnodes(int fxnum, int tracknum, int blocknum, int windownum){
   if (fxs==NULL)
     return 0;
 
-  return ListFindNumElements3(&fxs->fxnodelines->l);
+  return ListFindNumElements3((struct ListHeader3*)fxs->fxnodelines);
 }
 
 float getFxMinValue(int fxnum, int tracknum, int blocknum, int windownum){
@@ -3142,7 +3142,7 @@ int getNumFxrangenodes(int fxnum, int rangetracknum){
     return 0;
   }
   
-  return ListFindNumElements3(&fxs->fxnodelines->l);
+  return ListFindNumElements3((struct ListHeader3*)fxs->fxnodelines);
 }
 
 int getNumFxsInRange(int rangetracknum){

@@ -281,7 +281,7 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 
 	twindow=talloc(sizeof(struct Tracker_Windows));
 
-	twindow->l.num=ListFindFirstFreePlace1(&root->song->tracker_windows->l);
+	twindow->l.num = root->song->tracker_windows==NULL ? 0 : ListFindFirstFreePlace1(&root->song->tracker_windows->l);
 
 	twindow->x=x;
 	twindow->y=y;
@@ -294,8 +294,6 @@ int OpenTrackerWindow(int x, int y, int width,int height){
 
 	if(GFX_CreateVisual(twindow)!=0)
 		return -1;
-
-	twindow->l.num=ListFindFirstFreePlace1(&root->song->tracker_windows->l);
 
 	twindow->playalong=true;
 

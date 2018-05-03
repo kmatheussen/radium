@@ -378,7 +378,7 @@ hash_t *SF2_get_info(const wchar_t *filename){
     HASH_put_hash(hash,"menu",get_menu(hash));
     return hash;
 
-  }catch (RIFF::Exception e) {
+  }catch (RIFF::Exception &e) {
     //GFX_Message(NULL,"Unable to parse soundfont file %s: %s", STRING_get_chars(filename), e.Message.c_str());
     fprintf(stderr, "SoundFonts.cpp: Caught RIFF::Exception exception:\n");
     e.PrintMessage();

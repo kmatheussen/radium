@@ -130,7 +130,7 @@ int getNumPitches(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return 0;
 
-  return 2+ListFindNumElements3(&note->pitches->l);
+  return 2+ListFindNumElements3((struct ListHeader3*)note->pitches);
 }
 
 int addPitch(float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum){
