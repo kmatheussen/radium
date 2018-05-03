@@ -261,9 +261,13 @@ endif
 # -pg
 
 # CPPOPT is CPP flags
-CPPOPT = $(COMMONOPT) -Wno-unused-function -DNDEBUG -Wno-class-memaccess  -Wno-parentheses # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
+CPPOPT = $(COMMONOPT) -Wno-unused-function -DNDEBUG  # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
 # -Wno-class-memaccess added because of Qt.
 # -Wno-parentheses added because of boost.
+
+ifeq ($(GCC_MAJOR),8)
+	CPPOPT += -Wno-class-memaccess  -Wno-parentheses
+endif
 
 
 QT_VERSION:=$(shell $(MOC) --version)
