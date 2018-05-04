@@ -170,13 +170,13 @@
                          (newline)
                          (catch #t
                                 (lambda ()
-                                  (ra:add-message message))
+                                  (ra:add-message (ra:get-html-from-text message)))
                                 (lambda args
                                   #t))
                          (handle-assertion-failure-during-startup message)))
                       ((and *currently-loading-file*
                             (not *currently-reloading-file*))
-                       (ra:add-message message))
+                       (ra:add-message (ra:get-html-from-text message)))
                       ((defined? 'c-display (rootlet))
                        (c-display message))
                       (else

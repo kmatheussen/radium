@@ -259,6 +259,9 @@
          (with-output-to-string
            (lambda ()
              (display a))))))
+#!!
+(c-display "args:" x)
+!!#
 
 (define (<-> . args) (apply string-append (map to-string args)))
 (define (<_> . args)
