@@ -526,6 +526,7 @@
 !!#
 ;;||#
 
+;; Called from ra:add-message
 (define (add-message-window-message message)
   ;;(maybe-start-debug-pulse)
   (define html-message (<-> "<h4>" (<ra> :get-date-string) " " (<ra> :get-time-string) ":</h4>"

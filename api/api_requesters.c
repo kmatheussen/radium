@@ -319,15 +319,15 @@ const_char* showMessage2(const char *text){
   
 extern bool g_qtgui_has_stopped;
 
-void addMessage(const char *text){
+void addMessage(const char *html){
   const char *funcname = "add-message-window-message";
   
   static bool gotit = false;
   if (g_qtgui_has_stopped==false && (gotit || s7extra_is_defined(funcname))){
-    S7CALL2(void_charpointer,funcname, text);
+    S7CALL2(void_charpointer,funcname, html);
     gotit = true;
   } else {
-    showMessage(text, g_uninitialized_dyn);
+    showMessage(html, g_uninitialized_dyn);
   }
 }
 
