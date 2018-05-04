@@ -274,6 +274,9 @@
         ((eq? command :requester-operations)
          `(ra:gui_requester-operations ,(car args) ,(cadr args)))
         
+        ((eq? command :do-alpha)
+         `(ra:gui_do-alpha ,@args))
+        
         ((let ((stringcommand (symbol->string (keyword->symbol command))))
            (and (string-starts-with? stringcommand "add-")
                 (string-ends-with? stringcommand "-callback")))
@@ -354,7 +357,11 @@
           layout)
 
 
-
+(define (ra:gui_do-alpha gui alpha func)
+  (<gui> :set-paint-opacity gui alpha)
+  (try-finally :try func
+               :finally (lambda ()
+                          (<gui> :set-paint-opacity gui 1))))
 
 (define (ra:gui_requester-operations text block)
   (c-display "OPEN REQ")

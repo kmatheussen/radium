@@ -182,14 +182,17 @@ static QPointer<QWidget> g_last_released_widget = NULL;
       QPainter p(this);                                                 \
       p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \
     }else{                                                              \
-      if (_paint_callback!=NULL || _background_color.isValid())         \
-        Gui::paintEvent(ev);                                            \
-      else                                                              \
-        classname::paintEvent(ev);                                      \
+      if (Gui::paintVamps(ev)==false){                                  \
+        if (_paint_callback!=NULL || _background_color.isValid())       \
+          Gui::paintEvent(ev);                                          \
+        else                                                            \
+          classname::paintEvent(ev);                                    \
+      }                                                                 \
     }                                                                   \
-  }                                                                     
+  }
+  
 
-
+  
 #define SETVISIBLE_OVERRIDER(classname)                                 \
   void setVisible(bool visible) override {                              \
     if (_has_been_opened_before == false)                               \
@@ -298,11 +301,484 @@ static QHash<const FullScreenParent*, Gui*> g_gui_from_full_screen_widgets;
 static bool g_delayed_resizing_timer_active = false;
 static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one, if present. We could have used QPointer<Gui> instead, but that would make it harder to check if gui is already scheduled for later resizing.
 
-struct VerticalAudioMeterPainter;
+
+  class VerticalAudioMeterPainter;
+
+  static QVector<VerticalAudioMeterPainter*> g_active_vertical_audio_meters;
+
+  static int64_t g_vamp_id = 0;
+
+  class VerticalAudioMeterPainter {
+    
+    friend class Gui;
+    
+    radium::GcHolder<struct Patch> _patch;
+    float *_pos = NULL;
+    float *_falloff_pos = NULL;
+
+    int _num_channels = 0;
+    bool _is_input = false;
+    bool _is_output = false;
+
+    float _last_peak = -100.0f;
+    func_t *_peak_callback = NULL;
+
+  public:
+    int64_t _guinum;
+
+  private:
+    
+    float _x1, _y1, _x2, _y2;
+    float _width, _height;
+    QRect _rect;
+    
+  public:
+
+    int64_t _id = g_vamp_id++;
+
+    void setPos(double x1, double y1, double x2, double y2){
+      _x1=x1;
+      _y1=y1;
+      _x2=x2;
+      _y2=y2;
+      _width=x2-x1;
+      _height=y2-y1;
+      int i_x1 = floor(x1);
+      int i_y1 = floor(y1);
+      int i_x2 = ceil(x2);
+      int i_y2 = ceil(y2);
+      _rect = QRect(i_x1, i_y1, i_x2, i_y2);
+    }
+
+  private:
+    
+    VerticalAudioMeterPainter(struct Patch *patch, int64_t guinum, double x1, double y1, double x2, double y2)
+      : _patch(patch)
+      , _guinum(guinum)
+    {
+      R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
+
+      setPos(x1, y1, x2, y2);
+
+      /*
+      // autofill black bacground color
+      setAutoFillBackground(true);
+      QPalette pal = palette();
+      pal.setColor(QPalette::Window, QColor("black"));
+      setPalette(pal);
+      */
+                            
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+      if(plugin->type->num_outputs > 0)
+        _is_output = true;
+      else if(plugin->type->num_inputs > 0)
+        _is_input = true;
+
+      if (_is_output)
+        _num_channels = plugin->type->num_outputs;
+      else if (_is_input)
+        _num_channels = plugin->type->num_inputs;
+
+      if (_num_channels > 0){
+        _pos = (float*)calloc(_num_channels, sizeof(float));
+        _falloff_pos = (float*)calloc(_num_channels, sizeof(float));
+      }
+
+      R_ASSERT_RETURN_IF_FALSE(get_audio_meter_peaks().num_channels == _num_channels);
+
+      g_active_vertical_audio_meters.push_back(this);
+    }
+
+    ~VerticalAudioMeterPainter(){
+      R_ASSERT(g_active_vertical_audio_meters.removeOne(this));
+      
+      if (_peak_callback!=NULL)
+        s7extra_unprotect(_peak_callback);
+
+      free(_pos);
+      free(_falloff_pos);
+    }
+
+  public:
+    
+    void addPeakCallback(func_t *func, int64_t guinum){
+      if (_peak_callback != NULL){
+        handleError("Audio Meter #%d already have a peak callback", (int)guinum);
+        return;
+      }
+
+      _peak_callback = func;
+
+      s7extra_protect(_peak_callback);
+
+      callPeakCallback();
+    }
+
+    AudioMeterPeaks _fallback_peaks = {0};
+
+    AudioMeterPeaks &get_audio_meter_peaks(void){
+      if(_patch->instrument==get_MIDI_instrument()){
+#if !defined(RELEASE)
+        abort(); // want to know if this can happen.
+#endif
+        return _fallback_peaks;
+      }
+        
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+      if(plugin==NULL)
+        return _fallback_peaks;
+
+      // Testing backtrace.
+      //if (ATOMIC_GET(root->editonoff)==false) // If removing this line, there is no s7 backtrace in the crashreport when the program stops during startup. Really strange.
+      //  R_ASSERT(false);
+            
+      if (_is_output)
+        return plugin->volume_peaks;
+
+      if (_is_input)
+        return plugin->input_volume_peaks;
+
+      R_ASSERT(false);
+      return _fallback_peaks;
+    }
+
+    void callPeakCallback(void){
+      if (_peak_callback != NULL){
+        if (_last_peak<=-100.0)
+          S7CALL(void_charpointer,_peak_callback, "-inf");
+        else
+          S7CALL(void_charpointer,_peak_callback, talloc_format("%.1f", _last_peak));
+      }
+    }
+
+    void resetPeak(void){
+      _last_peak = -100;
+      const AudioMeterPeaks &peaks = get_audio_meter_peaks();
+      for(int ch = 0 ; ch < _num_channels ; ch++)
+        peaks.peaks[ch] = -100;
+    }
+
+    void get_x1_x2(int ch, float &x1, float &x2, const int num_channels) const {
+
+      int num_borders = num_channels + 1;
+      float border_width = 0;
+
+      float meter_area_width = _width - 2;
+      float start_x = _x1 + 1;
+
+      float total_meter_space = meter_area_width - num_borders * border_width;
+
+      float meter_width = total_meter_space / num_channels;
+
+      x1 = start_x + border_width + (ch * (border_width+meter_width));
+      x2 = start_x + border_width + (ch * (border_width+meter_width)) + meter_width;
+    }
+
+    const float upper_border = 2;
+    const float down_border = 2;
+
+    float get_pos_y1(void) const {
+      return _y1; //upper_border - 1;
+    }
+    
+    float get_pos_y2(void) const {
+      return _y2; //- down_border + 2;
+    }
+    
+    float get_pos_height(void) const {
+      return _height - upper_border - down_border;
+    }
+
+    const float falloff_height = 1.5;
+
+    int get_num_visible_channels(void) const {
+      int num_channels = _num_channels;
+      
+      if (_is_output){
+        if(_patch->instrument==get_MIDI_instrument()){
+#if !defined(RELEASE)
+          abort(); // want to know if this can happen.
+#endif
+          return 0;
+        }
+        
+        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+        if (plugin != NULL){
+          if (plugin->num_visible_outputs >= 0)
+            num_channels = R_MIN(num_channels, plugin->num_visible_outputs);
+        } else {
+          //R_ASSERT_NON_RELEASE(false); // Happens when loading song. (more accurately, right after, so can't assert g_is_loading_song)
+        }
+      }
+
+      return num_channels;
+    }
+
+    QRectF get_falloff_rect(double x1, double x2, double falloff_pos) const {
+      return QRectF(x1, falloff_pos-falloff_height/2.0,
+                    x2-x1, falloff_height);      
+    }
+
+    void myupdate(QWidget *widget, float x1, float y1, float x2, float y2){
+      int x1_i = floor(R_MAX(_x1, x1));
+      int y1_i = floor(R_MAX(_y1, y1));
+      int x2_i = ceil(R_MIN(_x2, x2));
+      int y2_i = ceil(R_MIN(_y2, y2));
+      widget->update(x1_i,
+                     y1_i,
+                     x2_i - x1_i,
+                     y2_i - y1_i);
+    }
+
+    void myupdate(QWidget *widget, const QRectF &rect){
+      qreal x1, y1, x2, y2;
+      rect.getCoords(&x1, &y1, &x2, &y2);
+      myupdate(widget, x1, y1, x2, y2);
+    }
+
+    void myupdate(QWidget *widget, const QRect &rect){
+      int x1, y1, x2, y2;
+      rect.getCoords(&x1, &y1, &x2, &y2);
+      myupdate(widget, x1, y1, x2, y2);
+    }
+
+  private:
+    
+    // NOTE. This function can be called from a custom exec().
+    // This means that _patch->plugin might be gone, and the same goes for soundproducer.
+    // (_patch is never gone, never deleted, except when loading song)
+    void call_regularly(QWidget *widget){
+        
+      if(_patch->instrument==get_MIDI_instrument()){
+#if !defined(RELEASE)
+          abort(); // want to know if this can happen.
+#endif
+          return;
+      }
+            
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      if(plugin==NULL)
+        return;
+
+      const AudioMeterPeaks &peaks = get_audio_meter_peaks();
+
+      R_ASSERT_NON_RELEASE(plugin->num_visible_outputs <= _num_channels);
+      
+      int num_channels = R_MIN(peaks.num_channels, get_num_visible_channels());
+
+      for(int ch=0 ; ch < num_channels ; ch++){
+        float prev_pos = _pos[ch];
+        float prev_falloff_pos = _falloff_pos[ch];
+
+        float db;
+        float db_falloff;
+        float db_peak;
+
+        db = peaks.decaying_dbs[ch];
+        db_falloff = peaks.falloff_dbs[ch];
+        db_peak = peaks.peaks[ch];
+        
+        if (db_peak > _last_peak){
+          _last_peak = db_peak;
+          callPeakCallback();
+        }
+
+        float pos = db2linear(db, get_pos_y1(), get_pos_y2());
+        _pos[ch] = pos;
+
+        float x1,x2;
+        get_x1_x2(ch, x1,x2, num_channels);
+
+        if (pos < prev_pos){
+          myupdate(widget,
+                   x1-2,   pos-2,
+                   x2+4,   prev_pos+4);
+        } else if (pos > prev_pos){
+          myupdate(widget,
+                   x1-2,   prev_pos-2,
+                   x2+4,   pos+4);
+        }
+
+        //update();
+
+        float falloff_pos = db2linear(db_falloff, get_pos_y1(), get_pos_y2());
+        _falloff_pos[ch] = falloff_pos;
+
+#if 0
+        
+        if (falloff_pos != prev_falloff_pos)
+          myupdate(widget, _x1, _y1, _width, _height);
+
+#elif 1
+        if (falloff_pos != prev_falloff_pos){
+          myupdate(widget, get_falloff_rect(x1, x2, prev_falloff_pos).toRect().adjusted(-4,-4,4,4));
+          myupdate(widget, get_falloff_rect(x1, x2, falloff_pos).toRect().adjusted(-4,-4,4,4));
+        }
+#else
+        
+        const int extra = 5;
+        
+        // don't know what's wrong here...
+        if (falloff_pos < prev_falloff_pos){
+          myupdate(widget,
+                   x1-1,   floorf(falloff_pos)-extra-falloff_height,
+                   x2+2,   floorf(prev_falloff_pos-falloff_pos)+2+extra*2+falloff_height*2);
+        } else if (pos > prev_pos){
+          myupdate(widget,
+                   x1-1,   floorf(prev_falloff_pos)-extra-falloff_height,
+                   x2+2,   floorf(falloff_pos-prev_falloff_pos)+2+extra*2+falloff_height*2);
+        }
+        
+#endif
+      }
+    }
+    
+  public:
+    
+    bool paint(QPainter &p, const QRect &rect) {
+      if(_patch->instrument==get_MIDI_instrument()){
+#if !defined(RELEASE)
+        abort(); // Not necessarily anything wrong. Just want to know if this can happen.
+#endif
+        return false;
+      }
+
+      if (rect.intersects(_rect)==false)
+        return false;
+      
+      p.setRenderHints(QPainter::Antialiasing,true);
+
+      QColor qcolor1("black");
+      QColor color4db = get_qcolor(PEAKS_4DB_COLOR_NUM);
+      QColor color0db = get_qcolor(PEAKS_0DB_COLOR_NUM);
+      QColor colorgreen  = get_qcolor(PEAKS_COLOR_NUM);
+      QColor colordarkgreen  = get_qcolor(PEAKS_COLOR_NUM).darker(150);
+
+      float posm20db = db2linear(-20, get_pos_y1(), get_pos_y2());
+      float pos0db = db2linear(0, get_pos_y1(), get_pos_y2());
+      float pos4db = db2linear(4, get_pos_y1(), get_pos_y2());
+
+      p.setPen(Qt::NoPen);
+
+      int num_channels = get_num_visible_channels();
+      
+      for(int ch=0 ; ch < num_channels ; ch++){
+        float x1,x2;
+        get_x1_x2(ch, x1,x2, num_channels);
+
+        float pos = _pos[ch];
+
+        // Background (using autofill instead since this way left created graphical artifacts)
+        {
+          QRectF rect1(x1,  get_pos_y1(),
+                       x2-x1,  pos-get_pos_y1());
+          p.setBrush(qcolor1);
+          p.drawRect(rect1);
+        }
+        
+        
+        // decaying meter
+        {
+
+            // Do the dark green
+            {
+              float dark_green_pos = R_MAX(pos, posm20db);
+              QRectF rect(x1, dark_green_pos,
+                          x2-x1,  get_pos_y2()-dark_green_pos);
+              
+              p.setBrush(colordarkgreen);
+              p.drawRect(rect);
+            }
+
+            // Do the green
+            if (pos <= posm20db){
+              float green_pos = R_MAX(pos, pos0db);
+              QRectF rect(x1, green_pos,
+                          x2-x1,  posm20db-green_pos);
+              
+              p.setBrush(colorgreen);
+              p.drawRect(rect);
+            }
+
+            // Do the yellow
+            if (pos <= pos0db){
+              float yellow_pos = R_MAX(pos, pos4db);
+              QRectF rect(x1, yellow_pos,
+                           x2-x1,  pos0db-yellow_pos);
+              
+              p.setBrush(color0db);
+              p.drawRect(rect);
+            }
+
+            // Do the red
+            if (pos <= pos4db){
+              float red_pos = pos;
+              QRectF rect(x1, red_pos,
+                           x2-x1,  pos4db-red_pos);
+              
+              p.setBrush(color4db);
+              p.drawRect(rect);
+            }
+        }
+
+        // falloff meter
+        {
+          //SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+          //if(plugin!=NULL)
+          //  printf("Fallof pos: %f, y2: %f, falloffdb: %f\n", _falloff_pos[ch], get_pos_y2(), plugin->volume_peaks.falloff_dbs[ch]);
+          
+          if (_falloff_pos[ch] < get_pos_y2()){
+            float falloff_pos = _falloff_pos[ch];
+            /*
+            QRectF falloff_rect(x1, falloff_pos-falloff_height/2.0,
+                                x2-x1, falloff_height);
+            */
+            QRectF falloff_rect = get_falloff_rect(x1, x2, falloff_pos);
+            
+            if (falloff_pos > posm20db)
+              p.setBrush(colordarkgreen);
+            else if (falloff_pos > pos0db)
+              p.setBrush(colorgreen);
+            else if (falloff_pos > pos4db)
+              p.setBrush(color0db);
+            else
+              p.setBrush(color4db);
+
+            p.drawRect(falloff_rect);
+          }
+        }
+
+        /*        
+        p.setBrush(qcolor1);
+        p.drawRoundedRect(QRectF(get_x1(ch), 1,
+                                 get_x2(ch), height()-1),
+                          5,5);
+
+        p.setBrush(qcolor2);
+        p.drawRoundedRect(rect2,5,5);
+        */
+      }
+
+      p.setBrush(Qt::NoBrush);
+      
+      //border
+#if 0
+      QPen pen(QColor("#202020"));
+      pen.setWidth(2.0);
+      p.setPen(pen);
+      p.drawRoundedRect(0,0,width()-1,height()-1, 5, 5);
+#endif
+
+      return true;
+    }
+  };
+
 
   
-static QVector<VerticalAudioMeterPainter*> g_active_vertical_audio_meters;
-
+  
   struct Callback : QObject {
     Q_OBJECT;
 
@@ -584,8 +1060,8 @@ static QVector<VerticalAudioMeterPainter*> g_active_vertical_audio_meters;
   };
 
   
-  struct Gui {
-
+  struct Gui{
+    
     QVector<Callback*> _callbacks;
  
   public:
@@ -605,7 +1081,7 @@ static QVector<VerticalAudioMeterPainter*> g_active_vertical_audio_meters;
 
     bool _take_keyboard_focus;
     bool _has_keyboard_focus = false;
-    
+
     QVector<func_t*> _deleted_callbacks;
 
     RememberGeometry remember_geometry;
@@ -680,6 +1156,10 @@ static QVector<VerticalAudioMeterPainter*> g_active_vertical_audio_meters;
         R_ASSERT_NON_RELEASE(false==g_static_toplevel_widgets.contains(_widget)); // Use _widget instead of widget since the static toplevel widgets might be deleted before all gui widgets. The check is good enough anyway.
       }
 
+      // delete meters
+      while(_vamps.size() > 0)
+        deleteVamp(_vamps.value(0));
+      
       // Close plugin GUI children
       {
         QList<int64_t> patch_ids = _child_plugin_gui_patch_ids.toList(); // Work on a copy since elements are removed while iterating.
@@ -817,6 +1297,57 @@ static QVector<VerticalAudioMeterPainter*> g_active_vertical_audio_meters;
       }
     }
 
+    
+    /************ AUDIO METERS *******************/
+    
+    QVector<VerticalAudioMeterPainter*> _vamps;
+
+    VerticalAudioMeterPainter *createVamp(struct Patch *patch, double x1, double y1, double x2, double y2){
+      auto *vamp = new VerticalAudioMeterPainter(patch, get_gui_num(), x1, y1, x2, y2);
+      _vamps.push_back(vamp);
+      callVampRegularly(vamp);
+      return vamp;
+    }
+    
+    void deleteVamp(VerticalAudioMeterPainter *vamp){
+      R_ASSERT_RETURN_IF_FALSE(_vamps.contains(vamp)==true);
+      R_ASSERT(_vamps.removeAll(vamp)==1);
+      delete vamp;
+    }
+
+    void callVampRegularly(VerticalAudioMeterPainter *vamp){
+      if(_widget.data()==NULL){
+        R_ASSERT_NON_RELEASE(false);
+        return;
+      }
+      
+      vamp->call_regularly(_widget);
+    }
+    
+    bool paintVamps(QPaintEvent *event) {
+      if(_widget.data()==NULL){
+        R_ASSERT_NON_RELEASE(false);
+        return false;
+      }
+      if(_vamps.size()==0)
+        return false;
+      
+      QPainter p(_widget.data());
+      QRect rect = event->rect();
+      
+      for(auto *vamp : _vamps){
+        if (vamp->paint(p, rect)==true){
+          if (vamp->_rect.contains(rect)){
+            //printf("Entirely true\n");
+            return true;
+          }
+        }
+      }
+
+      //printf("  FALSE\n");
+      return false;
+    }
+    
     /************ MOUSE *******************/
     
     func_t *_mouse_callback = NULL;
@@ -1373,6 +1904,11 @@ static QVector<VerticalAudioMeterPainter*> g_active_vertical_audio_meters;
       myupdate(x1, y1, x2, y2);
     }
 
+    void setOpacity(double opacity){
+      QPainter *painter = get_painter();
+      painter->setOpacity(opacity);
+    }
+    
     bool drawText(const_char* color, const_char *chartext, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
       QPainter *painter = get_painter();
 
@@ -1906,463 +2442,28 @@ static QVector<VerticalAudioMeterPainter*> g_active_vertical_audio_meters;
   };
   */
 
-  class VerticalAudioMeterPainter{    
-    radium::GcHolder<struct Patch> _patch;
-    float *_pos = NULL;
-    float *_falloff_pos = NULL;
-
-    int _num_channels = 0;
-    bool _is_input = false;
-    bool _is_output = false;
-
-    float _last_peak = -100.0f;
-    func_t *_peak_callback = NULL;
-
-    QPointer<QWidget> _widget;
-    float _x1, _y1, _x2, _y2;
-    float _width, _height;
-    
-  public:
-    void setPos(double x1, double y1, double x2, double y2){
-      _x1=x1;
-      _y1=y1;
-      _x2=x2;
-      _y2=y2;
-      _width=x2-x1;
-      _height=y2-y1;
-    }
-    
-    VerticalAudioMeterPainter(struct Patch *patch, QWidget *widget, double x1, double y1, double x2, double y2)
-      : _patch(patch)
-      , _widget(widget)
-      , _x1(x1)
-      , _y1(y1)
-      , _x2(x2)
-      , _y2(y2)
-      , _width(x2-x1)
-      , _height(y2-y1)
-    {
-      R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
-            
-      /*
-      // autofill black bacground color
-      setAutoFillBackground(true);
-      QPalette pal = palette();
-      pal.setColor(QPalette::Window, QColor("black"));
-      setPalette(pal);
-      */
-                            
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
-
-      if(plugin->type->num_outputs > 0)
-        _is_output = true;
-      else if(plugin->type->num_inputs > 0)
-        _is_input = true;
-
-      if (_is_output)
-        _num_channels = plugin->type->num_outputs;
-      else if (_is_input)
-        _num_channels = plugin->type->num_inputs;
-
-      if (_num_channels > 0){
-        _pos = (float*)calloc(_num_channels, sizeof(float));
-        _falloff_pos = (float*)calloc(_num_channels, sizeof(float));
-      }
-
-      R_ASSERT_RETURN_IF_FALSE(get_audio_meter_peaks().num_channels == _num_channels);
-
-      call_regularly(); // Set meter positions.
-
-      g_active_vertical_audio_meters.push_back(this);
-    }
-
-    ~VerticalAudioMeterPainter(){
-      R_ASSERT(g_active_vertical_audio_meters.removeOne(this));
-      if (_peak_callback!=NULL)
-        s7extra_unprotect(_peak_callback);
-
-      free(_pos);
-      free(_falloff_pos);
-    }
-
-    void addPeakCallback(func_t *func, int64_t guinum){
-      if (_peak_callback != NULL){
-        handleError("Audio Meter #%d already have a peak callback", (int)guinum);
-        return;
-      }
-
-      _peak_callback = func;
-
-      s7extra_protect(_peak_callback);
-
-      callPeakCallback();
-    }
-
-    AudioMeterPeaks _fallback_peaks = {0};
-
-    AudioMeterPeaks &get_audio_meter_peaks(void){
-      if(_patch->instrument==get_MIDI_instrument()){
-#if !defined(RELEASE)
-        abort(); // want to know if this can happen.
-#endif
-        return _fallback_peaks;
-      }
-        
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
-      if(plugin==NULL)
-        return _fallback_peaks;
-
-      // Testing backtrace.
-      //if (ATOMIC_GET(root->editonoff)==false) // If removing this line, there is no s7 backtrace in the crashreport when the program stops during startup. Really strange.
-      //  R_ASSERT(false);
-            
-      if (_is_output)
-        return plugin->volume_peaks;
-
-      if (_is_input)
-        return plugin->input_volume_peaks;
-
-      R_ASSERT(false);
-      return _fallback_peaks;
-    }
-
-    void callPeakCallback(void){
-      if (_peak_callback != NULL){
-        if (_last_peak<=-100.0)
-          S7CALL(void_charpointer,_peak_callback, "-inf");
-        else
-          S7CALL(void_charpointer,_peak_callback, talloc_format("%.1f", _last_peak));
-      }
-    }
-
-    void resetPeak(void){
-      _last_peak = -100;
-      const AudioMeterPeaks &peaks = get_audio_meter_peaks();
-      for(int ch = 0 ; ch < _num_channels ; ch++)
-        peaks.peaks[ch] = -100;
-    }
-
-    void get_x1_x2(int ch, float &x1, float &x2, const int num_channels) const {
-
-      int num_borders = num_channels + 1;
-      float border_width = 0;
-
-      float meter_area_width = _width - 2;
-      float start_x = _x1 + 1;
-
-      float total_meter_space = meter_area_width - num_borders * border_width;
-
-      float meter_width = total_meter_space / num_channels;
-
-      x1 = start_x + border_width + (ch * (border_width+meter_width));
-      x2 = start_x + border_width + (ch * (border_width+meter_width)) + meter_width;
-    }
-
-    const float upper_border = 2;
-    const float down_border = 2;
-
-    float get_pos_y1(void) const {
-      return _y1; //upper_border - 1;
-    }
-    
-    float get_pos_y2(void) const {
-      return _y2; //- down_border + 2;
-    }
-    
-    float get_pos_height(void) const {
-      return _height - upper_border - down_border;
-    }
-
-    const float falloff_height = 1.5;
-
-    int get_num_visible_channels(void) const {
-      int num_channels = _num_channels;
-      
-      if (_is_output){
-        if(_patch->instrument==get_MIDI_instrument()){
-#if !defined(RELEASE)
-          abort(); // want to know if this can happen.
-#endif
-          return 0;
-        }
-        
-        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-        if (plugin != NULL){
-          if (plugin->num_visible_outputs >= 0)
-            num_channels = R_MIN(num_channels, plugin->num_visible_outputs);
-        } else {
-          //R_ASSERT_NON_RELEASE(false); // Happens when loading song. (more accurately, right after, so can't assert g_is_loading_song)
-        }
-      }
-
-      return num_channels;
-    }
-
-    QRectF get_falloff_rect(double x1, double x2, double falloff_pos) const {
-      return QRectF(x1, falloff_pos-falloff_height/2.0,
-                    x2-x1, falloff_height);      
-    }
-    
-
-    // NOTE. This function can be called from a custom exec().
-    // This means that _patch->plugin might be gone, and the same goes for soundproducer.
-    // (_patch is never gone, never deleted)
-    void call_regularly(void){
-      if (_widget.data()==NULL){ // Don't think this is possible though since this class is a subclass of QWidget, and therefore gui->_widget==this.
-        R_ASSERT_NON_RELEASE(false);
-        return;
-      }
-
-      if(_patch->instrument==get_MIDI_instrument()){
-#if !defined(RELEASE)
-          abort(); // want to know if this can happen.
-#endif
-          return;
-      }
-            
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-      if(plugin==NULL)
-        return;
-
-      const AudioMeterPeaks &peaks = get_audio_meter_peaks();
-
-      R_ASSERT_NON_RELEASE(plugin->num_visible_outputs <= _num_channels);
-      
-      int num_channels = R_MIN(peaks.num_channels, get_num_visible_channels());
-
-      for(int ch=0 ; ch < num_channels ; ch++){
-        float prev_pos = _pos[ch];
-        float prev_falloff_pos = _falloff_pos[ch];
-
-        float db;
-        float db_falloff;
-        float db_peak;
-
-        db = peaks.decaying_dbs[ch];
-        db_falloff = peaks.falloff_dbs[ch];
-        db_peak = peaks.peaks[ch];
-        
-        if (db_peak > _last_peak){
-          _last_peak = db_peak;
-          callPeakCallback();
-        }
-
-        float pos = db2linear(db, get_pos_y1(), get_pos_y2());
-        _pos[ch] = pos;
-
-        float x1,x2;
-        get_x1_x2(ch, x1,x2, num_channels);
-
-        if (pos < prev_pos){
-          _widget->update(x1-2,      floorf(pos)-2,
-                         x2-x1+4,   floorf(prev_pos-pos)+4);
-        } else if (pos > prev_pos){
-          _widget->update(x1-2,      floorf(prev_pos)-2,
-                         x2-x1+4,   floorf(pos-prev_pos)+4);
-        }
-
-        //update();
-
-        float falloff_pos = db2linear(db_falloff, get_pos_y1(), get_pos_y2());
-        _falloff_pos[ch] = falloff_pos;
-
-#if 0
-        
-        if (falloff_pos != prev_falloff_pos)
-          _widget->update(_x1, _y1, _width, _height);
-
-#elif 1
-        if (falloff_pos != prev_falloff_pos){
-          _widget->update(get_falloff_rect(x1, x2, prev_falloff_pos).toRect().adjusted(-4,-4,4,4));
-          _widget->update(get_falloff_rect(x1, x2, falloff_pos).toRect().adjusted(-4,-4,4,4));
-        }
-#else
-        
-        const int extra = 5;
-        
-        // don't know what's wrong here...
-        if (falloff_pos < prev_falloff_pos){
-          _widget->update(x1-1,      floorf(falloff_pos)-extra-falloff_height,
-                         x2-x1+2,   floorf(prev_falloff_pos-falloff_pos)+2+extra*2+falloff_height*2);
-        } else if (pos > prev_pos){
-          _widget->update(x1-1,      floorf(prev_falloff_pos)-extra-falloff_height,
-                         x2-x1+2,   floorf(falloff_pos-prev_falloff_pos)+2+extra*2+falloff_height*2);
-        }
-        
-#endif
-      }
-    }
-
-    void paint(QPainter &p){
-      if(_patch->instrument==get_MIDI_instrument()){
-#if !defined(RELEASE)
-        abort(); // Not necessarily anything wrong. Just want to know if this can happen.
-#endif
-        return;
-      }
-      
-      p.setRenderHints(QPainter::Antialiasing,true);
-
-      QColor qcolor1("black");
-      QColor color4db = get_qcolor(PEAKS_4DB_COLOR_NUM);
-      QColor color0db = get_qcolor(PEAKS_0DB_COLOR_NUM);
-      QColor colorgreen  = get_qcolor(PEAKS_COLOR_NUM);
-      QColor colordarkgreen  = get_qcolor(PEAKS_COLOR_NUM).darker(150);
-
-      float posm20db = db2linear(-20, get_pos_y1(), get_pos_y2());
-      float pos0db = db2linear(0, get_pos_y1(), get_pos_y2());
-      float pos4db = db2linear(4, get_pos_y1(), get_pos_y2());
-
-      p.setPen(Qt::NoPen);
-
-      int num_channels = get_num_visible_channels();
-      
-      for(int ch=0 ; ch < num_channels ; ch++){
-        float x1,x2;
-        get_x1_x2(ch, x1,x2, num_channels);
-
-        float pos = _pos[ch];
-
-        // Background (using autofill instead since this way left created graphical artifacts)
-        {
-          QRectF rect1(x1,  get_pos_y1(),
-                       x2-x1,  pos-get_pos_y1());
-          p.setBrush(qcolor1);
-          p.drawRect(rect1);
-        }
-        
-        
-        // decaying meter
-        {
-
-            // Do the dark green
-            {
-              float dark_green_pos = R_MAX(pos, posm20db);
-              QRectF rect(x1, dark_green_pos,
-                          x2-x1,  get_pos_y2()-dark_green_pos);
-              
-              p.setBrush(colordarkgreen);
-              p.drawRect(rect);
-            }
-
-            // Do the green
-            if (pos <= posm20db){
-              float green_pos = R_MAX(pos, pos0db);
-              QRectF rect(x1, green_pos,
-                          x2-x1,  posm20db-green_pos);
-              
-              p.setBrush(colorgreen);
-              p.drawRect(rect);
-            }
-
-            // Do the yellow
-            if (pos <= pos0db){
-              float yellow_pos = R_MAX(pos, pos4db);
-              QRectF rect(x1, yellow_pos,
-                           x2-x1,  pos0db-yellow_pos);
-              
-              p.setBrush(color0db);
-              p.drawRect(rect);
-            }
-
-            // Do the red
-            if (pos <= pos4db){
-              float red_pos = pos;
-              QRectF rect(x1, red_pos,
-                           x2-x1,  pos4db-red_pos);
-              
-              p.setBrush(color4db);
-              p.drawRect(rect);
-            }
-        }
-
-        // falloff meter
-        {
-          //SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-          //if(plugin!=NULL)
-          //  printf("Fallof pos: %f, y2: %f, falloffdb: %f\n", _falloff_pos[ch], get_pos_y2(), plugin->volume_peaks.falloff_dbs[ch]);
-          
-          if (_falloff_pos[ch] < get_pos_y2()){
-            float falloff_pos = _falloff_pos[ch];
-            /*
-            QRectF falloff_rect(x1, falloff_pos-falloff_height/2.0,
-                                x2-x1, falloff_height);
-            */
-            QRectF falloff_rect = get_falloff_rect(x1, x2, falloff_pos);
-            
-            if (falloff_pos > posm20db)
-              p.setBrush(colordarkgreen);
-            else if (falloff_pos > pos0db)
-              p.setBrush(colorgreen);
-            else if (falloff_pos > pos4db)
-              p.setBrush(color0db);
-            else
-              p.setBrush(color4db);
-
-            p.drawRect(falloff_rect);
-          }
-        }
-
-        /*        
-        p.setBrush(qcolor1);
-        p.drawRoundedRect(QRectF(get_x1(ch), 1,
-                                 get_x2(ch), height()-1),
-                          5,5);
-
-        p.setBrush(qcolor2);
-        p.drawRoundedRect(rect2,5,5);
-        */
-      }
-
-      p.setBrush(Qt::NoBrush);
-      
-      //border
-#if 0
-      QPen pen(QColor("#202020"));
-      pen.setWidth(2.0);
-      p.setPen(pen);
-      p.drawRoundedRect(0,0,width()-1,height()-1, 5, 5);
-#endif
-    }
-  };
     
   struct VerticalAudioMeter : QWidget, public Gui{
     Q_OBJECT;
 
   public:
     
-    VerticalAudioMeterPainter _vamp;
+    VerticalAudioMeterPainter *_vamp;
 
     VerticalAudioMeter(struct Patch *patch)
       : Gui(this)
-      , _vamp(patch, this, 0, 0, width(), height())
     {
-    }
-
-    ~VerticalAudioMeter(){
+      _vamp = createVamp(patch, 0, 0, width(), height());
     }
 
   private:
+
+    OVERRIDERS(QWidget);
     
-    MOUSE_OVERRIDERS(QWidget);
-    DOUBLECLICK_OVERRIDER(QWidget);
-    RESIZE_OVERRIDER(QWidget);
-
     void resizeEvent2(QResizeEvent *event) override {
-      _vamp.setPos(0, 0, width(), height());
-      _vamp.call_regularly();
+      _vamp->setPos(0, 0, width(), height());
+      callVampRegularly(_vamp);
     }
-
-    void paintEvent(QPaintEvent *ev) override {
-      TRACK_PAINT();
-
-      QPainter p(this);
-
-      _vamp.paint(p);
-    }
-
   };
 
   
@@ -3757,7 +3858,28 @@ void gui_update(int64_t guinum, double x1, double y1, double x2, double y2){
   }
 }
 
+void gui_setClipRect(int64_t guinum, double x1, double y1, double x2, double y2){
+  Gui *gui = get_gui(guinum);
 
+  if (gui==NULL)
+    return;
+
+  QPainter *painter = gui->get_painter();
+
+  painter->setClipRect(QRectF(x1, y1, x2-x1, y2-y1));
+  painter->setClipping(true);  
+}
+
+void gui_cancelClipRect(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  QPainter *painter = gui->get_painter();
+
+  painter->setClipping(false);
+}
 
 /////// Widgets
 //////////////////////////
@@ -5647,6 +5769,38 @@ int64_t gui_verticalAudioMeter(int64_t instrument_id){
   return (new VerticalAudioMeter(patch))->get_gui_num();
 }
 
+int64_t gui_addVerticalAudioMeter(int64_t guinum, int64_t instrument_id, double x1, double y1, double x2, double y2){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return -1;
+
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return -1;
+
+  auto *vamp = gui->createVamp(patch, x1, y1, x2, y2);
+  gui_update(guinum, x1, y1, x2, y2);
+                       
+  return vamp->_id;
+}
+
+bool gui_removeVerticalAudioMeter(int64_t vap){
+  for(auto *vamp : g_active_vertical_audio_meters){
+    if (vamp->_id == vap){
+      Gui *gui = g_guis.value(vamp->_guinum);
+      if(gui==NULL)
+        R_ASSERT(false);
+      else {
+        gui->deleteVamp(vamp);
+        return true;
+      }
+    }
+  }
+
+  handleError("gui_removeVerticalAudioMeter: vertical audio meter %d not found", (int)vap);
+  return false;
+}
+                               
 void gui_addAudioMeterPeakCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -5656,7 +5810,7 @@ void gui_addAudioMeterPeakCallback(int64_t guinum, func_t* func){
   if (meter==NULL)
     return;
 
-  meter->_vamp.addPeakCallback(func, guinum);
+  meter->_vamp->addPeakCallback(func, guinum);
 }
 
 void gui_resetAudioMeterPeak(int64_t guinum){
@@ -5668,7 +5822,7 @@ void gui_resetAudioMeterPeak(int64_t guinum){
   if (meter==NULL)
     return;
 
-  meter->_vamp.resetPeak();
+  meter->_vamp->resetPeak();
 }
 
 
@@ -5838,6 +5992,18 @@ void gui_drawEllipse(int64_t guinum, const_char* color, float x1, float y1, floa
   gui->drawEllipse(color, x1, y1, x2, y2, width);
 }
 
+void gui_setPaintOpacity(int64_t guinum, double opacity){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  opacity = R_BOUNDARIES(0,opacity,1);
+
+  gui->setOpacity(opacity);
+}
+
+
 bool gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -5853,7 +6019,6 @@ void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, f
 
   gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, 90, true, true);
 }
-
 
 /////////////
 
@@ -5887,8 +6052,13 @@ bool gui_hasKeyboardFocus(int64_t guinum){
 // This means that _patch->plugin might be gone, and the same goes for soundproducer.
 // (_patch is never gone, never deleted)
 void API_gui_call_regularly(void){
-  for(auto *meter : g_active_vertical_audio_meters)
-    meter->call_regularly();
+  for(auto *vamp : g_active_vertical_audio_meters){
+    Gui *gui = g_guis.value(vamp->_guinum);
+    if(gui==NULL)
+      R_ASSERT(false);
+    else
+      gui->callVampRegularly(vamp);
+  }
   
   perhaps_collect_a_little_bit_of_gui_garbage(20);
 }
