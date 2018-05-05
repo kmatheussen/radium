@@ -681,8 +681,9 @@ public slots:
     if (pe.is_pause())
       SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -pe.get_pause());
     else{
+      int64_t seqblock_duration = SEQBLOCK_get_seq_duration(pe.seqblock);
       SEQTRACK_delete_seqblock(SEQUENCER_get_curr_seqtrack(), pe.seqblock);
-      SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -1 * SEQBLOCK_get_seq_duration(pe.seqblock));
+      SEQTRACK_move_all_seqblocks_to_the_right_of(SEQUENCER_get_curr_seqtrack(), pe.seqblocknum, -1 * seqblock_duration);
     }
     
       //BL_deleteCurrPos(num);
