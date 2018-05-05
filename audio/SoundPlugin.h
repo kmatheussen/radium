@@ -52,7 +52,7 @@ extern "C"{
 #define THRESHOLD_GAIN 0.01778279410038923 // = powf(10, MIN_DB_THRESHOLD / 20.0f);
   
 static inline float gain2db(float gain){
-  if (gain == 1.0) { // Common situation
+  if (gain == 1.0) { // Common situation, but also to ensure correct conversion (not sure if log10(1.0) always returns exactly 0.0, although it probably does).
     
     return 0.0;
     
@@ -73,7 +73,7 @@ static inline float gain2db(float gain){
 }
 
 static inline float db2gain(float db){
-  if (db == 0.0) {  // Common situation
+  if (db == 0.0) {  // Common situation, but also to ensure correct conversion (not sure if powf(10, 0) always returns exactly 0.0, although it probably does).
     
     return 1.0;
     

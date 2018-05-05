@@ -331,11 +331,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       _y2=y2;
       _width=x2-x1;
       _height=y2-y1;
-      int i_x1 = floor(x1);
-      int i_y1 = floor(y1);
-      int i_x2 = ceil(x2);
-      int i_y2 = ceil(y2);
-      _rect = QRect(i_x1, i_y1, i_x2 - i_x1, i_y2 - i_y1);
+      _rect = QRectF(x1, y1, _width, _height).toAlignedRect();
     }
 
   private:
@@ -1709,6 +1705,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     QPainter *_image_painter = NULL;
     QPainter *_current_painter = NULL;
     bool _paint_callback_failed = false;
+
+    const QRegion *_current_region = NULL;
     
     bool maybePaintBackgroundColor(QPaintEvent *event, QPainter &p) const {
       if (_background_color.isValid()==false)
@@ -1729,20 +1727,23 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       return maybePaintBackgroundColor(event, p);
     }
 
-    void paintEvent2(QPaintEvent *event, const bool *vamps_to_paint) {
+    // Returns true if 'this' is still alive. (sometimes the paint callback triggers deletion.)
+    bool paintEvent2(QPaintEvent *event, const bool *vamps_to_paint) {
       TRACK_PAINT();
+
+      bool ret = true;
       
-      R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL || _background_color.isValid());
+      R_ASSERT_RETURN_IF_FALSE2(_paint_callback!=NULL || _background_color.isValid(), ret);
 
       if(!can_internal_data_be_accessed_questionmark()){
         maybePaintBackgroundColor(event);
-        return;
+        return ret;
       }
           
       if (_paint_callback_failed){
         printf("paint_event failed last time. Won't try again to avoid a debug output bonanza (%s).\n", _class_name.toUtf8().constData());
         maybePaintBackgroundColor(event);
-        return;
+        return ret;
       }
 
       QPainter p(_widget);
@@ -1754,18 +1755,26 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         p.setRenderHints(QPainter::Antialiasing,true);
         
         _current_painter = &p;
-
+        _current_region = &event->region();
+        
         int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
         
         S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
         if (g_scheme_failed==true && gui_isOpen(guinum))
           _paint_callback_failed = true;
 
-        if (gui_isOpen(guinum))
+        ret = gui_isOpen(guinum);  // Check if we have been deleted in the mean time.
+        
+        if (ret){
           _current_painter = NULL;
+          _current_region = NULL;
+        }
       }
 
-      paintVamps(p, vamps_to_paint);
+      if (ret)
+        paintVamps(p, vamps_to_paint);
+
+      return ret;
     }
 
     bool paintEvent(QPaintEvent *event) {
@@ -1790,6 +1799,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
           
           TRACK_PAINT();
           QPainter p(_widget);
+          maybePaintBackgroundColor(event, p);
           paintVamps(p, vamps_to_paint);
           
         } else {
@@ -3921,13 +3931,8 @@ void gui_update(int64_t guinum, double x1, double y1, double x2, double y2){
 
   if (x1 < 0)
     gui->_widget->update();
-  else {
-    int x1_i = floor(x1);
-    int y1_i = floor(y1);
-    int x2_i = ceil(x2);
-    int y2_i = ceil(y2);
-    gui->_widget->update(x1_i, y1_i, x2_i - x1_i, y2_i - y1_i);
-  }
+  else
+    gui->_widget->update(QRectF(x1, y1, x2-x1, y2-y1).toAlignedRect());
 }
 
 void gui_setClipRect(int64_t guinum, double x1, double y1, double x2, double y2){
@@ -5850,6 +5855,12 @@ int64_t gui_addVerticalAudioMeter(int64_t guinum, int64_t instrument_id, double 
   if(patch==NULL)
     return -1;
 
+  // We get garbage graphics when the coordinates are not integers. Don't bother to investigate why.
+  x1 = floor(x1);
+  y1 = floor(y1);
+  x2 = floor(x2);
+  y2 = floor(y2);
+  
   auto *vamp = gui->createVamp(patch, x1, y1, x2, y2);
   gui_update(guinum, x1, y1, x2, y2);
                        
@@ -6075,7 +6086,6 @@ void gui_setPaintOpacity(int64_t guinum, double opacity){
   gui->setOpacity(opacity);
 }
 
-
 bool gui_drawText(int64_t guinum, const_char* color, const_char *text, float x1, float y1, float x2, float y2, bool wrap_lines, bool align_top, bool align_left, int rotate, bool cut_text_to_fit, bool scale_font_size) {
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
@@ -6088,8 +6098,28 @@ void gui_drawVerticalText(int64_t guinum, const_char* color, const_char *text, f
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
-
+  
   gui->drawText(color, text, x1, y1, x2, y2, wrap_lines, align_top, align_left, 90, true, true);
+}
+
+bool gui_areaNeedsPainting(int64_t guinum, float x1, float y1, float x2, float y2){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return false;
+
+  const QRegion *region = gui->_current_region;
+  
+  if (region==NULL){
+    R_ASSERT(gui->_current_painter==NULL);
+    handleError("gui_areaNeedsPainting: Function must be called from paint callback.");
+    return false;
+  }
+
+  R_ASSERT(gui->_current_painter!=NULL);
+  
+  const QRect rect = QRectF(x1, y1, x2-x1, y2-y1).toAlignedRect();
+
+  return region->intersects(rect);
 }
 
 /////////////
