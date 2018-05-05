@@ -447,22 +447,19 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     void get_x1_x2(int ch, float &x1, float &x2, const int num_channels) const {
 
-      int num_borders = num_channels + 1;
+      int num_borders = num_channels - 1;
       float border_width = 0;
 
-      float meter_area_width = _width - 2;
-      float start_x = _x1 + 1;
+      float meter_area_width = _width;
+      float start_x = _x1;
 
       float total_meter_space = meter_area_width - num_borders * border_width;
 
       float meter_width = total_meter_space / num_channels;
 
       x1 = start_x + border_width + (ch * (border_width+meter_width));
-      x2 = start_x + border_width + (ch * (border_width+meter_width)) + meter_width;
+      x2 = (ch==num_channels-1) ? _x2 : start_x + border_width + (ch * (border_width+meter_width)) + meter_width;
     }
-
-    const float upper_border = 2;
-    const float down_border = 2;
 
     float get_pos_y1(void) const {
       return _y1; //upper_border - 1;
@@ -472,10 +469,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       return _y2; //- down_border + 2;
     }
     
-    float get_pos_height(void) const {
-      return _height - upper_border - down_border;
-    }
-
     const float falloff_height = 1.5;
 
     int get_num_visible_channels(void) const {
