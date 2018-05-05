@@ -177,21 +177,9 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 #define PAINT_OVERRIDER(classname)                                      \
   void paintEvent(QPaintEvent *ev) override {                           \
-    if(_image!=NULL){                                                   \
-      TRACK_PAINT();                                                    \
-      QPainter p(this);                                                 \
-      p.drawImage(ev->rect().topLeft(), *_image, ev->rect());           \
-    }else{                                                              \
-      if (Gui::paintVamps(ev)==false){                                  \
-        if (_paint_callback!=NULL || _background_color.isValid())       \
-          Gui::paintEvent(ev);                                          \
-        else                                                            \
-          classname::paintEvent(ev);                                    \
-      }                                                                 \
-    }                                                                   \
+    if (Gui::paintEvent(ev)==false)                                     \
+      classname::paintEvent(ev);                                        \
   }
-  
-
   
 #define SETVISIBLE_OVERRIDER(classname)                                 \
   void setVisible(bool visible) override {                              \
@@ -347,7 +335,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       int i_y1 = floor(y1);
       int i_x2 = ceil(x2);
       int i_y2 = ceil(y2);
-      _rect = QRect(i_x1, i_y1, i_x2, i_y2);
+      _rect = QRect(i_x1, i_y1, i_x2 - i_x1, i_y2 - i_y1);
     }
 
   private:
@@ -638,17 +626,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
   public:
     
-    bool paint(QPainter &p, const QRect &rect) {
+    void paint(QPainter &p) {
       if(_patch->instrument==get_MIDI_instrument()){
 #if !defined(RELEASE)
         abort(); // Not necessarily anything wrong. Just want to know if this can happen.
 #endif
-        return false;
+        return;
       }
 
-      if (rect.intersects(_rect)==false)
-        return false;
-      
       p.setRenderHints(QPainter::Antialiasing,true);
 
       QColor qcolor1("black");
@@ -771,8 +756,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       p.setPen(pen);
       p.drawRoundedRect(0,0,width()-1,height()-1, 5, 5);
 #endif
-
-      return true;
     }
   };
 
@@ -1306,6 +1289,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     VerticalAudioMeterPainter *createVamp(struct Patch *patch, double x1, double y1, double x2, double y2){
       auto *vamp = new VerticalAudioMeterPainter(patch, get_gui_num(), x1, y1, x2, y2);
+
+#if !defined(RELEASE)
+      for(const auto *vamp2 : _vamps){
+        if (vamp->_rect.intersects(vamp2->_rect))
+          handleError("Error: Vertical audio meters overlaps with antoher vertical audio meter 1: (%d, %d -> %d, %d) 2: (%d, %d -> %d, %d)", vamp->_rect.x(), vamp->_rect.y(), vamp->_rect.right(), vamp->_rect.top(), vamp2->_rect.x(), vamp2->_rect.y(), vamp2->_rect.right(), vamp2->_rect.top());
+      }
+#endif
+
       _vamps.push_back(vamp);
       callVampRegularly(vamp);
       return vamp;
@@ -1325,29 +1316,57 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       vamp->call_regularly(_widget);
     }
-    
-    bool paintVamps(QPaintEvent *event) {
-      if(_widget.data()==NULL){
-        R_ASSERT_NON_RELEASE(false);
-        return false;
-      }
+
+    // Returns true if only vamps needs to be painted.
+    bool getVampsToPaint(const QPaintEvent *event, bool *vamps_to_paint) const {
       if(_vamps.size()==0)
         return false;
       
-      QPainter p(_widget.data());
-      QRect rect = event->rect();
-      
-      for(auto *vamp : _vamps){
-        if (vamp->paint(p, rect)==true){
-          if (vamp->_rect.contains(rect)){
-            //printf("Entirely true\n");
-            return true;
-          }
-        }
-      }
+      bool all_rects_are_contained_in_vamps = true;
 
-      //printf("  FALSE\n");
-      return false;
+      //int i2=0;
+      for(const QRect &rect : event->region()){
+        //printf("  Rect %d: %d, %d -> %d, %d\n", i2++, rect.x(), rect.y(), rect.right(), rect.bottom());
+
+        bool rect_is_contained_in_vamp = false;
+
+        int i=0;
+        
+        for(const auto *vamp : _vamps){
+
+          //printf("            VampRect %d: %d, %d -> %d, %d. Intersects: %d\n", i2++, vamp->_rect.x(), vamp->_rect.y(), vamp->_rect.right(), vamp->_rect.bottom(), rect.intersects(vamp->_rect));
+                  
+          if (rect.intersects(vamp->_rect)){
+            
+            if(vamps_to_paint[i]==false)
+              vamps_to_paint[i] = true;
+            
+            if (vamp->_rect.contains(rect)==true){
+              rect_is_contained_in_vamp = true;
+              break;
+            }
+          }
+          
+          i++;
+        }
+
+        if (rect_is_contained_in_vamp==false)
+          all_rects_are_contained_in_vamps = false;
+      }
+      
+      return all_rects_are_contained_in_vamps;
+    }
+
+    void paintVamps(QPainter &p, const bool *vamps_to_paint){
+      int i=0;        
+      for(auto *vamp : _vamps){
+
+        //printf("            Painting vamp %d: %d\n", i, vamps_to_paint[i]);
+        if (vamps_to_paint[i]==true)
+          vamp->paint(p);
+        
+        i++;
+      }
     }
     
     /************ MOUSE *******************/
@@ -1691,7 +1710,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     QPainter *_current_painter = NULL;
     bool _paint_callback_failed = false;
     
-    bool maybePaintBackgroundColor(QPaintEvent *event, QPainter &p){
+    bool maybePaintBackgroundColor(QPaintEvent *event, QPainter &p) const {
       if (_background_color.isValid()==false)
         return false;
       
@@ -1702,15 +1721,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       return true;
     }
 
-    bool maybePaintBackgroundColor(QPaintEvent *event){
+    bool maybePaintBackgroundColor(QPaintEvent *event) const {
       if (_background_color.isValid()==false)
         return false;
 
       QPainter p(_widget);
       return maybePaintBackgroundColor(event, p);
     }
-    
-    void paintEvent(QPaintEvent *event) {
+
+    void paintEvent2(QPaintEvent *event, const bool *vamps_to_paint) {
       TRACK_PAINT();
       
       R_ASSERT_RETURN_IF_FALSE(_paint_callback!=NULL || _background_color.isValid());
@@ -1727,7 +1746,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
 
       QPainter p(_widget);
-
+      
       if(maybePaintBackgroundColor(event, p)==false)
         event->accept();
 
@@ -1745,7 +1764,48 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         if (gui_isOpen(guinum))
           _current_painter = NULL;
       }
+
+      paintVamps(p, vamps_to_paint);
     }
+
+    bool paintEvent(QPaintEvent *event) {
+      bool ret = true;
+
+      if(_image!=NULL) {
+        
+        TRACK_PAINT();                  
+        QPainter p(_widget);
+        p.drawImage(event->rect().topLeft(), *_image, event->rect());
+        
+      } else {
+
+        int num_vamps = _vamps.size();
+        bool vamps_to_paint[R_MAX(1, num_vamps)] = {};
+        
+        bool only_vamps_needs_to_be_painted = getVampsToPaint(event, vamps_to_paint);
+
+        if (only_vamps_needs_to_be_painted){
+
+          //printf("Only vamp painting %d\n", vamps_to_paint[0]);
+          
+          TRACK_PAINT();
+          QPainter p(_widget);
+          paintVamps(p, vamps_to_paint);
+          
+        } else {
+
+          if (_paint_callback!=NULL || _background_color.isValid())
+            paintEvent2(event, vamps_to_paint);
+          else
+            ret = false;
+          
+        }
+
+      }
+      
+      return ret;
+    }
+
 
     void addPaintCallback(func_t* func){
       if (_paint_callback!=NULL){
