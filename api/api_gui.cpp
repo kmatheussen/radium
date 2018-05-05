@@ -1123,6 +1123,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     {
       _is_pure_qwidget = _class_name=="QWidget";
 
+      R_ASSERT(_background_color.isValid()==false);
+    
       update_modality_attribute();
       
       g_gui_from_widgets[_widget] = this;
@@ -1690,6 +1692,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     bool _paint_callback_failed = false;
     
     bool maybePaintBackgroundColor(QPaintEvent *event, QPainter &p){
+      if (_background_color.isValid()==false)
+        return false;
+      
       p.fillRect(_widget->rect(), _background_color);
 
       event->accept();
@@ -2387,6 +2392,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     Widget(int width, int height)
       : Gui(this)
     {
+      /*
+      setAutoFillBackground(true);
+      QPalette pal = palette();
+      pal.setColor(QPalette::Window, QColor("black"));
+      setPalette(pal);
+      */
+      
       if (width>=0 || height>=0){
         if(width<=0)
           width=R_MAX(1, QWidget::width());
