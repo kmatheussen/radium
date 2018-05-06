@@ -2645,12 +2645,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
   public:
     
-    VerticalAudioMeterPainter *_vamp;
-
     VerticalAudioMeter(struct Patch *patch)
       : Gui(this)
     {
-      _vamp = createVamp(patch, 0, 0, width(), height());
+      setAttribute(Qt::WA_OpaquePaintEvent);
+      createVamp(patch, 0, 0, width(), height());
     }
 
   private:
@@ -2658,8 +2657,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QWidget);
     
     void resizeEvent2(QResizeEvent *event) override {
-      _vamp->setPos(0, 0, width(), height());
-      callVampRegularly(_vamp);
+      _vamps.at(0)->setPos(0, 0, width(), height());
+      callVampRegularly(_vamps.at(0));
     }
   };
 
@@ -5728,6 +5727,7 @@ void gui_setBackgroundColor(int64_t guinum, const_char* color){
 
     // FIX: There's more gui types than pure QWidget were Background doesn't work. "QLabel" for instance.
     gui->_background_color = c; // Setting Background/Base of a pure QWidget doesn't work. Must paint manually.
+    gui->_widget->setAttribute(Qt::WA_OpaquePaintEvent);
     
   } else {
     
@@ -6024,7 +6024,7 @@ void gui_addAudioMeterPeakCallback(int64_t guinum, func_t* func){
   if (meter==NULL)
     return;
 
-  meter->_vamp->addPeakCallback(func, guinum);
+  meter->_vamps.at(0)->addPeakCallback(func, guinum);
 }
 
 void gui_resetAudioMeterPeak(int64_t guinum){
@@ -6036,7 +6036,7 @@ void gui_resetAudioMeterPeak(int64_t guinum){
   if (meter==NULL)
     return;
 
-  meter->_vamp->resetPeak();
+  meter->_vamps.at(0)->resetPeak();
 }
 
 
