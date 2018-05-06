@@ -80,7 +80,7 @@ bool InitProgram(void){
 	root->standardvel=MAX_VELOCITY*80/100;
         ATOMIC_SET(root->editonoff, true);
         ATOMIC_SET(root->play_cursor_onoff, false);
-        ATOMIC_SET(root->editor_follows_play_cursor_onoff, true);
+        ATOMIC_SET(root->editor_follows_play_cursor_onoff, false);
 
 	root->song=SONG_create();
           
