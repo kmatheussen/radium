@@ -1905,7 +1905,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
           
           TRACK_PAINT();
           QPainter p(_widget);
-          maybePaintBackgroundColor(event, p);
           paintVamps(p, vamps_to_paint);
           
         } else {
@@ -4087,6 +4086,15 @@ void gui_cancelClipRect(int64_t guinum){
   QPainter *painter = gui->get_painter();
 
   painter->setClipping(false);
+}
+
+void gui_dontAutofillBackground(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+
+  if (gui==NULL)
+    return;
+
+  gui->_widget->setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 /////// Widgets
