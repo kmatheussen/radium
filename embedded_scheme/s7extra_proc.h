@@ -24,6 +24,7 @@ extern "C" {
 
   #endif
 
+  extern int g_num_scheme_calls; // If this number > 0, then some scheme code is currently running.
   extern bool g_scheme_failed;
   
 #define S7CALL(Type,Func,...)                                           \

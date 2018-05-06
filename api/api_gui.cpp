@@ -95,12 +95,33 @@ static QByteArray g_filedialog_geometry;
 static QByteArray g_fontdialog_geometry;
 
 
+// Keep track of code that might be waiting for callbacks. We could get strange error messages when a widget is closed then.
+namespace{
+  namespace myprivate{
+    static int g_num_visiting_event_handlers = 0;
+  }
+  struct ScopedEventHandlerTracker{
+    ScopedEventHandlerTracker(){
+      myprivate::g_num_visiting_event_handlers++;
+    }
+    ~ScopedEventHandlerTracker(){
+      --myprivate::g_num_visiting_event_handlers;
+    }
+  };
+}
+
+static bool safe_to_close_widget(void){
+  R_ASSERT(myprivate::g_num_visiting_event_handlers >= 0);
+  return myprivate::g_num_visiting_event_handlers==0 && g_radium_runs_custom_exec==false;
+}
+
 // To make sure we don't sent double click events to a widget that has just been opened. (seems like a minor qt quirk/bug)
 static QPointer<QWidget> g_last_pressed_widget = NULL;
 static QPointer<QWidget> g_last_released_widget = NULL;
 
 #define MOUSE_OVERRIDERS(classname)                                     \
   void mousePressEvent(QMouseEvent *event) override{                    \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
     g_last_pressed_widget = this;                                       \
     if (_mouse_callback==NULL){                                         \
       classname::mousePressEvent(event); return;}                       \
@@ -110,6 +131,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   }                                                                     \
                                                                         \
   void mouseReleaseEvent(QMouseEvent *event) override {                 \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
     g_last_released_widget = this;                                      \
     if (_mouse_callback==NULL){                                         \
       classname::mouseReleaseEvent(event); return;}                     \
@@ -119,6 +141,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   }                                                                     \
                                                                         \
   void mouseMoveEvent(QMouseEvent *event) override{                     \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
     if (_mouse_callback==NULL){                                         \
       classname::mouseMoveEvent(event); return;}                        \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
@@ -128,6 +151,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 #define DOUBLECLICK_OVERRIDER(classname)                                \
   void mouseDoubleClickEvent(QMouseEvent *event) override{              \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
     if (_doubleclick_callback==NULL){                                   \
       classname::mouseDoubleClickEvent(event);return;}                  \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
@@ -138,17 +162,20 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 #define KEY_OVERRIDERS(classname)                                       \
   void keyPressEvent(QKeyEvent *event) override{                        \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
     if (!Gui::keyPressEvent(event))                                     \
       classname::keyPressEvent(event);                                  \
   }                                                                     \
                                                                         \
   void keyReleaseEvent(QKeyEvent *event) override{                      \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
     if (!Gui::keyReleaseEvent(event))                                   \
       classname::keyReleaseEvent(event);                                \
   }
 
 #define FOCUSIN_OVERRIDER(classname)                    \
   void focusInEvent ( QFocusEvent *event ) override {   \
+    ScopedEventHandlerTracker event_handler_tracker;    \
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();             \
     Gui::focusInEvent(event);                           \
     classname::focusInEvent(event);                     \
@@ -157,16 +184,14 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 #define CLOSE_OVERRIDER(classname)                                      \
   void closeEvent(QCloseEvent *ev) override {                           \
-    if (_close_callback==NULL){                                         \
-      Gui::_has_been_closed = true;                                     \
+    if (Gui::closeEvent(ev))                                            \
       classname::closeEvent(ev);                                        \
-    }else                                                               \
-      Gui::closeEvent(ev);                                              \
   }                                                                     
 
 
 #define RESIZE_OVERRIDER(classname)                                     \
   void resizeEvent( QResizeEvent *event) override {                     \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
     if (_image!=NULL)                                                   \
       setNewImage(event->size().width(), event->size().height());       \
     if (_resize_callback!=NULL)                                         \
@@ -177,6 +202,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 #define PAINT_OVERRIDER(classname)                                      \
   void paintEvent(QPaintEvent *ev) override {                           \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
     if (Gui::paintEvent(ev)==false)                                     \
       classname::paintEvent(ev);                                        \
   }
@@ -199,14 +225,16 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   */
 #define HIDE_OVERRIDER(classname)                                       \
   void hideEvent(QHideEvent *event_) override {                         \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
     remember_geometry.hideEvent_override(this);                         \
     Gui::hideEvent(event_);                                             \
   }
 
 #define CHANGE_OVERRIDER(classname)              \
-  void changeEvent(QEvent *event) override {     \
-    Gui::changeEvent(event);                     \
-    classname::changeEvent(event);               \
+  void changeEvent(QEvent *event) override {                            \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
+    Gui::changeEvent(event);                                            \
+    classname::changeEvent(event);                                      \
   }
 
 
@@ -430,6 +458,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void callPeakCallback(void){
+
       if (_peak_callback != NULL){
         if (_last_peak<=-100.0)
           S7CALL(void_charpointer,_peak_callback, "-inf");
@@ -528,6 +557,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     // This means that _patch->plugin might be gone, and the same goes for soundproducer.
     // (_patch is never gone, never deleted, except when loading song)
     void call_regularly(QWidget *widget){
+      ScopedEventHandlerTracker event_handler_tracker;
         
       if(_patch->instrument==get_MIDI_instrument()){
 #if !defined(RELEASE)
@@ -777,14 +807,18 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
   public slots:
     void clicked(bool checked){
+      ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_void,_func);
     }
     
     void toggled(bool checked){
+      ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_bool, _func, checked);
     }
 
     void editingFinished(){
+      ScopedEventHandlerTracker event_handler_tracker;
+
       QLineEdit *line_edit = dynamic_cast<QLineEdit*>(_widget);
       R_ASSERT_RETURN_IF_FALSE(line_edit!=NULL);
       
@@ -803,6 +837,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void intTextEditingFinished(){
+      ScopedEventHandlerTracker event_handler_tracker;
+
       QSpinBox *spinbox = dynamic_cast<QSpinBox*>(_widget);
       R_ASSERT_RETURN_IF_FALSE(spinbox!=NULL);
       
@@ -824,6 +860,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void doubleTextEditingFinished(){
+      ScopedEventHandlerTracker event_handler_tracker;
+
       QDoubleSpinBox *spinbox = dynamic_cast<QDoubleSpinBox*>(_widget);
       R_ASSERT_RETURN_IF_FALSE(spinbox!=NULL);
       
@@ -845,45 +883,55 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
 
     void textChanged(QString text){
+      ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_charpointer,_func, text.toUtf8().constData());
     }
     
     void currentFontChanged(const QFont &font){
+      ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_dyn,_func, DYN_create_string(font.toString()));//.toUtf8().constData()));
     }
 
     void intValueChanged(int val){
+      ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_int,_func, val);
     }
 
     void doubleValueChanged(double val){
+      ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_double,_func, val);
     }
 
     void textChanged(){
+      ScopedEventHandlerTracker event_handler_tracker;
       QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget);
       S7CALL(void_charpointer,_func, text_edit->toPlainText().toUtf8().constData());
     }
     
     void plainTextChanged(){
+      ScopedEventHandlerTracker event_handler_tracker;
       QPlainTextEdit *text_edit = dynamic_cast<QPlainTextEdit*>(_widget);
       S7CALL(void_charpointer,_func, text_edit->toPlainText().toUtf8().constData());
     }
     
     void itemSelectionChanged(){
+      ScopedEventHandlerTracker event_handler_tracker;
       //QTableWidget *table = dynamic_cast<QTableWidget*>(_widget);
       S7CALL(void_void,_func);
     }
     
     void cellDoubleClicked(int row, int column){
+      ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_int_int,_func, column, row);
     }
     
     void fileSelected(const QString &file){
+      ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_charpointer,_func, path_to_w_path(STRING_create(file)));
     }
 
     void currentChanged(int index){
+      ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_int,_func, index);
     }
   };
@@ -1031,8 +1079,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
   };
 
-  
-  struct Gui{
+  struct Gui {
     
     QVector<Callback*> _callbacks;
  
@@ -1069,7 +1116,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     int64_t get_gui_num(void) const {
       return _gui_num;
     }
+
     bool _has_been_closed = false;
+    bool _delayed_closing = false;
 
     radium::Modality _modality = radium::MAY_BE_MODAL; // We need to remember whether modality should be on or not, since modality is a parameter for set_window_parent.
     bool _have_set_size = false;
@@ -1120,6 +1169,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     virtual ~Gui(){
+      ScopedEventHandlerTracker event_handler_tracker;
+
       R_ASSERT(g_valid_guis[_valid_guis_pos] == this);
       R_ASSERT(g_guis.contains(_gui_num));
       R_ASSERT(g_guis.value(_gui_num) != NULL);
@@ -1315,7 +1366,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       //int i2=0;
       for(const QRect &rect : event->region()){
-        //printf("  Rect %d: %d, %d -> %d, %d\n", i2++, rect.x(), rect.y(), rect.right(), rect.bottom());
+        //printf("  Rect %d: %d, %d -> %d, %d\n", i2++, rect.x(), rect.y(), rect.x() + rect.width(), rect.y() + rect.width());
 
         bool rect_is_contained_in_vamp = false;
 
@@ -1591,20 +1642,82 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     func_t *_close_callback = NULL;
 
-    void closeEvent(QCloseEvent *event){
-      R_ASSERT_RETURN_IF_FALSE(_close_callback!=NULL);
+    bool closeEvent(QCloseEvent *event){
 
-      int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
-      
-      if (false==S7CALL(bool_bool,_close_callback, g_radium_runs_custom_exec)){
-        if (gui_isOpen(guinum))
-          Gui::_has_been_closed = false;
-        event->ignore();
-      }else{
-        if (gui_isOpen(guinum))
-          Gui::_has_been_closed = true;
-        event->accept();
+      if (_close_callback==NULL || Gui::_has_been_closed){
+
+        Gui::_has_been_closed = true;
+
+        if (safe_to_close_widget()==true) {
+
+          Gui::_delayed_closing = false;
+          return true;
+
+        } else {
+
+          Gui::_delayed_closing = true;
+          event->ignore();
+          if(_widget != NULL)
+            _widget->hide(); // Some scheme code is running (which might be run from an event handler), so we let the garbage collector delete us instead to avoid memory corruption in those event handlers.
+#if !defined(RELEASE)
+          else
+            abort();
+#endif
+          return false;
+
+        }
       }
+
+      {
+        int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
+        
+        bool closeresult;
+
+        {
+          ScopedEventHandlerTracker event_handler_tracker;
+          closeresult = S7CALL(bool_bool,_close_callback, g_radium_runs_custom_exec);
+        }
+
+        if (false==closeresult) {
+
+          if (gui_isOpen(guinum))
+            Gui::_has_been_closed = false;
+          else{
+            R_ASSERT_NON_RELEASE(false);
+          }
+
+          event->ignore();
+
+        }else{
+
+          if (gui_isOpen(guinum)){
+
+            Gui::_has_been_closed = true;
+            
+            if (safe_to_close_widget()==false) {
+
+              Gui::_delayed_closing = true;
+              event->ignore();
+              if(_widget != NULL)
+                _widget->hide();
+#if !defined(RELEASE)
+              else
+                abort();
+#endif
+
+            } else {
+
+              event->accept();
+
+            }
+
+          } else {
+            R_ASSERT_NON_RELEASE(false);
+          }
+        }
+      }
+
+      return false;
     }
 
     void addCloseCallback(func_t* func){      
@@ -2314,6 +2427,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
     
     virtual void addGuiCallback(func_t* func){
+      ScopedEventHandlerTracker event_handler_tracker;
+
       Callback *callback = new Callback(func, _widget);
 
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
@@ -2846,6 +2961,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(MyQSlider);
     
     void value_setted(int value){
+      ScopedEventHandlerTracker event_handler_tracker;
+
       double scaled_value = scale_double(value, minimum(), maximum(), _min, _max);
       
       if (_is_int) {
@@ -3386,6 +3503,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
     
     void done(int result) override{
+      ScopedEventHandlerTracker event_handler_tracker;
+
       printf("  DONE: %d\n", result);
       for (auto *callback : _callbacks)
         S7CALL(void_dyn, callback->_func, DYN_create_bool(result==0 ? false : 1));
@@ -3683,10 +3802,22 @@ static void perhaps_collect_a_little_bit_of_gui_garbage(int num_guis_to_check){
     R_ASSERT_RETURN_IF_FALSE(gui!=NULL);
     
     if (gui->_widget==NULL){
-      printf("        COLLECTING gui garbage. Pos: %d, guinum: %d\n", pos, (int)gui->get_gui_num());
+
+      printf("        GUI GC: COLLECTING gui garbage. Pos: %d, guinum: %d\n", pos, (int)gui->get_gui_num());
       delete gui;
-    }
+
+    } else {
     
+      if (gui->_has_been_closed && gui->_delayed_closing && safe_to_close_widget()) {
+        printf("        GUI GC: Delayed closing of GUI. Pos: %d, guinum: %d\n", pos, (int)gui->get_gui_num());
+        gui->_widget->close(); // Try to close again. Last time some scheme code was running, so we delayed closing the widget.
+      }
+
+    }
+
+
+      
+
     pos++;
     num_guis_to_check--;
   }
