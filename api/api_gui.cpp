@@ -2012,7 +2012,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       painter->drawLine(line);
 
-      myupdate(x1, y1, x2, y2, width);
+      if (_current_painter==NULL)
+        myupdate(x1, y1, x2, y2, width);
     }
 
     void drawBox(const_char* color, float x1, float y1, float x2, float y2, float width, float round_x, float round_y) {
@@ -2029,7 +2030,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       else
         painter->drawRect(rect);
 
-      myupdate(x1, y1, x2, y2);
+      float halfwidth = 2*width/3;
+      if (_current_painter==NULL)
+        myupdate(x1-halfwidth, y1-halfwidth, x2+halfwidth, y2+halfwidth);
     }
 
     void filledBox(const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y) {
@@ -2050,7 +2053,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       painter->setBrush(Qt::NoBrush);
       //_image_painter->setPen(pen);
 
-      myupdate(x1, y1, x2, y2);
+      if (_current_painter==NULL)
+        myupdate(x1, y1, x2, y2);
     }
 
     void filledEllipse(const_char* color, float x1, float y1, float x2, float y2) {
@@ -2068,7 +2072,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       painter->setBrush(Qt::NoBrush);
       //_image_painter->setPen(pen);
 
-      myupdate(x1, y1, x2, y2);
+      if (_current_painter==NULL)
+        myupdate(x1, y1, x2, y2);
     }
 
     void drawEllipse(const_char* color, float x1, float y1, float x2, float y2, float width) {
@@ -2082,7 +2087,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       painter->setPen(pen);
       painter->drawEllipse(rect);
 
-      myupdate(x1, y1, x2, y2);
+      if (_current_painter==NULL)
+        myupdate(x1, y1, x2, y2);
     }
 
     void setOpacity(double opacity){
@@ -2174,7 +2180,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       }
 
-      myupdate(x1, y1, x2, y2);
+      if (_current_painter==NULL)
+        myupdate(x1, y1, x2, y2);
 
       return org_text==draw_text;
     }
