@@ -677,7 +677,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
         // Background (using autofill instead since this way left created graphical artifacts)
         {
-          QRectF rect1(x1,  get_pos_y1(),
+          QRectF rect1(x1,     get_pos_y1(),
                        x2-x1,  pos-get_pos_y1());
           p.setBrush(qcolor1);
           p.drawRect(rect1);
@@ -2659,6 +2659,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     void resizeEvent2(QResizeEvent *event) override {
       _vamps.at(0)->setPos(0, 0, width(), height());
       callVampRegularly(_vamps.at(0));
+      update();
     }
   };
 
