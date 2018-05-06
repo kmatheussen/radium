@@ -487,7 +487,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       float meter_width = total_meter_space / num_channels;
 
       x1 = start_x + border_width + (ch * (border_width+meter_width));
-      x2 = (ch==num_channels-1) ? _x2 : start_x + border_width + (ch * (border_width+meter_width)) + meter_width;
+      x2 = (ch==num_channels-1) ? _x2 : floor(start_x + border_width + (ch * (border_width+meter_width)) + meter_width);
     }
 
     float get_pos_y1(void) const {
