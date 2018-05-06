@@ -525,13 +525,20 @@ func_t *s7extra_get_func_from_funcname(const char *funcname){
   return (func_t*)find_scheme_value(s7, funcname);
 }
 
+
+//int g_num_scheme_calls = 0;
+
 static s7_pointer catch_call(s7_scheme *sc, const s7_pointer args){
   g_scheme_failed=false;
 
   R_ASSERT(PLAYER_current_thread_has_lock()==false);
    
+  //g_num_scheme_calls++;
+
   s7_pointer ret = s7_call(sc, g_catchallerrors_func, args);
    
+  //g_num_scheme_calls--;
+
   if (s7_is_symbol(ret) && s7_symbol_name(ret)==s7_symbol_name(g_try_finally_failed))
     g_scheme_failed = true;
   
