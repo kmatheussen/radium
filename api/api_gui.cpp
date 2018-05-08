@@ -1118,7 +1118,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     bool _has_been_closed = false;
-    bool _delayed_closing = false;
+    bool _delayed_deletion = false;
 
     radium::Modality _modality = radium::MAY_BE_MODAL; // We need to remember whether modality should be on or not, since modality is a parameter for set_window_parent.
     bool _have_set_size = false;
@@ -1209,11 +1209,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       if (g_delayed_resized_guis.contains(this))
         g_delayed_resized_guis.removeOne(this);
-      
-      for(func_t *func : _deleted_callbacks){
-        S7CALL(void_bool,func, g_radium_runs_custom_exec);
-        s7extra_unprotect(func);
-      }
+
+      apply_deleted_callbacks();
 
       for(Callback *callback : _callbacks)
         delete callback;
@@ -1259,6 +1256,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
     }
 
+    void apply_deleted_callbacks(void){
+      for(func_t *func : _deleted_callbacks){
+        S7CALL(void_bool,func, g_radium_runs_custom_exec);
+        s7extra_unprotect(func);
+      }
+
+      _deleted_callbacks.clear();
+    }
+    
     void I_am_the_last_pos_of_valid_guis_move_me_somewhere_else(int new_pos) {
       R_ASSERT_RETURN_IF_FALSE(g_valid_guis.size()-1 == _valid_guis_pos);
 
@@ -1642,27 +1648,38 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     func_t *_close_callback = NULL;
 
+    // Some scheme code is running (which might be run from an event handler), so we let the garbage collector delete us instead to avoid memory corruption in those event handlers.
+    void setDelayedDeletion(QCloseEvent *event){
+
+      _delayed_deletion = true;
+      
+      event->ignore();
+      
+      if(_widget != NULL)
+        _widget->hide();
+#if !defined(RELEASE)
+      else
+        abort();
+#endif
+    }
+    
     bool closeEvent(QCloseEvent *event){
 
       if (_close_callback==NULL || Gui::_has_been_closed){
 
-        Gui::_has_been_closed = true;
+        apply_deleted_callbacks(); // Do this as early as possible
+      
+        _has_been_closed = true;
 
         if (safe_to_close_widget()==true) {
-
-          Gui::_delayed_closing = false;
+          
+          _delayed_deletion = false; // It might have been set to true in an earlier attempt.
           return true;
 
         } else {
 
-          Gui::_delayed_closing = true;
-          event->ignore();
-          if(_widget != NULL)
-            _widget->hide(); // Some scheme code is running (which might be run from an event handler), so we let the garbage collector delete us instead to avoid memory corruption in those event handlers.
-#if !defined(RELEASE)
-          else
-            abort();
-#endif
+           // Some scheme code is running (which might be run from an event handler), so we let the garbage collector delete us instead to avoid memory corruption in those event handlers.
+          setDelayedDeletion(event);
           return false;
 
         }
@@ -1690,29 +1707,21 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
         }else{
 
-          if (gui_isOpen(guinum)){
+          apply_deleted_callbacks(); // Do this as early as possible
+          
+          if (gui_isOpen(guinum)){ // Always supposed to be true.
 
             Gui::_has_been_closed = true;
             
-            if (safe_to_close_widget()==false) {
-
-              Gui::_delayed_closing = true;
-              event->ignore();
-              if(_widget != NULL)
-                _widget->hide();
-#if !defined(RELEASE)
-              else
-                abort();
-#endif
-
-            } else {
-
+            if (safe_to_close_widget()==false)
+              setDelayedDeletion(event);
+            else
               event->accept();
 
-            }
-
           } else {
+            
             R_ASSERT_NON_RELEASE(false);
+            
           }
         }
       }
@@ -3814,7 +3823,7 @@ static void perhaps_collect_a_little_bit_of_gui_garbage(int num_guis_to_check){
 
     } else {
     
-      if (gui->_has_been_closed && gui->_delayed_closing && safe_to_close_widget()) {
+      if (gui->_has_been_closed && gui->_delayed_deletion && safe_to_close_widget()) {
         printf("        GUI GC: Delayed closing of GUI. Pos: %d, guinum: %d\n", pos, (int)gui->get_gui_num());
         gui->_widget->close(); // Try to close again. Last time some scheme code was running, so we delayed closing the widget.
       }
