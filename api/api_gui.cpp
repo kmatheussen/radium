@@ -6033,6 +6033,20 @@ bool gui_removeVerticalAudioMeter(int64_t vap){
   return false;
 }
                                
+
+int gui_removeAllVerticalAudioMeters(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return 0;
+
+  int ret = gui->_vamps.size();
+
+  while(gui->_vamps.size() > 0)
+    gui->deleteVamp(gui->_vamps.value(0));
+
+  return ret;
+}
+                               
 void gui_addAudioMeterPeakCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
