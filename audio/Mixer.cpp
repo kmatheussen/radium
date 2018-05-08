@@ -190,6 +190,7 @@ static void check_jackd_arguments(void){
 
   if(found_jack==false){
 
+#if !defined(RELEASE)
     ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
     msgBox->setIcon(QMessageBox::Warning);
     msgBox->setText("Unable to find jack process command line arguments.");
@@ -197,7 +198,8 @@ static void check_jackd_arguments(void){
     msgBox->setInformativeText(mandatory);
     msgBox->setStandardButtons(QMessageBox::Ok);
     safeExec(msgBox, false);
-
+#endif
+    
   } else if(found_sync_flag==false){
 
     ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
