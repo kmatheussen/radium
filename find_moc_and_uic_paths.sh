@@ -2,16 +2,16 @@
 
 if which $1 >/dev/null 2>/dev/null ; then
     if $1 -v 2>&1 | grep Qt\ $RADIUM_QT_VERSION >/dev/null ; then
-        echo $1
+        echo `which $1`
         exit 0
     elif $1 -v 2>&1 | grep version\ $RADIUM_QT_VERSION >/dev/null ; then
-        echo $1
+        echo `which $1`
         exit 0
     elif $1 -v 2>&1 | grep qt$RADIUM_QT_VERSION >/dev/null ; then
-        echo $1
+        echo `which $1`
         exit 0
     elif $1 -v 2>&1 | grep $1\ $RADIUM_QT_VERSION >/dev/null ; then
-        echo $1
+        echo `which $1`
         exit 0
     fi
 fi
