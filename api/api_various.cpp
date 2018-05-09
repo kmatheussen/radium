@@ -1913,22 +1913,13 @@ void addMenuSeparator(void){
   GFX_AddMenuSeparator(window);
 }
 
-void setStatusbarText(const_char* text, int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  static bool is_empty = false;
-  if (text[0]=='\0') {
-    if (!is_empty) {
-      GFX_SetStatusBar(window,text);
-      is_empty = true;
-    }
-    
-  } else {
 
-    GFX_SetStatusBar(window,text);
-    is_empty = false;
-    
-  }
-  
+int64_t setStatusbarText(const_char* text){
+  return GFX_SetStatusBar(text);
+}
+
+void removeStatusbarText(int64_t id){
+  GFX_RemoveStatusbarText(id);
 }
 
 int getWebserverPort(void){

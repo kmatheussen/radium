@@ -690,13 +690,39 @@ void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const wchar_t *title){
   main_window->setWindowTitle(STRING_get_qstring(title));
 }
 
-void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title){
+#include <QToolTip>
+
+static int64_t g_status_bar_id=0;
+
+static void set_status_bar_text(const char *title){
+  static const char *last_title="";
+
+  if (strcmp(last_title, title)){
+  
+    //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+    for(auto *bottom_bar : g_bottom_bars){
+      printf("SETTIKNG text %s\n", title);
+      bottom_bar->status_label->setText(title);
+    }
+
+    last_title = talloc_strdup(title);
+  }
+}
+
+int64_t GFX_SetStatusBar(const char *title){
   //QMainWindow *main_window = (QMainWindow *)tvisual->os_visual.main_window;
   //main_window->statusBar()->message(title);
 
-  //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  for(auto *bottom_bar : g_bottom_bars)
-    bottom_bar->status_label->setText(title);
+  set_status_bar_text(title);
+  
+  //QToolTip::showText(QCursor::pos(),title,NULL,QRect());
+
+  return ++g_status_bar_id;
+}
+
+void GFX_RemoveStatusbarText(int64_t id){
+  if (id==g_status_bar_id)
+    set_status_bar_text("");
 }
 
 void GFX_DisablePainting(void){

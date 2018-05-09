@@ -454,7 +454,7 @@ static void show_curr_track_in_statusbar(struct Tracker_Windows *window,struct W
     message = talloc_format(PRE "%s track", get_track_name(window->curr_track));
   }
   
-  setStatusbarText(message, window->l.num);
+  setStatusbarText(message);
 
 #undef PRE
 }

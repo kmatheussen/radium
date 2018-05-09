@@ -35,7 +35,8 @@ extern LANGSPEC bool RT_message_will_be_sent(void);
 extern LANGSPEC void RT_message_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2);
 #define RT_message(...) do{donothing(0 && printf(__VA_ARGS__)); RT_message_internal(__VA_ARGS__);}while(0) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
 
-extern LANGSPEC void GFX_SetStatusBar(struct Tracker_Windows *tvisual,const char *title);
+extern LANGSPEC int64_t GFX_SetStatusBar(const char *title);
+extern LANGSPEC void GFX_RemoveStatusbarText(int64_t id);
 extern LANGSPEC void GFX_SetWindowTitle(struct Tracker_Windows *tvisual,const wchar_t *title);
 
 // Better to use these functions than to check tevent.keyswitch, since tevent.keyswitch is resetted when the mouse enters and leaves the window.
