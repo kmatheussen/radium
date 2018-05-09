@@ -16,11 +16,16 @@
       (= *right-button* Button)))
 
 
+(define *last-statusbar-id* -1)
+
+(define (set-editor-statusbar text)
+  (set! *last-statusbar-id* (<ra> :set-statusbar-text text)))
+
 (define (set-statusbar-value val)
-  (<ra> :set-statusbar-text (<-> val)))
+  (set-editor-statusbar (<-> val)))
 
 (define (set-velocity-statusbar-text value)
-  (<ra> :set-statusbar-text (<-> "Velocity: " (one-decimal-percentage-string value) "%")))
+  (set-editor-statusbar (<-> "Velocity: " (one-decimal-percentage-string value) "%")))
 
 
 ;; Quantitize
@@ -384,18 +389,18 @@
   (<ra> :set-current-velocity-node velnum notenum tracknum))
 (define (set-current-fxnode fxnodenum fxnum tracknum)
   (set! current-node-has-been-set #t)
-  (<ra> :set-statusbar-text (<ra> :get-fx-string fxnodenum fxnum tracknum))
+  (set-editor-statusbar (<ra> :get-fx-string fxnodenum fxnum tracknum))
   (<ra> :set-current-fxnode fxnodenum fxnum tracknum))
 (define (set-current-pitchnum pitchnum tracknum)
   (set! current-node-has-been-set #t)
   (<ra> :set-current-pitchnum pitchnum tracknum)
-  (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pitchnum tracknum)))))
+  (set-editor-statusbar (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pitchnum tracknum)))))
 
 (define2 current-pianonote-has-been-set boolean? #f)
 (define (set-current-pianonote pianonotenum notenum tracknum)
   (set! current-pianonote-has-been-set #t)
   (<ra> :set-current-pianonote pianonotenum notenum tracknum))
-;;  (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pianonotenum tracknum)))))
+;;  (set-editor-statusbar (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value pianonotenum tracknum)))))
 
 (define2 mouse-pointer-has-been-set boolean? #f)
 (define2 mouse-pointer-guinum number? -4)
@@ -425,8 +430,10 @@
   (set! current-node-has-been-set #f)
   (set! current-pianonote-has-been-set #f)
   (set! mouse-pointer-has-been-set #f)
-
-  (<ra> :set-statusbar-text "")
+  
+  ;;(set-editor-statusbar "")
+  ;;(c-display "   LAST_ID:" *last-statusbar-id*)
+  (<ra> :remove-statusbar-text *last-statusbar-id*)
   
   (try-finally :try thunk
                :failure (lambda ()
@@ -1106,7 +1113,7 @@
 
 
 (define (set-left-interior-status-bar2 interior-start)
-  (<ra> :set-statusbar-text (<-> "----|: " (get-interior-displayable-string interior-start))))
+  (set-editor-statusbar (<-> "----|: " (get-interior-displayable-string interior-start))))
 
 (define (set-left-interior-status-bar seqblocknum seqtracknum)
   ;;(c-display "setting" seqblocknum seqtracknum)
@@ -1116,7 +1123,7 @@
 (define (set-right-interior-status-bar seqblocknum seqtracknum)
   (set-seqblock-selected-box 6 seqblocknum seqtracknum)
 
-  (<ra> :set-statusbar-text (<-> "|----: " (get-interior-displayable-string (- (get-original-seqblock-duration seqblocknum seqtracknum)
+  (set-editor-statusbar (<-> "|----: " (get-interior-displayable-string (- (get-original-seqblock-duration seqblocknum seqtracknum)
                                                                                (<ra> :get-seqblock-interior-end seqblocknum seqtracknum))))))
 
 (define *old-selected-box-seqblocknum* -1)
@@ -1153,10 +1160,10 @@
   (if is-left
       (begin
         (set-seqblock-selected-box 1 seqblocknum seqtracknum)
-        (<ra> :set-statusbar-text (<-> "Fade in: " (get-displayable-string (<ra> :get-seqblock-fade-in seqblocknum seqtracknum)))))
+        (set-editor-statusbar (<-> "Fade in: " (get-displayable-string (<ra> :get-seqblock-fade-in seqblocknum seqtracknum)))))
       (begin
         (set-seqblock-selected-box 2 seqblocknum seqtracknum)
-        (<ra> :set-statusbar-text (<-> "Fade out: " (get-displayable-string (<ra> :get-seqblock-fade-out seqblocknum seqtracknum)))))))
+        (set-editor-statusbar (<-> "Fade out: " (get-displayable-string (<ra> :get-seqblock-fade-out seqblocknum seqtracknum)))))))
 
 
 (add-mouse-move-handler
@@ -1179,17 +1186,17 @@
                ((and *current-track-num*
                      (inside-box (<ra> :get-box track-pan-on-off *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
-                (<ra> :set-statusbar-text (<-> "Track panning slider " (if (<ra> :get-track-pan-on-off *current-track-num*) "on" "off"))))
+                (set-editor-statusbar (<-> "Track panning slider " (if (<ra> :get-track-pan-on-off *current-track-num*) "on" "off"))))
                
                ((and *current-track-num*
                      (inside-box (<ra> :get-box track-volume-on-off *current-track-num*) X Y))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
-                (<ra> :set-statusbar-text (<-> "Track volume slider " (if (<ra> :get-track-volume-on-off *current-track-num*) "on" "off"))))
+                (set-editor-statusbar (<-> "Track volume slider " (if (<ra> :get-track-volume-on-off *current-track-num*) "on" "off"))))
 
                ((and *current-track-num*
                      (< Y (<ra> :get-track-pan-on-off-y1)))
                 (set-mouse-pointer ra:set-pointing-mouse-pointer (<gui> :get-editor-gui))
-                (<ra> :set-statusbar-text (<-> "Select instrument for track " *current-track-num*)))
+                (set-editor-statusbar (<-> "Select instrument for track " *current-track-num*)))
 
                ((and (inside-box (<ra> :get-box sequencer) X Y)
                      (not *current-seqautomation/distance*))
@@ -1210,12 +1217,12 @@
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
                              ((inside-box (<ra> :get-box seqblock-right-stretch seqblocknum seqtracknum) X Y)
-                              (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
+                              (set-editor-statusbar (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
                               (set-seqblock-selected-box 4 seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
                              ((inside-box (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y)
-                              (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
+                              (set-editor-statusbar (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
                               (set-seqblock-selected-box 3 seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
@@ -1230,7 +1237,7 @@
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
                              (else                              
-                              (<ra> :set-statusbar-text (two-decimal-string (/ (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
+                              (set-editor-statusbar (two-decimal-string (/ (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
                                                                                (<ra> :get-sample-rate))))
                               (set-seqblock-selected-box 0 seqblocknum seqtracknum)
                               ;;(c-display "setting open hand")
@@ -1267,7 +1274,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (show-reltempo-in-statusbar)
-  (<ra> :set-statusbar-text (<-> "Block tempo multiplied by " (two-decimal-string (<ra> :get-reltempo)))))
+  (set-editor-statusbar (<-> "Block tempo multiplied by " (two-decimal-string (<ra> :get-reltempo)))))
 
 
 (define (get-BPMs)
@@ -1649,7 +1656,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (show-track-pan-in-statusbar Tracknum)
-  (<ra> :set-statusbar-text (<-> "Track pan " (two-decimal-string (<ra> :get-track-pan Tracknum)))))
+  (set-editor-statusbar (<-> "Track pan " (two-decimal-string (<ra> :get-track-pan Tracknum)))))
 
 (define (get-trackpan-x Tracknum)
   (scale (<ra> :get-track-pan Tracknum)
@@ -1697,7 +1704,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (show-track-volume-in-statusbar Tracknum)
-  (<ra> :set-statusbar-text (<-> "Track volume " (two-decimal-string (<ra> :get-track-volume Tracknum)))))
+  (set-editor-statusbar (<-> "Track volume " (two-decimal-string (<ra> :get-track-volume Tracknum)))))
 
 (define (get-trackvolume-x Tracknum)
   (scale (<ra> :get-track-volume Tracknum)
@@ -1757,7 +1764,7 @@
                            (/ 1
                               (- 1 value))
                            (1+ value)))
-  (<ra> :set-statusbar-text (<-> "Tempo multiplied by " (two-decimal-string actual-value))))
+  (set-editor-statusbar (<-> "Tempo multiplied by " (two-decimal-string actual-value))))
 
 (define (get-temponode-box $num)
   (get-common-node-box (<ra> :get-temponode-x $num)
@@ -1959,7 +1966,7 @@
                                                         *current-track-num*))
                         :Publicize (lambda (Num)
                                      (set-indicator-pitchnum Num *current-track-num*)
-                                     (<ra> :set-statusbar-text (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value Num *current-track-num*)))))
+                                     (set-editor-statusbar (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value Num *current-track-num*)))))
                         :Get-pixels-per-value-unit (lambda (_)
                                                      5.0)
                         )
@@ -3151,7 +3158,7 @@
                                      (set-indicator-fxnode (fxnode-info :fxnodenum)
                                                            (fxnode-info :fxnum)
                                                            (fxnode-info :tracknum))
-                                     (<ra> :set-statusbar-text (<ra> :get-fx-string (fxnode-info :fxnodenum) (fxnode-info :fxnum) (fxnode-info :tracknum))))
+                                     (set-editor-statusbar (<ra> :get-fx-string (fxnode-info :fxnodenum) (fxnode-info :fxnum) (fxnode-info :tracknum))))
 
                         :Move-node (lambda (fxnode-info Value Place)                                     
                                      (<ra> :set-fxnode (fxnode-info :fxnodenum) Value Place (fxnode-info :fxnum) (fxnode-info :tracknum))
@@ -3325,16 +3332,16 @@
                   
                   (cond ((and (<ra> :swingtext-visible *current-track-num*)
                               (inside-box (<ra> :get-box swingtext *current-track-num*) X Y))
-                         (<ra> :set-statusbar-text (<-> "Swing text for track #" *current-track-num*)))
+                         (set-editor-statusbar (<-> "Swing text for track #" *current-track-num*)))
                         ((and (<ra> :centtext-visible *current-track-num*)
                               (inside-box (<ra> :get-box centtext *current-track-num*) X Y))
-                         (<ra> :set-statusbar-text (<-> "Cent text for track #" *current-track-num*)))
+                         (set-editor-statusbar (<-> "Cent text for track #" *current-track-num*)))
                         ((and (<ra> :chancetext-visible *current-track-num*)
                               (inside-box (<ra> :get-box chancetext *current-track-num*) X Y))
-                         (<ra> :set-statusbar-text (<-> "Chance text for track #" *current-track-num*)))
+                         (set-editor-statusbar (<-> "Chance text for track #" *current-track-num*)))
                         ((and (<ra> :veltext-visible *current-track-num*)
                               (inside-box (<ra> :get-box velocitytext *current-track-num*) X Y))
-                         (<ra> :set-statusbar-text (<-> "Velocity text for track #" *current-track-num*)))
+                         (set-editor-statusbar (<-> "Velocity text for track #" *current-track-num*)))
                         ((and (<ra> :fxtext-visible *current-track-num*)
                               (inside-box (<ra> :get-box fxtext *current-track-num*) X Y))
                          (define instrument-id (<ra> :get-instrument-for-track  *current-track-num*))
@@ -3342,7 +3349,7 @@
                            (define effect-num (<ra> :get-fxtext-effect-num-from-x X *current-track-num*))
                            (when (>= effect-num 0)
                              (define effect-name (<ra> :get-instrument-effect-name effect-num instrument-id))
-                             (<ra> :set-statusbar-text (<-> "FX text \"" effect-name "\", track #" *current-track-num*)))))
+                             (set-editor-statusbar (<-> "FX text \"" effect-name "\", track #" *current-track-num*)))))
                         (velocity-info
                          (set-mouse-note (velocity-info :notenum) (velocity-info :tracknum))
                          ;;(c-display "setting current to " (velocity-info :velocitynum) (velocity-info :dir))
@@ -3370,7 +3377,7 @@
                         
                         ((and is-in-fx-area fx-dist-is-shortest)
                          (set! *current-fx/distance* fx-dist)
-                         (<ra> :set-statusbar-text (get-full-fx-name (fx-dist :fx) *current-track-num*)) ;; TODO: Also write fx value at mouse position.
+                         (set-editor-statusbar (get-full-fx-name (fx-dist :fx) *current-track-num*)) ;; TODO: Also write fx value at mouse position.
                          (set-mouse-fx (fx-dist :fx) *current-track-num*)
                          )
                       
@@ -3553,7 +3560,7 @@
                                      Num
                                      )
                         :Publicize (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
-                                     (<ra> :set-statusbar-text (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value Num))))
+                                     (set-editor-statusbar (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value Num))))
                                      (<ra> :set-curr-seqtemponode Num)
                                      #f)
                         
@@ -3639,7 +3646,7 @@
               (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
                      (existing-box Num Box) :> (begin
                                                  ;;(c-display "hepp" Num)
-                                                 (<ra> :set-statusbar-text (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value Num))))
+                                                 (set-editor-statusbar (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value Num))))
                                                  (<ra> :set-curr-seqtemponode Num)
                                                  #t)
                      A                      :> (begin
@@ -3729,8 +3736,8 @@
 
 (define (set-statusbar-loop-info Type)
   (if (eq? Type 'start)
-      (<ra> :set-statusbar-text (<-> "Loop start: " (two-decimal-string (/ (<ra> :get-seqlooping-start) (<ra> :get-sample-rate)))))
-      (<ra> :set-statusbar-text (<-> "Loop end: " (two-decimal-string (/ (<ra> :get-seqlooping-end) (<ra> :get-sample-rate)))))))
+      (set-editor-statusbar (<-> "Loop start: " (two-decimal-string (/ (<ra> :get-seqlooping-start) (<ra> :get-sample-rate)))))
+      (set-editor-statusbar (<-> "Loop end: " (two-decimal-string (/ (<ra> :get-seqlooping-end) (<ra> :get-sample-rate)))))))
 
 ;; highlight loop start / loop end
 (add-mouse-move-handler
@@ -4658,7 +4665,7 @@
                               (seqblock :start-time)))
                        (- (seqblock :interior-end)
                           (seqblock :interior-start))))
-    (<ra> :set-statusbar-text (<-> "Stretch: " (two-decimal-string stretch))))
+    (set-editor-statusbar (<-> "Stretch: " (two-decimal-string stretch))))
 
   :move (Value Y)
   (begin
@@ -5190,7 +5197,7 @@
                         :Create-new-node (lambda (X seqtracknum callback)
                                            #f)
                         :Publicize (lambda (move-single)
-                                     (<ra> :set-statusbar-text (two-decimal-string (/ (move-single :curr-pos)
+                                     (set-editor-statusbar (two-decimal-string (/ (move-single :curr-pos)
                                                                                       (<ra> :get-sample-rate)))))
                         
                         :Release-node (lambda (move-single)                                        
@@ -5305,7 +5312,7 @@
                                            #f)
 
                         :Publicize (lambda (seqblock-info)
-                                     (<ra> :set-statusbar-text (two-decimal-string (/ gakkgakk-really-last-inc-time
+                                     (set-editor-statusbar (two-decimal-string (/ gakkgakk-really-last-inc-time
                                                                                       (<ra> :get-sample-rate)))))
 
                         
@@ -5528,7 +5535,7 @@
                          (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
                          (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
                     (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
-                    (<ra> :set-statusbar-text (<-> instrument-name "/" effect-name))
+                    (set-editor-statusbar (<-> instrument-name "/" effect-name))
                     (<ra> :set-curr-seq-automation (*current-seqautomation/distance* :automation-num)
                           (*current-seqautomation/distance* :seqtrack))))
 
@@ -5536,7 +5543,7 @@
                   (<ra> :cancel-curr-seq-automation)
                   (set-seqblock-selected-box 0 -1 -1)
                   (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
-                  (<ra> :set-statusbar-text "Volume envelope")
+                  (set-editor-statusbar "Volume envelope")
                   (<ra> :set-curr-seqblock-envelope (*current-seqautomation/distance* :seqblock) (*current-seqautomation/distance* :seqtrack)))
 
                  (else
@@ -5555,7 +5562,7 @@
          ;;(instrument-name (<ra> :get-instrument-name instrument-id))
          (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
          (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
-    (<ra> :set-statusbar-text (<-> effect-name ": "
+    (set-editor-statusbar (<-> effect-name ": "
                                    (two-decimal-string (<ra> :get-seq-automation-value Num automationnum seqtracknum))))))
   
 
@@ -5709,7 +5716,7 @@
 (define (set-seqblock-envelope-node-statusbar-text Num)
   (let* ((seqblocknum (*current-seqautomation/distance* :seqblock))
          (seqtracknum (*current-seqautomation/distance* :seqtrack)))
-    (<ra> :set-statusbar-text (<-> "Volume: "                                   
+    (set-editor-statusbar (<-> "Volume: "                                   
                                    (let ((db (<ra> :get-seqblock-envelope-db Num seqblocknum seqtracknum)))
                                      (<-> ;(<ra> :get-seqblock-envelope-db Num seqblocknum seqtracknum)
                                           ;" : "
@@ -6528,7 +6535,7 @@
                                 ;;(c-display "new-end-time:" (/ new-end-time 48000.0) Value)
                                 (<ra> :set-sequencer-visible-end-time (min song-length (max (1+ start-time) new-end-time))))
                         :Publicize (lambda (_)
-                                     (<ra> :set-statusbar-text (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
+                                     (set-editor-statusbar (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
                                                                     " -> "
                                                                     (two-decimal-string (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate))))))
                         :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
@@ -6569,7 +6576,7 @@
                                 (define end-time (<ra> :get-sequencer-visible-end-time))
                                 (<ra> :set-sequencer-visible-start-time (max 0 (min (1- end-time) new-start-time))))
                         :Publicize (lambda (_)
-                                     (<ra> :set-statusbar-text (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
+                                     (set-editor-statusbar (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
                                                                     " -> "
                                                                     (two-decimal-string (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate))))))
                         :Mouse-pointer-func ra:set-horizontal-resize-mouse-pointer
@@ -6643,7 +6650,7 @@
                                 (<ra> :set-sequencer-visible-end-time new-end-time2))
                                 
                         :Publicize (lambda (_)
-                                     (<ra> :set-statusbar-text (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
+                                     (set-editor-statusbar (<-> (two-decimal-string (/ (<ra> :get-sequencer-visible-start-time) (<ra> :get-sample-rate)))
                                                                     " -> "
                                                                     (two-decimal-string (/ (<ra> :get-sequencer-visible-end-time) (<ra> :get-sample-rate))))))
                         

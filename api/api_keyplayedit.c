@@ -114,7 +114,7 @@ void switchEditOnOff(void){
 	ATOMIC_SET(root->editonoff, ATOMIC_GET(root->editonoff)?false:true);
         char temp[1000];
         sprintf(temp,"Edit %s",ATOMIC_GET(root->editonoff)?"On":"Off");
-        GFX_SetStatusBar(window,temp);
+        GFX_SetStatusBar(temp);
         window->must_redraw=true;
 }
 
