@@ -71,6 +71,9 @@ double g_opengl_scale_ratio = 1.0;
 static volatile float g_height = 512;
 
 void GE_set_height(int height){
+  if (height<=0)
+    height = 1; // avoid various situations.
+
   safe_volatile_float_write(&g_height, height);
 }
 
@@ -735,6 +738,7 @@ GE_Rgb GE_get_rgb(const GE_Context *c){
 
 static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_data){
   int height = safe_volatile_float_read(&g_height);// * g_opengl_scale_ratio;
+
   int y1 = scale(actor->boundingBox().maxCorner().y(),
                  height, 0,
                  0, height);

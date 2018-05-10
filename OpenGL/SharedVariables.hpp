@@ -101,8 +101,8 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
   sv->reltempo       = is_playing_song() ? 1.0 : ATOMIC_DOUBLE_GET(block->reltempo);
   sv->block_duration = getBlockSTimeLength(block);
 
-  sv->scrollbar_height          = get_scrollbar_y2(window,wblock) - get_scrollbar_y1(window,wblock);
-  sv->scrollbar_scroller_height = get_scrollbar_scroller_height(window,wblock);
+  sv->scrollbar_height          = R_MAX(1, get_scrollbar_y2(window,wblock) - get_scrollbar_y1(window,wblock));
+  sv->scrollbar_scroller_height = R_MAX(1, get_scrollbar_scroller_height(window,wblock));
 
   sv->wtracks_scissor_x1 = wblock->t.x1;
   sv->wtracks_scissor_x2 = wblock->t.x2;

@@ -1067,7 +1067,8 @@ private:
         return false; // TODO: Check if this still uses 100% cpu on Intel/linux. It's a little bit wasteful to render the same frame again and again while not playing just because of one driver on one platform.
       }
     }
-    
+
+
     //printf("scrolling\n");
 
     //_scissor->enable(_rendering->camera()->viewport());
