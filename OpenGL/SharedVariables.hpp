@@ -28,15 +28,13 @@ struct SharedVariables{
 
   int wtracks_scissor_x1, wtracks_scissor_x2;
 
-  const struct Root *root;
-  
-  const struct Blocks *block; // We store it in g_shared_variables_gc_storage, so it can not be garbage collected while it is here.
 
-  const struct Blocks *curr_playing_block; // We store it in g_shared_variables_gc_storage, so it can not be garbage collected while it is here.
-  
-  const struct STimes *times; // Also stored in g_shread_variables_gc_storage.
-
-  const struct LocalZooms **reallines; // We store it in g_shared_variables_gc_storage, so it can not be garbage collected while it is here.
+  // These 5 pointers are also stored in g_shared_variables_gc_storage, so that they can't be garbage collected while only being used in the OpenGL thread.
+  const struct Root *root;  
+  const struct Blocks *block;
+  const struct Blocks *curr_playing_block;
+  const struct STimes *times;
+  const struct LocalZooms **reallines;
 
   double seqblock_stretch;
   
@@ -65,8 +63,7 @@ SharedVariables::~SharedVariables(){
     if(!is_main_thread)
       Threadsafe_GC_disable();
 
-    { // Disable garbage collector since we modify gc memory from another thread. (I wouldn't be surprised if turning off the GC here would only be useful once in a million years, or never.)
-
+    {
       VECTOR_remove(&g_shared_variables_gc_storage, this->root);
       VECTOR_remove(&g_shared_variables_gc_storage, this->times);
       //VECTOR_remove(&g_shared_variables_gc_storage, this->times_with_global_swings);
