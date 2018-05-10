@@ -50,18 +50,19 @@ struct SharedVariables{
 
 #ifdef OPENGL_GFXELEMENTS_CPP
 
-static radium::Mutex vector_mutex;
+static radium::Mutex g_vector_mutex;
 static vector_t g_shared_variables_gc_storage = {}; // Here we store stuff used in SharedVariables that should not be garbage collected
 
 // Called from T2 or main thread
 SharedVariables::~SharedVariables(){
   {
-    radium::ScopedMutex locker(vector_mutex);
+    radium::ScopedMutex locker(g_vector_mutex);
 
     bool is_main_thread = THREADING_is_main_thread();
     
     if(!is_main_thread)
-      Threadsafe_GC_disable();
+      Threadsafe_GC_disable(); // Disable garbage collector since we modify gc memory from another thread. (I wouldn't be surprised if turning off the GC here would only be useful once in a million years, or most likely never.)
+
 
     {
       VECTOR_remove(&g_shared_variables_gc_storage, this->root);
@@ -132,7 +133,7 @@ static void GE_fill_in_shared_variables(SharedVariables *sv){
 
   
   {
-    radium::ScopedMutex locker(vector_mutex);
+    radium::ScopedMutex locker(g_vector_mutex);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->root);
     VECTOR_push_back(&g_shared_variables_gc_storage, sv->times);
     //VECTOR_push_back(&g_shared_variables_gc_storage, sv->times_with_global_swings);
