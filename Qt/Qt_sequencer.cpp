@@ -363,9 +363,12 @@ static QColor get_seqblock_color(const SeqTrack *seqtrack, const SeqBlock *seqbl
 
 class MouseTrackerQWidget : public QWidget {
 public:
-  
-  MouseTrackerQWidget(QWidget *parent)
+
+  bool _is_sequencer_widget;
+
+  MouseTrackerQWidget(QWidget *parent, bool is_sequencer_widget = false)
     : QWidget(parent)
+    , _is_sequencer_widget(is_sequencer_widget)
   {
     setMouseTracking(true);
   }
@@ -385,6 +388,11 @@ public:
 
   void	mousePressEvent( QMouseEvent *event) override{
     event->accept();
+
+    if (_is_sequencer_widget)
+      if (API_run_mouse_press_event_for_custom_widget(SEQUENCER_getWidget(), event))
+        return;
+
     _currentButton = getMouseButtonEventID(event);
     QPoint point = mapToEditor(this, event->pos());
     SCHEME_mousepress(_currentButton, point.x(), point.y());
@@ -392,6 +400,11 @@ public:
   }
   void	mouseReleaseEvent( QMouseEvent *event) override{
     event->accept();
+
+    if (_is_sequencer_widget)
+      if (API_run_mouse_release_event_for_custom_widget(SEQUENCER_getWidget(), event))
+        return;
+
     QPoint point = mapToEditor(this, event->pos());
     SCHEME_mouserelease(_currentButton, point.x(), point.y());
     _currentButton = 0;
@@ -399,11 +412,18 @@ public:
   }
   void	mouseMoveEvent( QMouseEvent *event) override{
     event->accept();
+
+    if (_is_sequencer_widget)
+      if (API_run_mouse_move_event_for_custom_widget(SEQUENCER_getWidget(), event))
+        return;
+
     QPoint point = mapToEditor(this, event->pos());
     SCHEME_mousemove(_currentButton, point.x(), point.y());
     //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
   }
-
+  void leaveEvent(QEvent *event) override{
+    API_run_mouse_leave_event_for_custom_widget(SEQUENCER_getWidget(), event);
+  }
 };
 
 static double get_visible_song_length(void){
@@ -474,6 +494,8 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
   } else {
 
     double pos = R_MAX(0, scale_double(e->x(), x1, x2, start_play_time, end_play_time));
+    //printf("pos: %f, _start/end: %f / %f. x: %d\n", (double)pos/48000.0, (double)start_play_time / 48000.0, (double)end_play_time / 48000.0, e->x());
+
     if (e->delta() > 0)
       PlaySong(pos);
     else {
@@ -1764,9 +1786,12 @@ struct Timeline_widget : public MouseTrackerQWidget {
   {    
   }
 
+  /*
+    // g_sequencer_widget handle wheel events too. Don't need (or want) to start playing twice.
   void wheelEvent(QWheelEvent *e) override {
     handle_wheel_event(e, 0, width(), _start_time, _end_time);
   }
+  */
 
   void draw_filled_triangle(QPainter &p, double x1, double y1, double x2, double y2, double x3, double y3){
     const QPointF points[3] = {
@@ -1989,6 +2014,7 @@ struct Seqtracks_navigator_widget : public MouseTrackerQWidget {
 
   void wheelEvent(QWheelEvent *e) override {
     handle_wheel_event(e, 0, width(), 0, get_visible_song_length()*MIXER_get_sample_rate());
+    e->accept();
   }
 
 private:
@@ -2132,7 +2158,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   QRect _selection_rectangle;
 
   Sequencer_widget(QWidget *parent)
-    : MouseTrackerQWidget(parent)
+    : MouseTrackerQWidget(parent, true)
     , _end_time(get_visible_song_length()*MIXER_get_sample_rate())
     , _samples_per_pixel((_end_time-_start_time) / width())
     , _songtempoautomation_widget(_start_time, _end_time)
@@ -2148,8 +2174,10 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
 
-    int height = root->song->tracker_windows->systemfontheight*1.3 * 2;
-    setMinimumHeight(height);
+    setAttribute(Qt::WA_OpaquePaintEvent); // we paint everything. By doing this we also avoid cleaning backgrounds for the vertical audio meters.
+
+    int minimum_height = root->song->tracker_windows->systemfontheight*1.3 * 2;
+    setMinimumHeight(minimum_height);
     //setMaximumHeight(height);
   }
 
@@ -2229,7 +2257,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
 
   void wheelEvent(QWheelEvent *e) override {
-    handle_wheel_event(e, 0, width(), _start_time, _end_time);
+    handle_wheel_event(e, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2, _start_time, _end_time);
   }
 
   void resizeEvent( QResizeEvent *qresizeevent) override {
@@ -2238,8 +2266,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     //  set_end_time();
     // _samples_per_pixel = (_end_time-_start_time) / width();
     position_widgets();
+
+    API_run_resize_event_for_custom_widget(this, qresizeevent);
   }
-  
+
+  int get_sequencer_left_part_width(void) const {
+    return 1.5 * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... And M+S|");
+  }
+
   void position_widgets(void){
     //R_ASSERT_RETURN_IF_FALSE(_seqtracks_widget._seqtrack_widgets.size() > 0);
 
@@ -2250,7 +2284,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     const QPoint p = mute_button->mapTo(this, mute_button->pos());
 #endif
 
-    const int x1 = 0; //p.x() + mute_button->width();
+    const int x1 = get_sequencer_left_part_width(); //p.x() + mute_button->width();
     const int x1_width = width() - x1;
 
     QFontMetrics fm(QApplication::font());
@@ -2296,7 +2330,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
                                     width()-1, y2 - y1);
       */
       
-      _seqtracks_widget.position_widgets(1,y1,
+      _seqtracks_widget.position_widgets(x1 + 1, y1,
                                          width()-1, y2);
       y1 = y2;
     }
@@ -2458,7 +2492,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         while(abstime < _end_time){
           int64_t maybe = SEQUENCER_find_closest_bar_start(0, abstime);
           if (maybe > last_bar){
-            double x = scale_double(maybe, _start_time, _end_time, 0, width);
+            double x = scale_double(maybe, _start_time, _end_time, x1, x2);
             //printf("x: %f, abstime: %f\n",x,(double)maybe/44100.0);
             QLineF line(x, y1+2, x, y2-2);
             p.drawLine(line);
@@ -2522,28 +2556,40 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     D(static int num_calls = 0;
       printf("   SEQ paintEvent called %d, %d -> %d, %d (%d)\n", ev->rect().x(), ev->rect().y(), ev->rect().width(), ev->rect().height(),num_calls++)
       );
-    TRACK_PAINT();
 
-    RETURN_IF_DATA_IS_INACCESSIBLE();
+    if(ev->rect().right() >= _seqtracks_widget.t_x1){
+      // Need to put TRACK_PAINT in a different scope than the call to API_run_paint_event_for_custom_widget.
+      TRACK_PAINT();
+      
+      //printf("Painting seq\n");
 
-    QPainter p(this);
+      RETURN_IF_DATA_IS_INACCESSIBLE();
+      
+      QPainter p(this);
+      
+      p.eraseRect(rect()); // We don't paint everything.
+      
+      p.setRenderHints(QPainter::Antialiasing,true);    
+      
+      _seqtracks_widget.paint(ev->rect(), p);
+      
+      if (_songtempoautomation_widget.is_visible)
+        _songtempoautomation_widget.paint(ev->rect(), p);
+      
+      paintGrid(ev->rect(), p, _grid_type);
+      paintCursor(ev->rect(), p);
+      if (SEQUENCER_is_looping())
+        paintSeqloop(ev->rect(), p);    
+      
+      if (_has_selection_rectangle)
+        paintSelectionRectangle(ev->rect(), p);
+    }
 
-    p.eraseRect(rect()); // We don't paint everything.
-    
-    p.setRenderHints(QPainter::Antialiasing,true);    
-
-    _seqtracks_widget.paint(ev->rect(), p);
-
-    if (_songtempoautomation_widget.is_visible)
-      _songtempoautomation_widget.paint(ev->rect(), p);
-
-    paintGrid(ev->rect(), p, _grid_type);
-    paintCursor(ev->rect(), p);
-    if (SEQUENCER_is_looping())
-      paintSeqloop(ev->rect(), p);    
-
-    if (_has_selection_rectangle)
-      paintSelectionRectangle(ev->rect(), p);
+    API_run_paint_event_for_custom_widget(this,
+                                          ev,
+                                          QRegion(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1,
+                                                  _seqtracks_widget.t_width, _seqtracks_widget.t_height)
+                                          );
   }
 
   Seqblocks_widget get_seqblocks_widget(int seqtracknum){
@@ -2943,19 +2989,15 @@ SEQBLOCK_handles(stretch, yfunc_ysplit2, SEQBLOCK_get_y2);
 // seqtracks
 
 float SEQTRACK_get_x1(int seqtracknum){
-  //auto *w = g_sequencer_widget->get_seqtrack_widget(seqtracknum);
-  //if (w==NULL)
-  //  return 0.0;
+  const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum);
     
-  return mapToEditorX(g_sequencer_widget, 0);
+  return mapToEditorX(g_sequencer_widget, 0) + w.t_x1;
 }
 
 float SEQTRACK_get_x2(int seqtracknum){
-  //auto *w = g_sequencer_widget->get_seqtrack_widget(seqtracknum);
-  //if (w==NULL)
-  //  return 0.0;
+  const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum);
     
-  return mapToEditorX(g_sequencer_widget, g_sequencer_widget->width());
+  return mapToEditorX(g_sequencer_widget, 0) + w.t_x2;
 }
 
 float SEQTRACK_get_y1(int seqtracknum){
@@ -2989,7 +3031,14 @@ void SEQUENCER_update(void){
     //g_sequencer_widget->position_widgets();
     //printf("SEQUENCER_update called\n%s\n",JUCE_get_backtrace());
     D(printf("SEQUENCER_update called\n%s\n",""));
-    g_sequencer_widget->update();
+    if (THREADING_is_main_thread()){
+      g_sequencer_widget->update(g_sequencer_widget->_seqtracks_widget.t_x1,
+                                 0,
+                                 g_sequencer_widget->_seqtracks_widget.t_width,
+                                 g_sequencer_widget->height());
+    } else {
+      g_sequencer_widget->update();
+    }
   }
 }
 

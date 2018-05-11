@@ -701,7 +701,7 @@ static void set_status_bar_text(const char *title){
   
     //EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
     for(auto *bottom_bar : g_bottom_bars){
-      printf("SETTIKNG text %s\n", title);
+      //printf("SETTIKNG text %s\n", title);
       bottom_bar->status_label->setText(title);
     }
 

@@ -1,5 +1,7 @@
 (provide 'mixer-strips.scm)
 
+(my-require 'gui.scm)
+
 ;; TOPIC: Should the pan slider work for the last instrument in the path?
 ;; In case, we need to copy pan values when deleting / removing plulgins.
 ;;
@@ -850,15 +852,15 @@
                          #f
                          gui))
   
-(define (paint-horizontal-instrument-slider widget instrument-id value text is-enabled is-current get-automation-data text-x1 width height)
+(define (paint-horizontal-instrument-slider widget instrument-id value text is-enabled is-current get-automation-data text-x1 x1 y1 x2 y2)
   ;;(c-display "PAINTING SLIDER FOR" instrument-name)
   (define color (<ra> :get-instrument-color instrument-id))
   ;;(c-display "value: " value)
 
-  (define pos (scale value 0 1 0 width))
-  (<gui> :filled-box widget (<gui> :get-background-color widget) 0 0 width height)
-  (<gui> :filled-box widget "black" 1 1 (1- width) (1- height) 5 5)
-  (<gui> :filled-box widget color 0 0 pos height 5 5)
+  (define pos (scale value 0 1 x1 x2))
+  (<gui> :filled-box widget (<gui> :get-background-color widget) x1 y1 x2 y2)
+  (<gui> :filled-box widget "black" (1+ x1) (1+ y1) (1- x2) (1- y2) 5 5)
+  (<gui> :filled-box widget color x1 y1 pos y2 5 5)
   
   ;;(if (= (<ra> :get-current-instrument) instrument-id)
   ;;    (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
@@ -871,14 +873,13 @@
       (get-automation-data
        (lambda (value color)
          (let* ((w (if is-current w3 1))
-                (x (max 0 (scale value 0 1 w (- width w)))))
-           (<gui> :draw-line widget color x w x (- height w) 2.0)))))
+                (x (between 0 (scale value 0 1 (+ x1 w) (- x2 w)) x2)))
+           (<gui> :draw-line
+                  widget color
+                  x (+ y1 w)
+                  x (- y2 w)
+                  2.0)))))
   
-  
-  ;; border
-  (if is-current
-      (<gui> :draw-box widget *current-mixer-strip-border-color* w w (- width w) (- height w) w3 5 5) ;; "#aa111144"
-      (<gui> :draw-box widget "gray"      0 0 width height 0.8 5 5))
   
   ;;(if show-tooltip
   ;;    (set-tooltip-and-statusbar text))
@@ -888,10 +889,16 @@
                          *text-color*))
   
   (<gui> :draw-text widget text-color text
-         (+ 1 text-x1) 0 (- width 4) height
+         (floor (+ (/ (get-fontheight) 4) text-x1)) y1 (- x2 4) y2
          #t ;; wrap-lines
          #f ;; align top
-         #t)) ;; align left
+         #t) ;; align left
+
+  ;; border
+  (if is-current
+      (<gui> :draw-box widget *current-mixer-strip-border-color* (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 5 5) ;; "#aa111144"
+      (<gui> :draw-box widget "gray"      x1 y1 x2 y2   0.8 5 5))
+  )
   
 (define (strip-slider first-instrument-id
                       parent-instrument-id
@@ -956,7 +963,7 @@
                                         (= (<ra> :get-current-instrument) instrument-id)
                                         get-automation-data
                                         x1-on/off
-                                        width height))
+                                        0 0 width height))
   
   (define fontheight (get-fontheight))
   
@@ -1760,6 +1767,81 @@
 ;;(define (create-mixer-strip-checkbox text sel-color unsel-color width height callback)
 ;;  (define button (<gui> :widget width height))
 
+(delafina (draw-mutesolo :gui
+                         :type
+                         :instrument-id
+                         :x1 :y1 :x2 :y2
+                         :is-selected 'undefined
+                         :use-single-letters 
+                         :background-color #f
+                         :border 2)
+
+  (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
+
+  (define (get-muted)
+    (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
+  (define (get-soloed)
+    (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
+  
+  (if (eq? is-selected 'undefined)
+      (set! is-selected (if (eq? type 'mute)
+                            (get-muted)
+                            (get-soloed))))
+
+  (define text (if (eq? type 'mute)
+                   (if use-single-letters
+                       "M"
+                       "Mute")
+                   (if use-single-letters
+                       "S"
+                       "Solo")))
+
+  (define color (if (eq? type 'mute)
+                    "green"
+                    "yellow"))
+
+  (define is-implicitly-muted (and (eq? type 'mute) (<ra> :instrument-is-implicitly-muted instrument-id)))
+
+  (if background-color
+      (<gui> :filled-box
+             gui
+             background-color
+             x1 y1 x2 y2))
+
+  (define b (if use-single-letters 2 5))
+
+  (if is-selected
+      (<gui> :filled-box
+             gui
+             color
+             (+ border x1) (+ border y1) (- x2 border) (- y2 border)
+             b b))
+
+  (<gui> :draw-text
+         gui
+         "black"
+         text
+         (+ x1 3) (+ y1 2) (- x2 3) (- y2 2)
+         #f
+         #f
+         #f
+         0
+         #f
+         #t
+         )
+  
+  (<gui> :draw-box
+         gui
+         (if is-implicitly-muted
+             color
+             "#404040")
+         (+ x1 border) (+ y1 border) (- x2 border) (- y2 border)
+         (if is-implicitly-muted
+             2.0
+             1.0)
+         b b)
+  )
+
 (delafina (create-mixer-strip-mutesolo :instrument-id 
                                        :strips-config 
                                        :background-color 
@@ -1768,44 +1850,6 @@
                                        :stack-horizontally 
                                        :set-fixed-size #t)
   
-  (define (draw-mutesolo checkbox is-selected is-implicitly-selected text color width height)
-    (<gui> :filled-box
-           checkbox
-           background-color
-           0 0 width height)
-    (define b (if use-single-letters 2 5))
-    (<gui> :filled-box
-           checkbox
-           (if is-selected
-               color
-               background-color)
-           2 2 (- width 2) (- height 2)
-           b b)
-    (<gui> :draw-text
-           checkbox
-           "black"
-           text
-           3 2 (- width 3) (- height 2)
-           #f
-           #f
-           #f
-           0
-           #f
-           #t
-           )
-    
-    (<gui> :draw-box
-           checkbox
-           (if is-implicitly-selected
-               color
-               "#404040")
-           2 2 (- width 2) (- height 2)
-           (if is-implicitly-selected
-               2.0
-               1.0)
-           b b)
-    )
-
   (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
 
   (define (get-muted)
@@ -1832,9 +1876,14 @@
               (get-all-audio-instruments)))
 
   
-  (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id)) ;; Mutable variable
   (define (draw-mute mute is-muted width height)
-    (draw-mutesolo mute is-muted implicitly-muted (if use-single-letters "M" "Mute") "green" width height))
+    (draw-mutesolo mute
+                   'mute
+                   instrument-id
+                   0 0 width height
+                   is-muted 
+                   use-single-letters
+                   background-color))
 
   (define mute (create-custom-checkbox instrument-id strips-config
                                        draw-mute
@@ -1849,6 +1898,8 @@
                                        (get-muted)
                                        min-height))
 
+  (define implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
+  
   (<ra> :schedule (random 1000) (let ((mute (cadr mute)))
                                   (lambda ()
                                     (if (and (<gui> :is-open mute) (<ra> :instrument-is-open-and-audio instrument-id))
@@ -1863,7 +1914,13 @@
   
   (define solo (create-custom-checkbox instrument-id strips-config
                                        (lambda (solo is-soloed width height)
-                                         (draw-mutesolo solo is-soloed #f (if use-single-letters "S" "Solo") "yellow" width height))
+                                         (draw-mutesolo solo 
+                                                        'solo
+                                                        instrument-id
+                                                        0 0 width height
+                                                        is-soloed
+                                                        use-single-letters
+                                                        background-color))
                                        (lambda (is-selected)
                                          (undo-block
                                           (lambda ()
@@ -2189,6 +2246,10 @@
          (<ra> :get-instrument-color instrument-id)
          (<gui> :get-background-color gui)
          0.3))
+
+(define (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id)
+  (define background-color (get-mixer-strip-background-color gui instrument-id))
+  (<gui> :filled-box gui background-color x1 y1 x2 y2))
 
 
 (define (create-mixer-strip-comment instrument-id strips-config height)
@@ -2784,7 +2845,7 @@
 !!#
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)
-  (recreate-left-part-gui)
+  (reconfigure-sequencer-left-part)
   (set-minimum-mixer-strip-widths!)
   ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " (sort list-of-modified-instrument-ids <) (length *mixer-strips-objects*) "\n\n\n")
   ;;(c-display "all:" (sort (get-all-audio-instruments) <))

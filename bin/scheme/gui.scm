@@ -156,9 +156,12 @@
                   rows)
         table)))
 
+(define *last-tooltip-and-statusbar-text* "")
 (define (set-tooltip-and-statusbar text)
-  (<ra> :set-statusbar-text text)
-  (<gui> :tool-tip text))
+  (when (not (string=? text *last-tooltip-and-statusbar-text*))
+    (set! *last-tooltip-and-statusbar-text* text)
+    (<ra> :set-statusbar-text text)
+    (<gui> :tool-tip text)))
 
 (define (<gui-helper> command . args)
   ;;(c-display "****" command args)

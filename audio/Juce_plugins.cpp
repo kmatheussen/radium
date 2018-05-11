@@ -2113,6 +2113,10 @@ float JUCE_get_max_val(const float *array, const int num_elements){
 
 #if TEST_GET_MAX_VAL
 
+static float RT_get_max_val2(const float *array, const int num_elements){
+  return JUCE_get_max_val(array, num_elements);
+}
+
 static float RT_get_max_val(const float *array, const int num_elements){
   float ret=0.0f;
   float minus_ret = 0.0f;
