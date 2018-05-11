@@ -109,9 +109,6 @@ make -j3 # necessary to create the moc files.
 cd ..
 
 
-rm -fr s7
-tar xvzf s7.tar.gz
-
 rm -fr sndlib
 tar xvzf sndlib.tar.gz
 
