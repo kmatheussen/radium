@@ -2272,6 +2272,10 @@ endif
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
 	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
 
+bin/packages/s7/s7.c: bin/packages/s7.tar.gz
+	cd bin/packages && rm -fr s7 && tar xvzf s7.tar.gz
+
+
 # -Wno-absolute-value
 #-DDEBUGGING=1
 
