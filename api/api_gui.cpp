@@ -1464,7 +1464,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     
     func_t *_mouse_callback = NULL;
     int _currentButton = 0;
-    bool _mouse_event_failed = false;
+    double _mouse_event_failed = -1;
     
     int getMouseButtonEventID(QMouseEvent *qmouseevent) const {
       if(qmouseevent->button()==Qt::LeftButton)
@@ -1480,12 +1480,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     bool mousePressEvent(QMouseEvent *event){
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
-#ifndef RELEASE // Don't want endless debug messages.
-      if (_mouse_event_failed){
-        printf("mouse_event failed last time. Won't try again\n");
+      if ((_mouse_event_failed - TIME_get_ms()) > 0){
+        printf("mouse_event failed last time. Won't try again for a couple of seconds\n");
         return false;
       }
-#endif
       
       event->accept();
 
@@ -1496,7 +1494,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
             
       int ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_PRESSING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
-        _mouse_event_failed = true;
+        _mouse_event_failed = TIME_get_ms() + 5000;
       
       return ret;
       
@@ -1506,12 +1504,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     bool mouseReleaseEvent(QMouseEvent *event) {
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
-#ifndef RELEASE
-      if (_mouse_event_failed){
+      if ((_mouse_event_failed - TIME_get_ms()) > 0){
         printf("mouse_event failed last time. Won't try again\n");
         return false;
       }
-#endif
       
       event->accept();
 
@@ -1520,7 +1516,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       const QPoint &point = event->pos();
       bool ret = S7CALL(bool_int_int_float_float, _mouse_callback, _currentButton, API_MOUSE_RELEASING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
-        _mouse_event_failed = true;
+        _mouse_event_failed = TIME_get_ms() + 5000;
       
       _currentButton = 0;
       //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
@@ -1530,12 +1526,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     bool mouseMoveEvent(QMouseEvent *event){
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
-#ifndef RELEASE
-      if (_mouse_event_failed){
+      if ((_mouse_event_failed - TIME_get_ms()) > 0){
         printf("mouse_event failed last time. Won't try again\n");
         return false;
       }
-#endif
       
       event->accept();
 
@@ -1545,7 +1539,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
-        _mouse_event_failed = true;
+        _mouse_event_failed = TIME_get_ms() + 5000;
       
       return ret;
       
@@ -1555,12 +1549,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     bool mouseLeaveEvent(QEvent *event){
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
 
-#ifndef RELEASE
-      if (_mouse_event_failed){
+      if ((_mouse_event_failed - TIME_get_ms()) > 0){
         printf("mouse_event failed last time. Won't try again\n");
         return false;
       }
-#endif
       
       event->accept();
 
@@ -1570,7 +1562,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_LEAVING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
-        _mouse_event_failed = true;
+        _mouse_event_failed = TIME_get_ms() + 5000;
       
       return ret;
       
@@ -1813,14 +1805,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     /************ RESIZE *******************/
     
     func_t *_resize_callback = NULL;
-    bool _resize_callback_failed = false;
+    double _resize_callback_failed = -1;
 
     void do_the_resize(int width, int height){
       if(gui_isOpen(_gui_num)){ // && _widget->isVisible()){ //  && _widget->width()>0 && _widget->height()>0)
         int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
         S7CALL(void_int_int,_resize_callback, width, height);
         if (g_scheme_failed==true && gui_isOpen(guinum))
-          _resize_callback_failed = true;
+          _resize_callback_failed = TIME_get_ms() + 5000;
       }
     }
     
@@ -1851,7 +1843,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     void resizeEvent(QResizeEvent *event){
       R_ASSERT_RETURN_IF_FALSE(_resize_callback!=NULL);
 
-      if (_resize_callback_failed){
+      if ((_resize_callback_failed - TIME_get_ms()) > 0){
         printf("resize_event failed last time. Won't try again to avoid a debug output bonanza (%s).\n", _class_name.toUtf8().constData());
         return;
       }
@@ -1889,7 +1881,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     QImage *_image = NULL;
     QPainter *_image_painter = NULL;
     QPainter *_current_painter = NULL;
-    bool _paint_callback_failed = false;
+    double _paint_callback_failed = -1;
 
     const QRegion *_current_region = NULL;
     
@@ -1925,7 +1917,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return ret;
       }
           
-      if (_paint_callback_failed){
+      if ((_paint_callback_failed - TIME_get_ms()) > 0){
         printf("paint_event failed last time. Won't try again to avoid a debug output bonanza (%s).\n", _class_name.toUtf8().constData());
         maybePaintBackgroundColor(event);
         return ret;
@@ -1946,7 +1938,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         
         S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
         if (g_scheme_failed==true && gui_isOpen(guinum))
-          _paint_callback_failed = true;
+          _paint_callback_failed = TIME_get_ms() + 5000;
 
         ret = gui_isOpen(guinum);  // Check if we have been deleted in the mean time.
         
