@@ -233,20 +233,6 @@
            (1- x2) (1- y2)
            1.3 0 0)) ;; align left
 
-  (define (mouse-callback button state x y)
-    (if (and (>= x x1)
-             (< x x2)
-             (>= y y1)
-             (< y y2))
-        (begin
-          ;;(c-display "x/y" x y)
-          (set-mouse-pointer ra:set-vertical-resize-mouse-pointer gui)
-          ;;(set-tooltip-and-statusbar "Change sequencer height"))
-        (begin
-          (set-mouse-pointer ra:set-normal-mouse-pointer gui)
-          ;;(set-tooltip-and-statusbar "")
-          ))))
-  
   (add-nonpress-mouse-cycle!
    :enter-func (lambda (x* y)
                  (set-mouse-pointer ra:set-vertical-resize-mouse-pointer gui)
