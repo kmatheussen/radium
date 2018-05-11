@@ -1279,7 +1279,7 @@ for .emacs:
 ;;;;;;;;;; define-class ;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (define-class-helper class-name methods)
+(define (define-class-helper class-name hash-table-name methods)
   (define this-method-names (map (lambda (method)
                                    (c-display "METHOD" method)
                                    (<_> 'this-> (keyword->symbol (car method))))
@@ -1288,8 +1288,11 @@ for .emacs:
   (define this-methods (map (lambda (this-method-name method)
                               (define args (cadr method))
                               (define body (cddr method))
-                              `(define (,this-method-name ,@args)
-                                 ,@body))
+                              (if (pair? args)
+                                  `(define (,this-method-name ,@args)
+                                     ,@body)
+                                  `(define (,this-method-name . ,args)
+                                     ,@body)))
                             this-method-names
                             methods))
 
@@ -1298,18 +1301,12 @@ for .emacs:
                                    this-method-names
                                    methods))
 
-  (define hash-table-name (<_> 'methods_of_ class-name))
-
   `(,@this-methods
-    (define ,hash-table-name
-      (hash-table* ,@(apply append hash-method-content)))
-    (lambda (methodname . rest)
-      (let ((func (,hash-table-name methodname)))
-        (if func
-            (apply func rest)
-            (error (<-> "Method \"" methodname ,(<-> "\" not found in class " class-name))))))))
+    (set! ,hash-table-name
+          (hash-table* ,@(apply append hash-method-content)))
+    this))
 
-(***assert*** (define-class-helper 'list-and-set
+(***assert*** (define-class-helper 'list-and-set 'methods_of_list-and-set
                 '((:contains (key)
                              (hash key))
                   
@@ -1325,16 +1322,11 @@ for .emacs:
                 (define (this->set)
                   hash)
                 
-                (define methods_of_list-and-set
-                  (hash-table* :contains this->contains
-                               :list this->list
-                               :set this->set))
-
-                (lambda (methodname . rest)
-                  (let ((func (methods_of_list-and-set methodname)))
-                    (if func
-                        (apply func rest)
-                        (error (<-> "Method \"" methodname "\" not found in class list-and-set")))))))
+                (set! methods_of_list-and-set
+                      (hash-table* :contains this->contains
+                                   :list this->list
+                                   :set this->set))
+                this))
 
 
 (define-expansion (<define-class-with-custom-definer> definer signature . rest)
@@ -1356,9 +1348,17 @@ for .emacs:
              (push-back! body (car rest))
              (loop (cdr rest) #f)))))
   
+  (define hash-table-name (<_> 'methods_of_ class-name))
+
   (append (cons definer (list (cons new-class-name args)))
+          `((define ,hash-table-name #f)
+            (define (this methodname . rest)
+              (let ((func (,hash-table-name methodname)))
+                (if func
+                    (apply func rest)
+                    (error (<-> "Method \"" methodname ,(<-> "\" not found in class " class-name)))))))
           body
-          (define-class-helper class-name methods)))
+          (define-class-helper class-name hash-table-name methods)))
 
 (define-expansion (define-class signature . rest)
   (append '(<define-class-with-custom-definer>) '(delafina) (list signature)
@@ -1367,6 +1367,63 @@ for .emacs:
 (define-expansion (<new> class-name . args)
   `(,(<_> 'new_instance_of_ (keyword->symbol class-name)) ,@args))
 
+
+
+#!!
+(pretty-print
+ (define-class-helper 'list-and-set 'hello
+   '((:contains x
+                (hash key)))))
+
+(pretty-print
+ (macroexpand
+  (define-class (<test-class>)
+    (define (dosomething a b)
+      ;;(c-display a b)
+      50
+      )
+    :dosomething x
+    (apply dosomething x))))
+
+(define-class (<test-class>)
+  (define (dosomething a b)
+    (+ a b))
+  :dosomething x
+  (apply dosomething x))
+
+(define testinstance (<new> :test-class))
+
+(testinstance :dosomething 5 9)
+
+
+(begin
+  (newline)
+  (pretty-print
+   (macroexpand
+    (define-class (<test-class>)
+      )))
+  (newline))
+
+(begin
+  (newline)
+  (pretty-print
+   (macroexpand (<define-class-with-custom-definer> delafina (<test-class>)))
+   )
+  (newline))
+
+(define-class (<test-class>)
+  (define (dosomething a b)
+    (c-display a b (this))
+    50
+    )
+  :dosomething x
+  (apply dosomething x))
+
+(define testinstance (<new> :test-class))
+
+(testinstance :dosomething 5 9)
+
+!!#
 
 #||
 (pretty-print

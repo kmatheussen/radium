@@ -2656,7 +2656,7 @@ const_char* getProgramLog(void){
 // Scheduler
 ////////////////////////////
 
-#define MAX_SCHEDULED_CALLBACKS 1024
+#define MAX_SCHEDULED_CALLBACKS 8192
 
 namespace{
   struct ScheduledEvent{

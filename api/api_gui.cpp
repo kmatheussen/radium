@@ -147,7 +147,17 @@ static QPointer<QWidget> g_last_released_widget = NULL;
     RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
     if (!Gui::mouseMoveEvent(event))                                    \
       classname::mouseMoveEvent(event);                                 \
+  }                                                                     \
+                                                                        \
+  void leaveEvent(QEvent *event) override{                              \
+    ScopedEventHandlerTracker event_handler_tracker;                    \
+    if (_mouse_callback==NULL){                                         \
+      classname::leaveEvent(event); return;}                            \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
+    if (!Gui::mouseLeaveEvent(event))                                   \
+      classname::leaveEvent(event);                                     \
   }
+
 
 #define DOUBLECLICK_OVERRIDER(classname)                                \
   void mouseDoubleClickEvent(QMouseEvent *event) override{              \
@@ -203,7 +213,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 #define PAINT_OVERRIDER(classname)                                      \
   void paintEvent(QPaintEvent *ev) override {                           \
     ScopedEventHandlerTracker event_handler_tracker;                    \
-    if (Gui::paintEvent(ev)==false)                                     \
+    if (Gui::paintEvent(ev, QRegion())==false)                          \
       classname::paintEvent(ev);                                        \
   }
   
@@ -1132,7 +1142,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 #if !defined(RELEASE)
     // for debugging. Use "call puts(gui->scheme_backtrace)" in gdb to print.
     //const char *backtrace = strdup(JUCE_get_backtrace()); // Extremely slow.
-    const char *scheme_backtrace = strdup(SCHEME_get_history());
+    //const char *scheme_backtrace = strdup(SCHEME_get_history());
+    const char *scheme_backtrace = "";
 #endif
                    
     Gui(QWidget *widget, bool created_from_existing_widget = false)
@@ -1363,8 +1374,29 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       vamp->call_regularly(_widget);
     }
 
+    // QRegion::contains doesn't work.
+    bool workingQRegionContains(const QRegion &region, const QRect &rect2) const{
+      for(const QRect &rect : region){
+        if (rect.contains(rect2))
+          return true;
+      }
+      return false;
+    }
+
+    bool workingQRegionContains(const QRegion &region, const QRegion &region2) const{
+      for(const QRect &rect2 : region2){
+        for(const QRect &rect : region){
+          if (rect.contains(rect2)==false)
+            return false;
+        }
+      }
+      return true;
+    }
+    
     // Returns true if only vamps needs to be painted.
-    bool getVampsToPaint(const QPaintEvent *event, bool *vamps_to_paint) const {
+    bool getVampsToPaint(const QPaintEvent *event, bool *vamps_to_paint, const QRegion &already_painted_areas, int &num_vamps_to_paint) const {
+      num_vamps_to_paint = 0;
+
       if(_vamps.size()==0)
         return false;
       
@@ -1372,21 +1404,34 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       //int i2=0;
       for(const QRect &rect : event->region()){
-        //printf("  Rect %d: %d, %d -> %d, %d\n", i2++, rect.x(), rect.y(), rect.x() + rect.width(), rect.y() + rect.width());
+
+#if 0
+        printf("  Rect %d: %d, %d -> %d, %d. Covered: %d\n", i2++, rect.x(), rect.y(), rect.x() + rect.width(), rect.y() + rect.height(), already_painted_areas.contains(rect));
+
+        if(already_painted_areas.rects().size()>0){
+          QRect rect2 = already_painted_areas.rects().at(0);
+          printf("   t_X: %d,%d -> %d, %d. Size: %d\n", rect2.x(), rect2.y(), rect2.right(), rect2.bottom(), already_painted_areas.rects().size());
+        }
+#endif
+
+        if (workingQRegionContains(already_painted_areas, rect))
+          continue;
 
         bool rect_is_contained_in_vamp = false;
 
         int i=0;
-        
+
         for(const auto *vamp : _vamps){
 
           //printf("            VampRect %d: %d, %d -> %d, %d. Intersects: %d\n", i2++, vamp->_rect.x(), vamp->_rect.y(), vamp->_rect.right(), vamp->_rect.bottom(), rect.intersects(vamp->_rect));
                   
           if (rect.intersects(vamp->_rect)){
             
-            if(vamps_to_paint[i]==false)
+            if(vamps_to_paint[i]==false){
+              num_vamps_to_paint++;
               vamps_to_paint[i] = true;
-            
+            }
+
             if (vamp->_rect.contains(rect)==true){
               rect_is_contained_in_vamp = true;
               break;
@@ -1499,6 +1544,31 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
       
       bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_MOVING, point.x(), point.y());
+      if (g_scheme_failed==true && gui_isOpen(guinum))
+        _mouse_event_failed = true;
+      
+      return ret;
+      
+      //printf("    move. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+    }
+
+    bool mouseLeaveEvent(QEvent *event){
+      R_ASSERT_RETURN_IF_FALSE2(_mouse_callback!=NULL, false);
+
+#ifndef RELEASE
+      if (_mouse_event_failed){
+        printf("mouse_event failed last time. Won't try again\n");
+        return false;
+      }
+#endif
+      
+      event->accept();
+
+      const QPoint point(0,0);
+
+      int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
+      
+      bool ret = S7CALL(bool_int_int_float_float,_mouse_callback, _currentButton, API_MOUSE_LEAVING, point.x(), point.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = true;
       
@@ -1892,7 +1962,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       return ret;
     }
 
-    bool paintEvent(QPaintEvent *event) {
+    bool paintEvent(QPaintEvent *event, const QRegion &already_painted_areas) {
       bool ret = true;
 
       if(_image!=NULL) {
@@ -1906,16 +1976,19 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         int num_vamps = _vamps.size();
         bool vamps_to_paint[R_MAX(1, num_vamps)] = {};
         
-        bool only_vamps_needs_to_be_painted = getVampsToPaint(event, vamps_to_paint);
+        int num_vamps_to_paint;
+        bool only_vamps_needs_to_be_painted = getVampsToPaint(event, vamps_to_paint, already_painted_areas, num_vamps_to_paint);
 
         if (only_vamps_needs_to_be_painted){
 
           //printf("Only vamp painting %d\n", vamps_to_paint[0]);
-          
-          TRACK_PAINT();
-          QPainter p(_widget);
-          paintVamps(p, vamps_to_paint);
-          
+
+          if (num_vamps_to_paint > 0){
+            TRACK_PAINT();
+            QPainter p(_widget);
+            paintVamps(p, vamps_to_paint);
+          }
+
         } else {
 
           if (_paint_callback!=NULL || _background_color.isValid())
@@ -3927,6 +4000,97 @@ int64_t API_get_gui_from_existing_widget(QWidget *widget){
 #endif
 
   return API_get_gui_from_widget(widget);
+}
+
+void API_run_paint_event_for_custom_widget(QWidget *widget, QPaintEvent *ev, const QRegion &already_painted_areas){
+  ScopedEventHandlerTracker event_handler_tracker;
+
+  Gui *gui = g_gui_from_widgets.value(widget);
+  if (gui==NULL){
+    fprintf(stderr, "     API_run_paint_event_for_custom_widget: No Gui created for widget %p\n", widget);
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+
+  gui->paintEvent(ev, already_painted_areas);
+}
+
+bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, QMouseEvent *ev){
+  ScopedEventHandlerTracker event_handler_tracker;
+
+  Gui *gui = g_gui_from_widgets.value(widget);
+  if (gui==NULL){
+    fprintf(stderr, "     API_run_mouse_press_event_for_custom_widget: No Gui created for widget %p\n", widget);
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+
+  if (gui->_mouse_callback != NULL)
+    return gui->mousePressEvent(ev);
+  else
+    return false;
+}
+
+bool API_run_mouse_move_event_for_custom_widget(QWidget *widget, QMouseEvent *ev){
+  ScopedEventHandlerTracker event_handler_tracker;
+
+  Gui *gui = g_gui_from_widgets.value(widget);
+  if (gui==NULL){
+    fprintf(stderr, "     API_run_mouse_press_event_for_custom_widget: No Gui created for widget %p\n", widget);
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+
+  if (gui->_mouse_callback != NULL)
+    return gui->mouseMoveEvent(ev);
+  else
+    return false;
+}
+
+bool API_run_mouse_release_event_for_custom_widget(QWidget *widget, QMouseEvent *ev){
+  ScopedEventHandlerTracker event_handler_tracker;
+
+  Gui *gui = g_gui_from_widgets.value(widget);
+  if (gui==NULL){
+    fprintf(stderr, "     API_run_mouse_press_event_for_custom_widget: No Gui created for widget %p\n", widget);
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+
+  if (gui->_mouse_callback != NULL)
+    return gui->mouseReleaseEvent(ev);
+  else
+    return false;
+}
+
+bool API_run_mouse_leave_event_for_custom_widget(QWidget *widget, QEvent *ev){
+  ScopedEventHandlerTracker event_handler_tracker;
+
+  Gui *gui = g_gui_from_widgets.value(widget);
+  if (gui==NULL){
+    fprintf(stderr, "     API_run_mouse_press_event_for_custom_widget: No Gui created for widget %p\n", widget);
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+
+  if (gui->_mouse_callback != NULL)
+    return gui->mouseLeaveEvent(ev);
+  else
+    return false;
+}
+
+void API_run_resize_event_for_custom_widget(QWidget *widget, QResizeEvent *ev){
+  ScopedEventHandlerTracker event_handler_tracker;
+
+  Gui *gui = g_gui_from_widgets.value(widget);
+  if (gui==NULL){
+    fprintf(stderr, "     API_run_mouse_press_event_for_custom_widget: No Gui created for widget %p\n", widget);
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+
+  if (gui->_resize_callback != NULL)
+    gui->resizeEvent(ev);
 }
 
 int64_t gui_getMainXSplitter(void){

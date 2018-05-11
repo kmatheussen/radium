@@ -321,7 +321,7 @@
                        (get-as-displayable-string-as-possible (list "Custom error hook catch failed:\n"))))
               (handle-assertion-failure-during-startup (list "error-hook failed\n" backtrace-txt)))))
 
-;;(handle-assertion-failure-during-startup "hello")
+-;;(handle-assertion-failure-during-startup "hello")
 
 ;; Test startup crash: (crash reporter should show up, and program exit). Startup crashes before this point (i.e. before the error hook is added, are not handled.)
 ;;(+ a 90)
@@ -530,7 +530,7 @@
   (my-require 'pluginmanager.scm)
 
   (assert-functions-called-from-evalScheme)
-  
+
   (set! *is-initializing* #f))
 
 

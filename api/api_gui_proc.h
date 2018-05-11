@@ -20,12 +20,22 @@ void *API_get_native_gui_handle(int guinum);
 
 #if USE_QT5
 class QWidget;
+class QPaintEvent;
+class QMouseEvent;
+
 QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void);
 QWidget *MIXERSTRIPS_get_curr_widget(void);
 QWidget *API_gui_get_widget(int64_t guinum);
 QWidget *API_gui_get_parentwidget(QWidget *child, int64_t guinum); // child can be NULL. It's only used when guinum=-2.
 int64_t API_get_gui_from_widget(QWidget *widget);
 int64_t API_get_gui_from_existing_widget(QWidget *widget);
+
+void API_run_paint_event_for_custom_widget(QWidget *widget, QPaintEvent *ev, const QRegion &already_painted_areas);
+bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
+bool API_run_mouse_move_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
+bool API_run_mouse_release_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
+bool API_run_mouse_leave_event_for_custom_widget(QWidget *widget, QEvent *ev);
+void API_run_resize_event_for_custom_widget(QWidget *widget, QResizeEvent *ev);
 
 QWidget *API_get_main_ysplitter(void);
 QWidget *API_get_lowertabs(void);

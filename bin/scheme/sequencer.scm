@@ -1,486 +1,529 @@
 
 (provide 'sequencer.scm)
 
+;;(my-require 'area.scm)
+(my-require 'gui.scm)
+(my-require 'instruments.scm)
+(my-require 'area.scm)
 
 
-(define (show-sequencer-header-popup-menu instrument-id parentgui)
-  (popup-menu
-   (list "Reset volume"
-         (lambda ()
-           (<ra> :undo-instrument-effect instrument-id "System Volume")
-           (<ra> :set-instrument-effect instrument-id "System Volume" (db-to-radium-normalized 0.0))))
-   "------------"
-   (get-instrument-popup-entries instrument-id parentgui)))
+
+;; There's a lot of copy-paste code from mixer-strip.scm:create-mixer-strip-mutesolo here, but I hope this code will eventually replace mixer-strip.scm:create-mixer-strip-mutesolo some day.
+(def-area-subclass (<mute-solo-buttons> :gui :x1 :y1 :x2 :y2
+                                        :instrument-id
+                                        :use-single-letters 
+                                        :stack-horizontally )
+
+  (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
+
+  (define (get-muted)
+    (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
+  (define (get-soloed)
+    (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
+
+  (define (turn-off-all-mute except)
+    (for-each (lambda (instrument-id)
+                (when (and (not (= instrument-id except))
+                           (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
+                  (<ra> :undo-instrument-effect instrument-id volume-on-off-name)
+                  (<ra> :set-instrument-effect instrument-id volume-on-off-name 1)
+                  ))
+              (get-all-audio-instruments)))
   
+  (define (turn-off-all-solo except)
+    (for-each (lambda (instrument-id)
+                (when (and (not (= instrument-id except))
+                           (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
+                  ;;(<ra> :undo-instrument-effect instrument-id "System Solo On/Off")
+                  (set-instrument-solo! instrument-id #f)
+                  ))
+              (get-all-audio-instruments)))
 
-(define (create-seqtrack-volume-slider instrument-id instrument-name use-two-rows)
-  (define (get-db-value)
-    (radium-normalized-to-db (<ra> :get-stored-instrument-effect instrument-id "System Volume")))
-  (define (set-db-value db)    
-    (<ra> :set-instrument-effect instrument-id "System Volume" (db-to-radium-normalized db)))
-
-  (define (get-scaled-value)
-    (db-to-slider (get-db-value)))
+  (define last-drawn-implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id))
   
-  (define has-made-undo #f)
-
-  (define (maybe-make-undo)
-    (when (not has-made-undo)
-      (set! has-made-undo #t)
-      (<ra> :undo-instrument-effect instrument-id "System Volume")))
-
-  (define automation-value #f)
-  (define automation-color (<ra> :get-instrument-effect-color instrument-id "System Volume"))
-  (define (get-automation-data kont)
-    (if automation-value
-        (kont automation-value automation-color)))
-
-  (define last-value -20000)
-  (define volume-slider #f)
-  (set! volume-slider (<gui> :horizontal-slider "" 0 (get-scaled-value) 1.0
-                             (lambda (val)
-                               ;;(<ra> :set-instrument-effect instrument-id effect-name val)
-                               (when volume-slider
-
-                                 (define db (slider-to-db val))
-                                 ;;(c-display "new-db:" db ", old-db:" last-value)
-                                 (when (not (= last-value db))
-                                   (set! last-value db)
-                                   (maybe-make-undo)
-                                   (set-db-value db))
-                               
-                                 ;;(set-value val)
-                                 (<gui> :update volume-slider)
-                                 ;;(<ra> :set-current-instrument first-instrument-id)
-                                 ))))
+  (<ra> :schedule (random 1000) (lambda ()
+                                   (and is-alive (<gui> :is-open gui) (<ra> :instrument-is-open-and-audio instrument-id)
+                                        (begin
+                                          (if (not (eq? last-drawn-implicitly-muted
+                                                        (<ra> :instrument-is-implicitly-muted instrument-id)))
+                                              (update-me!))
+                                          100))))
   
-  (add-gui-effect-monitor volume-slider instrument-id "System Volume" #t #t
-                          (lambda (radium-normalized automation)
-                            (when radium-normalized
-                              (define new-value (radium-normalized-to-slider radium-normalized))
-                              (<gui> :set-value volume-slider new-value))
-                            (when automation
-                              (set! automation-value (if (< automation 0)
-                                                         #f
-                                                         automation))
-                              (<gui> :update volume-slider))))
+  (add-area-effect-monitor! instrument-id volume-on-off-name #t #t
+                            (lambda (on/off automation)
+                              (update-me!)))
+  
+  (add-area-effect-monitor! instrument-id "System Solo On/Off" #t #t
+                            (lambda (on/off automation)
+                              ;;(c-display "Solo changed for" instrument-id)
+                              (update-me!)))
+  
+  (define (get-selected type)
+    (if (eq? type 'solo)
+        (get-soloed)
+        (get-muted)))
 
-  (define (get-volume-slider-value-text value)
-    (db-to-text (slider-to-db value) #t))
+  (define layout-func (if stack-horizontally
+                          horizontally-layout-areas
+                          vertically-layout-areas))
 
-  (define (get-volume-slider-text)
-    (let ((volume-text (get-volume-slider-value-text (get-scaled-value))))
-      (if use-two-rows
-          (<-> "  " volume-text)
-          (<-> instrument-name ": " volume-text))))
-    
-  (add-safe-paint-callback volume-slider
-                           (lambda (width height)
-                             (paint-horizontal-instrument-slider volume-slider
-                                                                 instrument-id
-                                                                 (get-scaled-value)
-                                                                 (get-volume-slider-text)
-                                                                 #t
-                                                                 #f
-                                                                 get-automation-data
-                                                                 0
-                                                                 width height)))
+  (layout-func x1 y1 x2 y2
+               (list 'mute 'solo)
+               :callback
+               (lambda (type x1 y1 x2 y2)
+                 (add-sub-area-plain! (<new> :checkbox gui x1 y1 x2 y2
+                                             #t
+                                             (lambda (_)
+                                               (define is-selected (get-selected type))
+                                               (if (eq? type 'solo)
+                                                   (set! last-drawn-implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id)))
+                                               (draw-mutesolo gui
+                                                              type
+                                                              instrument-id
+                                                              x1 y1 x2 y2
+                                                              is-selected
+                                                              use-single-letters
+                                                              :background-color (get-mixer-strip-background-color gui instrument-id)
+                                                              :border 0))
+                                             (lambda (_)
+                                               (define is-selected (not (get-selected type)))
+                                               (undo-block
+                                                (lambda ()
+                                                  (if (eq? type 'solo)
+                                                      (begin
+                                                        (<ra> :set-instrument-solo instrument-id is-selected)
+                                                        (if (<ra> :control-pressed)
+                                                            (turn-off-all-solo instrument-id)))
+                                                      (begin
+                                                        (<ra> :set-instrument-mute instrument-id is-selected)
+                                                        ;;(c-display "mute: " is-muted)
+                                                        (if (<ra> :control-pressed)
+                                                            (turn-off-all-mute instrument-id)))))))))))
+  )
 
-  (define is-dragging #f)
+(def-area-subclass (<instrument-name> :gui :x1 :y1 :x2 :y2
+                                      :instrument-id)
+  
+  (define last-painted-name "")
 
-  (add-safe-mouse-callback volume-slider                           
-                           (lambda (button state x y)
-                             (when (and (= state *is-pressing*)
-                                        (= button *right-button*))
-                               (show-sequencer-header-popup-menu instrument-id volume-slider))
-                             (when (and (= state *is-pressing*)
-                                        (= button *left-button*))
-                               (set! has-made-undo #f)
-                               (set! is-dragging #t))
-                             (if (= state *is-releasing*)
-                                 (set! is-dragging #f))
-                             (let ((status-text (get-volume-slider-text)))
-                               (if is-dragging 
-                                   (set-tooltip-and-statusbar status-text)
-                                   (<ra> :set-statusbar-text status-text)))
-                             (when (= state *is-releasing*)
-                               (c-display "RELEASE")
-                               (<gui> :tool-tip ""))
-                             #f))
-  volume-slider)
+  (define (paint)
+                ;;(<gui> :set-clip-rect gui x1 y1 x2 y2)
+                (let* ((b 0)
+                       (x1 (+ x1 b))
+                       (y1 (+ y1 b))
+                       (x2 (- x2 b))
+                       (y2 (- y2 b)))
+                  (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id)
+                  (define instrument-name (<ra> :get-instrument-name instrument-id))
+                  (set! last-painted-name instrument-name)
+                  (<gui> :draw-text gui *text-color* instrument-name
+                         (+ 4 x1) y1 x2 y2
+                         #f ;; wrap-lines
+                         #f ;; align top
+                         #t) ;; align left
+                  (define background-color (<gui> :get-background-color gui))
+                  (<gui> :draw-box gui background-color (+ 0 x1) (+ 0 y1) (- x2 0) (- y2 0) 2 0 0)
+                  (<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 5 5))
+                ;;(<gui> :cancel-clip-rect gui)
+                )
 
-(define (create-seqtrack-header-gui instrument-id use-two-rows)
-  (define gui (<gui> :horizontal-layout))
+  (<ra> :schedule (random 1000)
+        (lambda ()
+          (and is-alive (<gui> :is-open gui) (<ra> :instrument-is-open-and-audio instrument-id)
+               (begin
+                 (if (not (string=? last-painted-name (<ra> :get-instrument-name instrument-id)))
+                     (update-me!))
+                 300))))
+  
+  (add-mouse-cycle! :press-func (lambda x
+                                  #t)
+                    :release-func
+                    (lambda (button x* y*)
+                      (and (= button *left-button*)
+                           (let* ((old-name (<ra> :get-instrument-name instrument-id))
+                                  (new-name (<ra> :request-string "New name:" #t old-name)))
+                             (c-display "GAKKKGAKK_________ NEWNAME" (<-> "-" new-name "-"))
+                             (when (and (not (string=? new-name ""))
+                                        (not (string=? new-name old-name)))
+                               (<ra> :set-instrument-name new-name instrument-id)
+                               (update-me!))
+                             #f)))) ;; Mouse cycle is screwed up when focus is switeched to a different widget. #f fixes this.
+  )
 
-  (define instrument-name (<ra> :get-instrument-name instrument-id))
 
-  ;;(define system-background-color (<gui> :get-background-color gui))
-  (define background-color (get-mixer-strip-background-color gui instrument-id))
-  (define instrument-color (<ra> :get-instrument-color instrument-id))
+(def-area-subclass (<seqtrack-header> :gui :x1 :y1 :x2 :y2
+                                      :instrument-id
+                                      :use-two-rows)
 
-  (define name-gui (and use-two-rows
-                        (let ((name-gui (<gui> :line instrument-name
-                                               (lambda (new-name)
-                                                 (c-display "NEWNAME" new-name)
-                                                 (<ra> :set-instrument-name new-name instrument-id)))))
-                          (<gui> :set-background-color name-gui background-color)
-                          name-gui)))
+  ;;(<gui> :set-background-color gui "blue")
 
   (define fontheight (get-fontheight))
   (define fontheight-and-borders (+ 4 fontheight))
 
-  ;;(define pan-height fontheight-and-borders)
-  (define mutesolo-height fontheight-and-borders)
+  (define mutesolo-width (myfloor (* 1.8 (<gui> :text-width "M S"))))
+  (define meter-width (max 4 (myfloor (/ fontheight 2))))
 
-                               
-  (define volume-slider (create-seqtrack-volume-slider instrument-id instrument-name use-two-rows))
+  (define name-height (if use-two-rows
+                          (* fontheight 1.3)
+                          height))
 
-  ;;(define pan-gui (create-mixer-strip-pan instrument-id
-  ;;                                        strips-config
-  ;;                                        system-background-color
-  ;;                                        background-color
-  ;;                                        pan-height))
+  (define b (max 1 (myfloor (/ fontheight 6)))) ;; border between areas.
+  
+  (define x-meter-split (- x2 (+ b meter-width)))
+  (define x1-split (- x-meter-split (+ b mutesolo-width)))
+  (define y-split (myfloor (+ y1 name-height)))
 
-  (define mutesolo-gui (create-mixer-strip-mutesolo instrument-id 
-                                                    #f
-                                                    background-color
-                                                    mutesolo-height
-                                                    #t
-                                                    #t
-                                                    :set-fixed-size #f))
-  (<gui> :set-layout-spacing mutesolo-gui 2 0 0 0 0)
-
-  (define meter-instrument-id (find-meter-instrument-id instrument-id))
-  (define meter-gui (<gui> :vertical-audio-meter meter-instrument-id))
-
-  (define upper-row (and use-two-rows
-                         (let ((upper-row (<gui> :horizontal-layout
-                                                 name-gui
-                                                 mutesolo-gui)))
-                           (<gui> :set-size-policy upper-row #t #f)
-                           (<gui> :set-layout-spacing upper-row 2 2 0 2 0)
-                           upper-row)))
 
   (if use-two-rows
-      (<gui> :add gui
-             (let ((rows (<gui> :vertical-layout
-                                upper-row
-                                volume-slider)))
-               (<gui> :set-layout-spacing rows 2 2 0 2 0)
-               rows))
+      (add-sub-area-plain! (<new> :instrument-name gui
+                                  x1 y1 x1-split
+                                  y-split
+                                  instrument-id)))
+
+  (add-sub-area-plain! (<new> :mute-solo-buttons gui
+                              (+ b x1-split) y1
+                              x-meter-split y-split
+                              instrument-id #t #t))
+  (add-sub-area-plain! (<new> :horizontal-instrument-slider gui
+                              x1 (if use-two-rows (+ b y-split) y1)
+                              (if use-two-rows x-meter-split x1-split) y2
+                              instrument-id
+                              :use-two-rows use-two-rows))
+
+  (define vam (<gui> :add-vertical-audio-meter gui instrument-id (+ b x-meter-split) y1 x2 y2))
+  ;;(define vam2 (<gui> :add-vertical-audio-meter gui instrument-id (- x2 8) y1 x2 y2))
+  
+  ;;(<gui> :remove-vertical-audio-meter vam)
+
+  (set! paint? (lambda ()
+                 (<ra> :instrument-is-open-and-audio instrument-id)))
+  
+  '(set! paint (lambda ()
+                ;;(define background-color (get-mixer-strip-background-color gui instrument-id))
+                 (define background-color (<gui> :get-background-color gui))
+                ;;(define background-color (<ra> :generate-new-color))
+                 (<gui> :filled-box gui background-color x1 y1 x2 y2)
+                 )
+        )
+  
+  '(set! post-paint (lambda ()
+                     (define background-color (get-mixer-strip-background-color gui instrument-id))
+                     (define background-color (<ra> :generate-new-color))
+                     (<gui> :do-alpha gui 0.65
+                            (lambda ()
+                              (<gui> :filled-box gui background-color x1 y1 x2 y2)))
+                     )
+        )
+  
+  )
+
+
+(def-area-subclass (<sequencer-height-dragger> :gui :x1 :y1 :x2 :y2)
+  (define background-color (<gui> :get-background-color gui))
+  (define border-color (<gui> :mix-colors background-color "black" 0.5))
+
+  (define (paint)
+    ;;(<gui> :filled-box gui background-color 0 0 width height)
+    (<gui> :draw-text gui *text-color* "=" x1 y1 x2 y2
+           #f ;; wrap-lines
+           #f ;; align top
+           #f)
+    (<gui> :draw-box gui border-color
+           (1+ x1) (1+ y1)
+           (1- x2) (1- y2)
+           1.3 0 0)) ;; align left
+
+  (define (mouse-callback button state x y)
+    (if (and (>= x x1)
+             (< x x2)
+             (>= y y1)
+             (< y y2))
+        (begin
+          ;;(c-display "x/y" x y)
+          (set-mouse-pointer ra:set-vertical-resize-mouse-pointer gui)
+          ;;(set-tooltip-and-statusbar "Change sequencer height"))
+        (begin
+          (set-mouse-pointer ra:set-normal-mouse-pointer gui)
+          ;;(set-tooltip-and-statusbar "")
+          ))))
+  
+  (add-nonpress-mouse-cycle!
+   :enter-func (lambda (x* y)
+                 (set-mouse-pointer ra:set-vertical-resize-mouse-pointer gui)
+                 #f))
+
+  (add-statusbar-text-handler (lambda ()
+                                "Change sequencer height"))
+  
+  (add-delta-mouse-cycle!
+   :drag-func
+   (lambda (button x* y* dx dy)
+     (define size0 ((<gui> :get-splitter-sizes *ysplitter*) 0))
+     (define size1 ((<gui> :get-splitter-sizes *ysplitter*) 1))
+     
+     (define new-size0 (+ size0 dy))
+     (when (< new-size0 0)
+       (set! new-size0 0)
+       (set! dy (- size0)))
+     
+     (define new-size1 (- size1 dy))
+     (when (< new-size1 0)
+       (set! new-size1 0))
+     
+     ;;(c-display "Y:" y ", start-y:" start-y ". DY:" (- y start-y))
+     (<gui> :set-splitter-sizes *ysplitter* (list new-size0 new-size1)))
+
+   :release-func
+   (lambda (button x* y*)
+     (set-mouse-pointer ra:set-normal-mouse-pointer gui))
+   )
+  )
+
+#!!
+(<ra> :schedule 3000
+      (lambda ()
+        (let loop ((n (floor (myrand 2 17))))
+          (when (> n 0)
+            (define dy (floor (myrand -100 100)))
+            (define size0 ((<gui> :get-splitter-sizes *ysplitter*) 0))
+            (define size1 ((<gui> :get-splitter-sizes *ysplitter*) 1))
+            
+            (define new-size0 (+ size0 dy))
+            (when (< new-size0 0)
+              (set! new-size0 0)
+              (set! dy (- size0)))
+            
+            (define new-size1 (- size1 dy))
+            (when (< new-size1 0)
+              (set! new-size1 0))
+        
+            ;;(c-display "Y:" y ", start-y:" start-y ". DY:" (- y start-y))
+            (<gui> :set-splitter-sizes *ysplitter* (list new-size0 new-size1))
+            (loop (- n 1))))
+        (if (= 0 (myrand 0 50))
+            5000
+            (floor (myrand 5 20)))))
+
+(define added 0)
+(<ra> :schedule 500
+      (lambda ()
+        (if (< added (myrand 30 50))
+            (begin
+              (<ra> :append-seqtrack)
+              (set! added (1+ added)))
+            (begin
+              (let loop ((n (floor (myrand 2 (- added 2)))))
+                (<ra> :delete-seqtrack 0)
+                (set! added (- added 1)))))
+        2000))
+
+(<ra> :toggle-full-screen)
+!!#
+
+(def-area-subclass (<sequencer-left-part-buttons> :gui :x1 :y1 :x2 :y2)
+
+  (define (callback type)
+    (cond ((eq? type '+)
+           (define seqtracknum (<ra> :get-curr-seqtrack))
+           (<ra> :insert-seqtrack seqtracknum))
+          ((eq? type '-)
+           (define seqtracknum (<ra> :get-curr-seqtrack))
+           (set! *current-seqblock-info* #f)
+           (<ra> :delete-seqtrack seqtracknum))
+          ((eq? type 'Append)
+           (<ra> :append-seqtrack))
+          (else
+           (assert #f))))
+
+  (define b (max 0 (/ (get-fontheight) 6)))
+  (horizontally-layout-areas x1 y1 x2 y2
+                             (list '+ '- 'Append)
+                             :y1-border (1+ b)
+                             :spacing b
+                             :callback
+                             (lambda (type x1 y1 x2 y2)
+                               (add-sub-area-plain! (<new> :button gui x1 y1 x2 y2
+                                                           :text (to-string type)
+                                                           :statusbar-text (cond ((eq? type '+) "Insert seqtrack")
+                                                                                 ((eq? type '-) "Delete current seqtrack")
+                                                                                 ((eq? type 'Append) "Append seqtrack")
+                                                                                 (else
+                                                                                  (assert #f)))                                                                                  
+                                                           :callback (lambda ()
+                                                                       (callback type)))))))
+
+
+(def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2)
+  (define num-seqtracks (<ra> :get-num-seqtracks))
+
+  (define seqtrack0-y1 (<ra> :get-seqtrack-y1 0))
+  
+  (define b 2)
+  (define b/2 (/ b 2))
+
+  (define dragger-height (myfloor (+ ((<ra> :get-box seqtimeline-area) :height)
+                                     (if (not (<ra> :seqtempo-visible))
+                                         0
+                                         ((<ra> :get-box seqtempo-area) :height)))))
+  
+  (define ty1 (+ y1 dragger-height))    
+  (define ty2 (- y2 (myfloor ((<ra> :get-box seqnav) :height))))
+
+  (c-display "       ___:" x1 y1 x2 y2 ty1 ty2)
+
+  (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 x2 ty1))
+
+  (define use-two-rows (> (/ (- ty2 ty1) num-seqtracks)
+                          (* 2.5 (get-fontheight))))
+  
+  (let loop ((seqtracknum 0))
+    (when (< seqtracknum num-seqtracks)
+      (define seqtrack-box (<ra> :get-box seqtrack seqtracknum))
+      (define sy1 (+ ty1 (- (seqtrack-box :y1) seqtrack0-y1)))
+      (define sy2 (+ ty1 (- (seqtrack-box :y2) seqtrack0-y1)))
+
+      ;;(set! sy1 (scale seqtracknum 0 num-seqtracks ty1 ty2))
+      ;;(set! sy2 (scale (1+ seqtracknum) 0 num-seqtracks ty1 ty2))
+
+      (set! sy1 (+ sy1
+                   (if (= 0 seqtracknum)
+                       0
+                       b/2)))
+      (set! sy2 (- sy2
+                   (if (= (1- num-seqtracks) seqtracknum)
+                       0
+                       b/2)))
+
+      (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
+      (if (>= instrument-id 0)
+          (add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 instrument-id use-two-rows)))
+      
+      (loop (1+ seqtracknum))))
+
+  (add-sub-area-plain! (<new> :sequencer-left-part-buttons gui x1 ty2 x2 y2))
+
+  (define background-color (<gui> :get-background-color gui))
+  
+  (define (paint)
+    (<gui> :filled-box gui background-color x1 y1 x2 y2))
+  
+  )
+
+'(def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2)
+  #t)
+
+
+(define *testarea* (and *use-testgui* (<new> :area *testgui* 20 30 2000 2000)))
+
+(if *use-testgui*
+    (<gui> :add-paint-callback *testgui*
+           (lambda (width height)
+             (try-finally :try (lambda ()
+                                 (*testarea* :paint-internal 0 0 width height))))))
+
+(if *use-testgui*
+    (<gui> :add-mouse-callback *testgui*
+           (lambda (button state x y)
+             ;;(c-display "asd" x y)
+             (*testarea* :mouse-callback-internal button state x y)
+             (if (*testarea* :has-mouse)
+                 #t
+                 #f))))
+
+(if *use-testgui*
+    (<gui> :add-deleted-callback *testgui*
+           (lambda (radium-runs-custom-exec)
+             (*testarea* :i-am-removed!))))
+
+
+(if *use-testgui*
+    (<gui> :show *testgui*))
+  
+
+(define (get-sequencer-left-part-position kont)
+  (define sequencer-box (<ra> :get-box sequencer))
+  (define x2 (<ra> :get-seqtrack-x1 0))
+  (kont 2 0
+        (- (- x2 (sequencer-box :x1)) 5)
+        (sequencer-box :height)))
+
+(define *had-sequencer-paint-callback* (defined? '*sequencer-left-part-area*))
+
+(define *sequencer-left-part-area* #f)
+
+(define (get-sequencer-left-part-area)
+  (when (not *sequencer-left-part-area*)
+    (set! *sequencer-left-part-area* (if *use-testgui*
+                                         *testarea*
+                                         (get-sequencer-left-part-position
+                                          (lambda (x1 y1 x2 y2)
+                                            (<new> :area (<gui> :get-sequencer-gui)
+                                                   x1 y1 x2 y2)))))
+    (when (and (not *use-testgui*)
+               (not *had-sequencer-paint-callback*))
+      (<gui> :add-paint-callback (<gui> :get-sequencer-gui)
+             (lambda (width height)
+               (get-sequencer-left-part-area)
+               (try-finally :try (lambda ()
+                                   (if (not *sequencer-left-part-area*)
+                                       (c-display "*sequencer-left-part-area* is false")
+                                       (*sequencer-left-part-area* :paint-internal 0 0 width height))))))
+      (<gui> :add-mouse-callback (<gui> :get-sequencer-gui)
+             (lambda (button state x y)
+               (get-sequencer-left-part-area)
+               ;;(c-display "asd" x y)
+               (*sequencer-left-part-area* :mouse-callback-internal button state x y)
+               (if (*sequencer-left-part-area* :has-mouse)
+                   #t
+                   #f)))
+      (<gui> :add-resize-callback (<gui> :get-sequencer-gui)
+             (lambda (width height)
+               (try-finally :try reconfigure-sequencer-left-part)))
+
+      ))
+  
+  *sequencer-left-part-area*)
+
+(define (reconfigure-sequencer-left-part)
+  (get-sequencer-left-part-area)
+
+  (define gui (if *use-testgui*
+                  *testgui*
+                  (<gui> :get-sequencer-gui)))
+
+  (define height ((<ra> :get-box sequencer) :height))
+  ;;(define height (- (<gui> :height *testgui*) 60))
+
+  (<gui> :remove-all-vertical-audio-meters gui)
+
+  (if *use-testgui*
       (begin
-        (<gui> :add gui volume-slider)
-        (<gui> :add gui mutesolo-gui)))
-
-  (<gui> :add gui
-         meter-gui)
-  
-  (<gui> :set-layout-spacing gui 0 2 2 2 2)
-  
-  ;(<gui> :set-size-policy volume-slider #t #t)
-  ;(<gui> :set-size-policy mutesolo-gui #t #t)
-  ;;(<gui> :set-size-policy gui #t #t)
-  
-  ;;(set-fixed-height volume-slider (<gui> :height mutesolo-gui))
-  (<gui> :set-size-policy volume-slider #t #t)
-  (<gui> :set-size-policy mutesolo-gui #t #t)
-
-  (set-fixed-width meter-gui (max 4 (floor (/ fontheight 2))))
-  (<gui> :set-size-policy meter-gui #f #t)
-
-  ;;(if name-gui
-  ;;    (<gui> :set-min-height name-gui (floor (* fontheight 1.5))))
-
-  (set-fixed-width mutesolo-gui (floor (* 1.8 (<gui> :text-width "M S"))))
-
-  (<gui> :set-size-policy gui #t #t)
-
-  gui)
+        ;;(define *testarea* (<new> :horizontal-instrument-slider *testgui* 20 30 110 120 (car (get-all-audio-instruments))))
+        ;;(define *testarea* (<new> :mute-solo-buttons *testgui* 20 30 110 120 (car (get-all-audio-instruments)) #t #t))
+        (*sequencer-left-part-area* :reset! 20 30 210 (+ 30 height))
+        
+        (*sequencer-left-part-area* :add-sub-area-plain! (<new> :sequencer-left-part gui
+                                                                20 30 
+                                                                210 (+ 30 height))))
+      (get-sequencer-left-part-position
+       (lambda (x1 y1 x2 y2)
+         (*sequencer-left-part-area* :reset! x1 y1 x2 y2)        
+         (*sequencer-left-part-area* :add-sub-area-plain! (<new> :sequencer-left-part gui
+                                                                 x1 y1 x2 y2)))))
+  )
 
 
-(if *is-initializing*
-    (let ((num-rows 1)
-          (last-showed-seqtempo #f))
-      (<ra> :schedule 100
-            (lambda ()
-              (define num-seqtracks (<ra> :get-num-seqtracks))
-              (define show-seqtempo (<ra> :seqtempo-visible))
-              ;;(c-display "num-rows/num-seqtracks:" num-rows num-seqtracks)
-              (when (or (not (= num-rows num-seqtracks))
-                        (not (eq? last-showed-seqtempo show-seqtempo)))
-                (set! num-rows num-seqtracks)
-                (set! last-showed-seqtempo show-seqtempo)
-                (recreate-left-part-gui))
-              70))))
-
-#!!    
-(define testgui (create-seqtrack-header-gui (<ra> :get-seqtrack-instrument seqtracknum) #t))
-(<gui> :show testgui)
-!##
-
-(define (add-seqtrack-header gui seqtracknum use-two-rows)
-  (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))  
-
-  (define sequencer-box (<ra> :get-box sequencer))
-  (define seqtrack-box (<ra> :get-box seqtrack seqtracknum))
-  (define y1 (floor (- (seqtrack-box :y1) (sequencer-box :y1))))
-  (define y2 (floor (- (seqtrack-box :y2) (sequencer-box :y1))))
-
-  ;;(define mixer-strip (create-standalone-mixer-strip instrument-id width (floor height)))
-  (define seqheader-gui (if (>= instrument-id 0)
-                            (create-seqtrack-header-gui instrument-id use-two-rows)
-                            (let ((gui (<gui> :widget)))
-                              (<gui> :set-size-policy gui #t #t)
-                              gui)))
-    
-  (<gui> :add gui seqheader-gui);; 0 y1 width y2)
-  ;;(set-fixed-size mixer-strip width height)
-
-  ;;(c-display "   " seqtracknum ": ADDed TO: " 0 y1 100 y2)
-
-  (add-safe-mouse-callback seqheader-gui
-                           (lambda (button state x y)
-                             (when (and (= state *is-pressing*)
-                                        (= button *right-button*))
-                               (show-sequencer-header-popup-menu instrument-id seqheader-gui))
-                             #f))
-
-  seqheader-gui)
-
-
-(define *g-sequencer-left-part-gui* (if *is-initializing*
-                                        #f
-                                        *g-sequencer-left-part-gui*))
-
-(delafina (create-sequencer-left-part-gui :use-two-rows 'undefined)
-  (define gui (<gui> :vertical-layout));;widget))
-  (<gui> :set-layout-spacing gui 0 0 0 0 0)
-
-  (define sequencer-box (<ra> :get-box sequencer))
-  (set-fixed-width gui (floor (* 1.5 (<gui> :text-width "S Seqtrack 0.... And M+S|"))))
-  ;;(<gui> :set-background-color gui "red")
-  
-  (define upper-left (<gui> :widget))
-  (if (not (<ra> :release-mode))
-      (<gui> :set-background-color upper-left "red"))
-  (set-fixed-height upper-left (floor (+ ((<ra> :get-box seqtimeline-area) :height)
-                                         (if (not (<ra> :seqtempo-visible))
-                                             0
-                                             ((<ra> :get-box seqtempo-area) :height)))))
-  (<gui> :add gui upper-left)
-
-  (begin
-    (define background-color (<gui> :get-background-color upper-left))
-    (define border-color (<gui> :mix-colors background-color "black" 0.5))
-    (add-safe-paint-callback upper-left
-                             (lambda (width height)
-                               (<gui> :filled-box upper-left background-color 0 0 width height)
-                               (<gui> :draw-box upper-left border-color 1 1 (- width 1) (- height 1) 1.3 0 0)
-                               (<gui> :draw-text upper-left *text-color* "=" 1 1 (- width 2) (- height 2)
-                                      #f ;; wrap-lines
-                                      #f ;; align top
-                                      #f)))) ;; align left
-
-  (let ((is-dragging #f)
-        (start-y #f))
-    (add-safe-mouse-callback upper-left                           
-                             (lambda (button state x y)
-                               (set-mouse-pointer ra:set-vertical-resize-mouse-pointer upper-left)
-                               (set-tooltip-and-statusbar "Change sequencer height")
-                               (when (and (= state *is-pressing*)
-                                          (= button *left-button*))                                 
-                                 (set! start-y y)                                 
-                                 (set! is-dragging #t))
-                               (when (= state *is-releasing*)
-                                 ;;(set-tooltip-and-statusbar "")
-                                 (set! is-dragging #f))
-                               (when is-dragging
-                                 (define size0 ((<gui> :get-splitter-sizes *ysplitter*) 0))
-                                 (define size1 ((<gui> :get-splitter-sizes *ysplitter*) 1))
-                                 
-                                 (define dy (- y start-y))
-                                 
-                                 (define new-size0 (+ size0 dy))
-                                 (when (< new-size0 0)
-                                   (set! new-size0 0)
-                                   (set! dy (- size0)))
-                                 
-                                 (define new-size1 (- size1 dy))
-                                 (when (< new-size1 0)
-                                   (set! new-size1 0))
-                                 
-                                 ;;(c-display "Y:" y ", start-y:" start-y ". DY:" (- y start-y))
-                                 (<gui> :set-splitter-sizes *ysplitter* (list new-size0 new-size1)))
-                               
-                               is-dragging)))
-
-
-  (define (use-two-rows?)
-    (let* ((seqtrack-box (<ra> :get-box seqtrack 0))
-           (height (seqtrack-box :height)))
-      ;;(c-display "seqbox/seqtrackbox\n" sequencer-box "\n" seqtrack-box "\ny1/y2:" y1 y2)
-      (cond ((eq? 'undefined use-two-rows)
-             (> height (* 2.5 (get-fontheight))))
-            (use-two-rows
-             (> height (* 2.5 (get-fontheight))))
-            (else
-             (> height (* 2.7 (get-fontheight)))))))
-
-  (if (eq? 'undefined use-two-rows)
-      (set! use-two-rows (use-two-rows?)))
-
-  (let ((scroll-area (<gui> :scroll-area #t #t)))
-    (<gui> :set-layout-spacing scroll-area 0 0 0 0 0)
-    
-    (define num-seqtracks (<ra> :get-num-seqtracks))
-    
-    (let loop ((seqtracknum 0))
-      (when (< seqtracknum num-seqtracks)
-        (add-seqtrack-header scroll-area seqtracknum use-two-rows)
-        (loop (1+ seqtracknum))))
-
-    (<gui> :set-size-policy scroll-area #t #t)
-    (<gui> :set-min-height scroll-area 10)
-  
-    (<gui> :add gui scroll-area))
-
-  
-  (define lower-left (<gui> :horizontal-layout)) ;;
-
-  (let ()
-    (if (not (<ra> :release-mode))
-        (<gui> :set-background-color lower-left "green"))
-
-    (<gui> :set-layout-spacing lower-left 2 2 2 2 2)
-    (set-fixed-height lower-left (floor ((<ra> :get-box seqnav) :height)))
-
-    (define pressed-color (<gui> :get-background-color lower-left))
-    (define background-color (<gui> :mix-colors pressed-color "black" 0.5))
-    (define text-color "white")
-    
-    (define button1 (mybutton "+" background-color pressed-color text-color
-                              (lambda ()
-                                (define seqtracknum (<ra> :get-curr-seqtrack))
-                                (<ra> :insert-seqtrack seqtracknum))))
-    (define button2 (mybutton "-" background-color pressed-color text-color
-                              (lambda ()
-                                (define seqtracknum (<ra> :get-curr-seqtrack))
-                                (set! *current-seqblock-info* #f)
-                                (<ra> :delete-seqtrack seqtracknum))))
-    (define button3 (mybutton "Append" background-color pressed-color text-color
-                              (lambda ()
-                                (<ra> :append-seqtrack))))
-
-    (if (= 1 (<ra> :get-num-seqtracks))
-        (<gui> :set-enabled button2 #f))
-    
-    (for-each (lambda (button)
-                (<gui> :set-size-policy button #t #t)
-                ;;(<gui> :set-background-color button "white")
-                (<gui> :add lower-left button))
-              (list button1 button2 button3))
-    
-    (<gui> :add gui lower-left))
-
-  ;;(<gui> :set-size-policy gui #f #f)
-
-  (define is-resizing #f)
-  (define is-creating #t)
-
-  ;;(<ra> :schedule 100
-  ;;      (lambda ()
-  ;;        (c-display "is-visible:" (FROM-C-sequencer-gui-is-visible) gui)
-  ;;        (if (<gui> :is-open gui)
-  ;;            100
-  ;;            #f)))
-
-  (<gui> :add-resize-callback gui
+(when *use-testgui*
+  (<gui> :add-resize-callback *testgui*
          (lambda (width height)
-           (define new-use-two-rows (use-two-rows?))
-           (when (not (eq? new-use-two-rows use-two-rows))
-             (when (and (not is-resizing) ;; Unfortunately, remake triggers a new resize, and we get a recursive call here. TODO: Fix this. Resize callback should never call itself.
-                        (not is-creating))
-               (set! is-resizing #t)             
-               ;;(<gui> :disable-updates gui)
-               ;;(c-display "  Calling remake from resize callback")
-               (recreate-left-part-gui new-use-two-rows)
-               ;;(<gui> :enable-updates gui)
-               (set! is-resizing #f)))))
-  
-  (set! is-creating #f)
+           (try-finally :try reconfigure-sequencer-left-part)))
 
-  gui)
+  (reconfigure-sequencer-left-part))
 
 #!!
-(<gui> :height *g-sequencer-left-part-gui*)
-(<gui> :set-size (<gui> :get-sequencer-gui) (<gui> :width (<gui> :get-sequencer-gui)) 400)
-!!#
-
-(define *g-full-sequencer-gui* (if *is-initializing*
-                                   #f
-                                   *g-full-sequencer-gui*))
-
-(delafina (create-full-sequencer-gui :use-two-rows 'undefined)
-  (define gui (<gui> :horizontal-layout))
-
-  (define left-part (create-sequencer-left-part-gui use-two-rows))
-  
-  (define sequencer-gui (<gui> :get-sequencer-gui))
-  ;;(<gui> :set-size-policy left-part #t #t)
-  
-  (<gui> :add gui left-part)
-
-  (<gui> :remove-parent sequencer-gui)
-  (<gui> :add gui sequencer-gui)
-
-  (<gui> :show sequencer-gui)
-
-  (set! *g-full-sequencer-gui* gui)
-  (set! *g-sequencer-left-part-gui* left-part)
-
-  gui)
-
-(delafina (recreate-left-part-gui :use-two-rows 'undefined)
-  (define old-left-part *g-sequencer-left-part-gui*)
-  (assert old-left-part)
-  (define new-left-part (create-sequencer-left-part-gui use-two-rows))
-  (try-finally :try (lambda ()
-                      (<gui> :replace *g-full-sequencer-gui* old-left-part new-left-part))
-               :failure (lambda ()
-                          (c-display "FAILURE!")
-                          (<gui> :add *g-full-sequencer-gui* new-left-part)))
-  (set! *g-sequencer-left-part-gui* new-left-part)
-
-  (<gui> :close old-left-part))
-
-
-;;(define full (create-full-sequencer-gui))
-
-;;(<gui> :add *g-full-sequencer-gui* (<gui> :get-sequencer-gui))
-
-(if (not *is-initializing*)
-    (recreate-left-part-gui))
-
-
-#!!
-(recreate-left-part-gui #f)
-(recreate-left-part-gui)
-
-(begin *g-sequencer-left-part-gui*)
-
-(define seq-gui (<gui> :get-sequencer-gui))
-
-(c-display seq-gui *g-full-sequencer-gui*)
-(<gui> :show seq-gui)
-(<gui> :remove-parent seq-gui)
-
-(<gui> :show *g-full-sequencer-gui*)
-
-(define new-seq-gui (create-full-sequencer-gui))
-(<gui> :show new-seq-gui)
-
-(begin *g-sequencer-left-part-gui*)
-(begin *g-full-sequencer-gui*)
+(reconfigure-sequencer-left-part)
 !!#
 
 
+
+;;(<gui> :height *testgui*)
