@@ -8,7 +8,18 @@
 
 
 
-;; There's a lot of copy-paste code from mixer-strip.scm:create-mixer-strip-mutesolo here, but I hope this code will eventually replace mixer-strip.scm:create-mixer-strip-mutesolo some day.
+(define (show-sequencer-header-popup-menu instrument-id parentgui)
+  (popup-menu
+   (list "Reset volume"
+         (lambda ()
+           (<ra> :undo-instrument-effect instrument-id "System Volume")
+           (<ra> :set-instrument-effect instrument-id "System Volume" (db-to-radium-normalized 0.0))))
+   "------------"
+   (get-instrument-popup-entries instrument-id parentgui)))
+
+
+
+;; There's a lot of copy-paste code from mixer-strip.scm:create-mixer-strip-mutesolo here, but I hope this code will eventually replace mixer-strip.scm:create-mixer-strip-mutesolo some day
 (def-area-subclass (<mute-solo-buttons> :gui :x1 :y1 :x2 :y2
                                         :instrument-id
                                         :use-single-letters 
@@ -135,8 +146,8 @@
                      (update-me!))
                  300))))
   
-  (add-mouse-cycle! :press-func (lambda x
-                                  #t)
+  (add-mouse-cycle! :press-func (lambda (button x* y*)
+                                  (= button *left-button*))
                     :release-func
                     (lambda (button x* y*)
                       (and (= button *left-button*)
@@ -214,7 +225,13 @@
                               (<gui> :filled-box gui background-color x1 y1 x2 y2)))
                      )
         )
-  
+
+  (add-mouse-cycle! :press-func (lambda (button x* y*)
+                                  (if (= button *right-button*)
+                                      (begin
+                                        (show-sequencer-header-popup-menu instrument-id gui)
+                                        #t)
+                                      #f)))  
   )
 
 
@@ -389,7 +406,7 @@
   (add-sub-area-plain! (<new> :sequencer-left-part-buttons gui x1 ty2 x2 y2))
 
   (define background-color (<gui> :get-background-color gui))
-  
+
   (define (paint)
     (<gui> :filled-box gui background-color x1 y1 x2 y2))
   

@@ -608,11 +608,13 @@
   
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
-     (define radium-normalized (get-radium-normalized))
-     (set! start-mouse-value (get-scaled-value radium-normalized));;(scale x* x1 x2 0 1));;(get-db-value));;(<ra> :get-stored-instrument-effect instrument-id effect-name))
-     ;;(c-display "press button/x/y" x* y*)
-     (set-statusbar-text! (get-statusbar-text))
-     #t)
+     (and (= button *left-button*)
+          (begin
+            (define radium-normalized (get-radium-normalized))
+            (set! start-mouse-value (get-scaled-value radium-normalized));;(scale x* x1 x2 0 1));;(get-db-value));;(<ra> :get-stored-instrument-effect instrument-id effect-name))
+            ;;(c-display "press button/x/y" x* y*)
+            (set-statusbar-text! (get-statusbar-text))
+            #t)))
    (lambda (button x* y* dx dy)
      (maybe-make-undo)
      (define slider-value (between 0 (+ start-mouse-value
