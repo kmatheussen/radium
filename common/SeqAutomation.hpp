@@ -209,7 +209,7 @@ public:
         
         if (always_set_value)
           value = rt->nodes[0].value;
-        
+
         return false;
       }
       

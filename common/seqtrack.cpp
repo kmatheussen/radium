@@ -1502,19 +1502,24 @@ bool SEQBLOCK_set_fade_out_shape(struct SeqBlock *seqblock, enum FadeShape shape
 // Returns true if there is more to play.
 bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
 
+  bool more_things_to_do = false;
+
   if (is_really_playing_song())
-    RT_SEQTRACK_AUTOMATION_called_per_block(seqtrack);
+    more_things_to_do = RT_SEQTRACK_AUTOMATION_called_per_block(seqtrack);
 
   RT_SEQBLOCK_ENVELOPE_called_before_editor(seqtrack);
   
   if (seqtrack->patch==NULL)
-    return false;
+    return more_things_to_do;
 
   SoundPlugin *plugin = (SoundPlugin*)seqtrack->patch->patchdata;
   if (plugin==NULL)
-    return false;
+    return more_things_to_do;
   
-  return RT_SEQTRACKPLUGIN_called_per_block(plugin, seqtrack);
+  if (RT_SEQTRACKPLUGIN_called_per_block(plugin, seqtrack))
+    more_things_to_do = true;
+
+  return more_things_to_do;
 }
 
 
@@ -1696,16 +1701,22 @@ int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wch
 }
 
 double SEQTRACK_get_length(struct SeqTrack *seqtrack){
-  int num_seqblocks = seqtrack->seqblocks.num_elements;
-    
-  if (num_seqblocks==0)
-    return 0.0;
-  
-  //SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
-  
-  struct SeqBlock *last_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[num_seqblocks-1];
+  int64_t ret = 0;
 
-  return get_seqblock_time2_s(last_seqblock);
+  struct SeqBlock *last_seqblock = (struct SeqBlock*)VECTOR_last(&seqtrack->seqblocks);
+  if (last_seqblock != NULL)
+    ret = last_seqblock->t.time2;
+
+  int num_automations = SEQTRACK_AUTOMATION_get_num_automations(seqtrack->seqtrackautomation);
+
+  for(int automationnum = 0 ; automationnum < num_automations ; automationnum++){
+    int num_nodes = SEQTRACK_AUTOMATION_get_num_nodes(seqtrack->seqtrackautomation, automationnum);
+    int64_t len = R_MAX(ret, SEQTRACK_AUTOMATION_get_seqtime(seqtrack->seqtrackautomation, automationnum, num_nodes-1));
+    if (len > ret)
+      ret = len;
+  }
+
+  return (double)ret / (double)pc->pfreq;
 }
 
 // The returned vector contains the vector to paint last first, and vice versa.
