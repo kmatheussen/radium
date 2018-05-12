@@ -5998,29 +5998,41 @@
 
 
 (define (create-sequencer-automation seqtracknum X Y)
+  (define (instrument-popup-menu instrument-id)
+    (popup-menu (map (lambda (effectnum)
+                       (list (<-> effectnum ". " (<ra> :get-instrument-effect-name effectnum instrument-id))
+                             (lambda ()
+                               (define Time1 (scale X
+                                                    (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
+                                                    (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                               (define Time2 (scale (+ X (* 5 *seqnode-min-distance*))
+                                                    (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
+                                                    (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                               (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
+                               ;;(c-display effectnum)
+                               (<ra> :add-seq-automation
+                                     (floor Time1) Value
+                                     (floor Time2) Value
+                                     effectnum
+                                     instrument-id
+                                     seqtracknum))))
+                     (iota (<ra> :get-num-instrument-effects instrument-id)))))
+
+  (define seqtrack-instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
+
   (define all-instruments (get-all-audio-instruments))
+
   (popup-menu
+   (if (>= seqtrack-instrument-id 0)
+       (list (<ra> :get-instrument-name seqtrack-instrument-id)
+             (lambda ()
+               (instrument-popup-menu seqtrack-instrument-id)))
+       '())
+   "---------------------"
    (map (lambda (num instrument-id)
           (list (<-> num ". " (<ra> :get-instrument-name instrument-id))
                 (lambda ()
-                  (popup-menu (map (lambda (effectnum)
-                                     (list (<-> effectnum ". " (<ra> :get-instrument-effect-name effectnum instrument-id))
-                                           (lambda ()
-                                             (define Time1 (scale X
-                                                                 (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
-                                                                 (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
-                                             (define Time2 (scale (+ X (* 5 *seqnode-min-distance*))
-                                                                  (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
-                                                                  (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
-                                             (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
-                                             (c-display num effectnum)
-                                             (<ra> :add-seq-automation
-                                                   (floor Time1) Value
-                                                   (floor Time2) Value
-                                                   effectnum
-                                                   instrument-id
-                                                   seqtracknum))))
-                                   (iota (<ra> :get-num-instrument-effects instrument-id)))))))
+                  (instrument-popup-menu instrument-id))))
         (iota (length all-instruments))
         all-instruments)))
 
