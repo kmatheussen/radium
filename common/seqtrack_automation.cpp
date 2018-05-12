@@ -649,11 +649,11 @@ void SEQTRACK_AUTOMATION_set(struct SeqTrack *seqtrack, int automationnum, int n
   AutomationNode node = automation->automation.at(nodenum);
   const AutomationNode *next = nodenum==size-1 ? NULL : &automation->automation.at(nodenum+1);
 
-  double mintime = prev==NULL ? 0 : prev->time; //next==NULL ? R_MAX(R_MAX(node.time, seqtime), SONG_get_length()) : prev->time;
-  double maxtime = next==NULL ? get_seqtrack_song_length(seqtrack)  : next->time;
+  if (prev != NULL)
+    seqtime = R_MAX(prev->time, seqtime);
 
-  //printf("       mintime: %f, seqtime: %f, maxtime: %f\n",mintime,seqtime,maxtime);
-  seqtime = R_BOUNDARIES(mintime, seqtime, maxtime);
+  if (next != NULL)
+    seqtime = R_MIN(next->time, seqtime);
 
   value = R_BOUNDARIES(0.0, value, 1.0);
 
@@ -734,24 +734,26 @@ void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqT
 }
   
 
-// Called from seqtrack.cpp
-void RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
-  R_ASSERT_NON_RELEASE(is_playing() && pc->playtype==PLAYSONG);
+// Called from seqtrack.cpp. Returns true if there are more things to do.
+bool RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
+  R_ASSERT_NON_RELEASE2(is_playing() && pc->playtype==PLAYSONG, false);
+
+  bool more_things_to_do = false;
 
   int64_t seqtime = seqtrack->end_time; // use end_time instead of start_time to ensure automation is sent out before note start. (causes slightly inaccurate automation, but it probably doesn't matter)
     
-  R_ASSERT_RETURN_IF_FALSE(seqtrack->seqtrackautomation!=NULL);
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack->seqtrackautomation!=NULL, more_things_to_do);
 
   for(auto *automation : seqtrack->seqtrackautomation->_automations){
     struct Patch *patch = automation->patch;
     int effect_num = automation->effect_num;
 
-    R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
+    R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(), more_things_to_do);
     
     SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
     if (plugin==NULL) {
       
-      R_ASSERT_RETURN_IF_FALSE(false);
+      R_ASSERT_RETURN_IF_FALSE2(false, more_things_to_do);
 
     } else {
       
@@ -767,9 +769,10 @@ void RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
 
       double value;
       if (automation->automation.RT_get_value(seqtime+latency, value)){
+
         if (value != automation->last_value){
           FX_when when;
-          if (automation->last_value==-1.0)
+          if (automation->last_value < -0.5)
             when = FX_start;
           else
             when = FX_middle;
@@ -779,20 +782,31 @@ void RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
           PLUGIN_set_effect_value(plugin,0,effect_num,value, DONT_STORE_VALUE, when, EFFECT_FORMAT_SCALED);
           automation->last_value = value;
         }
+
+        more_things_to_do = true;
+
       } else {
-        if (automation->last_value != -1.0) {
+
+        if (automation->last_value > -0.5){
           RT_PLUGIN_touch(plugin);
 
           const AutomationNode &last_node = automation->automation.at(automation->automation.size()-1);
                   
           PLUGIN_set_effect_value(plugin,0,effect_num, last_node.value, DONT_STORE_VALUE, FX_end, EFFECT_FORMAT_SCALED); // Make sure last value is sent out with FX_end. This also ensures last value is sent when the second last node is LOGTYPE_HOLD.
           automation->last_value = -1.0;
+
+        } else {
+
+          more_things_to_do = true; // We haven't started the automation yet.
+
         }
+
       }
     }
       
   }
 
+  return more_things_to_do;
 }
 
 void RT_SEQTRACK_AUTOMATION_called_when_player_stopped(void){
