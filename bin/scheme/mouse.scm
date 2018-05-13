@@ -3624,10 +3624,13 @@
                                                                                 1000000))
                                                (if (> new highest)
                                                    (<ra> :set-seqtempo-max-tempo new))))
-                                       (list "Hide song tempo automation"
-                                             (lambda ()
-                                               (<ra> :set-seqtempo-visible #f)))
 
+                                                  
+                                       (list "Song tempo automation visible"
+                                             :check (<ra> :seqtempo-visible)
+                                             (lambda (doit)
+                                               (<ra> :set-seqtempo-visible doit)))
+                                       
                                        "-----------------"
 
                                        (list "Preferences"
@@ -3760,7 +3763,11 @@
                                                         (lambda (val)
                                                           (<ra> :set-seqlooping val)))
                                                   "-----------------"
-                                                  
+                                                  (list "Song tempo automation visible"
+                                                        :check (<ra> :seqtempo-visible)
+                                                        (lambda (doit)
+                                                          (<ra> :set-seqtempo-visible doit)))
+                                                  "-----------------"
                                                   (list "Preferences"
                                                         (lambda ()
                                                           (<ra> :open-sequencer-preferences-dialog))))
