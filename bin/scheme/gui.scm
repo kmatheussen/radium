@@ -5,6 +5,9 @@
 (define-constant *max-mixer-db* 6)
 (define-constant *max-volume-envelope-db* (<ra> :get-seqblock-envelope-max-db))
 
+(define-constant *mixer-strip-border-color* "#bb222222")
+(define *current-mixer-strip-border-color* "mixerstrips_selected_object_color_num")
+
 
 
 (define (rectangle-intersects-with-parallelogram a_x1 a_y1 a_x2 a_y2

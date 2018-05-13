@@ -41,10 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "seqtrack_automation_proc.h"
 
-static double get_seqtrack_song_length(struct SeqTrack *seqtrack){
-  return SONG_get_length()*MIXER_get_sample_rate();
-}
-
 
 // g_curr_seqtrack_automation_seqtrack is set to NULL by ~SeqtrackAutomation or SEQTRACK_AUTOMATION_cancel_curr_automation.
 // Note that it not possible for a seqtrack to be valid, and its seqtrack->seqtrackautomation value to be invalid, or
@@ -69,6 +65,19 @@ static void set_no_curr_seqtrack(void){
   g_curr_seqtrack_automation_num = -1;
 }
 
+static void update(const struct SeqTrack *seqtrack){
+  SEQTRACK_update_with_borders(seqtrack);
+
+  int seqtracknum = get_seqtracknum(seqtrack);
+
+  // prev
+  if (seqtracknum > 0)
+    SEQTRACK_update((const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum-1]);
+
+  // next
+  if (seqtracknum < root->song->seqtracks.num_elements-1)
+    SEQTRACK_update((const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum+1]);
+}
 
 namespace{
 
@@ -294,7 +303,7 @@ public:
     SEQTRACK_AUTOMATION_set_curr_automation(seqtrack, );
     */
     
-    SEQTRACK_update(_seqtrack);
+    update(_seqtrack);
     
     return ret;
   }
@@ -519,7 +528,7 @@ int SEQTRACK_AUTOMATION_add_node(struct SeqtrackAutomation *seqtrackautomation, 
 
   int ret = automation->automation.add_node(create_node(seqtime, value, logtype));
   
-  SEQTRACK_update(seqtrackautomation->_seqtrack);
+  update(seqtrackautomation->_seqtrack);
   
   return ret;
 }
@@ -536,7 +545,7 @@ void SEQTRACK_AUTOMATION_delete_node(struct SeqtrackAutomation *seqtrackautomati
     automation->automation.delete_node(nodenum);
   }
 
-  SEQTRACK_update(seqtrackautomation->_seqtrack);
+  update(seqtrackautomation->_seqtrack);
 }
 
 void SEQTRACK_AUTOMATION_set_curr_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum){
@@ -547,7 +556,7 @@ void SEQTRACK_AUTOMATION_set_curr_node(struct SeqtrackAutomation *seqtrackautoma
 
   if (automation->automation.get_curr_nodenum() != nodenum){
     automation->automation.set_curr_nodenum(nodenum);
-    SEQTRACK_update(seqtrackautomation->_seqtrack);
+    update(seqtrackautomation->_seqtrack);
   }
 }
 
@@ -557,7 +566,7 @@ void SEQTRACK_AUTOMATION_cancel_curr_node(struct SeqtrackAutomation *seqtrackaut
   struct Automation *automation = seqtrackautomation->_automations[automationnum];
 
   automation->automation.set_curr_nodenum(-1);
-  SEQTRACK_update(seqtrackautomation->_seqtrack);
+  update(seqtrackautomation->_seqtrack);
 }
 
 // Legal to call even if there is already a current automation.
@@ -577,7 +586,7 @@ void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, int auto
   } else {
 
     curr_automation->automation.set_do_paint_nodes(true);
-    SEQTRACK_update(seqtrack);
+    update(seqtrack);
 
   }
   
@@ -610,7 +619,7 @@ void SEQTRACK_AUTOMATION_cancel_curr_automation(void){
       
       if (automation->automation.do_paint_nodes()){
         automation->automation.set_do_paint_nodes(false);
-        SEQTRACK_update(seqtrack);
+        update(seqtrack);
       }else{
         R_ASSERT_NON_RELEASE(false);
       }
@@ -663,7 +672,7 @@ void SEQTRACK_AUTOMATION_set(struct SeqTrack *seqtrack, int automationnum, int n
 
   automation->automation.replace_node(nodenum, node);
 
-  SEQTRACK_update(seqtrack);
+  update(seqtrack);
 }
 
 

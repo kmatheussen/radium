@@ -852,10 +852,7 @@
                          #f
                          gui))
   
-(define (paint-horizontal-instrument-slider widget instrument-id value text is-enabled is-current get-automation-data text-x1 x1 y1 x2 y2)
-  ;;(c-display "PAINTING SLIDER FOR" instrument-name)
-  (define color (<ra> :get-instrument-color instrument-id))
-  ;;(c-display "value: " value)
+(define (paint-horizontal-instrument-slider widget instrument-id value text is-enabled is-current get-automation-data text-x1 x1 y1 x2 y2 color)
 
   (define pos (scale value 0 1 x1 x2))
   (<gui> :filled-box widget (<gui> :get-background-color widget) x1 y1 x2 y2)
@@ -963,7 +960,9 @@
                                         (= (<ra> :get-current-instrument) instrument-id)
                                         get-automation-data
                                         x1-on/off
-                                        0 0 width height))
+                                        0 0 width height
+                                        (<ra> :get-instrument-color instrument-id)
+                                        ))
   
   (define fontheight (get-fontheight))
   
@@ -1774,7 +1773,8 @@
                          :is-selected 'undefined
                          :use-single-letters 
                          :background-color #f
-                         :border 2)
+                         :border 2
+                         :implicit-border 0)
 
   (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
 
@@ -1829,13 +1829,17 @@
          #f
          #t
          )
-  
+
+  (define box-border (+ border
+                        (if is-implicitly-muted
+                            implicit-border
+                            0)))
   (<gui> :draw-box
          gui
          (if is-implicitly-muted
              color
              "#404040")
-         (+ x1 border) (+ y1 border) (- x2 border) (- y2 border)
+         (+ x1 box-border) (+ y1 box-border) (- x2 box-border) (- y2 box-border)
          (if is-implicitly-muted
              2.0
              1.0)
@@ -2269,9 +2273,6 @@
                                                   #t)
                                                 #f)))
   comment-edit)
-
-(define-constant *mixer-strip-border-color* "#bb222222")
-(define *current-mixer-strip-border-color* "mixerstrips_selected_object_color_num")
 
 (define (mydrawbox gui color x1 y1 x2 y2 line-width rounding)
   (define w (/ line-width 2))

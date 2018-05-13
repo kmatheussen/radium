@@ -70,6 +70,22 @@ float getSequencerY2(void){
   return SEQUENCER_get_y2();
 }
 
+float getSequencerLeftPartX1(void){
+  return SEQUENCER_get_left_part_x1();
+}
+
+float getSequencerLeftPartX2(void){
+  return SEQUENCER_get_left_part_x2();
+}
+
+float getSequencerLeftPartY1(void){
+  return SEQUENCER_get_left_part_y1();
+}
+
+float getSequencerLeftPartY2(void){
+  return SEQUENCER_get_left_part_y2();
+}
+
 void undoSeqblockFades(int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)

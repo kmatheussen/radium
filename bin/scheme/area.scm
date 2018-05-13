@@ -397,8 +397,8 @@
                   (<gui> :area-needs-painting gui x1 y1 x2 y2));;overlaps? x1* y1* x2* y2*))
 
        (when (and (or (not paint?)
-                       (paint?))
-                   (<gui> :area-needs-painting gui x1 y1 x2 y2));;overlaps? x1* y1* x2* y2*))
+                      (paint?))
+                  (<gui> :area-needs-painting gui x1 y1 x2 y2));;overlaps? x1* y1* x2* y2*))
 
          ;;(c-display "paint-internal hepp" ',(car def) paint "sub-areas" sub-areas)
          (let ((cx1 (max x1 px1))
@@ -538,7 +538,8 @@
 (def-area-subclass (<horizontal-instrument-slider> :gui :x1 :y1 :x2 :y2
                                                    :instrument-id
                                                    :effect-name "System Volume"
-                                                   :use-two-rows #f)
+                                                   :use-two-rows #f
+                                                   :get-color)
 
   (define has-made-undo #f)
   
@@ -594,6 +595,7 @@
     (define b 1)
     (define radium-normalized (get-radium-normalized))
     (set! last-painted-radium-normalized radium-normalized)
+
     (paint-horizontal-instrument-slider gui
                                         instrument-id
                                         (get-scaled-value radium-normalized)
@@ -602,7 +604,9 @@
                                         #f
                                         get-automation-data
                                         (+ b x1)
-                                        (+ b x1) (+ b y1) (- x2 b) (- y2 b)))
+                                        (+ b x1) (+ b y1) (- x2 b) (- y2 b)
+                                        (get-color)
+                                        ))
   
   (define start-mouse-value #f)
   
