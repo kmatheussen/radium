@@ -643,7 +643,10 @@
                                                       (<ra> :set-wide-instrument-strip instrument-id is-minimized)
                                                       (remake-mixer-strips instrument-id))
                                                      (else
-                                                      (<ra> :set-current-instrument instrument-id))))))
+                                                      ;;(c-display "         SETTING CURRENT")
+                                                      (<ra> :set-current-instrument instrument-id)
+                                                      ;;(remake-mixer-strips instrument-id)
+                                                      )))))
                                      #t))
 
   label)
@@ -2871,8 +2874,8 @@
   (set-minimum-mixer-strip-widths!)
   ;;(c-display "\n\n\n             REDRAW MIXER STRIPS " list-of-modified-instrument-ids "\n\n\n")
   (for-each (lambda (a-mixer-strips-object)
-              ;;(<gui> :update-recursively (a-mixer-strips-object :gui))  ;; When is this necessary?
-              (<gui> :update (a-mixer-strips-object :gui))
+              (<gui> :update-recursively (a-mixer-strips-object :gui))  ;; In Qt, it's not enough to call update on the parent, for some reason. (Advice for other programmers: It's much faster to draw everything manually in semi-large or larger programs, both in terms of CPU and development time (especially in development time), than to use qt's widget system. It will probably look better too. Not only is Qt's widget system extremely slow, it's also very buggy (widgets "jump" all over the place, plus all the more serious bugs), and when you try to file bug reports they are very likely be marked as "not a bug" by the developers. In addition, you have all these insane workarounds about temporarily turning off updates, forced dealyed redrawing, and so forth.)
+              ;;(<gui> :update (a-mixer-strips-object :gui)) ;; Doesn't always work.
               )
             *mixer-strips-objects*))
 
