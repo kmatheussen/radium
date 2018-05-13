@@ -348,8 +348,12 @@ private:
     return ret;
   }
 
+  float get_min_node_size(void) const {
+    return root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in getHalfOfNodeWidth in api/api_mouse.c and OpenGL/Render.cpp
+  }
+
   void paint_node(QPainter *p, float x, float y, int nodenum, QColor color) const {
-    float minnodesize = root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in getHalfOfNodeWidth in api/api_mouse.c and OpenGL/Render.cpp
+    float minnodesize = get_min_node_size();
     float x1 = x-minnodesize;
     float x2 = x+minnodesize;
     float y1 = y-minnodesize;
@@ -455,44 +459,62 @@ public:
 
       float x_a;
 
-      if (get_x != NULL){
-
+      if (get_x != NULL)
         x_a = get_x(node1, start_time, end_time, x1, x2, data);
-        if (x_a >= x2)
-          num_after_end++;
+      else
+        x_a = scale(node1.time, start_time, end_time, x1, x2);
 
-      } else {
-
-        double time1 = node1.time;
-        if (time1 < start_time)
-          continue;
-
-        if (time1 >= end_time)
-          num_after_end++;
-
-        x_a = scale(time1, start_time, end_time, x1, x2);
-      }
+      if (x_a >= x2)
+        num_after_end++;
 
       if (num_after_end == 2)
         break;
-
+      
       if (start_i < 0)
         start_i = i;
 
       float y_a = get_y(node1, y1, y2);
 
-      if (next_is_hold){
+      if (next_is_hold && x_a>=x1){
         points[size] = QPointF(x_a, points[size-1].y());
         size++;
       }
 
-      points[size++] = QPointF(x_a, y_a);
-      
+      //printf("   %d: %f, %f  (x1: %f)\n", size, x_a, y_a, x1);
+      if (size > 0 && x_a < x1)
+        points[size-1] = QPointF(x_a, y_a);
+      else
+        points[size++] = QPointF(x_a, y_a);
+
+
       next_is_hold = node1.logtype==LOGTYPE_HOLD;
     }
+
+    //printf("---------------------------. x1: %f\n", x1);
+
+    if (size==0)
+      return;
+
+    bool paint_lines = size >= 2;
     
+    if (points[size-1].x() < x1){
+
+      if (points[size-1].x() < x1-get_min_node_size())
+        return;
+
+      paint_lines = false;
+    }
+
+    if (points[0].x() >= x2){
+
+      if (points[0].x() >= x2+get_min_node_size())
+        return;
+
+      paint_lines = false;
+    }
+
     // 2. Background fill
-    if (fill_color.isValid() && size >= 2) {      
+    if (paint_lines && fill_color.isValid()) {
 
       float first_x = points[0].x();
       float first_y = points[0].y();
@@ -525,7 +547,7 @@ public:
     }
     
     // 3. Lines
-    {
+    if (paint_lines){
       QPen pen(color);
       pen.setWidthF(_paint_nodes ? root->song->tracker_windows->systemfontheight / 3 : root->song->tracker_windows->systemfontheight / 6);
       p->setPen(pen);
