@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <inttypes.h>
 
+#include <QFloat16>
+
 #include "Juce_plugins_proc.h"
 #include "../common/Mutex.hpp"
 #include "../common/read_binary.h"
@@ -83,8 +85,8 @@ public:
   }
 
   void write_to_disk(disk_t *disk) const {
-    DISK_write_binary(disk, &min, 4);
-    DISK_write_binary(disk, &max, 4);
+    qfloat16 minmax[2] = {min, max};
+    DISK_write_binary(disk, &minmax, sizeof(qfloat16)*2);
   }
 
   /*
@@ -420,9 +422,13 @@ private:
     {
       char source[8] = {};
       if (DISK_read_binary(disk, source, 8)==-1)
-        goto exit;
-      if(strncmp(source, "RADIUM0", 8)){
-        GFX_Message(NULL, "Unable to read peak file %s. Expected \"RADUIM0\", found something else.", STRING_get_qstring(_peak_filename).toUtf8().constData());
+        goto exit; // Shouldn't we show an error message here?
+
+      if(!strncmp(source, "RADIUM0", 8))
+        goto exit; // old format
+
+      if(strncmp(source, "RADIUM1", 8)){
+        GFX_Message(NULL, "Unable to read peak file %s. Expected \"RADIUM0\" or \"RADIUM1\", found something else.", STRING_get_qstring(_peak_filename).toUtf8().constData());
         goto exit;
       }
     }
@@ -478,13 +484,13 @@ private:
       
 #if READ_EVERYTHING_AT_ONCE
       // TODO: Optimize. Read more than one float at the time.
-      float *data = new float[num_peaks*2]; // Allocate on heap instead of the stack since it could be very big (even likely to be very big)
+      qfloat16 *data = new qfloat16[num_peaks*2]; // Allocate on heap instead of the stack since it could be very big (even likely to be very big)
       if (data==NULL){
-        GFX_Message(NULL, "Unable to allocate enough temporary memory when reading Peak file %s. Size: %d.", STRING_get_qstring(_peak_filename).toUtf8().constData(), (int)(num_peaks*2*sizeof(float)));
+        GFX_Message(NULL, "Unable to allocate enough temporary memory when reading Peak file %s. Size: %d.", STRING_get_qstring(_peak_filename).toUtf8().constData(), (int)(num_peaks*2*sizeof(qfloat16)));
         goto exit;
       }
       
-      if (DISK_read_binary(disk, data, sizeof(float)*2*num_peaks)==-1){
+      if (DISK_read_binary(disk, data, sizeof(qfloat16)*2*num_peaks)==-1){
         GFX_Message(NULL, "Unable to read data from peak file %s.", STRING_get_qstring(_peak_filename).toUtf8().constData());
         goto exit;
       }
@@ -548,7 +554,7 @@ private:
     }
 
     {
-      unsigned char source[8] = "RADIUM0";
+      unsigned char source[8] = "RADIUM1";
       DISK_write_binary(disk, source, 8);
     }
 
