@@ -128,6 +128,11 @@ extern LANGSPEC float SEQUENCER_get_x2(void);
 extern LANGSPEC float SEQUENCER_get_y1(void);
 extern LANGSPEC float SEQUENCER_get_y2(void);
 
+extern LANGSPEC float SEQUENCER_get_left_part_x1(void);
+extern LANGSPEC float SEQUENCER_get_left_part_x2(void);
+extern LANGSPEC float SEQUENCER_get_left_part_y1(void);
+extern LANGSPEC float SEQUENCER_get_left_part_y2(void);
+
 extern LANGSPEC void SEQUENCER_disable_gfx_updates(void);
 extern LANGSPEC void SEQUENCER_enable_gfx_updates(void);
 
@@ -173,7 +178,8 @@ extern LANGSPEC float SEQTRACK_get_x2(int seqtracknum);
 extern LANGSPEC float SEQTRACK_get_y1(int seqtracknum);
 extern LANGSPEC float SEQTRACK_get_y2(int seqtracknum);
 
-extern LANGSPEC void SEQTRACK_update(struct SeqTrack *seqtrack);
+extern LANGSPEC void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack);
+extern LANGSPEC void SEQTRACK_update(const struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQTRACK_recreate(int seqtracknum);
 
 

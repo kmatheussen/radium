@@ -7,6 +7,10 @@
 (my-require 'area.scm)
 
 
+;;(define *curr-seqtrack-color* "#7c3a3a")
+;;(define *curr-seqtrack-color* "#776757")
+(define *curr-seqtrack-color* (ra:gui_mix-colors *current-mixer-strip-border-color* "black" 0.6))
+;;(define *curr-seqtrack-color* (<gui> :mix-colors *current-mixer-strip-border-color* "white" 0.92))
 
 (define (show-sequencer-header-popup-menu instrument-id parentgui)
   (popup-menu
@@ -23,7 +27,8 @@
 (def-area-subclass (<mute-solo-buttons> :gui :x1 :y1 :x2 :y2
                                         :instrument-id
                                         :use-single-letters 
-                                        :stack-horizontally )
+                                        :stack-horizontally
+                                        :seqtracknum)
 
   (define volume-on-off-name (get-instrument-volume-on/off-effect-name instrument-id))
 
@@ -94,8 +99,12 @@
                                                               x1 y1 x2 y2
                                                               is-selected
                                                               use-single-letters
-                                                              :background-color (get-mixer-strip-background-color gui instrument-id)
-                                                              :border 0))
+                                                              :background-color (if (= seqtracknum (<ra> :get-curr-seqtrack))
+                                                                                    *curr-seqtrack-color*
+                                                                                    (get-mixer-strip-background-color gui instrument-id))
+                                                              :border 0
+                                                              :implicit-border 1
+                                                              ))
                                              (lambda (_)
                                                (define is-selected (not (get-selected type)))
                                                (undo-block
@@ -113,7 +122,8 @@
   )
 
 (def-area-subclass (<instrument-name> :gui :x1 :y1 :x2 :y2
-                                      :instrument-id)
+                                      :instrument-id
+                                      :seqtracknum)
   
   (define last-painted-name "")
 
@@ -124,7 +134,11 @@
                        (y1 (+ y1 b))
                        (x2 (- x2 b))
                        (y2 (- y2 b)))
-                  (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id)
+
+                  (if (= seqtracknum (<ra> :get-curr-seqtrack))
+                      (<gui> :filled-box gui *curr-seqtrack-color* x1 y1 x2 y2)
+                      (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id))
+
                   (define instrument-name (<ra> :get-instrument-name instrument-id))
                   (set! last-painted-name instrument-name)
                   (<gui> :draw-text gui *text-color* instrument-name
@@ -164,14 +178,15 @@
 
 (def-area-subclass (<seqtrack-header> :gui :x1 :y1 :x2 :y2
                                       :instrument-id
-                                      :use-two-rows)
+                                      :use-two-rows
+                                      :seqtracknum)
 
   ;;(<gui> :set-background-color gui "blue")
 
   (define fontheight (get-fontheight))
   (define fontheight-and-borders (+ 4 fontheight))
 
-  (define mutesolo-width (myfloor (* 1.8 (<gui> :text-width "M S"))))
+  (define mutesolo-width (myfloor (* 1.8 (<gui> :text-width "M S "))))
   (define meter-width (max 4 (myfloor (/ fontheight 2))))
 
   (define name-height (if use-two-rows
@@ -189,22 +204,32 @@
       (add-sub-area-plain! (<new> :instrument-name gui
                                   x1 y1 x1-split
                                   y-split
-                                  instrument-id)))
+                                  instrument-id
+                                  seqtracknum)))
 
   (add-sub-area-plain! (<new> :mute-solo-buttons gui
                               (+ b x1-split) y1
                               x-meter-split y-split
-                              instrument-id #t #t))
+                              instrument-id #t #t seqtracknum))
   (add-sub-area-plain! (<new> :horizontal-instrument-slider gui
                               x1 (if use-two-rows (+ b y-split) y1)
                               (if use-two-rows x-meter-split x1-split) y2
                               instrument-id
-                              :use-two-rows use-two-rows))
+                              :use-two-rows use-two-rows
+                              :get-color (lambda ()
+                                           (if (= seqtracknum (<ra> :get-curr-seqtrack))
+                                               *curr-seqtrack-color*
+                                               (<ra> :get-instrument-color instrument-id)))
+                              ))
 
   (define vam (<gui> :add-vertical-audio-meter gui instrument-id (+ b x-meter-split) y1 x2 y2))
   ;;(define vam2 (<gui> :add-vertical-audio-meter gui instrument-id (- x2 8) y1 x2 y2))
   
   ;;(<gui> :remove-vertical-audio-meter vam)
+
+  (define (paint)
+    (if (= seqtracknum (<ra> :get-curr-seqtrack))
+        (<gui> :filled-box gui *curr-seqtrack-color* x1 y1 x2 y2)))
 
   (set! paint? (lambda ()
                  (<ra> :instrument-is-open-and-audio instrument-id)))
@@ -361,7 +386,7 @@
 
   (define seqtrack0-y1 (<ra> :get-seqtrack-y1 0))
   
-  (define b 2)
+  (define b 0)
   (define b/2 (/ b 2))
 
   (define dragger-height (myfloor (+ ((<ra> :get-box seqtimeline-area) :height)
@@ -369,12 +394,15 @@
                                          0
                                          ((<ra> :get-box seqtempo-area) :height)))))
   
-  (define ty1 (+ y1 dragger-height))    
+  (define ty1-height (myfloor (- (<ra> :get-seqtrack-y1 0)
+                                 (<ra> :get-seqtimeline-area-y1))))
+  
+  (define ty1 (+ y1 ty1-height))    
   (define ty2 (- y2 (myfloor ((<ra> :get-box seqnav) :height))))
 
   (c-display "       ___:" x1 y1 x2 y2 ty1 ty2)
 
-  (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 x2 ty1))
+  (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 x2 (+ y1 dragger-height)))
 
   (define use-two-rows (> (/ (- ty2 ty1) num-seqtracks)
                           (* 2.5 (get-fontheight))))
@@ -399,7 +427,7 @@
 
       (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
       (if (>= instrument-id 0)
-          (add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 instrument-id use-two-rows)))
+          (add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 instrument-id use-two-rows seqtracknum)))
       
       (loop (1+ seqtracknum))))
 
@@ -444,11 +472,9 @@
   
 
 (define (get-sequencer-left-part-position kont)
-  (define sequencer-box (<ra> :get-box sequencer))
-  (define x2 (<ra> :get-seqtrack-x1 0))
-  (kont 2 0
-        (- (- x2 (sequencer-box :x1)) 5)
-        (sequencer-box :height)))
+  (define header-box (<ra> :get-box sequencer-left-part))
+  (kont (header-box :x1) (header-box :y1)
+        (header-box :x2) (header-box :y2)))
 
 (define *had-sequencer-paint-callback* (defined? '*sequencer-left-part-area*))
 
