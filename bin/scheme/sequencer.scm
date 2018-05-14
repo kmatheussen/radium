@@ -251,7 +251,14 @@
                      )
         )
 
-  (add-mouse-cycle! :press-func (lambda (button x* y*)
+  (define get-mouse-cycle-org get-mouse-cycle)
+  (define (get-mouse-cycle . args)
+    ;;(c-display "HEADER seqtracknum:" seqtracknum)
+    (<ra> :select-seqtrack seqtracknum)
+    (apply get-mouse-cycle-org args))
+  
+  (add-mouse-cycle! :press-func (lambda (button x* y*)                                  
+                                  (<ra> :select-seqtrack seqtracknum)
                                   (if (= button *right-button*)
                                       (begin
                                         (show-sequencer-header-popup-menu instrument-id gui)
