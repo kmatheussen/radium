@@ -249,13 +249,19 @@ void deleteSeqtrack(int seqtracknum){
 }
 
 void selectSeqtrack(int seqtracknum){
-  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-    handleError("Sequencer track #%d does not exist", seqtracknum);
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
     return;
-  }
 
-  ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
-  SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);
+  if (seqtracknum != ATOMIC_GET(root->song->curr_seqtracknum)){
+
+    ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
+    SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);
+    
+    struct Patch *patch = seqtrack->patch;
+    if(patch!=NULL)
+      patch->instrument->PP_Update(patch->instrument, patch, false);
+  }
 }
 
 int getCurrSeqtrack(void){
