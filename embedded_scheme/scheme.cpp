@@ -91,7 +91,7 @@ namespace{
 
   struct ProtectedS7Pointer{
     s7_pointer v;
-    int pos;
+    int64_t pos;
     
     ProtectedS7Pointer(s7_pointer val)
       : v(val)
