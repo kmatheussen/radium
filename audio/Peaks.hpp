@@ -55,15 +55,15 @@ namespace radium{
 struct Peak{
 
 private:
-  float min, max;
+  qfloat16 min, max;
 
 public:
   
-  Peak(const float min, const float max)
+  Peak(const qfloat16 min, const qfloat16 max)
     : min(min)
     , max(max)
   {    
-    R_ASSERT_NON_RELEASE(sizeof(float)==4);
+    R_ASSERT_NON_RELEASE(sizeof(qfloat16)==2);
   }
 
   Peak(const Peak &other)
@@ -74,12 +74,12 @@ public:
     : Peak(FLT_MAX, FLT_MIN)
   {}
 
-  float get_min(void) const {
+  qfloat16 get_min(void) const {
     R_ASSERT_RETURN_IF_FALSE2(has_data(), 0);
     return min;
   }
 
-  float get_max(void) const {
+  qfloat16 get_max(void) const {
     R_ASSERT_RETURN_IF_FALSE2(has_data(), 0);
     return max;
   }
@@ -116,8 +116,10 @@ public:
     else if (!has_data()){
       *this = peak;
     } else {
-      min = std::min(peak.min, min);
-      max = std::max(peak.max, max);
+      if (peak.min < min)
+        min = peak.min;
+      if (peak.max > max)
+        max = peak.max;
     }
   }
 };
