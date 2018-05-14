@@ -472,7 +472,7 @@ private:
       }
       
       {
-        unsigned char source[8];
+        unsigned char __attribute__((aligned (sizeof(int64_t)))) source[8];
         if (DISK_read_binary(disk, source, 8)==-1)
           goto exit;
         int64_t total_frames = get_le_64(source);

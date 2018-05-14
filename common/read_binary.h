@@ -47,7 +47,7 @@ static inline void put_le_32 (unsigned char *src, int32_t value)
 static inline int64_t get_le_64 (unsigned char *src)
 {
 #if IS_LITTLE_ENDIAN
-    return *(int64_t*)src;
+  return *((int64_t*)src);
 #else
 #error "not implemented"
 #endif
