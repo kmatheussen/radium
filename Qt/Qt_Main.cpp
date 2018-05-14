@@ -2190,7 +2190,7 @@ protected:
 
     if (MIDI_insert_recorded_midi_gfx_events()){
       window->must_redraw_editor = true;
-      SEQUENCER_update();
+      SEQUENCER_update(SEQUPDATE_TIME);
     }
     
 #if 0
@@ -2303,9 +2303,11 @@ static void setCursor(int64_t guinum, const QCursor &cursor){
   if (widget==NULL)
     return;
 
+#if !defined(RELEASE)
   if (g_user_interaction_enabled==true)
     R_ASSERT(!widget->isWindow()); // Can have this assertion since we currently have no such calls. If it happens, it will cause the mouse cursor to be stuck in this mode for the whole window.
-    
+#endif
+  
   widget->setCursor(cursor);
 }
 

@@ -745,8 +745,7 @@ public slots:
             
     }
 
-    SEQUENCER_update();
-    BS_UpdatePlayList();
+    SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);
   }
 
   void move_down(void){
@@ -874,7 +873,7 @@ public slots:
           DO_GFX(SelectWBlock(window,wblock));
         }PC_StopPause_ForcePlayBlock(NULL);
 
-        SEQUENCER_update();
+        SEQUENCER_update(SEQUPDATE_TIME);
               
       } else {
         
@@ -896,14 +895,16 @@ public slots:
 }
 
 
-static BlockSelector *bs = NULL;
+static BlockSelector *g_bs = NULL;
+static bool g_is_hidden = false;
+
 
 QWidget *create_blockselector(){
   ScopedVisitors v;
 
-  bs = new BlockSelector (NULL);
+  g_bs = new BlockSelector (NULL);
 
-  return bs;
+  return g_bs;
 }
 
 void BS_resizewindow(void){
@@ -913,15 +914,18 @@ void BS_resizewindow(void){
 void BS_UpdateBlockList(void){
   ScopedVisitors v;
 
-  while(bs->blocklist.count()>0)
-    bs->blocklist.removeItem(0);
+  if (g_is_hidden)
+    return;
+  
+  while(g_bs->blocklist.count()>0)
+    g_bs->blocklist.removeItem(0);
 
   int justify = log10(root->song->num_blocks) + 1;
   printf("justify: %d\n", justify);
   
   struct Blocks *block=root->song->blocks;
   while(block!=NULL){
-    bs->blocklist.insertItem(QString::number(block->l.num).rightJustified(justify, ' ')+": "+QString(block->name));
+    g_bs->blocklist.insertItem(QString::number(block->l.num).rightJustified(justify, ' ')+": "+QString(block->name));
     block=NextBlock(block);
   }
 
@@ -932,25 +936,28 @@ void BS_UpdateBlockList(void){
 
 void BS_UpdatePlayList(void){
   ScopedVisitors v;
-    
-  if (bs==NULL)
+
+  if (g_is_hidden)
+    return;
+  
+  if (g_bs==NULL)
     return;
   
   if (root->song->seqtracks.num_elements==0)
     return;
 
-  int orgpos = bs->playlist.currentItem();
+  int orgpos = g_bs->playlist.currentItem();
 
   // Remove all
-  while(bs->playlist.count()>0)
-    bs->playlist.removeItem(0);
+  while(g_bs->playlist.count()>0)
+    g_bs->playlist.removeItem(0);
 
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
   R_ASSERT_RETURN_IF_FALSE(seqtrack!=NULL);
   
   //SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
 
-  int justify_playlist = log10(seqtrack->seqblocks.num_elements) + 1;
+  int justify_playlist = log10(gfx_seqblocks(seqtrack)->num_elements) + 1;
   //int justify_blocklist = log10(root->song->num_blocks) + 1;
   
   QVector<PlaylistElement> elements = get_playlist_elements();
@@ -958,15 +965,15 @@ void BS_UpdatePlayList(void){
   int pos = 0;
   for(const PlaylistElement &pe : elements){
     if (pe.is_pause()){
-      bs->playlist.insertItem(" pause: "+radium::get_time_string(pe.get_pause()));
+      g_bs->playlist.insertItem(" pause: "+radium::get_time_string(pe.get_pause()));
     }else {
       QString seqblockname = get_seqblock_name(seqtrack, pe.seqblock, "/", true);
-      bs->playlist.insertItem(QString::number(pos).rightJustified(justify_playlist, ' ') + ": " + seqblockname);
+      g_bs->playlist.insertItem(QString::number(pos).rightJustified(justify_playlist, ' ') + ": " + seqblockname);
       pos++;
     }
   }
         
-  bs->playlist.insertItem(" "); // Make it possible to put a block at the end of the playlist.
+  g_bs->playlist.insertItem(" "); // Make it possible to put a block at the end of the playlist.
 
   //printf("orgpos: %d\n",orgpos);
   
@@ -1003,7 +1010,7 @@ void BS_UpdatePlayList_old(void){
 
 void BS_SelectBlock(struct Blocks *block){
   ScopedVisitors v;
-  bs->blocklist.setSelected(block->l.num, true);
+  g_bs->blocklist.setSelected(block->l.num, true);
 }
 
 void BS_SelectPlaylistPos(int pos){
@@ -1013,43 +1020,43 @@ void BS_SelectPlaylistPos(int pos){
     if(pos==-1)
       return;
     
-    bs->playlist.setSelected(pos, true);
+    g_bs->playlist.setSelected(pos, true);
   }
   
-  bs->playlist_itemPressed(NULL);
+  g_bs->playlist_itemPressed(NULL);
 }
 
 struct SeqBlock *BS_GetPrevPlaylistBlock(void){
   ScopedVisitors v;
-  return bs->get_prev_playlist_block();
+  return g_bs->get_prev_playlist_block();
 }
   
 struct SeqBlock *BS_GetNextPlaylistBlock(void){
   ScopedVisitors v;
-  return bs->get_next_playlist_block();
+  return g_bs->get_next_playlist_block();
 }
 
 struct SeqBlock *BS_GetSeqBlockFromPos(int pos){
   ScopedVisitors v;
-  return bs->get_seqblock_from_pos(pos);
+  return g_bs->get_seqblock_from_pos(pos);
 }
 
 /*
 struct Blocks *BS_GetBlockFromPos(int pos){
   ScopedVisitors v;
-  return bs->get_block_from_pos(pos);
+  return g_bs->get_block_from_pos(pos);
 }
 */
 
 int BS_GetCurrPlaylistPos(void){
   ScopedVisitors v;
-  return bs->playlist.currentRow();
+  return g_bs->playlist.currentRow();
 }
 
 void BS_call_very_often(void){
   ScopedVisitors v;
   if (is_called_every_ms(70))
-    return bs->call_very_often();
+    return g_bs->call_very_often();
 }
 
 #if 0
@@ -1059,32 +1066,30 @@ static void set_widget_width(int width){
   radium::Splitter *splitter = editor->xsplitter;
 
   QValueList<int> currentSizes = splitter->sizes();
-  bs->last_shown_width = currentSizes[1];
+  g_bs->last_shown_width = currentSizes[1];
   currentSizes[0] = main_window->width()-width;
   currentSizes[1] = width;
   splitter->setSizes(currentSizes);
 }
 #endif
 
-static bool is_hidden = false;
-
 bool GFX_PlaylistWindowIsVisible(void){
-  return !is_hidden;
+  return !g_is_hidden;
 }
 
 void GFX_PlayListWindowToFront(void){
   ScopedVisitors v;
 
-  //set_widget_width(bs->last_shown_width > 30 ? bs->last_shown_width : 200);
-  bs->show();
+  //set_widget_width(g_bs->last_shown_width > 30 ? g_bs->last_shown_width : 200);
+  g_bs->show();
   
 #if 0
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   radium::Splitter *splitter = editor->xsplitter;
-  splitter->addWidget(bs);
+  splitter->addWidget(g_bs);
 #endif
 
-  is_hidden = false;
+  g_is_hidden = false;
 }
 
 void GFX_PlayListWindowToBack(void){
@@ -1092,25 +1097,25 @@ void GFX_PlayListWindowToBack(void){
 
 #if 0
   // Perhaps a value in percentage of screen would work. But the default size (200) is best anyway.
-  if(bs->width() > 30)
-    SETTINGS_write_int((char*)"blocklist_width",bs->width());
+  if(g_bs->width() > 30)
+    SETTINGS_write_int((char*)"blocklist_width",g_bs->width());
 #endif
 
   //set_widget_width(0);
-  bs->hide();
-  is_hidden = true;
+  g_bs->hide();
+  g_is_hidden = true;
 }
 
 void GFX_showHidePlaylist(struct Tracker_Windows *window){
   ScopedVisitors v;
 
 #if 0
-  if(bs->width() < 10)
+  if(g_bs->width() < 10)
     GFX_PlayListWindowToFront();
   else
     GFX_PlayListWindowToBack();
 #endif
-  if(is_hidden)
+  if(g_is_hidden)
     GFX_PlayListWindowToFront();
   else
     GFX_PlayListWindowToBack();

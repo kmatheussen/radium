@@ -172,12 +172,17 @@ void EditorWidget::updateEditor(){
     this->window->must_calculate_coordinates=false;
   }
 
+#if 0
+  if (this->window->must_redraw || this->window->must_redraw_editor)
+    printf("   Must_redraw: %d. Must redraw editor: %d\n", this->window->must_redraw, this->window->must_redraw_editor);
+#endif
+  
   if (this->window->must_redraw) {
     UpdateTrackerWindowCoordinates(window);
     UpdateWBlockCoordinates(this->window, this->window->wblock);
     GFX_UpdateUpperLeft(window, window->wblock);
     UpdateAllPianoRollHeaders(window, window->wblock);
-    SEQUENCER_update();
+    SEQUENCER_update(SEQUPDATE_TIME);
     
     update();
 
@@ -188,7 +193,7 @@ void EditorWidget::updateEditor(){
   if (this->window->must_redraw_editor==true){
     GL_create(this->window);
     if (!is_playing())
-      SEQUENCER_update();
+      SEQUENCER_update(SEQUPDATE_TIME);
     this->window->must_redraw_editor=false;
   }
 }

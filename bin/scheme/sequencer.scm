@@ -400,7 +400,7 @@
   (define ty1 (+ y1 ty1-height))    
   (define ty2 (- y2 (myfloor ((<ra> :get-box seqnav) :height))))
 
-  (c-display "       ___:" x1 y1 x2 y2 ty1 ty2)
+  ;;(c-display "       ___:" x1 y1 x2 y2 ty1 ty2)
 
   (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 x2 (+ y1 dragger-height)))
 
@@ -436,6 +436,7 @@
   (define background-color (<gui> :get-background-color gui))
 
   (define (paint)
+    ;;(c-display "   Scheme: Painting left part")
     (<gui> :filled-box gui background-color x1 y1 x2 y2))
   
   )
@@ -505,15 +506,17 @@
                (if (*sequencer-left-part-area* :has-mouse)
                    #t
                    #f)))
-      (<gui> :add-resize-callback (<gui> :get-sequencer-gui)
-             (lambda (width height)
-               (try-finally :try reconfigure-sequencer-left-part)))
+      ;(<gui> :add-resize-callback (<gui> :get-sequencer-gui) ;; TODO: I think this resize callback can be removed.
+      ;       (lambda (width height)
+      ;         (try-finally :try FROM_C-reconfigure-sequencer-left-part)))
 
       ))
   
   *sequencer-left-part-area*)
 
-(define (reconfigure-sequencer-left-part)
+(define (FROM_C-reconfigure-sequencer-left-part)
+  (c-display "   Scheme: Reconfiguring left part")
+
   (get-sequencer-left-part-area)
 
   (define gui (if *use-testgui*
@@ -535,7 +538,7 @@
                                                                 20 30 
                                                                 210 (+ 30 height))))
       (get-sequencer-left-part-position
-       (lambda (x1 y1 x2 y2)
+       (lambda (x1 y1 x2 y2)         
          (*sequencer-left-part-area* :reset! x1 y1 x2 y2)        
          (*sequencer-left-part-area* :add-sub-area-plain! (<new> :sequencer-left-part gui
                                                                  x1 y1 x2 y2)))))
@@ -545,12 +548,12 @@
 (when *use-testgui*
   (<gui> :add-resize-callback *testgui*
          (lambda (width height)
-           (try-finally :try reconfigure-sequencer-left-part)))
+           (try-finally :try FROM_C-reconfigure-sequencer-left-part)))
 
-  (reconfigure-sequencer-left-part))
+  (FROM_C-reconfigure-sequencer-left-part))
 
 #!!
-(reconfigure-sequencer-left-part)
+(FROM_C-reconfigure-sequencer-left-part)
 !!#
 
 

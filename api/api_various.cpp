@@ -935,7 +935,7 @@ void setBlockColor(const_char *colorname, int blocknum, int windownum){
   unsigned int color = GFX_get_color_from_colorname(colorname);
   wblock->block->color = color;
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 const char *getBlockColor(int blocknum, int windownum){
@@ -961,7 +961,7 @@ void setAudiofileColor(const_char* colorname, const_char* w_audiofilename){
 
   SAMPLEREADER_set_sample_color(w_path_to_path(w_audiofilename), color);
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 

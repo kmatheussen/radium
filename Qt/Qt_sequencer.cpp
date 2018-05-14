@@ -49,6 +49,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "../audio/Envelope.hpp"
 #include "../audio/SampleReader_proc.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "../common/seqtrack_proc.h"
 
 #include "Qt_sequencer_proc.h"
@@ -136,7 +138,7 @@ static QImage blurred(QImage& image, const QRect& rect, int radius, bool alphaOn
 #endif
 
 
-static bool g_need_update = false;
+static DEFINE_ATOMIC(uint32_t, g_needs_update) = 0;
 
 static bool smooth_scrolling(void){
   return smoothSequencerScrollingEnabled();
@@ -505,7 +507,7 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
     else {
       PlayStop();
       ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
-      SEQUENCER_update();
+      SEQUENCER_update(SEQUPDATE_TIME);
       if (useJackTransport())
         MIXER_TRANSPORT_set_pos(pos);
     }
@@ -1481,7 +1483,7 @@ public:
   void call_very_often(const struct SeqTrack *seqtrack){
     
     if (_last_num_seqblocks != gfx_seqblocks(seqtrack)->num_elements) {
-      SEQUENCER_update();
+      SEQUENCER_update(SEQUPDATE_TIME);
       _last_num_seqblocks = gfx_seqblocks(seqtrack)->num_elements;
     }
 
@@ -2203,7 +2205,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     }
     
     _timeline_widget.update();
-    //_seqtracks_widget.my_update();
     _navigator_widget.update();
     update();
   }
@@ -2350,6 +2351,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
                                x1, bottom_height);
     */
 
+    S7CALL2(void_void, "FROM_C-reconfigure-sequencer-left-part");
+
+    my_update();
   }
 
   
@@ -2378,12 +2382,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       position_widgets();
     }
 
-    if (g_need_update){
-      my_update();
-      BS_UpdatePlayList();
-      g_need_update=false;
-    }
-
+    if (ATOMIC_GET_RELAXED(g_needs_update) != 0)
+      SEQUENCER_update(0);
+    
     // Check if the number of seqtracks have changed
     //
     if (is_called_every_ms(50)){
@@ -2399,7 +2400,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       
       if (do_update){
         position_widgets();
-        my_update();
         _last_num_seqtracks = root->song->seqtracks.num_elements;
       }
     }
@@ -2980,7 +2980,6 @@ void SEQTEMPO_set_visible(bool visible){
   if (g_sequencer_widget != NULL){
     g_sequencer_widget->_songtempoautomation_widget.is_visible = visible;
     g_sequencer_widget->position_widgets();
-    SEQUENCER_update();
   }
 }
 
@@ -3178,30 +3177,73 @@ void SEQTRACK_update(const struct SeqTrack *seqtrack){
   update(seqtrack, false);
 }
 
+
 // Note: Might be called from a different thread than the main thread. (DiskPeak thread calls this function)
-void SEQUENCER_update(void){
-  if (g_sequencer_widget != NULL){
-    //g_sequencer_widget->position_widgets();
-    //printf("SEQUENCER_update called\n%s\n",JUCE_get_backtrace());
-    D(printf("SEQUENCER_update called\n%s\n",""));
-    if (THREADING_is_main_thread()){
-      g_sequencer_widget->update(g_sequencer_widget->_seqtracks_widget.t_x1,
-                                 0,
-                                 g_sequencer_widget->_seqtracks_widget.t_width,
-                                 g_sequencer_widget->height());
-    } else {
-      g_sequencer_widget->update();
+void SEQUENCER_update(uint32_t what){
+#if 0
+  static int i=0;
+  printf("%d: SEQUENCER_update called Main: %d. Has lock: %d. Time: %d. Header: %d. Trackorder: %d. Playlist: %d\n%s\n\n",
+         i++,
+         THREADING_is_main_thread(),PLAYER_current_thread_has_lock(),
+         what&SEQUPDATE_TIME, what&SEQUPDATE_HEADERS, what&SEQUPDATE_TRACKORDER, what&SEQUPDATE_PLAYLIST,
+         "" //JUCE_get_backtrace()
+         );
+#endif
+
+  if (THREADING_is_main_thread()==false || g_sequencer_widget==NULL || PLAYER_current_thread_has_lock() || g_qt_is_painting){
+    R_ASSERT_NON_RELEASE( (what & SEQUPDATE_HEADERS)==false);
+    R_ASSERT_NON_RELEASE( (what & SEQUPDATE_TRACKORDER)==false);
+    ATOMIC_OR_RETURN_OLD_RELAXED(g_needs_update, what);
+    return;
+  }
+
+  what = what | ATOMIC_SET_RETURN_OLD_RELAXED(g_needs_update, 0);
+
+  R_ASSERT_NON_RELEASE(what != 0);
+  
+  //g_sequencer_widget->position_widgets();
+  //printf("SEQUENCER_update called\n%s\n",JUCE_get_backtrace());
+    
+  if (what & SEQUPDATE_TRACKORDER) {
+    
+    g_sequencer_widget->position_widgets();
+    
+  } else {
+    
+    if (what & SEQUPDATE_HEADERS)
+      g_sequencer_widget->update(0, 0,
+                                 ceil(g_sequencer_widget->_seqtracks_widget.t_x1), g_sequencer_widget->height()
+                                 );
+
+    if (what & SEQUPDATE_SONGTEMPO){
+      if (g_sequencer_widget->_songtempoautomation_widget.is_visible)
+        g_sequencer_widget->update(g_sequencer_widget->_songtempoautomation_widget._rect.toAlignedRect());
+    }
+    
+    if (what & SEQUPDATE_TIMELINE){
+      g_sequencer_widget->_timeline_widget.update();
+    }
+    
+    if (what & SEQUPDATE_TIME){
+      g_sequencer_widget->update(floor(g_sequencer_widget->_seqtracks_widget.t_x1), 0,
+                                 ceil(g_sequencer_widget->_seqtracks_widget.t_width), g_sequencer_widget->height()
+                                 );
+      g_sequencer_widget->_navigator_widget.update();
     }
   }
+
+  if (what & SEQUPDATE_PLAYLIST)
+    BS_UpdatePlayList();
 }
 
 // Only called from the main thread.
+/*
 void RT_SEQUENCER_update_sequencer_and_playlist(void){
   R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
 
   if (PLAYER_current_thread_has_lock()) {
     
-    g_need_update = true;
+    g_needs_update = true;
     
   } else {
 
@@ -3209,10 +3251,11 @@ void RT_SEQUENCER_update_sequencer_and_playlist(void){
     SEQUENCER_update();
     BS_UpdatePlayList();
     
-    g_need_update=false;
+    g_needs_update=false;
     
   }
 }
+*/
 
 static bool g_sequencer_visible = true;
 static bool g_sequencer_hidden_because_instrument_widget_is_large = false;

@@ -255,8 +255,7 @@ void selectSeqtrack(int seqtracknum){
   }
 
   ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
-  BS_UpdatePlayList();
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);
 }
 
 int getCurrSeqtrack(void){
@@ -604,7 +603,7 @@ void setSeqblockEnvelopeEnabled(bool is_enabled, int seqblocknum, int seqtracknu
     seqblock->envelope_enabled = is_enabled;
   }
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 float getSeqblockEnvelopeMaxDb(void){
@@ -994,7 +993,7 @@ bool showBarsInTimeline(void){
 void setShowBarsInTimeline(bool doit){
   g_show_bars_in_timeline = doit;
   SETTINGS_write_bool("show_bars_in_timeline", doit);
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 
@@ -1014,7 +1013,7 @@ bool useJackTransport(void){
 void setUseJackTransport(bool doit){
   ATOMIC_SET(g_use_jack_transport, doit);
   SETTINGS_write_bool("use_jack_transport", doit);
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_EVERYTHING); // not sure why
 }
 
 
@@ -1395,7 +1394,7 @@ void setCurrSeqblockUnderMouse(int seqblocknum, int seqtracknum){
   
   S7CALL(void_int_int, func, seqtracknum, seqblocknum);
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 int getCurrSeqblockUnderMouse(void){
@@ -1410,7 +1409,7 @@ void cancelCurrSeqblockUnderMouse(void){
   g_curr_seqblock = NULL;
   g_curr_seqblocknum_under_mouse = -1;
   g_curr_seqtracknum_under_mouse = -1;
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 dyn_t getBlockUsageInSequencer(void){
@@ -1698,7 +1697,7 @@ void setSeqblockSelectedBox(int which_one, int seqblocknum, int seqtracknum){
 
   if (old != new_){
     seqblock->selected_box = new_;
-    SEQUENCER_update();
+    SEQUENCER_update(SEQUPDATE_TIME);
   }
   
 }
@@ -1738,7 +1737,7 @@ void setSeqblockFadeIn(double fadein, int seqblocknum, int seqtracknum){
     seqblock->fadein = fadein;
   }
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 void setSeqblockFadeOut(double fadeout, int seqblocknum, int seqtracknum){
@@ -1756,7 +1755,7 @@ void setSeqblockFadeOut(double fadeout, int seqblocknum, int seqtracknum){
     seqblock->fadeout = fadeout;
   }
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 
@@ -1913,7 +1912,7 @@ void setSeqblockZOrder(dyn_t zorder, int seqtracknum){
 
   seqtrack->seqblocks_z_order = *zorder.array;
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 
@@ -2036,7 +2035,7 @@ void deleteGfxGfxSeqblock(int seqblocknum, int seqtracknum){
 
   SEQTRACK_delete_gfx_gfx_seqblock(seqtrack, seqblock);
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 int getSeqblockBlocknum(int seqblocknum, int seqtracknum){
@@ -2124,7 +2123,7 @@ void selectSeqblock(bool is_selected, int seqblocknum, int seqtracknum){
 
   if (  seqblock->is_selected != is_selected){
     seqblock->is_selected = is_selected;
-    SEQUENCER_update();
+    SEQUENCER_update(SEQUPDATE_TIME);
   }
 }
 
@@ -2177,7 +2176,7 @@ void setSeqblockTrackEnabled(bool is_enabled, int tracknum, int seqblocknum, int
     PC_Pause();{
       seqblock->track_is_disabled[tracknum] = !is_enabled;
     }PC_StopPause(NULL);
-    SEQUENCER_update();
+    SEQUENCER_update(SEQUPDATE_TIME);
   }
 }
 

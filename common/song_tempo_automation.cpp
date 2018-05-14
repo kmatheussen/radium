@@ -221,7 +221,7 @@ int TEMPOAUTOMATION_add_node(double abstime, double value, int logtype){
   
   int ret = g_tempo_automation.add_node(create_node(abstime, value, logtype));
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_SONGTEMPO);
   
   return ret;
 }
@@ -242,13 +242,13 @@ void TEMPOAUTOMATION_delete_node(int nodenum){
     
   }
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_SONGTEMPO);
 }
 
 void TEMPOAUTOMATION_set_curr_node(int nodenum){
   if (g_tempo_automation.get_curr_nodenum() != nodenum){
     g_tempo_automation.set_curr_nodenum(nodenum);
-    SEQUENCER_update();
+    SEQUENCER_update(SEQUPDATE_SONGTEMPO);
   }
 }
 
@@ -275,7 +275,7 @@ void TEMPOAUTOMATION_set(int nodenum, double abstime, double value, int logtype)
 
   g_tempo_automation.replace_node(nodenum, node);
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_SONGTEMPO);
 }
 
 
@@ -314,7 +314,7 @@ void TEMPOAUTOMATION_set_length(double end_time, bool do_shrink){
 
   }
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_SONGTEMPO);
 }
 
 double TEMPOAUTOMATION_get_length(void){
@@ -458,7 +458,7 @@ void TEMPOAUTOMATION_create_from_state(hash_t *state, double state_samplerate){
   g_max_tempo = HASH_get_float(state, "max_tempo");
   g_tempo_automation.create_from_state(HASH_get_dyn(state, "nodes"), create_node_from_state, state_samplerate);
   SEQTEMPO_set_visible(HASH_get_bool(state, "is_visible"));
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_SONGTEMPO);
 }
 
 static hash_t *get_node_state(const TempoAutomationNode &node){
@@ -492,7 +492,7 @@ void TEMPOAUTOMATION_set_max_tempo(double new_max_tempo){
   else
     g_max_tempo = new_max_tempo;
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_SONGTEMPO);
 }
 
 float TEMPOAUTOMATION_get_node_x(int nodenum){

@@ -506,8 +506,8 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
       //wblock->block->is_dirty = true;
       
       GE_set_curr_realline(wblock->curr_realline);
-      
-      SEQUENCER_update();
+
+      SEQUENCER_update(SEQUPDATE_TIME);
       
       window->must_redraw = true;
 

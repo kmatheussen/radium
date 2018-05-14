@@ -1224,7 +1224,7 @@ void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struc
   printf("\n\n");
 #endif
 
-  RT_SEQUENCER_update_sequencer_and_playlist();
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 }
 
 dyn_t SEQTRACK_get_seqblocks_state(const struct SeqTrack *seqtrack){
@@ -1243,8 +1243,8 @@ void SEQTRACK_cancel_gfx_seqblocks(struct SeqTrack *seqtrack){
   
   seqtrack->gfx_seqblocks = NULL;
   SEQTRACKPLUGIN_assert_samples2(seqtrack);
-  
-  RT_SEQUENCER_update_sequencer_and_playlist();
+
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 }
 
 void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtracknum, bool seqtrack_is_live){
@@ -1291,7 +1291,7 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
   SEQTRACKPLUGIN_assert_samples2(seqtrack);
 
   R_ASSERT(len1==seqtrack->seqblocks.num_elements);
-  RT_SEQUENCER_update_sequencer_and_playlist();
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
   R_ASSERT(len1==seqtrack->seqblocks.num_elements);
 }
 
@@ -1401,7 +1401,7 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
     RT_legalize_seqtrack_timing(seqtrack);  // Shouldn't be necessary, but we call it just in case.
   }
 
-  RT_SEQUENCER_update_sequencer_and_playlist();
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 
 #if !defined(RELEASE)
   //memset((void*)seqblock, 0, sizeof(struct SeqBlock));
@@ -1456,7 +1456,7 @@ void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int 
     RT_legalize_seqtrack_timing(seqtrack);
   }
 
-  RT_SEQUENCER_update_sequencer_and_playlist();
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 }
 
 bool SEQBLOCK_set_fade_in_shape(struct SeqBlock *seqblock, enum FadeShape shape){
@@ -1473,7 +1473,7 @@ bool SEQBLOCK_set_fade_in_shape(struct SeqBlock *seqblock, enum FadeShape shape)
 
   delete old_fade;
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 
   return true;
 }
@@ -1492,7 +1492,7 @@ bool SEQBLOCK_set_fade_out_shape(struct SeqBlock *seqblock, enum FadeShape shape
 
   delete old_fade;
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 
   return true;
 }
@@ -1586,9 +1586,8 @@ void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t
 
     RT_legalize_seqtrack_timing(seqtrack);
   }
-      
-  SEQUENCER_update();
-  BS_UpdatePlayList();
+
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 }
 
 static int get_seqblock_pos(vector_t *seqblocks, int64_t seqtime){  
@@ -1650,8 +1649,8 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
 
     RT_legalize_seqtrack_timing(seqtrack);
   }
-  
-  RT_SEQUENCER_update_sequencer_and_playlist();
+
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 
   return pos;
 }
@@ -1669,7 +1668,7 @@ int insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
   int pos = get_seqblock_pos(seqblocks, seqblock->t.time);
   VECTOR_insert(seqblocks, seqblock, pos);
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 
   return pos;
 }
@@ -1780,7 +1779,7 @@ void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
       SEQTRACK_delete_seqblock(pair.first, pair.second);
   }
 
-  RT_SEQUENCER_update_sequencer_and_playlist();
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 }
 
 void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos){
@@ -1799,7 +1798,7 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos){
 
   evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements+1));
 
-  RT_SEQUENCER_update_sequencer_and_playlist();
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
 void SEQUENCER_append_seqtrack(struct SeqTrack *new_seqtrack){
@@ -1831,9 +1830,9 @@ void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos){
     radium::PlayerLock lock;
 
     VECTOR_set(&root->song->seqtracks, pos, new_seqtrack);
-
-    RT_SEQUENCER_update_sequencer_and_playlist();
   }
+
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
 
   call_me_after_seqtrack_has_been_removed(old_seqtrack);
 }
@@ -1854,10 +1853,10 @@ void SEQUENCER_delete_seqtrack(int pos){
     int curr_seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
     if (curr_seqtracknum >= root->song->seqtracks.num_elements)
       ATOMIC_SET(root->song->curr_seqtracknum, root->song->seqtracks.num_elements -1);
-    
-    RT_SEQUENCER_update_sequencer_and_playlist();      
   }
 
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
+  
   call_me_after_seqtrack_has_been_removed(old_seqtrack);
   evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements-1));
 
@@ -1869,7 +1868,7 @@ void SEQUENCER_delete_seqtrack(int pos){
 
 void SEQUENCER_set_looping(bool do_loop){
   ATOMIC_SET(root->song->looping.enabled, do_loop);
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
 }
 
 bool SEQUENCER_is_looping(void){
@@ -1878,7 +1877,7 @@ bool SEQUENCER_is_looping(void){
 
 void SEQUENCER_set_loop_start(int64_t start){  
   root->song->looping.start = R_BOUNDARIES(0, start, ATOMIC_GET(root->song->looping.end)-1);
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
 }
 
 int64_t SEQUENCER_get_loop_start(void){
@@ -1888,7 +1887,7 @@ int64_t SEQUENCER_get_loop_start(void){
 void SEQUENCER_set_loop_end(int64_t end){
   ATOMIC_SET(root->song->looping.end, R_BOUNDARIES(root->song->looping.start+1, end, SONG_get_length()*MIXER_get_sample_rate()));
   //printf("   Set end. %d %d %d\n",(int)(root->song->looping.start+1), (int)end, (int)(SONG_get_length()*MIXER_get_sample_rate()));
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
 }
 
 int64_t SEQUENCER_get_loop_end(void){
@@ -2098,9 +2097,8 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     R_ASSERT_NON_RELEASE(g_is_loading);
     SEQUENCER_block_changes_tempo_multiplier(NULL, -1); // Remove seqtime.
   }
-  
-  BS_UpdatePlayList();
-  SEQUENCER_update();
+
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
 
@@ -2137,7 +2135,7 @@ void SEQUENCER_create_automations_from_state(hash_t *state){
     SEQTRACK_AUTOMATION_free(old_seqtrackautomation);
   }
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 
@@ -2190,7 +2188,7 @@ void SEQUENCER_create_envelopes_from_state(hash_t *state){
     apply_envelopes_state(seqtrack, HASH_get_hash_at(state, "seqtrackenvelopes", i));
   }
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 // When playing song, block->tempo_multiplier is ignored. Instead seqblocks are stretched.

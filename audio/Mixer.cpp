@@ -1502,7 +1502,7 @@ void MIXER_call_very_often(void){
         double abstime = TEMPOAUTOMATION_get_abstime_from_absabstime(absabstime);
         if (abstime != ATOMIC_DOUBLE_GET(pc->song_abstime)){
           ATOMIC_DOUBLE_SET(pc->song_abstime, abstime);
-          SEQUENCER_update();
+          SEQUENCER_update(SEQUPDATE_TIME);
         }
       }
     }
