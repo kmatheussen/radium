@@ -22,6 +22,8 @@ void *API_get_native_gui_handle(int guinum);
 class QWidget;
 class QPaintEvent;
 class QMouseEvent;
+class QEvent;
+class QResizeEvent;
 
 QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void);
 QWidget *MIXERSTRIPS_get_curr_widget(void);
