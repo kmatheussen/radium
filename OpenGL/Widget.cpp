@@ -1474,6 +1474,8 @@ public:
   
   // Necessary to avoid error with clang++.
   virtual void resizeEvent(QResizeEvent *qresizeevent) {
+    radium::ScopedResizeEventTracker resize_event_tracker;
+    
 #if USE_QT5
     vlQt5::Qt5ThreadedWidget::resizeEvent(qresizeevent);
 #else

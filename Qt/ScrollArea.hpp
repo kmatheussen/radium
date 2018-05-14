@@ -51,6 +51,8 @@ class ScrollArea : public QWidget {
       }
 
       void resizeEvent(QResizeEvent * event) override {
+        radium::ScopedResizeEventTracker resize_event_tracker;
+
         //fprintf(stderr, " Widget resized. width: %d, height: %d\n", event->size().width(), event->size().height());
         _inner_scroll_area->_scroll_area->updateScrollbars();
       }
@@ -79,6 +81,8 @@ class ScrollArea : public QWidget {
     }
 
     void resizeEvent(QResizeEvent * event) override {
+      radium::ScopedResizeEventTracker resize_event_tracker;
+    
       //fprintf(stderr, " InnerScrollArea resized. width: %d, height: %d\n", event->size().width(), event->size().height());
 
       if(_scroll_area->_vertical_scrollbar_policy==Qt::ScrollBarAlwaysOff){
@@ -227,6 +231,7 @@ class ScrollArea : public QWidget {
 public:
 
   void resizeEvent(QResizeEvent * event) override {
+    radium::ScopedResizeEventTracker resize_event_tracker;
     pauseUpdatesALittleBit();
   }
 

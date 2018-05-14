@@ -60,7 +60,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static_assert (sizeof(qreal) >= 8, "qreal should be at least 64 bits");
 
 
-
 #define D(n)
 //#define D(n) n
 
@@ -2266,8 +2265,10 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void resizeEvent( QResizeEvent *qresizeevent) override {
-    RETURN_IF_DATA_IS_INACCESSIBLE();
+    radium::ScopedResizeEventTracker resize_event_tracker;
     
+    RETURN_IF_DATA_IS_INACCESSIBLE();
+
     //  set_end_time();
     // _samples_per_pixel = (_end_time-_start_time) / width();
     position_widgets();

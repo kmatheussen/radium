@@ -246,6 +246,7 @@ class ParamWidget : public QWidget {
   }
 
   void resizeEvent(QResizeEvent * event) override{
+    radium::ScopedResizeEventTracker resize_event_tracker;
     RETURN_IF_DATA_IS_INACCESSIBLE();
     adjustFontSize();
     QWidget::resizeEvent(event);
