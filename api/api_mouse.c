@@ -1689,10 +1689,17 @@ void setCurrentPianonote(int num, dyn_t dynnote, int tracknum){
 }
 
 void cancelCurrentPianonote(void){
-  current_piano_note.tracknum = -1;
-  current_piano_note.noteid = -1;
-  current_piano_note.pianonotenum = -1;
-  root->song->tracker_windows->must_redraw_editor = true;
+  if (
+      current_piano_note.tracknum != -1 ||
+      current_piano_note.noteid != -1 ||
+      current_piano_note.pianonotenum != -1
+      )
+    {
+      current_piano_note.tracknum = -1;
+      current_piano_note.noteid = -1;
+      current_piano_note.pianonotenum = -1;
+      root->song->tracker_windows->must_redraw_editor = true;
+    }
 }
 
 static int addPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value);
