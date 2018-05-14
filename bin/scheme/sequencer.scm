@@ -355,9 +355,10 @@
            (define seqtracknum (<ra> :get-curr-seqtrack))
            (<ra> :insert-seqtrack seqtracknum))
           ((eq? type '-)
-           (define seqtracknum (<ra> :get-curr-seqtrack))
-           (set! *current-seqblock-info* #f)
-           (<ra> :delete-seqtrack seqtracknum))
+           (when (> (<ra> :get-num-seqtracks) 1)
+             (define seqtracknum (<ra> :get-curr-seqtrack))
+             (set! *current-seqblock-info* #f)
+             (<ra> :delete-seqtrack seqtracknum)))
           ((eq? type 'Append)
            (<ra> :append-seqtrack))
           (else
