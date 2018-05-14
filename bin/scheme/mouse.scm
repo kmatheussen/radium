@@ -5035,6 +5035,8 @@
     (set! *current-seqblock-info* (copy-seqblock-info *current-seqblock-info*
                                                       :seqtracknum seqtracknum
                                                       :seqblocknum seqblocknum))
+
+    (<ra> :select-seqtrack seqtracknum)
     )
 
   :seqtracknum ()
