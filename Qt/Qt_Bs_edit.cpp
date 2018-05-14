@@ -233,7 +233,7 @@ static QVector<PlaylistElement> get_playlist_elements(void){
   
   double last_end_seq_time = 0;
   
-  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
 
     int64_t next_last_end_seq_time = seqblock->t.time2;
         
