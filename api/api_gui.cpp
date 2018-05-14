@@ -94,6 +94,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static QByteArray g_filedialog_geometry;
 static QByteArray g_fontdialog_geometry;
 
+int g_num_running_resize_events = 0;
 
 // Keep track of code that might be waiting for callbacks. We could get strange error messages when a widget is closed then.
 namespace{
@@ -202,6 +203,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 #define RESIZE_OVERRIDER(classname)                                     \
   void resizeEvent( QResizeEvent *event) override {                     \
     ScopedEventHandlerTracker event_handler_tracker;                    \
+    radium::ScopedResizeEventTracker resize_event_tracker;              \
     if (_image!=NULL)                                                   \
       setNewImage(event->size().width(), event->size().height());       \
     if (_resize_callback!=NULL)                                         \
@@ -1851,7 +1853,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       if(g_delayed_resized_guis.contains(this))
         return; // already scheduled.
 
-      if(g_radium_runs_custom_exec && g_and_its_not_safe_to_paint){
+      if(g_num_running_resize_events > 1 || myprivate::g_num_visiting_event_handlers>1 || (g_radium_runs_custom_exec && g_and_its_not_safe_to_paint)){
         g_delayed_resized_guis.push_back(this);
         if (g_delayed_resizing_timer_active==false){
           g_delayed_resizing_timer_active = true;

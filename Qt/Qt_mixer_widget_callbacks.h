@@ -323,6 +323,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
 
   /*
   void resizeEvent( QResizeEvent *qresizeevent) override{
+  radium::ScopedResizeEventTracker resize_event_tracker;
     //pauseUpdatesALittleBit();
     //Mixer_widget->update();
   }

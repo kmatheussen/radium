@@ -575,6 +575,8 @@ void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent) {
 
 #if USE_GTK_VISUAL
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
+  radium::ScopedResizeEventTracker resize_event_tracker;
+  
   if(g_is_starting_up==true)
     return;
 
@@ -593,6 +595,8 @@ void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only GTK VISUAL!
 
 #if USE_QT_VISUAL
 void EditorWidget::resizeEvent( QResizeEvent *qresizeevent){ // Only QT VISUAL!
+  radium::ScopedResizeEventTracker resize_event_tracker;
+  
 #if !USE_OPENGL
   this->init_buffers();
 #endif

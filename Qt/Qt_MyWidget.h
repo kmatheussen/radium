@@ -274,6 +274,7 @@ namespace cvs{
         mywidget->repaint(&p);
       }
       void resizeEvent ( QResizeEvent * event ) override {
+        radium::ScopedResizeEventTracker resize_event_tracker;
         RETURN_IF_DATA_IS_INACCESSIBLE();
         mywidget->resized();
       }

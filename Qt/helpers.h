@@ -367,6 +367,21 @@ static inline bool set_window_flags(QWidget *window, radium::Modality modality){
   return set_window_parent_andor_flags(window, window->parentWidget(), modality, true);
 }
 
+
+extern int g_num_running_resize_events;
+
+namespace radium{
+  struct ScopedResizeEventTracker{
+    ScopedResizeEventTracker(){
+      g_num_running_resize_events++;
+    }
+    ~ScopedResizeEventTracker(){
+      --g_num_running_resize_events;
+    }
+  };
+}
+
+
 namespace radium{
   struct ASMTimer : public QTimer{
     QTime time;

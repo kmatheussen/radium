@@ -529,6 +529,8 @@ public:
   }
 
   void resizeEvent(QResizeEvent *qresizeevent) override {
+    radium::ScopedResizeEventTracker resize_event_tracker;
+    
     //fprintf(stderr,"I am resized\n");
 
     int width = this->width();
