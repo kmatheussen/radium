@@ -151,11 +151,17 @@ static inline bool atomic_compare_and_set_float(float *variable, float old_value
 #define ATOMIC_SET_RETURN_OLD(name, val) \
   __atomic_exchange_n (&ATOMIC_NAME(name), val, __ATOMIC_SEQ_CST)
 
+#define ATOMIC_SET_RETURN_OLD_RELAXED(name, val) \
+  __atomic_exchange_n (&ATOMIC_NAME(name), val, __ATOMIC_RELAXED)
+
 #define ATOMIC_ADD_RETURN_OLD(name, how_much)                           \
   __atomic_fetch_add (&ATOMIC_NAME(name), how_much, __ATOMIC_SEQ_CST)
 
 #define ATOMIC_ADD_RETURN_OLD_RELAXED(name, how_much)                           \
   __atomic_fetch_add (&ATOMIC_NAME(name), how_much, __ATOMIC_RELAXED)
+
+#define ATOMIC_OR_RETURN_OLD_RELAXED(name, how_much)                           \
+  __atomic_fetch_or (&ATOMIC_NAME(name), how_much, __ATOMIC_RELAXED)
 
 #define ATOMIC_ADD_ARRAY_RETURN_OLD(name, pos, how_much)                 \
   __atomic_fetch_add (&ATOMIC_NAME(name)[pos], how_much, __ATOMIC_SEQ_CST)
@@ -175,6 +181,9 @@ static inline bool atomic_compare_and_set_float(float *variable, float old_value
 // doesn't work with bool!
 #define ATOMIC_ADD_RETURN_NEW(name, how_much)                           \
   (__atomic_fetch_add (&ATOMIC_NAME(name), how_much, __ATOMIC_SEQ_CST) + how_much)
+
+#define ATOMIC_OR_RETURN_NEW_RELAXED(name, how_much)                           \
+  (__atomic_fetch_or (&ATOMIC_NAME(name), how_much, __ATOMIC_RELAXED) | how_much)
 
 
 

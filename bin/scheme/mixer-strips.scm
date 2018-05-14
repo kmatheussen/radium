@@ -2849,7 +2849,7 @@
 !!#
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)
-  (reconfigure-sequencer-left-part)
+  (FROM_C-reconfigure-sequencer-left-part)
   (set-minimum-mixer-strip-widths!)
   ;;(c-display "\n\n\n             REMAKE MIXER STRIPS " (sort list-of-modified-instrument-ids <) (length *mixer-strips-objects*) "\n\n\n")
   ;;(c-display "all:" (sort (get-all-audio-instruments) <))

@@ -517,7 +517,7 @@ private:
           
           if (percentage_read != last_percentage_read){
             ATOMIC_SET(_percentage_read, percentage_read);
-            SEQUENCER_update(); // SEQUENCER_update can be called from another thread.
+            SEQUENCER_update(SEQUPDATE_TIME);
           }
           
           last_percentage_read = percentage_read;
@@ -634,7 +634,7 @@ private:
         
         if (percentage_read != last_percentage_read){
           ATOMIC_SET(_percentage_read, percentage_read);
-          SEQUENCER_update(); // SEQUENCER_update can be called from another thread.
+          SEQUENCER_update(SEQUPDATE_TIME);
         }
         
         last_percentage_read = percentage_read;

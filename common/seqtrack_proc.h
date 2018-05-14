@@ -169,8 +169,8 @@ extern LANGSPEC float SEQNAV_get_y1(void);
 extern LANGSPEC float SEQNAV_get_y2(void);
 extern LANGSPEC float SEQNAV_get_left_handle_x(void);
 extern LANGSPEC float SEQNAV_get_right_handle_x(void);
-extern LANGSPEC void SEQNAV_update(void);
-extern LANGSPEC void RT_SEQUENCER_update_sequencer_and_playlist(void);
+//extern LANGSPEC void SEQNAV_update(void);
+//extern LANGSPEC void RT_SEQUENCER_update_sequencer_and_playlist(void);
 
 // seqtrack gfx
 extern LANGSPEC float SEQTRACK_get_x1(int seqtracknum);
@@ -254,7 +254,16 @@ extern LANGSPEC float SEQBLOCK_get_right_stretch_y2(int seqblocknum, int seqtrac
 // sequencer_gfx
 //extern LANGSPEC void SEQTRACK_update_all_seqblock_start_and_end_times(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQUENCER_update_all_seqblock_positions(void);
-extern LANGSPEC void SEQUENCER_update(void); // Can be called from a different thread than the main thread. That thread might have to be QThread though.
+
+#define SEQUPDATE_TIME 1
+#define SEQUPDATE_TIMELINE 2
+#define SEQUPDATE_SONGTEMPO 4
+#define SEQUPDATE_HEADERS 8
+#define SEQUPDATE_TRACKORDER 16
+#define SEQUPDATE_PLAYLIST 32
+#define SEQUPDATE_EVERYTHING (1|2|4|8|16|32)
+
+extern LANGSPEC void SEQUENCER_update(uint32_t what); // Can be called from any thread, and also while holding the player lock.
 
   
 // seqtrack

@@ -453,7 +453,6 @@
                           #f
                           )
                :finally (lambda ()
-                          
                           (if (not mouse-fx-has-been-set)
                               (<ra> :set-no-mouse-fx))
                           
@@ -471,7 +470,6 @@
                           
                           (if (not current-pianonote-has-been-set)
                               (<ra> :cancel-current-pianonote))
-                          
                           ;;(if (not mouse-pointer-has-been-set)
                           ;;    (<ra> :set-normal-mouse-pointer))
                           )))

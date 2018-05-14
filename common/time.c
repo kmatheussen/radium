@@ -724,9 +724,8 @@ void UpdateSTimes2(struct Blocks *block, int default_bpm, int default_lpb){
             }END_ALL_SEQTRACKS_FOR_EACH;
           }PLAYER_unlock();
           
-          SEQUENCER_update();
-          BS_UpdatePlayList();
-
+          SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);
+          
         }PC_StopPause(NULL);
         
         //update_is_beat(block, stp.times);
@@ -1429,9 +1428,8 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
 
       SEQUENCER_timing_has_changed();
     }
-    
-    SEQUENCER_update();
-    BS_UpdatePlayList();
+
+    SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);
     
   }PC_StopPause(NULL);
 }

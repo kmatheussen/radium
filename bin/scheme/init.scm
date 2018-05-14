@@ -493,6 +493,7 @@
     if
     FROM_C-call-me-when-num-seqtracks-might-have-changed
     ra:set-instrument-color
+    FROM_C-reconfigure-sequencer-left-part
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

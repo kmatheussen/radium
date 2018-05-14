@@ -75,7 +75,7 @@ void setSongPos(int64_t pos){
     PlaySong(pos);
   else{
     ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
-    SEQUENCER_update();
+    SEQUENCER_update(SEQUPDATE_TIME);
     if (useJackTransport())
       MIXER_TRANSPORT_set_pos(pos);
   }

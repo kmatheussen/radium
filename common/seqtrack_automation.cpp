@@ -460,7 +460,7 @@ void SEQTRACK_AUTOMATION_replace_all_automations(struct Patch *old_patch, struct
       seqtrack->seqtrackautomation->replace_all_automations(old_patch, new_patch);
   }END_ALL_SEQTRACKS_FOR_EACH;
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 int SEQTRACK_AUTOMATION_add_automation(struct SeqtrackAutomation *seqtrackautomation, struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2){

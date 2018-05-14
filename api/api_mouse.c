@@ -314,7 +314,7 @@ void setReltempo(double reltempo){
 
   SEQUENCER_block_changes_tempo_multiplier(wblock->block, new_reltempo);
 
-  SEQUENCER_update();
+  SEQUENCER_update(SEQUPDATE_TIME);
 
   window->must_redraw = true;
 }
