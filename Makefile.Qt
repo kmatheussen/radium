@@ -192,12 +192,16 @@ ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common -DDISABLE_BDWGC
 OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS)
 DEBUG_BUILD_OPTS = -Werror -Wall -g -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 
+NOSHORTEN64TO32FLAG=
+ifneq (,$(findstring clang,$(CC)))
+	NOSHORTEN64TO32FLAG += -Wno-shorten-64-to-32
+endif
+
+
+DEBUG_BUILD_OPTS += $(NOSHORTEN64TO32FLAG)
+S7OPTS += $(NOSHORTEN64TO32FLAG)
 
 ifneq (,$(findstring clang,$(CC)))
-	DEBUG_BUILD_OPTS += -Wshorten-64-to-32
-	S7OPTS += -Wno-shorten-64-to-32
-#	COMMONOPT += -Wshadow
-#	DEBUG_BUILD_OPTS += -Wshadow
 else
 #	ifeq ($(GCC_MAJOR),5)
 #		DEBUG_BUILD_OPTS += -Wshadow # gcc 4 has too many unnecessary positives
@@ -1824,7 +1828,7 @@ FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
-	$(CCC) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp -Wno-shorten-64-to-32 # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
+	$(CCC) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(NOSHORTEN64TO32FLAG) # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
 
 audio/mfaustqt2.cpp: bin/packages/faust2/architecture/faust/gui/faustqt.h
 	cd audio && $(MOC) ../bin/packages/faust2/architecture/faust/gui/faustqt.h >mfaustqt2.cpp
@@ -2318,7 +2322,7 @@ bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 scheme.o: embedded_scheme/scheme.cpp $(API)radium_proc.h
 	$(CCC) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
 
-QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT #-fno-sanitize=undefined
+QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT #-fno-sanitize=undefined
 
 ifeq ($(GCC_MAJOR),8)
 	QHTTPCONNECTIONFLAGS= -fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
@@ -2331,9 +2335,6 @@ else
 	HTTPPARSERFLAGS=
 endif
 
-ifneq (,$(findstring clang,$(CC)))
-	QHTTPSERVERFLAGS += -Wno-shorten-64-to-32
-endif
 
 
 qhttpconnection.o: bin/packages/qhttpserver-master/src/qhttpconnection.cpp
