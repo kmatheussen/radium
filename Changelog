@@ -1,3 +1,84 @@
+Changes 5.6.5 -> 5.6.7:
+* GUI: Prevent crash in some rare situations when displaying an error
+  message from a resize event. (Workaround for QTBUG-64375)
+* Sequencer: Always change current seqtrack when clicking anywhere
+  inside a seqtrack header.
+* Sequencer: Automatically set current instrument to the seqtrack
+  instrument when changing current seqtrack.
+* Sequencer: When moving a seqblock to a new seqtrack, automatically
+  set the new seqtrack as the current seqtrack.
+* Sequencer: Don't show error message if trying to delete seqtrack and
+  there is only one seqtrack. Instead, just silently ignore
+  the operation.
+* Sequencer: Optimize when to update graphics. (i.e. faster graphics).
+* Mouse: Don't repaint editor and sequencer unnecessarily when moving
+  the mouse pointer.
+* Playlist: Show seqblock time in realtime when a seqblock is moved.
+  This is a fix for a regression introduced maybe a few months ago.
+* Sequencer: Paint all song tempo automation graphics when zooming in.
+* Sequencer: Some minor optimization of sequencer automation rendering.
+* Peak files: Peak files are now 50% smaller and uses 50% less memory
+  in the program.
+* Mixer strips: Fix graphics update when current instrument is changed.
+* Sequencer: Various bug fixes and minor improvements.
+* Sequencer: Draw a green border around current seqtrack, similar to
+  how current instrument is shown in the mixer.
+* Sequencer: Add "Song tempo automation visible" checkbox to the
+  timeline popup menu, and replace "Hide song tempo automation" with
+  "Song tempo automation visible" in the song tempo automation
+  popup menu.
+* Sequencer: Display instrument for seqtrack pointed to by mouse at
+  the top in the "New automation" popup menu.
+* Song: Calculate song length from start to the last automation node,
+  not the last seqblock. This change also fixes a bug where
+  automation nodes could be forced to be placed before a previous
+  node when song length was shortened.
+* Sequencer: Allow automation nodes to be placed after song length.
+* Build: Move unpacking of s7.tar.gz from bin/packages/build.sh
+  to Makefile.qt, plus automatically unpack if there is a
+  newer version.
+* GUI: Wait 5 seconds before trying again if a mouse/resize/paint
+  callback fails. This to avoid debug message bonanza if something
+  goes wrong.
+* Sequencer: Redo seqtrack header GUIs. Much simpler and faster now.
+* Sequencer: Don't start/stop playing twice when using scroll wheel to
+  start/stop playing if the mouse cursor is placed in the
+  sequencer timeline.
+* Editor: Avoid a couple of floating point divide by zero errors
+  when the height of the editor is very small.
+* Build: Trying to fix find_moc_and_uic_paths.sh for Ubuntu.
+* Build: Fix VST include path. Steinberg changed the directory
+  structure again.
+* Build: Upgrade s7 to latest version.
+* GUI: Faster to delete widgets.
+* Windows: Don't show error message about unable to find jack process
+  command line arguments (not important for users to know).
+* Editor: Set the default value of "F" (editor follows play cursor)
+  to false.
+* GUI: Remove the thin black line that can sometimes be seen between
+  the channels in the vertical audio meters.
+* GUI: Optimize rendering of audio meters and other widgets that paint
+  all pixels (optimization by not filling the background first).
+* API: Another fix for memory corruption (and strange scheme error
+  messages) when an exception is thrown in scheme code called from
+  a Qt event.
+* GUI: Vertical audio meter rendering tweaks.
+* GUI: Optimize vertical audio meter rendering, especially for widgets
+  containing more than one audio meter.
+* GUI: Don't paint background color of various widgets unnecessarily
+  (bug fix). May speed up some things notably.
+* Message window: Make sure error messages are properly shown also if
+  they contain text that could be interpreted as html.
+* Build: Support gcc 8.
+* Sequencer: Fix possible sound glitches that could happen when moving
+  seqblocks.
+* MIDI: Use a lot less CPU when recording.
+* API: gui_setClipRect, gui_cancelClipRect, gui_addVerticalAudioMeter,
+  gui_removeVerticalAudioMeter, setPaintOpacity,
+  gui_areaNeedsPainting, gui_dontAutofillBackground,
+  gui_removeAllVerticalAudioMeters, removeStatusbarText
+
+
 Changes 5.6.4 -> 5.6.5:
 * Demo songs: Romance by Nikos Levantis.
 * Editor: Incrase distance between peaks when displaying waveforms.
