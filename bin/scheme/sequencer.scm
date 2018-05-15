@@ -141,7 +141,7 @@
 
                   (define instrument-name (<ra> :get-instrument-name instrument-id))
                   (set! last-painted-name instrument-name)
-                  (<gui> :draw-text gui *text-color* instrument-name
+                  (<gui> :draw-text gui *text-color* (<-> seqtracknum ": " instrument-name)
                          (+ 4 x1) y1 x2 y2
                          #f ;; wrap-lines
                          #f ;; align top
