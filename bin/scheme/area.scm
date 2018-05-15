@@ -399,13 +399,14 @@
      (define (remove-statusbar-text)
        (<ra> :remove-statusbar-text statusbar-text-id))
      
-     (define (add-statusbar-text-handler get-statusbar-text-func)
+     (define (add-statusbar-text-handler string-or-func)
        (add-nonpress-mouse-cycle!
         :enter-func (lambda (x* y)
-                      (set-statusbar-text! (get-statusbar-text-func))
+                      (set-statusbar-text! (if (string? string-or-func)
+                                               string-or-func
+                                               (string-or-func)))
                       #t)
-        :leave-func (lambda ()
-                      (<ra> :remove-statusbar-text statusbar-text-id))))
+        :leave-func remove-statusbar-text))
        
      ;; Painting
      ;;;;;;;;;;;;;;;
@@ -739,8 +740,7 @@
         (mypaint)))
 
   (if statusbar-text
-      (add-statusbar-text-handler (lambda ()
-                                    statusbar-text)))
+      (add-statusbar-text-handler statusbar-text))
   
   (add-mouse-cycle! (lambda (button x* y*)
                       (and (= button *left-button*)                        

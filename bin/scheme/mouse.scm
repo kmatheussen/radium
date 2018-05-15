@@ -409,6 +409,8 @@
   ;;(c-display "  setting mouse func to" func)
   (set! mouse-pointer-has-been-set #t)
   (set! mouse-pointer-guinum guinum)
+  ;;(c-display "  setting mouse func to" func)
+  (set! mouse-pointer-func func)
   (func guinum)
   )
 
