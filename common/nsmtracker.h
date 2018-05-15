@@ -2694,7 +2694,7 @@ struct SeqTrack{
   // These two variables are here only for convenience (and maybe a little bit of efficency) so that we don't have to do atomic operations on start_time and end_time in the player thread.
   // They contain the same values as 'start_time" and 'end_time' above.
   DEFINE_ATOMIC(double, start_time_nonrealtime);
-  DEFINE_ATOMIC(double, end_time_nonrealtime);
+  //DEFINE_ATOMIC(double, end_time_nonrealtime);
 
   //Place p; // Used by the scheduler when starting to play in the middle of a block
 

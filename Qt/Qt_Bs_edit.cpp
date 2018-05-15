@@ -229,7 +229,7 @@ static QVector<PlaylistElement> get_playlist_elements(void){
     
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
 
-  double current_seq_time = ATOMIC_DOUBLE_GET(seqtrack->start_time_nonrealtime);
+  double current_seq_time = ATOMIC_DOUBLE_GET_RELAXED(seqtrack->start_time_nonrealtime);
   
   double last_end_seq_time = 0;
   

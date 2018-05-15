@@ -380,8 +380,8 @@ void SCHEDULER_set_seqtrack_timing(struct SeqTrack *seqtrack, double start_time,
   seqtrack->start_time = start_time;
   seqtrack->end_time = end_time;
   
-  ATOMIC_DOUBLE_SET(seqtrack->start_time_nonrealtime, start_time);
-  ATOMIC_DOUBLE_SET(seqtrack->end_time_nonrealtime, end_time);
+  ATOMIC_DOUBLE_SET_RELAXED(seqtrack->start_time_nonrealtime, start_time);
+  //ATOMIC_DOUBLE_SET(seqtrack->end_time_nonrealtime, end_time);
 }
 
 static void reset_timing(struct SeqTrack *seqtrack){
