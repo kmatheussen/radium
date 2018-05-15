@@ -410,7 +410,6 @@
   (set! mouse-pointer-has-been-set #t)
   (set! mouse-pointer-guinum guinum)
   ;;(c-display "  setting mouse func to" func)
-  (set! mouse-pointer-func func)
   (func guinum)
   )
 
@@ -1071,10 +1070,11 @@
 
 (define2 *current-seqblock-info* (curry-or not hash-table?) #f)
 
-(define (FROM_C-call-me-when-num-seqtracks-might-have-changed new-num-seqtracks)
-  (if (and *current-seqtrack-num*
-           (>= *current-seqtrack-num* new-num-seqtracks))
-      (set! *current-seqtrack-num* #f)))
+(set! FROM_C-call-me-when-num-seqtracks-might-have-changed
+      (lambda (new-num-seqtracks)
+        (if (and *current-seqtrack-num*
+                 (>= *current-seqtrack-num* new-num-seqtracks))
+            (set! *current-seqtrack-num* #f))))
 
 ;;(define (update-current-seqblock-info!) )
   

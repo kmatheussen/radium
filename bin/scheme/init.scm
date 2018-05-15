@@ -515,7 +515,11 @@
                   (assert (defined? funcname))))
             *functions-called-from-evalScheme*))
               
-              
+
+;; Called during startup. Will be overridden later.
+(define (FROM_C-call-me-when-num-seqtracks-might-have-changed new-num-seqtracks)
+  (assert (not (provided? 'mouse.scm))))
+
 ;; The files loaded in init-step-2 can use ra: functions.
 (define (init-step-2)
 
