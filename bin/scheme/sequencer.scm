@@ -251,6 +251,11 @@
                      )
         )
 
+  (add-nonpress-mouse-cycle!
+   :enter-func (lambda (x* y)
+                 (set-mouse-pointer ra:set-normal-mouse-pointer gui)
+                 #f))
+
   (define get-mouse-cycle-org get-mouse-cycle)
   (define (get-mouse-cycle button x* y*)
     (when (inside? x* y*)
@@ -287,8 +292,7 @@
                  (set-mouse-pointer ra:set-vertical-resize-mouse-pointer gui)
                  #f))
 
-  (add-statusbar-text-handler (lambda ()
-                                "Change sequencer height"))
+  (add-statusbar-text-handler "Change sequencer height")
   
   (add-delta-mouse-cycle!
    :drag-func
