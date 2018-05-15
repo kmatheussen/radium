@@ -248,7 +248,7 @@ void deleteSeqtrack(int seqtracknum){
   }UNDO_CLOSE();
 }
 
-void selectSeqtrack(int seqtracknum){
+void setCurrSeqtrack(int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return;

@@ -5040,7 +5040,7 @@
                                                       :seqtracknum seqtracknum
                                                       :seqblocknum seqblocknum))
 
-    (<ra> :select-seqtrack seqtracknum)
+    (<ra> :set-curr-seqtrack seqtracknum)
     )
 
   :seqtracknum ()
@@ -5149,7 +5149,7 @@
                                                     (and (not *current-seqautomation/distance*)
                                                          seqtracknum
                                                          (begin
-                                                           (<ra> :select-seqtrack seqtracknum)
+                                                           (<ra> :set-curr-seqtrack seqtracknum)
                                                            (let ((seqblock-info *current-seqblock-info*))
                                                              ;;(c-display "get-existing " seqblock-info X Y seqtracknum)
                                                              (and seqblock-info
@@ -5249,7 +5249,7 @@
                                                     (and (not *current-seqautomation/distance*)
                                                          seqtracknum
                                                          (begin
-                                                           (<ra> :select-seqtrack seqtracknum)
+                                                           (<ra> :set-curr-seqtrack seqtracknum)
                                                            (let ((seqblock-info *current-seqblock-info*))
                                                              ;;(c-display "get-existing " seqblock-info X Y)
                                                              (and seqblock-info
@@ -6620,7 +6620,7 @@
 ;                (let ((seqtracknum (get-seqtracknum X Y)))
 ;                  (if seqtracknum
 ;                      (begin
-;                        (<ra> :select-seqtrack seqtracknum)))
+;                        (<ra> :set-curr-seqtrack seqtracknum)))
 ;                  #f))))
 
 
@@ -6785,9 +6785,9 @@
 (<ra> :move-mouse-pointer 50 50)
 
 (<ra> :append-seqtrack)
-(<ra> :select-seqtrack 0)
-(<ra> :select-seqtrack 1)
-(<ra> :select-seqtrack 2)
+(<ra> :set-curr-seqtrack 0)
+(<ra> :set-curr-seqtrack 1)
+(<ra> :set-curr-seqtrack 2)
 
 (box-to-string (ra:get-box2 seqtrack 0))
 (box-to-string (ra:get-box2 seqtrack 1))
