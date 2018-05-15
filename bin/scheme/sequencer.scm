@@ -255,7 +255,7 @@
   (define (get-mouse-cycle button x* y*)
     (when (inside? x* y*)
       ;;(c-display "____HEADER seqtracknum:" seqtracknum)
-      (<ra> :select-seqtrack seqtracknum))
+      (<ra> :set-curr-seqtrack seqtracknum))
     (get-mouse-cycle-org button x* y*))
   
   (add-mouse-cycle! :press-func (lambda (button x* y*)
