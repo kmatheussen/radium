@@ -539,8 +539,10 @@ static s7_pointer catch_call(s7_scheme *sc, const s7_pointer args){
    
   //g_num_scheme_calls--;
 
-  if (s7_is_symbol(ret) && s7_symbol_name(ret)==s7_symbol_name(g_try_finally_failed))
+  if (s7_is_symbol(ret) && s7_symbol_name(ret)==s7_symbol_name(g_try_finally_failed)){
     g_scheme_failed = true;
+    R_ASSERT(g_is_starting_up==false);
+  }
   
   return ret;
 }
