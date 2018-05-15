@@ -3760,6 +3760,10 @@
                                                         :check (<ra> :is-seqlooping)
                                                         (lambda (val)
                                                           (<ra> :set-seqlooping val)))
+                                                  (list "Display bars and beats"
+                                                        :check (<ra> :show-bars-in-timeline)
+                                                        (lambda (val)
+                                                          (<ra> :set-show-bars-in-timeline val)))
                                                   "-----------------"
                                                   (list "Song tempo automation visible"
                                                         :check (<ra> :seqtempo-visible)
@@ -6501,15 +6505,20 @@
 
                                           "-----------------"
 
-                                          (list "Song tempo automation visible"
-                                                :check (<ra> :seqtempo-visible)
-                                                (lambda (doit)
-                                                  (<ra> :set-seqtempo-visible doit)))
                                           (list "Play loop"
                                                 :check (<ra> :is-seqlooping)
                                                 (lambda (val)
                                                   (<ra> :set-seqlooping val)))
+                                          (list "Display bars and beats"
+                                                :check (<ra> :show-bars-in-timeline)
+                                                (lambda (val)
+                                                  (<ra> :set-show-bars-in-timeline val)))
+                                          "-----------------"
 
+                                          (list "Song tempo automation visible"
+                                                :check (<ra> :seqtempo-visible)
+                                                (lambda (doit)
+                                                  (<ra> :set-seqtempo-visible doit)))
                                           "-----------------"
 
                                           (list "Preferences"
