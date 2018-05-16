@@ -3158,9 +3158,11 @@ static void update(const struct SeqTrack *seqtrack, bool also_update_borders){
 
   int seqtracknum = get_seqtracknum(seqtrack);
   const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, true);
-  
-  D(printf("SEQTRACK_update called\n"));
 
+#if 0
+  printf("SEQTRACK_update called %d\n", get_seqtracknum(seqtrack));
+#endif
+  
   if (also_update_borders) // && (abs(ATOMIC_GET(root->song->curr_seqtracknum)-seqtracknum)<=1))
     g_sequencer_widget->update(floor(w.t_x1), floor(w.t_y1-get_seqtrack_border_width()-1),
                                ceil(w.t_width), ceil(w.t_height+get_seqtrack_border_width()*2+2));
@@ -3183,10 +3185,10 @@ void SEQTRACK_update(const struct SeqTrack *seqtrack){
 void SEQUENCER_update(uint32_t what){
 #if 0
   static int i=0;
-  printf("%d: SEQUENCER_update called Main: %d. Has lock: %d. Time: %d. Header: %d. Trackorder: %d. Playlist: %d\n%s\n\n",
+  printf("%d: SEQUENCER_update called Main: %d. Has lock: %d. Time: %d. Header: %d. Trackorder: %d. Playlist: %d. Navigator: %d\n%s\n\n",
          i++,
          THREADING_is_main_thread(),PLAYER_current_thread_has_lock(),
-         what&SEQUPDATE_TIME, what&SEQUPDATE_HEADERS, what&SEQUPDATE_TRACKORDER, what&SEQUPDATE_PLAYLIST,
+         what&SEQUPDATE_TIME, what&SEQUPDATE_HEADERS, what&SEQUPDATE_TRACKORDER, what&SEQUPDATE_PLAYLIST, what&SEQUPDATE_NAVIGATOR,
          "" //JUCE_get_backtrace()
          );
 #endif
@@ -3229,6 +3231,9 @@ void SEQUENCER_update(uint32_t what){
       g_sequencer_widget->update(floor(g_sequencer_widget->_seqtracks_widget.t_x1), 0,
                                  ceil(g_sequencer_widget->_seqtracks_widget.t_width), g_sequencer_widget->height()
                                  );
+    }
+
+    if ((what & SEQUPDATE_NAVIGATOR) || (what & SEQUPDATE_TIME)){
       g_sequencer_widget->_navigator_widget.update();
     }
   }

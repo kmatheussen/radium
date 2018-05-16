@@ -1343,7 +1343,7 @@ void createGfxSeqblocksFromState(dyn_t seqblocks_state, int seqtracknum){
     return;
   }
 
-
+  //printf("\n\n============= Creating gfxseqblocks from state\n");
   SEQTRACK_create_gfx_seqblocks_from_state(seqblocks_state, seqtrack, seqtracknum, THROW_API_EXCEPTION);
 }
 
@@ -1389,9 +1389,13 @@ void setCurrSeqblockUnderMouse(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return;
 
+  struct SeqTrack *old_seqtrack_under_mouse = seqtrack;
+  if (g_curr_seqtracknum_under_mouse!=seqtracknum && g_curr_seqtracknum_under_mouse >= 0 && g_curr_seqtracknum_under_mouse < root->song->seqtracks.num_elements)
+    old_seqtrack_under_mouse = getSeqtrackFromNum(g_curr_seqtracknum_under_mouse);
+
   g_curr_seqblocknum_under_mouse = seqblocknum;
   g_curr_seqtracknum_under_mouse = seqtracknum;
-
+    
   g_curr_seqblock = seqblock;
 
   static func_t *func = NULL;
@@ -1399,8 +1403,10 @@ void setCurrSeqblockUnderMouse(int seqblocknum, int seqtracknum){
     func = s7extra_get_func_from_funcname_for_storing("FROM_C-update-seqblock-track-on-off-configuration");
   
   S7CALL(void_int_int, func, seqtracknum, seqblocknum);
-
-  SEQUENCER_update(SEQUPDATE_TIME);
+  
+  SEQTRACK_update(seqtrack);
+  if (seqtrack!=old_seqtrack_under_mouse)
+    SEQTRACK_update(old_seqtrack_under_mouse);
 }
 
 int getCurrSeqblockUnderMouse(void){
