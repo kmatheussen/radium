@@ -34,6 +34,14 @@
   (floor a))
 
 
+(define-expansion (define-override def . body)
+  (let* ((funcname (car def))
+         (org (<_> "super:" funcname)))
+    `(let ((,org ,funcname))
+       (set! ,funcname (lambda ,(cdr def)
+                         ,@body)))))
+
+
 (define-expansion (def-area-subclass def . body)
 
   `(define-class ,def
@@ -48,7 +56,8 @@
      (define width (- x2 x1))
      (define height (- y2 y1))
 
-     (define paint? #f)
+     (define (paint?)
+       #t)
 
      (define is-alive #t)
 
@@ -314,8 +323,7 @@
                          
 
      (define (get-nonpress-mouse-cycle x* y*)
-       (and (or (not paint?)
-                (paint?))
+       (and (paint?)
             (inside? x* y*)
 	    (or (call-with-exit (lambda (return)
                                   (for-each (lambda (sub-area)
@@ -333,8 +341,7 @@
      
 
      (define (get-mouse-cycle button x* y*)
-       (and (or (not paint?)
-                (paint?))
+       (and (paint?)
             (inside? x* y*)
 	    (or (call-with-exit (lambda (return)
                                   (for-each (lambda (sub-area)
@@ -411,21 +418,20 @@
      ;; Painting
      ;;;;;;;;;;;;;;;
        
-     (define paint #f)      ;; Called before painting the current area's sub-areas
-     (define post-paint #f) ;; Called after painting the current area's sub-areas
-
+     (define (paint)  ;; Called before painting the current area's sub-areas
+       #f)
+     (define (post-paint) ;; Called after painting the current area's sub-areas
+       #f)
      
      (define (paint-internal px1 py1 px2 py2) ;; px1, py1, etc. is the clip area of the parent area.
 
        ;;(c-display "\n\npaint-internal called" ',(car def) "(" x1 y1 x2 y2 "). p: (" px1 py1 px2 py2 ")")
                   
        
-       '(c-display (or (not paint?)
-                      (paint?))
-                  (<gui> :area-needs-painting gui x1 y1 x2 y2));;overlaps? x1* y1* x2* y2*))
+       '(c-display (paint?)
+                   (<gui> :area-needs-painting gui x1 y1 x2 y2));;overlaps? x1* y1* x2* y2*))
 
-       (when (and (or (not paint?)
-                      (paint?))
+       (when (and (paint?)
                   (<gui> :area-needs-painting gui x1 y1 x2 y2));;overlaps? x1* y1* x2* y2*))
 
          ;;(c-display "paint-internal hepp" ',(car def) paint "sub-areas" sub-areas)
@@ -437,29 +443,24 @@
            (when (and (> cx2 cx1)
                       (> cy2 cy1))
 
-             ;;(c-display "PAINT:" paint)
-             (when paint
-               ;;(c-display "---clipping" cx1 cy1 cx2 cy2);;(- cx2 cx1) (- cy2 cy1) x2 x2* px2)
-                                        ;(assert (<= cx2 190))
-               (<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
-               (paint)
-               )
+             (<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
+             (paint)
              
              (for-each (lambda (sub-area)
                          (sub-area :paint-internal cx1 cy1 cx2 cy2))
                        sub-areas)
              
-             (when post-paint
-               (<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
-               (post-paint)
-               )))
+             (<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
+             (post-paint)))
            
          (if (not parent-area)
              (<gui> :cancel-clip-rect gui))))
      
      ;;(define class-name ',(car def))
-     
-     ,@body
+
+     (let () ;; Put body into new scope to avoid accidentally overriding an internal method. (use define-override instead of define to purposefully override)
+       #t ;; Added to silence "let has no body" error messages.
+       ,@body)
      
      :get-position x (apply get-position x)
      :repaint-me! x (apply repaint-me! x)
@@ -500,11 +501,11 @@
   (define X 0)
   (define Y 0)
 
-  (define (paint)
-                ;;(c-display "x1:" gui x1 y1 x2 y2 (<ra> :generate-new-color))
-                (<gui> :filled-box gui (<ra> :generate-new-color 1) x1 y1 x2 y2)
-                (<gui> :draw-text gui "green" "hello" X Y x2 y2)
-                (<gui> :draw-line gui "white" X Y x2 y2 2.3))
+  (define-override (paint)
+    ;;(c-display "x1:" gui x1 y1 x2 y2 (<ra> :generate-new-color))
+    (<gui> :filled-box gui (<ra> :generate-new-color 1) x1 y1 x2 y2)
+    (<gui> :draw-text gui "green" "hello" X Y x2 y2)
+    (<gui> :draw-line gui "white" X Y x2 y2 2.3))
   
   (add-mouse-cycle! (lambda (button x* y*)
                       (set! X x*)
@@ -619,7 +620,7 @@
                                                            (radium-normalized-to-slider automation)))
                                 (update-me!))))
   
-  (define (paint)
+  (define-override (paint)
     (define b 1)
     (define radium-normalized (get-radium-normalized))
     (set! last-painted-radium-normalized radium-normalized)
@@ -683,8 +684,8 @@
                                :paint-func
                                :value-changed-callback)
 
-  (define (paint)
-                (paint-func is-selected))
+  (define-override (paint)
+    (paint-func is-selected))
 
   (add-mouse-cycle! (lambda (button x* y*)
                       (and (= button *left-button*)                        
@@ -734,7 +735,7 @@
       (if is-pressing
           (<gui> :draw-box gui background-color (+ x1 r/2) (+ y1 r/2) (- x2 r/2) (- y2 r/2) b r r))))
     
-  (define (paint)
+  (define-override (paint)
     (if paint-func
         paint-func
         (mypaint)))
