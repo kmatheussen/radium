@@ -36,10 +36,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 #include "../common/OS_string_proc.h"
 #include "../common/threading.h"
+#include "../common/Vector.hpp"
 
-#include "Sampler_plugin_proc.h"
 #include "Mixer_proc.h"
-#include "undo_plugin_state_proc.h"
 #include "Juce_plugins_proc.h"
 
 #include "SampleRecorder_proc.h"
@@ -48,14 +47,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 namespace{
 
 struct PeakSlice{
-  struct Patch *patch;
+  radium::SampleRecorderInstance *instance;
   int ch;
   float min;
   float max;
 };
   
 struct RecordingSlice{
-  struct Patch *patch;
+  radium::SampleRecorderInstance *instance;
 
   enum {
     Start_Recording,
@@ -71,17 +70,7 @@ struct RecordingSlice{
     float samples[RADIUM_BLOCKSIZE];
   };
     
-  // if command==START_Recording
-  struct StartRecording{
-    int num_channels;
-    wchar_t *path;
-    float middle_note;
-  };
-
-  union{
-    Slice slice;
-    StartRecording start_recording;
-  };
+  Slice slice;
 };
  
 }
@@ -118,11 +107,9 @@ static void put_slice(RecordingSlice *slice){
 namespace{
 
 struct RecordingFile{
-  struct Patch *patch = NULL;
+  radium::SampleRecorderInstance *instance = NULL;
   SNDFILE *sndfile = NULL;
   QString filename;
-  int num_channels;
-  float middle_note;
   radium::Vector<RecordingSlice*> non_written_slices;
 
   QString get_unique_filename(const wchar_t *path, bool &success){
@@ -144,23 +131,22 @@ struct RecordingFile{
 
   // Remember that this is not the main thread.
   //
-  RecordingFile(struct Patch *patch, const wchar_t *path, int num_channels, float middle_note)
-    : patch(patch)
-    , num_channels(num_channels)
-    , middle_note(middle_note)
+  RecordingFile(radium::SampleRecorderInstance *instance)
+    : instance(instance)
   {
     SF_INFO sf_info = {};
+    float middle_note = instance->middle_note;
     if (middle_note < 0.01)
       middle_note = 0.01;
     sf_info.samplerate = MIXER_get_sample_rate();
-    sf_info.channels = num_channels;
+    sf_info.channels = instance->num_ch;
     sf_info.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
     bool success;
-    filename = get_unique_filename(path, success);
+    filename = get_unique_filename(instance->recording_path, success);
 
     if (success==false){
-      RT_message("Unable to create new file in \"%s\".\nPerhaps you have more than 100 takes there?",STRING_get_qstring(path).toUtf8().constData());
+      RT_message("Unable to create new file in \"%s\".\nPerhaps you have more than 100 takes there?",STRING_get_qstring(instance->recording_path).toUtf8().constData());
       return;
     }
 
@@ -221,7 +207,7 @@ struct RecordingFile{
       
       write_uint32(f, 1000000000 / MIXER_get_sample_rate(), s); // sample period
 
-      double middle_note = this->middle_note + 12.0; // for some reason, radium's middle note is 48. It should have been 60.
+      double middle_note = instance->middle_note + 12.0; // for some reason, radium's middle note is 48. It should have been 60.
         
       int unity_note = int(middle_note);
       double fraction = middle_note - unity_note;
@@ -259,7 +245,7 @@ private:
 
     R_ASSERT_RETURN_IF_FALSE(!non_written_slices.is_empty());
     
-    float *channels[num_channels];
+    float *channels[instance->num_ch];
 
     int num_frames = RADIUM_BLOCKSIZE;
     
@@ -268,11 +254,11 @@ private:
       num_frames = R_MIN(num_frames, slice->slice.num_frames);
     }
     
-    float interleaved_data[num_frames*num_channels];
+    float interleaved_data[num_frames*instance->num_ch];
 
     int pos=0;
     for(int i=0;i<num_frames;i++)
-      for(int ch=0;ch<num_channels;ch++)
+      for(int ch=0;ch<instance->num_ch;ch++)
         interleaved_data[pos++] = channels[ch]==NULL ? 0.0f : channels[ch][i]; // channels[ch]==NULL is not supposed to happen, but things are semi-messy, so we add the check just in case. (assertion window is shown in RT_put_slice if buffer couldn't be written to the queue.
 
     int num_written_frames = (int)sf_writef_float(sndfile, interleaved_data, num_frames);
@@ -292,7 +278,7 @@ public:
 
     non_written_slices.push_back(slice);
 
-    if (slice->slice.ch==num_channels-1)
+    if (slice->slice.ch==instance->num_ch-1)
       flush();
   }
   
@@ -326,26 +312,26 @@ public:
     wait(5000);
   }
   
-  RecordingFile *get_recording_file(struct Patch *patch){
+  RecordingFile *get_recording_file(const radium::SampleRecorderInstance *instance) const {
     for(auto *recording_file : recording_files)
-      if (recording_file->patch==patch)
+      if (recording_file->instance==instance)
         return recording_file;
 
     return NULL;
   }
   
-  void start_recording(struct Patch *patch, wchar_t *path, int num_channels, float middle_note){
-    QDir dir = QFileInfo(STRING_get_qstring(path)).dir();
+  void start_recording(radium::SampleRecorderInstance *instance){
+    QDir dir = QFileInfo(STRING_get_qstring(instance->recording_path)).dir();
     if (dir.exists()==false){
       RT_message("Error. Could not find the directory \"%s\".\n", dir.absolutePath().toUtf8().constData());
       return;
     }
 
-    recording_files.push_back(new RecordingFile(patch, path, num_channels, middle_note));
+    recording_files.push_back(new RecordingFile(instance));
   }
   
-  void stop_recording(struct Patch *patch){
-    RecordingFile *recording_file = get_recording_file(patch);
+  void stop_recording(radium::SampleRecorderInstance *instance){
+    RecordingFile *recording_file = get_recording_file(instance);
 
     if (recording_file==NULL)
       return;
@@ -356,8 +342,8 @@ public:
     recorded_files.put(recording_file);    
   }
   
-  void treat_slice(struct Patch *patch, struct RecordingSlice *slice){
-    RecordingFile *recording_file = get_recording_file(patch);
+  void treat_slice(radium::SampleRecorderInstance *instance, struct RecordingSlice *slice){
+    RecordingFile *recording_file = get_recording_file(instance);
 
     if (recording_file==NULL)
       g_free_slices->bounded_push(slice);
@@ -374,18 +360,17 @@ public:
       switch(slice->command){
         
         case RecordingSlice::Start_Recording:
-          start_recording(slice->patch, slice->start_recording.path, slice->start_recording.num_channels, slice->start_recording.middle_note);
-          free(slice->start_recording.path);
+          start_recording(slice->instance);
           g_free_slices->bounded_push(slice);
           break;
           
         case RecordingSlice::Stop_Recording:
-          stop_recording(slice->patch);
+          stop_recording(slice->instance);
           g_free_slices->bounded_push(slice);
           break;
           
         case RecordingSlice::Sample_Data:
-          treat_slice(slice->patch, slice);
+          treat_slice(slice->instance, slice);
           break;
 
         case RecordingSlice::Quit:
@@ -410,14 +395,10 @@ void SampleRecorder_called_regularly(void){
     if (g_peak_slice_queue->pop(peak_slice)==false)
       break;
 
-    SoundPlugin *plugin = (SoundPlugin*)peak_slice.patch->patchdata;
-    
-    if (plugin != NULL)
-      SAMPLER_add_recorded_peak(plugin,
-                                peak_slice.ch,
-                                peak_slice.min,
-                                peak_slice.max
-                                );                       
+    peak_slice.instance->add_recorded_peak(peak_slice.ch,
+                                           peak_slice.min,
+                                           peak_slice.max
+                                           );                       
   }
   
   while(true){
@@ -427,63 +408,47 @@ void SampleRecorder_called_regularly(void){
     if(!gotit)
       break;
 
-    SoundPlugin *plugin = (SoundPlugin*)recorded_file->patch->patchdata;
-    
-    if (plugin != NULL){
+    recorded_file->instance->is_finished(recorded_file->sndfile != NULL, STRING_create(recorded_file->filename));
 
-      SAMPLER_erase_recorded_peaks(plugin);
-      
-      if (recorded_file->sndfile != NULL) {
-        ADD_UNDO(PluginState_CurrPos(recorded_file->patch));
-    
-        SAMPLER_set_new_sample(plugin,
-                               STRING_create(recorded_file->filename),
-                               0);
-      }
-    }
-    
     delete recorded_file;
   }
 }
 
 
-void RT_SampleRecorder_start_recording(struct Patch *patch, wchar_t *path, int num_channels, float middle_note){
-  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
-  R_ASSERT_RETURN_IF_FALSE(path!=NULL);
-  R_ASSERT_RETURN_IF_FALSE(num_channels>0);    
+void RT_SampleRecorder_start_recording(radium::SampleRecorderInstance *instance){
+  R_ASSERT_RETURN_IF_FALSE(instance!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(instance->recording_path!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(instance->num_ch>0);    
 
   RecordingSlice *slice = RT_get_free_slice();
 
   if(slice==NULL)
     return;
 
-  slice->patch = patch;
+  slice->instance = instance;
   slice->command = RecordingSlice::Start_Recording;
-  slice->start_recording.num_channels = num_channels;
-  slice->start_recording.path = path;
-  slice->start_recording.middle_note = middle_note;
 
   put_slice(slice);
 }
 
-void RT_SampleRecorder_stop_recording(struct Patch *patch){
-  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+void RT_SampleRecorder_stop_recording(radium::SampleRecorderInstance *instance){
+  R_ASSERT_RETURN_IF_FALSE(instance!=NULL);
 
   RecordingSlice *slice;
   while(g_free_slices->pop(slice)==false); // buzy looping. The close message must be sent.
   
-  slice->patch = patch;
+  slice->instance = instance;
   slice->command = RecordingSlice::Stop_Recording;
 
   put_slice(slice);
 }
 
-void RT_SampleRecorder_add_audio(struct Patch *patch, float **audio, int num_frames, int num_channels){
+void RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, float **audio, int num_frames){
   R_ASSERT_NON_RELEASE(num_frames <= RADIUM_BLOCKSIZE);
   
-  RecordingSlice *slices[num_channels];
+  RecordingSlice *slices[instance->num_ch];
 
-  for(int ch=0;ch<num_channels;ch++){
+  for(int ch=0;ch<instance->num_ch;ch++){
     slices[ch] = RT_get_free_slice();
     
     if (slices[ch]==NULL){
@@ -495,11 +460,11 @@ void RT_SampleRecorder_add_audio(struct Patch *patch, float **audio, int num_fra
     
   }
         
-  for(int ch=0;ch<num_channels;ch++){
+  for(int ch=0;ch<instance->num_ch;ch++){
     {
       RecordingSlice *slice = slices[ch];
 
-      slice->patch = patch;
+      slice->instance = instance;
       slice->command = RecordingSlice::Sample_Data;
       slice->slice.ch = ch;
       slice->slice.num_frames = num_frames;
@@ -513,7 +478,7 @@ void RT_SampleRecorder_add_audio(struct Patch *patch, float **audio, int num_fra
       JUCE_get_min_max_val(audio[ch], num_frames, &min_peak, &max_peak);
       
       PeakSlice peak_slice;
-      peak_slice.patch = patch;
+      peak_slice.instance = instance;
       peak_slice.ch = ch;
       peak_slice.min = min_peak;
       peak_slice.max = max_peak;

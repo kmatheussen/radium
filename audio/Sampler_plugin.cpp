@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Mixer_proc.h"
 #include "SampleRecorder_proc.h"
 #include "Peaks.hpp"
+#include "undo_plugin_state_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 
@@ -87,6 +88,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define MAX_TREMOLO_DEPTH 1
 
 const char *g_click_name = "Click";
+
+
+static void update_editor_graphics(SoundPlugin *plugin){
+#if 0
+  struct Tracker_Windows *window=root->song->tracker_windows;
+  struct WBlocks *wblock=window->wblock;
+  TRACKREALLINES_update_peak_tracks(window,plugin->patch);
+  DrawUpAllPeakWTracks(window,wblock,plugin->patch);
+#endif
+
+#if USE_OPENGL
+  GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const_cast<Patch*>(plugin->patch));
+
+#else
+  if(plugin->patch!=NULL)
+    RT_TRACKREALLINES_schedule_update_peak_tracks(plugin->patch);
+#endif
+}
+
+
 
 // Effect order.
 //
@@ -234,6 +255,8 @@ enum{
   IS_RECORDING
 };
 
+struct MySampleRecorderInstance;
+
 struct Data{
 
   CopyData p = {};
@@ -271,14 +294,13 @@ struct Data{
   DEFINE_ATOMIC(struct Data *, new_data) = NULL;
   RSemaphore *signal_from_RT = NULL;
 
-  DEFINE_ATOMIC(wchar_t*, recording_path) = NULL; // allocated using malloc
-  DEFINE_ATOMIC(int, num_recording_channels) = 0;
+
   DEFINE_ATOMIC(int, recording_status) = 0;
-  int recording_start_frame = 0;
-  DEFINE_ATOMIC(bool, recording_from_main_input) = false;
-  DEFINE_ATOMIC(int, recording_note) = 0;
-  int64_t recording_note_id = 0;
-  const struct SeqBlock *recording_seqblock = NULL;
+  MySampleRecorderInstance *recorder_instance;  // thread-protected by recording_status
+  int recording_start_frame = 0;  // thread-protected by recording_status
+  bool recording_from_main_input;  // thread-protected by recording_status
+  int64_t recording_note_id = 0;  // thread-protected by recording_status
+  const struct SeqBlock *recording_seqblock = NULL;  // thread-protected by recording_status
   
   // No need to clear these two fields after usage (to save some memory) since plugin->data is reloaded after recording.
   radium::Vector<float> min_recording_peaks[2];
@@ -302,6 +324,63 @@ struct Data{
     R_ASSERT(samples[0].sound==NULL);
   }
 };
+
+
+struct MySampleRecorderInstance : radium::SampleRecorderInstance{
+
+  struct Patch *_patch;
+
+  MySampleRecorderInstance(struct Patch *patch, wchar_t *recording_path, int num_ch)
+    : SampleRecorderInstance(recording_path, num_ch, 48)
+    , _patch(patch)
+  {
+  }
+  
+  void is_finished(bool success, wchar_t *filename) override {
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    
+    if (plugin != NULL){
+      
+      Data *data=(Data*)plugin->data;
+      
+      data->min_recording_peaks[0].clear();
+      data->max_recording_peaks[0].clear();
+      
+      data->min_recording_peaks[1].clear();
+      data->max_recording_peaks[1].clear();
+      
+      update_editor_graphics(plugin);
+      
+      if (success) {
+        
+        ADD_UNDO(PluginState_CurrPos(_patch));
+        
+        SAMPLER_set_new_sample(plugin,
+                               filename,
+                               0);
+      }
+    }
+  }
+  
+  void add_recorded_peak(int ch, float min_peak, float max_peak) override {
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    
+    if (plugin != NULL){
+      Data *data=(Data*)plugin->data;
+      
+      if (ATOMIC_GET(data->recording_status) != IS_RECORDING)
+        return;
+      
+      R_ASSERT_RETURN_IF_FALSE(ch==0 || ch==1);
+      
+      data->min_recording_peaks[ch].push_back(min_peak);
+      data->max_recording_peaks[ch].push_back(max_peak);
+      
+      update_editor_graphics(plugin);
+    }
+  }
+};
+
 
 } // end anon. namespace
 
@@ -824,7 +903,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
     float *audio_[2];
     float **audio = audio_;
     
-    if (ATOMIC_GET(data->recording_from_main_input)) {
+    if (data->recording_from_main_input) {
       MIXER_get_main_inputs(audio);
     } else {
       audio_[0] = inputs[0];
@@ -834,10 +913,10 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
     audio_[0] += data->recording_start_frame;
     audio_[1] += data->recording_start_frame;
 
-    RT_SampleRecorder_add_audio((struct Patch*)plugin->patch,
+    RT_SampleRecorder_add_audio(data->recorder_instance,
                                 audio,
-                                RADIUM_BLOCKSIZE - data->recording_start_frame,
-                                ATOMIC_GET(data->num_recording_channels));
+                                RADIUM_BLOCKSIZE - data->recording_start_frame
+                                );
     
     data->recording_start_frame = 0;
 
@@ -891,17 +970,15 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
 
   if (ATOMIC_GET(data->recording_status)==BEFORE_RECORDING && note2.sample_pos==0){
 
+    data->recorder_instance->middle_note = note2.pitch;
+
     struct Patch *patch = (struct Patch*)plugin->patch;
-    RT_SampleRecorder_start_recording(patch,
-                                      ATOMIC_GET(data->recording_path),
-                                      ATOMIC_GET(data->num_recording_channels),
-                                      note2.pitch);
+    RT_SampleRecorder_start_recording(data->recorder_instance);
     
     data->recording_note_id = note2.id;
     data->recording_seqblock = note2.seqblock;
     data->recording_start_frame = time;
     
-    ATOMIC_SET(data->recording_note, note2.pitch * 10000);
     ATOMIC_SET(data->recording_status, IS_RECORDING);
     ATOMIC_SET(patch->is_recording, true); // Used to determine whether to paint the chip background red.
     
@@ -1056,7 +1133,7 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
       
       struct Patch *patch = (struct Patch*)plugin->patch;
       
-      RT_SampleRecorder_stop_recording(patch);
+      RT_SampleRecorder_stop_recording(data->recorder_instance);
       
       ATOMIC_SET(data->recording_status, NOT_RECORDING);
       ATOMIC_SET(patch->is_recording, false);
@@ -1241,8 +1318,10 @@ static int get_peaks(struct SoundPlugin *plugin,
   //printf("  get_peaks. Start_time: %d, end_time: %d\n\n",(int)start_time,(int)end_time);
   
   if(ch==-1){
-    if (ATOMIC_GET(data->recording_status) == IS_RECORDING)
-      return ATOMIC_GET(data->num_recording_channels);
+    if (ATOMIC_GET(data->recording_status) == IS_RECORDING){
+      R_ASSERT_RETURN_IF_FALSE2(data->recorder_instance!=NULL, 1);
+      return data->recorder_instance->num_ch;
+    }
     
     int i;
     for(i=0;i<MAX_NUM_SAMPLES;i++){
@@ -1261,7 +1340,9 @@ static int get_peaks(struct SoundPlugin *plugin,
 
   if (data->min_recording_peaks[0].size() > 0) {
       
-    double recording_note = (float)ATOMIC_GET(data->recording_note) / 10000.0;
+    R_ASSERT_RETURN_IF_FALSE2(data->recorder_instance!=NULL, 2);
+
+    double recording_note = data->recorder_instance->middle_note; //(float)ATOMIC_GET(data->recording_note) / 10000.0;
 
     double ratio = midi_to_hz(note_num) / midi_to_hz(recording_note);
 
@@ -1390,23 +1471,6 @@ static int get_peaks(struct SoundPlugin *plugin,
   *min_value = 0.0f;
   *max_value = 0.0f;
   return 2;
-}
-
-static void update_editor_graphics(SoundPlugin *plugin){
-#if 0
-  struct Tracker_Windows *window=root->song->tracker_windows;
-  struct WBlocks *wblock=window->wblock;
-  TRACKREALLINES_update_peak_tracks(window,plugin->patch);
-  DrawUpAllPeakWTracks(window,wblock,plugin->patch);
-#endif
-
-#if USE_OPENGL
-  GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const_cast<Patch*>(plugin->patch));
-
-#else
-  if(plugin->patch!=NULL)
-    RT_TRACKREALLINES_schedule_update_peak_tracks(plugin->patch);
-#endif
 }
 
 static void set_loop_onoff(Data *data, bool loop_onoff){
@@ -2199,6 +2263,8 @@ static void delete_data(Data *data){
 
   free_tremolo(data->tremolo);
 
+  delete data->recorder_instance;
+
   delete data;
 }
 
@@ -2244,37 +2310,6 @@ void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int start, int length){
     set_loop_data(data, start, length, true);
     PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
   }PLAYER_unlock();
-}
-
-void SAMPLER_add_recorded_peak(SoundPlugin *plugin,
-                               int ch,
-                               float min,
-                               float max
-                               )
-{
-  Data *data=(Data*)plugin->data;
-
-  if (ATOMIC_GET(data->recording_status) != IS_RECORDING)
-    return;
-
-  R_ASSERT_RETURN_IF_FALSE(ch==0 || ch==1);
-  
-  data->min_recording_peaks[ch].push_back(min);
-  data->max_recording_peaks[ch].push_back(max);
-
-  update_editor_graphics(plugin);
-}
-
-void SAMPLER_erase_recorded_peaks(SoundPlugin *plugin){
-  Data *data=(Data*)plugin->data;
-
-  data->min_recording_peaks[0].clear();
-  data->max_recording_peaks[0].clear();
-  
-  data->min_recording_peaks[1].clear();
-  data->max_recording_peaks[1].clear();
-
-  update_editor_graphics(plugin);
 }
 
 static bool set_new_sample(struct SoundPlugin *plugin,
@@ -2485,12 +2520,12 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, const wchar_t *pathdir,
     return;
   }
   
-  free(ATOMIC_GET(data->recording_path));
-  ATOMIC_SET(data->recording_path, wcsdup(recording_path));
-  
-  ATOMIC_SET(data->num_recording_channels, num_channels);
-  ATOMIC_SET(data->recording_from_main_input, recording_from_main_input);
+  data->recording_from_main_input = recording_from_main_input;
   ATOMIC_SET(data->recording_status, BEFORE_RECORDING);
+
+  auto *old = data->recorder_instance;
+  data->recorder_instance = new MySampleRecorderInstance(const_cast<struct Patch*>(plugin->patch), recording_path, num_channels);
+  delete old; // Wait before deleting this one since data from it is being used here and there (although it shouldn't really be used after finished recording);
 }
 
 const char *SAMPLER_get_recording_status(struct SoundPlugin *plugin){
