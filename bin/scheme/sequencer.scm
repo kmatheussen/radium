@@ -127,30 +127,30 @@
   
   (define last-painted-name "")
 
-  (define (paint)
-                ;;(<gui> :set-clip-rect gui x1 y1 x2 y2)
-                (let* ((b 0)
-                       (x1 (+ x1 b))
-                       (y1 (+ y1 b))
-                       (x2 (- x2 b))
-                       (y2 (- y2 b)))
-
-                  (if (= seqtracknum (<ra> :get-curr-seqtrack))
-                      (<gui> :filled-box gui *curr-seqtrack-color* x1 y1 x2 y2)
-                      (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id))
-
-                  (define instrument-name (<ra> :get-instrument-name instrument-id))
-                  (set! last-painted-name instrument-name)
-                  (<gui> :draw-text gui *text-color* (<-> seqtracknum ": " instrument-name)
-                         (+ 4 x1) y1 x2 y2
-                         #f ;; wrap-lines
-                         #f ;; align top
-                         #t) ;; align left
-                  (define background-color (<gui> :get-background-color gui))
-                  (<gui> :draw-box gui background-color (+ 0 x1) (+ 0 y1) (- x2 0) (- y2 0) 2 0 0)
-                  (<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 5 5))
-                ;;(<gui> :cancel-clip-rect gui)
-                )
+  (define-override (paint)
+    ;;(<gui> :set-clip-rect gui x1 y1 x2 y2)
+    (let* ((b 0)
+           (x1 (+ x1 b))
+           (y1 (+ y1 b))
+           (x2 (- x2 b))
+           (y2 (- y2 b)))
+      
+      (if (= seqtracknum (<ra> :get-curr-seqtrack))
+          (<gui> :filled-box gui *curr-seqtrack-color* x1 y1 x2 y2)
+          (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id))
+      
+      (define instrument-name (<ra> :get-instrument-name instrument-id))
+      (set! last-painted-name instrument-name)
+      (<gui> :draw-text gui *text-color* (<-> seqtracknum ": " instrument-name)
+             (+ 4 x1) y1 x2 y2
+             #f ;; wrap-lines
+             #f ;; align top
+             #t) ;; align left
+      (define background-color (<gui> :get-background-color gui))
+      (<gui> :draw-box gui background-color (+ 0 x1) (+ 0 y1) (- x2 0) (- y2 0) 2 0 0)
+      (<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 5 5))
+    ;;(<gui> :cancel-clip-rect gui)
+    )
 
   (<ra> :schedule (random 1000)
         (lambda ()
@@ -211,6 +211,7 @@
                               (+ b x1-split) y1
                               x-meter-split y-split
                               instrument-id #t #t seqtracknum))
+
   (add-sub-area-plain! (<new> :horizontal-instrument-slider gui
                               x1 (if use-two-rows (+ b y-split) y1)
                               (if use-two-rows x-meter-split x1-split) y2
@@ -256,13 +257,12 @@
                  (set-mouse-pointer ra:set-normal-mouse-pointer gui)
                  #f))
 
-  (define get-mouse-cycle-org get-mouse-cycle)
-  (define (get-mouse-cycle button x* y*)
+  (define-override (get-mouse-cycle button x* y*)
     (when (inside? x* y*)
       ;;(c-display "____HEADER seqtracknum:" seqtracknum)
       (<ra> :set-curr-seqtrack seqtracknum))
-    (get-mouse-cycle-org button x* y*))
-  
+    (super:get-mouse-cycle button x* y*))
+    
   (add-mouse-cycle! :press-func (lambda (button x* y*)
                                   (if (= button *right-button*)
                                       (begin
@@ -276,7 +276,7 @@
   (define background-color (<gui> :get-background-color gui))
   (define border-color (<gui> :mix-colors background-color "black" 0.5))
 
-  (define (paint)
+  (define-override (paint)
     ;;(<gui> :filled-box gui background-color 0 0 width height)
     (<gui> :draw-text gui *text-color* "=" x1 y1 x2 y2
            #f ;; wrap-lines
@@ -447,7 +447,7 @@
 
   (define background-color (<gui> :get-background-color gui))
 
-  (define (paint)
+  (define-override (paint)
     ;;(c-display "   Scheme: Painting left part")
     (<gui> :filled-box gui background-color x1 y1 x2 y2))
   
