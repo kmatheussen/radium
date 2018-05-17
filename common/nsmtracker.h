@@ -2838,12 +2838,20 @@ static inline struct SeqTrack *SEQUENCER_get_curr_seqtrack(void){
 
   R_ASSERT_NON_RELEASE(curr_seqtracknum >= 0);
   R_ASSERT_NON_RELEASE(curr_seqtracknum < root->song->seqtracks.num_elements);
-  
+
   vector_t *seqtracks = &root->song->seqtracks;
-  if (curr_seqtracknum >= seqtracks->num_elements)
-    return NULL;
-  else
-    return (struct SeqTrack*)seqtracks->elements[curr_seqtracknum];
+  
+  R_ASSERT(seqtracks->num_elements > 0);
+
+  if (curr_seqtracknum >= seqtracks->num_elements || curr_seqtracknum<0){
+    R_ASSERT_NON_RELEASE(false);
+    if (curr_seqtracknum >= seqtracks->num_elements){
+      curr_seqtracknum = seqtracks->num_elements-1;
+    } else
+      curr_seqtracknum = 0;
+  }
+  
+  return (struct SeqTrack*)seqtracks->elements[curr_seqtracknum];
 }
 
 static inline struct SeqTrack *RT_get_curr_seqtrack(void){

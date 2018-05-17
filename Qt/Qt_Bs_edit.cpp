@@ -16,6 +16,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <math.h>
 
+#include <QFileInfo>
+
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
 #include "../common/visual_proc.h"
@@ -27,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/settings_proc.h"
 #include "../common/seqtrack_proc.h"
 #include "../common/undo_sequencer_proc.h"
+
+#include "../audio/SampleReader_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -161,12 +165,20 @@ namespace{
     int seqblocknum;
 
     bool is_current;
+
+    bool is_last = false;
     
   private:
     
     int64_t _pause;
 
   public:
+
+    static PlaylistElement last(void){
+      PlaylistElement pe;
+      pe.is_last = true;
+      return pe;
+    }
     
     static PlaylistElement pause(int seqblocknum, struct SeqBlock *seqblock, int64_t pause, bool is_current){
       R_ASSERT(pause > 0);
@@ -228,7 +240,7 @@ static QVector<PlaylistElement> get_playlist_elements(void){
   QVector<PlaylistElement> ret;
     
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-
+  
   double current_seq_time = ATOMIC_DOUBLE_GET_RELAXED(seqtrack->start_time_nonrealtime);
   
   double last_end_seq_time = 0;
@@ -630,7 +642,7 @@ public slots:
   void add_to_playlist(void){
 
     struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-      
+    
     struct Blocks *block = getBlockFromNum(blocklist.currentItem());
 
 #ifdef USE_QT3
@@ -919,26 +931,45 @@ void BS_UpdateBlockList(void){
   if (g_is_hidden)
     return;
   
-  while(g_bs->blocklist.count()>0)
-    g_bs->blocklist.removeItem(0);
-
-  int justify = log10(root->song->num_blocks) + 1;
-  printf("justify: %d\n", justify);
-  
-  struct Blocks *block=root->song->blocks;
-  while(block!=NULL){
-    g_bs->blocklist.insertItem(QString::number(block->l.num).rightJustified(justify, ' ')+": "+QString(block->name));
-    block=NextBlock(block);
+  while(g_bs->blocklist.count()>0){
+    delete g_bs->blocklist.takeItem(0);
   }
 
-  //PyRun_SimpleString(temp);
+  struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
 
-  BS_SelectBlock(root->song->tracker_windows->wblock->block);  
+  if (seqtrack->for_audiofiles){
+
+    vector_t filenames = SAMPLEREADER_get_all_filenames();
+    int justify = log10(filenames.num_elements) + 1;
+
+    VECTOR_FOR_EACH(const wchar_t*, filename, &filenames){
+
+      QFileInfo info(STRING_get_qstring(filename));
+      g_bs->blocklist.insertItem(QString::number(iterator666).rightJustified(justify, ' ')+": "+info.fileName());
+      
+    }END_VECTOR_FOR_EACH;
+    
+  } else {
+    
+    int justify = log10(root->song->num_blocks) + 1;
+    printf("justify: %d\n", justify);
+    
+    struct Blocks *block=root->song->blocks;
+    while(block!=NULL){
+      g_bs->blocklist.insertItem(QString::number(block->l.num).rightJustified(justify, ' ')+": "+QString(block->name));
+      block=NextBlock(block);
+    }
+
+    //PyRun_SimpleString(temp);
+    
+    BS_SelectBlock(root->song->tracker_windows->wblock->block);
+  }
 }
 
 void BS_UpdatePlayList(void){
   ScopedVisitors v;
 
+  //printf("  updateplaylist start\n");
   if (g_is_hidden)
     return;
   
@@ -950,34 +981,54 @@ void BS_UpdatePlayList(void){
 
   int orgpos = g_bs->playlist.currentItem();
 
-  // Remove all
-  while(g_bs->playlist.count()>0)
-    g_bs->playlist.removeItem(0);
-
   struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-  R_ASSERT_RETURN_IF_FALSE(seqtrack!=NULL);
   
-  //SEQTRACK_update_all_seqblock_gfx_start_and_end_times(seqtrack);
-
   int justify_playlist = log10(gfx_seqblocks(seqtrack)->num_elements) + 1;
-  //int justify_blocklist = log10(root->song->num_blocks) + 1;
   
   QVector<PlaylistElement> elements = get_playlist_elements();
-
-  int pos = 0;
-  for(const PlaylistElement &pe : elements){
-    if (pe.is_pause()){
-      g_bs->playlist.insertItem(" pause: "+radium::get_time_string(pe.get_pause()));
-    }else {
-      QString seqblockname = get_seqblock_name(seqtrack, pe.seqblock, "/", true);
-      g_bs->playlist.insertItem(QString::number(pos).rightJustified(justify_playlist, ' ') + ": " + seqblockname);
-      pos++;
-    }
+  {
+    PlaylistElement pe = PlaylistElement::last();
+    elements.push_back(pe);
   }
-        
-  g_bs->playlist.insertItem(" "); // Make it possible to put a block at the end of the playlist.
+  
+  int num_elements = elements.size();
+  int num_items = g_bs->playlist.count();
+  int num_iterations = R_MAX(num_elements, num_items);
 
-  //printf("orgpos: %d\n",orgpos);
+  QVector<QListWidgetItem*> to_remove;
+  
+  int pos = 0;
+  for(int i=0;i<num_iterations;i++){
+    const PlaylistElement *element = i < num_elements ? &elements.at(i) : NULL;
+    QListWidgetItem *item = i < num_items ? g_bs->playlist.item(i) : NULL;
+
+    if (element==NULL) {
+
+      to_remove.push_back(item);
+
+    } else {
+
+      QString new_text;
+      if (element->is_last) {
+        new_text = " "; // Make it possible to put a block at the end of the playlist.
+      } else if (element->is_pause()){
+        new_text = " pause: "+radium::get_time_string(element->get_pause());
+      } else {
+        QString seqblockname = get_seqblock_name(seqtrack, element->seqblock, "/", true);
+        new_text = QString::number(pos).rightJustified(justify_playlist, ' ') + ": " + seqblockname;
+        pos++;
+      }
+      
+      if (item==NULL)
+        g_bs->playlist.insertItem(new_text);
+      else if (new_text != item->text())
+        item->setText(new_text);
+    }
+
+  }
+
+  for(auto *item : to_remove)
+    delete item;
   
   BS_SelectPlaylistPos(orgpos);
 }

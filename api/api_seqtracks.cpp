@@ -210,6 +210,7 @@ void appendSeqtrack(bool for_audiofiles){
 
   ATOMIC_SET(root->song->curr_seqtracknum, root->song->seqtracks.num_elements -1);
   BS_UpdatePlayList();
+  BS_UpdateBlockList();
 }
 
 void insertSeqtrack(bool for_audiofiles, int pos){
@@ -226,6 +227,7 @@ void insertSeqtrack(bool for_audiofiles, int pos){
 
   ATOMIC_SET(root->song->curr_seqtracknum, pos);
   BS_UpdatePlayList();
+  BS_UpdateBlockList();
 }
 
 void deleteSeqtrack(int seqtracknum){
@@ -257,6 +259,7 @@ void setCurrSeqtrack(int seqtracknum){
 
     ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
     SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);
+    BS_UpdateBlockList();
     
     struct Patch *patch = seqtrack->patch;
     if(patch!=NULL)

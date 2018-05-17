@@ -235,6 +235,7 @@ int main(){
 #include "../common/nsmtracker.h"
 #include "../common/Queue.hpp"
 #include "../common/OS_visual_input.h"
+#include "../common/OS_Bs_edit_proc.h"
 #include "../common/LockAsserter.hpp"
 
 #include "../Qt/Qt_colors_proc.h"
@@ -597,6 +598,8 @@ static SampleProvider *get_sample_provider(const wchar_t *filename){
     return NULL;
   }
 
+  BS_UpdateBlockList();
+  
   return provider;
 }
 
@@ -1222,6 +1225,14 @@ SampleReader *SAMPLEREADER_create(const wchar_t *filename){
   }
   
   return new SampleReader(provider);
+}
+
+vector_t SAMPLEREADER_get_all_filenames(void){
+  vector_t ret = {};
+  for(const auto key : g_sample_providers.keys())
+    VECTOR_push_back(&ret, STRING_create(key));
+
+  return ret;
 }
 
 int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename){
