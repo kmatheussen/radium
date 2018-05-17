@@ -2192,9 +2192,57 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     if (_end_time < _start_time+10)
       _end_time = _start_time+10;
   }
+
+#if 0
+  /*
+    Need custom update() system. We don't know where the cursor will be placed until the paintEvent() function is called.
+    Calculating the cursor position in the timer callback is suboptimal and might (not unlikely) cause unnecessary visible jumpiness.
+    Currently we are trying to predict where the cursor position will be when the paint event method is called, and when
+    we predict wrong, we get graphical garbage.
+
+    The plan is to only call update() (i.e. update with no arguments), and let paintEvent look like this:
+
+    void paintEvent (QPaintEvent *ev) override {
+      QRectF new_cursor_rect = get_cursor_rect();
+      if (_last_painted_cursor_rect != new_cursor_rect) {
+        _update_region += _last_painted_cursor_rect.toAlignedRect()
+        _update_region += new_cursor_rect.toAlignedRect();
+      }
+
+      setClipRegion(_update_region);
+
+      ...
+
+      paintCursor(new_cursor_rect);
+      _last_painted_cursor_rect = new_cursor_rect;
+      _update_region.clear();
+    }
+   */
+
+  QRectF _last_painted_cursor_rect;
+  QRegion _update_region;
   
-  void my_update(void){
-    D(printf("SEQ: my_update called\n"));
+  void my_update(const QRegion &reg){
+    _update_region += reg;
+    update();
+  }
+    
+  void my_update(const QRect &rect){
+    _update_region += rect;
+    update();
+  }
+    
+  void my_update(const QRectF &rect){
+    my_update(rect.toAlignedRect());
+  }
+    
+  void my_update(qreal x1, qreal y1, qreal x2, qreal y2){
+    my_update(QRectF(x1, y1, x2-x1, y2-y1));
+  }
+#endif
+  
+  void my_update_all(void){
+    D(printf("SEQ: my_update_all called\n"));
     int64_t visible_song_length = MIXER_get_sample_rate() * get_visible_song_length();
     if (_end_time > visible_song_length) {
       _end_time = visible_song_length;
@@ -2354,7 +2402,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     S7CALL2(void_void, "FROM_C-reconfigure-sequencer-left-part");
 
-    my_update();
+    my_update_all();
   }
 
   
@@ -2830,7 +2878,7 @@ void SEQUENCER_set_visible_start_and_end_time(int64_t start_time, int64_t end_ti
 
   g_sequencer_widget->legalize_start_end_times();
           
-  g_sequencer_widget->my_update();
+  g_sequencer_widget->my_update_all();
 }
 
 void SEQUENCER_set_visible_start_time(int64_t val){
@@ -2840,7 +2888,7 @@ void SEQUENCER_set_visible_start_time(int64_t val){
 
   g_sequencer_widget->legalize_start_end_times();
 
-  g_sequencer_widget->my_update();
+  g_sequencer_widget->my_update_all();
 }
 
 void SEQUENCER_set_visible_end_time(int64_t val){
@@ -2850,7 +2898,7 @@ void SEQUENCER_set_visible_end_time(int64_t val){
 
   g_sequencer_widget->legalize_start_end_times();
     
-  g_sequencer_widget->my_update();
+  g_sequencer_widget->my_update_all();
 }
 
 void SEQUENCER_set_grid_type(enum GridType grid_type){
