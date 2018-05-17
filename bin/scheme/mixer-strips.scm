@@ -2255,7 +2255,9 @@
          0.3))
 
 (define (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id)
-  (define background-color (get-mixer-strip-background-color gui instrument-id))
+  (define background-color (if (>= instrument-id 0)
+                               (get-mixer-strip-background-color gui instrument-id)
+                               "grey"))
   (<gui> :filled-box gui background-color x1 y1 x2 y2))
 
 

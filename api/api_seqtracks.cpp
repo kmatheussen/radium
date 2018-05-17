@@ -204,15 +204,15 @@ float getSeqnavRightSizeHandleY2(void){
   return getSeqnavY2();
 }
 
-void appendSeqtrack(void){
+void appendSeqtrack(bool for_audiofiles){
   undoSequencer();
-  SEQUENCER_append_seqtrack(NULL);
+  SEQUENCER_append_seqtrack(NULL, for_audiofiles);
 
   ATOMIC_SET(root->song->curr_seqtracknum, root->song->seqtracks.num_elements -1);
   BS_UpdatePlayList();
 }
 
-void insertSeqtrack(int pos){
+void insertSeqtrack(bool for_audiofiles, int pos){
   if (pos==-1)
     pos = ATOMIC_GET(root->song->curr_seqtracknum);
   
@@ -222,7 +222,7 @@ void insertSeqtrack(int pos){
   }
 
   undoSequencer();
-  SEQUENCER_insert_seqtrack(NULL, pos);
+  SEQUENCER_insert_seqtrack(NULL, pos, for_audiofiles);
 
   ATOMIC_SET(root->song->curr_seqtracknum, pos);
   BS_UpdatePlayList();
@@ -273,7 +273,7 @@ int getNumSeqtracks(void){
 }
 
 int64_t getSeqtrackInstrument(int seqtracknum){
-  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
 
@@ -288,6 +288,35 @@ int64_t getSeqtrackInstrument(int seqtracknum){
   return seqtrack->patch->id;
 }
 
+bool seqtrackForAudiofiles(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  return seqtrack->for_audiofiles;
+}
+
+void setSeqtrackName(const_char *name, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  if (seqtrack->patch != NULL)
+    setInstrumentName(name, seqtrack->patch->id);
+  else
+    seqtrack->name = talloc_strdup(name);
+}
+
+const_char *getSeqtrackName(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return "";
+
+  if (seqtrack->patch != NULL)
+    return seqtrack->patch->name;
+  else
+    return seqtrack->name == NULL ? "" : seqtrack->name;
+}
 
 // Sequencer track automation
 //////////////////////////////////////////
@@ -1237,7 +1266,7 @@ static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
 int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
   VALIDATE_TIME(pos, -1);
   
-  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  struct SeqTrack *seqtrack = getBlockSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
 
@@ -1258,7 +1287,7 @@ int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
 int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, int64_t endpos){
   VALIDATE_TIME(pos, -1);
   
-  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
 

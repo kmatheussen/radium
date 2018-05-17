@@ -2679,6 +2679,8 @@ typedef struct _scheduler_t scheduler_t;
 struct SeqtrackAutomation;
 
 struct SeqTrack{
+  bool for_audiofiles;
+
   vector_t seqblocks; // Player must be stopped when modifying this variable. Also used for displaying if gfx_seqblocks != NULL.
   vector_t *gfx_seqblocks; // Used for displaying. Might have the same content as this->seqblocks (points to).
   vector_t gfx_gfx_seqblocks; // When moving several seqblocks. Just for graphics. Player does not have to be stopped when modifying this variable
@@ -2704,6 +2706,8 @@ struct SeqTrack{
 
   struct SeqtrackAutomation *seqtrackautomation;
 
+  const char *name; // Not used when for_audiofiles==true. (then we use patch->name instead)
+  
   struct Patch *patch; // A "Sequencer audio file recorder/player" audio plugin.
   
   scheduler_t *scheduler;

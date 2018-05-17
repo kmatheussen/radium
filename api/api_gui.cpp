@@ -626,32 +626,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         float falloff_pos = db2linear(db_falloff, get_pos_y1(), get_pos_y2());
         _falloff_pos[ch] = falloff_pos;
 
-#if 0
-        
-        if (falloff_pos != prev_falloff_pos)
-          myupdate(widget, _x1, _y1, _width, _height);
-
-#elif 1
         if (falloff_pos != prev_falloff_pos){
-          myupdate(widget, get_falloff_rect(x1, x2, prev_falloff_pos).toRect().adjusted(-4,-4,4,4));
-          myupdate(widget, get_falloff_rect(x1, x2, falloff_pos).toRect().adjusted(-4,-4,4,4));
+          myupdate(widget, get_falloff_rect(x1, x2, prev_falloff_pos).toAlignedRect().adjusted(-1,-1,1,1)); // I don't understand why it's necessary to add .adjusted() here.
+          myupdate(widget, get_falloff_rect(x1, x2, falloff_pos).toAlignedRect().adjusted(-1,-1,1,1)); // I don't understand why it's necessary to add .adjusted() here.
         }
-#else
-        
-        const int extra = 5;
-        
-        // don't know what's wrong here...
-        if (falloff_pos < prev_falloff_pos){
-          myupdate(widget,
-                   x1-1,   floorf(falloff_pos)-extra-falloff_height,
-                   x2+2,   floorf(prev_falloff_pos-falloff_pos)+2+extra*2+falloff_height*2);
-        } else if (pos > prev_pos){
-          myupdate(widget,
-                   x1-1,   floorf(prev_falloff_pos)-extra-falloff_height,
-                   x2+2,   floorf(falloff_pos-prev_falloff_pos)+2+extra*2+falloff_height*2);
-        }
-        
-#endif
       }
     }
     
@@ -687,7 +665,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
         float pos = _pos[ch];
 
-        // Background (using autofill instead since this way left created graphical artifacts)
+        // Background
         {
           QRectF rect1(x1,     get_pos_y1(),
                        x2-x1,  pos-get_pos_y1());

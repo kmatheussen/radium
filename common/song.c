@@ -63,7 +63,7 @@ struct Song *SONG_create(void){
   song->mute_editor_automation_when_track_is_muted = true;
   song->num_channels_in_main_pipe = 2;
 
-  VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL, -1));
+  VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL, -1, false));
 
   SEQUENCER_init(song);
   

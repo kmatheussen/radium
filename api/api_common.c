@@ -487,6 +487,32 @@ struct SeqTrack *getSeqtrackFromNum(int seqtracknum){
   return root->song->seqtracks.elements[seqtracknum];
 }
 
+struct SeqTrack *getAudioSeqtrackFromNum(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return NULL;
+
+  if (seqtrack->for_audiofiles==false){
+    handleError("Sequencer track %d is not for audio files", seqtracknum);
+    return NULL;
+  }
+    
+  return seqtrack;
+}
+
+struct SeqTrack *getBlockSeqtrackFromNum(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return NULL;
+
+  if (seqtrack->for_audiofiles==true){
+    handleError("Sequencer track %d is not for editor blocks", seqtracknum);
+    return NULL;
+  }
+    
+  return seqtrack;
+}
+
 struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)

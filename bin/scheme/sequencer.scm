@@ -121,9 +121,9 @@
                                                             (turn-off-all-mute instrument-id)))))))))))
   )
 
-(def-area-subclass (<instrument-name> :gui :x1 :y1 :x2 :y2
-                                      :instrument-id
-                                      :seqtracknum)
+(def-area-subclass (<seqtrack-name> :gui :x1 :y1 :x2 :y2
+                                    :instrument-id
+                                    :seqtracknum)
   
   (define last-painted-name "")
 
@@ -139,9 +139,9 @@
           (<gui> :filled-box gui *curr-seqtrack-color* x1 y1 x2 y2)
           (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id))
       
-      (define instrument-name (<ra> :get-instrument-name instrument-id))
-      (set! last-painted-name instrument-name)
-      (<gui> :draw-text gui *text-color* (<-> seqtracknum ": " instrument-name)
+      (define seqtrack-name (<ra> :get-seqtrack-name seqtracknum))
+      (set! last-painted-name seqtrack-name)
+      (<gui> :draw-text gui *text-color* (<-> seqtracknum ": " seqtrack-name)
              (+ 4 x1) y1 x2 y2
              #f ;; wrap-lines
              #f ;; align top
@@ -152,34 +152,40 @@
     ;;(<gui> :cancel-clip-rect gui)
     )
 
-  (<ra> :schedule (random 1000)
-        (lambda ()
-          (and is-alive (<gui> :is-open gui) (<ra> :instrument-is-open-and-audio instrument-id)
-               (begin
-                 (if (not (string=? last-painted-name (<ra> :get-instrument-name instrument-id)))
-                     (update-me!))
-                 300))))
+  (if (>= instrument-id 0)
+      (<ra> :schedule (random 1000)
+            (lambda ()
+              (and is-alive (<gui> :is-open gui) (<ra> :instrument-is-open-and-audio instrument-id)
+                   (begin
+                     (if (not (string=? last-painted-name (<ra> :get-instrument-name instrument-id)))
+                         (update-me!))
+                     300)))))
   
   (add-mouse-cycle! :press-func (lambda (button x* y*)
                                   (= button *left-button*))
                     :release-func
                     (lambda (button x* y*)
                       (and (= button *left-button*)
-                           (let* ((old-name (<ra> :get-instrument-name instrument-id))
+                           (let* ((old-name (<ra> :get-seqtrack-name seqtracknum))
                                   (new-name (<ra> :request-string "New name:" #t old-name)))
                              (c-display "GAKKKGAKK_________ NEWNAME" (<-> "-" new-name "-"))
                              (when (and (not (string=? new-name ""))
                                         (not (string=? new-name old-name)))
-                               (<ra> :set-instrument-name new-name instrument-id)
+                               (<ra> :set-seqtrack-name new-name seqtracknum)
                                (update-me!))
                              #f)))) ;; Mouse cycle is screwed up when focus is switeched to a different widget. #f fixes this.
   )
 
 
 (def-area-subclass (<seqtrack-header> :gui :x1 :y1 :x2 :y2
-                                      :instrument-id
                                       :use-two-rows
                                       :seqtracknum)
+
+  (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+  (define for-blocks (not for-audiofiles))
+  (define instrument-id (if for-blocks
+                            -1
+                            (<ra> :get-seqtrack-instrument seqtracknum)))
 
   ;;(<gui> :set-background-color gui "blue")
 
@@ -201,47 +207,52 @@
 
 
   (if use-two-rows
-      (add-sub-area-plain! (<new> :instrument-name gui
+      (add-sub-area-plain! (<new> :seqtrack-name gui
                                   x1 y1 x1-split
                                   y-split
                                   instrument-id
                                   seqtracknum)))
 
-  (add-sub-area-plain! (<new> :mute-solo-buttons gui
-                              (+ b x1-split) y1
-                              x-meter-split y-split
-                              instrument-id #t #t seqtracknum))
+  (if for-audiofiles
+      (add-sub-area-plain! (<new> :mute-solo-buttons gui
+                                  (+ b x1-split) y1
+                                  x-meter-split y-split
+                                  instrument-id #t #t seqtracknum)))
 
-  (add-sub-area-plain! (<new> :horizontal-instrument-slider gui
-                              x1 (if use-two-rows (+ b y-split) y1)
-                              (if use-two-rows x-meter-split x1-split) y2
-                              instrument-id
-                              :use-two-rows use-two-rows
-                              :get-color (lambda ()
-                                           (if (= seqtracknum (<ra> :get-curr-seqtrack))
-                                               *curr-seqtrack-color*
-                                               (<ra> :get-instrument-color instrument-id)))
-                              ))
+  (if for-audiofiles
+      (add-sub-area-plain! (<new> :horizontal-instrument-slider gui
+                                  x1 (if use-two-rows (+ b y-split) y1)
+                                  (if use-two-rows x-meter-split x1-split) y2
+                                  instrument-id
+                                  :use-two-rows use-two-rows
+                                  :get-color (lambda ()
+                                               (if (= seqtracknum (<ra> :get-curr-seqtrack))
+                                                   *curr-seqtrack-color*
+                                                   (<ra> :get-instrument-color instrument-id)))
+                                  )))
 
-  (define vam (<gui> :add-vertical-audio-meter gui instrument-id (+ b x-meter-split) y1 x2 y2))
+  (if for-audiofiles
+      (<gui> :add-vertical-audio-meter gui instrument-id (+ b x-meter-split) y1 x2 y2))
+
   ;;(define vam2 (<gui> :add-vertical-audio-meter gui instrument-id (- x2 8) y1 x2 y2))
   
   ;;(<gui> :remove-vertical-audio-meter vam)
 
-  (define (paint)
+  (define-override (paint)
     (if (= seqtracknum (<ra> :get-curr-seqtrack))
         (<gui> :filled-box gui *curr-seqtrack-color* x1 y1 x2 y2)))
-
-  (set! paint? (lambda ()
-                 (<ra> :instrument-is-open-and-audio instrument-id)))
+  
+  (define-override (paint?)
+    (or for-blocks
+        (<ra> :instrument-is-open-and-audio instrument-id)))
   
   '(set! paint (lambda ()
-                ;;(define background-color (get-mixer-strip-background-color gui instrument-id))
+                 ;;(define background-color (get-mixer-strip-background-color gui instrument-id))
                  (define background-color (<gui> :get-background-color gui))
-                ;;(define background-color (<ra> :generate-new-color))
+                 ;;(define background-color (<ra> :generate-new-color))
                  (<gui> :filled-box gui background-color x1 y1 x2 y2)
                  )
-        )
+         )
   
   '(set! post-paint (lambda ()
                      (define background-color (get-mixer-strip-background-color gui instrument-id))
@@ -363,15 +374,26 @@
 
   (define (callback type)
     (cond ((eq? type '+)
-           (define seqtracknum (<ra> :get-curr-seqtrack))
-           (<ra> :insert-seqtrack seqtracknum))
+           (popup-menu
+            "Insert Audio track"
+            (lambda ()
+              (<ra> :insert-seqtrack #t))
+            "Insert Editor track"
+            (lambda ()
+              (<ra> :insert-seqtrack #f))))
           ((eq? type '-)
            (when (> (<ra> :get-num-seqtracks) 1)
              (define seqtracknum (<ra> :get-curr-seqtrack))
              (set! *current-seqblock-info* #f)
              (<ra> :delete-seqtrack seqtracknum)))
           ((eq? type 'Append)
-           (<ra> :append-seqtrack))
+           (popup-menu
+            "Append Audio track"
+            (lambda ()
+              (<ra> :append-seqtrack #t))
+            "Append Editor track"
+            (lambda ()
+              (<ra> :append-seqtrack #f))))
           (else
            (assert #f))))
 
@@ -437,9 +459,9 @@
                        0
                        b/2)))
 
-      (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
-      (if (>= instrument-id 0)
-          (add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 instrument-id use-two-rows seqtracknum)))
+      (if (or (not (<ra> :seqtrack-for-audiofiles seqtracknum))
+              (>= (<ra> :get-seqtrack-instrument seqtracknum) 0))
+          (add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 use-two-rows seqtracknum)))
       
       (loop (1+ seqtracknum))))
 
