@@ -1458,7 +1458,8 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
 
 #if !defined(RELEASE)
   //memset((void*)seqblock, 0, sizeof(struct SeqBlock));
-  tfree((void*)seqblock); // 
+  if(seqblock->block != NULL) // Can't release sample seqblock memory here since it may still be used in Seqtrack_plugin.cpp.
+    tfree((void*)seqblock); // Only for debugging.
 #endif
 
 }
