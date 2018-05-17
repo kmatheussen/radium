@@ -536,7 +536,7 @@ struct Sample{
 
   radium::DiskPeaks *_peaks;
 
-  const struct SeqBlock *_seqblock;
+  radium::GcHolder<const struct SeqBlock> _seqblock;
   Seqblock_Type _type;
   
   float _pitch = 1.0;
@@ -958,7 +958,7 @@ struct Sample{
         
         //printf(" PLAYING SAMPLE. Time: %f\n", (double)curr_start_time / (double)pc->pfreq);
         
-        atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, (void*)_seqblock); // bang!
+        atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, (void*)_seqblock.data()); // bang!
         GFX_ScheduleEditorRedraw();
         
         _is_playing = true;
@@ -968,7 +968,7 @@ struct Sample{
         
       } else {
         
-        if (atomic_pointer_read_relaxed((void**)&seqtrack->curr_sample_seqblock)==_seqblock){
+        if (atomic_pointer_read_relaxed((void**)&seqtrack->curr_sample_seqblock)==_seqblock.data()){
           atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, NULL);
           GFX_ScheduleEditorRedraw();
         }
@@ -1036,7 +1036,7 @@ public:
       if (ATOMIC_GET(sample->_state)==Sample::State::RUNNING){
         int num = 0;
         VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-          if(seqblock==sample->_seqblock){
+          if(seqblock==sample->_seqblock.data()){
             R_ASSERT(seqblock->block==NULL);
             R_ASSERT(seqblock->sample_id == sample->_id);
             num++;

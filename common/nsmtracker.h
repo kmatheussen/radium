@@ -718,7 +718,7 @@ static inline T add_gc_root(T root){
   return root;
 }
 
-static inline void remove_gc_root(void *root){
+static inline void remove_gc_root(const void *root){
   if(root != NULL)
     VECTOR_remove(&g_global_roots, root);
 }
@@ -740,12 +740,12 @@ static inline void *add_gc_root(void *root){
   return root;
 }
 
-static inline void remove_gc_root(void *root){
+static inline void remove_gc_root(const void *root){
   if(root!=NULL)
     VECTOR_remove(&g_global_roots, root);
 }
 
-static inline void *replace_gc_root(void *old_root, void *new_root){
+static inline void *replace_gc_root(const void *old_root, void *new_root){
   if(old_root!=NULL)
     remove_gc_root(old_root);
   if(new_root!=NULL)
