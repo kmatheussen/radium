@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 
+extern LANGSPEC vector_t SAMPLEREADER_get_all_filenames(void);
 extern LANGSPEC int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename);
 
 extern LANGSPEC unsigned int SAMPLEREADER_get_sample_color(const wchar_t *filename);
