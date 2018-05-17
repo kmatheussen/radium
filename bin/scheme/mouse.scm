@@ -5000,7 +5000,11 @@
     (set! seqblocks new-seqblocks)
     (set! seqblocknum new-seqblocknum)
     (set! seqblock (seqblocks seqblocknum)))
-       
+
+  (define (both-seqtracks-are-same-type seqtracknum new-seqtracknum)
+    (eq? (<ra> :seqtrack-for-audiofiles seqtracknum)
+         (<ra> :seqtrack-for-audiofiles new-seqtracknum)))
+         
   (define (change-seqtrack! new-seqtracknum new-pos)
     (maybe-make-undo)
     
@@ -5075,7 +5079,8 @@
     (set-grid-type #t)
     
     ;; changing track
-    (if (not (= seqtracknum new-seqtracknum))
+    (if (and (not (= seqtracknum new-seqtracknum))
+             (both-seqtracks-are-same-type seqtracknum new-seqtracknum))
         (change-seqtrack! new-seqtracknum new-pos))
     
     ;;(pretty-print seqblocks)
@@ -6234,6 +6239,8 @@
                        (and seqtracknum
                             (let ((seqblock-infos (get-selected-seqblock-infos))
                                   (seqblock-info *current-seqblock-info*))
+                              (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+                              (define for-blocks (not for-audiofiles))
                               (define seqblocknum (and seqblock-info
                                                        (seqblock-info :seqblocknum)))
                               (define blocknum (and seqblock-info
@@ -6244,17 +6251,20 @@
                                       (only-select-one-seqblock seqblocknum seqtracknum)
                                       (<ra> :select-seqblock #t seqblocknum seqtracknum)))
 
-                              (popup-menu "Insert existing block" (lambda ()
-                                                                    (let ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                                                      (if (= 1 (<ra> :get-num-blocks))
-                                                                          (<ra> :create-seqblock seqtracknum 0 pos)                                          
-                                                                          (apply popup-menu
-                                                                                 (map (lambda (blocknum)
-                                                                                        (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
-                                                                                              (lambda ()
-                                                                                                (<ra> :create-seqblock seqtracknum blocknum pos))))
-                                                                                      (iota (<ra> :get-num-blocks)))))))
-
+                              (popup-menu (list
+                                           "Insert existing block"
+                                           :enabled for-blocks
+                                           (lambda ()
+                                             (let ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
+                                               (if (= 1 (<ra> :get-num-blocks))
+                                                   (<ra> :create-seqblock seqtracknum 0 pos)                                          
+                                                   (apply popup-menu
+                                                          (map (lambda (blocknum)
+                                                                 (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                                                                       (lambda ()
+                                                                         (<ra> :create-seqblock seqtracknum blocknum pos))))
+                                                               (iota (<ra> :get-num-blocks))))))))
+                                          
                                           ;;   Sub menues version. It looks better, but it is less convenient.
                                           ;;"Insert existing block" (map (lambda (blocknum)
                                           ;;                               (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
@@ -6264,34 +6274,47 @@
                                           ;;                                       (<ra> :select-block blocknum))))
                                           ;;                             (iota (<ra> :get-num-blocks)))
                                           
-                                          "Insert current block" (lambda ()
-                                                                   (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
-                                                                          (blocknum (<ra> :current-block)))
-                                                                     (<ra> :create-seqblock seqtracknum blocknum pos)))
+                                          (list                                          
+                                           "Insert current block"
+                                           :enabled for-blocks
+                                           (lambda ()
+                                             (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
+                                                    (blocknum (<ra> :current-block)))
+                                               (<ra> :create-seqblock seqtracknum blocknum pos))))
                                           
-                                          "Insert new block" (lambda ()
-                                                               (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
-                                                                      (blocknum (<ra> :append-block)))
-                                                                 (<ra> :create-seqblock seqtracknum blocknum pos)))
-                                          "Insert new block from disk (BETA)" (lambda ()
-                                                                                (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
-                                                                                       (num-blocks (<ra> :get-num-blocks)))
-                                                                                  (<ra> :load-block "")
-                                                                                  (if (not (= num-blocks (<ra> :get-num-blocks)))
-                                                                                      (<ra> :create-seqblock seqtracknum num-blocks pos))))
+                                          (list                                           
+                                           "Insert new block"
+                                           :enabled for-blocks
+                                           (lambda ()
+                                             (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
+                                                    (blocknum (<ra> :append-block)))
+                                               (<ra> :create-seqblock seqtracknum blocknum pos))))
+                                          
+                                          (list
+                                           "Insert new block from disk (BETA)"
+                                           :enabled for-blocks
+                                           (lambda ()
+                                             (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
+                                                    (num-blocks (<ra> :get-num-blocks)))
+                                               (<ra> :load-block "")
+                                               (if (not (= num-blocks (<ra> :get-num-blocks)))
+                                                   (<ra> :create-seqblock seqtracknum num-blocks pos)))))
                                           "--------------------"
                                           (if (<ra> :release-mode)
                                               '()
-                                              (list                                          
-                                                "Insert my soundfile" (lambda ()
-                                                                        (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                                                          ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong_24000.wav") pos))))
-                                                                          (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
-                                                                       ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
+                                              (list                                               
+                                               "Insert my soundfile"
+                                               :enabled for-audiofiles
+                                               (lambda ()
+                                                 (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
+                                                   ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong_24000.wav") pos))))
+                                                   (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
+                                              ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
                                               )
                                           ;;
                                           (list
                                            "Insert new audio file"
+                                           :enabled for-audiofiles
                                            (lambda ()
                                              (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
                                                (create-file-requester "Choose audio file" "" "audio files" "*" #t #f -1
@@ -6493,17 +6516,17 @@
                                           "New automation" (lambda ()
                                                              (create-sequencer-automation seqtracknum X Y))
 
-                                          "-----------------"
-                                          
-                                          "Insert sequencer track" (lambda ()
-                                                                     (<ra> :insert-seqtrack seqtracknum))
-                                          (list "Delete sequencer track"
-                                                :enabled (> (<ra> :get-num-seqtracks) 1)
-                                                (lambda ()
-                                                  (set! *current-seqblock-info* #f)
-                                                  (<ra> :delete-seqtrack seqtracknum)))
-                                          "Append sequencer track" (lambda ()
-                                                                     (<ra> :append-seqtrack))
+                                          ;;"-----------------"
+                                          ;;
+                                          ;;"Insert sequencer track" (lambda ()
+                                          ;;                           (<ra> :insert-seqtrack seqtracknum))
+                                          ;;(list "Delete sequencer track"
+                                          ;;      :enabled (> (<ra> :get-num-seqtracks) 1)
+                                          ;;      (lambda ()
+                                          ;;        (set! *current-seqblock-info* #f)
+                                          ;;        (<ra> :delete-seqtrack seqtracknum)))
+                                          ;;"Append sequencer track" (lambda ()
+                                          ;;                           (<ra> :append-seqtrack))
 
                                           "-----------------"
 

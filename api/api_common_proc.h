@@ -132,6 +132,9 @@ extern struct Patch *getPatchFromNum(int64_t instrument_id);
 extern struct Patch *getAudioPatchFromNum(int64_t instrument_id);
 
 extern struct SeqTrack *getSeqtrackFromNum(int seqtracknum);
+extern struct SeqTrack *getAudioSeqtrackFromNum(int seqtracknum);
+extern struct SeqTrack *getBlockSeqtrackFromNum(int seqtracknum);
+
 extern struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum);
 extern struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
