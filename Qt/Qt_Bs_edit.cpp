@@ -920,20 +920,31 @@ public slots:
         seqtime = seqblock->t.time;
       }      
 
-      if ((!is_playing() || pc->playtype==PLAYBLOCK) && seqblock->block!=NULL) {
-        
-        struct Tracker_Windows *window=getWindowFromNum(-1);
-        struct WBlocks *wblock=getWBlockFromNum(-1,seqblock->block->l.num);
-        if(wblock->curr_realline == wblock->num_reallines-1)
-          wblock->curr_realline = 0;
-        
-        PC_PauseNoMessage();{
-          ATOMIC_DOUBLE_SET(pc->song_abstime, abstime);
-          //ATOMIC_DOUBLE_SET(seqtrack->start_time_f, seqtime);
-          printf("seqtime: %d\n",(int)seqtime);
-          DO_GFX(SelectWBlock(window,wblock));
-        }PC_StopPause_ForcePlayBlock(NULL);
+      if ((!is_playing() || pc->playtype==PLAYBLOCK)) {
 
+        if (seqblock->block!=NULL) {
+        
+          struct Tracker_Windows *window=getWindowFromNum(-1);
+          struct WBlocks *wblock=getWBlockFromNum(-1,seqblock->block->l.num);
+          if(wblock->curr_realline == wblock->num_reallines-1)
+            wblock->curr_realline = 0;
+          
+          PC_PauseNoMessage();{
+            ATOMIC_DOUBLE_SET(pc->song_abstime, abstime);
+            //ATOMIC_DOUBLE_SET(seqtrack->start_time_f, seqtime);
+            printf("seqtime: %d\n",(int)seqtime);
+            DO_GFX(SelectWBlock(window,wblock));
+          }PC_StopPause_ForcePlayBlock(NULL);
+          
+        } else {
+          
+          if (is_playing_song())
+            PlayStop();
+          
+          ATOMIC_DOUBLE_SET(pc->song_abstime, abstime);
+          
+        }
+          
         SEQUENCER_update(SEQUPDATE_TIME);
               
       } else {
