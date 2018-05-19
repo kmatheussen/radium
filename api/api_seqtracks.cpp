@@ -2067,7 +2067,6 @@ void deleteSeqblock(int seqblocknum, int seqtracknum){
   
   SEQTRACK_delete_seqblock(seqtrack, seqblock);
 
-  ATOMIC_SET(root->song->curr_seqtracknum, R_MAX(seqtracknum-1, 0));
   BS_UpdatePlayList();
 }
 
