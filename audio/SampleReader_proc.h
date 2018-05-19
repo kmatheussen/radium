@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern LANGSPEC vector_t SAMPLEREADER_get_all_filenames(void);
+extern LANGSPEC bool SAMPLEREADER_add_audiofile(const wchar_t *filename);
 extern LANGSPEC int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename);
 extern LANGSPEC double SAMPLEREADER_get_samplerate(const wchar_t *filename);
 

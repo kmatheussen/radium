@@ -6317,7 +6317,7 @@
                                            :enabled for-audiofiles
                                            (lambda ()
                                              (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                               (create-file-requester "Choose audio file" "" "audio files" "*" #t #f -1
+                                               (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
                                                                       (lambda (filename)
                                                                         (<ra> :create-sample-seqblock seqtracknum filename pos))))))
                                           (list

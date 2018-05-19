@@ -101,7 +101,6 @@ public:
 
   // popup menu
   void mousePressEvent(QMouseEvent *event) override {
-    QListWidgetItem *item = itemAt(event->pos());
 
     QListWidget::mousePressEvent(event);
 
@@ -110,30 +109,10 @@ public:
     if(event->button()==Qt::RightButton && is_blocklist && shiftPressed()==false){
     
       //printf("mouse pressed %d %d %p\n",(int)event->buttons(),is_blocklist,item);
-      
-      int result = simplePopupMenu(talloc_format("Insert new block%%Append new block%%%sDelete block%%--------------%%Load Block (BETA!)%%Save Block%%--------------%%Show block list%%--------------%%Hide",item==NULL?"[disabled]":""));
-      //printf("result: %d\n",result);
 
-      if (result != -1){
-        //int pos = currentItem();
-        //printf("pos: %d\n",pos);
-        if (result==0){
-          insertBlock(-1);
-        } else if (result==1){
-          appendBlock();
-        } else if (result==2){
-          deleteBlock(-1,-1);
-        } else if (result==4){
-          loadBlock("");
-        } else if (result==5){
-          saveBlock("",-1,-1);
-        } else if (result==7){
-          showBlocklistGui();
-        } else if (result==9){
-          showHidePlaylist(-1);
-        } 
-        gotit = true;
-      }
+      evalScheme("(FROM_C-show-blocklist-popup-menu)");
+      gotit = true;
+      
     }
     
     if (gotit)
@@ -890,7 +869,8 @@ public slots:
       struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
       
       if (num>=playlist.count()-1) {
-        PlaySong(SEQTRACK_get_length(seqtrack)*MIXER_get_sample_rate());
+        if (is_playing_song())
+          PlaySong(SEQTRACK_get_length(seqtrack)*MIXER_get_sample_rate()); // why was this line added here?
         return;
       }
       
@@ -920,7 +900,7 @@ public slots:
         seqtime = seqblock->t.time;
       }      
 
-      if ((!is_playing() || pc->playtype==PLAYBLOCK)) {
+      if (is_playing_song()==false) {
 
         if (seqblock->block!=NULL) {
         
@@ -937,9 +917,6 @@ public slots:
           }PC_StopPause_ForcePlayBlock(NULL);
           
         } else {
-          
-          if (is_playing_song())
-            PlayStop();
           
           ATOMIC_DOUBLE_SET(pc->song_abstime, abstime);
           

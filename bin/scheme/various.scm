@@ -674,3 +674,70 @@
       (<gui> :raise *instruments-table-gui*)))
 
   
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Blocklist / Playlist 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (FROM_C-show-blocklist-popup-menu)
+  (define seqtracknum (<ra> :get-curr-seqtrack))
+  (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+  (define for-blocks (not for-audiofiles))
+
+  (define (get-block-entries)
+    (list 
+     "Insert new block"
+     (lambda ()
+       (<ra> :insert-block -1)
+       )
+     
+     "Append new block"
+     (lambda ()
+       (<ra> :append-block)
+       )
+     
+     "Delete block"
+     (lambda ()
+       (<ra> :delete-block -1 -1)
+       )
+
+     "---------------"
+     
+     "Load Block (BETA!)"
+     (lambda ()
+       (<ra> :load-block "")
+       )
+     
+     "Save Block"
+     (lambda ()
+       (<ra> :save-block "" -1 -1)
+       )
+
+     "---------------"
+     
+     "Show block list"
+     (lambda ()
+       (<ra> :show-blocklist-gui)
+       )))
+
+  (define (get-audiofile-entries)
+    (list
+     "Add new audio file"
+     (lambda ()
+       (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
+                              (lambda (filename)
+                                (<ra> :add-audiofile filename))))
+     ))
+
+  (popup-menu
+
+   (if for-blocks
+       (get-block-entries)
+       (get-audiofile-entries))
+
+   "---------------"
+   
+   "Hide"
+   (lambda ()
+     (<ra> :show-hide-playlist -1)
+     )))

@@ -1235,6 +1235,10 @@ vector_t SAMPLEREADER_get_all_filenames(void){
   return ret;
 }
 
+bool SAMPLEREADER_add_audiofile(const wchar_t *filename){
+  return get_sample_provider(filename) != NULL;
+}
+
 int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)

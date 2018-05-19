@@ -3289,6 +3289,9 @@ void SEQUENCER_update(uint32_t what){
 
   if (what & SEQUPDATE_PLAYLIST)
     BS_UpdatePlayList();
+  
+  if (what & SEQUPDATE_BLOCKLIST)
+    BS_UpdateBlockList();
 }
 
 // Only called from the main thread.
