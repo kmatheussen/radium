@@ -6152,12 +6152,12 @@
                                                   (define duration (get-nonstretched-seqblock-duration seqblocknum seqtracknum))
                                                   (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
                                                   (define seqblock (seqblocks seqblocknum))
-                                                  (define new-seqblock (if is-left                                                                           
+                                                  (define new-seqblock (if is-right
                                                                            (copy-hash seqblock
                                                                                       :end-time (+ (seqblock :start-time) duration))
                                                                            (copy-hash seqblock
                                                                                       :start-time (- (seqblock :end-time) duration))))
-                                                  (if (and is-right
+                                                  (if (and is-left
                                                            (< (new-seqblock :start-time) 0))
                                                       (set! new-seqblock (copy-hash new-seqblock
                                                                                     :start-time 0
