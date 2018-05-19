@@ -3584,7 +3584,7 @@
                                           (existing-box Num Box) :> Num
                                           _                      :> #f))
                        (if (<ra> :shift-pressed)
-                           (begin
+                           (when Num
                              ;;(c-display "  Deleting" Num)
                              (<ra> :undo-seqtempo)
                              (<ra> :delete-seqtemponode Num))
