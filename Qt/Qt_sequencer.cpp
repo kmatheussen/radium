@@ -504,7 +504,8 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
     if (e->delta() > 0)
       PlaySong(pos);
     else {
-      PlayStop();
+      if (is_playing_song())
+        PlayStop();
       ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
       SEQUENCER_update(SEQUPDATE_TIME);
       if (useJackTransport())
