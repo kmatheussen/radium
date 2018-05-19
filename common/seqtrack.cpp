@@ -1708,7 +1708,11 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
     RT_legalize_seqtrack_timing(seqtrack);
   }
 
-  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
+  int seqtracknum = get_seqtracknum(seqtrack);
+  if (seqtracknum >= 0)
+    ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
+  
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST | SEQUPDATE_PLAYLIST);
 
   return pos;
 }
