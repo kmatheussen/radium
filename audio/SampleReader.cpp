@@ -1243,6 +1243,14 @@ int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename){
   return provider->_num_frames;
 }
 
+double SAMPLEREADER_get_samplerate(const wchar_t *filename){
+  SampleProvider *provider = get_sample_provider(filename);
+  if (provider==NULL)
+    return -1;
+
+  return provider->_samplerate;
+}
+
 
 //#include "Juce_plugins_proc.h"
 void SAMPLEREADER_delete(SampleReader *reader){
