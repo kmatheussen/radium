@@ -81,6 +81,9 @@ public:
   int currentItem(){
     return QListWidget::currentRow();
   }
+  QString currentText(){
+    return QListWidget::currentItem()->text();
+  }
   void setSelected(int pos, bool something){
     QListWidget::setCurrentRow(pos);
   }
@@ -451,8 +454,11 @@ namespace{
 class BlockSelector : public QWidget
 {
   Q_OBJECT
-
+  
 public:
+
+  int _last_selected_audiofilenum = 0;
+
   BlockSelector(QWidget *parent)
     : QWidget(parent) //, Qt::Dialog)
     , add_button("Insert",this)
@@ -643,8 +649,6 @@ public slots:
 
     struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
     
-    struct Blocks *block = getBlockFromNum(blocklist.currentItem());
-
 #ifdef USE_QT3
     int pos = playlist.currentItem();
 #else
@@ -660,9 +664,21 @@ public slots:
 
       const struct SeqBlock *last_seqblock = (const struct SeqBlock*)VECTOR_last(&seqtrack->seqblocks);
       int64_t seqtime = last_seqblock==NULL ? 0 : SEQBLOCK_get_seq_endtime(last_seqblock);
-      
-      SEQTRACK_insert_block(seqtrack, block, seqtime, -1);
 
+      if (seqtrack->for_audiofiles) {
+        vector_t filenames = SAMPLEREADER_get_all_filenames();
+        if (filenames.num_elements > 0)
+          SEQTRACK_insert_sample(seqtrack, get_seqtracknum(seqtrack), (wchar_t*)filenames.elements[filenames.num_elements-1], seqtime, -1);
+        
+      } else {
+
+        if (blocklist.currentItem() < root->song->num_blocks){
+          struct Blocks *block = getBlockFromNum(blocklist.currentItem());
+          SEQTRACK_insert_block(seqtrack, block, seqtime, -1);
+        }
+
+      }
+      
     } else {
 
       // Insert block
@@ -676,8 +692,34 @@ public slots:
       //
       // SEQTRACK_insert_silence(seqtrack, seqtime, getBlockSTimeLength(block));
       
-      SEQTRACK_insert_block(seqtrack, block, seqtime, -1);
-      
+      if (seqtrack->for_audiofiles) {
+        
+        vector_t filenames = SAMPLEREADER_get_all_filenames();
+        
+        if (blocklist.currentItem() < filenames.num_elements){
+          wchar_t *filename = (wchar_t*)filenames.elements[blocklist.currentItem()];
+          QFileInfo info(STRING_get_qstring(filename));
+          if (blocklist.currentText().endsWith(QString(info.fileName()))) {
+            
+            double samplerate = SAMPLEREADER_get_samplerate(filename);
+            int64_t duration = SAMPLEREADER_get_sample_duration(filename);
+            
+            if (fabs(samplerate-pc->pfreq) > 1)
+              duration = (double)duration * pc->pfreq / samplerate;
+            
+            SEQTRACK_insert_silence(seqtrack, seqtime, duration);
+            SEQTRACK_insert_sample(seqtrack, get_seqtracknum(seqtrack), filename, seqtime, -1);
+                                    
+          }
+        }
+        
+      } else {
+
+        if (blocklist.currentItem() < root->song->num_blocks){
+          struct Blocks *block = getBlockFromNum(blocklist.currentItem());
+          SEQTRACK_insert_block(seqtrack, block, seqtime, -1);
+        }
+      }
     }
     
     playlist.setSelected(pos+1, true);
@@ -796,7 +838,12 @@ public slots:
 
     printf("block high num: %d\n",num);
 
-    selectBlock(num, -1);
+    struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+
+    if (seqtrack->for_audiofiles==true)
+      _last_selected_audiofilenum = num;
+    else
+      selectBlock(num, -1);
   }
 
   void blocklist_doubleclicked(QListWidgetItem *item){
@@ -948,6 +995,11 @@ void BS_UpdateBlockList(void){
       g_bs->blocklist.insertItem(QString::number(iterator666).rightJustified(justify, ' ')+": "+info.fileName());
       
     }END_VECTOR_FOR_EACH;
+
+    if (filenames.num_elements > 0){
+      g_bs->_last_selected_audiofilenum = R_MIN(filenames.num_elements-1, g_bs->_last_selected_audiofilenum);
+      g_bs->blocklist.setCurrentRow(g_bs->_last_selected_audiofilenum);
+    }
     
   } else {
     

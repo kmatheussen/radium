@@ -1671,13 +1671,15 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
     R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&seqtrack_here->seqblocks, seqblock), 0);
   }END_VECTOR_FOR_EACH;
 
+  /*
   int64_t seqtimes[R_MAX(1, seqtrack->seqblocks.num_elements)]; // Using R_MAX since arrays of size 0 causes ubsan hit
 
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     seqtimes[iterator666] = seqblock->t.time;
     //printf("bef %d: %f\n", iterator666, abstimes[iterator666] / 44100.0);
   }END_VECTOR_FOR_EACH;
-
+  */
+  
   int pos = get_seqblock_pos(&seqtrack->seqblocks, seqtime);
     
   VECTOR_ensure_space_for_one_more_element(&seqtrack->seqblocks);
@@ -1694,11 +1696,13 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
     
     VECTOR_insert(&seqtrack->seqblocks, seqblock, pos);
 
+    /*
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
       if (iterator666 > pos)
         move_seqblock(seqblock, seqtimes[iterator666-1]);
     }END_VECTOR_FOR_EACH;
-
+    */
+    
     SEQTRACKPLUGIN_assert_samples2(seqtrack);
 
     RT_legalize_seqtrack_timing(seqtrack);
