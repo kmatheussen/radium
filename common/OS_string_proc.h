@@ -58,6 +58,95 @@ bool STRING_is_local8Bit_compatible(QString s);
 
 #endif
 
+#ifdef __cplusplus
+
+namespace radium{
+
+#define DEBUG_RADIUM_STRING 0
+
+#if DEBUG_RADIUM_STRING
+#define D(A) A
+#else
+#define D(A)
+#endif
+
+struct String{
+
+private:
+  struct InternalString{
+    
+    const wchar_t *string;
+    int num_users;
+
+    InternalString(const wchar_t *string)
+      : string(wcsdup(string))
+      , num_users(1)
+    {
+      D(printf("... Created \"%S\"\n", this->string));
+    }
+    
+    ~InternalString(){    
+      D(printf("... Destroyed \"%S\"\n", string));
+      free(const_cast<wchar_t*>(string));
+    }
+    
+  };
+
+  InternalString *string;
+
+public:
+
+  String(const wchar_t *string)
+    : string(new InternalString(string))
+  {
+    R_ASSERT(THREADING_is_main_thread());
+    D(printf("  String(%S): %d\n", get(), (int)this->string->num_users));
+  }
+
+  String(const char *string)
+    : string(new InternalString(STRING_create(string)))
+  {
+    R_ASSERT(THREADING_is_main_thread());
+    D(printf("  String(%S): %d\n", get(), (int)this->string->num_users));
+  }
+
+  String(const String& old_string)
+    : string(old_string.string)
+  {
+    R_ASSERT(THREADING_is_main_thread());
+    string->num_users++;
+    D(printf("  String(%S): %d\n", get(), string->num_users));
+  }
+
+  ~String(){
+    R_ASSERT(THREADING_is_main_thread());
+
+    string->num_users--;
+    D(printf("     ~String(%S): %d\n", get(), string->num_users));
+    if(string->num_users==0)
+      delete string;
+  }
+
+  const wchar_t* get(void) const {
+    R_ASSERT(THREADING_is_main_thread());
+    return string->string;
+  }
+
+  const wchar_t* get_from_another_thread(void) const {
+    R_ASSERT(!THREADING_is_main_thread());
+    return string->string;
+  }
+
+  operator const wchar_t*() const {
+    R_ASSERT(THREADING_is_main_thread());
+    return string->string;
+  }
+};
+}
+
+#undef D
+
+#endif
 
 
 #endif // COMMON_OS_STRING_PROC_H

@@ -1,23 +1,26 @@
 #ifndef _RADIUM_AUDIO_SAMPLERECORDER_PROC_H
 #define _RADIUM_AUDIO_SAMPLERECORDER_PROC_H
 
+
 namespace radium{
+
 struct SampleRecorderInstance{
 
-  wchar_t *recording_path;
+  radium::String recording_path;
   int num_ch;
   float middle_note;
 
   SampleRecorderInstance(wchar_t *recording_path, int num_ch, float middle_note)
-    : recording_path(wcsdup(recording_path))
+    : recording_path(recording_path)
     , num_ch(num_ch)
     , middle_note(middle_note)
   {
   }
 
+
   virtual ~SampleRecorderInstance(){
-    free(recording_path);
   }
+
 
   // Called when recording is finished.
   // Called by the main thread.
