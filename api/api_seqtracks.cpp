@@ -1302,6 +1302,17 @@ int createSampleSeqblock(int seqtracknum, const_char* w_filename, int64_t pos, i
   }
 }
 
+extern QStringList get_sample_name_filters(void);
+const_char* getAudiofilePostfixes(void){
+  return talloc_strdup(get_sample_name_filters().join(" ").toUtf8().constData());
+}  
+
+bool addAudiofile(const_char* w_filename){
+  bool ret = SAMPLEREADER_add_audiofile(w_path_to_path(w_filename));
+  BS_UpdateBlockList();
+  return ret;
+}
+
 int createGfxGfxSeqblock(dyn_t state){
   if (state.type != HASH_TYPE){
     handleError("createGfxGfxSeqblockNew: Expected hash table as first argument, found %s\n", DYN_type_name(state));
