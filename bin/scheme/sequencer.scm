@@ -277,7 +277,10 @@
   (add-mouse-cycle! :press-func (lambda (button x* y*)
                                   (if (= button *right-button*)
                                       (begin
-                                        (show-sequencer-header-popup-menu instrument-id gui)
+                                        (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
+                                              (lambda ()
+                                                (show-sequencer-header-popup-menu instrument-id gui)
+                                                #t))
                                         #t)
                                       #f)))  
   )
@@ -397,6 +400,16 @@
           (else
            (assert #f))))
 
+  (define-override (get-nonpress-mouse-cycle x* y*)
+    (when (inside? x* y*)
+      (set-mouse-pointer ra:set-normal-mouse-pointer gui))
+    (super:get-nonpress-mouse-cycle x* y*))
+
+  (add-nonpress-mouse-cycle!
+   :enter-func (lambda (x* y)
+                 (set-mouse-pointer ra:set-normal-mouse-pointer gui)
+                 #f))
+
   (define b (max 0 (/ (get-fontheight) 6)))
   (horizontally-layout-areas x1 y1 x2 y2
                              (list '+ '- 'Append)
@@ -412,7 +425,10 @@
                                                                                  (else
                                                                                   (assert #f)))                                                                                  
                                                            :callback (lambda ()
-                                                                       (callback type)))))))
+                                                                       (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
+                                                                             (lambda ()
+                                                                               (callback type)
+                                                                               #f))))))))
 
 
 (def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2)
