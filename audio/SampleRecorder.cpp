@@ -143,10 +143,10 @@ struct RecordingFile{
     sf_info.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
     bool success;
-    filename = get_unique_filename(instance->recording_path, success);
+    filename = get_unique_filename(instance->recording_path.get_from_another_thread(), success);
 
     if (success==false){
-      RT_message("Unable to create new file in \"%s\".\nPerhaps you have more than 100 takes there?",STRING_get_qstring(instance->recording_path).toUtf8().constData());
+      RT_message("Unable to create new file in \"%s\".\nPerhaps you have more than 100 takes there?",STRING_get_qstring(instance->recording_path.get_from_another_thread()).toUtf8().constData());
       return;
     }
 
@@ -321,7 +321,7 @@ public:
   }
   
   void start_recording(radium::SampleRecorderInstance *instance){
-    QDir dir = QFileInfo(STRING_get_qstring(instance->recording_path)).dir();
+    QDir dir = QFileInfo(STRING_get_qstring(instance->recording_path.get_from_another_thread())).dir();
     if (dir.exists()==false){
       RT_message("Error. Could not find the directory \"%s\".\n", dir.absolutePath().toUtf8().constData());
       return;
@@ -417,7 +417,7 @@ void SampleRecorder_called_regularly(void){
 
 void RT_SampleRecorder_start_recording(radium::SampleRecorderInstance *instance){
   R_ASSERT_RETURN_IF_FALSE(instance!=NULL);
-  R_ASSERT_RETURN_IF_FALSE(instance->recording_path!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(instance->recording_path.get_from_another_thread()!=NULL);
   R_ASSERT_RETURN_IF_FALSE(instance->num_ch>0);    
 
   RecordingSlice *slice = RT_get_free_slice();
