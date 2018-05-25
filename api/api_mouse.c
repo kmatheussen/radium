@@ -56,6 +56,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../OpenGL/Render_proc.h"
 
+#include "../windows/W_Keyboard_proc.h"
+
 #include "api_common_proc.h"
 
 #include "radium_proc.h"
@@ -3366,6 +3368,12 @@ void moveMousePointer(float x, float y, int windownum){
     MovePointer(window, x, y);
 }
 
+void moveAbsMousePointer(float x, float y, int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window!=NULL)
+    MoveAbsPointer(window, x, y);
+}
+
 float getMousePointerX(int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if (window==NULL)
@@ -3382,6 +3390,72 @@ float getMousePointerY(int windownum){
   WPoint ret = GetPointerPos(window);
   return ret.y;
 }
+
+float getAbsMousePointerX(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window==NULL)
+    return 0;
+
+  WPoint ret = GetAbsPointerPos(window);
+  return ret.x;
+}
+float getAbsMousePointerY(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window==NULL)
+    return 0;
+
+  WPoint ret = GetAbsPointerPos(window);
+  return ret.y;
+}
+
+int getScreenWidth(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window==NULL)
+    return 0;
+
+  Area ret = GetScreenSize(window);
+  return ret.x;
+}
+int getScreenHeight(int windownum){
+  struct Tracker_Windows *window = getWindowFromNum(windownum);
+  if (window==NULL)
+    return 0;
+
+  Area ret = GetScreenSize(window);
+  return ret.x2;
+}
+
+float g_mouse_dx = 0;
+float g_mouse_dy = 0;
+
+float getDeltaMouseX(void){
+  float ret = g_mouse_dx;
+  g_mouse_dx = 0;
+  return ret;
+}
+
+float getDeltaMouseY(void){
+  float ret = g_mouse_dy;
+  g_mouse_dy = 0;
+  return ret;
+}
+
+bool hasDeltaMouse(void){
+#if defined(FOR_WINDOWS)
+  return W_HasDeltaMouse();
+#else
+  return false;
+#endif
+}
+
+bool canMovePointer(void){
+#if defined(FOR_WINDOWS)
+  return W_CanMovePointer();
+#else
+  return true;
+#endif
+}
+
 float getGlobalMousePointerX(void){
   WPoint ret = GetPointerPos(NULL);
   return ret.x;

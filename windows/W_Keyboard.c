@@ -17,6 +17,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifdef FOR_WINDOWS
 
 #include <windows.h>
+#include <windowsx.h>
+
+#ifndef HID_USAGE_PAGE_GENERIC
+#define HID_USAGE_PAGE_GENERIC         ((USHORT) 0x01)
+#endif
+#ifndef HID_USAGE_GENERIC_MOUSE
+#define HID_USAGE_GENERIC_MOUSE        ((USHORT) 0x02)
+#endif
+
+#include <math.h>
 
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
@@ -438,12 +448,227 @@ int OS_SYSTEM_get_scancode(void *void_event) {
 
 static DEFINE_ATOMIC(bool, g_bWindowActive) = true;
 
+
+
+
+/*************  START / Code to automatically figure out Mouse DPI (approximately at least) ******************/
+
+static double total_distance_abs = 0;
+static double total_distance_rel = 0;
+static double mouse_ratio = 0.5;
+
+typedef struct{
+  double start_x, inc_dx;
+} mouse_thing_t;
+
+static void reset_mouse_thing(mouse_thing_t *mouse_thing, double x){
+  mouse_thing->start_x = x;
+  mouse_thing->inc_dx = 0;
+}
+
+static mouse_thing_t mouse_x = {0};
+static mouse_thing_t mouse_y = {0};
+
+static bool is_measuring = false;
+static bool finished_measuring = false;
+
+static void maybe_improve_ratio(double x, mouse_thing_t *mouse_thing){ 
+
+  double distance_rel = fabs(mouse_thing->inc_dx);
+  if (distance_rel < 1)
+    return;
+
+  double distance_abs = fabs(x-mouse_thing->start_x);
+
+  if (distance_abs < 50) { // If moving more than 50 pixels, the mouse most likely has moved faster than it would do when editing data.
+    
+    total_distance_abs += distance_abs;
+    total_distance_rel += distance_rel;
+
+    mouse_ratio = total_distance_abs / total_distance_rel;
+
+    //    printf("    New Best Ratio: %f. distance_abs: %f. distance_rel: %f. inc_dx: %f. Total_abs/rel: %f / %f\n", mouse_ratio, distance_abs, distance_rel, mouse_thing->inc_dx, total_distance_abs, total_distance_rel);
+
+  }
+
+  mouse_thing->inc_dx = 0;
+  mouse_thing->start_x = x;
+
+  if (total_distance_abs > 5000){
+    printf("\n\n\n    ======Finished figuring out average mouse DPI. Ratio: %f. distance_abs: %f. distance_rel: %f.=============\n\n\n", mouse_ratio, total_distance_abs, total_distance_rel);
+    finished_measuring = true;
+  }
+}
+
+static void add_ratio_absolute_data(float x, float y){
+
+  // When mouse pointer is set by the program, positions are probably screwed up. Wait at least 1 second before trying to measure again.
+  if (g_last_time_mouse_pointer_was_moved_by_the_program>0 && (TIME_get_ms() - g_last_time_mouse_pointer_was_moved_by_the_program) < 1000) {
+    //printf("   Don't want to measure right now\n");
+    is_measuring = false;
+    return;
+  }
+  
+  if (x < 100 || y < 100 || x > (OS_get_main_window_width()-100) || y > (OS_get_main_window_height()-100)){
+    is_measuring = false;
+    return;
+  }
+
+  if (is_measuring==false){
+    is_measuring = true;
+    reset_mouse_thing(&mouse_x, x);
+    reset_mouse_thing(&mouse_y, y);
+    return;
+  }
+
+  maybe_improve_ratio(x, &mouse_x);
+  maybe_improve_ratio(y, &mouse_y);
+
+  /*
+  if (x < start_x){
+    printf(" ... x < start_x: %f (%f)\n", x, start_x);
+    start_x = x;
+    inc_dx = 0;
+  }
+  
+  if (y < start_y){
+    printf(" ... y < start_y: %f (%f)\n", y, start_y);
+    start_y = y;
+    inc_dy = 0;
+  }
+  */
+}
+
+static void add_ratio_relative_data(float dx, float dy){
+
+  mouse_x.inc_dx += dx;
+  mouse_y.inc_dx += dy;
+
+  //printf("              dx: %f / %f. dy: %f / %f\n", dx, inc_dx, dy, inc_dy);
+}
+
+
+static bool g_has_delta_mouse = false;
+static bool g_can_move_pointer = false;
+
+
+static void wminputhandler(MSG *msg){
+    UINT dwSize;
+
+    // get size
+    GetRawInputData((HRAWINPUT)msg->lParam, RID_INPUT, NULL, &dwSize, 
+                    sizeof(RAWINPUTHEADER));
+    
+    BYTE lpb[dwSize];
+    memset(lpb, 0, sizeof(BYTE)*dwSize);
+
+    // get data
+    if (GetRawInputData((HRAWINPUT)msg->lParam, RID_INPUT, lpb, &dwSize, 
+                        sizeof(RAWINPUTHEADER)) != dwSize )
+      OutputDebugString (TEXT("GetRawInputData does not return correct size !\n")); 
+    
+    RAWINPUT* raw = (RAWINPUT*)lpb;
+
+    if (raw->header.dwType == RIM_TYPEMOUSE) 
+    {
+      //HRESULT hResult = StringCchPrintf(szTempOutput, STRSAFE_MAX_CCH, TEXT("Mouse: usFlags=%04x ulButtons=%04x usButtonFlags=%04x usButtonData=%04x ulRawButtons=%04x lLastX=%04x lLastY=%04x ulExtraInformation=%04x\r\n"),
+
+      // https://msdn.microsoft.com/en-us/library/windows/desktop/ms645578(v=vs.85).aspx
+
+      RAWMOUSE mouse = raw->data.mouse;
+
+      static LONG last_x=0, last_y=0;
+      LONG dx,dy;
+      
+      if (mouse.usFlags & MOUSE_MOVE_ABSOLUTE){
+        dx = last_x - mouse.lLastX;
+        dy = last_y - mouse.lLastY;
+        last_x = mouse.lLastX;
+        last_y = mouse.lLastY;
+        /* 
+           Commented out since measuring ratio after using the mouse for a while in absolute mode doesn't seem to work.
+        g_has_delta_mouse = false;
+        g_can_move_pointer = false;
+        */
+      } else {
+        dx = mouse.lLastX;
+        dy = mouse.lLastY;
+        last_x += dx;
+        last_y += dy;
+        g_has_delta_mouse = true;
+        g_can_move_pointer = true;
+      }
+
+#if 0
+      char temp[1000];
+      
+      sprintf(temp,"Mouse: usFlags=%04x ulButtons=%04x usButtonFlags=%04x usButtonData=%04x ulRawButtons=%04x lLastX=%d lLastY=%d ulExtraInformation=%04x",
+              (unsigned int)raw->data.mouse.usFlags, 
+              (unsigned int)raw->data.mouse.ulButtons, 
+              (unsigned int)raw->data.mouse.usButtonFlags, 
+              (unsigned int)raw->data.mouse.usButtonData, 
+              (unsigned int)raw->data.mouse.ulRawButtons, 
+              (int)raw->data.mouse.lLastX, 
+              (int)raw->data.mouse.lLastY, 
+              (unsigned int)raw->data.mouse.ulExtraInformation
+              );
+
+      GFX_SetStatusBar(temp);
+#endif
+      
+      add_ratio_relative_data(dx, dy);
+      
+      MouseMoveRelative(last_x, last_y, dx * mouse_ratio, dy * mouse_ratio);
+      
+    } 
+}
+
+bool W_HasDeltaMouse(void){
+  return g_has_delta_mouse;
+}
+
+bool W_CanMovePointer(void){
+  return g_can_move_pointer;
+}
+
+void W_RegisterRawInputHandler(void *hwnd){
+   RAWINPUTDEVICE Rid[1];
+   Rid[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+   Rid[0].usUsage = HID_USAGE_GENERIC_MOUSE;
+   Rid[0].dwFlags = RIDEV_INPUTSINK;
+   Rid[0].hwndTarget = (HWND)hwnd;//w.effectiveWinId();
+   if(!RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]))){
+#if !defined(RELEASE)
+     R_ASSERT(false);
+#endif
+   }
+}
+
+
+/*************  END / Code to figure out Mouse DPI ******************/
+
+
+
+
 void OS_SYSTEM_EventPreHandler(void *void_event){
   MSG *msg = (MSG*)void_event;
 
   // https://msdn.microsoft.com/en-us/library/windows/desktop/ff468922(v=vs.85).aspx
   switch(msg->message){
-    
+
+    case WM_INPUT:
+      wminputhandler(msg);
+      break;
+
+    case WM_MOUSEMOVE:
+      if (finished_measuring==false){
+        float xPos = GET_X_LPARAM(msg->lParam); 
+        float yPos = GET_Y_LPARAM(msg->lParam);
+        //printf("    MOUSEMOVE. %f %f\n", xPos, yPos);
+        add_ratio_absolute_data(xPos, yPos);
+      }
+      break;
+ 
     case WM_NCACTIVATE:
       ATOMIC_SET(g_bWindowActive, msg->wParam ? true : false);
       //printf("1. Got NC Activate. wParam: %d. Active: %p\n",(int)msg->wParam,GetForegroundWindow());

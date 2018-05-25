@@ -707,9 +707,6 @@ struct SoundProducer {
 
   LatencyCompensatorDelay *_dry_sound_latencycompensator_delays;
   
-  float *_input_peaks;
-  float *_volume_peaks;
-
   float **_output_sound;
 
   // Scheduling, start
@@ -796,9 +793,6 @@ public:
       _num_dry_sounds = _num_outputs;
 
     allocate_sound_buffers(num_frames);
-
-    _input_peaks = (float*)V_calloc(sizeof(float),_num_dry_sounds);
-    _volume_peaks = (float*)V_calloc(sizeof(float),_num_outputs);
 
     _dry_sound_latencycompensator_delays = new LatencyCompensatorDelay[_num_dry_sounds];
     
@@ -905,9 +899,6 @@ public:
 
     delete[] _dry_sound_latencycompensator_delays;
     
-    V_free(_input_peaks);
-    V_free(_volume_peaks);
-          
     free_sound_buffers();
   }
   

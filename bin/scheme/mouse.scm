@@ -261,6 +261,18 @@
   (define next-mouse-y #f)
   
   (define (call-move-and-release $button $x $y)
+    ;;(set! $x (<ra> :get-mouse-pointer-x))
+    ;;(set! $y (<ra> :get-mouse-pointer-y))
+
+    (define mouse-pointer-is-hidden (and mouse-pointer-is-hidden-func
+                                         (mouse-pointer-is-hidden-func)))
+    
+    ;; Delta-movements are not always exactly pixel-accurate (especially if user has not disabled acceleration), so we only use it if the pointer is hidden.
+    (define use-delta (and mouse-pointer-is-hidden
+                           (<ra> :has-delta-mouse)))
+
+    ;;(c-display "use-delta:" use-delta "hidden:" mouse-pointer-is-hidden "has-delta:" (<ra> :has-delta-mouse) "can-move-pointer:" (<ra> :can-move-pointer))
+    
     ;;(c-display "call-move-and-release" $x $y ", next-mouse-x:" next-mouse-x)
     ;; Ignore all $x and $y values that was already queued when we sat a new mouse pointer position. (needed in qt5)
     (when next-mouse-x
@@ -274,49 +286,81 @@
           (begin            
             (set! $x prev-x)
             (set! $y prev-y))))
-            
-    (if (and (morally-equal? $x prev-x)
-             (morally-equal? $y prev-y)
+
+    (define raw-dx (if use-delta
+                       (<ra> :get-delta-mouse-x)
+                       (- $x prev-x)))
+    (define raw-dy (if use-delta
+                       (<ra> :get-delta-mouse-y)
+                       (- $y prev-y)))
+      
+    (if (and (not (= 0 raw-dx))
+             (not (= 0 raw-dy))
              (not instance))
         instance
         (begin
           (define dx (cond ((only-y-direction)
                             0)
                            ((<ra> :control-pressed)
-                            (/ (- $x prev-x)
+                            (/ raw-dx
                                10))
                            (else
-                            (- $x prev-x))))
+                            raw-dx)))
           (define dy (cond ((only-x-direction)
                             0)
                            ((<ra> :control-pressed)
-                            (/ (- $y prev-y)
+                            (/ raw-dy
                                10))
                            (else
-                            (- $y prev-y))))
+                            raw-dy)))
 
           ;;(c-display "               $x:" $x ", prev-x:" prev-x)
           
           (set! prev-x $x)
           (set! prev-y $y)
           
-          ;; dirty trick to avoid the screen edges
+          ;; dirty tricks to avoid the screen edges
           ;;
-          (when (and mouse-pointer-is-hidden-func (mouse-pointer-is-hidden-func)) ;; <- this line can cause mouse pointer to be stuck between 100,100 and 500,500 if something goes wrong.
-            ;;(when mouse-pointer-has-been-set ;; <- Workaround. Hopefully there's no problem doing it like this.
-            (when (or (< (<ra> :get-mouse-pointer-x) 100)
-                      (< (<ra> :get-mouse-pointer-y) 100)
-                      (> (<ra> :get-mouse-pointer-x) 500)
-                      (> (<ra> :get-mouse-pointer-y) 500))
-              (<ra> :move-mouse-pointer 300 300)
-              ;;(c-display "x/y" (<ra> :get-mouse-pointer-x) (<ra> :get-mouse-pointer-y))
-              ;;(set! prev-x 300)
-              ;;(set! prev-y 300)
+          (when (<ra> :can-move-pointer)
+            
+            (define (set-mouse x y)
+              ;;(c-display " ... SET MOUSE " x y)
+              (<ra> :move-mouse-pointer x y)
               (set! next-mouse-x-set-time (time))
-              (set! next-mouse-x 300)
-              (set! next-mouse-y 300)
-              ))
-          
+              (set! next-mouse-x x)
+              (set! next-mouse-y y))
+            
+            (define limit (if mouse-pointer-is-hidden
+                              100
+                              0))
+
+            (define limit-x2 (if mouse-pointer-is-hidden
+                                 100
+                                 20))
+
+            (let ((x (<ra> :get-mouse-pointer-x))
+                  (y (<ra> :get-mouse-pointer-y))
+                  (x2 (- (<ra> :get-seqnav-x2) 1))
+                  (y2 (- (<ra> :get-seqnav-y2) 1)))
+              
+              (define new-x x)
+              (define new-y y)
+
+              (if (<= x limit)
+                  (set! new-x limit)
+                  (if (>= x (- x2 limit-x2))
+                      (set! new-x (- x2 limit-x2))))
+              
+              (if (<= y limit)
+                  (set! new-y limit)
+                  (if (>= y (- y2 limit))
+                      (set! new-y (- y2 limit))))
+
+              (if (or (not (= new-x x))
+                      (not (= new-y y)))
+                  (set-mouse new-x new-y))))
+              
+
           (set! instance (move-and-release $button
                                         dx
                                         dy
@@ -329,6 +373,8 @@
                                       (begin
                                         (set! prev-x $x)
                                         (set! prev-y $y)
+                                        (<ra> :get-delta-mouse-x) ;; reset delta
+                                        (<ra> :get-delta-mouse-y) ;; reset delta
                                         #t)
                                       #f))
                     :drag-func  call-move-and-release
@@ -338,7 +384,6 @@
                                         (release $button $x $y instance))
                                     (set! prev-x #f)
                                     (set! prev-y #f)))))
-  
 
 
 ;; Functions called from radium

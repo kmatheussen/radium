@@ -60,7 +60,13 @@ extern LANGSPEC void SetHorizResizePointer(int64_t guinum);
 extern LANGSPEC void SetHorizSplitPointer(int64_t guinum);
 extern LANGSPEC void SetVerticalResizePointer(int64_t guinum);
 extern LANGSPEC void MovePointer(struct Tracker_Windows *tvisual, float x, float y);
+extern LANGSPEC void MoveAbsPointer(struct Tracker_Windows *tvisual, float x, float y);
 extern LANGSPEC WPoint GetPointerPos(struct Tracker_Windows *tvisual);
+extern LANGSPEC WPoint GetAbsPointerPos(struct Tracker_Windows *tvisual);
+extern LANGSPEC Area GetScreenSize(struct Tracker_Windows *tvisual);
+
+extern LANGSPEC void MouseMoveRelative(float x, float y, float dx, float dy); // Called from windows.
+  
 
 // Note that For the ReqType functions, tvisual might be NULL. The reasons is that it can be called when loading, or when starting up.
 extern LANGSPEC ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title);
@@ -151,6 +157,10 @@ extern LANGSPEC void GFX_PP_Update(struct Patch *patch, bool is_loading);
 
 extern LANGSPEC void *OS_GFX_get_native_main_window(void);
 extern LANGSPEC bool OS_GFX_main_window_has_focus(void);
+
+extern LANGSPEC int OS_get_main_window_width(void);
+extern LANGSPEC int OS_get_main_window_height(void);
+
 
 extern LANGSPEC void OS_VST_config(struct Tracker_Windows *window);
 

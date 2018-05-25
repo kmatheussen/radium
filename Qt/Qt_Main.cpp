@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDesktopServices>
 #include <QTextCodec>
 #include <QWindow>
+#include <QScreen>
 
 #include <QStyleFactory>
 
@@ -116,6 +117,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_system_proc.h"
 
 #include "../crashreporter/crashreporter_proc.h"
+
+#include "../windows/W_Keyboard_proc.h"
 
 #include "../audio/Juce_plugins_proc.h"
 #include "../audio/Mixer_proc.h"
@@ -1604,6 +1607,21 @@ int OS_GFX_get_num_toplevel_windows(void){
   return QGuiApplication::topLevelWindows().size();
 }
 
+int OS_get_main_window_width(void){
+  if (g_main_window==NULL)
+    return 0;
+
+  return g_main_window->width();
+}
+
+int OS_get_main_window_height(void){
+  if (g_main_window==NULL)
+    return 0;
+
+  return g_main_window->height();
+}
+
+
 // Warning: Does not always work on windows.
 //
 // Maybe this test is better: QWidget::find(GetForegroundWindow()) != NULL
@@ -2338,7 +2356,13 @@ void SetHorizSplitPointer(int64_t guinum){
 void SetVerticalResizePointer(int64_t guinum){
   setCursor(guinum, Qt::SizeVerCursor);
 }
+
+
+double g_last_time_mouse_pointer_was_moved_by_the_program = 0;
+
 void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
+  g_last_time_mouse_pointer_was_moved_by_the_program = TIME_get_ms(); // Important to set it as soon as possible before doing the actual movement. (at least not after)
+  
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   QPoint pos;
   if (!g_editor->isVisible())
@@ -2350,6 +2374,22 @@ void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
   OS_OSX_set_cursorpos(pos.x(), pos.y()); // https://bugreports.qt.io/browse/QTBUG-33959
 #else
   QCursor::setPos(pos);
+#endif
+}
+
+void MoveAbsPointer(struct Tracker_Windows *tvisual, float x, float y){
+  g_last_time_mouse_pointer_was_moved_by_the_program = TIME_get_ms(); // Important to set it as soon as possible before doing the actual movement. (at least not after)
+
+#if FOR_MACOSX
+  OS_OSX_set_cursorpos(x,y); // https://bugreports.qt.io/browse/QTBUG-33959
+#else
+  if (tvisual==NULL)
+    QCursor::setPos(x,y);
+  else {
+    QWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+    QScreen *screen = editor->window()->windowHandle()->screen();
+    QCursor::setPos(screen, x, y);
+  }
 #endif
 }
 
@@ -2368,6 +2408,41 @@ WPoint GetPointerPos(struct Tracker_Windows *tvisual){
   }
   ret.x = pos.x();
   ret.y = pos.y();
+  return ret;
+}
+
+WPoint GetAbsPointerPos(struct Tracker_Windows *tvisual){
+  WPoint ret;
+  QPoint pos;
+  
+  if (tvisual==NULL)
+    pos = QCursor::pos();
+  else{
+    QWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+    QScreen *screen = editor->window()->windowHandle()->screen();
+    pos = QCursor::pos(screen);
+  }
+  ret.x = pos.x();
+  ret.y = pos.y();
+  return ret;
+}
+
+Area GetScreenSize(struct Tracker_Windows *tvisual){
+  Area ret;
+  QPoint pos;
+
+  QScreen *screen;
+  
+  if (tvisual==NULL)
+    screen = QApplication::screens()[0];
+  else{
+    QWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+    screen = editor->window()->windowHandle()->screen();
+  }
+  
+  ret.x = screen->size().width();
+  ret.x2 = screen->size().height();
+  
   return ret;
 }
 
@@ -2569,7 +2644,6 @@ static QString g_startup_path;
 
 extern void TIME_init(void);
 extern void UPDATECHECKER_doit(void);
-
 
 
 int radium_main(char *arg){
@@ -2959,8 +3033,11 @@ int radium_main(char *arg){
   OS_OSX_clear_modifiers(); // Don't know why we need to call this again. (it's also called from OS_SYSTEM_init_keyboard)
 #endif
   
+#if defined(FOR_WINDOWS)
+  W_RegisterRawInputHandler((void*)g_main_window->effectiveWinId());
+#endif
+  
   CalledPeriodically periodic_timer;
-
 
 #if USE_QT_VISUAL
   qapplication->exec();

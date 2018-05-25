@@ -16,3 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern LANGSPEC void W_KeyboardHandlerShutDown(void);
+extern LANGSPEC void W_RegisterRawInputHandler(void *hwnd); // hwnd is g_main_window->effectiveWinId(). Call this function during initialization after g_main_window has started.
+extern LANGSPEC bool W_HasDeltaMouse(void);
+extern LANGSPEC bool W_CanMovePointer(void);
+
