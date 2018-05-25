@@ -203,6 +203,10 @@ extern bool g_initing_starting_to_play_song;
 
 extern bool g_user_interaction_enabled; // Used for testing. If this one is false, all user interaction will be done automatically, randomly.
 
+extern float g_mouse_dx, g_mouse_dy; // Only have valid values in windows.
+extern bool g_wants_delta_movements; // Only useful in windows.
+extern double g_last_time_mouse_pointer_was_moved_by_the_program; // Only used in windows.
+
 #include "atomic.h"
 
 #include "../crashreporter/crashreporter_proc.h"

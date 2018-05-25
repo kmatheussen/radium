@@ -469,7 +469,11 @@ static int getMouseButtonEventID( QMouseEvent *qmouseevent){
     return 0;
 }
 
+static bool g_is_mousing_editor = false;
+
 void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent) {
+  g_is_mousing_editor = true;
+  
   if(g_is_starting_up==true)
     return;
 
@@ -506,37 +510,80 @@ void EditorWidget::mousePressEvent( QMouseEvent *qmouseevent) {
 }
 
 
-void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent) {
+void MouseMoveRelative(float x, float y, float dx, float dy) {
+#if 1
+  
+  g_mouse_dx += dx;
+  g_mouse_dy += dy;
+  return;
+
+#else
+  
+  if (g_is_mousing_editor==false)
+    return;
+  
   if(g_is_starting_up==true)
     return;
 
+  if (g_wants_delta_movements==false)
+    return;
+    
+  
   tevent.ID=TR_MOUSEMOVE;
-#if USE_QT5
-  tevent.x  = qmouseevent->localPos().x();
-  tevent.y  = qmouseevent->localPos().y();
-#else
-  tevent.x  = qmouseevent->posF().x();
-  tevent.y  = qmouseevent->posF().y();
-#endif
+  tevent.x  = x;
+  tevent.y  = y;
+
 
   //Qt::ButtonState buttonstate=qmouseevent->state();
   //printf("************** buttonstate: %d, %d, %d\n",getMouseButtonEventID(qmouseevent),buttonstate,tevent.keyswitch);
 
   if (SCHEME_mousemove(g_currentButton, tevent.x, tevent.y)==false)
-    EventReciever(&tevent,this->window);
+    EventReciever(&tevent,root->song->tracker_windows);
 
   R_ASSERT(g_pausing_level==0);
   
   //fprintf(stderr, "mouse %d / %d\n", tevent.x, tevent.y);
 //  printf("----Got mouse move %d %d %f %f\n",tevent.x,tevent.y,qmouseevent->posF().x(),qmouseevent->posF().y());
 
-  updateEditor();
+  g_editor->updateEditor();
+#endif
+}
 
+
+
+void EditorWidget::mouseMoveEvent( QMouseEvent *qmouseevent) {  
+  if(g_is_starting_up==true)
+    return;
+
+  float x, y;
+  
+#if USE_QT5
+  x = qmouseevent->localPos().x();
+  y = qmouseevent->localPos().y();
+#else
+  x  = qmouseevent->posF().x();
+  y  = qmouseevent->posF().y();
+#endif
+
+  tevent.ID=TR_MOUSEMOVE;
+  tevent.x  = x;
+  tevent.y  = y;
+
+  if (true || g_wants_delta_movements==false)
+    if (SCHEME_mousemove(g_currentButton, tevent.x, tevent.y)==false)
+      EventReciever(&tevent,root->song->tracker_windows);
+
+  R_ASSERT(g_pausing_level==0);
+
+  updateEditor();
+  
   qmouseevent->accept();
 }
 
 
 void EditorWidget::mouseReleaseEvent( QMouseEvent *qmouseevent) {
+  g_is_mousing_editor = false;
+
   if(g_is_starting_up==true)
     return;
 
