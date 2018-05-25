@@ -5740,7 +5740,8 @@
                                        (list "Glide to next break point"
                                              :check (and Num (= (<ra> :get-seq-automation-logtype Num automationnum seqtracknum)
                                                                 *logtype-linear*))
-                                             :enabled Num
+                                             :enabled (and Num
+                                                           (< Num (- (<ra> :get-num-seq-automation-nodes automationnum seqtracknum) 1)))
                                              (lambda (maybe)
                                                (<ra> :undo-sequencer-automations)
                                                (<ra> :set-seq-automation-node
