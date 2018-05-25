@@ -284,7 +284,6 @@ int64_t getSeqtrackInstrument(int seqtracknum){
     return -1;
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
-  //R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, -1);
   if (plugin==NULL)
     return -1;
 
@@ -294,7 +293,7 @@ int64_t getSeqtrackInstrument(int seqtracknum){
 bool seqtrackForAudiofiles(int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
-    return -1;
+    return false;
 
   return seqtrack->for_audiofiles;
 }

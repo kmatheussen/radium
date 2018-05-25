@@ -6081,17 +6081,19 @@
                                      seqtracknum))))
                      (iota (<ra> :get-num-instrument-effects instrument-id)))))
 
-  (define seqtrack-instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
+  (define seqtrack-instrument-id (and (<ra> :seqtrack-for-audiofiles seqtracknum)
+                                      (<ra> :get-seqtrack-instrument seqtracknum)))
 
   (define all-instruments (get-all-audio-instruments))
 
   (popup-menu
-   (if (>= seqtrack-instrument-id 0)
+   (if (and seqtrack-instrument-id
+            (>= seqtrack-instrument-id 0))
        (list (<ra> :get-instrument-name seqtrack-instrument-id)
              (lambda ()
-               (instrument-popup-menu seqtrack-instrument-id)))
+               (instrument-popup-menu seqtrack-instrument-id))
+             "---------------------")
        '())
-   "---------------------"
    (map (lambda (num instrument-id)
           (list (<-> num ". " (<ra> :get-instrument-name instrument-id))
                 (lambda ()
