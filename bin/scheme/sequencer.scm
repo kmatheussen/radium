@@ -206,7 +206,8 @@
   (define y-split (myfloor (+ y1 name-height)))
 
 
-  (if use-two-rows
+  (if (or use-two-rows
+          for-blocks)
       (add-sub-area-plain! (<new> :seqtrack-name gui
                                   x1 y1 x1-split
                                   y-split
@@ -273,16 +274,17 @@
       ;;(c-display "____HEADER seqtracknum:" seqtracknum)
       (<ra> :set-curr-seqtrack seqtracknum))
     (super:get-mouse-cycle button x* y*))
-    
-  (add-mouse-cycle! :press-func (lambda (button x* y*)
-                                  (if (= button *right-button*)
-                                      (begin
-                                        (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
-                                              (lambda ()
-                                                (show-sequencer-header-popup-menu instrument-id gui)
-                                                #t))
-                                        #t)
-                                      #f)))  
+
+  (if for-audiofiles
+      (add-mouse-cycle! :press-func (lambda (button x* y*)
+                                      (if (= button *right-button*)
+                                          (begin
+                                            (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
+                                                  (lambda ()
+                                                    (show-sequencer-header-popup-menu instrument-id gui)
+                                                    #t))
+                                            #t)
+                                          #f))))
   )
 
 
