@@ -128,19 +128,21 @@ public:
   }
 
   const wchar_t* get(void) const {
-    R_ASSERT(THREADING_is_main_thread());
+    R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
     return string->string;
   }
 
   const wchar_t* get_from_another_thread(void) const {
-    R_ASSERT(!THREADING_is_main_thread());
+    R_ASSERT_NON_RELEASE(!THREADING_is_main_thread());
     return string->string;
   }
 
+  /*
   operator const wchar_t*() const {
     R_ASSERT(THREADING_is_main_thread());
     return string->string;
   }
+  */
 };
 }
 
