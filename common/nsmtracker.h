@@ -667,6 +667,15 @@ struct vector_t_{
 
 typedef struct vector_t_ vector_t;
 
+static inline vector_t create_static_vector_t(int num_elements, void **elements){
+  const vector_t ret = {
+    .num_elements = num_elements,
+    .num_elements_allocated = num_elements,
+    .elements = elements
+  };
+  return ret;
+}
+
 #include "vector_proc.h"
 
 

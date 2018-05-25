@@ -215,22 +215,32 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
   return myProcess->exitCode();
 }
 
+// Note: Can be called from any thread. No gc-alloc.
 int SYSTEM_show_error_message(const char *message){
-  static bool ignore_forever = false;
-  static double ignore_until = -1;
-  static double last_time = -1;
+  static DEFINE_ATOMIC(bool, ignore_forever) = false;
+  static DEFINE_ATOMIC(double, ignore_until) = -1;
+  static DEFINE_ATOMIC(double, last_time) = -1;
+  
   double time_now = TIME_get_ms();
 
-  if (time_now <= ignore_until || ignore_forever)
+  if (time_now <= ATOMIC_DOUBLE_GET(ignore_until) || ATOMIC_GET(ignore_forever))
     return 0;
 
-  last_time = TIME_get_ms();
+  ATOMIC_DOUBLE_SET(last_time, TIME_get_ms());
 
-  vector_t v = {};
-  int continue_ = VECTOR_push_back(&v, "continue"); (void)continue_;
-  int quit = VECTOR_push_back(&v, "quit");
-  int ignore1 = VECTOR_push_back(&v, "ignore warnings and errors for two seconds");
-  int ignore2 = VECTOR_push_back(&v, "ignore warnings and errors for the rest of the program");
+  const char *choices[] = {
+    "continue",
+    "quit",
+    "ignore warnings and errors for two seconds",
+    "ignore warnings and errors for the rest of the program"
+  };
+  
+  const vector_t v = create_static_vector_t(4, (void**)choices);
+  
+  //int continue_ = 0;
+  int quit = 1;
+  int ignore1 = 2;
+  int ignore2 = 3;
 
   int ret = SYSTEM_show_message_menu(&v, message);
 
@@ -240,10 +250,10 @@ int SYSTEM_show_error_message(const char *message){
   }
     
   if (ret==ignore1)
-    ignore_until = last_time + 2000;
+    ATOMIC_DOUBLE_SET(ignore_until, ATOMIC_DOUBLE_GET(last_time) + 2000);
   else if (ret==ignore2)
-    ignore_forever = true;
-
+    ATOMIC_SET(ignore_forever, true);
+  
   return ret;
 }
 }
