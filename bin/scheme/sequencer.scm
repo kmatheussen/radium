@@ -424,11 +424,8 @@
                                                                                  ((eq? type 'Append) "Append seqtrack")
                                                                                  (else
                                                                                   (assert #f)))                                                                                  
-                                                           :callback (lambda ()
-                                                                       (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
-                                                                             (lambda ()
-                                                                               (callback type)
-                                                                               #f))))))))
+                                                           :callback-release (lambda ()
+                                                                               (callback type)))))))
 
 
 (def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2)

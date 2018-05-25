@@ -701,7 +701,8 @@
                              :text ""
                              :background-color #f
                              :statusbar-text #f
-                             :callback)
+                             :callback #f
+                             :callback-release #f)
 
   (define is-pressing #f)
 
@@ -747,13 +748,16 @@
                       (and (= button *left-button*)                        
                            (begin
                              (set! is-pressing #t)
-                             (callback)
+                             (if callback
+                                 (callback))
                              (update-me!)
                              #t)))
                     (lambda (button x* y*)
                       #t)
                     (lambda (button x* y*)
                       (set! is-pressing #f)
+                      (if callback-release
+                          (callback-release))
                       (update-me!))))
 
                                   
