@@ -14,10 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef _RADIUM_COMMON_COMMON_PROC_H
+#define _RADIUM_COMMON_COMMON_PROC_H
 
-#ifndef TRACKER_INCLUDE
-
-#include "nsmtracker.h"
 
 extern LANGSPEC int GetCursorY1Pos(const struct Tracker_Windows *window, const struct WBlocks *wblock);
 extern LANGSPEC int GetCursorY2Pos(const struct Tracker_Windows *window, const struct WBlocks *wblock);
@@ -63,13 +62,10 @@ extern int GetReallineFromY(
 	int y
 );
 
-extern int GetReallineAndPlaceFromY(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	float y,
-	Place *place,
-	Place *maxplace,
-	Place *minplace
-);
+extern LANGSPEC Place GetPlaceFromY(
+                                    struct Tracker_Windows *window,
+                                    struct WBlocks *wblock,
+                                    float y
+                                    );
 
 #endif

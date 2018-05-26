@@ -165,20 +165,12 @@ Place getPlaceFromY(float y, int blocknum, int windownum) {
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
 
-  Place place;
-
-  GetReallineAndPlaceFromY(window,
-                           wblock,
-                           y,
-                           &place,
-                           NULL,
-                           NULL
-                           );
-
-  //printf("Got place %s for %f\n",PlaceToString(&place),y);
-  return place;
+  return GetPlaceFromY(window,
+                       wblock,
+                       y
+                       );
 }
 
 
@@ -203,19 +195,10 @@ Place getPlaceInGridFromY(float y, int blocknum, int windownum) {
   float gridded_abs_y = get_gridded_abs_y(window, abs_y);
   float gridded_y = gridded_abs_y - wblock->top_realline*window->fontheight + wblock->t.y1;
   
-  Place place;
-  
-  GetReallineAndPlaceFromY(window,
-                           wblock,
-                           gridded_y,
-                           &place,
-                           NULL,
-                           NULL
-                           );
-
-  //printf("Got grid-place %s\n",PlaceToString(&place));
-  
-  return place;
+  return GetPlaceFromY(window,
+                       wblock,
+                       gridded_y
+                       );
 }
 
 
@@ -240,17 +223,10 @@ Place getNextPlaceInGridFromY(float y, int blocknum, int windownum) {
   float gridded_abs_y = get_next_gridded_abs_y(window, abs_y);
   float gridded_y = gridded_abs_y - wblock->top_realline*window->fontheight + wblock->t.y1;
   
-  Place place;
-  
-  GetReallineAndPlaceFromY(window,
-                           wblock,
-                           gridded_y,
-                           &place,
-                           NULL,
-                           NULL
-                           );
-  
-  return place;
+  return GetPlaceFromY(window,
+                       wblock,
+                       gridded_y
+                       );
 }
 
 
@@ -1638,7 +1614,7 @@ dyn_t addPianonote(float value, Place place, Place endplace, int tracknum, int b
 
   ADD_UNDO(Notes(window,block,track,window->wblock->curr_realline));
 
-  printf("  Place: %d %d/%d\n",place.line,place.counter,place.dividor);
+  //printf("  Place: %d %d/%d\n",place.line,place.counter,place.dividor);
   struct Notes *note = InsertNote(wblock, wtrack, &place, &endplace, value, NOTE_get_velocity(track), true);
   
   window->must_redraw_editor = true;
