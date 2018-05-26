@@ -114,7 +114,7 @@ void SEQTRACK_move_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock
   radium::PlayerPause pause;
   radium::PlayerRecursiveLock lock;
   move_seqblock(seqblock, new_start);
-  RT_legalize_seqtrack_timing(seqtrack);
+  RT_legalize_seqtrack_timing(seqtrack, NULL);
 }
   
 static bool seqblock_has_stretch(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
@@ -385,7 +385,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
   int64_t duration = SEQTRACKPLUGIN_get_total_num_frames_for_sample(plugin, seqblock->sample_id);
   
   default_duration_changed(seqblock, duration);  
-  SEQBLOCK_ENVELOPE_duration_changed(seqtrack, seqblock, duration);
+  SEQBLOCK_ENVELOPE_duration_changed(seqblock, duration, NULL);
  
   return seqblock;
 }
@@ -393,10 +393,13 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
 
 // Ensures that two seqblocks doesn't overlap, and that a seqblock doesn't start before 0.
 // Preserves original pause times.
-static void legalize_seqtrack_timing(struct SeqTrack *seqtrack){
-  //printf("Legalizing timing\n");
-
+static void legalize_seqtrack_timing(struct SeqTrack *seqtrack, radium::PlayerLockOnlyIfNeeded *lock){
+  //printf("Legalizing timing\n");  
+  
 #if !defined(RELEASE)
+  //if (lock==NULL)
+  //  R_ASSERT(PLAYER_current_thread_has_lock()); // hits when initializing a seqtrack.
+  
   //if (!is_gfx)
   //  R_ASSERT(PLAYER_current_thread_has_lock()); (not true when creating from state. I.e. creating new seqtrack that isn't live yet)
   R_ASSERT(is_playing_song()==false);
@@ -414,8 +417,11 @@ static void legalize_seqtrack_timing(struct SeqTrack *seqtrack){
         seq_block_start = last_end_time;
       }
       
-      if (seq_block_start != seqblock->t.time) 
+      if (seq_block_start != seqblock->t.time){
+        if (lock)
+          lock->lock();
         move_seqblock(seqblock, seq_block_start);
+      }
       
       last_end_time = seqblock->t.time2;
     }
@@ -424,9 +430,8 @@ static void legalize_seqtrack_timing(struct SeqTrack *seqtrack){
   //VECTOR_sort(&seqtrack->seqblocks, seqblocks_comp);
 }
 
-void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack){
-  radium::PlayerRecursiveLock lock;
-  legalize_seqtrack_timing(seqtrack);
+void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack, radium::PlayerLockOnlyIfNeeded *lock){
+  legalize_seqtrack_timing(seqtrack, lock);
 }
 
 /*
@@ -1297,7 +1302,7 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
       
       SEQTRACKPLUGIN_assert_samples2(seqtrack);
       
-      legalize_seqtrack_timing(seqtrack);
+      legalize_seqtrack_timing(seqtrack, NULL);
     }
 
     SEQTRACKPLUGIN_assert_samples2(seqtrack);
@@ -1451,7 +1456,7 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
     
     SEQTRACKPLUGIN_assert_samples2(seqtrack);
     
-    RT_legalize_seqtrack_timing(seqtrack);  // Shouldn't be necessary, but we call it just in case.
+    RT_legalize_seqtrack_timing(seqtrack, NULL);  // Shouldn't be necessary, but we call it just in case.
   }
 
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
@@ -1507,7 +1512,7 @@ void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int 
         move_seqblock(seqblock, seqblock->t.time+how_much);
     }END_VECTOR_FOR_EACH;
     
-    RT_legalize_seqtrack_timing(seqtrack);
+    RT_legalize_seqtrack_timing(seqtrack, NULL);
   }
 
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
@@ -1577,10 +1582,8 @@ bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
 }
 
 
-void SEQUENCER_timing_has_changed(void){
+void SEQUENCER_timing_has_changed(radium::PlayerLockOnlyIfNeeded &lock){
   R_ASSERT_NON_RELEASE(false==PLAYER_current_thread_has_lock());
-
-  bool isplayingsong = is_playing_song();
 
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
 
@@ -1590,21 +1593,21 @@ void SEQUENCER_timing_has_changed(void){
         
         if (seqblock->t.default_duration != default_duration){
 
-          {
-            radium::PlayerLock lock(isplayingsong);
+          lock.lock();
             
-            double stretch = seqblock->t.stretch;
-            if (stretch==1.0)
-              seqblock->t.time2 = seqblock->t.time + default_duration;
-            else
-              seqblock->t.time2 = seqblock->t.time + round(stretch*(double)default_duration);
-            
-            seqblock->t.default_duration = default_duration;
+          double stretch = seqblock->t.stretch;
+          if (stretch==1.0)
+            seqblock->t.time2 = seqblock->t.time + default_duration;
+          else
+            seqblock->t.time2 = seqblock->t.time + round(stretch*(double)default_duration);
+          
+          seqblock->t.default_duration = default_duration;
+          
+          seqblock->t.interior_end = default_duration;
 
-            seqblock->t.interior_end = default_duration;
-          }
+          SEQBLOCK_ENVELOPE_duration_changed(seqblock, default_duration, &lock);
 
-          SEQBLOCK_ENVELOPE_duration_changed(seqtrack, seqblock, default_duration);
+          lock.maybe_pause(iterator666);
         }
       }
     }END_VECTOR_FOR_EACH;
@@ -1638,7 +1641,7 @@ void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t seqtime, int64_t
       
     }END_VECTOR_FOR_EACH;
 
-    RT_legalize_seqtrack_timing(seqtrack);
+    RT_legalize_seqtrack_timing(seqtrack, NULL);
   }
 
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
@@ -1705,7 +1708,7 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
     
     SEQTRACKPLUGIN_assert_samples2(seqtrack);
 
-    RT_legalize_seqtrack_timing(seqtrack);
+    RT_legalize_seqtrack_timing(seqtrack, NULL);
   }
 
   int seqtracknum = get_seqtracknum(seqtrack);
@@ -2269,7 +2272,7 @@ void SEQUENCER_create_envelopes_from_state(hash_t *state){
 // When playing song, block->tempo_multiplier is ignored. Instead seqblocks are stretched.
 void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double new_tempo_multiplier){
   radium::PlayerPauseOnlyIfNeeded pause(is_playing_song());
-  radium::PlayerLockOnlyIfNeeded lock(is_playing_song());
+  radium::PlayerLockOnlyIfNeeded lock;
 
   if (block==NULL)
     R_ASSERT_RETURN_IF_FALSE(g_is_loading==true);
@@ -2318,10 +2321,12 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
 
       skew += add_skew;
       
+      lock.maybe_pause(iterator666);
+    
     }END_VECTOR_FOR_EACH;
 
     if (skew > 0)
-      legalize_seqtrack_timing(seqtrack);
+      legalize_seqtrack_timing(seqtrack, &lock);
 
   }END_VECTOR_FOR_EACH;  
 }

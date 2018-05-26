@@ -269,7 +269,9 @@ extern LANGSPEC void SEQUENCER_update(uint32_t what); // Can be called from any 
 
   
 // seqtrack
-extern LANGSPEC void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack);
+#ifdef __cplusplus
+extern LANGSPEC void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack, radium::PlayerLockOnlyIfNeeded *lock);
+#endif
 
 extern LANGSPEC void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int seqblocknum, int64_t how_much);
 extern LANGSPEC void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
@@ -288,7 +290,9 @@ bool SEQBLOCK_set_fade_out_shape(struct SeqBlock *seqblock, enum FadeShape shape
 
 extern LANGSPEC bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack); // Sets seqtrack->curr_sample_seqblock when starting/stopping playing audio file.
 
-extern LANGSPEC void SEQUENCER_timing_has_changed(void);
+#ifdef __cplusplus
+extern LANGSPEC void SEQUENCER_timing_has_changed(radium::PlayerLockOnlyIfNeeded &lock);
+#endif
 
 //extern LANGSPEC void SEQTRACK_move_gfx_gfx_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_abs_time);
 

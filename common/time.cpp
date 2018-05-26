@@ -946,7 +946,7 @@ STime Place2STime(
 // Precalculate timing for all line starts. (optimization)
 struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChange *time_changes, int num_elements){//const struct STimeChange **tchanges){
 
-  struct STimes *stimes = talloc(sizeof(struct STimes)*(1+num_lines));
+  struct STimes *stimes = (struct STimes*)talloc(sizeof(struct STimes)*(1+num_lines));
 
   int i=0;
 
@@ -1061,7 +1061,7 @@ static dyn_t get_fallback_timings(const struct Blocks *block, const dyn_t dynbea
 
 // Returns an array of STimeChange elements
 static struct STimeChange *create_time_changes_from_scheme_data(const dynvec_t *timings){
-  struct STimeChange *time_changes = talloc(sizeof(struct STimeChange)*(timings->num_elements+1)); // Allocate one more element so that the last element is nulled out (used for assertion).
+  struct STimeChange *time_changes = (struct STimeChange*)talloc(sizeof(struct STimeChange)*(timings->num_elements+1)); // Allocate one more element so that the last element is nulled out (used for assertion).
   
   for(int i=0;i<timings->num_elements;i++){
     hash_t *h = timings->elements[i].hash;
@@ -1308,7 +1308,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
           const dyn_t block_swings = API_getAllBlockSwings(blocks[i]);
           filledout_swingss[i] = create_filledout_swings(g_empty_dynvec, block_swings, blocks[i]->num_lines, dynbeats[i]);
           
-          dyn_t empty_track_swing = {0};
+          dyn_t empty_track_swing = {};
           
           struct Tracks *track = blocks[i]->tracks;
           
@@ -1409,7 +1409,7 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
           struct Tracks *track = block->tracks;
           while(track!=NULL){
             track->filledout_swings = filledout_trackswingss[i].elements[track->l.num];
-            track->times = trackstimess[i].elements[track->l.num];
+            track->times = (const STimes*)trackstimess[i].elements[track->l.num];
             track = NextTrack(track);
           }
         }
@@ -1418,15 +1418,15 @@ static void update_stuff2(struct Blocks *blocks[], int num_blocks,
     }
 
     if (only_update_beats_for_all_blocks==false){
-      PLAYER_lock();{
-        int i = 0;
-        ALL_SEQTRACKS_FOR_EACH(){
-          PLAYER_maybe_pause_lock_a_little_bit(i++);
-          RT_legalize_seqtrack_timing(seqtrack);
-        }END_ALL_SEQTRACKS_FOR_EACH;
-      }PLAYER_unlock();
+      radium::PlayerLockOnlyIfNeeded lock;
+      
+      int i = 0;
+      ALL_SEQTRACKS_FOR_EACH(){
+        RT_legalize_seqtrack_timing(seqtrack, &lock);
+        lock.maybe_pause(i++);
+      }END_ALL_SEQTRACKS_FOR_EACH;    
 
-      SEQUENCER_timing_has_changed();
+      SEQUENCER_timing_has_changed(lock);
     }
 
     SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);

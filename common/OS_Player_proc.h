@@ -117,14 +117,14 @@ struct PlayerRecursiveLock{
   PlayerRecursiveLock& operator=(const PlayerRecursiveLock&) = delete;
 
   PlayerRecursiveLock()
-  : gotit (!PLAYER_current_thread_has_lock())
+    : gotit(PLAYER_current_thread_has_lock())
   {
-    if (gotit)
+    if (!gotit)
       PLAYER_lock();
   }
 
   ~PlayerRecursiveLock(){
-    if (gotit)
+    if (!gotit)
       PLAYER_unlock();
   }
 };
@@ -133,7 +133,7 @@ struct PlayerRecursiveLock{
   
 // TODO: Go through all use of PlayerRecursiveLock and see if it can be replaced with PlayerLockOnlyIfNeeded.
 struct PlayerLockOnlyIfNeeded{
-  bool gotit = false;
+  bool gotit;
 
   bool do_lock;
 
@@ -154,14 +154,30 @@ struct PlayerLockOnlyIfNeeded{
     maybe_pause(i);
     lock();
   }
+
+  struct ScopedLockPause{
+    bool gotit;
+    ScopedLockPause(PlayerLockOnlyIfNeeded *lock)
+      : gotit(lock==NULL ? false : lock->gotit)
+    {
+      if(gotit)
+        PLAYER_unlock();        
+    }
+    ~ScopedLockPause(){
+      if(gotit)
+        PLAYER_lock();
+    }
+  };
   
   PlayerLockOnlyIfNeeded(const PlayerLockOnlyIfNeeded&) = delete;
   PlayerLockOnlyIfNeeded& operator=(const PlayerLockOnlyIfNeeded&) = delete;
 
   
   PlayerLockOnlyIfNeeded(bool do_lock = true)
-    : do_lock(do_lock)
+    : gotit(PLAYER_current_thread_has_lock())
+    , do_lock(gotit==false && do_lock)
   {
+    R_ASSERT_NON_RELEASE(gotit==false);
   }
   
   ~PlayerLockOnlyIfNeeded(){

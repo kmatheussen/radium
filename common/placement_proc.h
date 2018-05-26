@@ -277,10 +277,10 @@ extern LANGSPEC void PlaceSetReallinePlace(
 );
 
 // Puts 'p' as near as possible 'tp' so that p<tp.
-extern void PlaceTilLimit(Place *p,  const Place *tp);
+extern LANGSPEC void PlaceTilLimit(Place *p,  const Place *tp);
 
 // Puts 'p' as near as possible 'tp' so that p>tp.
-extern void PlaceFromLimit(Place *p,  const Place *tp);
+extern LANGSPEC void PlaceFromLimit(Place *p,  const Place *tp);
 
 
 
