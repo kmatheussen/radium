@@ -2592,45 +2592,7 @@ enum Seqblock_Type{
 struct SeqBlock{
   int64_t id;
 
-  // FIX: Don't need two of these anymore. Pretty sure they never differ now.
-  struct SeqBlockTimings t;
-  //struct SeqBlockTimings gfx;
-
-  /*
-  // Start seqtime.
-  // Player must be stopped when modifying this variable.
-  // Note that because of tempo multipliers (block->reltempo), the 'start_time' and 'end_time' fields does not correspond linearly to this value.
-  // Written to by the main thread, read by the main thread and the player thread(s).
-  int64_t time;
-  int64_t gfx_time;  // Usually contains the same value as 'time', but when moving seqblocks with the mouse, it contains the currently visible time instead. When releasing the mouse button, 'time' will get the same value as 'gfx_time'.
-  
-  // End seqtime.
-  // When seqblock is NOT stretched, end_time = time + getBlockSTimeLength(seqblock->block).
-  int64_t time2;
-  int64_t gfx_time2; // (see gfx_time)
-
-  
-  int64_t default_duration; // Usually has value Place2Stime(end_place)-Place2Stime(start_place). Also used to set the stretch value.
-  int64_t gfx_default_duration;
-
-
-  Place start_place; // usually {0,0,1} (not used yet). Only used if block!=NULL
-  Place gfx_start_place; // (not used yet). Only used if block!=NULL
-
-  Place end_place;   // usually {num_lines,0,1} (not used yet)
-  Place gfx_end_place; // (not used yet)
-
-  bool is_looping;
-  int64_t interior_start; // seqtime version of start_place
-  int64_t interior_end;   // seqtime version of end_place
-  
-  // stretch = (end_time-time) / getBlockSTimeLength(seqblock->block)
-  // 1.0 = no stretch. 0.5 = double tempo. 2.0 = half tempo.
-  // Only used for converting stime -> seqtime a little bit faster. Updated when the result of end_time-time or getBlockSTimeLength(seqblock->block) changes.
-  // Must not be used to find seqblock duration (i.e end_time-time).
-  double stretch;
-  double gfx_stretch; // (see gfx_time)
-  */
+  struct SeqBlockTimings t; // Note, player lock must be obtained when changing values in t, even when not playing song. There's a race condition in audio/Seqtrack_plugin.c that's quite tricky to avoid, so it's probably better to always lock player.
   
   struct Blocks *block; // If NULL, then the seqblock holds a sample.
 

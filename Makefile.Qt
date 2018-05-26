@@ -844,8 +844,8 @@ song_tempo_automation.o:  $(BUILD_DEPENDENCIES) $(CD)song_tempo_automation.cpp $
 seqblock_envelope.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_envelope.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h audio/Envelope.hpp common/Vector.hpp
 	$(CCC) $(CD)seqblock_envelope.cpp $(QTOPT) -Wno-unknown-pragmas
 
-time.o:  $(BUILD_DEPENDENCIES) $(CD)time.c
-	$(CC) $(CD)time.c $(OPT) 
+time.o:  $(BUILD_DEPENDENCIES) $(CD)time.cpp
+	$(CCC) $(CD)time.cpp $(CPPOPT) 
 
 reltempo.o:  $(BUILD_DEPENDENCIES) $(CD)reltempo.c
 	$(CC) $(CD)reltempo.c $(OPT)

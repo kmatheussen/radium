@@ -393,9 +393,8 @@ void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock,
 
   SEQTRACK_update(seqtrack);
 }
-  
-void SEQBLOCK_ENVELOPE_duration_changed(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t new_duration){
-  R_ASSERT_NON_RELEASE(false==PLAYER_current_thread_has_lock());
+
+void SEQBLOCK_ENVELOPE_duration_changed(struct SeqBlock *seqblock, int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock){
 
   struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
 
@@ -422,10 +421,14 @@ void SEQBLOCK_ENVELOPE_duration_changed(struct SeqTrack *seqtrack, struct SeqBlo
   if (reduced==true){
 
     R_ASSERT_RETURN_IF_FALSE(new_size >= 2);
-
-    while(automation.automation.size() > new_size){
-      //printf("   Remoing node %d\n", automation.automation.size()-1);
-      automation.automation.delete_node(automation.automation.size()-1);      
+    
+    if(automation.automation.size() > new_size){
+      radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause_lock(lock);
+      
+      while(automation.automation.size() > new_size){
+        //printf("   Remoing node %d\n", automation.automation.size()-1);
+        automation.automation.delete_node(automation.automation.size()-1);      
+      }
     }
 
   } else {
