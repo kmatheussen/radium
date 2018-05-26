@@ -879,17 +879,13 @@
     ;;(c-display "num" ($node :num) ($get-num-nodes-func) "value" $dx ($node :value) (node-area :x1) (node-area :x2) ($get-node-value-func ($node :num)))
     (define new-y (if Use-Place
                       (and (not (= 0 Dy))                           
-                           (let ((try-it (+ (Node :y)
-                                            Dy)))
-                             (between (1- (<ra> :get-top-visible-y))
-                                      try-it
-                                      (+ 2 (<ra> :get-bot-visible-y)))))
+                           (+ (Node :y) Dy))
                       (+ Dy (Node :y))))
 
     (define same-pos (and (morally-equal? new-y (Node :y))
                           (morally-equal? new-value (Node :value))))
     
-    ;;(c-display "Dx:" Dx ", Dy:" Dy ", same-pos:" same-pos "new-y:" new-y "(Node :y):" (Node :y) "new-value:" new-value "(Node :value):" (Node :value))
+    ;;(c-display "Dx:" Dx ", Dy:" Dy ", same-pos:" same-pos "new-y:" new-y ". Place:" (and new-y (get-place-from-y Button new-y)) "(Node :y):" (Node :y) "new-value:" new-value "(Node :value):" (Node :value))
 
     (if same-pos
         (begin

@@ -480,15 +480,10 @@ void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window){
   if (wtrack==NULL)
     return;
   
-  Place place;
-  
-  GetReallineAndPlaceFromY(window,
-                           wblock,
-                           y,
-                           &place,
-                           NULL,
-                           NULL
-                           );
+  Place place = GetPlaceFromY(window,
+                              wblock,
+                              y
+                              );
 
   struct FX *fx=selectFX(window,wblock,wtrack);
   if(fx==NULL)

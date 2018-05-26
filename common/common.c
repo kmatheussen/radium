@@ -211,101 +211,67 @@ int GetReallineFromY(
     If minplace is NULL, FirstPlace will be used instead.
     If maxplace is NULL, LastPlace will be used instead.
 *************************************************************************/
-int GetReallineAndPlaceFromY(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	float y,
-	Place *place,
-	Place *minplace,
-	Place *maxplace
-){
+Place GetPlaceFromY(
+                    struct Tracker_Windows *window,
+                    struct WBlocks *wblock,
+                    float y
+                    )
+{
 	int top_realline     = wblock->top_realline;
-	int bot_realline     = wblock->bot_realline;
 	int num_reallines    = wblock->num_reallines;
-	bool at_bottom       = false;
 
         float abs_y = (y-(float)wblock->t.y1) + (float)(top_realline*window->fontheight);
 
-        int realline = abs_y / window->fontheight;
-	int ret       = realline;
+        float realline_f = abs_y / (float)window->fontheight;
+        int realline = realline_f;
 
-	if(realline<0 || y<wblock->t.y1){
-		realline = R_MAX(0,top_realline);
-		ret      = y-Common_oldGetReallineY1Pos(window,wblock,realline);
-	}
+	if(realline<0 || realline_f<0)
+          return p_Create(0,0,1);
+        
+	if(realline>=num_reallines)
+          return p_Last_Pos(wblock->block);
+        
+        float dy = realline_f - realline;
+        if (dy<0.0f){
+          R_ASSERT_NON_RELEASE(false);          
+          dy = 0.0f;
+        }
+        
+        if (dy>=1.0f){
+          R_ASSERT_NON_RELEASE(false);
+          dy = 0.9999999f;
+        }
 
-	if(realline>bot_realline || realline>=num_reallines || y>wblock->t.y2){
-		realline  = R_MIN(num_reallines-1,bot_realline);
-		ret       = Common_oldGetReallineY2Pos(window,wblock,realline)-y;
-		at_bottom = true;
-	}
-
-        Place temp = wblock->reallines[realline]->l.p;
-
-	if(ret>=0){
-                float dy = (y - Common_oldGetReallineY1Pos(window,wblock,realline) ) / (float)window->fontheight;
-                if (dy<0.0f)
-                  dy = 0.0f;
-                if (dy>=1.0f)
-                  dy = 0.9999999f;
-                //printf("dy: %f\n",dy);
+        //printf("dy: %f\n",dy);
                 
-                Place x = p_FromFloat(dy);
-                Place x1 = {0,0,1};
-                Place x2 = {1,0,1};
-                Place y1 = wblock->reallines[realline]->l.p;
-                Place y2;
+        Place x = p_FromFloat(dy);                
+        Place x1 = {0,0,1};
+        Place x2 = {1,0,1};
+                
+        Place y1 = wblock->reallines[realline]->l.p;
+        Place y2;
 
-                if (realline+1 < wblock->num_reallines)
-                  y2 = wblock->reallines[realline+1]->l.p;
-                else
-                  y2 = p_Create(wblock->block->num_lines, 0, MAX_UINT32);
+        if (realline+1 < wblock->num_reallines)
+          y2 = wblock->reallines[realline+1]->l.p;
+        else
+          y2 = p_Create(wblock->block->num_lines, 0, MAX_UINT32);
 
-                temp = p_Scale(x, x1, x2, y1, y2);
+        Place ret = p_Scale(x, x1, x2, y1, y2);
 
-                /*
-                temp.counter = scale(dy, 
-                                     
-		temp.counter = (temp.counter*window->fontheight) + dy;
-		temp.dividor = window->fontheight*temp.dividor;
-	
-		PlaceHandleOverflow(&temp);
-                */
-	}else{
-		if(at_bottom){
-                  if (realline==num_reallines-1){
-                    PlaceSetLastPos(wblock->block, &temp);
-                  } else {
-                    temp.counter=temp.counter*window->fontheight+(window->fontheight-1);
-                    temp.dividor=temp.dividor*window->fontheight;
-                    PlaceHandleOverflow(&temp);
-                  }
-		}
-	}
-
-        if(minplace==NULL)
-          minplace = PlaceGetFirstPos();
+        Place minplace = p_Create(0,0,1);
+        Place maxplace = p_Last_Pos(wblock->block);
         
-        if(maxplace==NULL)
-          maxplace = PlaceCreate(wblock->block->num_lines,0,1);
-        
-	if(PlaceLessOrEqual(&temp,minplace)){
-		if(ret>=0) ret=window->fontheight*(ret-FindRealLineFor(wblock,0,minplace));
-		PlaceFromLimit(&temp,minplace);
-	}
+	if(p_Less_Than(ret,minplace)){
+          R_ASSERT_NON_RELEASE(false);
+          ret = minplace;
+        }
 
-	if(PlaceGreaterOrEqual(&temp,maxplace)){
-		if(ret>=0) ret=window->fontheight*(ret-FindRealLineFor(wblock,ret,maxplace));
-		PlaceTilLimit(&temp,maxplace);
-	}
+	if(p_Greater_Than(ret,maxplace)){
+          R_ASSERT_NON_RELEASE(false);
+          ret = maxplace;
+        }
 
-	PlaceCopy(place,&temp);
-
-	if(place->line<0 || (false && place->line>=wblock->num_reallines)){
-	  RError("Error in function GetReallineAndPlaceFromY. place->line=%d\n",place->line);
-	  place->line=R_BOUNDARIES(0,place->line,wblock->num_reallines-1);
-	}
-	return ret;
+        return ret;
 }
 
 
