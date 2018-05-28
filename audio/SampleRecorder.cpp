@@ -69,7 +69,7 @@ struct RecordingSlice{
     int num_frames;
     float samples[RADIUM_BLOCKSIZE];
   };
-    
+
   Slice slice;
 };
  
@@ -415,7 +415,7 @@ void SampleRecorder_called_regularly(void){
 }
 
 
-void RT_SampleRecorder_start_recording(radium::SampleRecorderInstance *instance){
+void RT_SampleRecorder_start_recording(radium::SampleRecorderInstance *instance, int64_t pos){
   R_ASSERT_RETURN_IF_FALSE(instance!=NULL);
   R_ASSERT_RETURN_IF_FALSE(instance->recording_path.get_from_another_thread()!=NULL);
   R_ASSERT_RETURN_IF_FALSE(instance->num_ch>0);    
@@ -427,7 +427,9 @@ void RT_SampleRecorder_start_recording(radium::SampleRecorderInstance *instance)
 
   slice->instance = instance;
   slice->command = RecordingSlice::Start_Recording;
-
+  instance->start = pos;
+  instance->end = pos;
+  
   put_slice(slice);
 }
 
@@ -443,9 +445,11 @@ void RT_SampleRecorder_stop_recording(radium::SampleRecorderInstance *instance){
   put_slice(slice);
 }
 
-void RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, float **audio, int num_frames){
+void RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const float **audio, int num_frames){
   R_ASSERT_NON_RELEASE(num_frames <= RADIUM_BLOCKSIZE);
-  
+
+  instance->end += num_frames;
+    
   RecordingSlice *slices[instance->num_ch];
 
   for(int ch=0;ch<instance->num_ch;ch++){

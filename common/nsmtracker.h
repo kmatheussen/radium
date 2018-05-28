@@ -2585,7 +2585,8 @@ static inline int get_system_fontheight(void);
 enum Seqblock_Type{
   REGULAR,
   GFX, // When moving or changing seqblocks.
-  GFX_GFX // When moving a copy of several seqblocks (orange transparent color)
+  GFX_GFX, // When moving a copy of several seqblocks (orange transparent color)
+  RECORDING
 };
 
 
@@ -2659,6 +2660,7 @@ struct SeqTrack{
   vector_t seqblocks; // Player must be stopped when modifying this variable. Also used for displaying if gfx_seqblocks != NULL.
   vector_t *gfx_seqblocks; // Used for displaying. Might have the same content as this->seqblocks (points to).
   vector_t gfx_gfx_seqblocks; // When moving several seqblocks. Just for graphics. Player does not have to be stopped when modifying this variable
+  vector_t recording_seqblocks;
 
   dynvec_t seqblocks_z_order; // Used when painting seqblocks. Contains an array of indexes to gfx_seqblocks. Might not be constantly updated, so must check validity when using.
   
@@ -2683,7 +2685,8 @@ struct SeqTrack{
 
   const char *name; // Not used when for_audiofiles==true. (then we use patch->name instead)
   
-  struct Patch *patch; // A "Sequencer audio file recorder/player" audio plugin.
+  struct Patch *patch; // A "Sequencer audio file recorder/player" audio plugin. Only used when for_audiofiles==true.
+  bool is_recording; // only used when for_audiofiles==true.
   
   scheduler_t *scheduler;
 };

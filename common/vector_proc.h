@@ -135,6 +135,9 @@ extern LANGSPEC vector_t *VECTOR_append(vector_t *v1, const vector_t *v2);
 extern LANGSPEC void VECTOR_delete(vector_t *v, int pos); //keeps order
 extern LANGSPEC int VECTOR_find_pos(const vector_t *v, const void *element);
 extern LANGSPEC bool VECTOR_is_in_vector(const vector_t *v, const void *element);
+static inline bool VECTOR_contains(const vector_t *v, const void *element){
+  return VECTOR_is_in_vector(v, element);
+}
 extern LANGSPEC void VECTOR_remove(vector_t *v, const void *element); //keeps order
 extern LANGSPEC vector_t *VECTOR_list1_to_vector(const struct ListHeader1 *list);
 extern LANGSPEC vector_t *VECTOR_list3_to_vector(const struct ListHeader3 *list);
@@ -216,6 +219,20 @@ static inline void VECTOR_sort2(vector_t *v, vector_sort_callback_t comp){
     struct SeqTrack *seqtrack = seqiterator666==-1 ? root->song->block_seqtrack : (struct SeqTrack*)root->song->seqtracks.elements[seqiterator666];
 
 #define END_ALL_SEQTRACKS_FOR_EACH }
+
+
+#ifdef __cplusplus
+
+template<typename T>
+static inline QVector<T> VECTOR_get_qvector(const vector_t *v){
+  QVector<T> ret;
+  VECTOR_FOR_EACH(T, el, v){
+    ret.push_back(el);
+  }END_VECTOR_FOR_EACH;
+  return ret;
+}
+
+#endif
 
 
 

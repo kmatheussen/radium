@@ -36,6 +36,8 @@
     (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
   (define (get-soloed)
     (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
+  (define (get-recording)
+    (<ra> :seqtrack-is-recording seqtracknum))
 
   (define (turn-off-all-mute except)
     (for-each (lambda (instrument-id)
@@ -75,16 +77,21 @@
                               (update-me!)))
   
   (define (get-selected type)
-    (if (eq? type 'solo)
-        (get-soloed)
-        (get-muted)))
+    (cond ((eq? type 'record)
+           (get-recording))
+          ((eq? type 'solo)
+           (get-soloed))
+          ((eq? type 'mute)
+           (get-muted))
+          (else
+           (assert #f))))
 
   (define layout-func (if stack-horizontally
                           horizontally-layout-areas
                           vertically-layout-areas))
 
   (layout-func x1 y1 x2 y2
-               (list 'mute 'solo)
+               (list 'record 'mute 'solo)
                :callback
                (lambda (type x1 y1 x2 y2)
                  (add-sub-area-plain! (<new> :checkbox gui x1 y1 x2 y2
@@ -109,16 +116,20 @@
                                                (define is-selected (not (get-selected type)))
                                                (undo-block
                                                 (lambda ()
-                                                  (if (eq? type 'solo)
-                                                      (begin
-                                                        (<ra> :set-instrument-solo instrument-id is-selected)
-                                                        (if (<ra> :control-pressed)
-                                                            (turn-off-all-solo instrument-id)))
-                                                      (begin
-                                                        (<ra> :set-instrument-mute instrument-id is-selected)
-                                                        ;;(c-display "mute: " is-muted)
-                                                        (if (<ra> :control-pressed)
-                                                            (turn-off-all-mute instrument-id)))))))))))
+                                                  (cond ((eq? type 'record)
+                                                         (<ra> :set-seqtrack-is-recording seqtracknum is-selected)
+                                                         )
+                                                        ((eq? type 'solo)
+                                                         (<ra> :set-instrument-solo instrument-id is-selected)
+                                                         (if (<ra> :control-pressed)
+                                                             (turn-off-all-solo instrument-id)))
+                                                        ((eq? type 'mute)
+                                                         (<ra> :set-instrument-mute instrument-id is-selected)
+                                                         ;;(c-display "mute: " is-muted)
+                                                         (if (<ra> :control-pressed)
+                                                             (turn-off-all-mute instrument-id)))
+                                                        (else
+                                                         (assert #f))))))))))
   )
 
 (def-area-subclass (<seqtrack-name> :gui :x1 :y1 :x2 :y2
@@ -192,7 +203,7 @@
   (define fontheight (get-fontheight))
   (define fontheight-and-borders (+ 4 fontheight))
 
-  (define mutesolo-width (myfloor (* 1.8 (<gui> :text-width "M S "))))
+  (define mutesolo-width (myfloor (* 1.8 (<gui> :text-width "R M S "))))
   (define meter-width (max 4 (myfloor (/ fontheight 2))))
 
   (define name-height (if use-two-rows

@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/SeqAutomation.hpp"
+#include "../common/Array.hpp"
+#include "../common/undo_sequencer_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -36,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SampleReader_proc.h"
 #include "Granulator.hpp"
 #include "Resampler_proc.h"
-
+#include "SampleRecorder_proc.h"
 #include "SoundPluginRegistry_proc.h"
 
 
@@ -83,10 +85,11 @@ static void set_num_visible_outputs(SoundPlugin *plugin);
 
 static QSet<QString> g_resampler_warnings;
 
-  
+#define RECORDER_ID 0
+
 namespace{
 
-static int64_t g_id = 0;
+static int64_t g_id = RECORDER_ID+1;
 
 struct MyReader : public radium::GranulatorCallback{
   radium::LockAsserter lockAsserter;
@@ -982,15 +985,136 @@ struct Sample{
 
 };
 
+ 
+enum{
+ NOT_RECORDING = 0,
+ READY_TO_RECORD,
+ IS_RECORDING,
+ STOP_RECORDING
+};
 
-struct Data{
+#define HIGHEST_RECORDER_ID -2
+static int64_t g_recorder_id = HIGHEST_RECORDER_ID;
+
+struct Recorder;
+static QHash<int64_t, Recorder*> g_recorders;
+
+struct Recorder : public radium::SampleRecorderInstance{
+
+  const int64_t _id = g_recorder_id--;
+  
+  radium::Array<radium::Peaks*> _peaks;
+
+  //Data *_data;
+  
+  radium::GcHolder<struct SeqBlock> _seqblock;
+  radium::GcHolder<struct SeqTrack> _seqtrack;
+
+  bool _recording_from_main_input;
+
+  Recorder(struct SeqTrack *seqtrack, const wchar_t *recording_path, int num_ch, bool recording_from_main_input)
+    : SampleRecorderInstance(recording_path, num_ch, 60)
+    , _peaks(num_ch)
+      //, _data(data)
+    , _seqtrack(seqtrack)
+    , _recording_from_main_input(recording_from_main_input)
+  {
+    for(int ch=0;ch<num_ch;ch++)
+      _peaks.set(ch, new radium::Peaks);
+
+    g_recorders[_id] = this;
+  }
+
+  ~Recorder(){
+    g_recorders.remove(_id);
+    
+    for(int ch=0;ch<num_ch;ch++)
+      delete _peaks[ch];
+  }
+
+  void is_finished(bool success, wchar_t *filename){
+    
+    // TODO: Schedule adding the sample right after playing stops. (shouldn't add it directly since we have to stop playing)
+
+    struct SeqTrack *seqtrack = _seqtrack.data();
+    
+    int seqtracknum = get_seqtracknum(seqtrack);
+    R_ASSERT_RETURN_IF_FALSE(seqtracknum >= 0);
+
+    SEQTRACK_set_recording(seqtrack, false);
+    
+    SEQTRACK_remove_recording_seqblock(seqtrack, _seqblock.data());
+
+    ADD_UNDO(Sequencer());
+    SEQTRACK_insert_sample(seqtrack, seqtracknum, filename, start, end);
+
+    delete this;
+  }
+
+  bool _has_started = false;
+  int64_t _start;
+  int64_t _end;
+  
+  void add_recorded_peak(int ch, float min_peak, float max_peak){
+
+    _peaks[ch]->add(radium::Peak(min_peak, max_peak));
+
+    if (ch==num_ch-1){
+
+      if (_has_started==false){
+      
+        PLAYER_lock();{
+          _start = radium::SampleRecorderInstance::start;
+        }PLAYER_unlock();
+        
+        _end = _start + RADIUM_BLOCKSIZE;
+        
+        _seqblock.set(SEQTRACK_add_recording_seqblock(_seqtrack.data(), _start, _end));
+        if (_seqblock.data() != NULL) // Not supposed to be NULL, but we should have already gotten an assertion report if it has happened. This check is only to avoid crash.
+          _seqblock->sample_id = _id;
+        
+        _has_started = true;
+        
+      } else {
+
+        _end += RADIUM_BLOCKSIZE;
+
+        if (_seqblock.data() != NULL){
+          _seqblock->t.time2 = _end;
+          _seqblock->t.interior_end = _end - _start;
+        }
+        
+      }      
+
+      printf("Seqblock: %f -> %f. (%f -> %f). Stretch: %f. _start: %f\n", (double)_seqblock->t.time / 48000.0, (double)_seqblock->t.time2 / 48000.0, (double)_seqblock->t.interior_start / 48000.0, (double)_seqblock->t.interior_end / 48000.0, (double)_seqblock->t.stretch, (double)start / 48000.0);
+      
+      SEQTRACK_update(_seqtrack.data(), _end-RADIUM_BLOCKSIZE, _end);
+    }
+
+  }
+};
+
+
+ 
+struct Data {
   radium::Vector<Sample*> _samples;
   radium::Vector<Sample*> _gfx_samples;
   radium::Vector<Sample*> _gfx_gfx_samples; // used when moving several samples.
 
+  DEFINE_ATOMIC(int, _recording_status) = 0;
+  Recorder *_recorder = NULL;
+    
   float _sample_rate;
 
 #if !defined(RELEASE)
+  
+private:
+  
+  bool wait_for_main_thread_before_asserting_samples = false;
+  radium::Mutex assert_samples_mutex; // Need lock (i.e. atomic variable is not enough) since all of assert_samples needs to be protected, not just access to wait_for_main_thread_before_asserting_samples.
+  
+public:
+  
   struct SeqTrack *get_seqtrack(void) const {
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
       if (seqtrack->patch != NULL){
@@ -1002,17 +1126,8 @@ struct Data{
     }END_VECTOR_FOR_EACH;
     return NULL;
   }
-#endif
-
-#if !defined(RELEASE)
-private:
-  bool wait_for_main_thread_before_asserting_samples = false;
-  radium::Mutex assert_samples_mutex; // Need lock (i.e. atomic variable is not enough) since all of assert_samples needs to be protected, not just access to wait_for_main_thread_before_asserting_samples.
-public:
-#endif
   
   void assert_samples(const struct SeqTrack *seqtrack = NULL) {    
-#if !defined(RELEASE)
     if(THREADING_is_main_thread()==false)  // Too much work to maintain multithreaded sample assertion. _samples can only be modified from main thread anyway.
       return;
     
@@ -1049,16 +1164,24 @@ public:
         }
       }
     }
-#endif
   }
-
+  
   void temporarily_suspend_sample_assertions_from_other_threads(void){
-#if !defined(RELEASE)
     R_ASSERT(THREADING_is_main_thread());
     radium::ScopedMutex lock(assert_samples_mutex);
     wait_for_main_thread_before_asserting_samples = true;
-#endif
   }
+  
+#else
+  
+  void assert_samples(const struct SeqTrack *seqtrack = NULL) {
+  }
+
+  void temporarily_suspend_sample_assertions_from_other_threads(void){
+  }
+  
+#endif
+
 
   Data(float sample_rate)
     :_sample_rate(sample_rate)
@@ -1080,14 +1203,72 @@ public:
       delete sample;
     }
   }
+
+private:
+
+  void start_recording(int64_t start_time){
+    ATOMIC_SET(_recording_status, IS_RECORDING);
+    RT_SampleRecorder_start_recording(_recorder, start_time);
+  }
+  
+  void stop_recording(void){
+    RT_SampleRecorder_stop_recording(_recorder); // Fix: Make sure deleting plugin doesn't crash anything.
+    _recorder = NULL; // It deletes itself when finished.
+    ATOMIC_SET(_recording_status, NOT_RECORDING); // This line must be placed after "_recorder = NULL".
+  }
+  
+public:
   
   bool RT_called_per_block(struct SeqTrack *seqtrack){
     R_ASSERT(PLAYER_current_thread_has_lock());
     
+    bool more_to_play = false;
+    
     int64_t start_time = seqtrack->start_time;
     int64_t end_time = seqtrack->end_time;
 
-    bool more_to_play = false;
+    switch(ATOMIC_GET(_recording_status)){
+      
+      case READY_TO_RECORD:
+        {
+          R_ASSERT_RETURN_IF_FALSE2(_recorder!=NULL, false);
+
+          if (is_playing_song()) {
+            int64_t recording_start = root->song->looping.start; // FIX: Make atomic.
+            
+            if (start_time >= recording_start) {
+              
+              int64_t recording_end = ATOMIC_GET(root->song->looping.end);
+              
+              if (start_time < recording_end){
+                start_recording(start_time);
+                more_to_play = true;
+              }
+            }
+          }
+          
+          break;
+        }
+
+      case IS_RECORDING:
+        {
+          R_ASSERT_RETURN_IF_FALSE2(_recorder!=NULL, false);
+
+          int64_t recording_end = ATOMIC_GET(root->song->looping.end);
+          
+          if (start_time >= recording_end || is_playing_song()==false)
+            stop_recording();
+          else
+            more_to_play = true;
+          
+          break;
+        }
+        
+      case STOP_RECORDING:
+        stop_recording();
+        break;
+    }
+    
     
     for(auto *sample : _samples){
       if (sample->RT_called_per_block(seqtrack, start_time, end_time)==true)
@@ -1132,7 +1313,9 @@ public:
     assert_samples(seqtrack);
   }
 };
-}
+
+} // end anon. namespace
+
 
 void SEQTRACKPLUGIN_clear_resampler_warning_hashmap(void){
   g_resampler_warnings.clear();
@@ -1183,17 +1366,24 @@ static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqB
   case Seqblock_Type::GFX_GFX:
     data->_gfx_gfx_samples.push_back(sample);
     break;
+  case Seqblock_Type::RECORDING:
+    R_ASSERT(false);
+    break;
   }
 
   return sample->_id;
 }
 
-int64_t SEQTRACKPLUGIN_add_sample(SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock, Seqblock_Type type){
+int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock, Seqblock_Type type){
   R_ASSERT(THREADING_is_main_thread());
   
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
-  
+
   Data *data = (Data*)plugin->data;
+
+  if (type==Seqblock_Type::RECORDING)
+    return RECORDER_ID;
+
   int64_t ret = add_sample(data, filename, seqblock, type);
 
   //printf("   ADD (is_gfx: %d). NUM samples: %d.  NUM gfx samples: %d\n", is_gfx, data->_samples.size(), data->_gfx_samples.size());
@@ -1202,6 +1392,82 @@ int64_t SEQTRACKPLUGIN_add_sample(SoundPlugin *plugin, const wchar_t *filename, 
     set_num_visible_outputs(plugin);
     
   return ret;
+}
+
+// Called when user enables the "R" checkbox.
+void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *path, int num_ch, bool recording_from_main_input){
+  R_ASSERT(THREADING_is_main_thread());
+
+  Data *data = (Data*)plugin->data;
+
+  int status = ATOMIC_GET(data->_recording_status);
+
+  if (status == NOT_RECORDING) {
+
+    R_ASSERT_RETURN_IF_FALSE(data->_recorder == NULL);
+    
+    data->_recorder = new Recorder(seqtrack, path, num_ch, recording_from_main_input);
+    
+    ATOMIC_SET(data->_recording_status, READY_TO_RECORD);
+  }
+}
+
+static void disable_running_recorder(Data *data){
+  if (ATOMIC_COMPARE_AND_SET_INT(data->_recording_status, IS_RECORDING, STOP_RECORDING)){
+  
+    int i = 0;
+    while(ATOMIC_GET(data->_recording_status) != NOT_RECORDING && i < 10){
+      msleep(10);
+      i++;
+    }
+    
+    R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_recording_status)==NOT_RECORDING);
+
+  } else {
+    
+    R_ASSERT_NON_RELEASE(false);
+    
+  }
+}
+
+
+
+// Called when user disables the "R" checkbox.
+void SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin){
+  R_ASSERT(THREADING_is_main_thread());
+
+  Data *data = (Data*)plugin->data;
+
+  int status = ATOMIC_GET(data->_recording_status);
+
+  if (status==NOT_RECORDING)
+    return;
+  
+  if (status == READY_TO_RECORD) {
+    
+    Recorder *recorder = NULL;
+
+    {
+      radium::PlayerLock lock;
+
+      if (ATOMIC_COMPARE_AND_SET_INT(data->_recording_status, READY_TO_RECORD, NOT_RECORDING)){
+        recorder = data->_recorder;        
+        data->_recorder = NULL;
+      }
+    }
+
+    if (recorder != NULL)
+      delete recorder;
+    else{
+      R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_recording_status)==IS_RECORDING);
+      disable_running_recorder(data); // Between the first and the second test whether data->_recording_status==READY_TO_RECORD, it switched status to IS_RECORDING.
+    }
+    
+  } else {
+
+    disable_running_recorder(data);
+
+  }
 }
 
 void SEQTRACKPLUGIN_apply_gfx_samples(SoundPlugin *plugin){
@@ -1367,6 +1633,17 @@ int SEQTRACKPLUGIN_get_num_channels(const SoundPlugin *plugin, int64_t id){
   R_ASSERT(THREADING_is_main_thread());
   
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
+
+  if (id <= HIGHEST_RECORDER_ID){
+    Recorder *recorder = g_recorders[id];
+    
+    if (recorder==NULL){
+      R_ASSERT_NON_RELEASE(false);
+      return 1;
+    }
+
+    return recorder->num_ch;
+  }
   
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -1395,6 +1672,7 @@ int64_t SEQTRACKPLUGIN_get_total_num_frames_for_sample(const SoundPlugin *plugin
   //return sample->_interior_end - sample->_interior_start;
 }
 
+/*
 int64_t SEQTRACKPLUGIN_get_total_num_frames_in_sample(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
   
@@ -1405,10 +1683,22 @@ int64_t SEQTRACKPLUGIN_get_total_num_frames_in_sample(const SoundPlugin *plugin,
   return sample->_total_num_frames_in_sample;
   //return sample->_interior_end - sample->_interior_start;
 }
+*/
 
 const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t id, bool full_path){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), L"");
-  
+
+  if (id <= HIGHEST_RECORDER_ID){
+    Recorder *recorder = g_recorders[id];
+    
+    if (recorder==NULL){
+      R_ASSERT_NON_RELEASE(false);
+      return L"";
+    }
+
+    return recorder->recording_path.get();
+  }
+
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
     return L"";
@@ -1427,18 +1717,40 @@ const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t
     return sample->_filename_without_path;
 }
 
-const radium::DiskPeaks *SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
+unsigned int SEQTRACKPLUGIN_get_sample_color(const SoundPlugin *plugin, int64_t id){
+  if (id <= HIGHEST_RECORDER_ID)
+    return 0x00ff0000;
+
+  return SAMPLEREADER_get_sample_color(SEQTRACKPLUGIN_get_sample_name(plugin, id, true));
+}
   
+radium::Peaks **SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
+
+  if (id <= HIGHEST_RECORDER_ID){
+    Recorder *recorder = g_recorders[id];
+    
+    if (recorder==NULL){
+      R_ASSERT_NON_RELEASE(false);
+      printf("SEQTRACKPLUGIN_get_peaks: recorder==NULL\n");
+      return NULL;
+    }
+
+    return recorder->_peaks.get_array();
+  }
+
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
     return NULL;
 
-  return sample->_peaks;
+  return sample->_peaks->_peaks;
 }
 
 double SEQTRACKPLUGIN_get_resampler_ratio(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 1.0);
+
+  if (id <= HIGHEST_RECORDER_ID)
+    return 1.0;
   
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -1512,6 +1824,31 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   //SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
 
+  // Recorder
+  if (ATOMIC_GET(data->_recording_status)==IS_RECORDING){
+    const float *audio_[data->_recorder->num_ch];
+    const float **audio = audio_;
+
+    int num_ch;
+    
+    if (data->_recorder->_recording_from_main_input) {
+      num_ch = MIXER_get_main_inputs(audio, data->_recorder->num_ch); // Fix: More main input channels. Now there's only two. This number can easily be increased to 8.
+    } else {
+      num_ch = R_MIN(NUM_INPUTS, data->_recorder->num_ch);
+      for(int ch=0;ch<num_ch;ch++)        
+        audio[ch] = inputs[ch];
+    }
+
+    const float empty_block[RADIUM_BLOCKSIZE] = {}; // The stack might be hotter than the heap.
+    for(int ch = num_ch ; ch < data->_recorder->num_ch ; ch++)
+      audio[ch] = empty_block;
+    
+    RT_SampleRecorder_add_audio(data->_recorder,
+                                audio,
+                                RADIUM_BLOCKSIZE
+                                );
+  }
+
   // Null out channels
   for(int ch = 0 ; ch < NUM_OUTPUTS ; ch++)
     memset(outputs[ch], 0, num_frames*sizeof(float));
@@ -1520,7 +1857,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   //  return;
 
   //printf("Num samples: %d\n", data->_samples.size());
-  
+
   // Read samples
   for(Sample *sample : data->_samples)
     sample->RT_process(num_frames, outputs);

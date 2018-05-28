@@ -1785,23 +1785,42 @@
     (< (<ra> :get-instrument-effect instrument-id volume-on-off-name) 0.5))
   (define (get-soloed)
     (>= (<ra> :get-instrument-effect instrument-id "System Solo On/Off") 0.5))
+  (define (get-recording)
+    (<ra> :seqtrack-is-recording seqtracknum))
   
   (if (eq? is-selected 'undefined)
-      (set! is-selected (if (eq? type 'mute)
-                            (get-muted)
-                            (get-soloed))))
+      (set! is-selected (cond ((eq? type 'record)
+                               (get-recording))
+                              ((eq? type 'solo)
+                               (get-soloed))
+                              ((eq? type 'mute)
+                               (get-muted))
+                              (else
+                               (assert #f)))))
 
-  (define text (if (eq? type 'mute)
-                   (if use-single-letters
-                       "M"
-                       "Mute")
-                   (if use-single-letters
-                       "S"
-                       "Solo")))
-
-  (define color (if (eq? type 'mute)
-                    "green"
-                    "yellow"))
+  (define text (cond ((eq? type 'record)
+                      (if use-single-letters
+                          "R"
+                          "Record"))                      
+                     ((eq? type 'mute)
+                      (if use-single-letters
+                          "M"
+                          "Mute"))
+                     ((eq? type 'solo)
+                      (if use-single-letters
+                          "S"
+                          "Solo"))
+                     (else
+                      (assert #f))))
+  
+  (define color (cond ((eq? type 'record)
+                       "red")
+                      ((eq? type 'mute)
+                       "green")
+                      ((eq? type 'solo)
+                       "yellow")
+                      (else
+                       (assert #f))))
 
   (define is-implicitly-muted (and (eq? type 'mute) (<ra> :instrument-is-implicitly-muted instrument-id)))
 
