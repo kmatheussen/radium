@@ -178,8 +178,14 @@ extern LANGSPEC float SEQTRACK_get_x2(int seqtracknum);
 extern LANGSPEC float SEQTRACK_get_y1(int seqtracknum);
 extern LANGSPEC float SEQTRACK_get_y2(int seqtracknum);
 
+#ifdef __cplusplus
+extern void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack, int64_t start_time = -1, int64_t end_time = -1);
+extern void SEQTRACK_update(const struct SeqTrack *seqtrack, int64_t start_time = -1, int64_t end_time = -1);
+#else
 extern LANGSPEC void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_update(const struct SeqTrack *seqtrack);
+#endif
+
 //extern LANGSPEC void SEQTRACK_recreate(int seqtracknum);
 
 
@@ -276,6 +282,7 @@ extern LANGSPEC void RT_legalize_seqtrack_timing(struct SeqTrack *seqtrack, radi
 extern LANGSPEC void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int seqblocknum, int64_t how_much);
 extern LANGSPEC void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 extern LANGSPEC void SEQTRACK_delete_gfx_gfx_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
+extern LANGSPEC void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording);
 
 /*
 Too inconvenient. Use apply_gfx_seqblocks instead of these two functions.
@@ -300,6 +307,8 @@ extern LANGSPEC void SEQTRACK_insert_silence(struct SeqTrack *seqtrack, int64_t 
 extern LANGSPEC int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime, int64_t end_seqtime);
 extern LANGSPEC int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type);
 extern LANGSPEC int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime);
+extern LANGSPEC struct SeqBlock *SEQTRACK_add_recording_seqblock(struct SeqTrack *seqtrack, int64_t seqtime, int64_t end_seqtime);
+extern LANGSPEC void SEQTRACK_remove_recording_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock);
 extern LANGSPEC double SEQTRACK_get_length(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQTRACK_init(struct SeqTrack *seqtrack, const hash_t *automation_state);
 

@@ -157,6 +157,8 @@ public:
 private:
 
   Peak _curr_uplevel_peak;
+
+public:
   
   void add(const Peak &peak){    
     radium::ScopedMutex lock(_mutex);
@@ -187,11 +189,13 @@ private:
     
   }
 
+private:
+  
   void merge_in_plain(int start, int end, Peak &peak) const {
     R_ASSERT_RETURN_IF_FALSE(start >= 0);
     R_ASSERT_RETURN_IF_FALSE(end >= start);
     R_ASSERT_RETURN_IF_FALSE(end <= _peaks.size());
-
+    
     //printf("   merge: Iterating %d\n", end-start);
     for(int pos = start ; pos < end ; pos++)
       peak.merge(_peaks.at(pos));

@@ -1544,9 +1544,11 @@ STime MIXER_get_block_delta_time(STime time){
   return (time+g_startup_time) - g_mixer->_time;
 }
 
-void MIXER_get_main_inputs(float **audio){
-  audio[0] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[0],ATOMIC_GET(jackblock_size))) + jackblock_delta_time;
-  audio[1] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[1],ATOMIC_GET(jackblock_size))) + jackblock_delta_time;
+int MIXER_get_main_inputs(const float **audio, int max_num_ch){
+  int num_ch = R_MIN(2, max_num_ch);
+  for(int i=0;i<num_ch;i++)
+    audio[i] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[i],ATOMIC_GET(jackblock_size))) + jackblock_delta_time;
+  return num_ch;
 }
 
 /*

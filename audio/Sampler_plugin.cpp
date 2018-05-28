@@ -900,19 +900,31 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
   memset(outputs[1],0,R_NUM_FRAMES*sizeof(float));
 
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
-    float *audio_[2];
-    float **audio = audio_;
+    const float *audio_[data->recorder_instance->num_ch];
+    const float **audio = audio_;
+
+    int num_ch;
     
     if (data->recording_from_main_input) {
-      MIXER_get_main_inputs(audio);
+      num_ch = MIXER_get_main_inputs(audio, data->recorder_instance->num_ch);
     } else {
-      audio_[0] = inputs[0];
-      audio_[1] = inputs[1];
+      num_ch = R_MIN(2, data->recorder_instance->num_ch);
+      for(int ch=0;ch<num_ch;ch++)
+        audio_[ch] = inputs[ch];
     }
 
-    audio_[0] += data->recording_start_frame;
-    audio_[1] += data->recording_start_frame;
+    for(int ch=0;ch<num_ch;ch++)
+      audio_[ch] += data->recording_start_frame;
 
+    R_ASSERT_RETURN_IF_FALSE(num_ch==data->recorder_instance->num_ch);
+    
+    /*
+      // No need. Mixer always have at least 2 channels, and data->recorder->num_ch can never have more than 2 channels.
+    const float empty_block[RADIUM_BLOCKSIZE] = {}; // The stack might be hotter than the heap.
+    for(int ch = num_ch ; ch < data->recorder->num_ch ; ch++)
+      audio[ch] = empty_block;
+    */
+    
     RT_SampleRecorder_add_audio(data->recorder_instance,
                                 audio,
                                 RADIUM_BLOCKSIZE - data->recording_start_frame
@@ -973,7 +985,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
     data->recorder_instance->middle_note = note2.pitch;
 
     struct Patch *patch = (struct Patch*)plugin->patch;
-    RT_SampleRecorder_start_recording(data->recorder_instance);
+    RT_SampleRecorder_start_recording(data->recorder_instance, 0);
     
     data->recording_note_id = note2.id;
     data->recording_seqblock = note2.seqblock;

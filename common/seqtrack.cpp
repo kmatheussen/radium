@@ -353,10 +353,10 @@ static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct 
 }
 
 static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, const dyn_t envelope_state, double state_samplerate, int64_t seqtime, Seqblock_Type type){
-
+ 
   if (seqtrack->for_audiofiles==false)
     return NULL;
-  
+ 
   if (ensure_seqtrack_has_instrument(seqtrack)==false)
     return NULL;
 
@@ -376,17 +376,23 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
   
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
 
-  seqblock->sample_id = SEQTRACKPLUGIN_add_sample(plugin, filename, seqblock, type);
+  seqblock->sample_id = SEQTRACKPLUGIN_add_sample(seqtrack, plugin, filename, seqblock, type);
   if (seqblock->sample_id==-1)
     return NULL;
 
-  seqblock->sample_filename_without_path = STRING_copy(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, false));
+  if (type==Seqblock_Type::RECORDING) {
+    
+    seqblock->sample_filename_without_path = L"";
+    
+  } else {
+    seqblock->sample_filename_without_path = STRING_copy(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, false));
 
-  int64_t duration = SEQTRACKPLUGIN_get_total_num_frames_for_sample(plugin, seqblock->sample_id);
+    int64_t duration = SEQTRACKPLUGIN_get_total_num_frames_for_sample(plugin, seqblock->sample_id);
   
-  default_duration_changed(seqblock, duration);  
-  SEQBLOCK_ENVELOPE_duration_changed(seqblock, duration, NULL);
- 
+    default_duration_changed(seqblock, duration);  
+    SEQBLOCK_ENVELOPE_duration_changed(seqblock, duration, NULL);
+  }
+  
   return seqblock;
 }
 
@@ -1518,6 +1524,32 @@ void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int 
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 }
 
+
+// Recording
+
+void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
+  R_ASSERT_RETURN_IF_FALSE(seqtrack->for_audiofiles);
+  
+  if (is_recording==seqtrack->is_recording)
+    return;
+
+  R_ASSERT_RETURN_IF_FALSE(seqtrack->patch!=NULL);
+  
+  struct SoundPlugin *plugin = (struct SoundPlugin*) seqtrack->patch->patchdata;
+
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  
+  if (is_recording==false)
+    SEQTRACKPLUGIN_disable_recording(seqtrack, plugin);
+  else
+    SEQTRACKPLUGIN_enable_recording(seqtrack, plugin, L"/tmp/", 2, false);
+
+  seqtrack->is_recording = is_recording;
+
+  SEQUENCER_update(SEQUPDATE_HEADERS);
+}
+
+
 bool SEQBLOCK_set_fade_in_shape(struct SeqBlock *seqblock, enum FadeShape shape){
   auto *old_fade = seqblock->fade_in_envelope;
   if (old_fade->_shape==shape)
@@ -1748,24 +1780,65 @@ int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int seqtracknum, co
   return insert_gfx_gfx_block(seqtrack, seqblock);
 }
 
-int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime){
+
+static struct SeqBlock *create_sample_seqblock(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime, Seqblock_Type type){
   if (end_seqtime != -1)
-    R_ASSERT_RETURN_IF_FALSE2(end_seqtime > seqtime, -1);
+    R_ASSERT_RETURN_IF_FALSE2(end_seqtime > seqtime, NULL);
 
-  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, g_uninitialized_dyn, -1, -1, Seqblock_Type::REGULAR);
+  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, g_uninitialized_dyn, -1, -1, type);
   if (seqblock==NULL)
-    return -1;
+    return NULL;
 
-  seqblock->t.default_duration = get_seqblock_stime_default_duration(seqtrack, seqblock);
-
-  R_ASSERT_RETURN_IF_FALSE2(seqblock->t.default_duration > 0, -1);
+  if (type==Seqblock_Type::RECORDING) {
+    
+    seqblock->t.default_duration = end_seqtime - seqtime;
+    default_duration_changed(seqblock, seqblock->t.default_duration);
+    
+  } else {
+    
+    seqblock->t.default_duration = get_seqblock_stime_default_duration(seqtrack, seqblock);
+    
+  }
   
-  if (end_seqtime==-1)
+  R_ASSERT_RETURN_IF_FALSE2(seqblock->t.default_duration > 0, NULL);
+  
+  if (end_seqtime==-1){
+    R_ASSERT(type==Seqblock_Type::REGULAR);
     end_seqtime = seqtime + seqblock->t.default_duration;
-  
-  return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime, end_seqtime);
+  }
+
+  return seqblock;
 }
 
+int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime){
+  struct SeqBlock *seqblock = create_sample_seqblock(seqtrack, seqtracknum, filename, seqtime, end_seqtime, Seqblock_Type::REGULAR);
+  if (seqblock==NULL)
+    return -1;
+  
+  return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime, end_seqtime);    
+}
+
+struct SeqBlock *SEQTRACK_add_recording_seqblock(struct SeqTrack *seqtrack, int64_t seqtime, int64_t end_seqtime){
+  int seqtracknum = get_seqtracknum(seqtrack);
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum >= 0, NULL);
+  
+  struct SeqBlock *seqblock = create_sample_seqblock(seqtrack, seqtracknum, L"", seqtime, end_seqtime, Seqblock_Type::RECORDING);
+  if (seqblock==NULL)
+    return NULL;
+
+  seqblock->t.time = seqtime;
+  seqblock->t.time2 = end_seqtime;
+  
+  VECTOR_push_back(&seqtrack->recording_seqblocks, seqblock);
+  return seqblock;
+}
+
+void SEQTRACK_remove_recording_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
+  R_ASSERT_RETURN_IF_FALSE(VECTOR_contains(&seqtrack->recording_seqblocks, seqblock));
+                           
+  VECTOR_remove(&seqtrack->recording_seqblocks, seqblock);
+}
+  
 double SEQTRACK_get_length(struct SeqTrack *seqtrack){
   int64_t ret = 0;
 
@@ -2330,3 +2403,4 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
 
   }END_VECTOR_FOR_EACH;  
 }
+

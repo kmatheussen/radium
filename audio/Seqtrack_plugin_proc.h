@@ -42,7 +42,11 @@ extern LANGSPEC void SEQTRACKPLUGIN_prepare_to_play(struct SoundPlugin *plugin, 
 #endif
 
 extern LANGSPEC void SEQTRACKPLUGIN_clear_resampler_warning_hashmap(void);
-extern LANGSPEC int64_t SEQTRACKPLUGIN_add_sample(struct SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock, enum Seqblock_Type type);
+extern LANGSPEC int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock, enum Seqblock_Type type);
+
+extern LANGSPEC void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *path, int num_ch, bool recording_from_main_input); // Called when user enables the "R" checkbox.
+extern LANGSPEC void SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin); // Called when user disables the "R" checkbox.
+
 extern LANGSPEC void SEQTRACKPLUGIN_apply_gfx_samples(struct SoundPlugin *plugin);
 extern LANGSPEC void SEQTRACKPLUGIN_assert_samples(const struct SoundPlugin *plugin);
 extern LANGSPEC void SEQTRACKPLUGIN_assert_samples2(const struct SeqTrack *seqtrack);
@@ -54,15 +58,16 @@ extern LANGSPEC int SEQTRACKPLUGIN_get_num_channels(const struct SoundPlugin *pl
 extern LANGSPEC int64_t SEQTRACKPLUGIN_get_total_num_frames_in_sample(const struct SoundPlugin *plugin, int64_t id); // Directly in sample
 extern LANGSPEC int64_t SEQTRACKPLUGIN_get_total_num_frames_for_sample(const struct SoundPlugin *plugin, int64_t id); // When resampled.
 extern LANGSPEC const wchar_t *SEQTRACKPLUGIN_get_sample_name(const struct SoundPlugin *plugin, int64_t id, bool full_path);
+extern LANGSPEC unsigned int SEQTRACKPLUGIN_get_sample_color(const SoundPlugin *plugin, int64_t id);
 //extern LANGSPEC unsigned int SEQTRACKPLUGIN_get_sample_color(const struct SoundPlugin *plugin, int64_t id);
 //extern LANGSPEC void SEQTRACKPLUGIN_set_sample_color(const SoundPlugin *plugin, int64_t id, unsigned int new_color);
 extern LANGSPEC double SEQTRACKPLUGIN_get_resampler_ratio(const struct SoundPlugin *plugin, int64_t id);
 
 #ifdef __cplusplus
 namespace radium{
-  class DiskPeaks;
+  class Peaks;
 }
-extern const radium::DiskPeaks *SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id);
+extern radium::Peaks **SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id);
 #endif
 
 #endif

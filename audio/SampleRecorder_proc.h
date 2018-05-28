@@ -10,7 +10,9 @@ struct SampleRecorderInstance{
   int num_ch;
   float middle_note;
 
-  SampleRecorderInstance(wchar_t *recording_path, int num_ch, float middle_note)
+  int64_t start, end; // Can be accessed from another thread after is_finished has been called. Can also be accessed if holding the player lock.
+  
+  SampleRecorderInstance(const wchar_t *recording_path, int num_ch, float middle_note)
     : recording_path(recording_path)
     , num_ch(num_ch)
     , middle_note(middle_note)
@@ -20,7 +22,6 @@ struct SampleRecorderInstance{
 
   virtual ~SampleRecorderInstance(){
   }
-
 
   // Called when recording is finished.
   // Called by the main thread.
@@ -33,8 +34,8 @@ struct SampleRecorderInstance{
 }
 
 extern void SampleRecorder_called_regularly(void);
-extern void RT_SampleRecorder_start_recording(radium::SampleRecorderInstance *instance);
-extern void RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, float **audio, int num_frames);
+extern void RT_SampleRecorder_start_recording(radium::SampleRecorderInstance *instance, int64_t pos);
+extern void RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const float **audio, int num_frames);
 extern void RT_SampleRecorder_stop_recording(radium::SampleRecorderInstance *instance);
 extern void SampleRecorder_Init(void);
 

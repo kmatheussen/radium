@@ -320,6 +320,36 @@ const_char *getSeqtrackName(int seqtracknum){
     return seqtrack->name == NULL ? "" : seqtrack->name;
 }
 
+
+
+
+
+// Recording
+//////////////////////////////////////////
+
+bool seqtrackIsRecording(int seqtracknum){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  return seqtrack->is_recording;
+}
+
+void setSeqtrackIsRecording(int seqtracknum, bool is_recording){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  SEQTRACK_set_recording(seqtrack, is_recording);
+}
+
+
+
+
+
+
+
+
 // Sequencer track automation
 //////////////////////////////////////////
 
