@@ -175,7 +175,8 @@ class Hepp2 : public Hepp{
 void * operator new(decltype(sizeof(0)) size) noexcept(false)
 {
   void *mem = malloc(size);
-  memset(mem, rand(), size);
+  if (size > 1048576) // If changing 1048576, also change 1048576 in make_and_run_linux.sh
+    memset(mem, rand(), size);
   return mem;
 }
 #endif
