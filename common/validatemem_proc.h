@@ -49,6 +49,7 @@ extern "C" {
   
   void *V_malloc__(size_t size, const char *filename, int linenumber);
   char *V_strdup__(const char *s, const char *filename, int linenumber);
+  char *V_wcsdup__(const wchar_t *s, const char *filename, int linenumber);
   void *V_calloc__(size_t n, size_t size, const char *filename, int linenumber);
   void V_free__(void *ptr);
   void *V_realloc__(void *ptr, size_t size, const char *filename, int linenumber);
@@ -93,6 +94,7 @@ static inline void* my_calloc(size_t size1,size_t size2){
 #  if defined(RELEASE)
 #    define V_malloc(size) malloc(size)
 #    define V_strdup(s) strdup(s)
+#    define V_wcsdup(s) wcsdup(s)
 #    define V_calloc(n, size) my_calloc(n, size)
 #    define V_free(ptr) free((void*)ptr)
 #    define V_free_function free
@@ -108,6 +110,10 @@ static inline void *V_malloc(size_t size){
 static inline char *V_strdup(const char *s){
   R_ASSERT(MIXER_is_saving() || !PLAYER_current_thread_has_lock());
   return strdup(s);
+}
+static inline wchar_t *V_wcsdup(const wchar_t *s){
+  R_ASSERT(MIXER_is_saving() || !PLAYER_current_thread_has_lock());
+  return wcsdup(s);
 }
 static inline void *V_calloc(size_t n, size_t size){
   R_ASSERT(!PLAYER_current_thread_has_lock());
@@ -145,6 +151,7 @@ static inline void V_shutdown(void){
 
 #  define V_malloc(size) V_malloc__(size, __FILE__, __LINE__)
 #  define V_strdup(s) V_strdup__(s, __FILE__, __LINE__)
+#  define V_wcsdup(s) V_wcsdup__(s, __FILE__, __LINE__)
 #  define V_calloc(n, size) V_calloc__(n, size, __FILE__, __LINE__)
 #  define V_free(ptr) V_free__((void*)(ptr))
 #  define V_realloc(ptr, size) V_realloc__((void*)ptr, size, __FILE__, __LINE__)

@@ -79,7 +79,7 @@ private:
     int num_users;
 
     InternalString(const wchar_t *string)
-      : string(wcsdup(string))
+      : string(V_wcsdup(string))
       , num_users(1)
     {
       D(printf("... Created \"%S\"\n", this->string));
@@ -87,7 +87,7 @@ private:
     
     ~InternalString(){    
       D(printf("... Destroyed \"%S\"\n", string));
-      free(const_cast<wchar_t*>(string));
+      V_free(const_cast<wchar_t*>(string));
     }
     
   };
