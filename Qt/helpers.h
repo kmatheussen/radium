@@ -674,7 +674,9 @@ namespace{
   struct RememberGeometry{
     QByteArray geometry;
     bool has_stored_geometry = false;
-
+    
+    bool move_window_to_centre_first_time_its_opened = true; // may be set to false by owner.
+    
     void save(QWidget *widget){
       geometry = widget->saveGeometry();
       has_stored_geometry = true;
@@ -691,7 +693,8 @@ namespace{
 
         //printf("   88888888888888888888888888888888888888888888 NO geometry stored\n");
 
-        moveWindowToCentre(widget);
+        if (move_window_to_centre_first_time_its_opened)
+          moveWindowToCentre(widget);
       }
     }
 
@@ -699,7 +702,7 @@ namespace{
     // I've tried lots of things, and the only thing that seems to work is overriding setVisible and hideEvent exactly like below.
     // Other combinations will fail in more or less subtle ways.
     ///////////////////
-  
+
     template <class SuperWidget>
     void setVisible_override(SuperWidget *widget, bool visible) {
       if (visible==false && widget->isVisible()==false){
