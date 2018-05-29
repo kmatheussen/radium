@@ -112,21 +112,29 @@ struct RecordingFile{
   QString filename;
   radium::Vector<RecordingSlice*> non_written_slices;
 
-  QString get_unique_filename(const wchar_t *path, bool &success){
+  bool success = false;
+  
+  QString get_unique_filename(const wchar_t *path, bool &unique_success){
     QString base = STRING_get_qstring(path);
 
-    success=true;
+    unique_success=true;
 
-    QString filename;
+    QString take;
+    if (QFileInfo(base).isDir())
+      take = "take ";
+    else
+      take = " take ";
     
     for(int counter = 1 ; counter <= 100 ; counter++){
-      filename = base + " take "+QString::number(counter)+".wav";
+      
+      QString filename = base + take + QString::number(counter) + ".wav";
+      
       if (!QFile(filename).exists())
         return filename;
     }
 
-    success=false;
-    return filename;
+    unique_success=false;
+    return "";
   }
 
   // Remember that this is not the main thread.
@@ -142,10 +150,10 @@ struct RecordingFile{
     sf_info.channels = instance->num_ch;
     sf_info.format = SF_FORMAT_WAV | SF_FORMAT_FLOAT;
 
-    bool success;
-    filename = get_unique_filename(instance->recording_path.get_from_another_thread(), success);
-
-    if (success==false){
+    bool unique_success;
+    filename = get_unique_filename(instance->recording_path.get_from_another_thread(), unique_success);
+    
+    if (unique_success==false){
       RT_message("Unable to create new file in \"%s\".\nPerhaps you have more than 100 takes there?",STRING_get_qstring(instance->recording_path.get_from_another_thread()).toUtf8().constData());
       return;
     }
@@ -154,6 +162,8 @@ struct RecordingFile{
 
     if(sndfile==NULL)
       RT_message("Unable to create file \"%s\": %s",filename.toUtf8().constData(), sf_strerror(NULL));
+
+    success = true;
   }
 
   void write_uint32(QFile &f, uint32_t i, bool &success){
@@ -327,7 +337,11 @@ public:
       return;
     }
 
-    recording_files.push_back(new RecordingFile(instance));
+    auto *recording_file = new RecordingFile(instance);
+    if (recording_file->success==false)
+      recorded_files.put(recording_file);
+    else
+      recording_files.push_back(recording_file);
   }
   
   void stop_recording(radium::SampleRecorderInstance *instance){
@@ -339,6 +353,7 @@ public:
     recording_files.remove(recording_file);
 
     recording_file->close();
+
     recorded_files.put(recording_file);    
   }
   
@@ -408,7 +423,7 @@ void SampleRecorder_called_regularly(void){
     if(!gotit)
       break;
 
-    recorded_file->instance->is_finished(recorded_file->sndfile != NULL, STRING_create(recorded_file->filename));
+    recorded_file->instance->is_finished(recorded_file->success, STRING_create(recorded_file->filename));
 
     delete recorded_file;
   }
