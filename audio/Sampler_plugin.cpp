@@ -295,7 +295,7 @@ struct Data{
 
 
   DEFINE_ATOMIC(int, recording_status) = 0;
-  MySampleRecorderInstance *recorder_instance;  // thread-protected by recording_status
+  MySampleRecorderInstance *recorder_instance = NULL;  // thread-protected by recording_status
   int recording_start_frame = 0;  // thread-protected by recording_status
   bool recording_from_main_input;  // thread-protected by recording_status
   int64_t recording_note_id = 0;  // thread-protected by recording_status
