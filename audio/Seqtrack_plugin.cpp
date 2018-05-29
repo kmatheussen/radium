@@ -1238,11 +1238,11 @@ public:
           if (is_playing_song()) {
             int64_t recording_start = root->song->looping.start; // FIX: Make atomic.
             
-            if (start_time >= recording_start) {
+            if (true || start_time >= recording_start) {
               
               int64_t recording_end = ATOMIC_GET(root->song->looping.end);
               
-              if (start_time < recording_end){
+              if (true || start_time < recording_end){
                 start_recording(start_time);
                 more_to_play = true;
               }
@@ -1256,9 +1256,10 @@ public:
         {
           R_ASSERT_RETURN_IF_FALSE2(_recorder!=NULL, false);
 
-          int64_t recording_end = ATOMIC_GET(root->song->looping.end);
+          //int64_t recording_end = ATOMIC_GET(root->song->looping.end);
           
-          if (start_time >= recording_end || is_playing_song()==false)
+          //if (start_time >= recording_end || is_playing_song()==false)
+          if (is_playing_song()==false)
             stop_recording();
           else
             more_to_play = true;
