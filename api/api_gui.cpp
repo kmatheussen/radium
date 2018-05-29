@@ -53,6 +53,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextDocumentFragment>
 #include <QSplitter>
 #include <QHideEvent>
+#include <QWindow>
+#include <QScreen>
 
 #include <QDesktopServices>
 #include <QtWebKitWidgets/QWebView>
@@ -2663,6 +2665,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     {
       
       setWindowFlags(Qt::FramelessWindowHint | Qt::Popup);
+      //setWindowFlags(Qt::Popup);
+
+      remember_geometry.move_window_to_centre_first_time_its_opened = false;
       
       if (width>=0 || height>=0){
         if(width<=0)
@@ -5369,9 +5374,33 @@ void gui_show(int64_t guinum){
 
   if (dynamic_cast<Popup*>(w) != NULL) {
     printf("   Showing POPUP\n");
-    //w->move(QCursor::pos()); // Has no effect. Probably yet another bug in Qt which the Qt people states is not a bug.
+
+    w->adjustSize();
+    w->updateGeometry();
+
+    QScreen *screen = QGuiApplication::primaryScreen();
+    auto pos = QCursor::pos(screen);
+  
+    int swidth = screen->size().width();
+    int sheight = screen->size().height();
+    
+    if (pos.x() >= 0){
+      if (pos.x() + w->width() > swidth)
+        pos.setX(R_MAX(0, swidth - w->width()));
+    } else {
+      pos.setX(0);
+    }
+                   
+    if (pos.y() >= 0){
+      if (pos.y() + w->height() > sheight)
+        pos.setY(R_MAX(0, sheight - w->height()));
+    } else {
+      pos.setY(0);
+    }
+    
+    w->move(pos);
     safeShowPopup(w);
-    w->move(QCursor::pos()); // Workaround. Causes flickering though. I have tried a lot of things to get rid of the flickering. Hopefully it's only visible in X11.
+
     return;
   }
 
