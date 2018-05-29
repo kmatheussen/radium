@@ -1,3 +1,13 @@
+Changes 5.6.9 -> 5.7.0:
+* Sampler: Fix crash when sampler instrument is deleted.
+* Internal: Some improvements to the memory validation system
+  Prevent bugs such as the sampler instrument bug above from going
+  into production again.
+* Sequencer: Record audio (press the new "R" button in the seqtrack
+  header).
+* API: seqtrackIsRecording, setSeqtrackIsRecording
+
+
 Changes 5.6.7 -> 5.6.9:
 * Linux: Include the libfontconfig.so library file.
 * Player: More finegrained locking and less locking when changing tempo
