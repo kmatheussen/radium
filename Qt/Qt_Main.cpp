@@ -1935,7 +1935,7 @@ protected:
         rt_msgBox->setText(message);
 
         safeShow(rt_msgBox);
-
+        //getchar();
                                         
 #if 0 //def FOR_WINDOWS
         HWND wnd=(HWND)rt_msgBox->winId();

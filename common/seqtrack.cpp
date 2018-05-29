@@ -1527,6 +1527,41 @@ void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int 
 
 // Recording
 
+static wchar_t *get_recording_path(const struct SoundPlugin *plugin){
+  QString filename = STRING_get_qstring(dc.filename).replace(QRegExp(".rad$"), "_rad");      
+
+  const wchar_t *pathdir = STRING_create(QFileInfo(filename).absoluteFilePath() + "_audio");
+
+  if (DISK_create_dir(pathdir)==false){
+    GFX_addMessage("Unable to create directory %s.", STRING_get_chars(pathdir));
+    return NULL;
+  }
+
+  wchar_t *last_dir = STRING_replace(STRING_replace(STRING_create(plugin->patch->name),
+                                                    "/",
+                                                    "_slash_"),
+                                     "\\",
+                                     "_backslash_");
+
+  QString s = STRING_get_qstring(last_dir);
+
+  s.remove(QRegExp("[^a-zA-Z\\d\\s]"));
+
+  if (s=="")
+    s = "noname";
+
+  wchar_t *recording_path = STRING_append(pathdir,
+                                          STRING_append(STRING_create(OS_get_directory_separator()),
+                                                        STRING_create(s)));
+
+  if (DISK_create_dir(recording_path)==false){
+    GFX_addMessage("Unable to create directory \"%s\".\n", STRING_get_chars(recording_path));
+    return NULL;
+  }
+
+  return recording_path;
+}
+
 void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
   R_ASSERT_RETURN_IF_FALSE(seqtrack->for_audiofiles);
   
@@ -1541,9 +1576,15 @@ void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
   
   if (is_recording==false)
     SEQTRACKPLUGIN_disable_recording(seqtrack, plugin);
-  else
-    SEQTRACKPLUGIN_enable_recording(seqtrack, plugin, L"/tmp/", 2, false);
+  else {
 
+    wchar_t *recording_path = get_recording_path(plugin);
+    if (recording_path==NULL)
+      return;
+    
+    SEQTRACKPLUGIN_enable_recording(seqtrack, plugin, STRING_append(recording_path, STRING_create(OS_get_directory_separator())), 2, false);
+  }
+  
   seqtrack->is_recording = is_recording;
 
   SEQUENCER_update(SEQUPDATE_HEADERS);

@@ -1045,9 +1045,11 @@ struct Recorder : public radium::SampleRecorderInstance{
     
     SEQTRACK_remove_recording_seqblock(seqtrack, _seqblock.data());
 
-    ADD_UNDO(Sequencer());
-    SEQTRACK_insert_sample(seqtrack, seqtracknum, filename, start, end);
-
+    if (success) {
+      ADD_UNDO(Sequencer());
+      SEQTRACK_insert_sample(seqtrack, seqtracknum, filename, start, end);
+    }
+    
     delete this;
   }
 
@@ -1086,7 +1088,7 @@ struct Recorder : public radium::SampleRecorderInstance{
         
       }      
 
-      printf("Seqblock: %f -> %f. (%f -> %f). Stretch: %f. _start: %f\n", (double)_seqblock->t.time / 48000.0, (double)_seqblock->t.time2 / 48000.0, (double)_seqblock->t.interior_start / 48000.0, (double)_seqblock->t.interior_end / 48000.0, (double)_seqblock->t.stretch, (double)start / 48000.0);
+      //printf("Seqblock: %f -> %f. (%f -> %f). Stretch: %f. _start: %f\n", (double)_seqblock->t.time / 48000.0, (double)_seqblock->t.time2 / 48000.0, (double)_seqblock->t.interior_start / 48000.0, (double)_seqblock->t.interior_end / 48000.0, (double)_seqblock->t.stretch, (double)start / 48000.0);
       
       SEQTRACK_update(_seqtrack.data(), _end-RADIUM_BLOCKSIZE, _end);
     }
