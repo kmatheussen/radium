@@ -167,6 +167,21 @@ class Hepp2 : public Hepp{
 */
 
 
+#if !defined(RELEASE)
+
+// The address sanitizer (asan) tends to zero out all allocated memory, covering up bugs. 
+// This is a workaround.
+
+void * operator new(decltype(sizeof(0)) size) noexcept(false)
+{
+  void *mem = malloc(size);
+  memset(mem, rand(), size);
+  return mem;
+}
+#endif
+
+
+
 #include "../GTK/GTK_visual_proc.h"
 
 #if 0
