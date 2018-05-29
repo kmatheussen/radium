@@ -10,8 +10,13 @@
 #include "../common/disk_save_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../common/undo.h"
+
 #include "../OpenGL/Render_proc.h"
+
+#include "../audio/SampleRecorder_proc.h"
+
 #include "../api/api_proc.h"
+
 
 #include "helpers.h"
 
