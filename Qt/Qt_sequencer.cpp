@@ -1357,7 +1357,7 @@ public:
     draw_fades(p, rect_without_header, seqtrack, seqblock);
   }
   
-  bool paintSeqBlock(QPainter &p, const QRectF &update_rect, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type){
+  bool paintSeqBlock(QPainter &p, const QRegion &update_region, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type){
     //QPoint mousep = _sequencer_widget->mapFromGlobal(QCursor::pos());
 
     QRectF rect;
@@ -1377,16 +1377,9 @@ public:
       rect = QRectF(x1,t_y1+1,x2-x1,t_height-2);
 
       //printf("%p: Start: %f, End: %f. X1: %f, X2: %f\n", seqblock, start_time, end_time, x1,x2);
-      
-#if 0
-      // Can not use rect.toAlignedRect() because it returns a QRect, which uses 'int', which is a lot smaller than 'double' which QRectF uses.
-      // Why was toAlignedRect() used in the first place?
-      if (false==update_rect.intersects(rect.toAlignedRect()))
+
+      if (false==update_region.intersects(rect.toAlignedRect()))
         return false;
-#else
-      if (false==update_rect.intersects(rect))
-        return false;
-#endif
     }
 
     int header_height = get_block_header_height();
@@ -1444,11 +1437,11 @@ public:
     return true;
   }
   
-  void paint_automation(const QRect &update_rect, QPainter &p, const struct SeqTrack *seqtrack) {
+  void paint_automation(const QRegion &update_region, QPainter &p, const struct SeqTrack *seqtrack) {
     SEQTRACK_AUTOMATION_paint(&p, seqtrack, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
   }
 
-  void paint(const QRect &update_rect, QPainter &p, const struct SeqTrack *seqtrack) {
+  void paint(const QRegion &update_region, QPainter &p, const struct SeqTrack *seqtrack) {
     RETURN_IF_DATA_IS_INACCESSIBLE();
     
     //printf("  PAINTING %d %d -> %d %d\n",t_x1,t_y1,t_x2,t_y2);
@@ -1475,7 +1468,7 @@ public:
       //printf("  seqblocks size: %d. (%d %d)\n", seqblocks.size(), _seqtrack->seqblocks.num_elements, _seqtrack->gfx_seqblocks==NULL ? -1 : _seqtrack->gfx_seqblocks->num_elements);
       
       for(int i=seqblocks.size()-1 ; i>=0 ; i--)
-        paintSeqBlock(p, update_rect, seqtrack, seqblocks.at(i), type);
+        paintSeqBlock(p, update_region, seqtrack, seqblocks.at(i), type);
     }
   }
 
@@ -1540,17 +1533,17 @@ public:
     }END_VECTOR_FOR_EACH;
   }
 
-  void paint_automation(const QRect &update_rect, QPainter &p){
+  void paint_automation(const QRegion &update_region, QPainter &p){
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
       Seqblocks_widget seqblocks_widget = get_seqblocks_widget(iterator666, true);
-      seqblocks_widget.paint_automation(update_rect, p, seqtrack);
+      seqblocks_widget.paint_automation(update_region, p, seqtrack);
     }END_VECTOR_FOR_EACH;
   }
 
-  void paint(const QRect &update_rect, QPainter &p){
+  void paint(const QRegion &update_region, QPainter &p){
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
       Seqblocks_widget seqblocks_widget = get_seqblocks_widget(iterator666, true);
-      seqblocks_widget.paint(update_rect, p, seqtrack);
+      seqblocks_widget.paint(update_region, p, seqtrack);
     }END_VECTOR_FOR_EACH;
   }
 
@@ -1601,7 +1594,7 @@ struct SongTempoAutomation_widget {
     _rect = QRectF(t_x1, t_y1, width, height);
   }
 
-  void paint(const QRect &update_rect, QPainter &p){
+  void paint(const QRegion &update_region, QPainter &p){
 
     myFillRect(p, _rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
     
@@ -2528,7 +2521,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
 
-  void paintGrid(const QRect &update_rect, QPainter &p, enum GridType grid_type) const {
+  void paintGrid(const QRegion &update_region, QPainter &p, enum GridType grid_type) const {
     double x1 = _seqtracks_widget.t_x1;
     double x2 = _seqtracks_widget.t_x2;
     double width = x2-x1;
@@ -2566,7 +2559,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     }
   }
       
-  void paintCursor(const QRect &update_rect, QPainter &p){
+  void paintCursor(const QRegion &update_region, QPainter &p){
     double y1 = _songtempoautomation_widget.t_y1;
     double y2 = _seqtracks_widget.t_y2;
     
@@ -2581,7 +2574,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     p.drawLine(line);
   }
       
-  void paintSeqloop(const QRect &update_rect, QPainter &p) const {
+  void paintSeqloop(const QRegion &update_region, QPainter &p) const {
     double y1 = _songtempoautomation_widget.t_y1;
     double y2 = _seqtracks_widget.t_y2;
 
@@ -2604,7 +2597,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     }
   }
       
-  void paintSelectionRectangle(const QRect &update_rect, QPainter &p) const {
+  void paintSelectionRectangle(const QRegion &update_region, QPainter &p) const {
     QColor grayout_color = QColor(220,220,220,0x40); //get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM);
 
     p.setPen(Qt::black);
@@ -2745,17 +2738,17 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
       p.setClipRect(QRectF(_seqtracks_widget.t_x1, 0, _seqtracks_widget.t_width, height()));
 
-      _seqtracks_widget.paint(ev->rect(), p);
+      _seqtracks_widget.paint(ev->region(), p);
       
       if (_songtempoautomation_widget.is_visible)
-        _songtempoautomation_widget.paint(ev->rect(), p);
+        _songtempoautomation_widget.paint(ev->region(), p);
       
-      paintGrid(ev->rect(), p, _grid_type);
+      paintGrid(ev->region(), p, _grid_type);
       if (SEQUENCER_is_looping())
-        paintSeqloop(ev->rect(), p);    
+        paintSeqloop(ev->region(), p);    
       
       if (_has_selection_rectangle)
-        paintSelectionRectangle(ev->rect(), p);
+        paintSelectionRectangle(ev->region(), p);
     }
 
     // Paint seqtrack borders, seqtrack automation, and cursor
@@ -2772,8 +2765,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       if (seqtracks_are_painted) {
         p.setRenderHints(QPainter::Antialiasing,true);
         p.setClipRect(QRectF(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1, _seqtracks_widget.t_width, _seqtracks_widget.t_height));
-        _seqtracks_widget.paint_automation(ev->rect(), p);    
-        paintCursor(ev->rect(), p);
+        _seqtracks_widget.paint_automation(ev->region(), p);    
+        paintCursor(ev->region(), p);
       }
     }
   }
