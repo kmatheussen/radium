@@ -221,7 +221,7 @@ static inline void VECTOR_sort2(vector_t *v, vector_sort_callback_t comp){
 #define END_ALL_SEQTRACKS_FOR_EACH }
 
 
-#ifdef __cplusplus
+#if defined(__cplusplus) && defined(QVECTOR_H)
 
 template<typename T>
 static inline QVector<T> VECTOR_get_qvector(const vector_t *v){
