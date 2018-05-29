@@ -115,6 +115,9 @@ void BACKUP_call_very_often(void){
       return;
   
   //printf("duration: %f\n",get_unbackuped_duration() / 1000.0);
+
+  if (SampleRecorder_Get_Num_Instances() > 0)
+    return;
   
   if (get_unbackuped_duration()  > get_backup_interval_ms()){
     make_backup();

@@ -103,6 +103,7 @@ static void put_slice(RecordingSlice *slice){
   }
 }
 
+static DEFINE_ATOMIC(int, g_num_recording_files) = 0;
 
 namespace{
 
@@ -142,6 +143,8 @@ struct RecordingFile{
   RecordingFile(radium::SampleRecorderInstance *instance)
     : instance(instance)
   {
+    ATOMIC_ADD(g_num_recording_files, 1);
+    
     SF_INFO sf_info = {};
     float middle_note = instance->middle_note;
     if (middle_note < 0.01)
@@ -166,6 +169,10 @@ struct RecordingFile{
     success = true;
   }
 
+  ~RecordingFile(){
+    ATOMIC_ADD(g_num_recording_files, -1);
+  }
+  
   void write_uint32(QFile &f, uint32_t i, bool &success){
     char temp[4];
 #if IS_LITTLE_ENDIAN
@@ -429,7 +436,6 @@ void SampleRecorder_called_regularly(void){
   }
 }
 
-
 void RT_SampleRecorder_start_recording(radium::SampleRecorderInstance *instance, int64_t pos){
   R_ASSERT_RETURN_IF_FALSE(instance!=NULL);
   R_ASSERT_RETURN_IF_FALSE(instance->recording_path.get_from_another_thread()!=NULL);
@@ -505,6 +511,10 @@ void RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const
       g_peak_slice_queue->bounded_push(peak_slice);
     }
   }
+}
+
+int SampleRecorder_Get_Num_Instances(void){
+  return ATOMIC_GET(g_num_recording_files);
 }
 
 void SampleRecorder_Init(void){

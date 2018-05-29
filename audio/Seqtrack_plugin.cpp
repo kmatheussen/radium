@@ -1013,7 +1013,7 @@ struct Recorder : public radium::SampleRecorderInstance{
   bool _recording_from_main_input;
 
   Recorder(struct SeqTrack *seqtrack, const wchar_t *recording_path, int num_ch, bool recording_from_main_input)
-    : SampleRecorderInstance(recording_path, num_ch, 60)
+    : SampleRecorderInstance(recording_path, num_ch, 48) // The sample recorder adds 12 to the middle note.
     , _peaks(num_ch)
       //, _data(data)
     , _seqtrack(seqtrack)
