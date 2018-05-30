@@ -559,7 +559,7 @@ namespace{
 }
 
 namespace{
-  
+
 struct Mixer{
   SoundProducer *_bus[NUM_BUSES];
 
@@ -572,7 +572,7 @@ struct Mixer{
   float _sample_rate;
   int _buffer_size;
 
-  jack_port_t *_main_inputs[2];
+  jack_port_t *_main_inputs[NUM_SYSTEM_INPUT_JACK_PORTS];
   
   bool _is_freewheeling;
 
@@ -781,23 +781,17 @@ struct Mixer{
 #endif
 
     {
-      _main_inputs[0] = jack_port_register(_rjack_client, "main_input_1", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
-      _main_inputs[1] = jack_port_register(_rjack_client, "main_input_2", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+      for(int ch = 0 ; ch < NUM_SYSTEM_INPUT_JACK_PORTS ; ch++)
+        _main_inputs[ch] = jack_port_register(_rjack_client, talloc_format("main_input_%d", ch+1), JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
       
       const char **outportnames = jack_get_ports(_rjack_client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
-      //R_ASSERT(outportnames != NULL);
 
       if (outportnames != NULL) {
-        if (outportnames[0] != NULL){
-          jack_connect(_rjack_client, outportnames[0],
-                       jack_port_name(_main_inputs[0])
+        for(int ch = 0 ; ch < NUM_SYSTEM_INPUT_JACK_PORTS && outportnames[ch] != NULL ; ch++)
+          jack_connect(_rjack_client, outportnames[ch],
+                       jack_port_name(_main_inputs[ch])
                        );
-          if (outportnames[1] != NULL )
-            jack_connect(_rjack_client, outportnames[1],
-                         jack_port_name(_main_inputs[1])
-                         );
-        }
-
+        
         jack_free(outportnames);
       }
     }
@@ -1545,7 +1539,7 @@ STime MIXER_get_block_delta_time(STime time){
 }
 
 int MIXER_get_main_inputs(const float **audio, int max_num_ch){
-  int num_ch = R_MIN(2, max_num_ch);
+  int num_ch = R_MIN(NUM_SYSTEM_INPUT_JACK_PORTS, max_num_ch);
   for(int i=0;i<num_ch;i++)
     audio[i] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[i],ATOMIC_GET(jackblock_size))) + jackblock_delta_time;
   return num_ch;

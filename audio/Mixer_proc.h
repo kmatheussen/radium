@@ -8,6 +8,10 @@ extern LANGSPEC void PLAYER_memory_debug_wake_up(void);
 #define PLAYER_memory_debug_wake_up()
 #endif
 
+
+#define NUM_SYSTEM_INPUT_JACK_PORTS 8
+  
+
 extern DEFINE_ATOMIC(bool, g_currently_processing_dsp);
 extern DEFINE_ATOMIC(double, g_curr_song_tempo_automation_tempo);
 
