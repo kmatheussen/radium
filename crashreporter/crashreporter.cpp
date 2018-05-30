@@ -582,8 +582,9 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
   #error "unknown system"
 #endif
 
-#if !defined(RELEASE) && defined(FOR_LINUX)
-  abort();
+#if !defined(RELEASE)  // && (defined(FOR_LINUX)
+  getchar();
+  //abort();
 #endif
     
 
