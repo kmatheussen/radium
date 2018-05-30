@@ -530,7 +530,7 @@ public:
         if (client->_sndfile==NULL){
           client->_sndfile = client->_provider->create_sndfile();
           if (client->_sndfile==NULL)
-            RT_message("Could not open file %s", STRING_get_chars(client->_provider->_filename));
+            RT_message("Could not open file \"%S\"", client->_provider->_filename);
         }
 
         SPT_fill_slice(client->_sndfile, slice, slice_num);          
