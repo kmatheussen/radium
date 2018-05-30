@@ -22,11 +22,117 @@
    (get-instrument-popup-entries instrument-id parentgui)))
 
 
-(define *has-shown-record-message* #f)
+(define *has-shown-record-message* #t)
 (define (maybe-show-record-message)
   (when (not *has-shown-record-message*)
     (show-async-message :text "Recording audio is a technology preview. It seems to work fine, but it could have some bugs.<p>Current limitations:<UL><LI>You can only record from the input connections of the seqtrack instrument,<br>not from the main inputs of the program. (For now you have to manually<br>connect a \"System In\" object to the seqtrack instrument.)<LI>You can only record stereo files.<LI>There is no punch in and punch out yet.</UL>")
     (set! *has-shown-record-message* #t)))
+
+
+
+(define (show-record-popup-menu seqtracknum)
+  (define popup #f)
+  (define radiobuttons
+    (map (lambda (ch)
+           (<gui> :radiobutton (<-> ch "") #f (lambda (val)
+                                                ;;(if popup
+                                                ;;    (<gui> :close popup))
+                                                #t)))
+         (map 1+ (iota 8))))
+
+  (define (create-options)
+    (let ((options
+           (<gui> :vertical-layout
+                  
+                  (<gui> :group "Source"
+                         (<gui> :horizontal-layout
+                                (<gui> :radiobutton "System input"
+                                       (<ra> :get-seqtrack-record-from-system-input seqtracknum)
+                                       (lambda (ison)
+                                         (<ra> :set-seqtrack-record-from-system-input seqtracknum ison)))
+                                (<gui> :radiobutton "Input connections to the instrument"
+                                       (not (<ra> :get-seqtrack-record-from-system-input seqtracknum))
+                                       (lambda (ison)
+                                         (<ra> :set-seqtrack-record-from-system-input seqtracknum (not ison))))
+                                
+                                ))
+                                         ;;;(<gui> :radiobutton "Output of instrument main pipe #f")))
+                  
+                  (<gui> :group "Source channel -> Soundfile channel"
+                         (let ((matrix (<gui> :horizontal-layout
+                                              (map (lambda (input-channel)
+                                                     (<gui> :vertical-layout
+                                                            (map (lambda (soundfile-channel)
+                                                                   (<gui> :checkbox (<-> input-channel " -> " soundfile-channel)
+                                                                          (<ra> :get-seqtrack-recording-matrix seqtracknum input-channel soundfile-channel)
+                                                                          #t
+                                                                          (lambda (ison)
+                                                                            (<ra> :set-seqtrack-recording-matrix seqtracknum input-channel soundfile-channel ison)
+                                                                            (c-display (<-> input-channel " -> " soundfile-channel ": " ison)))))
+                                                                 (iota 8))))
+                                                   (iota 8)))))
+                           matrix))
+                  
+                  (<gui> :group "Use custom settings for this seqtrack?"
+                         (<gui> :vertical-layout
+                                (<gui> :radiobutton "Yes. (These settings applies to this seqtrack only)"
+                                       (<ra> :get-seqtrack-use-custom-recording-config seqtracknum)
+                                       (lambda (ison)
+                                         (<ra> :set-seqtrack-use-custom-recording-config seqtracknum ison)))                                         
+                                (<gui> :radiobutton "No. (These settings applies to all seqtracks with non-custom settings)"
+                                       (not (<ra> :get-seqtrack-use-custom-recording-config seqtracknum))
+                                       (lambda (ison)
+                                         (<ra> :set-seqtrack-use-custom-recording-config seqtracknum (not ison))))))
+                  
+                  )))
+      (<gui> :set-layout-spacing options 5 2 2 2 2)
+      options))
+  
+  (define options #f)
+
+  (define (recreate-options)
+    (define new-options (create-options))
+    (when options
+      (<gui> :replace content options new-options)
+      (<gui> :close options))
+    (set! options new-options))
+
+  (recreate-options)
+  
+  (if (<ra> :seqtrack-is-recording seqtracknum)
+      (<gui> :set-enabled options #f))
+
+  (define content #f)
+  
+  (set! content (<gui> :vertical-layout
+                       (mid-horizontal-layout (<gui> :text (<-> "Recording options for \"" (<ra> :get-seqtrack-name seqtracknum) "\" (#" seqtracknum ")")))
+                       options
+                       (<gui> :horizontal-layout
+                              (<gui> :button "Reset values"
+                                     (lambda ()
+                                       (<ra> :reset-seqtrack-recording-options seqtracknum)
+                                       (recreate-options)))
+                              (<gui> :button "Close"
+                                     (lambda ()
+                                       (if popup
+                                           (<gui> :close popup)))))))
+    
+  (<gui> :set-layout-spacing content 5 2 2 2 2)
+
+  (if #t
+      (set! popup (<gui> :popup))
+      (begin
+        (set! popup (<gui> :widget))
+        (<gui> :set-parent popup -2)))
+  
+  (<gui> :add popup content)
+                                        ;(<gui> :set-parent widget -2)
+  (<gui> :show popup)
+  (<gui> :minimize-as-much-as-possible popup)
+                                        ;(<gui> :set-pos widget (floor (<ra> :get-global-mouse-pointer-x)) (floor (<ra> :get-global-mouse-pointer-y)))
+  )
+
+
 
 ;; There's a lot of copy-paste code from mixer-strip.scm:create-mixer-strip-mutesolo here, but I hope this code will eventually replace mixer-strip.scm:create-mixer-strip-mutesolo some day
 (def-area-subclass (<mute-solo-buttons> :gui :x1 :y1 :x2 :y2
@@ -99,43 +205,53 @@
                (list 'record 'mute 'solo)
                :callback
                (lambda (type x1 y1 x2 y2)
-                 (add-sub-area-plain! (<new> :checkbox gui x1 y1 x2 y2
-                                             #t
-                                             (lambda (_)
-                                               (define is-selected (get-selected type))
-                                               (if (eq? type 'solo)
-                                                   (set! last-drawn-implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id)))
-                                               (draw-mutesolo gui
-                                                              type
-                                                              instrument-id
-                                                              x1 y1 x2 y2
-                                                              is-selected
-                                                              use-single-letters
-                                                              :background-color (if (= seqtracknum (<ra> :get-curr-seqtrack))
-                                                                                    *curr-seqtrack-color*
-                                                                                    (get-mixer-strip-background-color gui instrument-id))
-                                                              :border 0
-                                                              :implicit-border 1
-                                                              ))
-                                             (lambda (_)
-                                               (define is-selected (not (get-selected type)))
-                                               (undo-block
-                                                (lambda ()
-                                                  (cond ((eq? type 'record)
-                                                         (maybe-show-record-message)
-                                                         (<ra> :set-seqtrack-is-recording seqtracknum is-selected)
-                                                         )
-                                                        ((eq? type 'solo)
-                                                         (<ra> :set-instrument-solo instrument-id is-selected)
-                                                         (if (<ra> :control-pressed)
-                                                             (turn-off-all-solo instrument-id)))
-                                                        ((eq? type 'mute)
-                                                         (<ra> :set-instrument-mute instrument-id is-selected)
-                                                         ;;(c-display "mute: " is-muted)
-                                                         (if (<ra> :control-pressed)
-                                                             (turn-off-all-mute instrument-id)))
-                                                        (else
-                                                         (assert #f))))))))))
+                 (define box (<new> :checkbox gui x1 y1 x2 y2
+                                    #t
+                                    (lambda (_)
+                                      (define is-selected (get-selected type))
+                                      (if (eq? type 'solo)
+                                          (set! last-drawn-implicitly-muted (<ra> :instrument-is-implicitly-muted instrument-id)))
+                                      (draw-mutesolo gui
+                                                     type
+                                                     instrument-id
+                                                     x1 y1 x2 y2
+                                                     is-selected
+                                                     use-single-letters
+                                                     :background-color (if (= seqtracknum (<ra> :get-curr-seqtrack))
+                                                                           *curr-seqtrack-color*
+                                                                           (get-mixer-strip-background-color gui instrument-id))
+                                                     :border 0
+                                                     :implicit-border 1
+                                                     ))
+                                    (lambda (_)
+                                      (define is-selected (not (get-selected type)))
+                                      (undo-block
+                                       (lambda ()
+                                         (cond ((eq? type 'record)
+                                                (if (not (get-recording))
+                                                    (maybe-show-record-message))
+                                                (<ra> :set-seqtrack-is-recording seqtracknum is-selected)
+                                                )
+                                               ((eq? type 'solo)
+                                                (<ra> :set-instrument-solo instrument-id is-selected)
+                                                (if (<ra> :control-pressed)
+                                                    (turn-off-all-solo instrument-id)))
+                                               ((eq? type 'mute)
+                                                (<ra> :set-instrument-mute instrument-id is-selected)
+                                                ;;(c-display "mute: " is-muted)
+                                                (if (<ra> :control-pressed)
+                                                    (turn-off-all-mute instrument-id)))
+                                               (else
+                                                (assert #f))))))
+                                    :right-mouse-clicked-callback (if (eq? type 'record)
+                                                                      (lambda ()
+                                                                        (show-record-popup-menu seqtracknum))
+                                                                      #f)))
+
+                 (if (eq? type 'record)
+                     (box :add-statusbar-text-handler "Right-click the \"R\" button to configure recording options."))
+                 (add-sub-area-plain! box)))
+
   )
 
 (def-area-subclass (<seqtrack-name> :gui :x1 :y1 :x2 :y2
@@ -442,7 +558,7 @@
                                                                                  ((eq? type '-) "Delete current seqtrack")
                                                                                  ((eq? type 'Append) "Append seqtrack")
                                                                                  (else
-                                                                                  (assert #f)))                                                                                  
+                                                                                  (assert #f)))
                                                            :callback-release (lambda ()
                                                                                (callback type)))))))
 

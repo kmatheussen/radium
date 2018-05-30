@@ -327,13 +327,8 @@ const_char *getSeqtrackName(int seqtracknum){
 // Recording
 //////////////////////////////////////////
 
-bool seqtrackIsRecording(int seqtracknum){
-  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
-  if (seqtrack==NULL)
-    return false;
 
-  return seqtrack->is_recording;
-}
+// seqtrack is recording
 
 void setSeqtrackIsRecording(int seqtracknum, bool is_recording){
   struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
@@ -343,10 +338,110 @@ void setSeqtrackIsRecording(int seqtracknum, bool is_recording){
   SEQTRACK_set_recording(seqtrack, is_recording);
 }
 
+bool seqtrackIsRecording(int seqtracknum){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  return seqtrack->is_recording;
+}
 
 
+// seqtrack using custom recording config
+
+void setSeqtrackUseCustomRecordingConfig(int seqtracknum, bool use_custom){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  if (seqtrack->use_custom_recording_config == use_custom)
+    return;
+
+  if (use_custom==true)
+    seqtrack->custom_recording_config = root->song->default_recording_config;
+
+  seqtrack->use_custom_recording_config = use_custom;
+}
+
+bool getSeqtrackUseCustomRecordingConfig(int seqtracknum){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  return seqtrack->use_custom_recording_config;
+}
 
 
+// seqtrack recording from system input
+
+void setSeqtrackRecordFromSystemInput(int seqtracknum, bool record_from_system_input){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  get_seqtrack_recording_config(seqtrack)->record_from_system_input = record_from_system_input;
+}
+
+bool getSeqtrackRecordFromSystemInput(int seqtracknum){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  return get_seqtrack_recording_config(seqtrack)->record_from_system_input;
+}
+
+
+// seqtrack recording matrix
+
+void setSeqtrackRecordingMatrix(int seqtracknum, int input_channel, int soundfile_channel, bool enabled){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  if (input_channel < 0 || input_channel >= NUM_CHANNELS_RECORDING_MATRIX){
+    handleError("setSeqtrackRecordingMatrix: input_channel must be between 0 and %d, found %d", NUM_CHANNELS_RECORDING_MATRIX, input_channel);
+    return;
+  }
+  
+  if (soundfile_channel < 0 || soundfile_channel >= NUM_CHANNELS_RECORDING_MATRIX){
+    handleError("setSeqtrackRecordingMatrix: soundfile_channel must be between 0 and %d, found %d", NUM_CHANNELS_RECORDING_MATRIX, soundfile_channel);
+    return;
+  }
+
+  auto *config = get_seqtrack_recording_config(seqtrack);
+  config->matrix[input_channel][soundfile_channel] = enabled;
+
+  set_enabled_soundfile_channels(config);
+}
+
+bool getSeqtrackRecordingMatrix(int seqtracknum, int input_channel, int soundfile_channel){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  if (input_channel < 0 || input_channel >= NUM_CHANNELS_RECORDING_MATRIX){
+    handleError("setSeqtrackRecordingMatrix: input_channel must be between 0 and %d, found %d", NUM_CHANNELS_RECORDING_MATRIX, input_channel);
+    return false;
+  }
+  
+  if (soundfile_channel < 0 || soundfile_channel >= NUM_CHANNELS_RECORDING_MATRIX){
+    handleError("setSeqtrackRecordingMatrix: soundfile_channel must be between 0 and %d, found %d", NUM_CHANNELS_RECORDING_MATRIX, soundfile_channel);
+    return false;
+  }
+  
+  return get_seqtrack_recording_config(seqtrack)->matrix[input_channel][soundfile_channel];
+}
+
+
+// reset
+
+void resetSeqtrackRecordingOptions(int seqtracknum){
+ struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  reset_recording_config(get_seqtrack_recording_config(seqtrack));
+}
 
 
 

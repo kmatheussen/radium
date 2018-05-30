@@ -489,6 +489,7 @@
      :has-mouse () (or curr-mouse-cycle curr-nonpress-mouse-cycle)
      :reset! x (apply reset! x)
      :i-am-removed! x (apply i-am-removed! x)
+     :add-statusbar-text-handler x (apply add-statusbar-text-handler x)
      ))
  
 
@@ -682,18 +683,30 @@
 (def-area-subclass (<checkbox> :gui :x1 :y1 :x2 :y2
                                :is-selected
                                :paint-func
-                               :value-changed-callback)
+                               :value-changed-callback
+                               :right-mouse-clicked-callback #f)
 
   (define-override (paint)
     (paint-func is-selected))
 
   (add-mouse-cycle! (lambda (button x* y*)
-                      (and (= button *left-button*)                        
-                           (begin
+                      (cond ((and right-mouse-clicked-callback
+                                  (= button *right-button*))
+                             (right-mouse-clicked-callback)
+                             #t)
+                            ((= button *left-button*)                        
                              (set! is-selected (not is-selected))
                              (value-changed-callback is-selected)
                              (update-me!)
-                             #t)))))
+                             #t)
+                            (else
+                             #f)))
+                    (lambda (button x* y*)
+                      #f)
+                    (lambda (button x* y*)
+                      #f)))
+                          
+                            
                       
 
 (def-area-subclass (<button> :gui :x1 :y1 :x2 :y2
@@ -702,7 +715,9 @@
                              :background-color #f
                              :statusbar-text #f
                              :callback #f
-                             :callback-release #f)
+                             :callback-release #f
+                             :right-mouse-clicked-callback #f)
+  
 
   (define is-pressing #f)
 
@@ -745,19 +760,25 @@
       (add-statusbar-text-handler statusbar-text))
   
   (add-mouse-cycle! (lambda (button x* y*)
-                      (and (= button *left-button*)                        
-                           (begin
+                      (cond ((and right-mouse-clicked-callback
+                                  (= button *right-button*))
+                             (right-mouse-clicked-callback)
+                             #t)
+                            ((= button *left-button*)
                              (set! is-pressing #t)
                              (if callback
                                  (callback))
                              (update-me!)
-                             #t)))
+                             #t)
+                            (else
+                             #f)))
                     (lambda (button x* y*)
                       #t)
                     (lambda (button x* y*)
                       (set! is-pressing #f)
-                      (if callback-release
-                          (callback-release))
+                      (cond ((and callback-release
+                                  (= button *left-button*))
+                             (callback-release)))
                       (update-me!))))
 
                                   

@@ -1144,7 +1144,9 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_sa
   //memset(seqtrack, 0, sizeof(struct SeqTrack));
 
   seqtrack->for_audiofiles = for_audiofiles;
-
+  reset_recording_config(&seqtrack->custom_recording_config);
+  seqtrack->use_custom_recording_config = false;
+  
   seqtrack->scheduler = SCHEDULER_create();
 
   auto *seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, automation_state, state_samplerate);

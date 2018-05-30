@@ -2752,7 +2752,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     OVERRIDERS(QCheckBox);
   };
-  
+
   struct RadiumCheckBox : MyQCheckBox, Gui{
     Q_OBJECT;
     
