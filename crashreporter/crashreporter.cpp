@@ -583,6 +583,13 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
 #endif
 
 #if !defined(RELEASE)  // && (defined(FOR_LINUX)
+  msleep(300);
+  fflush(stderr);
+  fflush(stdout);
+  fprintf(stderr, "\n\n\n  Press return to continue, or CTRL-C to abort\n\n");
+  fprintf(stdout, "\n\n\n  Press return to continue, or CTRL-C to abort\n\n");
+  fflush(stderr);
+  fflush(stdout);
   getchar();
   //abort();
 #endif

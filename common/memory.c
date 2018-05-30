@@ -122,9 +122,15 @@ static void gcfinalizer(void *actual_mem_start, void *user_data){
 void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber){
 	allocated+=size;
 
-        R_ASSERT(THREADING_is_main_thread());
-        R_ASSERT(!PLAYER_current_thread_has_lock());
+        bool is_main_thread = THREADING_is_main_thread();
+        
+        R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
 
+        if (is_main_thread==false){
+          RError("Calling GC-alloc from non-main_thread. %s: %d", filename, linenumber);
+          return calloc(1, size);
+        }
+        
 #ifndef DISABLE_BDWGC
 #	ifdef _AMIGA
 		return (*GC_amiga_allocwrapper_do)(size,AllocFunction);
