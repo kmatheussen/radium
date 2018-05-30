@@ -1300,7 +1300,7 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
 
   const PluginDescription &description = type_data->description;
 
-  printf("  Trying to load -%s-. Identifier: -%s-\n", STRING_get_chars(type_data->file_or_identifier),description.createIdentifierString().toRawUTF8());
+  printf("  Trying to load -%S-. Identifier: -%s-\n", type_data->file_or_identifier,description.createIdentifierString().toRawUTF8());
   
   {
     radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
@@ -1672,7 +1672,7 @@ static void set_non_realtime(struct SoundPlugin *plugin, bool is_non_realtime){
 }
 
 static SoundPluginType *create_plugin_type(const PluginDescription &description, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
-  printf("b02 %s\n",STRING_get_chars(file_or_identifier));
+  printf("b02 %S\n",file_or_identifier);
   fflush(stdout);
   //  return;
 
@@ -1795,7 +1795,7 @@ static enum PopulateContainerResult launch_program_calling_write_container_descr
     int blacklist = VECTOR_push_back(&v, "Cancel, and add to blacklist");
     fprintf(stderr, "Openinig requester\n");
 
-    int ret = GFX_Message2(&v, true, "Waited more than %d seconds for \"%s\" to load\n", s, STRING_get_chars(container_filename));
+    int ret = GFX_Message2(&v, true, "Waited more than %d seconds for \"%S\" to load\n", s, container_filename);
     fprintf(stderr, "Got answer from requester\n");
 
     if (ret==w3)
@@ -1902,7 +1902,7 @@ static enum PopulateContainerResult populate(SoundPluginTypeContainer *container
 #if 0 //FOR_MACOSX
   DirectoryIterator iter(File(data->library_file_full_path), false, "*", File::findFiles);
   while (iter.next()) {
-    printf("Checking -%s- (%s)\n",iter.getFile().getFullPathName().toRawUTF8(), STRING_get_chars(data->library_file_full_path));
+    printf("Checking -%s- (%S)\n",iter.getFile().getFullPathName().toRawUTF8(), data->library_file_full_path);
     add_descriptions_from_plugin_file(descriptions, iter.getFile().getFullPathName());
   }
 #else
@@ -1929,7 +1929,7 @@ static enum PopulateContainerResult populate(SoundPluginTypeContainer *container
   }
 
   if (size==0)
-    GFX_addMessage("No valid plugins found in %s", STRING_get_chars(container->filename));
+    GFX_addMessage("No valid plugins found in %S", container->filename);
 
   return POPULATE_RESULT_IS_OKAY;
 }
@@ -2283,13 +2283,13 @@ void PLUGINHOST_load_fxbp(SoundPlugin *plugin, wchar_t *wfilename){
   
   bool success = file.loadFileAsData(memoryBlock);
   if (success==false){
-    GFX_Message2(NULL, true, "Unable to load %s", STRING_get_chars(wfilename));
+    GFX_Message2(NULL, true, "Unable to load %S", wfilename);
     return;
   }
       
   success = VSTPluginFormat::loadFromFXBFile(instance, memoryBlock.getData(), memoryBlock.getSize());
   if (success==false){
-    GFX_Message2(NULL, true, "Could not use %s for this plugin", STRING_get_chars(wfilename));
+    GFX_Message2(NULL, true, "Could not use %S for this plugin", wfilename);
     return;
   }
   
@@ -2314,13 +2314,13 @@ static void save_fxbp(SoundPlugin *plugin, wchar_t *wfilename, bool is_fxb){
   Result result2 = file.create();
 
   if (result2.failed()){
-    GFX_Message2(NULL, true, "Unable to create file %s (%s)", STRING_get_chars(wfilename), result2.getErrorMessage().toRawUTF8());
+    GFX_Message2(NULL, true, "Unable to create file %S (%s)", wfilename, result2.getErrorMessage().toRawUTF8());
     return;
   }
   
   bool result3 = file.replaceWithData(memoryBlock.getData(), memoryBlock.getSize());
   if (result3==false){
-    GFX_Message2(NULL, true, "Unable to write data to file %s (disk full?)", STRING_get_chars(wfilename));
+    GFX_Message2(NULL, true, "Unable to write data to file %S (disk full?)", wfilename);
     return;
   }
   

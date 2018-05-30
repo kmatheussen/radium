@@ -2166,7 +2166,7 @@ void setKeybinding(const_char* keybinding, const_char* funcname, dyn_t arguments
       handleError("setKeybinding: Expected string in argument[%d], found %s", i, DYN_type_name(argument.type));
       return;
     }
-    command = talloc_format("%s %s", command, STRING_get_chars(argument.string));
+    command = talloc_format("%s %S", command, argument.string);
   }
 
   const char *pythoncommand = talloc_format("keybindings_changer.FROM_C_insert_new_keybinding_into_conf_file(\"%s\", \'%s\')", keybinding, command);
@@ -2196,7 +2196,7 @@ void removeKeybinding(const_char* keybinding, const_char* funcname, dyn_t argume
       handleError("setKeybinding: Expected string in argument[%d], found %s", i, DYN_type_name(argument.type));
       return;
     }
-    command = talloc_format("%s %s", command, STRING_get_chars(argument.string));
+    command = talloc_format("%s %S", command, argument.string);
   }
 
   const char *pythoncommand = talloc_format("keybindings_changer.FROM_C_remove_keybinding_from_conf_file(\"%s\", \'%s\')", keybinding, command);

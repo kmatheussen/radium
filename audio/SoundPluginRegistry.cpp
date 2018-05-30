@@ -225,7 +225,7 @@ static enum PopulateResult populate(SoundPluginTypeContainer* container){
     int cancel = VECTOR_push_back(&v, "Cancel");
     (void)cancel;
 
-    int hmm=GFX_Message(&v, "Warning: The plugin file \"%s\" crashed last time we tried to open it.", STRING_get_chars(container->filename));
+    int hmm=GFX_Message(&v, "Warning: The plugin file \"%S\" crashed last time we tried to open it.", container->filename);
 
     if (hmm != load_it)
       return PR_POPULATE_CANCELLED;
@@ -611,9 +611,9 @@ void PR_add_plugin_container(SoundPluginTypeContainer *container){
   
   if (existing != NULL){
     if (!STRING_equals2(container->filename, existing->filename))
-      GFX_Message(NULL, "Warning: Two different plugin files with the same name has been added to the registry:<br><UL><LI>%s<LI>%s</UL>Only the first file will be used.",
-                  STRING_get_chars(existing->filename),
-                  STRING_get_chars(container->filename)
+      GFX_Message(NULL, "Warning: Two different plugin files with the same name has been added to the registry:<br><UL><LI>%S<LI>%S</UL>Only the first file will be used.",
+                  existing->filename,
+                  container->filename
                   );
     container = existing;
   } else

@@ -469,7 +469,7 @@ static void *create_data(const wchar_t *filename, float samplerate){
   data->soundfont_id = fluid_synth_sfload(data->synth,STRING_get_chars(data->filename),true);
 
   if(data->soundfont_id==FLUID_FAILED){
-    printf("Soundfont loading failed for \"%s\"\n",STRING_get_chars(data->filename));
+    printf("Soundfont loading failed for \"%S\"\n",data->filename);
 
     delete_data(data);
 
@@ -550,7 +550,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     return;
 
   if(FLUIDSYNTH_set_new_preset(plugin, filename, bank_num, preset_num)==false)
-    GFX_Message(NULL, "Could not load soundfont \"%s\", bank %d, preset %d",STRING_get_chars(filename),bank_num,preset_num);
+    GFX_Message(NULL, "Could not load soundfont \"%S\", bank %d, preset %d",filename,bank_num,preset_num);
 
   // Can not delete now. file is still used when creating/recreating states. Deleting at program end.
   //if (audiodata_is_included)
@@ -571,7 +571,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
     if (audiofile != NULL)
       HASH_put_chars(state, "audiofile", audiofile);
     else
-      GFX_addMessage("Unable to embed sample \"%s\". Could not read file.", STRING_get_chars(maybe_relative_filename));
+      GFX_addMessage("Unable to embed sample \"%S\". Could not read file.", maybe_relative_filename);
   }
 }
 

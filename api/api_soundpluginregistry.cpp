@@ -236,20 +236,20 @@ static hash_t *get_container_disk_hash(const SoundPluginTypeContainer *container
   {
     QFileInfo info(STRING_get_qstring(container->filename));
     if (info.exists()==false){
-      GFX_Message(NULL, "Error: Plugin file %s does not seem to exist anymore.", STRING_get_chars(container->filename));
+      GFX_Message(NULL, "Error: Plugin file %S does not seem to exist anymore.", container->filename);
       return NULL;
     }
 
     int64_t filesize = info.size();
     if (filesize==0){
       //GFX_addMessage("Error: Plugin file %s seems to have size 0.", STRING_get_chars(container->filename));
-      printf("Error: Plugin file %s seems to have size 0.", STRING_get_chars(container->filename));
+      printf("Error: Plugin file %S seems to have size 0.", container->filename);
       //return NULL;  // No need to fail.
     }
     
     QDateTime datetime = info.lastModified();
     if (datetime.isValid()==false)
-      printf("Warning: plugin %s does not have a valid write time", STRING_get_chars(container->filename)); // Could perhaps happen on some filesystems.
+      printf("Warning: plugin %S does not have a valid write time", container->filename); // Could perhaps happen on some filesystems.
     
     int64_t writetime = datetime.isValid() ? datetime.toUTC().toMSecsSinceEpoch() : 0;
     
@@ -334,7 +334,7 @@ static bool load_entries_from_diskcache(dynvec_t &ret, const SoundPluginTypeCont
     if (loaded_filename != STRING_get_qstring(container->filename)){
       // Oops. sha1 crash. How likely is that?
       printf("             NOT SAME FILENAME: -%s-",loaded_filename.toUtf8().constData());
-      printf("                                -%s-",STRING_get_chars(container->filename));
+      printf("                                -%S-",container->filename);
       return false;
     }
 

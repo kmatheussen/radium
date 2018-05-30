@@ -75,7 +75,7 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
 
 	dc.file=DISK_open_for_reading(filename);
 	if(dc.file==NULL){
-          GFX_Message2(NULL,true,"Could not open \"%s\" for loading\n",STRING_get_chars(filename));
+          GFX_Message2(NULL,true,"Could not open \"%S\" for loading\n",filename);
           return false;
 	}
 
@@ -155,7 +155,7 @@ static bool Load(const wchar_t *filename){
           return false;
         
 	if(strcmp(dc.ls,"OSSTUFF")){
-          GFX_Message2(NULL, true,"OSSTUFF not found, but: '%s'. File: '%s'\n",dc.ls,STRING_get_chars(filename));
+          GFX_Message2(NULL, true,"OSSTUFF not found, but: '%s'. File: '%S'\n",dc.ls,filename);
           DISK_close_and_delete(dc.file);
           //EndProgram();
           //exit(4);

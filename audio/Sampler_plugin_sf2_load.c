@@ -4,7 +4,7 @@
 #include "../common/hashmap_proc.h"
 
 static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_bag_number, bool set_loop_on_off){
-  EVENTLOG_add_event(talloc_format("load_sf2_instrument -%s-", STRING_get_chars(filename)));
+  EVENTLOG_add_event(talloc_format("load_sf2_instrument -%S-", filename));
     
   hash_t *info = SF2_get_info(filename);
   if(info==NULL)
@@ -16,7 +16,7 @@ static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_
   hash_t *presets = HASH_get_hash(info,"presets");
   hash_t *preset = HASH_get_hash_at(presets, "", preset_bag_number);
   if(preset==NULL){
-    GFX_Message(NULL, "No such preset number %d in instrument \"%s\"\n", preset_bag_number, STRING_get_chars(filename));
+    GFX_Message(NULL, "No such preset number %d in instrument \"%S\"\n", preset_bag_number, filename);
     return false;
   }
 
@@ -41,8 +41,8 @@ static bool load_sf2_instrument(Data *data, const wchar_t *filename, int preset_
   }
 
   if(instrument==NULL){
-    GFX_Message(NULL, "load_sf2_instrument: Preset \"%s\" (bank %d / preset %d) in \"%s\" doesn't point to an instrument\n",
-                HASH_get_chars(preset,"name"), bank_num, HASH_get_int32(preset,"num"), STRING_get_chars(filename)
+    GFX_Message(NULL, "load_sf2_instrument: Preset \"%S\" (bank %d / preset %d) in \"%S\" doesn't point to an instrument\n",
+                HASH_get_string(preset,"name"), bank_num, HASH_get_int32(preset,"num"), filename
                 );
     return false;
   }

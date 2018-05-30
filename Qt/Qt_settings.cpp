@@ -124,9 +124,11 @@ wchar_t *STRING_create(const char *s){
   return STRING_create(string);
 }
 
+/*
 wchar_t *STRING_copy(const wchar_t *string){
   return STRING_create(STRING_get_qstring(string));
 }
+*/
 
 const wchar_t *STRING_get_sha1(const wchar_t *string){
   QString encrypted = QCryptographicHash::hash(STRING_get_qstring(string).toUtf8(), QCryptographicHash::Sha1).toHex();

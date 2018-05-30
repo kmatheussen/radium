@@ -383,7 +383,7 @@ hash_t *SF2_get_info(const wchar_t *filename){
     fprintf(stderr, "SoundFonts.cpp: Caught RIFF::Exception exception:\n");
     e.PrintMessage();
   }catch (...) {
-    GFX_Message(NULL,"Unknown exception while trying to parse file: %s", STRING_get_chars(filename));
+    GFX_Message(NULL,"Unknown exception while trying to parse file: %S", filename);
   }
 
   return NULL;

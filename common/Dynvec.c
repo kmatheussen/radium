@@ -104,7 +104,7 @@ static wchar_t *das_read_line(disk_t *file){
 
   wchar_t *line = DISK_read_wchar_line(file);
 
-  //printf("%d: -%s-\n", curr_disk_line, STRING_get_chars(line));
+  //printf("%d: -%S-\n", curr_disk_line, line);
   
   if(line==NULL){
     GFX_Message(NULL, "End of file before finished reading array");
@@ -195,7 +195,7 @@ dynvec_t DYNVEC_load(disk_t *file, bool *success){
   wchar_t *line = READ_LINE(file);
 
   if (!STRING_equals(line,">> DYNVEC BEGIN")){
-    GFX_Message(NULL, "Trying to load something which is not an array. Expected \"%s\", found \"%s\"",">> DYNVEC BEGIN",STRING_get_chars(line));
+    GFX_Message(NULL, "Trying to load something which is not an array. Expected \"%s\", found \"%S\"", ">> DYNVEC BEGIN", line);
     return ret;
   }
 
@@ -232,7 +232,7 @@ dynvec_t DYNVEC_load(disk_t *file, bool *success){
   line = READ_LINE(file);
   
   if(!STRING_equals(line,"<< DYNVEC END")){
-    GFX_Message(NULL, "Something went wrong when loading array of size %d from disk. Expected \"%s\", but found \"%s\".", elements_size, "<< DYNVEC END", STRING_get_chars(line));
+    GFX_Message(NULL, "Something went wrong when loading array of size %d from disk. Expected \"%s\", but found \"%S\".", elements_size, "<< DYNVEC END", line);
     return ret;
   }
   

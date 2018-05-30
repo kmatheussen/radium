@@ -373,7 +373,7 @@ public:
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
     SNDFILE *sndfile = create_sndfile2(&sf_info);
     if (sndfile==NULL){
-      GFX_addMessage("Could not open file %s", STRING_get_chars(filename));
+      GFX_addMessage("Could not open file %S", filename);
       return;
     }
 
@@ -1219,7 +1219,7 @@ SampleReader *SAMPLEREADER_create(const wchar_t *filename){
     return NULL;
 
   if (provider->_num_frames==0){
-    GFX_Message(NULL, "Sample %s contains no samples", STRING_get_chars(filename));
+    GFX_Message(NULL, "Sample %S contains no samples", filename);
     delete provider;
     return NULL;
   }
@@ -1291,7 +1291,7 @@ const wchar_t *SAMPLEREADER_get_filename(SampleReader *reader){
 unsigned int SAMPLEREADER_get_sample_color(const wchar_t *filename){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL){
-    GFX_addMessage("Error: No audio file \"%s\" in the system.\n", STRING_get_chars(filename));
+    GFX_addMessage("Error: No audio file \"%S\" in the system.\n", filename);
     return 0;
   }
 
@@ -1301,7 +1301,7 @@ unsigned int SAMPLEREADER_get_sample_color(const wchar_t *filename){
 void SAMPLEREADER_set_sample_color(const wchar_t *filename, unsigned int color){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL){
-    GFX_addMessage("Error: No audio file \"%s\" in the system.\n", STRING_get_chars(filename));
+    GFX_addMessage("Error: No audio file \"%S\" in the system.\n", filename);
     return;
   }
 

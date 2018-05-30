@@ -990,7 +990,7 @@ bool CONNECTIONS_apply_changes(const dyn_t dynchanges){
       changes.remove(source, target);
       
     } else {
-      handleError("Element %d[\"type\"]: Expected \"connect\" or \"disconnect\", found \"%s\"", i, STRING_get_chars(type_name));
+      handleError("Element %d[\"type\"]: Expected \"connect\" or \"disconnect\", found \"%S\"", i, type_name);
       return false;
     }
       

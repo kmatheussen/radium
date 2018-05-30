@@ -2278,7 +2278,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         if (text_edit!=NULL){ 
           if(val.type==STRING_TYPE){
             
-            QString s = STRING_get_chars(val.string);
+            QString s = STRING_get_qstring(val.string);
             text_edit->moveCursor(QTextCursor::End);
             
             if (text_edit->isReadOnly()){
@@ -2375,7 +2375,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         QTextEdit *text_edit = dynamic_cast<QTextEdit*>(_widget.data());
         if (text_edit!=NULL){ 
           if(val.type==STRING_TYPE){
-            QString s = STRING_get_chars(val.string);
+            QString s = STRING_get_qstring(val.string);
             if (text_edit->isReadOnly()){
               text_edit->setText(s);
             }

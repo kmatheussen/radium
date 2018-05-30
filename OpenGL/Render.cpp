@@ -2836,7 +2836,7 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
             R_ASSERT(false);
             new_message = "error";
           }else
-            new_message = talloc_format("Playing %s.", STRING_get_chars(filename));
+            new_message = talloc_format("Playing %S.", filename);
         }else
           new_message = is_pausing_message;
       }
