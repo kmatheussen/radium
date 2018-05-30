@@ -423,14 +423,20 @@ void SampleRecorder_unregister_instance(radium::SampleRecorderInstance *instance
 void SampleRecorder_called_regularly(void){
   R_ASSERT(THREADING_is_main_thread());
 
+  int64_t last_instance_id = -1;
+  radium::SampleRecorderInstance *instance = NULL;
+  
   while(true){
     PeakSlice peak_slice;
 
     if (g_peak_slice_queue->pop(peak_slice)==false)
       break;
 
-    radium::SampleRecorderInstance *instance = g_instances.value(peak_slice.instance_id);
-
+    if (peak_slice.instance_id != last_instance_id){
+      instance = g_instances.value(peak_slice.instance_id);
+      last_instance_id = peak_slice.instance_id;
+    }
+    
     if (instance != NULL)
       instance->add_recorded_peak(peak_slice.ch,
                                   peak_slice.min,
