@@ -2647,6 +2647,49 @@ static inline double get_note_reltempo(note_t note){
     return ATOMIC_DOUBLE_GET(note.seqblock->block->reltempo);
 }
 
+#define NUM_CHANNELS_RECORDING_MATRIX 8
+
+struct SeqtrackRecordingConfig{
+  bool record_from_system_input;
+  bool matrix[NUM_CHANNELS_RECORDING_MATRIX][NUM_CHANNELS_RECORDING_MATRIX];
+  bool enabled_soundfile_channels[NUM_CHANNELS_RECORDING_MATRIX]; // Set automatically when recording_matrix is changed in setSeqtrackRecordingMatrix.
+};
+
+static inline void set_enabled_soundfile_channels(struct SeqtrackRecordingConfig *config){
+  for (int soundfile_channel = 0 ; soundfile_channel < NUM_CHANNELS_RECORDING_MATRIX ; soundfile_channel++){
+    bool enabled = false;
+    
+    for(int ch=0;ch<NUM_CHANNELS_RECORDING_MATRIX;ch++)
+      if (config->matrix[ch][soundfile_channel]==true)
+        enabled = true;
+  
+    config->enabled_soundfile_channels[soundfile_channel] = enabled;
+  }
+}
+
+static inline void reset_recording_config(struct SeqtrackRecordingConfig *config){
+  memset(config, 0, sizeof(struct SeqtrackRecordingConfig));
+  
+  config->record_from_system_input = true;
+  config->matrix[0][0] = true;
+  config->matrix[1][1] = true;
+  set_enabled_soundfile_channels(config);
+}
+
+/*
+static inline struct SeqtrackRecordingConfig get_recording_config_from_state(hash_t *state){
+  struct SeqtrackRecordingConfig config;
+  reset_recording_config(&config);
+  
+  if (HASH_has_key(state, "record_from_system_input"))
+    config.record_from_system_input = HASH_get_bool(state, "record_from_system_input");
+
+  if (HASH_has_key(state, "matrix")){
+    
+    config.record_from_system_input = HASH_get_bool(state, "record_from_system_input");
+  }
+}
+*/
 
 
 struct _scheduler_t;
@@ -2655,10 +2698,12 @@ typedef struct _scheduler_t scheduler_t;
 struct SeqtrackAutomation;
 
 struct SeqTrack{
+  scheduler_t *scheduler;
+
   bool for_audiofiles;
 
   vector_t seqblocks; // Player must be stopped when modifying this variable. Also used for displaying if gfx_seqblocks != NULL.
-  vector_t *gfx_seqblocks; // Used for displaying. Might have the same content as this->seqblocks (points to).
+  vector_t *gfx_seqblocks; // Used for displaying. Might have the same content as this->seqblocks (pointing to &this->seqblocks).
   vector_t gfx_gfx_seqblocks; // When moving several seqblocks. Just for graphics. Player does not have to be stopped when modifying this variable
   vector_t recording_seqblocks;
 
@@ -2687,10 +2732,9 @@ struct SeqTrack{
   
   struct Patch *patch; // A "Sequencer audio file recorder/player" audio plugin. Only used when for_audiofiles==true.
   bool is_recording; // only used when for_audiofiles==true.
-  
-  scheduler_t *scheduler;
+  bool use_custom_recording_config;  // only used when for_audiofiles==true.
+  struct SeqtrackRecordingConfig custom_recording_config;  // only used when for_audiofiles==true.
 };
-
 
 static inline double get_seqtrack_reltempo(struct SeqTrack *seqtrack){
   if (seqtrack==NULL)
@@ -2756,6 +2800,8 @@ struct Song{
         bool mute_editor_automation_when_track_is_muted;
         int num_channels_in_main_pipe;
 
+        struct SeqtrackRecordingConfig default_recording_config;
+
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.
 };
@@ -2795,6 +2841,15 @@ struct Root{
 };
 
 extern struct Root *root;
+
+
+static inline struct SeqtrackRecordingConfig *get_seqtrack_recording_config(struct SeqTrack *seqtrack){
+  if (seqtrack->use_custom_recording_config)
+    return &seqtrack->custom_recording_config;
+  else
+    return &root->song->default_recording_config;
+}
+
 
 static inline int get_system_fontheight(void){
   if (root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL)
