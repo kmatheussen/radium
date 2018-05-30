@@ -1,26 +1,37 @@
 #ifndef _RADIUM_AUDIO_SAMPLERECORDER_PROC_H
 #define _RADIUM_AUDIO_SAMPLERECORDER_PROC_H
 
+namespace radium{
+  struct SampleRecorderInstance;
+}
+
+void SampleRecorder_register_instance(radium::SampleRecorderInstance *instance);
+void SampleRecorder_unregister_instance(radium::SampleRecorderInstance *instance);
+
 
 namespace radium{
 
+
 struct SampleRecorderInstance{
+  int64_t id;
 
   radium::String recording_path;
   int num_ch;
   float middle_note;
 
   int64_t start, end; // Can be accessed from another thread after is_finished has been called. Can also be accessed if holding the player lock.
-  
+
   SampleRecorderInstance(const wchar_t *recording_path, int num_ch, float middle_note)  // Note that the sample recorder adds 12 to the middle note.
     : recording_path(recording_path)
     , num_ch(num_ch)
     , middle_note(middle_note)
   {
+    SampleRecorder_register_instance(this); // sets id.
   }
 
 
   virtual ~SampleRecorderInstance(){
+    SampleRecorder_unregister_instance(this);
   }
 
   // Called when recording is finished.
