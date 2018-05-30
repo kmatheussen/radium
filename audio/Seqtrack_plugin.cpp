@@ -1398,7 +1398,7 @@ int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, SoundPlugin *plugin
 }
 
 // Called when user enables the "R" checkbox.
-void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *path, int num_ch, bool recording_from_main_input){
+void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *path, int num_ch){
   R_ASSERT(THREADING_is_main_thread());
 
   Data *data = (Data*)plugin->data;
@@ -1409,7 +1409,7 @@ void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plu
 
     R_ASSERT_RETURN_IF_FALSE(data->_recorder == NULL);
     
-    data->_recorder = new Recorder(seqtrack, path, num_ch, recording_from_main_input);
+    data->_recorder = new Recorder(seqtrack, path, num_ch, get_seqtrack_recording_config(seqtrack)->record_from_system_input);
     
     ATOMIC_SET(data->_recording_status, READY_TO_RECORD);
   }
@@ -1589,7 +1589,7 @@ void SEQTRACKPLUGIN_request_remove_sample(SoundPlugin *plugin, int64_t id, enum 
     return;
 
   if (ATOMIC_GET(sample->_state) != Sample::State::RUNNING){
-    RError("Sample %s has already been requested removed from sequencer track. type: %d", STRING_get_chars(sample->_filename), (int)type);
+    RError("Sample \"%S\" has already been requested removed from sequencer track. type: %d", sample->_filename, (int)type);
     return;
   }
     

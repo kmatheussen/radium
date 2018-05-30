@@ -2153,7 +2153,7 @@ int64_t getSampleLength(const_char* w_filename){
   const wchar_t *path = w_path_to_path(w_filename);
   int64_t length = SAMPLEREADER_get_sample_duration(path);
   if (length < 0)
-    handleError("Sample \"%s\" not found", STRING_get_chars(path));
+    handleError("Sample \"%S\" not found", path);
 
   return length;
 }

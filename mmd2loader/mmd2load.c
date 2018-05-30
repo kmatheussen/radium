@@ -542,7 +542,7 @@ bool LoadMMP2(struct Tracker_Windows *window,const wchar_t *filename){
 
 	if(file==NULL){
           perror(STRING_get_chars(filename));
-          GFX_Message(NULL, "Could not open file\n");
+          GFX_Message(NULL, "Could not open file \"%S\"\n", filename);
           return false;
 	}
 

@@ -122,7 +122,7 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool prog
   QString path = QString::fromWCharArray(wpath);
   QFileInfo info(path);
 
-  printf("path: -%s-, loading-path: -%s-\n",path.toUtf8().constData(),STRING_get_chars(_loading_path));
+  printf("path: -%s-, loading-path: -%S-\n",path.toUtf8().constData(),_loading_path);
 
   // If the path is absolute, first try the original path.
   if(!info.isRelative() && info.exists()==true){
@@ -262,7 +262,7 @@ int main(void){
 
   OS_set_saving_path(s("/asdf/tmp/filename.rad"));
 
-  printf("-%s- -%s-\n",STRING_get_chars(OS_saving_get_relative_path_if_possible(s("/asdf/tmp/aiai"))),saving_path.toUtf8().constData());
+  printf("-%S- -%s-\n",OS_saving_get_relative_path_if_possible(s("/asdf/tmp/aiai")),saving_path.toUtf8().constData());
 
   assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/badffa")), "/badffa"));
   assert(STRING_equals(OS_saving_get_relative_path_if_possible(s("/badffa/aba")), "/badffa/aba"));

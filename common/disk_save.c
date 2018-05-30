@@ -170,7 +170,7 @@ void Save(struct Root *theroot){
 }
 
 void Save_Backup(wchar_t *filename, struct Root *theroot){
-  printf("not saving backup to %s\n",STRING_get_chars(filename));
+  printf("not saving backup to %S\n", filename);
 
   const wchar_t *filename_org = dc.filename;
 

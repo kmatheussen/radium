@@ -9,7 +9,11 @@
 
 // implemented in Qt/Qt_Settings.cpp
 extern LANGSPEC wchar_t *STRING_create(const char *s);
-extern LANGSPEC wchar_t *STRING_copy(const wchar_t *s);
+
+//extern LANGSPEC wchar_t *STRING_copy(const wchar_t *s);
+static inline wchar_t *STRING_copy(const wchar_t *s){
+  return talloc_wcsdup(s);
+}
 
 extern LANGSPEC char* STRING_get_chars(const wchar_t *string);
 extern LANGSPEC char* STRING_get_utf8_chars(const char* s);

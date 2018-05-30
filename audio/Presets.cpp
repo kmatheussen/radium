@@ -112,7 +112,7 @@ static void request_load_preset_filename_from_requester(int64_t parentgui, func_
   }
 
   if (!filename.isNull())
-    S7CALL(void_charpointer,callback, talloc_format("2%s",STRING_get_chars(STRING_toBase64(STRING_create(filename)))));
+    S7CALL(void_charpointer,callback, talloc_format("2%S",STRING_toBase64(STRING_create(filename))));
 }
 
 /*

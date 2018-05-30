@@ -41,7 +41,7 @@ extern PlayerClass *pc;
 
 static bool g_saving_was_successful = true;
 static SNDFILE *g_sndfile;
-static const char *g_filename = NULL;
+static const wchar_t *g_filename = NULL;
 static float g_post_writing_left;
 
 
@@ -94,13 +94,13 @@ static bool stop_writing(bool is_cancelled){
     sprintf(temp,"Cancelled");
   
   else if(ret==false)
-    sprintf(temp,"Unable to save \"%s\": \"%s\".", g_filename, sf_error_number(close_result));
+    sprintf(temp,"Unable to save \"%S\": \"%s\".", g_filename, sf_error_number(close_result));
 
   else if(g_saving_was_successful==false)
-    sprintf(temp,"\"%s\" was saved, but with errors.", g_filename);
+    sprintf(temp,"\"%S\" was saved, but with errors.", g_filename);
 
   else
-    sprintf(temp,"\"%s\" saved successfully.", g_filename);
+    sprintf(temp,"\"%S\" saved successfully.", g_filename);
     
 
   SOUNDFILESAVERGUI_stop(temp);
@@ -190,7 +190,7 @@ bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_
   }
 
   g_saving_was_successful = true;
-  g_filename = STRING_get_chars(filename);
+  g_filename = talloc_wcsdup(filename);
   g_post_writing_left = post_recording_length;
 
   

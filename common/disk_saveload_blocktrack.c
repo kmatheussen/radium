@@ -160,7 +160,7 @@ void LoadBlockFromDisk(const char *filename_c){
   }
 
   if(strcmp(dc.ls,"WBLOCK")){
-    GFX_Message(NULL, "Loading failed.\nExpected \"WBLOCK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
+    GFX_Message(NULL, "Loading failed.\nExpected \"WBLOCK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename);
     DISK_close_and_delete(dc.file);
     goto exit;
     return;
@@ -171,7 +171,7 @@ void LoadBlockFromDisk(const char *filename_c){
 
   DC_Next();
   if(strcmp(dc.ls,"BLOCK")){
-    GFX_Message(NULL, "Loading failed.\nExpected \"BLOCK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
+    GFX_Message(NULL, "Loading failed.\nExpected \"BLOCK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename);
     DISK_close_and_delete(dc.file);
     goto exit;
   }
@@ -311,7 +311,7 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
   }
 
   if(strcmp(dc.ls,"WTRACK")){
-    GFX_Message2(NULL, true,"Loading failed.\nExpected \"WTRACK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
+    GFX_Message2(NULL, true,"Loading failed.\nExpected \"WTRACK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename);
     DISK_close_and_delete(dc.file);
     goto exit;
     return;
@@ -322,7 +322,7 @@ void LoadTrackFromDisk(const char *filename_c, struct Tracker_Windows *window, s
 
   DC_Next();
   if(strcmp(dc.ls,"TRACK")){
-    GFX_Message(NULL, "Loading failed.\nExpected \"TRACK\", but found instead: '%s'.\nFile: '%s'\n",dc.ls,STRING_get_chars(filename));
+    GFX_Message(NULL, "Loading failed.\nExpected \"TRACK\", but found instead: '%s'.\nFile: '%S'\n",dc.ls,filename);
     DISK_close_and_delete(dc.file);
     goto exit;
   }

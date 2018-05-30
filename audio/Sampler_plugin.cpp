@@ -1997,7 +1997,7 @@ static float *load_interleaved_samples(const wchar_t *filename, SF_INFO *sf_info
 }
 
 static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, bool set_loop_on_off){
-  EVENTLOG_add_event(talloc_format("load_sample_with_libsndfile -%s-", STRING_get_chars(filename)));
+  EVENTLOG_add_event(talloc_format("load_sample_with_libsndfile -%S-", filename));
     
   SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
 
@@ -2006,7 +2006,7 @@ static bool load_sample_with_libsndfile(Data *data, const wchar_t *filename, boo
   float *samples = load_interleaved_samples(filename, &sf_info);
 
   if(samples==NULL){
-    fprintf(stderr,"  Libsndfile could not open file \"%s\"\n", STRING_get_chars(filename));
+    fprintf(stderr,"  Libsndfile could not open file \"%S\"\n", filename);
     return false;
   }
 
@@ -2111,7 +2111,7 @@ static bool load_sample(Data *data, const wchar_t *filename, int instrument_numb
   if(load_xi_instrument(data,filename, set_loop_on_off)==false){
     if(load_sample_with_libsndfile(data,filename, set_loop_on_off)==false){
       if(load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false){        
-        GFX_Message(NULL,"Unable to load %s as soundfile.", STRING_get_chars(filename));
+        GFX_Message(NULL,"Unable to load %S as soundfile.", filename);
         return false;
       }
     }
@@ -2637,7 +2637,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     return;
 
   if(set_new_sample(plugin,filename,instrument_number,resampler_type,loop_start,loop_length, use_sample_file_middle_note, is_loading)==false)
-    GFX_Message(NULL, "Could not load soundfile \"%s\". (instrument number: %d)\n",STRING_get_chars(filename),instrument_number);
+    GFX_Message(NULL, "Could not load soundfile \"%S\". (instrument number: %d)\n", filename,instrument_number);
 
   Data *data=(Data*)plugin->data;
 
@@ -2679,7 +2679,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
     if (audiofile != NULL)
       HASH_put_chars(state, "audiofile", audiofile);
     else
-      GFX_addMessage("Unable to embed sample \"%s\". Could not read file.", STRING_get_chars(maybe_relative_filename));
+      GFX_addMessage("Unable to embed sample \"%S\". Could not read file.", maybe_relative_filename);
   }
 }
 

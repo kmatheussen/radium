@@ -122,13 +122,12 @@ static void gcfinalizer(void *actual_mem_start, void *user_data){
 void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber){
 	allocated+=size;
 
-        bool is_main_thread = THREADING_is_main_thread();
-        
-        R_ASSERT(!PLAYER_current_thread_has_lock());
+        if (PLAYER_current_thread_has_lock())
+          RError("Calling GC-alloc while holding player lock. %s: %d", filename, linenumber);
 
-        if (is_main_thread==false){
+        if (THREADING_is_main_thread()==false){
           RError("Calling GC-alloc from non-main_thread. %s: %d", filename, linenumber);
-          return calloc(1, size);
+          return calloc(1, size); // thread-safe fallback.
         }
         
 #ifndef DISABLE_BDWGC
@@ -310,6 +309,15 @@ char *talloc_strdup__(const char *input, const char *filename, int linenumber) {
   char *ret = talloc_atomic__((int)strlen(input) + 1, filename, linenumber);
   sprintf(ret,"%s",input);
   return ret;
+}
+
+wchar_t *talloc_wcsdup__(const wchar_t *input, const char *filename, int linenumber) {
+  if(input==NULL)
+    return NULL;
+  
+  wchar_t *ret = talloc_atomic__(sizeof(wchar_t) * ((int)wcslen(input) + 1), filename, linenumber);
+  
+  return wcscpy(ret, input);
 }
 
 char *talloc_numberstring__(int number, const char *filename, int linenumber){

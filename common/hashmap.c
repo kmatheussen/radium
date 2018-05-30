@@ -711,7 +711,7 @@ static wchar_t *read_line(disk_t *file){
 
   wchar_t *line = DISK_read_wchar_line(file);
 
-  //printf("%d: -%s-\n", curr_disk_line, STRING_get_chars(line));
+  //printf("%d: -%S-\n", curr_disk_line, line);
   
   if(line==NULL){
     GFX_Message(NULL, "End of file before finished reading hash map");
@@ -747,7 +747,7 @@ hash_t *HASH_load(disk_t *file){
     (void)ok;
 
   } else {
-    GFX_Message(NULL, "Trying to load something which is not a hash map. First line: \"%s\"",STRING_get_chars(line));
+    GFX_Message(NULL, "Trying to load something which is not a hash map. First line: \"%S\"", line);
     return NULL;
   }
 

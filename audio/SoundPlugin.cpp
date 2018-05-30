@@ -2894,7 +2894,7 @@ const wchar_t *PLUGIN_DISK_get_audio_filename(hash_t *state){
     
     if (DISK_create_dir(dc.embedded_files_dirname)==false){
       if (dc.has_shown_embedded_files_dirname_warning==false){
-        GFX_Message(NULL, "Unable to create directory \"%s\"", STRING_get_chars(dc.embedded_files_dirname));
+        GFX_Message(NULL, "Unable to create directory \"%S\"", dc.embedded_files_dirname);
         dc.has_shown_embedded_files_dirname_warning = true;
       }
     }else{      
