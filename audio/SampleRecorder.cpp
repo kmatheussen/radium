@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 namespace{
 
 struct PeakSlice{
-  radium::SampleRecorderInstance *instance;
+  int64_t instance_id; // Can't store the instance itself since it can be deleted before the queue is drained.
   int ch;
   float min;
   float max;
@@ -407,6 +407,18 @@ public:
 
 static SampleRecorderThread g_sample_recorder_thread;
 
+static QHash<int64_t, radium::SampleRecorderInstance*> g_instances;
+static int64_t g_instance_id = 0;
+
+void SampleRecorder_register_instance(radium::SampleRecorderInstance *instance){
+  instance->id = g_instance_id++;
+  g_instances[instance->id] = instance;
+}
+
+void SampleRecorder_unregister_instance(radium::SampleRecorderInstance *instance){
+  g_instances.remove(instance->id);
+}
+
 
 void SampleRecorder_called_regularly(void){
   R_ASSERT(THREADING_is_main_thread());
@@ -417,10 +429,13 @@ void SampleRecorder_called_regularly(void){
     if (g_peak_slice_queue->pop(peak_slice)==false)
       break;
 
-    peak_slice.instance->add_recorded_peak(peak_slice.ch,
-                                           peak_slice.min,
-                                           peak_slice.max
-                                           );                       
+    radium::SampleRecorderInstance *instance = g_instances.value(peak_slice.instance_id);
+
+    if (instance != NULL)
+      instance->add_recorded_peak(peak_slice.ch,
+                                  peak_slice.min,
+                                  peak_slice.max
+                                  );                       
   }
   
   while(true){
@@ -503,7 +518,7 @@ void RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const
       JUCE_get_min_max_val(audio[ch], num_frames, &min_peak, &max_peak);
       
       PeakSlice peak_slice;
-      peak_slice.instance = instance;
+      peak_slice.instance_id = instance->id;
       peak_slice.ch = ch;
       peak_slice.min = min_peak;
       peak_slice.max = max_peak;

@@ -1243,7 +1243,7 @@ X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
 
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
-Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h
+Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	$(CCC) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) # -Wno-deprecated-declarations -Wno-shadow 
 
@@ -1523,7 +1523,7 @@ Qt_check_for_updates.o: $(BUILD_DEPENDENCIES) $(P)Qt_check_for_updates.cpp
 	$(MOC) $(P)/Qt_check_for_updates.cpp >$(P)/mQt_check_for_updates.cpp
 	$(CCC) $(P)Qt_check_for_updates.cpp $(QTOPT) -DVERSION=\"$(VERSION)\"
 
-Qt_AutoBackups.o: $(BUILD_DEPENDENCIES) $(P)Qt_AutoBackups.cpp
+Qt_AutoBackups.o: $(BUILD_DEPENDENCIES) $(P)Qt_AutoBackups.cpp audio/SampleRecorder_proc.h
 	$(CCC) $(P)Qt_AutoBackups.cpp $(QTOPT) -DVERSION=\"$(VERSION)\"
 
 flowlayout.o: $(BUILD_DEPENDENCIES) $(P)flowlayout.cpp $(P)flowlayout.h
@@ -1808,7 +1808,7 @@ SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS
 SampleReader.o: audio/SampleReader.cpp
 	$(CCC) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
 
-Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/Granulator.hpp audio/Peaks.hpp
+Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/Granulator.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h
 	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT)
 
 FluidSynth_plugin.o: audio/FluidSynth_plugin.c
@@ -2159,7 +2159,7 @@ AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp
 Peaks.o: audio/Peaks.cpp audio/Peaks.hpp
 	$(CCC) audio/Peaks.cpp $(SNDFILEOPT) $(QTOPT)
 
-Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h
+Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h audio/SampleRecorder_proc.h
 	$(CCC) audio/Mixer.cpp $(QTOPT) $(JACKOPT)  $(CPUOPT)
 
 get_windows_commandlines.o: audio/get_windows_commandlines.c
