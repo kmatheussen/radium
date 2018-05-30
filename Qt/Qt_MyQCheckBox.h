@@ -173,10 +173,17 @@ struct MyQCheckBox : public QCheckBox{
 
   void mousePressEvent ( QMouseEvent * event ) override
   {
+    
+    if (_patch.data()==NULL){
+      QCheckBox::mousePressEvent(event);
+      return;
+    }
+
     if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
       return;
 
-    if (event->button() == Qt::LeftButton){      
+    if (event->button() == Qt::LeftButton){
+
       //setSliderDown(true);    
 #ifdef COMPILING_RADIUM
       if (_add_undo_when_clicked){
@@ -328,6 +335,7 @@ struct MyQCheckBox : public QCheckBox{
     CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2, _is_implicitly_on);
   }
 
+  
 #if 0  //unable to make this work. Using the "clicked" signal instead.
  signals:
   
