@@ -124,7 +124,7 @@ void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char 
 
         bool is_main_thread = THREADING_is_main_thread();
         
-        R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
+        R_ASSERT(!PLAYER_current_thread_has_lock());
 
         if (is_main_thread==false){
           RError("Calling GC-alloc from non-main_thread. %s: %d", filename, linenumber);
