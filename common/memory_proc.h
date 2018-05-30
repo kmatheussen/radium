@@ -23,8 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <wchar.h>
 
 
-#ifndef TRACKER_INCLUDE
-
 extern LANGSPEC void Threadsafe_GC_disable(void);
 extern LANGSPEC void Threadsafe_GC_enable(void);
 
@@ -86,8 +84,6 @@ extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, i
 extern LANGSPEC char *talloc_format_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2);
 
 #define talloc_format(FMT, ...) ((void)donothing(0 && printf(FMT,  __VA_ARGS__)), talloc_format_internal(FMT,   __VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT. (the printf call will never be called, or even compiled into the program, but the error runs on it)
-
-#endif
 
 
 #endif
