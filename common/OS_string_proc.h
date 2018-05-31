@@ -74,6 +74,9 @@ namespace radium{
 #define D(A)
 #endif
 
+// Horrible. Will replace with a new one using radium::GcHolder instead.
+// Copy constructors, manual reference counters and so forth are funny concepts, but not something there's any sober reason to have to deal with with when making non-programming programs.
+// Proper behind-the-scene garbage collectors is what you want in real life programming.
 struct String{
 
 private:
@@ -93,7 +96,25 @@ private:
       D(printf("... Destroyed \"%S\"\n", string));
       V_free(const_cast<wchar_t*>(string));
     }
+
+    void inc(void){
+      num_users++;
+    }
     
+    void dec(void){
+      num_users--;
+      if (num_users==0)
+        delete this;
+    }
+    
+    mutable int _length = -1;
+    
+    int length(void) const {
+      if (_length==-1)
+        _length = wcslen(string);
+
+      return _length;
+    }
   };
 
   InternalString *string;
@@ -107,28 +128,47 @@ public:
     D(printf("  String(%S): %d\n", get(), (int)this->string->num_users));
   }
 
+  String()
+    : String(L"")
+  {}
+  
   String(const char *string)
-    : string(new InternalString(STRING_create(string)))
+    : String(STRING_create(string))
   {
-    R_ASSERT(THREADING_is_main_thread());
-    D(printf("  String(%S): %d\n", get(), (int)this->string->num_users));
   }
 
   String(const String& old_string)
     : string(old_string.string)
   {
     R_ASSERT(THREADING_is_main_thread());
-    string->num_users++;
+    
+    string->inc();
+    
     D(printf("  String(%S): %d\n", get(), string->num_users));
   }
 
+  String& operator=(const String &copy){
+    R_ASSERT(THREADING_is_main_thread());
+
+    D(printf("   String::operator=. Old: -%S-. New: -%S-\n", get(), copy.get()));
+      
+    copy.string->inc();
+    string->dec();
+    string = copy.string;
+    
+    return *this;
+  }
+
+  String& operator=(const wchar_t *string){
+    return operator=(String(string));
+  }
+    
   ~String(){
     R_ASSERT(THREADING_is_main_thread());
 
-    string->num_users--;
-    D(printf("     ~String(%S): %d\n", get(), string->num_users));
-    if(string->num_users==0)
-      delete string;
+    D(printf("     ~String(%S): %d\n", get(), string->num_users-1));
+    
+    string->dec();
   }
 
   const wchar_t* get(void) const {
@@ -141,6 +181,14 @@ public:
     return string->string;
   }
 
+  int length(void) const {
+    return string->length();
+  }
+
+  bool is_empty(void) const {
+    return length()==0;
+  }
+  
   /*
   operator const wchar_t*() const {
     R_ASSERT(THREADING_is_main_thread());

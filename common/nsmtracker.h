@@ -2729,11 +2729,13 @@ struct SeqTrack{
   struct SeqtrackAutomation *seqtrackautomation;
 
   const char *name; // Not used when for_audiofiles==true. (then we use patch->name instead)
-  
-  struct Patch *patch; // A "Sequencer audio file recorder/player" audio plugin. Only used when for_audiofiles==true.
-  bool is_recording; // only used when for_audiofiles==true.
-  bool use_custom_recording_config;  // only used when for_audiofiles==true.
-  struct SeqtrackRecordingConfig custom_recording_config;  // only used when for_audiofiles==true.
+
+  // All variables below are only used when for_audiofiles==true.
+  struct Patch *patch; // A "Sequencer audio file recorder/player" audio plugin.
+  bool is_recording;
+  bool use_custom_recording_config;
+  struct SeqtrackRecordingConfig custom_recording_config;
+  int recording_generation; // Used in audio/Seqtrack_plugin.cpp
 };
 
 static inline double get_seqtrack_reltempo(struct SeqTrack *seqtrack){

@@ -346,7 +346,6 @@ bool seqtrackIsRecording(int seqtracknum){
   return seqtrack->is_recording;
 }
 
-
 // seqtrack using custom recording config
 
 void setSeqtrackUseCustomRecordingConfig(int seqtracknum, bool use_custom){
@@ -359,7 +358,7 @@ void setSeqtrackUseCustomRecordingConfig(int seqtracknum, bool use_custom){
 
   if (use_custom==true)
     seqtrack->custom_recording_config = root->song->default_recording_config;
-
+  
   seqtrack->use_custom_recording_config = use_custom;
 }
 
