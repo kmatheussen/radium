@@ -85,11 +85,11 @@ static void set_num_visible_outputs(SoundPlugin *plugin);
 
 static QSet<QString> g_resampler_warnings;
 
-#define RECORDER_ID 0
+#define INITIAL_RECORDER_ID 0
 
 namespace{
 
-static int64_t g_id = RECORDER_ID+1;
+static int64_t g_id = INITIAL_RECORDER_ID+1;
 
 struct MyReader : public radium::GranulatorCallback{
   radium::LockAsserter lockAsserter;
@@ -998,7 +998,8 @@ static int64_t g_recorder_id = HIGHEST_RECORDER_ID;
 
 struct Recorder;
 static QHash<int64_t, Recorder*> g_recorders;
-
+static QVector<Recorder*> g_successfully_finished_recorders;
+ 
 struct Recorder : public radium::SampleRecorderInstance{
 
   const int64_t _id = g_recorder_id--;
@@ -1012,13 +1013,22 @@ struct Recorder : public radium::SampleRecorderInstance{
 
   bool _recording_from_main_input;
 
+  radium::String _filename;
+  
+  int _seqtrack_recording_generation;
+  
   Recorder(struct SeqTrack *seqtrack, const wchar_t *recording_path, int num_ch, bool recording_from_main_input)
-    : SampleRecorderInstance(recording_path, num_ch, 48) // The sample recorder adds 12 to the middle note.
+    : SampleRecorderInstance(recording_path, num_ch, 48) // 60 is standard value, I think, but the sample recorder adds 12 to the middle note, for some reason.
     , _peaks(num_ch)
       //, _data(data)
     , _seqtrack(seqtrack)
     , _recording_from_main_input(recording_from_main_input)
+    , _seqtrack_recording_generation(++seqtrack->recording_generation)
   {
+    printf("-------------------------     recorder CONSTRUCTOR %d (%p)\n", (int)_seqtrack_recording_generation, this);
+    R_ASSERT(THREADING_is_main_thread());
+    R_ASSERT(seqtrack->for_audiofiles);
+      
     for(int ch=0;ch<num_ch;ch++)
       _peaks.set(ch, new radium::Peaks);
 
@@ -1026,36 +1036,107 @@ struct Recorder : public radium::SampleRecorderInstance{
   }
 
   ~Recorder(){
+    R_ASSERT(THREADING_is_main_thread());
+    
+    printf("-------------------------     recorder DESTRUCTOR %d (%p)\n", (int)_seqtrack_recording_generation, this);
     g_recorders.remove(_id);
     
     for(int ch=0;ch<num_ch;ch++)
       delete _peaks[ch];
   }
 
-  void is_finished(bool success, wchar_t *filename){
-    
-    // TODO: Schedule adding the sample right after playing stops. (shouldn't add it directly since we have to stop playing)
+  void insert_audiofile(void){
+    R_ASSERT(THREADING_is_main_thread());
+    R_ASSERT_RETURN_IF_FALSE(g_successfully_finished_recorders.contains(this));
 
     struct SeqTrack *seqtrack = _seqtrack.data();
-    
-    int seqtracknum = get_seqtracknum(seqtrack);
-    R_ASSERT_RETURN_IF_FALSE(seqtracknum >= 0);
 
-    SEQTRACK_set_recording(seqtrack, false);
+    int seqtracknum = get_seqtracknum(seqtrack);
+
+    if (seqtracknum < 0){
+      
+      printf(" Recorder::insert_audiofile: Seqtrack not found in song. Deleted?\n");
+      
+    } else {
+
+      if (_seqblock.data() != NULL)
+        SEQTRACK_remove_recording_seqblock(seqtrack, _seqblock.data());
+      else{
+        R_ASSERT_NON_RELEASE(false);
+      }
+      
+      ADD_UNDO(Sequencer());
+      SEQTRACK_insert_sample(seqtrack, seqtracknum, _filename.get(), start, end);
+
+    }
+  }
+ 
+  void is_finished(bool success, wchar_t *filename){
+    struct SeqTrack *seqtrack = _seqtrack.data();
     
-    SEQTRACK_remove_recording_seqblock(seqtrack, _seqblock.data());
+    printf("-------------------------        recorder IS_FINISHED start %d / %d  (%p)\n", (int)seqtrack->recording_generation, (int)_seqtrack_recording_generation, this);
+
+    int seqtracknum = get_seqtracknum(seqtrack);
+    if (seqtracknum < 0){
+      printf(" Recorder::is_finished: Seqtrack not in song. Deleted?\n");
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+
+    if(_seqtrack_recording_generation==seqtrack->recording_generation){
+      SEQTRACK_set_recording(seqtrack, false);
+    }
+
+    if (_has_started==false)
+      R_ASSERT(_seqblock.data()==NULL);
+    
+    printf("-------------------------        recorder IS_FINISHED end   %d / %d  (%p). Success: %d. Filename: %S\n", (int)seqtrack->recording_generation, (int)_seqtrack_recording_generation, this, success, filename);
 
     if (success) {
-      ADD_UNDO(Sequencer());
-      SEQTRACK_insert_sample(seqtrack, seqtracknum, filename, start, end);
+
+      QFileInfo info(STRING_get_qstring(filename));
+      _seqblock->sample_filename_without_path = talloc_wcsdup(STRING_create(info.fileName()));
+      
+      _filename = filename;
+      g_successfully_finished_recorders.push_back(this);
+      
+    } else {
+      
+      delete this;
+      
     }
+
+    SEQTRACK_update(seqtrack);
+  }
+
+  
+private:
+
+  int64_t _start;
+  int64_t _end;
+
+  void called_when_started(void){
+    R_ASSERT(_seqblock.data()==NULL);
     
-    delete this;
+    PLAYER_lock();{
+      _start = radium::SampleRecorderInstance::start;
+    }PLAYER_unlock();
+    
+    _end = _start + RADIUM_BLOCKSIZE;
+    
+    _seqblock.set(SEQTRACK_add_recording_seqblock(_seqtrack.data(), _start, _end));
+    
+    if (_seqblock.data() != NULL){ // Not supposed to be NULL, but we should have already gotten an assertion report if it has happened. This check is only to avoid crash.
+      _seqblock->sample_id = _id;
+      _seqblock->sample_filename_without_path = L"Recording...";
+      SEQTRACK_update(_seqtrack.data());
+    }
   }
 
   bool _has_started = false;
-  int64_t _start;
-  int64_t _end;
+  
+  
+public:
   
   void add_recorded_peak(int ch, float min_peak, float max_peak){
 
@@ -1064,16 +1145,8 @@ struct Recorder : public radium::SampleRecorderInstance{
     if (ch==num_ch-1){
 
       if (_has_started==false){
-      
-        PLAYER_lock();{
-          _start = radium::SampleRecorderInstance::start;
-        }PLAYER_unlock();
-        
-        _end = _start + RADIUM_BLOCKSIZE;
-        
-        _seqblock.set(SEQTRACK_add_recording_seqblock(_seqtrack.data(), _start, _end));
-        if (_seqblock.data() != NULL) // Not supposed to be NULL, but we should have already gotten an assertion report if it has happened. This check is only to avoid crash.
-          _seqblock->sample_id = _id;
+
+        called_when_started();
         
         _has_started = true;
         
@@ -1385,7 +1458,7 @@ int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, SoundPlugin *plugin
   Data *data = (Data*)plugin->data;
 
   if (type==Seqblock_Type::RECORDING)
-    return RECORDER_ID;
+    return INITIAL_RECORDER_ID;
 
   int64_t ret = add_sample(data, filename, seqblock, type);
 
@@ -1415,13 +1488,16 @@ void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plu
   }
 }
 
-static void disable_running_recorder(Data *data){
+static bool disable_running_recorder(Data *data){
   if (ATOMIC_COMPARE_AND_SET_INT(data->_recording_status, IS_RECORDING, STOP_RECORDING)){
-  
-    int i = 0;
-    while(ATOMIC_GET(data->_recording_status) != NOT_RECORDING && i < 10){
-      msleep(10);
-      i++;
+
+    const int ms_to_wait = 5000; // 5 seconds
+    const int ms_to_wait_per_call = 10;
+    int ms = 0;
+    
+    while(ATOMIC_GET(data->_recording_status) != NOT_RECORDING && ms < ms_to_wait){
+      msleep(ms_to_wait_per_call);
+      ms += ms_to_wait_per_call;
     }
     
     R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_recording_status)==NOT_RECORDING);
@@ -1431,12 +1507,15 @@ static void disable_running_recorder(Data *data){
     R_ASSERT_NON_RELEASE(false);
     
   }
+
+  return false; // to avoid deadlock.
 }
 
 
 
 // Called when user disables the "R" checkbox.
-void SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin){
+// If it returns true, it means that we have to wait for SEQTRACK_call_me_when_recorder_is_finished.
+bool SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin){
   R_ASSERT(THREADING_is_main_thread());
 
   Data *data = (Data*)plugin->data;
@@ -1444,7 +1523,7 @@ void SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, SoundPlugin *pl
   int status = ATOMIC_GET(data->_recording_status);
 
   if (status==NOT_RECORDING)
-    return;
+    return false;
   
   if (status == READY_TO_RECORD) {
     
@@ -1463,12 +1542,14 @@ void SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, SoundPlugin *pl
       delete recorder;
     else{
       R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_recording_status)==IS_RECORDING);
-      disable_running_recorder(data); // Between the first and the second test whether data->_recording_status==READY_TO_RECORD, it switched status to IS_RECORDING.
+      return disable_running_recorder(data); // Between the first and the second test whether data->_recording_status==READY_TO_RECORD, it switched status to IS_RECORDING.
     }
+
+    return false;
     
   } else {
 
-    disable_running_recorder(data);
+    return disable_running_recorder(data);
 
   }
 }
@@ -1691,6 +1772,9 @@ int64_t SEQTRACKPLUGIN_get_total_num_frames_in_sample(const SoundPlugin *plugin,
 const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t id, bool full_path){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), L"");
 
+  if (id == INITIAL_RECORDER_ID)
+    return L"";
+
   if (id <= HIGHEST_RECORDER_ID){
     Recorder *recorder = g_recorders[id];
     
@@ -1699,7 +1783,10 @@ const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t
       return L"";
     }
 
-    return recorder->recording_path.get();
+    if (recorder->_filename.is_empty()==false)
+      return recorder->_filename.get();
+    else
+      return recorder->recording_path.get();    
   }
 
   Sample *sample = get_sample(plugin, id, true, true, true);
@@ -1821,6 +1908,20 @@ void SEQTRACKPLUGIN_called_very_often(SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
 
   data->called_very_often(plugin);
+
+  if (is_playing_song()==false){
+    QVector<Recorder*> to_remove;
+    
+    for(auto *recorder : g_successfully_finished_recorders){
+      recorder->insert_audiofile();
+      to_remove.push_back(recorder);
+    }
+    
+    for(auto *recorder : to_remove){
+      R_ASSERT(g_successfully_finished_recorders.removeAll(recorder)==1);
+      delete recorder;
+    }
+  }
 }
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){

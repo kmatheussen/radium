@@ -380,12 +380,9 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
   if (seqblock->sample_id==-1)
     return NULL;
 
-  if (type==Seqblock_Type::RECORDING) {
-    
-    seqblock->sample_filename_without_path = L"";
-    
-  } else {
-    seqblock->sample_filename_without_path = STRING_copy(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, false));
+  seqblock->sample_filename_without_path = STRING_copy(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, false));
+
+  if (type != Seqblock_Type::RECORDING) {
 
     int64_t duration = SEQTRACKPLUGIN_get_total_num_frames_for_sample(plugin, seqblock->sample_id);
   
@@ -1564,9 +1561,11 @@ static wchar_t *get_recording_path(const struct SoundPlugin *plugin){
   return recording_path;
 }
 
-void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
-  R_ASSERT_RETURN_IF_FALSE(seqtrack->for_audiofiles);
   
+void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
+  R_ASSERT(THREADING_is_main_thread());
+  R_ASSERT_RETURN_IF_FALSE(seqtrack->for_audiofiles);
+
   if (is_recording==seqtrack->is_recording)
     return;
 
@@ -1576,15 +1575,21 @@ void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
 
   R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
   
-  if (is_recording==false)
+  if (is_recording==false) {
+    
     SEQTRACKPLUGIN_disable_recording(seqtrack, plugin);
-  else {
+    
+  } else {
 
     wchar_t *recording_path = get_recording_path(plugin);
     if (recording_path==NULL)
       return;
     
-    SEQTRACKPLUGIN_enable_recording(seqtrack, plugin, STRING_append(recording_path, STRING_create(OS_get_directory_separator())), 2);
+    SEQTRACKPLUGIN_enable_recording(seqtrack,
+                                    plugin,
+                                    STRING_append(recording_path,
+                                                  STRING_create(OS_get_directory_separator())),
+                                    2);
   }
   
   seqtrack->is_recording = is_recording;

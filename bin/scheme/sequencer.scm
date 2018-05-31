@@ -99,19 +99,22 @@
 
   (recreate-options)
   
-  (if (<ra> :seqtrack-is-recording seqtracknum)
-      (<gui> :set-enabled options #f))
-
   (define content #f)
-  
+
+  (define reset-button (<gui> :button "Reset values"
+                              (lambda ()
+                                (<ra> :reset-seqtrack-recording-options seqtracknum)
+                                (recreate-options))))
+
+  ;;(when (<ra> :seqtrack-is-recording seqtracknum)
+  ;;  (<gui> :set-enabled options #f)
+  ;;  (<gui> :set-enabled reset-button #f))
+    
   (set! content (<gui> :vertical-layout
                        (mid-horizontal-layout (<gui> :text (<-> "Recording options for \"" (<ra> :get-seqtrack-name seqtracknum) "\" (#" seqtracknum ")")))
                        options
                        (<gui> :horizontal-layout
-                              (<gui> :button "Reset values"
-                                     (lambda ()
-                                       (<ra> :reset-seqtrack-recording-options seqtracknum)
-                                       (recreate-options)))
+                              reset-button
                               (<gui> :button "Close"
                                      (lambda ()
                                        (if popup
@@ -119,10 +122,11 @@
     
   (<gui> :set-layout-spacing content 5 2 2 2 2)
 
-  (if #t
+  (if #f
       (set! popup (<gui> :popup))
       (begin
         (set! popup (<gui> :widget))
+        ;;(<gui> :set-modal popup #t)
         (<gui> :set-parent popup -2)))
   
   (<gui> :add popup content)
