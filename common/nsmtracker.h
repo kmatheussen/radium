@@ -2652,19 +2652,17 @@ static inline double get_note_reltempo(note_t note){
 struct SeqtrackRecordingConfig{
   bool record_from_system_input;
   bool matrix[NUM_CHANNELS_RECORDING_MATRIX][NUM_CHANNELS_RECORDING_MATRIX];
-  bool enabled_soundfile_channels[NUM_CHANNELS_RECORDING_MATRIX]; // Set automatically when recording_matrix is changed in setSeqtrackRecordingMatrix.
 };
 
-static inline void set_enabled_soundfile_channels(struct SeqtrackRecordingConfig *config){
-  for (int soundfile_channel = 0 ; soundfile_channel < NUM_CHANNELS_RECORDING_MATRIX ; soundfile_channel++){
-    bool enabled = false;
-    
+static inline int get_num_recording_soundfile_channels(const struct SeqtrackRecordingConfig *config){
+  int ret = 0;
+  
+  for (int soundfile_channel = 0 ; soundfile_channel < NUM_CHANNELS_RECORDING_MATRIX ; soundfile_channel++)
     for(int ch=0;ch<NUM_CHANNELS_RECORDING_MATRIX;ch++)
       if (config->matrix[ch][soundfile_channel]==true)
-        enabled = true;
-  
-    config->enabled_soundfile_channels[soundfile_channel] = enabled;
-  }
+        ret = R_MAX(ret, soundfile_channel+1);
+
+  return ret;
 }
 
 static inline void reset_recording_config(struct SeqtrackRecordingConfig *config){
@@ -2673,7 +2671,6 @@ static inline void reset_recording_config(struct SeqtrackRecordingConfig *config
   config->record_from_system_input = true;
   config->matrix[0][0] = true;
   config->matrix[1][1] = true;
-  set_enabled_soundfile_channels(config);
 }
 
 /*

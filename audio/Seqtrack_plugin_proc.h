@@ -44,7 +44,7 @@ extern LANGSPEC void SEQTRACKPLUGIN_prepare_to_play(struct SoundPlugin *plugin, 
 extern LANGSPEC void SEQTRACKPLUGIN_clear_resampler_warning_hashmap(void);
 extern LANGSPEC int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock, enum Seqblock_Type type);
 
-extern LANGSPEC void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *path, int num_ch); // Called when user enables the "R" checkbox.
+extern LANGSPEC void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *path); // Called when user enables the "R" checkbox.
 extern LANGSPEC bool SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin); // Called when user disables the "R" checkbox.
 
 extern LANGSPEC void SEQTRACKPLUGIN_apply_gfx_samples(struct SoundPlugin *plugin);

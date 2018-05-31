@@ -1011,18 +1011,18 @@ struct Recorder : public radium::SampleRecorderInstance{
   radium::GcHolder<struct SeqBlock> _seqblock;
   radium::GcHolder<struct SeqTrack> _seqtrack;
 
-  bool _recording_from_main_input;
-
+  const SeqtrackRecordingConfig _config;
+  
   radium::String _filename;
   
   int _seqtrack_recording_generation;
   
-  Recorder(struct SeqTrack *seqtrack, const wchar_t *recording_path, int num_ch, bool recording_from_main_input)
-    : SampleRecorderInstance(recording_path, num_ch, 48) // 60 is standard value, I think, but the sample recorder adds 12 to the middle note, for some reason.
+  Recorder(struct SeqTrack *seqtrack, const wchar_t *recording_path, const SeqtrackRecordingConfig *config)
+    : SampleRecorderInstance(recording_path, get_num_recording_soundfile_channels(config), 48) // 60 is standard value, I think, but the sample recorder adds 12 to the middle note, for some reason.
     , _peaks(num_ch)
       //, _data(data)
     , _seqtrack(seqtrack)
-    , _recording_from_main_input(recording_from_main_input)
+    , _config(*config)
     , _seqtrack_recording_generation(++seqtrack->recording_generation)
   {
     printf("-------------------------     recorder CONSTRUCTOR %d (%p)\n", (int)_seqtrack_recording_generation, this);
@@ -1471,7 +1471,7 @@ int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, SoundPlugin *plugin
 }
 
 // Called when user enables the "R" checkbox.
-void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *path, int num_ch){
+void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *path){
   R_ASSERT(THREADING_is_main_thread());
 
   Data *data = (Data*)plugin->data;
@@ -1482,7 +1482,7 @@ void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, SoundPlugin *plu
 
     R_ASSERT_RETURN_IF_FALSE(data->_recorder == NULL);
     
-    data->_recorder = new Recorder(seqtrack, path, num_ch, get_seqtrack_recording_config(seqtrack)->record_from_system_input);
+    data->_recorder = new Recorder(seqtrack, path, get_seqtrack_recording_config(seqtrack));
     
     ATOMIC_SET(data->_recording_status, READY_TO_RECORD);
   }
@@ -1924,35 +1924,113 @@ void SEQTRACKPLUGIN_called_very_often(SoundPlugin *plugin){
   }
 }
 
+static void RT_record(Data *data, int num_frames, float **instrument_inputs){
+  R_ASSERT_RETURN_IF_FALSE(num_frames==RADIUM_BLOCKSIZE);
+
+  
+  Recorder *recorder = data->_recorder;
+  const SeqtrackRecordingConfig &config = recorder->_config;
+
+  bool empty_block_has_been_cleared = false;
+  float empty_block[RADIUM_BLOCKSIZE];
+
+  
+  // Input buffer
+  //
+  float *inputs_[NUM_CHANNELS_RECORDING_MATRIX];
+  float **inputs = inputs_;
+  
+  const int num_ch = NUM_CHANNELS_RECORDING_MATRIX;
+  
+  if (config.record_from_system_input)
+    R_ASSERT(MIXER_get_main_inputs(inputs, num_ch)==num_ch);
+  else
+    memcpy(inputs, instrument_inputs, sizeof(float*)*num_ch);
+
+  
+  // Output buffer (i.e. audio sent to soundfile)
+  //
+  int num_used_output_buffers = 0;
+  float output_buffer[NUM_CHANNELS_RECORDING_MATRIX*RADIUM_BLOCKSIZE];
+
+  float *outputs_[NUM_CHANNELS_RECORDING_MATRIX];
+  float **outputs = outputs_;
+
+
+  // Fill output buffer
+  //
+  for (int output_ch = 0 ; output_ch < NUM_CHANNELS_RECORDING_MATRIX ; output_ch++){
+
+    bool has_been_used = false;
+    bool has_been_used_more_than_once = false;
+    
+    for(int input_ch=0;input_ch<NUM_CHANNELS_RECORDING_MATRIX;input_ch++) {
+      
+      if (config.matrix[input_ch][output_ch]==true) {
+
+        if(has_been_used) {
+
+          if (false==has_been_used_more_than_once){
+
+            const float *old_output = outputs[output_ch];
+            
+            outputs[output_ch] = &output_buffer[num_used_output_buffers*RADIUM_BLOCKSIZE];
+            num_used_output_buffers++;          
+
+            for(int i=0 ; i < RADIUM_BLOCKSIZE ; i++)
+              outputs[output_ch][i] = old_output[i] + inputs[input_ch][i];
+
+            has_been_used_more_than_once = true;
+
+          } else {
+          
+            for(int i=0 ; i < RADIUM_BLOCKSIZE ; i++)
+              outputs[output_ch][i] += inputs[input_ch][i];
+
+          }
+          
+        } else {
+          
+          outputs[output_ch] = inputs[input_ch];
+          
+          has_been_used = true;
+
+          
+        }
+      }
+
+    }
+
+    if (false==has_been_used){
+      
+      if (false==empty_block_has_been_cleared){
+        memset(empty_block, 0, sizeof(float)*RADIUM_BLOCKSIZE);
+        empty_block_has_been_cleared = true;
+      }
+      
+      outputs[output_ch] = empty_block;
+          
+    }
+    
+  }
+
+
+
+  // Record
+  //
+  RT_SampleRecorder_add_audio(data->_recorder,
+                              (const float**)outputs,
+                              RADIUM_BLOCKSIZE
+                              );
+}
+
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   //SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
 
-  // Recorder
-  if (ATOMIC_GET(data->_recording_status)==IS_RECORDING){
-    const float *audio_[data->_recorder->num_ch];
-    const float **audio = audio_;
-
-    int num_ch;
-    
-    if (data->_recorder->_recording_from_main_input) {
-      num_ch = MIXER_get_main_inputs(audio, data->_recorder->num_ch); // Fix: More main input channels. Now there's only two. This number can easily be increased to 8.
-    } else {
-      num_ch = R_MIN(NUM_INPUTS, data->_recorder->num_ch);
-      for(int ch=0;ch<num_ch;ch++)        
-        audio[ch] = inputs[ch];
-    }
-
-    const float empty_block[RADIUM_BLOCKSIZE] = {}; // The stack might be hotter than the heap.
-    for(int ch = num_ch ; ch < data->_recorder->num_ch ; ch++)
-      audio[ch] = empty_block;
-    
-    RT_SampleRecorder_add_audio(data->_recorder,
-                                audio,
-                                RADIUM_BLOCKSIZE
-                                );
-  }
-
+  if (ATOMIC_GET(data->_recording_status)==IS_RECORDING)
+    RT_record(data, num_frames, inputs);
+  
   // Null out channels
   for(int ch = 0 ; ch < NUM_OUTPUTS ; ch++)
     memset(outputs[ch], 0, num_frames*sizeof(float));

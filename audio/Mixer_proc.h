@@ -34,7 +34,7 @@ extern LANGSPEC void MIXER_set_jack_timebase_master(bool doit);
 
 extern LANGSPEC void MIXER_call_very_often(void);
 extern LANGSPEC STime MIXER_get_block_delta_time(STime time);
-extern LANGSPEC int MIXER_get_main_inputs(const float **audio, int max_num_ch);
+extern LANGSPEC int MIXER_get_main_inputs(float **audio, int max_num_ch);
 //extern LANGSPEC int64_t MIXER_get_time(void);
 
 extern LANGSPEC float MIXER_get_curr_audio_block_cycle_fraction(void);
