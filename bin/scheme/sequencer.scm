@@ -515,27 +515,19 @@
 (def-area-subclass (<sequencer-left-part-buttons> :gui :x1 :y1 :x2 :y2)
 
   (define (callback type)
-    (cond ((eq? type '+)
-           (popup-menu
-            "Insert Audio track"
-            (lambda ()
-              (<ra> :insert-seqtrack #t))
-            "Insert Editor track"
-            (lambda ()
-              (<ra> :insert-seqtrack #f))))
+    (cond ((eq? type '+E)
+           (<ra> :insert-seqtrack #f))
+          ((eq? type '+A)
+           (<ra> :insert-seqtrack #t))
           ((eq? type '-)
            (when (> (<ra> :get-num-seqtracks) 1)
              (define seqtracknum (<ra> :get-curr-seqtrack))
              (set! *current-seqblock-info* #f)
              (<ra> :delete-seqtrack seqtracknum)))
-          ((eq? type 'Append)
-           (popup-menu
-            "Append Audio track"
-            (lambda ()
-              (<ra> :append-seqtrack #t))
-            "Append Editor track"
-            (lambda ()
-              (<ra> :append-seqtrack #f))))
+          ((eq? type 'AppendE)
+           (<ra> :append-seqtrack #f))
+          ((eq? type 'AppendA)
+           (<ra> :append-seqtrack #t))
           (else
            (assert #f))))
 
@@ -551,16 +543,24 @@
 
   (define b (max 0 (/ (get-fontheight) 6)))
   (horizontally-layout-areas x1 y1 x2 y2
-                             (list '+ '- 'Append)
+                             (list '+E '+A '- 'AppendE 'AppendA)
                              :y1-border (1+ b)
                              :spacing b
                              :callback
                              (lambda (type x1 y1 x2 y2)
                                (add-sub-area-plain! (<new> :button gui x1 y1 x2 y2
-                                                           :text (to-string type)
-                                                           :statusbar-text (cond ((eq? type '+) "Insert seqtrack")
+                                                           :text (cond ((eq? type '+E) "+ e")
+                                                                       ((eq? type '+A ) "+ a")
+                                                                       ((eq? type '-) "-")
+                                                                       ((eq? type 'AppendE) "+A e")
+                                                                       ((eq? type 'AppendA) "+A a")
+                                                                       (else
+                                                                        (assert #f)))
+                                                           :statusbar-text (cond ((eq? type '+E) "Insert editor seqtrack")
+                                                                                 ((eq? type '+A ) "Insert audio seqtrack")
                                                                                  ((eq? type '-) "Delete current seqtrack")
-                                                                                 ((eq? type 'Append) "Append seqtrack")
+                                                                                 ((eq? type 'AppendE) "Append editor seqtrack")
+                                                                                 ((eq? type 'AppendA) "Append audio seqtrack")
                                                                                  (else
                                                                                   (assert #f)))
                                                            :callback-release (lambda ()
