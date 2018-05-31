@@ -1584,12 +1584,17 @@ void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
     wchar_t *recording_path = get_recording_path(plugin);
     if (recording_path==NULL)
       return;
-    
+
+    if (get_num_recording_soundfile_channels(get_seqtrack_recording_config(seqtrack))==0){
+      R_ASSERT(false);
+      return;
+    }
+      
     SEQTRACKPLUGIN_enable_recording(seqtrack,
                                     plugin,
                                     STRING_append(recording_path,
-                                                  STRING_create(OS_get_directory_separator())),
-                                    2);
+                                                  STRING_create(OS_get_directory_separator()))
+                                    );
   }
   
   seqtrack->is_recording = is_recording;

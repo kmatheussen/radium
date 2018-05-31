@@ -335,6 +335,11 @@ void setSeqtrackIsRecording(int seqtracknum, bool is_recording){
   if (seqtrack==NULL)
     return;
 
+  if (is_recording && get_num_recording_soundfile_channels(get_seqtrack_recording_config(seqtrack))==0){
+    handleError("setSeqtrackIsRecording: Can not record since no channels are selected in the matrix");
+    return;
+  }
+
   SEQTRACK_set_recording(seqtrack, is_recording);
 }
 
@@ -409,8 +414,6 @@ void setSeqtrackRecordingMatrix(int seqtracknum, int input_channel, int soundfil
 
   auto *config = get_seqtrack_recording_config(seqtrack);
   config->matrix[input_channel][soundfile_channel] = enabled;
-
-  set_enabled_soundfile_channels(config);
 }
 
 bool getSeqtrackRecordingMatrix(int seqtracknum, int input_channel, int soundfile_channel){

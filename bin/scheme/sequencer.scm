@@ -29,8 +29,23 @@
     (set! *has-shown-record-message* #t)))
 
 
+(define (get-num-recording-channels seqtracknum)
+  (define ret 0)
+  (for-each (lambda (input-channel)
+              (for-each (lambda (soundfile-channel)
+                          (if (<ra> :get-seqtrack-recording-matrix seqtracknum input-channel soundfile-channel)
+                              (set! ret (max ret (1+ soundfile-channel)))))
+                        (iota 8)))
+            (iota 8))
+  ret)
+
+(define *open-record-config-windows* (make-hash-table))
+(define *curr-record-config-window* #f) ;; only show one at a time.
 
 (define (show-record-popup-menu seqtracknum)
+  (if *curr-record-config-window*
+      (<gui> :close *curr-record-config-window*))
+  
   (define popup #f)
   (define radiobuttons
     (map (lambda (ch)
@@ -134,6 +149,13 @@
   (<gui> :show popup)
   (<gui> :minimize-as-much-as-possible popup)
                                         ;(<gui> :set-pos widget (floor (<ra> :get-global-mouse-pointer-x)) (floor (<ra> :get-global-mouse-pointer-y)))
+
+  (set! *curr-record-config-window* popup)
+
+  (<gui> :add-deleted-callback popup
+         (lambda (radium-runs-custom-exec)
+           (set! (*open-record-config-windows* seqtracknum) #f)
+           (set! *curr-record-config-window* #f)))
   )
 
 
@@ -232,9 +254,12 @@
                                       (undo-block
                                        (lambda ()
                                          (cond ((eq? type 'record)
-                                                (if (not (get-recording))
+                                                (if (and (not (get-recording))
+                                                         (not (*open-record-config-windows* seqtracknum)))
                                                     (maybe-show-record-message))
-                                                (<ra> :set-seqtrack-is-recording seqtracknum is-selected)
+                                                (if (= 0 (get-num-recording-channels seqtracknum))
+                                                    (<ra> :show-async-message "Must select at least one recording channel")
+                                                    (<ra> :set-seqtrack-is-recording seqtracknum is-selected))
                                                 )
                                                ((eq? type 'solo)
                                                 (<ra> :set-instrument-solo instrument-id is-selected)
