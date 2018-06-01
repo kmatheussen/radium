@@ -581,13 +581,14 @@
                                                                        ((eq? type 'AppendA) "+A a")
                                                                        (else
                                                                         (assert #f)))
-                                                           :statusbar-text (cond ((eq? type '+E) "Insert editor seqtrack")
-                                                                                 ((eq? type '+A ) "Insert audio seqtrack")
-                                                                                 ((eq? type '-) "Delete current seqtrack")
-                                                                                 ((eq? type 'AppendE) "Append editor seqtrack")
-                                                                                 ((eq? type 'AppendA) "Append audio seqtrack")
-                                                                                 (else
-                                                                                  (assert #f)))
+                                                           :statusbar-text (list #t
+                                                                                 (cond ((eq? type '+E) "Insert editor seqtrack")
+                                                                                       ((eq? type '+A ) "Insert audio seqtrack")
+                                                                                       ((eq? type '-) "Delete current seqtrack")
+                                                                                       ((eq? type 'AppendE) "Append editor seqtrack")
+                                                                                       ((eq? type 'AppendA) "Append audio seqtrack")
+                                                                                       (else
+                                                                                        (assert #f))))
                                                            :callback-release (lambda ()
                                                                                (callback type)))))))
 

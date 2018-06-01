@@ -67,6 +67,10 @@ static int seqblocks_comp(const void *a, const void *b){
 }
 
 
+static hash_t *get_state_from_recording_config(const struct SeqtrackRecordingConfig &config);
+static struct SeqtrackRecordingConfig get_recording_config_from_state(const hash_t *state);
+
+
 static int64_t get_seqblock_stime_default_duration(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
   if (seqblock->block==NULL) {
     
@@ -1175,6 +1179,11 @@ hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_old_for
 
   if (seqtrack->name != NULL)
     HASH_put_chars(state, "name", seqtrack->name);
+
+  if (seqtrack->for_audiofiles){
+    HASH_put_bool(state, "use_custom_recording_config", seqtrack->use_custom_recording_config);
+    HASH_put_hash(state, "recording_config", get_state_from_recording_config(seqtrack->custom_recording_config));
+  }
   
   return state;
 }
@@ -1333,6 +1342,13 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
   struct SeqTrack *seqtrack = SEQTRACK_create(automation_state, state_samplerate, for_audiofiles);
   struct SeqTrack *seqtrack_extra = NULL; // For loading older songs. In older songs, both audiofiles and editor blocks could be placed in all seqtracks. (and they still can, probably, but it makes very little sense to allow it)
 
+  if (HASH_has_key(state, "use_custom_recording_config"))
+    seqtrack->use_custom_recording_config = HASH_get_bool(state, "use_custom_recording_config");
+  
+  if (HASH_has_key(state, "recording_config"))
+    seqtrack->custom_recording_config = get_recording_config_from_state(HASH_get_hash(state, "recording_config"));
+  
+  
   if (HASH_has_key(state, "patch_id")){
     int64_t patch_id = HASH_get_int(state, "patch_id");
     if (patch_id >= 0){
@@ -1525,6 +1541,61 @@ void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int 
 
 
 // Recording
+
+static hash_t *get_state_from_recording_config(const struct SeqtrackRecordingConfig &config){
+  hash_t *state = HASH_create(2);
+  
+  HASH_put_bool(state, "record_from_system_input", config.record_from_system_input);
+
+  dynvec_t matrix = {};
+  
+  for(int input_ch=0;input_ch<NUM_CHANNELS_RECORDING_MATRIX;input_ch++){
+    
+    dynvec_t m2 = {};
+    
+    for (int soundfile_ch = 0 ; soundfile_ch < NUM_CHANNELS_RECORDING_MATRIX ; soundfile_ch++)
+      DYNVEC_push_back(&m2, DYN_create_bool(config.matrix[input_ch][soundfile_ch]));
+
+    DYNVEC_push_back(&matrix, DYN_create_array(m2));
+
+  }
+
+  HASH_put_dyn(state, "matrix", DYN_create_array(matrix));
+
+  return state;
+}
+
+static struct SeqtrackRecordingConfig get_recording_config_from_state(const hash_t *state){
+  struct SeqtrackRecordingConfig config;
+  reset_recording_config(&config);
+  
+  config.record_from_system_input = HASH_get_bool(state, "record_from_system_input");
+
+  const dynvec_t *matrix = HASH_get_dyn(state, "matrix").array;
+    
+  int input_ch = 0;
+  
+  for(const dyn_t &m2 : matrix){
+    
+    int soundfile_ch = 0;
+    
+    for(const dyn_t &m3 : m2.array){
+
+      if (input_ch < NUM_CHANNELS_RECORDING_MATRIX && soundfile_ch < NUM_CHANNELS_RECORDING_MATRIX)
+        config.matrix[input_ch][soundfile_ch] = m3.bool_number;
+      else
+        R_ASSERT(false);
+      
+      soundfile_ch++;
+      
+    }
+    
+    input_ch++;
+  }
+
+  return config;
+}
+
 
 static wchar_t *get_recording_path(const struct SoundPlugin *plugin){
   QString filename = STRING_get_qstring(dc.filename).replace(QRegExp(".rad$"), "_rad");      
@@ -2146,6 +2217,8 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
   hash_t *state = HASH_create(root->song->seqtracks.num_elements);
 
   HASH_put_float(state, "samplerate", pc->pfreq);
+
+  HASH_put_hash(state, "default_recording_config", get_state_from_recording_config(root->song->default_recording_config));
   
   VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
     hash_t *seqtrack_state = SEQTRACK_get_state(seqtrack /*, get_old_format */);
@@ -2250,6 +2323,12 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     // Need to do this first since widgets are not positioned correctly if it's done last. Not quite sure why.
     if(HASH_has_key(state, "song_tempo_automation"))
       TEMPOAUTOMATION_create_from_state(HASH_get_hash(state, "song_tempo_automation"), state_samplerate);
+
+
+    if (HASH_has_key(state, "default_recording_config"))
+      root->song->default_recording_config = get_recording_config_from_state(HASH_get_hash(state, "default_recording_config"));
+    else
+      reset_recording_config(&root->song->default_recording_config);
     
     vector_t seqtracks = {0};
 
