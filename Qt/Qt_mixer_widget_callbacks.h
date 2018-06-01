@@ -118,7 +118,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
 
   Mixer_Direction_Menu _mixer_direction_menu;
 
-  dyn_t *_mixer_strip_configuration = NULL;
+  radium::GcHolder<dyn_t> _mixer_strip_configuration;
   int64_t _mixer_strips_gui = -1;
   int _num_rows = 2;
 
@@ -537,10 +537,9 @@ public slots:
 
       }
 
-      if (_mixer_strip_configuration != NULL){
-        gui_setMixerStripsConfiguration(_mixer_strips_gui, *_mixer_strip_configuration);
-        remove_gc_root(_mixer_strip_configuration);
-        _mixer_strip_configuration = NULL;
+      if (_mixer_strip_configuration.data() != NULL){
+        gui_setMixerStripsConfiguration(_mixer_strips_gui, *_mixer_strip_configuration.data());
+        _mixer_strip_configuration.set(NULL);
       }
     }
     
@@ -732,8 +731,8 @@ void MW_apply_mixer_strips_state(dyn_t state){
 
   } else {
 
-    g_mixer_widget2->_mixer_strip_configuration =  (dyn_t*)add_gc_root(tcopy(&state, sizeof(dyn_t)));
-
+    g_mixer_widget2->_mixer_strip_configuration.set((dyn_t*)tcopy(&state, sizeof(dyn_t)));
+    
   }
 }
 
