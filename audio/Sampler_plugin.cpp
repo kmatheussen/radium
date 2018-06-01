@@ -899,13 +899,13 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
   memset(outputs[1],0,R_NUM_FRAMES*sizeof(float));
 
   if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
-    const float *audio_[data->recorder_instance->num_ch];
-    const float **audio = audio_;
+    float *audio_[data->recorder_instance->num_ch];
+    float **audio = audio_;
 
     int num_ch;
     
     if (data->recording_from_main_input) {
-      num_ch = MIXER_get_main_inputs(audio, data->recorder_instance->num_ch);
+      num_ch = MIXER_get_main_inputs(const_cast<const float**>(audio), data->recorder_instance->num_ch);
     } else {
       num_ch = R_MIN(2, data->recorder_instance->num_ch);
       for(int ch=0;ch<num_ch;ch++)
@@ -925,7 +925,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, R_NUM_FRAMES_DECL floa
     */
     
     RT_SampleRecorder_add_audio(data->recorder_instance,
-                                audio,
+                                const_cast<const float**>(audio),
                                 RADIUM_BLOCKSIZE - data->recording_start_frame
                                 );
     

@@ -3208,8 +3208,13 @@ static void update(const struct SeqTrack *seqtrack, bool also_update_borders, in
   int seqtracknum = get_seqtracknum(seqtrack);
   const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, true);
 
-  qreal x1 = start_time==-1 ? w.t_x1 : scale_double(start_time, g_sequencer_widget->_start_time, g_sequencer_widget->_end_time, w.t_x1, w.t_x2) - 10; // subtracting 10 to show "Recording"
-  qreal x2 = end_time==-1 ? w.t_x2 : scale_double(end_time, g_sequencer_widget->_start_time, g_sequencer_widget->_end_time, w.t_x1, w.t_x2) + 10; // adding 10 to show "Recording"
+  qreal x1 = start_time==-1
+    ? w.t_x1
+    : scale_double(start_time, g_sequencer_widget->_start_time, g_sequencer_widget->_end_time, w.t_x1, w.t_x2) - 5; // subtracting 5 to show "Recording". TODO: Found out why it's necessary.
+  
+  qreal x2 = end_time==-1
+    ? w.t_x2
+    : scale_double(end_time, g_sequencer_widget->_start_time, g_sequencer_widget->_end_time, w.t_x1, w.t_x2);
   
 #if 0
   printf("SEQTRACK_update called %d\n", get_seqtracknum(seqtrack));
