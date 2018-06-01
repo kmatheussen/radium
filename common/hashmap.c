@@ -737,7 +737,7 @@ hash_t *HASH_load(disk_t *file){
   } else  if (STRING_starts_with(line, ">> HASH MAP V")){
     version = 3;
     vector_t v = {0};
-    int try_anyway = VECTOR_push_back(&v, "Try anyway (on your own risk)");
+    int try_anyway = VECTOR_push_back(&v, "Try anyway (program might crash and/or behave unstable)");
     int ok = VECTOR_push_back(&v, "Ok");
 
     int res = GFX_Message(&v, "Need a newer version or Radium to load this file");
