@@ -1924,7 +1924,7 @@ void SEQTRACKPLUGIN_called_very_often(SoundPlugin *plugin){
   }
 }
 
-static void RT_record(Data *data, int num_frames, float **instrument_inputs){
+static void RT_record(Data *data, int num_frames, const float **instrument_inputs){
   R_ASSERT_RETURN_IF_FALSE(num_frames==RADIUM_BLOCKSIZE);
 
   
@@ -1943,7 +1943,7 @@ static void RT_record(Data *data, int num_frames, float **instrument_inputs){
   const int num_ch = NUM_CHANNELS_RECORDING_MATRIX;
   
   if (config.record_from_system_input)
-    R_ASSERT(MIXER_get_main_inputs(inputs, num_ch)==num_ch);
+    R_ASSERT(MIXER_get_main_inputs(const_cast<const float**>(inputs), num_ch)==num_ch);
   else
     memcpy(inputs, instrument_inputs, sizeof(float*)*num_ch);
 
@@ -2019,7 +2019,7 @@ static void RT_record(Data *data, int num_frames, float **instrument_inputs){
   // Record
   //
   RT_SampleRecorder_add_audio(data->_recorder,
-                              (const float**)outputs,
+                              const_cast<const float**>(outputs),
                               RADIUM_BLOCKSIZE
                               );
 }
@@ -2029,7 +2029,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   Data *data = (Data*)plugin->data;
 
   if (ATOMIC_GET(data->_recording_status)==IS_RECORDING)
-    RT_record(data, num_frames, inputs);
+    RT_record(data, num_frames, const_cast<const float**>(inputs));
   
   // Null out channels
   for(int ch = 0 ; ch < NUM_OUTPUTS ; ch++)

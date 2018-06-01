@@ -552,7 +552,7 @@ public:
 
     const dynvec_t *targets = dyntargets.array;
 
-    for(const dyn_t target : targets){
+    for(const dyn_t &target : targets){
       auto *new_target = new ModulatorTarget(target);//targets->elements[i]);
       if (new_target->patch != NULL)
         new_targets->push_back(new_target);

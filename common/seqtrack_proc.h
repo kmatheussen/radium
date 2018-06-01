@@ -421,5 +421,91 @@ static inline QString get_seqblock_name(const struct SeqTrack *seqtrack, const s
 
 #endif
 
+
+// recording config
+
+static inline int get_num_recording_soundfile_channels(const struct SeqtrackRecordingConfig *config){
+  int ret = 0;
+  
+  for (int soundfile_channel = 0 ; soundfile_channel < NUM_CHANNELS_RECORDING_MATRIX ; soundfile_channel++)
+    for(int ch=0;ch<NUM_CHANNELS_RECORDING_MATRIX;ch++)
+      if (config->matrix[ch][soundfile_channel]==true)
+        ret = R_MAX(ret, soundfile_channel+1);
+
+  return ret;
+}
+
+static inline void reset_recording_config(struct SeqtrackRecordingConfig *config){
+  memset(config, 0, sizeof(struct SeqtrackRecordingConfig));
+  
+  config->record_from_system_input = true;
+  config->matrix[0][0] = true;
+  config->matrix[1][1] = true;
+}
+
+#ifdef __cplusplus
+static inline hash_t *get_state_from_recording_config(const struct SeqtrackRecordingConfig &config){
+  hash_t *state = HASH_create(2);
+  
+  HASH_put_bool(state, "record_from_system_input", config.record_from_system_input);
+
+  dynvec_t matrix = {};
+  
+  for(int input_ch=0;input_ch<NUM_CHANNELS_RECORDING_MATRIX;input_ch++){
+    
+    dynvec_t m2 = {};
+    
+    for (int soundfile_ch = 0 ; soundfile_ch < NUM_CHANNELS_RECORDING_MATRIX ; soundfile_ch++)
+      DYNVEC_push_back(&m2, DYN_create_bool(config.matrix[input_ch][soundfile_ch]));
+
+    DYNVEC_push_back(&matrix, DYN_create_array(m2));
+
+  }
+
+  HASH_put_dyn(state, "matrix", DYN_create_array(matrix));
+
+  return state;
+}
+
+static inline struct SeqtrackRecordingConfig get_recording_config_from_state(const hash_t *state){
+  struct SeqtrackRecordingConfig config;
+  reset_recording_config(&config);
+  
+  config.record_from_system_input = HASH_get_bool(state, "record_from_system_input");
+
+  const dynvec_t *matrix = HASH_get_dyn(state, "matrix").array;
+    
+  int input_ch = 0;
+  
+  for(const dyn_t &m2 : matrix){
+    
+    int soundfile_ch = 0;
+    
+    for(const dyn_t &m3 : m2.array){
+
+      if (input_ch < NUM_CHANNELS_RECORDING_MATRIX && soundfile_ch < NUM_CHANNELS_RECORDING_MATRIX)
+        config.matrix[input_ch][soundfile_ch] = m3.bool_number;
+      else
+        R_ASSERT(false);
+      
+      soundfile_ch++;
+      
+    }
+    
+    input_ch++;
+  }
+
+  return config;
+}
+#endif
+
+static inline struct SeqtrackRecordingConfig *get_seqtrack_recording_config(struct SeqTrack *seqtrack){
+  if (seqtrack->use_custom_recording_config)
+    return &seqtrack->custom_recording_config;
+  else
+    return &root->song->default_recording_config;
+}
+
+
 #endif
 

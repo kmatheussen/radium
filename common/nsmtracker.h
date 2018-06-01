@@ -2654,40 +2654,6 @@ struct SeqtrackRecordingConfig{
   bool matrix[NUM_CHANNELS_RECORDING_MATRIX][NUM_CHANNELS_RECORDING_MATRIX];
 };
 
-static inline int get_num_recording_soundfile_channels(const struct SeqtrackRecordingConfig *config){
-  int ret = 0;
-  
-  for (int soundfile_channel = 0 ; soundfile_channel < NUM_CHANNELS_RECORDING_MATRIX ; soundfile_channel++)
-    for(int ch=0;ch<NUM_CHANNELS_RECORDING_MATRIX;ch++)
-      if (config->matrix[ch][soundfile_channel]==true)
-        ret = R_MAX(ret, soundfile_channel+1);
-
-  return ret;
-}
-
-static inline void reset_recording_config(struct SeqtrackRecordingConfig *config){
-  memset(config, 0, sizeof(struct SeqtrackRecordingConfig));
-  
-  config->record_from_system_input = true;
-  config->matrix[0][0] = true;
-  config->matrix[1][1] = true;
-}
-
-/*
-static inline struct SeqtrackRecordingConfig get_recording_config_from_state(hash_t *state){
-  struct SeqtrackRecordingConfig config;
-  reset_recording_config(&config);
-  
-  if (HASH_has_key(state, "record_from_system_input"))
-    config.record_from_system_input = HASH_get_bool(state, "record_from_system_input");
-
-  if (HASH_has_key(state, "matrix")){
-    
-    config.record_from_system_input = HASH_get_bool(state, "record_from_system_input");
-  }
-}
-*/
-
 
 struct _scheduler_t;
 typedef struct _scheduler_t scheduler_t;
@@ -2841,13 +2807,6 @@ struct Root{
 
 extern struct Root *root;
 
-
-static inline struct SeqtrackRecordingConfig *get_seqtrack_recording_config(struct SeqTrack *seqtrack){
-  if (seqtrack->use_custom_recording_config)
-    return &seqtrack->custom_recording_config;
-  else
-    return &root->song->default_recording_config;
-}
 
 
 static inline int get_system_fontheight(void){
