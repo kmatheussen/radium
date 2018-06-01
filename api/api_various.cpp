@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/notes_proc.h"
 #include "../common/pitches_proc.h"
 #include "../common/wblocks_proc.h"
+#include "../common/disk.h"
 #include "../common/disk_save_proc.h"
 #include "../common/disk_load_proc.h"
 #include "../common/lines_proc.h"
@@ -770,6 +771,10 @@ void loadSong(const_char *filename){
   if( LoadSong_CurrPos(getWindowFromNum(-1),STRING_create(filename))){
     isloaded=true;
   }
+}
+
+bool hasSession(void){
+  return dc.filename != NULL; 
 }
 
 void newSong(void){
