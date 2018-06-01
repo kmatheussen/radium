@@ -351,6 +351,19 @@ bool seqtrackIsRecording(int seqtracknum){
   return seqtrack->is_recording;
 }
 
+
+static void maybe_restart_recording(struct SeqTrack *seqtrack){
+  if (seqtrack->is_recording==false)
+    return;
+
+  if (is_playing_song()==true)
+    return;
+
+  SEQTRACK_set_recording(seqtrack, false);
+  SEQTRACK_set_recording(seqtrack, true);
+}
+
+
 // seqtrack using custom recording config
 
 void setSeqtrackUseCustomRecordingConfig(int seqtracknum, bool use_custom){
@@ -365,6 +378,8 @@ void setSeqtrackUseCustomRecordingConfig(int seqtracknum, bool use_custom){
     seqtrack->custom_recording_config = root->song->default_recording_config;
   
   seqtrack->use_custom_recording_config = use_custom;
+
+maybe_restart_recording(seqtrack);  
 }
 
 bool getSeqtrackUseCustomRecordingConfig(int seqtracknum){
@@ -384,6 +399,8 @@ void setSeqtrackRecordFromSystemInput(int seqtracknum, bool record_from_system_i
     return;
 
   get_seqtrack_recording_config(seqtrack)->record_from_system_input = record_from_system_input;
+
+  maybe_restart_recording(seqtrack);
 }
 
 bool getSeqtrackRecordFromSystemInput(int seqtracknum){
@@ -414,6 +431,8 @@ void setSeqtrackRecordingMatrix(int seqtracknum, int input_channel, int soundfil
 
   auto *config = get_seqtrack_recording_config(seqtrack);
   config->matrix[input_channel][soundfile_channel] = enabled;
+
+  maybe_restart_recording(seqtrack);
 }
 
 bool getSeqtrackRecordingMatrix(int seqtracknum, int input_channel, int soundfile_channel){
@@ -443,6 +462,8 @@ void resetSeqtrackRecordingOptions(int seqtracknum){
     return;
 
   reset_recording_config(get_seqtrack_recording_config(seqtrack));
+
+  maybe_restart_recording(seqtrack);
 }
 
 
