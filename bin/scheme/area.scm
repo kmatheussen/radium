@@ -397,21 +397,32 @@
      
      ;; Status bar
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-     
+
      (define statusbar-text-id -1)
      
      (define (set-statusbar-text! text)
        (set! statusbar-text-id (<ra> :set-statusbar-text text)))
 
      (define (remove-statusbar-text)
+       (<gui> :tool-tip "")
        (<ra> :remove-statusbar-text statusbar-text-id))
      
      (define (add-statusbar-text-handler string-or-func)
        (add-nonpress-mouse-cycle!
         :enter-func (lambda (x* y)
-                      (set-statusbar-text! (if (string? string-or-func)
-                                               string-or-func
-                                               (string-or-func)))
+                      (define string (if (procedure? string-or-func)
+                                         (string-or-func)
+                                         string-or-func))
+                      (define text (if (pair? string)
+                                       (cadr string)
+                                       string))
+                      (define also-show-tooltip (if (pair? string)
+                                                    (car string)
+                                                    #f))
+                                 
+                      (if also-show-tooltip
+                          (<gui> :tool-tip text))
+                      (set-statusbar-text! text)
                       #t)
         :leave-func remove-statusbar-text))
        
