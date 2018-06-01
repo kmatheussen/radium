@@ -50,13 +50,23 @@ struct UndoEntry{
   source_pos_t source_pos;
 };
 
+struct UnavailableCallback{
+  UndoUnavailableCallback callback;
+  void *data;
+  int downcount;
+};
+
+static vector_t g_unavailable_callbacks_to_call = {0};
 
 struct Undo{
   struct Undo *prev;
   struct Undo *next;
+  struct Undo *last_next; // Used when cancelling last undo.
 
   vector_t entries;
-
+  int generation;
+  vector_t unavailable_callbacks;
+  
   // Used to find cursorpos.
   NInt windownum;
   NInt blocknum;
@@ -200,6 +210,42 @@ bool Undo_are_you_sure_questionmark(void){
   return true;
 }
 
+
+static void run_undo_unavailable_callbacks(const struct Undo *undo){
+  while(undo != NULL){
+
+    VECTOR_FOR_EACH(struct UnavailableCallback *unavailable_callback, &undo->unavailable_callbacks){
+
+      VECTOR_push_back(&g_unavailable_callbacks_to_call, unavailable_callback);
+      
+    }END_VECTOR_FOR_EACH;
+    
+    undo = undo->next;
+  }
+
+  vector_t next_callbacks = {0};
+  
+  VECTOR_FOR_EACH(struct UnavailableCallback *unavailable_callback, &g_unavailable_callbacks_to_call){
+    
+    if (unavailable_callback->downcount <= 0 ){
+      
+      R_ASSERT(unavailable_callback->downcount==0);      
+      unavailable_callback->callback(unavailable_callback->data);
+      
+    } else {
+
+      unavailable_callback->downcount--;
+    
+      VECTOR_push_back(&next_callbacks, unavailable_callback);
+      
+    }
+    
+  }END_VECTOR_FOR_EACH;
+
+  g_unavailable_callbacks_to_call = next_callbacks;
+}
+
+
 static bool g_is_adding_undo = false;
 static source_pos_t g_curr_source_pos;
 
@@ -241,12 +287,12 @@ void Das_Undo_Open_rec(void){
     
     //printf("Undo_Open\n");
     
-    curr_open_undo = talloc(sizeof(struct Undo));
-    curr_open_undo->windownum=window->l.num;
-    curr_open_undo->blocknum=wblock->l.num;
-    curr_open_undo->tracknum=wtrack->l.num;
-    curr_open_undo->realline=realline;
-    
+    curr_open_undo             = talloc(sizeof(struct Undo));
+    curr_open_undo->generation = g_curr_undo_generation;
+    curr_open_undo->windownum  = window->l.num;
+    curr_open_undo->blocknum   = wblock->l.num;
+    curr_open_undo->tracknum   = wtrack->l.num;
+    curr_open_undo->realline   = realline;
     
 #if 0 // Disabled. Code doesn't look right.
     if(num_undos!=0 && num_undos>max_num_undos){
@@ -308,7 +354,14 @@ bool Das_Undo_Close(void){
   struct Undo *undo = curr_open_undo;
 
   if(undo->entries.num_elements > 0){
+
+    run_undo_unavailable_callbacks(CurrUndo->next);
+
+    if (CurrUndo->prev != NULL)
+      CurrUndo->prev->last_next = NULL; // Free up memory. Not needed anymore since last_next is only used by CancelLastUndo which can not be called two times in a row.
+    
     undo->prev=CurrUndo;
+    CurrUndo->last_next = CurrUndo->next;
     CurrUndo->next=undo;
     CurrUndo=undo;
     
@@ -322,7 +375,7 @@ bool Das_Undo_Close(void){
   } else
     return false;
 }
-
+/*
 void Das_Undo_ReopenLast(void){
   if (ignore())
     return;
@@ -340,7 +393,7 @@ void Das_Undo_ReopenLast(void){
   num_undos--;
   //printf("        UNDO Reopenlast. num_undos--: %d\n", num_undos);
 }
-
+*/
 void Das_Undo_CancelLastUndo(void){
   if (ignore()) return;
 
@@ -351,7 +404,7 @@ void Das_Undo_CancelLastUndo(void){
   R_ASSERT_RETURN_IF_FALSE(CurrUndo->prev!=NULL);
 
   CurrUndo=CurrUndo->prev;
-  CurrUndo->next=NULL;
+  CurrUndo->next=CurrUndo->last_next;
 
   num_undos--;
   //printf("        UNDO CancelLast. num_undos++: %d\n", num_undos);
@@ -423,18 +476,19 @@ static void Undo_Add_internal(
 
   Das_Undo_Open_rec();{
 
-    struct UndoEntry *entry=talloc(sizeof(struct UndoEntry));
-    entry->windownum=windownum;
-    entry->blocknum=blocknum;
-    entry->tracknum=tracknum;
-    entry->realline=realline;
-    entry->current_patch = g_currpatch;
-    entry->pointer=pointer;
-    entry->function=undo_function;
-    entry->stop_playing=stop_playing_when_undoing;
-    entry->info = talloc_strdup(info);
+    struct UndoEntry *entry = talloc(sizeof(struct UndoEntry));
+    
+    entry->windownum        = windownum;
+    entry->blocknum         = blocknum;
+    entry->tracknum         = tracknum;
+    entry->realline         = realline;
+    entry->current_patch    = g_currpatch;
+    entry->pointer          = pointer;
+    entry->function         = undo_function;
+    entry->stop_playing     = stop_playing_when_undoing;
+    entry->info             = talloc_strdup(info);    
     memcpy(&entry->source_pos, &g_curr_source_pos, sizeof(source_pos_t));
-      
+  
     VECTOR_push_back(&curr_open_undo->entries,entry);
 
     EVENTLOG_add_event(get_entry_string(entry));
@@ -649,7 +703,15 @@ void SetMaxUndos(struct Tracker_Windows *window){
         GFX_Message2(NULL, true, "The max number of undoes variables is ignored. Undo is unlimited.");
 }
 
-
-
-
-
+void UNDO_add_callback_when_curr_entry_becomes_unavailable(UndoUnavailableCallback callback, void *data, int delay){
+  struct UnavailableCallback *unavailable_callback = talloc(sizeof(struct UnavailableCallback));
+  
+  unavailable_callback->callback = callback;
+  unavailable_callback->data = data;
+  unavailable_callback->downcount = delay;
+  
+  if (CurrUndo->prev != NULL)
+    VECTOR_push_back(&CurrUndo->unavailable_callbacks, unavailable_callback);  
+  
+  //VECTOR_push_back(&next_unavailable_callbacks, unavailable_callback);  
+};

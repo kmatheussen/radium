@@ -74,7 +74,7 @@ extern LANGSPEC bool Das_Undo_Close(void); // Don't call directly
 extern LANGSPEC bool Undo_Is_Currently_Undoing(void);
 extern LANGSPEC bool Undo_Is_Open(void);
 extern LANGSPEC void Das_Undo_CancelLastUndo(void); // don't call directly
-extern LANGSPEC void Das_Undo_ReopenLast(void); // don't call directly
+//extern LANGSPEC void Das_Undo_ReopenLast(void); // don't call directly
 extern LANGSPEC UndoFunction Undo_get_last_function(void);
 
 #define UNDO_CANCEL_LAST_UNDO()                                                     \
@@ -83,11 +83,14 @@ extern LANGSPEC UndoFunction Undo_get_last_function(void);
     Das_Undo_CancelLastUndo();                                                    \
   }while(0)
 
+#if 0
+// Is implemented, but not used. Also destroys redo data, but that should be fixed by replacing CurrUndo->next=NULL with CurrUndo->next=CurrUndo->last_next.
 #define UNDO_REOPEN_LAST()                                                     \
   do{                                                                   \
     EVENTLOG_add_event(CR_FORMATEVENT("Undo: Reopen last"));                          \
     Das_Undo_ReopenLast();                                                \
   }while(0)
+#endif
 
 extern LANGSPEC bool Undo_Currently_Adding_Undo(void);
 extern LANGSPEC void Undo_Start_Adding_Undo(source_pos_t source_pos);
@@ -137,6 +140,11 @@ extern LANGSPEC bool Undo_are_you_sure_questionmark(void);
 extern LANGSPEC void Undo(void);
 extern LANGSPEC void Redo(void);
 extern LANGSPEC void SetMaxUndos(struct Tracker_Windows *window);
+
+typedef void (*UndoUnavailableCallback)(void*);
+
+extern LANGSPEC void UNDO_add_callback_when_curr_entry_becomes_unavailable(UndoUnavailableCallback callback, void *data, int delay); // if delay is 0, callback will be called immediately. if delay is 1, callback will be called one undo addition later.
+
 
 extern int64_t g_curr_undo_generation;
 
