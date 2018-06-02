@@ -581,7 +581,8 @@ struct Sample{
     if (!info.isAbsolute())
       abort();
 #endif
-    
+
+
     // prepare readers.
     {
       _free_readers.push_back(new MyReader(reader1));
@@ -1064,9 +1065,13 @@ struct Recorder : public radium::SampleRecorderInstance{
       else{
         R_ASSERT_NON_RELEASE(false);
       }
-      
-      ADD_UNDO(Sequencer());
-      SEQTRACK_insert_sample(seqtrack, seqtracknum, _filename.get(), start, end);
+
+      if (SAMPLEREADER_register_deletable_audio_file(_filename.get())==true) {
+
+        ADD_UNDO(Sequencer());
+
+        SEQTRACK_insert_sample(seqtrack, seqtracknum, _filename.get(), start, end);
+      }
 
     }
   }

@@ -728,6 +728,10 @@ template<typename T>
 static inline T add_gc_root(T root){
   if(root != NULL)
     VECTOR_push_back(&g_global_roots, root);
+#if !defined(RELEASE)
+  if(g_global_roots.num_elements > 10000)
+    printf("\n\n\n  ==================   GC_ROOT(1) size: %d =================== \n\n\n\n\n", g_global_roots.num_elements);
+#endif
   return root;
 }
 
@@ -750,6 +754,10 @@ static inline T replace_gc_root(T old_root, T new_root){
 static inline void *add_gc_root(void *root){
   if(root!=NULL)
     VECTOR_push_back(&g_global_roots, root);
+#if !defined(RELEASE)
+  if(g_global_roots.num_elements > 10000)
+    printf("\n\n\n  ==================   GC_ROOT(2) size: %d =================== \n\n\n\n\n", g_global_roots.num_elements);
+#endif
   return root;
 }
 

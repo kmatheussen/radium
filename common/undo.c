@@ -704,14 +704,17 @@ void SetMaxUndos(struct Tracker_Windows *window){
 }
 
 void UNDO_add_callback_when_curr_entry_becomes_unavailable(UndoUnavailableCallback callback, void *data, int delay){
+  R_ASSERT_RETURN_IF_FALSE(currently_undoing==false);
+  
   struct UnavailableCallback *unavailable_callback = talloc(sizeof(struct UnavailableCallback));
   
   unavailable_callback->callback = callback;
   unavailable_callback->data = data;
   unavailable_callback->downcount = delay;
+
+  struct Undo *undo = curr_open_undo != NULL ? curr_open_undo : CurrUndo;
   
-  if (CurrUndo->prev != NULL)
-    VECTOR_push_back(&CurrUndo->unavailable_callbacks, unavailable_callback);  
+  VECTOR_push_back(&undo->unavailable_callbacks, unavailable_callback);  
   
   //VECTOR_push_back(&next_unavailable_callbacks, unavailable_callback);  
 };

@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Mixer_proc.h"
 #include "Juce_plugins_proc.h"
+#include "SampleReader_proc.h"
 
 #include "SampleRecorder_proc.h"
 
@@ -114,6 +115,67 @@ struct RecordingFile{
   radium::Vector<RecordingSlice*> non_written_slices;
 
   bool success = false;
+
+private:
+
+  QString get_take_number_filename(const wchar_t *path){
+    QString base = STRING_get_qstring(path);
+
+    QString take;
+    
+    if (QFileInfo(base).isDir())
+      take = "last_take_number.txt";
+    else
+      take = " last_take_number.txt";
+    
+    return base + take;
+  }
+  
+  int read_old_take_number_from_disk(const wchar_t *path){
+    QString filename = get_take_number_filename(path);
+
+    int takenum = 0;
+    
+    auto *file = DISK_open_for_reading(filename);
+    if (file!=NULL){
+      
+      QString line = DISK_read_qstring_line(file);
+      takenum = atoi(line.trimmed().toUtf8().constData());
+      
+      DISK_close_and_delete(file);
+      
+    }
+
+    return takenum;
+  }
+  
+  bool write_new_take_number_to_disk(const wchar_t *path, int take_number){
+    QString filename = get_take_number_filename(path);
+
+    auto *file = DISK_open_for_writing(filename);
+    if (file==NULL)
+      return false;
+    
+    DISK_write_qstring(file, QString::number(take_number));
+    
+    DISK_close_and_delete(file);
+    
+    return true;
+  }
+  
+  bool is_valid_new_soundfile_name(QString filename){
+    wchar_t *wfilename = STRING_create(filename, false);
+    
+    bool has_file = SAMPLEREADER_has_file(wfilename);
+    bool file_exists = DISK_file_exists(wfilename);
+    
+    free(wfilename);
+    
+    if (has_file==false && false==file_exists) // Check for SAMPLEREADER_has_file since the user could have manually deleted an earlier recording.
+      return true;
+    else
+      return false;
+  }
   
   QString get_unique_filename(const wchar_t *path, bool &unique_success){
     QString base = STRING_get_qstring(path);
@@ -125,19 +187,33 @@ struct RecordingFile{
       take = "take ";
     else
       take = " take ";
-    
-    for(int counter = 1 ; counter <= 100 ; counter++){
+
+    int take_number = read_old_take_number_from_disk(path);
+    take_number++;
+
+    for(int counter = 1 ; counter <= 1000 ; counter++){
       
-      QString filename = base + take + QString::number(counter) + ".wav";
+      QString filename = base + take + QString::number(take_number) + ".wav";
       
-      if (!QFile(filename).exists())
+      if (is_valid_new_soundfile_name(filename)) {
+        
+        write_new_take_number_to_disk(path, take_number);
+        
         return filename;
+        
+      } else {
+          
+        take_number++;
+        
+      }
     }
 
     unique_success=false;
     return "";
   }
 
+public:
+  
   // Remember that this is not the main thread.
   //
   RecordingFile(radium::SampleRecorderInstance *instance)
@@ -157,7 +233,7 @@ struct RecordingFile{
     filename = get_unique_filename(instance->recording_path.get_from_another_thread(), unique_success);
     
     if (unique_success==false){
-      RT_message("Unable to create new file in \"%s\".\nPerhaps you have more than 100 takes there?",STRING_get_qstring(instance->recording_path.get_from_another_thread()).toUtf8().constData());
+      RT_message("Unable to create new file in \"%s\".\nPerhaps you have more than 1000 takes there?",STRING_get_qstring(instance->recording_path.get_from_another_thread()).toUtf8().constData());
       return;
     }
 
@@ -418,7 +494,6 @@ void SampleRecorder_register_instance(radium::SampleRecorderInstance *instance){
 void SampleRecorder_unregister_instance(radium::SampleRecorderInstance *instance){
   g_instances.remove(instance->id);
 }
-
 
 void SampleRecorder_called_regularly(void){
   R_ASSERT(THREADING_is_main_thread());

@@ -635,6 +635,8 @@ public slots:
 #endif
     const PlaylistElement pe = get_playlist_element(pos);
 
+    radium::ScopedUndo undo; // This line prevents the audio file from being deleted in the call to ADD_UNDO(Sequencer()) if the file in the call to SEQTRACK_insert_sample is marked as deletable.
+    
     ADD_UNDO(Sequencer());
     
     if (pe.is_illegal()) {
@@ -646,8 +648,9 @@ public slots:
 
       if (seqtrack->for_audiofiles) {
         vector_t filenames = SAMPLEREADER_get_all_filenames();
-        if (filenames.num_elements > 0)
+        if (filenames.num_elements > 0) {
           SEQTRACK_insert_sample(seqtrack, get_seqtracknum(seqtrack), (wchar_t*)filenames.elements[filenames.num_elements-1], seqtime, -1);
+        }
         
       } else {
 

@@ -26,6 +26,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern LANGSPEC vector_t SAMPLEREADER_get_all_filenames(void);
+
+extern LANGSPEC bool SAMPLEREADER_register_deletable_audio_file(const wchar_t *filename);
+extern LANGSPEC void SAMPLEREADER_maybe_unregister_deletable_audio_file(const wchar_t *filename);
+extern LANGSPEC void SAMPLEREADER_unregister_all_deletable_audio_file(void);
+extern LANGSPEC void SAMPLEREADER_delete_all_deletable_audio_files(void);
+extern LANGSPEC void SAMPLEREADER_call_very_often(void);
+extern LANGSPEC void SAMPLEREADER_inc_users(const wchar_t *filename);
+extern LANGSPEC void SAMPLEREADER_dec_users(const wchar_t *filename);
+extern LANGSPEC void SAMPLEREADER_dec_users_undo_callback(void *data);
+extern LANGSPEC bool SAMPLEREADER_has_file(const wchar_t *filename); // can be called from any thread, but not while holding player lock.
+
 extern LANGSPEC bool SAMPLEREADER_add_audiofile(const wchar_t *filename);
 extern LANGSPEC int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename);
 extern LANGSPEC double SAMPLEREADER_get_samplerate(const wchar_t *filename);
