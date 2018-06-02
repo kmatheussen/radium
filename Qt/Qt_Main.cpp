@@ -2226,6 +2226,9 @@ protected:
       window->must_redraw_editor = true;
       SEQUENCER_update(SEQUPDATE_TIME);
     }
+
+    if (is_called_every_ms(100))
+      SAMPLEREADER_call_very_often();
     
 #if 0
     // Update graphics when playing

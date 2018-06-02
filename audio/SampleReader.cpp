@@ -244,7 +244,8 @@ int main(){
 
 #include "SampleReader_proc.h"
 
-static void SAMPLEREADER_really_delete(radium::SampleReader *reader);
+
+static void SAMPLEREADER_mark_ready_for_deletion(radium::SampleReader *reader);
 
 
 namespace radium {
@@ -253,6 +254,7 @@ namespace{
 
 
 class SampleProvider;
+static radium::Mutex g_sample_providers_mutex;
 static QHash<QString, SampleProvider*> g_sample_providers;
 
   
@@ -332,10 +334,12 @@ public:
   bool _is_valid = false;
 
   unsigned int _color;
-                      
+
+  bool _can_be_deleted = false; // Recorded files should be deleted when unavailable.
+  
 private:
 
-  DEFINE_ATOMIC(int, _num_users) = 0;
+  int _num_users = 0;
 
   Slice *_slices;
 
@@ -373,7 +377,7 @@ public:
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
     SNDFILE *sndfile = create_sndfile2(&sf_info);
     if (sndfile==NULL){
-      GFX_addMessage("Could not open file %S", filename);
+      GFX_addMessage("Could not open file \"%S\"", filename);
       return;
     }
 
@@ -387,10 +391,15 @@ public:
     _slices = (Slice*)V_calloc(_num_slices, sizeof(Slice)); //SLICE_SIZE*_num_ch*sizeof(float));
 
     _is_valid = true;
-    g_sample_providers[STRING_get_qstring(filename)] = this;
+    {
+      radium::ScopedMutex lock(g_sample_providers_mutex);
+      g_sample_providers[STRING_get_qstring(filename)] = this;
+    }
   }
 
   ~SampleProvider(){
+    R_ASSERT(THREADING_is_main_thread());
+    
     if(_is_valid==false)
       return;
 
@@ -407,23 +416,43 @@ public:
     
     V_free(_slices);
 
-    g_sample_providers.remove(STRING_get_qstring(_filename));
+    {
+      radium::ScopedMutex lock(g_sample_providers_mutex);
+      g_sample_providers.remove(STRING_get_qstring(_filename));
+    }
 
+    BS_UpdateBlockList();
+    
+    if (_can_be_deleted){
+      printf("\n\n\n====================== Deleting \"%S\" ===================\n\n\n", _filename);
+      DISK_delete_file(_filename);
+      DISKPEAKS_delete_file(_filename);
+    }
+    
     free((void*)_filename);
     free((void*)_filename_without_path);
+
   }
 
   void inc_users(void){
-    ATOMIC_ADD(_num_users, 1);
+    R_ASSERT(THREADING_is_main_thread());
+    
+    _num_users++;
   }
 
   void dec_users(void){
-    R_ASSERT_RETURN_IF_FALSE(ATOMIC_GET(_num_users)>0);
-    ATOMIC_ADD(_num_users, -1);
+    R_ASSERT(THREADING_is_main_thread());
+    
+    R_ASSERT_RETURN_IF_FALSE(_num_users>0);
 
+    _num_users--;
+    
     // Not much point. Commented out so that the color doesn't change if deleting and adding later.
     //if (_num_users == 0)
     //  delete this;
+    
+    if (_num_users == 0 && _can_be_deleted)
+      delete this;
   }
 
   void SPT_fill_slice(SNDFILE *sndfile, Slice &slice, int64_t slice_num){
@@ -587,6 +616,8 @@ public:
 };
 
 static SampleProvider *get_sample_provider(const wchar_t *filename){
+  R_ASSERT(THREADING_is_main_thread());
+  
   auto *maybe = g_sample_providers[STRING_get_qstring(filename)];
   if (maybe != NULL)
     return maybe;
@@ -669,8 +700,8 @@ private:
 
         if (command.type==Command::Type::DELETE_){
           R_ASSERT(command.gotit==NULL);
-          
-          SAMPLEREADER_really_delete(command.client->_reader);
+
+          SAMPLEREADER_mark_ready_for_deletion(command.client->_reader);
         }
         
         break;
@@ -760,7 +791,7 @@ class SampleReader : public SampleProviderClient{
   
   int64_t _requested_slice_start = 0;
   int64_t _requested_slice_end = 0;
-  
+
   LockAsserter lockAsserter;
 
 public:
@@ -1201,6 +1232,7 @@ using namespace radium;
 
 // Called very often
 void SAMPLEREADER_set_permanent_samples(SampleReader *reader, int64_t first_sample, int64_t first_sample2){
+  R_ASSERT(THREADING_is_main_thread());
 
   // TODO: Have two queues, one high priority, and one low priority. This data would be put on the low priority queue, and then we could remove "if(is_playing_song()==true) return;".
   // Now the user has to stop playing for a while in order to cache the start of the sample, which isn't ideal.
@@ -1213,13 +1245,13 @@ void SAMPLEREADER_set_permanent_samples(SampleReader *reader, int64_t first_samp
   reader->set_and_obtain_first_slice(first_slice, first_slice2);
 }
 
-SampleReader *SAMPLEREADER_create(const wchar_t *filename){  
+SampleReader *SAMPLEREADER_create(const wchar_t *filename){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)
     return NULL;
 
   if (provider->_num_frames==0){
-    GFX_Message(NULL, "Sample %S contains no samples", filename);
+    GFX_Message(NULL, "Audio file \"%S\" contains no samples", filename);
     delete provider;
     return NULL;
   }
@@ -1228,6 +1260,8 @@ SampleReader *SAMPLEREADER_create(const wchar_t *filename){
 }
 
 vector_t SAMPLEREADER_get_all_filenames(void){
+  R_ASSERT(THREADING_is_main_thread());
+  
   vector_t ret = {};
   for(const auto key : g_sample_providers.keys())
     VECTOR_push_back(&ret, STRING_create(key));
@@ -1235,11 +1269,77 @@ vector_t SAMPLEREADER_get_all_filenames(void){
   return ret;
 }
 
+// Called right after recording file
+bool SAMPLEREADER_register_deletable_audio_file(const wchar_t *filename){
+  R_ASSERT_RETURN_IF_FALSE2(SAMPLEREADER_has_file(filename)==false, false);
+
+  SampleProvider *provider = get_sample_provider(filename);
+  if (provider==NULL)
+    return false; // No need for assertion. Error message has already been shown if file couldn't be opened.
+
+  R_ASSERT_RETURN_IF_FALSE2(provider->_can_be_deleted==false, false);
+  
+  provider->_can_be_deleted = true;
+  
+  return true;
+}
+
+// Called for all used sound files when saving (but not for audio files which are only available through undo/redo).
+void SAMPLEREADER_maybe_unregister_deletable_audio_file(const wchar_t *filename){
+  SampleProvider *provider = get_sample_provider(filename);
+  if (provider==NULL)
+    return;
+
+  if (provider->_can_be_deleted==true)
+    provider->_can_be_deleted = false;
+}
+
+// Called when loading song. (Shouldn't be necessary though, all deletable audio files will be deleted when removed during load process)
+void SAMPLEREADER_unregister_all_deletable_audio_file(void){
+  R_ASSERT(THREADING_is_main_thread());
+}
+
+// Called when quitting. (and maybe loading)
+void SAMPLEREADER_delete_all_deletable_audio_files(void){
+  R_ASSERT(THREADING_is_main_thread());
+}
+
+
+void SAMPLEREADER_inc_users(const wchar_t *filename){
+  SampleProvider *provider = get_sample_provider(filename);
+  if (provider==NULL)
+    return;
+
+  provider->inc_users();
+}
+  
+void SAMPLEREADER_dec_users(const wchar_t *filename){
+  SampleProvider *provider = get_sample_provider(filename);
+  if (provider==NULL)
+    return;
+
+  provider->dec_users();
+}
+
+void SAMPLEREADER_dec_users_undo_callback(void *data){
+  R_ASSERT(THREADING_is_main_thread());
+  SAMPLEREADER_dec_users((const wchar_t*)data);
+}
+  
+
+bool SAMPLEREADER_has_file(const wchar_t *filename){
+  R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
+  
+  radium::ScopedMutex lock(g_sample_providers_mutex);
+  return g_sample_providers.contains(STRING_get_qstring(filename));
+}
+   
+ 
 bool SAMPLEREADER_add_audiofile(const wchar_t *filename){
   return get_sample_provider(filename) != NULL;
 }
 
-int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename){
+int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename){  
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)
     return -1;
@@ -1248,6 +1348,8 @@ int64_t SAMPLEREADER_get_sample_duration(const wchar_t *filename){
 }
 
 double SAMPLEREADER_get_samplerate(const wchar_t *filename){
+  R_ASSERT(THREADING_is_main_thread());
+  
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)
     return -1;
@@ -1258,14 +1360,28 @@ double SAMPLEREADER_get_samplerate(const wchar_t *filename){
 
 //#include "Juce_plugins_proc.h"
 void SAMPLEREADER_delete(SampleReader *reader){
+  R_ASSERT(THREADING_is_main_thread());
+  
   //printf("Delete:\n%s\n", JUCE_get_backtrace());
   R_ASSERT_RETURN_IF_FALSE(reader->_has_requested_deletion==false);
   
   reader->request_deletion();
 }
 
-static void SAMPLEREADER_really_delete(SampleReader *reader){
-  delete reader;
+static radium::Mutex g_readers_ready_for_deletion_mutex;
+static QVector<SampleReader*> g_readers_ready_for_deletion;
+
+void SAMPLEREADER_call_very_often(void){
+  radium::ScopedMutex lock(g_readers_ready_for_deletion_mutex);
+  while(g_readers_ready_for_deletion.isEmpty()==false){
+    auto *reader = g_readers_ready_for_deletion.takeFirst();
+    delete reader;
+  }
+}
+  
+static void SAMPLEREADER_mark_ready_for_deletion(SampleReader *reader){
+  radium::ScopedMutex lock(g_readers_ready_for_deletion_mutex);
+  g_readers_ready_for_deletion.push_back(reader);
 }
   
 int SAMPLEREADER_get_num_channels(SampleReader *reader){
@@ -1329,6 +1445,8 @@ int RT_SAMPLEREADER_read(SampleReader *reader, float **samples, int num_frames){
 }
 
 void SAMPLEREADER_shut_down(void){
+  R_ASSERT(THREADING_is_main_thread());
+
   g_spt.shut_down();
 }
 

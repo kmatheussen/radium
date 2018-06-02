@@ -310,6 +310,9 @@ public:
 #include "../common/Queue.hpp"
 #include "../common/Mutex.hpp"
 
+static inline wchar_t *get_peak_filename(const wchar_t *soundfilename){
+  return STRING_append(soundfilename, ".radium_peaks");
+}
 
 namespace radium{
 
@@ -336,7 +339,7 @@ public:
 
   // Use DISKPEAKS_get instead.
   DiskPeaks(const wchar_t *filename)
-    : _peak_filename(wcsdup(STRING_append(filename, ".radium_peaks")))
+    : _peak_filename(wcsdup(get_peak_filename(filename)))
     , _filename(wcsdup(filename))
   {
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
@@ -676,6 +679,7 @@ private:
 void DISKPEAKS_stop(void);
 radium::DiskPeaks *DISKPEAKS_get(const wchar_t *wfilename);
 void DISKPEAKS_remove(radium::DiskPeaks *diskpeaks);
+void DISKPEAKS_delete_file(const wchar_t *wfilename);
 void DISKPEAKS_call_very_often(void);
 
 #endif

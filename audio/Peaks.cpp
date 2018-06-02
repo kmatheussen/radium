@@ -69,7 +69,7 @@ static QHash<QString,radium::DiskPeaks*> g_diskpeaks;
 radium::DiskPeaks *DISKPEAKS_get(const wchar_t *wfilename){
   QString filename = STRING_get_qstring(wfilename);
   
-  radium::DiskPeaks *diskpeaks = g_diskpeaks[filename];
+  radium::DiskPeaks *diskpeaks = g_diskpeaks.value(filename);
 
   if (diskpeaks==NULL || diskpeaks->has_valid_peaks_on_disk()==false) {
     diskpeaks = new radium::DiskPeaks(wfilename);
@@ -93,6 +93,19 @@ void DISKPEAKS_remove(radium::DiskPeaks *diskpeaks){
   R_ASSERT(ATOMIC_ADD(diskpeaks->num_visitors, -1) > 0);
 }
 
+void DISKPEAKS_delete_file(const wchar_t *wfilename){
+  QString filename = STRING_get_qstring(wfilename);
+  
+  radium::DiskPeaks *diskpeaks = g_diskpeaks.value(filename);
+  
+  if (diskpeaks != NULL){
+    g_diskpeaks.remove(filename);
+    delete diskpeaks;
+  }
+
+  DISK_delete_file(get_peak_filename(wfilename));
+}
+  
 
 void DISKPEAKS_call_very_often(void){
  again:

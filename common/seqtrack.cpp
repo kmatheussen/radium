@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../audio/Seqtrack_plugin_proc.h"
 #include "../audio/Juce_plugins_proc.h"
+#include "../audio/SampleReader_proc.h"
 
 #include "seqtrack_proc.h"
 
@@ -392,6 +393,15 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
   
     default_duration_changed(seqblock, duration);  
     SEQBLOCK_ENVELOPE_duration_changed(seqblock, duration, NULL);
+
+    /*
+      // Don't think we can do this here since this code could be called when undoing. It's probably good enough when it's being done in SEQTRACK_insert_sample.
+    SAMPLEREADER_inc_users(filename);
+    UNDO_add_callback_when_next_entry_becomes_unavailable(SAMPLEREADER_dec_users_undo_callback,
+                                                          talloc_wcsdup(filename),
+                                                          1
+                                                          );
+    */
   }
   
   return seqblock;
@@ -1386,7 +1396,8 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
     if (seqblock_for_audiofiles == for_audiofiles){
       
       struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, seqblock_state, error_type, Seqblock_Type::GFX);
-      VECTOR_push_back(seqtrack->gfx_seqblocks, seqblock);
+      if (seqblock != NULL)
+        VECTOR_push_back(seqtrack->gfx_seqblocks, seqblock);
       
     } else {
     
@@ -1396,7 +1407,8 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
       }
       
       struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack_extra, seqtracknum+1, seqblock_state, error_type, Seqblock_Type::GFX);
-      VECTOR_push_back(seqtrack_extra->gfx_seqblocks, seqblock);
+      if (seqblock != NULL)
+        VECTOR_push_back(seqtrack_extra->gfx_seqblocks, seqblock);
 
     }
   }
@@ -1817,6 +1829,8 @@ static int get_seqblock_pos(vector_t *seqblocks, int64_t seqtime){
 
 // Is static since there is no reason to call this from the outside since seqblocks should only be created in this file.
 static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime, int64_t end_seqtime){
+  R_ASSERT_RETURN_IF_FALSE2(seqblock!=NULL, -1);
+  
   if (end_seqtime != -1)
     R_ASSERT_RETURN_IF_FALSE2(end_seqtime >= seqtime, -1);
 
@@ -1939,6 +1953,12 @@ int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wch
   if (seqblock==NULL)
     return -1;
   
+  SAMPLEREADER_inc_users(filename);
+  UNDO_add_callback_when_curr_entry_becomes_unavailable(SAMPLEREADER_dec_users_undo_callback,
+                                                        talloc_wcsdup(filename),
+                                                        0
+                                                        );
+
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime, end_seqtime);    
 }
 

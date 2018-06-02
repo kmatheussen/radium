@@ -65,7 +65,7 @@ bool DISK_create_dir(const wchar_t *wdirname){
 
 bool DISK_delete_file(const wchar_t *wfilename){
   if(!DISK_file_exists(wfilename))
-    return true;
+    return false;
   
   QFile::remove(STRING_get_qstring(wfilename));
 

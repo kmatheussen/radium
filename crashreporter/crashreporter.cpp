@@ -591,6 +591,15 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
   fflush(stderr);
   fflush(stdout);
   getchar();
+
+  // once more. I usually press return by habit.
+  
+  fprintf(stderr, "\n\n\n  Press return to continue, or CTRL-C to abort\n\n");
+  fprintf(stdout, "\n\n\n  Press return to continue, or CTRL-C to abort\n\n");
+  fflush(stderr);
+  fflush(stdout);
+  getchar();
+  
   //abort();
 #endif
     

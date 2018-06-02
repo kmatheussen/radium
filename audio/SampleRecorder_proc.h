@@ -12,7 +12,8 @@ void SampleRecorder_unregister_instance(radium::SampleRecorderInstance *instance
 namespace radium{
 
 
-struct SampleRecorderInstance{
+struct SampleRecorderInstance {
+
   int64_t id;
 
   radium::String recording_path;
