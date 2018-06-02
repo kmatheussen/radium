@@ -197,7 +197,6 @@ static void myDrawText(QPainter &painter, QRectF rect, QString text, QTextOption
   if (is_playing() && pc->playtype==PLAYSONG && smooth_scrolling()){
 
     // Paint glyphs manually. QPainter::drawText doesn't have floating point precision.
-
     int len=text.length();
 
     double x = rect.x();
@@ -217,7 +216,10 @@ static void myDrawText(QPainter &painter, QRectF rect, QString text, QTextOption
       x += g.width;
     }
   } else {
+    
+    option.setWrapMode(QTextOption::NoWrap);
     painter.drawText(rect, text, option);
+    
   } 
 }
 
