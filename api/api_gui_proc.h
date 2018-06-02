@@ -32,7 +32,10 @@ QWidget *API_gui_get_parentwidget(QWidget *child, int64_t guinum); // child can 
 int64_t API_get_gui_from_widget(QWidget *widget);
 int64_t API_get_gui_from_existing_widget(QWidget *widget);
 
+#if defined(QREGION_H)
 void API_run_paint_event_for_custom_widget(QWidget *widget, QPaintEvent *ev, const QRegion &already_painted_areas);
+#endif
+
 bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
 bool API_run_mouse_move_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
 bool API_run_mouse_release_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
