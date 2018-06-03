@@ -1590,6 +1590,11 @@ for .emacs:
 
 
 (define (parse-popup-menu-options args)
+  ;;(c-display ">>----- args:")
+  ;;(pretty-print args)
+  ;;(newline)
+  ;;(c-display "->" args "<- null?" (null? args))
+  ;;(c-display "<<--------")
   (if (null? args)
       '()
       (cond ((list? (car args))
@@ -1597,6 +1602,12 @@ for .emacs:
                                                (cdr args))))
             ((not (car args))
              (parse-popup-menu-options (cdr args)))
+            ((eq? (car args) :radio-buttons)
+             (append (list "[radiobuttons start]"
+                           (lambda () #t))
+                     (parse-popup-menu-options (cdr args))
+                     (list "[radiobuttons end]"
+                           (lambda () #t))))
             ((string-starts-with? (car args) "---")
              (cons (car args)
                    (cons (lambda _ #t)
@@ -1608,7 +1619,7 @@ for .emacs:
                (cond ((eq? :check arg2)
                       (let ((check-on (caddr args)))
                         (parse-popup-menu-options (cons (<-> (if check-on "[check on]" "[check off]") text)
-                                                        (cdddr args)))))
+                                                        (cdddr args)))))                      
                      ((eq? :enabled arg2)
                       (let ((enabled (caddr args)))
                         (if enabled

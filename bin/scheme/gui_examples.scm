@@ -463,3 +463,31 @@
     (<gui> :show fontreq)
     fontreq))
 
+
+(popup-menu
+ (list
+  "hello-1" (lambda ()
+              #t)
+  "----------"
+  (list
+   :radio-buttons
+   (list "hello0"
+         :check #f
+         (lambda (ison)
+           (c-display "hello0:" ison)))
+   (list "hello1"
+         :check #t
+         :enabled #t
+         (lambda (ison)
+           (c-display "hello1" ison)))
+   (list "hello2"
+         :check #f
+         :icon (<ra> :to-base64 "/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png")
+         (lambda (ison)
+           (c-display "hello2" ison))))
+  "--------------"
+  "hello3" (lambda ()
+             #t)))
+)
+
+
