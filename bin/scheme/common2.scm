@@ -1590,24 +1590,30 @@ for .emacs:
 
 
 (define (parse-popup-menu-options args)
-  ;;(c-display ">>----- args:")
+  ;;(c-display "\n\n\n>>----- args:")
   ;;(pretty-print args)
   ;;(newline)
-  ;;(c-display "->" args "<- null?" (null? args))
-  ;;(c-display "<<--------")
+  ;;(c-display "<<--------\n\n\n")
   (if (null? args)
       '()
-      (cond ((list? (car args))
+      (cond ((and (list? (car args))
+                  (not (null? (car args)))
+                  (eq? (car (car args)) :radio-buttons))
+             (let ((radiobuttons (car args)))
+               (c-display "REST:->>>" radiobuttons "<<<-")
+               (append (list "[radiobuttons start]"
+                             (lambda () #t))
+                       (parse-popup-menu-options (cdr (car args)))
+                       (list "[radiobuttons end]"
+                             (lambda () #t))
+                       (parse-popup-menu-options (cdr args)))))
+             
+            ((list? (car args))
              (parse-popup-menu-options (append (car args)
                                                (cdr args))))
             ((not (car args))
              (parse-popup-menu-options (cdr args)))
-            ((eq? (car args) :radio-buttons)
-             (append (list "[radiobuttons start]"
-                           (lambda () #t))
-                     (parse-popup-menu-options (cdr args))
-                     (list "[radiobuttons end]"
-                           (lambda () #t))))
+            
             ((string-starts-with? (car args) "---")
              (cons (car args)
                    (cons (lambda _ #t)
