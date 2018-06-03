@@ -409,12 +409,18 @@ static QMenu *create_qmenu(
   QStack<QMenu*> parents;
   QStack<int> n_submenuess;
   int n_submenues=0;
+
+  QActionGroup *radio_buttons = NULL;
   
   for(int i=0;i<v.num_elements;i++) {
+    
     QString text = (const char*)v.elements[i];
-    if (text.startsWith("----"))
+    
+    if (text.startsWith("----")) {
+      
       menu->addSeparator();
-    else {
+      
+    } else {
       
       if (n_submenues==getMaxSubmenuEntries()){
         curr_menu = curr_menu->addMenu("Next");
@@ -483,6 +489,19 @@ static QMenu *create_qmenu(
         else
           curr_menu = parent;
         n_submenues = n_submenuess.pop();
+
+      } else if (text.startsWith("[radiobuttons start]")){
+        
+        radio_buttons = new QActionGroup(curr_menu);
+        
+      } else if (text.startsWith("[radiobuttons end]")){
+
+        R_ASSERT_NON_RELEASE(radio_buttons!=NULL);
+        
+        if (radio_buttons!=NULL && radio_buttons->actions().size()==0)
+          delete radio_buttons;
+        
+        radio_buttons = NULL;
         
       } else {
 
@@ -515,10 +534,17 @@ static QMenu *create_qmenu(
           }
         }
         
-        if (is_checkable)
+        if (is_checkable) {
+          
           action = new CheckableAction(icon, text, is_checked, menu, i, is_async, callback2, callback3, result);
-        else
-          action = new ClickableAction(icon, text, menu, i, is_async, callback2, callback3, result);        
+          if (radio_buttons != NULL)
+            radio_buttons->addAction(action);
+          
+        } else {
+          
+          action = new ClickableAction(icon, text, menu, i, is_async, callback2, callback3, result);
+          
+        }
       }
       
       if (action != NULL){
@@ -535,7 +561,12 @@ static QMenu *create_qmenu(
 
   if (menu->actions().size() > 0)
     menu->setActiveAction(menu->actions().at(0));
-  
+
+  if (radio_buttons!=NULL && radio_buttons->actions().size()==0){
+    R_ASSERT_NON_RELEASE(false);
+    delete radio_buttons;
+  }
+
   return menu;
 }
 
