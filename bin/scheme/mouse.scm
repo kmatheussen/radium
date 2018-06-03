@@ -3667,7 +3667,7 @@
                                                    (<ra> :set-seqtempo-max-tempo new))))
 
                                                   
-                                       (list "Song tempo automation visible"
+                                       (list "Show song tempo automation"
                                              :check (<ra> :seqtempo-visible)
                                              (lambda (doit)
                                                (<ra> :set-seqtempo-visible doit)))
@@ -6601,7 +6601,7 @@
                                                   (<ra> :set-show-bars-in-timeline val)))
                                           "-----------------"
 
-                                          (list "Song tempo automation visible"
+                                          (list "Show song tempo automation"
                                                 :check (<ra> :seqtempo-visible)
                                                 (lambda (doit)
                                                   (<ra> :set-seqtempo-visible doit)))
