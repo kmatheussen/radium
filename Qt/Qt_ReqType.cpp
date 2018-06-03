@@ -172,9 +172,11 @@ void GFX_SetString(ReqType das_reqtype,const char *text){
 namespace{
   class MyQLineEdit : public FocusSnifferQLineEdit {
   public:
+    bool pressed_return = false;
+    bool pressed_escape = false;
+
     MyQLineEdit(QWidget *parent)
       : FocusSnifferQLineEdit(parent)
-      , gotit(false)
     {
       setContextMenuPolicy(Qt::NoContextMenu); // Only way I've found to avoid it from popping up on windows.
     }
@@ -185,8 +187,11 @@ namespace{
       if(event->key()>0){
         QLineEdit::keyPressEvent(event);
       
-        if(event->key()==Qt::Key_Return || event->key()==Qt::Key_Escape)
-          gotit = true;
+        if(event->key()==Qt::Key_Return)
+          pressed_return = true;
+        
+        if(event->key()==Qt::Key_Escape)
+          pressed_escape = true;
 
 #if USE_GTK_VISUAL
         if(event->key()==Qt::Key_Return)
@@ -194,7 +199,6 @@ namespace{
 #endif
       }
     }
-    bool gotit;
   };
 }
 
@@ -332,7 +336,7 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
   {
     radium::ScopedExec scoped_exec(program_state_is_valid);
     
-    while(edit->gotit==false){
+    while(edit->pressed_escape==false && edit->pressed_return==false){
       // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
       GL_lock();{
         QApplication::processEvents(QEventLoop::ExcludeSocketNotifiers); // ExcludeSocketNotifiers doesn't seem to work.
@@ -367,8 +371,12 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
   
 #endif
 
-  if (edit != NULL)
+  if (edit != NULL) {
     edit->setEnabled(false);
+
+    if (edit->pressed_escape)
+      text = "";
+  }
   
   reqtype->label_text = "";
   
