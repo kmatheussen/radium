@@ -741,3 +741,13 @@
    (lambda ()
      (<ra> :show-hide-playlist -1)
      )))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Load song, "are you sure?" requester 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;(define (create-are-you-sure?-loading-song-requester callback)
+;;  (define gui (<gui> :vertical-layout))
+  
+
