@@ -29,23 +29,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wblocks_proc.h"
 #include "windows_proc.h"
 #include "OS_settings_proc.h"
+#include "OS_Player_proc.h"
+#include "control_proc.h"
+#include "OS_disk_proc.h"
+#include "undo.h"
+#include "player_proc.h"
+#include "patch_proc.h"
+
 #include "../mmd2loader/mmd2load_proc.h"
+
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
+
 #include "../audio/Seqtrack_plugin_proc.h"
-#include "OS_Player_proc.h"
+#include "../audio/SampleReader_proc.h"
 
 #ifdef _AMIGA
 #include "Amiga_bs.h"
 #include "instrprop/Amiga_instrprop.h"
 #include "plug-ins/disk_camd_mymidilinks_proc.h"
 #endif
-
-#include "control_proc.h"
-#include "OS_disk_proc.h"
-#include "undo.h"
-#include "player_proc.h"
-#include "patch_proc.h"
 
 #include "../Qt/Qt_comment_dialog_proc.h"
 
@@ -235,6 +238,9 @@ static bool Load(const wchar_t *filename){
 
         ResetUndo();
 
+        // Not necessary. The call to ResetUndo() above takes care of this automagically.
+        //SAMPLEREADER_delete_all_deletable_audio_files();
+        
         return true;
 }
 
@@ -266,7 +272,8 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
         if(filename==NULL)
           filename=GFX_GetLoadFileName(window,NULL,"Select file to load", NULL, NULL, NULL, true);
             
-	if(filename==NULL) goto exit;
+	if(filename==NULL)
+          goto exit;
 
         g_is_loading = true;
 
@@ -326,6 +333,14 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, const wchar_t *file
         if (ret)
           PATCH_clean_unused_patches();
 
+        if (!ret){
+          const vector_t deletable_audiofiles = SAMPLEREADER_get_all_deletable_filenames();
+          
+          VECTOR_FOR_EACH(const wchar_t *filename, &deletable_audiofiles){      
+            SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(filename, WTT_DONT_KNOW);
+          }END_VECTOR_FOR_EACH;
+        }
+        
         //fprintf(stderr,"Got here4 (loading finished)\n");
         
         return ret;

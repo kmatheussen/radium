@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>5</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -1433,11 +1433,11 @@ by mixing sound for all the buses.
         </spacer>
        </item>
        <item row="5" column="0">
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
-         <item>
+        <layout class="QGridLayout" name="gridLayout_7">
+         <item row="0" column="0">
           <widget class="QGroupBox" name="groupBox_46">
            <property name="title">
-            <string>Recorded audio files</string>
+            <string>Recorded audio files in the sampler instrument</string>
            </property>
            <layout class="QFormLayout" name="formLayout_6">
             <item row="0" column="0">
@@ -1457,7 +1457,7 @@ by mixing sound for all the buses.
            </layout>
           </widget>
          </item>
-         <item>
+         <item row="0" column="1">
           <widget class="QGroupBox" name="groupBox_10">
            <property name="title">
             <string>Auto-backup</string>
@@ -1589,6 +1589,49 @@ by mixing sound for all the buses.
                </size>
               </property>
              </spacer>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QGroupBox" name="groupBox_15">
+           <property name="title">
+            <string>Recorded audio files in the sequencer</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_18">
+            <item>
+             <widget class="QCheckBox" name="autodelete_takes_when_undoing">
+              <property name="text">
+               <string>Automatically delete takes when undoing. (redo still works)</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="treatment0">
+              <property name="text">
+               <string>Never delete unused takes when loading new song or quitting program</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="treatment1">
+              <property name="text">
+               <string>Ask whether to delete unused takes when loading new song or quitting gprogram</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="treatment2">
+              <property name="text">
+               <string>Always delete unused takes when loading new song or quitting program</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -6987,7 +7030,7 @@ you should check this box.
             <x>0</x>
             <y>0</y>
             <width>614</width>
-            <height>562</height>
+            <height>564</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -9601,7 +9644,7 @@ you should check this box.
                <x>0</x>
                <y>0</y>
                <width>983</width>
-               <height>296</height>
+               <height>298</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -9818,8 +9861,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>

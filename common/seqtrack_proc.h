@@ -343,6 +343,10 @@ extern LANGSPEC void SEQUENCER_append_seqtrack(struct SeqTrack *new_seqtrack, bo
 extern LANGSPEC void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos);
 extern LANGSPEC void SEQUENCER_delete_seqtrack(int pos);
 
+extern LANGSPEC vector_t SEQUENCER_get_all_used_audiofile_names_note_USED(void);
+extern LANGSPEC vector_t SEQUENCER_get_all_unused_audiofile_names_note_UNUSED(void);
+extern LANGSPEC void SEQUENCER_make_all_used_audio_files_undeletable(void);
+  
 // song
 extern LANGSPEC double SONG_get_length(void);
 extern LANGSPEC void SEQUENCER_init(struct Song *song);

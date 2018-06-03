@@ -1893,6 +1893,53 @@ void setAutobackupIntervalInMinutes(int interval){
   SETTINGS_write_int("autobackup_interval_minutes", interval);
 }
 
+
+// sequencer recording
+
+static bool g_do_auto_delete_sequencer_recordings = true;
+
+bool doAutoDeleteSequencerRecordings(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_do_auto_delete_sequencer_recordings = SETTINGS_read_bool("auto_delete_sequencer_recordings", g_do_auto_delete_sequencer_recordings);
+    has_inited = true;
+  }
+
+  return g_do_auto_delete_sequencer_recordings;
+}
+
+void setDoAutoDeleteSequencerRecordings(bool doit){
+  g_do_auto_delete_sequencer_recordings = doit;
+  SETTINGS_write_bool("auto_delete_sequencer_recordings", doit);
+}
+
+
+static int g_unused_recording_takes_treatment = URTT_ASK;
+
+int unusedRecordingTakesTreatment(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_unused_recording_takes_treatment = SETTINGS_read_int32("unused_recording_takes_treatment", g_unused_recording_takes_treatment);
+    has_inited = true;
+  }
+
+  return g_unused_recording_takes_treatment;
+}
+
+void setUnusedRecordingTakesTreatment(int treatment){
+  if (treatment < 0 || treatment > 2){
+    handleError("setUnusedRecordingTakesTreatment: Treatment must be 0, 1, or 2. Found %d", treatment);
+    return;
+  }
+  g_unused_recording_takes_treatment = treatment;
+  SETTINGS_write_int("unused_recording_takes_treatment", treatment);
+}
+
+
+
+// main menu
 void addMenuMenu(const char* name, const_char* command){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return;
   GFX_AddMenuMenu(window, name, command);

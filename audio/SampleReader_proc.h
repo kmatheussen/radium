@@ -24,12 +24,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define SLICE_SIZE 3
 #endif
 
+enum WhatToDoWithDeletableFileWhenLoadingOrQuitting{
+  WTT_DONT_KNOW, // When this is true, we are not loading or quitting and the user has not decided what to do about this file.
+  WTT_DELETE, // when this is true, the user has decided that the file should be deleted. (note that we might not load or delete when we read this variable, but that should be okay)
+  WTT_KEEP // when this is true, the user has decided that the file should NOT be deleted. (note that we might not load or delete when we read this variable, but that should be okay)
+};
 
 extern LANGSPEC vector_t SAMPLEREADER_get_all_filenames(void);
+extern LANGSPEC vector_t SAMPLEREADER_get_all_deletable_filenames(void);
 
 extern LANGSPEC bool SAMPLEREADER_register_deletable_audio_file(const wchar_t *filename);
-extern LANGSPEC void SAMPLEREADER_maybe_unregister_deletable_audio_file(const wchar_t *filename);
-extern LANGSPEC void SAMPLEREADER_unregister_all_deletable_audio_file(void);
+extern LANGSPEC void SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(const wchar_t *filename, enum WhatToDoWithDeletableFileWhenLoadingOrQuitting wtt);
+extern LANGSPEC void SAMPLEREADER_maybe_make_audio_file_undeletable(const wchar_t *filename);
 extern LANGSPEC void SAMPLEREADER_delete_all_deletable_audio_files(void);
 extern LANGSPEC void SAMPLEREADER_call_very_often(void);
 extern LANGSPEC void SAMPLEREADER_inc_users(const wchar_t *filename);

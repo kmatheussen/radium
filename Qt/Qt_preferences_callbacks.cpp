@@ -498,6 +498,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       autobackup_onoff->setChecked(doAutoBackups());
       save_backup_while_playing->setChecked(doSaveBackupWhilePlaying());
       autobackup_interval->setValue(autobackupIntervalInMinutes());
+
+      autodelete_takes_when_undoing->setChecked(doAutoDeleteSequencerRecordings());
+      treatment0->setChecked(unusedRecordingTakesTreatment()==URTT_NEVER);
+      treatment1->setChecked(unusedRecordingTakesTreatment()==URTT_ASK);
+      treatment2->setChecked(unusedRecordingTakesTreatment()==URTT_ALWAYS);
     }
     
     // Editor
@@ -916,6 +921,25 @@ public slots:
   }
 
 
+  void on_autodelete_takes_when_undoing_toggled(bool val){
+    if (_initing==false)
+      setDoAutoDeleteSequencerRecordings(val);
+  }
+
+  void on_treatment0_toggled(bool val){
+    if (_initing==false && val)
+      setUnusedRecordingTakesTreatment(URTT_NEVER);
+  }
+  
+  void on_treatment1_toggled(bool val){
+    if (_initing==false && val)
+      setUnusedRecordingTakesTreatment(URTT_ASK);
+  }
+  
+  void on_treatment2_toggled(bool val){
+    if (_initing==false && val)
+      setUnusedRecordingTakesTreatment(URTT_ALWAYS);
+  }
   
   // editor
   //

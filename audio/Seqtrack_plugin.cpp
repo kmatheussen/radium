@@ -41,10 +41,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SampleRecorder_proc.h"
 #include "SoundPluginRegistry_proc.h"
 
+#include "../api/api_proc.h"
+
 
 #include "Seqtrack_plugin_proc.h"
 
-// FIX!! Don't fade-in when playing sample from seqblock->t.interior_start
 
 
 #define NUM_INPUTS 8
@@ -1907,6 +1908,17 @@ void SEQTRACKPLUGIN_prepare_to_play(SoundPlugin *plugin, const struct SeqTrack *
   Data *data = (Data*)plugin->data;
 
   data->prepare_to_play(seqtrack, seqtime, gotit);
+}
+
+vector_t SEQTRACKPLUGIN_get_all_used_audio_filenames(struct SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+
+  vector_t ret = {};
+  
+  for(Sample *sample : data->_samples)
+    VECTOR_push_back(&ret, talloc_wcsdup(sample->_filename));
+
+  return ret;
 }
 
 void SEQTRACKPLUGIN_called_very_often(SoundPlugin *plugin){
