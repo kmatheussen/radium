@@ -3799,20 +3799,37 @@
                                 (if (and (= Button *right-button*)
                                          (inside-box (<ra> :get-box seqtimeline-area) X Y))
                                     (begin
-                                      (popup-menu (list "Play loop"
-                                                        :check (<ra> :is-seqlooping)
-                                                        (lambda (val)
-                                                          (<ra> :set-seqlooping val)))
-                                                  (list "Display bars and beats"
-                                                        :check (<ra> :show-bars-in-timeline)
-                                                        (lambda (val)
-                                                          (<ra> :set-show-bars-in-timeline val)))
-                                                  "-----------------"
-                                                  (list "Song tempo automation visible"
+                                      (popup-menu "-------- Time format" ;;Display bars and beats"
+                                                  (list
+                                                   :radio-buttons
+                                                   (list "Bars and beats"
+                                                         :check (<ra> :show-bars-in-timeline)
+                                                         (lambda (val)
+                                                           (<ra> :set-show-bars-in-timeline val)))
+                                                   (list "HH:MM:SS"
+                                                         :check (not (<ra> :show-bars-in-timeline))
+                                                         (lambda (val)
+                                                           (<ra> :set-show-bars-in-timeline (not val)))))
+                                                  "-------- Usage"
+                                                  (list
+                                                   :radio-buttons
+                                                   (list "Free"
+                                                         :check (not (<ra> :is-seqlooping))
+                                                         (lambda (val)
+                                                           (c-display "new no-looping-or-punch:" val)))
+                                                   (list "Looping"
+                                                         :check (<ra> :is-seqlooping)
+                                                         (lambda (val)
+                                                           (<ra> :set-seqlooping val)))
+                                                   (list "Punch in/out"
+                                                         :check #f
+                                                         (lambda (val)
+                                                           (c-display "new punch in/out:" val))))
+                                                  "------- Configuration" ;;Various"
+                                                  (list "Show song tempo automation"
                                                         :check (<ra> :seqtempo-visible)
                                                         (lambda (doit)
                                                           (<ra> :set-seqtempo-visible doit)))
-                                                  "-----------------"
                                                   (list "Preferences"
                                                         (lambda ()
                                                           (<ra> :open-sequencer-preferences-dialog))))

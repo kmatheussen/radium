@@ -418,7 +418,13 @@ static QMenu *create_qmenu(
     
     if (text.startsWith("----")) {
       
-      menu->addSeparator();
+      auto *separator = menu->addSeparator();
+
+      for(int i = 3 ; i < text.size() ; i++)
+        if (text[i] != '-'){
+          separator->setText(text.mid(i));
+          break;
+        }
       
     } else {
       
@@ -495,7 +501,7 @@ static QMenu *create_qmenu(
         radio_buttons = new QActionGroup(curr_menu);
         
       } else if (text.startsWith("[radiobuttons end]")){
-
+        
         R_ASSERT_NON_RELEASE(radio_buttons!=NULL);
         
         if (radio_buttons!=NULL && radio_buttons->actions().size()==0)
@@ -562,6 +568,8 @@ static QMenu *create_qmenu(
   if (menu->actions().size() > 0)
     menu->setActiveAction(menu->actions().at(0));
 
+  R_ASSERT_NON_RELEASE(radio_buttons==NULL);
+  
   if (radio_buttons!=NULL && radio_buttons->actions().size()==0){
     R_ASSERT_NON_RELEASE(false);
     delete radio_buttons;
