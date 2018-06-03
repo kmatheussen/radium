@@ -410,16 +410,16 @@
      (define (add-statusbar-text-handler string-or-func)
        (add-nonpress-mouse-cycle!
         :enter-func (lambda (x* y)
-                      (define string (if (procedure? string-or-func)
-                                         (string-or-func)
-                                         string-or-func))
-                      (define text (if (pair? string)
-                                       (cadr string)
-                                       string))
-                      (define also-show-tooltip (if (pair? string)
-                                                    (car string)
+                      (define string-or-pair (if (procedure? string-or-func)
+                                                 (string-or-func)
+                                                 string-or-func))
+                      (define text (if (pair? string-or-pair)
+                                       (cadr string-or-pair)
+                                       string-or-pair))
+                      (define also-show-tooltip (if (pair? string-or-pair)
+                                                    (car string-or-pair)
                                                     #f))
-                                 
+                      
                       (if also-show-tooltip
                           (<gui> :tool-tip text))
                       (set-statusbar-text! text)

@@ -83,7 +83,8 @@
                                                                           #t
                                                                           (lambda (ison)
                                                                             (<ra> :set-seqtrack-recording-matrix seqtracknum input-channel soundfile-channel ison)
-                                                                            (c-display (<-> input-channel " -> " soundfile-channel ": " ison)))))
+                                                                            ;;(c-display (<-> input-channel " -> " soundfile-channel ": " ison))
+                                                                            )))
                                                                  (iota 8))))
                                                    (iota 8)))))
                            matrix))
