@@ -26,7 +26,7 @@ extern struct Root *root;
 static QPointer<MidiLearnPrefs> midilearn_prefs_widget;
 
 static void ensure_open(void){
-  if (midilearn_prefs_widget == NULL){
+  if (midilearn_prefs_widget.isNull()){
     midilearn_prefs_widget = new MidiLearnPrefs(g_main_window);
     g_static_toplevel_widgets.push_back(midilearn_prefs_widget.data());
   }
@@ -34,7 +34,7 @@ static void ensure_open(void){
 
 void MIDILEARN_PREFS_open(void){
   ensure_open();
-  safeShowOrExec(midilearn_prefs_widget, true);
+  safeShowOrExec(midilearn_prefs_widget.data(), true);
 }
 
 void MIDILEARN_PREFS_add(MidiLearn *midi_learn){

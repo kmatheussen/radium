@@ -1218,10 +1218,10 @@ public slots:
 static void ensure_widget_is_created(void){
 }
 
-static QPointer<Preferences> g_preferences_widget=NULL;
+static QPointer<Preferences> g_preferences_widget;
 
 void PREFERENCES_open(void){
-  if(g_preferences_widget==NULL){
+  if(g_preferences_widget.isNull()){
     g_preferences_widget = new Preferences(g_main_window);
     
     g_static_toplevel_widgets.push_back(g_preferences_widget.data());
@@ -1241,9 +1241,9 @@ void PREFERENCES_open_sequencer(void){
 }
 
 void PREFERENCES_update(void){
-  if (g_preferences_widget != NULL) {
+  if (false==g_preferences_widget.isNull()){
     g_preferences_widget->_needs_to_update = true;
-    
+  
     if (g_preferences_widget->isVisible())
         g_preferences_widget->updateWidgets();
   }
