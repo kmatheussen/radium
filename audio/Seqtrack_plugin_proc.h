@@ -41,6 +41,8 @@ namespace radium{
 extern LANGSPEC void SEQTRACKPLUGIN_prepare_to_play(struct SoundPlugin *plugin, const struct SeqTrack *seqtrack, int64_t seqtime, radium::FutureSignalTrackingSemaphore *gotit);
 #endif
 
+extern LANGSPEC vector_t SEQTRACKPLUGIN_get_all_used_audio_filenames(struct SoundPlugin *plugin);
+  
 extern LANGSPEC void SEQTRACKPLUGIN_clear_resampler_warning_hashmap(void);
 extern LANGSPEC int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock, enum Seqblock_Type type);
 

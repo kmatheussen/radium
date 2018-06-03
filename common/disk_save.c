@@ -27,9 +27,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk_save_proc.h"
 #include "visual_proc.h"
 #include "player_proc.h"
+#include "seqtrack_proc.h"
 #include "undo.h"
 #include "nag.h"
 #include "OS_settings_proc.h"
+
 #include "../api/api_proc.h"
 
 #include "../config/config.h"
@@ -82,6 +84,8 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
         if (is_backup==false) {
           Undo_saved_song();
 
+          SEQUENCER_make_all_used_audio_files_undeletable(); // I.e. don't auto-delete anymore recording takes that are in use. Wouldn't be good if loading the song later.
+          
           if (success)
             show_nag_window("File successfully saved.<p>");
         }

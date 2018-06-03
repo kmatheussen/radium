@@ -3127,12 +3127,16 @@ int radium_main(char *arg){
   fprintf(stderr,"          ENDING 8\n");
   
   SAMPLEREADER_shut_down();
-  
-  fprintf(stderr,"          ENDING 9\n");
 
+  fprintf(stderr,"          ENDING 9\n");
+    
   DISKPEAKS_stop();
   
   fprintf(stderr,"          ENDING 10\n");
+
+  SAMPLEREADER_delete_all_deletable_audio_files(); // This function is a little bit dirty, and because of some dirtyness that might interfere with the sample reder thread and the disk peaks, we call it after calling the two functions above (at least it feels cleaner this way, it probably works to call the function before the other ones as well.).
+  
+  fprintf(stderr,"          ENDING 11\n");
 
   //V_shutdown();
   
@@ -3143,7 +3147,7 @@ int radium_main(char *arg){
   OS_WaitForAShortTime(100);
 #endif
   
-  fprintf(stderr,"          ENDING 11\n");
+  fprintf(stderr,"          ENDING 12\n");
   
   return 0;
 

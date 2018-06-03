@@ -397,7 +397,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
     /*
       // Don't think we can do this here since this code could be called when undoing. It's probably good enough when it's being done in SEQTRACK_insert_sample.
     SAMPLEREADER_inc_users(filename);
-    UNDO_add_callback_when_next_entry_becomes_unavailable(SAMPLEREADER_dec_users_undo_callback,
+    UNDO_add_callback_when_curr_entry_becomes_unavailable(SAMPLEREADER_dec_users_undo_callback,
                                                           talloc_wcsdup(filename),
                                                           1
                                                           );
@@ -2181,6 +2181,76 @@ int64_t SEQUENCER_get_loop_end(void){
   return ATOMIC_GET(root->song->looping.end);
 }
 
+vector_t SEQUENCER_get_all_used_audiofile_names_note_USED(void){
+  vector_t ret = {};
+
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    
+    if (seqtrack->patch!=NULL){
+
+      if (seqtrack->for_audiofiles==false) {
+
+        R_ASSERT(false);
+
+      } else {
+      
+        SoundPlugin *plugin = (SoundPlugin*)seqtrack->patch->patchdata;
+        
+        if (plugin !=NULL){
+          vector_t all = SEQTRACKPLUGIN_get_all_used_audio_filenames(plugin);
+          VECTOR_append(&ret, &all);
+        }else
+          R_ASSERT_NON_RELEASE(false);
+
+      }
+                  
+    }
+    
+  }END_VECTOR_FOR_EACH;
+
+  return ret;
+}
+
+vector_t SEQUENCER_get_all_unused_audiofile_names_note_UNUSED(void){
+  QSet<QString> used;
+
+  {
+    vector_t used2 = SEQUENCER_get_all_used_audiofile_names_note_USED();
+    VECTOR_FOR_EACH(const wchar_t*, filename, &used2){
+      used << STRING_get_qstring(filename);
+    }END_VECTOR_FOR_EACH;
+  }
+
+  
+  vector_t unused = {};
+
+  
+  const vector_t all = SAMPLEREADER_get_all_filenames();
+
+  VECTOR_FOR_EACH(const wchar_t*, filename, &all){
+    
+    if (false==used.contains(STRING_get_qstring(filename)))
+      VECTOR_push_back(&unused, filename);
+    
+  }END_VECTOR_FOR_EACH;
+  
+
+  return unused;
+}
+
+
+// Called from disk_save.c (not when making backup though)
+void SEQUENCER_make_all_used_audio_files_undeletable(void){
+  vector_t audiofile_names = SEQUENCER_get_all_used_audiofile_names_note_USED();
+  
+  VECTOR_FOR_EACH(const wchar_t *, filename, &audiofile_names){
+    
+    SAMPLEREADER_maybe_make_audio_file_undeletable(filename);
+    
+  }END_VECTOR_FOR_EACH;
+}
+
+
 double SONG_get_length(void){
   double len = 0;
   
@@ -2192,6 +2262,7 @@ double SONG_get_length(void){
 
   return len;
 }
+
 
 // Called from SONG_create()
 void SEQUENCER_init(struct Song *song){

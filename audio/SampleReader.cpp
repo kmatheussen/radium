@@ -240,7 +240,10 @@ int main(){
 
 #include "../Qt/Qt_colors_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "Peaks.hpp"
+
 
 #include "SampleReader_proc.h"
 
@@ -336,6 +339,8 @@ public:
   unsigned int _color;
 
   bool _can_be_deleted = false; // Recorded files should be deleted when unavailable.
+
+  enum WhatToDoWithDeletableFileWhenLoadingOrQuitting _what_to_do_with_deletable_file_when_loading_or_quitting = WTT_DONT_KNOW;
   
 private:
 
@@ -424,9 +429,7 @@ public:
     BS_UpdateBlockList();
     
     if (_can_be_deleted){
-      printf("\n\n\n====================== Deleting \"%S\" ===================\n\n\n", _filename);
-      DISK_delete_file(_filename);
-      DISKPEAKS_delete_file(_filename);
+      force_file_deletion();
     }
     
     free((void*)_filename);
@@ -434,6 +437,30 @@ public:
 
   }
 
+  void force_file_deletion(void){
+    
+    bool do_delete = false;
+    
+    if (_what_to_do_with_deletable_file_when_loading_or_quitting != WTT_DONT_KNOW){
+
+      if (_what_to_do_with_deletable_file_when_loading_or_quitting == WTT_DELETE)      
+        do_delete = true;
+      
+    } else {
+      
+      if (doAutoDeleteSequencerRecordings())
+        do_delete = true;
+      
+    }
+
+    printf("\n\n\n====================== Maybe deleting \"%S\". Going to? (i.e. allowed by user?): %d. ===================\n\n\n", _filename, do_delete);
+
+    if (do_delete){
+      DISK_delete_file(_filename);
+      DISKPEAKS_delete_file(_filename);
+    }
+  }
+  
   void inc_users(void){
     R_ASSERT(THREADING_is_main_thread());
     
@@ -1269,6 +1296,16 @@ vector_t SAMPLEREADER_get_all_filenames(void){
   return ret;
 }
 
+vector_t SAMPLEREADER_get_all_deletable_filenames(void){
+  vector_t ret = {};
+  for(const auto *provider : g_sample_providers.values())
+    if (provider->_can_be_deleted)
+      VECTOR_push_back(&ret, talloc_wcsdup(provider->_filename));
+
+  return ret;
+}
+
+
 // Called right after recording file
 bool SAMPLEREADER_register_deletable_audio_file(const wchar_t *filename){
   R_ASSERT_RETURN_IF_FALSE2(SAMPLEREADER_has_file(filename)==false, false);
@@ -1284,8 +1321,18 @@ bool SAMPLEREADER_register_deletable_audio_file(const wchar_t *filename){
   return true;
 }
 
+void SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(const wchar_t *filename, enum WhatToDoWithDeletableFileWhenLoadingOrQuitting wtt){
+  SampleProvider *provider = get_sample_provider(filename);
+  if (provider==NULL)
+    return;
+
+  R_ASSERT_NON_RELEASE(provider->_can_be_deleted==true);
+  
+  provider->_what_to_do_with_deletable_file_when_loading_or_quitting = wtt;
+}
+  
 // Called for all used sound files when saving (but not for audio files which are only available through undo/redo).
-void SAMPLEREADER_maybe_unregister_deletable_audio_file(const wchar_t *filename){
+void SAMPLEREADER_maybe_make_audio_file_undeletable(const wchar_t *filename){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)
     return;
@@ -1294,14 +1341,13 @@ void SAMPLEREADER_maybe_unregister_deletable_audio_file(const wchar_t *filename)
     provider->_can_be_deleted = false;
 }
 
-// Called when loading song. (Shouldn't be necessary though, all deletable audio files will be deleted when removed during load process)
-void SAMPLEREADER_unregister_all_deletable_audio_file(void){
-  R_ASSERT(THREADING_is_main_thread());
-}
-
-// Called when quitting. (and maybe loading)
+// Called when quitting.
 void SAMPLEREADER_delete_all_deletable_audio_files(void){
   R_ASSERT(THREADING_is_main_thread());
+
+  for(auto *provider : g_sample_providers.values())
+    if (provider->_can_be_deleted==true)
+      provider->force_file_deletion();
 }
 
 

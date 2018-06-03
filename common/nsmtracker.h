@@ -394,7 +394,11 @@ typedef struct{
     })
 
 
-
+enum WhetherToDeleteUnusedRecordingTakes{
+  URTT_NEVER=0,
+  URTT_ASK=1,
+  URTT_ALWAYS=2
+};
 
 /*********************************************************************
 	time.h

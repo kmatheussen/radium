@@ -29,7 +29,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "seqtrack_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
+
 #include "../OpenGL/Widget_proc.h"
+
+#include "../audio/SampleReader_proc.h"
+
+#include "../api/api_proc.h"
+
 
 #include "undo.h"
 
@@ -137,80 +143,6 @@ static void update_gfx(void){
 
 }
 
-int Undo_num_undos(void){
-  return num_undos;
-}
-
-void Undo_saved_song(void){
-  undo_pos_at_last_saving = num_undos;
-  update_gfx();
-}
-
-bool Undo_Is_Currently_Undoing(void){
-  return currently_undoing;
-}
-
-bool Undo_Is_Currently_Ignoring(void){
-  return ignore();
-}
-
-void ResetUndo(void){
-  if (ignore()) {
-    if (ignore()==false)
-      RError("ignore_undo_operations_level < 0: %d",ignore_undo_operations_level);
-    ignore_undo_operations_level = 0;
-  }
-
-  if(currently_undoing){
-    RError("Can not call ResetUndo from Undo()\n");
-    return;
-  }
-
-  memset(&UndoRoot,0,sizeof(struct Undo));
-
-  CurrUndo=&UndoRoot;
-  
-  //printf("        UNDO ResetUndo(). num_undos=0\n");
-  num_undos=0;
-  undo_pos_at_last_saving=0;
-  update_gfx();
-}
-
-bool Undo_are_you_sure_questionmark(void){
-  int num_undos = Undo_num_undos_since_last_save();
-
-  if(num_undos>0){
-    char temp[200];
-    char *ret=NULL;
-
-    sprintf(
-            temp,
-            "%d change%s been made to file since song was saved.\nAre you sure? (yes/no) > ",
-            num_undos,
-            num_undos>1 ? "s have" : " has"
-            );
-    while(
-          ret==NULL || (
-                        strcmp("yes",ret) &&
-                        strcmp("no",ret)
-			)
-          ){
-      ret=GFX_GetString(
-                        root->song->tracker_windows,
-                        NULL,
-                        temp,
-                        true
-			);
-      
-    }
-    if(!strcmp("no",ret))
-      return false;
-  }
-
-  return true;
-}
-
-
 static void run_undo_unavailable_callbacks(const struct Undo *undo){
   while(undo != NULL){
 
@@ -244,6 +176,171 @@ static void run_undo_unavailable_callbacks(const struct Undo *undo){
 
   g_unavailable_callbacks_to_call = next_callbacks;
 }
+
+
+int Undo_num_undos(void){
+  return num_undos;
+}
+
+void Undo_saved_song(void){
+  undo_pos_at_last_saving = num_undos;
+  update_gfx();
+}
+
+bool Undo_Is_Currently_Undoing(void){
+  return currently_undoing;
+}
+
+bool Undo_Is_Currently_Ignoring(void){
+  return ignore();
+}
+
+void ResetUndo(void){
+  if (ignore()) {
+    if (ignore()==false)
+      RError("ignore_undo_operations_level < 0: %d",ignore_undo_operations_level);
+    ignore_undo_operations_level = 0;
+  }
+
+  if(currently_undoing){
+    RError("Can not call ResetUndo from Undo()\n");
+    return;
+  }
+
+  run_undo_unavailable_callbacks(UndoRoot.next);
+  
+  memset(&UndoRoot,0,sizeof(struct Undo));
+
+  CurrUndo=&UndoRoot;
+  
+  //printf("        UNDO ResetUndo(). num_undos=0\n");
+  num_undos=0;
+  undo_pos_at_last_saving=0;
+  update_gfx();
+}
+
+bool Undo_are_you_sure_questionmark(void){
+  int num_undos = Undo_num_undos_since_last_save();
+
+  const vector_t deletable_audiofiles = SAMPLEREADER_get_all_deletable_filenames();
+  const bool num_deletable_audio_files = deletable_audiofiles.num_elements;
+    
+  const bool has_deletable_audio_files = num_deletable_audio_files > 0;
+  
+  bool boolret = true;
+
+  ReqType reqtype = NULL;
+
+  if (num_undos>0) {
+    
+    reqtype = GFX_OpenReq(root->song->tracker_windows, 200, 100, "");
+    
+    if(num_undos>0){
+      char temp[200];
+      char *ret=NULL;
+      
+      sprintf(
+              temp,
+              "%d change%s been made to file since song was saved.\nAre you sure? (yes/no) > ",
+              num_undos,
+              num_undos>1 ? "s have" : " has"
+              );
+      do{
+        ret=GFX_GetString(
+                          root->song->tracker_windows,
+                          reqtype,
+                          temp,
+                          true
+                          );
+      }while(
+             ret!=NULL &&
+             strcmp("yes",ret) &&
+             strcmp("no",ret)
+             );
+      
+      if(ret==NULL || !strcmp("no",ret)){
+        boolret = false;
+        goto exit;
+      }
+    }
+  }
+  
+  if (has_deletable_audio_files) {
+
+    enum WhatToDoWithDeletableFileWhenLoadingOrQuitting wtt;
+
+    switch(unusedRecordingTakesTreatment()){
+        
+      case URTT_NEVER:
+        wtt = WTT_KEEP;
+        break;
+
+      case URTT_ALWAYS:
+        wtt = WTT_DELETE;
+        break;
+
+      case URTT_ASK:
+        {
+          if (reqtype==NULL)
+            reqtype = GFX_OpenReq(root->song->tracker_windows, 200, 100, "");
+          
+          char temp[200];
+          char *ret=NULL;
+          sprintf(
+                  temp,
+                  "There %s %d unused recording take%s. Do you want to delete %s file%s? (yes/no) > ",
+                  num_deletable_audio_files==1 ? "is" : "are",
+                  num_deletable_audio_files,
+                  num_deletable_audio_files==1 ? "" : "s",
+                  num_deletable_audio_files==1 ? "that" : "those",
+                  num_deletable_audio_files==1 ? "" : "s"
+                  );
+          do{
+            ret=GFX_GetString(
+                              root->song->tracker_windows,
+                              reqtype,
+                              temp,
+                              true
+                              );
+          }while(
+                 ret!=NULL &&
+                 strcmp("yes",ret) &&
+                 strcmp("no",ret)
+                 );
+          
+          if (ret==NULL){            
+            boolret = false;
+            goto exit;
+          }
+          
+          if (!strcmp("yes", ret))
+            wtt = WTT_DELETE;
+          else
+            wtt = WTT_KEEP;
+        }
+        break;
+    
+      default:
+        R_ASSERT(false);
+        wtt = WTT_KEEP;
+        break;
+    }
+      
+    VECTOR_FOR_EACH(const wchar_t *filename, &deletable_audiofiles){      
+      SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(filename, wtt);
+    }END_VECTOR_FOR_EACH;
+    
+  }
+
+
+ exit:
+  
+  if (reqtype != NULL)
+    GFX_CloseReq(root->song->tracker_windows, reqtype);
+  
+  return boolret;
+}
+
 
 
 static bool g_is_adding_undo = false;

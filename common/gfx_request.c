@@ -118,7 +118,7 @@ char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *
         
 	if(temp[0] !='\0' ){
           rettext=talloc_atomic((int)strlen(temp)+2);
-		sprintf(rettext,"%s",temp);
+          sprintf(rettext,"%s",temp);
 	}
 
 	if(reqtype==NULL){
