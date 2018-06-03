@@ -7,13 +7,13 @@
 
 static bool g_has_been_made = false;
 
-static QPointer<song_properties> widget=NULL;
+static QPointer<song_properties> widget;
 
 static void ensure_widget_is_created(void){
-  if(widget==NULL){
+  if(widget.data()==NULL){
     R_ASSERT(g_has_been_made==false);
     widget = new song_properties(g_main_window);
-    g_static_toplevel_widgets.push_back(widget);
+    g_static_toplevel_widgets.push_back(widget.data());
     g_has_been_made = true;
   }
 }
@@ -23,7 +23,7 @@ extern "C"{
   void SONGPROPERTIES_open(void){
     ensure_widget_is_created();
 
-    safeShowOrExec(widget, true);
+    safeShowOrExec(widget.data(), true);
     
     // minimize
     //widget->adjustSize();
@@ -31,7 +31,7 @@ extern "C"{
   }
 
   void SONGPROPERTIES_update(struct Song *song){
-    if (widget==NULL)
+    if (widget.data()==NULL)
       return;
 
     widget->_initing = true;

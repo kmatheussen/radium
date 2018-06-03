@@ -178,7 +178,7 @@
   ;    (<gui> :set-tool-tip button (get-displayable-keybinding funcname '()))
   ;    (add-keybinding-configuration-to-gui button funcname '())))
 
-  (fix-button "Quantitize Range2" "quantitize_range" "ra:quantitize-range")
+  (fix-button "Quantitize Range" "quantitize_range" "ra:quantitize-range")
   (fix-button "Quantitize Track" "quantitize_track" "ra:general-track-quantitize")
   ;;(fix-button "quantitize_fx" "ra:quantitize-fx")
   (fix-button "Quantitize Block" "quantitize_block" "ra:quantitize-block")

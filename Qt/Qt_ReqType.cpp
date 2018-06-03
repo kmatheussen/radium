@@ -74,7 +74,7 @@ struct MyQFrame : public QDialog{
   
   void showEvent(QShowEvent* e) override {
     this->activateWindow();
-    if (_widget_to_get_focus_when_shown != NULL){
+    if (_widget_to_get_focus_when_shown.data() != NULL){
       GL_lock();{
         _widget_to_get_focus_when_shown->setFocus();
       }GL_unlock();
