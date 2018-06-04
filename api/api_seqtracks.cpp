@@ -1051,7 +1051,7 @@ void setSeqtempoMaxTempo(double max_tempo){
 }
 
 
-// sequencer timeline and looping
+// sequencer timeline, looping, and punch in/out
 //
 
 float getSeqtimelineAreaX1(void){
@@ -1068,6 +1068,7 @@ float getSeqtimelineAreaY2(void){
 }
 
 
+// loop
 void setSeqlooping(bool do_loop){
   SEQUENCER_set_looping(do_loop);
 }
@@ -1091,6 +1092,33 @@ void setSeqloopingEnd(int64_t end){
 int64_t getSeqloopingEnd(void){
   return SEQUENCER_get_loop_end();
 }
+
+// punch in/out
+void setSeqpunching(bool do_loop){
+  SEQUENCER_set_punching(do_loop);
+}
+
+bool isSeqpunching(void){
+  return SEQUENCER_is_punching();
+}
+
+void setSeqpunchingStart(int64_t start){
+  SEQUENCER_set_punch_start(start);
+}
+
+int64_t getSeqpunchingStart(void){
+  return SEQUENCER_get_punch_start();
+}
+
+void setSeqpunchingEnd(int64_t end){
+  SEQUENCER_set_punch_end(end);
+}
+
+int64_t getSeqpunchingEnd(void){
+  return SEQUENCER_get_punch_end();
+}
+
+
 
 // seqtracks
 //

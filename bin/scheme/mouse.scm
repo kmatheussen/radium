@@ -3666,18 +3666,8 @@
                                                (if (> new highest)
                                                    (<ra> :set-seqtempo-max-tempo new))))
 
-                                                  
-                                       (list "Show song tempo automation"
-                                             :check (<ra> :seqtempo-visible)
-                                             (lambda (doit)
-                                               (<ra> :set-seqtempo-visible doit)))
-                                       
-                                       "-----------------"
 
-                                       (list "Preferences"
-                                             (lambda ()
-                                               (<ra> :open-sequencer-preferences-dialog)))
-                                       
+                                       (get-sequencer-conf-menues)
                                        ))
                        #t)))))
 
@@ -3705,35 +3695,55 @@
 ;;
 
 
-(define (get-seqloop-start-x)
-  (scale (<ra> :get-seqlooping-start)
+(define (get-sequencer-x time)
+  (scale time
          (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)
          (<ra> :get-seqtimeline-area-x1) (<ra> :get-seqtimeline-area-x2)))
 
-(define (get-seqloop-end-x)
-  (scale (<ra> :get-seqlooping-end)
-         (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)
-         (<ra> :get-seqtimeline-area-x1) (<ra> :get-seqtimeline-area-x2)))
+(define (set-statusbar-looppunch-info name getter)
+  (set-editor-statusbar (<-> name " : " (two-decimal-string (/ (getter) (<ra> :get-sample-rate))))))
 
+;; highlight loop start / loop end
+(define (create-seqlooppunch-highlighter name in-use? get-start get-end)
+  (add-mouse-move-handler
+   :move (lambda ($button $x $y)
+           (and (in-use?)
+                (inside-box (<ra> :get-box seqtimeline-area) $x $y)
+                (let* ((start-x (get-sequencer-x (get-start)))
+                       (end-x (get-sequencer-x (get-end)))
+                       (mid (average start-x end-x)))
+                  (apply set-statusbar-looppunch-info (if (< $x mid)
+                                                          (list (<-> name " start") get-start)
+                                                          (list (<-> name " end") get-end)))
+                  #t)))))
 
-(define gakkgakk-seqloop-handler-num-moves 0)
-(define gakkgakk-seqloop-handler-start-X #f)
 
 ;; Set loop start and end and set cursor pos
-(define (create-seqloop-handler Type)
+(define (create-seqlooppunch-mouse-handler base-name in-use? get-start get-end set-start! set-end!)
+  (define gakkgakk-seqloop-handler-num-moves 0)
+  (define gakkgakk-seqloop-handler-start-X #f)
+  (define getter #f)
+  (define setter! #f)
+  (define name #f)
   (add-horizontal-handler :Get-handler-data (lambda (X Y)
-                                              (and (inside-box (<ra> :get-box seqtimeline-area) X Y)
-                                                   (let* ((start-x (get-seqloop-start-x))
-                                                          (end-x (get-seqloop-end-x))
+                                              (and (in-use?)
+                                                   (inside-box (<ra> :get-box seqtimeline-area) X Y)
+                                                   (let* ((start-x (get-sequencer-x (get-start)))
+                                                          (end-x (get-sequencer-x (get-end)))
                                                           (mid (average start-x end-x)))
                                                      (set-grid-type #t)
                                                      (set! gakkgakk-seqloop-handler-num-moves 0)
                                                      (set! gakkgakk-seqloop-handler-start-X X)
-                                                     (if (eq? Type 'start)
-                                                         (and (< X mid)
-                                                              (<ra> :get-seqlooping-start))
-                                                         (and (> X mid)
-                                                              (<ra> :get-seqlooping-end))))))
+                                                     (if (< X mid)
+                                                         (begin
+                                                           (set! name (<-> base-name " start"))
+                                                           (set! getter get-start)
+                                                           (set! setter! set-start!))
+                                                         (begin
+                                                           (set! name (<-> base-name " end"))
+                                                           (set! getter get-end)
+                                                           (set! setter! set-end!)))
+                                                     (getter))))
                           :Get-x1 (lambda (_)
                                     (<ra> :get-seqtimeline-area-x1))
                           :Get-x2 (lambda (_)
@@ -3764,76 +3774,73 @@
                                   (set! Value (floor Value))
                                   (if (not (<ra> :control-pressed))
                                       (set! Value (<ra> :get-seq-gridded-time Value 0 (<ra> :get-seq-loop-grid-type))))
-                                  (if (eq? Type 'start)
-                                      (<ra> :set-seqlooping-start Value)
-                                      (<ra> :set-seqlooping-end Value)))
+                                  (setter! Value))
                           
                           :Publicize (lambda (Value)
-                                       (set-statusbar-loop-info Type))
+                                       (set-statusbar-looppunch-info name getter))
                           
                           :Mouse-pointer-func ra:set-normal-mouse-pointer
                           :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                           ))
 
-(create-seqloop-handler 'start)
-(create-seqloop-handler 'end)
+(define (create-seqlooppunch-mouse-handlers name in-use? get-start get-end set-start! set-end!)
+  (create-seqlooppunch-highlighter   name in-use? get-start get-end)
+  (create-seqlooppunch-mouse-handler name in-use? get-start get-end set-start! set-end!))
+  
+(define (show-timeline-looping?)
+  (not (<ra> :is-seqpunching)))
+
+(create-seqlooppunch-mouse-handlers "Loop"  show-timeline-looping? ra:get-seqlooping-start   ra:get-seqlooping-end  ra:set-seqlooping-start   ra:set-seqlooping-end)
+(create-seqlooppunch-mouse-handlers "Punch" ra:is-seqpunching      ra:get-seqpunching-start  ra:get-seqpunching-end ra:set-seqpunching-start  ra:set-seqpunching-end)
 
 
-(define (set-statusbar-loop-info Type)
-  (if (eq? Type 'start)
-      (set-editor-statusbar (<-> "Loop start: " (two-decimal-string (/ (<ra> :get-seqlooping-start) (<ra> :get-sample-rate)))))
-      (set-editor-statusbar (<-> "Loop end: " (two-decimal-string (/ (<ra> :get-seqlooping-end) (<ra> :get-sample-rate)))))))
 
-;; highlight loop start / loop end
-(add-mouse-move-handler
- :move (lambda ($button $x $y)
-         (and (inside-box (<ra> :get-box seqtimeline-area) $x $y)
-              (let* ((start-x (get-seqloop-start-x))
-                     (end-x (get-seqloop-end-x))
-                     (mid (average start-x end-x)))
-                (set-statusbar-loop-info (if (< $x mid) 'start 'end))
-                #t))))
+(define (get-sequencer-conf-menues)
+  (list 
+        "-------- Timeline"
+        (list
+         :radio-buttons
+         (list "Free"
+               :check (and (not (<ra> :is-seqlooping))
+                           (not (<ra> :is-seqpunching)))
+               (lambda (val)
+                 (c-display "new no-looping-or-punch:" val)))
+         (list "Looping"
+               :check (<ra> :is-seqlooping)
+               (lambda (val)
+                 (<ra> :set-seqlooping val)))
+         (list "Punch in/out (recording)"
+               :check (<ra> :is-seqpunching)
+               (lambda (val)
+                 (<ra> :set-seqpunching val)
+                 (c-display "new punch in/out:" val))))
+        "------- Configuration" ;;Various"
+        (list "Show song tempo automation"
+              :check (<ra> :seqtempo-visible)
+              (lambda (doit)
+                (<ra> :set-seqtempo-visible doit)))
+        (list "Preferences"
+              (lambda ()
+                (<ra> :open-sequencer-preferences-dialog)))))
 
 (add-mouse-cycle (make-mouse-cycle
                   :press-func (lambda (Button X Y)                                
                                 (if (and (= Button *right-button*)
                                          (inside-box (<ra> :get-box seqtimeline-area) X Y))
                                     (begin
-                                      (popup-menu "-------- Time format" ;;Display bars and beats"
-                                                  (list
-                                                   :radio-buttons
-                                                   (list "Bars and beats"
-                                                         :check (<ra> :show-bars-in-timeline)
-                                                         (lambda (val)
-                                                           (<ra> :set-show-bars-in-timeline val)))
-                                                   (list "HH:MM:SS"
-                                                         :check (not (<ra> :show-bars-in-timeline))
-                                                         (lambda (val)
-                                                           (<ra> :set-show-bars-in-timeline (not val)))))
-                                                  "-------- Usage"
-                                                  (list
-                                                   :radio-buttons
-                                                   (list "Free"
-                                                         :check (not (<ra> :is-seqlooping))
-                                                         (lambda (val)
-                                                           (c-display "new no-looping-or-punch:" val)))
-                                                   (list "Looping"
-                                                         :check (<ra> :is-seqlooping)
-                                                         (lambda (val)
-                                                           (<ra> :set-seqlooping val)))
-                                                   (list "Punch in/out"
-                                                         :check #f
-                                                         (lambda (val)
-                                                           (c-display "new punch in/out:" val))))
-                                                  "------- Configuration" ;;Various"
-                                                  (list "Show song tempo automation"
-                                                        :check (<ra> :seqtempo-visible)
-                                                        (lambda (doit)
-                                                          (<ra> :set-seqtempo-visible doit)))
-                                                  (list "Preferences"
-                                                        (lambda ()
-                                                          (<ra> :open-sequencer-preferences-dialog))))
-
+                                      (popup-menu (append
+                                                   (list "-------- Time format" ;;Display bars and beats"
+                                                         (list
+                                                          :radio-buttons
+                                                          (list "Bars and beats"
+                                                                :check (<ra> :show-bars-in-timeline)
+                                                                (lambda (val)
+                                                                  (<ra> :set-show-bars-in-timeline val)))
+                                                          (list "HH:MM:SS"
+                                                                :check (not (<ra> :show-bars-in-timeline))
+                                                                (lambda (val)
+                                                                  (<ra> :set-show-bars-in-timeline (not val))))))
+                                                   (get-sequencer-conf-menues)))
                                       #t)
                                     #f))))
 
@@ -6588,29 +6595,7 @@
                                           ;;        (<ra> :delete-seqtrack seqtracknum)))
                                           ;;"Append sequencer track" (lambda ()
                                           ;;                           (<ra> :append-seqtrack))
-
-                                          "-----------------"
-
-                                          (list "Play loop"
-                                                :check (<ra> :is-seqlooping)
-                                                (lambda (val)
-                                                  (<ra> :set-seqlooping val)))
-                                          (list "Display bars and beats"
-                                                :check (<ra> :show-bars-in-timeline)
-                                                (lambda (val)
-                                                  (<ra> :set-show-bars-in-timeline val)))
-                                          "-----------------"
-
-                                          (list "Show song tempo automation"
-                                                :check (<ra> :seqtempo-visible)
-                                                (lambda (doit)
-                                                  (<ra> :set-seqtempo-visible doit)))
-                                          "-----------------"
-
-                                          (list "Preferences"
-                                                (lambda ()
-                                                  (<ra> :open-sequencer-preferences-dialog)))
-                                          
+                                          (get-sequencer-conf-menues)
                                           ))))))))
                                                                                  
 

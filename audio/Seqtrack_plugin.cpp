@@ -1315,13 +1315,14 @@ public:
           R_ASSERT_RETURN_IF_FALSE2(_recorder!=NULL, false);
 
           if (is_playing_song()) {
-            int64_t recording_start = root->song->looping.start; // FIX: Make atomic.
+            const bool is_punching = ATOMIC_GET(root->song->punching.enabled);
+            const int64_t punching_start = is_punching ? ATOMIC_GET(root->song->punching.start) : 0;
             
-            if (true || start_time >= recording_start) {
+            if (is_punching==false || start_time >= punching_start) {
               
-              int64_t recording_end = ATOMIC_GET(root->song->looping.end);
+              const int64_t punching_end = is_punching ? ATOMIC_GET(root->song->punching.end) : 0;
               
-              if (true || start_time < recording_end){
+              if (is_punching==false || start_time < punching_end){
                 start_recording(start_time);
                 more_to_play = true;
               }
@@ -1335,10 +1336,10 @@ public:
         {
           R_ASSERT_RETURN_IF_FALSE2(_recorder!=NULL, false);
 
-          //int64_t recording_end = ATOMIC_GET(root->song->looping.end);
-          
-          //if (start_time >= recording_end || is_playing_song()==false)
-          if (is_playing_song()==false)
+          const bool is_punching = ATOMIC_GET(root->song->punching.enabled);
+          const int64_t punching_end = is_punching ? ATOMIC_GET(root->song->punching.end) : 0;
+
+          if (is_playing_song()==false || (is_punching && start_time >= punching_end))
             stop_recording();
           else
             more_to_play = true;

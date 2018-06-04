@@ -45,10 +45,24 @@ namespace{
 
   struct MyProxyStyle: public QProxyStyle {
     MyProxyStyle(){
-      static QStyle *base_style = QStyleFactory::create("fusion");
+      static QStyle *base_style = QStyleFactory::create("Fusion");
       setBaseStyle(base_style); // Trying to fix style on OSX and Windows. Not necessary on Linux, for some reason.
     }
 
+#if 0
+    void drawPrimitive(PrimitiveElement element, const QStyleOption *option, QPainter *painter, const QWidget *widget) const {
+      static QStyle *windows_style = QStyleFactory::create("Windows");
+
+      printf("   Element: %d (radio: %d)\n", element, QStyle::PE_IndicatorRadioButton);
+      
+      if (element == QStyle::PE_IndicatorRadioButton){
+        windows_style->drawPrimitive(element, option, painter, widget);
+      } else {          
+        QProxyStyle::drawPrimitive(element, option, painter, widget);
+      }
+    }
+#endif
+    
     virtual int pixelMetric(QStyle::PixelMetric metric, const QStyleOption* option = 0, const QWidget* widget = 0 ) const {
       if (metric==QStyle::PM_SmallIconSize && root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL)
         return root->song->tracker_windows->fontheight*4;
@@ -390,6 +404,14 @@ QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if g_curr_
 QPointer<QMenu> g_curr_popup_qmenu;
 
 
+static void setStyleRecursively(QWidget *widget, QStyle *style){
+  if (widget != NULL){
+    widget->setStyle(style);
+    
+    for(auto *c : widget->children())
+      setStyleRecursively(dynamic_cast<QWidget*>(c), style);
+  }
+}
 
 static QMenu *create_qmenu(
                            const vector_t &v,
@@ -401,8 +423,6 @@ static QMenu *create_qmenu(
 {
   MyQMenu *menu = new MyQMenu(NULL, is_async, callback2);
   menu->setAttribute(Qt::WA_DeleteOnClose);
-
-  menu->setStyle(&g_my_proxy_style);
 
   QMenu *curr_menu = menu;
   
@@ -575,6 +595,18 @@ static QMenu *create_qmenu(
     delete radio_buttons;
   }
 
+  /*
+  for(auto style : QStyleFactory::keys())
+    printf("  STYLE: -%s\n", style.toUtf8().constData());
+  */
+  
+  setStyleRecursively(menu, &g_my_proxy_style);
+
+  /*
+  menu->setStyleSheet("QMenu::indicator:exclusive:checked {  background-color: #ff00ff; }"
+                      "QMenu::indicator:exclusive:unchecked {  background-color: #00ffff; }"
+                      );
+  */
   return menu;
 }
 
