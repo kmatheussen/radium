@@ -209,6 +209,13 @@ extern LANGSPEC int64_t SEQUENCER_get_loop_start(void);
 extern LANGSPEC void SEQUENCER_set_loop_end(int64_t end);
 extern LANGSPEC int64_t SEQUENCER_get_loop_end(void);
 
+extern LANGSPEC void SEQUENCER_set_punching(bool do_punch);
+extern LANGSPEC bool SEQUENCER_is_punching(void);
+extern LANGSPEC void SEQUENCER_set_punch_start(int64_t start);
+extern LANGSPEC int64_t SEQUENCER_get_punch_start(void);
+extern LANGSPEC void SEQUENCER_set_punch_end(int64_t end);
+extern LANGSPEC int64_t SEQUENCER_get_punch_end(void);
+
 // seqblocks gfx
 extern LANGSPEC float SEQBLOCK_get_x1(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_x2(int seqblocknum, int seqtracknum);

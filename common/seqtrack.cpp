@@ -2153,33 +2153,70 @@ void SEQUENCER_delete_seqtrack(int pos){
 #endif
 }
 
+// looping
+//
 void SEQUENCER_set_looping(bool do_loop){
   ATOMIC_SET(root->song->looping.enabled, do_loop);
   SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
 }
 
 bool SEQUENCER_is_looping(void){
-  return ATOMIC_GET(root->song->looping.enabled);
+  return ATOMIC_GET_RELAXED(root->song->looping.enabled);
 }
 
 void SEQUENCER_set_loop_start(int64_t start){  
-  root->song->looping.start = R_BOUNDARIES(0, start, ATOMIC_GET(root->song->looping.end)-1);
+  ATOMIC_SET(root->song->looping.start, R_BOUNDARIES(0, start, ATOMIC_GET(root->song->looping.end)-1));
   SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
 }
 
 int64_t SEQUENCER_get_loop_start(void){
-  return root->song->looping.start;
+  return ATOMIC_GET_RELAXED(root->song->looping.start);
 }
 
 void SEQUENCER_set_loop_end(int64_t end){
-  ATOMIC_SET(root->song->looping.end, R_BOUNDARIES(root->song->looping.start+1, end, SONG_get_length()*MIXER_get_sample_rate()));
+  ATOMIC_SET(root->song->looping.end, R_MAX(SEQUENCER_get_loop_start()+1, end));
   //printf("   Set end. %d %d %d\n",(int)(root->song->looping.start+1), (int)end, (int)(SONG_get_length()*MIXER_get_sample_rate()));
   SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
 }
 
 int64_t SEQUENCER_get_loop_end(void){
-  return ATOMIC_GET(root->song->looping.end);
+  return ATOMIC_GET_RELAXED(root->song->looping.end);
 }
+
+// punch in/out
+//
+void SEQUENCER_set_punching(bool do_punch){
+  ATOMIC_SET(root->song->punching.enabled, do_punch);
+  SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
+}
+
+bool SEQUENCER_is_punching(void){
+  return ATOMIC_GET_RELAXED(root->song->punching.enabled);
+}
+
+void SEQUENCER_set_punch_start(int64_t start){  
+  ATOMIC_SET(root->song->punching.start, R_BOUNDARIES(0, start, ATOMIC_GET(root->song->punching.end)-1));
+  SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
+}
+
+int64_t SEQUENCER_get_punch_start(void){
+  return ATOMIC_GET_RELAXED(root->song->punching.start);
+}
+
+void SEQUENCER_set_punch_end(int64_t end){
+  ATOMIC_SET(root->song->punching.end, R_MAX(SEQUENCER_get_punch_start()+1, end));
+  //printf("   Set end. %d %d %d\n",(int)(root->song->punching.start+1), (int)end, (int)(SONG_get_length()*MIXER_get_sample_rate()));
+  SEQUENCER_update(SEQUPDATE_TIME|SEQUPDATE_TIMELINE);
+}
+
+int64_t SEQUENCER_get_punch_end(void){
+  return ATOMIC_GET_RELAXED(root->song->punching.end);
+}
+
+
+
+
+// audio files
 
 vector_t SEQUENCER_get_all_used_audiofile_names_note_USED(void){
   vector_t ret = {};
@@ -2268,12 +2305,18 @@ double SONG_get_length(void){
 void SEQUENCER_init(struct Song *song){
   TEMPOAUTOMATION_reset();
   song->block_seqtrack = SEQTRACK_create(NULL, -1, false);
-  song->looping.start = 0;
+  ATOMIC_SET(song->looping.start, 0);
+  ATOMIC_SET(song->punching.start, 0);
 
   if (g_is_starting_up)
     ATOMIC_SET(song->looping.end, 30 * 48000.0);
   else
     ATOMIC_SET(song->looping.end, 30 * MIXER_get_sample_rate());
+
+  if (g_is_starting_up)
+    ATOMIC_SET(song->punching.end, 30 * 48000.0);
+  else
+    ATOMIC_SET(song->punching.end, 30 * MIXER_get_sample_rate());
 }
 
 // Only called during program startup
@@ -2327,6 +2370,10 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
   HASH_put_bool(state, "looping_enabled", SEQUENCER_is_looping());
   HASH_put_int(state, "loop_start", SEQUENCER_get_loop_start());
   HASH_put_int(state, "loop_end", SEQUENCER_get_loop_end());
+  
+  HASH_put_bool(state, "punching_enabled", SEQUENCER_is_punching());
+  HASH_put_int(state, "punch_start", SEQUENCER_get_punch_start());
+  HASH_put_int(state, "punch_end", SEQUENCER_get_punch_end());
   
   return state;
 }
@@ -2417,9 +2464,9 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
 
 
     if (HASH_has_key(state, "default_recording_config"))
-      root->song->default_recording_config = get_recording_config_from_state(HASH_get_hash(state, "default_recording_config"));
+      song->default_recording_config = get_recording_config_from_state(HASH_get_hash(state, "default_recording_config"));
     else
-      reset_recording_config(&root->song->default_recording_config);
+      reset_recording_config(&song->default_recording_config);
     
     vector_t seqtracks = {0};
 
@@ -2445,25 +2492,36 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       radium::PlayerPause pause(is_playing_song());
       radium::PlayerLock lock;
       
-      root->song->seqtracks = seqtracks;
+      song->seqtracks = seqtracks;
 
-      ATOMIC_SET(root->song->curr_seqtracknum, new_curr_seqtracknum);
+      ATOMIC_SET(song->curr_seqtracknum, new_curr_seqtracknum);
 
-      VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+      VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &song->seqtracks){
         SEQTRACKPLUGIN_assert_samples2(seqtrack);
       }END_VECTOR_FOR_EACH;
     }
 
-    evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements));
+    if (root->song==song)
+      evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", song->seqtracks.num_elements));
 
     if(HASH_has_key(state, "loop_start")) {
-      root->song->looping.start = HASH_get_int(state, "loop_start");
-      ATOMIC_SET(root->song->looping.end, HASH_get_int(state, "loop_end"));
-      SEQUENCER_set_looping(HASH_get_bool(state, "looping_enabled"));
+      ATOMIC_SET(song->looping.start, HASH_get_int(state, "loop_start"));
+      ATOMIC_SET(song->looping.end, HASH_get_int(state, "loop_end"));
+      ATOMIC_SET(song->looping.enabled, HASH_get_bool(state, "looping_enabled"));
     } else {
-      root->song->looping.start = 0;
-      ATOMIC_SET(root->song->looping.end, 30 * MIXER_get_sample_rate());
-      SEQUENCER_set_looping(false);
+      ATOMIC_SET(song->looping.start, 0);
+      ATOMIC_SET(song->looping.end, 30 * MIXER_get_sample_rate());
+      ATOMIC_SET(song->looping.enabled, false);
+    }
+
+    if(HASH_has_key(state, "punch_start")) {
+      ATOMIC_SET(song->punching.start, HASH_get_int(state, "punch_start"));
+      ATOMIC_SET(song->punching.end, HASH_get_int(state, "punch_end"));
+      ATOMIC_SET(song->punching.enabled, HASH_get_bool(state, "punching_enabled"));
+    } else {
+      ATOMIC_SET(song->punching.start, 0);
+      ATOMIC_SET(song->punching.end, 30 * MIXER_get_sample_rate());
+      ATOMIC_SET(song->punching.enabled, false);
     }
   }
   

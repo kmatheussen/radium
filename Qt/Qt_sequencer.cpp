@@ -1861,10 +1861,13 @@ struct Timeline_widget : public MouseTrackerQWidget {
     else
       min_pixels_between_text = fn.width("00:00:00") + t1*2 + 10;
     
-      //double  = 40; //width() / 4;
+    //double  = 40; //width() / 4;
 
-    const double loop_start_x = scale_double(SEQUENCER_get_loop_start(), _start_time, _end_time, 0, width());
-    const double loop_end_x = scale_double(SEQUENCER_get_loop_end(), _start_time, _end_time, 0, width());
+    const bool show_punching = SEQUENCER_is_punching();
+    const bool show_looping = !show_punching;
+    
+    const double looppunch_start_x = scale_double(show_looping ? SEQUENCER_get_loop_start() : SEQUENCER_get_punch_start(), _start_time, _end_time, 0, width());
+    const double looppunch_end_x = scale_double(show_looping ? SEQUENCER_get_loop_end(): SEQUENCER_get_punch_end(), _start_time, _end_time, 0, width());
 
     const double start_time = _start_time / MIXER_get_sample_rate();
     const double end_time = _end_time / MIXER_get_sample_rate();
@@ -1962,9 +1965,9 @@ struct Timeline_widget : public MouseTrackerQWidget {
 
         bool draw_alpha = false;
 
-        if (loop_start_x >= x-t1 && loop_start_x <= x+t1+min_pixels_between_text)
+        if (looppunch_start_x >= x-t1 && looppunch_start_x <= x+t1+min_pixels_between_text)
           draw_alpha = true;
-        if (loop_end_x >= x-t1 && loop_end_x <= x+t1+min_pixels_between_text)
+        if (looppunch_end_x >= x-t1 && looppunch_end_x <= x+t1+min_pixels_between_text)
           draw_alpha = true;
 
         if (draw_alpha==true && did_draw_alpha==false){
@@ -1992,16 +1995,19 @@ struct Timeline_widget : public MouseTrackerQWidget {
     }
     
     p.setPen(Qt::black);
-    p.setBrush(QColor(0,0,255,150));
+    if (show_looping)
+      p.setBrush(QColor(0,0,255,150));
+    else
+      p.setBrush(QColor(255,0,0,150));
 
     // loop start
     {
-      draw_filled_triangle(p, loop_start_x-t1*2, y1, loop_start_x, y1, loop_start_x, y2);
+      draw_filled_triangle(p, looppunch_start_x-t1*2, y1, looppunch_start_x, y1, looppunch_start_x, y2);
     }
 
     // loop end
     {
-      draw_filled_triangle(p, loop_end_x, y1, loop_end_x+t1*2, y1, loop_end_x, y2);
+      draw_filled_triangle(p, looppunch_end_x, y1, looppunch_end_x+t1*2, y1, looppunch_end_x, y2);
     }
   }
 
@@ -2576,15 +2582,21 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     p.drawLine(line);
   }
       
-  void paintSeqloop(const QRegion &update_region, QPainter &p) const {
+  void paintSeqPunchOrLoop(const QRegion &update_region, bool is_looping, QPainter &p) const {
     double y1 = _songtempoautomation_widget.t_y1;
     double y2 = _seqtracks_widget.t_y2;
 
-    double x_start = scale_double(SEQUENCER_get_loop_start(), _start_time, _end_time, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2);
-    double x_end = scale_double(SEQUENCER_get_loop_end(), _start_time, _end_time, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2);
+    int64_t start = is_looping ? SEQUENCER_get_loop_start() : SEQUENCER_get_punch_start();
+    int64_t end = is_looping ? SEQUENCER_get_loop_end() : SEQUENCER_get_punch_end();
+    
+    double x_start = scale_double(start, _start_time, _end_time, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2);
+    double x_end = scale_double(end, _start_time, _end_time, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2);
 
-    QColor grayout_color = get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM); //.darker(200);
-
+    QColor mix = is_looping ? QColor("blue") : QColor("red");
+    QColor gray = get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM);
+    QColor grayout_color = mix_colors(mix, gray, 0.1); //.darker(200);
+    grayout_color.setAlpha(gray.alpha());
+    
     p.setPen(Qt::NoPen);
     p.setBrush(grayout_color);
 
@@ -2746,8 +2758,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         _songtempoautomation_widget.paint(ev->region(), p);
       
       paintGrid(ev->region(), p, _grid_type);
+      
       if (SEQUENCER_is_looping())
-        paintSeqloop(ev->region(), p);    
+        paintSeqPunchOrLoop(ev->region(), true, p);    
+      
+      if (SEQUENCER_is_punching())
+        paintSeqPunchOrLoop(ev->region(), false, p);
       
       if (_has_selection_rectangle)
         paintSelectionRectangle(ev->region(), p);

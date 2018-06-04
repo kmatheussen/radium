@@ -2748,10 +2748,10 @@ struct SeqPlaylist{
 };
 */
 
-struct Looping{
+struct LoopingOrPunching{
   DEFINE_ATOMIC(bool, enabled);
-  int64_t start; // abstime
-  DEFINE_ATOMIC(int64_t, end);   // abstime
+  DEFINE_ATOMIC(int64_t, start);
+  DEFINE_ATOMIC(int64_t, end);
 };
 
 
@@ -2761,7 +2761,8 @@ struct Song{
 
         struct SeqTrack *block_seqtrack; // Used when playing block.
 
-        struct Looping looping;
+        struct LoopingOrPunching looping;
+        struct LoopingOrPunching punching;
         DEFINE_ATOMIC(int, curr_seqtracknum);
         vector_t seqtracks; // New playlist. Player must both be stopped and locked when modifying this variable, or any of the contents.
 
