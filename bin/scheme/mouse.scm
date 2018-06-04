@@ -6436,7 +6436,8 @@
                                           ;;           (<ra> :add-block-to-seqtrack seqtracknum (<ra> :current-block) pos)))))
                                           
                                           (list (if (pair? seqblock-infos) "Replace blocks with existing block" "Replace with existing block")
-                                                :enabled (or seqblock-info (pair? seqblock-infos))
+                                                :enabled (and for-blocks
+                                                              (or seqblock-info (pair? seqblock-infos)))
                                                 (lambda ()
                                                   (apply popup-menu
                                                          (map (lambda (blocknum)
@@ -6487,8 +6488,9 @@
                                           ;;          (<ra> :select-block blocknum))))
                                           
                                           (list (if (pair? seqblock-infos) "Replace blocks with new block" "Replace with new block")
-                                                :enabled (or (pair? seqblock-infos)
-                                                             seqblock-info)
+                                                :enabled (and for-blocks
+                                                              (or (pair? seqblock-infos)
+                                                                  seqblock-info))
                                                 (lambda ()
                                                   (let ((blocknum (<ra> :append-block)))
                                                     (undo-block
