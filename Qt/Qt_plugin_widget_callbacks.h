@@ -642,8 +642,8 @@ public:
 public slots:
 
   // ab-testing
-  void on_ab_a_clicked(){ab_rightclicked(0);}
-  void on_ab_b_clicked(){ab_rightclicked(1);}
+  void on_ab_a_clicked(){if(ab_a->_last_pressed_button==Qt::RightButton) ab_rightclicked(0);}
+  void on_ab_b_clicked(){if(ab_b->_last_pressed_button==Qt::RightButton) ab_rightclicked(1);}
   /*
   void on_ab_c_clicked(){ab_rightclicked(2);}
   void on_ab_d_clicked(){ab_rightclicked(3);}

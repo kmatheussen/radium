@@ -2762,6 +2762,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       : MyQCheckBox(text)
       , Gui(this)
     {
+      MyQCheckBox::_override_mouse_events = false;
       setChecked(is_checked);
     }
 

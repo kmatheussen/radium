@@ -160,6 +160,8 @@ struct MyQCheckBox : public QCheckBox{
   bool _is_implicitly_on = false;
   QString vertical_text;
 
+  bool _override_mouse_events = true;
+  
   void init(){
     _has_mouse=false;
     _patch.set(NULL);
@@ -171,10 +173,14 @@ struct MyQCheckBox : public QCheckBox{
   MyQCheckBox ( QWidget * parent = 0 ) : QCheckBox(parent) {init();}
   MyQCheckBox ( const QString & text, QWidget * parent = 0) : QCheckBox(text,parent) {init();}
 
+  Qt::MouseButton _last_pressed_button = Qt::NoButton;
+    
   void mousePressEvent ( QMouseEvent * event ) override
   {
-    
-    if (_patch.data()==NULL){
+
+    _last_pressed_button = event->button();
+
+    if (_override_mouse_events==false){
       QCheckBox::mousePressEvent(event);
       return;
     }

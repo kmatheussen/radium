@@ -987,11 +987,21 @@ public:
       checkbox->setMaximumWidth(_ab_checkbox_width);
     }
   }
+
+  MyQCheckBox *get_ab_checkbox(int num){
+    if (num<0 || num >= 8){
+      R_ASSERT(false);
+      num=0;
+    }
+    MyQCheckBox *array[] = {ab0,ab1,ab2,ab3,ab4,ab5,ab6,ab7};
+    return array[num];
+  }
   
   bool arrgh = false;
   
-  void ab_pressed(QCheckBox *checkbox, int num, bool val){
-
+  void ab_pressed(int num, bool val){
+    MyQCheckBox *checkbox = get_ab_checkbox(num);
+    
     if (arrgh==false) {
 
       arrgh=true;
@@ -1032,8 +1042,10 @@ public:
   }
 
   void ab_rightclicked(int num){
-    _plugin_widget->ab_rightclicked(num);
-    update_all_ab_buttons();
+    if (get_ab_checkbox(num)->_last_pressed_button==Qt::RightButton){
+      _plugin_widget->ab_rightclicked(num);
+      update_all_ab_buttons();
+    }
   }
 
 public slots:
@@ -1053,14 +1065,14 @@ public slots:
     update_all_ab_buttons();
   }
 
-  void on_ab0_toggled(bool val){ab_pressed(ab0, 0, val);}
-  void on_ab1_toggled(bool val){ab_pressed(ab1, 1, val);}
-  void on_ab2_toggled(bool val){ab_pressed(ab2, 2, val);}
-  void on_ab3_toggled(bool val){ab_pressed(ab3, 3, val);}
-  void on_ab4_toggled(bool val){ab_pressed(ab4, 4, val);}
-  void on_ab5_toggled(bool val){ab_pressed(ab5, 5, val);}
-  void on_ab6_toggled(bool val){ab_pressed(ab6, 6, val);}
-  void on_ab7_toggled(bool val){ab_pressed(ab7, 7, val);}
+  void on_ab0_toggled(bool val){ab_pressed(0, val);}
+  void on_ab1_toggled(bool val){ab_pressed(1, val);}
+  void on_ab2_toggled(bool val){ab_pressed(2, val);}
+  void on_ab3_toggled(bool val){ab_pressed(3, val);}
+  void on_ab4_toggled(bool val){ab_pressed(4, val);}
+  void on_ab5_toggled(bool val){ab_pressed(5, val);}
+  void on_ab6_toggled(bool val){ab_pressed(6, val);}
+  void on_ab7_toggled(bool val){ab_pressed(7, val);}
   
   
   
