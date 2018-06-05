@@ -217,10 +217,22 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     }
   }
 
+  MyQCheckBox *get_ab_checkbox(int num){
+    if (num<0 || num >= 8){
+      R_ASSERT(false);
+      num=0;
+    }
+    MyQCheckBox *array[] = {ab_a,ab_b,ab_c,ab_d,ab_e,ab_f,ab_g,ab_h};
+    return array[num];
+  }
+  
+
   void ab_rightclicked(int num){
-    if (simplePopupMenu(talloc_format("%sReset",MW_get_curr_ab()==num?"[disabled]":""))==0){
-      MW_reset_ab(num);
-      update_ab_buttons(false);
+    if (get_ab_checkbox(num)->_last_pressed_button==Qt::RightButton){
+      if (simplePopupMenu(talloc_format("%sReset",MW_get_curr_ab()==num?"[disabled]":""))==0){
+        MW_reset_ab(num);
+        update_ab_buttons(false);
+      }
     }
   }
 
