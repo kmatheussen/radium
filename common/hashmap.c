@@ -155,6 +155,11 @@ hash_t *HASH_create(int approx_size){
 
 static void put2(hash_t *hash, const char *key, int i, hash_element_t *element);
 
+hash_t *HASH_shallow_copy(const hash_t *hash){
+  hash_t *copy = tcopy(hash, sizeof(hash_t) + (hash->elements_size*sizeof(hash_element_t*)));
+  return copy;
+}
+  
 // Can also be used to rehash
 hash_t *HASH_copy(const hash_t *hash){
   hash_t *ret = HASH_create(hash->num_elements);

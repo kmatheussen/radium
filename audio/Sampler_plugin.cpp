@@ -352,7 +352,7 @@ struct MySampleRecorderInstance : radium::SampleRecorderInstance{
       
       if (success) {
         
-        ADD_UNDO(PluginState_CurrPos(_patch));
+        ADD_UNDO(PluginState(_patch, NULL));
         
         SAMPLER_set_new_sample(plugin,
                                filename,

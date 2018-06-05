@@ -32,6 +32,9 @@ extern LANGSPEC hash_t *HASH_create(int approx_size);
 
 extern LANGSPEC bool HASH_equal(const hash_t *h1, const hash_t *h2);
 
+// Can be used to make a copy of a hash which later could be HASH_clear-ed.
+extern LANGSPEC hash_t *HASH_shallow_copy(const hash_t *hash);
+
 // Can also be used to rehash
 extern LANGSPEC hash_t *HASH_copy(const hash_t *hash);
 

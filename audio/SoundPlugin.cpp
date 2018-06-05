@@ -56,6 +56,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SoundPluginRegistry_proc.h"
 #include "SoundProducer_proc.h"
 #include "undo_audio_effect_proc.h"
+#include "undo_plugin_state_proc.h"
 #include "system_compressor_wrapper_proc.h"
 #include "audio_instrument_proc.h"
 #include "CpuUsage.hpp"
@@ -1328,11 +1329,17 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       
       if(storeit_type==STORE_VALUE) {
         R_ASSERT_NON_RELEASE(!FX_when_is_automation(when));
-        
+
+        R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+        //R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock()==false);
+          
         // Reload both native and scaled values, just to be sure. The native effect we get out might not be the same as we put in.
         // We are not doing automation here either, so performance shouldn't matter (it probably wouldn't have mattered even if we did automation though).
         store_value_native = plugin->type->get_effect_value(plugin, effect_num, EFFECT_FORMAT_NATIVE);
-        store_value_scaled = plugin->type->get_effect_value(plugin, effect_num, EFFECT_FORMAT_SCALED);
+        if (plugin->type->get_scaled_value_from_native_value != NULL)
+          store_value_scaled = plugin->type->get_scaled_value_from_native_value(plugin, effect_num, store_value_native);
+        else
+          store_value_scaled = plugin->type->get_effect_value(plugin, effect_num, EFFECT_FORMAT_SCALED);
       }
     }
     
@@ -1766,8 +1773,11 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
 
   
   if(effect_num < plugin->type->num_effects){
-    if (plugin->type->get_effect_value!=NULL)
+    if (plugin->type->get_effect_value!=NULL){
+      R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+      R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock()==false);
       return plugin->type->get_effect_value(plugin, effect_num, value_format);
+    }
   }
 
   if (ATOMIC_GET(plugin->has_initialized)) {
@@ -2108,36 +2118,67 @@ void PLUGIN_apply_modulation_state(SoundPlugin *plugin, hash_t *modulation){
 }
 */
 
+void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *state, bool is_loading){
+  SoundPluginType *type = plugin->type;
 
+  R_ASSERT_RETURN_IF_FALSE(type->recreate_from_state != NULL);
+  
+  type->recreate_from_state(plugin, state, false);
+
+  if (type->state_contains_effect_values){
+    for(int i=0 ; i < type->num_effects ; i++){
+      float store_value_native = plugin->type->get_effect_value(plugin, i, EFFECT_FORMAT_NATIVE);
+      
+      float store_value_scaled;
+      if (plugin->type->get_scaled_value_from_native_value != NULL)
+        store_value_scaled = plugin->type->get_scaled_value_from_native_value(plugin, i, store_value_native);
+      else
+        store_value_scaled = plugin->type->get_effect_value(plugin, i, EFFECT_FORMAT_SCALED);
+      
+      PLUGIN_call_me_when_an_effect_value_has_changed(plugin, i, store_value_native, store_value_scaled, false, STORE_VALUE, FX_single, false, false);
+    }
+  }
+}
+
+// Called from the mixer gui. (the a/b/c/d/e/f/g/h buttons in the mixer)
 void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state){
   SoundPluginType *type = plugin->type;
 
-  volatile struct Patch *patch = plugin->patch;
+  struct Patch *patch = (struct Patch*)plugin->patch;
   
-  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1));
-
+  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
+  
   hash_t *values_state = HASH_get_hash(state, "values");
 
+  if (HASH_get_array_size(values_state, "value") != num_effects){
+    addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply new ab state for \"%s\"\n", HASH_get_array_size(values_state, "value"), num_effects, patch->name));
+    return;
+  }
+  
+  ADD_UNDO(PluginState(patch, NULL));
+
   // system effects
-  for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+  for(int i=type->num_effects;i<num_effects;i++){
     float value = HASH_get_float_at(values_state,"value",i);
     PLUGIN_set_effect_value(plugin, 0, i, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
   }
 
   // plugin effects
-  if (type->dont_send_effect_values_from_state_into_plugin == false) {
-    
-    float values[type->num_effects];
-    
-    for(int i=0;i<type->num_effects;i++)
-      values[i] = HASH_get_float_at(values_state,"value",i);
+  if (false == type->state_contains_effect_values) {
 
-    {
-      radium::PlayerLock lock;
+    if (type->num_effects > 0) {
+      float values[type->num_effects];
       
-      for(int i=0;i<type->num_effects;i++){
-        PLAYER_maybe_pause_lock_a_little_bit(i);
-        PLUGIN_set_effect_value(plugin, 0, i, values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+      for(int i=0;i<type->num_effects;i++)
+        values[i] = HASH_get_float_at(values_state,"value",i);
+      
+      {
+        radium::PlayerLock lock;
+        
+        for(int i=0;i<type->num_effects;i++){
+          PLAYER_maybe_pause_lock_a_little_bit(i);
+          PLUGIN_set_effect_value(plugin, 0, i, values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+        }
       }
     }
     
@@ -2148,10 +2189,10 @@ void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state){
   }
   
   if(type->recreate_from_state!=NULL)
-    type->recreate_from_state(plugin, HASH_get_hash(state, "plugin_state"), false);
+    PLUGIN_recreate_from_state(plugin, HASH_get_hash(state, "plugin_state"), false);
 }
 
-
+// Called from the mixer gui. (the a/b/c/d/e/f/g/h buttons in the mixer)
 hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin){
   hash_t *state = HASH_create(2);
 
@@ -2160,12 +2201,17 @@ hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin){
   int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
     
   hash_t *values_state = HASH_create(num_effects);
-  for(int n=0;n<num_effects;n++)
-    HASH_put_float_at(values_state, "value", n, plugin->stored_effect_values_native[n]);
+
+  int start_effectnum = 0;
+  if (type->state_contains_effect_values)
+    start_effectnum = type->num_effects;
   
+  for(int n=start_effectnum;n<num_effects;n++)
+    HASH_put_float_at(values_state, "value", n, plugin->stored_effect_values_native[n]);
+    
   HASH_put_hash(state, "values", values_state);
     
-  if(type->create_state!=NULL){
+  if(type->create_state!=NULL && type->recreate_from_state!=NULL){
     hash_t *plugin_state = HASH_create(5);
     type->create_state(plugin, plugin_state);
     HASH_put_hash(state, "plugin_state", plugin_state);
@@ -2352,15 +2398,21 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   }
 
   // 3. Store custom effects (need lock here)
-  if (type->dont_send_effect_values_from_state_into_plugin == false) {
-    radium::PlayerLock lock;
+  if (type->state_contains_effect_values == false) {
 
-    for(int i=0 ; i<type->num_effects ; i++){
-      PLAYER_maybe_pause_lock_a_little_bit(i);
+    if (type->num_effects > 0) {
+      
+      radium::PlayerLock lock;
 
-      float val = has_value[i] ? values[i] : plugin->initial_effect_values[i];
-      PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+      for(int i=0 ; i<type->num_effects ; i++){
+        PLAYER_maybe_pause_lock_a_little_bit(i);
+        
+        float val = has_value[i] ? values[i] : plugin->initial_effect_values[i];
+        PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+      }
+      
     }
+    
   }else{
 #if !defined(RELEASE)
     if (type->recreate_from_state==NULL) // Not necessarily wrong. Just want to know if it ever happens.
@@ -2418,8 +2470,8 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   PLUGIN_set_effects_from_state(plugin, effects);
 
   if(plugin_state!=NULL && type->recreate_from_state!=NULL)
-    type->recreate_from_state(plugin, plugin_state, is_loading);
-
+    PLUGIN_recreate_from_state(plugin, plugin_state, is_loading);
+  
   // auto-suspend
   if (HASH_has_key(state, "auto_suspend_behavior"))
     PLUGIN_set_autosuspend_behavior(plugin, (AutoSuspendBehavior)HASH_get_int(state, "auto_suspend_behavior"));
@@ -2489,18 +2541,23 @@ void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
   R_ASSERT_RETURN_IF_FALSE(ab_num>=0);
   R_ASSERT_RETURN_IF_FALSE(ab_num<NUM_AB);
 
-  SoundPluginType *type = plugin->type;
+  const SoundPluginType *type = plugin->type;
   
-  int old_ab_num = plugin->curr_ab_num;
-  int new_ab_num = ab_num;
+  const int old_ab_num = plugin->curr_ab_num; // const since old_ab_num is in a call to PluginState_CurrPos further down.
+  const int new_ab_num = ab_num;
   
-  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
+  const int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
 
+  if (old_ab_num==new_ab_num){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+  
   // Save old data
   {
     memcpy(plugin->ab_values[old_ab_num], plugin->stored_effect_values_native, sizeof(float)*num_effects);
 
-    if(type->create_state!=NULL) {
+    if(type->create_state!=NULL && type->recreate_from_state!=NULL) {
       HASH_clear(plugin->ab_states[old_ab_num]);
       type->create_state(plugin, plugin->ab_states[old_ab_num]);
     }
@@ -2521,30 +2578,36 @@ void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
     
     float *new_ab_values = plugin->ab_values[new_ab_num];
 
-    ADD_UNDO(AudioEffect_CurrPos((struct Patch*)plugin->patch, -1));
+    struct Patch *patch = const_cast<struct Patch*>(plugin->patch);
 
+    ADD_UNDO(PluginState(patch, HASH_shallow_copy(plugin->ab_states[old_ab_num])));
+    
     // Set system effects
     for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
       PLUGIN_set_effect_value(plugin, 0, i, new_ab_values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 
     // set custom effects, if necessary
-    if (type->dont_send_effect_values_from_state_into_plugin == false){
-      
-      radium::PlayerLock lock;
+    if (type->state_contains_effect_values == false){
 
-      for(int i=0 ; i < type->num_effects ; i++){
-        PLAYER_maybe_pause_lock_a_little_bit(i);
-        PLUGIN_set_effect_value(plugin, 0, i, new_ab_values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+      if (type->num_effects > 0) {
+        radium::PlayerLock lock;
+        
+        for(int i=0 ; i < type->num_effects ; i++){
+          PLAYER_maybe_pause_lock_a_little_bit(i);
+          PLUGIN_set_effect_value(plugin, 0, i, new_ab_values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+        }
       }
-      
+        
     }else{
       
       R_ASSERT_NON_RELEASE(type->recreate_from_state!=NULL);
       
     }
     
-    if(type->recreate_from_state!=NULL)
-      type->recreate_from_state(plugin, plugin->ab_states[new_ab_num], false);
+    if(type->recreate_from_state!=NULL){
+      PLUGIN_recreate_from_state(plugin, plugin->ab_states[new_ab_num], false);      
+      GFX_update_instrument_widget(patch);
+    }
   }
   
   plugin->curr_ab_num = new_ab_num;
@@ -2750,6 +2813,9 @@ void PLUGIN_reset(SoundPlugin *plugin){
   volatile struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
   
+  if (type->num_effects==0)
+    return;
+      
   ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1));
 
   // system effects (no, we don't reset those, only plugin effects)
@@ -2763,6 +2829,7 @@ void PLUGIN_reset(SoundPlugin *plugin){
                             FX_single,
                             EFFECT_FORMAT_NATIVE);
   */
+
   
   PLAYER_lock();{
     for(int i=0 ; i<type->num_effects ; i++){

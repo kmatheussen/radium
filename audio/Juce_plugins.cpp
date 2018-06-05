@@ -73,17 +73,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_system_proc.h"
 #include "../common/OS_settings_proc.h"
-#include "../crashreporter/crashreporter_proc.h"
-#include "../OpenGL/Widget_proc.h"
-#include "../midi/midi_i_plugin_proc.h"
 
-#include "../api/api_proc.h"
+#include "../Qt/Qt_instruments_proc.h"
+
+#include "../crashreporter/crashreporter_proc.h"
+
+#include "../OpenGL/Widget_proc.h"
+
+#include "../midi/midi_i_plugin_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 #include "SoundProducer_proc.h"
 
 #include "SoundPluginRegistry_proc.h"
+
+#include "../api/api_proc.h"
+
 
 #include "VST_plugins_proc.h"
 
@@ -482,6 +488,9 @@ namespace{
     ToggleButton grab_keyboard_button;
     //ToggleButton always_on_top_button;
     ToggleButton bypass_button;
+
+    ToggleButton ab_buttons[8];
+    bool ab_button_valid[8] = {};
     
     AudioProcessorEditor* const editor;
 
@@ -495,6 +504,7 @@ namespace{
     }
 
     virtual void buttonStateChanged (Button *dasbutton) override {
+      
       if (dasbutton == &grab_keyboard_button) {
         
         bool new_state = grab_keyboard_button.getToggleState();
@@ -534,7 +544,42 @@ namespace{
           PLUGIN_set_effect_value(plugin, -1, num_effects+EFFNUM_EFFECTS_ONOFF, new_state ? 0.0 : 1.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
         }
         
+      } else {
+
+        int num = -1;
+        for(int i=0;i<8;i++){
+          if (dasbutton==&ab_buttons[i]){
+            num = i;
+            break;
+          }
+        }
+
+        //printf("   buttonstateChanged. Num: %d. State: %d\n", num, dasbutton->getToggleState());
+               
+        if (num >= 0) {
+          if (dasbutton->getToggleState()){
+
+            struct SoundPlugin *plugin = data->_plugin;
+            R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+            if (plugin->curr_ab_num != num) {
+              
+              struct Patch *patch = const_cast<struct Patch*>(plugin->patch);
+            
+              if (patch==NULL){
+                
+                R_ASSERT_NON_RELEASE(false);
+                
+              } else {
+                
+                AUDIOWIDGET_set_ab(patch, num);
+              
+              }
+            }
+          }
+        }
       }
+      
     }
     
     void timerCallback() override {
@@ -545,17 +590,43 @@ namespace{
           grab_keyboard_button.setToggleState(g_vst_grab_keyboard, dontSendNotification);
       }
 
+      struct SoundPlugin *plugin = data->_plugin;
+      R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
       // bypass button
       {
         bool new_state = bypass_button.getToggleState();
-        struct SoundPlugin *plugin = data->_plugin;
-        R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
-        
         bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
         if (new_state != is_bypass)
           bypass_button.setToggleState(is_bypass, dontSendNotification);
       }
 
+      // ab buttons
+      int num = plugin->curr_ab_num;
+      R_ASSERT_RETURN_IF_FALSE(num >= 0 && num < 8);
+
+      if (ab_buttons[num].getToggleState()==false)
+        ab_buttons[num].setToggleState(true, dontSendNotification);
+
+      for(int i=0;i<8;i++){
+        bool is_selected = plugin->curr_ab_num==i;
+        
+        bool new_valid = plugin->ab_is_valid[i] || is_selected;
+        
+        if (new_valid != ab_button_valid[i]){
+
+          const char *buttonnames = "ABCDEFGH";
+          
+          if (new_valid)
+            ab_buttons[i].setButtonText(String(&buttonnames[i], 1) + "*");
+          else
+            ab_buttons[i].setButtonText(String(&buttonnames[i], 1));
+          
+          ab_button_valid[i] = new_valid;
+        }
+      }
+
+      
       //printf("Width: %d\n", editor->getWidth());
              
       //if (isAlwaysOnTop() != vstGuiIsAlwaysOnTop())
@@ -650,7 +721,32 @@ namespace{
         bypass_button.setTopLeftPosition(0, 0);
       }
 #endif
-      
+
+      // a/b buttons
+      {
+        for(int i=7;i>=0;i--){
+          
+          const char *buttonnames = "ABCDEFGH";
+
+          bool is_selected = plugin->curr_ab_num==i;
+          
+          ab_buttons[i].setButtonText(String(&buttonnames[i], 1));
+          ab_buttons[i].setToggleState(is_selected, dontSendNotification);
+          ab_buttons[i].setSize(40, button_height);
+          ab_buttons[i].changeWidthToFitText();
+          ab_buttons[i].setRadioGroupId(1, NotificationType::dontSendNotification);
+          ab_buttons[i].addListener(this);
+
+          if (plugin->ab_is_valid[i] || is_selected){
+            ab_buttons[i].setButtonText(String(&buttonnames[i], 1) + "*");
+            ab_button_valid[i] = true;
+          }
+                
+          // add it
+          main_component.addAndMakeVisible(&ab_buttons[i]);
+          ab_buttons[i].setTopLeftPosition(0, 0);
+        }
+      }
 
       // add vst gui
       main_component.addChildComponent(editor);
@@ -691,16 +787,52 @@ namespace{
       }
 
 
-      this->setVisible(true);
+      {
+        int x = 0;
 
+        int rightmost_ab_button_x = 0;
 
 #if defined(RELEASE) && FOR_LINUX
-      bypass_button.setTopLeftPosition(main_component.getWidth()-bypass_button.getWidth(), 0);
+        rightmost_ab_button_x = main_component.getWidth()-bypass_button.getWidth();
+        bypass_button.setTopLeftPosition(R_MAX(x, rightmost_ab_button_x), 0);
+        x = bypass_button.getX() + bypass_button.getWidth();
+        
 #else
-      grab_keyboard_button.setTopLeftPosition(main_component.getWidth()-grab_keyboard_button.getWidth(), 0);
-      //always_on_top_button.setTopLeftPosition(main_component.getWidth()-grab_keyboard_button.getWidth()-always_on_top_button.getWidth(), 0);
-      bypass_button.setTopLeftPosition(main_component.getWidth()-grab_keyboard_button.getWidth()-bypass_button.getWidth(), 0);
+        rightmost_ab_button_x = main_component.getWidth()-grab_keyboard_button.getWidth()-bypass_button.getWidth();
+        bypass_button.setTopLeftPosition(R_MAX(x, rightmost_ab_button_x), 0);
+        x = bypass_button.getX() + bypass_button.getWidth();
+
+        grab_keyboard_button.setTopLeftPosition(x, 0);
+        x += grab_keyboard_button.getWidth();
+        
+        //always_on_top_button.setTopLeftPosition(main_component.getWidth()-grab_keyboard_button.getWidth()-always_on_top_button.getWidth(), 0);
 #endif
+
+        int total_button_width = x;
+
+        x = 0;
+        for(int i=0;i<8;i++){
+
+          int width = ab_buttons[i].getWidth();
+          
+          if (x+width > rightmost_ab_button_x)
+            main_component.removeChildComponent(&ab_buttons[i]);
+          else
+            ab_buttons[i].setTopLeftPosition(x, 0);
+          
+          x += width;
+        }
+      
+
+        //int bypass_pos = R_MIN(main_component.getWidth()-grab_keyboard_button.getWidth(), 0);
+        //int grab_pos = R_MIN(main_component.getWidth()-grab_keyboard_button.getWidth(), 0);
+        
+
+        if (total_button_width > editor->getWidth()){
+          main_component.setSize(x, total_button_width);
+        }
+      }
+
 
       startTimer(100);
 
@@ -1174,6 +1306,10 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
   }
 }
 
+float get_scaled_value_from_native_value(struct SoundPlugin *plugin, int effect_num, float native_value){
+  return native_value;
+}
+
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   radium::PlayerRecursiveLock lock;
 
@@ -1181,6 +1317,9 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
   if (is_vst2(plugin)){
     // juce::VSTPluginInstance::getParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
     // So instead, we call the vst getParameter function directly:
+
+    R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); // If not, we might have to use a mutex here.
+    
     AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
     
     float val = aeffect->getParameter(aeffect, effect_num);
@@ -1339,7 +1478,7 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
   plugin_type->num_inputs = audio_instance->getTotalNumInputChannels();
   plugin_type->num_outputs = audio_instance->getTotalNumOutputChannels();
     
-  plugin_type->dont_send_effect_values_from_state_into_plugin = true; // Don't need to. Juce takes care of saving and loading all effect parameters (General optimization plus crash fix for buggy CM 505 plugin)
+  plugin_type->state_contains_effect_values = true;
 
 #if 0
   if (false && is_vst2(plugin_type)){
@@ -1736,8 +1875,9 @@ static SoundPluginType *create_plugin_type(const PluginDescription &description,
   plugin_type->RT_get_latency = RT_get_latency;
   plugin_type->RT_get_audio_tail_length = RT_get_audio_tail_length;
   
-  plugin_type->get_effect_value = get_effect_value;
   plugin_type->set_effect_value = set_effect_value;
+  plugin_type->get_effect_value = get_effect_value;
+  plugin_type->get_scaled_value_from_native_value = get_scaled_value_from_native_value;
   
   plugin_type->get_display_value_string=get_display_value_string;
   plugin_type->get_effect_name=get_effect_name;

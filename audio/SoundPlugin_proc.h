@@ -103,6 +103,8 @@ extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin,
                                               int effect_num,
                                               enum WhereToGetValue where);
 
+extern LANGSPEC void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *state, bool is_loading);
+
 extern LANGSPEC void PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *state);
 extern LANGSPEC hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin);
 

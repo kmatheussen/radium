@@ -64,11 +64,11 @@ Ratio RATIO_from_string(QString string){
 }
 
 
-QString RATIO_as_qstring(Ratio ratio){
+QString RATIO_as_qstring(const Ratio ratio){
   return Rational(ratio).toString();
 }
 
-wchar_t *RATIO_as_string(Ratio ratio){
+wchar_t *RATIO_as_string(const Ratio ratio){
   return STRING_create(RATIO_as_qstring(ratio));
 }
 

@@ -551,7 +551,7 @@ void setInstrumentSample(int64_t instrument_id, const_char *filename){
     return;
   }
 
-  ADD_UNDO(PluginState_CurrPos(patch));
+  ADD_UNDO(PluginState(patch, NULL));
   
   SAMPLER_set_new_sample(plugin, STRING_create(filename), -1);
 }
@@ -575,7 +575,7 @@ void setRandomInstrumentSample(int64_t instrument_id, const_char *path){
   if (path==NULL || path[0]==0)
     path = NULL;
 
-  ADD_UNDO(PluginState_CurrPos(patch));
+  ADD_UNDO(PluginState(patch, NULL));
   
   SAMPLER_set_random_sample(plugin, path==NULL ? NULL : STRING_create(path));
 }

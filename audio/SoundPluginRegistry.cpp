@@ -576,6 +576,14 @@ void PR_add_plugin_type_no_menu(SoundPluginType *type){
   if(!strcmp(type->type_name,"Faust") && !strcmp(type->name,"Tapiir"))
     type->info = "The tapiir program is a multitap delay program. It has a stereo input and a stereo output. Each channel of the stereo signal is sent to 6 independant delays, not necessarily with the same gain for each delay. Then, each delay output is sent to the 5 other delay input, and also to its own input (to provide feedback possibilities), and all volumes can be changed independantly. Finally, each delay output, and each input of the tapiir is connected to both channels of the stereo output of the tapiir, still with configurable volumes. A wide range of effect can be constructed out of this complex system of delays (feedback, echos, filters). (This text is copied from http://faust.grame.fr)\n\nThe first Tapiir was made by Maarten de Boer's. This Faust version is implemented by the Faust team.";
 
+  if(type->state_contains_effect_values){
+    R_ASSERT_RETURN_IF_FALSE(type->create_state!=NULL);
+    R_ASSERT_RETURN_IF_FALSE(type->recreate_from_state!=NULL);
+  }
+
+  if (type->recreate_from_state!=NULL)
+    R_ASSERT_RETURN_IF_FALSE(type->create_state!=NULL);
+  
   g_plugin_types.push_back(type);
 }
 
