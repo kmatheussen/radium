@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
+#include "undo_audio_effect_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 
@@ -46,16 +47,26 @@ static void *Undo_Do_PluginState(
 static void Undo_PluginState(
                              struct Tracker_Windows *window,
                              struct WBlocks *wblock,
-                             struct Patch *patch
+                             struct Patch *patch,
+                             hash_t *state
                              )
 {
-  struct Undo_PluginState *undo_ae=talloc(sizeof(struct Undo_PluginState));
-  SoundPlugin *plugin = patch->patchdata;
   
-  undo_ae->patch = patch;
-  undo_ae->state = HASH_create(3);
+  SoundPlugin *plugin = patch->patchdata;
+  if (plugin->type->create_state == NULL || plugin->type->recreate_from_state==NULL)
+    return;
 
-  plugin->type->create_state(plugin,undo_ae->state);
+  struct Undo_PluginState *undo_ae=talloc(sizeof(struct Undo_PluginState));
+
+  if (state==NULL){
+    state = HASH_create(3);
+    plugin->type->create_state(plugin,state);
+  }
+
+  undo_ae->patch = patch;
+  undo_ae->state = state;
+
+  
 
   Undo_Add_dont_stop_playing(
                              window->l.num,
@@ -68,11 +79,36 @@ static void Undo_PluginState(
                              );
 }
 
-void ADD_UNDO_FUNC(PluginState_CurrPos(struct Patch *patch)){
+static void ADD_UNDO_FUNC(PluginState_CurrPos_internal(struct Patch *patch, hash_t *state_or_null)){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
-  Undo_PluginState(window,window->wblock, patch);
+  Undo_PluginState(window,window->wblock, patch, state_or_null);
 }
+
+void ADD_UNDO_FUNC(PluginState(struct Patch *patch, hash_t *state_or_null)){
+  struct SoundPlugin *plugin = patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  
+  const struct SoundPluginType *type = plugin->type;
+
+  UNDO_OPEN_REC();{
+      
+    CALL_ADD_UNDO_FUNC(PluginState_CurrPos_internal(patch, state_or_null));
+
+    if (type->state_contains_effect_values) {
+      
+      CALL_ADD_UNDO_FUNC(OnlySystemEffects(patch));
+      
+    } else {
+      
+      CALL_ADD_UNDO_FUNC(AudioEffect_CurrPos(patch, -1));
+      
+    }
+    
+  }UNDO_CLOSE();
+      
+}
+
 
 static void *Undo_Do_PluginState(
 	struct Tracker_Windows *window,
@@ -90,7 +126,7 @@ static void *Undo_Do_PluginState(
 
   //printf("Calling Undo_do for %d. Current value: %f. Now setting it back to %f\n",undo_ae->effect_num,new_value,undo_ae->value);
 
-  plugin->type->recreate_from_state(plugin, undo_ae->state, false);
+  PLUGIN_recreate_from_state(plugin, undo_ae->state, false);
 
   GFX_update_instrument_widget(undo_ae->patch);
 

@@ -15,6 +15,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#ifndef _RADIUM_AUDIO_UNDO_AUDIO_EFFECT_PROC_H
+#define _RADIUM_AUDIO_UNDO_AUDIO_EFFECT_PROC_H
 
 extern LANGSPEC void ADD_UNDO_FUNC(AudioEffect_CurrPos(struct Patch *patch, int effect_num));
 extern LANGSPEC void ADD_UNDO_FUNC(AudioEffect_CurrPos2(struct Patch *patch, int effect_num, float value));
+extern LANGSPEC void ADD_UNDO_FUNC(OnlySystemEffects(struct Patch *patch));
+  
+#endif

@@ -252,7 +252,7 @@ typedef struct SoundPluginType{
 
   //bool plugin_takes_care_of_stored_values; // For instance, if a VST plugin has it's own editor, we ask the plugin for values instead of using stored_effect_values (which contains the last set value). Then this value is true.
   
-  bool dont_send_effect_values_from_state_into_plugin; // Can be set to true if all effects are stored in type->create_state. type->effect_value will not be called for all effects then. All effect values are still stored in the state though. In an ideal world, this variable would only have served as an optimization, but it is also a crash fix for buggy plugins ("CM 505").
+  bool state_contains_effect_values; // Can be set to true if all effects are stored in type->create_state and applied in recreate_from_state. type->set_effect_value() will be called less often if this one is true.
 
   bool will_always_autosuspend; // obviously, it doesn't make sense ...
   bool will_never_autosuspend;  // ... if both of these are true
@@ -317,13 +317,15 @@ typedef struct SoundPluginType{
   // This functions is called if SoundPluginType->effect_is_RT(effect_num) returns false
   void (*set_effect_value)(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when);
 
-  float (*get_effect_value)(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format);
+  float (*get_effect_value)(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format); // Is only called from the main thread. Player lock might be held though.
+
+  float (*get_scaled_value_from_native_value)(struct SoundPlugin *plugin, int effect_num, float native_value); // If get_effect_value might take some time to call, or the plugin could have a lot of effects, or we may obtain a lock in get_effect_value (or do other blocking operations), it could be a good idea to implement this one if possible.
 
   bool (*gui_is_visible)(struct SoundPlugin *plugin); // May be NULL
   bool (*show_gui)(struct SoundPlugin *plugin, int64_t parentgui); // If NULL, the "GUI" button will not show. Returns true if gui was opened.
   void (*hide_gui)(struct SoundPlugin *plugin);
 
-  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state, bool is_loading); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "recreate_from_state", but this function is called AFTER the effect values have been set. It makes sense to to set dont_send_effect_values_from_state_into_plugin==true if 'recreate_from_state' creates and recreates all effects.
+  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state, bool is_loading); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "create_plugin_data", but this function is called AFTER the effect values have been set. It makes sense to set state_contains_effect_values=true if 'recreate_from_state' creates and recreates all effects. Note that this function is also called when changing a/b value (where we prefer efficient operation and non-stuttering sound), so it might be a good idea to do "if(HASH_equal(state, create_state())) return;" in the top of the function.
   void (*create_state)(struct SoundPlugin *plugin, hash_t *state);
 
   // Presets (optional)

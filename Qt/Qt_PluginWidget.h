@@ -277,6 +277,8 @@ class ParamWidget : public QWidget {
       if(_slider!=NULL) {
         set_slider_string(); // maybe fix: set_slider_string will be called twice if the value has changed.
         _slider->setValue(value * 10000.0f);
+        //if (_effect_num==0)
+        //  printf("   ===== ParamWidget. Setting slider value to %f (%s)\n", value,get_slider_string().toUtf8().constData());
       } else if(_check_button!=NULL)
         _check_button->setChecked(value>0.5f);
       
@@ -315,7 +317,7 @@ class ParamWidget : public QWidget {
         set_effect_value(value/10000.0f);
         set_slider_string();
         //_slider->display_string.sprintf("%s: %s",_name.toUtf8().constData(),
-        //printf("Has set value to %s\n",_slider->_painter->display_string.toUtf8().constData());
+        //printf(".... sliderValueChanged slot: Has set value to %s (%f)\n", get_slider_string().toUtf8().constData(), value / 1000.0f);
       }
     }
 

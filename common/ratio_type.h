@@ -57,19 +57,19 @@ static inline bool ratio_equal(const Ratio a, const Ratio b){
 }
 */
 
-static inline bool RATIO_equal(Ratio r1, Ratio r2){
+static inline bool RATIO_equal(const Ratio r1, const Ratio r2){
   return r1.numerator*r2.denominator == r2.numerator*r1.denominator;
 }
 
-static inline bool RATIO_literary_equal(Ratio r1, Ratio r2){
+static inline bool RATIO_literary_equal(const Ratio r1, const Ratio r2){
   return r1.numerator==r2.numerator && r1.denominator==r2.denominator;
 }
 
-static inline Ratio RATIO_multiply(Ratio r1, Ratio r2){
+static inline Ratio RATIO_multiply(const Ratio r1, const Ratio r2){
   return make_ratio(r1.numerator*r2.numerator, r1.denominator*r2.denominator);
 }
 
-static inline Ratio RATIO_divide(Ratio r1, Ratio r2){
+static inline Ratio RATIO_divide(const Ratio r1, const Ratio r2){
   return make_ratio(r1.numerator*r2.denominator, r1.denominator*r2.numerator);
 }
 
@@ -77,7 +77,7 @@ static inline Ratio RATIO_divide(Ratio r1, Ratio r2){
 extern "C"{
 #endif
   
-extern wchar_t *RATIO_as_string(Ratio ratio);
+extern wchar_t *RATIO_as_string(const Ratio ratio);
 extern Ratio RATIO_from_string(const wchar_t *wstring);
 
 #ifdef __cplusplus
@@ -85,7 +85,7 @@ extern Ratio RATIO_from_string(const wchar_t *wstring);
 #endif
 
 #if defined(USE_QT4) && defined(QSTRING_H)
-extern QString RATIO_as_qstring(Ratio ratio);
+extern QString RATIO_as_qstring(const Ratio ratio);
 #endif
   
 
