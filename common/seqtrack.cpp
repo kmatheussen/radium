@@ -1141,7 +1141,8 @@ int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowA
 
   struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
 
-  HASH_put_bool(hash, ":new-block", true); // To avoid two seqblocks with the same id.
+  if (false==HASH_has_key(hash, ":new-block"))
+    HASH_put_bool(hash, ":new-block", true); // To avoid two seqblocks with the same id.
   
   struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, error_type, Seqblock_Type::REGULAR);
   if (seqblock==NULL)
@@ -1389,7 +1390,8 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
     if(HASH_has_key(seqblock_state, "time"))
       seqblock_state = get_new_seqblock_state_from_old(HASH_get_hash_at(state, "seqblock", i), song);
 
-    HASH_put_bool(seqblock_state, ":new-block", true);  // To avoid two seqblocks with the same id.
+    if (false==HASH_has_key(hash, ":new-block"))
+      HASH_put_bool(seqblock_state, ":new-block", true);  // To avoid two seqblocks with the same id.
 
     bool seqblock_for_audiofiles = HASH_has_key(seqblock_state, ":blocknum")==false;
 
