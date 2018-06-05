@@ -2624,7 +2624,16 @@ static QString get_final_embedded_filename(QString org_filename, QString new_fil
 }
 */
 
+static void create_state(struct SoundPlugin *plugin, hash_t *state);
+  
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
+  {
+    hash_t *curr_state = HASH_create(10);
+    create_state(plugin, curr_state);
+    if (HASH_equal(state, curr_state))
+      return;
+  }
+                                      
   bool           use_sample_file_middle_note = true ; if (HASH_has_key(state, "use_sample_file_middle_note")) use_sample_file_middle_note = HASH_get_bool(state, "use_sample_file_middle_note");
   int            instrument_number = HASH_get_int32(state, "instrument_number");
   enum ResamplerType resampler_type    = (enum ResamplerType)HASH_get_int(state, "resampler_type");
