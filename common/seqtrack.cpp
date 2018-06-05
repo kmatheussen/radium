@@ -1390,7 +1390,7 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
     if(HASH_has_key(seqblock_state, "time"))
       seqblock_state = get_new_seqblock_state_from_old(HASH_get_hash_at(state, "seqblock", i), song);
 
-    if (false==HASH_has_key(hash, ":new-block"))
+    if (false==HASH_has_key(seqblock_state, ":new-block"))
       HASH_put_bool(seqblock_state, ":new-block", true);  // To avoid two seqblocks with the same id.
 
     bool seqblock_for_audiofiles = HASH_has_key(seqblock_state, ":blocknum")==false;
@@ -1887,7 +1887,7 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
   if (seqtracknum >= 0)
     ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
   
-  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST | SEQUPDATE_PLAYLIST);
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST);
 
   return pos;
 }
