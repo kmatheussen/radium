@@ -678,7 +678,10 @@ namespace{
         
         if (has_y)
           y = data->ys[parentgui];
-                
+
+
+        this->setVisible(true); // Must set visible before setting position. At least on Linux/fvwm.
+        
         if (x <= 0 || y <= 0) {
           this->centreWithSize (getWidth(), getHeight());
         } else {
