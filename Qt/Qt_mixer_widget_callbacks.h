@@ -372,8 +372,8 @@ public slots:
   void on_ab_d_clicked(){ab_rightclicked(3);}
   void on_ab_e_clicked(){ab_rightclicked(4);}
   void on_ab_f_clicked(){ab_rightclicked(5);}
-  void on_ab_g_clicked(){ab_rightclicked(5);}
-  void on_ab_h_clicked(){ab_rightclicked(6);}
+  void on_ab_g_clicked(){ab_rightclicked(6);}
+  void on_ab_h_clicked(){ab_rightclicked(7);}
     
   void on_ab_a_toggled(bool val){
     printf("  CHECK A. val: %d\n", val);
