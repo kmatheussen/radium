@@ -540,7 +540,16 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, const wchar_t *sf2_file, int
   return true;
 }
 
+static void create_state(struct SoundPlugin *plugin, hash_t *state);
+
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
+  {
+    hash_t *curr_state = HASH_create(10);
+    create_state(plugin, curr_state);
+    if (HASH_equal(state, curr_state))
+      return;
+  }
+  
   int         bank_num    = HASH_get_int32(state, "bank_num");
   int         preset_num  = HASH_get_int32(state, "preset_num");
 
