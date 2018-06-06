@@ -718,8 +718,11 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
   HASH_put_int(state, ":id", seqblock->id);
   
   if(seqblock->block != NULL) {
+    
     HASH_put_int(state, ":blocknum", seqblock->block->l.num);
+    
   } else {
+    
     SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
     const wchar_t *filename = L"";
     if (plugin != NULL)
@@ -733,6 +736,9 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
     if (!info.isAbsolute())
       abort();
 #endif
+
+    if (seqblock->name != NULL)
+      HASH_put_string(state, ":name", seqblock->name);
 
   }
   
@@ -1021,8 +1027,12 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     if (seqblock==NULL)
       return NULL;
 
+    if (HASH_has_key(state, ":name"))
+      seqblock->name = HASH_get_string(state, ":name");
+    
   }
 
+  
   int64_t default_duration = get_seqblock_stime_default_duration(seqtrack, seqblock);
 
   if (interior_end > default_duration){

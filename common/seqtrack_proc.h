@@ -412,6 +412,9 @@ struct SoundPlugin;
 
 static inline QString get_seqblock_name(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, QString separator = ": ", bool right_justify = false){
 
+  if (seqblock->name != NULL)
+    return STRING_get_qstring(seqblock->name);
+  
   if (seqblock->block==NULL) {
 
     return STRING_get_qstring(get_seqblock_sample_name(seqtrack, seqblock, false));
