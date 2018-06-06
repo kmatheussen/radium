@@ -316,6 +316,7 @@ extern LANGSPEC int SEQTRACK_insert_gfx_gfx_block(struct SeqTrack *seqtrack, int
 extern LANGSPEC int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, int64_t seqtime, int64_t end_seqtime);
 extern LANGSPEC struct SeqBlock *SEQTRACK_add_recording_seqblock(struct SeqTrack *seqtrack, int64_t seqtime, int64_t end_seqtime);
 extern LANGSPEC void SEQTRACK_remove_recording_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock);
+extern LANGSPEC void SEQUENCER_remove_sample_from_song(const wchar_t *filename);
 extern LANGSPEC double SEQTRACK_get_length(struct SeqTrack *seqtrack);
 //extern LANGSPEC void SEQTRACK_init(struct SeqTrack *seqtrack, const hash_t *automation_state);
 

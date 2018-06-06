@@ -2227,7 +2227,7 @@ protected:
       SEQUENCER_update(SEQUPDATE_TIME);
     }
 
-    if (is_called_every_ms(100))
+    if (is_called_every_ms(50))
       SAMPLEREADER_call_very_often();
     
 #if 0
@@ -3064,6 +3064,8 @@ int radium_main(char *arg){
   GTK_MainLoop();
 #endif
 
+  while(SAMPLEREADER_call_very_often()); // Drain the g_readers_ready_for_deletion queue.
+  
   g_qtgui_has_stopped = true;
 
   PlayStop();

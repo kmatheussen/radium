@@ -288,7 +288,7 @@ bool Undo_are_you_sure_questionmark(void){
           char *ret=NULL;
           sprintf(
                   temp,
-                  "There %s %d unused recording take%s. Do you want to delete %s file%s? (yes/no) > ",
+                  "There %s %d unused/unsaved recording take%s. Do you want to delete %s file%s? (yes/no) > ",
                   num_deletable_audio_files==1 ? "is" : "are",
                   num_deletable_audio_files,
                   num_deletable_audio_files==1 ? "" : "s",
