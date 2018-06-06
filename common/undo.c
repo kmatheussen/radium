@@ -472,7 +472,7 @@ bool Das_Undo_Close(void){
   } else
     return false;
 }
-/*
+
 void Das_Undo_ReopenLast(void){
   if (ignore())
     return;
@@ -490,7 +490,7 @@ void Das_Undo_ReopenLast(void){
   num_undos--;
   //printf("        UNDO Reopenlast. num_undos--: %d\n", num_undos);
 }
-*/
+
 void Das_Undo_CancelLastUndo(void){
   if (ignore()) return;
 

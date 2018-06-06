@@ -74,7 +74,7 @@ extern LANGSPEC bool Das_Undo_Close(void); // Don't call directly
 extern LANGSPEC bool Undo_Is_Currently_Undoing(void);
 extern LANGSPEC bool Undo_Is_Open(void);
 extern LANGSPEC void Das_Undo_CancelLastUndo(void); // don't call directly
-//extern LANGSPEC void Das_Undo_ReopenLast(void); // don't call directly
+extern LANGSPEC void Das_Undo_ReopenLast(void); // don't call directly
 extern LANGSPEC UndoFunction Undo_get_last_function(void);
 
 #define UNDO_CANCEL_LAST_UNDO()                                                     \
@@ -83,8 +83,8 @@ extern LANGSPEC UndoFunction Undo_get_last_function(void);
     Das_Undo_CancelLastUndo();                                                    \
   }while(0)
 
-#if 0
-// Is implemented, but not used. Also destroys redo data, but that should be fixed by replacing CurrUndo->next=NULL with CurrUndo->next=CurrUndo->last_next.
+#if 1
+// Used in Qt/Qt_faust_plugin_widget_callbacks.h. Fix: destroys redo data (should be fixed by replacing CurrUndo->next=NULL with CurrUndo->next=CurrUndo->last_next).
 #define UNDO_REOPEN_LAST()                                                     \
   do{                                                                   \
     EVENTLOG_add_event(CR_FORMATEVENT("Undo: Reopen last"));                          \
