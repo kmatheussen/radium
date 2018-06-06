@@ -99,24 +99,32 @@ public:
     setCursor(Qt::ArrowCursor);
   }
 
+  Qt::MouseButton _last_button =  Qt::NoButton;
+  
   // popup menu
   void mousePressEvent(QMouseEvent *event) override {
 
+    _last_button = event->button();
+      
     QListWidget::mousePressEvent(event);
 
-    bool gotit = false;
+    if(_last_button==Qt::RightButton) { // Prevent Qt from emiting doubleclick signals when right-clicking.
     
-    if(event->button()==Qt::RightButton && is_blocklist && shiftPressed()==false){
-    
-      //printf("mouse pressed %d %d %p\n",(int)event->buttons(),is_blocklist,item);
+      if(is_blocklist && shiftPressed()==false){
+        
+        //printf("mouse pressed %d %d %p\n",(int)event->buttons(),is_blocklist,item);
+        
+        evalScheme("(FROM_C-show-blocklist-popup-menu)");
+        
+      }
 
-      evalScheme("(FROM_C-show-blocklist-popup-menu)");
-      gotit = true;
-      
-    }
-    
-    if (gotit)
       event->accept();
+      
+    } else {
+      
+
+    }
+
   }
 
 };
@@ -521,6 +529,14 @@ public:
     button_width = add_button.width();
   }
 
+  /*
+  Qt::MouseButton _last_button =  Qt::NoButton;
+  void mousePressEvent( QMouseEvent *qmouseevent) override {
+    _last_button = qmouseevent->button();
+    QWidget::mousePressEvent(qmouseevent);
+  }
+  */
+  
   void enterEvent(QEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
@@ -829,7 +845,8 @@ public slots:
   }
 
   void blocklist_doubleclicked(QListWidgetItem *item){
-    add_to_playlist();
+    if (blocklist._last_button==Qt::LeftButton)
+      add_to_playlist();
   }
 
   void blocklist_itemPressed(QListWidgetItem * item){
@@ -941,7 +958,8 @@ public slots:
   }
 
   void playlist_doubleclicked(QListWidgetItem *item){
-    remove_from_playlist();
+    if (playlist._last_button==Qt::LeftButton)
+      remove_from_playlist();
   }
 };
 }
