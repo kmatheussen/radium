@@ -31,13 +31,15 @@ enum WhatToDoWithDeletableFileWhenLoadingOrQuitting{
 };
 
 extern LANGSPEC vector_t SAMPLEREADER_get_all_filenames(void);
+extern LANGSPEC bool SAMPLEREADER_remove_filename_from_filenames(const wchar_t *filename); // returns true if filename was removed from filenames
 extern LANGSPEC vector_t SAMPLEREADER_get_all_deletable_filenames(void);
 
 extern LANGSPEC bool SAMPLEREADER_register_deletable_audio_file(const wchar_t *filename);
+extern LANGSPEC bool SAMPLEREADER_is_deletable_audio_file(const wchar_t *filename);
 extern LANGSPEC void SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(const wchar_t *filename, enum WhatToDoWithDeletableFileWhenLoadingOrQuitting wtt);
 extern LANGSPEC void SAMPLEREADER_maybe_make_audio_file_undeletable(const wchar_t *filename);
 extern LANGSPEC void SAMPLEREADER_delete_all_deletable_audio_files(void);
-extern LANGSPEC void SAMPLEREADER_call_very_often(void);
+extern LANGSPEC bool SAMPLEREADER_call_very_often(void);
 extern LANGSPEC void SAMPLEREADER_inc_users(const wchar_t *filename);
 extern LANGSPEC void SAMPLEREADER_dec_users(const wchar_t *filename);
 extern LANGSPEC void SAMPLEREADER_dec_users_undo_callback(void *data);

@@ -338,7 +338,8 @@ public:
 
   unsigned int _color;
 
-  bool _can_be_deleted = false; // Recorded files should be deleted when unavailable.
+  bool _can_be_deleted = false;
+  bool _file_can_be_deleted = false; // Recorded files should be deleted when unavailable.
 
   enum WhatToDoWithDeletableFileWhenLoadingOrQuitting _what_to_do_with_deletable_file_when_loading_or_quitting = WTT_DONT_KNOW;
   
@@ -428,9 +429,8 @@ public:
 
     BS_UpdateBlockList();
     
-    if (_can_be_deleted){
+    if (_file_can_be_deleted)
       force_file_deletion();
-    }
     
     free((void*)_filename);
     free((void*)_filename_without_path);
@@ -453,11 +453,24 @@ public:
       
     }
 
-    printf("\n\n\n====================== Maybe deleting \"%S\". Going to? (i.e. allowed by user?): %d. ===================\n\n\n", _filename, do_delete);
+    //printf("\n\n\n====================== Maybe deleting \"%S\". Going to? (i.e. allowed by user?): %d. ===================\n\n\n", _filename, do_delete);
 
     if (do_delete){
       DISK_delete_file(_filename);
       DISKPEAKS_delete_file(_filename);
+    }
+  }
+
+  bool delete_me_if_no_users(void){
+    if (_num_users==0){
+      
+      delete this;
+      return true;
+      
+    } else {
+
+      return false;
+      
     }
   }
   
@@ -478,10 +491,21 @@ public:
     //if (_num_users == 0)
     //  delete this;
     
-    if (_num_users == 0 && _can_be_deleted)
-      delete this;
+    if (_can_be_deleted)
+      delete_me_if_no_users();
   }
 
+  int num_users(void) const{
+    return _num_users;
+  }
+  
+  bool mark_as_deletable_and_delete_if_unused(void){
+    R_ASSERT_RETURN_IF_FALSE2(_can_be_deleted==false, false);
+
+    _can_be_deleted=true;
+    return delete_me_if_no_users();
+  }
+  
   void SPT_fill_slice(SNDFILE *sndfile, Slice &slice, int64_t slice_num){
     int64_t pos = slice_num*SLICE_SIZE;
 
@@ -720,15 +744,23 @@ private:
           command.client->_sndfile = NULL;
         }
         
-        if (command.gotit!=NULL){
-          fprintf(stderr, "CLOSE_SNDFILE_ SIGNALLING %p\n", command.gotit);
-          command.gotit->signal();
-        }
-
-        if (command.type==Command::Type::DELETE_){
+        if (command.type==Command::Type::DELETE_){ // i.e. command.type != Command::Type::CLOSE_SNDFILE_:
+          
           R_ASSERT(command.gotit==NULL);
-
+          
           SAMPLEREADER_mark_ready_for_deletion(command.client->_reader);
+
+        } else if (command.type==Command::Type::CLOSE_SNDFILE_) {
+          
+          if (command.gotit!=NULL){
+            fprintf(stderr, "CLOSE_SNDFILE_ SIGNALLING %p\n", command.gotit);
+            command.gotit->signal();
+          }
+
+        } else {
+          
+          R_ASSERT(false);
+          
         }
         
         break;
@@ -842,7 +874,9 @@ public:
         msleep(10);
     }
 
-    _provider->inc_users();
+    //printf("     =========== SampleReader Constructor: %p %d\n", this, _provider->num_users()+1);
+    
+    _provider->inc_users();    
   }
 
   // Called from the g_spt thread.
@@ -850,7 +884,9 @@ public:
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     
     R_ASSERT(_has_requested_deletion);
-  
+    
+    //printf("     =========== SampleReader Destructor: %p %d\n", this, _provider->num_users()-1);
+    
     _provider->dec_users();
 
     V_free((void*)_ch_pos);
@@ -1296,15 +1332,26 @@ vector_t SAMPLEREADER_get_all_filenames(void){
   return ret;
 }
 
+bool SAMPLEREADER_remove_filename_from_filenames(const wchar_t *filename){
+  SampleProvider *provider = g_sample_providers[STRING_get_qstring(filename)];
+  //R_ASSERT_RETURN_IF_FALSE(provider!=NULL); Commented out since we might have asked to remove a deletable filename, which could have been deleted in between gathering the filename and calling this function.  
+  if(provider==NULL)
+    return true;
+  
+  if(provider->_can_be_deleted)
+    return false;
+
+  return provider->mark_as_deletable_and_delete_if_unused();
+}
+
 vector_t SAMPLEREADER_get_all_deletable_filenames(void){
   vector_t ret = {};
   for(const auto *provider : g_sample_providers.values())
-    if (provider->_can_be_deleted)
+    if (provider->_file_can_be_deleted)
       VECTOR_push_back(&ret, talloc_wcsdup(provider->_filename));
 
   return ret;
 }
-
 
 // Called right after recording file
 bool SAMPLEREADER_register_deletable_audio_file(const wchar_t *filename){
@@ -1314,19 +1361,31 @@ bool SAMPLEREADER_register_deletable_audio_file(const wchar_t *filename){
   if (provider==NULL)
     return false; // No need for assertion. Error message has already been shown if file couldn't be opened.
 
-  R_ASSERT_RETURN_IF_FALSE2(provider->_can_be_deleted==false, false);
+  R_ASSERT_RETURN_IF_FALSE2(provider->_file_can_be_deleted==false, false);
   
   provider->_can_be_deleted = true;
+  provider->_file_can_be_deleted = true;
   
   return true;
 }
 
+bool SAMPLEREADER_is_deletable_audio_file(const wchar_t *filename){
+  R_ASSERT_RETURN_IF_FALSE2(SAMPLEREADER_has_file(filename)==true, false);
+
+  SampleProvider *provider = get_sample_provider(filename);
+  if (provider==NULL)
+    return false; // No need for assertion. Error message has already been shown if file couldn't be opened.
+
+  return provider->_file_can_be_deleted;
+}
+  
 void SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(const wchar_t *filename, enum WhatToDoWithDeletableFileWhenLoadingOrQuitting wtt){
   SampleProvider *provider = get_sample_provider(filename);
   if (provider==NULL)
     return;
 
   R_ASSERT_NON_RELEASE(provider->_can_be_deleted==true);
+  R_ASSERT_NON_RELEASE(provider->_file_can_be_deleted==true);
   
   provider->_what_to_do_with_deletable_file_when_loading_or_quitting = wtt;
 }
@@ -1337,8 +1396,8 @@ void SAMPLEREADER_maybe_make_audio_file_undeletable(const wchar_t *filename){
   if (provider==NULL)
     return;
 
-  if (provider->_can_be_deleted==true)
-    provider->_can_be_deleted = false;
+  if (provider->_file_can_be_deleted==true)
+    provider->_file_can_be_deleted = false;
 }
 
 // Called when quitting.
@@ -1346,7 +1405,7 @@ void SAMPLEREADER_delete_all_deletable_audio_files(void){
   R_ASSERT(THREADING_is_main_thread());
 
   for(auto *provider : g_sample_providers.values())
-    if (provider->_can_be_deleted==true)
+    if (provider->_file_can_be_deleted==true)
       provider->force_file_deletion();
 }
 
@@ -1411,18 +1470,26 @@ void SAMPLEREADER_delete(SampleReader *reader){
   //printf("Delete:\n%s\n", JUCE_get_backtrace());
   R_ASSERT_RETURN_IF_FALSE(reader->_has_requested_deletion==false);
   
-  reader->request_deletion();
+  reader->request_deletion(); // We don't want to simply call "delete reader" here since there might be things in the sample provider thread queue.
 }
 
 static radium::Mutex g_readers_ready_for_deletion_mutex;
 static QVector<SampleReader*> g_readers_ready_for_deletion;
 
-void SAMPLEREADER_call_very_often(void){
-  radium::ScopedMutex lock(g_readers_ready_for_deletion_mutex);
-  while(g_readers_ready_for_deletion.isEmpty()==false){
-    auto *reader = g_readers_ready_for_deletion.takeFirst();
-    delete reader;
+bool SAMPLEREADER_call_very_often(void){
+  SampleReader *reader;
+
+  // Just delete one reader for each visit to avoid blocking the sample provider thread for too long, and also avoid blocking the main thread for too long (since we would probably sleep a little bit between each reader deletion to avoid blocking the sample provider thread for too long)
+  {
+    radium::ScopedMutex lock(g_readers_ready_for_deletion_mutex);
+    if (g_readers_ready_for_deletion.isEmpty())
+      return false;
+    
+    reader = g_readers_ready_for_deletion.takeFirst();
   }
+
+  delete reader;
+  return true;
 }
   
 static void SAMPLEREADER_mark_ready_for_deletion(SampleReader *reader){
@@ -1494,6 +1561,8 @@ void SAMPLEREADER_shut_down(void){
   R_ASSERT(THREADING_is_main_thread());
 
   g_spt.shut_down();
+
+  while(SAMPLEREADER_call_very_often()); // Drain the g_readers_ready_for_deletion queue. More readers might have been added since last time we did this.
 }
 
 

@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Dynvec_proc.h"
 #include "instruments_proc.h"
 #include "visual_proc.h"
+#include "undo_sequencer_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -920,6 +921,18 @@ static bool get_value(const hash_t *state,
   return true;
 }
 
+// Call before removing seqblock from seqtrack->seqblocks.
+static void prepare_remove_sample_from_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const Seqblock_Type type){
+  R_ASSERT_RETURN_IF_FALSE(seqtrack->for_audiofiles);
+  R_ASSERT_RETURN_IF_FALSE(seqtrack->patch!=NULL && seqtrack->patch->patchdata!=NULL);
+  
+  SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+  SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, type);
+  if (atomic_pointer_read_relaxed((void**)&seqtrack->curr_sample_seqblock)==seqblock)
+    atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, NULL);
+}
+  
+
 // Is static since seqblocks should only be created in this file.
 static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type, Seqblock_Type type){
   //R_ASSERT(is_gfx==true);
@@ -1032,11 +1045,8 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
       
       if (error_type==THROW_API_EXCEPTION){
 
-        if (seqblock->block==NULL){
-          R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL && seqtrack->patch->patchdata!=NULL, NULL);
-          SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-          SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, type);
-        }
+        if (seqblock->block==NULL)
+          prepare_remove_sample_from_seqblock(seqtrack, seqblock, type);
         
         handleError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
 #if 0 //!defined(RELEASE)
@@ -1200,20 +1210,15 @@ hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_old_for
 }
 
 static void remove_all_gfx_samples(struct SeqTrack *seqtrack){
-  SoundPlugin *plugin = NULL;
-  
   R_ASSERT_RETURN_IF_FALSE(seqtrack->gfx_seqblocks != NULL);
   
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqtrack->gfx_seqblocks){
-    if (seqblock->block == NULL){ 
-      if (plugin==NULL){
-        R_ASSERT_RETURN_IF_FALSE(seqtrack->patch!=NULL);
-        R_ASSERT_RETURN_IF_FALSE(seqtrack->patch->patchdata!=NULL);
-        plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-        R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
-      }        
-      SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, Seqblock_Type::GFX);
+    if (seqblock->block == NULL){
+      prepare_remove_sample_from_seqblock(seqtrack, seqblock, Seqblock_Type::GFX);
+#if !defined(RELEASE)
+      SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
       SEQTRACKPLUGIN_assert_samples(plugin);
+#endif
     }
   }END_VECTOR_FOR_EACH;
 }
@@ -1469,12 +1474,8 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
 
   //printf("    SEQTRACK_delete_seqblock\n");
 
-  if (seqblock->block==NULL){
-    SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-    SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, Seqblock_Type::REGULAR);
-    if (atomic_pointer_read_relaxed((void**)&seqtrack->curr_sample_seqblock)==seqblock)
-      atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, NULL);
-  }
+  if (seqblock->block==NULL)
+    prepare_remove_sample_from_seqblock(seqtrack, seqblock, Seqblock_Type::REGULAR);
 
   {
     radium::PlayerPause pause(is_playing_song());
@@ -1954,12 +1955,17 @@ int SEQTRACK_insert_sample(struct SeqTrack *seqtrack, int seqtracknum, const wch
   struct SeqBlock *seqblock = create_sample_seqblock(seqtrack, seqtracknum, filename, seqtime, end_seqtime, Seqblock_Type::REGULAR);
   if (seqblock==NULL)
     return -1;
-  
-  SAMPLEREADER_inc_users(filename);
-  UNDO_add_callback_when_curr_entry_becomes_unavailable(SAMPLEREADER_dec_users_undo_callback,
-                                                        talloc_wcsdup(filename),
-                                                        0
-                                                        );
+
+  if (SAMPLEREADER_has_file(filename) && SAMPLEREADER_is_deletable_audio_file(filename)){
+    
+    // Prevent sample file from being deleted while it's still reachable through undo/redo.
+    
+    SAMPLEREADER_inc_users(filename);
+    UNDO_add_callback_when_curr_entry_becomes_unavailable(SAMPLEREADER_dec_users_undo_callback,
+                                                          talloc_wcsdup(filename),
+                                                          0
+                                                          );
+  }
 
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime, end_seqtime);    
 }
@@ -1983,6 +1989,51 @@ void SEQTRACK_remove_recording_seqblock(struct SeqTrack *seqtrack, struct SeqBlo
   R_ASSERT_RETURN_IF_FALSE(VECTOR_contains(&seqtrack->recording_seqblocks, seqblock));
                            
   VECTOR_remove(&seqtrack->recording_seqblocks, seqblock);
+}
+
+void SEQUENCER_remove_sample_from_song(const wchar_t *filename){
+  struct ToRemove{
+    struct SeqTrack *seqtrack;
+    int seqblockpos;
+  };
+  
+  QVector<ToRemove> to_removes;
+    
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    
+    if (seqtrack->for_audiofiles){
+
+      SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+      
+      VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+        
+        if (STRING_equals2(filename, SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, true))) {
+          prepare_remove_sample_from_seqblock(seqtrack, seqblock, Seqblock_Type::REGULAR);
+
+          ToRemove to_remove = {seqtrack, iterator666};
+          to_removes.push_back(to_remove);
+        }
+        
+      }END_VECTOR_FOR_EACH;
+      
+    }
+    
+  }END_VECTOR_FOR_EACH;
+
+  if (to_removes.size() > 0){
+
+    ADD_UNDO(Sequencer());
+
+    {
+      radium::PlayerPause pause(is_playing_song());
+      radium::PlayerRecursiveLock lock;
+
+      for(const ToRemove &to_remove : to_removes)
+        VECTOR_delete(&to_remove.seqtrack->seqblocks, to_remove.seqblockpos);
+    }
+  }
+  
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 }
   
 double SEQTRACK_get_length(struct SeqTrack *seqtrack){
@@ -2103,7 +2154,7 @@ static void call_me_after_seqtrack_has_been_removed(struct SeqTrack *seqtrack){
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
       
       if (seqblock->block==NULL)
-        SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, Seqblock_Type::REGULAR);
+        prepare_remove_sample_from_seqblock(seqtrack, seqblock, Seqblock_Type::REGULAR);
       
     }END_VECTOR_FOR_EACH;
 
@@ -2416,17 +2467,8 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     {
       VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
         VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-          if (seqblock->block==NULL){
-            if (seqtrack->patch == NULL)
-              R_ASSERT(false);
-            else {
-              SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-              if (plugin==NULL){
-                R_ASSERT_NON_RELEASE(false); // this might happen legally. Not sure.
-              }else
-                SEQTRACKPLUGIN_request_remove_sample(plugin, seqblock->sample_id, Seqblock_Type::REGULAR);
-            }
-          }
+          if (seqblock->block==NULL)
+            prepare_remove_sample_from_seqblock(seqtrack, seqblock, Seqblock_Type::REGULAR);
         }END_VECTOR_FOR_EACH;
       }END_VECTOR_FOR_EACH;
     }

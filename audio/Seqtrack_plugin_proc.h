@@ -52,7 +52,7 @@ extern LANGSPEC bool SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack,
 extern LANGSPEC void SEQTRACKPLUGIN_apply_gfx_samples(struct SoundPlugin *plugin);
 extern LANGSPEC void SEQTRACKPLUGIN_assert_samples(const struct SoundPlugin *plugin);
 extern LANGSPEC void SEQTRACKPLUGIN_assert_samples2(const struct SeqTrack *seqtrack);
-extern LANGSPEC void SEQTRACKPLUGIN_request_remove_sample(struct SoundPlugin *plugin, int64_t id, enum Seqblock_Type type);
+extern LANGSPEC void SEQTRACKPLUGIN_request_remove_sample(struct SoundPlugin *plugin, int64_t id, enum Seqblock_Type type); // Note: Make sure seqtrack->curr_sample_seqblock is updated. In seqtrack.cpp, use prepare_remove_sample_from_seqblock instead.
 extern LANGSPEC bool SEQTRACKPLUGIN_can_be_deleted(struct SoundPlugin *plugin);
 extern LANGSPEC int SEQTRACKPLUGIN_get_num_samples(struct SoundPlugin *plugin);
 

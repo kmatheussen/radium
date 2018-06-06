@@ -859,7 +859,24 @@ public slots:
       blocklist_highlighted(pos);
       
       if (shiftPressed()){
-        deleteBlock(pos,-1);
+        struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+        if (seqtrack->for_audiofiles) {
+
+          vector_t filenames = SAMPLEREADER_get_all_filenames();
+          if (pos < filenames.num_elements) {
+
+            const wchar_t *filename = static_cast<const wchar_t*>(filenames.elements[pos]);
+            
+            SEQUENCER_remove_sample_from_song(filename);
+            SAMPLEREADER_remove_filename_from_filenames(filename);
+            
+          }
+          
+        } else {
+          
+          deleteBlock(pos,-1);
+          
+        }
       }
     }
   }

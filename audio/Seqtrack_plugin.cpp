@@ -194,6 +194,7 @@ public:
 
     {      
       SAMPLEREADER_delete(_reader);
+      //printf("     =========SAMPLE c/d: Deleted 1: %p\n", _reader);
       _reader = NULL;
     }
 
@@ -573,6 +574,8 @@ struct Sample{
     , _color(SAMPLEREADER_get_sample_color(filename))
     , _filename_without_path(wcsdup(SAMPLEREADER_get_sample_name(reader1)))
   {
+    //printf("     =========SAMPLE c/d: Alloced 1: %p\n", _reader_holding_permanent_samples);
+    
     R_ASSERT(THREADING_is_main_thread());
     
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
@@ -632,6 +635,7 @@ struct Sample{
     }
     
     SAMPLEREADER_delete(_reader_holding_permanent_samples);
+    //printf("      =========SAMPLE c/d: Deleted 2: %p\n", _reader_holding_permanent_samples);
     _reader_holding_permanent_samples = NULL;
     
     DISKPEAKS_remove(_peaks);
@@ -761,6 +765,7 @@ struct Sample{
       radium::SampleReader *samplereader = SAMPLEREADER_create(_filename); // light operation
       if (samplereader==NULL)
         return;
+      //printf("     =========SAMPLE c/d: Alloced 2: %p\n", samplereader);
       allocated_reader = new MyReader(samplereader); // light operation
     }
     
@@ -1372,7 +1377,9 @@ public:
           _samples.remove(sample);
         }PLAYER_unlock();
         assert_samples();
-        //printf("    REMOVING Sample. Reader: %p\n", sample->_reader_holding_permanent_samples);        
+#if !defined(RELEASE)
+        printf("    REMOVING Sample \"%S\". Reader: %p\n", sample->_filename_without_path, sample->_reader_holding_permanent_samples);
+#endif
         delete sample;
         set_num_visible_outputs(plugin);
 
@@ -1428,14 +1435,19 @@ static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqB
     return -1;
   }
 
+  //printf("     =========SAMPLE c/d: Alloced 3: %p\n", reader1);
+  
   radium::SampleReader *reader2 = SAMPLEREADER_create(filename);
 
   if(reader2==NULL){
     //abort();
     SAMPLEREADER_delete(reader1);
+    //printf("      =========SAMPLE c/d: Deleted 3: %p\n", reader1);
     return -1;
   }
 
+  //printf("     =========SAMPLE c/d: Alloced 4: %p\n", reader2);
+  
   Sample *sample = new Sample(filename, reader1, reader2, seqblock, type);
 
   switch(type){ 
@@ -1681,7 +1693,11 @@ void SEQTRACKPLUGIN_request_remove_sample(SoundPlugin *plugin, int64_t id, enum 
     return;
   }
     
-  if (type != Seqblock_Type::REGULAR){
+  if (type == Seqblock_Type::REGULAR){
+
+    ATOMIC_SET(sample->_state, Sample::State::RT_REQUEST_DELETION);
+ 
+  } else {
 
     if(type==Seqblock_Type::GFX)
       data->_gfx_samples.remove(sample);
@@ -1690,10 +1706,6 @@ void SEQTRACKPLUGIN_request_remove_sample(SoundPlugin *plugin, int64_t id, enum 
     
     ATOMIC_SET_RELAXED(sample->_state, Sample::State::READY_FOR_DELETION);
     delete sample;
-
-  } else {
-
-    ATOMIC_SET(sample->_state, Sample::State::RT_REQUEST_DELETION);
 
   }
 }
