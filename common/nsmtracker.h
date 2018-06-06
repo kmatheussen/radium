@@ -2612,7 +2612,8 @@ struct SeqBlock{
   int64_t sample_id; // Has valid value if block==NULL.
   const wchar_t *sample_filename;
   const wchar_t *sample_filename_without_path;
-
+  const wchar_t *name; // Only used when block==NULL. If null, sample_filename is displayed.
+  
   bool *track_is_disabled; // Is NULL in the seqblock used when playing block.
   
   

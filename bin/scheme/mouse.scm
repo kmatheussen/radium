@@ -6396,6 +6396,7 @@
                                              (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
                                                (split-sample-seqblock pos seqtracknum seqblocknum))))
                                           
+                                          
                                           "--------------------"
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
@@ -6532,7 +6533,16 @@
                                                 (lambda ()
                                                   (<ra> :select-block blocknum)
                                                   (<ra> :config-block)))
-                                          
+
+                                          (list
+                                           "Rename"
+                                           (lambda ()
+                                             (let* ((old-name (<ra> :get-seqblock-name seqblocknum seqtracknum))
+                                                    (new-name (<ra> :request-string "New name:" #t old-name)))
+                                               (when (and (not (string=? new-name ""))
+                                                          (not (string=? new-name old-name)))
+                                                 (<ra> :set-seqblock-name new-name seqblocknum seqtracknum)))))
+
                                           (list "Configure color"
                                                 :enabled seqblock-info
                                                 (lambda ()

@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/time_proc.h"
 #include "../common/undo_sequencer_proc.h"
 #include "../common/undo_song_tempo_automation_proc.h"
+#include "../common/undo_blocks_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
 #include "../common/settings_proc.h"
@@ -1660,6 +1661,42 @@ dyn_t getBlockUsageInSequencer(void){
     DYNVEC_push_back(&dynvec, DYN_create_int(ret[i]));
 
   return DYN_create_array(dynvec);
+}
+
+void setSeqblockName(const_char* new_name, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+  if (seqblock==NULL)
+    return;
+
+  if (seqblock->block==NULL) {
+    
+    undoSequencer();
+    seqblock->name = STRING_create(new_name);
+    
+  } else {
+
+    ADD_UNDO(Block_CurrPos(root->song->tracker_windows));
+    seqblock->block->name = talloc_strdup(new_name);
+
+  }
+
+  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST);
+}
+  
+const_char* getSeqblockName(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return "";
+
+  if (seqblock->name != NULL)
+    return STRING_get_chars(seqblock->name);
+  
+  else if (seqblock->block==NULL)
+    return STRING_get_chars(get_seqblock_sample_name(seqtrack, seqblock, false));
+  
+  else
+    return talloc_strdup(seqblock->block->name);
 }
 
 int getNumSeqblocks(int seqtracknum){
