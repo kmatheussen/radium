@@ -565,8 +565,6 @@ static bool insert_recorded_midi_events(bool is_gfx){
         struct Tracks *track = wtrack->track;
 
         const uint32_t msg = midi_event.msg;
-        const int cc0 = MIDI_msg_byte1_remove_channel(msg);
-        const int data1 = MIDI_msg_byte2(msg);
         const STime time = midi_event.timepos.blocktime;
 
 
@@ -578,7 +576,7 @@ static bool insert_recorded_midi_events(bool is_gfx){
 
         // Do things that should only be done once for each track.
         // 
-        if (!is_gfx || cc0==0x90) {
+        if (!is_gfx || msg_is_note_on(msg)){
 
           if (track_set.contains(track)==false){
             
@@ -619,15 +617,14 @@ static bool insert_recorded_midi_events(bool is_gfx){
           
         }
 
-
         // Add Data
         //
-        if (!is_gfx && (cc0==0x80 || (cc0==0x90 && data1==0))) {
+        if (!is_gfx && msg_is_note_off(msg)){
 
           add_recorded_stp(block, track, time);
           ret = true;
 
-        } else if (cc0==0x90) {
+        } else if (msg_is_note_on(msg)) {
 
           add_recorded_note(midi_events, wblock, block, wtrack, i, time, msg, is_gfx);
           ret = true;
