@@ -1,3 +1,87 @@
+Changes 5.7.0 -> 5.7.2:
+* Sequencer: Option to rename seqblocks. For audio files, this will edit
+  what is displayed in the sequencer and playlist (the file itself is not
+  renamed). For editor blocks, this will edit the block name.
+* Blocklist: Let Shift + right mouse button remove the audio file from
+  the song and the playlist when clicking a sound file, not delete a block.
+* Blocklist: Don't add blocks or samples when right-double clicking.
+* Playlist: Don't remove seqblocks when right-double clicking.
+* Sampler instrument: Make A/B and undo/redo more efficient.
+* Sampler instrument: Sound is not slightly paused anymore when changing
+  A/B, unless the A/B change also changes sample.
+* Fluidsynth instrument: Make A/B and undo/redo more efficient.
+* Instruments and Mixer: Fix a really bad bug in the A/B system. Values
+  loaded from A/B wasn"t stored on disk and in undo/redo. Not sure when
+  this bug was introduced, but it was visible for the users since the
+  effect sliders weren't positioned to the new values.
+* VST/AU: Make undo/redo more efficient.
+* VST/AU: Make changing effect values more efficient.
+* Mixer: Make A/B more efficient.
+* Mixer: Include plugin state information in A/B data.
+* VST/AU: Add A/B buttons to the header of the native GUIs.
+* Mixer: Show error message if trying to apply an A/B value loaded from
+  a song which used a version of the instrument that had different
+  number of effects than the saved state.
+* Instruments: Make changing A/B more efficient.
+* VST/AU: Fix GUI position when opened in Linux.
+* Mixer: Fix reset A/B for "g" and "h". Earlier, resetting "g" actually
+  resetted "f", and resetting "h" actually resetted "g".
+* Sequencer: Increase calculated song duration if loop end or punch end
+  is placed after the end of the last seqblock.
+* Sequencer: Fix blocklist not being updated when inserting new track.
+* Sequencer: Disable the popup menu options "Replace with existing block"
+  and "Replace with new block" when right-clicking in an audio file
+  seqtrack.
+* Sequencer: Punch in/out when recording. Enable by right clicking in the
+  timeline and select "Punch in/out" in the popup menu.
+* New song: Move start/end looping position into visible area.
+* Sequencer: Slightly improve the timeline popup menu
+* GUI: Add support for radio buttons in the pop menus.
+* Sequencer: Ask whether to delete unused recording takes when loading
+  song or quitting program.
+* Sequencer: When saving song, mark used recording takes as not being
+  auto-deleted.
+* Sequencer: Make it configurable whether to auto-delete recording takes
+  when they become unavailable.
+* GUI: Always cancel operations when pressing the Escape key in the line
+  requesters. Don't just treat the escape key the same way as the return key.
+* Quantization GUI: Fix name of the "Quantitize Range" button.
+* Audio recording: Automatically delete takes when undoing (redo still
+  works).
+* Audio recording: Never reset the "take" counter when autocreating
+  filenames.
+* Sequencer: Don't wrap lines when printing seqblock header names. I.e. if
+  there is not space for all of "Name of seqblock" in the seqblock header,
+  don't just select between "Name of" and "Name", but print as many
+  characters as there is space for.
+* Undo: Fix current redo data being deleted when right-clicking a sound
+  object in the modular mixer and possibly other situations.
+* Sequencer: Program requires a session to record files. If not, we
+  would have to move the recorded audio files when user saves song, which
+  is a bit messy.
+* Sequencer: One button for each function in the bottom of the seqtrack
+  headers instead of popup menus.
+* Audio recording: Fix rare crash when stopping to record audio file.
+* Audio recording: GUI to configure recording options. Right-click
+  the "R" button.
+* Sequencer: Don't show assertion reporter if soundfile was deleted
+  while being used. Instead, just show a normal window informing that
+  the window could not be found anymore.
+* GUI: Fix clicking checkbox not always responding when clicking too
+  fast.
+* Audio: Increase number of system input ports from 2 to 8.
+* Autobackup: Don't make backup when recording audio files
+* API: setSeqtrackUseCustomRecordingConfig,
+  getSeqtrackUseCustomRecordingConfig, setSeqtrackRecordFromSystemInput,
+  getSeqtrackRecordFromSystemInput, setSeqtrackRecordingMatrix,
+  getSeqtrackRecordingMatrix, resetSeqtrackRecordingOptions,
+  doAutoDeleteSequencerRecordings, setDoAutoDeleteSequencerRecordings,
+  unusedRecordingTakesTreatment, setUnusedRecordingTakes,
+  setSeqpunching, isSeqpunching, setSeqpunchingStart,
+  getSeqpunchingStart, setSeqpunchingEnd, getSeqpunchingEnd,
+  setSeqblockName, getSeqblockName.
+
+
 Changes 5.6.9 -> 5.7.0:
 * Sampler: Fix crash when sampler instrument is deleted.
 * Internal: Some improvements to the memory validation system
