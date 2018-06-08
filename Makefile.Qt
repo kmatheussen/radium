@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 5.7.0
+VERSION = 5.7.2
 
 
 #----------------USER SETTINGS-------------------------------
@@ -439,10 +439,13 @@ very_clean: clean
 	cd pluginhost/Builds/Linux && $(MAKE) clean && cd ../../../
 	cd bin/packages && ./buildclean.sh
 
-clean:
+clean: clean_pluginhost
 	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt* $(P)Qt_preferences.h $(P)Qt_vst_paths_widget.h $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h $(CD)visual_op_queue_proc.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe bin/radium_plugin_scanner bin/radium_plugin_scanner.exe bin/addr2line.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp libsndfile_built libsndfile_objectfiles/* bin/packages/sndlib/*.o
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
 	cd bin/packages/sndlib && $(MAKE) clean && rm -f libsndfile.a libsndfile.so
+
+clean_pluginhost:
+	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
 
 dependencies_ok: check_dependencies.sh #Makefile
 	bash check_dependencies.sh `./find_python_path.sh` $(MOC) $(UIC) test_build
