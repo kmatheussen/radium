@@ -875,6 +875,8 @@ struct ScopedExec{
 
 // Happens sometimes that there are more than two menues visible at the same time. (probably got something to do with non-async menues)
 static inline void closePopup(void){
+  R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
+
   if (!g_curr_popup_qmenu.isNull()){
     g_curr_popup_qmenu->hide(); // safer.
   //g_curr_popup_qmenu->deleteLater(); // We might be called from the "triggered" callback of the menu.

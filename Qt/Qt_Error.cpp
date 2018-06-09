@@ -174,6 +174,9 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
 
   }
 
+  if (THREADING_is_main_thread())
+    closePopup();
+  
   QProcess *myProcess = new QProcess();
   myProcess->connect(myProcess, SIGNAL(finished(int)), myProcess, SLOT(deleteLater()));
   
