@@ -263,8 +263,6 @@ private:
           abort();
         if (snd_seq_nonblock (handle, SND_SEQ_NONBLOCK) != 0)
           abort();
-        fprintf(stderr,  "SO FAR\n");
-        getchar();
         snd_seq_set_client_name (handle, JUCE_ALSA_MIDI_NAME);
         clientId = snd_seq_client_id(handle);
 
