@@ -1,34 +1,27 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_LISTENERLIST_H_INCLUDED
-#define JUCE_LISTENERLIST_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -46,12 +39,12 @@
         void myCallbackMethod (int foo, bool bar);
     };
 
-    ListenerList <MyListenerType> listeners;
+    ListenerList<MyListenerType> listeners;
     listeners.add (someCallbackObjects...);
 
     // This will invoke myCallbackMethod (1234, true) on each of the objects
     // in the list...
-    listeners.call (&MyListenerType::myCallbackMethod, 1234, true);
+    listeners.call ([] (MyListenerType& l) { l.myCallbackMethod (1234, true); });
     @endcode
 
     If you add or remove listeners from the list during one of the callbacks - i.e. while
@@ -67,33 +60,20 @@
     operation. For an example of a bail-out checker, see the Component::BailOutChecker class,
     which can be used to check when a Component has been deleted. See also
     ListenerList::DummyBailOutChecker, which is a dummy checker that always returns false.
+
+    @tags{Core}
 */
 template <class ListenerClass,
-          class ArrayType = Array<ListenerClass*> >
+          class ArrayType = Array<ListenerClass*>>
 class ListenerList
 {
-    // Horrible macros required to support VC7..
-    #ifndef DOXYGEN
-     #if JUCE_VC8_OR_EARLIER
-       #define LL_TEMPLATE(a)   typename P##a, typename Q##a
-       #define LL_PARAM(a)      Q##a& param##a
-     #else
-       #define LL_TEMPLATE(a)   typename P##a
-       #define LL_PARAM(a)      PARAMETER_TYPE(P##a) param##a
-     #endif
-    #endif
-
 public:
     //==============================================================================
     /** Creates an empty list. */
-    ListenerList()
-    {
-    }
+    ListenerList() {}
 
     /** Destructor. */
-    ~ListenerList()
-    {
-    }
+    ~ListenerList() {}
 
     //==============================================================================
     /** Adds a listener to the list.
@@ -101,192 +81,97 @@ public:
         this method has no effect.
         @see remove
     */
-    void add (ListenerClass* const listenerToAdd)
+    void add (ListenerClass* listenerToAdd)
     {
-        // Listeners can't be null pointers!
-        jassert (listenerToAdd != nullptr);
-
         if (listenerToAdd != nullptr)
             listeners.addIfNotAlreadyThere (listenerToAdd);
+        else
+            jassertfalse;  // Listeners can't be null pointers!
     }
 
     /** Removes a listener from the list.
         If the listener wasn't in the list, this has no effect.
     */
-    void remove (ListenerClass* const listenerToRemove)
+    void remove (ListenerClass* listenerToRemove)
     {
-        // Listeners can't be null pointers!
-        jassert (listenerToRemove != nullptr);
-
+        jassert (listenerToRemove != nullptr); // Listeners can't be null pointers!
         listeners.removeFirstMatchingValue (listenerToRemove);
     }
 
     /** Returns the number of registered listeners. */
-    int size() const noexcept
-    {
-        return listeners.size();
-    }
+    int size() const noexcept                                { return listeners.size(); }
 
     /** Returns true if any listeners are registered. */
-    bool isEmpty() const noexcept
-    {
-        return listeners.size() == 0;
-    }
+    bool isEmpty() const noexcept                            { return listeners.isEmpty(); }
 
     /** Clears the list. */
-    void clear()
-    {
-        listeners.clear();
-    }
+    void clear()                                             { listeners.clear(); }
 
     /** Returns true if the specified listener has been added to the list. */
-    bool contains (ListenerClass* const listener) const noexcept
-    {
-        return listeners.contains (listener);
-    }
+    bool contains (ListenerClass* listener) const noexcept   { return listeners.contains (listener); }
+
+    /** Returns the raw array of listeners. */
+    const ArrayType& getListeners() const noexcept           { return listeners; }
 
     //==============================================================================
-    /** Calls a member function on each listener in the list, with no parameters. */
-    void call (void (ListenerClass::*callbackFunction) ())
+    /** Calls a member function on each listener in the list, with multiple parameters. */
+    template <typename Callback>
+    void call (Callback&& callback)
     {
-        callChecked (static_cast<const DummyBailOutChecker&> (DummyBailOutChecker()), callbackFunction);
-    }
+        typename ArrayType::ScopedLockType lock (listeners.getLock());
 
-    /** Calls a member function on each listener in the list, with no parameters and a bail-out-checker.
-        See the class description for info about writing a bail-out checker. */
-    template <class BailOutCheckerType>
-    void callChecked (const BailOutCheckerType& bailOutChecker,
-                      void (ListenerClass::*callbackFunction) ())
-    {
-        for (Iterator<BailOutCheckerType, ThisType> iter (*this); iter.next (bailOutChecker);)
-            (iter.getListener()->*callbackFunction) ();
-    }
-
-    //==============================================================================
-    /** Calls a member function on each listener in the list, with 1 parameter. */
-    template <LL_TEMPLATE(1)>
-    void call (void (ListenerClass::*callbackFunction) (P1), LL_PARAM(1))
-    {
         for (Iterator<DummyBailOutChecker, ThisType> iter (*this); iter.next();)
-            (iter.getListener()->*callbackFunction) (param1);
+            callback (*iter.getListener());
     }
 
-    /** Calls a member function on each listener in the list, with one parameter and a bail-out-checker.
-        See the class description for info about writing a bail-out checker. */
-    template <class BailOutCheckerType, LL_TEMPLATE(1)>
-    void callChecked (const BailOutCheckerType& bailOutChecker,
-                      void (ListenerClass::*callbackFunction) (P1),
-                      LL_PARAM(1))
+    /** Calls a member function with 1 parameter, on all but the specified listener in the list.
+        This can be useful if the caller is also a listener and needs to exclude itself.
+    */
+    template <typename Callback>
+    void callExcluding (ListenerClass* listenerToExclude, Callback&& callback)
     {
-        for (Iterator<BailOutCheckerType, ThisType> iter (*this); iter.next (bailOutChecker);)
-            (iter.getListener()->*callbackFunction) (param1);
-    }
+        typename ArrayType::ScopedLockType lock (listeners.getLock());
 
-    //==============================================================================
-    /** Calls a member function on each listener in the list, with 2 parameters. */
-    template <LL_TEMPLATE(1), LL_TEMPLATE(2)>
-    void call (void (ListenerClass::*callbackFunction) (P1, P2),
-               LL_PARAM(1), LL_PARAM(2))
-    {
         for (Iterator<DummyBailOutChecker, ThisType> iter (*this); iter.next();)
-            (iter.getListener()->*callbackFunction) (param1, param2);
+        {
+            auto* l = iter.getListener();
+
+            if (l != listenerToExclude)
+                callback (*l);
+        }
     }
 
-    /** Calls a member function on each listener in the list, with 2 parameters and a bail-out-checker.
-        See the class description for info about writing a bail-out checker. */
-    template <class BailOutCheckerType, LL_TEMPLATE(1), LL_TEMPLATE(2)>
-    void callChecked (const BailOutCheckerType& bailOutChecker,
-                      void (ListenerClass::*callbackFunction) (P1, P2),
-                      LL_PARAM(1), LL_PARAM(2))
+    /** Calls a member function on each listener in the list, with 1 parameter and a bail-out-checker.
+        See the class description for info about writing a bail-out checker.
+    */
+    template <typename Callback, typename BailOutCheckerType>
+    void callChecked (const BailOutCheckerType& bailOutChecker, Callback&& callback)
     {
+        typename ArrayType::ScopedLockType lock (listeners.getLock());
+
         for (Iterator<BailOutCheckerType, ThisType> iter (*this); iter.next (bailOutChecker);)
-            (iter.getListener()->*callbackFunction) (param1, param2);
+            callback (*iter.getListener());
     }
 
-    //==============================================================================
-    /** Calls a member function on each listener in the list, with 3 parameters. */
-    template <LL_TEMPLATE(1), LL_TEMPLATE(2), LL_TEMPLATE(3)>
-    void call (void (ListenerClass::*callbackFunction) (P1, P2, P3),
-               LL_PARAM(1), LL_PARAM(2), LL_PARAM(3))
+    /** Calls a member function, with 1 parameter, on all but the specified listener in the list
+        with a bail-out-checker. This can be useful if the caller is also a listener and needs to
+        exclude itself. See the class description for info about writing a bail-out checker.
+    */
+    template <typename Callback, typename BailOutCheckerType>
+    void callCheckedExcluding (ListenerClass* listenerToExclude,
+                               const BailOutCheckerType& bailOutChecker,
+                               Callback&& callback)
     {
-        for (Iterator<DummyBailOutChecker, ThisType> iter (*this); iter.next();)
-            (iter.getListener()->*callbackFunction) (param1, param2, param3);
-    }
+        typename ArrayType::ScopedLockType lock (listeners.getLock());
 
-    /** Calls a member function on each listener in the list, with 3 parameters and a bail-out-checker.
-        See the class description for info about writing a bail-out checker. */
-    template <class BailOutCheckerType, LL_TEMPLATE(1), LL_TEMPLATE(2), LL_TEMPLATE(3)>
-    void callChecked (const BailOutCheckerType& bailOutChecker,
-                      void (ListenerClass::*callbackFunction) (P1, P2, P3),
-                      LL_PARAM(1), LL_PARAM(2), LL_PARAM(3))
-    {
         for (Iterator<BailOutCheckerType, ThisType> iter (*this); iter.next (bailOutChecker);)
-            (iter.getListener()->*callbackFunction) (param1, param2, param3);
-    }
+        {
+            auto* l = iter.getListener();
 
-    //==============================================================================
-    /** Calls a member function on each listener in the list, with 4 parameters. */
-    template <LL_TEMPLATE(1), LL_TEMPLATE(2), LL_TEMPLATE(3), LL_TEMPLATE(4)>
-    void call (void (ListenerClass::*callbackFunction) (P1, P2, P3, P4),
-               LL_PARAM(1), LL_PARAM(2), LL_PARAM(3), LL_PARAM(4))
-    {
-        for (Iterator<DummyBailOutChecker, ThisType> iter (*this); iter.next();)
-            (iter.getListener()->*callbackFunction) (param1, param2, param3, param4);
+            if (l != listenerToExclude)
+                callback (*l);
+        }
     }
-
-    /** Calls a member function on each listener in the list, with 4 parameters and a bail-out-checker.
-        See the class description for info about writing a bail-out checker. */
-    template <class BailOutCheckerType, LL_TEMPLATE(1), LL_TEMPLATE(2), LL_TEMPLATE(3), LL_TEMPLATE(4)>
-    void callChecked (const BailOutCheckerType& bailOutChecker,
-                      void (ListenerClass::*callbackFunction) (P1, P2, P3, P4),
-                      LL_PARAM(1), LL_PARAM(2), LL_PARAM(3), LL_PARAM(4))
-    {
-        for (Iterator<BailOutCheckerType, ThisType> iter (*this); iter.next (bailOutChecker);)
-            (iter.getListener()->*callbackFunction) (param1, param2, param3, param4);
-    }
-
-    //==============================================================================
-    /** Calls a member function on each listener in the list, with 5 parameters. */
-    template <LL_TEMPLATE(1), LL_TEMPLATE(2), LL_TEMPLATE(3), LL_TEMPLATE(4), LL_TEMPLATE(5)>
-    void call (void (ListenerClass::*callbackFunction) (P1, P2, P3, P4, P5),
-               LL_PARAM(1), LL_PARAM(2), LL_PARAM(3), LL_PARAM(4), LL_PARAM(5))
-    {
-        for (Iterator<DummyBailOutChecker, ThisType> iter (*this); iter.next();)
-            (iter.getListener()->*callbackFunction) (param1, param2, param3, param4, param5);
-    }
-
-    /** Calls a member function on each listener in the list, with 5 parameters and a bail-out-checker.
-        See the class description for info about writing a bail-out checker. */
-    template <class BailOutCheckerType, LL_TEMPLATE(1), LL_TEMPLATE(2), LL_TEMPLATE(3), LL_TEMPLATE(4), LL_TEMPLATE(5)>
-    void callChecked (const BailOutCheckerType& bailOutChecker,
-                      void (ListenerClass::*callbackFunction) (P1, P2, P3, P4, P5),
-                      LL_PARAM(1), LL_PARAM(2), LL_PARAM(3), LL_PARAM(4), LL_PARAM(5))
-    {
-        for (Iterator<BailOutCheckerType, ThisType> iter (*this); iter.next (bailOutChecker);)
-            (iter.getListener()->*callbackFunction) (param1, param2, param3, param4, param5);
-    }
-
-    //==============================================================================
-    /** Calls a member function on each listener in the list, with 5 parameters. */
-    template <LL_TEMPLATE(1), LL_TEMPLATE(2), LL_TEMPLATE(3), LL_TEMPLATE(4), LL_TEMPLATE(5), LL_TEMPLATE(6)>
-    void call (void (ListenerClass::*callbackFunction) (P1, P2, P3, P4, P5, P6),
-               LL_PARAM(1), LL_PARAM(2), LL_PARAM(3), LL_PARAM(4), LL_PARAM(5), LL_PARAM(6))
-    {
-        for (Iterator<DummyBailOutChecker, ThisType> iter (*this); iter.next();)
-            (iter.getListener()->*callbackFunction) (param1, param2, param3, param4, param5, param6);
-    }
-
-    /** Calls a member function on each listener in the list, with 5 parameters and a bail-out-checker.
-        See the class description for info about writing a bail-out checker. */
-    template <class BailOutCheckerType, LL_TEMPLATE(1), LL_TEMPLATE(2), LL_TEMPLATE(3), LL_TEMPLATE(4), LL_TEMPLATE(5), LL_TEMPLATE(6)>
-    void callChecked (const BailOutCheckerType& bailOutChecker,
-                      void (ListenerClass::*callbackFunction) (P1, P2, P3, P4, P5, P6),
-                      LL_PARAM(1), LL_PARAM(2), LL_PARAM(3), LL_PARAM(4), LL_PARAM(5), LL_PARAM(6))
-    {
-        for (Iterator<BailOutCheckerType, ThisType> iter (*this); iter.next (bailOutChecker);)
-            (iter.getListener()->*callbackFunction) (param1, param2, param3, param4, param5, param6);
-    }
-
 
     //==============================================================================
     /** A dummy bail-out checker that always returns false.
@@ -297,13 +182,14 @@ public:
         bool shouldBailOut() const noexcept                 { return false; }
     };
 
+    using ThisType      = ListenerList<ListenerClass, ArrayType>;
+    using ListenerType  = ListenerClass;
+
     //==============================================================================
     /** Iterates the listeners in a ListenerList. */
     template <class BailOutCheckerType, class ListType>
-    class Iterator
+    struct Iterator
     {
-    public:
-        //==============================================================================
         Iterator (const ListType& listToIterate) noexcept
             : list (listToIterate), index (listToIterate.size())
         {}
@@ -316,7 +202,7 @@ public:
             if (index <= 0)
                 return false;
 
-            const int listSize = list.size();
+            auto listSize = list.size();
 
             if (--index < listSize)
                 return true;
@@ -343,20 +229,85 @@ public:
         JUCE_DECLARE_NON_COPYABLE (Iterator)
     };
 
-    typedef ListenerList<ListenerClass, ArrayType> ThisType;
-    typedef ListenerClass ListenerType;
+    //==============================================================================
+   #ifndef DOXYGEN
+    // There are now lambda-based call functions that can be used to replace these old method-based versions.
+    // We'll eventually deprecate these old ones, so please begin moving your code to use lambdas!
+    void call (void (ListenerClass::*callbackFunction) ())
+    {
+        call ([=] (ListenerClass& l) { (l.*callbackFunction)(); });
+    }
 
-    const ArrayType& getListeners() const noexcept          { return listeners; }
+    void callExcluding (ListenerClass* listenerToExclude, void (ListenerClass::*callbackFunction) ())
+    {
+        callExcluding (listenerToExclude, [=] (ListenerClass& l) { (l.*callbackFunction)(); });
+    }
+
+    template <class BailOutCheckerType>
+    void callChecked (const BailOutCheckerType& bailOutChecker, void (ListenerClass::*callbackFunction) ())
+    {
+        callChecked (bailOutChecker, [=] (ListenerClass& l) { (l.*callbackFunction)(); });
+    }
+
+    template <class BailOutCheckerType>
+    void callCheckedExcluding (ListenerClass* listenerToExclude,
+                               const BailOutCheckerType& bailOutChecker,
+                               void (ListenerClass::*callbackFunction) ())
+    {
+        callCheckedExcluding (listenerToExclude, bailOutChecker, [=] (ListenerClass& l) { (l.*callbackFunction)(); });
+    }
+
+    template <typename... MethodArgs, typename... Args>
+    void call (void (ListenerClass::*callbackFunction) (MethodArgs...), Args&&... args)
+    {
+        typename ArrayType::ScopedLockType lock (listeners.getLock());
+
+        for (Iterator<DummyBailOutChecker, ThisType> iter (*this); iter.next();)
+            (iter.getListener()->*callbackFunction) (static_cast<typename TypeHelpers::ParameterType<Args>::type> (args)...);
+    }
+
+    template <typename... MethodArgs, typename... Args>
+    void callExcluding (ListenerClass* listenerToExclude,
+                        void (ListenerClass::*callbackFunction) (MethodArgs...),
+                        Args&&... args)
+    {
+        typename ArrayType::ScopedLockType lock (listeners.getLock());
+
+        for (Iterator<DummyBailOutChecker, ThisType> iter (*this); iter.next();)
+            if (iter.getListener() != listenerToExclude)
+                (iter.getListener()->*callbackFunction) (static_cast<typename TypeHelpers::ParameterType<Args>::type> (args)...);
+    }
+
+    template <typename BailOutCheckerType, typename... MethodArgs, typename... Args>
+    void callChecked (const BailOutCheckerType& bailOutChecker,
+                      void (ListenerClass::*callbackFunction) (MethodArgs...),
+                      Args&&... args)
+    {
+        typename ArrayType::ScopedLockType lock (listeners.getLock());
+
+        for (Iterator<BailOutCheckerType, ThisType> iter (*this); iter.next (bailOutChecker);)
+            (iter.getListener()->*callbackFunction) (static_cast<typename TypeHelpers::ParameterType<Args>::type> (args)...);
+    }
+
+    template <typename BailOutCheckerType, typename... MethodArgs, typename... Args>
+    void callCheckedExcluding (ListenerClass* listenerToExclude,
+                               const BailOutCheckerType& bailOutChecker,
+                               void (ListenerClass::*callbackFunction) (MethodArgs...),
+                               Args&&... args)
+    {
+        typename ArrayType::ScopedLockType lock (listeners.getLock());
+
+        for (Iterator<BailOutCheckerType, ThisType> iter (*this); iter.next (bailOutChecker);)
+            if (iter.getListener() != listenerToExclude)
+                (iter.getListener()->*callbackFunction) (static_cast<typename TypeHelpers::ParameterType<Args>::type> (args)...);
+    }
+   #endif
 
 private:
     //==============================================================================
     ArrayType listeners;
 
     JUCE_DECLARE_NON_COPYABLE (ListenerList)
-
-    #undef LL_TEMPLATE
-    #undef LL_PARAM
 };
 
-
-#endif   // JUCE_LISTENERLIST_H_INCLUDED
+} // namespace juce

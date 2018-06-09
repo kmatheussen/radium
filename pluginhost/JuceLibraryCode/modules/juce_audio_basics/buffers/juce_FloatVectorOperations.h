@@ -2,34 +2,42 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-   ------------------------------------------------------------------------------
-
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_FLOATVECTOROPERATIONS_H_INCLUDED
-#define JUCE_FLOATVECTOROPERATIONS_H_INCLUDED
+namespace juce
+{
 
+#ifndef JUCE_SNAP_TO_ZERO
+ #if JUCE_INTEL
+  #define JUCE_SNAP_TO_ZERO(n)    if (! (n < -1.0e-8f || n > 1.0e-8f)) n = 0;
+ #else
+  #define JUCE_SNAP_TO_ZERO(n)    ignoreUnused (n)
+ #endif
+#endif
+class ScopedNoDenormals;
 
 //==============================================================================
 /**
     A collection of simple vector operations on arrays of floats, accelerated with
     SIMD instructions where possible.
+
+    @tags{Audio}
 */
 class JUCE_API  FloatVectorOperations
 {
@@ -107,6 +115,18 @@ public:
     /** Multiplies each source1 value by the corresponding source2 value, then adds it to the destination value. */
     static void JUCE_CALLTYPE addWithMultiply (double* dest, const double* src1, const double* src2, int num) noexcept;
 
+    /** Multiplies each source value by the given multiplier, then subtracts it to the destination value. */
+    static void JUCE_CALLTYPE subtractWithMultiply (float* dest, const float* src, float multiplier, int numValues) noexcept;
+
+    /** Multiplies each source value by the given multiplier, then subtracts it to the destination value. */
+    static void JUCE_CALLTYPE subtractWithMultiply (double* dest, const double* src, double multiplier, int numValues) noexcept;
+
+    /** Multiplies each source1 value by the corresponding source2 value, then subtracts it to the destination value. */
+    static void JUCE_CALLTYPE subtractWithMultiply (float* dest, const float* src1, const float* src2, int num) noexcept;
+
+    /** Multiplies each source1 value by the corresponding source2 value, then subtracts it to the destination value. */
+    static void JUCE_CALLTYPE subtractWithMultiply (double* dest, const double* src1, const double* src2, int num) noexcept;
+
     /** Multiplies the destination values by the source values. */
     static void JUCE_CALLTYPE multiply (float* dest, const float* src, int numValues) noexcept;
 
@@ -176,16 +196,16 @@ public:
     /** Each element of dest is calculated by hard clipping the corresponding src element so that it is in the range specified by the arguments low and high. */
     static void JUCE_CALLTYPE clip (double* dest, const double* src, double low, double high, int num) noexcept;
 
-    /** Finds the miniumum and maximum values in the given array. */
+    /** Finds the minimum and maximum values in the given array. */
     static Range<float> JUCE_CALLTYPE findMinAndMax (const float* src, int numValues) noexcept;
 
-    /** Finds the miniumum and maximum values in the given array. */
+    /** Finds the minimum and maximum values in the given array. */
     static Range<double> JUCE_CALLTYPE findMinAndMax (const double* src, int numValues) noexcept;
 
-    /** Finds the miniumum value in the given array. */
+    /** Finds the minimum value in the given array. */
     static float JUCE_CALLTYPE findMinimum (const float* src, int numValues) noexcept;
 
-    /** Finds the miniumum value in the given array. */
+    /** Finds the minimum value in the given array. */
     static double JUCE_CALLTYPE findMinimum (const double* src, int numValues) noexcept;
 
     /** Finds the maximum value in the given array. */
@@ -194,17 +214,44 @@ public:
     /** Finds the maximum value in the given array. */
     static double JUCE_CALLTYPE findMaximum (const double* src, int numValues) noexcept;
 
-    /** On Intel CPUs, this method enables or disables the SSE flush-to-zero mode.
-        Effectively, this is a wrapper around a call to _MM_SET_FLUSH_ZERO_MODE
-    */
-    static void JUCE_CALLTYPE enableFlushToZeroMode (bool shouldEnable);// noexcept;
+    /** This method enables or disables the SSE/NEON flush-to-zero mode. */
+    static void JUCE_CALLTYPE enableFlushToZeroMode (bool shouldEnable) noexcept;
 
     /** On Intel CPUs, this method enables the SSE flush-to-zero and denormalised-are-zero modes.
-        This effectively sets the DAZ and FZ bits of the MXCSR register. It's a convenient thing to
-        call before audio processing code where you really want to avoid denormalisation performance hits.
+        This effectively sets the DAZ and FZ bits of the MXCSR register. On arm CPUs this will
+        enable flush to zero mode.
+        It's a convenient thing to call before audio processing code where you really want to
+        avoid denormalisation performance hits.
     */
-    static void JUCE_CALLTYPE disableDenormalisedNumberSupport() ; // noexcept;
+    static void JUCE_CALLTYPE disableDenormalisedNumberSupport (bool shouldDisable = true) noexcept;
+
+    /** This method returns true if denormals are currently disabled. */
+    static bool JUCE_CALLTYPE areDenormalsDisabled() noexcept;
+
+private:
+    friend ScopedNoDenormals;
+
+    static intptr_t JUCE_CALLTYPE getFpStatusRegister() noexcept;
+    static void JUCE_CALLTYPE setFpStatusRegister (intptr_t) noexcept;
 };
 
+//==============================================================================
+/**
+     Helper class providing an RAII-based mechanism for temporarily disabling
+     denormals on your CPU.
 
-#endif   // JUCE_FLOATVECTOROPERATIONS_H_INCLUDED
+    @tags{Audio}
+*/
+class ScopedNoDenormals
+{
+public:
+    ScopedNoDenormals() noexcept;
+    ~ScopedNoDenormals() noexcept;
+
+private:
+  #if JUCE_USE_SSE_INTRINSICS || (JUCE_USE_ARM_NEON || defined (__arm64__) || defined (__aarch64__))
+    intptr_t fpsr;
+  #endif
+};
+
+} // namespace juce

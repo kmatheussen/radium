@@ -2,25 +2,26 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-   ------------------------------------------------------------------------------
-
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
+
+namespace juce
+{
 
 #define JNI_CLASS_MEMBERS(METHOD, STATICMETHOD, FIELD, STATICFIELD) \
  METHOD (getJuceAndroidMidiInputDevices, "getJuceAndroidMidiInputDevices", "()[Ljava/lang/String;") \
@@ -90,10 +91,10 @@ public:
         jassert (byteArray != nullptr);
         jbyte* data = getEnv()->GetByteArrayElements (byteArray, nullptr);
 
-        HeapBlock<uint8> buffer (len);
-        std::memcpy (buffer.getData(), data + offset, len);
+        HeapBlock<uint8> buffer (static_cast<size_t> (len));
+        std::memcpy (buffer.get(), data + offset, static_cast<size_t> (len));
 
-        midiConcatenator.pushMidiData (buffer.getData(),
+        midiConcatenator.pushMidiData (buffer.get(),
                                        len, static_cast<double> (timestamp) * 1.0e-9,
                                        juceMidiInput, *callback);
 
@@ -103,8 +104,8 @@ public:
 private:
     MidiInput* juceMidiInput;
     MidiInputCallback* callback;
-    GlobalRef javaMidiDevice;
     MidiDataConcatenator midiConcatenator;
+    GlobalRef javaMidiDevice;
 };
 
 //==============================================================================
@@ -138,12 +139,12 @@ private:
 };
 
 JUCE_JNI_CALLBACK (JUCE_JOIN_MACRO (JUCE_ANDROID_ACTIVITY_CLASSNAME, _00024JuceMidiInputPort), handleReceive,
-                   void, (JNIEnv* env, jobject device, jlong host, jbyteArray byteArray,
+                   void, (JNIEnv* env, jobject, jlong host, jbyteArray byteArray,
                           jint offset, jint count, jlong timestamp))
 {
     // Java may create a Midi thread which JUCE doesn't know about and this callback may be
     // received on this thread. Java will have already created a JNI Env for this new thread,
-    // which we need to tell Juce about
+    // which we need to tell JUCE about
     setEnv (env);
 
     reinterpret_cast<AndroidMidiInput*> (host)->receive (byteArray, offset, count, timestamp);
@@ -166,7 +167,7 @@ public:
             return juceString (string);
         }
 
-        return String();
+        return {};
     }
 
     String getOutputPortNameForJuceIndex (int idx)
@@ -177,7 +178,7 @@ public:
             return juceString (string);
         }
 
-        return String();
+        return {};
     }
 
     StringArray getDevices (bool input)
@@ -194,14 +195,14 @@ public:
             return javaStringArrayToJuce (devices);
         }
 
-        return StringArray();
+        return {};
     }
 
     AndroidMidiInput* openMidiInputPortWithIndex (int idx, MidiInput* juceMidiInput, juce::MidiInputCallback* callback)
     {
         if (jobject dm = deviceManager.get())
         {
-            ScopedPointer<AndroidMidiInput> androidMidiInput (new AndroidMidiInput (juceMidiInput, idx, callback, dm));
+            std::unique_ptr<AndroidMidiInput> androidMidiInput (new AndroidMidiInput (juceMidiInput, idx, callback, dm));
 
             if (androidMidiInput->isOpen())
                 return androidMidiInput.release();
@@ -220,22 +221,6 @@ public:
     }
 
 private:
-    static StringArray javaStringArrayToJuce (jobjectArray jStrings)
-    {
-        StringArray retval;
-
-        JNIEnv* env = getEnv();
-        const int count = env->GetArrayLength (jStrings);
-
-        for (int i = 0; i < count; ++i)
-        {
-            LocalRef<jstring> string ((jstring) env->GetObjectArrayElement (jStrings, i));
-            retval.add (juceString (string));
-        }
-
-        return retval;
-    }
-
     GlobalRef deviceManager;
 };
 
@@ -296,7 +281,7 @@ void MidiOutput::sendMessageNow (const MidiMessage& message)
         jbyteArray content = messageContent.get();
 
         jbyte* rawBytes = env->GetByteArrayElements (content, nullptr);
-        std::memcpy (rawBytes, message.getRawData(), messageSize);
+        std::memcpy (rawBytes, message.getRawData(), static_cast<size_t> (messageSize));
         env->ReleaseByteArrayElements (content, rawBytes, 0);
 
         androidMidi->send (content, (jint) 0, (jint) messageSize);
@@ -326,7 +311,7 @@ MidiInput* MidiInput::openDevice (int index, juce::MidiInputCallback* callback)
 
     AndroidMidiDeviceManager manager;
 
-    String midiInputName = manager.getInputPortNameForJuceIndex (index);
+    String midiInputName (manager.getInputPortNameForJuceIndex (index));
 
     if (midiInputName.isEmpty())
     {
@@ -335,9 +320,9 @@ MidiInput* MidiInput::openDevice (int index, juce::MidiInputCallback* callback)
         return nullptr;
     }
 
-    ScopedPointer<MidiInput> midiInput (new MidiInput (midiInputName));
+    std::unique_ptr<MidiInput> midiInput (new MidiInput (midiInputName));
 
-    midiInput->internal = manager.openMidiInputPortWithIndex (index, midiInput, callback);
+    midiInput->internal = manager.openMidiInputPortWithIndex (index, midiInput.get(), callback);
 
     return midiInput->internal != nullptr ? midiInput.release()
                                           : nullptr;
@@ -359,3 +344,5 @@ MidiInput::~MidiInput()
 {
     delete reinterpret_cast<AndroidMidiInput*> (internal);
 }
+
+} // namespace juce

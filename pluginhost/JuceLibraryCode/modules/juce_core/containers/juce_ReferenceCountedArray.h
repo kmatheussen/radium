@@ -1,34 +1,27 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_REFERENCECOUNTEDARRAY_H_INCLUDED
-#define JUCE_REFERENCECOUNTEDARRAY_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -50,19 +43,20 @@
     TypeOfCriticalSectionToUse parameter, instead of the default DummyCriticalSection.
 
     @see Array, OwnedArray, StringArray
+
+    @tags{Core}
 */
 template <class ObjectClass, class TypeOfCriticalSectionToUse = DummyCriticalSection>
 class ReferenceCountedArray
 {
 public:
-    typedef ReferenceCountedObjectPtr<ObjectClass> ObjectClassPtr;
+    using ObjectClassPtr = ReferenceCountedObjectPtr<ObjectClass>;
 
     //==============================================================================
     /** Creates an empty array.
         @see ReferenceCountedObject, Array, OwnedArray
     */
     ReferenceCountedArray() noexcept
-        : numUsed (0)
     {
     }
 
@@ -70,13 +64,21 @@ public:
     ReferenceCountedArray (const ReferenceCountedArray& other) noexcept
     {
         const ScopedLockType lock (other.getLock());
-        numUsed = other.size();
+        numUsed = other.numUsed;
         data.setAllocatedSize (numUsed);
         memcpy (data.elements, other.getRawDataPointer(), (size_t) numUsed * sizeof (ObjectClass*));
 
-        for (int i = numUsed; --i >= 0;)
-            if (ObjectClass* o = data.elements[i])
+        for (auto* o : *this)
+            if (o != nullptr)
                 o->incReferenceCount();
+    }
+
+    /** Moves from another array */
+    ReferenceCountedArray (ReferenceCountedArray&& other) noexcept
+        : data (static_cast<ArrayAllocationBase<ObjectClass*, TypeOfCriticalSectionToUse>&&> (other.data)),
+          numUsed (other.numUsed)
+    {
+        other.numUsed = 0;
     }
 
     /** Creates a copy of another array */
@@ -86,10 +88,10 @@ public:
         const typename ReferenceCountedArray<OtherObjectClass, OtherCriticalSection>::ScopedLockType lock (other.getLock());
         numUsed = other.size();
         data.setAllocatedSize (numUsed);
-        memcpy (data.elements, other.getRawDataPointer(), numUsed * sizeof (ObjectClass*));
+        memcpy (data.elements, other.getRawDataPointer(), (size_t) numUsed * sizeof (ObjectClass*));
 
-        for (int i = numUsed; --i >= 0;)
-            if (ObjectClass* o = data.elements[i])
+        for (auto* o : *this)
+            if (o != nullptr)
                 o->incReferenceCount();
     }
 
@@ -98,7 +100,8 @@ public:
     */
     ReferenceCountedArray& operator= (const ReferenceCountedArray& other) noexcept
     {
-        ReferenceCountedArray otherCopy (other);
+        releaseAllObjects();
+        auto otherCopy = other;
         swapWith (otherCopy);
         return *this;
     }
@@ -107,10 +110,20 @@ public:
         Any existing objects in this array will first be released.
     */
     template <class OtherObjectClass>
-    ReferenceCountedArray<ObjectClass, TypeOfCriticalSectionToUse>& operator= (const ReferenceCountedArray<OtherObjectClass, TypeOfCriticalSectionToUse>& other) noexcept
+    ReferenceCountedArray& operator= (const ReferenceCountedArray<OtherObjectClass, TypeOfCriticalSectionToUse>& other) noexcept
     {
-        ReferenceCountedArray<ObjectClass, TypeOfCriticalSectionToUse> otherCopy (other);
+        auto otherCopy = other;
         swapWith (otherCopy);
+        return *this;
+    }
+
+    /** Moves from another array */
+    ReferenceCountedArray& operator= (ReferenceCountedArray&& other) noexcept
+    {
+        releaseAllObjects();
+        data = static_cast<ArrayAllocationBase<ObjectClass*, TypeOfCriticalSectionToUse>&&> (other.data);
+        numUsed = other.numUsed;
+        other.numUsed = 0;
         return *this;
     }
 
@@ -152,7 +165,7 @@ public:
     /** Returns true if the array is empty, false otherwise. */
     inline bool isEmpty() const noexcept
     {
-        return size() == 0;
+        return numUsed == 0;
     }
 
     /** Returns a pointer to the object at this index in the array.
@@ -163,7 +176,7 @@ public:
 
         @see getUnchecked
     */
-    inline ObjectClassPtr operator[] (const int index) const noexcept
+    inline ObjectClassPtr operator[] (int index) const noexcept
     {
         return getObjectPointer (index);
     }
@@ -174,7 +187,7 @@ public:
         This is a faster and less safe version of operator[] which doesn't check the index passed in, so
         it can be used when you're sure the index is always going to be legal.
     */
-    inline ObjectClassPtr getUnchecked (const int index) const noexcept
+    inline ObjectClassPtr getUnchecked (int index) const noexcept
     {
         return getObjectPointerUnchecked (index);
     }
@@ -187,17 +200,17 @@ public:
 
         @see getUnchecked
     */
-    inline ObjectClass* getObjectPointer (const int index) const noexcept
+    inline ObjectClass* getObjectPointer (int index) const noexcept
     {
         const ScopedLockType lock (getLock());
 
         if (isPositiveAndBelow (index, numUsed))
         {
             jassert (data.elements != nullptr);
-            return data.elements [index];
+            return data.elements[index];
         }
 
-        return ObjectClassPtr();
+        return {};
     }
 
     /** Returns a raw pointer to the object at this index in the array, without checking
@@ -207,7 +220,7 @@ public:
     {
         const ScopedLockType lock (getLock());
         jassert (isPositiveAndBelow (index, numUsed) && data.elements != nullptr);
-        return data.elements [index];
+        return data.elements[index];
     }
 
     /** Returns a pointer to the first object in the array.
@@ -222,10 +235,10 @@ public:
         if (numUsed > 0)
         {
             jassert (data.elements != nullptr);
-            return data.elements [0];
+            return data.elements[0];
         }
 
-        return ObjectClassPtr();
+        return {};
     }
 
     /** Returns a pointer to the last object in the array.
@@ -240,10 +253,10 @@ public:
         if (numUsed > 0)
         {
             jassert (data.elements != nullptr);
-            return data.elements [numUsed - 1];
+            return data.elements[numUsed - 1];
         }
 
-        return ObjectClassPtr();
+        return {};
     }
 
     /** Returns a pointer to the actual array data.
@@ -278,16 +291,16 @@ public:
         @param objectToLookFor    the object to look for
         @returns                  the index at which the object was found, or -1 if it's not found
     */
-    int indexOf (const ObjectClass* const objectToLookFor) const noexcept
+    int indexOf (const ObjectClass* objectToLookFor) const noexcept
     {
         const ScopedLockType lock (getLock());
-        ObjectClass** e = data.elements.getData();
-        ObjectClass** const endPointer = e + numUsed;
+        auto** e = data.elements.get();
+        auto** endPointer = e + numUsed;
 
         while (e != endPointer)
         {
             if (objectToLookFor == *e)
-                return static_cast<int> (e - data.elements.getData());
+                return static_cast<int> (e - data.elements.get());
 
             ++e;
         }
@@ -300,11 +313,11 @@ public:
         @param objectToLookFor      the object to look for
         @returns                    true if the object is in the array
     */
-    bool contains (const ObjectClass* const objectToLookFor) const noexcept
+    bool contains (const ObjectClass* objectToLookFor) const noexcept
     {
         const ScopedLockType lock (getLock());
-        ObjectClass** e = data.elements.getData();
-        ObjectClass** const endPointer = e + numUsed;
+        auto** e = data.elements.get();
+        auto** endPointer = e + numUsed;
 
         while (e != endPointer)
         {
@@ -324,12 +337,12 @@ public:
         @param newObject       the new object to add to the array
         @see set, insert, addIfNotAlreadyThere, addSorted, addArray
     */
-    ObjectClass* add (ObjectClass* const newObject) noexcept
+    ObjectClass* add (ObjectClass* newObject) noexcept
     {
         const ScopedLockType lock (getLock());
         data.ensureAllocatedSize (numUsed + 1);
         jassert (data.elements != nullptr);
-        data.elements [numUsed++] = newObject;
+        data.elements[numUsed++] = newObject;
 
         if (newObject != nullptr)
             newObject->incReferenceCount();
@@ -350,8 +363,7 @@ public:
         @param newObject            the new object to add to the array
         @see add, addSorted, addIfNotAlreadyThere, set
     */
-    ObjectClass* insert (int indexToInsertAt,
-                         ObjectClass* const newObject) noexcept
+    ObjectClass* insert (int indexToInsertAt, ObjectClass* newObject) noexcept
     {
         if (indexToInsertAt < 0)
             return add (newObject);
@@ -364,8 +376,8 @@ public:
         data.ensureAllocatedSize (numUsed + 1);
         jassert (data.elements != nullptr);
 
-        ObjectClass** const e = data.elements + indexToInsertAt;
-        const int numToMove = numUsed - indexToInsertAt;
+        auto** e = data.elements + indexToInsertAt;
+        auto numToMove = numUsed - indexToInsertAt;
 
         if (numToMove > 0)
             memmove (e + 1, e, sizeof (ObjectClass*) * (size_t) numToMove);
@@ -376,7 +388,6 @@ public:
             newObject->incReferenceCount();
 
         ++numUsed;
-
         return newObject;
     }
 
@@ -388,7 +399,7 @@ public:
         @param newObject   the new object to add to the array
         @returns           true if the object has been added, false otherwise
     */
-    bool addIfNotAlreadyThere (ObjectClass* const newObject) noexcept
+    bool addIfNotAlreadyThere (ObjectClass* newObject) noexcept
     {
         const ScopedLockType lock (getLock());
 
@@ -411,8 +422,7 @@ public:
         @param newObject            the new value to set for this index.
         @see add, insert, remove
     */
-    void set (const int indexToChange,
-              ObjectClass* const newObject)
+    void set (int indexToChange, ObjectClass* newObject)
     {
         if (indexToChange >= 0)
         {
@@ -423,16 +433,14 @@ public:
 
             if (indexToChange < numUsed)
             {
-                if (ObjectClass* o = data.elements [indexToChange])
-                    releaseObject (o);
-
-                data.elements [indexToChange] = newObject;
+                releaseObject (data.elements[indexToChange]);
+                data.elements[indexToChange] = newObject;
             }
             else
             {
                 data.ensureAllocatedSize (numUsed + 1);
                 jassert (data.elements != nullptr);
-                data.elements [numUsed++] = newObject;
+                data.elements[numUsed++] = newObject;
             }
         }
     }
@@ -446,7 +454,7 @@ public:
                                     all available elements will be copied.
         @see add
     */
-    void addArray (const ReferenceCountedArray<ObjectClass, TypeOfCriticalSectionToUse>& arrayToAddFrom,
+    void addArray (const ReferenceCountedArray& arrayToAddFrom,
                    int startIndex = 0,
                    int numElementsToAdd = -1) noexcept
     {
@@ -490,7 +498,7 @@ public:
     int addSorted (ElementComparator& comparator, ObjectClass* newObject) noexcept
     {
         const ScopedLockType lock (getLock());
-        const int index = findInsertIndexInSortedArray (comparator, data.elements.getData(), newObject, 0, numUsed);
+        auto index = findInsertIndexInSortedArray (comparator, data.elements.get(), newObject, 0, numUsed);
         insert (index, newObject);
         return index;
     }
@@ -501,13 +509,12 @@ public:
         replaced by the new one, rather than the new one being added as well.
     */
     template <class ElementComparator>
-    void addOrReplaceSorted (ElementComparator& comparator,
-                             ObjectClass* newObject) noexcept
+    void addOrReplaceSorted (ElementComparator& comparator, ObjectClass* newObject) noexcept
     {
         const ScopedLockType lock (getLock());
-        const int index = findInsertIndexInSortedArray (comparator, data.elements.getData(), newObject, 0, numUsed);
+        auto index = findInsertIndexInSortedArray (comparator, data.elements.get(), newObject, 0, numUsed);
 
-        if (index > 0 && comparator.compareElements (newObject, data.elements [index - 1]) == 0)
+        if (index > 0 && comparator.compareElements (newObject, data.elements[index - 1]) == 0)
             set (index - 1, newObject); // replace an existing object that matches
         else
             insert (index, newObject);  // no match, so insert the new one
@@ -527,7 +534,7 @@ public:
     */
     template <class ElementComparator>
     int indexOfSorted (ElementComparator& comparator,
-                       const ObjectClass* const objectToLookFor) const noexcept
+                       const ObjectClass* objectToLookFor) const noexcept
     {
         ignoreUnused (comparator);
         const ScopedLockType lock (getLock());
@@ -535,14 +542,15 @@ public:
 
         while (s < e)
         {
-            if (comparator.compareElements (objectToLookFor, data.elements [s]) == 0)
+            if (comparator.compareElements (objectToLookFor, data.elements[s]) == 0)
                 return s;
 
-            const int halfway = (s + e) / 2;
+            auto halfway = (s + e) / 2;
+
             if (halfway == s)
                 break;
 
-            if (comparator.compareElements (objectToLookFor, data.elements [halfway]) >= 0)
+            if (comparator.compareElements (objectToLookFor, data.elements[halfway]) >= 0)
                 s = halfway;
             else
                 e = halfway;
@@ -565,19 +573,16 @@ public:
         @param indexToRemove    the index of the element to remove
         @see removeObject, removeRange
     */
-    void remove (const int indexToRemove)
+    void remove (int indexToRemove)
     {
         const ScopedLockType lock (getLock());
 
         if (isPositiveAndBelow (indexToRemove, numUsed))
         {
-            ObjectClass** const e = data.elements + indexToRemove;
-
-            if (ObjectClass* o = *e)
-                releaseObject (o);
-
+            auto** e = data.elements + indexToRemove;
+            releaseObject (*e);
             --numUsed;
-            const int numberToShift = numUsed - indexToRemove;
+            auto numberToShift = numUsed - indexToRemove;
 
             if (numberToShift > 0)
                 memmove (e, e + 1, sizeof (ObjectClass*) * (size_t) numberToShift);
@@ -596,23 +601,18 @@ public:
         @param indexToRemove    the index of the element to remove
         @see remove, removeObject, removeRange
     */
-    ObjectClassPtr removeAndReturn (const int indexToRemove)
+    ObjectClassPtr removeAndReturn (int indexToRemove)
     {
         ObjectClassPtr removedItem;
         const ScopedLockType lock (getLock());
 
         if (isPositiveAndBelow (indexToRemove, numUsed))
         {
-            ObjectClass** const e = data.elements + indexToRemove;
-
-            if (ObjectClass* o = *e)
-            {
-                removedItem = o;
-                releaseObject (o);
-            }
-
+            auto** e = data.elements + indexToRemove;
+            removedItem = *e;
+            releaseObject (*e);
             --numUsed;
-            const int numberToShift = numUsed - indexToRemove;
+            auto numberToShift = numUsed - indexToRemove;
 
             if (numberToShift > 0)
                 memmove (e, e + 1, sizeof (ObjectClass*) * (size_t) numberToShift);
@@ -632,7 +632,7 @@ public:
         @param objectToRemove   the object to try to remove
         @see remove, removeRange
     */
-    void removeObject (ObjectClass* const objectToRemove)
+    void removeObject (ObjectClass* objectToRemove)
     {
         const ScopedLockType lock (getLock());
         remove (indexOf (objectToRemove));
@@ -653,34 +653,30 @@ public:
         @param numberToRemove   how many objects should be removed
         @see remove, removeObject
     */
-    void removeRange (const int startIndex,
-                      const int numberToRemove)
+    void removeRange (int startIndex,
+                      int numberToRemove)
     {
         const ScopedLockType lock (getLock());
 
-        const int start    = jlimit (0, numUsed, startIndex);
-        const int endIndex = jlimit (0, numUsed, startIndex + numberToRemove);
+        auto start    = jlimit (0, numUsed, startIndex);
+        auto endIndex = jlimit (0, numUsed, startIndex + numberToRemove);
 
         if (endIndex > start)
         {
-            int i;
-            for (i = start; i < endIndex; ++i)
+            for (int i = start; i < endIndex; ++i)
             {
-                if (ObjectClass* o = data.elements[i])
-                {
-                    releaseObject (o);
-                    data.elements[i] = nullptr; // (in case one of the destructors accesses this array and hits a dangling pointer)
-                }
+                releaseObject (data.elements[i]);
+                data.elements[i] = nullptr; // (in case one of the destructors accesses this array and hits a dangling pointer)
             }
 
-            const int rangeSize = endIndex - start;
-            ObjectClass** e = data.elements + start;
-            i = numUsed - endIndex;
+            auto rangeSize = endIndex - start;
+            auto** e = data.elements + start;
+            int i = numUsed - endIndex;
             numUsed -= rangeSize;
 
             while (--i >= 0)
             {
-                *e = e [rangeSize];
+                *e = e[rangeSize];
                 ++e;
             }
 
@@ -713,16 +709,15 @@ public:
         If either of the indexes passed in is out-of-range, nothing will happen,
         otherwise the two objects at these positions will be exchanged.
     */
-    void swap (const int index1,
-               const int index2) noexcept
+    void swap (int index1, int index2) noexcept
     {
         const ScopedLockType lock (getLock());
 
         if (isPositiveAndBelow (index1, numUsed)
              && isPositiveAndBelow (index2, numUsed))
         {
-            std::swap (data.elements [index1],
-                       data.elements [index2]);
+            std::swap (data.elements[index1],
+                       data.elements[index2]);
         }
     }
 
@@ -739,8 +734,7 @@ public:
         @param newIndex         the index at which you'd like this object to end up. If this
                                 is less than zero, it will be moved to the end of the array
     */
-    void move (const int currentIndex,
-               int newIndex) noexcept
+    void move (int currentIndex, int newIndex) noexcept
     {
         if (currentIndex != newIndex)
         {
@@ -751,7 +745,7 @@ public:
                 if (! isPositiveAndBelow (newIndex, numUsed))
                     newIndex = numUsed - 1;
 
-                ObjectClass* const value = data.elements [currentIndex];
+                auto* value = data.elements[currentIndex];
 
                 if (newIndex > currentIndex)
                 {
@@ -766,7 +760,7 @@ public:
                              sizeof (ObjectClass*) * (size_t) (currentIndex - newIndex));
                 }
 
-                data.elements [newIndex] = value;
+                data.elements[newIndex] = value;
             }
         }
     }
@@ -800,7 +794,7 @@ public:
             return false;
 
         for (int i = numUsed; --i >= 0;)
-            if (data.elements [i] != other.data.elements [i])
+            if (data.elements[i] != other.data.elements[i])
                 return false;
 
         return true;
@@ -844,13 +838,13 @@ public:
     */
     template <class ElementComparator>
     void sort (ElementComparator& comparator,
-               const bool retainOrderOfEquivalentItems = false) const noexcept
+               bool retainOrderOfEquivalentItems = false) const noexcept
     {
         ignoreUnused (comparator); // if you pass in an object with a static compareElements() method, this
                                    // avoids getting warning messages about the parameter being unused
 
         const ScopedLockType lock (getLock());
-        sortArray (comparator, data.elements.getData(), 0, size() - 1, retainOrderOfEquivalentItems);
+        sortArray (comparator, data.elements.get(), 0, size() - 1, retainOrderOfEquivalentItems);
     }
 
     //==============================================================================
@@ -886,7 +880,7 @@ public:
     inline const TypeOfCriticalSectionToUse& getLock() const noexcept      { return data; }
 
     /** Returns the type of scoped lock to use for locking this array */
-    typedef typename TypeOfCriticalSectionToUse::ScopedLockType ScopedLockType;
+    using ScopedLockType = typename TypeOfCriticalSectionToUse::ScopedLockType;
 
 
     //==============================================================================
@@ -898,24 +892,22 @@ public:
 
 private:
     //==============================================================================
-    ArrayAllocationBase <ObjectClass*, TypeOfCriticalSectionToUse> data;
-    int numUsed;
+    ArrayAllocationBase<ObjectClass*, TypeOfCriticalSectionToUse> data;
+    int numUsed = 0;
 
     void releaseAllObjects()
     {
         while (numUsed > 0)
-            if (ObjectClass* o = data.elements [--numUsed])
-                releaseObject (o);
+            releaseObject (data.elements[--numUsed]);
 
         jassert (numUsed == 0);
     }
 
     static void releaseObject (ObjectClass* o)
     {
-        if (o->decReferenceCountWithoutDeleting())
+        if (o != nullptr && o->decReferenceCountWithoutDeleting())
             ContainerDeletePolicy<ObjectClass>::destroy (o);
     }
 };
 
-
-#endif   // JUCE_REFERENCECOUNTEDARRAY_H_INCLUDED
+} // namespace juce

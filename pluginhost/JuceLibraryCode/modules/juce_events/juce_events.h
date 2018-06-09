@@ -2,22 +2,20 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-   ------------------------------------------------------------------------------
-
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
@@ -33,28 +31,36 @@
 
   ID:               juce_events
   vendor:           juce
-  version:          4.2.4
+  version:          5.3.2
   name:             JUCE message and event handling classes
   description:      Classes for running an application's main event loop and sending/receiving messages, timers, etc.
   website:          http://www.juce.com/juce
-  license:          GPL/Commercial
+  license:          ISC
 
   dependencies:     juce_core
-  linuxPackages:    x11
 
  END_JUCE_MODULE_DECLARATION
 
 *******************************************************************************/
 
 
-#ifndef JUCE_EVENTS_H_INCLUDED
+#pragma once
 #define JUCE_EVENTS_H_INCLUDED
 
-//==============================================================================
 #include <juce_core/juce_core.h>
 
-namespace juce
-{
+//==============================================================================
+/** Config: JUCE_EXECUTE_APP_SUSPEND_ON_IOS_BACKGROUND_TASK
+    Will execute your application's suspend method on an iOS background task, giving
+    you extra time to save your applications state.
+*/
+#ifndef JUCE_EXECUTE_APP_SUSPEND_ON_BACKGROUND_TASK
+ #define JUCE_EXECUTE_APP_SUSPEND_ON_BACKGROUND_TASK 0
+#endif
+
+#if JUCE_EVENTS_INCLUDE_WINRT_WRAPPER && JUCE_WINDOWS
+ #include <hstring.h>
+#endif
 
 #include "messages/juce_MessageManager.h"
 #include "messages/juce_Message.h"
@@ -75,12 +81,16 @@ namespace juce
 #include "interprocess/juce_InterprocessConnection.h"
 #include "interprocess/juce_InterprocessConnectionServer.h"
 #include "interprocess/juce_ConnectedChildProcess.h"
-#include "native/juce_ScopedXLock.h"
 
-#if JUCE_EVENTS_INCLUDE_WIN32_MESSAGE_WINDOW && JUCE_WINDOWS
- #include "native/juce_win32_HiddenMessageWindow.h"
+#if JUCE_LINUX
+ #include "native/juce_linux_EventLoop.h"
 #endif
 
-}
-
-#endif   // JUCE_EVENTS_H_INCLUDED
+#if JUCE_WINDOWS
+ #if JUCE_EVENTS_INCLUDE_WIN32_MESSAGE_WINDOW
+  #include "native/juce_win32_HiddenMessageWindow.h"
+ #endif
+ #if JUCE_EVENTS_INCLUDE_WINRT_WRAPPER
+  #include "native/juce_win32_WinRTWrapper.h"
+ #endif
+#endif

@@ -1,30 +1,27 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
+
+namespace juce
+{
 
 ScopedAutoReleasePool::ScopedAutoReleasePool()
 {
@@ -81,15 +78,24 @@ void CPUInformation::initialise() noexcept
     has3DNow = (b & (1u << 31)) != 0;
     hasSSE3  = (c & (1u <<  0)) != 0;
     hasSSSE3 = (c & (1u <<  9)) != 0;
-    hasSSE41 = (c & (1u << 20)) != 0;
-    hasSSE42 = (c & (1u << 19)) != 0;
+    hasSSE41 = (c & (1u << 19)) != 0;
+    hasSSE42 = (c & (1u << 20)) != 0;
     hasAVX   = (c & (1u << 28)) != 0;
 
     SystemStatsHelpers::doCPUID (a, b, c, d, 7);
     hasAVX2  = (b & (1u <<  5)) != 0;
    #endif
 
-    numCpus = (int) [[NSProcessInfo processInfo] activeProcessorCount];
+    numLogicalCPUs = (int) [[NSProcessInfo processInfo] activeProcessorCount];
+
+    unsigned int physicalcpu = 0;
+    size_t len = sizeof (physicalcpu);
+
+    if (sysctlbyname ("hw.physicalcpu", &physicalcpu, &len, nullptr, 0) >= 0)
+        numPhysicalCPUs = (int) physicalcpu;
+
+    if (numPhysicalCPUs <= 0)
+        numPhysicalCPUs = numLogicalCPUs;
 }
 
 //==============================================================================
@@ -136,8 +142,20 @@ String SystemStats::getDeviceDescription()
    #if JUCE_IOS
     return nsStringToJuce ([[UIDevice currentDevice] model]);
    #else
-    return String();
+    size_t size;
+    if (sysctlbyname ("hw.model", nullptr, &size, nullptr, 0) >= 0)
+    {
+        HeapBlock<char> model (size);
+        if (sysctlbyname ("hw.model", model,   &size, nullptr, 0) >= 0)
+            return model.get();
+    }
+    return {};
    #endif
+}
+
+String SystemStats::getDeviceManufacturer()
+{
+    return "Apple";
 }
 
 bool SystemStats::isOperatingSystem64Bit()
@@ -170,8 +188,19 @@ String SystemStats::getCpuVendor()
 
     return String (reinterpret_cast<const char*> (vendor), 12);
    #else
-    return String();
+    return {};
    #endif
+}
+
+String SystemStats::getCpuModel()
+{
+    char name[65] = { 0 };
+    size_t size = sizeof (name) - 1;
+
+    if (sysctlbyname ("machdep.cpu.brand_string", &name, &size, nullptr, 0) >= 0)
+        return String (name);
+
+    return {};
 }
 
 int SystemStats::getCpuSpeedInMegaherz()
@@ -202,11 +231,11 @@ String SystemStats::getFullUserName()
 
 String SystemStats::getComputerName()
 {
-    char name [256] = { 0 };
+    char name[256] = { 0 };
     if (gethostname (name, sizeof (name) - 1) == 0)
         return String (name).upToLastOccurrenceOf (".local", false, true);
 
-    return String();
+    return {};
 }
 
 static String getLocaleValue (CFStringRef key)
@@ -292,3 +321,5 @@ int SystemStats::getPageSize()
 {
     return (int) NSPageSize();
 }
+
+} // namespace juce

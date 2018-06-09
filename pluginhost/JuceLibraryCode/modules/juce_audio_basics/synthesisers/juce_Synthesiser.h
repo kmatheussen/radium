@@ -2,29 +2,26 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-   ------------------------------------------------------------------------------
-
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_SYNTHESISER_H_INCLUDED
-#define JUCE_SYNTHESISER_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -38,6 +35,8 @@
     more than one SynthesiserVoice to play the same sound at the same time.
 
     @see Synthesiser, SynthesiserVoice
+
+    @tags{Audio}
 */
 class JUCE_API  SynthesiserSound    : public ReferenceCountedObject
 {
@@ -65,7 +64,7 @@ public:
     virtual bool appliesToChannel (int midiChannel) = 0;
 
     /** The class is reference-counted, so this is a handy pointer class for it. */
-    typedef ReferenceCountedObjectPtr<SynthesiserSound> Ptr;
+    using Ptr = ReferenceCountedObjectPtr<SynthesiserSound>;
 
 
 private:
@@ -82,6 +81,8 @@ private:
     voices so that it can play polyphonically.
 
     @see Synthesiser, SynthesiserSound
+
+    @tags{Audio}
 */
 class JUCE_API  SynthesiserVoice
 {
@@ -185,6 +186,8 @@ public:
     virtual void renderNextBlock (AudioBuffer<float>& outputBuffer,
                                   int startSample,
                                   int numSamples) = 0;
+
+    /** A double-precision version of renderNextBlock() */
     virtual void renderNextBlock (AudioBuffer<double>& outputBuffer,
                                   int startSample,
                                   int numSamples);
@@ -217,11 +220,22 @@ public:
     */
     bool isKeyDown() const noexcept                             { return keyIsDown; }
 
+    /** Allows you to modify the flag indicating that the key that triggered this voice is still held down.
+        @see isKeyDown
+    */
+    void setKeyDown (bool isNowDown) noexcept                   { keyIsDown = isNowDown; }
+
     /** Returns true if the sustain pedal is currently active for this voice. */
     bool isSustainPedalDown() const noexcept                    { return sustainPedalDown; }
 
+    /** Modifies the sustain pedal flag. */
+    void setSustainPedalDown (bool isNowDown) noexcept          { sustainPedalDown = isNowDown; }
+
     /** Returns true if the sostenuto pedal is currently active for this voice. */
     bool isSostenutoPedalDown() const noexcept                  { return sostenutoPedalDown; }
+
+    /** Modifies the sostenuto pedal flag. */
+    void setSostenutoPedalDown (bool isNowDown) noexcept        { sostenutoPedalDown = isNowDown; }
 
     /** Returns true if a voice is sounding in its release phase **/
     bool isPlayingButReleased() const noexcept
@@ -252,11 +266,11 @@ private:
     //==============================================================================
     friend class Synthesiser;
 
-    double currentSampleRate;
-    int currentlyPlayingNote, currentPlayingMidiChannel;
-    uint32 noteOnTime;
+    double currentSampleRate = 44100.0;
+    int currentlyPlayingNote = -1, currentPlayingMidiChannel = 0;
+    uint32 noteOnTime = 0;
     SynthesiserSound::Ptr currentlyPlayingSound;
-    bool keyIsDown, sustainPedalDown, sostenutoPedalDown;
+    bool keyIsDown = false, sustainPedalDown = false, sostenutoPedalDown = false;
 
     AudioBuffer<float> tempBuffer;
 
@@ -292,6 +306,8 @@ private:
     Before rendering, be sure to call the setCurrentPlaybackSampleRate() to tell it
     what the target playback rate is. This value is passed on to the voices so that
     they can pitch their output correctly.
+
+    @tags{Audio}
 */
 class JUCE_API  Synthesiser
 {
@@ -510,16 +526,20 @@ public:
         with timestamps outside the specified region will be ignored.
     */
     inline void renderNextBlock (AudioBuffer<float>& outputAudio,
-                          const MidiBuffer& inputMidi,
-                          int startSample,
-                          int numSamples)
-        { processNextBlock (outputAudio, inputMidi, startSample, numSamples); }
+                                 const MidiBuffer& inputMidi,
+                                 int startSample,
+                                 int numSamples)
+    {
+        processNextBlock (outputAudio, inputMidi, startSample, numSamples);
+    }
 
     inline void renderNextBlock (AudioBuffer<double>& outputAudio,
-                          const MidiBuffer& inputMidi,
-                          int startSample,
-                          int numSamples)
-        { processNextBlock (outputAudio, inputMidi, startSample, numSamples); }
+                                 const MidiBuffer& inputMidi,
+                                 int startSample,
+                                 int numSamples)
+    {
+        processNextBlock (outputAudio, inputMidi, startSample, numSamples);
+    }
 
     /** Returns the current target sample rate at which rendering is being done.
         Subclasses may need to know this so that they can pitch things correctly.
@@ -618,11 +638,11 @@ private:
                            int startSample,
                            int numSamples);
     //==============================================================================
-    double sampleRate;
-    uint32 lastNoteOnCounter;
-    int minimumSubBlockSize;
-    bool subBlockSubdivisionIsStrict;
-    bool shouldStealNotes;
+    double sampleRate = 0;
+    uint32 lastNoteOnCounter = 0;
+    int minimumSubBlockSize = 32;
+    bool subBlockSubdivisionIsStrict = false;
+    bool shouldStealNotes = true;
     BigInteger sustainPedalsDown;
 
    #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
@@ -636,5 +656,4 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Synthesiser)
 };
 
-
-#endif   // JUCE_SYNTHESISER_H_INCLUDED
+} // namespace juce

@@ -1,34 +1,27 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_LOGGER_H_INCLUDED
-#define JUCE_LOGGER_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -41,6 +34,8 @@
     output stream.
 
     @see FileLogger
+
+    @tags{Core}
 */
 class JUCE_API  Logger
 {
@@ -54,12 +49,12 @@ public:
 
         Note that the object passed in will not be owned or deleted by the logger, so
         the caller must make sure that it is not deleted while still being used.
-        A null pointer can be passed-in to disable any logging.
+        A null pointer can be passed-in to reset the system to the default logger.
     */
     static void JUCE_CALLTYPE setCurrentLogger (Logger* newLogger) noexcept;
 
-    /** Returns the current logger, or nullptr if none has been set. */
-    static Logger* getCurrentLogger() noexcept;
+    /** Returns the current logger, or nullptr if no custom logger has been set. */
+    static Logger* JUCE_CALLTYPE getCurrentLogger() noexcept;
 
     /** Writes a string to the current logger.
 
@@ -93,5 +88,4 @@ private:
     static Logger* currentLogger;
 };
 
-
-#endif   // JUCE_LOGGER_H_INCLUDED
+} // namespace juce

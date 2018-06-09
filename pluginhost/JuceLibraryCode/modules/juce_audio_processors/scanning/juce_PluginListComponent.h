@@ -2,39 +2,41 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_PLUGINLISTCOMPONENT_H_INCLUDED
-#define JUCE_PLUGINLISTCOMPONENT_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
     A component displaying a list of plugins, with options to scan for them,
     add, remove and sort them.
+
+    @tags{Audio}
 */
 class JUCE_API  PluginListComponent   : public Component,
                                         public FileDragAndDropTarget,
-                                        private ChangeListener,
-                                        private ButtonListener  // (can't use Button::Listener due to idiotic VC2005 bug)
+                                        private ChangeListener
 {
 public:
     //==============================================================================
@@ -76,6 +78,11 @@ public:
     /** Triggers an asynchronous scan for the given format. */
     void scanFor (AudioPluginFormat&);
 
+    /** Triggers an asynchronous scan for the given format and scans only the given files or identifiers.
+        @see AudioPluginFormat::searchPathsForPlugins
+    */
+    void scanFor (AudioPluginFormat&, const StringArray& filesOrIdentifiersToScan);
+
     /** Returns true if there's currently a scan in progress. */
     bool isScanning() const noexcept;
 
@@ -103,12 +110,12 @@ private:
     int numThreads;
 
     class TableModel;
-    ScopedPointer<TableListBoxModel> tableModel;
+    std::unique_ptr<TableListBoxModel> tableModel;
 
     class Scanner;
     friend class Scanner;
     friend struct ContainerDeletePolicy<Scanner>;
-    ScopedPointer<Scanner> currentScanner;
+    std::unique_ptr<Scanner> currentScanner;
 
     void scanFinished (const StringArray&);
     static void optionsMenuStaticCallback (int, PluginListComponent*);
@@ -118,15 +125,14 @@ private:
     bool canShowSelectedFolder() const;
     void removeMissingPlugins();
     void removePluginItem (int index);
+    void showOptionsMenu();
 
     void resized() override;
     bool isInterestedInFileDrag (const StringArray&) override;
     void filesDropped (const StringArray&, int, int) override;
-    void buttonClicked (Button*) override;
     void changeListenerCallback (ChangeBroadcaster*) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginListComponent)
 };
 
-
-#endif   // JUCE_PLUGINLISTCOMPONENT_H_INCLUDED
+} // namespace juce

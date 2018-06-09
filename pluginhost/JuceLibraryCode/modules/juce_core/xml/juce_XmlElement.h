@@ -1,34 +1,27 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_XMLELEMENT_H_INCLUDED
-#define JUCE_XMLELEMENT_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /** A handy macro to make it easy to iterate all the child elements in an XmlElement.
@@ -51,7 +44,7 @@
 */
 #define forEachXmlChildElement(parentXmlElement, childElementVariableName) \
 \
-    for (juce::XmlElement* childElementVariableName = (parentXmlElement).getFirstChildElement(); \
+    for (auto* childElementVariableName = (parentXmlElement).getFirstChildElement(); \
          childElementVariableName != nullptr; \
          childElementVariableName = childElementVariableName->getNextElement())
 
@@ -80,7 +73,7 @@
 */
 #define forEachXmlChildElementWithTagName(parentXmlElement, childElementVariableName, requiredTagName) \
 \
-    for (juce::XmlElement* childElementVariableName = (parentXmlElement).getChildByName (requiredTagName); \
+    for (auto* childElementVariableName = (parentXmlElement).getChildByName (requiredTagName); \
          childElementVariableName != nullptr; \
          childElementVariableName = childElementVariableName->getNextElementWithTagName (requiredTagName))
 
@@ -138,6 +131,8 @@
     @endcode
 
     @see XmlDocument
+
+    @tags{Core}
 */
 class JUCE_API  XmlElement
 {
@@ -164,18 +159,19 @@ public:
     /** Creates a (deep) copy of another element. */
     XmlElement& operator= (const XmlElement&);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    XmlElement (XmlElement&&) noexcept;
+    /** Move assignment operator */
     XmlElement& operator= (XmlElement&&) noexcept;
-   #endif
+
+    /** Move constructor */
+    XmlElement (XmlElement&&) noexcept;
 
     /** Deleting an XmlElement will also delete all of its child elements. */
     ~XmlElement() noexcept;
 
     //==============================================================================
-    /** Compares two XmlElements to see if they contain the same text and attiributes.
+    /** Compares two XmlElements to see if they contain the same text and attributes.
 
-        The elements are only considered equivalent if they contain the same attiributes
+        The elements are only considered equivalent if they contain the same attributes
         with the same values, and have the same sub-nodes.
 
         @param other                    the other element to compare to
@@ -281,6 +277,11 @@ public:
         @see getTagName
     */
     bool hasTagNameIgnoringNamespace (StringRef possibleTagName) const;
+
+    /** Changes this elements tag name.
+        @see getTagName
+     */
+    void setTagName (StringRef newTagName);
 
     //==============================================================================
     /** Returns the number of XML attributes this element contains.
@@ -638,11 +639,11 @@ public:
     void sortChildElements (ElementComparator& comparator,
                             bool retainOrderOfEquivalentItems = false)
     {
-        const int num = getNumChildElements();
+        auto num = getNumChildElements();
 
         if (num > 1)
         {
-            HeapBlock<XmlElement*> elems ((size_t) num);
+            HeapBlock<XmlElement*> elems (num);
             getChildElementsAsArray (elems);
             sortArray (comparator, (XmlElement**) elems, 0, num - 1, retainOrderOfEquivalentItems);
             reorderChildElements (elems, num);
@@ -652,7 +653,7 @@ public:
     //==============================================================================
     /** Returns true if this element is a section of text.
 
-        Elements can either be an XML tag element or a secton of text, so this
+        Elements can either be an XML tag element or a section of text, so this
         is used to find out what kind of element this one is.
 
         @see getAllText, addTextElement, deleteAllTextElements
@@ -740,7 +741,7 @@ private:
         String value;
 
     private:
-        XmlAttributeNode& operator= (const XmlAttributeNode&) JUCE_DELETED_FUNCTION;
+        XmlAttributeNode& operator= (const XmlAttributeNode&) = delete;
     };
 
     friend class XmlDocument;
@@ -764,10 +765,9 @@ private:
     // Sigh.. L"" or _T("") string literals are problematic in general, and really inappropriate
     // for XML tags. Use a UTF-8 encoded literal instead, or if you're really determined to use
     // UTF-16, cast it to a String and use the other constructor.
-    XmlElement (const wchar_t*) JUCE_DELETED_FUNCTION;
+    XmlElement (const wchar_t*) = delete;
 
     JUCE_LEAK_DETECTOR (XmlElement)
 };
 
-
-#endif   // JUCE_XMLELEMENT_H_INCLUDED
+} // namespace juce

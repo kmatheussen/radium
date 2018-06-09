@@ -2,29 +2,26 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-   ------------------------------------------------------------------------------
-
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_AUDIODEVICEMANAGER_H_INCLUDED
-#define JUCE_AUDIODEVICEMANAGER_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -63,6 +60,8 @@
     listeners whenever one of its settings is changed.
 
     @see AudioDeviceSelectorComponent, AudioIODevice, AudioIODeviceType
+
+    @tags{Audio}
 */
 class JUCE_API  AudioDeviceManager  : public ChangeBroadcaster
 {
@@ -99,6 +98,7 @@ public:
         AudioDeviceSetup();
 
         bool operator== (const AudioDeviceSetup& other) const;
+        bool operator!= (const AudioDeviceSetup& other) const;
 
         /** The name of the audio device used for output.
             The name has to be one of the ones listed by the AudioDeviceManager's currently
@@ -211,7 +211,7 @@ public:
     /** Returns the current device properties that are in use.
         @see setAudioDeviceSetup
     */
-    void getAudioDeviceSetup (AudioDeviceSetup& result);
+    void getAudioDeviceSetup (AudioDeviceSetup& result) const;
 
     /** Changes the current device or its settings.
 
@@ -237,7 +237,7 @@ public:
 
 
     /** Returns the currently-active audio device. */
-    AudioIODevice* getCurrentAudioDevice() const noexcept               { return currentAudioDevice; }
+    AudioIODevice* getCurrentAudioDevice() const noexcept               { return currentAudioDevice.get(); }
 
     /** Returns the type of audio device currently in use.
         @see setCurrentAudioDeviceType
@@ -375,7 +375,7 @@ public:
         If no device has been selected, or the device can't be opened, this will return nullptr.
         @see getDefaultMidiOutputName
     */
-    MidiOutput* getDefaultMidiOutput() const noexcept               { return defaultMidiOutput; }
+    MidiOutput* getDefaultMidiOutput() const noexcept               { return defaultMidiOutput.get(); }
 
     /** Returns a list of the types of device supported. */
     const OwnedArray<AudioIODeviceType>& getAvailableDeviceTypes();
@@ -404,80 +404,45 @@ public:
     */
     void playTestSound();
 
-    /** Plays a sound from a file. */
-    void playSound (const File& file);
+    //==============================================================================
+    /**
+        A simple reference-counted struct that holds a level-meter value that can be read
+        using getCurrentLevel().
 
-    /** Convenient method to play sound from a JUCE resource. */
-    void playSound (const void* resourceData, size_t resourceSize);
+        This is used to ensure that the level processing code is only executed when something
+        holds a reference to one of these objects and will be bypassed otherwise.
 
-    /** Plays the sound from an audio format reader.
-
-        If deleteWhenFinished is true then the format reader will be
-        automatically deleted once the sound has finished playing.
+        @see getInputLevelGetter, getOutputLevelGetter
     */
-    void playSound (AudioFormatReader* buffer, bool deleteWhenFinished = false);
+    struct LevelMeter    : public ReferenceCountedObject
+    {
+        LevelMeter() noexcept;
+        double getCurrentLevel() const noexcept;
 
-    /** Plays the sound from a positionable audio source.
+        using Ptr = ReferenceCountedObjectPtr<LevelMeter>;
 
-        This will output the sound coming from a positionable audio source.
-        This gives you slightly more control over the sound playback compared
-        to  the other playSound methods. For example, if you would like to
-        stop the sound prematurely you can call this method with a
-        TransportAudioSource and then call audioSource->stop. Note that,
-        you must call audioSource->start to start the playback, if your
-        audioSource is a TransportAudioSource.
+    private:
+        friend class AudioDeviceManager;
 
-        The audio device manager will not hold any references to this audio
-        source once the audio source has stopped playing for any reason,
-        for example when the sound has finished playing or when you have
-        called audioSource->stop. Therefore, calling audioSource->start() on
-        a finished audioSource will not restart the sound again. If this is
-        desired simply call playSound with the same audioSource again.
+        Atomic<float> level { 0 };
+        void updateLevel (const float* const*, int numChannels, int numSamples) noexcept;
+    };
 
-        @param audioSource   the audio source to play
-        @param deleteWhenFinished If this is true then the audio source will
-                                  be deleted once the device manager has finished playing.
+    /** Returns a reference-counted object that can be used to get the current input level.
+
+        You need to store this object locally to ensure that the reference count is incremented
+        and decremented properly. The current input level value can be read using getCurrentLevel().
     */
-    void playSound (PositionableAudioSource* audioSource, bool deleteWhenFinished = false);
+    LevelMeter::Ptr getInputLevelGetter() noexcept          { return inputLevelGetter; }
 
-    /** Plays the sound from an audio sample buffer.
+    /** Returns a reference-counted object that can be used to get the current input level.
 
-        This will output the sound contained in an audio sample buffer. If
-        deleteWhenFinished is true then the audio sample buffer will be
-        automatically deleted once the sound has finished playing.
-
-        If playOnAllOutputChannels is true, then if there are more output channels
-        than buffer channels, then the ones that are available will be re-used on
-        multiple outputs so that something is sent to all output channels. If it
-        is false, then the buffer will just be played on the first output channels.
+        You need to store this object locally to ensure that the reference count is incremented
+        and decremented properly. The current input level value can be read using getCurrentLevel().
     */
-    void playSound (AudioSampleBuffer* buffer,
-                    bool deleteWhenFinished = false,
-                    bool playOnAllOutputChannels = false);
+    LevelMeter::Ptr getOutputLevelGetter() noexcept         { return outputLevelGetter; }
 
     //==============================================================================
-    /** Turns on level-measuring for input channels.
-        @see getCurrentInputLevel()
-    */
-    void enableInputLevelMeasurement (bool enableMeasurement) noexcept;
-
-    /** Turns on level-measuring for output channels.
-        @see getCurrentOutputLevel()
-    */
-    void enableOutputLevelMeasurement (bool enableMeasurement) noexcept;
-
-    /** Returns the current input level.
-        To use this, you must first enable it by calling enableInputLevelMeasurement().
-        @see enableInputLevelMeasurement()
-    */
-    double getCurrentInputLevel() const noexcept;
-
-    /** Returns the current output level.
-        To use this, you must first enable it by calling enableOutputLevelMeasurement().
-        @see enableOutputLevelMeasurement()
-    */
-    double getCurrentOutputLevel() const noexcept;
-
     /** Returns the a lock that can be used to synchronise access to the audio callback.
         Obviously while this is locked, you're blocking the audio thread from running, so
         it must only be used for very brief periods when absolutely necessary.
@@ -490,20 +455,29 @@ public:
     */
     CriticalSection& getMidiCallbackLock() noexcept         { return midiCallbackLock; }
 
+    //==============================================================================
+    /** Returns the number of under- or over runs reported.
+
+        This method will use the underlying device's native getXRunCount if it supports
+        it. Otherwise it will estimate the number of under-/overruns by measuring the
+        time it spent in the audio callback.
+    */
+    int getXRunCount() const noexcept;
+
 private:
     //==============================================================================
     OwnedArray<AudioIODeviceType> availableDeviceTypes;
     OwnedArray<AudioDeviceSetup> lastDeviceTypeConfigs;
 
     AudioDeviceSetup currentSetup;
-    ScopedPointer<AudioIODevice> currentAudioDevice;
+    std::unique_ptr<AudioIODevice> currentAudioDevice;
     Array<AudioIODeviceCallback*> callbacks;
-    int numInputChansNeeded, numOutputChansNeeded;
+    int numInputChansNeeded = 0, numOutputChansNeeded = 2;
     String currentDeviceType;
     BigInteger inputChannels, outputChannels;
-    ScopedPointer<XmlElement> lastExplicitSettings;
-    mutable bool listNeedsScanning;
-    AudioSampleBuffer tempBuffer;
+    std::unique_ptr<XmlElement> lastExplicitSettings;
+    mutable bool listNeedsScanning = true;
+    AudioBuffer<float> tempBuffer;
 
     struct MidiCallbackInfo
     {
@@ -516,29 +490,23 @@ private:
     Array<MidiCallbackInfo> midiCallbacks;
 
     String defaultMidiOutputName;
-    ScopedPointer<MidiOutput> defaultMidiOutput;
+    std::unique_ptr<MidiOutput> defaultMidiOutput;
     CriticalSection audioCallbackLock, midiCallbackLock;
 
-    double cpuUsageMs, timeToCpuScale;
+    std::unique_ptr<AudioBuffer<float>> testSound;
+    int testSoundPosition = 0;
 
-    struct LevelMeter
-    {
-        LevelMeter() noexcept;
-        void updateLevel (const float* const*, int numChannels, int numSamples) noexcept;
-        void setEnabled (bool) noexcept;
-        double getCurrentLevel() const noexcept;
+    double cpuUsageMs = 0, timeToCpuScale = 0, msPerBlock = 0;
+    int xruns = 0;
 
-        Atomic<int> enabled;
-        double level;
-    };
-
-    LevelMeter inputLevelMeter, outputLevelMeter;
+    LevelMeter::Ptr inputLevelGetter   { new LevelMeter() },
+                    outputLevelGetter  { new LevelMeter() };
 
     //==============================================================================
     class CallbackHandler;
     friend class CallbackHandler;
     friend struct ContainerDeletePolicy<CallbackHandler>;
-    ScopedPointer<CallbackHandler> callbackHandler;
+    std::unique_ptr<CallbackHandler> callbackHandler;
 
     void audioDeviceIOCallbackInt (const float** inputChannelData, int totalNumInputChannels,
                                    float** outputChannelData, int totalNumOutputChannels, int numSamples);
@@ -570,4 +538,4 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioDeviceManager)
 };
 
-#endif   // JUCE_AUDIODEVICEMANAGER_H_INCLUDED
+} // namespace juce

@@ -2,29 +2,30 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_UNDOMANAGER_H_INCLUDED
-#define JUCE_UNDOMANAGER_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -45,6 +46,8 @@
     when actions are performed or undone.
 
     @see UndoableAction
+
+    @tags{DataStructures}
 */
 class JUCE_API  UndoManager  : public ChangeBroadcaster
 {
@@ -155,14 +158,10 @@ public:
     */
     bool canUndo() const noexcept;
 
-    /** Returns the name of the transaction that will be rolled-back when undo() is called.
-        @see undo
-    */
-    String getUndoDescription() const;
-
     /** Tries to roll-back the last transaction.
         @returns    true if the transaction can be undone, and false if it fails, or
                     if there aren't any transactions to undo
+        @see undoCurrentTransactionOnly
     */
     bool undo();
 
@@ -181,6 +180,23 @@ public:
     */
     bool undoCurrentTransactionOnly();
 
+    /** Returns the name of the transaction that will be rolled-back when undo() is called.
+        @see undo, canUndo, getUndoDescriptions
+    */
+    String getUndoDescription() const;
+
+    /** Returns the names of the sequence of transactions that will be performed if undo()
+        is repeatedly called. Note that for transactions where no name was provided, the
+        corresponding string will be empty.
+        @see undo, canUndo, getUndoDescription
+    */
+    StringArray getUndoDescriptions() const;
+
+    /** Returns the time to which the state would be restored if undo() was to be called.
+        If an undo isn't currently possible, it'll return Time().
+    */
+    Time getTimeOfUndoTransaction() const;
+
     /** Returns a list of the UndoableAction objects that have been performed during the
         transaction that is currently open.
 
@@ -197,26 +213,11 @@ public:
     */
     int getNumActionsInCurrentTransaction() const;
 
-    /** Returns the time to which the state would be restored if undo() was to be called.
-        If an undo isn't currently possible, it'll return Time().
-    */
-    Time getTimeOfUndoTransaction() const;
-
-    /** Returns the time to which the state would be restored if redo() was to be called.
-        If a redo isn't currently possible, it'll return Time::getCurrentTime().
-    */
-    Time getTimeOfRedoTransaction() const;
-
     //==============================================================================
     /** Returns true if there's at least one action in the list to redo.
         @see getRedoDescription, redo, canUndo
     */
     bool canRedo() const noexcept;
-
-    /** Returns the name of the transaction that will be redone when redo() is called.
-        @see redo
-    */
-    String getRedoDescription() const;
 
     /** Tries to redo the last transaction that was undone.
         @returns   true if the transaction can be redone, and false if it fails, or
@@ -224,6 +225,23 @@ public:
     */
     bool redo();
 
+    /** Returns the name of the transaction that will be redone when redo() is called.
+        @see redo, canRedo, getRedoDescriptions
+    */
+    String getRedoDescription() const;
+
+    /** Returns the names of the sequence of transactions that will be performed if redo()
+        is repeatedly called. Note that for transactions where no name was provided, the
+        corresponding string will be empty.
+        @see redo, canRedo, getRedoDescription
+    */
+    StringArray getRedoDescriptions() const;
+
+    /** Returns the time to which the state would be restored if redo() was to be called.
+        If a redo isn't currently possible, it'll return Time::getCurrentTime().
+        @see redo, canRedo
+    */
+    Time getTimeOfRedoTransaction() const;
 
 private:
     //==============================================================================
@@ -231,8 +249,8 @@ private:
     friend struct ContainerDeletePolicy<ActionSet>;
     OwnedArray<ActionSet> transactions, stashedFutureTransactions;
     String newTransactionName;
-    int totalUnitsStored, maxNumUnitsToKeep, minimumTransactionsToKeep, nextIndex;
-    bool newTransaction, reentrancyCheck;
+    int totalUnitsStored = 0, maxNumUnitsToKeep = 0, minimumTransactionsToKeep = 0, nextIndex = 0;
+    bool newTransaction = true, reentrancyCheck = false;
     ActionSet* getCurrentSet() const noexcept;
     ActionSet* getNextSet() const noexcept;
     void moveFutureTransactionsToStash();
@@ -242,5 +260,4 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (UndoManager)
 };
 
-
-#endif   // JUCE_UNDOMANAGER_H_INCLUDED
+} // namespace juce
