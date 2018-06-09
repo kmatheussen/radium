@@ -670,11 +670,14 @@ namespace{
       for(int i=0;i<8;i++){
         
         int width = ab_buttons[i].getWidth();
+
+        ab_buttons[i].setTopLeftPosition(x, 0);
         
-        if (x+width > rightmost_ab_button_x)
-          this->removeChildComponent(&ab_buttons[i]);
-        else
-          ab_buttons[i].setTopLeftPosition(x, 0);
+        if (x+width > rightmost_ab_button_x) {
+          ab_buttons[i].setVisible(false);
+        } else {
+          ab_buttons[i].setVisible(true);
+        }
         
         x += width;
       }
@@ -868,15 +871,15 @@ namespace{
           y = data->ys[parentgui];
 
 
-        this->setVisible(true); // Must set visible before setting position. At least on Linux/fvwm.
-        
         if (x <= 0 || y <= 0) {
           this->centreWithSize (getWidth(), getHeight());
         } else {
           this->setTopLeftPosition(x, y);
         }
 
-      }
+        this->setVisible(true); // Must set visible before setting position. At least on Linux/fvwm.
+         
+     }
 
 
       startTimer(100);
