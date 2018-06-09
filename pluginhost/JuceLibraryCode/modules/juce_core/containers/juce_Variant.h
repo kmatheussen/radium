@@ -1,34 +1,27 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_VARIANT_H_INCLUDED
-#define JUCE_VARIANT_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -42,6 +35,8 @@
     using writeToStream()/readFromStream(), or as JSON by using the JSON class.
 
     @see JSON, DynamicObject
+
+    @tags{Core}
 */
 class JUCE_API  var
 {
@@ -50,18 +45,19 @@ public:
     /** This structure is passed to a NativeFunction callback, and contains invocation
         details about the function's arguments and context.
     */
-    struct NativeFunctionArgs
+    struct JUCE_API  NativeFunctionArgs
     {
         NativeFunctionArgs (const var& thisObject, const var* args, int numArgs) noexcept;
+
+        // Suppress a VS2013 compiler warning
+        NativeFunctionArgs& operator= (const NativeFunctionArgs&) = delete;
 
         const var& thisObject;
         const var* arguments;
         int numArguments;
-
-        JUCE_DECLARE_NON_COPYABLE (NativeFunctionArgs)
     };
 
-    typedef var (*NativeFunction) (const NativeFunctionArgs&);
+    using NativeFunction = std::function<var (const NativeFunctionArgs&)>;
 
     //==============================================================================
     /** Creates a void variant. */
@@ -69,11 +65,6 @@ public:
 
     /** Destructor. */
     ~var() noexcept;
-
-   #if JUCE_ALLOW_STATIC_NULL_VARIABLES
-    /** A static var object that can be used where you need an empty variant object. */
-    static const var null;
-   #endif
 
     var (const var& valueToCopy);
     var (int value) noexcept;
@@ -84,6 +75,7 @@ public:
     var (const wchar_t* value);
     var (const String& value);
     var (const Array<var>& value);
+    var (const StringArray& value);
     var (ReferenceCountedObject* object);
     var (NativeFunction method) noexcept;
     var (const void* binaryData, size_t dataSize);
@@ -102,14 +94,12 @@ public:
     var& operator= (ReferenceCountedObject* object);
     var& operator= (NativeFunction method);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
     var (var&&) noexcept;
     var (String&&);
     var (MemoryBlock&&);
     var (Array<var>&&);
     var& operator= (var&&) noexcept;
     var& operator= (String&&);
-   #endif
 
     void swapWith (var& other) noexcept;
 
@@ -250,6 +240,8 @@ public:
     /** If this variant is an object, this returns one of its properties, or a default
         fallback value if the property is not set. */
     var getProperty (const Identifier& propertyName, const var& defaultReturnValue) const;
+    /** Returns true if this variant is an object and if it has the given property. */
+    bool hasProperty (const Identifier& propertyName) const noexcept;
 
     /** Invokes a named method call with no arguments. */
     var call (const Identifier& method) const;
@@ -282,6 +274,16 @@ public:
     */
     static var readFromStream (InputStream& input);
 
+    /* This was a static empty var object, but is now deprecated as it's too easy to accidentally
+       use it indirectly during a static constructor, leading to hard-to-find order-of-initialisation
+       problems.
+       @deprecated If you need a default-constructed var, just use var() or {}.
+       The only time you might miss having var::null available might be if you need to return an
+       empty var from a function by reference, but if you need to do that, it's easy enough to use
+       a function-local static var and return that, avoiding any order-of-initialisation issues.
+    */
+    JUCE_DEPRECATED_STATIC (static const var null;)
+
 private:
     //==============================================================================
     class VariantType;            friend class VariantType;
@@ -306,7 +308,7 @@ private:
         char stringValue [sizeof (String)];
         ReferenceCountedObject* objectValue;
         MemoryBlock* binaryValue;
-        NativeFunction methodValue;
+        NativeFunction* methodValue;
     };
 
     const VariantType* type;
@@ -317,16 +319,19 @@ private:
 };
 
 /** Compares the values of two var objects, using the var::equals() comparison. */
-bool operator== (const var&, const var&) noexcept;
+JUCE_API bool operator== (const var&, const var&) noexcept;
 /** Compares the values of two var objects, using the var::equals() comparison. */
-bool operator!= (const var&, const var&) noexcept;
-bool operator== (const var&, const String&);
-bool operator!= (const var&, const String&);
-bool operator== (const var&, const char*);
-bool operator!= (const var&, const char*);
+JUCE_API bool operator!= (const var&, const var&) noexcept;
+JUCE_API bool operator== (const var&, const String&);
+JUCE_API bool operator!= (const var&, const String&);
+JUCE_API bool operator== (const var&, const char*);
+JUCE_API bool operator!= (const var&, const char*);
 
 //==============================================================================
-/** This template-overloaded class can be used to convert between var and custom types. */
+/** This template-overloaded class can be used to convert between var and custom types.
+
+    @tags{Core}
+*/
 template <typename Type>
 struct VariantConverter
 {
@@ -334,13 +339,13 @@ struct VariantConverter
     static var toVar (const Type& t)               { return t; }
 };
 
-/** This template-overloaded class can be used to convert between var and custom types. */
+#ifndef DOXYGEN
 template <>
 struct VariantConverter<String>
 {
     static String fromVar (const var& v)           { return v.toString(); }
     static var toVar (const String& s)             { return s; }
 };
+#endif
 
-
-#endif   // JUCE_VARIANT_H_INCLUDED
+} // namespace juce

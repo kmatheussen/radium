@@ -2,29 +2,30 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_SCROLLBAR_H_INCLUDED
-#define JUCE_SCROLLBAR_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -45,6 +46,8 @@
     instead of handling a scrollbar directly.
 
     @see ScrollBar::Listener
+
+    @tags{GUI}
 */
 class JUCE_API  ScrollBar  : public Component,
                              public AsyncUpdater,
@@ -94,6 +97,10 @@ public:
         The bar's thumb will always be constrained so that the entire thumb lies
         within this range.
 
+        @param newRangeLimit    the new range.
+        @param notification     whether to send a notification of the change to listeners.
+                                A notification will only be sent if the range has changed.
+
         @see setCurrentRange
     */
     void setRangeLimits (Range<double> newRangeLimit,
@@ -103,6 +110,11 @@ public:
 
         The bar's thumb will always be constrained so that the entire thumb lies
         within this range.
+
+        @param minimum         the new range minimum.
+        @param maximum         the new range maximum.
+        @param notification    whether to send a notification of the change to listeners.
+                               A notification will only be sent if the range has changed.
 
         @see setCurrentRange
     */
@@ -207,6 +219,11 @@ public:
 
         A positive value here will move the bar down or to the right, a negative
         value moves it up or to the left.
+
+        @param howManySteps    the number of steps to move the scrollbar
+        @param notification    whether to send a notification of the change to listeners.
+                               A notification will only be sent if the position has changed.
+
         @returns true if the scrollbar's position actually changed.
     */
     bool moveScrollbarInSteps (int howManySteps,
@@ -219,6 +236,11 @@ public:
 
         A positive value here will move the bar down or to the right, a negative
         value moves it up or to the left.
+
+        @param howManyPages    the number of pages to move the scrollbar
+        @param notification    whether to send a notification of the change to listeners.
+                               A notification will only be sent if the position has changed.
+
         @returns true if the scrollbar's position actually changed.
     */
     bool moveScrollbarInPages (int howManyPages,
@@ -226,12 +248,20 @@ public:
 
     /** Scrolls to the top (or left).
         This is the same as calling setCurrentRangeStart (getMinimumRangeLimit());
+
+        @param notification    whether to send a notification of the change to listeners.
+                               A notification will only be sent if the position has changed.
+
         @returns true if the scrollbar's position actually changed.
     */
     bool scrollToTop (NotificationType notification = sendNotificationAsync);
 
     /** Scrolls to the bottom (or right).
         This is the same as calling setCurrentRangeStart (getMaximumRangeLimit() - getCurrentRangeSize());
+
+        @param notification    whether to send a notification of the change to listeners.
+                               A notification will only be sent if the position has changed.
+
         @returns true if the scrollbar's position actually changed.
     */
     bool scrollToBottom (NotificationType notification = sendNotificationAsync);
@@ -378,29 +408,29 @@ public:
     void resized() override;
     /** @internal */
     void parentHierarchyChanged() override;
+    /** @internal */
+    void setVisible (bool) override;
 
 private:
     //==============================================================================
-    Range<double> totalRange, visibleRange;
-    double singleStepSize, dragStartRange;
-    int thumbAreaStart, thumbAreaSize, thumbStart, thumbSize;
-    int dragStartMousePos, lastMousePos;
-    int initialDelayInMillisecs, repeatDelayInMillisecs, minimumDelayInMillisecs;
-    bool vertical, isDraggingThumb, autohides;
+    Range<double> totalRange { 0.0, 1.0 }, visibleRange { 0.0, 1.0 };
+    double singleStepSize = 0.1, dragStartRange = 0;
+    int thumbAreaStart = 0, thumbAreaSize = 0, thumbStart = 0, thumbSize = 0;
+    int dragStartMousePos = 0, lastMousePos = 0;
+    int initialDelayInMillisecs = 100, repeatDelayInMillisecs = 50, minimumDelayInMillisecs = 10;
+    bool vertical, isDraggingThumb = false, autohides = true, userVisibilityFlag = false;
     class ScrollbarButton;
     friend struct ContainerDeletePolicy<ScrollbarButton>;
-    ScopedPointer<ScrollbarButton> upButton, downButton;
+    std::unique_ptr<ScrollbarButton> upButton, downButton;
     ListenerList<Listener> listeners;
 
     void handleAsyncUpdate() override;
     void updateThumbPosition();
     void timerCallback() override;
+    bool getVisibility() const noexcept;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ScrollBar)
 };
 
-/** This typedef is just for compatibility with old code - newer code should use the ScrollBar::Listener class directly. */
-typedef ScrollBar::Listener ScrollBarListener;
 
-
-#endif   // JUCE_SCROLLBAR_H_INCLUDED
+} // namespace juce

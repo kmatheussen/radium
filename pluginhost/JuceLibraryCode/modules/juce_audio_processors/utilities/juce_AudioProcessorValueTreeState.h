@@ -2,30 +2,30 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_AUDIOPROCESSORVALUETREESTATE_H_INCLUDED
-#define JUCE_AUDIOPROCESSORVALUETREESTATE_H_INCLUDED
-
-#if JUCE_COMPILER_SUPPORTS_LAMBDAS || defined (DOXYGEN)
+namespace juce
+{
 
 /**
     This class contains a ValueTree which is used to manage an AudioProcessor's entire state.
@@ -33,14 +33,17 @@
     It has its own internal class of parameter object which are linked to values
     within its ValueTree, and which are each identified by a string ID.
 
-    To use: Create a AudioProcessorValueTreeState, and give it some parameters
-    using createParameter().
-
     You can get access to the underlying ValueTree object via the state member variable,
     so you can add extra properties to it as necessary.
 
     It also provides some utility child classes for connecting parameters directly to
     GUI controls like sliders.
+
+    To use:
+    1) Create an AudioProcessorValueTreeState, and give it some parameters using createAndAddParameter().
+    2) Initialise the state member variable with a type name.
+
+    @tags{Audio}
 */
 class JUCE_API  AudioProcessorValueTreeState  : private Timer,
                                                 private ValueTree::Listener
@@ -66,27 +69,43 @@ public:
         Calling this will create and add a special type of AudioProcessorParameter to the
         AudioProcessor to which this state is attached.
 
-        @param parameterID          A unique string ID for the new parameter
-        @param parameterName        The name that the parameter will return from AudioProcessorParameter::getName()
-        @param labelText            The label that the parameter will return from AudioProcessorParameter::getLabel()
-        @param valueRange           A mapping that will be used to determine the value range which this parameter uses
-        @param defaultValue         A default value for the parameter (in non-normalised units)
-        @param valueToTextFunction  A function that will convert a non-normalised value to a string for the
-                                    AudioProcessorParameter::getText() method. This can be nullptr to use the
-                                    default implementation
-        @param textToValueFunction  The inverse of valueToTextFunction
+        @param parameterID              A unique string ID for the new parameter
+        @param parameterName            The name that the parameter will return from AudioProcessorParameter::getName()
+        @param labelText                The label that the parameter will return from AudioProcessorParameter::getLabel()
+        @param valueRange               A mapping that will be used to determine the value range which this parameter uses
+        @param defaultValue             A default value for the parameter (in non-normalised units)
+        @param valueToTextFunction      A function that will convert a non-normalised value to a string for the
+                                        AudioProcessorParameter::getText() method. This can be nullptr to use the
+                                        default implementation
+        @param textToValueFunction      The inverse of valueToTextFunction
+        @param isMetaParameter          Set this value to true if this should be a meta parameter
+        @param isAutomatableParameter   Set this value to false if this parameter should not be automatable
+        @param isDiscrete               Set this value to true to make this parameter take discrete values in a host.
+                                        @see AudioProcessorParameter::isDiscrete
+        @param category                 Which category the parameter should use.
+                                        @see AudioProcessorParameter::Category
+        @param isBoolean                Set this value to true to make this parameter appear as a boolean toggle in
+                                        a hosts view of your plug-ins parameters
+                                        @see AudioProcessorParameter::isBoolean
+
         @returns the parameter object that was created
     */
-    AudioProcessorParameter* createAndAddParameter (String parameterID,
-                                                    String parameterName,
-                                                    String labelText,
-                                                    NormalisableRange<float> valueRange,
-                                                    float defaultValue,
-                                                    std::function<String (float)> valueToTextFunction,
-                                                    std::function<float (const String&)> textToValueFunction);
+    AudioProcessorParameterWithID* createAndAddParameter (const String& parameterID,
+                                                          const String& parameterName,
+                                                          const String& labelText,
+                                                          NormalisableRange<float> valueRange,
+                                                          float defaultValue,
+                                                          std::function<String (float)> valueToTextFunction,
+                                                          std::function<float (const String&)> textToValueFunction,
+                                                          bool isMetaParameter = false,
+                                                          bool isAutomatableParameter = true,
+                                                          bool isDiscrete = false,
+                                                          AudioProcessorParameter::Category category
+                                                             = AudioProcessorParameter::genericParameter,
+                                                          bool isBoolean = false);
 
     /** Returns a parameter by its ID string. */
-    AudioProcessorParameter* getParameter (StringRef parameterID) const noexcept;
+    AudioProcessorParameterWithID* getParameter (StringRef parameterID) const noexcept;
 
     /** Returns a pointer to a floating point representation of a particular
         parameter which a realtime process can read to find out its current value.
@@ -117,13 +136,42 @@ public:
     /** Returns the range that was set when the given parameter was created. */
     NormalisableRange<float> getParameterRange (StringRef parameterID) const noexcept;
 
+    /** Returns a copy of the state value tree.
+
+        The AudioProcessorValueTreeState's ValueTree is updated internally on the
+        message thread, but there may be cases when you may want to access the state
+        from a different thread (getStateInformation is a good example). This method
+        flushes all pending audio parameter value updates and returns a copy of the
+        state in a thread safe way.
+
+        Note: This method uses locks to synchronise thread access, so whilst it is
+        thread-safe, it is not realtime-safe. Do not call this method from within
+        your audio processing code!
+    */
+    ValueTree copyState();
+
+    /** Replaces the state value tree.
+
+        The AudioProcessorValueTreeState's ValueTree is updated internally on the
+        message thread, but there may be cases when you may want to modify the state
+        from a different thread (setStateInformation is a good example). This method
+        allows you to replace the state in a thread safe way.
+
+        Note: This method uses locks to synchronise thread access, so whilst it is
+        thread-safe, it is not realtime-safe. Do not call this method from within
+        your audio processing code!
+    */
+    void replaceState (const ValueTree& newState);
+
     /** A reference to the processor with which this state is associated. */
     AudioProcessor& processor;
 
     /** The state of the whole processor.
+
+        This must be initialised after all calls to createAndAddParameter().
         You can replace this with your own ValueTree object, and can add properties and
         children to the tree. This class will automatically add children for each of the
-        parameter objects that are created by createParameter().
+        parameter objects that are created by createAndAddParameter().
     */
     ValueTree state;
 
@@ -150,7 +198,7 @@ public:
     private:
         struct Pimpl;
         friend struct ContainerDeletePolicy<Pimpl>;
-        ScopedPointer<Pimpl> pimpl;
+        std::unique_ptr<Pimpl> pimpl;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SliderAttachment)
     };
 
@@ -174,7 +222,7 @@ public:
     private:
         struct Pimpl;
         friend struct ContainerDeletePolicy<Pimpl>;
-        ScopedPointer<Pimpl> pimpl;
+        std::unique_ptr<Pimpl> pimpl;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ComboBoxAttachment)
     };
 
@@ -198,7 +246,7 @@ public:
     private:
         struct Pimpl;
         friend struct ContainerDeletePolicy<Pimpl>;
-        ScopedPointer<Pimpl> pimpl;
+        std::unique_ptr<Pimpl> pimpl;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ButtonAttachment)
     };
 
@@ -208,6 +256,7 @@ private:
     friend struct Parameter;
 
     ValueTree getOrCreateChildValueTree (const String&);
+    bool flushParameterValuesToValueTree();
     void timerCallback() override;
 
     void valueTreePropertyChanged (ValueTree&, const Identifier&) override;
@@ -218,12 +267,13 @@ private:
     void valueTreeRedirected (ValueTree&) override;
     void updateParameterConnectionsToChildTrees();
 
-    Identifier valueType, valuePropertyID, idPropertyID;
-    bool updatingConnections;
+    Identifier valueType { "PARAM" },
+               valuePropertyID { "value" },
+               idPropertyID { "id" };
+
+    CriticalSection valueTreeChanging;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioProcessorValueTreeState)
 };
 
-#endif
-
-#endif  // JUCE_AUDIOPROCESSORVALUETREESTATE_H_INCLUDED
+} // namespace juce

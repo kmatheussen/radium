@@ -1,33 +1,26 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_TARGETPLATFORM_H_INCLUDED
-#define JUCE_TARGETPLATFORM_H_INCLUDED
+#pragma once
 
 //==============================================================================
 /*  This file figures out which platform is being built, and defines some macros
@@ -64,15 +57,17 @@
 #endif
 
 //==============================================================================
-#if (defined (_WIN32) || defined (_WIN64))
+#if defined (_WIN32) || defined (_WIN64)
   #define       JUCE_WIN32 1
   #define       JUCE_WINDOWS 1
 #elif defined (JUCE_ANDROID)
   #undef        JUCE_ANDROID
   #define       JUCE_ANDROID 1
+#elif defined (__FreeBSD__) || (__OpenBSD__)
+  #define       JUCE_BSD 1
 #elif defined (LINUX) || defined (__linux__)
   #define     JUCE_LINUX 1
-#elif defined (__APPLE_CPP__) || defined(__APPLE_CC__)
+#elif defined (__APPLE_CPP__) || defined (__APPLE_CC__)
   #include <CoreFoundation/CoreFoundation.h> // (needed to find out what platform we're using)
   #include "../native/juce_mac_ClangBugWorkaround.h"
 
@@ -82,8 +77,6 @@
   #else
     #define     JUCE_MAC 1
   #endif
-#elif defined (__FreeBSD__)
-  #define       JUCE_BSD 1
 #else
   #error "Unknown platform!"
 #endif
@@ -179,7 +172,7 @@
     #define JUCE_32BIT 1
   #endif
 
-  #if defined (__arm__) || defined (__arm64__)
+  #if defined (__arm__) || defined (__arm64__) || defined (__aarch64__)
     #define JUCE_ARM 1
   #elif __MMX__ || __SSE__ || __amd64__
     #define JUCE_INTEL 1
@@ -191,20 +184,13 @@
 
 #ifdef __clang__
   #define JUCE_CLANG 1
+
 #elif defined (__GNUC__)
   #define JUCE_GCC 1
+
 #elif defined (_MSC_VER)
   #define JUCE_MSVC 1
 
-  #if _MSC_VER < 1500
-    #define JUCE_VC8_OR_EARLIER 1
-
-    #if _MSC_VER < 1400
-      #error "Visual Studio 2003 and earlier are no longer supported!"
-    #endif
-  #endif
 #else
   #error unknown compiler
 #endif
-
-#endif   // JUCE_TARGETPLATFORM_H_INCLUDED

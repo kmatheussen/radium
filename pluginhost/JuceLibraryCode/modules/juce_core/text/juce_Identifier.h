@@ -1,34 +1,27 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_IDENTIFIER_H_INCLUDED
-#define JUCE_IDENTIFIER_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -39,8 +32,10 @@
     is to keep some static Identifier objects for the things you use often.
 
     @see NamedValueSet, ValueTree
+
+    @tags{Core}
 */
-class JUCE_API  Identifier
+class JUCE_API  Identifier  final
 {
 public:
     /** Creates a null identifier. */
@@ -70,13 +65,11 @@ public:
     /** Creates a copy of another identifier. */
     Identifier& operator= (const Identifier& other) noexcept;
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
     /** Creates a copy of another identifier. */
     Identifier (Identifier&& other) noexcept;
 
     /** Creates a copy of another identifier. */
     Identifier& operator= (Identifier&& other) noexcept;
-   #endif
 
     /** Destructor */
     ~Identifier() noexcept;
@@ -92,6 +85,18 @@ public:
 
     /** Compares the identifier with a string. */
     inline bool operator!= (StringRef other) const noexcept             { return name != other; }
+
+    /** Compares the identifier with a string. */
+    inline bool operator<  (StringRef other) const noexcept             { return name <  other; }
+
+    /** Compares the identifier with a string. */
+    inline bool operator<= (StringRef other) const noexcept             { return name <= other; }
+
+    /** Compares the identifier with a string. */
+    inline bool operator>  (StringRef other) const noexcept             { return name >  other; }
+
+    /** Compares the identifier with a string. */
+    inline bool operator>= (StringRef other) const noexcept             { return name >= other; }
 
     /** Returns this identifier as a string. */
     const String& toString() const noexcept                             { return name; }
@@ -124,5 +129,4 @@ private:
     String name;
 };
 
-
-#endif   // JUCE_IDENTIFIER_H_INCLUDED
+} // namespace juce

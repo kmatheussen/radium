@@ -2,38 +2,35 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
+namespace juce
+{
+
 Label::Label (const String& name, const String& labelText)
     : Component (name),
       textValue (labelText),
-      lastTextValue (labelText),
-      font (15.0f),
-      justification (Justification::centredLeft),
-      border (1, 5, 1, 5),
-      minimumHorizontalScale (0.0f),
-      keyboardType (TextEditor::textKeyboard),
-      editSingleClick (false),
-      editDoubleClick (false),
-      lossOfFocusDiscardsChanges (false)
+      lastTextValue (labelText)
 {
     setColour (TextEditor::textColourId, Colours::black);
     setColour (TextEditor::backgroundColourId, Colours::transparentBlack);
@@ -49,12 +46,11 @@ Label::~Label()
     if (ownerComponent != nullptr)
         ownerComponent->removeComponentListener (this);
 
-    editor = nullptr;
+    editor.reset();
 }
 
 //==============================================================================
-void Label::setText (const String& newText,
-                     const NotificationType notification)
+void Label::setText (const String& newText, NotificationType notification)
 {
     hideEditor (true);
 
@@ -74,7 +70,7 @@ void Label::setText (const String& newText,
     }
 }
 
-String Label::getText (const bool returnActiveEditorContents) const
+String Label::getText (bool returnActiveEditorContents) const
 {
     return (returnActiveEditorContents && isBeingEdited())
                 ? editor->getText()
@@ -102,13 +98,13 @@ Font Label::getFont() const noexcept
     return font;
 }
 
-void Label::setEditable (const bool editOnSingleClick,
-                         const bool editOnDoubleClick,
-                         const bool lossOfFocusDiscardsChanges_)
+void Label::setEditable (bool editOnSingleClick,
+                         bool editOnDoubleClick,
+                         bool lossOfFocusDiscards)
 {
     editSingleClick = editOnSingleClick;
     editDoubleClick = editOnDoubleClick;
-    lossOfFocusDiscardsChanges = lossOfFocusDiscardsChanges_;
+    lossOfFocusDiscardsChanges = lossOfFocusDiscards;
 
     setWantsKeyboardFocus (editOnSingleClick || editOnDoubleClick);
     setFocusContainer (editOnSingleClick || editOnDoubleClick);
@@ -138,7 +134,7 @@ Component* Label::getAttachedComponent() const
     return static_cast<Component*> (ownerComponent);
 }
 
-void Label::attachToComponent (Component* owner, const bool onLeft)
+void Label::attachToComponent (Component* owner, bool onLeft)
 {
     if (ownerComponent != nullptr)
         ownerComponent->removeComponentListener (this);
@@ -158,28 +154,27 @@ void Label::attachToComponent (Component* owner, const bool onLeft)
 
 void Label::componentMovedOrResized (Component& component, bool /*wasMoved*/, bool /*wasResized*/)
 {
-    const Font f (getLookAndFeel().getLabelFont (*this));
+    auto f = getLookAndFeel().getLabelFont (*this);
 
     if (leftOfOwnerComp)
     {
-        setSize (jmin (roundToInt (f.getStringWidthFloat (textValue.toString()) + 0.5f) + getBorderSize().getLeftAndRight(),
-                       component.getX()),
-                 component.getHeight());
+        auto width = jmin (roundToInt (f.getStringWidthFloat (textValue.toString()) + 0.5f)
+                             + getBorderSize().getLeftAndRight(),
+                           component.getX());
 
-        setTopRightPosition (component.getX(), component.getY());
+        setBounds (component.getX() - width, component.getY(), width, component.getHeight());
     }
     else
     {
-        setSize (component.getWidth(),
-                 getBorderSize().getTopAndBottom() + 6 + roundToInt (f.getHeight() + 0.5f));
+        auto height = getBorderSize().getTopAndBottom() + 6 + roundToInt (f.getHeight() + 0.5f);
 
-        setTopLeftPosition (component.getX(), component.getY() - getHeight());
+        setBounds (component.getX(), component.getY() - height, component.getWidth(), height);
     }
 }
 
 void Label::componentParentHierarchyChanged (Component& component)
 {
-    if (Component* parent = component.getParentComponent())
+    if (auto* parent = component.getParentComponent())
         parent->addChildComponent (this);
 }
 
@@ -195,23 +190,36 @@ void Label::textWasChanged() {}
 void Label::editorShown (TextEditor* textEditor)
 {
     Component::BailOutChecker checker (this);
-    listeners.callChecked (checker, &LabelListener::editorShown, this, *textEditor);
+    listeners.callChecked (checker, [this, textEditor] (Label::Listener& l) { l.editorShown (this, *textEditor); });
+
+    if (checker.shouldBailOut())
+        return;
+
+    if (onEditorShow != nullptr)
+        onEditorShow();
 }
 
 void Label::editorAboutToBeHidden (TextEditor* textEditor)
 {
-    if (ComponentPeer* const peer = getPeer())
+    if (auto* peer = getPeer())
         peer->dismissPendingTextInput();
 
     Component::BailOutChecker checker (this);
-    listeners.callChecked (checker, &LabelListener::editorHidden, this, *textEditor);
+    listeners.callChecked (checker, [this, textEditor] (Label::Listener& l) { l.editorHidden (this, *textEditor); });
+
+    if (checker.shouldBailOut())
+        return;
+
+    if (onEditorHide != nullptr)
+        onEditorHide();
 }
 
 void Label::showEditor()
 {
     if (editor == nullptr)
     {
-        addAndMakeVisible (editor = createEditorComponent());
+        editor.reset (createEditorComponent());
+        addAndMakeVisible (editor.get());
         editor->setText (getText(), false);
         editor->setKeyboardType (keyboardType);
         editor->addListener (this);
@@ -225,7 +233,7 @@ void Label::showEditor()
         resized();
         repaint();
 
-        editorShown (editor);
+        editorShown (editor.get());
 
         enterModalState (false);
         editor->grabKeyboardFocus();
@@ -234,7 +242,7 @@ void Label::showEditor()
 
 bool Label::updateFromTextEditorContents (TextEditor& ed)
 {
-    const String newText (ed.getText());
+    auto newText = ed.getText();
 
     if (textValue.toString() != newText)
     {
@@ -253,19 +261,19 @@ bool Label::updateFromTextEditorContents (TextEditor& ed)
     return false;
 }
 
-void Label::hideEditor (const bool discardCurrentEditorContents)
+void Label::hideEditor (bool discardCurrentEditorContents)
 {
     if (editor != nullptr)
     {
         WeakReference<Component> deletionChecker (this);
+        std::unique_ptr<TextEditor> outgoingEditor;
+        std::swap (outgoingEditor, editor);
 
-        ScopedPointer<TextEditor> outgoingEditor (editor);
-
-        editorAboutToBeHidden (outgoingEditor);
+        editorAboutToBeHidden (outgoingEditor.get());
 
         const bool changed = (! discardCurrentEditorContents)
                                && updateFromTextEditorContents (*outgoingEditor);
-        outgoingEditor = nullptr;
+        outgoingEditor.reset();
         repaint();
 
         if (changed)
@@ -303,7 +311,7 @@ static void copyColourIfSpecified (Label& l, TextEditor& ed, int colourID, int t
 
 TextEditor* Label::createEditorComponent()
 {
-    TextEditor* const ed = new TextEditor (getName());
+    auto* ed = new TextEditor (getName());
     ed->applyFontToAllText (getLookAndFeel().getLabelFont (*this));
     copyAllExplicitColoursTo (*ed);
 
@@ -316,7 +324,7 @@ TextEditor* Label::createEditorComponent()
 
 TextEditor* Label::getCurrentTextEditor() const noexcept
 {
-    return editor;
+    return editor.get();
 }
 
 //==============================================================================
@@ -385,8 +393,8 @@ class LabelKeyboardFocusTraverser   : public KeyboardFocusTraverser
 public:
     LabelKeyboardFocusTraverser() {}
 
-    Component* getNextComponent (Component* c)     { return KeyboardFocusTraverser::getNextComponent (getComp (c)); }
-    Component* getPreviousComponent (Component* c) { return KeyboardFocusTraverser::getPreviousComponent (getComp (c)); }
+    Component* getNextComponent (Component* c) override     { return KeyboardFocusTraverser::getNextComponent (getComp (c)); }
+    Component* getPreviousComponent (Component* c) override { return KeyboardFocusTraverser::getPreviousComponent (getComp (c)); }
 
     static Component* getComp (Component* current)
     {
@@ -401,20 +409,19 @@ KeyboardFocusTraverser* Label::createFocusTraverser()
 }
 
 //==============================================================================
-void Label::addListener (LabelListener* const listener)
-{
-    listeners.add (listener);
-}
-
-void Label::removeListener (LabelListener* const listener)
-{
-    listeners.remove (listener);
-}
+void Label::addListener    (Label::Listener* l)     { listeners.add (l); }
+void Label::removeListener (Label::Listener* l)     { listeners.remove (l); }
 
 void Label::callChangeListeners()
 {
     Component::BailOutChecker checker (this);
-    listeners.callChecked (checker, &LabelListener::labelTextChanged, this);  // (can't use Label::Listener due to idiotic VC2005 bug)
+    listeners.callChecked (checker, [this] (Listener& l) { l.labelTextChanged (this); });
+
+    if (checker.shouldBailOut())
+        return;
+
+    if (onTextChange != nullptr)
+        onTextChange();
 }
 
 //==============================================================================
@@ -422,7 +429,7 @@ void Label::textEditorTextChanged (TextEditor& ed)
 {
     if (editor != nullptr)
     {
-        jassert (&ed == editor);
+        jassert (&ed == editor.get());
 
         if (! (hasKeyboardFocus (true) || isCurrentlyBlockedByAnotherModalComponent()))
         {
@@ -438,14 +445,14 @@ void Label::textEditorReturnKeyPressed (TextEditor& ed)
 {
     if (editor != nullptr)
     {
-        jassert (&ed == editor);
+        jassert (&ed == editor.get());
 
-        const bool changed = updateFromTextEditorContents (ed);
+        WeakReference<Component> deletionChecker (this);
+        bool changed = updateFromTextEditorContents (ed);
         hideEditor (true);
 
-        if (changed)
+        if (changed && deletionChecker != nullptr)
         {
-            WeakReference<Component> deletionChecker (this);
             textWasEdited();
 
             if (deletionChecker != nullptr)
@@ -458,7 +465,7 @@ void Label::textEditorEscapeKeyPressed (TextEditor& ed)
 {
     if (editor != nullptr)
     {
-        jassert (&ed == editor);
+        jassert (&ed == editor.get());
         ignoreUnused (ed);
 
         editor->setText (textValue.toString(), false);
@@ -470,3 +477,5 @@ void Label::textEditorFocusLost (TextEditor& ed)
 {
     textEditorTextChanged (ed);
 }
+
+} // namespace juce

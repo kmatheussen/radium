@@ -2,31 +2,32 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-   ------------------------------------------------------------------------------
-
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
+namespace juce
+{
+
 namespace MidiFileHelpers
 {
-    static void writeVariableLengthInt (OutputStream& out, unsigned int v)
+    static void writeVariableLengthInt (OutputStream& out, uint32 v)
     {
-        unsigned int buffer = v & 0x7f;
+        auto buffer = v & 0x7f;
 
         while ((v >>= 7) != 0)
         {
@@ -47,7 +48,7 @@ namespace MidiFileHelpers
 
     static bool parseMidiHeader (const uint8* &data, short& timeFormat, short& fileType, short& numberOfTracks) noexcept
     {
-        unsigned int ch = ByteOrder::bigEndianInt (data);
+        auto ch = ByteOrder::bigEndianInt (data);
         data += 4;
 
         if (ch != ByteOrder::bigEndianInt ("MThd"))
@@ -73,7 +74,7 @@ namespace MidiFileHelpers
                 return false;
         }
 
-        unsigned int bytesRemaining = ByteOrder::bigEndianInt (data);
+        auto bytesRemaining = ByteOrder::bigEndianInt (data);
         data += 4;
         fileType = (short) ByteOrder::bigEndianShort (data);
         data += 2;
@@ -87,22 +88,22 @@ namespace MidiFileHelpers
         return true;
     }
 
-    static double convertTicksToSeconds (const double time,
+    static double convertTicksToSeconds (double time,
                                          const MidiMessageSequence& tempoEvents,
-                                         const int timeFormat)
+                                         int timeFormat)
     {
         if (timeFormat < 0)
             return time / (-(timeFormat >> 8) * (timeFormat & 0xff));
 
-        double lastTime = 0.0, correctedTime = 0.0;
-        const double tickLen = 1.0 / (timeFormat & 0x7fff);
-        double secsPerTick = 0.5 * tickLen;
-        const int numEvents = tempoEvents.getNumEvents();
+        double lastTime = 0, correctedTime = 0;
+        auto tickLen = 1.0 / (timeFormat & 0x7fff);
+        auto secsPerTick = 0.5 * tickLen;
+        auto numEvents = tempoEvents.getNumEvents();
 
         for (int i = 0; i < numEvents; ++i)
         {
-            const MidiMessage& m = tempoEvents.getEventPointer(i)->message;
-            const double eventTime = m.getTimeStamp();
+            auto& m = tempoEvents.getEventPointer(i)->message;
+            auto eventTime = m.getTimeStamp();
 
             if (eventTime >= time)
                 break;
@@ -115,7 +116,7 @@ namespace MidiFileHelpers
 
             while (i + 1 < numEvents)
             {
-                const MidiMessage& m2 = tempoEvents.getEventPointer(i + 1)->message;
+                auto& m2 = tempoEvents.getEventPointer(i + 1)->message;
 
                 if (m2.getTimeStamp() != eventTime)
                     break;
@@ -130,36 +131,18 @@ namespace MidiFileHelpers
         return correctedTime + (time - lastTime) * secsPerTick;
     }
 
-    // a comparator that puts all the note-offs before note-ons that have the same time
-    struct Sorter
-    {
-        static int compareElements (const MidiMessageSequence::MidiEventHolder* const first,
-                                    const MidiMessageSequence::MidiEventHolder* const second) noexcept
-        {
-            const double diff = (first->message.getTimeStamp() - second->message.getTimeStamp());
-
-            if (diff > 0) return 1;
-            if (diff < 0) return -1;
-            if (first->message.isNoteOff() && second->message.isNoteOn())   return -1;
-            if (first->message.isNoteOn()  && second->message.isNoteOff())  return 1;
-
-            return 0;
-        }
-    };
-
     template <typename MethodType>
     static void findAllMatchingEvents (const OwnedArray<MidiMessageSequence>& tracks,
                                        MidiMessageSequence& results,
                                        MethodType method)
     {
-        for (int i = 0; i < tracks.size(); ++i)
+        for (auto* track : tracks)
         {
-            const MidiMessageSequence& track = *tracks.getUnchecked(i);
-            const int numEvents = track.getNumEvents();
+            auto numEvents = track->getNumEvents();
 
             for (int j = 0; j < numEvents; ++j)
             {
-                const MidiMessage& m = track.getEventPointer(j)->message;
+                auto& m = track->getEventPointer(j)->message;
 
                 if ((m.*method)())
                     results.addEvent (m);
@@ -169,13 +152,33 @@ namespace MidiFileHelpers
 }
 
 //==============================================================================
-MidiFile::MidiFile()
-   : timeFormat ((short) (unsigned short) 0xe728)
+MidiFile::MidiFile()  : timeFormat ((short) (unsigned short) 0xe728) {}
+MidiFile::~MidiFile() {}
+
+MidiFile::MidiFile (const MidiFile& other)  : timeFormat (other.timeFormat)
+{
+    tracks.addCopiesOf (other.tracks);
+}
+
+MidiFile& MidiFile::operator= (const MidiFile& other)
+{
+    tracks.clear();
+    tracks.addCopiesOf (other.tracks);
+    timeFormat = other.timeFormat;
+    return *this;
+}
+
+MidiFile::MidiFile (MidiFile&& other)
+    : tracks (static_cast<OwnedArray<MidiMessageSequence>&&> (other.tracks)),
+      timeFormat (other.timeFormat)
 {
 }
 
-MidiFile::~MidiFile()
+MidiFile& MidiFile::operator= (MidiFile&& other)
 {
+    tracks = static_cast<OwnedArray<MidiMessageSequence>&&> (other.tracks);
+    timeFormat = other.timeFormat;
+    return *this;
 }
 
 void MidiFile::clear()
@@ -189,9 +192,9 @@ int MidiFile::getNumTracks() const noexcept
     return tracks.size();
 }
 
-const MidiMessageSequence* MidiFile::getTrack (const int index) const noexcept
+const MidiMessageSequence* MidiFile::getTrack (int index) const noexcept
 {
-    return tracks [index];
+    return tracks[index];
 }
 
 void MidiFile::addTrack (const MidiMessageSequence& trackSequence)
@@ -205,13 +208,12 @@ short MidiFile::getTimeFormat() const noexcept
     return timeFormat;
 }
 
-void MidiFile::setTicksPerQuarterNote (const int ticks) noexcept
+void MidiFile::setTicksPerQuarterNote (int ticks) noexcept
 {
     timeFormat = (short) ticks;
 }
 
-void MidiFile::setSmpteTimeFormat (const int framesPerSecond,
-                                   const int subframeResolution) noexcept
+void MidiFile::setSmpteTimeFormat (int framesPerSecond, int subframeResolution) noexcept
 {
     timeFormat = (short) (((-framesPerSecond) << 8) | subframeResolution);
 }
@@ -236,8 +238,8 @@ double MidiFile::getLastTimestamp() const
 {
     double t = 0.0;
 
-    for (int i = tracks.size(); --i >= 0;)
-        t = jmax (t, tracks.getUnchecked(i)->getEndTime());
+    for (auto* ms : tracks)
+        t = jmax (t, ms->getEndTime());
 
     return t;
 }
@@ -253,8 +255,8 @@ bool MidiFile::readFrom (InputStream& sourceStream)
     // (put a sanity-check on the file size, as midi files are generally small)
     if (sourceStream.readIntoMemoryBlock (data, maxSensibleMidiFileSize))
     {
-        size_t size = data.getSize();
-        const uint8* d = static_cast<const uint8*> (data.getData());
+        auto size = data.getSize();
+        auto d = static_cast<const uint8*> (data.getData());
         short fileType, expectedTracks;
 
         if (size > 16 && MidiFileHelpers::parseMidiHeader (d, timeFormat, fileType, expectedTracks))
@@ -265,9 +267,9 @@ bool MidiFile::readFrom (InputStream& sourceStream)
 
             while (size > 0 && track < expectedTracks)
             {
-                const int chunkType = (int) ByteOrder::bigEndianInt (d);
+                auto chunkType = (int) ByteOrder::bigEndianInt (d);
                 d += 4;
-                const int chunkSize = (int) ByteOrder::bigEndianInt (d);
+                auto chunkSize = (int) ByteOrder::bigEndianInt (d);
                 d += 4;
 
                 if (chunkSize <= 0)
@@ -298,7 +300,7 @@ void MidiFile::readNextTrack (const uint8* data, int size)
     while (size > 0)
     {
         int bytesUsed;
-        const int delay = MidiMessage::readVariableLengthVal (data, bytesUsed);
+        auto delay = MidiMessage::readVariableLengthVal (data, bytesUsed);
         data += bytesUsed;
         size -= bytesUsed;
         time += delay;
@@ -314,14 +316,25 @@ void MidiFile::readNextTrack (const uint8* data, int size)
 
         result.addEvent (mm);
 
-        const uint8 firstByte = *(mm.getRawData());
+        auto firstByte = *(mm.getRawData());
+
         if ((firstByte & 0xf0) != 0xf0)
             lastStatusByte = firstByte;
     }
 
-    // use a sort that puts all the note-offs before note-ons that have the same time
-    MidiFileHelpers::Sorter sorter;
-    result.list.sort (sorter, true);
+    // sort so that we put all the note-offs before note-ons that have the same time
+    std::stable_sort (result.list.begin(), result.list.end(),
+                      [] (const MidiMessageSequence::MidiEventHolder* a,
+                          const MidiMessageSequence::MidiEventHolder* b)
+    {
+        auto t1 = a->message.getTimeStamp();
+        auto t2 = b->message.getTimeStamp();
+
+        if (t1 < t2)  return true;
+        if (t2 < t1)  return false;
+
+        return a->message.isNoteOff() && b->message.isNoteOn();
+    });
 
     addTrack (result);
     tracks.getLast()->updateMatchedPairs();
@@ -336,13 +349,11 @@ void MidiFile::convertTimestampTicksToSeconds()
 
     if (timeFormat != 0)
     {
-        for (int i = 0; i < tracks.size(); ++i)
+        for (auto* ms : tracks)
         {
-            const MidiMessageSequence& ms = *tracks.getUnchecked(i);
-
-            for (int j = ms.getNumEvents(); --j >= 0;)
+            for (int j = ms->getNumEvents(); --j >= 0;)
             {
-                MidiMessage& m = ms.getEventPointer(j)->message;
+                auto& m = ms->getEventPointer(j)->message;
                 m.setTimeStamp (MidiFileHelpers::convertTicksToSeconds (m.getTimeStamp(), tempoEvents, timeFormat));
             }
         }
@@ -354,23 +365,23 @@ bool MidiFile::writeTo (OutputStream& out, int midiFileType)
 {
     jassert (midiFileType >= 0 && midiFileType <= 2);
 
-    out.writeIntBigEndian ((int) ByteOrder::bigEndianInt ("MThd"));
-    out.writeIntBigEndian (6);
-    out.writeShortBigEndian ((short) midiFileType);
-    out.writeShortBigEndian ((short) tracks.size());
-    out.writeShortBigEndian (timeFormat);
+    if (! out.writeIntBigEndian ((int) ByteOrder::bigEndianInt ("MThd"))) return false;
+    if (! out.writeIntBigEndian (6))                                      return false;
+    if (! out.writeShortBigEndian ((short) midiFileType))                 return false;
+    if (! out.writeShortBigEndian ((short) tracks.size()))                return false;
+    if (! out.writeShortBigEndian (timeFormat))                           return false;
 
-    for (int i = 0; i < tracks.size(); ++i)
-        writeTrack (out, i);
+    for (auto* ms : tracks)
+        if (! writeTrack (out, *ms))
+            return false;
 
     out.flush();
     return true;
 }
 
-void MidiFile::writeTrack (OutputStream& mainOut, const int trackNum)
+bool MidiFile::writeTrack (OutputStream& mainOut, const MidiMessageSequence& ms)
 {
     MemoryOutputStream out;
-    const MidiMessageSequence& ms = *tracks.getUnchecked (trackNum);
 
     int lastTick = 0;
     uint8 lastStatusByte = 0;
@@ -378,20 +389,19 @@ void MidiFile::writeTrack (OutputStream& mainOut, const int trackNum)
 
     for (int i = 0; i < ms.getNumEvents(); ++i)
     {
-        const MidiMessage& mm = ms.getEventPointer(i)->message;
+        auto& mm = ms.getEventPointer(i)->message;
 
         if (mm.isEndOfTrackMetaEvent())
             endOfTrackEventWritten = true;
 
-        const int tick = roundToInt (mm.getTimeStamp());
-        const int delta = jmax (0, tick - lastTick);
+        auto tick = roundToInt (mm.getTimeStamp());
+        auto delta = jmax (0, tick - lastTick);
         MidiFileHelpers::writeVariableLengthInt (out, (uint32) delta);
         lastTick = tick;
 
-        const uint8* data = mm.getRawData();
-        int dataSize = mm.getRawDataSize();
-
-        const uint8 statusByte = data[0];
+        auto* data = mm.getRawData();
+        auto dataSize = mm.getRawDataSize();
+        auto statusByte = data[0];
 
         if (statusByte == lastStatusByte
              && (statusByte & 0xf0) != 0xf0
@@ -418,11 +428,16 @@ void MidiFile::writeTrack (OutputStream& mainOut, const int trackNum)
     if (! endOfTrackEventWritten)
     {
         out.writeByte (0); // (tick delta)
-        const MidiMessage m (MidiMessage::endOfTrack());
+        auto m = MidiMessage::endOfTrack();
         out.write (m.getRawData(), (size_t) m.getRawDataSize());
     }
 
-    mainOut.writeIntBigEndian ((int) ByteOrder::bigEndianInt ("MTrk"));
-    mainOut.writeIntBigEndian ((int) out.getDataSize());
+    if (! mainOut.writeIntBigEndian ((int) ByteOrder::bigEndianInt ("MTrk"))) return false;
+    if (! mainOut.writeIntBigEndian ((int) out.getDataSize()))                return false;
+
     mainOut << out;
+
+    return true;
 }
+
+} // namespace juce

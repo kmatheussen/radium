@@ -2,30 +2,30 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-namespace MouseCursorHelpers
+namespace juce
 {
-    extern NSImage* createNSImage (const Image&, float scaleFactor = 1.f);
-}
 
 extern NSMenu* createNSMenu (const PopupMenu&, const String& name, int topLevelMenuId,
                              int topLevelIndex, bool addDelegate);
@@ -34,9 +34,7 @@ class SystemTrayIconComponent::Pimpl  : private Timer
 {
 public:
     Pimpl (SystemTrayIconComponent& iconComp, const Image& im)
-        : owner (iconComp), statusItem (nil),
-          statusIcon (MouseCursorHelpers::createNSImage (im)),
-          view (nil), isHighlighted (false)
+        : owner (iconComp), statusIcon (imageToNSImage (im))
     {
         static SystemTrayViewClass cls;
         view = [cls.createInstance() init];
@@ -70,9 +68,10 @@ public:
     void updateIcon (const Image& newImage)
     {
         [statusIcon release];
-        statusIcon = MouseCursorHelpers::createNSImage (newImage);
+        statusIcon = imageToNSImage (newImage);
         setIconSize();
         SystemTrayViewClass::setImage (view, statusIcon);
+        [statusItem setView: view];
     }
 
     void setHighlighted (bool shouldHighlight)
@@ -85,47 +84,49 @@ public:
     {
         NSEventType type = [e type];
 
-        const bool isLeft  = (type == NSLeftMouseDown  || type == NSLeftMouseUp);
-        const bool isRight = (type == NSRightMouseDown || type == NSRightMouseUp);
+        const bool isLeft  = (type == NSEventTypeLeftMouseDown  || type == NSEventTypeLeftMouseUp);
+        const bool isRight = (type == NSEventTypeRightMouseDown || type == NSEventTypeRightMouseUp);
 
         if (owner.isCurrentlyBlockedByAnotherModalComponent())
         {
             if (isLeft || isRight)
-                if (Component* const current = Component::getCurrentlyModalComponent())
+                if (auto* current = Component::getCurrentlyModalComponent())
                     current->inputAttemptWhenModal();
         }
         else
         {
-            ModifierKeys eventMods (ModifierKeys::getCurrentModifiersRealtime());
+            auto eventMods = ComponentPeer::getCurrentModifiersRealtime();
 
-            if (([e modifierFlags] & NSCommandKeyMask) != 0)
+            if (([e modifierFlags] & NSEventModifierFlagCommand) != 0)
                 eventMods = eventMods.withFlags (ModifierKeys::commandModifier);
 
-            const Time now (Time::getCurrentTime());
-
-            MouseInputSource mouseSource = Desktop::getInstance().getMainMouseSource();
-            const float pressure = (float) e.pressure;
+            auto now = Time::getCurrentTime();
+            auto mouseSource = Desktop::getInstance().getMainMouseSource();
+            auto pressure = (float) e.pressure;
 
             if (isLeft || isRight)  // Only mouse up is sent by the OS, so simulate a down/up
             {
                 setHighlighted (true);
                 startTimer (150);
 
-                owner.mouseDown (MouseEvent (mouseSource, Point<float>(),
+                owner.mouseDown (MouseEvent (mouseSource, {},
                                              eventMods.withFlags (isLeft ? ModifierKeys::leftButtonModifier
                                                                          : ModifierKeys::rightButtonModifier),
-                                             pressure, &owner, &owner, now,
-                                             Point<float>(), now, 1, false));
+                                             pressure, MouseInputSource::invalidOrientation, MouseInputSource::invalidRotation,
+                                             MouseInputSource::invalidTiltX, MouseInputSource::invalidTiltY,
+                                             &owner, &owner, now, {}, now, 1, false));
 
-                owner.mouseUp (MouseEvent (mouseSource, Point<float>(), eventMods.withoutMouseButtons(),
-                                           pressure, &owner, &owner, now,
-                                           Point<float>(), now, 1, false));
+                owner.mouseUp (MouseEvent (mouseSource, {}, eventMods.withoutMouseButtons(), pressure,
+                                           MouseInputSource::invalidOrientation, MouseInputSource::invalidRotation,
+                                           MouseInputSource::invalidTiltX, MouseInputSource::invalidTiltY,
+                                           &owner, &owner, now, {}, now, 1, false));
             }
-            else if (type == NSMouseMoved)
+            else if (type == NSEventTypeMouseMoved)
             {
-                owner.mouseMove (MouseEvent (mouseSource, Point<float>(), eventMods,
-                                             pressure, &owner, &owner, now,
-                                             Point<float>(), now, 1, false));
+                owner.mouseMove (MouseEvent (mouseSource, {}, eventMods, pressure,
+                                             MouseInputSource::invalidOrientation, MouseInputSource::invalidRotation,
+                                             MouseInputSource::invalidTiltX, MouseInputSource::invalidTiltY,
+                                             &owner, &owner, now, {}, now, 1, false));
             }
         }
     }
@@ -142,12 +143,12 @@ public:
     }
 
     SystemTrayIconComponent& owner;
-    NSStatusItem* statusItem;
+    NSStatusItem* statusItem = nil;
 
 private:
-    NSImage* statusIcon;
-    NSControl* view;
-    bool isHighlighted;
+    NSImage* statusIcon = nil;
+    NSControl* view = nil;
+    bool isHighlighted = false;
 
     void setIconSize()
     {
@@ -182,7 +183,7 @@ private:
 
         static void frameChanged (id self, SEL, NSNotification*)
         {
-            if (Pimpl* const owner = getOwner (self))
+            if (auto* owner = getOwner (self))
             {
                 NSRect r = [[[owner->statusItem view] window] frame];
                 NSRect sr = [[[NSScreen screens] objectAtIndex: 0] frame];
@@ -194,7 +195,7 @@ private:
     private:
         static void handleEventDown (id self, SEL, NSEvent* e)
         {
-            if (Pimpl* const owner = getOwner (self))
+            if (auto* owner = getOwner (self))
                 owner->handleStatusItemAction (e);
         }
 
@@ -202,7 +203,7 @@ private:
         {
             NSRect bounds = [self bounds];
 
-            if (Pimpl* const owner = getOwner (self))
+            if (auto* owner = getOwner (self))
                 [owner->statusItem drawStatusBarBackgroundInRect: bounds
                                                    withHighlight: owner->isHighlighted];
 
@@ -214,7 +215,7 @@ private:
                                             bounds.origin.y + ((bounds.size.height - imageSize.height) / 2.0f),
                                             imageSize.width, imageSize.height)
                       fromRect: NSZeroRect
-                     operation: NSCompositeSourceOver
+                     operation: NSCompositingOperationSourceOver
                       fraction: 1.0f];
             }
         }
@@ -230,13 +231,13 @@ void SystemTrayIconComponent::setIconImage (const Image& newImage)
     if (newImage.isValid())
     {
         if (pimpl == nullptr)
-            pimpl = new Pimpl (*this, newImage);
+            pimpl.reset (new Pimpl (*this, newImage));
         else
             pimpl->updateIcon (newImage);
     }
     else
     {
-        pimpl = nullptr;
+        pimpl.reset();
     }
 }
 
@@ -271,3 +272,5 @@ void SystemTrayIconComponent::showDropdownMenu (const PopupMenu& menu)
     if (pimpl != nullptr)
         pimpl->showMenu (menu);
 }
+
+} // namespace juce

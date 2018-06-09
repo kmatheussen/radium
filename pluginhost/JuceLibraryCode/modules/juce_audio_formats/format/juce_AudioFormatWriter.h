@@ -2,29 +2,30 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_AUDIOFORMATWRITER_H_INCLUDED
-#define JUCE_AUDIOFORMATWRITER_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -37,6 +38,8 @@
     you can call its write() method to store the samples, and then delete it.
 
     @see AudioFormat, AudioFormatReader
+
+    @tags{Audio}
 */
 class JUCE_API  AudioFormatWriter
 {
@@ -61,6 +64,26 @@ protected:
                        unsigned int numberOfChannels,
                        unsigned int bitsPerSample);
 
+    //==============================================================================
+    /** Creates an AudioFormatWriter object.
+
+        @param destStream            the stream to write to - this will be deleted
+                                     by this object when it is no longer needed
+        @param formatName            the description that will be returned by the getFormatName()
+                                     method
+        @param sampleRate            the sample rate to use - the base class just stores
+                                     this value, it doesn't do anything with it
+        @param audioChannelLayout    the channel layout to use for the writer - the base class
+                                     just stores this value, it doesn't do anything with it
+        @param bitsPerSample         the bit depth of the stream - the base class just stores
+                                     this value, it doesn't do anything with it
+    */
+    AudioFormatWriter (OutputStream* destStream,
+                       const String& formatName,
+                       double sampleRate,
+                       const AudioChannelSet& audioChannelLayout,
+                       unsigned int bitsPerSample);
+
 public:
     /** Destructor. */
     virtual ~AudioFormatWriter();
@@ -75,7 +98,7 @@ public:
     //==============================================================================
     /** Writes a set of samples to the audio stream.
 
-        Note that if you're trying to write the contents of an AudioSampleBuffer, you
+        Note that if you're trying to write the contents of an AudioBuffer, you
         can use writeFromAudioSampleBuffer().
 
         @param samplesToWrite   an array of arrays containing the sample data for
@@ -133,8 +156,8 @@ public:
                                int samplesPerBlock = 2048);
 
 
-    /** Writes some samples from an AudioSampleBuffer. */
-    bool writeFromAudioSampleBuffer (const AudioSampleBuffer& source,
+    /** Writes some samples from an AudioBuffer. */
+    bool writeFromAudioSampleBuffer (const AudioBuffer<float>& source,
                                      int startSample, int numSamples);
 
     /** Writes some samples from a set of float data channels. */
@@ -189,6 +212,7 @@ public:
         */
         bool write (const float* const* data, int numSamples);
 
+        /** Receiver for incoming data. */
         class JUCE_API  IncomingDataReceiver
         {
         public:
@@ -196,14 +220,14 @@ public:
             virtual ~IncomingDataReceiver() {}
 
             virtual void reset (int numChannels, double sampleRate, int64 totalSamplesInSource) = 0;
-            virtual void addBlock (int64 sampleNumberInSource, const AudioSampleBuffer& newData,
+            virtual void addBlock (int64 sampleNumberInSource, const AudioBuffer<float>& newData,
                                    int startOffsetInBuffer, int numSamples) = 0;
         };
 
         /** Allows you to specify a callback that this writer should update with the
             incoming data.
-            The receiver will be cleared and will the writer will begin adding data to
-            it as the data arrives. Pass a null pointer to remove the current receiver.
+            The receiver will be cleared and the writer will begin adding data to it
+            as the data arrives. Pass a null pointer to remove the current receiver.
 
             The object passed-in must not be deleted while this writer is still using it.
         */
@@ -217,7 +241,7 @@ public:
     private:
         class Buffer;
         friend struct ContainerDeletePolicy<Buffer>;
-        ScopedPointer<Buffer> buffer;
+        std::unique_ptr<Buffer> buffer;
     };
 
 protected:
@@ -234,6 +258,9 @@ protected:
     /** True if it's a floating-point format, false if it's fixed-point. */
     bool usesFloatingPointData;
 
+    /** The audio channel layout that the writer should use */
+    AudioChannelSet channelLayout;
+
     /** The output stream for use by subclasses. */
     OutputStream* output;
 
@@ -241,8 +268,8 @@ protected:
     template <class DestSampleType, class SourceSampleType, class DestEndianness>
     struct WriteHelper
     {
-        typedef AudioData::Pointer <DestSampleType, DestEndianness, AudioData::Interleaved, AudioData::NonConst>                DestType;
-        typedef AudioData::Pointer <SourceSampleType, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::Const>     SourceType;
+        using DestType   = AudioData::Pointer <DestSampleType,   DestEndianness,          AudioData::Interleaved,    AudioData::NonConst>;
+        using SourceType = AudioData::Pointer <SourceSampleType, AudioData::NativeEndian, AudioData::NonInterleaved, AudioData::Const>;
 
         static void write (void* destData, int numDestChannels, const int* const* source,
                            int numSamples, const int sourceOffset = 0) noexcept
@@ -271,4 +298,4 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioFormatWriter)
 };
 
-#endif   // JUCE_AUDIOFORMATWRITER_H_INCLUDED
+} // namespace juce

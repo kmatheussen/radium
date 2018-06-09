@@ -2,25 +2,30 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
+
+namespace juce
+{
 
 static juce_wchar getDefaultPasswordChar() noexcept
 {
@@ -38,8 +43,7 @@ AlertWindow::AlertWindow (const String& title,
                           Component* comp)
    : TopLevelWindow (title, true),
      alertIconType (iconType),
-     associatedComponent (comp),
-     escapeKeyCancels (true)
+     associatedComponent (comp)
 {
     setAlwaysOnTop (juce_areThereAnyAlwaysOnTopWindows());
 
@@ -54,6 +58,16 @@ AlertWindow::AlertWindow (const String& title,
 
 AlertWindow::~AlertWindow()
 {
+    // Ensure that the focus does not jump to another TextEditor while we
+    // remove children.
+    for (auto* t : textBoxes)
+        t->setWantsKeyboardFocus (false);
+
+    // Giveaway focus before removing the editors, so that any TextEditor
+    // with focus has a chance to dismiss native keyboard if shown.
+    if (hasKeyboardFocus (true))
+        Component::unfocusAllComponents();
+
     removeAllChildren();
 }
 
@@ -66,7 +80,7 @@ void AlertWindow::userTriedToCloseWindow()
 //==============================================================================
 void AlertWindow::setMessage (const String& message)
 {
-    const String newMessage (message.substring (0, 2048));
+    auto newMessage = message.substring (0, 2048);
 
     if (text != newMessage)
     {
@@ -77,9 +91,9 @@ void AlertWindow::setMessage (const String& message)
 }
 
 //==============================================================================
-void AlertWindow::buttonClicked (Button* button)
+void AlertWindow::exitAlert (Button* button)
 {
-    if (Component* parent = button->getParentComponent())
+    if (auto* parent = button->getParentComponent())
         parent->exitModalState (button->getCommandID());
 }
 
@@ -89,7 +103,7 @@ void AlertWindow::addButton (const String& name,
                              const KeyPress& shortcutKey1,
                              const KeyPress& shortcutKey2)
 {
-    TextButton* const b = new TextButton (name, String());
+    auto* b = new TextButton (name, {});
     buttons.add (b);
 
     b->setWantsKeyboardFocus (true);
@@ -97,11 +111,21 @@ void AlertWindow::addButton (const String& name,
     b->setCommandToTrigger (0, returnValue, false);
     b->addShortcut (shortcutKey1);
     b->addShortcut (shortcutKey2);
-    b->addListener (this);
-    b->changeWidthToFitText (getLookAndFeel().getAlertWindowButtonHeight());
+    b->onClick = [this, b] { exitAlert (b); };
+
+    Array<TextButton*> buttonsArray (buttons.begin(), buttons.size());
+    auto& lf = getLookAndFeel();
+
+    auto buttonHeight = lf.getAlertWindowButtonHeight();
+    auto buttonWidths = lf.getWidthsForTextButtons (*this, buttonsArray);
+
+    jassert (buttonWidths.size() == buttons.size());
+    int i = 0;
+
+    for (auto* button : buttons)
+        button->setSize (buttonWidths[i++], buttonHeight);
 
     addAndMakeVisible (b, 0);
-
     updateLayout (false);
 }
 
@@ -112,10 +136,8 @@ int AlertWindow::getNumButtons() const
 
 void AlertWindow::triggerButtonClick (const String& buttonName)
 {
-    for (int i = buttons.size(); --i >= 0;)
+    for (auto* b : buttons)
     {
-        TextButton* const b = buttons.getUnchecked(i);
-
         if (buttonName == b->getName())
         {
             b->triggerClick();
@@ -135,7 +157,7 @@ void AlertWindow::addTextEditor (const String& name,
                                  const String& onScreenLabel,
                                  const bool isPasswordBox)
 {
-    TextEditor* ed = new TextEditor (name, isPasswordBox ? getDefaultPasswordChar() : 0);
+    auto* ed = new TextEditor (name, isPasswordBox ? getDefaultPasswordChar() : 0);
     ed->setSelectAllWhenFocused (true);
     ed->setEscapeAndReturnKeysConsumed (false);
     textBoxes.add (ed);
@@ -153,19 +175,19 @@ void AlertWindow::addTextEditor (const String& name,
 
 TextEditor* AlertWindow::getTextEditor (const String& nameOfTextEditor) const
 {
-    for (int i = textBoxes.size(); --i >= 0;)
-        if (textBoxes.getUnchecked(i)->getName() == nameOfTextEditor)
-            return textBoxes.getUnchecked(i);
+    for (auto* tb : textBoxes)
+        if (tb->getName() == nameOfTextEditor)
+            return tb;
 
     return nullptr;
 }
 
 String AlertWindow::getTextEditorContents (const String& nameOfTextEditor) const
 {
-    if (TextEditor* const t = getTextEditor (nameOfTextEditor))
+    if (auto* t = getTextEditor (nameOfTextEditor))
         return t->getText();
 
-    return String();
+    return {};
 }
 
 
@@ -174,7 +196,7 @@ void AlertWindow::addComboBox (const String& name,
                                const StringArray& items,
                                const String& onScreenLabel)
 {
-    ComboBox* const cb = new ComboBox (name);
+    auto* cb = new ComboBox (name);
     comboBoxes.add (cb);
     allComps.add (cb);
 
@@ -189,9 +211,9 @@ void AlertWindow::addComboBox (const String& name,
 
 ComboBox* AlertWindow::getComboBoxComponent (const String& nameOfList) const
 {
-    for (int i = comboBoxes.size(); --i >= 0;)
-        if (comboBoxes.getUnchecked(i)->getName() == nameOfList)
-            return comboBoxes.getUnchecked(i);
+    for (auto* cb : comboBoxes)
+        if (cb->getName() == nameOfList)
+            return cb;
 
     return nullptr;
 }
@@ -202,27 +224,24 @@ class AlertTextComp  : public TextEditor
 public:
     AlertTextComp (AlertWindow& owner, const String& message, const Font& font)
     {
-        setReadOnly (true);
-        setMultiLine (true, true);
-        setCaretVisible (false);
-        setScrollbarsShown (true);
-        lookAndFeelChanged();
-        setWantsKeyboardFocus (false);
-
-        setFont (font);
-        setText (message, false);
-
-        bestWidth = 2 * (int) std::sqrt (font.getHeight() * font.getStringWidth (message));
-
         if (owner.isColourSpecified (AlertWindow::textColourId))
             setColour (TextEditor::textColourId, owner.findColour (AlertWindow::textColourId));
 
         setColour (TextEditor::backgroundColourId, Colours::transparentBlack);
         setColour (TextEditor::outlineColourId, Colours::transparentBlack);
         setColour (TextEditor::shadowColourId, Colours::transparentBlack);
-    }
 
-    int getPreferredWidth() const noexcept   { return bestWidth; }
+        setReadOnly (true);
+        setMultiLine (true, true);
+        setCaretVisible (false);
+        setScrollbarsShown (true);
+        lookAndFeelChanged();
+        setWantsKeyboardFocus (false);
+        setFont (font);
+        setText (message, false);
+
+        bestWidth = 2 * (int) std::sqrt (font.getHeight() * font.getStringWidth (message));
+    }
 
     void updateLayout (const int width)
     {
@@ -235,7 +254,6 @@ public:
         setSize (width, jmin (width, (int) (text.getHeight() + getFont().getHeight())));
     }
 
-private:
     int bestWidth;
 
     JUCE_DECLARE_NON_COPYABLE (AlertTextComp)
@@ -243,10 +261,9 @@ private:
 
 void AlertWindow::addTextBlock (const String& textBlock)
 {
-    AlertTextComp* const c = new AlertTextComp (*this, textBlock, getLookAndFeel().getAlertWindowMessageFont());
+    auto* c = new AlertTextComp (*this, textBlock, getLookAndFeel().getAlertWindowMessageFont());
     textBlocks.add (c);
     allComps.add (c);
-
     addAndMakeVisible (c);
 
     updateLayout (false);
@@ -255,10 +272,9 @@ void AlertWindow::addTextBlock (const String& textBlock)
 //==============================================================================
 void AlertWindow::addProgressBarComponent (double& progressValue)
 {
-    ProgressBar* const pb = new ProgressBar (progressValue);
+    auto* pb = new ProgressBar (progressValue);
     progressBars.add (pb);
     allComps.add (pb);
-
     addAndMakeVisible (pb);
 
     updateLayout (false);
@@ -269,25 +285,17 @@ void AlertWindow::addCustomComponent (Component* const component)
 {
     customComps.add (component);
     allComps.add (component);
-
     addAndMakeVisible (component);
 
     updateLayout (false);
 }
 
-int AlertWindow::getNumCustomComponents() const
-{
-    return customComps.size();
-}
-
-Component* AlertWindow::getCustomComponent (const int index) const
-{
-    return customComps [index];
-}
+int AlertWindow::getNumCustomComponents() const                 { return customComps.size(); }
+Component* AlertWindow::getCustomComponent (int index) const    { return customComps [index]; }
 
 Component* AlertWindow::removeCustomComponent (const int index)
 {
-    Component* const c = getCustomComponent (index);
+    auto* c = getCustomComponent (index);
 
     if (c != nullptr)
     {
@@ -304,14 +312,15 @@ Component* AlertWindow::removeCustomComponent (const int index)
 //==============================================================================
 void AlertWindow::paint (Graphics& g)
 {
-    getLookAndFeel().drawAlertBox (g, *this, textArea, textLayout);
+    auto& lf = getLookAndFeel();
+    lf.drawAlertBox (g, *this, textArea, textLayout);
 
     g.setColour (findColour (textColourId));
-    g.setFont (getLookAndFeel().getAlertWindowFont());
+    g.setFont (lf.getAlertWindowFont());
 
     for (int i = textBoxes.size(); --i >= 0;)
     {
-        const TextEditor* const te = textBoxes.getUnchecked(i);
+        auto* te = textBoxes.getUnchecked(i);
 
         g.drawFittedText (textboxNames[i],
                           te->getX(), te->getY() - 14,
@@ -321,7 +330,7 @@ void AlertWindow::paint (Graphics& g)
 
     for (int i = comboBoxNames.size(); --i >= 0;)
     {
-        const ComboBox* const cb = comboBoxes.getUnchecked(i);
+        auto* cb = comboBoxes.getUnchecked(i);
 
         g.drawFittedText (comboBoxNames[i],
                           cb->getX(), cb->getY() - 14,
@@ -329,15 +338,11 @@ void AlertWindow::paint (Graphics& g)
                           Justification::centredLeft, 1);
     }
 
-    for (int i = customComps.size(); --i >= 0;)
-    {
-        const Component* const c = customComps.getUnchecked(i);
-
+    for (auto* c : customComps)
         g.drawFittedText (c->getName(),
                           c->getX(), c->getY() - 14,
                           c->getWidth(), 14,
                           Justification::centredLeft, 1);
-    }
 }
 
 void AlertWindow::updateLayout (const bool onlyIncreaseSize)
@@ -345,15 +350,14 @@ void AlertWindow::updateLayout (const bool onlyIncreaseSize)
     const int titleH = 24;
     const int iconWidth = 80;
 
-    LookAndFeel& lf = getLookAndFeel();
+    auto& lf = getLookAndFeel();
+    auto messageFont (lf.getAlertWindowMessageFont());
 
-    const Font messageFont (lf.getAlertWindowMessageFont());
+    auto wid = jmax (messageFont.getStringWidth (text),
+                     messageFont.getStringWidth (getName()));
 
-    const int wid = jmax (messageFont.getStringWidth (text),
-                          messageFont.getStringWidth (getName()));
-
-    const int sw = (int) std::sqrt (messageFont.getHeight() * wid);
-    int w = jmin (300 + sw * 2, (int) (getParentWidth() * 0.7f));
+    auto sw = (int) std::sqrt (messageFont.getHeight() * wid);
+    auto w = jmin (300 + sw * 2, (int) (getParentWidth() * 0.7f));
     const int edgeGap = 10;
     const int labelHeight = 18;
     int iconSpace = 0;
@@ -381,24 +385,24 @@ void AlertWindow::updateLayout (const bool onlyIncreaseSize)
     w = jmax (350, (int) textLayout.getWidth() + iconSpace + edgeGap * 4);
     w = jmin (w, (int) (getParentWidth() * 0.7f));
 
-    const int textLayoutH = (int) textLayout.getHeight();
-    const int textBottom = 16 + titleH + textLayoutH;
+    auto textLayoutH = (int) textLayout.getHeight();
+    auto textBottom = 16 + titleH + textLayoutH;
     int h = textBottom;
 
     int buttonW = 40;
-    for (int i = 0; i < buttons.size(); ++i)
-        buttonW += 16 + buttons.getUnchecked (i)->getWidth();
+
+    for (auto* b : buttons)
+        buttonW += 16 + b->getWidth();
 
     w = jmax (buttonW, w);
 
     h += (textBoxes.size() + comboBoxes.size() + progressBars.size()) * 50;
 
-    if (buttons.size() > 0)
-        h += 20 + buttons.getUnchecked (0)->getHeight();
+    if (auto* b = buttons[0])
+        h += 20 + b->getHeight();
 
-    for (int i = customComps.size(); --i >= 0;)
+    for (auto* c : customComps)
     {
-        Component* c = customComps.getUnchecked (i);
         w = jmax (w, (c->getWidth() * 100) / 80);
         h += 10 + c->getHeight();
 
@@ -406,17 +410,14 @@ void AlertWindow::updateLayout (const bool onlyIncreaseSize)
             h += labelHeight;
     }
 
-    for (int i = textBlocks.size(); --i >= 0;)
-    {
-        const AlertTextComp* const ac = static_cast<const AlertTextComp*> (textBlocks.getUnchecked(i));
-        w = jmax (w, ac->getPreferredWidth());
-    }
+    for (auto* tb : textBlocks)
+        w = jmax (w, static_cast<const AlertTextComp*> (tb)->bestWidth);
 
     w = jmin (w, (int) (getParentWidth() * 0.7f));
 
-    for (int i = textBlocks.size(); --i >= 0;)
+    for (auto* tb : textBlocks)
     {
-        AlertTextComp* const ac = static_cast<AlertTextComp*> (textBlocks.getUnchecked(i));
+        auto* ac = static_cast<AlertTextComp*> (tb);
         ac->updateLayout ((int) (w * 0.8f));
         h += ac->getHeight() + 10;
     }
@@ -439,15 +440,14 @@ void AlertWindow::updateLayout (const bool onlyIncreaseSize)
     const int spacer = 16;
     int totalWidth = -spacer;
 
-    for (int i = buttons.size(); --i >= 0;)
-        totalWidth += buttons.getUnchecked(i)->getWidth() + spacer;
+    for (auto* b : buttons)
+        totalWidth += b->getWidth() + spacer;
 
-    int x = (w - totalWidth) / 2;
-    int y = (int) (getHeight() * 0.95f);
+    auto x = (w - totalWidth) / 2;
+    auto y = (int) (getHeight() * 0.95f);
 
-    for (int i = 0; i < buttons.size(); ++i)
+    for (auto* c : buttons)
     {
-        TextButton* const c = buttons.getUnchecked(i);
         int ny = proportionOfHeight (0.95f) - c->getHeight();
         c->setTopLeftPosition (x, ny);
         if (ny < y)
@@ -460,9 +460,8 @@ void AlertWindow::updateLayout (const bool onlyIncreaseSize)
 
     y = textBottom;
 
-    for (int i = 0; i < allComps.size(); ++i)
+    for (auto* c : allComps)
     {
-        Component* const c = allComps.getUnchecked(i);
         h = 22;
 
         const int comboIndex = comboBoxes.indexOf (dynamic_cast<ComboBox*> (c));
@@ -515,10 +514,8 @@ void AlertWindow::mouseDrag (const MouseEvent& e)
 
 bool AlertWindow::keyPressed (const KeyPress& key)
 {
-    for (int i = buttons.size(); --i >= 0;)
+    for (auto* b : buttons)
     {
-        TextButton* const b = buttons.getUnchecked(i);
-
         if (b->isRegisteredForShortcut (key))
         {
             b->triggerClick();
@@ -526,7 +523,7 @@ bool AlertWindow::keyPressed (const KeyPress& key)
         }
     }
 
-    if (key.isKeyCode (KeyPress::escapeKey) && escapeKeyCancels && buttons.size() == 0)
+    if (key.isKeyCode (KeyPress::escapeKey) && escapeKeyCancels)
     {
         exitModalState (0);
         return true;
@@ -563,8 +560,7 @@ public:
                      AlertWindow::AlertIconType icon, int numButts,
                      ModalComponentManager::Callback* cb, bool runModally)
         : title (t), message (m), iconType (icon), numButtons (numButts),
-          returnValue (0), associatedComponent (component),
-          callback (cb), modal (runModally)
+          associatedComponent (component), callback (cb), modal (runModally)
     {
     }
 
@@ -578,18 +574,18 @@ public:
 
 private:
     AlertWindow::AlertIconType iconType;
-    int numButtons, returnValue;
+    int numButtons, returnValue = 0;
     WeakReference<Component> associatedComponent;
     ModalComponentManager::Callback* callback;
     bool modal;
 
     void show()
     {
-        LookAndFeel& lf = associatedComponent != nullptr ? associatedComponent->getLookAndFeel()
-                                                         : LookAndFeel::getDefaultLookAndFeel();
+        auto& lf = associatedComponent != nullptr ? associatedComponent->getLookAndFeel()
+                                                  : LookAndFeel::getDefaultLookAndFeel();
 
-        ScopedPointer<Component> alertBox (lf.createAlertWindow (title, message, button1, button2, button3,
-                                                                 iconType, numButtons, associatedComponent));
+        std::unique_ptr<Component> alertBox (lf.createAlertWindow (title, message, button1, button2, button3,
+                                                                   iconType, numButtons, associatedComponent));
 
         jassert (alertBox != nullptr); // you have to return one of these!
 
@@ -708,3 +704,5 @@ bool AlertWindow::showNativeDialogBox (const String& title,
     return true;
 }
 #endif
+
+} // namespace juce

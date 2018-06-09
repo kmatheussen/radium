@@ -2,29 +2,26 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-   ------------------------------------------------------------------------------
-
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_MIDIMESSAGESEQUENCE_H_INCLUDED
-#define JUCE_MIDIMESSAGESEQUENCE_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -34,6 +31,8 @@
     written to a standard midi file.
 
     @see MidiMessage, MidiFile
+
+    @tags{Audio}
 */
 class JUCE_API  MidiMessageSequence
 {
@@ -48,17 +47,11 @@ public:
     /** Replaces this sequence with another one. */
     MidiMessageSequence& operator= (const MidiMessageSequence&);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    MidiMessageSequence (MidiMessageSequence&& other) noexcept
-        : list (static_cast<OwnedArray<MidiEventHolder>&&> (other.list))
-    {}
+    /** Move constructor */
+    MidiMessageSequence (MidiMessageSequence&&) noexcept;
 
-    MidiMessageSequence& operator= (MidiMessageSequence&& other) noexcept
-    {
-        list = static_cast<OwnedArray<MidiEventHolder>&&> (other.list);
-        return *this;
-    }
-   #endif
+    /** Move assignment operator */
+    MidiMessageSequence& operator= (MidiMessageSequence&&) noexcept;
 
     /** Destructor. */
     ~MidiMessageSequence();
@@ -89,12 +82,13 @@ public:
             note-offs up-to-date after events have been moved around in the sequence
             or deleted.
         */
-        MidiEventHolder* noteOffObject;
+        MidiEventHolder* noteOffObject = nullptr;
 
     private:
         //==============================================================================
         friend class MidiMessageSequence;
         MidiEventHolder (const MidiMessage&);
+        MidiEventHolder (MidiMessage&&);
         JUCE_LEAK_DETECTOR (MidiEventHolder)
     };
 
@@ -107,6 +101,12 @@ public:
 
     /** Returns a pointer to one of the events. */
     MidiEventHolder* getEventPointer (int index) const noexcept;
+
+    /** Iterator for the list of MidiEventHolders */
+    MidiEventHolder** begin() const noexcept;
+
+    /** Iterator for the list of MidiEventHolders */
+    MidiEventHolder** end() const noexcept;
 
     /** Returns the time of the note-up that matches the note-on at this index.
         If the event at this index isn't a note-on, it'll just return 0.
@@ -121,7 +121,7 @@ public:
     int getIndexOfMatchingKeyUp (int index) const noexcept;
 
     /** Returns the index of an event. */
-    int getIndexOf (MidiEventHolder* event) const noexcept;
+    int getIndexOf (const MidiEventHolder* event) const noexcept;
 
     /** Returns the index of the first event on or after the given timestamp.
         If the time is beyond the end of the sequence, this will return the
@@ -158,8 +158,21 @@ public:
                                 that will be inserted
         @see updateMatchedPairs
     */
-    MidiEventHolder* addEvent (const MidiMessage& newMessage,
-                               double timeAdjustment = 0);
+    MidiEventHolder* addEvent (const MidiMessage& newMessage, double timeAdjustment = 0);
+
+    /** Inserts a midi message into the sequence.
+
+        The index at which the new message gets inserted will depend on its timestamp,
+        because the sequence is kept sorted.
+
+        Remember to call updateMatchedPairs() after adding note-on events.
+
+        @param newMessage       the new message to add (an internal copy will be made)
+        @param timeAdjustment   an optional value to add to the timestamp of the message
+                                that will be inserted
+        @see updateMatchedPairs
+    */
+    MidiEventHolder* addEvent (MidiMessage&& newMessage, double timeAdjustment = 0);
 
     /** Deletes one of the events in the sequence.
 
@@ -279,8 +292,9 @@ private:
     friend class MidiFile;
     OwnedArray<MidiEventHolder> list;
 
+    MidiEventHolder* addEvent (MidiEventHolder*, double);
+
     JUCE_LEAK_DETECTOR (MidiMessageSequence)
 };
 
-
-#endif   // JUCE_MIDIMESSAGESEQUENCE_H_INCLUDED
+} // namespace juce

@@ -1,34 +1,27 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_ABSTRACTFIFO_H_INCLUDED
-#define JUCE_ABSTRACTFIFO_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -85,6 +78,8 @@
         int myBuffer [1024];
     };
     @endcode
+
+    @tags{Core}
 */
 class JUCE_API  AbstractFifo
 {
@@ -207,14 +202,115 @@ public:
     */
     void finishedRead (int numRead) noexcept;
 
+    //==============================================================================
+
+private:
+    enum class ReadOrWrite
+    {
+        read,
+        write
+    };
+
+public:
+    /** Class for a scoped reader/writer */
+    template <ReadOrWrite mode>
+    class ScopedReadWrite final
+    {
+    public:
+        /** Construct an unassigned reader/writer. Doesn't do anything upon destruction. */
+        ScopedReadWrite() = default;
+
+        /** Construct a reader/writer and immediately call prepareRead/prepareWrite
+            on the abstractFifo which was passed in.
+            This object will hold a pointer back to the fifo, so make sure that
+            the fifo outlives this object.
+        */
+        ScopedReadWrite (AbstractFifo&, int num) noexcept;
+
+        ScopedReadWrite (const ScopedReadWrite&) = delete;
+        ScopedReadWrite (ScopedReadWrite&&) noexcept;
+
+        ScopedReadWrite& operator= (const ScopedReadWrite&) = delete;
+        ScopedReadWrite& operator= (ScopedReadWrite&&) noexcept;
+
+        /** Calls finishedRead or finishedWrite if this is a non-null scoped
+            reader/writer.
+        */
+        ~ScopedReadWrite() noexcept;
+
+        /** Calls the passed function with each index that was deemed valid
+            for the current read/write operation.
+        */
+        template <typename FunctionToApply>
+        void forEach (FunctionToApply&& func) const
+        {
+            for (auto i = startIndex1, e = startIndex1 + blockSize1; i != e; ++i)  func (i);
+            for (auto i = startIndex2, e = startIndex2 + blockSize2; i != e; ++i)  func (i);
+        }
+
+        int startIndex1, blockSize1, startIndex2, blockSize2;
+
+    private:
+        void prepare (AbstractFifo&, int) noexcept;
+        static void finish (AbstractFifo&, int) noexcept;
+        void swap (ScopedReadWrite&) noexcept;
+
+        AbstractFifo* fifo = nullptr;
+    };
+
+    using ScopedRead  = ScopedReadWrite<ReadOrWrite::read>;
+    using ScopedWrite = ScopedReadWrite<ReadOrWrite::write>;
+
+    /** Replaces prepareToRead/finishedRead with a single function.
+        This function returns an object which contains the start indices and
+        block sizes, and also automatically finishes the read operation when
+        it goes out of scope.
+        @code
+        {
+            auto readHandle = fifo.read (4);
+
+            for (auto i = 0; i != readHandle.blockSize1; ++i)
+            {
+                // read the item at index readHandle.startIndex1 + i
+            }
+
+            for (auto i = 0; i != readHandle.blockSize2; ++i)
+            {
+                // read the item at index readHandle.startIndex2 + i
+            }
+        } // readHandle goes out of scope here, finishing the read operation
+        @endcode
+    */
+    ScopedRead read (int numToRead) noexcept      { return { *this, numToRead }; }
+
+    /** Replaces prepareToWrite/finishedWrite with a single function.
+        This function returns an object which contains the start indices and
+        block sizes, and also automatically finishes the write operation when
+        it goes out of scope.
+        @code
+        {
+            auto writeHandle = fifo.write (5);
+
+            for (auto i = 0; i != writeHandle.blockSize1; ++i)
+            {
+                // write the item at index writeHandle.startIndex1 + i
+            }
+
+            for (auto i = 0; i != writeHandle.blockSize2; ++i)
+            {
+                // write the item at index writeHandle.startIndex2 + i
+            }
+        } // writeHandle goes out of scope here, finishing the write operation
+        @endcode
+    */
+    ScopedWrite write (int numToWrite) noexcept    { return { *this, numToWrite }; }
 
 private:
     //==============================================================================
     int bufferSize;
-    Atomic <int> validStart, validEnd;
+    Atomic<int> validStart, validEnd;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AbstractFifo)
 };
 
-
-#endif   // JUCE_ABSTRACTFIFO_H_INCLUDED
+} // namespace juce

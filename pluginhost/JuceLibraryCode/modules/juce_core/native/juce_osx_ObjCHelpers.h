@@ -1,97 +1,230 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_OSX_OBJCHELPERS_H_INCLUDED
-#define JUCE_OSX_OBJCHELPERS_H_INCLUDED
-
-
 /* This file contains a few helper functions that are used internally but which
    need to be kept away from the public headers because they use obj-C symbols.
 */
-namespace
+namespace juce
 {
-    //==============================================================================
-    static inline String nsStringToJuce (NSString* s)
-    {
-        return CharPointer_UTF8 ([s UTF8String]);
-    }
 
-    static inline NSString* juceStringToNS (const String& s)
-    {
-        return [NSString stringWithUTF8String: s.toUTF8()];
-    }
-
-    static inline NSString* nsStringLiteral (const char* const s) noexcept
-    {
-        return [NSString stringWithUTF8String: s];
-    }
-
-    static inline NSString* nsEmptyString() noexcept
-    {
-        return [NSString string];
-    }
-
-   #if JUCE_MAC
-    template <typename RectangleType>
-    static NSRect makeNSRect (const RectangleType& r) noexcept
-    {
-        return NSMakeRect (static_cast<CGFloat> (r.getX()),
-                           static_cast<CGFloat> (r.getY()),
-                           static_cast<CGFloat> (r.getWidth()),
-                           static_cast<CGFloat> (r.getHeight()));
-    }
-   #endif
-  #if JUCE_MAC || JUCE_IOS
-   #if JUCE_COMPILER_SUPPORTS_VARIADIC_TEMPLATES
-
-    // This is necessary as on iOS builds, some arguments may be passed on registers
-    // depending on the argument type. The re-cast objc_msgSendSuper to a function
-    // take the same arguments as the target method.
-    template <typename ReturnValue, typename... Params>
-    static inline ReturnValue ObjCMsgSendSuper (struct objc_super* s, SEL sel, Params... params)
-    {
-        typedef ReturnValue (*SuperFn)(struct objc_super*, SEL, Params...);
-        SuperFn fn = reinterpret_cast<SuperFn> (objc_msgSendSuper);
-        return fn (s, sel, params...);
-    }
-
-   #endif
-
-    // These hacks are a workaround for newer Xcode builds which by default prevent calls to these objc functions..
-    typedef id (*MsgSendSuperFn) (struct objc_super*, SEL, ...);
-    static inline MsgSendSuperFn getMsgSendSuperFn() noexcept   { return (MsgSendSuperFn) (void*) objc_msgSendSuper; }
-
-   #if ! JUCE_IOS
-    typedef double (*MsgSendFPRetFn) (id, SEL op, ...);
-    static inline MsgSendFPRetFn getMsgSendFPRetFn() noexcept   { return (MsgSendFPRetFn) (void*) objc_msgSend_fpret; }
-   #endif
-   #endif
+//==============================================================================
+static inline String nsStringToJuce (NSString* s)
+{
+    return CharPointer_UTF8 ([s UTF8String]);
 }
+
+static inline NSString* juceStringToNS (const String& s)
+{
+    return [NSString stringWithUTF8String: s.toUTF8()];
+}
+
+static inline NSString* nsStringLiteral (const char* const s) noexcept
+{
+    return [NSString stringWithUTF8String: s];
+}
+
+static inline NSString* nsEmptyString() noexcept
+{
+    return [NSString string];
+}
+
+static inline NSURL* createNSURLFromFile (const String& f)
+{
+    return [NSURL fileURLWithPath: juceStringToNS (f)];
+}
+
+static inline NSURL* createNSURLFromFile (const File& f)
+{
+    return createNSURLFromFile (f.getFullPathName());
+}
+
+static inline NSArray* createNSArrayFromStringArray (const StringArray& strings)
+{
+    auto* array = [[NSMutableArray alloc] init];
+
+    for (auto string: strings)
+        [array addObject:juceStringToNS (string)];
+
+    return [array autorelease];
+}
+
+static NSArray* varArrayToNSArray (const var& varToParse);
+
+static NSDictionary* varObjectToNSDictionary (const var& varToParse)
+{
+    auto* dictionary = [NSMutableDictionary dictionary];
+
+    if (varToParse.isObject())
+    {
+        auto* dynamicObject = varToParse.getDynamicObject();
+
+        auto& properties = dynamicObject->getProperties();
+
+        for (int i = 0; i < properties.size(); ++i)
+        {
+            auto* keyString = juceStringToNS (properties.getName (i).toString());
+
+            const var& valueVar = properties.getValueAt (i);
+
+            if (valueVar.isObject())
+            {
+                auto* valueDictionary = varObjectToNSDictionary (valueVar);
+
+                [dictionary setObject: valueDictionary forKey: keyString];
+            }
+            else if (valueVar.isArray())
+            {
+                auto* valueArray = varArrayToNSArray (valueVar);
+
+                [dictionary setObject: valueArray forKey: keyString];
+            }
+            else
+            {
+                auto* valueString = juceStringToNS (valueVar.toString());
+
+                [dictionary setObject: valueString forKey: keyString];
+            }
+        }
+    }
+
+    return dictionary;
+}
+
+static NSArray* varArrayToNSArray (const var& varToParse)
+{
+    jassert (varToParse.isArray());
+
+    if (! varToParse.isArray())
+        return nil;
+
+    const auto* varArray = varToParse.getArray();
+
+    auto* array = [NSMutableArray arrayWithCapacity: (NSUInteger) varArray->size()];
+
+    for (const auto& aVar : *varArray)
+    {
+        if (aVar.isObject())
+        {
+            auto* valueDictionary = varObjectToNSDictionary (aVar);
+
+            [array addObject: valueDictionary];
+        }
+        else if (aVar.isArray())
+        {
+            auto* valueArray = varArrayToNSArray (aVar);
+
+            [array addObject: valueArray];
+        }
+        else
+        {
+            auto* valueString = juceStringToNS (aVar.toString());
+
+            [array addObject: valueString];
+        }
+    }
+
+    return array;
+}
+
+static var nsArrayToVar (NSArray* array);
+
+static var nsDictionaryToVar (NSDictionary* dictionary)
+{
+    DynamicObject::Ptr dynamicObject = new DynamicObject();
+
+    for (NSString* key in dictionary)
+    {
+        const auto keyString = nsStringToJuce (key);
+
+        id value = dictionary[key];
+
+        if ([value isKindOfClass: [NSString class]])
+            dynamicObject->setProperty (keyString, nsStringToJuce ((NSString*) value));
+        else if ([value isKindOfClass: [NSNumber class]])
+            dynamicObject->setProperty (keyString, nsStringToJuce ([(NSNumber*) value stringValue]));
+        else if ([value isKindOfClass: [NSDictionary class]])
+            dynamicObject->setProperty (keyString, nsDictionaryToVar ((NSDictionary*) value));
+        else if ([value isKindOfClass: [NSArray class]])
+            dynamicObject->setProperty (keyString, nsArrayToVar ((NSArray*) value));
+        else
+            jassertfalse; // Unsupported yet, add here!
+    }
+
+    return var (dynamicObject.get());
+}
+
+static var nsArrayToVar (NSArray* array)
+{
+    Array<var> resultArray;
+
+    for (id value in array)
+    {
+        if ([value isKindOfClass: [NSString class]])
+            resultArray.add (var (nsStringToJuce ((NSString*) value)));
+        else if ([value isKindOfClass: [NSNumber class]])
+            resultArray.add (var (nsStringToJuce ([(NSNumber*) value stringValue])));
+        else if ([value isKindOfClass: [NSDictionary class]])
+            resultArray.add (nsDictionaryToVar ((NSDictionary*) value));
+        else if ([value isKindOfClass: [NSArray class]])
+            resultArray.add (nsArrayToVar ((NSArray*) value));
+        else
+            jassertfalse; // Unsupported yet, add here!
+    }
+
+    return var (resultArray);
+}
+
+#if JUCE_MAC
+template <typename RectangleType>
+static NSRect makeNSRect (const RectangleType& r) noexcept
+{
+    return NSMakeRect (static_cast<CGFloat> (r.getX()),
+                       static_cast<CGFloat> (r.getY()),
+                       static_cast<CGFloat> (r.getWidth()),
+                       static_cast<CGFloat> (r.getHeight()));
+}
+#endif
+#if JUCE_MAC || JUCE_IOS
+
+// This is necessary as on iOS builds, some arguments may be passed on registers
+// depending on the argument type. The re-cast objc_msgSendSuper to a function
+// take the same arguments as the target method.
+template <typename ReturnValue, typename... Params>
+static inline ReturnValue ObjCMsgSendSuper (struct objc_super* s, SEL sel, Params... params)
+{
+    typedef ReturnValue (*SuperFn)(struct objc_super*, SEL, Params...);
+    SuperFn fn = reinterpret_cast<SuperFn> (objc_msgSendSuper);
+    return fn (s, sel, params...);
+}
+
+// These hacks are a workaround for newer Xcode builds which by default prevent calls to these objc functions..
+typedef id (*MsgSendSuperFn) (struct objc_super*, SEL, ...);
+static inline MsgSendSuperFn getMsgSendSuperFn() noexcept   { return (MsgSendSuperFn) (void*) objc_msgSendSuper; }
+
+#if ! JUCE_IOS
+typedef double (*MsgSendFPRetFn) (id, SEL op, ...);
+static inline MsgSendFPRetFn getMsgSendFPRetFn() noexcept   { return (MsgSendFPRetFn) (void*) objc_msgSend_fpret; }
+#endif
+#endif
 
 //==============================================================================
 template <typename ObjectType>
@@ -101,6 +234,15 @@ struct NSObjectRetainer
     inline ~NSObjectRetainer()                            { [object release]; }
 
     ObjectType* object;
+};
+
+//==============================================================================
+struct NSObjectDeleter
+{
+    void operator()(NSObject* object) const
+    {
+        [object release];
+    }
 };
 
 //==============================================================================
@@ -192,7 +334,76 @@ private:
     JUCE_DECLARE_NON_COPYABLE (ObjCClass)
 };
 
-#if JUCE_COMPILER_SUPPORTS_VARIADIC_TEMPLATES
+//==============================================================================
+#ifndef DOXYGEN
+template <class JuceClass>
+struct ObjCLifetimeManagedClass : public ObjCClass<NSObject>
+{
+    ObjCLifetimeManagedClass()
+        : ObjCClass<NSObject> ("ObjCLifetimeManagedClass_")
+    {
+        addIvar<JuceClass*> ("cppObject");
+
+       #pragma clang diagnostic push
+       #pragma clang diagnostic ignored "-Wundeclared-selector"
+        addMethod (@selector (initWithJuceObject:), initWithJuceObject, "@@:@");
+       #pragma clang diagnostic pop
+
+        addMethod (@selector (dealloc),             dealloc,            "v@:");
+
+
+        registerClass();
+    }
+
+    static id initWithJuceObject (id _self, SEL, JuceClass* obj)
+    {
+        NSObject* self = _self;
+
+        objc_super s = { self, [NSObject class] };
+        self = ObjCMsgSendSuper<NSObject*> (&s, @selector(init));
+
+        object_setInstanceVariable (self, "cppObject", obj);
+        return self;
+    }
+
+    static void dealloc (id _self, SEL)
+    {
+        if (auto* obj = getIvar<JuceClass*> (_self, "cppObject"))
+        {
+            delete obj;
+            object_setInstanceVariable (_self, "cppObject", nullptr);
+        }
+
+        objc_super s = { _self, [NSObject class] };
+        ObjCMsgSendSuper<void> (&s, @selector(dealloc));
+    }
+
+
+    static ObjCLifetimeManagedClass objCLifetimeManagedClass;
+};
+
+template <typename Class>
+ObjCLifetimeManagedClass<Class> ObjCLifetimeManagedClass<Class>::objCLifetimeManagedClass;
+#endif
+
+// this will return an NSObject which takes ownership of the JUCE instance passed-in
+// This is useful to tie the life-time of a juce instance to the life-time of an NSObject
+template <typename Class>
+NSObject* createNSObjectFromJuceClass (Class* obj)
+{
+   #pragma clang diagnostic push
+   #pragma clang diagnostic ignored "-Wobjc-method-access"
+    return [ObjCLifetimeManagedClass<Class>::objCLifetimeManagedClass.createInstance() initWithJuceObject:obj];
+   #pragma clang diagnostic pop
+}
+
+// Get the JUCE class instance that was tied to the life-time of an NSObject with the
+// function above
+template <typename Class>
+Class* getJuceClassFromNSObject (NSObject* obj)
+{
+    return obj != nullptr ? ObjCLifetimeManagedClass<Class>:: template getIvar<Class*> (obj, "cppObject") : nullptr;
+}
 
 template <typename ReturnT, class Class, typename... Params>
 ReturnT (^CreateObjCBlock(Class* object, ReturnT (Class::*fn)(Params...))) (Params...)
@@ -212,8 +423,8 @@ public:
     ObjCBlock (C* _this, R (C::*fn)(P...))  : block (CreateObjCBlock (_this, fn)) {}
     ObjCBlock (BlockType b) : block ([b copy]) {}
     ObjCBlock& operator= (const BlockType& other) { if (block != nullptr) { [block release]; } block = [other copy]; return *this; }
-    bool operator== (const void* ptr) const  { return (block == ptr); }
-    bool operator!= (const void* ptr) const  { return (block != ptr); }
+    bool operator== (const void* ptr) const  { return ((const void*) block == ptr); }
+    bool operator!= (const void* ptr) const  { return ((const void*) block != ptr); }
     ~ObjCBlock() { if (block != nullptr) [block release]; }
 
     operator BlockType() { return block; }
@@ -222,7 +433,5 @@ private:
     BlockType block;
 };
 
-#endif
 
-
-#endif   // JUCE_OSX_OBJCHELPERS_H_INCLUDED
+} // namespace juce

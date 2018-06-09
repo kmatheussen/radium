@@ -2,42 +2,63 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
+
+namespace juce
+{
 
 /**
     Provides a class of AudioProcessorParameter that can be used as an
     integer value with a given range.
 
     @see AudioParameterFloat, AudioParameterBool, AudioParameterChoice
+
+    @tags{Audio}
 */
 class JUCE_API  AudioParameterInt  : public AudioProcessorParameterWithID
 {
 public:
-    /** Creates an AudioParameterInt with an ID, name, and range.
-        Note that the min and max range values are inclusive.
-        On creation, its value is set to the default value.
+    /** Creates a AudioParameterInt with the specified parameters.
+
+        @param parameterID         The parameter ID to use
+        @param name                The parameter name to use
+        @param minValue            The minimum parameter value
+        @param maxValue            The maximum parameter value
+        @param defaultValue        The default value
+        @param label               An optional label for the parameter's value
+        @param stringFromInt       An optional lambda function that converts a int
+                                   value to a string with a maximum length. This may
+                                   be used by hosts to display the parameter's value.
+        @param intFromString       An optional lambda function that parses a string
+                                   and converts it into an int. Some hosts use this
+                                   to allow users to type in parameter values.
     */
-    AudioParameterInt (String parameterID, String name,
+    AudioParameterInt (const String& parameterID, const String& name,
                        int minValue, int maxValue,
-                       int defaultValue);
+                       int defaultValue,
+                       const String& label = String(),
+                       std::function<String (int value, int maximumStringLength)> stringFromInt = nullptr,
+                       std::function<int (const String& text)> intFromString = nullptr);
 
     /** Destructor. */
     ~AudioParameterInt();
@@ -55,12 +76,14 @@ public:
     /** Returns the parameter's range. */
     Range<int> getRange() const noexcept        { return Range<int> (minValue, maxValue); }
 
+protected:
+    /** Override this method if you are interested in receiving callbacks
+        when the parameter value changes.
+    */
+    virtual void valueChanged (int newValue);
 
 private:
     //==============================================================================
-    int minValue, maxValue;
-    float value, defaultValue;
-
     float getValue() const override;
     void setValue (float newValue) override;
     float getDefaultValue() const override;
@@ -72,5 +95,13 @@ private:
     float convertTo0to1 (int) const noexcept;
     int convertFrom0to1 (float) const noexcept;
 
+    const int minValue, maxValue, rangeOfValues;
+    float value;
+    const float defaultValue;
+    std::function<String (int, int)> stringFromIntFunction;
+    std::function<int (const String&)> intFromStringFunction;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioParameterInt)
 };
+
+} // namespace juce

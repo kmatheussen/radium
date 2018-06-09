@@ -1,30 +1,27 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
+
+namespace juce
+{
 
 Uuid::Uuid()
 {
@@ -54,6 +51,20 @@ Uuid& Uuid::operator= (const Uuid& other) noexcept
 bool Uuid::operator== (const Uuid& other) const noexcept    { return memcmp (uuid, other.uuid, sizeof (uuid)) == 0; }
 bool Uuid::operator!= (const Uuid& other) const noexcept    { return ! operator== (other); }
 
+bool Uuid::operator<  (const Uuid& other) const noexcept    { return compare (other) < 0; }
+bool Uuid::operator>  (const Uuid& other) const noexcept    { return compare (other) > 0; }
+bool Uuid::operator<= (const Uuid& other) const noexcept    { return compare (other) <= 0; }
+bool Uuid::operator>= (const Uuid& other) const noexcept    { return compare (other) >= 0; }
+
+int Uuid::compare (Uuid other) const noexcept
+{
+    for (size_t i = 0; i < sizeof (uuid); ++i)
+        if (int diff = uuid[i] - (int) other.uuid[i])
+            return diff > 0 ? 1 : -1;
+
+    return 0;
+}
+
 Uuid Uuid::null() noexcept
 {
     return Uuid ((const uint8*) nullptr);
@@ -61,8 +72,8 @@ Uuid Uuid::null() noexcept
 
 bool Uuid::isNull() const noexcept
 {
-    for (size_t i = 0; i < sizeof (uuid); ++i)
-        if (uuid[i] != 0)
+    for (auto i : uuid)
+        if (i != 0)
             return false;
 
     return true;
@@ -115,3 +126,32 @@ Uuid& Uuid::operator= (const uint8* const rawData) noexcept
 
     return *this;
 }
+
+uint32 Uuid::getTimeLow() const noexcept                  { return ByteOrder::bigEndianInt (uuid); }
+uint16 Uuid::getTimeMid() const noexcept                  { return ByteOrder::bigEndianShort (uuid + 4); }
+uint16 Uuid::getTimeHighAndVersion() const noexcept       { return ByteOrder::bigEndianShort (uuid + 6); }
+uint8  Uuid::getClockSeqAndReserved() const noexcept      { return uuid[8]; }
+uint8  Uuid::getClockSeqLow() const noexcept              { return uuid[9]; }
+uint64 Uuid::getNode() const noexcept                     { return (((uint64) ByteOrder::bigEndianShort (uuid + 10)) << 32) + ByteOrder::bigEndianInt (uuid + 12); }
+
+uint64 Uuid::hash() const noexcept
+{
+    uint64 result = 0;
+
+    for (auto n : uuid)
+        result = ((uint64) 101) * result + n;
+
+    return result;
+}
+
+} // namespace juce
+
+#if ! DOXYGEN
+namespace std
+{
+    template <> struct hash<juce::Uuid>
+    {
+        size_t operator() (const juce::Uuid& u) const noexcept   { return (size_t) u.hash(); }
+    };
+}
+#endif

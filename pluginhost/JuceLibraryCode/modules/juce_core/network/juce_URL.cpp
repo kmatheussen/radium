@@ -1,38 +1,186 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-URL::URL()
+namespace juce
 {
+
+struct FallbackDownloadTask  : public URL::DownloadTask,
+                               public Thread
+{
+    FallbackDownloadTask (FileOutputStream* outputStreamToUse,
+                          size_t bufferSizeToUse,
+                          WebInputStream* streamToUse,
+                          URL::DownloadTask::Listener* listenerToUse)
+        : Thread ("DownloadTask thread"),
+          fileStream (outputStreamToUse),
+          stream (streamToUse),
+          bufferSize (bufferSizeToUse),
+          buffer (bufferSize),
+          listener (listenerToUse)
+    {
+        jassert (fileStream != nullptr);
+        jassert (stream != nullptr);
+
+        contentLength = stream->getTotalLength();
+        httpCode      = stream->getStatusCode();
+
+        startThread();
+    }
+
+    ~FallbackDownloadTask()
+    {
+        signalThreadShouldExit();
+        stream->cancel();
+        waitForThreadToExit (-1);
+    }
+
+    //==============================================================================
+    void run() override
+    {
+        while (! (stream->isExhausted() || stream->isError() || threadShouldExit()))
+        {
+            if (listener != nullptr)
+                listener->progress (this, downloaded, contentLength);
+
+            const int max = jmin ((int) bufferSize, contentLength < 0 ? std::numeric_limits<int>::max()
+                                                                      : static_cast<int> (contentLength - downloaded));
+
+            const int actual = stream->read (buffer.get(), max);
+
+            if (actual < 0 || threadShouldExit() || stream->isError())
+                break;
+
+            if (! fileStream->write (buffer.get(), static_cast<size_t> (actual)))
+            {
+                error = true;
+                break;
+            }
+
+            downloaded += actual;
+
+            if (downloaded == contentLength)
+                break;
+        }
+
+        fileStream->flush();
+
+        if (threadShouldExit() || stream->isError())
+            error = true;
+
+        if (contentLength > 0 && downloaded < contentLength)
+            error = true;
+
+        finished = true;
+
+        if (listener != nullptr && ! threadShouldExit())
+            listener->finished (this, ! error);
+    }
+
+    //==============================================================================
+    const std::unique_ptr<FileOutputStream> fileStream;
+    const std::unique_ptr<WebInputStream> stream;
+    const size_t bufferSize;
+    HeapBlock<char> buffer;
+    URL::DownloadTask::Listener* const listener;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FallbackDownloadTask)
+};
+
+void URL::DownloadTask::Listener::progress (DownloadTask*, int64, int64) {}
+URL::DownloadTask::Listener::~Listener() {}
+
+//==============================================================================
+URL::DownloadTask* URL::DownloadTask::createFallbackDownloader (const URL& urlToUse,
+                                                                const File& targetFileToUse,
+                                                                const String& extraHeadersToUse,
+                                                                Listener* listenerToUse,
+                                                                bool usePostRequest)
+{
+    const size_t bufferSize = 0x8000;
+    targetFileToUse.deleteFile();
+
+    std::unique_ptr<FileOutputStream> outputStream (targetFileToUse.createOutputStream (bufferSize));
+
+    if (outputStream != nullptr)
+    {
+        std::unique_ptr<WebInputStream> stream (new WebInputStream (urlToUse, usePostRequest));
+        stream->withExtraHeaders (extraHeadersToUse);
+
+        if (stream->connect (nullptr))
+            return new FallbackDownloadTask (outputStream.release(), bufferSize, stream.release(), listenerToUse);
+    }
+
+    return nullptr;
 }
+
+URL::DownloadTask::DownloadTask() {}
+URL::DownloadTask::~DownloadTask() {}
+
+//==============================================================================
+URL::URL() noexcept {}
 
 URL::URL (const String& u)  : url (u)
 {
-    int i = url.indexOfChar ('?');
+    init();
+}
+
+URL::URL (File localFile)
+{
+    if (localFile == File())
+        return;
+
+   #if JUCE_WINDOWS
+    bool isUncPath = localFile.getFullPathName().startsWith ("\\\\");
+   #endif
+
+    while (! localFile.isRoot())
+    {
+        url = "/" + addEscapeChars (localFile.getFileName(), false) + url;
+        localFile = localFile.getParentDirectory();
+    }
+
+    url = addEscapeChars (localFile.getFileName(), false) + url;
+
+   #if JUCE_WINDOWS
+    if (isUncPath)
+    {
+        url = url.fromFirstOccurrenceOf ("/", false, false);
+    }
+    else
+   #endif
+    {
+        if (! url.startsWithChar (L'/'))
+            url = "/" + url;
+    }
+
+
+    url = "file://" + url;
+
+    jassert (isWellFormed());
+}
+
+void URL::init()
+{
+    auto i = url.indexOfChar ('?');
 
     if (i >= 0)
     {
@@ -41,18 +189,15 @@ URL::URL (const String& u)  : url (u)
             const int nextAmp   = url.indexOfChar (i + 1, '&');
             const int equalsPos = url.indexOfChar (i + 1, '=');
 
-            if (equalsPos > i + 1)
+            if (nextAmp < 0)
             {
-                if (nextAmp < 0)
-                {
-                    addParameter (removeEscapeChars (url.substring (i + 1, equalsPos)),
-                                  removeEscapeChars (url.substring (equalsPos + 1)));
-                }
-                else if (nextAmp > 0 && equalsPos < nextAmp)
-                {
-                    addParameter (removeEscapeChars (url.substring (i + 1, equalsPos)),
-                                  removeEscapeChars (url.substring (equalsPos + 1, nextAmp)));
-                }
+                addParameter (removeEscapeChars (equalsPos < 0 ? url.substring (i + 1) : url.substring (i + 1, equalsPos)),
+                              equalsPos < 0 ? String() : removeEscapeChars (url.substring (equalsPos + 1)));
+            }
+            else if (nextAmp > 0 && equalsPos < nextAmp)
+            {
+                addParameter (removeEscapeChars (equalsPos < 0 ? url.substring (i + 1, nextAmp) : url.substring (i + 1, equalsPos)),
+                              equalsPos < 0 ? String() : removeEscapeChars (url.substring (equalsPos + 1, nextAmp)));
             }
 
             i = nextAmp;
@@ -65,29 +210,37 @@ URL::URL (const String& u)  : url (u)
 
 URL::URL (const String& u, int)  : url (u) {}
 
+URL::URL (URL&& other)
+    : url             (static_cast<String&&> (other.url)),
+      postData        (static_cast<MemoryBlock&&> (other.postData)),
+      parameterNames  (static_cast<StringArray&&> (other.parameterNames)),
+      parameterValues (static_cast<StringArray&&> (other.parameterValues)),
+      filesToUpload   (static_cast<ReferenceCountedArray<Upload>&&> (other.filesToUpload))
+   #if JUCE_IOS
+    , bookmark        (static_cast<Bookmark::Ptr&&> (other.bookmark))
+   #endif
+{
+}
+
+URL& URL::operator= (URL&& other)
+{
+    url             = static_cast<String&&> (other.url);
+    postData        = static_cast<MemoryBlock&&> (other.postData);
+    parameterNames  = static_cast<StringArray&&> (other.parameterNames);
+    parameterValues = static_cast<StringArray&&> (other.parameterValues);
+    filesToUpload   = static_cast<ReferenceCountedArray<Upload>&&> (other.filesToUpload);
+   #if JUCE_IOS
+    bookmark        = static_cast<Bookmark::Ptr&&> (other.bookmark);
+   #endif
+
+    return *this;
+}
+
+URL::~URL() {}
+
 URL URL::createWithoutParsing (const String& u)
 {
     return URL (u, 0);
-}
-
-URL::URL (const URL& other)
-    : url (other.url),
-      postData (other.postData),
-      parameterNames (other.parameterNames),
-      parameterValues (other.parameterValues),
-      filesToUpload (other.filesToUpload)
-{
-}
-
-URL& URL::operator= (const URL& other)
-{
-    url = other.url;
-    postData = other.postData;
-    parameterNames = other.parameterNames;
-    parameterValues = other.parameterValues;
-    filesToUpload = other.filesToUpload;
-
-    return *this;
 }
 
 bool URL::operator== (const URL& other) const
@@ -104,10 +257,6 @@ bool URL::operator!= (const URL& other) const
     return ! operator== (other);
 }
 
-URL::~URL()
-{
-}
-
 namespace URLHelpers
 {
     static String getMangledParameters (const URL& url)
@@ -120,9 +269,12 @@ namespace URLHelpers
             if (i > 0)
                 p << '&';
 
-            p << URL::addEscapeChars (url.getParameterNames()[i], true)
-              << '='
-              << URL::addEscapeChars (url.getParameterValues()[i], true);
+            auto val = url.getParameterValues()[i];
+
+            p << URL::addEscapeChars (url.getParameterNames()[i], true);
+
+            if (val.isNotEmpty())
+                p << '=' << URL::addEscapeChars (val, true);
         }
 
         return p;
@@ -133,7 +285,7 @@ namespace URLHelpers
         int i = 0;
 
         while (CharacterFunctions::isLetterOrDigit (url[i])
-                || url[i] == '+' || url[i] == '-' || url[i] == '.')
+               || url[i] == '+' || url[i] == '-' || url[i] == '.')
             ++i;
 
         return url.substring (i).startsWith ("://") ? i + 1 : 0;
@@ -142,6 +294,7 @@ namespace URLHelpers
     static int findStartOfNetLocation (const String& url)
     {
         int start = findEndOfScheme (url);
+
         while (url[start] == '/')
             ++start;
 
@@ -192,22 +345,22 @@ bool URL::isWellFormed() const
 
 String URL::getDomain() const
 {
-    const int start = URLHelpers::findStartOfNetLocation (url);
-    const int end1 = url.indexOfChar (start, '/');
-    const int end2 = url.indexOfChar (start, ':');
+    auto start = URLHelpers::findStartOfNetLocation (url);
+    auto end1 = url.indexOfChar (start, '/');
+    auto end2 = url.indexOfChar (start, ':');
 
-    const int end = (end1 < 0 && end2 < 0) ? std::numeric_limits<int>::max()
-                                           : ((end1 < 0 || end2 < 0) ? jmax (end1, end2)
-                                                                     : jmin (end1, end2));
+    auto end = (end1 < 0 && end2 < 0) ? std::numeric_limits<int>::max()
+                                      : ((end1 < 0 || end2 < 0) ? jmax (end1, end2)
+                                                                : jmin (end1, end2));
     return url.substring (start, end);
 }
 
 String URL::getSubPath() const
 {
-    const int startOfPath = URLHelpers::findStartOfPath (url);
+    auto startOfPath = URLHelpers::findStartOfPath (url);
 
     return startOfPath <= 0 ? String()
-                            : url.substring (startOfPath);
+        : url.substring (startOfPath);
 }
 
 String URL::getScheme() const
@@ -215,9 +368,55 @@ String URL::getScheme() const
     return url.substring (0, URLHelpers::findEndOfScheme (url) - 1);
 }
 
+#ifndef JUCE_ANDROID
+bool URL::isLocalFile() const
+{
+    return (getScheme() == "file");
+}
+
+File URL::getLocalFile() const
+{
+    return fileFromFileSchemeURL (*this);
+}
+
+String URL::getFileName() const
+{
+    return toString (false).fromLastOccurrenceOf ("/", false, true);
+}
+#endif
+
+File URL::fileFromFileSchemeURL (const URL& fileURL)
+{
+    if (! fileURL.isLocalFile())
+    {
+        jassertfalse;
+        return {};
+    }
+
+    auto path = removeEscapeChars (fileURL.getDomain()).replace ("+", "%2B");
+
+   #ifdef JUCE_WINDOWS
+    bool isUncPath = (! fileURL.url.startsWith ("file:///"));
+   #else
+    path = File::getSeparatorString() + path;
+   #endif
+
+    auto urlElements = StringArray::fromTokens (fileURL.getSubPath(), "/", "");
+
+    for (auto urlElement : urlElements)
+        path += File::getSeparatorString() + removeEscapeChars (urlElement.replace ("+", "%2B"));
+
+   #ifdef JUCE_WINDOWS
+    if (isUncPath)
+        path = "\\\\" + path;
+   #endif
+
+    return path;
+}
+
 int URL::getPort() const
 {
-    const int colonPos = url.indexOfChar (URLHelpers::findStartOfNetLocation (url), ':');
+    auto colonPos = url.indexOfChar (URLHelpers::findStartOfNetLocation (url), ':');
 
     return colonPos > 0 ? url.substring (colonPos + 1).getIntValue() : 0;
 }
@@ -249,16 +448,16 @@ URL URL::getChildURL (const String& subPath) const
     return u;
 }
 
-void URL::createHeadersAndPostData (String& headers, MemoryBlock& headersAndPostData) const
+void URL::createHeadersAndPostData (String& headers, MemoryBlock& postDataToWrite) const
 {
-    MemoryOutputStream data (headersAndPostData, false);
+    MemoryOutputStream data (postDataToWrite, false);
 
     if (filesToUpload.size() > 0)
     {
         // (this doesn't currently support mixing custom post-data with uploads..)
         jassert (postData.getSize() == 0);
 
-        const String boundary (String::toHexString (Random::getSystemRandom().nextInt64()));
+        auto boundary = String::toHexString (Random::getSystemRandom().nextInt64());
 
         headers << "Content-Type: multipart/form-data; boundary=" << boundary << "\r\n";
 
@@ -271,22 +470,20 @@ void URL::createHeadersAndPostData (String& headers, MemoryBlock& headersAndPost
                  << "\r\n--" << boundary;
         }
 
-        for (int i = 0; i < filesToUpload.size(); ++i)
+        for (auto* f : filesToUpload)
         {
-            const Upload& f = *filesToUpload.getObjectPointerUnchecked(i);
+            data << "\r\nContent-Disposition: form-data; name=\"" << f->parameterName
+                 << "\"; filename=\"" << f->filename << "\"\r\n";
 
-            data << "\r\nContent-Disposition: form-data; name=\"" << f.parameterName
-                 << "\"; filename=\"" << f.filename << "\"\r\n";
-
-            if (f.mimeType.isNotEmpty())
-                data << "Content-Type: " << f.mimeType << "\r\n";
+            if (f->mimeType.isNotEmpty())
+                data << "Content-Type: " << f->mimeType << "\r\n";
 
             data << "Content-Transfer-Encoding: binary\r\n\r\n";
 
-            if (f.data != nullptr)
-                data << *f.data;
+            if (f->data != nullptr)
+                data << *f->data;
             else
-                data << f.file;
+                data << f->file;
 
             data << "\r\n--" << boundary;
         }
@@ -311,28 +508,149 @@ bool URL::isProbablyAWebsiteURL (const String& possibleURL)
 {
     static const char* validProtocols[] = { "http:", "ftp:", "https:" };
 
-    for (int i = 0; i < numElementsInArray (validProtocols); ++i)
-        if (possibleURL.startsWithIgnoreCase (validProtocols[i]))
+    for (auto* protocol : validProtocols)
+        if (possibleURL.startsWithIgnoreCase (protocol))
             return true;
 
     if (possibleURL.containsChar ('@')
-         || possibleURL.containsChar (' '))
+        || possibleURL.containsChar (' '))
         return false;
 
     const String topLevelDomain (possibleURL.upToFirstOccurrenceOf ("/", false, false)
-                                            .fromLastOccurrenceOf (".", false, false));
+                                 .fromLastOccurrenceOf (".", false, false));
 
     return topLevelDomain.isNotEmpty() && topLevelDomain.length() <= 3;
 }
 
 bool URL::isProbablyAnEmailAddress (const String& possibleEmailAddress)
 {
-    const int atSign = possibleEmailAddress.indexOfChar ('@');
+    auto atSign = possibleEmailAddress.indexOfChar ('@');
 
     return atSign > 0
-            && possibleEmailAddress.lastIndexOfChar ('.') > (atSign + 1)
-            && ! possibleEmailAddress.endsWithChar ('.');
+        && possibleEmailAddress.lastIndexOfChar ('.') > (atSign + 1)
+        && ! possibleEmailAddress.endsWithChar ('.');
 }
+
+#if JUCE_IOS
+URL::Bookmark::Bookmark (void* bookmarkToUse)
+    : data (bookmarkToUse)
+{
+}
+
+URL::Bookmark::~Bookmark()
+{
+    [(NSData*) data release];
+}
+
+void setURLBookmark (URL& u, void* bookmark)
+{
+    u.bookmark = new URL::Bookmark (bookmark);
+}
+
+void* getURLBookmark (URL& u)
+{
+    if (u.bookmark.get() == nullptr)
+        return nullptr;
+
+    return u.bookmark.get()->data;
+}
+
+template <typename Stream> struct iOSFileStreamWrapperFlush    { static void flush (Stream*) {} };
+template <> struct iOSFileStreamWrapperFlush<FileOutputStream> { static void flush (OutputStream* o) { o->flush(); } };
+
+template <typename Stream>
+class iOSFileStreamWrapper : public Stream
+{
+public:
+    iOSFileStreamWrapper (URL& urlToUse)
+        : Stream (getLocalFileAccess (urlToUse)),
+          url (urlToUse)
+    {}
+
+    ~iOSFileStreamWrapper()
+    {
+        iOSFileStreamWrapperFlush<Stream>::flush (this);
+
+        if (NSData* bookmark = (NSData*) getURLBookmark (url))
+        {
+            BOOL isBookmarkStale = false;
+            NSError* error = nil;
+
+            auto* nsURL = [NSURL URLByResolvingBookmarkData: bookmark
+                                                    options: 0
+                                              relativeToURL: nil
+                                        bookmarkDataIsStale: &isBookmarkStale
+                                                      error: &error];
+
+            if (error == nil)
+            {
+                if (isBookmarkStale)
+                    updateStaleBookmark (nsURL, url);
+
+                [nsURL stopAccessingSecurityScopedResource];
+            }
+            else
+            {
+                auto* desc = [error localizedDescription];
+                ignoreUnused (desc);
+                jassertfalse;
+            }
+        }
+    }
+
+private:
+    URL url;
+    bool securityAccessSucceeded = false;
+
+    File getLocalFileAccess (URL& urlToUse)
+    {
+        if (NSData* bookmark = (NSData*) getURLBookmark (urlToUse))
+        {
+            BOOL isBookmarkStale = false;
+            NSError* error = nil;
+
+            auto* nsURL = [NSURL URLByResolvingBookmarkData: bookmark
+                                                    options: 0
+                                              relativeToURL: nil
+                                        bookmarkDataIsStale: &isBookmarkStale
+                                                      error: &error];
+
+            if (error == nil)
+            {
+                securityAccessSucceeded = [nsURL startAccessingSecurityScopedResource];
+
+                if (isBookmarkStale)
+                    updateStaleBookmark (nsURL, urlToUse);
+
+                return urlToUse.getLocalFile();
+            }
+            else
+            {
+                auto* desc = [error localizedDescription];
+                ignoreUnused (desc);
+                jassertfalse;
+            }
+        }
+
+        return urlToUse.getLocalFile();
+    }
+
+    void updateStaleBookmark (NSURL* nsURL, URL& juceUrl)
+    {
+        NSError* error = nil;
+
+        NSData* bookmark = [nsURL bookmarkDataWithOptions: NSURLBookmarkCreationSuitableForBookmarkFile
+                           includingResourceValuesForKeys: nil
+                                            relativeToURL: nil
+                                                    error: &error];
+
+        if (error == nil)
+            setURLBookmark (juceUrl, (void*) bookmark);
+        else
+            jassertfalse;
+    }
+};
+#endif
 
 //==============================================================================
 InputStream* URL::createInputStream (const bool usePostCommand,
@@ -345,37 +663,94 @@ InputStream* URL::createInputStream (const bool usePostCommand,
                                      const int numRedirectsToFollow,
                                      String httpRequestCmd) const
 {
-    MemoryBlock headersAndPostData;
+    if (isLocalFile())
+    {
+       #if JUCE_IOS
+        // We may need to refresh the embedded bookmark.
+        return new iOSFileStreamWrapper<FileInputStream> (const_cast<URL&>(*this));
+       #else
+        return getLocalFile().createInputStream();
+       #endif
 
-    if (! headers.endsWithChar ('\n'))
-        headers << "\r\n";
+    }
 
-    if (usePostCommand)
-        createHeadersAndPostData (headers, headersAndPostData);
+    std::unique_ptr<WebInputStream> wi (new WebInputStream (*this, usePostCommand));
 
-    if (! headers.endsWithChar ('\n'))
-        headers << "\r\n";
+    struct ProgressCallbackCaller  : public WebInputStream::Listener
+    {
+        ProgressCallbackCaller (OpenStreamProgressCallback* progressCallbackToUse, void* progressCallbackContextToUse)
+            : callback (progressCallbackToUse), data (progressCallbackContextToUse)
+        {}
 
-    if (httpRequestCmd.isEmpty())
-        httpRequestCmd = usePostCommand ? "POST" : "GET";
+        bool postDataSendProgress (WebInputStream&, int bytesSent, int totalBytes) override
+        {
+            return callback(data, bytesSent, totalBytes);
+        }
 
-    ScopedPointer<WebInputStream> wi (new WebInputStream (toString (! usePostCommand),
-                                                          usePostCommand, headersAndPostData,
-                                                          progressCallback, progressCallbackContext,
-                                                          headers, timeOutMs, responseHeaders,
-                                                          numRedirectsToFollow, httpRequestCmd));
+        OpenStreamProgressCallback* const callback;
+        void* const data;
+
+        // workaround a MSVC 2013 compiler warning
+        ProgressCallbackCaller (const ProgressCallbackCaller& o) : callback (o.callback), data (o.data) { jassertfalse; }
+        ProgressCallbackCaller& operator= (const ProgressCallbackCaller&) { jassertfalse; return *this; }
+    };
+
+    std::unique_ptr<ProgressCallbackCaller> callbackCaller
+        (progressCallback != nullptr ? new ProgressCallbackCaller (progressCallback, progressCallbackContext) : nullptr);
+
+    if (headers.isNotEmpty())
+        wi->withExtraHeaders (headers);
+
+    if (timeOutMs != 0)
+        wi->withConnectionTimeout (timeOutMs);
+
+    if (httpRequestCmd.isNotEmpty())
+        wi->withCustomRequestCommand (httpRequestCmd);
+
+    wi->withNumRedirectsToFollow (numRedirectsToFollow);
+
+    bool success = wi->connect (callbackCaller.get());
 
     if (statusCode != nullptr)
-        *statusCode = wi->statusCode;
+        *statusCode = wi->getStatusCode();
 
-    return wi->isError() ? nullptr : wi.release();
+    if (responseHeaders != nullptr)
+        *responseHeaders = wi->getResponseHeaders();
+
+    if (! success || wi->isError())
+        return nullptr;
+
+    return wi.release();
+}
+
+#if JUCE_ANDROID
+OutputStream* juce_CreateContentURIOutputStream (const URL&);
+#endif
+
+OutputStream* URL::createOutputStream() const
+{
+    if (isLocalFile())
+    {
+       #if JUCE_IOS
+        // We may need to refresh the embedded bookmark.
+        return new iOSFileStreamWrapper<FileOutputStream> (const_cast<URL&> (*this));
+       #else
+        return new FileOutputStream (getLocalFile());
+       #endif
+    }
+
+   #if JUCE_ANDROID
+    return juce_CreateContentURIOutputStream (*this);
+   #else
+    return nullptr;
+   #endif
 }
 
 //==============================================================================
-bool URL::readEntireBinaryStream (MemoryBlock& destData,
-                                  const bool usePostCommand) const
+bool URL::readEntireBinaryStream (MemoryBlock& destData, bool usePostCommand) const
 {
-    const ScopedPointer<InputStream> in (createInputStream (usePostCommand));
+    const std::unique_ptr<InputStream> in (isLocalFile() ? getLocalFile().createInputStream()
+                                                         : static_cast<InputStream*> (createInputStream (usePostCommand)));
 
     if (in != nullptr)
     {
@@ -386,17 +761,18 @@ bool URL::readEntireBinaryStream (MemoryBlock& destData,
     return false;
 }
 
-String URL::readEntireTextStream (const bool usePostCommand) const
+String URL::readEntireTextStream (bool usePostCommand) const
 {
-    const ScopedPointer<InputStream> in (createInputStream (usePostCommand));
+    const std::unique_ptr<InputStream> in (isLocalFile() ? getLocalFile().createInputStream()
+                                                         : static_cast<InputStream*> (createInputStream (usePostCommand)));
 
     if (in != nullptr)
         return in->readEntireStreamAsString();
 
-    return String();
+    return {};
 }
 
-XmlElement* URL::readEntireXmlStream (const bool usePostCommand) const
+XmlElement* URL::readEntireXmlStream (bool usePostCommand) const
 {
     return XmlDocument::parse (readEntireTextStream (usePostCommand));
 }
@@ -469,7 +845,7 @@ URL URL::withDataToUpload (const String& parameterName, const String& filename,
 //==============================================================================
 String URL::removeEscapeChars (const String& s)
 {
-    String result (s.replaceCharacter ('+', ' '));
+    auto result = s.replaceCharacter ('+', ' ');
 
     if (! result.containsChar ('%'))
         return result;
@@ -496,19 +872,22 @@ String URL::removeEscapeChars (const String& s)
     return String::fromUTF8 (utf8.getRawDataPointer(), utf8.size());
 }
 
-String URL::addEscapeChars (const String& s, const bool isParameter)
+String URL::addEscapeChars (const String& s, bool isParameter, bool roundBracketsAreLegal)
 {
-    const CharPointer_UTF8 legalChars (isParameter ? "_-.*!'()"
-                                                   : ",$_-.*!'()");
+    String legalChars (isParameter ? "_-.~"
+                                   : ",$_-.*!'");
+
+    if (roundBracketsAreLegal)
+        legalChars += "()";
 
     Array<char> utf8 (s.toRawUTF8(), (int) s.getNumBytesAsUTF8());
 
     for (int i = 0; i < utf8.size(); ++i)
     {
-        const char c = utf8.getUnchecked(i);
+        auto c = utf8.getUnchecked(i);
 
         if (! (CharacterFunctions::isLetterOrDigit (c)
-                 || legalChars.indexOf ((juce_wchar) c) >= 0))
+                 || legalChars.containsChar ((juce_wchar) c)))
         {
             utf8.set (i, '%');
             utf8.insert (++i, "0123456789ABCDEF" [((uint8) c) >> 4]);
@@ -522,10 +901,12 @@ String URL::addEscapeChars (const String& s, const bool isParameter)
 //==============================================================================
 bool URL::launchInDefaultBrowser() const
 {
-    String u (toString (true));
+    auto u = toString (true);
 
     if (u.containsChar ('@') && ! u.containsChar (':'))
         u = "mailto:" + u;
 
-    return Process::openDocument (u, String());
+    return Process::openDocument (u, {});
 }
+
+} // namespace juce

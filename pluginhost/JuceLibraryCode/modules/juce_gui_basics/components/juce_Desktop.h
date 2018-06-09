@@ -2,29 +2,30 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_DESKTOP_H_INCLUDED
-#define JUCE_DESKTOP_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -32,6 +33,8 @@
     to receive callbacks when the currently focused component changes.
 
     @see Desktop::addFocusChangeListener, Desktop::removeFocusChangeListener
+
+    @tags{GUI}
 */
 class JUCE_API  FocusChangeListener
 {
@@ -48,6 +51,8 @@ public:
 /**
     Describes and controls aspects of the computer's desktop.
 
+
+    @tags{GUI}
 */
 class JUCE_API  Desktop  : private DeletedAtShutdown,
                            private Timer,
@@ -71,6 +76,8 @@ public:
 
     /** Makes the mouse pointer jump to a given location.
         The coordinates are relative to the top-left of the main monitor.
+        Note that this is a pretty old method, kept around mainly for backwards-compatibility,
+        and you should use the MouseInputSource class directly in new code.
     */
     static void setMousePosition (Point<int> newPosition);
 
@@ -104,7 +111,7 @@ public:
         Pass false to disable the screensaver, and true to re-enable it. (Note that this
         won't enable a screensaver unless the user has actually set one up).
 
-        The disablement will only happen while the Juce application is the foreground
+        The disablement will only happen while the JUCE application is the foreground
         process - if another task is running in front of it, then the screensaver will
         be unaffected.
 
@@ -193,7 +200,7 @@ public:
         This will drill down into top-level windows to find the child component at
         the given position.
 
-        Returns nullptr if the coordinates are inside a non-Juce window.
+        Returns nullptr if the coordinates are inside a non-JUCE window.
     */
     Component* findComponentAt (Point<int> screenPosition) const;
 
@@ -257,7 +264,7 @@ public:
 
     /** Returns the number of mouse-sources that are currently being dragged.
         In a traditional single-mouse system, this will be 0 or 1, depending on whether a
-        juce component has the button down on it. In a multi-touch system, this could
+        JUCE component has the button down on it. In a multi-touch system, this could
         be any number from 0 to the number of simultaneous touches that can be detected.
     */
     int getNumDraggingMouseSources() const noexcept;
@@ -286,13 +293,13 @@ public:
     void beginDragAutoRepeat (int millisecondsBetweenCallbacks);
 
     //==============================================================================
-    /** In a tablet device which can be turned around, this is used to inidicate the orientation. */
+    /** In a tablet/mobile device which can be turned around, this is used to indicate the orientation. */
     enum DisplayOrientation
     {
-        upright                 = 1,  /**< Indicates that the display is the normal way up. */
-        upsideDown              = 2,  /**< Indicates that the display is upside-down. */
-        rotatedClockwise        = 4,  /**< Indicates that the display is turned 90 degrees clockwise from its upright position. */
-        rotatedAntiClockwise    = 8,  /**< Indicates that the display is turned 90 degrees anti-clockwise from its upright position. */
+        upright                 = 1,  /**< Indicates that the device is the normal way up. */
+        upsideDown              = 2,  /**< Indicates that the device is upside-down. */
+        rotatedClockwise        = 4,  /**< Indicates that the device is turned 90 degrees clockwise from its upright position. */
+        rotatedAntiClockwise    = 8,  /**< Indicates that the device is turned 90 degrees anti-clockwise from its upright position. */
 
         allOrientations         = 1 + 2 + 4 + 8   /**< A combination of all the orientation values */
     };
@@ -309,12 +316,18 @@ public:
     */
     void setOrientationsEnabled (int allowedOrientations);
 
+    /** Returns the set of orientations the display is allowed to rotate to.
+        @see setOrientationsEnabled
+    */
+    int getOrientationsEnabled() const noexcept;
+
     /** Returns whether the display is allowed to auto-rotate to the given orientation.
         Each orientation can be enabled using setOrientationEnabled(). By default, all orientations are allowed.
     */
     bool isOrientationEnabled (DisplayOrientation orientation) const noexcept;
 
     //==============================================================================
+    /** Manages details about connected display devices */
     class JUCE_API  Displays
     {
     public:
@@ -365,13 +378,13 @@ public:
        #ifndef DOXYGEN
         /** @internal */
         void refresh();
+        /** @internal */
+        ~Displays();
        #endif
 
     private:
         friend class Desktop;
-        friend struct ContainerDeletePolicy<Displays>;
         Displays (Desktop&);
-        ~Displays();
 
         void init (Desktop&);
         void findDisplays (float masterScale);
@@ -409,7 +422,7 @@ private:
     friend class DeletedAtShutdown;
     friend class TopLevelWindowManager;
 
-    ScopedPointer<MouseInputSource::SourceList> mouseSources;
+    std::unique_ptr<MouseInputSource::SourceList> mouseSources;
 
     ListenerList<MouseListener> mouseListeners;
     ListenerList<FocusChangeListener> focusListeners;
@@ -417,23 +430,23 @@ private:
     Array<Component*> desktopComponents;
     Array<ComponentPeer*> peers;
 
-    ScopedPointer<Displays> displays;
+    std::unique_ptr<Displays> displays;
 
     Point<float> lastFakeMouseMove;
     void sendMouseMove();
 
-    int mouseClickCounter, mouseWheelCounter;
+    int mouseClickCounter = 0, mouseWheelCounter = 0;
     void incrementMouseClickCounter() noexcept;
     void incrementMouseWheelCounter() noexcept;
 
-    ScopedPointer<LookAndFeel> defaultLookAndFeel;
+    std::unique_ptr<LookAndFeel> defaultLookAndFeel;
     WeakReference<LookAndFeel> currentLookAndFeel;
 
-    Component* kioskModeComponent;
+    Component* kioskModeComponent = nullptr;
     Rectangle<int> kioskComponentOriginalBounds;
-    bool kioskModeReentrant;
+    bool kioskModeReentrant = false;
 
-    int allowedOrientations;
+    int allowedOrientations = allOrientations;
     void allowedOrientationsChanged();
 
     float masterScaleFactor;
@@ -463,5 +476,4 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Desktop)
 };
 
-
-#endif   // JUCE_DESKTOP_H_INCLUDED
+} // namespace juce

@@ -2,29 +2,31 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#include "juce_mac_CoreGraphicsContext.h"
+namespace juce
+{
 
-//==============================================================================
 class CoreGraphicsImage   : public ImagePixelData
 {
 public:
@@ -34,7 +36,7 @@ public:
         pixelStride = format == Image::RGB ? 3 : ((format == Image::ARGB) ? 4 : 1);
         lineStride = (pixelStride * jmax (1, width) + 3) & ~3;
 
-        imageData.allocate ((size_t) (lineStride * jmax (1, height)), clearImage);
+        imageData.allocate ((size_t) lineStride * (size_t) jmax (1, height), clearImage);
 
         CGColorSpaceRef colourSpace = (format == Image::SingleChannel) ? CGColorSpaceCreateDeviceGray()
                                                                        : CGColorSpaceCreateDeviceRGB();
@@ -110,13 +112,13 @@ public:
 
         if (mustOutliveSource)
         {
-            CFDataRef data = CFDataCreate (0, (const UInt8*) srcData.data, (CFIndex) (srcData.lineStride * srcData.height));
+            CFDataRef data = CFDataCreate (0, (const UInt8*) srcData.data, (CFIndex) ((size_t) srcData.lineStride * (size_t) srcData.height));
             provider = CGDataProviderCreateWithCFData (data);
             CFRelease (data);
         }
         else
         {
-            provider = CGDataProviderCreateWithData (0, srcData.data, (size_t) (srcData.lineStride * srcData.height), 0);
+            provider = CGDataProviderCreateWithData (0, srcData.data, (size_t) srcData.lineStride * (size_t) srcData.height, 0);
         }
 
         CGImageRef imageRef = CGImageCreate ((size_t) srcData.width,
@@ -245,12 +247,12 @@ bool CoreGraphicsContext::clipToRectangleListWithoutTest (const RectangleList<in
         return false;
     }
 
-    const size_t numRects = (size_t) clipRegion.getNumRectangles();
+    auto numRects = (size_t) clipRegion.getNumRectangles();
     HeapBlock<CGRect> rects (numRects);
 
     int i = 0;
-    for (const Rectangle<int>* r = clipRegion.begin(), * const e = clipRegion.end(); r != e; ++r)
-        rects[i++] = CGRectMake (r->getX(), flipHeight - r->getBottom(), r->getWidth(), r->getHeight());
+    for (auto& r : clipRegion)
+        rects[i++] = CGRectMake (r.getX(), flipHeight - r.getBottom(), r.getWidth(), r.getHeight());
 
     CGContextClipToRects (context, rects, numRects);
     lastClipRectIsValid = false;
@@ -272,7 +274,12 @@ void CoreGraphicsContext::excludeClipRectangle (const Rectangle<int>& r)
 void CoreGraphicsContext::clipToPath (const Path& path, const AffineTransform& transform)
 {
     createPath (path, transform);
-    CGContextClip (context);
+
+    if (path.isUsingNonZeroWinding())
+        CGContextClip (context);
+    else
+        CGContextEOClip (context);
+
     lastClipRectIsValid = false;
 }
 
@@ -339,9 +346,9 @@ void CoreGraphicsContext::restoreState()
 {
     CGContextRestoreGState (context);
 
-    if (SavedState* const top = stateStack.getLast())
+    if (auto* top = stateStack.getLast())
     {
-        state = top;
+        state.reset (top);
         stateStack.removeLast (1, false);
         lastClipRectIsValid = false;
     }
@@ -385,9 +392,13 @@ void CoreGraphicsContext::setOpacity (float newOpacity)
 
 void CoreGraphicsContext::setInterpolationQuality (Graphics::ResamplingQuality quality)
 {
-    CGContextSetInterpolationQuality (context, quality == Graphics::lowResamplingQuality
-                                                ? kCGInterpolationLow
-                                                : kCGInterpolationHigh);
+    switch (quality)
+    {
+        case Graphics::lowResamplingQuality:    CGContextSetInterpolationQuality (context, kCGInterpolationNone);   return;
+        case Graphics::mediumResamplingQuality: CGContextSetInterpolationQuality (context, kCGInterpolationMedium); return;
+        case Graphics::highResamplingQuality:   CGContextSetInterpolationQuality (context, kCGInterpolationHigh);   return;
+        default: return;
+    }
 }
 
 //==============================================================================
@@ -474,7 +485,8 @@ void CoreGraphicsContext::drawImage (const Image& sourceImage, const AffineTrans
 {
     const int iw = sourceImage.getWidth();
     const int ih = sourceImage.getHeight();
-    CGImageRef image = CoreGraphicsImage::getCachedImageRef (sourceImage, rgbColourSpace);
+    CGImageRef image = CoreGraphicsImage::getCachedImageRef (sourceImage, sourceImage.getFormat() == Image::PixelFormat::SingleChannel ? greyColourSpace
+                                                                                                                                       : rgbColourSpace);
 
     CGContextSaveGState (context);
     CGContextSetAlpha (context, state->fillType.getOpacity());
@@ -551,11 +563,12 @@ void CoreGraphicsContext::drawLine (const Line<float>& line)
 
 void CoreGraphicsContext::fillRectList (const RectangleList<float>& list)
 {
-    HeapBlock<CGRect> rects ((size_t) list.getNumRectangles());
+    HeapBlock<CGRect> rects (list.getNumRectangles());
 
     size_t num = 0;
-    for (const Rectangle<float>* r = list.begin(), * const e = list.end(); r != e; ++r)
-        rects[num++] = CGRectMake (r->getX(), flipHeight - r->getBottom(), r->getWidth(), r->getHeight());
+
+    for (auto& r : list)
+        rects[num++] = CGRectMake (r.getX(), flipHeight - r.getBottom(), r.getWidth(), r.getHeight());
 
     if (state->fillType.isColour())
     {
@@ -652,13 +665,8 @@ void CoreGraphicsContext::drawGlyph (int glyphNumber, const AffineTransform& tra
 
 bool CoreGraphicsContext::drawTextLayout (const AttributedString& text, const Rectangle<float>& area)
 {
-   #if JUCE_CORETEXT_AVAILABLE
     CoreTextTypeLayout::drawToCGContext (text, area, context, (float) flipHeight);
     return true;
-   #else
-    ignoreUnused (text, area);
-    return false;
-   #endif
 }
 
 CoreGraphicsContext::SavedState::SavedState()
@@ -871,7 +879,6 @@ Image juce_loadWithCoreImage (InputStream& input)
 }
 #endif
 
-#if JUCE_MAC
 Image juce_createImageFromCIImage (CIImage*, int, int);
 Image juce_createImageFromCIImage (CIImage* im, int w, int h)
 {
@@ -899,4 +906,41 @@ CGContextRef juce_getImageContext (const Image& image)
     return 0;
 }
 
+#if JUCE_IOS
+ Image juce_createImageFromUIImage (UIImage* img)
+ {
+     CGImageRef image = [img CGImage];
+
+     Image retval (Image::ARGB, (int) CGImageGetWidth (image), (int) CGImageGetHeight (image), true);
+     CGContextRef ctx = juce_getImageContext (retval);
+
+     CGContextDrawImage (ctx, CGRectMake (0.0f, 0.0f, CGImageGetWidth (image), CGImageGetHeight (image)), image);
+
+     return retval;
+ }
 #endif
+
+#if JUCE_MAC
+ NSImage* imageToNSImage (const Image& image, float scaleFactor)
+ {
+     JUCE_AUTORELEASEPOOL
+     {
+         NSImage* im = [[NSImage alloc] init];
+         auto requiredSize = NSMakeSize (image.getWidth() / scaleFactor, image.getHeight() / scaleFactor);
+
+         [im setSize: requiredSize];
+         CGColorSpaceRef colourSpace = CGColorSpaceCreateDeviceRGB();
+         CGImageRef imageRef = juce_createCoreGraphicsImage (image, colourSpace, true);
+         CGColorSpaceRelease (colourSpace);
+
+         NSBitmapImageRep* imageRep = [[NSBitmapImageRep alloc] initWithCGImage: imageRef];
+         [imageRep setSize: requiredSize];
+         [im addRepresentation: imageRep];
+         [imageRep release];
+         CGImageRelease (imageRef);
+         return im;
+     }
+ }
+#endif
+
+}

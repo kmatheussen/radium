@@ -2,25 +2,30 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
+
+namespace juce
+{
 
 class KeyMappingEditorComponent::ChangeKeyButton  : public Button
 {
@@ -99,8 +104,8 @@ public:
             addButton (TRANS("Cancel"), 0);
 
             // (avoid return + escape keys getting processed by the buttons..)
-            for (int i = getNumChildComponents(); --i >= 0;)
-                getChildComponent (i)->setWantsKeyboardFocus (false);
+            for (auto* child : getChildren())
+                child->setWantsKeyboardFocus (false);
 
             setWantsKeyboardFocus (true);
             grabKeyboardFocus();
@@ -111,7 +116,7 @@ public:
             lastPress = key;
             String message (TRANS("Key") + ": " + owner.getDescriptionForKeyPress (key));
 
-            const CommandID previousCommand = owner.getMappings().findCommandForKeyPress (key);
+            auto previousCommand = owner.getMappings().findCommandForKeyPress (key);
 
             if (previousCommand != 0)
                 message << "\n\n("
@@ -146,7 +151,7 @@ public:
     {
         if (newKey.isValid())
         {
-            const CommandID previousCommand = owner.getMappings().findCommandForKeyPress (newKey);
+            auto previousCommand = owner.getMappings().findCommandForKeyPress (newKey);
 
             if (previousCommand == 0 || dontAskUser)
             {
@@ -184,13 +189,13 @@ public:
                 button->setNewKey (button->currentKeyEntryWindow->lastPress, false);
             }
 
-            button->currentKeyEntryWindow = nullptr;
+            button->currentKeyEntryWindow.reset();
         }
     }
 
     void assignNewKey()
     {
-        currentKeyEntryWindow = new KeyEntryWindow (owner);
+        currentKeyEntryWindow.reset (new KeyEntryWindow (owner));
         currentKeyEntryWindow->enterModalState (true, ModalCallbackFunction::forComponent (keyChosen, this));
     }
 
@@ -198,7 +203,7 @@ private:
     KeyMappingEditorComponent& owner;
     const CommandID commandID;
     const int keyNum;
-    ScopedPointer<KeyEntryWindow> currentKeyEntryWindow;
+    std::unique_ptr<KeyEntryWindow> currentKeyEntryWindow;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChangeKeyButton)
 };
@@ -207,14 +212,14 @@ private:
 class KeyMappingEditorComponent::ItemComponent  : public Component
 {
 public:
-    ItemComponent (KeyMappingEditorComponent& kec, const CommandID command)
+    ItemComponent (KeyMappingEditorComponent& kec, CommandID command)
         : owner (kec), commandID (command)
     {
         setInterceptsMouseClicks (false, true);
 
         const bool isReadOnly = owner.isCommandReadOnly (commandID);
 
-        const Array<KeyPress> keyPresses (owner.getMappings().getKeyPressesAssignedToCommand (commandID));
+        auto keyPresses = owner.getMappings().getKeyPressesAssignedToCommand (commandID);
 
         for (int i = 0; i < jmin ((int) maxNumAssignments, keyPresses.size()); ++i)
             addKeyPressButton (owner.getDescriptionForKeyPress (keyPresses.getReference (i)), i, isReadOnly);
@@ -224,7 +229,7 @@ public:
 
     void addKeyPressButton (const String& desc, const int index, const bool isReadOnly)
     {
-        ChangeKeyButton* const b = new ChangeKeyButton (owner, commandID, desc, index);
+        auto* b = new ChangeKeyButton (owner, commandID, desc, index);
         keyChangeButtons.add (b);
 
         b->setEnabled (! isReadOnly);
@@ -248,7 +253,7 @@ public:
 
         for (int i = keyChangeButtons.size(); --i >= 0;)
         {
-            ChangeKeyButton* const b = keyChangeButtons.getUnchecked(i);
+            auto* b = keyChangeButtons.getUnchecked(i);
 
             b->fitToContent (getHeight() - 2);
             b->setTopRightPosition (x, 1);
@@ -270,7 +275,7 @@ private:
 class KeyMappingEditorComponent::MappingItem  : public TreeViewItem
 {
 public:
-    MappingItem (KeyMappingEditorComponent& kec, const CommandID command)
+    MappingItem (KeyMappingEditorComponent& kec, CommandID command)
         : owner (kec), commandID (command)
     {}
 
@@ -312,13 +317,9 @@ public:
         if (isNowOpen)
         {
             if (getNumSubItems() == 0)
-            {
-                const Array<CommandID> commands (owner.getCommandManager().getCommandsInCategory (categoryName));
-
-                for (int i = 0; i < commands.size(); ++i)
-                    if (owner.shouldCommandBeIncluded (commands.getUnchecked(i)))
-                        addSubItem (new MappingItem (owner, commands.getUnchecked(i)));
-            }
+                for (auto command : owner.getCommandManager().getCommandsInCategory (categoryName))
+                    if (owner.shouldCommandBeIncluded (command))
+                        addSubItem (new MappingItem (owner, command));
         }
         else
         {
@@ -335,7 +336,6 @@ private:
 
 //==============================================================================
 class KeyMappingEditorComponent::TopLevelItem   : public TreeViewItem,
-                                                  public ButtonListener,
                                                   private ChangeListener
 {
 public:
@@ -358,43 +358,28 @@ public:
         const OpennessRestorer opennessRestorer (*this);
         clearSubItems();
 
-        const StringArray categories (owner.getCommandManager().getCommandCategories());
-
-        for (int i = 0; i < categories.size(); ++i)
+        for (auto category : owner.getCommandManager().getCommandCategories())
         {
-            const Array<CommandID> commands (owner.getCommandManager().getCommandsInCategory (categories[i]));
             int count = 0;
 
-            for (int j = 0; j < commands.size(); ++j)
-                if (owner.shouldCommandBeIncluded (commands.getUnchecked(j)))
+            for (auto command : owner.getCommandManager().getCommandsInCategory (category))
+                if (owner.shouldCommandBeIncluded (command))
                     ++count;
 
             if (count > 0)
-                addSubItem (new CategoryItem (owner, categories[i]));
+                addSubItem (new CategoryItem (owner, category));
         }
-    }
-
-    static void resetToDefaultsCallback (int result, KeyMappingEditorComponent* owner)
-    {
-        if (result != 0 && owner != nullptr)
-            owner->getMappings().resetToDefaultMappings();
-    }
-
-    void buttonClicked (Button*) override
-    {
-        AlertWindow::showOkCancelBox (AlertWindow::QuestionIcon,
-                                      TRANS("Reset to defaults"),
-                                      TRANS("Are you sure you want to reset all the key-mappings to their default state?"),
-                                      TRANS("Reset"),
-                                      String(),
-                                      &owner,
-                                      ModalCallbackFunction::forComponent (resetToDefaultsCallback, &owner));
     }
 
 private:
     KeyMappingEditorComponent& owner;
 };
 
+static void resetKeyMappingsToDefaultsCallback (int result, KeyMappingEditorComponent* owner)
+{
+    if (result != 0 && owner != nullptr)
+        owner->getMappings().resetToDefaultMappings();
+}
 
 //==============================================================================
 KeyMappingEditorComponent::KeyMappingEditorComponent (KeyPressMappingSet& mappingManager,
@@ -402,19 +387,28 @@ KeyMappingEditorComponent::KeyMappingEditorComponent (KeyPressMappingSet& mappin
     : mappings (mappingManager),
       resetButton (TRANS ("reset to defaults"))
 {
-    treeItem = new TopLevelItem (*this);
+    treeItem.reset (new TopLevelItem (*this));
 
     if (showResetToDefaultButton)
     {
         addAndMakeVisible (resetButton);
-        resetButton.addListener (treeItem);
+
+        resetButton.onClick = [this]
+        {
+            AlertWindow::showOkCancelBox (AlertWindow::QuestionIcon,
+                                          TRANS("Reset to defaults"),
+                                          TRANS("Are you sure you want to reset all the key-mappings to their default state?"),
+                                          TRANS("Reset"),
+                                          {}, this,
+                                          ModalCallbackFunction::forComponent (resetKeyMappingsToDefaultsCallback, this));
+        };
     }
 
     addAndMakeVisible (tree);
     tree.setColour (TreeView::backgroundColourId, findColour (backgroundColourId));
     tree.setRootItemVisible (false);
     tree.setDefaultOpenness (true);
-    tree.setRootItem (treeItem);
+    tree.setRootItem (treeItem.get());
     tree.setIndentSize (12);
 }
 
@@ -457,14 +451,14 @@ void KeyMappingEditorComponent::resized()
 //==============================================================================
 bool KeyMappingEditorComponent::shouldCommandBeIncluded (const CommandID commandID)
 {
-    const ApplicationCommandInfo* const ci = mappings.getCommandManager().getCommandForID (commandID);
+    auto* ci = mappings.getCommandManager().getCommandForID (commandID);
 
     return ci != nullptr && (ci->flags & ApplicationCommandInfo::hiddenFromKeyEditor) == 0;
 }
 
 bool KeyMappingEditorComponent::isCommandReadOnly (const CommandID commandID)
 {
-    const ApplicationCommandInfo* const ci = mappings.getCommandManager().getCommandForID (commandID);
+    auto* ci = mappings.getCommandManager().getCommandForID (commandID);
 
     return ci != nullptr && (ci->flags & ApplicationCommandInfo::readOnlyInKeyEditor) != 0;
 }
@@ -473,3 +467,5 @@ String KeyMappingEditorComponent::getDescriptionForKeyPress (const KeyPress& key
 {
     return key.getTextDescription();
 }
+
+} // namespace juce

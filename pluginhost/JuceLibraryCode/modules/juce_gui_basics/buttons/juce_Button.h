@@ -2,29 +2,30 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_BUTTON_H_INCLUDED
-#define JUCE_BUTTON_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -35,6 +36,8 @@
     and radio groups, etc.
 
     @see TextButton, DrawableButton, ToggleButton
+
+    @tags{GUI}
 */
 class JUCE_API  Button  : public Component,
                           public SettableTooltipClient
@@ -184,6 +187,13 @@ public:
     void removeListener (Listener* listener);
 
     //==============================================================================
+    /** You can assign a lambda to this callback object to have it called when the button is clicked. */
+    std::function<void()> onClick;
+
+    /** You can assign a lambda to this callback object to have it called when the button's state changes. */
+    std::function<void()> onStateChange;
+
+    //==============================================================================
     /** Causes the button to act as if it's been clicked.
 
         This will asynchronously make the button draw itself going down and up, and
@@ -266,6 +276,11 @@ public:
     */
     void setTriggeredOnMouseDown (bool isTriggeredOnMouseDown) noexcept;
 
+    /** Returns whether the button click happens when the mouse is pressed or released.
+        @see setTriggeredOnMouseDown
+    */
+    bool getTriggeredOnMouseDown() const noexcept;
+
     /** Returns the number of milliseconds since the last time the button
         went into the 'down' state.
     */
@@ -346,9 +361,6 @@ public:
     /** Returns the button's current over/down/up state. */
     ButtonState getState() const noexcept               { return buttonState; }
 
-    // This method's parameters have changed - see the new version.
-    JUCE_DEPRECATED (void setToggleState (bool, bool));
-
     //==============================================================================
     /** This abstract base class is implemented by LookAndFeel classes to provide
         button-drawing functionality.
@@ -384,17 +396,17 @@ public:
        #endif
     };
 
+    // This method's parameters have changed - see the new version.
+    JUCE_DEPRECATED (void setToggleState (bool, bool));
+
 protected:
     //==============================================================================
     /** This method is called when the button has been clicked.
 
-        Subclasses can override this to perform whatever they actions they need
-        to do.
-
-        Alternatively, a ButtonListener can be added to the button, and these listeners
-        will be called when the click occurs.
-
-        @see triggerClick
+        Subclasses can override this to perform whatever actions they need to do.
+        In general, you wouldn't use this method to receive clicks, but should get your callbacks
+        by attaching a std::function to the onClick callback, or adding a Button::Listener.
+        @see triggerClick, onClick
     */
     virtual void clicked();
 
@@ -469,25 +481,25 @@ private:
     String text;
     ListenerList<Listener> buttonListeners;
 
-    class CallbackHelper;
-    friend class CallbackHelper;
+    struct CallbackHelper;
+    friend struct CallbackHelper;
     friend struct ContainerDeletePolicy<CallbackHelper>;
-    ScopedPointer<CallbackHelper> callbackHelper;
-    uint32 buttonPressTime, lastRepeatTime;
-    ApplicationCommandManager* commandManagerToUse;
-    int autoRepeatDelay, autoRepeatSpeed, autoRepeatMinimumDelay;
-    int radioGroupId, connectedEdgeFlags;
-    CommandID commandID;
-    ButtonState buttonState, lastStatePainted;
+    std::unique_ptr<CallbackHelper> callbackHelper;
+    uint32 buttonPressTime = 0, lastRepeatTime = 0;
+    ApplicationCommandManager* commandManagerToUse = nullptr;
+    int autoRepeatDelay = -1, autoRepeatSpeed = 0, autoRepeatMinimumDelay = -1;
+    int radioGroupId = 0, connectedEdgeFlags = 0;
+    CommandID commandID = {};
+    ButtonState buttonState = buttonNormal, lastStatePainted = buttonNormal;
 
     Value isOn;
-    bool lastToggleState;
-    bool clickTogglesState;
-    bool needsToRelease;
-    bool needsRepainting;
-    bool isKeyDown;
-    bool triggerOnMouseDown;
-    bool generateTooltip;
+    bool lastToggleState = false;
+    bool clickTogglesState = false;
+    bool needsToRelease = false;
+    bool needsRepainting = false;
+    bool isKeyDown = false;
+    bool triggerOnMouseDown = false;
+    bool generateTooltip = false;
 
     void repeatTimerCallback();
     bool keyStateChangedCallback();
@@ -497,20 +509,17 @@ private:
     ButtonState updateState();
     ButtonState updateState (bool isOver, bool isDown);
     bool isShortcutPressed() const;
-    void turnOffOtherButtonsInGroup (NotificationType);
+    void turnOffOtherButtonsInGroup (NotificationType click, NotificationType state);
 
     void flashButtonState();
     void sendClickMessage (const ModifierKeys&);
     void sendStateMessage();
+    void setToggleState (bool shouldBeOn, NotificationType click, NotificationType state);
 
     bool isMouseOrTouchOver (const MouseEvent& e);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Button)
 };
 
-#ifndef DOXYGEN
- /** This typedef is just for compatibility with old code and VC6 - newer code should use Button::Listener instead. */
- typedef Button::Listener ButtonListener;
-#endif
 
-#endif   // JUCE_BUTTON_H_INCLUDED
+} // namespace juce

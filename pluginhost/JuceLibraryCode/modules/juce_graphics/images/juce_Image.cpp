@@ -2,25 +2,30 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
+
+namespace juce
+{
 
 ImagePixelData::ImagePixelData (const Image::PixelFormat format, const int w, const int h)
     : pixelFormat (format), width (w), height (h)
@@ -31,12 +36,12 @@ ImagePixelData::ImagePixelData (const Image::PixelFormat format, const int w, co
 
 ImagePixelData::~ImagePixelData()
 {
-    listeners.call (&Listener::imageDataBeingDeleted, this);
+    listeners.call ([this] (Listener& l) { l.imageDataBeingDeleted (this); });
 }
 
 void ImagePixelData::sendDataChangeMessage()
 {
-    listeners.call (&Listener::imageDataChanged, this);
+    listeners.call ([this] (Listener& l) { l.imageDataChanged (this); });
 }
 
 int ImagePixelData::getSharedCount() const noexcept
@@ -50,7 +55,7 @@ ImageType::~ImageType() {}
 
 Image ImageType::convert (const Image& source) const
 {
-    if (source.isNull() || getTypeID() == (ScopedPointer<ImageType> (source.getPixelData()->createType())->getTypeID()))
+    if (source.isNull() || getTypeID() == (std::unique_ptr<ImageType> (source.getPixelData()->createType())->getTypeID()))
         return source;
 
     const Image::BitmapData src (source, Image::BitmapData::readOnly);
@@ -82,7 +87,7 @@ public:
           pixelStride (format_ == Image::RGB ? 3 : ((format_ == Image::ARGB) ? 4 : 1)),
           lineStride ((pixelStride * jmax (1, w) + 3) & ~3)
     {
-        imageData.allocate ((size_t) (lineStride * jmax (1, h)), clearImage);
+        imageData.allocate ((size_t) lineStride * (size_t) jmax (1, h), clearImage);
     }
 
     LowLevelGraphicsContext* createLowLevelContext() override
@@ -93,7 +98,7 @@ public:
 
     void initialiseBitmapData (Image::BitmapData& bitmap, int x, int y, Image::BitmapData::ReadWriteMode mode) override
     {
-        bitmap.data = imageData + x * pixelStride + y * lineStride;
+        bitmap.data = imageData + (size_t) x * (size_t) pixelStride + (size_t) y * (size_t) lineStride;
         bitmap.pixelFormat = pixelFormat;
         bitmap.lineStride = lineStride;
         bitmap.pixelStride = pixelStride;
@@ -105,7 +110,7 @@ public:
     ImagePixelData::Ptr clone() override
     {
         SoftwarePixelData* s = new SoftwarePixelData (pixelFormat, width, height, false);
-        memcpy (s->imageData, imageData, (size_t) (lineStride * height));
+        memcpy (s->imageData, imageData, (size_t) lineStride * (size_t) height);
         return s;
     }
 
@@ -176,7 +181,7 @@ public:
     ImagePixelData::Ptr clone() override
     {
         jassert (getReferenceCount() > 0); // (This method can't be used on an unowned pointer, as it will end up self-deleting)
-        const ScopedPointer<ImageType> type (createType());
+        const std::unique_ptr<ImageType> type (createType());
 
         Image newImage (type->create (pixelFormat, area.getWidth(), area.getHeight(), pixelFormat != Image::RGB));
 
@@ -242,7 +247,6 @@ Image& Image::operator= (const Image& other)
     return *this;
 }
 
-#if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
 Image::Image (Image&& other) noexcept
     : image (static_cast<ImagePixelData::Ptr&&> (other.image))
 {
@@ -253,15 +257,12 @@ Image& Image::operator= (Image&& other) noexcept
     image = static_cast<ImagePixelData::Ptr&&> (other.image);
     return *this;
 }
-#endif
 
 Image::~Image()
 {
 }
 
-#if JUCE_ALLOW_STATIC_NULL_VARIABLES
-const Image Image::null;
-#endif
+JUCE_DECLARE_DEPRECATED_STATIC (const Image Image::null;)
 
 int Image::getReferenceCount() const noexcept           { return image == nullptr ? 0 : image->getSharedCount(); }
 int Image::getWidth() const noexcept                    { return image == nullptr ? 0 : image->width; }
@@ -297,7 +298,7 @@ Image Image::rescaled (const int newWidth, const int newHeight, const Graphics::
     if (image == nullptr || (image->width == newWidth && image->height == newHeight))
         return *this;
 
-    const ScopedPointer<ImageType> type (image->createType());
+    const std::unique_ptr<ImageType> type (image->createType());
     Image newImage (type->create (image->pixelFormat, newWidth, newHeight, hasAlphaChannel()));
 
     Graphics g (newImage);
@@ -314,7 +315,7 @@ Image Image::convertedToFormat (PixelFormat newFormat) const
 
     const int w = image->width, h = image->height;
 
-    const ScopedPointer<ImageType> type (image->createType());
+    const std::unique_ptr<ImageType> type (image->createType());
     Image newImage (type->create (newFormat, w, h, false));
 
     if (newFormat == SingleChannel)
@@ -443,9 +444,12 @@ void Image::BitmapData::setPixelColour (const int x, const int y, Colour colour)
 //==============================================================================
 void Image::clear (const Rectangle<int>& area, Colour colourToClearTo)
 {
-    const ScopedPointer<LowLevelGraphicsContext> g (image->createLowLevelContext());
-    g->setFill (colourToClearTo);
-    g->fillRect (area, true);
+    if (image != nullptr)
+    {
+        const std::unique_ptr<LowLevelGraphicsContext> g (image->createLowLevelContext());
+        g->setFill (colourToClearTo);
+        g->fillRect (area, true);
+    }
 }
 
 //==============================================================================
@@ -516,17 +520,13 @@ static void performPixelOp (const Image::BitmapData& data, const PixelOperation&
 
 struct AlphaMultiplyOp
 {
-    AlphaMultiplyOp (float alpha_) noexcept : alpha (alpha_) {}
-
-    const float alpha;
+    float alpha;
 
     template <class PixelType>
     void operator() (PixelType& pixel) const
     {
         pixel.multiplyAlpha (alpha);
     }
-
-    JUCE_DECLARE_NON_COPYABLE (AlphaMultiplyOp)
 };
 
 void Image::multiplyAllAlphas (const float amountToMultiplyBy)
@@ -534,7 +534,7 @@ void Image::multiplyAllAlphas (const float amountToMultiplyBy)
     jassert (hasAlphaChannel());
 
     const BitmapData destData (*this, 0, 0, getWidth(), getHeight(), BitmapData::readWrite);
-    performPixelOp (destData, AlphaMultiplyOp (amountToMultiplyBy));
+    performPixelOp (destData, AlphaMultiplyOp { amountToMultiplyBy });
 }
 
 struct DesaturateOp
@@ -674,3 +674,5 @@ void Image::moveImageSection (int dx, int dy,
         }
     }
 }
+
+} // namespace juce

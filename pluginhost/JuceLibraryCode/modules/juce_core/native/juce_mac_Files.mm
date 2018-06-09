@@ -1,30 +1,27 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
+
+namespace juce
+{
 
 /*
     Note that a lot of methods that you'd expect to find in this file actually
@@ -58,7 +55,7 @@ void File::findFileSystemRoots (Array<File>& destArray)
 
 
 //==============================================================================
-namespace FileHelpers
+namespace MacFileHelpers
 {
     static bool isFileOnDriveType (const File& f, const char* const* types)
     {
@@ -84,9 +81,8 @@ namespace FileHelpers
             NSNumber* hidden = nil;
             NSError* err = nil;
 
-            return [[NSURL fileURLWithPath: juceStringToNS (path)]
-                        getResourceValue: &hidden forKey: NSURLIsHiddenKey error: &err]
-                    && [hidden boolValue];
+            return [createNSURLFromFile (path) getResourceValue: &hidden forKey: NSURLIsHiddenKey error: &err]
+                     && [hidden boolValue];
         }
        #elif JUCE_IOS
         return File (path).getFileName().startsWithChar ('.');
@@ -134,14 +130,14 @@ bool File::isOnCDRomDrive() const
 {
     static const char* const cdTypes[] = { "cd9660", "cdfs", "cddafs", "udf", nullptr };
 
-    return FileHelpers::isFileOnDriveType (*this, cdTypes);
+    return MacFileHelpers::isFileOnDriveType (*this, cdTypes);
 }
 
 bool File::isOnHardDisk() const
 {
     static const char* const nonHDTypes[] = { "nfs", "smbfs", "ramfs", nullptr };
 
-    return ! (isOnCDRomDrive() || FileHelpers::isFileOnDriveType (*this, nonHDTypes));
+    return ! (isOnCDRomDrive() || MacFileHelpers::isFileOnDriveType (*this, nonHDTypes));
 }
 
 bool File::isOnRemovableDrive() const
@@ -168,7 +164,7 @@ bool File::isOnRemovableDrive() const
 
 bool File::isHidden() const
 {
-    return FileHelpers::isHiddenFile (getFullPathName());
+    return MacFileHelpers::isHiddenFile (getFullPathName());
 }
 
 //==============================================================================
@@ -186,12 +182,12 @@ File File::getSpecialLocation (const SpecialLocationType type)
             case userHomeDirectory:                 resultPath = nsStringToJuce (NSHomeDirectory()); break;
 
           #if JUCE_IOS
-            case userDocumentsDirectory:            resultPath = FileHelpers::getIOSSystemLocation (NSDocumentDirectory); break;
-            case userDesktopDirectory:              resultPath = FileHelpers::getIOSSystemLocation (NSDesktopDirectory); break;
+            case userDocumentsDirectory:            resultPath = MacFileHelpers::getIOSSystemLocation (NSDocumentDirectory); break;
+            case userDesktopDirectory:              resultPath = MacFileHelpers::getIOSSystemLocation (NSDesktopDirectory); break;
 
             case tempDirectory:
             {
-                File tmp (FileHelpers::getIOSSystemLocation (NSCachesDirectory));
+                File tmp (MacFileHelpers::getIOSSystemLocation (NSCachesDirectory));
                 tmp = tmp.getChildFile (juce_getExecutableFile().getFileNameWithoutExtension());
                 tmp.createDirectory();
                 return tmp.getFullPathName();
@@ -218,7 +214,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
 
             case invokedExecutableFile:
                 if (juce_argv != nullptr && juce_argc > 0)
-                    return File::getCurrentWorkingDirectory().getChildFile (CharPointer_UTF8 (juce_argv[0]));
+                    return File::getCurrentWorkingDirectory().getChildFile (String (juce_argv[0]));
                 // deliberate fall-through...
 
             case currentExecutableFile:
@@ -244,7 +240,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
                 HeapBlock<char> buffer;
                 buffer.calloc (size + 8);
 
-                _NSGetExecutablePath (buffer.getData(), &size);
+                _NSGetExecutablePath (buffer.get(), &size);
                 return File (String::fromUTF8 (buffer, (int) size));
             }
 
@@ -257,7 +253,7 @@ File File::getSpecialLocation (const SpecialLocationType type)
             return File (resultPath.convertToPrecomposedUnicode());
     }
 
-    return File();
+    return {};
 }
 
 //==============================================================================
@@ -271,7 +267,7 @@ String File::getVersion() const
                     return nsStringToJuce (name);
     }
 
-    return String();
+    return {};
 }
 
 //==============================================================================
@@ -285,12 +281,12 @@ bool File::isSymbolicLink() const
     return getFileLink (fullPath) != nil;
 }
 
-File File::getLinkedTarget() const
+String File::getNativeLinkedTarget() const
 {
     if (NSString* dest = getFileLink (fullPath))
-        return getSiblingFile (nsStringToJuce (dest));
+        return nsStringToJuce (dest);
 
-    return *this;
+    return {};
 }
 
 //==============================================================================
@@ -299,28 +295,43 @@ bool File::moveToTrash() const
     if (! exists())
         return true;
 
-   #if JUCE_IOS
-    return deleteFile(); //xxx is there a trashcan on the iOS?
-   #else
     JUCE_AUTORELEASEPOOL
     {
-        NSURL* url = [NSURL fileURLWithPath: juceStringToNS (getFullPathName())];
-
-        [[NSWorkspace sharedWorkspace] recycleURLs: [NSArray arrayWithObject: url]
+       #if (defined (__IPHONE_11_0) && __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_11_0) \
+         || (defined (MAC_OS_X_VERSION_10_8) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_8)
+        NSError* error = nil;
+        return [[NSFileManager defaultManager] trashItemAtURL: createNSURLFromFile (*this)
+                                             resultingItemURL: nil
+                                                        error: &error];
+       #elif JUCE_IOS
+        return deleteFile();
+       #else
+        [[NSWorkspace sharedWorkspace] recycleURLs: [NSArray arrayWithObject: createNSURLFromFile (*this)]
                                  completionHandler: nil];
-        return true;
+
+        // recycleURLs is async, so we need to block until it has finished. We can't use a
+        // run-loop here because it'd dispatch unexpected messages, so have to do this very
+        // nasty bodge. But this is only needed for support of pre-10.8 versions.
+        for (int retries = 100; --retries >= 0;)
+        {
+            if (! exists())
+                return true;
+
+            Thread::sleep (5);
+        }
+
+        return false;
+       #endif
     }
-   #endif
 }
 
 //==============================================================================
 class DirectoryIterator::NativeIterator::Pimpl
 {
 public:
-    Pimpl (const File& directory, const String& wildCard_)
+    Pimpl (const File& directory, const String& wildcard)
         : parentDir (File::addTrailingSeparator (directory.getFullPathName())),
-          wildCard (wildCard_),
-          enumerator (nil)
+          wildCard (wildcard)
     {
         JUCE_AUTORELEASEPOOL
         {
@@ -343,8 +354,12 @@ public:
 
             for (;;)
             {
-                NSString* file;
-                if (enumerator == nil || (file = [enumerator nextObject]) == nil)
+                if (enumerator == nil)
+                    return false;
+
+                NSString* file = [enumerator nextObject];
+
+                if (file == nil)
                     return false;
 
                 [enumerator skipDescendents];
@@ -356,11 +371,11 @@ public:
                 if (fnmatch (wildcardUTF8, filenameFound.toUTF8(), FNM_CASEFOLD) != 0)
                     continue;
 
-                const String fullPath (parentDir + filenameFound);
+                auto fullPath = parentDir + filenameFound;
                 updateStatInfoForFile (fullPath, isDir, fileSize, modTime, creationTime, isReadOnly);
 
                 if (isHidden != nullptr)
-                    *isHidden = FileHelpers::isHiddenFile (fullPath);
+                    *isHidden = MacFileHelpers::isHiddenFile (fullPath);
 
                 return true;
             }
@@ -369,7 +384,7 @@ public:
 
 private:
     String parentDir, wildCard;
-    NSDirectoryEnumerator* enumerator;
+    NSDirectoryEnumerator* enumerator = nil;
 
     JUCE_DECLARE_NON_COPYABLE (Pimpl)
 };
@@ -397,7 +412,6 @@ bool JUCE_CALLTYPE Process::openDocument (const String& fileName, const String& 
     JUCE_AUTORELEASEPOOL
     {
         NSString* fileNameAsNS (juceStringToNS (fileName));
-
         NSURL* filenameAsURL ([NSURL URLWithString: fileNameAsNS]);
 
         if (filenameAsURL == nil)
@@ -406,10 +420,12 @@ bool JUCE_CALLTYPE Process::openDocument (const String& fileName, const String& 
       #if JUCE_IOS
         ignoreUnused (parameters);
 
-        if (SystemStats::isRunningInAppExtensionSandbox())
-            return false;
-
+       #if (! defined __IPHONE_OS_VERSION_MIN_REQUIRED) || (! defined __IPHONE_10_0) || (__IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_10_0)
         return [[UIApplication sharedApplication] openURL: filenameAsURL];
+       #else
+        [[UIApplication sharedApplication] openURL: filenameAsURL options: @{} completionHandler: nil];
+        return true;
+       #endif
       #else
         NSWorkspace* workspace = [NSWorkspace sharedWorkspace];
 
@@ -441,7 +457,7 @@ bool JUCE_CALLTYPE Process::openDocument (const String& fileName, const String& 
         }
 
         if (file.exists())
-            return FileHelpers::launchExecutable ("\"" + fileName + "\" " + parameters);
+            return MacFileHelpers::launchExecutable ("\"" + fileName + "\" " + parameters);
 
         return false;
       #endif
@@ -493,3 +509,5 @@ void File::addToDock() const
     }
 }
 #endif
+
+} // namespace juce

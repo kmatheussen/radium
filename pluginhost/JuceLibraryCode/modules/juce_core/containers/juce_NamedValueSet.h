@@ -1,40 +1,35 @@
 /*
   ==============================================================================
 
-   This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the JUCE library.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission to use, copy, modify, and/or distribute this software for any purpose with
-   or without fee is hereby granted, provided that the above copyright notice and this
-   permission notice appear in all copies.
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD
-   TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN
-   NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
-   DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
-   IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-   CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   ------------------------------------------------------------------------------
-
-   NOTE! This permissive ISC license applies ONLY to files within the juce_core module!
-   All other JUCE modules are covered by a dual GPL/commercial license, so if you are
-   using any other modules, be sure to check that you also comply with their license.
-
-   For more details, visit www.juce.com
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_NAMEDVALUESET_H_INCLUDED
-#define JUCE_NAMEDVALUESET_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /** Holds a set of named var objects.
 
     This can be used as a basic structure to hold a set of var object, which can
     be retrieved by using their identifier.
+
+    @tags{Core}
 */
 class JUCE_API  NamedValueSet
 {
@@ -42,63 +37,46 @@ public:
     /** Creates an empty set. */
     NamedValueSet() noexcept;
 
-    /** Creates a copy of another set. */
     NamedValueSet (const NamedValueSet&);
-
-    /** Replaces this set with a copy of another set. */
-    NamedValueSet& operator= (const NamedValueSet&);
-
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
     NamedValueSet (NamedValueSet&&) noexcept;
+    NamedValueSet& operator= (const NamedValueSet&);
     NamedValueSet& operator= (NamedValueSet&&) noexcept;
-   #endif
 
     /** Destructor. */
     ~NamedValueSet() noexcept;
 
-    bool operator== (const NamedValueSet&) const;
-    bool operator!= (const NamedValueSet&) const;
+    /** Two NamedValueSets are considered equal if they contain all the same key/value
+        pairs, regardless of the order.
+    */
+    bool operator== (const NamedValueSet&) const noexcept;
+    bool operator!= (const NamedValueSet&) const noexcept;
 
     //==============================================================================
-    struct NamedValue
+    /** Structure for a named var object */
+    struct JUCE_API  NamedValue
     {
-        NamedValue() noexcept {}
-        NamedValue (const Identifier& n, const var& v)  : name (n), value (v) {}
-        NamedValue (const NamedValue& other) : name (other.name), value (other.value) {}
+        NamedValue() noexcept;
+        ~NamedValue() noexcept;
 
-    #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
-        NamedValue (NamedValue&& other) noexcept
-        : name (static_cast<Identifier&&> (other.name)),
-          value (static_cast<var&&> (other.value))
-        {
-        }
+        NamedValue (const Identifier& name, const var& value);
+        NamedValue (const Identifier& name, var&& value) noexcept;
+        NamedValue (Identifier&& name, var&& value) noexcept;
 
-        NamedValue (Identifier&& n, var&& v) noexcept
-        : name (static_cast<Identifier&&> (n)),
-          value (static_cast<var&&> (v))
-        {
-        }
+        NamedValue (const NamedValue&);
+        NamedValue (NamedValue&&) noexcept;
+        NamedValue& operator= (NamedValue&&) noexcept;
 
-        NamedValue& operator= (NamedValue&& other) noexcept
-        {
-            name = static_cast<Identifier&&> (other.name);
-            value = static_cast<var&&> (other.value);
-            return *this;
-        }
-     #endif
-
-        bool operator== (const NamedValue& other) const noexcept   { return name == other.name && value == other.value; }
-        bool operator!= (const NamedValue& other) const noexcept   { return ! operator== (other); }
+        bool operator== (const NamedValue&) const noexcept;
+        bool operator!= (const NamedValue&) const noexcept;
 
         Identifier name;
         var value;
     };
 
-    NamedValueSet::NamedValue* begin() { return values.begin(); }
-    NamedValueSet::NamedValue* end()   { return values.end();   }
+    const NamedValueSet::NamedValue* begin() const noexcept     { return values.begin(); }
+    const NamedValueSet::NamedValue* end() const noexcept       { return values.end();   }
 
     //==============================================================================
-
     /** Returns the total number of values that the set contains. */
     int size() const noexcept;
 
@@ -122,13 +100,11 @@ public:
     */
     bool set (const Identifier& name, const var& newValue);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
     /** Changes or adds a named value.
         @returns    true if a value was changed or added; false if the
                     value was already set the value passed-in.
     */
     bool set (const Identifier& name, var&& newValue);
-   #endif
 
     /** Returns true if the set contains an item with the specified name. */
     bool contains (const Identifier& name) const noexcept;
@@ -182,5 +158,4 @@ private:
     Array<NamedValue> values;
 };
 
-
-#endif   // JUCE_NAMEDVALUESET_H_INCLUDED
+} // namespace juce

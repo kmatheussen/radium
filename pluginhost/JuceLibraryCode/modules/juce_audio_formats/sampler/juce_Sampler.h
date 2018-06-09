@@ -2,29 +2,30 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
 
-#ifndef JUCE_SAMPLER_H_INCLUDED
-#define JUCE_SAMPLER_H_INCLUDED
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -37,6 +38,8 @@
     give it some SampledSound objects to play.
 
     @see SamplerVoice, Synthesiser, SynthesiserSound
+
+    @tags{Audio}
 */
 class JUCE_API  SamplerSound    : public SynthesiserSound
 {
@@ -78,7 +81,7 @@ public:
     /** Returns the audio sample data.
         This could return nullptr if there was a problem loading the data.
     */
-    AudioSampleBuffer* getAudioData() const noexcept        { return data; }
+    AudioBuffer<float>* getAudioData() const noexcept       { return data.get(); }
 
 
     //==============================================================================
@@ -91,11 +94,11 @@ private:
     friend class SamplerVoice;
 
     String name;
-    ScopedPointer<AudioSampleBuffer> data;
+    std::unique_ptr<AudioBuffer<float>> data;
     double sourceSampleRate;
     BigInteger midiNotes;
-    int length, attackSamples, releaseSamples;
-    int midiRootNote;
+    int length = 0, attackSamples = 0, releaseSamples = 0;
+    int midiRootNote = 0;
 
     JUCE_LEAK_DETECTOR (SamplerSound)
 };
@@ -109,6 +112,8 @@ private:
     give it some SampledSound objects to play.
 
     @see SamplerSound, Synthesiser, SynthesiserVoice
+
+    @tags{Audio}
 */
 class JUCE_API  SamplerVoice    : public SynthesiserVoice
 {
@@ -129,18 +134,17 @@ public:
     void pitchWheelMoved (int newValue) override;
     void controllerMoved (int controllerNumber, int newValue) override;
 
-    void renderNextBlock (AudioSampleBuffer&, int startSample, int numSamples) override;
+    void renderNextBlock (AudioBuffer<float>&, int startSample, int numSamples) override;
 
 
 private:
     //==============================================================================
-    double pitchRatio;
-    double sourceSamplePosition;
-    float lgain, rgain, attackReleaseLevel, attackDelta, releaseDelta;
-    bool isInAttack, isInRelease;
+    double pitchRatio = 0;
+    double sourceSamplePosition = 0;
+    float lgain = 0, rgain = 0, attackReleaseLevel = 0, attackDelta = 0, releaseDelta = 0;
+    bool isInAttack = false, isInRelease = false;
 
     JUCE_LEAK_DETECTOR (SamplerVoice)
 };
 
-
-#endif   // JUCE_SAMPLER_H_INCLUDED
+} // namespace juce

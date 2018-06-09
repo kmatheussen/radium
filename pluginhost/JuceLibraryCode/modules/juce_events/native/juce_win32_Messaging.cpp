@@ -2,30 +2,34 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   The code included in this file is provided under the terms of the ISC license
+   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
+   To use, copy, modify, and/or distribute this software for any purpose with or
+   without fee is hereby granted provided that the above copyright notice and
+   this permission notice appear in all copies.
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-   ------------------------------------------------------------------------------
-
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
+
+namespace juce
+{
 
 extern HWND juce_messageWindowHandle;
 
 typedef bool (*CheckEventBlockedByModalComps) (const MSG&);
 CheckEventBlockedByModalComps isEventBlockedByModalComps = nullptr;
+
+typedef void (*SettingChangeCallbackFunc) (void);
+SettingChangeCallbackFunc settingChangeCallback = nullptr;
 
 //==============================================================================
 namespace WindowsMessageHelpers
@@ -34,7 +38,7 @@ namespace WindowsMessageHelpers
     const unsigned int broadcastMessageMagicNumber = 0xc403;
 
     const TCHAR messageWindowName[] = _T("JUCEWindow");
-    ScopedPointer<HiddenMessageWindow> messageWindow;
+    std::unique_ptr<HiddenMessageWindow> messageWindow;
 
     void dispatchMessageFromLParam (LPARAM lParam)
     {
@@ -100,11 +104,20 @@ namespace WindowsMessageHelpers
                 handleBroadcastMessage (reinterpret_cast<const COPYDATASTRUCT*> (lParam));
                 return 0;
             }
+            else if (message == WM_SETTINGCHANGE)
+            {
+                if (settingChangeCallback != nullptr)
+                    settingChangeCallback();
+            }
         }
 
         return DefWindowProc (h, message, wParam, lParam);
     }
 }
+
+#if JUCE_MODULE_AVAILABLE_juce_gui_extra
+LRESULT juce_offerEventToActiveXControl (::MSG&);
+#endif
 
 //==============================================================================
 bool MessageManager::dispatchNextMessageOnSystemQueue (const bool returnIfNoPendingMessages)
@@ -117,13 +130,18 @@ bool MessageManager::dispatchNextMessageOnSystemQueue (const bool returnIfNoPend
 
     if (GetMessage (&m, (HWND) 0, 0, 0) >= 0)
     {
+      #if JUCE_MODULE_AVAILABLE_juce_gui_extra
+        if (juce_offerEventToActiveXControl (m) != S_FALSE)
+            return true;
+      #endif
+
         if (m.message == customMessageID && m.hwnd == juce_messageWindowHandle)
         {
             dispatchMessageFromLParam (m.lParam);
         }
         else if (m.message == WM_QUIT)
         {
-            if (JUCEApplicationBase* const app = JUCEApplicationBase::getInstance())
+            if (auto* app = JUCEApplicationBase::getInstance())
                 app->systemRequestedQuit();
         }
         else if (isEventBlockedByModalComps == nullptr || ! isEventBlockedByModalComps (m))
@@ -168,7 +186,7 @@ void MessageManager::broadcastMessage (const String& value)
         data.lpData = (void*) localCopy.toUTF32().getAddress();
 
         DWORD_PTR result;
-        SendMessageTimeout (windows.getUnchecked(i), WM_COPYDATA,
+        SendMessageTimeout (windows.getUnchecked (i), WM_COPYDATA,
                             (WPARAM) juce_messageWindowHandle,
                             (LPARAM) &data,
                             SMTO_BLOCK | SMTO_ABORTIFHUNG, 8000, &result);
@@ -181,7 +199,7 @@ void MessageManager::doPlatformSpecificInitialisation()
     OleInitialize (0);
 
     using namespace WindowsMessageHelpers;
-    messageWindow = new HiddenMessageWindow (messageWindowName, (WNDPROC) messageWndProc);
+    messageWindow.reset (new HiddenMessageWindow (messageWindowName, (WNDPROC) messageWndProc));
     juce_messageWindowHandle = messageWindow->getHWND();
 }
 
@@ -216,5 +234,7 @@ struct MountedVolumeListChangeDetector::Pimpl   : private DeviceChangeDetector
     Array<File> lastVolumeList;
 };
 
-MountedVolumeListChangeDetector::MountedVolumeListChangeDetector()  { pimpl = new Pimpl (*this); }
+MountedVolumeListChangeDetector::MountedVolumeListChangeDetector()  { pimpl.reset (new Pimpl (*this)); }
 MountedVolumeListChangeDetector::~MountedVolumeListChangeDetector() {}
+
+} // namespace juce
