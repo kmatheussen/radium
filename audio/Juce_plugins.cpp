@@ -1345,7 +1345,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
     
   } else {
     // This caused glitches with vst2 plugins, but there doesn't seem to be locks when using vst3 or au plugins.
-    data->audio_instance->setParameter(effect_num, value);
+    data->audio_instance->getParameters()[effect_num]->setValue(value);
   }
 }
 
@@ -1370,19 +1370,19 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
     return val;
   } else {
     // This caused glitches with vst2 plugins, but there doesn't seem to be locks when using vst3 or au plugins.
-    return data->audio_instance->getParameter(effect_num);
+    return data->audio_instance->getParameters()[effect_num]->getValue();
   }
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const MessageManagerLock mmLock;  // FIX: Why do we use MessageManagerLock in get_display_value_string and not here? And doesn't we lock the player, which get_effect_value does?
 #endif
   
   Data *data = (Data*)plugin->data;
   
-  String l = data->audio_instance->getParameterLabel(effect_num);
+  String l = data->audio_instance->getParameters()[effect_num]->getLabel();
   const char *label = l.toRawUTF8();
 
   if (is_vst2(plugin)) // audio_instance->getParameterText() sometimes crashes. Doing it manually instead.
@@ -1399,8 +1399,9 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
       snprintf(buffer,buffersize-1,"%s%s",disp,label);
     }
   }
-  else {
-    String l = data->audio_instance->getParameterText(effect_num, buffersize-1);
+  else {    
+    float value = data->audio_instance->getParameters()[effect_num]->getValue();
+    String l = data->audio_instance->getParameters()[effect_num]->getText(value, buffersize-1);
     snprintf(buffer,buffersize-1,"%s%s",l.toRawUTF8(),label);
   }
 }
@@ -1543,12 +1544,12 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
         
   plugin_type->is_instrument = audio_instance->acceptsMidi(); // doesn't seem like this field ("is_instrument") is ever read...
 
-  plugin_type->num_effects = audio_instance->getNumParameters();
+  plugin_type->num_effects = audio_instance->getParameters().size();
 
   type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
   for(int i = 0 ; i < plugin_type->num_effects ; i++)
     //  type_data->effect_names[i] = V_strdup(audio_instance->getParameterName(i).toRawUTF8());
-    type_data->effect_names[i] = V_strdup(talloc_format("%d: %s",i,audio_instance->getParameterName(i).toRawUTF8()));
+    type_data->effect_names[i] = V_strdup(talloc_format("%d: %s",i,audio_instance->getParameters()[i]->getName(1000).toRawUTF8()));
 }
 
 
