@@ -596,9 +596,9 @@ bin/radium_plugin_scanner: $(PLUGINHOSTSCANNERLIB)
 
 
 # Adding "TARGET_ARCH=-g" to prevent juce from compiling with -march=native
-PLUGINHOSTOPTS = CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing"
+PLUGINHOSTOPTS = CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing"
 
-LIBPLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
+LIBPLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
 
 
 pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h common/Vector.hpp
