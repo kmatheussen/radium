@@ -586,7 +586,11 @@ namespace{
       }
       
     }
-    
+    /*
+    void paint(Graphics& g) override {
+      g.fillAll(Colours::black);
+    }
+    */
     void timerCallback() override {
       // grab button
       {
@@ -734,6 +738,9 @@ namespace{
       this->setOpaque(true);
       this->addToDesktop();//getDesktopWindowStyleFlags());
 
+      static auto *lookandfeel = new LookAndFeel_V3();
+      this->setLookAndFeel(lookandfeel);
+      
 #if TRY_TO_RESIZE_EDITOR
       this->setResizable(true, true);
 #endif
