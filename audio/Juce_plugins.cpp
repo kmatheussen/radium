@@ -37,7 +37,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../pluginhost/JuceLibraryCode/JuceHeader.h"
 
+
 #define USE_EMBEDDED_NATIVE_WINDOW 0
+#define CHANGE_GUI_VISIBILITY_INSTEAD_OF_REOPENING 1 // There was a good reason this wasn't enabled earlier, but I don't remember that reason. Seems to work now though.
+#define TRY_TO_RESIZE_EDITOR 0 // This doesn't seem to work, except for the juce demo plugin. Instead change window size when plugin gui size changes (and not the other way).
+    
 
   
 
@@ -119,6 +123,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #else
 #define CUSTOM_MM_THREAD 0
 #endif
+
 
 static int g_num_visible_plugin_windows = 0;
 static bool g_vst_grab_keyboard = true;
@@ -685,8 +690,6 @@ namespace{
     }
 
 
-#define TRY_TO_RESIZE_EDITOR 0 // This doesn't seem to work
-    
     void componentMovedOrResized(Component &component, bool wasMoved, bool wasResized) override {
 
       if (wasResized){
@@ -1410,16 +1413,22 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 }
 
 static bool gui_is_visible(struct SoundPlugin *plugin){
-#if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
-#endif
 
+#if CUSTOM_MM_THREAD
+  const MessageManagerLock mmLock; // Must place here. Even checkin gif data->window==NULL must be protected by lock.
+#endif
+    
   Data *data = (Data*)plugin->data;
 
-  if (data->window==NULL)
+  if (data->window==NULL) {
+    
     return false;
-  else
+    
+  } else {
+    
     return data->window->isVisible();
+    
+  }
 }
 
 radium::Mutex JUCE_show_hide_gui_lock;
@@ -1451,8 +1460,13 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 
     }GL_unlock();
 
+#if CHANGE_GUI_VISIBILITY_INSTEAD_OF_REOPENING
+  } else {
+    data->window->setVisible(true);
+    ret = true;
   }
-
+#endif
+  
   return ret;
 }
 
@@ -1465,8 +1479,13 @@ static void hide_gui(struct SoundPlugin *plugin){
   
   Data *data = (Data*)plugin->data;
 
-  //data->window->setVisible(false);
+#if CHANGE_GUI_VISIBILITY_INSTEAD_OF_REOPENING
+  if (data->window != NULL)
+    data->window->setVisible(false);
+#else
   delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
+#endif
+  
   //OS_WINDOWS_move_main_window_to_front();
 }
 
