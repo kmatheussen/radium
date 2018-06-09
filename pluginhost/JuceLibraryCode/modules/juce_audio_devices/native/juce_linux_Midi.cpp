@@ -297,11 +297,20 @@ private:
             jassert (client.get() != nullptr);
         }
 
+        void setLowestRealtimePriority()
+        {
+          struct sched_param param = {0};
+          param.sched_priority=sched_get_priority_min(SCHED_RR);
+          pthread_setschedparam(pthread_self(), SCHED_RR, &param);
+        }
+      
         void run() override
         {
             const int maxEventSize = 16 * 1024;
             snd_midi_event_t* midiParser;
             snd_seq_t* seqHandle = client.get();
+
+            setLowestRealtimePriority();
 
             if (snd_midi_event_new (maxEventSize, &midiParser) >= 0)
             {
