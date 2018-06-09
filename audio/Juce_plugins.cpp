@@ -261,7 +261,7 @@ namespace{
     
     // From JUCE documenation: You can ONLY call this from your processBlock() method!
     // I.e. it will only be called from the player thread or a multicore thread.
-    virtual bool getCurrentPosition (CurrentPositionInfo &result) {
+    bool getCurrentPosition (CurrentPositionInfo &result) override {
       memset(&result, 0, sizeof(CurrentPositionInfo));
 
       if (THREADING_is_main_thread()){
@@ -505,10 +505,10 @@ namespace{
     void *_embedded_native_window = NULL;
 #endif
     
-    virtual void 	buttonClicked (Button *) override {
+    void 	buttonClicked (Button *) override {
     }
 
-    virtual void buttonStateChanged (Button *dasbutton) override {
+    void buttonStateChanged (Button *dasbutton) override {
       
       if (dasbutton == &grab_keyboard_button) {
         
@@ -683,6 +683,8 @@ namespace{
         ab_buttons[i].setTopLeftPosition(x, 0);
         
         if (x+width > rightmost_ab_button_x) {
+          if (i==1)
+            ab_buttons[0].setVisible(false);
           ab_buttons[i].setVisible(false);
         } else {
           ab_buttons[i].setVisible(true);
@@ -929,6 +931,8 @@ namespace{
 
     ~PluginWindow(){
 
+      //printf("     \n\n\n\nPLUGINWINDOW DELETED\n\n\n\n");
+      
       data->xs[parentgui] = getX();
       data->ys[parentgui] = getY();
 
@@ -1001,7 +1005,7 @@ namespace{
       isInited.set(0);
     }
 
-    virtual void run(){
+    void run() override {
       initialiseJuce_GUI();
       MessageManager::getInstance(); // make sure there is an instance here to avoid theoretical race condition
       isInited.set(1);
