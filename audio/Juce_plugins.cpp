@@ -481,7 +481,7 @@ namespace{
 
   struct PluginWindow;
   
-  struct PluginWindow  : public DocumentWindow, Button::Listener, Timer {
+  struct PluginWindow  : public DocumentWindow, Button::Listener, Timer, ComponentListener {
     Data *data;
     const char *title;
     Component main_component;
@@ -626,6 +626,7 @@ namespace{
         }
       }
 
+      //printf("...Sizes (main: %d, editor: %d). Height: (main: %d, editor: %d)\n", main_component.getWidth(), editor->getWidth(), main_component.getHeight(), editor->getHeight());
       
       //printf("Width: %d\n", editor->getWidth());
              
@@ -633,7 +634,83 @@ namespace{
       //  delete this;
       //this->setAlwaysOnTop(vstGuiIsAlwaysOnTop());
     }
+
+    int get_button_height(void) const {
+      return root->song->tracker_windows->fontheight * 3 / 2;
+    }
     
+    void position_components(int editor_width, int editor_height){
+
+      int x = 0;
+
+      int rightmost_ab_button_x = 0;
+      
+#if defined(RELEASE) && FOR_LINUX
+      
+      rightmost_ab_button_x = editor_width-bypass_button.getWidth();
+      bypass_button.setTopLeftPosition(R_MAX(x, rightmost_ab_button_x), 0);
+      x = bypass_button.getX() + bypass_button.getWidth();
+      
+#else
+      
+      rightmost_ab_button_x = editor_width-grab_keyboard_button.getWidth()-bypass_button.getWidth();
+      bypass_button.setTopLeftPosition(R_MAX(x, rightmost_ab_button_x), 0);
+      x = bypass_button.getX() + bypass_button.getWidth();
+      
+      grab_keyboard_button.setTopLeftPosition(x, 0);
+      x += grab_keyboard_button.getWidth();
+      
+      //always_on_top_button.setTopLeftPosition(this->getWidth()-grab_keyboard_button.getWidth()-always_on_top_button.getWidth(), 0);
+      
+#endif
+      
+      //int total_button_width = x;
+      
+      x = 0;
+      for(int i=0;i<8;i++){
+        
+        int width = ab_buttons[i].getWidth();
+        
+        if (x+width > rightmost_ab_button_x)
+          this->removeChildComponent(&ab_buttons[i]);
+        else
+          ab_buttons[i].setTopLeftPosition(x, 0);
+        
+        x += width;
+      }
+      
+    }
+
+
+#define TRY_TO_RESIZE_EDITOR 0 // This doesn't seem to work
+    
+    void componentMovedOrResized(Component &component, bool wasMoved, bool wasResized) override {
+
+      if (wasResized){
+        
+        //#if !defined(RELEASE)
+        printf("Resized. Width: %d (main: %d, editor: %d). Height: %d (main: %d, editor: %d)\n", component.getWidth(), main_component.getWidth(), editor->getWidth(), component.getHeight(), main_component.getHeight(), editor->getHeight());
+        //#endif
+        
+#if TRY_TO_RESIZE_EDITOR        
+        int editor_width = main_component.getWidth();
+        int editor_height = main_component.getHeight() - get_button_height();
+          
+        editor->setSize(editor_width, editor_height);
+#else
+        int editor_width = editor->getWidth();
+        int editor_height = editor->getHeight();
+        
+        main_component.setSize(editor_width, editor_height + get_button_height());
+#endif
+
+        position_components(editor_width,editor_height);
+        
+      }
+
+    }
+
+          
     PluginWindow(const char *title, Data *data, AudioProcessorEditor* const editor, int64_t parentgui)
       : DocumentWindow (title,
                         Colours::lightgrey,
@@ -651,6 +728,10 @@ namespace{
       this->setOpaque(true);
       this->addToDesktop();//getDesktopWindowStyleFlags());
 
+#if TRY_TO_RESIZE_EDITOR
+      this->setResizable(true, true);
+#endif
+      
 #if !FOR_WINDOWS // We have a more reliable way to do this on Windows (done at the end of this function)
       if(vstGuiIsAlwaysOnTop()) {
         this->setAlwaysOnTop(true);
@@ -661,11 +742,15 @@ namespace{
       this->setUsingNativeTitleBar(true);
       //this->setUsingNativeTitleBar(false);
 
-      int button_height = root->song->tracker_windows->fontheight * 3 / 2;
+      int button_height = get_button_height();
       
       main_component.setSize(R_MIN(100, editor->getWidth()), R_MIN(100, editor->getHeight()));
+#if TRY_TO_RESIZE_EDITOR
+      this->setContentNonOwned(&main_component, false);
+#else
       this->setContentNonOwned(&main_component, true);
-
+#endif
+      
 #if defined(RELEASE) && FOR_LINUX
 #else
       // grab keyboard button
@@ -754,6 +839,13 @@ namespace{
       
       main_component.setSize(editor->getWidth(), editor->getHeight() + button_height);
 
+      position_components(editor->getWidth(), editor->getHeight());
+
+#if TRY_TO_RESIZE_EDITOR
+      main_component.addComponentListener(this);
+#else
+      editor->addComponentListener(this);
+#endif
       {
         int num_x = data->xs.count(parentgui);
         int num_y = data->ys.count(parentgui);
@@ -784,53 +876,6 @@ namespace{
           this->setTopLeftPosition(x, y);
         }
 
-      }
-
-
-      {
-        int x = 0;
-
-        int rightmost_ab_button_x = 0;
-
-#if defined(RELEASE) && FOR_LINUX
-        rightmost_ab_button_x = main_component.getWidth()-bypass_button.getWidth();
-        bypass_button.setTopLeftPosition(R_MAX(x, rightmost_ab_button_x), 0);
-        x = bypass_button.getX() + bypass_button.getWidth();
-        
-#else
-        rightmost_ab_button_x = main_component.getWidth()-grab_keyboard_button.getWidth()-bypass_button.getWidth();
-        bypass_button.setTopLeftPosition(R_MAX(x, rightmost_ab_button_x), 0);
-        x = bypass_button.getX() + bypass_button.getWidth();
-
-        grab_keyboard_button.setTopLeftPosition(x, 0);
-        x += grab_keyboard_button.getWidth();
-        
-        //always_on_top_button.setTopLeftPosition(main_component.getWidth()-grab_keyboard_button.getWidth()-always_on_top_button.getWidth(), 0);
-#endif
-
-        int total_button_width = x;
-
-        x = 0;
-        for(int i=0;i<8;i++){
-
-          int width = ab_buttons[i].getWidth();
-          
-          if (x+width > rightmost_ab_button_x)
-            main_component.removeChildComponent(&ab_buttons[i]);
-          else
-            ab_buttons[i].setTopLeftPosition(x, 0);
-          
-          x += width;
-        }
-      
-
-        //int bypass_pos = R_MIN(main_component.getWidth()-grab_keyboard_button.getWidth(), 0);
-        //int grab_pos = R_MIN(main_component.getWidth()-grab_keyboard_button.getWidth(), 0);
-        
-
-        if (total_button_width > editor->getWidth()){
-          main_component.setSize(x, total_button_width);
-        }
       }
 
 
@@ -870,7 +915,10 @@ namespace{
     }
 
     ~PluginWindow(){
-      
+
+      data->xs[parentgui] = getX();
+      data->ys[parentgui] = getY();
+
       g_num_visible_plugin_windows--;
       
       GL_lock();{
@@ -925,11 +973,6 @@ namespace{
     void closeButtonPressed() override
     {
       delete this;      
-    }
-
-    void moved() override {
-      data->xs[parentgui] = getX();
-      data->ys[parentgui] = getY();
     }
 
   };
