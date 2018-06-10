@@ -334,7 +334,7 @@ static void add_input_port(String name, bool do_update_settings, bool should_be_
 #endif
   
   if (midi_input==NULL){
-    GFX_Message(NULL, "Error. Unable to open MIDI output device %s.\n", (const char*)name.toUTF8());
+    GFX_Message(NULL, "Error. Unable to open MIDI input device %s.\n", (const char*)name.toUTF8());
     delete midi_input_callback;
     return;
   }

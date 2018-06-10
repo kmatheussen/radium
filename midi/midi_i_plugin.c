@@ -551,17 +551,27 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,cons
       portname += 8;
 
     if (!strcmp(input_port_names[i], portname)){
-      vector_t v = {0};
 
-      int yes = VECTOR_push_back(&v, "Yes");
-      int no = VECTOR_push_back(&v, "No");
+      static hash_t *dont_ask_again = NULL;
+      if (dont_ask_again==NULL)
+        dont_ask_again = HASH_create(10);
 
-      int result = GFX_Message2(&v, program_state_is_valid, "Are you sure? Port \"%s\" is an input port. If you send MIDI data to this port, you risk starting a recursive connection that's impossible to stop.", midi_port->name);
+      if (HASH_has_key(dont_ask_again, portname)==false){
+        vector_t v = {0};
+        
+        int no = VECTOR_push_back(&v, "No");(void)no;
+        int yes = VECTOR_push_back(&v, "Yes");
+        int yes_dont_ask_again = VECTOR_push_back(&v, "Yes (don't ask again)");
+        
+        int result = GFX_Message2(&v, program_state_is_valid, "Are you sure you want to connect to \"%s\"? We are also connected to an input port with the same name. If this device sends out its input, you risk starting a recursive connection that's impossible to stop.", midi_port->name);
 
-      if (g_user_interaction_enabled==false || result!=yes)
-        return MIDIgetPort(window, reqtype, NULL, program_state_is_valid);
-
-      (void)no;
+        if (result==yes_dont_ask_again)
+          HASH_put_bool(dont_ask_again, portname, true);
+        
+        if (g_user_interaction_enabled==false || (result!=yes && result!=yes_dont_ask_again))
+          return MIDIgetPort(window, reqtype, NULL, program_state_is_valid);
+      }
+      
     }
   }
 
