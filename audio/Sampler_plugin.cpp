@@ -2672,6 +2672,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
   const wchar_t *maybe_relative_filename = OS_saving_get_relative_path_if_possible(data->filename);
+  
   //printf("maybe: -%s- -%s-\n", data->filename, maybe_relative_filename);
   HASH_put_string(state, "filename", maybe_relative_filename);
 

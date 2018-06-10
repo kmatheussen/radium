@@ -729,7 +729,11 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
       filename = SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, true);
     else
       R_ASSERT(false);
-    HASH_put_string(state, ":sample", filename);
+
+    if(g_is_saving || g_is_loading)
+      HASH_put_string(state, ":sample", OS_saving_get_relative_path_if_possible(filename));
+    else
+      HASH_put_string(state, ":sample", filename);
 
 #if !defined(RELEASE)
     QFileInfo info(STRING_get_qstring(filename));
@@ -1023,6 +1027,9 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     if (get_value(state, ":sample", STRING_TYPE, HASH_get_string, error_type, filename)==false)
       return NULL;
 
+    if (g_is_loading || g_is_saving)
+      filename = OS_loading_get_resolved_file_path(filename, false);
+                                      
     seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, envelope, state_samplerate, time, type);
     if (seqblock==NULL)
       return NULL;

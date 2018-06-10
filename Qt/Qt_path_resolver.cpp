@@ -86,7 +86,9 @@ void OS_set_saving_path(const wchar_t *filename){
   /a/b/c.wav    /a            b/c.wav        (returns a relative path)
 
 */
-const wchar_t *OS_saving_get_relative_path_if_possible(const wchar_t *wfilepath){  
+const wchar_t *OS_saving_get_relative_path_if_possible(const wchar_t *wfilepath){
+  //R_ASSERT_NON_RELEASE(g_is_saving); //Commented out sinc eit happens in Sampler_plugin.c and FluidSynth.c when comparing states.
+  
   if (saving_path.isEmpty())
     return wfilepath;
 
@@ -97,11 +99,11 @@ const wchar_t *OS_saving_get_relative_path_if_possible(const wchar_t *wfilepath)
   if (info.isRelative())
     return wfilepath;
   
-  printf("canonical: -%s-\n",info.absolutePath().toUtf8().constData());
+  //printf("canonical: -%s-\n",info.absolutePath().toUtf8().constData());
 
   QString filepath2 = info.absolutePath()+QDir::separator();
   QString savepath2 = saving_path+QDir::separator();
-  printf("filepath2: -%s-, savepath2: -%s-\n",filepath2.toUtf8().constData(),savepath2.toUtf8().constData());
+  //printf("filepath2: -%s-, savepath2: -%s-\n",filepath2.toUtf8().constData(),savepath2.toUtf8().constData());
 
   if (filepath2.startsWith(savepath2))
     return STRING_create(filepath.remove(0, savepath2.length()));
@@ -118,15 +120,25 @@ static QHash<QString, QDir> resolved_paths;
 
 #ifndef TEST_PATH_RESOLVER
 
+// We don't want to do disk access while doing A/B testing.
+static bool safe_exists(const QFileInfo &info){
+  if (g_is_loading || g_is_saving)
+    return info.exists();
+  else
+    return true;
+}
+
 const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool program_state_is_valid){
+  //R_ASSERT_NON_RELEASE(g_is_loading); //Commented out sinc eit happens in Sampler_plugin.c and FluidSynth.c when comparing states.
+  
   QString path = QString::fromWCharArray(wpath);
   QFileInfo info(path);
-
-  printf("path: -%s-, loading-path: -%S-\n",path.toUtf8().constData(),_loading_path);
+  
+  //printf("path: -%s-, loading-path: -%S-\n",path.toUtf8().constData(),_loading_path);
 
   // If the path is absolute, first try the original path.
-  if(!info.isRelative() && info.exists()==true){
-    return STRING_create(path);
+  if(!info.isRelative() && safe_exists(info)==true){
+    return wpath; //STRING_create(path);
   }
   
   QDir dir = info.dir();
@@ -140,16 +152,19 @@ const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *wpath, bool prog
     //char temp[50];
     //gets(temp);
 
-    if(info2.exists()){
+    if(safe_exists(info2)){
       return STRING_create(info2.filePath());
     }
   }
 
+  if (g_is_loading==false && g_is_saving==false)
+    return NULL;
+  
   // Try resolved paths
   if(resolved_paths.contains(dir.path())){
     QFileInfo info2(resolved_paths[dir.path()], info.fileName());
 
-    if(info2.exists()) {
+    if(safe_exists(info2)) {
 
       return STRING_create(info2.filePath());
     }
