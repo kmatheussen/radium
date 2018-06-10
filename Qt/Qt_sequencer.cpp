@@ -2188,7 +2188,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
 
-    setAttribute(Qt::WA_OpaquePaintEvent); // we paint everything. By doing this we also avoid cleaning backgrounds for the vertical audio meters.
+    set_widget_takes_care_of_painting_everything(this);
 
     int minimum_height = root->song->tracker_windows->systemfontheight*1.3 * 2;
     setMinimumHeight(minimum_height);
@@ -2711,6 +2711,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       printf("   SEQ paintEvent called %d, %d -> %d, %d (%d)\n", ev->rect().x(), ev->rect().y(), ev->rect().width(), ev->rect().height(),num_calls++)
       );
 
+    
     RETURN_IF_DATA_IS_INACCESSIBLE();
 
     bool seqtracks_are_painted = ev->rect().right() >= _seqtracks_widget.t_x1;

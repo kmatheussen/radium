@@ -2022,8 +2022,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       _image_painter = new_image_painter;
       _image = new_image;
 
-      _widget->setAttribute(Qt::WA_OpaquePaintEvent);
-      //_widget->setAttribute(Qt::WA_PaintOnScreen);
+      set_widget_takes_care_of_painting_everything(_widget);
     }
     
     
@@ -2707,7 +2706,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     VerticalAudioMeter(struct Patch *patch)
       : Gui(this)
     {
-      setAttribute(Qt::WA_OpaquePaintEvent);
+      set_widget_takes_care_of_painting_everything(this);
       createVamp(patch, 0, 0, width(), height());
     }
 
@@ -4246,7 +4245,7 @@ void gui_dontAutofillBackground(int64_t guinum){
   if (gui==NULL)
     return;
 
-  gui->_widget->setAttribute(Qt::WA_OpaquePaintEvent);
+  set_widget_takes_care_of_painting_everything(gui->_widget);
 }
 
 /////// Widgets
@@ -5912,7 +5911,7 @@ void gui_setBackgroundColor(int64_t guinum, const_char* color){
 
     // FIX: There's more gui types than pure QWidget were Background doesn't work. "QLabel" for instance.
     gui->_background_color = c; // Setting Background/Base of a pure QWidget doesn't work. Must paint manually.
-    gui->_widget->setAttribute(Qt::WA_OpaquePaintEvent);
+    set_widget_takes_care_of_painting_everything(gui->_widget);
     
   } else {
     
