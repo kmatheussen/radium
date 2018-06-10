@@ -621,6 +621,7 @@ static bool insert_recorded_midi_events(bool is_gfx){
         //
         if (!is_gfx && msg_is_note_off(msg)){
 
+          // note off messages are normally treated in the call to add_recorded_note below, but if the note off message was received while playing a different block than the note on message, we treat it here.
           add_recorded_stp(block, track, time);
           ret = true;
 
