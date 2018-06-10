@@ -542,8 +542,12 @@ void SetupMainWindow(void){
   // But the reason the two lines are commented away is because glClear()/glClearColor doesn't quite work on OSX unless the background is actually clear.
   // We might experience less or more flicker though.
   //
+
+  set_widget_takes_care_of_painting_everything(editor);
+
+  
 #if !defined(FOR_MACOSX) // Yes, we definitely experienced more flicker. Turn ON unless running OSX.
-  editor->setAttribute(Qt::WA_OpaquePaintEvent);
+  //editor->setAttribute(Qt::WA_OpaquePaintEvent);
   //  editor->setAttribute(Qt::WA_NoSystemBackground); // This one doesn't seem to make a difference though.
 #else
   //  #error "Check if colors work if enabling \"editor->setAttribute(Qt::WA_OpaquePaintEvent);\" above."

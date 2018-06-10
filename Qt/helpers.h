@@ -367,6 +367,15 @@ static inline bool set_window_flags(QWidget *window, radium::Modality modality){
   return set_window_parent_andor_flags(window, window->parentWidget(), modality, true);
 }
 
+static inline void set_widget_takes_care_of_painting_everything(QWidget *widget){
+  widget->setAttribute(Qt::WA_NoSystemBackground);
+  
+#if !defined(FOR_MACOSX)
+  widget->setAttribute(Qt::WA_OpaquePaintEvent); // This seems broken on OSX.
+#endif
+  
+}
+
 
 extern int g_num_running_resize_events;
 
