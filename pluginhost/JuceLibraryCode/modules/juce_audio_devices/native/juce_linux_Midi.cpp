@@ -154,6 +154,7 @@ public:
 
         void createPort (const String& name, bool enableSubscription)
         {
+          enableSubscription = true; // Make sure ports are always displayed.
             if (auto* seqHandle = client.get())
             {
                 const unsigned int caps =
