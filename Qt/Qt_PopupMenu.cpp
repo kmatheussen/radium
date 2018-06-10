@@ -327,6 +327,9 @@ namespace{
     //void clicked(bool checked){
       printf("CLICKED %d\n",checked);
       
+      //if (is_async)
+        qmenu->close();
+        
       if (callback!=NULL)
         S7CALL(void_int_bool,callback, num, checked);
       
@@ -336,8 +339,6 @@ namespace{
       if (result != NULL)
         *result = num;
 
-      //if (is_async)
-        qmenu->close();
       //delete parent;
     }
   };
@@ -381,6 +382,9 @@ namespace{
     //void clicked(bool checked){
       //fprintf(stderr,"CLICKED clickable\n");
 
+      //if (is_async)
+        qmenu->close();
+
       if (callback!=NULL)
         S7CALL(void_int, callback, num);
 
@@ -391,9 +395,6 @@ namespace{
 
       if (result != NULL)
         *result = num;
-
-      //if (is_async)
-        qmenu->close();
 
       //delete parent;
     }
