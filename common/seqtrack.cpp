@@ -2153,6 +2153,8 @@ void SEQUENCER_insert_seqtrack(struct SeqTrack *new_seqtrack, int pos, bool for_
     VECTOR_insert(&root->song->seqtracks, new_seqtrack, pos);
   }
 
+  ensure_seqtrack_has_instrument(new_seqtrack);
+                                 
   evalScheme(talloc_format("(FROM_C-call-me-when-num-seqtracks-might-have-changed %d)", root->song->seqtracks.num_elements+1));
 
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
