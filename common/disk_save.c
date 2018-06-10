@@ -61,6 +61,8 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
         return true;
 }
 
+bool g_is_saving = false;
+
 void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
 
         if (g_user_interaction_enabled==false)
@@ -68,6 +70,8 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
 
         if (Save_Initialize(filename, "RADIUM SONG")==false)
           return;
+
+        g_is_saving = true;
         
 	DC_start("OSSTUFF");
 		SaveOsStuff();
@@ -89,6 +93,8 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
           if (success)
             show_nag_window("File successfully saved.<p>");
         }
+
+        g_is_saving = false;
 }
 
 void SaveAs(struct Root *theroot){

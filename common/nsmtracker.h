@@ -199,6 +199,8 @@ enum{
 #endif
 
 extern bool g_is_loading;
+extern bool g_is_saving;
+
 extern bool g_initing_starting_to_play_song;
 
 extern bool g_user_interaction_enabled; // Used for testing. If this one is false, all user interaction will be done automatically, randomly.
