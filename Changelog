@@ -1,3 +1,55 @@
+Changes 5.7.2 -> 5.7.4:
+* VST/AU: Always store individual effect values in undo, file, and a/b.
+  Fixes some misbehaving plugins (not sure whether the plugins are
+  required to store the effect values in the state, but I would think so).
+* VST: Add "C:/Program Files/VstPlugins", "C:/Program Files (x86)/VSTPlugins",
+  "C:/Program Files/Common Files/VST3", and
+  "C:/Program Files (x86)/Common Files/VST3" to the default VST paths.
+* Sequencer: Add "Add automation to current editor track", "Add automation
+  to current sequencer track", and add/remove modulator entries to the
+  header popup menus.
+* Mixer: Add MIDI learn entries to the effect popup menus.
+* Sequencer: Add MIDI learn options to the popup menus of the volume slider
+  and the mute/solo buttons.
+* Sequencer: Change "applies" to "apply" in the recording configuration
+  GUI.
+* VST/AU: Might prevent some badly written plugins from crashing in rare
+  situations.
+* Sequencer: Fix "Enable/disable editor tracks" GUI (partly broken in 5.7.2).
+* Sequencer: Add seqtrack instrument immediately to audio seqtracks.
+* GUI: Always close popup menu before doing operation. It both looks more
+  correct, plus that the popup menu could cover other widgets opened after
+  selection.
+* GUI: Fix seqtrack header painting on OSX when sequencer height is changed.
+* GUI: Slightly speed up rendering of widgets painting all content.
+* Sequencer: Save relative path for audio files so that the song file
+  and the audio files can be moved together.
+* Sequencer: If audio file couldn't be found when loading, ask user where
+  it is.
+* MIDI: Change the "Error. Unable to open MIDI output device ..." error
+  message to "Error. Unable to open MIDI input device ...".
+* MIDI: Add a "Yes (don"t ask again)" option when connecting to an output
+  port with the same name as a connected input port, plus make the warning
+  message cleearer.
+* VST/AU: Show at least two a/b buttons, or none if there isn't room.
+* VST/AU: Slightly faster to open and close GUIs.
+* VST/AU: Set GUI position before opening it. Fixes slight flicker.
+* VST/AU: Resize GUI window immediately when plugin gui changes size.
+  No need to manually reopen the GUI anymore.
+* GUI: Close popup window (if open) when opening system error window.
+* Juce: Upgrade to 5.3.2.
+  Modifications:
+  * Use ALSA client name + ": " + ALSA port name as juce port name, not
+    just the ALSA port name.
+  * Run ALSA MIDI input thread with lowest realtime priority. Necessary
+    to get accurate timing.
+  * Always subscribe to ALSA MIDI ports. I.e. always make connected port
+    names public.
+* MIDI: Fix realtime display of notes when recording MIDI, when the MIDI
+  device sends 0x90 instead of 0x80 for note off.
+
+
+
 Changes 5.7.0 -> 5.7.2:
 * Sequencer: Option to rename seqblocks. For audio files, this will edit
   what is displayed in the sequencer and playlist (the file itself is not
