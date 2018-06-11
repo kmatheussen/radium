@@ -970,7 +970,11 @@
   ;;(<gui> :update (<gui> :get-parent-gui widget)))))
 
   (define (get-slider-text value)
-    (<-> instrument-name ": " (get-value-text value)))
+    (define midi-learn-text (if (and effect-name
+                                     (<ra> :instrument-effect-has-midi-learn parent-instrument-id effect-name))
+                                "[M] "
+                                ""))
+    (<-> midi-learn-text instrument-name ": " (get-value-text value)))
   
   (define (paint-slider x1-on/off width height)
     (define value (get-scaled-value))
