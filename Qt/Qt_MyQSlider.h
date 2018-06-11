@@ -277,7 +277,7 @@ struct MyQSlider : public QSlider {
         
         if (has_midi_learn){
           remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
-          midi_relearn = VECTOR_push_back(&options, "MIDI Relearn");
+          midi_relearn = VECTOR_push_back(&options, "MIDI relearn");
         }else{
           midi_learn = VECTOR_push_back(&options, "MIDI Learn");
         }

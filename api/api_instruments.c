@@ -709,6 +709,7 @@ bool instrumentIsImplicitlyMuted(int64_t instrument_id){
   return SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(sp);
 }
 
+
 float getInstrumentEffect(int64_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -799,6 +800,75 @@ const_char* getInstrumentEffectColor(int64_t instrument_id, const_char* effect_n
 
   return GFX_get_colorname_from_color(GFX_get_color(get_effect_color(plugin, effect_num)));
 }
+
+// midi learn
+///////////////
+
+bool instrumentEffectHasMidiLearn(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+  
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return false;
+  }
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if(effect_num==-1)
+    return false;
+  
+  return PLUGIN_has_midi_learn(plugin, effect_num);
+}
+
+void addInstrumentEffectMidiLearn(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+  
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if(effect_num==-1)
+    return;
+
+  if (PLUGIN_has_midi_learn(plugin, effect_num)){
+    handleError("addInstrumentEffectMidiLearn: %s / %s already has MIDI learn", plugin->patch->name, effect_name);
+    return;
+  }
+  
+  PLUGIN_add_midi_learn(plugin, effect_num);  
+}
+
+void removeInstrumentEffectMidiLearn(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+  
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return;
+  }
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if(effect_num==-1)
+    return;
+
+  if (false == PLUGIN_has_midi_learn(plugin, effect_num)){
+    handleError("removeInstrumentEffectMidiLearn: %s / %s doesn't have MIDI learn", plugin->patch->name, effect_name);
+    return;
+  }
+  
+  PLUGIN_remove_midi_learn(plugin, effect_num, true);
+}
+
+
 
 bool addAutomationToCurrentEditorTrack(int64_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
