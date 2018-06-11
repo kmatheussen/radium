@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/threading.h"
 #include "../common/disk.h"
+#include "../common/seqtrack_proc.h"
 
 #include "../midi/midi_i_input_proc.h"
 
@@ -2687,7 +2688,8 @@ bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_err
   delete midi_learn;
 
   update_instrument_gui(plugin);
-
+  SEQUENCER_update(SEQUPDATE_HEADERS);
+  
   return true;
 }
 
