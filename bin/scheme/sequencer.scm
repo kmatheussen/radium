@@ -91,11 +91,11 @@
                   
                   (<gui> :group "Use custom settings for this seqtrack?"
                          (<gui> :vertical-layout
-                                (<gui> :radiobutton "Yes. (These settings applies to this seqtrack only)"
+                                (<gui> :radiobutton "Yes. (These settings apply to this seqtrack only)"
                                        (<ra> :get-seqtrack-use-custom-recording-config seqtracknum)
                                        (lambda (ison)
                                          (<ra> :set-seqtrack-use-custom-recording-config seqtracknum ison)))                                         
-                                (<gui> :radiobutton "No. (These settings applies to all seqtracks with non-custom settings)"
+                                (<gui> :radiobutton "No. (These settings apply to all seqtracks with non-custom settings)"
                                        (not (<ra> :get-seqtrack-use-custom-recording-config seqtracknum))
                                        (lambda (ison)
                                          (<ra> :set-seqtrack-use-custom-recording-config seqtracknum (not ison))))))
