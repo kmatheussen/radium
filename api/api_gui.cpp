@@ -2752,20 +2752,19 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QCheckBox);
   };
 
-  struct RadiumCheckBox : MyQCheckBox, Gui{
+  struct RadiumCheckBox : MyQCheckBox_OnlyCustomPainting, Gui{
     Q_OBJECT;
     
   public:
     
     RadiumCheckBox(const char *text, bool is_checked)
-      : MyQCheckBox(text)
+      : MyQCheckBox_OnlyCustomPainting(text)
       , Gui(this)
     {
-      MyQCheckBox::_override_mouse_events = false;
       setChecked(is_checked);
     }
 
-    OVERRIDERS(MyQCheckBox);
+    OVERRIDERS(MyQCheckBox_OnlyCustomPainting);
   };
   
   struct RadioButton : QRadioButton, Gui{
