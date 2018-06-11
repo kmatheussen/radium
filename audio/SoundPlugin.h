@@ -253,6 +253,7 @@ typedef struct SoundPluginType{
   //bool plugin_takes_care_of_stored_values; // For instance, if a VST plugin has it's own editor, we ask the plugin for values instead of using stored_effect_values (which contains the last set value). Then this value is true.
   
   bool state_contains_effect_values; // Can be set to true if all effects are stored in type->create_state and applied in recreate_from_state. type->set_effect_value() will be called less often if this one is true.
+  bool state_may_contain_effect_values; // Must be set to true if state may (or may not) contain effect values.
 
   bool will_always_autosuspend; // obviously, it doesn't make sense ...
   bool will_never_autosuspend;  // ... if both of these are true

@@ -1563,9 +1563,15 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
   // The info in PluginDescription is probably fine, but override here just in case.
   plugin_type->num_inputs = audio_instance->getTotalNumInputChannels();
   plugin_type->num_outputs = audio_instance->getTotalNumOutputChannels();
-    
-  plugin_type->state_contains_effect_values = true;
 
+  {
+    // Maybe this isn't always true...
+    //plugin_type->state_contains_effect_values = true;
+    
+    // This is always true
+    plugin_type->state_may_contain_effect_values = true;
+  }
+  
 #if 0
   if (false && is_vst2(plugin_type)){
     AEffect *aeffect = (AEffect*)audio_instance->getPlatformSpecificData();
