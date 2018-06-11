@@ -2127,8 +2127,8 @@ void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *state, bool is_load
   
   type->recreate_from_state(plugin, state, false);
 
-  // Put values into storage if the plugin state contains effect values.
-  if (true == type->state_contains_effect_values){
+  // Put values into storage if the plugin state may contain effect values.
+  if (true == type->state_may_contain_effect_values || true == type->state_contains_effect_values){
     for(int i=0 ; i < type->num_effects ; i++){
       float store_value_native = plugin->type->get_effect_value(plugin, i, EFFECT_FORMAT_NATIVE);
       
