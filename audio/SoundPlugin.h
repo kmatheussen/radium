@@ -318,7 +318,7 @@ typedef struct SoundPluginType{
   void (*set_effect_value)(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when);
 
   float (*get_effect_value)(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format); // Is only called from the main thread. Player lock might be held though.
-
+  
   float (*get_scaled_value_from_native_value)(struct SoundPlugin *plugin, int effect_num, float native_value); // If get_effect_value might take some time to call, or the plugin could have a lot of effects, or we may obtain a lock in get_effect_value (or do other blocking operations), it could be a good idea to implement this one if possible.
 
   bool (*gui_is_visible)(struct SoundPlugin *plugin); // May be NULL

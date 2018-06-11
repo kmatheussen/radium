@@ -1371,6 +1371,9 @@ float get_scaled_value_from_native_value(struct SoundPlugin *plugin, int effect_
 }
 
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
+  //static int num_calls=0;
+  //printf("    %d: GET_EFFECT_VALUE: %d\n", ++num_calls, effect_num);
+  
   radium::PlayerRecursiveLock lock;
 
   Data *data = (Data*)plugin->data;
@@ -1378,8 +1381,6 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
     // juce::VSTPluginInstance::getParameter obtains the vst lock. That should not be necessary (Radium ensures that we are alone here), plus that it causes glitches in sound.
     // So instead, we call the vst getParameter function directly:
 
-    R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); // If not, we might have to use a mutex here.
-    
     AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
     
     float val = aeffect->getParameter(aeffect, effect_num);
@@ -1394,7 +1395,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;  // FIX: Why do we use MessageManagerLock in get_display_value_string and not here? And doesn't we lock the player, which get_effect_value does?
+  const MessageManagerLock mmLock;  // FIX: Why do we use MessageManagerLock in get_display_value_string and not here? Partly answer: We can't hold mmLock in get_effect_value since it's called from the player and/or while holding the player lock. Not sure if we need the mmLock here though.
 #endif
   
   Data *data = (Data*)plugin->data;
@@ -1407,17 +1408,25 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     char disp[128] = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
     AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
     const int effGetParamDisplay = 7;
-    aeffect->dispatcher(aeffect,effGetParamDisplay,
-			effect_num, 0, (void *) disp, 0.0f);
 
+    {
+      radium::PlayerRecursiveLock lock;
+      aeffect->dispatcher(aeffect,effGetParamDisplay,
+                          effect_num, 0, (void *) disp, 0.0f);
+    }
+    
     if (disp[0]==0){
       snprintf(buffer,buffersize-1,"%f%s",aeffect->getParameter(aeffect,effect_num),label);//plugin->type_data->params[effect_num].label);
     }else{
       snprintf(buffer,buffersize-1,"%s%s",disp,label);
     }
   }
-  else {    
-    float value = data->audio_instance->getParameters()[effect_num]->getValue();
+  else {
+    float value;
+    {
+      radium::PlayerRecursiveLock lock;
+      value = data->audio_instance->getParameters()[effect_num]->getValue();
+    }
     String l = data->audio_instance->getParameters()[effect_num]->getText(value, buffersize-1);
     snprintf(buffer,buffersize-1,"%s%s",l.toRawUTF8(),label);
   }

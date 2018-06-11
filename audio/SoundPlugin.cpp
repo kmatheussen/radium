@@ -1326,7 +1326,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
         radium::PlayerRecursiveLock lock; // TODO: Let the plugins take care of locking, similar to get_effect_value. Usually it's not necessary to lock.
         plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
       }
-      
+
       if(storeit_type==STORE_VALUE) {
         R_ASSERT_NON_RELEASE(!FX_when_is_automation(when));
 
@@ -2125,7 +2125,8 @@ void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *state, bool is_load
   
   type->recreate_from_state(plugin, state, false);
 
-  if (type->state_contains_effect_values){
+  // Put values into storage if the plugin state contains effect values.
+  if (true == type->state_contains_effect_values){
     for(int i=0 ; i < type->num_effects ; i++){
       float store_value_native = plugin->type->get_effect_value(plugin, i, EFFECT_FORMAT_NATIVE);
       
