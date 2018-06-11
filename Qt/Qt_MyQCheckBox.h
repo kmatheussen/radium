@@ -149,29 +149,51 @@ inline static void CHECKBOX_paint(QPainter *painter, bool is_checked, bool is_en
     }
 }
 
-
-struct MyQCheckBox : public QCheckBox{
-  bool _has_mouse;
+struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   radium::GcHolder<struct Patch> _patch;
-  int _effect_num;
-  bool _is_patchvoice_onoff_button;
-  bool _add_undo_when_clicked = true;
-  bool _is_a_pd_slider;
+  bool _is_patchvoice_onoff_button = false;
+  int _effect_num = 0;
   bool _is_implicitly_on = false;
+
+  MyQCheckBox_OnlyCustomPainting ( QWidget * parent = 0 ) : QCheckBox(parent) {}
+  MyQCheckBox_OnlyCustomPainting ( const QString & text, QWidget * parent = 0) : QCheckBox(text,parent) {}
+
   QString vertical_text;
 
-  bool _override_mouse_events = true;
-  
-  void init(){
-    _has_mouse=false;
-    _patch.set(NULL);
-    _effect_num = 0;
-    _is_patchvoice_onoff_button = false;
-    _is_a_pd_slider = false;
+  // Have to do this. Just overriding the paintEvent makes mouse partly stop working.
+  virtual void mousePressEvent ( QMouseEvent * event ) override {
+    setChecked(!isChecked());    
   }
 
-  MyQCheckBox ( QWidget * parent = 0 ) : QCheckBox(parent) {init();}
-  MyQCheckBox ( const QString & text, QWidget * parent = 0) : QCheckBox(text,parent) {init();}
+      
+  void paintEvent ( QPaintEvent * ev ) override {
+    TRACK_PAINT();
+    
+    QPainter p(this);
+
+    if(text().startsWith("V ")){
+      vertical_text = text().right(text().size()-2);
+      setText("");
+    }
+
+    QString text2 = vertical_text!="" ? vertical_text : text();
+
+    if(_patch.data()!=NULL && _patch->patchdata != NULL && _is_patchvoice_onoff_button==false)
+      text2 = get_parameter_prepend_text(_patch.data(), _effect_num) + text2;
+    
+    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2, _is_implicitly_on);
+  }
+
+  
+};
+
+struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
+  bool _has_mouse = false;
+  bool _add_undo_when_clicked = true;
+  bool _is_a_pd_slider = false;
+
+  MyQCheckBox ( QWidget * parent = 0 ) : MyQCheckBox_OnlyCustomPainting(parent) {}
+  MyQCheckBox ( const QString & text, QWidget * parent = 0) : MyQCheckBox_OnlyCustomPainting(text,parent) {}
 
   Qt::MouseButton _last_pressed_button = Qt::NoButton;
     
@@ -179,11 +201,6 @@ struct MyQCheckBox : public QCheckBox{
   {
 
     _last_pressed_button = event->button();
-
-    if (_override_mouse_events==false){
-      QCheckBox::mousePressEvent(event);
-      return;
-    }
 
     if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
       return;
@@ -323,25 +340,6 @@ struct MyQCheckBox : public QCheckBox{
   }
 
 
-  void paintEvent ( QPaintEvent * ev ) override {
-    TRACK_PAINT();
-    
-    QPainter p(this);
-
-    if(text().startsWith("V ")){
-      vertical_text = text().right(text().size()-2);
-      setText("");
-    }
-
-    QString text2 = vertical_text!="" ? vertical_text : text();
-
-    if(_patch.data()!=NULL && _patch->patchdata != NULL && _is_patchvoice_onoff_button==false)
-      text2 = get_parameter_prepend_text(_patch.data(), _effect_num) + text2;
-    
-    CHECKBOX_paint(&p, isChecked(), isEnabled(), width(), height(), text2, _is_implicitly_on);
-  }
-
-  
 #if 0  //unable to make this work. Using the "clicked" signal instead.
  signals:
   
