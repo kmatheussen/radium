@@ -12,20 +12,6 @@
 (define *curr-seqtrack-color* (ra:gui_mix-colors *current-mixer-strip-border-color* "black" 0.6))
 ;;(define *curr-seqtrack-color* (<gui> :mix-colors *current-mixer-strip-border-color* "white" 0.92))
 
-(define (get-midi-learn-menu-elements instrument-id effect-name)
-  (if (<ra> :instrument-effect-has-midi-learn instrument-id effect-name)
-      (list
-       (list "Remove MIDI Learn"
-             (lambda ()
-               (<ra> :remove-instrument-effect-midi-learn instrument-id effect-name)))
-       (list "MIDI relearn"
-             (lambda ()
-               (<ra> :remove-instrument-effect-midi-learn instrument-id effect-name)
-               (<ra> :add-instrument-effect-midi-learn instrument-id effect-name))))
-      (list "MIDI Learn"
-            (lambda ()
-              (<ra> :add-instrument-effect-midi-learn instrument-id effect-name)))))
-
 (define (show-sequencer-header-popup-menu instrument-id effect-name parentgui)
   (popup-menu
    (list "Reset volume"
@@ -33,7 +19,7 @@
            (<ra> :undo-instrument-effect instrument-id "System Volume")
            (<ra> :set-instrument-effect instrument-id "System Volume" (db-to-radium-normalized 0.0))))
    "-------------"
-   (get-midi-learn-menu-elements instrument-id effect-name)
+   (get-effect-popup-entries instrument-id effect-name)
    "------------"
    (get-instrument-popup-entries instrument-id parentgui)))
 

@@ -164,6 +164,24 @@
                                                (sort-instruments-by-mixer-position-and-connections 
                                                 (get-all-audio-instruments)))))))
 
+
+(define (get-midi-learn-menu-elements instrument-id effect-name)
+  ;;(c-display "inst/eff:" instrument-id effect-name)
+  (if (and effect-name
+           (<ra> :instrument-effect-has-midi-learn instrument-id effect-name))
+      (list
+       (list "Remove MIDI Learn"
+             (lambda ()
+               (<ra> :remove-instrument-effect-midi-learn instrument-id effect-name)))
+       (list "MIDI relearn"
+             (lambda ()
+               (<ra> :remove-instrument-effect-midi-learn instrument-id effect-name)
+               (<ra> :add-instrument-effect-midi-learn instrument-id effect-name))))
+      (list "MIDI Learn"
+            :enabled effect-name
+            (lambda ()
+              (<ra> :add-instrument-effect-midi-learn instrument-id effect-name)))))
+
 (delafina (get-effect-popup-entries :instrument-id
                                     :effect-name
                                     :automation-error-message #f ;; If set to a string, the entries will be disabled, and this will be the text
@@ -188,6 +206,8 @@
                          (pre-undo-block-callback)
                          (<ra> :add-automation-to-current-sequencer-track instrument-id effect-name)
                          (post-undo-block-callback)))))
+   "-------------"
+   (get-midi-learn-menu-elements instrument-id effect-name)
    "------------"
    (let ((has-modulator (and (not modulation-error-message)
                              (<ra> :has-modulator instrument-id effect-name))))
