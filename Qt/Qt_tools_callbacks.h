@@ -14,6 +14,8 @@
 
 #include "../common/OS_visual_input.h"
 #include "../common/Vector.hpp"
+#include "../common/seqtrack_proc.h"
+
 #include "../OpenGL/Widget_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
@@ -69,12 +71,18 @@ public:
     dest->setText(midi_learn->get_dest_info());
   }
 
+  void update_midi_learn_gui_things(void){
+    if (g_currpatch != NULL) {
+      ATOMIC_SET(g_currpatch->widget_needs_to_be_updated, true);
+      SEQUENCER_update(SEQUPDATE_HEADERS);
+    }
+  }
+  
 public slots:
 
   void enabled_toggled(bool val){
     ATOMIC_SET(midi_learn->is_enabled, val);
-    if (g_currpatch != NULL)
-      ATOMIC_SET(g_currpatch->widget_needs_to_be_updated, true);
+    update_midi_learn_gui_things();
   }
   
   void delete_released(){

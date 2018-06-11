@@ -606,11 +606,14 @@
     (db-to-text (slider-to-db value) #t))
   
   (define (get-volume-slider-text radium-normalized)
+    (define midi-learn-text (if (<ra> :instrument-effect-has-midi-learn instrument-id effect-name)
+                                "[M] "
+                                ""))
     (let ((volume-text (get-volume-slider-value-text (get-scaled-value radium-normalized))))
       (if use-two-rows
-          (<-> "  " volume-text)
+          (<-> " " midi-learn-text volume-text)
           (let ((instrument-name (<ra> :get-instrument-name instrument-id)))
-            (<-> instrument-name ": " volume-text)))))
+            (<-> midi-learn-text instrument-name ": " volume-text)))))
     
   (define last-painted-radium-normalized -10000)
 
