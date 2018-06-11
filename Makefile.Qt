@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 5.7.2
+VERSION = 5.7.4
 
 
 #----------------USER SETTINGS-------------------------------
@@ -404,7 +404,7 @@ OBJ_MIXER=QM_view.o QM_chip.o QM_MixerWidget.o undo_mixer.o undo_mixer_connectio
 OBJ_VL=GfxElements.o T2.o Render.o Widget.o
 # Qt${RADIUM_QT_VERSION}Widget.o moc_Qt${RADIUM_QT_VERSION}Widget.o
 
-SNDLIBFILES=libsndfile_objectfiles/headers.o libsndfile_objectfiles/audio.o libsndfile_objectfiles/io.o libsndfile_objectfiles/sound.o libsndfile_objectfiles/xen.o libsndfile_objectfiles/vct.o libsndfile_objectfiles/clm.o libsndfile_objectfiles/sndlib2xen.o libsndfile_objectfiles/clm2xen.o
+SNDLIBFILES=sndlib_objectfiles/headers.o sndlib_objectfiles/audio.o sndlib_objectfiles/io.o sndlib_objectfiles/sound.o sndlib_objectfiles/xen.o sndlib_objectfiles/vct.o sndlib_objectfiles/clm.o sndlib_objectfiles/sndlib2xen.o sndlib_objectfiles/clm2xen.o
 
 
 #Embedded scheme
@@ -440,9 +440,9 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean: clean_pluginhost
-	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt* $(P)Qt_preferences.h $(P)Qt_vst_paths_widget.h $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h $(CD)visual_op_queue_proc.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe bin/radium_plugin_scanner bin/radium_plugin_scanner.exe bin/addr2line.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp libsndfile_built libsndfile_objectfiles/* bin/packages/sndlib/*.o
+	rm -f *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt* $(P)Qt_preferences.h $(P)Qt_vst_paths_widget.h $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h $(CD)visual_op_queue_proc.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe bin/radium_plugin_scanner bin/radium_plugin_scanner.exe bin/addr2line.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp sndlib_built sndlib_objectfiles/* bin/packages/sndlib/*.o
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
-	cd bin/packages/sndlib && $(MAKE) clean && rm -f libsndfile.a libsndfile.so
+	cd bin/packages/sndlib && $(MAKE) clean && rm -f sndlib.a sndlib.so
 
 clean_pluginhost:
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
@@ -2286,31 +2286,31 @@ bin/packages/s7/s7.c: bin/packages/s7.tar.gz
 # -Wno-absolute-value
 #-DDEBUGGING=1
 
-libsndfile_objectfiles/headers.o: libsndfile_built
-	cp bin/packages/sndlib/headers.o libsndfile_objectfiles/
-libsndfile_objectfiles/io.o: libsndfile_built
-	cp bin/packages/sndlib/io.o libsndfile_objectfiles/
-libsndfile_objectfiles/audio.o: libsndfile_built
-	cp bin/packages/sndlib/audio.o libsndfile_objectfiles/
-libsndfile_objectfiles/sound.o: libsndfile_built
-	cp bin/packages/sndlib/sound.o libsndfile_objectfiles/
-libsndfile_objectfiles/xen.o: libsndfile_built
-	cp bin/packages/sndlib/xen.o libsndfile_objectfiles/
-libsndfile_objectfiles/vct.o: libsndfile_built
-	cp bin/packages/sndlib/vct.o libsndfile_objectfiles/
-libsndfile_objectfiles/sndlib2xen.o: libsndfile_built
-	cp bin/packages/sndlib/sndlib2xen.o libsndfile_objectfiles/
-libsndfile_objectfiles/clm2xen.o: libsndfile_built
-	cp bin/packages/sndlib/clm2xen.o libsndfile_objectfiles/
-libsndfile_objectfiles/clm.o: libsndfile_built
-	cp bin/packages/sndlib/clm.o libsndfile_objectfiles/
+sndlib_objectfiles/headers.o: sndlib_built
+	cp bin/packages/sndlib/headers.o sndlib_objectfiles/
+sndlib_objectfiles/io.o: sndlib_built
+	cp bin/packages/sndlib/io.o sndlib_objectfiles/
+sndlib_objectfiles/audio.o: sndlib_built
+	cp bin/packages/sndlib/audio.o sndlib_objectfiles/
+sndlib_objectfiles/sound.o: sndlib_built
+	cp bin/packages/sndlib/sound.o sndlib_objectfiles/
+sndlib_objectfiles/xen.o: sndlib_built
+	cp bin/packages/sndlib/xen.o sndlib_objectfiles/
+sndlib_objectfiles/vct.o: sndlib_built
+	cp bin/packages/sndlib/vct.o sndlib_objectfiles/
+sndlib_objectfiles/sndlib2xen.o: sndlib_built
+	cp bin/packages/sndlib/sndlib2xen.o sndlib_objectfiles/
+sndlib_objectfiles/clm2xen.o: sndlib_built
+	cp bin/packages/sndlib/clm2xen.o sndlib_objectfiles/
+sndlib_objectfiles/clm.o: sndlib_built
+	cp bin/packages/sndlib/clm.o sndlib_objectfiles/
 
 SNDLIBCONF ?=
 
-libsndfile_built:
+sndlib_built:
 	cd bin/packages/sndlib && CC="$(CC)" CFLAGS="$(SNDLIBFLAGS)" ./configure --without-alsa --without-audio --without-forth --without-gsl --without-jack --without-oss --without-portaudio --without-ruby --without-s7 $(SNDLIBCONF) && $(MAKE) -j3
-	mkdir -p libsndfile_objectfiles
-	echo 1 >libsndfile_built
+	mkdir -p sndlib_objectfiles
+	echo 1 >sndlib_built
 
 #clm.o: audio/clm.h audio/clm.c audio/sndlib.h audio/_sndlib.h audio/xen.h audio/vct.h
 #	$(CC) $(OPT) audio/clm.c -Iembedded_scheme -I/home/kjetil/snd-17/
