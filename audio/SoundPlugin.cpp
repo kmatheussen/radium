@@ -1330,7 +1330,8 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       if(storeit_type==STORE_VALUE) {
         R_ASSERT_NON_RELEASE(!FX_when_is_automation(when));
 
-        R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+        // Commented out. This code can be called from MIDI learn.
+        //R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
         //R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock()==false);
           
         // Reload both native and scaled values, just to be sure. The native effect we get out might not be the same as we put in.

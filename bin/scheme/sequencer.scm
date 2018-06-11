@@ -12,12 +12,28 @@
 (define *curr-seqtrack-color* (ra:gui_mix-colors *current-mixer-strip-border-color* "black" 0.6))
 ;;(define *curr-seqtrack-color* (<gui> :mix-colors *current-mixer-strip-border-color* "white" 0.92))
 
-(define (show-sequencer-header-popup-menu instrument-id parentgui)
+(define (get-midi-learn-menu-elements instrument-id effect-name)
+  (if (<ra> :instrument-effect-has-midi-learn instrument-id effect-name)
+      (list
+       (list "Remove MIDI Learn"
+             (lambda ()
+               (<ra> :remove-instrument-effect-midi-learn instrument-id effect-name)))
+       (list "MIDI relearn"
+             (lambda ()
+               (<ra> :remove-instrument-effect-midi-learn instrument-id effect-name)
+               (<ra> :add-instrument-effect-midi-learn instrument-id effect-name))))
+      (list "MIDI Learn"
+            (lambda ()
+              (<ra> :add-instrument-effect-midi-learn instrument-id effect-name)))))
+
+(define (show-sequencer-header-popup-menu instrument-id effect-name parentgui)
   (popup-menu
    (list "Reset volume"
          (lambda ()
            (<ra> :undo-instrument-effect instrument-id "System Volume")
            (<ra> :set-instrument-effect instrument-id "System Volume" (db-to-radium-normalized 0.0))))
+   "-------------"
+   (get-midi-learn-menu-elements instrument-id effect-name)
    "------------"
    (get-instrument-popup-entries instrument-id parentgui)))
 
@@ -277,10 +293,15 @@
                                                     (turn-off-all-mute instrument-id)))
                                                (else
                                                 (assert #f))))))
-                                    :right-mouse-clicked-callback (if (eq? type 'record)
-                                                                      (lambda ()
-                                                                        (show-record-popup-menu seqtracknum))
-                                                                      #f)))
+                                    :right-mouse-clicked-callback (lambda ()
+                                                                    (cond ((eq? type 'record)
+                                                                           (show-record-popup-menu seqtracknum))
+                                                                          ((eq? type 'solo)
+                                                                           (show-sequencer-header-popup-menu instrument-id "System Solo On/Off" gui))
+                                                                          ((eq? type 'mute)
+                                                                           (show-sequencer-header-popup-menu instrument-id "System Volume On/Off" gui))
+                                                                          (else
+                                                                           (assert #f))))))
 
                  (if (eq? type 'record)
                      (box :add-statusbar-text-handler "Right-click the \"R\" button to configure recording options."))
@@ -448,7 +469,7 @@
                                           (begin
                                             (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
                                                   (lambda ()
-                                                    (show-sequencer-header-popup-menu instrument-id gui)
+                                                    (show-sequencer-header-popup-menu instrument-id "System Volume" gui)
                                                     #t))
                                             #t)
                                           #f))))
