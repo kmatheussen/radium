@@ -1600,7 +1600,7 @@ for .emacs:
                   (not (null? (car args)))
                   (eq? (car (car args)) :radio-buttons))
              (let ((radiobuttons (car args)))
-               (c-display "REST:->>>" radiobuttons "<<<-")
+               ;;(c-display "REST:->>>" radiobuttons "<<<-")
                (append (list "[radiobuttons start]"
                              (lambda () #t))
                        (parse-popup-menu-options (cdr (car args)))
@@ -1702,6 +1702,7 @@ for .emacs:
   (define options (parse-popup-menu-options args))
   ;;(c-display "bbb")
   ;;(c-display "optinos:" options)
+  
   (define relations (make-assoc-from-flat-list options))
   ;;(c-display "ccc")
   (define strings (map car relations))
@@ -1716,6 +1717,7 @@ for .emacs:
   ;;(c-display "   relations: " relations)
   ;;(for-each c-display relations (iota (length relations)))
   ;;(c-display "strings: " strings)
+  ;;(for-each c-display strings)
   ;;(c-display "popup-arg: " popup-arg)
   
   (define (get-func n)

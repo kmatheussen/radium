@@ -152,23 +152,9 @@
         ;;((hash-table? a)
         ;; (<-> 
         ((procedure? a)
-         (if #f
-             "something"
-             (catch #t
-                    (lambda ()
-                      (event-to-string a))
-                    (lambda args
-                      (catch #t
-                             (lambda ()
-                               (cloned-instrument-to-string a))
-                             (lambda args
-                               (catch #t
-                                      (lambda ()
-                                        (to-displayable-string (a :dir)))
-                                      (lambda args
-                                        (with-output-to-string
-                                          (lambda ()
-                                            (display a)))))))))))
+         (with-output-to-string
+           (lambda ()
+             (display a))))
         ((hash-table? a)
          (with-output-to-string
            (lambda ()
