@@ -1352,7 +1352,7 @@
                                replace
                                reset
 
-                               parent-instrument-id ;; midi-learn-instrument-id
+                               instrument-id ;; midi-learn-instrument-id
                                "System In"
                                ))
                                      
