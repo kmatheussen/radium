@@ -750,6 +750,7 @@
                                replace-func
                                reset-func
 
+                               midi-learn-instrument-id
                                effect-name
                                
                                parentgui
@@ -827,7 +828,7 @@
                       (reset-func)))
               
               "------------"
-              (get-effect-popup-entries parent-instrument-id
+              (get-effect-popup-entries midi-learn-instrument-id
                                         effect-name
                                         :automation-error-message (if effect-name
                                                                       #f
@@ -871,7 +872,8 @@
                          (if is-permanent? #f delete)
                          (if is-permanent? #f replace)
                          reset
-                         #f
+                         #f ;; midi-learn instrument-id
+                         #f ;; effect-name
                          gui))
   
 (define (paint-horizontal-instrument-slider widget instrument-id value text is-enabled is-current get-automation-data text-x1 x1 y1 x2 y2 color)
@@ -933,6 +935,7 @@
                       delete-func
                       replace-func
                       reset-func
+                      midi-learn-instrument-id
                       effect-name)
 
   (define instrument-name (<ra> :get-instrument-name instrument-id))
@@ -970,7 +973,7 @@
 
   (define (get-slider-text value)
     (define midi-learn-text (if (and effect-name
-                                     (<ra> :instrument-effect-has-midi-learn parent-instrument-id effect-name))
+                                     (<ra> :instrument-effect-has-midi-learn midi-learn-instrument-id effect-name))
                                 "[M] "
                                 ""))
     (<-> midi-learn-text instrument-name ": " (get-value-text value)))
@@ -1097,6 +1100,7 @@
                                                                        delete-func
                                                                        replace-func
                                                                        reset-func
+                                                                       midi-learn-instrument-id
                                                                        effect-name
                                                                        widget)))
                                           #f))))
@@ -1144,13 +1148,14 @@
             (undo-block
              (lambda ()
                (define changes '())
-               
+
                ;; Disconnect parent -> me
                (push-audio-connection-change! changes (list :type "disconnect"
                                                             :source parent-instrument-id
                                                             :target instrument-id))
                
                (for-each (lambda (child-id child-gain)
+
                            ;; Disconnect me -> child
                            (push-audio-connection-change! changes (list :type "disconnect"
                                                                         :source instrument-id
@@ -1201,16 +1206,19 @@
                                delete-instrument
                                das-replace-instrument
                                reset
+                               instrument-id
                                "System Dry/Wet"
                                ))
 
   (add-gui-effect-monitor slider instrument-id "System Dry/Wet" #t #t
                           (lambda (drywet automation)
                             (when drywet
+                              ;;(c-display "DRYWET:" drywet)
                               (set! doit #f)
                               (<gui> :set-value slider drywet)
                               (set! doit #t))
                             (when automation
+                              ;;(c-display "AUTOMATION:" automation)
                               (set! automation-value (if (< automation 0)
                                                          #f
                                                          automation))
@@ -1344,6 +1352,7 @@
                                replace
                                reset
 
+                               parent-instrument-id ;; midi-learn-instrument-id
                                "System In"
                                ))
                                      
@@ -1380,6 +1389,7 @@
                                  automation-color
                                  delete
                                  replace
+                                 midi-learn-instrument-id
                                  effect-name)
 
   (define horiz (get-mixer-strip-send-horiz gui))
@@ -1431,6 +1441,7 @@
                                replace
                                reset
 
+                               midi-learn-instrument-id
                                effect-name
                                ))
   
@@ -1442,6 +1453,7 @@
                        (when (not (= new-slider-value (<gui> :get-value slider)))
                          (set! doit #f)
                          (<gui> :set-value slider new-slider-value)
+                         (<gui> :update slider)
                          (set! doit #t)))
                      (when automation-normalized
                        (set! automation-value (if (< automation-normalized 0)
@@ -1503,6 +1515,7 @@
                                           (<ra> :get-instrument-effect-color instrument-id effect-name)
                                           delete
                                           replace
+                                          first-instrument-id ;; midi-learn-instrument-id
                                           effect-name))
   send-gui)
 
@@ -1588,6 +1601,7 @@
                                           "white" ;; not used (automation color)
                                           delete
                                           replace
+                                          #f ;; midi-learn-instrument-id
                                           #f)) ;; automation not supported
   send-gui)
 
