@@ -1751,20 +1751,33 @@ bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
 
   bool more_things_to_do = false;
 
-  if (is_really_playing_song())
+  bool is_playing_song = is_really_playing_song();
+
+  if (is_playing_song)
     more_things_to_do = RT_SEQTRACK_AUTOMATION_called_per_block(seqtrack);
 
   RT_SEQBLOCK_ENVELOPE_called_before_editor(seqtrack);
   
-  if (seqtrack->patch==NULL)
-    return more_things_to_do;
-
-  SoundPlugin *plugin = (SoundPlugin*)seqtrack->patch->patchdata;
-  if (plugin==NULL)
-    return more_things_to_do;
+  if (seqtrack->patch !=NULL ) {
   
-  if (RT_SEQTRACKPLUGIN_called_per_block(plugin, seqtrack))
-    more_things_to_do = true;
+    SoundPlugin *plugin = (SoundPlugin*)seqtrack->patch->patchdata;
+    
+    if (plugin!=NULL){  
+      if (RT_SEQTRACKPLUGIN_called_per_block(plugin, seqtrack))
+        more_things_to_do = true;
+    }
+  }
+
+  if (is_playing_song==true && more_things_to_do==false){
+
+    //printf("  Is: %d. llop end > end_time: %d > %d\n", SEQUENCER_is_looping(), (int)SEQUENCER_get_loop_end(), (int)seqtrack->end_time);
+
+    if (SEQUENCER_is_looping() && SEQUENCER_get_loop_end() > seqtrack->end_time)
+      more_things_to_do = true;
+    else if (SEQUENCER_is_punching() && SEQUENCER_get_punch_end() > seqtrack->end_time)
+      more_things_to_do = true;
+
+  }
 
   return more_things_to_do;
 }
