@@ -274,23 +274,29 @@ static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
 
     s7_pointer key = s7_car(val);
 
-    const char *key_name;
+    const dyn_t value = s7extra_dyn(s7, s7_cdr(val));
 
-    if (s7_is_symbol(key))
-      key_name = s7_symbol_name(key);
-    else{
-      handleError("Only symbols are supported as hash table keys");
-      key_name = "___radium__illegal_key type";
-    }
+    if (value.type != BOOL_TYPE || value.bool_number != false){ // Earlier, elements containing "#f" wasn't included in s7 hash tables.
 
-    HASH_put_dyn(r_hash,
-                 key_name,
-                 s7extra_dyn(s7, s7_cdr(val)));
+      const char *key_name;
 
-    num_elements++;
-    if (num_elements > hash_size*2){
-      r_hash = HASH_copy(r_hash); // rehash
-      hash_size = num_elements;
+      if (s7_is_symbol(key))
+        key_name = s7_symbol_name(key);
+      else{
+        handleError("Only symbols are supported as hash table keys");
+        key_name = "___radium__illegal_key type";
+      }
+      
+      HASH_put_dyn(r_hash,
+                   key_name,
+                   value);
+      
+      num_elements++;
+      if (num_elements > hash_size*2){
+        r_hash = HASH_copy(r_hash); // rehash
+        hash_size = num_elements;
+      }
+      
     }
   }
 
