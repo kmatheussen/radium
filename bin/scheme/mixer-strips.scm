@@ -1723,6 +1723,18 @@
             (<gui> :draw-line slider pan-automation-color middle 2 middle (- height 3) 2.0))
           
           (<gui> :draw-box slider "#404040" 0 0 width height 2)
+
+          (when (<ra> :instrument-effect-has-midi-learn instrument-id "System Pan")
+            (define midi-learn-color (<gui> :mix-colors *text-color* background 0.2))
+            (<gui> :draw-text slider midi-learn-color "[M]" 2 2 (- width 2) (- height 2)
+                   #f ;; wrap text
+                   #f ;; align left
+                   #f ;; align top
+                   0 ;; rotate
+                   #f ;; cut text to fit
+                   #t ;; scale font size
+                   ))
+          
           ))
 
   (add-safe-paint-callback slider (lambda x (paint)))
