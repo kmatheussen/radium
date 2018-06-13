@@ -1308,7 +1308,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
     if (THREADING_is_main_thread())
       R_ASSERT(PLAYER_current_thread_has_lock()==false);
     else
-      R_ASSERT(THREADING_is_player_thread); // Called from midi learn.
+      R_ASSERT(THREADING_is_player_thread()); // Called from midi learn.
     
   }
   
