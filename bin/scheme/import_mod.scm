@@ -60,7 +60,7 @@
 (pp (procedure-source 'make-event))
 ||#
 
-(define (event-to-string event)  
+(define (event-to-string event)
   (<-> "[" (event :type) (make-string (- 20 (string-length (<-> (event :type)))) #\space)
        ":value " (event :value)
        (if (> (event :value2) 0)

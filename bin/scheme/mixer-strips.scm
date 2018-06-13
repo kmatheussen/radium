@@ -115,7 +115,6 @@
                (<ra> :hide-instrument-gui instrument-id))))))
               
 
-
 (define (get-global-mixer-strips-popup-entries instrument-id strips-config)
   (list
    (list "Make all strips wide" (lambda ()

@@ -324,8 +324,8 @@ namespace{
 
   public slots:
     void toggled(bool checked){
-    //void clicked(bool checked){
-      printf("CLICKED %d\n",checked);
+      //void clicked(bool checked){
+      //printf("\n\n\n--------------------------CLICKED CHECKED %d\n\n\n\n\n",checked);
       
       //if (is_async)
         qmenu->close();
@@ -383,13 +383,13 @@ namespace{
       //fprintf(stderr,"CLICKED clickable\n");
 
       //if (is_async)
-        qmenu->close();
+      qmenu->close();
 
+      //fprintf(stderr,"\n\n\n\n=========================== CLICKED 222222 clickable %d\n\n\n\n", num);
+            
       if (callback!=NULL)
         S7CALL(void_int, callback, num);
 
-      fprintf(stderr,"CLICKED 222222 clickable %d\n", num);
-            
       if (callback3)
         callback3(num, true);
 
