@@ -2665,6 +2665,10 @@ void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num){
   
   auto *midi_learn = new SoundPluginEffectMidiLearn(plugin, effect_num);
   add_midi_learn(midi_learn);
+
+  update_instrument_gui(plugin);
+  SEQUENCER_update(SEQUPDATE_HEADERS);
+  RT_schedule_mixer_strips_redraw();
 }
 
 bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here){
@@ -2691,6 +2695,7 @@ bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_err
 
   update_instrument_gui(plugin);
   SEQUENCER_update(SEQUPDATE_HEADERS);
+  RT_schedule_mixer_strips_redraw();
   
   return true;
 }
