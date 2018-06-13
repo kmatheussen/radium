@@ -712,7 +712,7 @@ public:
     update_all_ab_buttons();
     
     bool is_bus_provider = SP_get_bus_descendant_type(plugin->sp)==IS_BUS_PROVIDER;
-    
+
     bus1_widget->setEnabled(is_bus_provider);
     bus2_widget->setEnabled(is_bus_provider);
     bus3_widget->setEnabled(is_bus_provider);
