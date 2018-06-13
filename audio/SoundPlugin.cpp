@@ -1305,9 +1305,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
 
   } else {
 
-    if (THREADING_is_main_thread())
-      R_ASSERT(PLAYER_current_thread_has_lock()==false);
-    else
+    if (false==THREADING_is_main_thread())
       R_ASSERT(THREADING_is_player_thread()); // Called from midi learn.
     
   }
@@ -2404,12 +2402,12 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
     */
   }
 
-  // 3. Store custom effects (need lock here)
+  // 3. Store custom effects
   if (type->state_contains_effect_values == false) {
 
     if (type->num_effects > 0) {
       
-      radium::PlayerLock lock;
+      radium::PlayerLock lock; // To avoid relocking for every effect.
 
       for(int i=0 ; i<type->num_effects ; i++){
         PLAYER_maybe_pause_lock_a_little_bit(i);
@@ -2597,7 +2595,7 @@ void PLUGIN_change_ab(SoundPlugin *plugin, int ab_num){
     if (type->state_contains_effect_values == false){
 
       if (type->num_effects > 0) {
-        radium::PlayerLock lock;
+        radium::PlayerLock lock; // To avoid relocking for every effect.
         
         for(int i=0 ; i < type->num_effects ; i++){
           PLAYER_maybe_pause_lock_a_little_bit(i);
@@ -2839,7 +2837,7 @@ void PLUGIN_reset(SoundPlugin *plugin){
   */
 
   
-  PLAYER_lock();{
+  PLAYER_lock();{  // To avoid relocking for every effect.
     for(int i=0 ; i<type->num_effects ; i++){
       PLAYER_maybe_pause_lock_a_little_bit(i);
       PLUGIN_set_effect_value(plugin,
@@ -2888,7 +2886,7 @@ void PLUGIN_random(SoundPlugin *plugin){
       values[i]=get_rand();
   
   {
-    radium::PlayerLockOnlyIfNeeded lock;
+    radium::PlayerLockOnlyIfNeeded lock; // To avoid relocking for every effect.
     for(i=0;i<type->num_effects;i++){
       if (plugin->do_random_change[i]){
         lock.maybe_pause_or_lock(i);
