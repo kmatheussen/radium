@@ -1748,10 +1748,11 @@ bool SEQBLOCK_set_fade_out_shape(struct SeqBlock *seqblock, enum FadeShape shape
 // Called from scheduler.c, before scheduling editor things.
 // Returns true if there is more to play.
 bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
-
   bool more_things_to_do = false;
 
   bool is_playing_song = is_really_playing_song();
+
+  //printf("  RT_seqtack called before editor %d\n", is_playing_song);
 
   if (is_playing_song)
     more_things_to_do = RT_SEQTRACK_AUTOMATION_called_per_block(seqtrack);
