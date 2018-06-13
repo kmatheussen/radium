@@ -1297,10 +1297,20 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       abort(); // This is most likely an error.
   */
 
-  if (storeit_type==DONT_STORE_VALUE)
+  if (storeit_type==DONT_STORE_VALUE) {
+    
     if (THREADING_is_main_thread())
       if (g_initing_starting_to_play_song==false)
         abort(); // Not an error, but I'm courious if it happens.
+
+  } else {
+
+    if (THREADING_is_main_thread())
+      R_ASSERT(PLAYER_current_thread_has_lock()==false);
+    else
+      R_ASSERT(THREADING_is_player_thread); // Called from midi learn.
+    
+  }
   
   if (FX_when_is_automation(when))
     if (storeit_type==STORE_VALUE)
@@ -1319,30 +1329,24 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
 #endif
     value = R_BOUNDARIES(0.0f, value, 1.0f);
   }      
-  
+
+        
   if(effect_num < plugin->type->num_effects){
 
-    {
-      {
-        radium::PlayerRecursiveLock lock; // TODO: Let the plugins take care of locking, similar to get_effect_value. Usually it's not necessary to lock.
-        plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
-      }
-
-      if(storeit_type==STORE_VALUE) {
-        R_ASSERT_NON_RELEASE(!FX_when_is_automation(when));
-
-        // Commented out. This code can be called from MIDI learn.
-        //R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
-        //R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock()==false);
-          
-        // Reload both native and scaled values, just to be sure. The native effect we get out might not be the same as we put in.
-        // We are not doing automation here either, so performance shouldn't matter (it probably wouldn't have mattered even if we did automation though).
-        store_value_native = plugin->type->get_effect_value(plugin, effect_num, EFFECT_FORMAT_NATIVE);
-        if (plugin->type->get_scaled_value_from_native_value != NULL)
-          store_value_scaled = plugin->type->get_scaled_value_from_native_value(plugin, effect_num, store_value_native);
-        else
-          store_value_scaled = plugin->type->get_effect_value(plugin, effect_num, EFFECT_FORMAT_SCALED);
-      }
+    radium::PlayerRecursiveLock lock; // Need lock both because set_effect_value expect player lock to be held, but also to ensure another thread doesn't interfere between set_effect_value() and get_effect_value().
+    
+    plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
+    
+    if(storeit_type==STORE_VALUE) {
+      R_ASSERT_NON_RELEASE(!FX_when_is_automation(when));
+      
+      // Reload both native and scaled values, just to be sure. The native effect we get out might not be the same as we put in.
+      // We are not doing automation here either, so performance shouldn't matter (it probably wouldn't have mattered even if we did automation though).
+      store_value_native = plugin->type->get_effect_value(plugin, effect_num, EFFECT_FORMAT_NATIVE);
+      if (plugin->type->get_scaled_value_from_native_value != NULL)
+        store_value_scaled = plugin->type->get_scaled_value_from_native_value(plugin, effect_num, store_value_native);
+      else
+        store_value_scaled = plugin->type->get_effect_value(plugin, effect_num, EFFECT_FORMAT_SCALED);
     }
     
   }else{

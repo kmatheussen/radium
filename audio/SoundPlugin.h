@@ -316,9 +316,9 @@ typedef struct SoundPluginType{
   const char *(*get_effect_name)(struct SoundPlugin *plugin, int effect_num); // The effect name is used as effect id. Two effects can not have the same name.
 
   // This functions is called if SoundPluginType->effect_is_RT(effect_num) returns false
-  void (*set_effect_value)(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when);
+  void (*set_effect_value)(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when); // Can be called from any thread. Player lock is held.
 
-  float (*get_effect_value)(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format); // Is only called from the main thread. Player lock might be held though.
+  float (*get_effect_value)(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format); // Can be called from any thread. Player lock might be held.
   
   float (*get_scaled_value_from_native_value)(struct SoundPlugin *plugin, int effect_num, float native_value); // If get_effect_value might take some time to call, or the plugin could have a lot of effects, or we may obtain a lock in get_effect_value (or do other blocking operations), it could be a good idea to implement this one if possible.
 
