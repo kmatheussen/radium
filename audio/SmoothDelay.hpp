@@ -21,7 +21,7 @@ namespace radium{
 //
 struct SmoothDelay {
 
-  int buffer_size;  
+  const int buffer_size;  
   float *fVec0;
   float fRec0[2];
   float fRec1[2];
