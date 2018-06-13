@@ -70,8 +70,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern PlayerClass *pc;
 
-static bool g_player_was_stopped_manually = true;
-
+bool g_player_was_stopped_manually = true;
+bool g_player_was_stopped_because_it_reached_sequencer_loop_end = false;
 
 extern void (*Ptask2MtaskCallBack)(void);
 
@@ -128,7 +128,8 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
     }
   
   g_player_was_stopped_manually = true;
-  
+  g_player_was_stopped_because_it_reached_sequencer_loop_end = false;
+
   //ATOMIC_SET(pc->isplaying, false);
   //ATOMIC_SET(pc->initplaying, false);
   //ATOMIC_SET(pc->playertask_has_been_called, false);
@@ -205,7 +206,8 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
 
 static void play_stop(bool called_from_jack_transport){
   g_player_was_stopped_manually = true;
-  
+  g_player_was_stopped_because_it_reached_sequencer_loop_end = false;
+
   if(!is_playing()){
     StopAllInstruments();
     R_ASSERT(is_playing()==false);
@@ -532,7 +534,7 @@ static void PlayHandleSequencerLoop(void){
   }
   
   if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED) {
-    if (g_player_was_stopped_manually==false) {
+    if (g_player_was_stopped_manually==false  && g_player_was_stopped_because_it_reached_sequencer_loop_end==true) {
       maybe_draw_lock(&got_lock);
 
       StopAllInstruments(); // PlaySong calls PlayStopReally, but PlayStopReally doesn't call StoppAllInstruments if player_state==PLAYER_STATE_STOPPED (which it is now).

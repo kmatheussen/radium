@@ -47,7 +47,7 @@ extern struct Root *root;
 
 extern LANGSPEC void OS_InitMidiTiming(void);
 
-
+extern bool g_player_was_stopped_because_it_reached_sequencer_loop_end;
 
 void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet, float max_audio_cycle_fraction){
 
@@ -197,7 +197,12 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
         if(player_state == PLAYER_STATE_PLAYING && is_finished){
 
           ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
-          
+          if (SEQUENCER_is_looping()){
+            if (ATOMIC_DOUBLE_GET(pc->song_abstime) >= SEQUENCER_get_loop_end()){
+              g_player_was_stopped_because_it_reached_sequencer_loop_end = true;
+            }
+          }
+
           if(pc->playtype==PLAYSONG && useJackTransport() && !SEQUENCER_is_looping())
             MIXER_TRANSPORT_stop(); // end of song
           
@@ -206,6 +211,7 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
         if(pc->playtype==PLAYSONG){
           if (SEQUENCER_is_looping()){
             if (ATOMIC_DOUBLE_GET(pc->song_abstime) >= SEQUENCER_get_loop_end()){
+              g_player_was_stopped_because_it_reached_sequencer_loop_end = true;
               ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPING);
             }
           }
