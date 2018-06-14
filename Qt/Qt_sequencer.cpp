@@ -2597,13 +2597,13 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     p.setPen(Qt::NoPen);
     p.setBrush(grayout_color);
 
-    if (x_start > 0){
-      QRectF rect(0, y1, x_start,  y2);
+    if (x_start > _seqtracks_widget.t_x1){
+      QRectF rect(_seqtracks_widget.t_x1, y1, x_start - _seqtracks_widget.t_x1,  y2);
       p.drawRect(rect);
     }
 
-    if (x_end < width()){
-      QRectF rect(x_end, y1, width(),  y2);
+    if (x_end < _seqtracks_widget.t_x2) {
+      QRectF rect(x_end, y1, _seqtracks_widget.t_x2 - x_end,  y2);
       p.drawRect(rect);
     }
   }
