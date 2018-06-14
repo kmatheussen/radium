@@ -13,6 +13,9 @@
 #include "Mixer_proc.h"
 #include "SoundPluginRegistry_proc.h"
 
+#include "../api/api_gui_proc.h"
+
+
 #include "Faust_plugins_proc.h"
 
 
@@ -276,8 +279,6 @@ struct Data{
 
   QTGUI *qtgui;
   QDialog *qtgui_parent;
-  QByteArray qtgui_geometry;
-  bool qtgui_has_stored_geometry;
 
   float *automation_values;
   
@@ -286,7 +287,6 @@ struct Data{
     , voices_not_playing(NULL)
     , qtgui(NULL)
     , qtgui_parent(NULL)
-    , qtgui_has_stored_geometry(false)
     , automation_values(NULL)
   {
   }
@@ -835,11 +835,10 @@ static const char *get_effect_description(struct SoundPlugin *plugin, int effect
 
 static bool show_gui2(Data* data, SoundPlugin *plugin, int64_t parentgui){
   printf("   Showing gui %p\n",data->qtgui);
-  
-  safeShow(data->qtgui_parent);
 
-  if (data->qtgui_has_stored_geometry)
-    data->qtgui_parent->restoreGeometry(data->qtgui_geometry);
+  int64_t guinum = API_get_gui_from_existing_widget(data->qtgui_parent);
+  gui_setParent(guinum, -1); // We let main window be parent. Other windows might not work very well as parent, for some reason.
+  gui_show(guinum);
 
   data->qtgui->run();
 
@@ -854,10 +853,9 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 static void hide_gui2(Data *data){
   printf("   Hiding gui %p\n",data->qtgui);
 
-  data->qtgui_geometry = data->qtgui_parent->saveGeometry();
-  data->qtgui_has_stored_geometry = true;
+  int64_t guinum = API_get_gui_from_existing_widget(data->qtgui_parent);
+  gui_hide(guinum);
 
-  data->qtgui_parent->hide();
   data->qtgui->stop();
 }
 
