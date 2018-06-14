@@ -83,10 +83,13 @@ namespace{
 
   class FaustQDialog : public RememberGeometryQDialog{
 
+    SoundPlugin *_plugin;
+
   public:
-    FaustQDialog(QWidget *parent)
+    FaustQDialog(QWidget *parent, SoundPlugin *plugin)
       : RememberGeometryQDialog(parent, radium::NOT_MODAL)
-    {
+      , _plugin(plugin)
+    {      
       //QStyle *style = QStyleFactory::create("plastique");
       //if (style!=NULL)
       //  setStyle(style);
@@ -102,12 +105,21 @@ namespace{
 
     ~FaustQDialog(){
       g_faustqdialogs.remove(this);
+      if(_plugin!=NULL)
+        PLUGIN_call_me_when_gui_closes(_plugin);
     }
+
+    void setVisible(bool visible) override {
+      if(visible==false && _plugin!=NULL)
+        PLUGIN_call_me_when_gui_closes(_plugin);
+      RememberGeometryQDialog::setVisible(visible);
+    }
+
   };
 }
 
-QDialog *FAUST_create_qdialog(void){
-  return new FaustQDialog(g_main_window);
+QDialog *FAUST_create_qdialog(SoundPlugin *plugin){
+  return new FaustQDialog(g_main_window, plugin);
 }
 
 void FAUST_change_qtguistyle(const char *style_name){
@@ -569,7 +581,7 @@ static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &
   // handle gui
   {
     if (devdata->qtgui_parent.data() == NULL)
-      devdata->qtgui_parent = FAUST_create_qdialog();
+      devdata->qtgui_parent = FAUST_create_qdialog(plugin);
     
     if (old_reply.data != NULL && old_reply.data->qtgui!=NULL){
       old_reply.data->qtgui->stop();

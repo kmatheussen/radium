@@ -627,7 +627,7 @@ static void *create_effect_plugin_data(const SoundPluginType *plugin_type, struc
 
 #ifndef FAUST_SYSTEM_EFFECT
   if (plugin != NULL) { // plugin==NULL during instrument type initialization, when we create test data. (took a long time to hunt down this bug)
-    data->qtgui_parent = FAUST_create_qdialog();
+    data->qtgui_parent = FAUST_create_qdialog(plugin);
     create_gui(data->qtgui_parent, data, plugin);
   }
 #endif
@@ -671,7 +671,7 @@ static void *create_instrument_plugin_data(const SoundPluginType *plugin_type, s
 
   create_automation_values(data);
 
-  data->qtgui_parent = FAUST_create_qdialog();
+  data->qtgui_parent = FAUST_create_qdialog(plugin);
 
   create_gui(data->qtgui_parent, data, plugin);
 
