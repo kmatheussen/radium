@@ -588,7 +588,8 @@
 
   (add-mouse-cycle! (lambda (button x* y*)
                       (cond ((and right-mouse-clicked-callback
-                                  (= button *right-button*))
+                                  (= button *right-button*)
+                                  (not (<ra> :shift-pressed)))
                              (right-mouse-clicked-callback)
                              #t)
                             ((= button *left-button*)                        
@@ -658,7 +659,8 @@
   
   (add-mouse-cycle! (lambda (button x* y*)
                       (cond ((and right-mouse-clicked-callback
-                                  (= button *right-button*))
+                                  (= button *right-button*)
+                                  (not (<ra> :shift-pressed)))
                              (right-mouse-clicked-callback)
                              #t)
                             ((= button *left-button*)

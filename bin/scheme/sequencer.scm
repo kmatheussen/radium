@@ -601,7 +601,8 @@
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
      (set! has-made-undo #f)
-     (cond ((= button *right-button*)
+     (cond ((and (= button *right-button*)
+                 (not (<ra> :shift-pressed)))
             (show-popup)
             #t)
            ((= button *left-button*)
@@ -757,9 +758,18 @@
       (<ra> :set-curr-seqtrack seqtracknum))
     (super:get-mouse-cycle button x* y*))
 
+  (add-mouse-cycle! :press-func (lambda (button x* y*)
+                                  (if (and (= button *right-button*)
+                                           (<ra> :shift-pressed)
+                                           (> (<ra> :get-num-seqtracks) 1))
+                                      (begin
+                                        (<ra> :delete-seqtrack seqtracknum)
+                                        #t)
+                                      #f)))
   (if for-audiofiles
       (add-mouse-cycle! :press-func (lambda (button x* y*)
-                                      (if (= button *right-button*)
+                                      (if (and (= button *right-button*)
+                                               (not (<ra> :shift-pressed)))
                                           (begin
                                             (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
                                                   (lambda ()
