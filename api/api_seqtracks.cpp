@@ -209,9 +209,7 @@ void appendSeqtrack(bool for_audiofiles){
   undoSequencer();
   SEQUENCER_append_seqtrack(NULL, for_audiofiles);
 
-  ATOMIC_SET(root->song->curr_seqtracknum, root->song->seqtracks.num_elements -1);
-  BS_UpdatePlayList();
-  BS_UpdateBlockList();
+  setCurrSeqtrack(root->song->seqtracks.num_elements -1);
 }
 
 void insertSeqtrack(bool for_audiofiles, int pos){
@@ -226,9 +224,7 @@ void insertSeqtrack(bool for_audiofiles, int pos){
   undoSequencer();
   SEQUENCER_insert_seqtrack(NULL, pos, for_audiofiles);
 
-  ATOMIC_SET(root->song->curr_seqtracknum, pos);
-  BS_UpdatePlayList();
-  BS_UpdateBlockList();
+  setCurrSeqtrack(pos);
 }
 
 void deleteSeqtrack(int seqtracknum){
