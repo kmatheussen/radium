@@ -1703,7 +1703,6 @@
 
   (set-fixed-height slider height)
 
-  (define automation-radium-normalized-pan -10)
   (define automation-slider-value -100)
   (define pan-automation-color (<ra> :get-instrument-effect-color instrument-id "System Pan"))
                                  
@@ -1762,7 +1761,6 @@
                               ;;(<gui> :update slider)
                               (set! doit #t))
                             (when automation
-                              (set! automation-radium-normalized-pan automation)
                               (if (< automation 0)
                                   (set! automation-slider-value -100)
                                   (set! automation-slider-value (get-pan-slider-value automation)))
