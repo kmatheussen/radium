@@ -2225,7 +2225,7 @@ void SEQUENCER_delete_seqtrack(int pos){
 
     int curr_seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
     if (curr_seqtracknum >= root->song->seqtracks.num_elements)
-      ATOMIC_SET(root->song->curr_seqtracknum, root->song->seqtracks.num_elements -1);
+      setCurrSeqtrack(root->song->seqtracks.num_elements -1);
   }
 
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
