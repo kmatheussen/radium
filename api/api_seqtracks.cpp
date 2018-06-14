@@ -1191,7 +1191,7 @@ void setSmoothSequencerScrollingEnabled(bool doit){
   }
 }
 
-static bool g_show_bars_in_timeline = false;
+static bool g_show_bars_in_timeline = true;
 
 bool showBarsInTimeline(void){
   static bool has_inited = false;
