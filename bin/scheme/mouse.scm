@@ -5980,6 +5980,19 @@
                               (set! *current-seqblock-info* #f)
                               #t)))))))
 
+;; delete seqtrack
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)
+                     (<ra> :shift-pressed)
+                     (> (<ra> :get-num-seqtracks) 1)
+                     (let ((seqtracknum *current-seqtrack-num*))
+                       (and seqtracknum
+                            (begin
+                              (<ra> :delete-seqtrack seqtracknum)
+                              #t)))))))
+
 (define (get-sequencer-pos-from-x X)
   (round (scale X
                 (<ra> :get-sequencer-x1) (<ra> :get-sequencer-x2)
