@@ -12,6 +12,19 @@
 (define *curr-seqtrack-color* (ra:gui_mix-colors *current-mixer-strip-border-color* "black" 0.6))
 ;;(define *curr-seqtrack-color* (<gui> :mix-colors *current-mixer-strip-border-color* "white" 0.92))
 
+(define (get-seqtrack-background-color gui seqtracknum)
+  (if (not (<ra> :seqtrack-for-audiofiles seqtracknum))
+      *curr-seqtrack-color*
+      (begin
+        (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
+        (let ((background-color (get-mixer-strip-background-color gui instrument-id)))
+          (if (= seqtracknum (<ra> :get-curr-seqtrack))
+              (<gui> :mix-colors
+                     (<gui> :mix-colors *curr-seqtrack-color* background-color 0.2)
+                     "white"
+                     0.95)
+              background-color)))))
+
 (define (show-sequencer-header-popup-menu instrument-id effect-name parentgui)
   (popup-menu
    (list "Reset volume"
@@ -246,9 +259,7 @@
                                                      x1 y1 x2 y2
                                                      is-selected
                                                      use-single-letters
-                                                     :background-color (if (= seqtracknum (<ra> :get-curr-seqtrack))
-                                                                           *curr-seqtrack-color*
-                                                                           (get-mixer-strip-background-color gui instrument-id))
+                                                     :background-color (get-seqtrack-background-color gui seqtracknum)
                                                      :border 0
                                                      :implicit-border 1
                                                      ))
@@ -310,7 +321,7 @@
            (y2 (- y2 b)))
       
       (if (= seqtracknum (<ra> :get-curr-seqtrack))
-          (<gui> :filled-box gui *curr-seqtrack-color* x1 y1 x2 y2)
+          (<gui> :filled-box gui (get-seqtrack-background-color gui seqtracknum) x1 y1 x2 y2)
           (paint-instrument-background-color gui x1 y1 x2 y2 instrument-id))
       
       (define seqtrack-name (<ra> :get-seqtrack-name seqtracknum))
@@ -688,7 +699,7 @@
                                     instrument-id
                                     :get-color (lambda ()
                                                  (if (= seqtracknum (<ra> :get-curr-seqtrack))
-                                                     *curr-seqtrack-color*
+                                                     (get-seqtrack-background-color gui seqtracknum)
                                                      (<ra> :get-instrument-color instrument-id)))
                                     )))
 
@@ -700,8 +711,8 @@
                                 :display-instrument-name (not use-two-rows)
                                 :get-color (lambda ()
                                              (if (= seqtracknum (<ra> :get-curr-seqtrack))
-                                               *curr-seqtrack-color*
-                                               (<ra> :get-instrument-color instrument-id)))
+                                                 (get-seqtrack-background-color gui seqtracknum)
+                                                 (<ra> :get-instrument-color instrument-id)))
                                 ))
     
     (<gui> :add-vertical-audio-meter gui instrument-id (+ b x-meter-split) y1 x2 y2))
@@ -712,7 +723,7 @@
 
   (define-override (paint)
     (if (= seqtracknum (<ra> :get-curr-seqtrack))
-        (<gui> :filled-box gui *curr-seqtrack-color* x1 y1 x2 y2)))
+        (<gui> :filled-box gui (get-seqtrack-background-color gui seqtracknum) x1 y1 x2 y2)))
   
   (define-override (paint?)
     (or for-blocks
