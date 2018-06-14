@@ -199,7 +199,7 @@ int CursorRight(struct Tracker_Windows *window,struct WBlocks *wblock){
 
                 window->curr_othertrack_sub++;
                    
-        } else if (window->curr_track==SWINGTRACK && window->curr_othertrack_sub<1) {
+        } else if (window->curr_track==SWINGTRACK && window->curr_othertrack_sub<2) {
 
                 window->curr_othertrack_sub++;
                    
