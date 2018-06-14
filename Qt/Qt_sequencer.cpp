@@ -1734,9 +1734,6 @@ static inline void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seq
     if (next_seqblock!=NULL) {
       if (next_blockstarttime <= start_seqtime)
         continue;
-    } else {
-      if (end_blockseqtime <= start_seqtime)
-        continue;
     }
 
     if (start_blockseqtime >= end_seqtime)
