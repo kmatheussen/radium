@@ -351,8 +351,282 @@
   )
 
 
+(def-area-subclass (<instrument-volume-slider> :gui :x1 :y1 :x2 :y2
+                                               :instrument-id
+                                               :effect-name "System Volume"
+                                               :display-instrument-name #t
+                                               :get-color)
+  (define has-made-undo #f)
+  
+  (define (maybe-make-undo)
+    (when (not has-made-undo)
+      (set! has-made-undo #t)
+      (<ra> :undo-instrument-effect instrument-id effect-name)))
+
+  (define (get-radium-normalized)
+    (<ra> :get-stored-instrument-effect instrument-id effect-name))
+
+  (define (get-db-value radium-normalized)
+    (radium-normalized-to-db radium-normalized))
+
+  (define (set-db-value db)    
+    ;;(c-display "      -------set-db-val:" (db-to-radium-normalized db))
+    (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized db)))
+  
+  (define (get-scaled-value radium-normalized)
+    (db-to-slider (get-db-value radium-normalized)))
+
+  (define (get-volume-slider-value-text value)
+    (db-to-text (slider-to-db value) #t))
+  
+  (define (get-volume-slider-text radium-normalized)
+    (define midi-learn-text (if (<ra> :instrument-effect-has-midi-learn instrument-id effect-name)
+                                "[M] "
+                                ""))
+    (let ((volume-text (get-volume-slider-value-text (get-scaled-value radium-normalized))))
+      (if display-instrument-name
+          (let ((instrument-name (<ra> :get-instrument-name instrument-id)))
+            (<-> midi-learn-text instrument-name ": " volume-text))
+          (<-> " " midi-learn-text volume-text))))
+  
+  (define last-painted-radium-normalized -10000)
+
+  (define automation-value #f)
+  (define automation-color (<ra> :get-instrument-effect-color instrument-id effect-name))
+  (define (get-automation-data kont)
+    (if automation-value
+        (kont automation-value automation-color)))
+
+  (add-area-effect-monitor! instrument-id effect-name #t #t
+                            (lambda (radium-normalized automation)
+                              (when radium-normalized
+                                (when (> (abs (- radium-normalized last-painted-radium-normalized))
+                                         0.0001)
+                                  (update-me!)))
+                              (when automation
+                                (set! automation-value (if (< automation 0)
+                                                           #f
+                                                           (radium-normalized-to-slider automation)))
+                                (update-me!))))
+  
+  (define-override (paint)
+    (define b 1)
+    (define radium-normalized (get-radium-normalized))
+    (set! last-painted-radium-normalized radium-normalized)
+
+    (paint-horizontal-instrument-slider gui
+                                        instrument-id
+                                        (get-scaled-value radium-normalized)
+                                        (get-volume-slider-text radium-normalized)
+                                        #t
+                                        #f
+                                        get-automation-data
+                                        (+ b x1)
+                                        (+ b x1) (+ b y1) (- x2 b) (- y2 b)
+                                        (get-color)
+                                        ))
+  
+  (define start-mouse-value #f)
+  
+  (add-delta-mouse-cycle!
+   (lambda (button x* y*)
+     (set! has-made-undo #f)
+     (and (= button *left-button*)
+          (begin
+            (define radium-normalized (get-radium-normalized))
+            (set! start-mouse-value (get-scaled-value radium-normalized));;(scale x* x1 x2 0 1));;(get-db-value));;(<ra> :get-stored-instrument-effect instrument-id effect-name))
+            ;;(c-display "press button/x/y" x* y*)
+            (set-statusbar-text! (get-statusbar-text))
+            #t)))
+   (lambda (button x* y* dx dy)
+     (maybe-make-undo)
+     (define slider-value (between 0 (+ start-mouse-value
+                                        (scale dx 0 width 0 1))
+                                   1))
+     (set-db-value (slider-to-db slider-value))
+     (set-statusbar-text! (get-statusbar-text))
+     (update-me!)
+     )
+   (lambda (button x* y*)
+     (c-display "release button/x/y" x* y*)))
+  
+  (define (get-statusbar-text)
+    (get-volume-slider-text (get-radium-normalized)))
+  
+  (add-statusbar-text-handler get-statusbar-text)
+                                
+
+  '(define (mouse-callback button state x y)
+    (if (and (>= x x1)
+             (< x x2)
+             (>= y y1)
+             (< y y2))
+        (let ((status-text (get-volume-slider-text (get-radium-normalized))))
+          ;;(c-display "hepp " status-text)
+          (<ra> :set-statusbar-text status-text)
+          )))
+
+  )
+
+
+
+(def-area-subclass (<instrument-pan-slider> :gui :x1 :y1 :x2 :y2
+                                            :instrument-id
+                                            :get-color)
+
+  (define (pan-enabled?)
+    (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))
+
+  (define (get-pan-slider-value normalized-value)
+    (floor (scale normalized-value
+                  0 1
+                  -90 90)))
+    
+  (define (get-pan)
+    (get-pan-slider-value (<ra> :get-stored-instrument-effect instrument-id "System Pan")))
+
+  (define (get-pan-slider-text pan)
+    (<-> "Pan: " (round pan)))
+
+  (define last-painted-normalized-pan -1000)
+  (define automation-slider-value -1000)
+  (define pan-automation-color (<ra> :get-instrument-effect-color instrument-id "System Pan"))
+
+  (define-override (paint)
+    (define value (get-pan))
+    (set! last-painted-normalized-pan (scale value -90 90 0 1))
+    (define is-on (pan-enabled?))
+    ;;(<gui> :filled-box gui (get-color) x1 y1 x2 y2)
+    (define background-color (get-color))
+    (define background (if is-on
+                           (<gui> :mix-colors background-color "black" 0.39)
+                           (<gui> :mix-colors background-color "white" 0.95)))
+    (<gui> :filled-box gui background x1 y1 x2 y2 5 5)
+    (define col1 (<gui> :mix-colors "white" background 0.4))
+    (define col2 (<gui> :mix-colors "#010101" background 0.5))
+    
+    (define inner-width/2 (scale 1 0 18 0 (get-fontheight)))
+    (define outer-width/2 (* inner-width/2 2))
+    
+    (define middle (scale value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
+    
+    (<gui> :filled-box gui col1 (+ x1 (- middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2)               (- y2 3))
+    (<gui> :filled-box gui col2 (+ x1 (- middle inner-width/2 outer-width/2)) (+ y1 2) (+ x1 (- middle inner-width/2))           (- y2 3))
+    (<gui> :filled-box gui col2 (+ x1 (+ middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2 outer-width/2) (- y2 3))
+    ;;(<gui> :draw-text gui "white" (<-> value "o") 0 0 width height #t)
+    
+    (when (> automation-slider-value -100)
+      (define middle (scale automation-slider-value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
+      (<gui> :draw-line gui pan-automation-color (+ x1 middle) (+ y1 2) (+ x1 middle) (- y2 3) 2.0))
+    
+    (<gui> :draw-box gui "#404040" x1 y1 x2 y2 2)
+    
+    (when (<ra> :instrument-effect-has-midi-learn instrument-id "System Pan")
+      (define midi-learn-color (<gui> :mix-colors *text-color* background 0.2))
+      (<gui> :draw-text gui midi-learn-color "[M]" (+ x1 2) (+ y1 2) (- x2 2) (- y2 2)
+             #f ;; wrap text
+             #f ;; align left
+             #f ;; align top
+             0 ;; rotate
+             #f ;; cut text to fit
+             #t ;; scale font size
+             )))
+    
+  (add-area-effect-monitor! instrument-id "System Pan" #t #t
+                            (lambda (normalized-value automation)
+                              (when normalized-value
+                                (if (> (abs (- last-painted-normalized-pan normalized-value))
+                                       0.001)
+                                    (update-me!)))
+                              (when automation
+                                (if (< automation 0)
+                                    (set! automation-slider-value -100)
+                                    (set! automation-slider-value (get-pan-slider-value automation)))
+                                (update-me!))))
+  
+  (add-area-effect-monitor! instrument-id "System Pan On/Off" #t #t
+                            (lambda (on/off automation)
+                              (update-me!)))
+  
+  (define has-made-undo #t)
+
+  (define (maybe-make-undo)
+    (when (not has-made-undo)
+      (undo-block
+       (lambda ()
+         (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
+         (<ra> :undo-instrument-effect instrument-id "System Pan")))
+      (set! has-made-undo #t)))
+
+  (define (set-new-value! pan)
+    (<ra> :set-instrument-effect instrument-id "System Pan On/Off" 1.0)
+    (<ra> :set-instrument-effect instrument-id "System Pan" (scale pan -90 90 0 1)))
+
+  (define (enable! onoff)
+    (when (not (eq? onoff (pan-enabled?)))
+      (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
+      (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0))))
+
+  (define start-mouse-value #f)
+
+  (define (show-popup)
+          (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
+                (lambda ()
+                  (define pan-enabled (pan-enabled?))
+                  (popup-menu (list "Reset Pan" (lambda ()
+                                              (<ra> :undo-instrument-effect instrument-id "System Pan")
+                                              (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))
+                              (list "Pan Enabled"
+                                    :check pan-enabled
+                                    enable!)
+                              "------------"
+                              (get-effect-popup-entries instrument-id "System Pan"
+                                                        :pre-undo-block-callback (lambda ()
+                                                                                   (enable! #t)))
+                              "------------"
+                              (get-instrument-popup-entries instrument-id gui))
+                  #f)))
+
+  (add-delta-mouse-cycle!
+   (lambda (button x* y*)
+     (set! has-made-undo #f)
+     (cond ((= button *right-button*)
+            (show-popup)
+            #t)
+           ((= button *left-button*)
+            (define pan (get-pan))
+            (set! start-mouse-value pan)
+            ;;(c-display "Start value:" pan)
+            ;;(c-display "press button/x/y" x* y*)
+            (set-statusbar-text! (get-pan-slider-text pan))
+            #t)
+           (else
+            #f)))
+   (lambda (button x* y* dx dy)
+     (maybe-make-undo)
+     (define slider-value (between -90 (+ start-mouse-value
+                                          (scale dx 0 width 0 180))
+                                   90))
+     ;;(c-display "start:" start-mouse-value ". dp:" (scale dx 0 width 0 180) ". New:" slider-value)
+     (set-new-value! slider-value)
+     (set-statusbar-text! (get-pan-slider-text slider-value))
+     (update-me!)
+     )
+   (lambda (button x* y*)
+     (c-display "Gakk. xrelease button/x/y" x* y*)))
+
+
+  (define (get-statusbar-text)
+    (get-pan-slider-text (get-pan)))
+  
+  (add-statusbar-text-handler get-statusbar-text)
+                                
+  )
+
+
 (def-area-subclass (<seqtrack-header> :gui :x1 :y1 :x2 :y2
                                       :use-two-rows
+                                      :show-panner
                                       :seqtracknum)
 
   (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
@@ -378,8 +652,7 @@
   (define x-meter-split (- x2 (+ b meter-width)))
   (define x1-split (- x-meter-split (+ b mutesolo-width)))
   (define y-split (myfloor (+ y1 name-height)))
-
-
+  
   (if (or use-two-rows
           for-blocks)
       (add-sub-area-plain! (<new> :seqtrack-name gui
@@ -388,26 +661,50 @@
                                   instrument-id
                                   seqtracknum)))
 
-  (if for-audiofiles
-      (add-sub-area-plain! (<new> :mute-solo-buttons gui
-                                  (+ b x1-split) y1
-                                  x-meter-split y-split
-                                  instrument-id #t #t seqtracknum)))
+  (when for-audiofiles
+    (add-sub-area-plain! (<new> :mute-solo-buttons gui
+                                (+ b x1-split) y1
+                                x-meter-split y-split
+                                instrument-id #t #t seqtracknum))
 
-  (if for-audiofiles
-      (add-sub-area-plain! (<new> :horizontal-instrument-slider gui
-                                  x1 (if use-two-rows (+ b y-split) y1)
-                                  (if use-two-rows x-meter-split x1-split) y2
-                                  instrument-id
-                                  :use-two-rows use-two-rows
-                                  :get-color (lambda ()
-                                               (if (= seqtracknum (<ra> :get-curr-seqtrack))
-                                                   *curr-seqtrack-color*
-                                                   (<ra> :get-instrument-color instrument-id)))
-                                  )))
+    (define panner-x2 (if use-two-rows x-meter-split x1-split))
+    (define panner-y1 (if use-two-rows
+                          (+ b y-split)
+                          y1))
+    (define panner-y2 (min (+ panner-y1 fontheight)
+                           (- y2 fontheight)))
+    
+    
+    (define vol-x2 panner-x2)
+    (define vol-y1 (if show-panner
+                       (+ 2 panner-y2)
+                       panner-y1))
+    (define vol-y2 y2)
+    
+    (if show-panner
+        (add-sub-area-plain! (<new> :instrument-pan-slider gui
+                                    x1 panner-y1
+                                    panner-x2 panner-y2
+                                    instrument-id
+                                    :get-color (lambda ()
+                                                 (if (= seqtracknum (<ra> :get-curr-seqtrack))
+                                                     *curr-seqtrack-color*
+                                                     (<ra> :get-instrument-color instrument-id)))
+                                    )))
 
-  (if for-audiofiles
-      (<gui> :add-vertical-audio-meter gui instrument-id (+ b x-meter-split) y1 x2 y2))
+    (add-sub-area-plain! (<new> :instrument-volume-slider gui
+                                x1 vol-y1
+                                vol-x2 vol-y2
+                                instrument-id
+                                :effect-name "System Volume"
+                                :display-instrument-name (not use-two-rows)
+                                :get-color (lambda ()
+                                             (if (= seqtracknum (<ra> :get-curr-seqtrack))
+                                               *curr-seqtrack-color*
+                                               (<ra> :get-instrument-color instrument-id)))
+                                ))
+    
+    (<gui> :add-vertical-audio-meter gui instrument-id (+ b x-meter-split) y1 x2 y2))
 
   ;;(define vam2 (<gui> :add-vertical-audio-meter gui instrument-id (- x2 8) y1 x2 y2))
   
@@ -456,7 +753,7 @@
                                             (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
                                                   (lambda ()
                                                     (show-sequencer-header-popup-menu instrument-id "System Volume" gui)
-                                                    #t))
+                                                    #f))
                                             #t)
                                           #f))))
   )
@@ -630,7 +927,10 @@
 
   (define use-two-rows (> (/ (- ty2 ty1) num-seqtracks)
                           (* 2.5 (get-fontheight))))
-  
+
+  (define show-panner (> (/ (- ty2 ty1) num-seqtracks)
+                         (* 3.5 (get-fontheight))))
+
   (let loop ((seqtracknum 0))
     (when (< seqtracknum num-seqtracks)
       (define seqtrack-box (<ra> :get-box seqtrack seqtracknum))
@@ -651,7 +951,7 @@
 
       (if (or (not (<ra> :seqtrack-for-audiofiles seqtracknum))
               (>= (<ra> :get-seqtrack-instrument seqtracknum) 0))
-          (add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 use-two-rows seqtracknum)))
+          (add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 use-two-rows show-panner seqtracknum)))
       
       (loop (1+ seqtracknum))))
 
