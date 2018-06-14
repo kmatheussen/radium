@@ -14,12 +14,14 @@ override_default_qt_style = true
 blocklist_width = 818
 use_0x90_for_note_off = 0
 
-num_vst_paths = 5
+num_vst_paths = 7
 vst_path0 = C:/Program Files/Steinberg/VstPlugins
 vst_path1 = C:/Program Files/VstPlugins
 vst_path2 = C:/Program Files (x86)/VSTPlugins
 vst_path3 = C:/Program Files/Common Files/VST3
 vst_path4 = C:/Program Files (x86)/Common Files/VST3
+vst_path5 = /usr/lib/vst
+vst_path6 = /usr/local/lib/vst
 
 last_system_font_version = 1.9.21
 last_editor_font_version = 3.0.b2.3
