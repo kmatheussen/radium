@@ -1917,7 +1917,7 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
 
   int seqtracknum = get_seqtracknum(seqtrack);
   if (seqtracknum >= 0)
-    ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
+    setCurrSeqtrack(seqtracknum);
   
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST);
 
