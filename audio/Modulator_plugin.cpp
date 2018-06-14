@@ -1406,7 +1406,11 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
   modulator->gui = S7CALL2(int_int, "FROM_C-create-modulator-gui", modulator_patch->id);
 
   if (modulator->gui>=0){
-    
+
+    //printf("    PARENT: %d\n", (int)parentgui);
+    //gui_setParent(modulator->gui, parentgui);
+    gui_setParent(modulator->gui, -1); // We let main window be parent. Other windows might not work very well as parent, for some reason.
+
     gui_show(modulator->gui);
     return true;
     
