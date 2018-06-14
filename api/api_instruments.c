@@ -2115,6 +2115,19 @@ bool instrumentGuiIsVisible(int64_t instrument_id, int64_t parentgui){
     return false;
 }
 
+void internal_instrumentGuiHasBeenHidden(int64_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = patch->patchdata;
+  if (plugin != NULL)
+    PLUGIN_call_me_when_gui_closes(plugin);
+  else{
+    R_ASSERT_NON_RELEASE(false);
+  }
+}
+
 int64_t getCurrentInstrument(void){
   if (g_currpatch==NULL)
     return -1;

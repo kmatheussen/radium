@@ -128,6 +128,19 @@
 
       (<gui> :enable-table-sorting table #t)))
 
+  (<gui> :add-deleted-callback gui
+         (lambda (radium-runs-custom-exec)
+           (<ra> :internal_instrument-gui-has-been-hidden instrument-id)))
+
+  ;;(<gui> :add-close-callback gui
+  ;;       (lambda (radium-runs-custom-exec)
+  ;;         (if (<ra> :instrument-is-open-and-audio instrument-id)
+  ;;             (begin
+  ;;               (<gui> :hide gui)
+  ;;               (<ra> :internal_instrument-gui-has-been-hidden instrument-id)
+  ;;               #f)
+  ;;             #t)))
+  
   (<ra> :schedule 0
         (lambda ()
           (cond ((not (<ra> :instrument-is-open-and-audio instrument-id))
@@ -154,7 +167,7 @@
   (<gui> :set-takes-keyboard-focus gui #f)
   (<gui> :enable-table-sorting table #t)
 
-  (<gui> :set-parent gui -1) ;; Set parent to the main window.
+  ;;(<gui> :set-parent gui -1) ;; Set parent to the main window. (caller are responsible for doing this, if needed)
   
   gui)
 

@@ -14,7 +14,7 @@ enum FAUST_calledRegularlyByParentReply{
 };
 
 class QDialog;
-QDialog *FAUST_create_qdialog(void);
+QDialog *FAUST_create_qdialog(SoundPlugin *plugin);
 //void FAUST_set_qtguistyle(QDialog *gui);
 
 void FFF_shut_down(void);
