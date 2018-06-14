@@ -501,7 +501,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       float meter_width = total_meter_space / num_channels;
 
       x1 = start_x + border_width + (ch * (border_width+meter_width));
-      x2 = (ch==num_channels-1) ? _x2 : round(start_x + border_width + (ch * (border_width+meter_width)) + meter_width); // Calling 'round' to get rid of think, almost invisible line, that sometimes can be seen between the channels.
+
+      if (ch==num_channels-1)
+        x2 = _x2;
+      else
+        x2 = x1 + meter_width;
+
+      // Calling 'round' to get rid of think, almost invisible line, that sometimes can be seen between the channels.
+      x1 = round(x1);
+      x2 = round(x2);
     }
 
     float get_pos_y1(void) const {
