@@ -81,7 +81,12 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 
 		}else{
 
-			wblock->curr_realline=0;
+                  if (wblock->curr_realline == wblock->num_reallines-1)
+                    wblock->curr_realline=0;
+                  else{
+                    ScrollEditorDown(window,  wblock->num_reallines - wblock->curr_realline - 1);
+                    return;
+                  }
                         GE_set_curr_realline(0);
 
 			SetWBlock_Top_And_Bot_Realline(window,wblock);
