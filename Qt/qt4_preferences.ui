@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -3426,7 +3426,10 @@ by mixing sound for all the buses.
          <item>
           <widget class="QGroupBox" name="groupBox_11">
            <property name="toolTip">
-            <string>Enable Jack to sync play/stop/position with other programs</string>
+            <string>Jack transport is slower than Internal transport.&lt;br&gt;
+&lt;br&gt;
+Jack transport should only be used when synchronizing Radium with other programs that supports Jack Transport
+such as Ardour, Bitwig, or another instance of Radium.</string>
            </property>
            <property name="title">
             <string>Transport</string>
@@ -9861,8 +9864,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>
