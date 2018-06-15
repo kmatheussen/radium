@@ -847,19 +847,26 @@
                              mcallback)
                        (loop (cdr entries))))
                 ((string=? type "CONTAINER")
-                 (cons (list (entry :name)
-                             mcallback)
-                       (loop (cdr entries))))
+                 (let ((in-container (loop (cdr entries))))
+                   (if (null? in-container)
+                       '()
+                       (cons (list (entry :name)
+                                   mcallback)
+                             in-container))))
                 ((string=? type "SEPARATOR")
-                 (cons "-------"
+                 (cons "----------------"
                        (loop (cdr entries))))
                 ((string=? type "LEVEL_UP")                 
                  (define rest #f)
-                 (cons (list (entry :name)
-                             (spr-entries->menu-entries (cdr entries) instrconf callback
-                                                         (lambda (dasrest)
-                                                           (set! rest dasrest))))
-                       (loop rest)))
+                 (define in-level-up (spr-entries->menu-entries (cdr entries) instrconf callback
+                                                                (lambda (dasrest)
+                                                                  (set! rest dasrest))))
+                 ;;(c-display "  LEVEL_UP:" (entry :name) ".  CONTENTS:" in-level-up)
+                 (if (null? in-level-up)
+                     (loop rest)
+                     (cons (list (entry :name)
+                                 in-level-up)
+                           (loop rest))))
                 ((string=? type "LEVEL_DOWN")
                  (assert level-down-func)
                  (level-down-func (cdr entries))
@@ -930,6 +937,11 @@
                                                                     #f)))))
     *popup-menu-args-cache-args*))
 
+#!!
+(for-each (lambda (i)
+            (<ra> :add-message (pp ((<ra> :get-sound-plugin-registry) i))))
+          (iota 50))
+!!#
 
 ;; async
 (define (start-instrument-popup-menu instrconf callback)

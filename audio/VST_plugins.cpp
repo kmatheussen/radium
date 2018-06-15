@@ -1298,13 +1298,25 @@ bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool i
   return false;
 }
 
-static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, bool is_juce_plugin, const char *container_type_name)
+static int create_vst_plugins_recursively(const QString main_path, const QString& sDir, QTime *time, bool is_juce_plugin, const char *container_type_name, bool &continuing)
 {
+  int ret = 0;
+  
   QDir dir(sDir);
   dir.setSorting(QDir::Name);
 
   QFileInfoList list = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
 
+  // Update progress window
+  {
+    static double g_last_time = -1000;
+    double time = TIME_get_ms();
+    if (time > g_last_time + 100){
+      GFX_ShowProgressMessage(dir.absolutePath().toUtf8().constData());
+      g_last_time = time;
+    }
+  }
+  
   for (int i=0;i<list.count();i++){
     QFileInfo file_info = list[i];
     
@@ -1312,43 +1324,62 @@ static bool create_vst_plugins_recursively(const QString& sDir, QTime *time, boo
     //printf("hepp: %s. Suffix: %s\n",file_path.toUtf8().constData(),file_info.suffix().toUtf8().constData());
 
     if (time->elapsed() > 1000*30) {
+
       ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
-      msgBox->setText("We have currently used more than 30 seconds searching for VST plugins. Continue for another 30 seconds?");
+      msgBox->setText("We have currently used more than 30 seconds searching for VST plugins in \"" + main_path + "\". Continue searching this directory for another 30 seconds?");
       msgBox->addButton(QMessageBox::Yes);
       msgBox->addButton(QMessageBox::No);
-      int ret = safeExec(msgBox, false);
-      if(ret==QMessageBox::Yes){
-        time->restart();
-      } else
-        return false;
+              
+      int ret2 = safeExec(msgBox, false);
+
+      time->restart();
+
+      if(ret2!=QMessageBox::Yes){
+        continuing = false;
+        return ret;
+      }
     }
 
 #if FOR_MACOSX
     QDir dir(file_info.absoluteFilePath() + "/Contents/MacOS/");
     if (dir.exists()) {
       add_vst_plugin_type(file_info, file_info.absoluteFilePath(), is_juce_plugin, container_type_name);
+      ret++;
     } else
 #endif
       
       if (file_info.isDir() && file_info.dir().dirName()!="unstable") {
+
         PR_add_menu_entry(PluginMenuEntry::level_up(file_info.baseName()));
-        bool continuing = create_vst_plugins_recursively(file_path, time, is_juce_plugin, container_type_name);
-        PR_add_menu_entry(PluginMenuEntry::level_down());
+        
+        int num_added_plugins = create_vst_plugins_recursively(main_path, file_path, time, is_juce_plugin, container_type_name, continuing);
+
+        printf("Added %d (total: %d) plugins to \"%s\"\n", num_added_plugins, ret, file_path.toUtf8().constData());
+        //getchar();
+        
+        if (num_added_plugins==0)
+          PR_remove_last_menu_entry();
+        else
+          PR_add_menu_entry(PluginMenuEntry::level_down());
+
+        ret += num_added_plugins;
         
         if (!continuing)
-          return false;
+          return ret;
       }
     
 #if !defined(FOR_MACOSX)       
       else if(file_info.suffix().toLower()==VST_SUFFIX){
-        add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST");
+        if(add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST"))
+          ret++;
       }else if(file_info.suffix().toLower()==VST3_SUFFIX){
-        add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST3");
+        if(add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST3"))
+          ret++;
       }
 #endif
   }
 
-  return true;
+  return ret;
 }
 
 
@@ -1359,16 +1390,19 @@ void create_vst_plugins(bool is_juce_plugin){
 
 #if defined(FOR_MACOSX)
 
-  PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{    
-    create_vst_plugins_recursively("/Library/Audio/Plug-Ins/VST/", &time, is_juce_plugin, "VST");
+  PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{
+    bool continuing = true;
+    create_vst_plugins_recursively("/Library/Audio/Plug-Ins/VST/", "/Library/Audio/Plug-Ins/VST/", &time, is_juce_plugin, "VST", continuing);
   }PR_add_menu_entry(PluginMenuEntry::level_down());
 
   PR_add_menu_entry(PluginMenuEntry::level_up("VST3"));{    
-    create_vst_plugins_recursively("/Library/Audio/Plug-Ins/VST3/", &time, is_juce_plugin, "VST3");
+    bool continuing = true;
+    create_vst_plugins_recursively("/Library/Audio/Plug-Ins/VST3/", "/Library/Audio/Plug-Ins/VST3/", &time, is_juce_plugin, "VST3", continuing);
   }PR_add_menu_entry(PluginMenuEntry::level_down());
 
   PR_add_menu_entry(PluginMenuEntry::level_up("AU"));{
-    create_vst_plugins_recursively("/Library/Audio/Plug-Ins/Components/", &time, is_juce_plugin, "AU");
+    bool continuing = true;
+    create_vst_plugins_recursively("/Library/Audio/Plug-Ins/Components/", "/Library/Audio/Plug-Ins/Components/", &time, is_juce_plugin, "AU", continuing);
   }PR_add_menu_entry(PluginMenuEntry::level_down());
   
   #if 0
@@ -1404,14 +1438,20 @@ void create_vst_plugins(bool is_juce_plugin){
 #else
   PR_add_menu_entry(PluginMenuEntry::level_up("VST/VST3"));
 #endif
+  
   {
     for(int i=0;i<num_paths; i++){
       QString vst_path = SETTINGS_read_qstring(QString("vst_path")+QString::number(i), QString(""));
       if(vst_path=="")
         continue;
+      
       printf("vst_path: %s\n",vst_path.toUtf8().constData());
-      create_vst_plugins_recursively(vst_path, &time, is_juce_plugin, "VST");
-      PR_add_menu_entry(PluginMenuEntry::separator());
+
+      bool continuing = true;
+      int num_plugins_added = create_vst_plugins_recursively(vst_path, vst_path, &time, is_juce_plugin, "VST", continuing);
+      
+      if (num_plugins_added > 0)
+        PR_add_menu_entry(PluginMenuEntry::separator());
     }    
   }PR_add_menu_entry(PluginMenuEntry::level_down());
   
