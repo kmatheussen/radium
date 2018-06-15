@@ -1,7 +1,7 @@
 #!/bin/bash
 
 THIS_DIR=$(dirname $(readlink -f $0))
-XCB_LIB_DIR=$THIS_DIR/bin/packages/libxcb-1.12/src/.libs
+XCB_LIB_DIR=$THIS_DIR/bin/packages/libxcb-1.13/src/.libs
 
 if ! file $XCB_LIB_DIR ; then
     echo "Unable to find directory $XCB_LIB_DIR"
