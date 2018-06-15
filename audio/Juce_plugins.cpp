@@ -398,6 +398,8 @@ namespace{
   struct Data{
     AudioPluginInstance *audio_instance;
 
+    MidiKeyboardState keyboardState;
+    
     SoundPlugin *_plugin;
     
     PluginWindow *window;
@@ -496,6 +498,8 @@ namespace{
 
     ToggleButton ab_buttons[8];
     bool ab_button_valid[8] = {};
+    
+    MidiKeyboardComponent *midi_keyboard = NULL;
     
     AudioProcessorEditor* const editor;
 
@@ -648,6 +652,13 @@ namespace{
       return root->song->tracker_windows->fontheight * 3 / 2;
     }
     
+    int get_keyboard_height(void) const {
+      if(midi_keyboard==NULL)
+        return 0;
+      else
+        return get_button_height() * 3;
+    }
+    
     void position_components(int editor_width, int editor_height){
 
       int x = 0;
@@ -692,7 +703,11 @@ namespace{
         
         x += width;
       }
-      
+
+      if (midi_keyboard != NULL){
+        midi_keyboard->setSize(editor_width, get_keyboard_height());
+        midi_keyboard->setTopLeftPosition(0, get_button_height() + editor_height);
+      }
     }
 
 
@@ -706,14 +721,14 @@ namespace{
         
 #if TRY_TO_RESIZE_EDITOR        
         int editor_width = main_component.getWidth();
-        int editor_height = main_component.getHeight() - get_button_height();
+        int editor_height = main_component.getHeight() - get_button_height() - get_keyboard_height();
           
         editor->setSize(editor_width, editor_height);
 #else
         int editor_width = editor->getWidth();
         int editor_height = editor->getHeight();
         
-        main_component.setSize(editor_width, editor_height + get_button_height());
+        main_component.setSize(editor_width, editor_height + get_button_height() + get_keyboard_height());
 #endif
 
         position_components(editor_width,editor_height);
@@ -734,6 +749,9 @@ namespace{
       , parentgui(parentgui)
     {
 
+      if (data->audio_instance->acceptsMidi())
+        midi_keyboard = new MidiKeyboardComponent(data->keyboardState, MidiKeyboardComponent::horizontalKeyboard);
+
       struct SoundPlugin *plugin = data->_plugin;
       ATOMIC_SET(plugin->auto_suspend_suspended, true);
 
@@ -753,13 +771,18 @@ namespace{
       }
 #endif
       
-      this->setSize (400, 300);
+      int button_height = get_button_height();
+      int keyboard_height = get_keyboard_height();
+
+      int initial_width = R_MAX(100, editor->getWidth());
+      int initial_height = R_MAX(100, editor->getHeight() + button_height + keyboard_height);
+      
+      this->setSize (initial_width, initial_height);
       this->setUsingNativeTitleBar(true);
       //this->setUsingNativeTitleBar(false);
 
-      int button_height = get_button_height();
+      main_component.setSize(initial_width, initial_height);
       
-      main_component.setSize(R_MIN(100, editor->getWidth()), R_MIN(100, editor->getHeight()));
 #if TRY_TO_RESIZE_EDITOR
       this->setContentNonOwned(&main_component, false);
 #else
@@ -851,9 +874,16 @@ namespace{
       // add vst gui
       main_component.addChildComponent(editor);
       editor->setTopLeftPosition(0, button_height);
-      
-      main_component.setSize(editor->getWidth(), editor->getHeight() + button_height);
 
+      if (midi_keyboard != NULL) {
+        main_component.addChildComponent(midi_keyboard);
+        midi_keyboard->setTopLeftPosition(0, button_height + editor->getHeight());
+        midi_keyboard->setSize(editor->getWidth(), keyboard_height);
+        midi_keyboard->setVisible(true);
+      }
+      
+      main_component.setSize(editor->getWidth(), editor->getHeight() + button_height + keyboard_height);
+          
       position_components(editor->getWidth(), editor->getHeight());
 
 #if TRY_TO_RESIZE_EDITOR
@@ -945,6 +975,8 @@ namespace{
         delete editor;
         data->window = NULL;
         V_free((void*)title);
+
+        delete midi_keyboard;
         
         struct SoundPlugin *plugin = data->_plugin;
         R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
@@ -1187,6 +1219,10 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   return;
 #endif
 
+  // Add events to the midi buffer created by the virtual keyboard.
+  data->keyboardState.processNextMidiBuffer(data->midi_buffer, 0, num_frames, true);
+ 
+
   // 1. Process audio
 
   AudioPluginInstance *instance = data->audio_instance;
@@ -1202,7 +1238,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   for(int ch=0; ch<data->num_output_channels ; ch++)
     memcpy(outputs[ch], buffer.getReadPointer(ch), sizeof(float)*num_frames);
 
-  
   // 2. Send out midi
   if (!data->midi_buffer.isEmpty()){
 
