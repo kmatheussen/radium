@@ -1273,20 +1273,46 @@ void PREFERENCES_update(void){
   }
 }
 
+namespace{
+  struct VST_paths_dialog : public RememberGeometryQDialog {
+    VST_paths_dialog(QWidget *parent)
+      : RememberGeometryQDialog(parent, radium::MAY_BE_MODAL)
+    {
+      setWindowTitle("VST preferences");
+
+      auto *child = new Vst_paths_widget;
+
+      QVBoxLayout *mainLayout = new QVBoxLayout;
+      setLayout(mainLayout);
+      mainLayout->addWidget(child);
+
+      connect(child->buttonBox,SIGNAL(accepted()),this,SLOT(hide()));
+    }
+  };
+}
+
+static QPointer<VST_paths_dialog> g_vst_paths_dialog;
 
 void OS_VST_config(struct Tracker_Windows *window){
 #if defined(FOR_MACOSX)
   GFX_addMessage("No VST options to edit on OSX");
 #else
   //EditorWidget *editor=(EditorWidget *)window->os_visual.widget;
-  Vst_paths_widget *vst_paths_widget=new Vst_paths_widget(NULL); // If we set the parent to g_main_window, it will open inside the main window.
-  GL_lock();{
-    vst_paths_widget->show();
-  } GL_unlock();
+  if (g_vst_paths_dialog.isNull())
+    g_vst_paths_dialog=new VST_paths_dialog(g_main_window);
+
+  safeShow(g_vst_paths_dialog.data());
+  
 #endif  
   printf("Ohjea\n");
 }
 
+bool OS_VST_config_visible(void){
+  if (g_vst_paths_dialog.isNull())
+    return false;
 
+  return g_vst_paths_dialog->isVisible();
+}
+  
 #include "mQt_preferences_callbacks.cpp"
 

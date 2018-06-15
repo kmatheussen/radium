@@ -187,6 +187,24 @@
                         (pmg-search "" #f pmg-scan-all-remaining)
                         #f)))))))
 
+(define *plugin-paths-button* (<gui> :child *pluginmanager-gui* "configure_paths_button"))
+(if (string=? "macosx" (<ra> :get-os-name))
+    (<gui> :close *plugin-paths-button*)
+    (<gui> :add-callback *plugin-paths-button*
+           (lambda ()
+             (define instrconf *pmg-instrconf*)
+             (define callback *pmg-callback*)
+             (pmg-hide)
+             (<ra> :config-vst)
+             (<ra> :schedule 50
+                   (lambda ()
+                     (if (<ra> :vst-config-open)
+                         50
+                         (begin
+                           (pmg-show instrconf callback)
+                           #f)))))))
+  
+
 (<gui> :add-mouse-callback *pmg-table*
        (lambda (button state x y)
          (if (and (= button *right-button*)
