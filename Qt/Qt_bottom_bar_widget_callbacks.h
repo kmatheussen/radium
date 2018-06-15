@@ -78,8 +78,14 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
       g_cpu_usage.reset();
 
-      for(auto *bottom_bar_widget : g_bottom_bars)
-        bottom_bar_widget->cpu_label->setText(usage);
+      for(auto *bottom_bar_widget : g_bottom_bars){
+        if(bottom_bar_widget==NULL)
+          RError("bottom_bar_widget==NULL");
+        else if (bottom_bar_widget->cpu_label==NULL)
+          RError("bottom_bar_widget->cpu_label==NULL");
+        else
+          bottom_bar_widget->cpu_label->setText(usage);
+      }
     }
   };
 
