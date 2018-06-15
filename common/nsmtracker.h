@@ -2617,8 +2617,7 @@ struct SeqBlock{
   const wchar_t *name; // Only used when block==NULL. If null, sample_filename is displayed.
   
   bool *track_is_disabled; // Is NULL in the seqblock used when playing block.
-  
-  
+    
   bool is_selected;
 
   enum SeqblockBoxSelected selected_box;
@@ -2634,11 +2633,14 @@ struct SeqBlock{
   void *fade_out_envelope; // radium::Envelope instance
 #endif
 
+  float gain;
+
+  float curr_gain; // gain for the current audio block. Calculated from envelope+gain+fadein+fadeout.
+  bool curr_gain_changed_this_block; // set to true or false each block.
+
   bool envelope_enabled;
-  float envelope_volume; // gain (current envelope_volume calculated from envelope+fadein+fadeout, updated each block)
   float envelope_db;     // db version of envelope_volume
   struct SeqblockEnvelope *envelope;
-  bool envelope_volume_changed_this_block;
   
   // 'start_time' and 'end_time' are absolute times.
   // They are only used the main thread.

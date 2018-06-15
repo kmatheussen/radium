@@ -804,6 +804,8 @@ public:
     if ((num_points % 2) != 0)
       num_points++;
 
+    const float sample_gain = seqblock->gain;
+    
     for(int ch=0;ch<num_ch;ch++){
 
       double y1 = scale_double(ch, 0, num_ch, w_y1, w_y2);
@@ -840,8 +842,8 @@ public:
             double min,max;
                 
             if (peak.has_data()==true) {
-              min = peak.get_min();
-              max = peak.get_max();
+              min = peak.get_min() * sample_gain;
+              max = peak.get_max() * sample_gain;
             } else {
               min = 0.0f;
               max = 0.0f;

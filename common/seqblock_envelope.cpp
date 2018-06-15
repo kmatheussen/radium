@@ -471,9 +471,9 @@ static void RT_handle_seqblock_volume_automation(linked_note_t *linked_notes, st
 
       } else {
 
-        if (seqblock->envelope_volume_changed_this_block){
+        if (seqblock->curr_gain_changed_this_block){
 
-          double seqblock_automation_volume = seqblock->envelope_volume;
+          double seqblock_automation_volume = seqblock->curr_gain;
           
           RT_PATCH_change_velocity(linked_note->seqtrack,
                                    patch,
@@ -569,26 +569,48 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
       printf("new_db: %f. Pos: %f\n\n", new_db, pos);
 #endif
 
+      // Add envelope gain.
+      //
       if (fabs(new_db-seqblock->envelope_db) > 0.0001){
 
-        //printf("new db: %f. Old: %f (old gain: %f)\n", new_db, seqblock->envelope_db, seqblock->envelope_volume);
+        //printf("new db: %f. Old: %f (old gain: %f)\n", new_db, seqblock->envelope_db, seqblock->curr_gain);
 
-        seqblock->envelope_volume_changed_this_block = true;
+        seqblock->curr_gain_changed_this_block = true;
         seqblock->envelope_db = new_db;
 
         if (new_db==0.0)
-          seqblock->envelope_volume = 1.0;
+          seqblock->curr_gain = 1.0;
         else
-          seqblock->envelope_volume = db2gain(new_db);
+          seqblock->curr_gain = db2gain(new_db);
 
       } else {
 
-        seqblock->envelope_volume_changed_this_block = false;
+        seqblock->curr_gain_changed_this_block = false;
 
         //printf("new db: xxx\n");
         
       }
 
+      
+      // Add sample gain.
+      //
+      if (fabsf(seqblock->gain-1.0f) > 0.0001f){
+
+        if (seqblock->curr_gain_changed_this_block) {
+          
+          seqblock->curr_gain *= seqblock->gain;
+          
+        } else {
+          
+          seqblock->curr_gain = seqblock->gain;
+          seqblock->curr_gain_changed_this_block = true;
+          
+        }
+      }
+
+      
+      // Add fade out/in gain.
+      //
       if (seqblock->fadein > 0.0 || seqblock->fadeout > 0.0){
 
         int64_t seqblock_start_pos = start_time - seqblock->t.time;
@@ -618,11 +640,11 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
               
               double fadein = seqblock->fade_in_envelope->get_y(fadein_pos);
               
-              if (seqblock->envelope_volume_changed_this_block)
-                seqblock->envelope_volume *= fadein;
+              if (seqblock->curr_gain_changed_this_block)
+                seqblock->curr_gain *= fadein;
               else {
-                seqblock->envelope_volume = fadein;
-                seqblock->envelope_volume_changed_this_block = true;
+                seqblock->curr_gain = fadein;
+                seqblock->curr_gain_changed_this_block = true;
               }
             }
             
@@ -634,11 +656,11 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
 
               double fadeout = seqblock->fade_out_envelope->get_y(fadeout_pos);
 
-              if (seqblock->envelope_volume_changed_this_block)
-                seqblock->envelope_volume *= fadeout;
+              if (seqblock->curr_gain_changed_this_block)
+                seqblock->curr_gain *= fadeout;
               else {
-                seqblock->envelope_volume = fadeout;
-                seqblock->envelope_volume_changed_this_block = true;
+                seqblock->curr_gain = fadeout;
+                seqblock->curr_gain_changed_this_block = true;
               }
             }
             
@@ -688,7 +710,7 @@ void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void){
 
       seqblock->envelope_db = MIN_DB - 1; // <-- To ensure (fabs(new_db-seqblock->envelope_db) > 0.0001) is true in RT_set_seqblock_volume_automation_values.
       
-      //seqblock->envelope_volume = -1; // WARNING: When enabling the Seqtrack_plugin, ensure that we don't use seqblock->envelope_volume when player is stopped. If we do, it could be hard to hear since the only thing we do is to invert the phase, at least when there's no envelope volume.
+      //seqblock->curr_gain = -1; // WARNING: When enabling the Seqtrack_plugin, ensure that we don't use seqblock->curr_gain when player is stopped. If we do, it could be hard to hear since the only thing we do is to invert the phase, at least when there's no envelope volume.
 
     }END_VECTOR_FOR_EACH;
 

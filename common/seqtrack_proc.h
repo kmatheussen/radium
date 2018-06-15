@@ -25,6 +25,10 @@ enum GridType{
 #define LAST_LEGAL_GRID BEAT_GRID
 
 
+extern LANGSPEC void SEQBLOCK_set_gain(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, float gain);
+extern LANGSPEC float SEQBLOCK_get_gain(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
+extern LANGSPEC float SEQBLOCK_get_max_sample_gain(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
+
 static inline int64_t SEQBLOCK_get_seq_duration(const struct SeqBlock *seqblock){
   return seqblock->t.time2 - seqblock->t.time;
 }

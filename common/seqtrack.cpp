@@ -35,7 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk.h"
 #include "OS_Player_proc.h"
 #include "scheduler_proc.h"
-#include "../audio/Mixer_proc.h"
 #include "OS_Bs_edit_proc.h"
 #include "song_tempo_automation_proc.h"
 #include "seqtrack_automation_proc.h"
@@ -49,10 +48,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_proc.h"
 
+#include "../audio/Mixer_proc.h"
 #include "../audio/SoundPlugin.h"
 #include "../audio/Seqtrack_plugin_proc.h"
 #include "../audio/Juce_plugins_proc.h"
 #include "../audio/SampleReader_proc.h"
+#include "../audio/Peaks.hpp"
 
 #include "seqtrack_proc.h"
 
@@ -92,6 +93,56 @@ static int64_t get_seqblock_stime_default_duration(const struct SeqTrack *seqtra
     return getBlockSTimeLength(seqblock->block);
     
   }
+}
+
+void SEQBLOCK_set_gain(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, float gain){  
+  safe_float_write(&seqblock->gain, gain);
+  SEQTRACK_update(seqtrack);
+}
+  
+float SEQBLOCK_get_gain(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  return seqblock->gain;
+}
+  
+float SEQBLOCK_get_max_sample_gain(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  R_ASSERT_RETURN_IF_FALSE2(seqblock->block==NULL, 1.0);
+
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch != NULL, 1.0);
+    
+  const SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, 1.0);
+  
+  radium::Peaks **peaks = SEQTRACKPLUGIN_get_peaks(plugin, seqblock->sample_id);
+
+  const double resample_ratio = SEQTRACKPLUGIN_get_resampler_ratio(plugin, seqblock->sample_id);
+  
+  const int64_t time1 = seqblock->t.interior_start / resample_ratio;
+  const int64_t time2 = seqblock->t.interior_end / resample_ratio;
+
+  int num_ch = SEQTRACKPLUGIN_get_num_channels(plugin, seqblock->sample_id);
+
+  float max = 0;
+  
+  for(int ch=0;ch<num_ch;ch++){
+    const radium::Peak peak = peaks[ch]->get(time1, time2);
+    float peak_min = fabsf(peak.get_min());
+    float peak_max = fabsf(peak.get_max());
+    
+    if (peak_min > max)
+      max = peak_min;
+    
+    if (peak_max > max)
+      max = peak_max;
+  }
+
+  return max;
+  /*
+  float gain = 1.0 / max;
+
+  printf("   Normalized GAIN: %f\n", gain);
+
+  SEQBLOCK_set_gain(seqtrack, seqblock, gain);
+  */
 }
 
 
@@ -307,7 +358,7 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
   seqblock->block = block;
   seqblock->sample_id = -1;
   seqblock->track_is_disabled = track_is_disabled;
-
+  
   seqblock->t.time = time;
 
   if (block != NULL) {
@@ -324,6 +375,8 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
 
   seqblock->t.stretch_without_tempo_multiplier = 1.0;
 
+  seqblock->gain = 1.0;
+
   seqblock->fadein = 0;
   seqblock->fadeout = 0;
 
@@ -338,7 +391,7 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
     R_ASSERT(true==PLAYER_current_thread_has_lock());
   }
 
-  seqblock->envelope_volume = 1.0;
+  seqblock->curr_gain = 1.0;
   seqblock->envelope_db = 0.0;
 }
 
@@ -771,6 +824,8 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
     }
   }
 
+  HASH_put_float(state, ":gain", seqblock->gain);
+  
   HASH_put_float(state, ":fade-in", seqblock->fadein);
   HASH_put_float(state, ":fade-out", seqblock->fadeout);
 
@@ -1128,6 +1183,9 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
   if (HASH_has_key(state, ":envelope-enabled"))
     seqblock->envelope_enabled = HASH_get_bool(state, ":envelope-enabled");
 
+  if (HASH_has_key(state, ":gain"))
+    seqblock->gain = HASH_get_float(state, ":gain");
+  
   if (HASH_has_key(state, ":fade-in")){
     seqblock->fadein = HASH_get_float(state, ":fade-in");
     seqblock->fadeout = HASH_get_float(state, ":fade-out");

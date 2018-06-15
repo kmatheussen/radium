@@ -741,6 +741,38 @@ float getSeqAutomationNodeY(int nodenum, int automationnum, int seqtracknum){
 
 
 
+// seqblock gain
+/////////////////////////////
+
+void setSeqblockGain(float new_gain, int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  undoSequencer();
+  SEQBLOCK_set_gain(seqtrack, seqblock, new_gain);
+}
+
+float getSeqblockGain(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 1.0;
+
+  return SEQBLOCK_get_gain(seqtrack, seqblock);
+}
+
+float getMaxSeqblockSampleGain(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 1.0;
+
+  return SEQBLOCK_get_max_sample_gain(seqtrack, seqblock);
+}
+
+
 
 // Sequencer block volume envelope
 //////////////////////////////////

@@ -830,7 +830,7 @@ struct Sample{
   void RT_process(int num_frames, float **outputs){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
-    //printf("RT_Process. _curr_reader: %p. Volume: %f. is1: %d. is2: %d\n", _curr_reader, _seqblock->envelope_volume, is_really_playing_song(), _is_playing);
+    //printf("RT_Process. _curr_reader: %p. Volume: %f. is1: %d. is2: %d\n", _curr_reader, _seqblock->curr_gain, is_really_playing_song(), _is_playing);
     
     // Playing Fadeouters
     //
@@ -919,7 +919,7 @@ struct Sample{
         mus_set_increment(_curr_reader->_granulator._clm_granulators[ch], _seqblock->t.stretch);
 
       // Set volume
-      _curr_reader->set_volume(_seqblock->envelope_volume);
+      _curr_reader->set_volume(_seqblock->curr_gain);
 
       // Add samples
       _curr_reader->RT_add_samples(num_frames, outputs);
