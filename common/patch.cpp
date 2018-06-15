@@ -988,19 +988,19 @@ static int rnd(int max){
 int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, struct Notes *editor_note, STime time){
   //printf("\n\nRT_PATCH_PLAY_NOTE. ___Starting note %f, time: %d, id: %d. block_reltempo: %f\n\n",note.pitch,(int)time,(int)note.id,note.block_reltempo);
 
-  float envelope_volume = 1.0;
+  float curr_gain = 1.0;
 
   if (editor_note != NULL){
     
     if (note.seqblock != NULL){
-      envelope_volume = note.seqblock->envelope_volume;
+      curr_gain = note.seqblock->curr_gain;
     }else
       R_ASSERT(false);
     
     editor_note->has_sent_seqblock_volume_automation_this_block = true;
   }
 
-  //printf("RT_PATCH_play_note. Envelope_volume: %f (%f)\n", envelope_volume, note.seqblock==NULL ? -1000 : note.seqblock->envelope_volume);
+  //printf("RT_PATCH_play_note. curr_gain: %f (%f)\n", curr_gain, note.seqblock==NULL ? -1000 : note.seqblock->curr_gain);
   
   if (!Patch_addPlayingNote(patch, note, editor_note, seqtrack))
     return note.id;
@@ -1019,7 +1019,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
 
       float voice_notenum = note.pitch + voice->transpose;
       if (voice_notenum > 0) {
-        float voice_velocity = note.velocity * get_voice_velocity(voice) * envelope_volume;
+        float voice_velocity = note.velocity * get_voice_velocity(voice) * curr_gain;
         int64_t voice_id = note.id + i;
         
         args[1].float_num = voice_notenum;

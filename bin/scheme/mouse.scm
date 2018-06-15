@@ -6408,8 +6408,32 @@
                                            (lambda ()
                                              (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
                                                (split-sample-seqblock pos seqtracknum seqblocknum))))
-                                          
-                                          
+
+                                          (list
+                                           (let ((old-gain (if seqblocknum
+                                                               (two-decimal-string (<ra> :get-seqblock-gain seqblocknum seqtracknum))
+                                                               1.0)))
+                                             (<-> "Set gain (now: " old-gain ")"))
+                                           :enabled (and seqblocknum
+                                                         (not blocknum)) ;; FIX: Need to ensure new envelope values aren't continually sent to the instruments before enabling gain for editor seqblocks.
+                                           (lambda ()
+                                             (define old-gain (two-decimal-string (<ra> :get-seqblock-gain seqblocknum seqtracknum)))
+                                             (define new (<ra> :request-float (<-> "New gain (now: " old-gain ")")
+                                                               0
+                                                               1000))
+                                             (if (and (>= new 0)
+                                                      (<= new 1000))
+                                                 (<ra> :set-seqblock-gain new seqblocknum seqtracknum))))
+                                           
+                                          (list
+                                           "Set normalized gain"
+                                           :enabled (and seqblocknum
+                                                         (not blocknum))
+                                           (lambda ()
+                                             (define max-gain (<ra> :get-max-seqblock-sample-gain seqblocknum seqtracknum))
+                                             (if (> max-gain 0)
+                                                 (<ra> :set-seqblock-gain (/ 1.0 max-gain) seqblocknum seqtracknum))))
+                                           
                                           "--------------------"
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)
