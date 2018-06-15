@@ -314,7 +314,8 @@ static QString get_rect_string(void){
 
 
 void GFX_OpenProgress(const char *message){
-  delete g_process;
+  GFX_CloseProgress();
+
   g_process = new QProcess;
 
 #if FOR_WINDOWS
@@ -353,7 +354,10 @@ void GFX_OpenProgress(const char *message){
   //getchar();
   
   if (g_process->waitForStarted()==false){
-    printf("Unable to start process\n");
+    printf("PROGRESSWINDOWS: Unable to start process\n");
+#if !defined(RELEASE)
+    getchar();
+#endif
     delete g_process;
     g_process = NULL;
   }

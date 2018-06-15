@@ -400,7 +400,7 @@
             )
            
            (else
-            (<ra> :addMessage (<-> "Don't know how to handle " entry)))))))
+            (<ra> :add-message (<-> "Don't know how to handle " entry)))))))
 
 (define (pmg-add-entries-to-table! table entries instrconf y)
   (let loop ((entries entries)

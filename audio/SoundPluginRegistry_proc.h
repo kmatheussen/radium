@@ -132,6 +132,7 @@ struct PluginMenuEntry{
 
 const QVector<PluginMenuEntry> PR_get_menu_entries(void); // Can not use radium::Vector if the contents requires copy constructor
 
+void PR_remove_last_menu_entry(void);
 void PR_add_menu_entry(PluginMenuEntry entry);
 
 #endif // USE_QT4

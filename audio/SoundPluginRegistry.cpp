@@ -329,7 +329,7 @@ SoundPluginTypeContainer *PR_get_populated_container(const char *container_name,
     if (user_has_cancelled_scanning==false)
       GFX_addMessage(
                      "Could not find a usable plugin file for %s.\n"
-                     "It might help to rescan plugins in the plugin manager and try again.",
+                     "It might help to rescan plugins in the plugin manager and try again (unless that's what you are already doing).",
                      container_name
                      );
 
@@ -523,6 +523,10 @@ const QVector<PluginMenuEntry> PR_get_menu_entries(void){
   return ret;
 }
 
+void PR_remove_last_menu_entry(void){
+  g_plugin_menu_entries.removeLast();
+}
+  
 void PR_add_menu_entry(PluginMenuEntry entry){
   g_plugin_menu_entries.push_back(entry);
 }
@@ -700,6 +704,8 @@ bool PR_is_initing_vst_first(void){
 
 
 void PR_init_plugin_types(void){
+  GFX_OpenProgress("Please wait, traversing plugin paths for potential plugins");
+  
   API_incSoundPluginRegistryGeneration();
   API_clearSoundPluginRegistryCache();
   
@@ -719,7 +725,8 @@ void PR_init_plugin_types(void){
     create_vst_plugins(true);
 
     PR_add_menu_entry(PluginMenuEntry::separator());
-    
+
+    GFX_ShowProgressMessage("Adding LADSPA plugins...");
     create_ladspa_plugins();
 
   } else {
@@ -730,6 +737,8 @@ void PR_init_plugin_types(void){
     create_vst_plugins(true);  
   }
 
+  GFX_ShowProgressMessage("Adding built-in instruments...");
+  
   /*
   PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{
     create_vst_plugins(false);
@@ -807,9 +816,13 @@ void PR_init_plugin_types(void){
   create_faust_system_highshelf_plugin();
   //create_faust_system_delay_plugin();
 
+  GFX_ShowProgressMessage("Recreating favourits...");
   recreate_favourites(true);
 
   // Update cache.
+  GFX_ShowProgressMessage("Updating cache...");
   getSoundPluginRegistry(false);
+
+  GFX_HideProgress();
 }
 

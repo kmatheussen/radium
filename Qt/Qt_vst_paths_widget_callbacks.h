@@ -41,10 +41,12 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
   {
     initing = true;
     setupUi(this);
+
+    rescan_button->hide(); // we rescan when pressing "add".
     
 #if defined(FOR_MACOSX)
     path_list->addItem("/Library/Audio/Plug-Ins/VST/");
-    
+
 #if 0
     path_list->setEnabled(false);
     delete_button->setEnabled(false);
@@ -116,13 +118,17 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
     VST_write_vst_paths(paths);
   }
 
+  void scan(void){    
+    PR_init_plugin_types();
+  }
+  
   void add_current_path(){
     QString path = path_edit->text();
     path = path.trimmed();
     if(path.length()>0 && is_in_list(path)==false){
       path_list->addItem(path);
       write_settings();
-      PR_init_plugin_types();
+      scan();
     }
     path_edit->clear();
   }
@@ -145,7 +151,7 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
       setLockJuceWhenSwappingOpenGL(val);
   }
   
-  void on_path_edit_editingFinished(){
+  void on_path_edit_returnPressed(){
     add_current_path();
     set_editor_focus();
   }
@@ -158,6 +164,7 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
     //printf("Trying to remove %p\n",path_list->currentItem());
     delete path_list->currentItem();
     write_settings();
+    scan();
   }
 
   void on_add_button_clicked(){
@@ -176,6 +183,8 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
     }GL_unlock();
 
     release_keyboard_focus();
+
+    add_current_path();
   }
 
   void on_buttonBox_clicked(){

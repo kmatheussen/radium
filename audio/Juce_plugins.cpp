@@ -2207,7 +2207,7 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, c
   container->type_name = V_strdup(container_type_name);
   container->name = V_strdup(name);
   container->populate = populate;
-  container->filename = wcsdup(library_file_full_path);
+  container->filename = V_wcsdup(library_file_full_path);
   
   ContainerData *data = (ContainerData*)V_calloc(1, sizeof(ContainerData));
   data->file_or_identifier = wcsdup(file_or_identifier);
