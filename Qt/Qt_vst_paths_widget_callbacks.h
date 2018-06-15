@@ -179,7 +179,7 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
   }
 
   void on_buttonBox_clicked(){
-    hide();
+    //hide();
   }
 
 };

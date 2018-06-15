@@ -97,6 +97,10 @@ void configVST(int windownum){
   OS_VST_config(window);
 }
 
+bool vstConfigOpen(void){
+  return OS_VST_config_visible();
+}
+
 const char *getLoadFilename(const_char *text, const_char *filetypes, const_char *dir, const_char *type){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
   if (!strcmp(type,""))

@@ -163,6 +163,7 @@ extern LANGSPEC int OS_get_main_window_height(void);
 
 
 extern LANGSPEC void OS_VST_config(struct Tracker_Windows *window);
+extern LANGSPEC bool OS_VST_config_visible(void);
 
 extern LANGSPEC void MIDILEARN_PREFS_open(void);
 struct MidiLearn;
