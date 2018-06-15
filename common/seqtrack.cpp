@@ -2274,17 +2274,23 @@ void SEQUENCER_delete_seqtrack(int pos){
   R_ASSERT_RETURN_IF_FALSE(pos < root->song->seqtracks.num_elements);
 
   struct SeqTrack *old_seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[pos];
-  
+
+  int new_seqtracknum = -1;
   {
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
     
     VECTOR_delete(&root->song->seqtracks, pos);
 
-    int curr_seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
-    if (curr_seqtracknum >= root->song->seqtracks.num_elements)
-      setCurrSeqtrack(root->song->seqtracks.num_elements -1);
+    int curr_seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);    
+    if (curr_seqtracknum >= root->song->seqtracks.num_elements){
+      new_seqtracknum = root->song->seqtracks.num_elements -1;
+      ATOMIC_SET(root->song->curr_seqtracknum, new_seqtracknum); // Set it now, while holding the player lock, to avoid root->song->curr_seqtracknum having an illegal value.
+    }      
   }
+
+  if (new_seqtracknum >= 0)
+    setCurrSeqtrack(new_seqtracknum);
 
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
   

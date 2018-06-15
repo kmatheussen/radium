@@ -252,7 +252,7 @@ void setCurrSeqtrack(int seqtracknum){
   if (seqtrack==NULL)
     return;
 
-  if (seqtracknum != ATOMIC_GET(root->song->curr_seqtracknum)){
+  if (true || seqtracknum != ATOMIC_GET(root->song->curr_seqtracknum)){ // We always go in here since the function is sometimes called just for the update() calls.
 
     ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
     SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);
