@@ -1354,7 +1354,7 @@ static int create_vst_plugins_recursively(const QString main_path, const QString
         
         int num_added_plugins = create_vst_plugins_recursively(main_path, file_path, time, is_juce_plugin, container_type_name, continuing);
 
-        printf("Added %d (total: %d) plugins to \"%s\"\n", num_added_plugins, ret, file_path.toUtf8().constData());
+        //printf("Added %d (total: %d) plugins to \"%s\"\n", num_added_plugins, ret, file_path.toUtf8().constData());
         //getchar();
         
         if (num_added_plugins==0)
