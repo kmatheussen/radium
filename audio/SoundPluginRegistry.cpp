@@ -823,6 +823,6 @@ void PR_init_plugin_types(void){
   GFX_ShowProgressMessage("Updating cache...");
   getSoundPluginRegistry(false);
 
-  GFX_HideProgress();
+  GFX_CloseProgress();
 }
 
