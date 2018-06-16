@@ -1,7 +1,7 @@
 Changes 5.7.4 -> 5.7.6:
 * GUI: Prevent a rare crash during startup.
 * VST/AU: Show a virtual keyboard under the native GUI of plugins that
-  accepts MIDI.
+  accept MIDI.
 * Preferences: Update tooltip text for Sequencer -> Transport.
 * Sequencer: Add "Set gain" and "Set normalized gain" options to the popup menu
   when mouse is pointing at an audio file.
