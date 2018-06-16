@@ -1,3 +1,71 @@
+Changes 5.7.4 -> 5.7.6:
+* GUI: Prevent a rare crash during startup.
+* VST/AU: Show a virtual keyboard under the native GUI of plugins that
+  accepts MIDI.
+* Preferences: Update tooltip text for Sequencer -> Transport.
+* Sequencer: Add "Set gain" and "Set normalized gain" options to the popup menu
+  when mouse is pointing at an audio file.
+* VST/AU: Show Progress window when traversing plugin paths for potential
+  plugin files.
+* Preferences: Remove the "Look through directories for potential plugins"
+  button in the plugins tab.
+* Preferences: Automatically look through directories when adding or
+  removing a path in the plugins tab.
+* Preferences: When adding a path with the "..." button, automatically add
+  the path when finished in the plugins tab. I.e. no need to press the
+  "Add" button afterwards, which at least to me was confusing.
+* Preferences: Must press the Return key for a manually added path to be
+  added in the plugins tab. Earlier it was enough just to move the mouse
+  around a little bit while writing.
+* GUI: Don't display names of empty directories in the plugin selector
+  popup menu.
+* VST/AU: When using more than 30 seconds to search for plugin files, don't
+  ask to stop searching in all paths, just stop searching in the current
+  path.
+* Plugin manager: add "VST paths" button (only Linux and Windows). Opens
+  the Plugin tab in the preferences in its own window.
+* Linux: Update libxcb and xcb-proto to 1.13.
+* Sequencer: Ensure current seqtrack graphics is updated properly.
+* Sequencer: Let Shift + right-click delete seqtack under mouse.
+* Editor: When scrolling down more than one line, don't jump up to line 0
+  unless cursor are placed at last line. Instead, place cursor at the last
+  line.
+* Sequencer: Set current instrument when inserting new audio file, and
+  update header graphics.
+* Sequencer: Adjust color of current audio seqtrack header a little bit.
+  Painting it green was confusing.
+* VST: Add "/usr/lib/vst", "/usr/local/lib/vst" to the default vst paths.
+  (Teteros)
+* Editor: Don't jump over the "glide" subtrack in the global swing track when
+  pressing right arrow key.
+* Sequencer: Show a pan slider in the track headers when there's room for it.
+* GUI: Fix initial GUI position of Faust plugins.
+* GUI: Remember last position of Faust GUIs.
+* Sequencer: Fix painting the transparent blue/red looping/punching colors.
+  Sometimes they could be painted at wrong positions.
+* Sequencer: Fix showing bars+beats in timeline when last block is placed to
+  the left of the visible area.
+* Sequencer: Show bars+beats by default in the timeline instead of HH:MM:SS.
+* Audio meters: Remove almost invisible black line that could appear between
+  channels when displaying more than two channels.
+* Mixer strips: Fix MIDI learn and modulators for sink plugins.
+* Player: Don't automatically start playing right after enabling looping when
+  the player was stopped last time because it reached end of song.
+* Sequencer: Don;t stop playing until cursor has reached loop end, if looping.
+* Sequencer: Don;t stop playing until cursor has reached punch end, if punching.
+* Mixer: Various fixes for MIDI-learn.
+* Mixer: Display the full range of db values for the tekst written on top of
+  send sliders, don't stop when db > 6.
+* Upgrade S7 scheme to latest version.
+* Mixer: Write "[M]" in the middle of MIDI-learned pan sliders.
+* GUI: Make sure all graphics are updated when adding or removing MIDI learn.
+* Mixer: Write "[M]" in the middle of MIDI-learned volume sliders.
+* VST/AU: Make sure the correct effect value is stored when automation or
+  modulation sets a new value simultaneously.
+* Build: Fix vst header include path
+* API: vstConfigOpen, setSeqblockGain, getSeqblockGain,
+  getMaxSeqblockSampleGain.
+
 Changes 5.7.2 -> 5.7.4:
 * VST/AU: Always store individual effect values in undo, file, and a/b.
   Fixes some misbehaving plugins (not sure whether the plugins are
