@@ -31,7 +31,9 @@
 !!#
 
 (define (myfloor a)
-  (floor a))
+  ;;a
+  (floor a)
+  )
 
 
 (define-expansion (define-override def . body)

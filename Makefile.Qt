@@ -598,7 +598,7 @@ bin/radium_plugin_scanner: $(PLUGINHOSTSCANNERLIB)
 # Adding "TARGET_ARCH=-g" to prevent juce from compiling with -march=native
 PLUGINHOSTOPTS = CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing"
 
-LIBPLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
+LIBPLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\" " TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
 
 
 pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer $(API)/radium_proc.h common/Vector.hpp
@@ -1505,7 +1505,7 @@ bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
 
 bin/radium_progress_window: $(P)Qt_progresswindow.cpp
 	$(CCC) -Wall -Werror $(P)Qt_progresswindow.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DP_CLIENT $(QT_GUI_CFLAGS) -o radium_progress_window.o
-	$(LINKER) `cat buildtype.opt` radium_progress_window.o -o bin/radium_progress_window $(QT_GUI_LDFLAGS)
+	$(LINKER) `cat buildtype.opt` radium_progress_window.o -o bin/radium_progress_window $(QT_GUI_LDFLAGS)  
 	rm radium_progress_window.o
 
 bin/radium_check_jack_status: audio/KillJackd.cpp Jack_plugin.o find_jack_library.o # Jack_plugin.o depends on all the weakjack things

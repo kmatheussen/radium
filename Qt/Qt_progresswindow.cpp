@@ -378,18 +378,24 @@ static void send_string(QString message){
   
   //printf("From client: -----------------%s\n-------------------\n", g_process->readAllStandardOutput().constData());
 }
-    
+
+static bool g_is_showing=false;
+
 void GFX_ShowProgressMessage(const char *message){
   if (g_process == NULL)
     GFX_OpenProgress("...");
 
   if (g_process != NULL)
     send_string(get_rect_string() + message);
+
+  g_is_showing=true;
 }
 
 bool GFX_ProgressIsOpen(void){
   return g_process != NULL;
 }
+
+
 
 void GFX_CloseProgress(void){
   if (g_process != NULL){
@@ -398,18 +404,22 @@ void GFX_CloseProgress(void){
     g_process->waitForFinished();
     delete g_process;
     g_process = NULL;
+    g_is_showing = false;
   }
 }
 
 void GFX_HideProgress(void){
   if (g_process != NULL) {
     send_string(message_hide);
+    g_is_showing = false;
   }
 }
 
 void GFX_ShowProgress(void){
-  if (g_process != NULL)
+  if (g_process != NULL) {
     send_string(message_show);
+    g_is_showing = true;
+  }
 }
 
 
