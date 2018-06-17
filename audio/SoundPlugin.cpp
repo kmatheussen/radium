@@ -98,10 +98,10 @@ struct SoundPluginEffectMidiLearn final : MidiLearn {
   }
 
   SoundPluginEffectMidiLearn(SoundPlugin *plugin, hash_t *state)
-    :plugin(plugin)
-    {
-      init_from_state(state);
-    }
+    : plugin(plugin)
+  {
+    init_from_state(state);
+  }
 
   /*
     virtual ~SoundPluginEffectMidiLearn(){

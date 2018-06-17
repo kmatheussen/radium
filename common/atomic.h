@@ -363,6 +363,13 @@ static_assert (sizeof(double) == sizeof(int64_t), "Size of double is not correct
       __atomic_store (&(ATOMIC_NAME(name)), &new_value_variable, __ATOMIC_SEQ_CST); \
     })
 
+#define ATOMIC_DOUBLE_SET_RETURN_OLD(name,new_value) ({                            \
+      double result;                                                    \
+      double new_value_variable = new_value;                            \
+      __atomic_exchange (&(ATOMIC_NAME(name)), &new_value_variable, &result, __ATOMIC_SEQ_CST); \
+      result;                                                           \
+    })
+
 #define ATOMIC_DOUBLE_SET_RELAXED(name,new_value) ({                            \
       double new_value_variable = new_value;                            \
       __atomic_store (&(ATOMIC_NAME(name)), &new_value_variable, __ATOMIC_RELAXED); \
