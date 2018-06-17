@@ -508,6 +508,17 @@ namespace{
 #if USE_EMBEDDED_NATIVE_WINDOW
     void *_embedded_native_window = NULL;
 #endif
+
+    bool try_to_resize_editor(void) const {
+#if TRY_TO_RESIZE_EDITOR
+      return true;
+#else
+      if (false)  // GenericAudioProcessorEditor doesn't resize its elements, so there's very little point returning true.
+        return dynamic_cast<GenericAudioProcessorEditor*>(editor) != NULL;
+      else
+        return false;
+#endif
+    }
     
     void 	buttonClicked (Button *) override {
     }
@@ -715,21 +726,28 @@ namespace{
 
       if (wasResized){
         
-        //#if !defined(RELEASE)
-        printf("Resized. Width: %d (main: %d, editor: %d). Height: %d (main: %d, editor: %d)\n", component.getWidth(), main_component.getWidth(), editor->getWidth(), component.getHeight(), main_component.getHeight(), editor->getHeight());
-        //#endif
-        
-#if TRY_TO_RESIZE_EDITOR        
-        int editor_width = main_component.getWidth();
-        int editor_height = main_component.getHeight() - get_button_height() - get_keyboard_height();
-          
-        editor->setSize(editor_width, editor_height);
-#else
-        int editor_width = editor->getWidth();
-        int editor_height = editor->getHeight();
-        
-        main_component.setSize(editor_width, editor_height + get_button_height() + get_keyboard_height());
+#if !defined(RELEASE)
+        //        printf("Resized. Width: %d (main: %d, editor: %d). Height: %d (main: %d, editor: %d)\n", component.getWidth(), main_component.getWidth(), editor->getWidth(), component.getHeight(), main_component.getHeight(), editor->getHeight());
 #endif
+
+        int editor_width;
+        int editor_height;
+
+        if(try_to_resize_editor()){
+          
+          editor_width = main_component.getWidth();
+          editor_height = main_component.getHeight() - get_button_height() - get_keyboard_height();
+          
+          editor->setSize(editor_width, editor_height);
+          
+        }else{
+          
+          editor_width = editor->getWidth();
+          editor_height = editor->getHeight();
+        
+          main_component.setSize(editor_width, editor_height + get_button_height() + get_keyboard_height());
+          
+        }
 
         position_components(editor_width,editor_height);
         
@@ -761,9 +779,8 @@ namespace{
       static auto *lookandfeel = new LookAndFeel_V3();
       this->setLookAndFeel(lookandfeel);
       
-#if TRY_TO_RESIZE_EDITOR
-      this->setResizable(true, true);
-#endif
+      if(try_to_resize_editor())
+        this->setResizable(true, true);
       
 #if !FOR_WINDOWS // We have a more reliable way to do this on Windows (done at the end of this function)
       if(vstGuiIsAlwaysOnTop()) {
@@ -782,12 +799,11 @@ namespace{
       //this->setUsingNativeTitleBar(false);
 
       main_component.setSize(initial_width, initial_height);
-      
-#if TRY_TO_RESIZE_EDITOR
-      this->setContentNonOwned(&main_component, false);
-#else
-      this->setContentNonOwned(&main_component, true);
-#endif
+
+      if(try_to_resize_editor())
+        this->setContentNonOwned(&main_component, false);
+      else
+        this->setContentNonOwned(&main_component, true);
       
 #if defined(RELEASE) && FOR_LINUX
 #else
@@ -889,11 +905,11 @@ namespace{
           
       position_components(editor->getWidth(), editor->getHeight());
 
-#if TRY_TO_RESIZE_EDITOR
-      main_component.addComponentListener(this);
-#else
-      editor->addComponentListener(this);
-#endif
+      if(try_to_resize_editor())
+        main_component.addComponentListener(this);
+      else
+        editor->addComponentListener(this);
+
       {
         int num_x = data->xs.count(parentgui);
         int num_y = data->ys.count(parentgui);
