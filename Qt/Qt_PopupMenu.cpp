@@ -272,25 +272,50 @@ namespace{
       run_and_delete(false);
     }
 
+  private:
+
+    int num_callback_tries = 0;
+    
+    void call_callback_and_delete(void){
+      num_callback_tries++;
+      
+      if (qmenu == g_curr_popup_qmenu.data()) {
+
+        printf("Num callback tries: %d\n", num_callback_tries);
+        
+        R_ASSERT_NON_RELEASE(false);
+
+        if (num_callback_tries < 100)
+          schedule_call_callback_and_delete(50); // try again. Wait a little bit more this time to avoid clogging up CPU in case we never succeed.
+        else
+          R_ASSERT(false);
+
+      } else {
+                               
+        if (callback != NULL){
+          
+          if (is_checkable)
+            S7CALL(void_int_bool, callback, num, checked);
+          else
+            S7CALL(void_int, callback, num);
+        }
+        
+        if (callback3)
+          callback3(num, checked);
+        
+        delete this;
+      }
+    }
+
+    void schedule_call_callback_and_delete(int ms){
+      QTimer::singleShot(ms, [this] {  // Must wait a little bit since Qt seems to be in a state right now where calling g_curr_popup_qmenu->hide() will crash the program (or do other bad things) (5.10).
+          this->call_callback_and_delete();
+        });
+    }
+
   private slots:
     void menu_destroyed(QObject*){
-      QTimer::singleShot(1, [this] {  // Must wait a little bit since Qt seems to be in a state right now where calling g_curr_popup_qmenu->hide() will crash the program (or do other bad things) (5.10).
-
-          R_ASSERT_NON_RELEASE(true==g_curr_popup_qmenu.isNull());
-                               
-          if (this->callback != NULL){
-            
-            if (this->is_checkable)
-              S7CALL(void_int_bool, this->callback, this->num, this->checked);
-            else
-              S7CALL(void_int, this->callback, this->num);
-          }
-          
-          if (this->callback3)
-            this->callback3(this->num, this->checked);
-
-          delete this;
-        });
+      schedule_call_callback_and_delete(1);
     }
   };
   
