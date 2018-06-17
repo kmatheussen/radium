@@ -873,8 +873,11 @@ namespace{
 
       // add vst gui
       main_component.addChildComponent(editor);
+      if (dynamic_cast<GenericAudioProcessorEditor*>(editor) != NULL)
+        editor->setLookAndFeel(new LookAndFeel_V4);
       editor->setTopLeftPosition(0, button_height);
-
+      editor->setVisible(true);
+      
       if (midi_keyboard != NULL) {
         main_component.addChildComponent(midi_keyboard);
         midi_keyboard->setTopLeftPosition(0, button_height + editor->getHeight());
@@ -1038,6 +1041,8 @@ namespace{
     }
 
     void run() override {
+      THREADING_init_juce_thread_type();
+      
       initialiseJuce_GUI();
       MessageManager::getInstance(); // make sure there is an instance here to avoid theoretical race condition
       isInited.set(1);
@@ -1502,8 +1507,14 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
     GL_lock();{
 
       radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+
+      AudioProcessorEditor *editor;
       
-      AudioProcessorEditor *editor = data->audio_instance->createEditor(); //IfNeeded();
+      if (data->audio_instance->hasEditor())
+        editor = data->audio_instance->createEditor(); //IfNeeded();
+      else{
+        editor = new GenericAudioProcessorEditor(data->audio_instance);        
+      }
       
       if (editor != NULL) {
 
@@ -1590,11 +1601,13 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
 static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPluginType *plugin_type){
   TypeData *type_data = (struct TypeData*)plugin_type->data;
 
+  /*
   if (audio_instance->hasEditor()==false) {
     plugin_type->show_gui = NULL;
     plugin_type->hide_gui = NULL;
   }
-
+  */
+  
   // The info in PluginDescription is probably fine, but override here just in case.
   plugin_type->num_inputs = audio_instance->getTotalNumInputChannels();
   plugin_type->num_outputs = audio_instance->getTotalNumOutputChannels();
