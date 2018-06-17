@@ -283,12 +283,12 @@ namespace{
 
         printf("Num callback tries: %d\n", num_callback_tries);
         
-        R_ASSERT_NON_RELEASE(false);
+        R_ASSERT_NON_RELEASE(false); // This line can probably be commented away. If Qt hasn't deleted the menu right after calling the menu_destroyed slot, that's an issue in qt and probably nothing we can do anything about here.
 
         if (num_callback_tries < 100)
           schedule_call_callback_and_delete(50); // try again. Wait a little bit more this time to avoid clogging up CPU in case we never succeed.
         else
-          R_ASSERT(false);
+          R_ASSERT(false); // After 5 seconds we give up.
 
       } else {
                                
@@ -308,14 +308,14 @@ namespace{
     }
 
     void schedule_call_callback_and_delete(int ms){
-      QTimer::singleShot(ms, [this] {  // Must wait a little bit since Qt seems to be in a state right now where calling g_curr_popup_qmenu->hide() will crash the program (or do other bad things) (5.10).
+      QTimer::singleShot(ms, [this] {
           this->call_callback_and_delete();
         });
     }
 
   private slots:
     void menu_destroyed(QObject*){
-      schedule_call_callback_and_delete(1);
+      schedule_call_callback_and_delete(1);  // Must wait a little bit since Qt seems to be in a state right now where calling g_curr_popup_qmenu->hide() will crash the program (or do other bad things) (5.10).
     }
   };
   
