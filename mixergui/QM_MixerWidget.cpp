@@ -1557,13 +1557,24 @@ void MyScene::mousePressEvent(QGraphicsSceneMouseEvent *event){
     Chip *chip = dynamic_cast<Chip*>(item);
       
     if(chip!=NULL){
+
+      {
+        struct Instruments *instrument = get_audio_instrument();
+        SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+        volatile struct Patch *patch = plugin->patch;
+        if(patch==NULL)
+          R_ASSERT(false);
+        else
+          instrument->PP_Update(instrument,(struct Patch*)patch,false);
+      }
+
       //printf("                                                    ^^^^^^^^^^^^ 222 mousepress_select_chip\n");
       EVENTLOG_add_event("start_moving_chips called from MyScene::mousePressEvent");
       start_moving_chips(this,event,chip,mouse_x,mouse_y);
       event->accept();
       return;
     }
-    
+
     //if(mousepress_select_chip(this,event,item,mouse_x,mouse_y,ctrl_pressed)==true) // select
     //  return;
   }
