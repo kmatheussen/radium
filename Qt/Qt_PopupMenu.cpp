@@ -207,88 +207,6 @@ namespace{
   };
 
   
-  /*
-
-   Old code to manually create checkableaction from qwidgets. Not sure why I used this code before. Replaced 2018-01 since it doesn't highlight entry when mouse hovers over it.
-
-  struct CheckboxMenuWidget : public QWidget {
-    
-    QCheckBox *checkBox;
-    
-    CheckboxMenuWidget(QString text, MQMenu *qmenu){
-      QHBoxLayout *layout = new QHBoxLayout;
-      layout->setSpacing(0);
-      layout->setContentsMargins(0,0,0,0);
-      
-      layout->addItem(new QSpacerItem(gui_textWidth("F"), 10, QSizePolicy::Fixed, QSizePolicy::MinimumExpanding));
-      
-      checkBox = new QCheckBox(text, qmenu);
-      checkBox->setChecked(is_on);
-      
-      layout->addWidget(checkBox);
-      
-      widget->setLayout(layout);
-    }
-  };
-  
-  class CheckableAction_old : public QWidgetAction
-  {
-    Q_OBJECT
-
-    QString text;
-    MyQMenu *qmenu;
-    int num;
-    bool is_async;
-    func_t *callback;
-    std::function<void(int,bool)> callback3;
-    
-  public:
-
-    ~CheckableAction(){
-      //printf("I was deleted: %s\n",text.toUtf8().constData());
-    }
-    
-    CheckableAction(const QString & text_b, bool is_on, MyQMenu *qmenu_b, int num_b, bool is_async, func_t *callback_b, std::function<void(int,bool)> callback3_b)
-      : QWidgetAction(qmenu_b)
-      , text(text_b)
-      , qmenu(qmenu_b)
-      , num(num_b)
-      , is_async(is_async)
-      , callback(callback_b)
-      , callback3(callback3_b)
-    {
-      auto *widget = new CheckboxMenuWidget(text, qmenu);
-      setDefaultWidget(widget);
-
-      connect(checkBox, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
-      connect(this, SIGNAL(hovered()), this, SLOT(hovered()));
-    }
-
-  public slots:
-    void toggled(bool checked){
-    //void clicked(bool checked){
-      printf("CLICKED %d\n",checked);
-      
-      if (callback!=NULL)
-        S7CALL(void_int_bool,callback, num, checked);
-      
-      if (callback3)
-        callback3(num, checked);
-
-      if (result != NULL)
-        *result = num;
-
-      //if (is_async)
-        qmenu->close();
-      //delete parent;
-    }
-
-    void hovered(){
-      printf("Hovered\n");
-    }
-  };
-  */
-
   struct Callbacker : public QObject{
     Q_OBJECT;
   public:
@@ -351,7 +269,7 @@ namespace{
       run_and_delete(false);
     }
 
-  public slots:
+  private slots:
     void menu_destroyed(QObject*){
       QTimer::singleShot(1, [this] {  // Must wait a little bit since Qt seems to be in a state right now where calling g_curr_popup_qmenu->hide() will crash the program (or do other bad things) (5.10).
 
@@ -374,15 +292,6 @@ namespace{
   class CheckableAction : public QAction {
     Q_OBJECT
 
-    /*
-    int num;
-    int *result;
-    QString text;
-    MyQMenu *qmenu;
-    func_t *callback;
-    std::function<void(int,bool)> callback3;
-    */
-    
     Callbacker *callbacker;
     
   public:
@@ -391,23 +300,10 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    CheckableAction(QIcon icon, const QString & text_b, bool is_on, Callbacker *callbacker) // MyQMenu *qmenu_b, int num_b, bool is_async, func_t *callback_b, std::function<void(int,bool)> callback3_b, int *result)
+    CheckableAction(QIcon icon, const QString & text_b, bool is_on, Callbacker *callbacker)
       : QAction(icon, text_b, callbacker->qmenu)
       , callbacker(callbacker)
-        
-        /*
-      , num(num_b)
-      , result(result)
-      , text(text_b)
-      , qmenu(qmenu_b)
-      , callback(callback_b)
-      , callback3(callback3_b)
-        */
     {
-      /*
-      if(is_async)
-        R_ASSERT(result==NULL);
-      */
       setCheckable(true);
       setChecked(is_on);
       connect(this, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
@@ -415,45 +311,13 @@ namespace{
 
   public slots:
     void toggled(bool checked){
-      //void clicked(bool checked){
-      //printf("\n\n\n--------------------------CLICKED CHECKED %d\n\n\n\n\n",checked);
-
-#if 1      
-
       callbacker->run_and_delete_checked(checked);
-
-#else
-      
-      //if (is_async)
-        qmenu->close();
-        
-      if (result != NULL)
-        *result = num;
-
-      if (callback!=NULL)
-        S7CALL(void_int_bool,callback, num, checked);
-      
-      if (callback3)
-        callback3(num, checked);
-
-      //delete parent;
-#endif
     }
   };
 
   class ClickableAction : public QAction
   {
     Q_OBJECT;
-
-    /*
-    int num;
-    int *result;
-    QString text;
-    MyQMenu *qmenu;
-    //bool is_async;
-    func_t *callback;
-    std::function<void(int,bool)> callback3;
-    */
     
     Callbacker *callbacker;
     
@@ -463,56 +327,16 @@ namespace{
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    ClickableAction(QIcon icon, const QString & text, Callbacker *callbacker) // MyQMenu *qmenu, int num, bool is_async, func_t *callback, std::function<void(int,bool)> callback3, int *result)
-      //: QAction(QIcon("/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png"), text, qmenu)
+    ClickableAction(QIcon icon, const QString & text, Callbacker *callbacker)
       : QAction(icon, text, callbacker->qmenu)
       , callbacker(callbacker)
-        /*
-      , num(num)
-      , result(result)
-      , text(text)
-      , qmenu(qmenu)
-        //, is_async(is_async)
-      , callback(callback)
-      , callback3(callback3)
-        */
     {
-
-      //callbacker = new Callbacker(qmenu, num, callback,  callback3, result, false);
-      
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
     }
 
   public slots:
     void triggered(){
-    //void clicked(bool checked){
-      //fprintf(stderr,"CLICKED clickable\n");
-
-#if 1
       callbacker->run_and_delete_clicked();
-#else
-      
-      //if (is_async)
-      qmenu->close();
-
-      //fprintf(stderr,"\n\n\n\n=========================== CLICKED 222222 clickable %d\n\n\n\n", num);
-            
-      if (result != NULL)
-        *result = num;
-
-      if (callback!=NULL){
-        auto *run_callback = new RunCallback;
-        run_callback->num = num;
-        run_callback->callback = callback;
-        //connect(qmenu, SIGNAL(destroyed(QObject*)), run_callback, SLOT(menu_destroyed(QObject*)) );
-        S7CALL(void_int, callback, num);
-      }
-      
-      if (callback3)
-        callback3(num, true);
-
-      //delete parent;
-#endif
     }
   };
 }
@@ -757,47 +581,12 @@ static int GFX_QtMenu(
     QAction *action = safeMenuExec(menu, program_state_is_valid);
     (void)action;
 
-    /*
-    MyAction *myaction = dynamic_cast<MyAction*>(action);
-    printf("    ACTION: %p\n", action);
-
-    if (myaction != NULL){
-      printf("        GOT MyAction\n");
-      return myaction->num;
-    }
-
-    printf("   NOt a myaction %p\n", action);
-    */
-
-    /////R_ASSERT_NON_RELEASE(false);
-
-    //(void)action;
-    //printf("    ACTION: %p\n", action);
-
     if (result >= v.num_elements){
       //R_ASSERT(false);
       return -1;
     }
 
     return result;
-    /*
-    if(action==NULL) {
-      
-      return -1;
-    
-    if (dynamic_cast<CheckableAction*>(action) != NULL)
-      return -1;
-    
-    bool ok;
-    int i=action->data().toInt(&ok);
-    
-    if (ok)      
-      return i;
-
-    //RWarning("Got unknown action %p %s\n",action,action->text().toAscii().constData());
-    
-    return -1;
-    */
   }
 }
 void GFX_Menu3(
