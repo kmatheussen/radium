@@ -1353,7 +1353,7 @@ void RT_PATCH_send_raw_midi_message_to_receivers(struct SeqTrack *seqtrack, stru
 
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];    
-    MidiLearn::RT_maybe_use_forall(receiver->id, patch->midi_learn_port_name, msg);
+    radium::MidiLearn::RT_maybe_use_forall(receiver->id, patch->midi_learn_port_name, msg);
     RT_PATCH_send_raw_midi_message(seqtrack, receiver, msg, time);
   }
 }

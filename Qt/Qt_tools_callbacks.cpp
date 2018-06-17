@@ -37,12 +37,12 @@ void MIDILEARN_PREFS_open(void){
   safeShowOrExec(midilearn_prefs_widget.data(), true);
 }
 
-void MIDILEARN_PREFS_add(MidiLearn *midi_learn){
+void MIDILEARN_PREFS_add(radium::MidiLearn *midi_learn){
   ensure_open();
   midilearn_prefs_widget->add(midi_learn);
 }
 
-void MIDILEARN_PREFS_remove(MidiLearn *midi_learn){
+void MIDILEARN_PREFS_remove(radium::MidiLearn *midi_learn){
   ensure_open();
   midilearn_prefs_widget->remove(midi_learn);
 }

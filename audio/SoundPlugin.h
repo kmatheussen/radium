@@ -28,7 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef __cplusplus
 #  include "../common/Vector.hpp"
+namespace radium{
   struct SoundPluginEffectMidiLearn;
+}
 #endif
   
 
@@ -543,7 +545,7 @@ typedef struct SoundPlugin{
   DEFINE_ATOMIC(bool *, is_recording_automation);
   
 #ifdef __cplusplus
-  radium::Vector<SoundPluginEffectMidiLearn*> *midi_learns;
+  radium::Vector<radium::SoundPluginEffectMidiLearn*> *midi_learns;
 #else
   void *midi_learns;
 #endif

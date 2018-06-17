@@ -81,7 +81,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define DELAY_MAX 50.0f
 
 
-struct SoundPluginEffectMidiLearn final : public MidiLearn {
+namespace radium{
+  
+struct SoundPluginEffectMidiLearn final : MidiLearn {
     
   SoundPlugin *plugin;
   int effect_num;
@@ -141,8 +143,9 @@ struct SoundPluginEffectMidiLearn final : public MidiLearn {
     return true;
   }
 };
+}
 
-static void add_midi_learn(SoundPluginEffectMidiLearn *midi_learn){
+static void add_midi_learn(radium::SoundPluginEffectMidiLearn *midi_learn){
   midi_learn->plugin->midi_learns->push_back(midi_learn);
   MIDI_add_midi_learn(midi_learn);
 }  
@@ -400,7 +403,7 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
   
   int buffer_size = MIXER_get_buffer_size();
 
-  plugin->midi_learns = new radium::Vector<SoundPluginEffectMidiLearn*>;
+  plugin->midi_learns = new radium::Vector<radium::SoundPluginEffectMidiLearn*>;
 
   // We can't do this any later since plugin_type->num_effects may be set here.
   // Use plugin->has_initialized to avoid running code that operates on plugin data that might be called while calling create_plugin_data.
@@ -2517,7 +2520,7 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
   {
     for(int i = 0 ; i < HASH_get_array_size(state, "midi_learns") ; i++){
       if (HASH_has_key_at(state, "midi_learns", i)){ // In case array is used for something else as well. TODO: Create a HASH_get_array_size function that takes key as argument.
-        auto *midi_learn = new SoundPluginEffectMidiLearn(plugin, HASH_get_hash_at(state, "midi_learns", i));
+        auto *midi_learn = new radium::SoundPluginEffectMidiLearn(plugin, HASH_get_hash_at(state, "midi_learns", i));
         add_midi_learn(midi_learn);
       }
     }
@@ -2648,18 +2651,18 @@ char *PLUGIN_generate_new_patchname(SoundPluginType *plugin_type){
   return talloc_format("%s %d",plugin_type->name,++plugin_type->instance_num);    
 }
 
-QString SoundPluginEffectMidiLearn::get_dest_info(void){
+QString radium::SoundPluginEffectMidiLearn::get_dest_info(void){
   QString a = plugin->patch==NULL ? plugin->type->name : plugin->patch->name;
 
   return a + " / " + PLUGIN_get_effect_name(plugin, effect_num);
 }
 
-void SoundPluginEffectMidiLearn::delete_me(void){
+void radium::SoundPluginEffectMidiLearn::delete_me(void){
   PLUGIN_remove_midi_learn(plugin, effect_num, true);
 }
 
 // called from player thread
-void SoundPluginEffectMidiLearn::RT_callback(float val) {
+void radium::SoundPluginEffectMidiLearn::RT_callback(float val) {
   //printf("soundpluginmidilearn %s got %f\n", plugin->patch->name, val);
 
   int num_effects = plugin->type->num_effects;
@@ -2681,7 +2684,7 @@ void SoundPluginEffectMidiLearn::RT_callback(float val) {
 void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num){
   RT_PLUGIN_touch(plugin);
   
-  auto *midi_learn = new SoundPluginEffectMidiLearn(plugin, effect_num);
+  auto *midi_learn = new radium::SoundPluginEffectMidiLearn(plugin, effect_num);
   add_midi_learn(midi_learn);
 
   update_instrument_gui(plugin);
@@ -2692,7 +2695,7 @@ void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num){
 bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here){
   RT_PLUGIN_touch(plugin);
   
-  SoundPluginEffectMidiLearn *midi_learn=NULL;
+  radium::SoundPluginEffectMidiLearn *midi_learn=NULL;
 
   for(auto *maybe_this_midi_learn : *plugin->midi_learns)
     if (effect_num==-1 || maybe_this_midi_learn->effect_num == effect_num){

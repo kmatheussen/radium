@@ -75,7 +75,7 @@ DEFINE_ATOMIC(struct Patch *, g_through_patch) = NULL;
 extern const char *NotesTexts3[131];
 
 static radium::Mutex g_midi_learns_mutex;
-static radium::Vector<MidiLearn*> g_midi_learns;
+static radium::Vector<radium::MidiLearn*> g_midi_learns;
 
 static bool msg_is_fx(const uint32_t msg){
   int cc0 = MIDI_msg_byte1_remove_channel(msg);
@@ -708,7 +708,7 @@ bool MIDI_insert_recorded_midi_gfx_events(void){
  *********************************************************
  *********************************************************/
 
-void MIDI_add_midi_learn(MidiLearn *midi_learn){
+void MIDI_add_midi_learn(radium::MidiLearn *midi_learn){
   g_midi_learns.ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
 
   {
@@ -723,7 +723,7 @@ void MIDI_add_midi_learn(MidiLearn *midi_learn){
   MIDILEARN_PREFS_add(midi_learn);
 }
 
-void MIDI_remove_midi_learn(MidiLearn *midi_learn, bool show_error_if_not_here){
+void MIDI_remove_midi_learn(radium::MidiLearn *midi_learn, bool show_error_if_not_here){
   R_ASSERT(show_error_if_not_here==false);
   
   MIDILEARN_PREFS_remove(midi_learn);
@@ -749,7 +749,7 @@ void MIDI_remove_midi_learn(MidiLearn *midi_learn, bool show_error_if_not_here){
  ****************************************************************************
  ****************************************************************************/
 
-hash_t* MidiLearn::create_state(void){
+hash_t* radium::MidiLearn::create_state(void){
   hash_t *state = HASH_create(5);
   HASH_put_bool(state, "is_enabled", ATOMIC_GET(is_enabled));
   HASH_put_bool(state, "is_learning", ATOMIC_GET(is_learning));
@@ -760,7 +760,7 @@ hash_t* MidiLearn::create_state(void){
   return state;
 }
 
-void MidiLearn::init_from_state(hash_t *state){
+void radium::MidiLearn::init_from_state(hash_t *state){
   ATOMIC_SET(byte2, HASH_get_int32(state, "byte2"));
   ATOMIC_SET(byte1, HASH_get_int32(state, "byte1"));
   ATOMIC_SET(port_name, get_symbol(HASH_get_chars(state, "port_name")));
@@ -768,7 +768,7 @@ void MidiLearn::init_from_state(hash_t *state){
   ATOMIC_SET(is_enabled, HASH_get_bool(state, "is_enabled"));
 }
 
-bool MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
+bool radium::MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
 
   if (ATOMIC_GET(is_enabled)==false)
     return false;
@@ -815,7 +815,7 @@ bool MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
   return false;
 }
 
-bool MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){  
+bool radium::MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){  
   if (RT_matching(port_name, msg)==false)
     return false;
 
@@ -834,7 +834,7 @@ typedef struct {
 
 static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > g_play_buffer;
 
-void MidiLearn::RT_maybe_use_forall(int64_t instrument_id, const symbol_t *port_name, uint32_t msg){
+void radium::MidiLearn::RT_maybe_use_forall(int64_t instrument_id, const symbol_t *port_name, uint32_t msg){
   for (auto midi_learn : g_midi_learns) {
     bool may_use = false;
 
@@ -863,7 +863,7 @@ void RT_MIDI_handle_play_buffer(void){
 
     uint32_t msg = event.msg;
 
-    MidiLearn::RT_maybe_use_forall(-1, event.port_name, msg);
+    radium::MidiLearn::RT_maybe_use_forall(-1, event.port_name, msg);
     
     if(through_patch!=NULL){
 
