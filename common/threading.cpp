@@ -45,7 +45,8 @@ void OS_WaitAtLeast(int milliseconds){
 enum ThreadType{
   OTHER_THREAD,
   MAIN_THREAD,
-  PLAYER_THREAD
+  PLAYER_THREAD,
+  JUCE_THREAD
 };
 
 static __thread ThreadType thread_type = OTHER_THREAD;
@@ -59,12 +60,26 @@ void THREADING_init_player_thread_type(void) {
   thread_type = PLAYER_THREAD;
 }
 
+void THREADING_init_juce_thread_type(void) {
+#if !defined(FOR_LINUX)
+  R_ASSERT(false); // Only juce thread in Linux.
+#endif
+  thread_type = JUCE_THREAD;
+}
+
 bool THREADING_is_main_thread(void){
   return thread_type==MAIN_THREAD;
 }
 
 bool THREADING_is_player_thread(void){
   return thread_type==PLAYER_THREAD;
+}
+
+bool THREADING_is_juce_thread(void){
+#if !defined(FOR_LINUX)
+  return false; // Only juce thread in Linux.
+#endif
+  return thread_type==JUCE_THREAD;
 }
 
 priority_t THREADING_get_priority(void){

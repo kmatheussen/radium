@@ -1305,10 +1305,21 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
 
   } else {
 
-    if (false==THREADING_is_main_thread())
-      R_ASSERT(THREADING_is_player_thread()); // Called from midi learn.
+    if (false==THREADING_is_main_thread()) {
+      R_ASSERT(THREADING_is_player_thread() || THREADING_is_juce_thread()); // Called from midi learn or juce.
+    }
     
   }
+  
+  if (THREADING_is_juce_thread()){
+    
+#if !defined(FOR_LINUX)
+    R_ASSERT(false); // strange. Only linux have a dedicated juce thread (the other platforms misbehaved I think, because the performance is extremely much better with a dedicated thread for the plugin GUIs).
+#endif
+    R_ASSERT(effect_num == plugin->type->num_effects+EFFNUM_EFFECTS_ONOFF);
+    R_ASSERT(storeit_type == STORE_VALUE);
+  }
+
   
   if (FX_when_is_automation(when))
     if (storeit_type==STORE_VALUE)
