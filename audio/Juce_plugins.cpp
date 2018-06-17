@@ -938,7 +938,7 @@ namespace{
           this->setTopLeftPosition(x, y);
         }
 
-        this->setVisible(true); // Must set visible before setting position. At least on Linux/fvwm.
+        this->setVisible(true);
          
      }
 
