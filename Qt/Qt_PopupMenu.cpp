@@ -289,34 +289,125 @@ namespace{
   };
   */
 
+  struct Callbacker : public QObject{
+    Q_OBJECT;
+  public:
+    QMenu *qmenu;    
+    int num;
+    func_t *callback; // TODO: Investige if this is gc-safe. (and if it is, it should be changed, because this seems messy. Probably cleaner to gc-protect/unprotect here.)
+    std::function<void(int,bool)> callback3;
+    int *result;
+
+    bool is_checkable;
+
+    Callbacker(QMenu *qmenu, int num, bool is_async, func_t *callback, std::function<void(int,bool)> callback3, int *result, bool is_checkable)
+      : qmenu(qmenu)
+      , num(num)
+      , callback(callback)
+      , callback3(callback3)
+      , result(result)
+      , is_checkable(is_checkable)
+    {
+      if(is_async)
+        R_ASSERT(result==NULL);
+    }
+
+  private:
+    bool checked = false;
+
+    bool run_have_run = false;
+    
+    void run_and_delete(bool checked){
+      R_ASSERT_RETURN_IF_FALSE(run_have_run==false);
+      run_have_run = true;
+      
+      this->checked = checked;
+      
+      qmenu->close();
+      
+      if (result != NULL)
+        *result = num;
+
+      if (callback!=NULL || callback3!=NULL) {
+        
+        connect(qmenu, SIGNAL(destroyed(QObject*)), this, SLOT(menu_destroyed(QObject*)) );
+
+      } else {
+
+        delete this;
+        
+      }
+    }
+
+  public:
+    
+    void run_and_delete_checked(bool checked){
+      R_ASSERT(is_checkable);
+      run_and_delete(checked);
+    }
+    
+    void run_and_delete_clicked(void){
+      R_ASSERT(false==is_checkable);
+      run_and_delete(false);
+    }
+
+  public slots:
+    void menu_destroyed(QObject*){
+      QTimer::singleShot(1, [this] {  // Must wait a little bit since Qt seems to be in a state right now where calling g_curr_popup_qmenu->hide() will crash the program (or do other bad things) (5.10).
+
+          if (this->callback != NULL){
+            
+            if (this->is_checkable)
+              S7CALL(void_int_bool, this->callback, this->num, this->checked);
+            else
+              S7CALL(void_int, this->callback, this->num);
+          }
+          
+          if (this->callback3)
+            this->callback3(this->num, this->checked);
+
+          delete this;
+        });
+    }
+  };
+  
   class CheckableAction : public QAction {
     Q_OBJECT
 
+    /*
     int num;
     int *result;
     QString text;
     MyQMenu *qmenu;
     func_t *callback;
     std::function<void(int,bool)> callback3;
-
+    */
+    
+    Callbacker *callbacker;
+    
   public:
 
     ~CheckableAction(){
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    CheckableAction(QIcon icon, const QString & text_b, bool is_on, MyQMenu *qmenu_b, int num_b, bool is_async, func_t *callback_b, std::function<void(int,bool)> callback3_b, int *result)
-      : QAction(icon, text_b, qmenu_b)
+    CheckableAction(QIcon icon, const QString & text_b, bool is_on, Callbacker *callbacker) // MyQMenu *qmenu_b, int num_b, bool is_async, func_t *callback_b, std::function<void(int,bool)> callback3_b, int *result)
+      : QAction(icon, text_b, callbacker->qmenu)
+      , callbacker(callbacker)
+        
+        /*
       , num(num_b)
       , result(result)
       , text(text_b)
       , qmenu(qmenu_b)
       , callback(callback_b)
       , callback3(callback3_b)
+        */
     {
+      /*
       if(is_async)
         R_ASSERT(result==NULL);
-
+      */
       setCheckable(true);
       setChecked(is_on);
       connect(this, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
@@ -326,27 +417,35 @@ namespace{
     void toggled(bool checked){
       //void clicked(bool checked){
       //printf("\n\n\n--------------------------CLICKED CHECKED %d\n\n\n\n\n",checked);
+
+#if 1      
+
+      callbacker->run_and_delete_checked(checked);
+
+#else
       
       //if (is_async)
         qmenu->close();
         
+      if (result != NULL)
+        *result = num;
+
       if (callback!=NULL)
         S7CALL(void_int_bool,callback, num, checked);
       
       if (callback3)
         callback3(num, checked);
 
-      if (result != NULL)
-        *result = num;
-
       //delete parent;
+#endif
     }
   };
 
   class ClickableAction : public QAction
   {
-    Q_OBJECT
+    Q_OBJECT;
 
+    /*
     int num;
     int *result;
     QString text;
@@ -354,16 +453,21 @@ namespace{
     //bool is_async;
     func_t *callback;
     std::function<void(int,bool)> callback3;
-
+    */
+    
+    Callbacker *callbacker;
+    
   public:
 
     ~ClickableAction(){
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
     
-    ClickableAction(QIcon icon, const QString & text, MyQMenu *qmenu, int num, bool is_async, func_t *callback, std::function<void(int,bool)> callback3, int *result)
+    ClickableAction(QIcon icon, const QString & text, Callbacker *callbacker) // MyQMenu *qmenu, int num, bool is_async, func_t *callback, std::function<void(int,bool)> callback3, int *result)
       //: QAction(QIcon("/home/kjetil/radium/temp/radium_64bit_linux-5.4.8/bin/radium_256x256x32.png"), text, qmenu)
-      : QAction(icon, text, qmenu)
+      : QAction(icon, text, callbacker->qmenu)
+      , callbacker(callbacker)
+        /*
       , num(num)
       , result(result)
       , text(text)
@@ -371,9 +475,11 @@ namespace{
         //, is_async(is_async)
       , callback(callback)
       , callback3(callback3)
+        */
     {
-      if(is_async)
-        R_ASSERT(result==NULL);
+
+      //callbacker = new Callbacker(qmenu, num, callback,  callback3, result, false);
+      
       connect(this, SIGNAL(triggered()), this, SLOT(triggered()));      
     }
 
@@ -382,21 +488,31 @@ namespace{
     //void clicked(bool checked){
       //fprintf(stderr,"CLICKED clickable\n");
 
+#if 1
+      callbacker->run_and_delete_clicked();
+#else
+      
       //if (is_async)
       qmenu->close();
 
       //fprintf(stderr,"\n\n\n\n=========================== CLICKED 222222 clickable %d\n\n\n\n", num);
             
-      if (callback!=NULL)
-        S7CALL(void_int, callback, num);
-
-      if (callback3)
-        callback3(num, true);
-
       if (result != NULL)
         *result = num;
 
+      if (callback!=NULL){
+        auto *run_callback = new RunCallback;
+        run_callback->num = num;
+        run_callback->callback = callback;
+        //connect(qmenu, SIGNAL(destroyed(QObject*)), run_callback, SLOT(menu_destroyed(QObject*)) );
+        S7CALL(void_int, callback, num);
+      }
+      
+      if (callback3)
+        callback3(num, true);
+
       //delete parent;
+#endif
     }
   };
 }
@@ -560,16 +676,16 @@ static QMenu *create_qmenu(
 
           }
         }
-        
+
         if (is_checkable) {
-          
-          action = new CheckableAction(icon, text, is_checked, menu, i, is_async, callback2, callback3, result);
+
+          action = new CheckableAction(icon, text, is_checked, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
           if (radio_buttons != NULL)
             radio_buttons->addAction(action);
           
         } else {
-          
-          action = new ClickableAction(icon, text, menu, i, is_async, callback2, callback3, result);
+
+          action = new ClickableAction(icon, text, new Callbacker(menu, i, is_async, callback2, callback3, result, is_checkable));
           
         }
       }

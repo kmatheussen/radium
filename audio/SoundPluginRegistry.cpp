@@ -226,7 +226,7 @@ static enum PopulateResult populate(SoundPluginTypeContainer* container){
     (void)cancel;
 
     int hmm=GFX_Message(&v, "Warning: The plugin file \"%S\" crashed last time we tried to open it.", container->filename);
-
+    
     if (hmm != load_it)
       return PR_POPULATE_CANCELLED;
     
