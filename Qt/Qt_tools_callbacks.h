@@ -37,11 +37,11 @@ struct MidiLearnItem : public QWidget {
 
 public:
 
-  MidiLearn *midi_learn;
+  radium::MidiLearn *midi_learn;
 
   QLabel *source,*dest;
   
-  MidiLearnItem(MidiLearn *midi_learn)
+  MidiLearnItem(radium::MidiLearn *midi_learn)
     : midi_learn(midi_learn)
   {
     auto *layout = new QHBoxLayout(this);
@@ -141,13 +141,13 @@ public:
     timer.start();
   }
 
-  void add(MidiLearn *midi_learn){
+  void add(radium::MidiLearn *midi_learn){
     auto *gakk = new MidiLearnItem(midi_learn);
     items.push_back(gakk);
     vertical_scroll->addWidget(gakk);
   }
   
-  void remove(MidiLearn *midi_learn){
+  void remove(radium::MidiLearn *midi_learn){
     MidiLearnItem *item=NULL;
     for (auto item2 : items)
       if (item2->midi_learn==midi_learn){

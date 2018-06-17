@@ -166,9 +166,14 @@ extern LANGSPEC void OS_VST_config(struct Tracker_Windows *window);
 extern LANGSPEC bool OS_VST_config_visible(void);
 
 extern LANGSPEC void MIDILEARN_PREFS_open(void);
-struct MidiLearn;
-extern void MIDILEARN_PREFS_add(struct MidiLearn *midi_learn);
-extern void MIDILEARN_PREFS_remove(struct MidiLearn *midi_learn);
+
+#ifdef __cplusplus
+namespace radium{
+  struct MidiLearn;
+}
+extern void MIDILEARN_PREFS_add(struct radium::MidiLearn *midi_learn);
+extern void MIDILEARN_PREFS_remove(struct radium::MidiLearn *midi_learn);
+#endif
 
 extern LANGSPEC void TOOLS_open(void);
 

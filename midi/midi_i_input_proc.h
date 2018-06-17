@@ -43,16 +43,24 @@ extern LANGSPEC void MIDI_HandleInputMessage(void);
 
 extern LANGSPEC void MIDI_input_init(void);
 
-struct MidiLearn;
-extern LANGSPEC void MIDI_add_midi_learn(struct MidiLearn *midi_learn);
-extern LANGSPEC void MIDI_remove_midi_learn(struct MidiLearn *midi_learn, bool show_error_if_not_here);
-    
+#ifdef __cplusplus
+namespace radium{
+  struct MidiLearn;
+}
+
+extern void MIDI_add_midi_learn(radium::MidiLearn *midi_learn);
+extern void MIDI_remove_midi_learn(radium::MidiLearn *midi_learn, bool show_error_if_not_here);
+
+#endif
+
 #ifdef USE_QT4
 
 #include <QString>
 
 #include "midi_proc.h"
 
+namespace radium{
+  
 struct MidiLearn{
 
   DEFINE_ATOMIC(bool, is_enabled);
@@ -120,6 +128,7 @@ public:
 
   static void RT_maybe_use_forall(int64_t instrument_id, const symbol_t *port_name, uint32_t msg);
 };
+}
 
 #endif
 
