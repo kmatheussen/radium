@@ -36,6 +36,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if g_curr_popup_qmenu != NULL
+QPointer<QMenu> g_curr_popup_qmenu;
+
 
 namespace{
 
@@ -273,6 +276,8 @@ namespace{
     void menu_destroyed(QObject*){
       QTimer::singleShot(1, [this] {  // Must wait a little bit since Qt seems to be in a state right now where calling g_curr_popup_qmenu->hide() will crash the program (or do other bad things) (5.10).
 
+          R_ASSERT_NON_RELEASE(true==g_curr_popup_qmenu.isNull());
+                               
           if (this->callback != NULL){
             
             if (this->is_checkable)
@@ -341,8 +346,6 @@ namespace{
   };
 }
 
-QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if g_curr_popup_qmenu != NULL
-QPointer<QMenu> g_curr_popup_qmenu;
 
 
 static void setStyleRecursively(QWidget *widget, QStyle *style){
