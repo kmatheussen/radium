@@ -213,7 +213,7 @@ namespace{
   struct Callbacker : public QObject{
     Q_OBJECT;
   public:
-    QMenu *qmenu;    
+    QPointer<QMenu> qmenu;    
     int num;
     func_t *callback; // TODO: Investige if this is gc-safe. (and if it is, it should be changed, because this seems messy. Probably cleaner to gc-protect/unprotect here.)
     std::function<void(int,bool)> callback3;
@@ -251,7 +251,7 @@ namespace{
 
       if (callback!=NULL || callback3!=NULL) {
         
-        connect(qmenu, SIGNAL(destroyed(QObject*)), this, SLOT(menu_destroyed(QObject*)) );
+        connect(qmenu.data(), SIGNAL(destroyed(QObject*)), this, SLOT(menu_destroyed(QObject*)) );
 
       } else {
 
@@ -279,7 +279,7 @@ namespace{
     void call_callback_and_delete(void){
       num_callback_tries++;
       
-      if (qmenu == g_curr_popup_qmenu.data()) {
+      if (false==qmenu.isNull()){
 
         printf("Num callback tries: %d\n", num_callback_tries);
         
