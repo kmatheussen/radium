@@ -671,8 +671,8 @@ Dynvec.o:  $(BUILD_DEPENDENCIES) $(CD)Dynvec.c $(CD)dyn_type.h $(CD)nsmtracker.h
 song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c 
 	$(CC) $(CD)song.c $(OPT)
 
-blocks.o:  $(BUILD_DEPENDENCIES) $(CD)blocks.c 
-	$(CC) $(CD)blocks.c $(OPT)
+blocks.o:  $(BUILD_DEPENDENCIES) $(CD)blocks.cpp
+	$(CCC) $(CD)blocks.cpp $(QTOPT)
 
 tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.c 
 	$(CC) $(CD)tracks.c $(OPT)

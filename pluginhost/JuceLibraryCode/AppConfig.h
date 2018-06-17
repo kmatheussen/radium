@@ -201,5 +201,4 @@
  #define   JUCE_USE_CAMERA 0
 #endif
 
-
 #endif  // __JUCE_APPCONFIG_LQNELU__

@@ -82,6 +82,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
 #include "../common/threading.h"
+#include "../common/blocks_proc.h"
 #include "../common/disk_load_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/undo.h"
@@ -2213,6 +2214,8 @@ protected:
       }
     }
 
+    BLOCKS_called_very_often();
+    
     if (is_called_every_ms(100))
       MIXERSTRIP_call_regularly();
 

@@ -1402,6 +1402,7 @@
                         :Make-undo (lambda (_)
                                      (<ra> :undo-reltempo))
                         :Move (lambda (_ Value)
+                                ;;(c-display "Value:" Value)
                                 (<ra> :set-reltempo Value))
                         :Publicize (lambda (_)
                                      (show-reltempo-in-statusbar))
@@ -1414,7 +1415,15 @@
                                          (inside-box (<ra> :get-box reltempo-slider) X Y))
                                     (begin
                                       (popup-menu "Reset" reset-tempo-multiplier
-                                                  "Apply tempo" apply-tempo-multiplier-to-block)
+                                                  "Apply tempo" apply-tempo-multiplier-to-block
+                                                  (list
+                                                   "add MIDI learn"
+                                                   :enabled (not (<ra> :has-block-multiplier-midi-learn))
+                                                   ra:add-block-multiplier-midi-learn)
+                                                  (list
+                                                   "remove MIDI learn"
+                                                   :enabled (<ra> :has-block-multiplier-midi-learn)
+                                                   ra:remove-block-multiplier-midi-learn))
                                       #t)
                                     #f))))
 

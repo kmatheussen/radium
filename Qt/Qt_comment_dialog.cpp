@@ -1,6 +1,7 @@
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
 #include "../common/OS_string_proc.h"
+#include "../common/blocks_proc.h"
 
 #include "Qt_comment_dialog_proc.h"
 
@@ -46,6 +47,8 @@ hash_t *COMMENT_get_state(void){
     HASH_put_string_at(state, "comment", i, STRING_create(lines.at(i)));
   
   HASH_put_int(state, "show_after_loading", COMMENT_show_after_loading()?1:0);
+
+  HASH_put_hash(state, "blocks", BLOCKS_get_state());
   
   return state;
 }
@@ -72,11 +75,17 @@ static QString get_comment_from_state(hash_t *state){
   QString ret = "";
   for(int i=0;i<num_elements;i++)
     ret += STRING_get_qstring(HASH_get_string_at(state, "comment", i)) + QString("\n");
+  
   return ret;
 }
 
 void COMMENT_set_state(hash_t *state){
   ensure_widget_is_created();
+
+  if (HASH_has_key(state, "blocks"))
+    BLOCKS_create_from_state(HASH_get_hash(state, "blocks"));
+  else
+    BLOCKS_remove_tempo_multiplier_midi_learn();
   
   set(STRING_get_qstring(HASH_get_string(state, "author")),
       STRING_get_qstring(HASH_get_string(state, "title")),

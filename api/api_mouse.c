@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_fxs_proc.h"
 #include "../common/fxlines_proc.h"
 #include "../common/instruments_proc.h"
+#include "../common/blocks_proc.h"
 #include "../common/wblocks_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/player_proc.h"
@@ -297,7 +298,6 @@ void setReltempo(double reltempo){
   window->must_redraw = true;
 }
 
-
 float getMinReltempo(void){
   return MINBLOCKRELTIME;
 }
@@ -305,6 +305,19 @@ float getMinReltempo(void){
 float getMaxReltempo(void){
   return MAXBLOCKRELTIME;
 }
+
+void addBlockMultiplierMidiLearn(void){
+  BLOCKS_add_tempo_multiplier_midi_learn();
+}
+
+void removeBlockMultiplierMidiLearn(void){
+  BLOCKS_remove_tempo_multiplier_midi_learn();
+}
+
+bool hasBlockMultiplierMidiLearn(void){
+  return BLOCKS_has_tempo_multiplier_midi_learn();
+}
+
 
 
 
