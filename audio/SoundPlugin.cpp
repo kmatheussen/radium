@@ -1224,12 +1224,13 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
 {
   R_ASSERT_NON_RELEASE(storeit_type==STORE_VALUE || storeit_type==DONT_STORE_VALUE);
 
-  // TODO: Create Undo.
+  //printf("has_changed. old: %f. New: %f. is_automation: %d. make_undo: %d. from midi_learn: %d\n", safe_float_read(&plugin->stored_effect_values_native[effect_num]), native_value, FX_when_is_automation(when), make_undo, is_sent_from_midi_learn);
 
+  //is_sent_from_midi_learn==false &&
   
-  if (is_sent_from_midi_learn==false && !FX_when_is_automation(when)) {
+  if (!FX_when_is_automation(when)) {
 
-    if (PLUGIN_is_recording_automation(plugin, effect_num))
+    if (is_sent_from_midi_learn==false && PLUGIN_is_recording_automation(plugin, effect_num)) // if sent from midi-learn, the event is already in the midi queue.
       MIDI_add_automation_recording_event(plugin, effect_num, scaled_value);
     
     if (make_undo) {
@@ -1296,7 +1297,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
     if (THREADING_is_player_thread())
       abort(); // This is most likely an error.
   */
-
+  
   if (storeit_type==DONT_STORE_VALUE) {
     
     if (THREADING_is_main_thread())
@@ -1307,10 +1308,16 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
 
     if (false==THREADING_is_main_thread()) {
       R_ASSERT(THREADING_is_player_thread() || THREADING_is_juce_thread()); // Called from midi learn or juce.
+
+      if (THREADING_is_player_thread())
+        R_ASSERT(sent_from_midi_learn);
     }
     
   }
-  
+
+  if (sent_from_midi_learn)
+    R_ASSERT(storeit_type==STORE_VALUE);
+
   if (THREADING_is_juce_thread()){
     
 #if !defined(FOR_LINUX)
@@ -1748,7 +1755,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
                                                   effect_num,
                                                   store_value_native,
                                                   store_value_scaled,
-                                                  false,
+                                                  storeit_type==STORE_VALUE && sent_from_midi_learn, // make_undo
                                                   storeit_type,
                                                   when,
                                                   false,
