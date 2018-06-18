@@ -44,6 +44,11 @@
 //==============================================================================
 // juce_audio_devices flags:
 
+
+// disabling these two. Don't feel too good about it, but it is quite intrusive.
+#define JUCE_REPORT_APP_USAGE 0
+#define JUCE_DISPLAY_SPLASH_SCREEN 0
+
 #ifndef    JUCE_ASIO
  #define JUCE_ASIO 0
 #endif
