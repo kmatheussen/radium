@@ -6438,10 +6438,10 @@
                                                                   (not blocknum)))
                                                  (get-normalized-gain (lambda ()
                                                                         (if is-enabled
-                                                                            (let ((max-gain (<ra> :get-max-seqblock-sample-gain seqblocknum seqtracknum))
-                                                                                  (if (> max-gain 0)
-                                                                                      (/ 1.0 max-gain)
-                                                                                      100)))
+                                                                            (let ((max-gain (<ra> :get-max-seqblock-sample-gain seqblocknum seqtracknum)))
+                                                                              (if (> max-gain 0)
+                                                                                  (/ 1.0 max-gain)
+                                                                                  100))
                                                                             1.0))))
                                             (list
                                              (<-> "Set normalized gain (" (db-to-text (<ra> :gain-to-db (get-normalized-gain)) #t) ")")
