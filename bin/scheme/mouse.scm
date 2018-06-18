@@ -6434,15 +6434,18 @@
                                                                  1000))
                                                (<ra> :set-seqblock-gain (<ra> :db-to-gain new) seqblocknum seqtracknum))))
 
-                                          (let ((get-normalized-gain (lambda ()
-                                                                       (define max-gain (<ra> :get-max-seqblock-sample-gain seqblocknum seqtracknum))
-                                                                       (if (> max-gain 0)
-                                                                           (/ 1.0 max-gain)
-                                                                           100))))
+                                          (let* ((is-enabled (and seqblocknum
+                                                                  (not blocknum)))
+                                                 (get-normalized-gain (lambda ()
+                                                                        (if is-enabled
+                                                                            (let ((max-gain (<ra> :get-max-seqblock-sample-gain seqblocknum seqtracknum))
+                                                                                  (if (> max-gain 0)
+                                                                                      (/ 1.0 max-gain)
+                                                                                      100)))
+                                                                            1.0))))
                                             (list
                                              (<-> "Set normalized gain (" (db-to-text (<ra> :gain-to-db (get-normalized-gain)) #t) ")")
-                                             :enabled (and seqblocknum
-                                                           (not blocknum))
+                                             :enabled is-enabled
                                              (lambda ()
                                                (<ra> :set-seqblock-gain (get-normalized-gain) seqblocknum seqtracknum))))
                                            
