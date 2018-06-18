@@ -215,6 +215,6 @@ hash_t *BLOCKS_get_state(void){
 void BLOCKS_create_from_state(hash_t *state){
   BLOCKS_remove_tempo_multiplier_midi_learn();
   
-  R_ASSERT_RETURN_IF_FALSE(HASH_has_key(state, "tempo_multiplier_midi_learn"));
-  MIDI_add_midi_learn(new BlockMultiplierMidiLearn(HASH_get_hash(state, "tempo_multiplier_midi_learn")));
+  if (HASH_has_key(state, "tempo_multiplier_midi_learn"))
+    MIDI_add_midi_learn(new BlockMultiplierMidiLearn(HASH_get_hash(state, "tempo_multiplier_midi_learn")));
 }
