@@ -1397,6 +1397,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       set_gain_store_value(store_value_native, store_value_scaled, value_format);
       if (ATOMIC_GET(plugin->volume_is_on))
         SMOOTH_set_target_value(&plugin->volume, store_value_native);
+      //printf("Setting volume to %f. (scaled: %f)\n", store_value_native, store_value_scaled);
       break;
 
       

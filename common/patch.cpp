@@ -988,12 +988,12 @@ static int rnd(int max){
 int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, struct Notes *editor_note, STime time){
   //printf("\n\nRT_PATCH_PLAY_NOTE. ___Starting note %f, time: %d, id: %d. block_reltempo: %f\n\n",note.pitch,(int)time,(int)note.id,note.block_reltempo);
 
-  float curr_gain = 1.0;
+  float curr_gain = seqtrack->note_gain;
 
   if (editor_note != NULL){
     
     if (note.seqblock != NULL){
-      curr_gain = note.seqblock->curr_gain;
+      curr_gain *= note.seqblock->curr_gain;
     }else
       R_ASSERT(false);
     

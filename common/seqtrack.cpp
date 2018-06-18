@@ -1249,6 +1249,8 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_sa
   auto *seqtrackautomation = SEQTRACK_AUTOMATION_create(seqtrack, automation_state, state_samplerate);
   seqtrack->seqtrackautomation = seqtrackautomation;
 
+  seqtrack->note_gain = 1.0;
+  
   GC_register_finalizer(seqtrack, seqtrackgcfinalizer, seqtrack, NULL, NULL);
 
   return seqtrack;
