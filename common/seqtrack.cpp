@@ -1845,7 +1845,6 @@ bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
 
 
 void SEQUENCER_timing_has_changed(radium::PlayerLockOnlyIfNeeded &lock){
-  R_ASSERT_NON_RELEASE(false==PLAYER_current_thread_has_lock());
 
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
 
