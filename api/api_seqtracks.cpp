@@ -317,7 +317,21 @@ const_char *getSeqtrackName(int seqtracknum){
     return seqtrack->name == NULL ? "" : seqtrack->name;
 }
 
+void setSeqtrackNoteGain(float gain, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
 
+  safe_float_write(&seqtrack->note_gain, gain);
+}
+
+float getSeqtrackNoteGain(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return 1.0;
+
+  return safe_float_read(&seqtrack->note_gain);
+}
 
 
 

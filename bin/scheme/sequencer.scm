@@ -479,6 +479,107 @@
 
   )
 
+#||
+;; Not used, too confusing. A little bit buggy too, but that should be easily fixed.
+(def-area-subclass (<block-seqtrack-volume-slider> :gui :x1 :y1 :x2 :y2
+                                                   :seqtracknum
+                                                   :display-seqtrack-name #t
+                                                   :get-color)
+  (define has-made-undo #f)
+  
+  (define (maybe-make-undo)
+    (when (not has-made-undo)
+      (set! has-made-undo #t)
+      ;;(<ra> :undo-instrument-effect instrument-id effect-name)))
+      ))
+
+  (define (get-radium-normalized)
+    (c-display "get-r-n: " seqtracknum (<ra> :get-seqtrack-note-gain seqtracknum) (db-to-text (slider-to-db (<ra> :get-seqtrack-note-gain seqtracknum)) #t))
+    (<ra> :get-seqtrack-note-gain seqtracknum))
+
+  (define (get-db-value radium-normalized)
+    (radium-normalized-to-db radium-normalized))
+
+  (define (set-db-value db)
+    (c-display "      -------set-db-val:" (db-to-radium-normalized db))
+    (<ra> :set-seqtrack-note-gain (db-to-radium-normalized db) seqtracknum ))
+  
+  (define (get-scaled-value radium-normalized)
+    (db-to-slider (get-db-value radium-normalized)))
+
+  (define (get-volume-slider-value-text value)
+    (db-to-text (slider-to-db value) #t))
+  
+  (define (get-volume-slider-text radium-normalized)
+    (define midi-learn-text "")
+    (let ((volume-text (get-volume-slider-value-text (get-scaled-value radium-normalized))))
+      (if display-seqtrack-name
+          (let ((seqtrack-name (<ra> :get-seqtrack-name seqtracknum)))
+            (<-> midi-learn-text seqtrack-name ": " volume-text))
+          (<-> " " midi-learn-text volume-text))))
+
+  (define last-painted-radium-normalized -10000)
+  
+  (define-override (paint)
+    (define b 1)
+    (define radium-normalized (get-radium-normalized))
+    (set! last-painted-radium-normalized radium-normalized)
+
+    (paint-horizontal-instrument-slider gui
+                                        -1
+                                        (get-scaled-value radium-normalized)
+                                        (get-volume-slider-text radium-normalized)
+                                        #t
+                                        #f
+                                        #f ;;get-automation-data
+                                        (+ b x1)
+                                        (+ b x1) (+ b y1) (- x2 b) (- y2 b)
+                                        (get-color)
+                                        ))
+  
+  (define start-mouse-value #f)
+  
+  (add-delta-mouse-cycle!
+   (lambda (button x* y*)
+     (set! has-made-undo #f)
+     (and (= button *left-button*)
+          (begin
+            (define radium-normalized (get-radium-normalized))
+            (set! start-mouse-value (get-scaled-value radium-normalized));;(scale x* x1 x2 0 1));;(get-db-value));;(<ra> :get-stored-instrument-effect instrument-id effect-name))
+            ;;(c-display "press button/x/y" x* y*)
+            (set-statusbar-text! (get-statusbar-text))
+            #t)))
+   (lambda (button x* y* dx dy)
+     (maybe-make-undo)
+     (define slider-value (between 0 (+ start-mouse-value
+                                        (scale dx 0 width 0 1))
+                                   1))
+     (set-db-value (slider-to-db slider-value))
+     (set-statusbar-text! (get-statusbar-text))
+     (update-me!)
+     )
+   (lambda (button x* y*)
+     (c-display "release button/x/y" x* y*)))
+  
+  (define (get-statusbar-text)
+    (c-display "GETAST for" seqtracknum (get-radium-normalized) (get-volume-slider-text (get-radium-normalized)))
+    (get-volume-slider-text (get-radium-normalized)))
+  
+  (add-statusbar-text-handler get-statusbar-text)
+                                
+
+  '(define (mouse-callback button state x y)
+    (if (and (>= x x1)
+             (< x x2)
+             (>= y y1)
+             (< y y2))
+        (let ((status-text (get-volume-slider-text (get-radium-normalized))))
+          ;;(c-display "hepp " status-text)
+          (<ra> :set-statusbar-text status-text)
+          )))
+
+  )
+||#
 
 
 (def-area-subclass (<instrument-pan-slider> :gui :x1 :y1 :x2 :y2
@@ -668,31 +769,34 @@
   (if (or use-two-rows
           for-blocks)
       (add-sub-area-plain! (<new> :seqtrack-name gui
-                                  x1 y1 x1-split
+                                  x1 y1
+                                  (if for-audiofiles
+                                      x1-split
+                                      x2)
                                   y-split
                                   instrument-id
                                   seqtracknum)))
 
+  (define panner-x2 (if use-two-rows x-meter-split x1-split))
+  (define panner-y1 (if use-two-rows
+                        (+ b y-split)
+                        y1))
+  (define panner-y2 (min (+ panner-y1 fontheight)
+                         (- y2 fontheight)))
+  
+  
+  (define vol-x2 panner-x2)
+  (define vol-y1 (if show-panner
+                     (+ 2 panner-y2)
+                     panner-y1))
+  (define vol-y2 y2)
+    
   (when for-audiofiles
     (add-sub-area-plain! (<new> :mute-solo-buttons gui
                                 (+ b x1-split) y1
                                 x-meter-split y-split
                                 instrument-id #t #t seqtracknum))
 
-    (define panner-x2 (if use-two-rows x-meter-split x1-split))
-    (define panner-y1 (if use-two-rows
-                          (+ b y-split)
-                          y1))
-    (define panner-y2 (min (+ panner-y1 fontheight)
-                           (- y2 fontheight)))
-    
-    
-    (define vol-x2 panner-x2)
-    (define vol-y1 (if show-panner
-                       (+ 2 panner-y2)
-                       panner-y1))
-    (define vol-y2 y2)
-    
     (if show-panner
         (add-sub-area-plain! (<new> :instrument-pan-slider gui
                                     x1 panner-y1
@@ -722,6 +826,19 @@
   
   ;;(<gui> :remove-vertical-audio-meter vam)
 
+
+  (when (and #f for-blocks) ;; Disable this. Too confusing.
+    (add-sub-area-plain! (<new> :block-seqtrack-volume-slider gui
+                                x1 vol-y1
+                                vol-x2 vol-y2
+                                seqtracknum
+                                :display-seqtrack-name (not use-two-rows)
+                                :get-color (lambda ()
+                                             (get-seqtrack-background-color gui seqtracknum))
+                                )))
+    
+
+  
   (define-override (paint)
     (if (= seqtracknum (<ra> :get-curr-seqtrack))
         (<gui> :filled-box gui (get-seqtrack-background-color gui seqtracknum) x1 y1 x2 y2)))

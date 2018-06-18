@@ -2708,6 +2708,8 @@ struct SeqTrack{
 
   struct SeqtrackAutomation *seqtrackautomation;
 
+  float note_gain; // Only used when for_audiofiles==false;
+  
   const char *name; // Not used when for_audiofiles==true. (then we use patch->name instead)
 
   // All variables below are only used when for_audiofiles==true.

@@ -2073,6 +2073,7 @@
                              (when (and doit (not (= last-vol-slider-db-value db)))
                                (set! last-vol-slider-db-value db)
                                ;;(c-display "             hepp hepp")
+                               ;;(c-display "Setting new volume to" (db-to-radium-normalized db))
                                (<ra> :set-instrument-effect instrument-id effect-name (db-to-radium-normalized db))
                                (if paint-voltext
                                    (<gui> :update voltext)
