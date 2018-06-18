@@ -1170,13 +1170,23 @@ static inline const char *fade_shape_to_string(enum FadeShape fade_shape){
 }
 
 
-static inline enum FadeShape string_to_fade_shape(const char *string){
+static inline bool string_to_fade_shape2(const char *string, enum FadeShape *ret){
   for(int i = 0 ; i<NUM_FADE_SHAPES ; i++){
     enum FadeShape shape = (enum FadeShape)i;
-    if (!strcmp(string, fade_shape_to_string(shape)))
-      return shape;
+    if (!strcmp(string, fade_shape_to_string(shape))){
+      *ret = shape;
+      return true;
+    }
   }
 
+  return false;
+}
+
+static inline enum FadeShape string_to_fade_shape(const char *string){
+  enum FadeShape ret;
+  if (string_to_fade_shape2(string, &ret))
+    return ret;
+  
   R_ASSERT(false);
   return FADE_LINEAR;  // Fewer assertions than FADE_CUSTOM down the lane
 }
