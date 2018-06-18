@@ -769,6 +769,11 @@ float getMaxSeqblockSampleGain(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return 1.0;
 
+  if (seqblock->block != NULL){
+    handleError("getMaxSeqblockSampleGain: seqblock %d in seqtrack %d does not hold an audio file.", seqblocknum, seqtracknum);
+    return 1.0;
+  }
+    
   return SEQBLOCK_get_max_sample_gain(seqtrack, seqblock);
 }
 
