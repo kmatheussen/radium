@@ -2084,7 +2084,14 @@ dyn_t getFadeShapes(void){
 }
 
 const_char* getFadeShapeIconFilename(const_char* shape, bool is_fadein){
-  radium::Envelope env(string_to_fade_shape(shape), 1.0, is_fadein);
+  enum FadeShape fade_shape;
+
+  if (string_to_fade_shape2(shape, &fade_shape)==false){
+    handleError("getFadeShapeIconFilename: Unknown shape \"%s\"", shape);
+    return "";
+  }
+  
+  radium::Envelope env(fade_shape, 1.0, is_fadein);
   return talloc_strdup(env.get_icon_filename().toUtf8().toBase64().constData());
 }
 
