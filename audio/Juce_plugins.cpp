@@ -118,7 +118,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#if FOR_LINUX
+#if FOR_LINUX // TODO: Seems like this works fine on windows as well now. Should test more.
 #define CUSTOM_MM_THREAD 1
 #else
 #define CUSTOM_MM_THREAD 0

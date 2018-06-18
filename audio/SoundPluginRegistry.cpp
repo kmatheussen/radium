@@ -704,7 +704,9 @@ bool PR_is_initing_vst_first(void){
 
 
 void PR_init_plugin_types(void){
-  GFX_OpenProgress("Please wait, traversing plugin paths for potential plugins");
+  GFX_OpenProgress("Initializing plugins");
+
+  GFX_ShowProgressMessage("Traversing plugin paths for plugins...");
   
   API_incSoundPluginRegistryGeneration();
   API_clearSoundPluginRegistryCache();
@@ -816,7 +818,7 @@ void PR_init_plugin_types(void){
   create_faust_system_highshelf_plugin();
   //create_faust_system_delay_plugin();
 
-  GFX_ShowProgressMessage("Recreating favourits...");
+  GFX_ShowProgressMessage("Recreating favourites...");
   recreate_favourites(true);
 
   // Update cache.
