@@ -1,3 +1,23 @@
+Changes 5.7.6 -> 5.7.7:
+* Sequencer: Use all available space for seqtrack names in seqtracks
+  for editor blocks.
+* Sequencer: Use dB when setting audio file gain.
+* Editor: Add "add MIDI learn" and "remove MIDI learn" to the block
+  tempo multiplier popup menu.
+* Modular mixer: Set current instrument when right-clicking a sound
+  object
+* MIDI Learn: Make undo when parameter value is changed from MIDI.
+* VST/AU: Display generic GUI if plugin doesn't provide one.
+  (Using GenericAudioProcessorEditor from Juce).
+* GUI: Finally fix so that popup menues are closed before doing
+  operation.
+* Plugins: Fix progress window popping up and not closing again when
+  program asks if user wants to open plugin that crashed last time.
+  (And probably other situations)
+* API: setSeqtrackNoteGain, getSeqtrackNoteGain
+
+
+
 Changes 5.7.4 -> 5.7.6:
 * GUI: Prevent a rare crash during startup.
 * VST/AU: Show a virtual keyboard under the native GUI of plugins that
@@ -65,6 +85,8 @@ Changes 5.7.4 -> 5.7.6:
 * Build: Fix vst header include path
 * API: vstConfigOpen, setSeqblockGain, getSeqblockGain,
   getMaxSeqblockSampleGain.
+
+
 
 Changes 5.7.2 -> 5.7.4:
 * VST/AU: Always store individual effect values in undo, file, and a/b.
