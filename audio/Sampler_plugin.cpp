@@ -707,7 +707,7 @@ static double RT_get_src_ratio3(Data *data, const Sample *sample, float pitch){
 static double RT_get_src_ratio2(Data *data, const Sample *sample, float pitch){
 
   //printf("note_adjust: %d (%f)\n",(int)data->p.note_adjust,data->p.note_adjust);
-  double adjusted_pitch = pitch + scale_double(data->p.finetune, 0, 1, -1, 1) + data->p.note_adjust;
+  double adjusted_pitch = pitch + scale_double(safe_float_read(&data->p.finetune), 0, 1, -1, 1) + data->p.note_adjust;
   return RT_get_src_ratio3(data, sample, adjusted_pitch);
 }
 
@@ -1507,7 +1507,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       update_editor_graphics(plugin);
       break;
     case EFF_FINETUNE:
-      data->p.finetune = value;
+      safe_float_write(&data->p.finetune, value);
       update_editor_graphics(plugin);
       break;
     case EFF_A:
@@ -1911,7 +1911,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     break;
 #endif
   case EFF_CROSSFADE_LENGTH:
-    snprintf(buffer,buffersize-1,"%d samples",(int)data->p.crossfade_length);
+    snprintf(buffer,buffersize-1,"%d samples",safe_int_read(&data->p.crossfade_length));
     break;
 
   default:
