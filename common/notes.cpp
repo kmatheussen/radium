@@ -135,7 +135,7 @@ void SetEndAttributes(
         bool endSetEarlier = PlaceGreaterThan(&note->end, &note->l.p);
         const Place *earliest = endSetEarlier ? &note->end : &note->l.p;
 
-        struct ListHeader3 *nextnote=note->l.next;
+        struct ListHeader3 *nextnote=track->notes==NULL ? NULL : &track->notes->l;
         while(nextnote!=NULL){
           if(PlaceGreaterThan(&nextnote->p, earliest)){
             p1 = &nextnote->p;
