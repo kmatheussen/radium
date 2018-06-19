@@ -1,3 +1,12 @@
+Changes 5.7.8 -> 5.7.9:
+* Editor: Fix new notes not ending at next note position. Bug
+  introduced in 4.6.5.
+* Save: Better error messages when unable to open file for writing or
+  unable to write data to disk.
+* Menus: Rename "Help -> Help overview" to "Help -> Manual"
+* Manual: Minor improvements.
+
+
 Changes 5.7.7 -> 5.7.8:
 * Load: Don't show assertion window if loading song saved with 5.7.7
   or later which hasn't got a MIDI-learned block tempo multiplier.
