@@ -42,7 +42,7 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
 
         dc.file=DISK_open_for_writing(filename);
 	if(dc.file==NULL){
-          GFX_Message2(NULL, true,"Could not open file for writing.\n");
+          GFX_Message2(NULL, true, "Could not save song file \"%S\".", filename);
           return false;
 	}
 
@@ -53,7 +53,7 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
 	int length3=DISK_printf(dc.file,"%s\n",OS_get_string_from_double(DISKVERSION));
 
 	if(length1<0 || length2<0 || length3<0){
-          GFX_Message2(NULL, true,"Could not write to file.\n");
+          GFX_Message2(NULL, true, "Unable to write to file \"%S\".", filename);
           DISK_close_and_delete(dc.file);
           return false;
 	}
@@ -80,7 +80,7 @@ void Save_Clean(const wchar_t *filename,struct Root *theroot, bool is_backup){
 	SaveRoot(theroot);
 
 	if( ! dc.success){
-          GFX_Message2(NULL, true,"Problems writing to file.\n");
+          GFX_Message2(NULL, true,"Problems writing to file \"%S\".\n", filename);
 	}
 
         bool success=DISK_close_and_delete(dc.file);
