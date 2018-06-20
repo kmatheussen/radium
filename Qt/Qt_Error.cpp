@@ -99,6 +99,9 @@ int main(int argc, char **argv){
   QCoreApplication::setLibraryPaths(QStringList());
 #endif
 
+  QLocale::setDefault(QLocale::c());
+  QLocale::setDefault(QLocale::C);
+
   QString message = QByteArray::fromBase64(argv[1]);
 
   QVector<QString> menu_strings;

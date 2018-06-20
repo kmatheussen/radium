@@ -926,6 +926,7 @@ struct Mixer{
       }jackblock_variables_protector.write_end();
       
       if(g_test_crashreporter_in_audio_thread){
+        //R_ASSERT(false);
         int *ai2=NULL;
         ai2[0] = 50;
       }

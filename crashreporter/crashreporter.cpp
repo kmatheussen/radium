@@ -88,11 +88,13 @@ static DEFINE_ATOMIC(bool, g_dont_report) = false;
 
 namespace local{
 static QString toBase64(QString s){
-  return s.toLocal8Bit().toBase64();
+  //return s.toLocal8Bit().toBase64();
+  return s.toUtf8().toBase64();
 }
 
 static QString fromBase64(QString encoded){
-  return QString::fromLocal8Bit(QByteArray::fromBase64(encoded.toLocal8Bit()).data());
+  //return QString::fromLocal8Bit(QByteArray::fromBase64(encoded.toLocal8Bit()).data());
+  return QString::fromUtf8(QByteArray::fromBase64(encoded.toUtf8()).data());
 }
 }
 
@@ -458,6 +460,9 @@ int main(int argc, char **argv){
   QCoreApplication::setLibraryPaths(QStringList());
 #endif
 
+  QLocale::setDefault(QLocale::c());
+  QLocale::setDefault(QLocale::C);
+
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
 
@@ -701,7 +706,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
   tosend += get_event_log(event_pos, time);
 
-  tosend += "end event_pos: " + QString::number(ATOMIC_GET(g_event_pos) % NUM_EVENTS) + "\n";
+  tosend += "end event_pos: " + QString::number(event_pos % NUM_EVENTS) + "\n";
   
   tosend += "\n\n";
 

@@ -1449,6 +1449,8 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 }
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
+
+  R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock()); // assert that we don't hold the player lock here since we obtain the mmLock below.
   
 #if CUSTOM_MM_THREAD
   const MessageManagerLock mmLock;  // FIX: Why do we use MessageManagerLock in get_display_value_string and not here? Partly answer: We can't hold mmLock in get_effect_value since it's called from the player and/or while holding the player lock. Not sure if we need the mmLock here though.
