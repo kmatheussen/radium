@@ -30,11 +30,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/Mutex.hpp"
 #include "../common/settings_proc.h"
 
-
+namespace{
 struct MyMidiPortOs{
-  MidiOutput *midiout;
+  juce::MidiOutput *midiout;
 };
-
+}
 
 static radium::Mutex g_midi_out_mutex;
 
@@ -51,13 +51,13 @@ int MIDI_msg_len(uint32_t msg){
     return 0;
   }
   
-  return MidiMessage::getMessageLengthFromFirstByte(byte1);
+  return juce::MidiMessage::getMessageLengthFromFirstByte(byte1);
 }
 
 
 namespace{
-  struct MyMidiInputCallback : MidiInputCallback{
-    MidiInput *midi_input;
+  struct MyMidiInputCallback : juce::MidiInputCallback{
+    juce::MidiInput *midi_input;
     const symbol_t *port_name;
 
     MyMidiInputCallback()
@@ -69,8 +69,8 @@ namespace{
       // free(port_name); // <- The string is used in queues in midi_i_input, so we get memory corruption if the port is deleted while the name lives in one of the buffers. The memory leak caused by not freing here doesn't really matter. The string is also used in midi_learn, where it can be kept for the remaining time of the program.
     }
       
-    void handleIncomingMidiMessage(MidiInput *source,
-                                   const MidiMessage &message 
+    void handleIncomingMidiMessage(juce::MidiInput *source,
+                                   const juce::MidiMessage &message 
                                    )
       override
     {
@@ -80,7 +80,7 @@ namespace{
       int64_t now_ms = Time::getMillisecondCounter();
       */
 
-      const uint8* raw = message.getRawData();
+      const juce::uint8* raw = message.getRawData();
       int length = message.getRawDataSize();
       
       if(length==1)
@@ -113,7 +113,7 @@ void OS_PutMidi(MidiPortOs port,
                 STime time
                 )
 {
-  int len = MidiMessage::getMessageLengthFromFirstByte(cc);
+  int len = juce::MidiMessage::getMessageLengthFromFirstByte(cc);
 
   /*
   {
@@ -138,7 +138,7 @@ void OS_PutMidi(MidiPortOs port,
            );
 #endif
 
-  MidiOutput *output = myport->midiout;
+  juce::MidiOutput *output = myport->midiout;
 
   if (output==NULL) // I.e. the "dummy" driver. (necessary on windows)
     return;
@@ -156,11 +156,11 @@ void OS_PutMidi(MidiPortOs port,
 
     
     if(len==1)
-      output->sendMessageNow(MidiMessage(cc));
+      output->sendMessageNow(juce::MidiMessage(cc));
     else if(len==2)
-      output->sendMessageNow(MidiMessage(cc, data1));
+      output->sendMessageNow(juce::MidiMessage(cc, data1));
     else
-      output->sendMessageNow(MidiMessage(cc, data1, data2));
+      output->sendMessageNow(juce::MidiMessage(cc, data1, data2));
   }
 }
 
@@ -177,7 +177,7 @@ void OS_GoodPutMidi(MidiPortOs port,
 }
 
 
-static char** string_array_to_char_array(const StringArray &devices, int *retsize){
+static char** string_array_to_char_array(const juce::StringArray &devices, int *retsize){
   *retsize = devices.size();
   
   char **ret = (char**)talloc(sizeof(char*)*devices.size());
@@ -200,22 +200,22 @@ char **MIDI_OS_get_connected_input_ports(int *retsize){ // returns ports we are 
 }
 
 char **MIDI_getInputPortOsNames(int *retsize){ // returns all ports that's possible to connect to (whether we are connected or not)
-  StringArray devices = MidiInput::getDevices();
+  juce::StringArray devices = juce::MidiInput::getDevices();
   return string_array_to_char_array(devices, retsize);
 }
 
 
 char **MIDI_getOutputPortOsNames(int *retsize){ // returns all ports that's possible to connect to (whether we are connected or not)
-  StringArray devices = MidiOutput::getDevices();
+  juce::StringArray devices = juce::MidiOutput::getDevices();
   return string_array_to_char_array(devices, retsize);
 }
 
 char *MIDI_getDefaultOutputPort(void){
-  StringArray devices = MidiOutput::getDevices();
+  juce::StringArray devices = juce::MidiOutput::getDevices();
   if (devices.size()==0)
     return NULL;
   
-  return talloc_strdup(devices[MidiOutput::getDefaultDeviceIndex()].toUTF8());
+  return talloc_strdup(devices[juce::MidiOutput::getDefaultDeviceIndex()].toUTF8());
 }
 
 void MIDI_closeMidiPortOs(MidiPortOs port){
@@ -228,14 +228,14 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,co
 
   MyMidiPortOs *ret = (MyMidiPortOs*)V_calloc(1, sizeof(MyMidiPortOs));
   
-  String name(name_c);
+  juce::String name(name_c);
 
 #if defined(FOR_LINUX)
   if (name.startsWith("Radium: "))
-    name = name.substring(String("Radium: ").length());
+    name = name.substring(juce::String("Radium: ").length());
 #endif
 
-  StringArray devices = MidiOutput::getDevices();
+  juce::StringArray devices = juce::MidiOutput::getDevices();
 
   int device_id = devices.indexOf(name);
 
@@ -251,18 +251,18 @@ MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,co
 
 #if JUCE_WINDOWS
     if (devices.size() > 0) {
-      device_id = MidiOutput::getDefaultDeviceIndex();
+      device_id = juce::MidiOutput::getDefaultDeviceIndex();
       GFX_Message(NULL, "MIDI output device \"%s\" not found.\n\nAs a workaround, all usage of this device is replaced with the device \"%s\".", name_c, devices[device_id].toRawUTF8());
-      ret->midiout = MidiOutput::openDevice(device_id);
+      ret->midiout = juce::MidiOutput::openDevice(device_id);
     }
 #else
 
-    ret->midiout = MidiOutput::createNewDevice(name);
+    ret->midiout = juce::MidiOutput::createNewDevice(name);
 #endif
 
   } else {
 
-    ret->midiout = MidiOutput::openDevice(device_id);
+    ret->midiout = juce::MidiOutput::openDevice(device_id);
 
   }
 
@@ -281,7 +281,7 @@ static void update_settings(void){
     SETTINGS_write_string(talloc_format("midi_input_port_%d",i), g_inports[i]->midi_input->getName().toUTF8());
 }
 
-static bool is_connected_to_input_port(String name){
+static bool is_connected_to_input_port(juce::String name){
 
   for (auto port : g_inports)
     if (port->midi_input->getName() == name)
@@ -290,11 +290,11 @@ static bool is_connected_to_input_port(String name){
   return false;
 }
 
-static void add_input_port(String name, bool do_update_settings, bool should_be_there){
+static void add_input_port(juce::String name, bool do_update_settings, bool should_be_there){
   
 #if defined(FOR_LINUX)
   if (name.startsWith("Radium: "))
-    name = name.substring(String("Radium: ").length());
+    name = name.substring(juce::String("Radium: ").length());
 #endif
 
 
@@ -302,7 +302,7 @@ static void add_input_port(String name, bool do_update_settings, bool should_be_
     return;
 
 
-  StringArray devices = MidiInput::getDevices();
+  juce::StringArray devices = juce::MidiInput::getDevices();
 
   int device_id = devices.indexOf(name);
 
@@ -324,13 +324,13 @@ static void add_input_port(String name, bool do_update_settings, bool should_be_
   
   auto *midi_input_callback = new MyMidiInputCallback();
 
-  MidiInput *midi_input = NULL;
+  juce::MidiInput *midi_input = NULL;
 
   if (device_id>=0)
-    midi_input = MidiInput::openDevice(device_id, midi_input_callback);
+    midi_input = juce::MidiInput::openDevice(device_id, midi_input_callback);
 #if !JUCE_WINDOWS
   else
-    midi_input = MidiInput::createNewDevice(name, midi_input_callback);
+    midi_input = juce::MidiInput::createNewDevice(name, midi_input_callback);
 #endif
   
   if (midi_input==NULL){
@@ -351,12 +351,12 @@ static void add_input_port(String name, bool do_update_settings, bool should_be_
 }
 
 void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *name_c){
-  String name(name_c);
+  juce::String name(name_c);
   add_input_port(name, true, true);
 }
 
 
-static void remove_input_port(String name, bool do_update_settings){
+static void remove_input_port(juce::String name, bool do_update_settings){
 
   for (auto port : g_inports)
     if (port->midi_input->getName() == name) {
@@ -373,7 +373,7 @@ static void remove_input_port(String name, bool do_update_settings){
 }
 
 void MIDI_OS_RemoveInputPort(const char *portname){
-  remove_input_port(String(portname), true);
+  remove_input_port(juce::String(portname), true);
 }
 
 
