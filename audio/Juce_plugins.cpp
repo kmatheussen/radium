@@ -1604,7 +1604,7 @@ static juce::AudioPluginInstance *create_audio_instance(const TypeData *type_dat
     
     {
 #if CUSTOM_MM_THREAD
-      const juce::MessageManagerLock mmLock;
+      // const juce::MessageManagerLock mmLock; Leads to deadlock. Also, AudioPluginFormat::createInstanceFromDescription is explicitly made to handle calls not made from the message thread.
 #endif
       instance = formatManager.createPluginInstance(description, sample_rate, block_size, errorMessage);
     }
