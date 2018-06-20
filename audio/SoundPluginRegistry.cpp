@@ -728,7 +728,13 @@ void PR_init_plugin_types(void){
 
     PR_add_menu_entry(PluginMenuEntry::separator());
 
-    GFX_ShowProgressMessage("Adding LADSPA plugins...");
+    static bool has_run = false;
+    if (has_run==false){
+      GFX_ShowProgressMessage("Adding LADSPA plugins... (This could take some time if realtime virus scanning is enabled)");
+      has_run = true;
+    } else {
+      GFX_ShowProgressMessage("Adding LADSPA plugins...");
+    }
     create_ladspa_plugins();
 
   } else {
