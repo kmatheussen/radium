@@ -2448,8 +2448,11 @@ double SONG_get_length(void){
       len = seqtrack_len;
   }END_VECTOR_FOR_EACH;
 
-  len = R_MAX(2 + (double)ATOMIC_GET_RELAXED(root->song->looping.end) / (double)pc->pfreq, len);
-  len = R_MAX(2 + (double)ATOMIC_GET_RELAXED(root->song->punching.end) / (double)pc->pfreq, len);
+  if (ATOMIC_GET_RELAXED(root->song->looping.enabled))
+    len = R_MAX(2 + (double)ATOMIC_GET_RELAXED(root->song->looping.end) / (double)pc->pfreq, len);
+
+  if (ATOMIC_GET_RELAXED(root->song->punching.enabled))
+    len = R_MAX(2 + (double)ATOMIC_GET_RELAXED(root->song->punching.end) / (double)pc->pfreq, len);
   
   return len;
 }
