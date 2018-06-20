@@ -5471,13 +5471,14 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (let loop ((pos 0)
              (playlist playlist))
     (when (not (null? playlist))
-      (<ra> :create-seqblock 0 (car playlist) (<ra> :get-song-length-in-frames))
+      (<ra> :create-seqblock 0 (car playlist) (if (= pos 0)
+                                                  0
+                                                  (<ra> :get-song-length-in-frames)))
       ;;(<ra> :set-playlist-block pos (car playlist))
       (loop (1+ pos)
             (cdr playlist))))
   (<ra> :set-sequencer-visible-start-time 0)
   (<ra> :set-sequencer-visible-end-time (<ra> :get-sequencer-song-length-in-frames)))
-
 
 (define (send-events-to-radium playlist instruments patterns)
   (clear-radium-editor)
@@ -5501,7 +5502,6 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
               (<ra> :select-prev-block))
             (iota 200))
   )
-
 
 (define (send-instruments-to-radium instruments)
   (for-each (lambda (instrument)
