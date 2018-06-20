@@ -33,6 +33,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <map>
 
+#define DONT_SET_USING_JUCE_NAMESPACE 1
+#define JUCE_DONT_DECLARE_PROJECTINFO 1
+
 #include "../pluginhost/JuceLibraryCode/AppConfig.h"
 
 #include "../pluginhost/JuceLibraryCode/JuceHeader.h"
@@ -189,14 +192,14 @@ namespace{
 
   struct PluginWindow;
 
-  struct Listener : public AudioProcessorListener {
+  struct Listener : public juce::AudioProcessorListener {
 
     SoundPlugin *_plugin; // Is never NULL. Listener is removed before plugin is deleted.
 
     Listener(SoundPlugin *plugin) : _plugin(plugin) {}
     
     // Receives a callback when a parameter is changed.
-    void 	audioProcessorParameterChanged (AudioProcessor *processor, int parameterIndex, float newValue) override {
+    void 	audioProcessorParameterChanged (juce::AudioProcessor *processor, int parameterIndex, float newValue) override {
 
 #if !defined(RELEASE)
         printf("   JUCE listener: parm %d changed to %f. has_inited: %d. is_shutting_down: %d\n",parameterIndex, newValue, ATOMIC_GET(_plugin->has_initialized), ATOMIC_GET(_plugin->is_shutting_down));
@@ -212,7 +215,7 @@ namespace{
     }
  
     // Called to indicate that something else in the plugin has changed, like its program, number of parameters, etc.
-    void 	audioProcessorChanged (AudioProcessor *processor) override {
+    void 	audioProcessorChanged (juce::AudioProcessor *processor) override {
 #if !defined(RELEASE)
       printf("    JUCE listener: audioProcessorChanged...\n");
 #endif
@@ -223,7 +226,7 @@ namespace{
  
 
     //Indicates that a parameter change gesture has started.
-    void 	audioProcessorParameterChangeGestureBegin (AudioProcessor *processor, int parameterIndex) override {
+    void 	audioProcessorParameterChangeGestureBegin (juce::AudioProcessor *processor, int parameterIndex) override {
 #if !defined(RELEASE)
       printf("    JUCE listener: gesture starts for %d\n",parameterIndex);
 #endif
@@ -231,7 +234,7 @@ namespace{
 
     
     //Indicates that a parameter change gesture has finished. 
-    void 	audioProcessorParameterChangeGestureEnd (AudioProcessor *processor, int parameterIndex) override {
+    void 	audioProcessorParameterChangeGestureEnd (juce::AudioProcessor *processor, int parameterIndex) override {
 #if !defined(RELEASE)
       printf("    JUCE listener: gesture ends for %d\n",parameterIndex);
 #endif
@@ -239,9 +242,9 @@ namespace{
   };
 
   
-  struct MyAudioPlayHead : public AudioPlayHead{
+  struct MyAudioPlayHead : public juce::AudioPlayHead{
 
-    String _plugin_name;
+    juce::String _plugin_name;
     struct SoundPlugin *_plugin;  // Set to NULL when SoundPlugin *plugin is deleted. (we can still be alive though, since the deletion of juce plugins are delayed)
     
     double positionOfLastLastBarStart = 0.0;
@@ -250,7 +253,7 @@ namespace{
     double lastLastBarStart = 0.0; // only used for debugging.
         
 
-    MyAudioPlayHead(String plugin_name, struct SoundPlugin *plugin)
+    MyAudioPlayHead(juce::String plugin_name, struct SoundPlugin *plugin)
       : _plugin_name(plugin_name)
       , _plugin(plugin)
     {}
@@ -396,9 +399,9 @@ namespace{
   };
 
   struct Data{
-    AudioPluginInstance *audio_instance;
+    juce::AudioPluginInstance *audio_instance;
 
-    MidiKeyboardState keyboardState;
+    juce::MidiKeyboardState keyboardState;
     
     SoundPlugin *_plugin;
     
@@ -406,8 +409,8 @@ namespace{
 
     MyAudioPlayHead playHead;
 
-    MidiBuffer midi_buffer;
-    AudioSampleBuffer buffer;
+    juce::MidiBuffer midi_buffer;
+    juce::AudioSampleBuffer buffer;
 
     Listener listener;
 
@@ -434,7 +437,7 @@ namespace{
       return ::is_vst(audio_instance);
     }
     */
-    Data(AudioPluginInstance *audio_instance, SoundPlugin *plugin, int num_input_channels, int num_output_channels)
+    Data(juce::AudioPluginInstance *audio_instance, SoundPlugin *plugin, int num_input_channels, int num_output_channels)
       : audio_instance(audio_instance)
       , _plugin(plugin)
       , window(NULL)
@@ -464,11 +467,11 @@ namespace{
 
   struct TypeData{
     const wchar_t *file_or_identifier; // used by Juce.
-    PluginDescription description;
+    juce::PluginDescription description;
     const char **effect_names = NULL; // set the first time the plugin is loaded
     bool has_shown_noncompatible_warning = false; // TODO: recreate_from_state is called twice when loading preset.
     TypeData(const wchar_t *file_or_identifier,
-             PluginDescription description
+             juce::PluginDescription description
              )
       : file_or_identifier(wcsdup(file_or_identifier))
       , description(description)
@@ -488,20 +491,20 @@ namespace{
 
   struct PluginWindow;
   
-  struct PluginWindow  : public DocumentWindow, Button::Listener, Timer, ComponentListener {
+  struct PluginWindow  : public juce::DocumentWindow, juce::Button::Listener, juce::Timer, juce::ComponentListener {
     Data *data;
     const char *title;
-    Component main_component;
-    ToggleButton grab_keyboard_button;
+    juce::Component main_component;
+    juce::ToggleButton grab_keyboard_button;
     //ToggleButton always_on_top_button;
-    ToggleButton bypass_button;
+    juce::ToggleButton bypass_button;
 
-    ToggleButton ab_buttons[8];
+    juce::ToggleButton ab_buttons[8];
     bool ab_button_valid[8] = {};
     
-    MidiKeyboardComponent *midi_keyboard = NULL;
+    juce::MidiKeyboardComponent *midi_keyboard = NULL;
     
-    AudioProcessorEditor* const editor;
+    juce::AudioProcessorEditor* const editor;
 
     int64_t parentgui;
     
@@ -514,16 +517,16 @@ namespace{
       return true;
 #else
       if (false)  // GenericAudioProcessorEditor doesn't resize its elements, so there's very little point returning true.
-        return dynamic_cast<GenericAudioProcessorEditor*>(editor) != NULL;
+        return dynamic_cast<juce::GenericAudioProcessorEditor*>(editor) != NULL;
       else
         return false;
 #endif
     }
     
-    void 	buttonClicked (Button *) override {
+    void 	buttonClicked (juce::Button *) override {
     }
 
-    void buttonStateChanged (Button *dasbutton) override {
+    void buttonStateChanged (juce::Button *dasbutton) override {
       
       if (dasbutton == &grab_keyboard_button) {
         
@@ -611,7 +614,7 @@ namespace{
       {
         bool new_state = grab_keyboard_button.getToggleState();
         if (new_state != g_vst_grab_keyboard)
-          grab_keyboard_button.setToggleState(g_vst_grab_keyboard, dontSendNotification);
+          grab_keyboard_button.setToggleState(g_vst_grab_keyboard, juce::NotificationType::dontSendNotification);
       }
 
       struct SoundPlugin *plugin = data->_plugin;
@@ -622,7 +625,7 @@ namespace{
         bool new_state = bypass_button.getToggleState();
         bool is_bypass = !ATOMIC_GET(plugin->effects_are_on);
         if (new_state != is_bypass)
-          bypass_button.setToggleState(is_bypass, dontSendNotification);
+          bypass_button.setToggleState(is_bypass, juce::NotificationType::dontSendNotification);
       }
 
       // ab buttons
@@ -630,7 +633,7 @@ namespace{
       R_ASSERT_RETURN_IF_FALSE(num >= 0 && num < 8);
 
       if (ab_buttons[num].getToggleState()==false)
-        ab_buttons[num].setToggleState(true, dontSendNotification);
+        ab_buttons[num].setToggleState(true, juce::NotificationType::dontSendNotification);
 
       for(int i=0;i<8;i++){
         bool is_selected = plugin->curr_ab_num==i;
@@ -642,9 +645,9 @@ namespace{
           const char *buttonnames = "ABCDEFGH";
           
           if (new_valid)
-            ab_buttons[i].setButtonText(String(&buttonnames[i], 1) + "*");
+            ab_buttons[i].setButtonText(juce::String(&buttonnames[i], 1) + "*");
           else
-            ab_buttons[i].setButtonText(String(&buttonnames[i], 1));
+            ab_buttons[i].setButtonText(juce::String(&buttonnames[i], 1));
           
           ab_button_valid[i] = new_valid;
         }
@@ -722,7 +725,7 @@ namespace{
     }
 
 
-    void componentMovedOrResized(Component &component, bool wasMoved, bool wasResized) override {
+    void componentMovedOrResized(juce::Component &component, bool wasMoved, bool wasResized) override {
 
       if (wasResized){
         
@@ -756,10 +759,10 @@ namespace{
     }
 
           
-    PluginWindow(const char *title, Data *data, AudioProcessorEditor* const editor, int64_t parentgui)
+    PluginWindow(const char *title, Data *data, juce::AudioProcessorEditor* const editor, int64_t parentgui)
       : DocumentWindow (title,
-                        Colours::lightgrey,
-                        DocumentWindow::closeButton, //allButtons,
+                        juce::Colours::lightgrey,
+                        juce::DocumentWindow::closeButton, //allButtons,
                         true)
       , data(data)
       , title(title)
@@ -768,7 +771,7 @@ namespace{
     {
 
       if (data->audio_instance->acceptsMidi())
-        midi_keyboard = new MidiKeyboardComponent(data->keyboardState, MidiKeyboardComponent::horizontalKeyboard);
+        midi_keyboard = new juce::MidiKeyboardComponent(data->keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard);
 
       struct SoundPlugin *plugin = data->_plugin;
       ATOMIC_SET(plugin->auto_suspend_suspended, true);
@@ -776,7 +779,7 @@ namespace{
       this->setOpaque(true);
       this->addToDesktop();//getDesktopWindowStyleFlags());
 
-      static auto *lookandfeel = new LookAndFeel_V3();
+      static auto *lookandfeel = new juce::LookAndFeel_V3();
       this->setLookAndFeel(lookandfeel);
       
       if(try_to_resize_editor())
@@ -815,7 +818,7 @@ namespace{
         grab_keyboard_button.setButtonText("Grab keyboard");
 #endif
         
-        grab_keyboard_button.setToggleState(g_vst_grab_keyboard, dontSendNotification);
+        grab_keyboard_button.setToggleState(g_vst_grab_keyboard, juce::NotificationType::dontSendNotification);
         grab_keyboard_button.setSize(400, button_height);
         grab_keyboard_button.changeWidthToFitText();
         
@@ -832,7 +835,7 @@ namespace{
       {
         always_on_top_button.setButtonText("Always on top");
         
-        always_on_top_button.setToggleState(vstGuiIsAlwaysOnTop(), dontSendNotification);
+        always_on_top_button.setToggleState(vstGuiIsAlwaysOnTop(), juce::NotificationType::dontSendNotification);
         always_on_top_button.setSize(400, button_height);
         always_on_top_button.changeWidthToFitText();
         
@@ -849,7 +852,7 @@ namespace{
       {
         bypass_button.setButtonText("Bypass");
         
-        bypass_button.setToggleState(!ATOMIC_GET(plugin->effects_are_on), dontSendNotification);
+        bypass_button.setToggleState(!ATOMIC_GET(plugin->effects_are_on), juce::NotificationType::dontSendNotification);
         bypass_button.setSize(400, button_height);
         bypass_button.changeWidthToFitText();
         
@@ -869,15 +872,15 @@ namespace{
 
           bool is_selected = plugin->curr_ab_num==i;
           
-          ab_buttons[i].setButtonText(String(&buttonnames[i], 1));
-          ab_buttons[i].setToggleState(is_selected, dontSendNotification);
+          ab_buttons[i].setButtonText(juce::String(&buttonnames[i], 1));
+          ab_buttons[i].setToggleState(is_selected, juce::NotificationType::dontSendNotification);
           ab_buttons[i].setSize(40, button_height);
           ab_buttons[i].changeWidthToFitText();
-          ab_buttons[i].setRadioGroupId(1, NotificationType::dontSendNotification);
+          ab_buttons[i].setRadioGroupId(1, juce::NotificationType::dontSendNotification);
           ab_buttons[i].addListener(this);
 
           if (plugin->ab_is_valid[i] || is_selected){
-            ab_buttons[i].setButtonText(String(&buttonnames[i], 1) + "*");
+            ab_buttons[i].setButtonText(juce::String(&buttonnames[i], 1) + "*");
             ab_button_valid[i] = true;
           }
                 
@@ -889,8 +892,8 @@ namespace{
 
       // add vst gui
       main_component.addChildComponent(editor);
-      if (dynamic_cast<GenericAudioProcessorEditor*>(editor) != NULL)
-        editor->setLookAndFeel(new LookAndFeel_V4);
+      if (dynamic_cast<juce::GenericAudioProcessorEditor*>(editor) != NULL)
+        editor->setLookAndFeel(new juce::LookAndFeel_V4);
       editor->setTopLeftPosition(0, button_height);
       editor->setVisible(true);
       
@@ -949,7 +952,7 @@ namespace{
       auto closeit = [this] (void *handle){
         printf("CLOSEIT called\n");
 #if CUSTOM_MM_THREAD
-        const MessageManagerLock mmLock;
+        const juce::MessageManagerLock mmLock;
 #endif
         _embedded_native_window = NULL; // It's not valid anymore.
         
@@ -1047,8 +1050,8 @@ namespace{
 
 
 #if CUSTOM_MM_THREAD
-  struct JuceThread : public Thread {
-    Atomic<int> isInited;
+  struct JuceThread : public juce::Thread {
+    juce::Atomic<int> isInited;
 
     JuceThread()
       : Thread("Juce dispatcher thread")
@@ -1059,10 +1062,10 @@ namespace{
     void run() override {
       THREADING_init_juce_thread_type();
       
-      initialiseJuce_GUI();
-      MessageManager::getInstance(); // make sure there is an instance here to avoid theoretical race condition
+      juce::initialiseJuce_GUI();
+      juce::MessageManager::getInstance(); // make sure there is an instance here to avoid theoretical race condition
       isInited.set(1);
-      MessageManager::getInstance()->runDispatchLoop(); 
+      juce::MessageManager::getInstance()->runDispatchLoop(); 
     }
   };
 #endif
@@ -1074,7 +1077,7 @@ static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_si
 }
 
 // 
-static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, struct Patch *patch, MidiMessage message, int64_t seq_time){       
+static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, struct Patch *patch, juce::MidiMessage message, int64_t seq_time){       
   if (message.isNoteOn()) {
     //printf("Out. Sending note ON %d\n",  message.getNoteNumber());
     note_t note = create_note_t(NULL,
@@ -1145,14 +1148,14 @@ int RT_MIDI_send_msg_to_patch_receivers(struct SeqTrack *seqtrack, struct Patch 
     }
   }
   
-  MidiMessage message(data, data_size, num_bytes_used, 0);
+  juce::MidiMessage message(data, data_size, num_bytes_used, 0);
   
   RT_MIDI_send_msg_to_patch_receivers2(seqtrack, patch, message, seq_time);
 
   return num_bytes_used;
 }
 
-static void RT_MIDI_send_msg_to_patch2(struct SeqTrack *seqtrack, struct Patch *patch, MidiMessage message, int64_t seq_time){       
+static void RT_MIDI_send_msg_to_patch2(struct SeqTrack *seqtrack, struct Patch *patch, juce::MidiMessage message, int64_t seq_time){       
   if (message.isNoteOn()) {
     note_t note = create_note_t(NULL,
                                 -1,
@@ -1222,7 +1225,7 @@ int RT_MIDI_send_msg_to_patch(struct SeqTrack *seqtrack, struct Patch *patch, vo
     }
   }
   
-  MidiMessage message(data, data_size, num_bytes_used, 0);
+  juce::MidiMessage message(data, data_size, num_bytes_used, 0);
   
   RT_MIDI_send_msg_to_patch2(seqtrack, patch, message, seq_time);
 
@@ -1246,8 +1249,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   // 1. Process audio
 
-  AudioPluginInstance *instance = data->audio_instance;
-  AudioSampleBuffer &buffer = data->buffer;
+  juce::AudioPluginInstance *instance = data->audio_instance;
+  juce::AudioSampleBuffer &buffer = data->buffer;
   
   for(int ch=0; ch<data->num_input_channels ; ch++)
     memcpy(buffer.getWritePointer(ch), inputs[ch], sizeof(float)*num_frames);
@@ -1264,10 +1267,10 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
     volatile struct Patch *patch = plugin->patch;
 
-    MidiBuffer::Iterator iterator(data->midi_buffer);
+    juce::MidiBuffer::Iterator iterator(data->midi_buffer);
     
     RT_PLAYER_runner_lock();{
-      MidiMessage message;
+      juce::MidiMessage message;
       int samplePosition;
 
       while(iterator.getNextEvent(message, samplePosition)){
@@ -1315,30 +1318,30 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
 static void play_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
-  MidiBuffer &buffer = data->midi_buffer;
+  juce::MidiBuffer &buffer = data->midi_buffer;
 
   //printf("In. Play note %d %d\n",(int)note_num,(int)time);
-  MidiMessage message(0x90 | note.midi_channel, (int)note.pitch, R_BOUNDARIES(0, (int)(note.velocity*127), 127));
+  juce::MidiMessage message(0x90 | note.midi_channel, (int)note.pitch, R_BOUNDARIES(0, (int)(note.velocity*127), 127));
   buffer.addEvent(message, time);
 }
 
 static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
-  MidiBuffer &buffer = data->midi_buffer;
+  juce::MidiBuffer &buffer = data->midi_buffer;
 
   int velocity = R_BOUNDARIES(0,note.velocity,127);
-  MidiMessage message(0xa0 | note.midi_channel, (int)note.pitch, velocity, 0.0);
+  juce::MidiMessage message(0xa0 | note.midi_channel, (int)note.pitch, velocity, 0.0);
   buffer.addEvent(message, time);
 }
 
 static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
-  MidiBuffer &buffer = data->midi_buffer;
+  juce::MidiBuffer &buffer = data->midi_buffer;
 
   int ox90 = MIDI_get_use_0x90_for_note_off() ? 0x90 : 0x80;
 
   //printf("In. Stop note %d %d\n",(int)note_num,(int)time);
-  MidiMessage message(ox90 | note.midi_channel, (int)note.pitch, 0, 0.0);
+  juce::MidiMessage message(ox90 | note.midi_channel, (int)note.pitch, 0, 0.0);
   buffer.addEvent(message, time);
 }
 
@@ -1351,11 +1354,11 @@ static void send_raw_midi_message(struct SoundPlugin *plugin, int block_delta_ti
   //printf("   Data: %x %x %x (%x)\n",(int)data[0],(int)data[1],(int)data[2], msg);
   
   int num_bytes_used;
-  MidiMessage message(data, 3, num_bytes_used, 0);
+  juce::MidiMessage message(data, 3, num_bytes_used, 0);
   
   if (num_bytes_used>0) {
     Data *data = (Data*)plugin->data;
-    MidiBuffer &buffer = data->midi_buffer;
+    juce::MidiBuffer &buffer = data->midi_buffer;
     buffer.addEvent(message, block_delta_time);
   }
   
@@ -1365,7 +1368,7 @@ static void send_raw_midi_message(struct SoundPlugin *plugin, int block_delta_ti
 
 static int RT_get_latency(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
-  AudioPluginInstance *instance = data->audio_instance;
+  juce::AudioPluginInstance *instance = data->audio_instance;
   int latency = instance->getLatencySamples();
   //printf("\n\n\n    Created new latency %d\n\n\n", latency);
   return latency;
@@ -1373,7 +1376,7 @@ static int RT_get_latency(struct SoundPlugin *plugin){
 
 static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
-  AudioPluginInstance *instance = data->audio_instance;
+  juce::AudioPluginInstance *instance = data->audio_instance;
 
   if (is_vst2(plugin)){
 
@@ -1453,12 +1456,12 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock()); // assert that we don't hold the player lock here since we obtain the mmLock below.
   
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;  // FIX: Why do we use MessageManagerLock in get_display_value_string and not here? Partly answer: We can't hold mmLock in get_effect_value since it's called from the player and/or while holding the player lock. Not sure if we need the mmLock here though.
+  const juce::MessageManagerLock mmLock;  // FIX: Why do we use MessageManagerLock in get_display_value_string and not here? Partly answer: We can't hold mmLock in get_effect_value since it's called from the player and/or while holding the player lock. Not sure if we need the mmLock here though.
 #endif
   
   Data *data = (Data*)plugin->data;
   
-  String l = data->audio_instance->getParameters()[effect_num]->getLabel();
+  juce::String l = data->audio_instance->getParameters()[effect_num]->getLabel();
   const char *label = l.toRawUTF8();
 
   if (is_vst2(plugin)) // audio_instance->getParameterText() sometimes crashes. Doing it manually instead.
@@ -1485,7 +1488,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
       radium::PlayerRecursiveLock lock;
       value = data->audio_instance->getParameters()[effect_num]->getValue();
     }
-    String l = data->audio_instance->getParameters()[effect_num]->getText(value, buffersize-1);
+    juce::String l = data->audio_instance->getParameters()[effect_num]->getText(value, buffersize-1);
     snprintf(buffer,buffersize-1,"%s%s",l.toRawUTF8(),label);
   }
 }
@@ -1493,7 +1496,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 static bool gui_is_visible(struct SoundPlugin *plugin){
 
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock; // Must place here. Even checkin gif data->window==NULL must be protected by lock.
+  const juce::MessageManagerLock mmLock; // Must place here. Even checkin gif data->window==NULL must be protected by lock.
 #endif
     
   Data *data = (Data*)plugin->data;
@@ -1513,7 +1516,7 @@ radium::Mutex JUCE_show_hide_gui_lock;
 
 static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
 
   bool ret = false;
@@ -1526,12 +1529,12 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 
       radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
 
-      AudioProcessorEditor *editor;
+      juce::AudioProcessorEditor *editor;
       
       if (data->audio_instance->hasEditor())
         editor = data->audio_instance->createEditor(); //IfNeeded();
       else{
-        editor = new GenericAudioProcessorEditor(data->audio_instance);        
+        editor = new juce::GenericAudioProcessorEditor(data->audio_instance);        
       }
       
       if (editor != NULL) {
@@ -1558,7 +1561,7 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 
 static void hide_gui(struct SoundPlugin *plugin){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
   
   Data *data = (Data*)plugin->data;
@@ -1574,34 +1577,34 @@ static void hide_gui(struct SoundPlugin *plugin){
 }
 
 
-static AudioPluginInstance *create_audio_instance(const TypeData *type_data, float sample_rate, int block_size){
+static juce::AudioPluginInstance *create_audio_instance(const TypeData *type_data, float sample_rate, int block_size){
   
   static bool inited=false;
 
-  static AudioPluginFormatManager formatManager;
+  static juce::AudioPluginFormatManager formatManager;
     
   if (inited==false){
 #if CUSTOM_MM_THREAD
-    const MessageManagerLock mmLock;
+    const juce::MessageManagerLock mmLock;
 #endif
     formatManager.addDefaultFormats();
     inited=true;
   }
 
-  String errorMessage;
+  juce::String errorMessage;
 
-  const PluginDescription &description = type_data->description;
+  const juce::PluginDescription &description = type_data->description;
 
   printf("  Trying to load -%S-. Identifier: -%s-\n", type_data->file_or_identifier,description.createIdentifierString().toRawUTF8());
   
   {
     radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
     
-    AudioPluginInstance *instance;
+    juce::AudioPluginInstance *instance;
     
     {
 #if CUSTOM_MM_THREAD
-      const MessageManagerLock mmLock;
+      const juce::MessageManagerLock mmLock;
 #endif
       instance = formatManager.createPluginInstance(description, sample_rate, block_size, errorMessage);
     }
@@ -1613,7 +1616,7 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
     
     {
 #if CUSTOM_MM_THREAD
-      const MessageManagerLock mmLock;
+      const juce::MessageManagerLock mmLock;
 #endif
       instance->prepareToPlay(sample_rate, block_size);
     }
@@ -1623,7 +1626,7 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
 }
 
 
-static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPluginType *plugin_type){
+static void set_plugin_type_data(juce::AudioPluginInstance *audio_instance, SoundPluginType *plugin_type){
   TypeData *type_data = (struct TypeData*)plugin_type->data;
 
   /*
@@ -1676,19 +1679,19 @@ static void set_plugin_type_data(AudioPluginInstance *audio_instance, SoundPlugi
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
 
   Data *data = (Data*)plugin->data;
   
-  AudioPluginInstance *audio_instance = data->audio_instance;
+  juce::AudioPluginInstance *audio_instance = data->audio_instance;
 
   TypeData *type_data = (struct TypeData*)plugin->type->data;
 
   bool is_compatible = true;
 
   if (HASH_has_key(state, "identifier_string")){
-    String identifier_string = HASH_get_chars(state, "identifier_string");
+    juce::String identifier_string = HASH_get_chars(state, "identifier_string");
     if (!type_data->description.matchesIdentifierString(identifier_string)){
       if (type_data->has_shown_noncompatible_warning == false){
         GFX_addMessage("Warning: Saved state is not compatible with \"%s\" / \"%s\".\n\nThe state was probably saved for a different plugin with the same name.", plugin->type->type_name, plugin->type->name);
@@ -1702,7 +1705,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 
     if (HASH_has_key(state, "audio_instance_state")) {
       const char *stateAsString = HASH_get_chars(state, "audio_instance_state");
-      MemoryBlock sourceData;
+      juce::MemoryBlock sourceData;
       sourceData.fromBase64Encoding(stateAsString);
       audio_instance->setStateInformation(sourceData.getData(), sourceData.getSize());
     }
@@ -1715,7 +1718,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     
     if (HASH_has_key(state, "audio_instance_program_state")){
       const char *programStateAsString = HASH_get_chars(state, "audio_instance_program_state");
-      MemoryBlock sourceData;
+      juce::MemoryBlock sourceData;
       sourceData.fromBase64Encoding(programStateAsString);
       
       audio_instance->setCurrentProgramStateInformation(sourceData.getData(), sourceData.getSize());
@@ -1747,7 +1750,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
   if(is_vst2(plugin_type) || is_vst3(plugin_type)){
     printf("TYPE_NAME: -%s-, NAME: -%s-. Version: %s\n", plugin_type->type_name, plugin_type->name, type_data->description.version.toRawUTF8());
-    if (String(plugin_type->name)=="Moody Sampler" && (type_data->description.version=="V5.0" || type_data->description.version=="0.5.0")){
+    if (juce::String(plugin_type->name)=="Moody Sampler" && (type_data->description.version=="V5.0" || type_data->description.version=="0.5.0")){
       vector_t v = {};
 
       int yes = VECTOR_push_back(&v, "Yes");
@@ -1760,17 +1763,17 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     }
   }
   
-  AudioPluginInstance *audio_instance = create_audio_instance(type_data, sample_rate, block_size);
+  juce::AudioPluginInstance *audio_instance = create_audio_instance(type_data, sample_rate, block_size);
   if (audio_instance==NULL){
     return NULL;
   }
 
   {
 #if CUSTOM_MM_THREAD
-    const MessageManagerLock mmLock;
+    const juce::MessageManagerLock mmLock;
 #endif
 
-    PluginDescription description = audio_instance->getPluginDescription();
+    juce::PluginDescription description = audio_instance->getPluginDescription();
 
     //plugin->name = talloc_strdup(description.name.toUTF8());
     
@@ -1794,31 +1797,31 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
   
   Data *data = (Data*)plugin->data;
   
-  AudioPluginInstance *audio_instance = data->audio_instance;
+  juce::AudioPluginInstance *audio_instance = data->audio_instance;
 
   // save state
   {
-    MemoryBlock destData;
+    juce::MemoryBlock destData;
     audio_instance->getStateInformation(destData);
 
     if (destData.getSize() > 0){
-      String stateAsString = destData.toBase64Encoding();    
+      juce::String stateAsString = destData.toBase64Encoding();    
       HASH_put_chars(state, "audio_instance_state", stateAsString.toRawUTF8());
     }
   }
 
   // save program state
   {
-    MemoryBlock destData;
+    juce::MemoryBlock destData;
     audio_instance->getCurrentProgramStateInformation(destData);
 
     if (destData.getSize() > 0){
-      String stateAsString = destData.toBase64Encoding();    
+      juce::String stateAsString = destData.toBase64Encoding();    
       HASH_put_chars(state, "audio_instance_program_state", stateAsString.toRawUTF8());
     }
   }
@@ -1838,7 +1841,7 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
 
 namespace{
   // Some plugins require that it takes some time between deleting the window and deleting the instance. If we don't do this, some plugins will crash. Only seen it on OSX though, but it doesn't hurt to do it on all platforms.
-  struct DelayDeleteData : public Timer {
+  struct DelayDeleteData : public juce::Timer {
     Data *data;
     int downcount;
     
@@ -1871,7 +1874,7 @@ namespace{
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
 
   num_running_plugins--;
@@ -1887,7 +1890,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   // Wait a little bit first. (if CPU is VERY buzy, perhaps this waiting could prevent a crash)
 #if 0
   // No, too much waiting when deleting several plugins at once. The 10*0.5s waiting scheme is probably good enough anyway.
-  MessageManager::getInstance()->runDispatchLoopUntil(100);
+  juce::MessageManager::getInstance()->runDispatchLoopUntil(100);
 #endif
   
   // Then schedule deletion in 5 seconds.
@@ -1908,7 +1911,7 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
 
 static int get_num_presets(struct SoundPlugin *plugin){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
 
   Data *data = (Data*)plugin->data;
@@ -1918,67 +1921,67 @@ static int get_num_presets(struct SoundPlugin *plugin){
   if (is_vst3(plugin)) // Must upgrade JUCE. With the current version, presets are not working with vst3.
     return 0;
   
-  AudioPluginInstance *instance = data->audio_instance;
+  juce::AudioPluginInstance *instance = data->audio_instance;
 
   return instance->getNumPrograms();
 }
 
 static int get_current_preset(struct SoundPlugin *plugin){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
 
   Data *data = (Data*)plugin->data;
-  AudioPluginInstance *instance = data->audio_instance;
+  juce::AudioPluginInstance *instance = data->audio_instance;
 
   return instance->getCurrentProgram();
 }
 
 static void set_current_preset(struct SoundPlugin *plugin, int num){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
 
   Data *data = (Data*)plugin->data;
-  AudioPluginInstance *instance = data->audio_instance;
+  juce::AudioPluginInstance *instance = data->audio_instance;
 
   instance->setCurrentProgram(num);
 }
 
 static const char *get_preset_name(struct SoundPlugin *plugin, int num){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
 
   Data *data = (Data*)plugin->data;
-  AudioPluginInstance *instance = data->audio_instance;
+  juce::AudioPluginInstance *instance = data->audio_instance;
 
   return talloc_strdup(instance->getProgramName(num).toRawUTF8());
 }
 
 static void set_preset_name(struct SoundPlugin *plugin, int num, const char* new_name){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
 
   Data *data = (Data*)plugin->data;
-  AudioPluginInstance *instance = data->audio_instance;
+  juce::AudioPluginInstance *instance = data->audio_instance;
 
   instance->changeProgramName(num, new_name);
 }
 
 static void set_non_realtime(struct SoundPlugin *plugin, bool is_non_realtime){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
 
   Data *data = (Data*)plugin->data;
-  AudioPluginInstance *instance = data->audio_instance;
+  juce::AudioPluginInstance *instance = data->audio_instance;
 
   instance->setNonRealtime(is_non_realtime);
 }
 
-static SoundPluginType *create_plugin_type(const PluginDescription &description, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
+static SoundPluginType *create_plugin_type(const juce::PluginDescription &description, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
   printf("b02 %S\n",file_or_identifier);
   fflush(stdout);
   //  return;
@@ -2066,25 +2069,25 @@ static SoundPluginType *create_plugin_type(const PluginDescription &description,
 
 
 
-static String get_container_descriptions_filename(const wchar_t *container_filename){
-  String encoded(STRING_get_sha1(container_filename));
-  return String(OS_get_dot_radium_path(true)) + OS_get_directory_separator() + SCANNED_PLUGINS_DIRNAME + OS_get_directory_separator() + "v2_PluginDescription_" + encoded;
+static juce::String get_container_descriptions_filename(const wchar_t *container_filename){
+  juce::String encoded(STRING_get_sha1(container_filename));
+  return juce::String(OS_get_dot_radium_path(true)) + OS_get_directory_separator() + SCANNED_PLUGINS_DIRNAME + OS_get_directory_separator() + "v2_PluginDescription_" + encoded;
 }
 
 
 static enum PopulateContainerResult launch_program_calling_write_container_descriptions_to_cache_on_disk(const wchar_t *container_filename){
 #if FOR_WINDOWS
-  String executable = String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner.exe")));
+  juce::String executable = juce::String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner.exe")));
 #else
-  String executable = String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner")));
+  juce::String executable = juce::String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner")));
 #endif
   
-  StringArray args;
+  juce::StringArray args;
   args.add(executable);
-  args.add(Base64::toBase64(String(container_filename)));
-  args.add(Base64::toBase64(get_container_descriptions_filename(container_filename)));
+  args.add(juce::Base64::toBase64(juce::String(container_filename)));
+  args.add(juce::Base64::toBase64(get_container_descriptions_filename(container_filename)));
 
-  ChildProcess process;
+  juce::ChildProcess process;
 
   if (process.start(args)==false){
     GFX_Message2(NULL, true, "Error: Unable to launch %s", executable.toRawUTF8());
@@ -2124,19 +2127,19 @@ static enum PopulateContainerResult launch_program_calling_write_container_descr
   return POPULATE_RESULT_IS_OKAY; // as far as we know. (ChildProcess doesn't have an hasCrashed() function).
 }
 
-static enum PopulateContainerResult get_container_descriptions_from_disk(const SoundPluginTypeContainer *container, OwnedArray<PluginDescription> &descriptions){
-  String filename = get_container_descriptions_filename(container->filename);
+static enum PopulateContainerResult get_container_descriptions_from_disk(const SoundPluginTypeContainer *container, juce::OwnedArray<juce::PluginDescription> &descriptions){
+  juce::String filename = get_container_descriptions_filename(container->filename);
   
-  fprintf(stderr, "   READING.  %s: Reading from description file \"%s\".\n", String(container->filename).toRawUTF8(), filename.toRawUTF8());
+  fprintf(stderr, "   READING.  %s: Reading from description file \"%s\".\n", juce::String(container->filename).toRawUTF8(), filename.toRawUTF8());
     
-  File file(filename);
+  juce::File file(filename);
   if (file.existsAsFile()==false){
     //GFX_Message2(NULL, true, "Error. Could not find file \"%s\"\n", filename.toRawUTF8());
     //return POPULATE_RESULT_OTHER_ERROR;
     return POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED; // Likely to have been caused by the plugin crashing
   }
 
-  XmlElement *xml = XmlDocument::parse(file);
+  juce::XmlElement *xml = juce::XmlDocument::parse(file);
   if (xml==NULL){
     //GFX_Message2(NULL, true, "Error. Unable to parse xml file \"%s\". You might want to delete this file and try again.\n", filename.toRawUTF8());
     //return POPULATE_RESULT_OTHER_ERROR;
@@ -2146,8 +2149,8 @@ static enum PopulateContainerResult get_container_descriptions_from_disk(const S
   int size = xml->getNumChildElements();
     
   for(int i = 0 ; i < size ; i++){
-    XmlElement *xml_description = xml->getChildElement(i);
-    PluginDescription description;
+    juce::XmlElement *xml_description = xml->getChildElement(i);
+    juce::PluginDescription description;
     if (description.loadFromXml(*xml_description)==false){
       /*
       GFX_Message2(NULL, true, "Error: Unable to create description %d for %s from xml file \"%s\". You might want to delete this file and try again.\n",
@@ -2158,13 +2161,13 @@ static enum PopulateContainerResult get_container_descriptions_from_disk(const S
       */
       return POPULATE_RESULT_PLUGIN_MUST_BE_BLACKLISTED; // Likely to have been caused by the plugin crashing
     }
-    descriptions.add(new PluginDescription(description));
+    descriptions.add(new juce::PluginDescription(description));
   }
 
   return POPULATE_RESULT_IS_OKAY;
 }
 
-static enum PopulateContainerResult get_container_descriptions(SoundPluginTypeContainer *container, OwnedArray<PluginDescription> &descriptions){
+static enum PopulateContainerResult get_container_descriptions(SoundPluginTypeContainer *container, juce::OwnedArray<juce::PluginDescription> &descriptions){
 #if 0
   if (!container_descriptions_are_cached_on_disk(container))
     if (write_container_descriptions_to_cache_on_disk(container)==false){
@@ -2175,8 +2178,8 @@ static enum PopulateContainerResult get_container_descriptions(SoundPluginTypeCo
   R_ASSERT_RETURN_IF_FALSE2(container_descriptions_are_cached_on_disk(container), false);
 #else
 
-  String filename = get_container_descriptions_filename(container->filename);
-  File file(filename);
+  juce::String filename = get_container_descriptions_filename(container->filename);
+  juce::File file(filename);
   if (file.exists()==true){
     if (file.deleteFile()==false){
       GFX_Message2(NULL, true, "Error. Unable to delete file \"%s\"\n", filename.toRawUTF8());
@@ -2202,7 +2205,7 @@ static enum PopulateContainerResult populate(SoundPluginTypeContainer *container
 
   ContainerData *data = (ContainerData*)container->data;
 
-  OwnedArray<PluginDescription> descriptions;
+  juce::OwnedArray<juce::PluginDescription> descriptions;
 
   
 #if 0
@@ -2294,18 +2297,18 @@ void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, c
 #if 0 // Only works in linux.
 
 namespace{
-  struct ProgressWindow  : public DocumentWindow {
-    ThreadWithProgressWindow *progress_bar = NULL;
+  struct ProgressWindow  : public juce::DocumentWindow {
+    juce::ThreadWithProgressWindow *progress_bar = NULL;
     //ProgressBar *progress_bar = NULL;
     double progress_progress = 0.0;
     
     ProgressWindow(const char *title)
       : DocumentWindow (title,
-                        Colours::lightgrey,
-                        DocumentWindow::allButtons,
+                        juce::Colours::lightgrey,
+                        juce::DocumentWindow::allButtons,
                         true)
     {      
-      progress_bar = new ThreadWithProgressWindow(title, true, false);
+      progress_bar = new juce::ThreadWithProgressWindow(title, true, false);
       //progress_bar = new ProgressBar(progress_progress);
       progress_bar->setSize(600,20);
 
@@ -2332,12 +2335,12 @@ static ProgressWindow *g_progress_window;
 
 void GFX_OpenProgress(const char *message){
 #if CUSTOM_MM_THREAD
-  const MessageManagerLock mmLock;
+  const juce::MessageManagerLock mmLock;
 #endif
 
   delete g_progress_window;
 
-  g_progress_window = new ProgressWindow(message);
+  g_progress_window = new juce::ProgressWindow(message);
 }
 
 void GFX_ShowProgressMessage(const char *message){
@@ -2346,7 +2349,7 @@ void GFX_ShowProgressMessage(const char *message){
 
   {
 #if CUSTOM_MM_THREAD
-    const MessageManagerLock mmLock;
+    const juce::MessageManagerLock mmLock;
 #endif
     //g_progress_window->progress_bar->setTextToDisplay(message);
     g_progress_window->progress_bar->setStatusMessage(message);
@@ -2359,7 +2362,7 @@ void GFX_ShowProgressMessage(const char *message){
 
 void GFX_CloseProgress(void){
 #if CUSTOM_MM_THREAD
-    const MessageManagerLock mmLock;
+    const juce::MessageManagerLock mmLock;
 #endif
   delete g_progress_window;
   g_progress_window = NULL;
@@ -2368,11 +2371,11 @@ void GFX_CloseProgress(void){
 #endif
 
 void *JUCE_lock(void){
-  return new MessageManagerLock;
+  return new juce::MessageManagerLock;
 }
 
 void JUCE_unlock(void *lock){
-  MessageManagerLock *mmLock = static_cast<MessageManagerLock *>(lock);
+  juce::MessageManagerLock *mmLock = static_cast<juce::MessageManagerLock *>(lock);
   delete mmLock;
 }
 
@@ -2381,9 +2384,9 @@ bool JUCE_native_gui_grabs_keyboard(void){
 }
 
 char *JUCE_download(const char *url_url){
-  URL url(url_url);
+  juce::URL url(url_url);
   
-  String text =
+  juce::String text =
     url
     //    .withParameter("C", "M")
     //  .withParameter("O", "D")
@@ -2392,19 +2395,19 @@ char *JUCE_download(const char *url_url){
   return strdup(text.toRawUTF8());
 }
 
-static String g_backtrace;
+static juce::String g_backtrace;
 
 const char *JUCE_get_backtrace(void){
   static int num=0;
   printf("Getting backtrace %d\n", num);
-  g_backtrace = SystemStats::getStackBacktrace();
+  g_backtrace = juce::SystemStats::getStackBacktrace();
   printf("Got backtrace %d\n", num);
   num++;
   return g_backtrace.toUTF8();
 }
 
 void JUCE_get_min_max_val(const float *array, const int num_elements, float *min_val, float *max_val){
-  auto both = FloatVectorOperations::findMinAndMax(array,num_elements);
+  auto both = juce::FloatVectorOperations::findMinAndMax(array,num_elements);
   *min_val = both.getStart();
   *max_val = both.getEnd();
 }
@@ -2582,12 +2585,12 @@ static void testing(void){
 
 void PLUGINHOST_load_fxbp(SoundPlugin *plugin, wchar_t *wfilename){
   Data *data = (Data*)plugin->data;
-  AudioPluginInstance *instance = data->audio_instance;
+  juce::AudioPluginInstance *instance = data->audio_instance;
 
-  String filename(wfilename);
-  File file(filename);
+  juce::String filename(wfilename);
+  juce::File file(filename);
 
-  MemoryBlock memoryBlock;
+  juce::MemoryBlock memoryBlock;
   
   bool success = file.loadFileAsData(memoryBlock);
   if (success==false){
@@ -2595,7 +2598,7 @@ void PLUGINHOST_load_fxbp(SoundPlugin *plugin, wchar_t *wfilename){
     return;
   }
       
-  success = VSTPluginFormat::loadFromFXBFile(instance, memoryBlock.getData(), memoryBlock.getSize());
+  success = juce::VSTPluginFormat::loadFromFXBFile(instance, memoryBlock.getData(), memoryBlock.getSize());
   if (success==false){
     GFX_Message2(NULL, true, "Could not use %S for this plugin", wfilename);
     return;
@@ -2606,20 +2609,20 @@ void PLUGINHOST_load_fxbp(SoundPlugin *plugin, wchar_t *wfilename){
   
 static void save_fxbp(SoundPlugin *plugin, wchar_t *wfilename, bool is_fxb){
   Data *data = (Data*)plugin->data;
-  AudioPluginInstance *instance = data->audio_instance;
+  juce::AudioPluginInstance *instance = data->audio_instance;
 
-  MemoryBlock memoryBlock;
-  bool result = VSTPluginFormat::saveToFXBFile(instance, memoryBlock, is_fxb);
+  juce::MemoryBlock memoryBlock;
+  bool result = juce::VSTPluginFormat::saveToFXBFile(instance, memoryBlock, is_fxb);
   if (result==false){
     GFX_Message2(NULL, true, "Unable to create FXB/FXP data for this plugin");
     return;
   }
   
-  String filename(wfilename);
+  juce::String filename(wfilename);
 
-  File file(filename);
+  juce::File file(filename);
 
-  Result result2 = file.create();
+  juce::Result result2 = file.create();
 
   if (result2.failed()){
     GFX_Message2(NULL, true, "Unable to create file %S (%s)", wfilename, result2.getErrorMessage().toRawUTF8());
@@ -2657,7 +2660,7 @@ void PLUGINHOST_init(void){
   fprintf(stderr,"init1\n");
   const char crash[] = {3,1,1,1,1,-128,-128,-128,-128,16,1,1,1,1,1,77,26,52,
                         111,4,77,26,52,111,4,1,1,1,1,1,1,0};
-  String(CharPointer_UTF8(crash));
+  juce::String(CharPointer_UTF8(crash));
   fprintf(stderr,"init2\n");
   
 #endif
@@ -2668,7 +2671,7 @@ void PLUGINHOST_init(void){
   juce_thread->startThread();
 
   while(juce_thread->isInited.get()==0)
-    Thread::sleep(20);
+    juce::Thread::sleep(20);
   
 #else
 
