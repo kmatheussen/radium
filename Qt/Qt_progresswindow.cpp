@@ -198,6 +198,9 @@ private:
 
 int main(int argc, char **argv){
 
+  QLocale::setDefault(QLocale::c());
+  QLocale::setDefault(QLocale::C);
+
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
 
