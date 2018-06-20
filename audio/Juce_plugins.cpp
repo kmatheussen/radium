@@ -1597,7 +1597,14 @@ static AudioPluginInstance *create_audio_instance(const TypeData *type_data, flo
   {
     radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
     
-    AudioPluginInstance *instance = formatManager.createPluginInstance(description, sample_rate, block_size, errorMessage);
+    AudioPluginInstance *instance;
+    
+    {
+#if CUSTOM_MM_THREAD
+      const MessageManagerLock mmLock;
+#endif
+      instance = formatManager.createPluginInstance(description, sample_rate, block_size, errorMessage);
+    }
     
     if (instance==NULL){
       GFX_addMessage("Unable to open %s plugin %s: %s\n",description.pluginFormatName.toRawUTF8(), description.fileOrIdentifier.toRawUTF8(), errorMessage.toRawUTF8());

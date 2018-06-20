@@ -587,7 +587,7 @@ struct Mixer{
     memset(_bus, 0, sizeof(SoundProducer*)*NUM_BUSES);
   }
 
-  void add_SoundProducer(SoundProducer *sound_producer){
+  void add_SoundProducer(SoundProducer *sound_producer){    
     SoundPlugin *plugin = SP_get_plugin(sound_producer);
     int bus_num = SP_get_bus_num(sound_producer);
 
