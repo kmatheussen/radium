@@ -1184,7 +1184,7 @@ error.o:  $(BUILD_DEPENDENCIES) $(CD)error.c
 	$(CC) $(CD)error.c $(OPT)
 
 threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp
-	$(CCC)  $(CD)threading.cpp $(JACKOPT) $(CPPOPT)
+	$(CCC)  $(CD)threading.cpp $(JACKOPT) $(QTOPT)
 
 Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Semaphores.hpp common/OS_Semaphores.h
 	$(CCC) $(CD)Semaphores.cpp $(QTOPT)
