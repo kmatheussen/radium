@@ -1976,9 +1976,9 @@ namespace{
 static void cleanup_plugin_data(SoundPlugin *plugin){
   //const MMLock mmLock;
 
-  run_on_message_thread([&](){
+  num_running_plugins--;
       
-      num_running_plugins--;
+  run_on_message_thread([&](){
       
       printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
       Data *data = (Data*)plugin->data;
