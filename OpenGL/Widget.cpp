@@ -1258,7 +1258,7 @@ private:
       double now;
 #endif
 
-      if (juce_lock!=NULL){
+      if (juce_lock==NULL){
         radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
 #if USE_JUCE_CPU_PROTECTION_LOGIC
         now = monotonic_seconds() * 1000.0;
