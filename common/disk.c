@@ -347,12 +347,12 @@ int DC_whatString(char **variables,int num){
 		ret++;
 		if(ret>=num){
                   if (dc.type==LS_VARIABLE){
-                    GFX_Message(NULL,
-                                "Warning: Found unknown %s '%s'.\n"
-                                "The song was probably saved with a newer version of Radium.\n"
-                                "If you save this song, you will lose this variable.",
-                                dc.type==LS_VARIABLE?"variable":"object",
-                                string);
+                    GFX_addMessage(
+                                   "Warning: Found unknown %s '%s'.\n"
+                                   "The song was probably saved with a newer version of Radium.\n"
+                                   "If you save this song, you will lose this variable.",
+                                   dc.type==LS_VARIABLE?"variable":"object",
+                                   string);
                     DC_fgets();
                     return DC_UNKNOWN_VARIABLE;
                   } else {
