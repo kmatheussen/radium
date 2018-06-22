@@ -1870,13 +1870,13 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
         
         if(type_data->effect_names==NULL)
           set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
-        
-        if (state!=NULL)
-          recreate_from_state(plugin, state, is_loading);
-        
-        num_running_plugins++;
       });
     
+    if (state!=NULL)
+      recreate_from_state(plugin, state, is_loading);
+    
+    num_running_plugins++;
+
     return data;
   }
 }
