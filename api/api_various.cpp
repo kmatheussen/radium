@@ -2710,28 +2710,48 @@ const_char* getProgramLog(void){
 
 #define MAX_SCHEDULED_CALLBACKS 8192
 
+#define STDFUNC 0
+
+
 namespace{
+#if STDFUNC
+  static std::function<void(int,bool)> g_empty_callback3;
+#endif
+  
   struct ScheduledEvent{
     ScheduledEvent *next = NULL;
 
     double priority = 0.0;
     func_t *_callback = NULL;
+#if STDFUNC
+    std::function<void(void)> _callback3;
+#endif
     bool stop_me = false;
     
     ScheduledEvent()
     {
     }
 
-    void call_before_usage(double daspriority, func_t *callback){
+#if STDFUNC
+    void call_before_usage(double daspriority, func_t *callback, std::function<void(void)> callback3){
+#else
+      void call_before_usage(double daspriority, func_t *callback){
+#endif
       R_ASSERT(_callback==NULL);
       priority = daspriority;
       _callback = callback;
+#if STDFUNC
+      _callback3 = callback3;
+#endif
       s7extra_protect(_callback);
     }
 
     void call_after_usage(void){
       s7extra_unprotect(_callback);
       _callback = NULL;
+#if STDFUNC
+      _callback3 = g_empty_callback3;
+#endif
     }
   };
 }
@@ -2754,7 +2774,7 @@ static void schedule(ScheduledEvent *event){
   }
 }
 
-void schedule(double ms, func_t *callback){
+static ScheduledEvent *get_free_event(void){
   ScheduledEvent *event;
 
   if (g_unused_events!=NULL){
@@ -2764,11 +2784,40 @@ void schedule(double ms, func_t *callback){
   } else
     event = new ScheduledEvent();
 
+  return event;
+}
+
+#if STDFUNC
+static void schedule_internal(double ms, func_t *callback, std::function<void(void)> callback3)
+#else
+static void schedule_internal(double ms, func_t *callback)
+#endif
+{
+  ScheduledEvent *event = get_free_event();
+
   double priority = TIME_get_ms() + ms;
 
+#if STDFUNC
+  event->call_before_usage(priority, callback, g_empty_callback3);
+#else
   event->call_before_usage(priority, callback);
+#endif
+  
+  schedule(event);  
+}
 
-  schedule(event);
+#if STDFUNC
+void API_schedule(double ms, std::function<void(void)> callback3){
+  schedule_internal(ms, NULL, callback3);
+}
+#endif
+
+void schedule(double ms, func_t *callback){
+#if STDFUNC
+  schedule_internal(ms, callback, g_empty_callback3);
+#else
+  schedule_internal(ms, callback);
+#endif  
 }
 
 void removeSchedule(func_t *callback){
@@ -2801,11 +2850,30 @@ void API_call_very_often(void){
       release_event(event);
       break;
     }
+
+    bool has_new_ms = false;
+    double new_ms = 0;
     
-    dyn_t ret = S7CALL(dyn_void, event->_callback);
+    if (event->_callback != NULL) {
+      
+      dyn_t ret = S7CALL(dyn_void, event->_callback);
+      if (DYN_is_number(ret)){
+        new_ms = DYN_get_double_from_number(ret);
+        has_new_ms = true;
+      }
+      
+#if STDFUNC      
+    } else if(event->_callback3 != NULL){
+      
+      event->_callback3();
+#endif
+      
+    } else {
+      
+      R_ASSERT(false);
+    }
     
-    if (DYN_is_number(ret)){
-      double new_ms = DYN_get_double_from_number(ret);
+    if (has_new_ms){
       event->priority = TIME_get_ms() + new_ms;
       schedule(event);
     } else {
@@ -2817,4 +2885,7 @@ void API_call_very_often(void){
     //    throwExceptionIfError();
   }
 }
+
+#undef STDFUNC
+
 

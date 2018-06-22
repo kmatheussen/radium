@@ -80,6 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_Player_proc.h"
 #include "../common/OS_system_proc.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/threading.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 
@@ -537,6 +538,8 @@ namespace{
     
     juce::AudioProcessorEditor* const editor;
 
+    int64_t g_async_function_id = -1;
+    
     int64_t parentgui;
     
 #if USE_EMBEDDED_NATIVE_WINDOW
@@ -616,7 +619,7 @@ namespace{
             struct SoundPlugin *plugin = data->_plugin;
             R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
 
-            if (plugin->curr_ab_num != num) {
+            if (safe_int_read(&plugin->curr_ab_num) != num) {
               
               struct Patch *patch = const_cast<struct Patch*>(plugin->patch);
             
@@ -625,9 +628,15 @@ namespace{
                 R_ASSERT_NON_RELEASE(false);
                 
               } else {
-                
-                AUDIOWIDGET_set_ab(patch, num);
-              
+
+                if (THREADING_is_main_thread())
+                  AUDIOWIDGET_set_ab(patch, num);
+                else
+                  // Theoretically, more than one button could be clicked before g_async_function_id goes back to -1, but that's not important since waiting for g_async_function_id is only to avoid flickering.
+                  g_async_function_id =
+                    THREADING_run_on_main_thread_async([patch, num](){ // Need to run async to avoid deadlock if QCheckbox->setChecked() calls the callback directly.
+                        AUDIOWIDGET_set_ab(patch, num);
+                      });
               }
             }
           }
@@ -660,27 +669,46 @@ namespace{
       }
 
       // ab buttons
-      int num = plugin->curr_ab_num;
-      R_ASSERT_RETURN_IF_FALSE(num >= 0 && num < 8);
-
-      if (ab_buttons[num].getToggleState()==false)
-        ab_buttons[num].setToggleState(true, juce::NotificationType::dontSendNotification);
-
-      for(int i=0;i<8;i++){
-        bool is_selected = plugin->curr_ab_num==i;
+      bool check_ab_buttons = false;
+      
+      if (g_async_function_id == -1) {
         
-        bool new_valid = plugin->ab_is_valid[i] || is_selected;
+        check_ab_buttons = true;
         
-        if (new_valid != ab_button_valid[i]){
+      } else {
 
-          const char *buttonnames = "ABCDEFGH";
+        if (THREADING_async_function_has_run(g_async_function_id)==true){
+          g_async_function_id = -1;
+          check_ab_buttons = true;
+        }
           
-          if (new_valid)
-            ab_buttons[i].setButtonText(juce::String(&buttonnames[i], 1) + "*");
-          else
-            ab_buttons[i].setButtonText(juce::String(&buttonnames[i], 1));
+      }
+
+      if (check_ab_buttons) {
+        
+        int num = safe_int_read(&plugin->curr_ab_num);
+        
+        R_ASSERT_RETURN_IF_FALSE(num >= 0 && num < 8);
+        
+        if (ab_buttons[num].getToggleState()==false)
+          ab_buttons[num].setToggleState(true, juce::NotificationType::dontSendNotification);
+        
+        for(int i=0;i<8;i++){
+          bool is_selected = num==i;
           
-          ab_button_valid[i] = new_valid;
+          bool new_valid = plugin->ab_is_valid[i] || is_selected;
+          
+          if (new_valid != ab_button_valid[i]){
+            
+            const char *buttonnames = "ABCDEFGH";
+            
+            if (new_valid)
+              ab_buttons[i].setButtonText(juce::String(&buttonnames[i], 1) + "*");
+            else
+              ab_buttons[i].setButtonText(juce::String(&buttonnames[i], 1));
+            
+            ab_button_valid[i] = new_valid;
+          }
         }
       }
 
@@ -900,11 +928,13 @@ namespace{
 
       // a/b buttons
       {
+        int curr_ab_num = safe_int_read(&plugin->curr_ab_num);
+        
         for(int i=7;i>=0;i--){
           
           const char *buttonnames = "ABCDEFGH";
 
-          bool is_selected = plugin->curr_ab_num==i;
+          bool is_selected = curr_ab_num==i;
           
           ab_buttons[i].setButtonText(juce::String(&buttonnames[i], 1));
           ab_buttons[i].setToggleState(is_selected, juce::NotificationType::dontSendNotification);

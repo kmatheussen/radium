@@ -3,6 +3,9 @@
 #include <errno.h>
 #include <pthread.h>
 
+#include <functional>
+
+#include <QHash>
 
 #ifndef TEST_THREADING
 
@@ -10,14 +13,16 @@
 #include "../weakjack/weak_libjack.h"
 #endif
 
-  #include "nsmtracker.h"
-  #include "visual_proc.h"
-  #include "threading.h"
-  #include "threading_lowlevel.h"
+#include "nsmtracker.h"
+#include "visual_proc.h"
+#include "Semaphores.hpp"
+#include "Mutex.hpp"
 
-  #include "OS_Player_proc.h"
+#include "threading.h"
+#include "threading_lowlevel.h"
 
-  #include "../audio/Juce_plugins_proc.h"
+#include "OS_Player_proc.h"
+
 
 
 void OS_WaitForAShortTime(int milliseconds){
@@ -81,6 +86,126 @@ bool THREADING_is_juce_thread(void){
   return thread_type==JUCE_THREAD;
 }
 
+static radium::Mutex g_on_main_thread_lock;
+
+namespace{
+  struct OnMainThread{
+    radium::Semaphore *semaphore = NULL;
+    std::function<void(void)> callback;
+
+    OnMainThread(std::function<void(void)> callback)
+      : callback(callback)
+    {}
+  };
+}
+  
+static int64_t g_on_main_thread_id = 0;
+
+static QHash<int64_t, OnMainThread*> g_on_main_threads;
+
+void THREADING_call_very_often(void){
+
+  while(true) {
+    
+    int64_t id;
+    OnMainThread *on_main_thread;
+    
+    {
+      radium::ScopedMutex lock(g_on_main_thread_lock);
+      if (g_on_main_threads.isEmpty())
+        return;
+
+      id = g_on_main_threads.keys().first();
+      on_main_thread = g_on_main_threads[id];
+    }
+
+    on_main_thread->callback();
+    
+    {
+      radium::ScopedMutex lock(g_on_main_thread_lock);
+
+      g_on_main_threads.remove(id);
+      
+      if (on_main_thread->semaphore != NULL)
+        on_main_thread->semaphore->signal();
+    }
+
+    delete on_main_thread;
+  }
+}
+
+bool THREADING_async_function_has_run(int64_t id){
+  R_ASSERT_NON_RELEASE(!THREADING_is_main_thread());
+  
+  radium::ScopedMutex lock(g_on_main_thread_lock);
+  return g_on_main_threads.contains(id)==false;
+}
+
+void THREADING_wait_for_async_function(int64_t id){
+  
+  if (THREADING_is_main_thread()){
+    
+    R_ASSERT_NON_RELEASE(false);
+
+    {
+      bool call_call_very_often = false;
+
+      {
+        radium::ScopedMutex lock(g_on_main_thread_lock);
+        call_call_very_often = g_on_main_threads.contains(id);
+      }
+
+      if (call_call_very_often)
+        THREADING_call_very_often();
+    }
+    
+  } else {
+
+    radium::Semaphore semaphore;
+    
+    {
+      radium::ScopedMutex lock(g_on_main_thread_lock);
+      
+      if(g_on_main_threads.contains(id)==false)
+        return;
+      
+      OnMainThread *on_main_thread = g_on_main_threads[id];
+      
+      on_main_thread->semaphore = &semaphore;
+    }
+    
+    semaphore.wait();
+  }
+}
+
+int64_t THREADING_run_on_main_thread_async(std::function<void(void)> callback){
+  R_ASSERT(!PLAYER_current_thread_has_lock());
+
+  R_ASSERT_NON_RELEASE(!THREADING_is_main_thread());
+
+  {
+    radium::ScopedMutex lock(g_on_main_thread_lock);
+    
+    int64_t id = g_on_main_thread_id++;
+    
+    g_on_main_threads[id] = new OnMainThread(callback);
+    
+    return id;
+  }
+}
+
+void THREADING_run_on_main_thread_and_wait(std::function<void(void)> callback){
+  if (THREADING_is_main_thread()){
+    R_ASSERT(!PLAYER_current_thread_has_lock());
+    R_ASSERT_NON_RELEASE(false);
+    callback();
+    return;    
+  }
+  
+  int64_t id = THREADING_run_on_main_thread_async(callback);
+  THREADING_wait_for_async_function(id);
+}
+    
 priority_t THREADING_get_priority(void){
   priority_t priority;
 
