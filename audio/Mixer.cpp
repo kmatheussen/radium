@@ -396,12 +396,21 @@ static void unlock_player_from_nonrt_thread(int iteration){
 #if !defined(RELEASE)
   //printf("Elapsed: %f. (%d)\n", elapsed, iteration);
   if(elapsed > MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS){  // The lock is realtime safe, but we can't hold it a long time.
-    
-    addMessage(talloc_format("Warning: Holding player lock (%d) for more than %fms: %fms. (bus-descptype dur: %fms)<br>\n<pre>%s</pre>\n",
-                             iteration,
-                             MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS, elapsed,
-                             setdur,
-                             JUCE_get_backtrace()));
+
+    if (THREADING_is_main_thread()){
+      addMessage(talloc_format("Warning: Holding player lock (%d) for more than %fms: %fms. (bus-descptype dur: %fms)<br>\n<pre>%s</pre>\n",
+                               iteration,
+                               MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS, elapsed,
+                               setdur,
+                               JUCE_get_backtrace()));
+    } else {
+      printf("Warning (non-main thread): Holding player lock (%d) for more than %fms: %fms. (bus-descptype dur: %fms)<br>\n<pre>%s</pre>\n",
+             iteration,
+             MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS, elapsed,
+             setdur,
+             JUCE_get_backtrace()
+             );
+    }
   }
 #endif
 }

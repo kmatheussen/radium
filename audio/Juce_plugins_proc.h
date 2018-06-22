@@ -2,6 +2,7 @@
 #ifndef JUCE_PLUGIN_H_INCLUDED
 #define JUCE_PLUGIN_H_INCLUDED
 
+
 struct SoundPlugin;
 
 extern LANGSPEC bool JUCE_native_gui_grabs_keyboard(void);
