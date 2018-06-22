@@ -17,6 +17,8 @@
 
   #include "OS_Player_proc.h"
 
+  #include "../audio/Juce_plugins_proc.h"
+
 
 void OS_WaitForAShortTime(int milliseconds){
 #ifdef FOR_WINDOWS
@@ -53,17 +55,17 @@ static __thread ThreadType thread_type = OTHER_THREAD;
 
 
 void THREADING_init_main_thread_type(void) {
+  R_ASSERT_NON_RELEASE(thread_type==OTHER_THREAD);
   thread_type = MAIN_THREAD;
 }
 
 void THREADING_init_player_thread_type(void) {
+  R_ASSERT_NON_RELEASE(thread_type==OTHER_THREAD);
   thread_type = PLAYER_THREAD;
 }
 
 void THREADING_init_juce_thread_type(void) {
-#if !defined(FOR_LINUX)
-  R_ASSERT(false); // Only juce thread in Linux.
-#endif
+  R_ASSERT_NON_RELEASE(thread_type==OTHER_THREAD);
   thread_type = JUCE_THREAD;
 }
 
@@ -76,9 +78,6 @@ bool THREADING_is_player_thread(void){
 }
 
 bool THREADING_is_juce_thread(void){
-#if !defined(FOR_LINUX)
-  return false; // Only juce thread in Linux.
-#endif
   return thread_type==JUCE_THREAD;
 }
 

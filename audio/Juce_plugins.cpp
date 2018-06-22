@@ -117,15 +117,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_juce.cpp"
 #include "Juce_plugins_proc.h"
 
-#undef Slider
+//#undef Slider
 
 
-
-#if FOR_LINUX // TODO: Seems like this works fine on windows as well now. Should test more.
-#define CUSTOM_MM_THREAD 1
-#else
-#define CUSTOM_MM_THREAD 0
-#endif
 
 
 static int g_num_visible_plugin_windows = 0;
@@ -136,6 +130,43 @@ static int RT_get_latency(struct SoundPlugin *plugin);
 
 namespace{
 
+#if FOR_LINUX
+  static const bool g_use_custom_mm_thread = true;
+#elif FOR_WINDOWS  
+  static const bool g_use_custom_mm_thread = false;
+#else
+  static const bool g_use_custom_mm_thread = false;
+#endif
+  
+  class MMLock{
+    juce::MessageManager::Lock mmLock;
+
+  public:
+    MMLock(void)
+    {
+      if (g_use_custom_mm_thread){
+        mmLock.enter();
+      }
+    }
+
+    ~MMLock(){
+      if (g_use_custom_mm_thread)
+        mmLock.exit();
+    }    
+  };
+
+  
+  void *run_callback(void *arg){
+    std::function<void(void)> *callback = static_cast<std::function<void(void)> *>(arg);
+    (*callback)();
+    return NULL;
+  }
+  
+  void run_on_message_thread(std::function<void(void)> callback){
+    R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+    juce::MessageManager::getInstance()->callFunctionOnMessageThread(run_callback, &callback);
+  }
+  
   /*
   static bool is_au(const struct SoundPluginType *type) {
     return !strcmp(type->type_name, "AU");
@@ -759,7 +790,7 @@ namespace{
     }
 
           
-    PluginWindow(const char *title, Data *data, juce::AudioProcessorEditor* const editor, int64_t parentgui)
+    PluginWindow(const char *title, Data *data, juce::AudioProcessorEditor* const editor, int64_t parentgui, bool vst_gui_always_on_top)
       : DocumentWindow (title,
                         juce::Colours::lightgrey,
                         juce::DocumentWindow::closeButton, //allButtons,
@@ -786,7 +817,7 @@ namespace{
         this->setResizable(true, true);
       
 #if !FOR_WINDOWS // We have a more reliable way to do this on Windows (done at the end of this function)
-      if(vstGuiIsAlwaysOnTop()) {
+      if(vst_gui_always_on_top){
         this->setAlwaysOnTop(true);
       }
 #endif
@@ -794,6 +825,9 @@ namespace{
       int button_height = get_button_height();
       int keyboard_height = get_keyboard_height();
 
+      R_ASSERT_NON_RELEASE(editor->getWidth() > 0);
+      R_ASSERT_NON_RELEASE(editor->getHeight() > 0);
+      
       int initial_width = R_MAX(100, editor->getWidth());
       int initial_height = R_MAX(100, editor->getHeight() + button_height + keyboard_height);
       
@@ -835,7 +869,7 @@ namespace{
       {
         always_on_top_button.setButtonText("Always on top");
         
-        always_on_top_button.setToggleState(vstGuiIsAlwaysOnTop(), juce::NotificationType::dontSendNotification);
+        always_on_top_button.setToggleState(vst_gui_always_on_top, juce::NotificationType::dontSendNotification);
         always_on_top_button.setSize(400, button_height);
         always_on_top_button.changeWidthToFitText();
         
@@ -951,12 +985,13 @@ namespace{
 #if USE_EMBEDDED_NATIVE_WINDOW
       auto closeit = [this] (void *handle){
         printf("CLOSEIT called\n");
-#if CUSTOM_MM_THREAD
-        const juce::MessageManagerLock mmLock;
-#endif
-        _embedded_native_window = NULL; // It's not valid anymore.
+        run_on_message_thread([&](){
+            //MMLock mmLock();
         
-        delete this;
+            _embedded_native_window = NULL; // It's not valid anymore.
+        
+            delete this;
+          });
       };
 #endif
       
@@ -1049,7 +1084,6 @@ namespace{
   };
 
 
-#if CUSTOM_MM_THREAD
   struct JuceThread : public juce::Thread {
     juce::Atomic<int> isInited;
 
@@ -1068,7 +1102,6 @@ namespace{
       juce::MessageManager::getInstance()->runDispatchLoop(); 
     }
   };
-#endif
 }
 
 static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_size){
@@ -1455,73 +1488,83 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 
   R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock()); // assert that we don't hold the player lock here since we obtain the mmLock below.
   
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;  // FIX: Why do we use MessageManagerLock in get_display_value_string and not here? Partly answer: We can't hold mmLock in get_effect_value since it's called from the player and/or while holding the player lock. Not sure if we need the mmLock here though.
-#endif
-  
+  //const MMLock mmLock; // FIX: Why do we use MessageManagerLock in get_display_value_string and not here? Partly answer: We can't hold mmLock in get_effect_value since it's called from the player and/or while holding the player lock. Not sure if we need the mmLock here though.
+
   Data *data = (Data*)plugin->data;
   
-  juce::String l = data->audio_instance->getParameters()[effect_num]->getLabel();
-  const char *label = l.toRawUTF8();
+  run_on_message_thread([&](){
+      
+      juce::String l = data->audio_instance->getParameters()[effect_num]->getLabel();
+      const char *label = l.toRawUTF8();
 
-  if (is_vst2(plugin)) // audio_instance->getParameterText() sometimes crashes. Doing it manually instead.
-  {
-    char disp[128] = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
-    AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
-    const int effGetParamDisplay = 7;
-
-    {
-      radium::PlayerRecursiveLock lock;
-      aeffect->dispatcher(aeffect,effGetParamDisplay,
-                          effect_num, 0, (void *) disp, 0.0f);
-    }
-    
-    if (disp[0]==0){
-      snprintf(buffer,buffersize-1,"%f%s",aeffect->getParameter(aeffect,effect_num),label);//plugin->type_data->params[effect_num].label);
-    }else{
-      snprintf(buffer,buffersize-1,"%s%s",disp,label);
-    }
-  }
-  else {
-    float value;
-    {
-      radium::PlayerRecursiveLock lock;
-      value = data->audio_instance->getParameters()[effect_num]->getValue();
-    }
-    juce::String l = data->audio_instance->getParameters()[effect_num]->getText(value, buffersize-1);
-    snprintf(buffer,buffersize-1,"%s%s",l.toRawUTF8(),label);
-  }
+      if (is_vst2(plugin)) // audio_instance->getParameterText() sometimes crashes. Doing it manually instead.
+        {
+          char disp[128] = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
+          AEffect *aeffect = (AEffect*)data->audio_instance->getPlatformSpecificData();
+          const int effGetParamDisplay = 7;
+          
+          {
+            radium::PlayerRecursiveLock lock;
+            aeffect->dispatcher(aeffect,effGetParamDisplay,
+                                effect_num, 0, (void *) disp, 0.0f);
+          }
+          
+          if (disp[0]==0){
+            snprintf(buffer,buffersize-1,"%f%s",aeffect->getParameter(aeffect,effect_num),label);//plugin->type_data->params[effect_num].label);
+          }else{
+            snprintf(buffer,buffersize-1,"%s%s",disp,label);
+          }
+        }
+      else {
+        float value;
+        {
+          radium::PlayerRecursiveLock lock;
+          value = data->audio_instance->getParameters()[effect_num]->getValue();
+        }
+        juce::String l = data->audio_instance->getParameters()[effect_num]->getText(value, buffersize-1);
+        snprintf(buffer,buffersize-1,"%s%s",l.toRawUTF8(),label);
+      }
+      
+    });
 }
 
 static bool gui_is_visible(struct SoundPlugin *plugin){
 
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock; // Must place here. Even checkin gif data->window==NULL must be protected by lock.
-#endif
+  //const MMLock mmLock; // Must place here. Even checkin gif data->window==NULL must be protected by lock.
     
   Data *data = (Data*)plugin->data;
 
-  if (data->window==NULL) {
+  bool ret = false;
+  
+  run_on_message_thread([&](){
+      if (data->window==NULL) {
+        
+        ret = false;
+        
+      } else {
+        
+        ret = data->window->isVisible();
     
-    return false;
-    
-  } else {
-    
-    return data->window->isVisible();
-    
-  }
+      }
+    });
+
+  return ret;
 }
 
 radium::Mutex JUCE_show_hide_gui_lock;
 
 static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //  const MMLock mmLock;
 
   bool ret = false;
   
   Data *data = (Data*)plugin->data;
+
+  bool vst_gui_always_on_top = vstGuiIsAlwaysOnTop();
+  const char *title = plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name;
+  
+  run_on_message_thread([&](){
+                        
 
   if (data->window==NULL) {
 
@@ -1539,8 +1582,7 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
       
       if (editor != NULL) {
 
-        const char *title = V_strdup(plugin->patch==NULL ? talloc_format("%s %s",plugin->type->type_name, plugin->type->name) : plugin->patch->name);
-        data->window = new PluginWindow(title, data, editor, parentgui);
+        data->window = new PluginWindow(V_strdup(title), data, editor, parentgui, vst_gui_always_on_top);
 
         ret = true;
       }
@@ -1553,25 +1595,29 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
     ret = true;
   }
 #endif
-  
+
+    });
+
   return ret;
 }
 
 //void OS_WINDOWS_move_main_window_to_front(void);
 
 static void hide_gui(struct SoundPlugin *plugin){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //const MMLock mmLock;
   
   Data *data = (Data*)plugin->data;
 
+  run_on_message_thread([&](){
+        
 #if CHANGE_GUI_VISIBILITY_INSTEAD_OF_REOPENING
-  if (data->window != NULL)
-    data->window->setVisible(false);
+      if (data->window != NULL)
+        data->window->setVisible(false);
 #else
-  delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
+      delete data->window; // NOTE: data->window is set to NULL in the window destructor. It's hairy, but there's probably not a better way.
 #endif
+      
+    });
   
   //OS_WINDOWS_move_main_window_to_front();
 }
@@ -1584,11 +1630,11 @@ static juce::AudioPluginInstance *create_audio_instance(const TypeData *type_dat
   static juce::AudioPluginFormatManager formatManager;
     
   if (inited==false){
-#if CUSTOM_MM_THREAD
-    const juce::MessageManagerLock mmLock;
-#endif
-    formatManager.addDefaultFormats();
-    inited=true;
+    //const MMLock mmLock;
+    run_on_message_thread([&](){
+        formatManager.addDefaultFormats();
+        inited=true;
+      });
   }
 
   juce::String errorMessage;
@@ -1603,9 +1649,7 @@ static juce::AudioPluginInstance *create_audio_instance(const TypeData *type_dat
     juce::AudioPluginInstance *instance;
     
     {
-#if CUSTOM_MM_THREAD
-      // const juce::MessageManagerLock mmLock; Leads to deadlock. Also, AudioPluginFormat::createInstanceFromDescription is explicitly made to handle calls not made from the message thread.
-#endif
+      // const MMLock mmLock; Leads to deadlock. Also, AudioPluginFormat::createInstanceFromDescription is explicitly made to handle calls not made from the message thread.
       instance = formatManager.createPluginInstance(description, sample_rate, block_size, errorMessage);
     }
     
@@ -1615,10 +1659,10 @@ static juce::AudioPluginInstance *create_audio_instance(const TypeData *type_dat
     }
     
     {
-#if CUSTOM_MM_THREAD
-      const juce::MessageManagerLock mmLock;
-#endif
-      instance->prepareToPlay(sample_rate, block_size);
+      //const MMLock mmLock;
+      run_on_message_thread([&](){
+          instance->prepareToPlay(sample_rate, block_size);
+        });
     }
   
     return instance;
@@ -1664,23 +1708,25 @@ static void set_plugin_type_data(juce::AudioPluginInstance *audio_instance, Soun
 #endif
 
   // Add some more info to the info string.
-  plugin_type->info = V_strdup(talloc_format("%sAccepts MIDI: %s\nProduces MIDI: %s\n", plugin_type->info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No"));
+  char temp[1024];
+  snprintf(temp, 1023, "%sAccepts MIDI: %s\nProduces MIDI: %s\n", plugin_type->info, audio_instance->acceptsMidi()?"Yes":"No", audio_instance->producesMidi()?"Yes":"No");
+  plugin_type->info = V_strdup(temp);
         
   plugin_type->is_instrument = audio_instance->acceptsMidi(); // doesn't seem like this field ("is_instrument") is ever read...
 
   plugin_type->num_effects = audio_instance->getParameters().size();
 
   type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
-  for(int i = 0 ; i < plugin_type->num_effects ; i++)
+  for(int i = 0 ; i < plugin_type->num_effects ; i++){
     //  type_data->effect_names[i] = V_strdup(audio_instance->getParameterName(i).toRawUTF8());
-    type_data->effect_names[i] = V_strdup(talloc_format("%d: %s",i,audio_instance->getParameters()[i]->getName(1000).toRawUTF8()));
+    snprintf(temp, 1023, "%d: %s",i,audio_instance->getParameters()[i]->getName(1000).toRawUTF8());
+    type_data->effect_names[i] = V_strdup(temp);
+  }
 }
 
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
   
@@ -1691,8 +1737,12 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   bool is_compatible = true;
 
   if (HASH_has_key(state, "identifier_string")){
-    juce::String identifier_string = HASH_get_chars(state, "identifier_string");
-    if (!type_data->description.matchesIdentifierString(identifier_string)){
+    bool matches;
+    const char *identifier_string = HASH_get_chars(state, "identifier_string");
+    run_on_message_thread([&](){
+        matches = type_data->description.matchesIdentifierString(identifier_string);
+      });
+    if (!matches){
       if (type_data->has_shown_noncompatible_warning == false){
         GFX_addMessage("Warning: Saved state is not compatible with \"%s\" / \"%s\".\n\nThe state was probably saved for a different plugin with the same name.", plugin->type->type_name, plugin->type->name);
         type_data->has_shown_noncompatible_warning = true;
@@ -1705,23 +1755,29 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 
     if (HASH_has_key(state, "audio_instance_state")) {
       const char *stateAsString = HASH_get_chars(state, "audio_instance_state");
-      juce::MemoryBlock sourceData;
-      sourceData.fromBase64Encoding(stateAsString);
-      audio_instance->setStateInformation(sourceData.getData(), sourceData.getSize());
+      run_on_message_thread([&](){
+          juce::MemoryBlock sourceData;
+          sourceData.fromBase64Encoding(stateAsString);
+          audio_instance->setStateInformation(sourceData.getData(), sourceData.getSize());
+        });
     }
     
     
     if (HASH_has_key(state, "audio_instance_current_program")) {
       int current_program = HASH_get_int(state, "audio_instance_current_program");
-      audio_instance->setCurrentProgram(current_program);
+      run_on_message_thread([&](){
+          audio_instance->setCurrentProgram(current_program);
+        });
     }
     
     if (HASH_has_key(state, "audio_instance_program_state")){
       const char *programStateAsString = HASH_get_chars(state, "audio_instance_program_state");
-      juce::MemoryBlock sourceData;
-      sourceData.fromBase64Encoding(programStateAsString);
+      run_on_message_thread([&](){
+          juce::MemoryBlock sourceData;
+          sourceData.fromBase64Encoding(programStateAsString);
       
-      audio_instance->setCurrentProgramStateInformation(sourceData.getData(), sourceData.getSize());
+          audio_instance->setCurrentProgramStateInformation(sourceData.getData(), sourceData.getSize());
+        });          
     }
   }
 
@@ -1769,45 +1825,46 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   }
 
   {
-#if CUSTOM_MM_THREAD
-    const juce::MessageManagerLock mmLock;
-#endif
+    //const MMLock mmLock;
+    Data *data;
+    
+    run_on_message_thread([&](){
+        juce::PluginDescription description = audio_instance->getPluginDescription();
 
-    juce::PluginDescription description = audio_instance->getPluginDescription();
-
-    //plugin->name = talloc_strdup(description.name.toUTF8());
+        //plugin->name = talloc_strdup(description.name.toUTF8());
+        
+        data = new Data(audio_instance, plugin, audio_instance->getTotalNumInputChannels(), audio_instance->getTotalNumOutputChannels());
+        plugin->data = data;
+        
+        audio_instance->setPlayHead(&data->playHead);
+        
+        if(type_data->effect_names==NULL)
+          set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
+        
+        if (state!=NULL)
+          recreate_from_state(plugin, state, is_loading);
+        
+        num_running_plugins++;
+      });
     
-    Data *data = new Data(audio_instance, plugin, audio_instance->getTotalNumInputChannels(), audio_instance->getTotalNumOutputChannels());
-    plugin->data = data;
-    
-    audio_instance->setPlayHead(&data->playHead);
-    
-    if(type_data->effect_names==NULL)
-      set_plugin_type_data(audio_instance,(SoundPluginType*)plugin_type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
-    
-    if (state!=NULL)
-      recreate_from_state(plugin, state, is_loading);
-    
-    num_running_plugins++;
-
     return data;
   }
 }
 
 
 static void create_state(struct SoundPlugin *plugin, hash_t *state){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //const MMLock mmLock;
   
   Data *data = (Data*)plugin->data;
   
   juce::AudioPluginInstance *audio_instance = data->audio_instance;
 
   // save state
-  {
+  {    
     juce::MemoryBlock destData;
-    audio_instance->getStateInformation(destData);
+    run_on_message_thread([&](){
+        audio_instance->getStateInformation(destData);
+      });
 
     if (destData.getSize() > 0){
       juce::String stateAsString = destData.toBase64Encoding();    
@@ -1818,24 +1875,38 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   // save program state
   {
     juce::MemoryBlock destData;
-    audio_instance->getCurrentProgramStateInformation(destData);
-
+    run_on_message_thread([&](){
+        audio_instance->getCurrentProgramStateInformation(destData);
+      });
+    
     if (destData.getSize() > 0){
       juce::String stateAsString = destData.toBase64Encoding();    
       HASH_put_chars(state, "audio_instance_program_state", stateAsString.toRawUTF8());
     }
   }
 
-  HASH_put_int(state, "audio_instance_current_program", audio_instance->getCurrentProgram());
+  int current_program;
+  
+  run_on_message_thread([&](){
+      current_program = audio_instance->getCurrentProgram();
+    });
+  HASH_put_int(state, "audio_instance_current_program", current_program);
 
   /*
   HASH_put_int(state, "x_pos", data->x);
   HASH_put_int(state, "y_pos", data->y);
   */
   
-  TypeData *type_data = (struct TypeData*)plugin->type->data;
-
-  HASH_put_chars(state, "identifier_string", type_data->description.createIdentifierString().toRawUTF8());
+  {
+    TypeData *type_data = (struct TypeData*)plugin->type->data;
+    const char *identifier_string;
+    run_on_message_thread([&](){
+        identifier_string = V_strdup(type_data->description.createIdentifierString().toRawUTF8());
+      });  
+    
+    HASH_put_chars(state, "identifier_string", identifier_string);
+    V_free((void*)identifier_string);
+  }
 }
 
 
@@ -1873,28 +1944,29 @@ namespace{
 
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //const MMLock mmLock;
 
-  num_running_plugins--;
-
-  printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
-  Data *data = (Data*)plugin->data;
-
-  if (data->window != NULL)
-    delete data->window;
-
-  data->plugin_will_be_deleted();
-
-  // Wait a little bit first. (if CPU is VERY buzy, perhaps this waiting could prevent a crash)
+  run_on_message_thread([&](){
+      
+      num_running_plugins--;
+      
+      printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
+      Data *data = (Data*)plugin->data;
+      
+      if (data->window != NULL)
+        delete data->window;
+      
+      data->plugin_will_be_deleted();
+      
+      // Wait a little bit first. (if CPU is VERY buzy, perhaps this waiting could prevent a crash)
 #if 0
-  // No, too much waiting when deleting several plugins at once. The 10*0.5s waiting scheme is probably good enough anyway.
-  juce::MessageManager::getInstance()->runDispatchLoopUntil(100);
+      // No, too much waiting when deleting several plugins at once. The 10*0.5s waiting scheme is probably good enough anyway.
+      juce::MessageManager::getInstance()->runDispatchLoopUntil(100);
 #endif
-  
-  // Then schedule deletion in 5 seconds.
-  new DelayDeleteData(data);
+      
+      // Then schedule deletion in 5 seconds.
+      new DelayDeleteData(data);
+    });
 }
 
 static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
@@ -1910,9 +1982,7 @@ static const char *get_effect_description(const struct SoundPluginType *plugin_t
 */
 
 static int get_num_presets(struct SoundPlugin *plugin){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
 
@@ -1923,62 +1993,74 @@ static int get_num_presets(struct SoundPlugin *plugin){
   
   juce::AudioPluginInstance *instance = data->audio_instance;
 
-  return instance->getNumPrograms();
+  int ret;
+
+  run_on_message_thread([&](){
+      ret = instance->getNumPrograms();
+    });
+  
+  return ret;
 }
 
 static int get_current_preset(struct SoundPlugin *plugin){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
   juce::AudioPluginInstance *instance = data->audio_instance;
 
-  return instance->getCurrentProgram();
+  int ret;
+  run_on_message_thread([&](){
+      ret = instance->getCurrentProgram();
+    });
+  return ret;
 }
 
 static void set_current_preset(struct SoundPlugin *plugin, int num){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
   juce::AudioPluginInstance *instance = data->audio_instance;
 
-  instance->setCurrentProgram(num);
+  run_on_message_thread([&](){
+      instance->setCurrentProgram(num);
+    });
 }
 
 static const char *get_preset_name(struct SoundPlugin *plugin, int num){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
   juce::AudioPluginInstance *instance = data->audio_instance;
 
-  return talloc_strdup(instance->getProgramName(num).toRawUTF8());
+  const char *ret;
+  run_on_message_thread([&](){
+      ret = V_strdup(instance->getProgramName(num).toRawUTF8());
+    });
+  const char *ret2 = talloc_strdup(ret);
+  V_free((void*)ret);
+  return ret2;
 }
 
 static void set_preset_name(struct SoundPlugin *plugin, int num, const char* new_name){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
   juce::AudioPluginInstance *instance = data->audio_instance;
 
-  instance->changeProgramName(num, new_name);
+  run_on_message_thread([&](){
+      instance->changeProgramName(num, new_name);
+    });
 }
 
 static void set_non_realtime(struct SoundPlugin *plugin, bool is_non_realtime){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //const MMLock mmLock;
 
   Data *data = (Data*)plugin->data;
   juce::AudioPluginInstance *instance = data->audio_instance;
 
-  instance->setNonRealtime(is_non_realtime);
+  run_on_message_thread([&](){
+      instance->setNonRealtime(is_non_realtime);
+    });
 }
 
 static SoundPluginType *create_plugin_type(const juce::PluginDescription &description, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
@@ -2334,13 +2416,13 @@ namespace{
 static ProgressWindow *g_progress_window;
 
 void GFX_OpenProgress(const char *message){
-#if CUSTOM_MM_THREAD
-  const juce::MessageManagerLock mmLock;
-#endif
+  //const MMLock mmLock;
 
-  delete g_progress_window;
-
-  g_progress_window = new juce::ProgressWindow(message);
+  run_on_message_thread([&](){
+      delete g_progress_window;
+      
+      g_progress_window = new juce::ProgressWindow(message);
+    });
 }
 
 void GFX_ShowProgressMessage(const char *message){
@@ -2348,30 +2430,30 @@ void GFX_ShowProgressMessage(const char *message){
     GFX_OpenProgress("...");
 
   {
-#if CUSTOM_MM_THREAD
-    const juce::MessageManagerLock mmLock;
-#endif
-    //g_progress_window->progress_bar->setTextToDisplay(message);
-    g_progress_window->progress_bar->setStatusMessage(message);
-    g_progress_window->progress_bar->setProgress(g_progress_window->progress_progress);
-    g_progress_window->progress_progress += 0.1;
-    //if(g_progress_progress > 1.0)
-    //  g_progress_progress = 0.0;
+    //const MMLock mmLock;
+    run_on_message_thread([&](){
+        //g_progress_window->progress_bar->setTextToDisplay(message);
+        g_progress_window->progress_bar->setStatusMessage(message);
+        g_progress_window->progress_bar->setProgress(g_progress_window->progress_progress);
+        g_progress_window->progress_progress += 0.1;
+        //if(g_progress_progress > 1.0)
+        //  g_progress_progress = 0.0;
+      });
   }
 }
 
 void GFX_CloseProgress(void){
-#if CUSTOM_MM_THREAD
-    const juce::MessageManagerLock mmLock;
-#endif
-  delete g_progress_window;
-  g_progress_window = NULL;
+  //const MMLock mmLock;
+  run_on_message_thread([&](){
+      delete g_progress_window;
+      g_progress_window = NULL;
+    });
 }
 
 #endif
 
 void *JUCE_lock(void){
-  return new juce::MessageManagerLock;
+  return new juce::MessageManagerLock; // Can not use MMLock here.
 }
 
 void JUCE_unlock(void *lock){
@@ -2664,23 +2746,23 @@ void PLUGINHOST_init(void){
   fprintf(stderr,"init2\n");
   
 #endif
+
+  if (g_use_custom_mm_thread){
+
+    JuceThread *juce_thread = new JuceThread;
+    juce_thread->startThread();
+    
+    while(juce_thread->isInited.get()==0)
+      juce::Thread::sleep(20);
+    
+  } else {
+
+    juce::initialiseJuce_GUI();
+
+  }
   
-#if CUSTOM_MM_THREAD // Seems like a separate thread is only necessary on linux.
-
-  JuceThread *juce_thread = new JuceThread;
-  juce_thread->startThread();
-
-  while(juce_thread->isInited.get()==0)
-    juce::Thread::sleep(20);
+  //juce::Font::setDefaultSansSerifFont
   
-#else
-
-  initialiseJuce_GUI();
-
-  //Font::setDefaultSansSerifFont 
-
-
-#endif
 }
 
 #endif // defined(COMPILING_JUCE_PLUGINS_O)
