@@ -1305,6 +1305,7 @@ struct PatchVoice{
   float volume;
   float start;
   float length;
+  float pan;
   enum TimeFormat time_format;
   float chance;
 };

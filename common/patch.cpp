@@ -984,6 +984,14 @@ static int rnd(int max){
   return rand() % max;
 }
 
+static float apply_pan_to_pan(const float old_pan, const float new_pan){
+  return R_BOUNDARIES(-1.0,
+                      old_pan+new_pan,  // is there a better way? (when thinking about it geometrically though, it seems correct. E.g. -90 + 90 = 0.)
+                      1.0
+                      );
+}
+
+
 // DOES add envelope volume
 int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, struct Notes *editor_note, STime time){
   //printf("\n\nRT_PATCH_PLAY_NOTE. ___Starting note %f, time: %d, id: %d. block_reltempo: %f\n\n",note.pitch,(int)time,(int)note.id,note.block_reltempo);
@@ -1025,7 +1033,8 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
         args[1].float_num = voice_notenum;
         args[2].int_num = voice_id;
         args[3].float_num = voice_velocity;
-        
+        args[4].float_num = apply_pan_to_pan(note.pan, voice->pan);
+       
         // voicenum
         args[5].int_num &= ~(0xff);
         args[5].int_num |= i;
