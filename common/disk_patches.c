@@ -38,6 +38,7 @@ static void SavePatchVoice(struct PatchVoice *voice, int voicenum){
     DC_SSF("volume",voice->volume);
     DC_SSF("start",voice->start);
     DC_SSF("length",voice->length);
+    DC_SSF("pan", voice->pan);
     DC_SSI("time_format",voice->time_format);
     DC_SSI("chance", voice->chance);
   }
@@ -46,11 +47,11 @@ static void SavePatchVoice(struct PatchVoice *voice, int voicenum){
 
 static void LoadPatchVoice(struct PatchVoice *voice){
   static char *objs[0] = {};
-  static char *vars[7] = {"is_on","transpose","volume","start","length","time_format","chance"};
+  static char *vars[8] = {"is_on","transpose","volume","start","length","pan","time_format","chance"};
 
   voice->chance = 256; // For older songs
   
-  GENERAL_LOAD(0,7);
+  GENERAL_LOAD(0,8);
 
  var0:
   voice->is_on = DC_LoadB();
@@ -68,12 +69,14 @@ static void LoadPatchVoice(struct PatchVoice *voice){
   voice->length = DC_LoadF();
   goto start;
  var5:
-  voice->time_format = DC_LoadI();
+  voice->pan = DC_LoadF();
   goto start;
  var6:
+  voice->time_format = DC_LoadI();
+  goto start;
+ var7:
   voice->chance = DC_LoadI();
   goto start;
-var7:
 var8:
 var9:
 var10:

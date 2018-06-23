@@ -59,6 +59,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
         setStyleRec(widget, style);
     }
   }
+
+  bool _show_pan = false;
   
   Patch_widget(QWidget *parent, struct Patch *patch)
     : QWidget(parent)
@@ -79,6 +81,28 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     main_vertical_layout->setSpacing(3);
 #endif
 #endif
+
+    if (_patch->instrument==get_audio_instrument()){
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+      if (plugin != NULL) {
+        
+        if (!strcmp(plugin->type->type_name, "Sample Player")) {
+          
+          _show_pan = true;
+          
+        } else if (!strcmp(plugin->type->type_name, "Pd")) {
+          
+        _show_pan = true;
+        
+        }
+        
+      } else {
+        
+        R_ASSERT_NON_RELEASE(false);
+        
+      }
+    }
     
 #ifdef USE_QT5
     
@@ -127,7 +151,11 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       set_fixed_widget_width(get_v(i), "-35 "); // volume
       set_fixed_widget_width(get_s(i), "999.9 "); // start
       set_fixed_widget_width(get_l(i), "999.9 "); //length
-      set_fixed_widget_width(get_c(i), "256 "); // chance
+      if (_show_pan)
+        set_fixed_widget_width(get_p(i), "-35 "); //pan
+      else
+        get_p(i)->hide();
+      set_fixed_widget_width(get_c(i), "Ch256 "); // chance
       
       get_o(i)->setToolTip("Whether to play this voice. At least one voice must be selected in order for any notes to be played.");
       get_t(i)->setToolTip("How much to transpose this voice");
@@ -136,7 +164,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
                            "The unit is milliseconds.");//Beats. To use milliseconds instead, press the \"ms.\" button.");
       get_l(i)->setToolTip("A value higher than 0.0 will override the duration of this voice.\n"
                            "The unit is milliseconds.");//by default Beats, unless \"ms.\" is selected");
-
+      get_p(i)->setToolTip("Pan value for this voice. The unit is in degrees.");
+        
       get_f(i)->hide();
       get_c(i)->setToolTip("The chance of this voice to play. A value of 256 means that there is 100% chance of this voice plaing.\n"
                            "A value of 128 means that there is a 50% chance of this voice playing.");
@@ -187,6 +216,11 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     return l[i];
   }
 
+  MyQSpinBox *get_p(int i){
+    MyQSpinBox *p[NUM_PATCH_VOICES]={p1,p2,p3,p4,p5,p6,p7};
+    return p[i];
+  }
+
   MyQCheckBox *get_f(int i){
     MyQCheckBox *f[NUM_PATCH_VOICES]={f1,f2,f3,f4,f5,f6,f7};
     return f[i];
@@ -229,6 +263,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       get_v(i)->setValue(voice.volume);
       get_s(i)->setValue(voice.start);
       get_l(i)->setValue(voice.length);
+      get_p(i)->setValue(scale(voice.pan,-1,1,-90,90));
       get_c(i)->setValue(voice.chance);
     }
 
@@ -242,8 +277,37 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     update_label_color(nd_label3);
     update_label_color(nd_label4);
     update_label_color(nd_label5);
+    if (_show_pan)
+      update_label_color(pan_label);
+    else
+      pan_label->hide();
+
+    adjust_labels();
   }
 
+  void adjust_labels(void){
+    labels_widget->resize(labels_widget->width(), root->song->tracker_windows->systemfontheight*1.5);
+    
+    nd_label4->move(get_t(0)->x(), 0);
+    nd_label1->move(get_v(0)->x(), 0);
+    nd_label2->move(get_s(0)->x(), 0);
+    nd_label3->move(get_l(0)->x(), 0);
+    if (_show_pan)
+      pan_label->move(get_p(0)->x(), 0);
+    nd_label5->move(get_c(0)->x(), 0);
+  }
+
+  void changeEvent(QEvent *event) override {
+    if (event->type()==QEvent::FontChange)
+      adjust_labels();
+  }
+    
+  void setVisible(bool visible) override {
+    QWidget::setVisible(visible);
+
+    adjust_labels();
+  }
+  
   void update_peaks(){
     struct Tracker_Windows *window=root->song->tracker_windows;
     window->wblock->block->is_dirty = true;
@@ -301,6 +365,16 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     if(_voices[voicenum].length != length){
       ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
       _voices[voicenum].length = length;
+    }
+    set_editor_focus();
+    update_peaks();
+  }
+
+  void set_pan(int voicenum){
+    float pan=scale(get_p(voicenum)->value(),-90,90,-1,1);
+    if(_voices[voicenum].pan != pan){
+      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
+      _voices[voicenum].pan = pan;
     }
     set_editor_focus();
     update_peaks();
@@ -413,6 +487,14 @@ public slots:
   void on_l5_editingFinished(){set_length(4);}
   void on_l6_editingFinished(){set_length(5);}
   void on_l7_editingFinished(){set_length(6);}
+
+  void on_p1_editingFinished(){set_pan(0);}
+  void on_p2_editingFinished(){set_pan(1);}
+  void on_p3_editingFinished(){set_pan(2);}
+  void on_p4_editingFinished(){set_pan(3);}
+  void on_p5_editingFinished(){set_pan(4);}
+  void on_p6_editingFinished(){set_pan(5);}
+  void on_p7_editingFinished(){set_pan(6);}
 
   void on_c1_editingFinished(){set_chance(0);}
   void on_c2_editingFinished(){set_chance(1);}
