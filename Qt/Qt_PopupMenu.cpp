@@ -407,7 +407,7 @@ static QMenu *create_qmenu(
     
     if (text.startsWith("----")) {
       
-      auto *separator = menu->addSeparator();
+      auto *separator = curr_menu->addSeparator();
 
       for(int i = 3 ; i < text.size() ; i++)
         if (text[i] != '-'){
