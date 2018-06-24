@@ -974,6 +974,120 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 !!#
 
 
+(define (get-midi-learn-menu-elements instrument-id effect-name)
+  ;;(c-display "inst/eff:" instrument-id effect-name)
+  (if (and effect-name
+           (<ra> :instrument-effect-has-midi-learn instrument-id effect-name))
+      (list
+       (list "Remove MIDI Learn"
+             (lambda ()
+               (<ra> :remove-instrument-effect-midi-learn instrument-id effect-name)))
+       (list "MIDI relearn"
+             (lambda ()
+               (<ra> :remove-instrument-effect-midi-learn instrument-id effect-name)
+               (<ra> :add-instrument-effect-midi-learn instrument-id effect-name))))
+      (list "MIDI Learn"
+            :enabled effect-name
+            (lambda ()
+              (<ra> :add-instrument-effect-midi-learn instrument-id effect-name)))))
+
+(define (create-select-modulator-popup-menu callback)
+  (popup-menu "Create new modulator"
+              (lambda ()
+                (callback 'create-new))
+              "-----------------"
+              (map (lambda (modulator-instrument-id)
+                     (list
+                      (<ra> :get-modulator-description3 modulator-instrument-id)
+                      (lambda ()
+                        (callback modulator-instrument-id))))
+                   (<ra> :get-modulator-instruments))))
+
+#!!
+(create-select-modulator-popup-menu 1 2 c-display)
+!!#
+
+(delafina (get-effect-popup-entries :instrument-id
+                                    :effect-name
+                                    :automation-error-message #f ;; If set to a string, the entries will be disabled, and this will be the text
+                                    :modulation-error-message #f ;; If set to a string, the entries will be disabled, and this will be the text
+                                    :pre-undo-block-callback (lambda () #f)
+                                    :post-undo-block-callback (lambda () #f)
+                                    )
+  (list
+   (list (or automation-error-message
+             "Add automation to current editor track")
+         :enabled (not automation-error-message)
+         (lambda ()
+           (undo-block (lambda ()
+                         (pre-undo-block-callback)
+                         (<ra> :add-automation-to-current-editor-track instrument-id effect-name)
+                         (post-undo-block-callback)))))
+   (list (or automation-error-message
+             "Add automation to current sequencer track")
+         :enabled (not automation-error-message)
+         (lambda ()
+           (undo-block (lambda ()
+                         (pre-undo-block-callback)
+                         (<ra> :add-automation-to-current-sequencer-track instrument-id effect-name)
+                         (post-undo-block-callback)))))
+   "-------------"
+   (get-midi-learn-menu-elements instrument-id effect-name)
+   "------------"
+   (let ((has-modulator (and (not modulation-error-message)
+                             (<ra> :has-modulator instrument-id effect-name))))
+     (if has-modulator
+         (list (list (<-> "Remove modulator (" (<ra> :get-modulator-description instrument-id effect-name) ")")
+                     (lambda ()
+                       (undo-block (lambda ()
+                                     (pre-undo-block-callback)
+                                     (<ra> :remove-modulator instrument-id effect-name)
+                                     (post-undo-block-callback)))))
+               (list (<-> "Replace modulator (" (<ra> :get-modulator-description instrument-id effect-name) ")")
+                     (lambda ()
+                       (create-select-modulator-popup-menu
+                        (lambda (modulator-id)
+                          (undo-block (lambda ()
+                                        (pre-undo-block-callback)
+                                        (if (and (symbol? modulator-id)
+                                                 (eq? 'create-new modulator-id))
+                                            (set! modulator-id (<ra> :create-modulator)))
+                                        (<ra> :replace-modulator instrument-id effect-name modulator-id)
+                                        (post-undo-block-callback))))))))
+         (list (list (or modulation-error-message
+                         "Assign modulator")
+                     :enabled (not automation-error-message)
+                     (lambda ()
+                       (create-select-modulator-popup-menu
+                        (lambda (modulator-id)
+                          ;;(<ra> :undo-instrument-effect instrument-id effect-name) ;; store value before assigning modulator.
+                          (undo-block (lambda ()
+                                        ;;(c-display "adding modulator for" instrument-id effect-name)
+                                        (pre-undo-block-callback)
+                                        (if (and (symbol? modulator-id)
+                                                 (eq? 'create-new modulator-id))
+                                            (set! modulator-id (<ra> :create-modulator)))
+                                        (<ra> :add-modulator instrument-id effect-name modulator-id)
+                                        (post-undo-block-callback))))))))))
+   ))
+  
+
+
+(define (show-note-duplicator-popup-menu instrument-id effect-name)
+  (popup-menu (list "Reset"
+                    (lambda ()                      
+                      (<ra> :reset-instrument-effect instrument-id effect-name)))
+              "-----------"
+              (get-effect-popup-entries instrument-id effect-name
+                                        :pre-undo-block-callback (lambda ()
+                                                                   (<ra> :undo-instrument-effect instrument-id effect-name) ;; store value before assigning modulator.
+                                                                   #f
+                                                                   ))))
+#!!
+(show-note-duplicator-popup-menu (<ra> :get-current-instrument) "System Chance Voice 1")
+!!#
+
+
 (define (delete-all-unused-MIDI-instruments)
   (define used-instruments (<new> :container '() =))
   (define unused-MIDI-instruments '())

@@ -42,6 +42,8 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
     _is_patchvoice_spinbox = false;
   }
 
+  std::function<void(void)> _show_popup_menu;
+  
   MyQSpinBox ( QWidget * parent = 0 ) : QSpinBox(parent) {init();}
 
   void focusInEvent ( QFocusEvent *e ) override {                                 
@@ -69,7 +71,14 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
     set_editor_focus();
   }
 
-
+  void contextMenuEvent(QContextMenuEvent *event){
+    if (_show_popup_menu) {
+      _show_popup_menu();
+    } else
+      QSpinBox::contextMenuEvent(event);
+  }
+  
+  // Is this method ever called? It doesn't seems so. Maybe it's only used if the arrows are clicked?
   void mousePressEvent ( QMouseEvent * event ) override
   {
     if (event->button() == Qt::LeftButton){      

@@ -212,10 +212,9 @@ static void updateAllFonts(QObject *object, const QFont &old_font, QFont new_fon
         widget->setFont(new_font);
         widget->update();
       }
-      
-      const QList<QObject*> list = object->children();
-      for (int i = 0; i < list.size(); ++i)
-        updateAllFonts(list.at(i), old_font, new_font);
+
+      for(auto *c : object->children())
+        updateAllFonts(c, old_font, new_font);
     }
   }
 }

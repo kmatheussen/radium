@@ -10,11 +10,15 @@ enum ModulatorEnabledTypes{
   MET_NUM_ENABLED_TYPES
 };
 
+#define MODULATOR_NAME "Modulator"
+
+
 extern LANGSPEC void RT_MODULATOR_process(void);
 extern LANGSPEC int64_t MODULATOR_get_id(const struct Patch *patch, int effect_num);
-extern LANGSPEC int64_t MODULATOR_get_id_from_modulator_patch(const struct Patch *patch);
+extern LANGSPEC int64_t MODULATOR_get_id_from_modulator_patch(const struct Patch *modulator_patch);
+extern LANGSPEC bool MODULATOR_has_modulator(const struct Patch *patch, int effect_num);
 extern LANGSPEC struct Patch *MODULATOR_get_modulator_patch(const struct Patch *patch, int effect_num);
-extern LANGSPEC void MODULATOR_add_target(int64_t modulator_id, const struct Patch *patch, int effect_num);
+extern LANGSPEC void MODULATOR_add_target(int64_t modulator_id, const struct Patch *patch, int effect_num, bool do_replace);
 extern LANGSPEC void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect_num, bool do_replace);
 extern LANGSPEC void MODULATOR_remove_target(int64_t modulator_id, const struct Patch *patch, int effect_num);
 extern LANGSPEC void MODULATOR_set_target_enabled(int64_t modulator_id, const struct Patch *patch, int effect_num, bool enabled);
