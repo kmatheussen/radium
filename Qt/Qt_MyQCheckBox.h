@@ -196,7 +196,16 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
   MyQCheckBox ( const QString & text, QWidget * parent = 0) : MyQCheckBox_OnlyCustomPainting(text,parent) {}
 
   Qt::MouseButton _last_pressed_button = Qt::NoButton;
-    
+
+  std::function<void(void)> _show_popup_menu;
+  
+  void contextMenuEvent(QContextMenuEvent *event){
+    if (_show_popup_menu) {
+      _show_popup_menu();
+    } else
+      MyQCheckBox_OnlyCustomPainting::contextMenuEvent(event);
+  }
+
   void mousePressEvent ( QMouseEvent * event ) override
   {
 

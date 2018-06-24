@@ -30,6 +30,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   Q_OBJECT;
 
  public:
+  bool _called_from_update = false;
   bool initing;
 
   radium::GcHolder<struct Patch> _patch;
@@ -182,8 +183,13 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void setup_popup_menus(void){
     for(int i=0;i<NUM_PATCH_VOICES;i++){
       int64_t id = _patch->id;
+      
       get_c(i)->_show_popup_menu = [id, i](){
         evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Chance Voice %d\")", id, i+1));
+      };
+      
+      get_o(i)->_show_popup_menu = [id, i](){
+        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System On/Off Voice %d\")", id, i+1));
       };
     }
   }
@@ -258,6 +264,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   
   void updateWidgets(){
 
+    _called_from_update = true;
+    
     QFontMetrics fm(QApplication::font());
     int header_height = fm.height() * 4 / 3;
     header->setMinimumHeight(header_height);
@@ -295,6 +303,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       pan_label->hide();
 
     adjust_labels();
+
+    _called_from_update = false;
   }
 
   void adjust_labels(void){
@@ -333,6 +343,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void onoff_toggled(int voicenum,bool val){
+    if (_called_from_update)
+      return;
+    
     printf("%d set to %d\n",voicenum,val);
     if(val==true)
       PATCH_turn_voice_on(_patch.data(), voicenum);
@@ -343,6 +356,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void set_transpose(int voicenum){
+    if (_called_from_update)
+      return;
+    
     float transpose=get_t(voicenum)->value();
     if(transpose!=_voices[voicenum].transpose){
       ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
@@ -353,6 +369,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void set_volume(int voicenum){
+    if (_called_from_update)
+      return;
+    
     float volume=get_v(voicenum)->value();
     if(_voices[voicenum].volume != volume){
       ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
@@ -363,6 +382,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void set_start(int voicenum){
+    if (_called_from_update)
+      return;
+    
     float start=get_s(voicenum)->value();
     if(_voices[voicenum].start != start){
       ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
@@ -373,6 +395,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void set_length(int voicenum){
+    if (_called_from_update)
+      return;
+    
     float length=get_l(voicenum)->value();
     if(_voices[voicenum].length != length){
       ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
@@ -383,6 +408,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void set_pan(int voicenum){
+    if (_called_from_update)
+      return;
+    
     float pan=scale(get_p(voicenum)->value(),-90,90,-1,1);
     if(_voices[voicenum].pan != pan){
       ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
@@ -393,6 +421,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void set_chance(int voicenum){
+    if (_called_from_update)
+      return;
+    
     int chance=get_c(voicenum)->value();
     if(_voices[voicenum].chance != chance){
 
@@ -524,6 +555,9 @@ public slots:
 
   void on_name_widget_editingFinished()
   {
+    if (_called_from_update)
+      return;
+    
     QString new_name = name_widget->text();
 
     if(new_name == QString(_patch->name)){
@@ -558,6 +592,9 @@ public slots:
   }
 
   void on_through_onoff_toggled(bool val){
+    if (_called_from_update)
+      return;
+    
     if(val != _patch->forward_events) {
       ADD_UNDO(PatchName_CurrPos(_patch.data()));
       _patch->forward_events = val;
