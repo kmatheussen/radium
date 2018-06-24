@@ -745,12 +745,11 @@ static PatchEffect *create_patch_effect(struct Patch *patch, int effect_num){
 static void add_patch_effects_to_menu(vector_t *menu, vector_t *patch_effects, struct Patch *patch){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   const SoundPluginType *plugin_type = plugin->type;
-  int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
+  //int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
     
-  int i;
-  for(i=0;i<num_effects;i++) {
+  for(int i=0;i<EFFNUM_VOICE1_ONOFF;i++) {
     if (i>0 && i==plugin_type->num_effects){
-      VECTOR_push_back(menu, "----------");
+      VECTOR_push_back(menu, "----------System effects");
       VECTOR_push_back(patch_effects, NULL);
     }
     const char *name = PLUGIN_get_effect_name(plugin, i);
@@ -758,6 +757,44 @@ static void add_patch_effects_to_menu(vector_t *menu, vector_t *patch_effects, s
       VECTOR_push_back(menu,name);
       VECTOR_push_back(patch_effects, create_patch_effect(patch, i));
     }
+  }
+
+  VECTOR_push_back(menu, "----------Note duplicator");
+  VECTOR_push_back(patch_effects, NULL);
+  
+  const int num_voice_effects = (NUM_SYSTEM_EFFECTS-EFFNUM_VOICE1_ONOFF) / NUM_PATCH_VOICES; // = 2
+      
+  for(int voicenum=0;voicenum<NUM_PATCH_VOICES;voicenum++){
+
+    VECTOR_push_back(menu, talloc_format("[submenu start]Voice %d",voicenum+1));
+    VECTOR_push_back(patch_effects, NULL);
+    
+    for(int i=0;i<num_voice_effects;i++){
+
+        /*
+          voicenum: 0,1,2,3,4,5,6,7
+          i: 0,1
+          effect_num: 0, 7, 1, 8, 2, 9, 3, 10
+          effect_num = i*7 + voicenum
+          effect_num(0) = 0 + 0 = 0
+          effect_num(1) = 7 + 0 = 7
+          effect_num(2) = 0 + 1 = 1
+          effect_num(3) = 7 + 1 = 8
+          effect_num(4) = 0 + 2 = 2
+          effect_num(5) = 7 + 2 = 9
+        */
+      
+      int effect_num = plugin_type->num_effects + EFFNUM_VOICE1_ONOFF + i*NUM_PATCH_VOICES + voicenum;
+    
+      const char *name = PLUGIN_get_effect_name(plugin, effect_num);
+      if (strncmp(name, NOTUSED_EFFECT_NAME, strlen(NOTUSED_EFFECT_NAME))) {
+        VECTOR_push_back(menu,name);
+        VECTOR_push_back(patch_effects, create_patch_effect(patch, effect_num));
+      }
+    }
+
+    VECTOR_push_back(menu, "[submenu end]");
+    VECTOR_push_back(patch_effects, NULL);
   }
 }
 
@@ -796,7 +833,7 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
     VECTOR_push_back(&patch_effects, NULL);
   }
 
-  VECTOR_push_back(&v, "---------");
+  VECTOR_push_back(&v, "---------Instrument effects");
   VECTOR_push_back(&patch_effects, NULL);
 
 #else

@@ -169,6 +169,8 @@ enum{
   EFFNUM_BROWSER_SHOW_GUI,
   EFFNUM_CONTROLS_SHOW_GUI,
 
+  // Add new effects here, or earlier.
+  
   EFFNUM_VOICE1_ONOFF,
   EFFNUM_VOICE2_ONOFF,
   EFFNUM_VOICE3_ONOFF,
@@ -184,6 +186,8 @@ enum{
   EFFNUM_CHANCE5,
   EFFNUM_CHANCE6,
   EFFNUM_CHANCE7,
+
+  // Don"t add new effects here. It will screw up fx menus.
   
   NUM_SYSTEM_EFFECTS
 };
