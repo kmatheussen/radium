@@ -781,7 +781,7 @@ int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name, c
     if(!strcmp(effect_name,plugin_type->get_effect_name(plugin,i)))
       return i;
 
-  char *message = talloc_format("The effect names of %s / %s has changed.\n\"%s\" will be ignored.\n\nIf you know the new name of the effect, you can edit the song manually in a text editor.", plugin_type->type_name, plugin_type->name, effect_name);
+  char *message = talloc_format("The effect names of the instrument %s / %s have changed.\n\"%s\" will be ignored.\n\nIf you know the new name of the effect, you can edit the song manually in a text editor.", plugin_type->type_name, plugin_type->name, effect_name);
 
   if (error_message==NULL)
     GFX_Message(NULL, "%s", message);

@@ -170,12 +170,24 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       get_c(i)->setToolTip("The chance of this voice to play. A value of 256 means that there is 100% chance of this voice plaing.\n"
                            "A value of 128 means that there is a 50% chance of this voice playing.");
       timeformat_label->hide();
+
     }
+
+    setup_popup_menus();
     
     updateWidgets();
     initing = false;
   }
 
+  void setup_popup_menus(void){
+    for(int i=0;i<NUM_PATCH_VOICES;i++){
+      int64_t id = _patch->id;
+      get_c(i)->_show_popup_menu = [id, i](){
+        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Chance Voice %d\")", id, i+1));
+      };
+    }
+  }
+  
   void set_fixed_widget_width(QWidget *widget, QString text){
     QFontMetrics fm(font());
     int width = fm.width(text) + 2;
@@ -383,24 +395,29 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void set_chance(int voicenum){
     int chance=get_c(voicenum)->value();
     if(_voices[voicenum].chance != chance){
-      
+
       SoundPlugin *plugin = NULL;
       if (_patch->instrument==get_audio_instrument())
         plugin = (SoundPlugin*)_patch->patchdata;
 
-      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
+      int effect_num = plugin->type->num_effects + EFFNUM_CHANCE1 + voicenum;
       
-      if (plugin != NULL){
-        float value = scale_double(R_BOUNDARIES(0, chance, 256), 0, 256, 0, 1);
-        PLUGIN_set_effect_value(plugin, 0, plugin->type->num_effects + EFFNUM_CHANCE1 + voicenum, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-      } else {
-        R_ASSERT_NON_RELEASE(_patch->instrument==get_MIDI_instrument());
-        safe_float_write(&_voices[voicenum].chance, chance);
-      }        
-    }
+      if (false==MODULATOR_has_modulator(_patch.data(), effect_num)){ // don't do anything if it has a modulator assigned. (screws up undo/redo)
+      
+        ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
+        
+        if (plugin != NULL){
+          float value = scale_double(R_BOUNDARIES(0, chance, 256), 0, 256, 0, 1);
+          PLUGIN_set_effect_value(plugin, 0, effect_num, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+        } else {
+          R_ASSERT_NON_RELEASE(_patch->instrument==get_MIDI_instrument());
+          safe_float_write(&_voices[voicenum].chance, chance);
+        }
 
-    //printf("4. Chance %d: %f (%d)\n\n", voicenum, _voices[voicenum].chance, chance);
-    R_ASSERT_NON_RELEASE(_voices[voicenum].chance==chance);
+        //printf("4. Chance %d: %f (%d)\n\n", voicenum, _voices[voicenum].chance, chance);
+        R_ASSERT_NON_RELEASE(_voices[voicenum].chance==chance);
+      }
+    }
     
     set_editor_focus();
     update_peaks();

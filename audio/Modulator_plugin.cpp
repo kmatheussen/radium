@@ -47,7 +47,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define M_PI2 (2.0*M_PI)
 
-#define MODULATOR_NAME "Modulator"
 
 enum{
   EFF_ENABLED,
@@ -758,6 +757,10 @@ int64_t MODULATOR_get_id(const struct Patch *patch, int effect_num){
   return -1;
 }
 
+bool MODULATOR_has_modulator(const struct Patch *patch, int effect_num){
+  return MODULATOR_get_id(patch, effect_num) >= 0;
+}
+  
 int64_t MODULATOR_get_id_from_modulator_patch(const struct Patch *patch){
   for(int64_t id : g_modulators.keys()){
     auto *modulator = g_modulators[id];
@@ -786,7 +789,20 @@ struct Patch *MODULATOR_get_modulator_patch(const struct Patch *patch, int effec
 }
 
 
-void MODULATOR_add_target(int64_t modulator_id, const struct Patch *patch, int effect_num){
+void MODULATOR_add_target(int64_t modulator_id, const struct Patch *patch, int effect_num, bool do_replace){
+  int64_t old_modulator_id = MODULATOR_get_id(patch, effect_num); // Call MODULATOR_get_id another time inside the callback. In case the old value had changed while showing the menu.
+
+  if(do_replace)
+    R_ASSERT(old_modulator_id >= 0);
+  else
+    R_ASSERT(old_modulator_id==-1);
+
+  if(old_modulator_id >= 0)
+    MODULATOR_remove_target(old_modulator_id, patch, effect_num);
+  else
+    ADD_UNDO(MixerConnections_CurrPos());
+
+
   R_ASSERT_RETURN_IF_FALSE(true==g_modulators.contains(modulator_id));
 
   R_ASSERT_RETURN_IF_FALSE(MODULATOR_get_id(patch, effect_num)==-1);
@@ -796,16 +812,6 @@ void MODULATOR_add_target(int64_t modulator_id, const struct Patch *patch, int e
 
 
 void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect_num, bool do_replace){
-  radium::ScopedUndo scoped_undo;
-
-  {
-    int64_t old_modulator_id = MODULATOR_get_id(patch, effect_num);
-    
-    if(do_replace)
-      R_ASSERT(old_modulator_id >= 0);
-    else
-      R_ASSERT(old_modulator_id==-1);
-  }
 
   vector_t v = {0};
 
@@ -823,7 +829,9 @@ void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect
 
   GFX_Menu3(v,
 
-            [create_new, modulators, patch, effect_num](int command, bool onoff){
+            [create_new, modulators, patch, effect_num, do_replace](int command, bool onoff){
+
+              radium::ScopedUndo scoped_undo;
 
               if (PATCH_get_from_id(patch->id)==NULL){
                 R_ASSERT_NON_RELEASE(false);
@@ -874,14 +882,7 @@ void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect
                 }
               }
 
-              int64_t old_modulator_id = MODULATOR_get_id(patch, effect_num); // Call MODULATOR_get_id another time inside the callback. In case the old value had changed while showing the menu.
-
-              if(old_modulator_id >= 0)
-                MODULATOR_remove_target(old_modulator_id, patch, effect_num);
-              else
-                ADD_UNDO(MixerConnections_CurrPos());
-
-              MODULATOR_add_target(new_modulator_id, patch, effect_num);
+              MODULATOR_add_target(new_modulator_id, patch, effect_num, do_replace);
 
             });
 }
