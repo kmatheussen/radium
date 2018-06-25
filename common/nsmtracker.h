@@ -1337,9 +1337,9 @@ typedef struct {
   float pitch;
   float velocity;
   float pan;
+  int64_t sample_pos; // for sample seek
   char midi_channel;
   char voicenum;
-  int64_t sample_pos; // for sample seek
 } note_t;
 
 static inline bool is_note(note_t note, int64_t id, const struct SeqBlock *seqblock){
@@ -2956,9 +2956,9 @@ static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
     .pitch = pitch,
     .velocity =velocity,
     .pan = pan,
+    .sample_pos = sample_pos,
     .midi_channel = midi_channel,
-    .voicenum = voicenum,
-    .sample_pos = sample_pos
+    .voicenum = voicenum
   };
   
   return note;  
