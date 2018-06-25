@@ -1013,7 +1013,7 @@ static void update_instrument_gui(struct SoundPlugin *plugin){
   if (patch != NULL)
     update_instrument_gui(patch);
   else{
-    R_ASSERT_NON_RELEASE(false);
+    //R_ASSERT_NON_RELEASE(false); // happens when creating plugin.
   }
 }
 
@@ -1035,7 +1035,7 @@ static float get_voice_ONOFF(struct SoundPlugin *plugin, int num, enum ValueForm
   } else
     return num==0 ? 1.0 : 0.0;
 }
-                      
+
 static void set_voice_value(struct SoundPlugin *plugin, float *voice_value, float min_native, float max_native, float &native_value, float &scaled_value, enum ValueFormat value_format){
   
   if(value_format==EFFECT_FORMAT_NATIVE)
@@ -1075,17 +1075,21 @@ static float get_voice_TRANSPOSE(struct SoundPlugin *plugin, int num, enum Value
 }
 
 static void set_voice_VOLUME(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
+  struct Patch *patch = const_cast<struct Patch*>(plugin->patch);
+  
   set_voice_value(plugin,
-                  plugin->patch==NULL ? NULL : &plugin->patch->voices[num].volume,
-                  -70, 70,
+                  patch==NULL ? NULL : &patch->voices[num].volume,
+                  MIN_PATCHVOICE_VOLUME, MAX_PATCHVOICE_VOLUME,
                   native_value, scaled_value, value_format);
+  if(patch != NULL)
+    RT_PATCH_voice_volume_has_changed(patch, num);
 }
                       
 static float get_voice_VOLUME(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
   if (plugin->patch == NULL)
     return 0;
   else
-    return get_voice_value(plugin->patch->voices[num].volume, -70, 70, value_format);
+    return get_voice_value(plugin->patch->voices[num].volume, MIN_PATCHVOICE_VOLUME, MAX_PATCHVOICE_VOLUME, value_format);
 }
 
 static void set_voice_START(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){

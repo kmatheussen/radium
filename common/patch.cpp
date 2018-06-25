@@ -924,10 +924,12 @@ static void Patch_removePlayingNote(struct Patch *patch, int64_t note_id, struct
 }
 
 static float get_voice_velocity(const struct PatchVoice &voice){
-  if(voice.volume<=35)
-    return scale(voice.volume,-35,35,0,2);
+  if (voice.volume < MIN_PATCHVOICE_VOLUME)
+    return 0;
+  else if (voice.volume <= MID_PATCHVOICE_VOLUME)
+    return scale(voice.volume,MIN_PATCHVOICE_VOLUME,MID_PATCHVOICE_VOLUME, 0, 2);
   else
-    return scale(voice.volume,35,70,2,7);
+    return scale(voice.volume, MID_PATCHVOICE_VOLUME, MAX_PATCHVOICE_VOLUME, 2, 7);
 }
 
 void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
@@ -1641,6 +1643,42 @@ void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, float new_t
 
   }PLAYER_unlock();
 }
+*/
+
+
+void RT_PATCH_voice_volume_has_changed(struct Patch *patch, int voicenum){ // float old_volume, float new_volume){ 
+  
+  const struct PatchVoice &voice = patch->voices[voicenum];
+
+  //float voice_velocity = get_voice_velocity(voice);
+
+  if(voice.is_on){
+
+    radium::PlayerRecursiveLock lock;
+
+    for(const linked_note_t *linked_note = patch->playing_notes ; linked_note!=NULL ; linked_note=linked_note->next) {
+      
+      struct Notes *note = linked_note->editor_note;
+      
+      if (note!=NULL && note->has_sent_seqblock_volume_automation_this_block==false){
+        // This causes voice volume change to be applied the next block instead of the current (i.e. 64 frames later).
+        // But that's not a big deal. The alternative is sending twice as many velocity messages, which can be a problem
+        // when messages are scheduled because of latency compensation.
+        continue;
+      }
+      
+      RT_PATCH_change_velocity(linked_note->seqtrack,
+                               patch,
+                               linked_note->note,
+                               0);
+
+      if (note != NULL)
+        note->has_sent_seqblock_volume_automation_this_block = true;
+    }
+
+  }
+}
+
 
 // Note: This function does not guarantee that all notes are stopped. A note can be scheduled
 // to start playing after this function returns.

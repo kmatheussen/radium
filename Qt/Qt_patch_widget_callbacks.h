@@ -462,7 +462,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void set_volume(int voicenum){
-    float volume=get_t(voicenum)->value();
+    float volume=get_v(voicenum)->value();
 
     set_float_effect(EFFNUM_VOICE1_VOLUME, voicenum, volume, _voices[voicenum].volume);
   }
