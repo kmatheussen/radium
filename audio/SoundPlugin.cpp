@@ -1037,6 +1037,7 @@ static float get_voice_ONOFF(struct SoundPlugin *plugin, int num, enum ValueForm
 }
                       
 static void set_voice_value(struct SoundPlugin *plugin, float *voice_value, float min_native, float max_native, float &native_value, float &scaled_value, enum ValueFormat value_format){
+  
   if(value_format==EFFECT_FORMAT_NATIVE)
     scaled_value = R_BOUNDARIES(0, scale(native_value, min_native, max_native, 0, 1), 1);
   else
@@ -1118,7 +1119,7 @@ static float get_voice_LENGTH(struct SoundPlugin *plugin, int num, enum ValueFor
 static void set_voice_PAN(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
   set_voice_value(plugin,
                   plugin->patch==NULL ? NULL : &plugin->patch->voices[num].pan,
-                  -1, 1,
+                  MIN_PATCHVOICE_PAN, MAX_PATCHVOICE_PAN,
                   native_value, scaled_value, value_format);
 }
                       
@@ -1126,7 +1127,7 @@ static float get_voice_PAN(const struct SoundPlugin *plugin, int num, enum Value
   if (plugin->patch == NULL)
     return 0;
   else
-    return get_voice_value(plugin->patch->voices[num].pan, -1, 1, value_format);
+    return get_voice_value(plugin->patch->voices[num].pan, MIN_PATCHVOICE_PAN, MAX_PATCHVOICE_PAN, value_format);
 }
 
 static void set_voice_CHANCE(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
