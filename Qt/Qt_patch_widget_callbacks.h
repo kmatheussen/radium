@@ -432,9 +432,11 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       return;
 
     if(voicevalue != new_voicevalue) {
-      
-      printf("Setting float effect %d to %f. Old: %f\n", first_system_effect, new_voicevalue, voicevalue);
 
+#if !defined(RELEASE)
+      printf("Setting float effect %d to %f. Old: %f\n", first_system_effect, new_voicevalue, voicevalue);
+#endif
+      
       //ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
       if (set_instrument_effect(first_system_effect, new_voicevalue, voicenum)==false)
         safe_float_write(&voicevalue, new_voicevalue);

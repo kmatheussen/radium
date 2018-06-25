@@ -311,7 +311,7 @@ static struct Patch *create_new_patch(const char *name, bool is_main_pipe){
   return patch;
 }
 
-static hash_t *PATCHVOICE_get_state(struct PatchVoice voice){
+static hash_t *PATCHVOICE_get_state(const struct PatchVoice &voice){
   hash_t *state = HASH_create(6);
   
   HASH_put_int(state, "is_on", voice.is_on ? 1 : 0);
@@ -324,13 +324,13 @@ static hash_t *PATCHVOICE_get_state(struct PatchVoice voice){
   return state;
 }
 
-static void apply_patchvoice_state(struct PatchVoice *voice, hash_t *state){
-  voice->is_on = HASH_get_int(state, "is_on") == 1 ? true : false;
-  voice->transpose = HASH_get_float(state, "transpose");
-  voice->volume = HASH_get_float(state, "volume");
-  voice->start = HASH_get_float(state, "start");
-  voice->length = HASH_get_float(state, "length");
-  voice->time_format = (TimeFormat)HASH_get_int(state, "time_format");
+static void apply_patchvoice_state(struct PatchVoice &voice, hash_t *state){
+  voice.is_on = HASH_get_int(state, "is_on") == 1 ? true : false;
+  voice.transpose = HASH_get_float(state, "transpose");
+  voice.volume = HASH_get_float(state, "volume");
+  voice.start = HASH_get_float(state, "start");
+  voice.length = HASH_get_float(state, "length");
+  voice.time_format = (TimeFormat)HASH_get_int(state, "time_format");
 }
                                                 
 hash_t *PATCH_get_state(const struct Patch *patch){
@@ -388,7 +388,7 @@ static void apply_patch_state(struct Patch *patch, hash_t *state){
   patch->forward_events = HASH_get_int(state, "forward_events")==1 ? true : false;
   int i;
   for (i=0;i<HASH_get_array_size(state, "patchvoice"); i++)
-    apply_patchvoice_state(&patch->voices[i], HASH_get_hash_at(state, "patchvoice", i));
+    apply_patchvoice_state(patch->voices[i], HASH_get_hash_at(state, "patchvoice", i));
 
   if (HASH_has_key(state, "name"))
     patch->name = HASH_get_chars(state, "name");
@@ -923,11 +923,11 @@ static void Patch_removePlayingNote(struct Patch *patch, int64_t note_id, struct
   Patch_removePlayingVoice(&patch->playing_notes, note_id, seqtrack, seqblock);
 }
 
-static float get_voice_velocity(struct PatchVoice *voice){
-  if(voice->volume<=35)
-    return scale(voice->volume,-35,35,0,2);
+static float get_voice_velocity(const struct PatchVoice &voice){
+  if(voice.volume<=35)
+    return scale(voice.volume,-35,35,0,2);
   else
-    return scale(voice->volume,35,70,2,7);
+    return scale(voice.volume,35,70,2,7);
 }
 
 void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
@@ -1021,11 +1021,11 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
     
   int i;
   for(i=0;i<NUM_PATCH_VOICES;i++){
-    struct PatchVoice *voice = &patch->voices[i];
+    const struct PatchVoice &voice = patch->voices[i];
 
-    if(voice->is_on==true && (voice->chance==256 || voice->chance > rnd(256))){
+    if(voice.is_on==true && (voice.chance==256 || voice.chance > rnd(256))){
 
-      float voice_notenum = note.pitch + voice->transpose;
+      float voice_notenum = note.pitch + voice.transpose;
       if (voice_notenum > 0) {
         float voice_velocity = note.velocity * get_voice_velocity(voice) * curr_gain;
         int64_t voice_id = note.id + i;
@@ -1033,21 +1033,21 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
         args[1].float_num = voice_notenum;
         args[2].int_num = voice_id;
         args[3].float_num = voice_velocity;
-        args[4].float_num = apply_pan_to_pan(note.pan, scale(voice->pan, -90, 90, -1, 1));
+        args[4].float_num = apply_pan_to_pan(note.pan, scale(voice.pan, MIN_PATCHVOICE_PAN, MAX_PATCHVOICE_PAN, -1, 1));
        
         // voicenum
         args[5].int_num &= ~(0xff);
         args[5].int_num |= i;
         
         // voice ON
-        //printf("___RT_PATCH_play_note. time: %d (%d)\n", (int)time, (int)(time + voice->start*sample_rate/1000));
+        //printf("___RT_PATCH_play_note. time: %d (%d)\n", (int)time, (int)(time + voice.start*sample_rate/1000));
         
-        //printf("  add %d at %d\n", (int)voice_id, (int)((int64_t)time + voice->start*sample_rate/1000));
-        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 8, SCHEDULER_NOTE_ON_PRIORITY);
+        //printf("  add %d at %d\n", (int)voice_id, (int)((int64_t)time + voice.start*sample_rate/1000));
+        SCHEDULER_add_event(seqtrack, time + voice.start*sample_rate/1000, RT_scheduled_play_voice, &args[0], 8, SCHEDULER_NOTE_ON_PRIORITY);
         
         // voice OFF
-        if(voice->length>0.001) // The voice decides when to stop by itself.
-          SCHEDULER_add_event(seqtrack, time + (voice->start+voice->length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
+        if(voice.length>0.001) // The voice decides when to stop by itself.
+          SCHEDULER_add_event(seqtrack, time + (voice.start+voice.length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
       }
     }
   }
@@ -1135,13 +1135,13 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
 
   int i;
   for(i=0;i<NUM_PATCH_VOICES;i++){
-    struct PatchVoice *voice = &patch->voices[i];
+    const struct PatchVoice &voice = patch->voices[i];
 
-    if(voice->is_on==true){
+    if(voice.is_on==true){
 
-      if(voice->length<=0.001) { // i.e. this voice does not use a stopping time defined in the editor.
+      if(voice.length<=0.001) { // i.e. this voice does not use a stopping time defined in the editor.
 
-        float voice_notenum = note.pitch + voice->transpose;
+        float voice_notenum = note.pitch + voice.transpose;
 
         if (voice_notenum > 0) {
           int64_t voice_id = note.id + i;
@@ -1156,8 +1156,8 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
           args[5].int_num |= i;
           
           
-          //printf("    remove %d at %d\n", (int)voice_id, (int)((int64_t)time + voice->start*sample_rate/1000));
-          SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
+          //printf("    remove %d at %d\n", (int)voice_id, (int)((int64_t)time + voice.start*sample_rate/1000));
+          SCHEDULER_add_event(seqtrack, time + voice.start*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
         }
       }
     }
@@ -1237,11 +1237,11 @@ void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, co
 
   int i;
   for(i=0;i<NUM_PATCH_VOICES;i++){
-    struct PatchVoice *voice = &patch->voices[i];
+    const struct PatchVoice &voice = patch->voices[i];
 
-    if(voice->is_on==true){
+    if(voice.is_on==true){
 
-      float voice_notenum = note.pitch + voice->transpose;
+      float voice_notenum = note.pitch + voice.transpose;
 
       if (voice_notenum > 0) {
         int64_t voice_id = note.id + i;
@@ -1256,7 +1256,7 @@ void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, co
         args[5].int_num |= i;
       
         
-        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 8, SCHEDULER_VELOCITY_PRIORITY);
+        SCHEDULER_add_event(seqtrack, time + voice.start*sample_rate/1000, RT_scheduled_change_voice_velocity, &args[0], 8, SCHEDULER_VELOCITY_PRIORITY);
       }
     }
   }
@@ -1319,11 +1319,11 @@ void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const
 
   int i;
   for(i=0;i<NUM_PATCH_VOICES;i++){
-    struct PatchVoice *voice = &patch->voices[i];
+    const struct PatchVoice &voice = patch->voices[i];
 
-    if(voice->is_on==true){
+    if(voice.is_on==true){
 
-      float voice_notenum = note.pitch + voice->transpose;
+      float voice_notenum = note.pitch + voice.transpose;
       if (voice_notenum > 0){
         int64_t voice_id = note.id + i;
         
@@ -1334,7 +1334,7 @@ void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const
         args[5].int_num &= ~(0xff);
         args[5].int_num |= i;
 
-        SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 8, SCHEDULER_PITCH_PRIORITY);
+        SCHEDULER_add_event(seqtrack, time + voice.start*sample_rate/1000, RT_scheduled_change_voice_pitch, &args[0], 8, SCHEDULER_PITCH_PRIORITY);
       }
     }
   }
@@ -1392,9 +1392,9 @@ void RT_PATCH_send_raw_midi_message(struct SeqTrack *seqtrack, struct Patch *pat
     
   int i;
   for(i=0;i<NUM_PATCH_VOICES;i++){
-    struct PatchVoice *voice = &patch->voices[i];
+    const struct PatchVoice &voice = patch->voices[i];
 
-    if(voice->is_on==true){
+    if(voice.is_on==true){
 
       union SuperType args[3];
       
@@ -1402,7 +1402,7 @@ void RT_PATCH_send_raw_midi_message(struct SeqTrack *seqtrack, struct Patch *pat
       args[1].uint32_num = msg;
       args[2].float_num = get_seqtrack_reltempo(seqtrack); // Fix? This is not always correct.
       
-      SCHEDULER_add_event(seqtrack, time + voice->start*sample_rate/1000, RT_scheduled_send_raw_midi_message, &args[0], 3, SCHEDULER_RAWMIDIMESSAGE_PRIORITY);
+      SCHEDULER_add_event(seqtrack, time + voice.start*sample_rate/1000, RT_scheduled_send_raw_midi_message, &args[0], 3, SCHEDULER_RAWMIDIMESSAGE_PRIORITY);
     }
   }
 }
@@ -1524,17 +1524,17 @@ static const int voice_on_off_effs[] = {EFFNUM_VOICE1_ONOFF,
 
 static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patch, int voicenum){ 
 
-  struct PatchVoice *voice = &patch->voices[voicenum];
+  struct PatchVoice &voice = patch->voices[voicenum];
 
   float voice_velocity = get_voice_velocity(voice);
 
-  if(voice->is_on==false){
+  if(voice.is_on==false){
 
     for(linked_note_t *linked_note = patch->playing_notes ; linked_note!=NULL ; linked_note=linked_note->next) {
       
       const note_t &note = linked_note->note;
 
-      float voice_notenum = note.pitch + voice->transpose;
+      float voice_notenum = note.pitch + voice.transpose;
 
       if (voice_notenum > 0){
         RT_play_voice(seqtrack,
@@ -1563,7 +1563,7 @@ static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patc
 
     }else{
 
-      voice->is_on = true;
+      voice.is_on = true;
 
     }
 
@@ -1572,15 +1572,15 @@ static void RT_PATCH_turn_voice_on(struct SeqTrack *seqtrack, struct Patch *patc
 
 static void RT_PATCH_turn_voice_off(struct SeqTrack *seqtrack, struct Patch *patch, int voicenum){ 
 
-  struct PatchVoice *voice = &patch->voices[voicenum];
+  struct PatchVoice &voice = patch->voices[voicenum];
 
-  if(voice->is_on==true){
+  if(voice.is_on==true){
 
     for(linked_note_t *linked_note = patch->playing_notes ; linked_note!=NULL ; linked_note=linked_note->next) {
       
       const note_t &note = linked_note->note;
 
-      float voice_notenum = note.pitch + voice->transpose;
+      float voice_notenum = note.pitch + voice.transpose;
 
       if (voice_notenum > 0)
         RT_stop_voice(seqtrack,
@@ -1608,7 +1608,7 @@ static void RT_PATCH_turn_voice_off(struct SeqTrack *seqtrack, struct Patch *pat
 
     }else{
 
-      voice->is_on = false;
+      voice.is_on = false;
 
     }
 
@@ -1733,6 +1733,17 @@ void PATCH_stopNoteCurrPos(struct Tracker_Windows *window,float notenum, int64_t
                         );
 }
 
+static bool note_duplicator_has_panning(const struct Patch *patch){
+  for(int i=0;i<NUM_PATCH_VOICES;i++){
+    const struct PatchVoice &voice = patch->voices[i];
+
+    if(voice.is_on==true && voice.pan!=0)
+      return true;
+  }
+
+  return false;  
+}
+
 // Must only be called if TRACK_has_peaks(track)==true.
 int PATCH_get_peaks(struct Patch *patch,
                     float notenum, 
@@ -1742,12 +1753,18 @@ int PATCH_get_peaks(struct Patch *patch,
                     float *min_value, float *max_value
                     )
 {
+  R_ASSERT_RETURN_IF_FALSE2(patch->instrument==get_audio_instrument(), 1);
+  
   int ret = 0;
   SoundPlugin *plugin=(SoundPlugin*)patch->patchdata;
 
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, 1);
+
+  R_ASSERT_NON_RELEASE(track!=NULL);
+  
   if(ch==-1) {
 
-    if(track!=NULL && track->panonoff)
+    if((track!=NULL && track->panonoff) || note_duplicator_has_panning(patch))
       return 2;
     else
       return plugin->type->get_peaks(plugin,
@@ -1769,32 +1786,30 @@ int PATCH_get_peaks(struct Patch *patch,
   float min=0.0f;
   float max=0.0f;
 
-  int i;
-
-  for(i=0;i<NUM_PATCH_VOICES;i++){
-    struct PatchVoice *voice = &patch->voices[i];
+  for(int i=0;i<NUM_PATCH_VOICES;i++){
+    const struct PatchVoice &voice = patch->voices[i];
 
     // This didn't turn out very pretty.
-    if(voice->is_on==true){
+    if(voice.is_on==true){
 
-      float voice_notenum = notenum + (float)voice->transpose;
+      float voice_notenum = notenum + voice.transpose;
 
       if(voice_notenum > 0 && voice_notenum<128){
 
-        int64_t voice_start_time = start_time - voice->start*sample_rate/1000;
+        int64_t voice_start_time = start_time - voice.start*sample_rate/1000;
 
         if(voice_start_time >= 0.0f){
           float min2;
           float max2;
 
-          int64_t voice_end_time = end_time - voice->start*sample_rate/1000;
+          int64_t voice_end_time = end_time - voice.start*sample_rate/1000;
 
-          if(voice->length<=0.001 || ( voice_start_time < (voice->length*sample_rate/1000))){
+          if(voice.length<=0.001 || ( voice_start_time < (voice.length*sample_rate/1000))){
 
             ret = plugin->type->get_peaks(plugin,
                                           voice_notenum,
                                           ch,
-                                          pan,
+                                          apply_pan_to_pan(pan, scale(voice.pan, MIN_PATCHVOICE_PAN, MAX_PATCHVOICE_PAN, -1, 1)),
                                           voice_start_time,
                                           voice_end_time,
                                           &min2,
