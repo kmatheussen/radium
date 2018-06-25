@@ -1317,6 +1317,10 @@ struct PatchVoice{
 #define MIN_PATCHVOICE_PAN -90
 #define MAX_PATCHVOICE_PAN 90
 
+#define MIN_PATCHVOICE_VOLUME -35
+#define MID_PATCHVOICE_VOLUME 35
+#define MAX_PATCHVOICE_VOLUME 75
+
 
 /*
 typedef struct{
