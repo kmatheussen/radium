@@ -181,16 +181,47 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   }
 
   void setup_popup_menus(void){
+    if (_patch->instrument != get_audio_instrument())
+      return;
+    
     for(int i=0;i<NUM_PATCH_VOICES;i++){
       int64_t id = _patch->id;
       
-      get_c(i)->_show_popup_menu = [id, i](){
-        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Chance Voice %d\")", id, i+1));
-      };
-      
       get_o(i)->_show_popup_menu = [id, i](){
         evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System On/Off Voice %d\")", id, i+1));
+        set_editor_focus();
       };
+
+      get_t(i)->_show_popup_menu = [id, i](){
+        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Transpose Voice %d\")", id, i+1));
+        set_editor_focus();
+      };
+      
+      get_v(i)->_show_popup_menu = [id, i](){
+        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Volume Voice %d\")", id, i+1));
+        set_editor_focus();
+      };
+
+      get_s(i)->_show_popup_menu = [id, i](){
+        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Start Voice %d\")", id, i+1));
+        set_editor_focus();
+      };
+
+      get_l(i)->_show_popup_menu = [id, i](){
+        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Length Voice %d\")", id, i+1));
+        set_editor_focus();
+      };
+            
+      get_p(i)->_show_popup_menu = [id, i](){
+        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Pan Voice %d\")", id, i+1));
+        set_editor_focus();
+      };
+      
+      get_c(i)->_show_popup_menu = [id, i](){
+        evalScheme(talloc_format("(show-note-duplicator-popup-menu %" PRId64 "\"System Chance Voice %d\")", id, i+1));
+        set_editor_focus();
+      };
+      
     }
   }
   
@@ -261,6 +292,13 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     int pos2 = text.indexOf("pt;");
     l->setText(text.replace(pos1, pos2-pos1, QString::number(fontsize)));
   }
+
+
+  template <class SpinBox>
+  void update_spinbox_value(SpinBox *spinbox, float new_value){
+    if (spinbox->value() != new_value && false==spinbox->hasFocus())
+      spinbox->setValue(new_value);
+  }
   
   void updateWidgets(){
 
@@ -279,12 +317,12 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       get_o(i)->_effect_num = i;
       get_o(i)->_is_patchvoice_onoff_button = true;
 
-      get_t(i)->setValue(voice.transpose);
-      get_v(i)->setValue(voice.volume);
-      get_s(i)->setValue(voice.start);
-      get_l(i)->setValue(voice.length);
-      get_p(i)->setValue(scale(voice.pan,-1,1,-90,90));
-      get_c(i)->setValue(voice.chance);
+      update_spinbox_value(get_t(i), voice.transpose);
+      update_spinbox_value(get_v(i), voice.volume);
+      update_spinbox_value(get_s(i), voice.start);
+      update_spinbox_value(get_l(i), voice.length);
+      update_spinbox_value(get_p(i), voice.pan);
+      update_spinbox_value(get_c(i), voice.chance);
     }
 
     // bad 1
@@ -346,7 +384,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     if (_called_from_update)
       return;
     
-    printf("%d set to %d\n",voicenum,val);
+    //printf("%d set to %d\n",voicenum,val);
     if(val==true)
       PATCH_turn_voice_on(_patch.data(), voicenum);
     else
@@ -355,103 +393,96 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     update_peaks();
   }
 
-  void set_transpose(int voicenum){
+  int get_effect_num(const int first_system_effect, const int voicenum){
+    SoundPlugin *plugin = NULL;
+    if (_patch->instrument==get_audio_instrument())
+      plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL)
+      return -1;
+    else
+      return plugin->type->num_effects + first_system_effect + voicenum;
+  }
+
+  // returns false if we couldn't set value through instrument.
+  bool set_instrument_effect(const int first_system_effect, const float value, const int voicenum){
+    SoundPlugin *plugin = NULL;
+    if (_patch->instrument==get_audio_instrument())
+      plugin = (SoundPlugin*)_patch->patchdata;
+    
+    const int effect_num = plugin==NULL ? -1 : get_effect_num(first_system_effect, voicenum);
+      
+    if (plugin==NULL || false==MODULATOR_has_modulator(_patch.data(), effect_num)){ // don't do anything if it has a modulator assigned (adds unnecessary undo/redo).
+      
+      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
+      
+      if (plugin != NULL){
+        PLUGIN_set_effect_value(plugin, 0, effect_num, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+      } else {
+        R_ASSERT_NON_RELEASE(_patch->instrument==get_MIDI_instrument());
+        return false;
+      }
+      
+    }
+
+    return true;
+  }
+
+  void set_float_effect(const int first_system_effect, int voicenum, float new_voicevalue, float &voicevalue){
     if (_called_from_update)
       return;
-    
-    float transpose=get_t(voicenum)->value();
-    if(transpose!=_voices[voicenum].transpose){
-      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
-      PATCH_change_voice_transpose(_patch.data(), voicenum, transpose);
+
+    if(voicevalue != new_voicevalue) {
+      
+      printf("Setting float effect %d to %f. Old: %f\n", first_system_effect, new_voicevalue, voicevalue);
+
+      //ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
+      if (set_instrument_effect(first_system_effect, new_voicevalue, voicenum)==false)
+        safe_float_write(&voicevalue, new_voicevalue);
+
+      update_peaks();
     }
+
+#if !defined(RELEASE)
+    if (_patch->instrument==get_audio_instrument()){
+      if (!is_playing() && false==MODULATOR_has_modulator(_patch.data(), get_effect_num(first_system_effect, voicenum)))
+        R_ASSERT(new_voicevalue==voicevalue);
+    } else
+      R_ASSERT(new_voicevalue==voicevalue);
+#endif
+
     set_editor_focus();
-    update_peaks();
+  }
+                        
+  void set_transpose(int voicenum){    
+    float transpose=get_t(voicenum)->value();
+
+    set_float_effect(EFFNUM_VOICE1_TRANSPOSE, voicenum, transpose, _voices[voicenum].transpose);
   }
 
   void set_volume(int voicenum){
-    if (_called_from_update)
-      return;
-    
-    float volume=get_v(voicenum)->value();
-    if(_voices[voicenum].volume != volume){
-      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
-      _voices[voicenum].volume = volume;
-    }
-    set_editor_focus();
-    update_peaks();
+    float volume=get_t(voicenum)->value();
+
+    set_float_effect(EFFNUM_VOICE1_VOLUME, voicenum, volume, _voices[voicenum].volume);
   }
 
   void set_start(int voicenum){
-    if (_called_from_update)
-      return;
-    
-    float start=get_s(voicenum)->value();
-    if(_voices[voicenum].start != start){
-      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
-      _voices[voicenum].start = start;
-    }
-    set_editor_focus();
-    update_peaks();
+    float new_value=get_s(voicenum)->value();
+    set_float_effect(EFFNUM_VOICE1_START, voicenum, new_value, _voices[voicenum].start);
   }
 
   void set_length(int voicenum){
-    if (_called_from_update)
-      return;
-    
-    float length=get_l(voicenum)->value();
-    if(_voices[voicenum].length != length){
-      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
-      _voices[voicenum].length = length;
-    }
-    set_editor_focus();
-    update_peaks();
+    float new_value=get_l(voicenum)->value();
+    set_float_effect(EFFNUM_VOICE1_LENGTH, voicenum, new_value, _voices[voicenum].length);
   }
 
   void set_pan(int voicenum){
-    if (_called_from_update)
-      return;
-    
-    float pan=scale(get_p(voicenum)->value(),-90,90,-1,1);
-    if(_voices[voicenum].pan != pan){
-      ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
-      _voices[voicenum].pan = pan;
-    }
-    set_editor_focus();
-    update_peaks();
+    float new_value=get_p(voicenum)->value();
+    set_float_effect(EFFNUM_VOICE1_PAN, voicenum, new_value, _voices[voicenum].pan);
   }
 
   void set_chance(int voicenum){
-    if (_called_from_update)
-      return;
-    
-    int chance=get_c(voicenum)->value();
-    if(_voices[voicenum].chance != chance){
-
-      SoundPlugin *plugin = NULL;
-      if (_patch->instrument==get_audio_instrument())
-        plugin = (SoundPlugin*)_patch->patchdata;
-
-      int effect_num = plugin->type->num_effects + EFFNUM_CHANCE1 + voicenum;
-      
-      if (false==MODULATOR_has_modulator(_patch.data(), effect_num)){ // don't do anything if it has a modulator assigned. (screws up undo/redo)
-      
-        ADD_UNDO(PatchVoice_CurrPos(_patch.data(),voicenum));
-        
-        if (plugin != NULL){
-          float value = scale_double(R_BOUNDARIES(0, chance, 256), 0, 256, 0, 1);
-          PLUGIN_set_effect_value(plugin, 0, effect_num, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-        } else {
-          R_ASSERT_NON_RELEASE(_patch->instrument==get_MIDI_instrument());
-          safe_float_write(&_voices[voicenum].chance, chance);
-        }
-
-        //printf("4. Chance %d: %f (%d)\n\n", voicenum, _voices[voicenum].chance, chance);
-        R_ASSERT_NON_RELEASE(_voices[voicenum].chance==chance);
-      }
-    }
-    
-    set_editor_focus();
-    update_peaks();
+    float new_value=get_c(voicenum)->value();
+    set_float_effect(EFFNUM_VOICE1_CHANCE, voicenum, new_value, _voices[voicenum].chance);
   }
   
 public slots:

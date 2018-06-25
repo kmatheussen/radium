@@ -354,6 +354,46 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System On/Off Voice 6",
   "System On/Off Voice 7",
   
+  "System Transpose Voice 1",
+  "System Transpose Voice 2",
+  "System Transpose Voice 3",
+  "System Transpose Voice 4",
+  "System Transpose Voice 5",
+  "System Transpose Voice 6",
+  "System Transpose Voice 7",
+  
+  "System Volume Voice 1",
+  "System Volume Voice 2",
+  "System Volume Voice 3",
+  "System Volume Voice 4",
+  "System Volume Voice 5",
+  "System Volume Voice 6",
+  "System Volume Voice 7",
+
+  "System Start Voice 1",
+  "System Start Voice 2",
+  "System Start Voice 3",
+  "System Start Voice 4",
+  "System Start Voice 5",
+  "System Start Voice 6",
+  "System Start Voice 7",
+
+  "System Length Voice 1",
+  "System Length Voice 2",
+  "System Length Voice 3",
+  "System Length Voice 4",
+  "System Length Voice 5",
+  "System Length Voice 6",
+  "System Length Voice 7",
+  
+  "System Pan Voice 1",
+  "System Pan Voice 2",
+  "System Pan Voice 3",
+  "System Pan Voice 4",
+  "System Pan Voice 5",
+  "System Pan Voice 6",
+  "System Pan Voice 7",
+  
   "System Chance Voice 1",
   "System Chance Voice 2",
   "System Chance Voice 3",
@@ -960,16 +1000,26 @@ static float get_delay_value(float native_value, enum ValueFormat value_format){
 }
 
 
-static void update_instrument_gui(struct SoundPlugin *plugin){
-  struct Patch *patch = (struct Patch*)plugin->patch;
-  if (patch != NULL) {
+static void update_instrument_gui(struct Patch *patch){
+  if (patch != NULL)
     GFX_ScheduleInstrumentRedraw(patch);
+  else{
+    R_ASSERT_NON_RELEASE(false);
   }
 }
 
-static void set_voice_onoff(struct SoundPlugin *plugin, int num, float value){
+static void update_instrument_gui(struct SoundPlugin *plugin){
+  struct Patch *patch = (struct Patch*)plugin->patch;
+  if (patch != NULL)
+    update_instrument_gui(patch);
+  else{
+    R_ASSERT_NON_RELEASE(false);
+  }
+}
+
+static void set_voice_ONOFF(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
   if (plugin->patch != NULL) {
-    bool new_val = value>=0.5;
+    bool new_val = native_value>=0.5;
     
     if (new_val != plugin->patch->voices[num].is_on){
       plugin->patch->voices[num].is_on = new_val;
@@ -979,31 +1029,135 @@ static void set_voice_onoff(struct SoundPlugin *plugin, int num, float value){
   }
 }
                       
-static float get_voice_onoff(struct SoundPlugin *plugin, int num){
+static float get_voice_ONOFF(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
   if (plugin->patch != NULL) {
     return plugin->patch->voices[num].is_on ? 1.0 : 0.0;
   } else
     return num==0 ? 1.0 : 0.0;
 }
                       
-static void set_chance(struct SoundPlugin *plugin, int num, float value){
-  if (plugin->patch != NULL) {
-    if (value>=1)
-      safe_float_write(&plugin->patch->voices[num].chance, 256);
-    else
-      safe_float_write(&plugin->patch->voices[num].chance, R_BOUNDARIES(0, round(scale_double(value, 0, 1, 0, 256)), 256));
+static void set_voice_value(struct SoundPlugin *plugin, float *voice_value, float min_native, float max_native, float &native_value, float &scaled_value, enum ValueFormat value_format){
+  if(value_format==EFFECT_FORMAT_NATIVE)
+    scaled_value = R_BOUNDARIES(0, scale(native_value, min_native, max_native, 0, 1), 1);
+  else
+    native_value = scale(scaled_value, 0, 1, min_native, max_native);
 
+  native_value = R_BOUNDARIES(min_native, native_value, max_native);
+ 
+  if (voice_value != NULL) {
+    safe_float_write(voice_value, native_value);
+    update_instrument_gui(plugin);
+    if (plugin->type->get_peaks != NULL)
+      GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const_cast<Patch*>(plugin->patch));
+  }
+}
+
+static float get_voice_value(const float voice_value, float min_native, float max_native, enum ValueFormat value_format){
+  if (value_format==EFFECT_FORMAT_NATIVE)
+    return voice_value;
+  else
+    return R_BOUNDARIES(0, scale(voice_value, min_native, max_native, 0, 1), 1);
+}
+
+static void set_voice_TRANSPOSE(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
+  set_voice_value(plugin,
+                  plugin->patch==NULL ? NULL : &plugin->patch->voices[num].transpose,
+                  -100, 100,
+                  native_value, scaled_value, value_format);
+}
+                      
+static float get_voice_TRANSPOSE(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
+  if (plugin->patch == NULL)
+    return 0;
+  else
+    return get_voice_value(plugin->patch->voices[num].transpose, -100, 100, value_format);
+}
+
+static void set_voice_VOLUME(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
+  set_voice_value(plugin,
+                  plugin->patch==NULL ? NULL : &plugin->patch->voices[num].volume,
+                  -70, 70,
+                  native_value, scaled_value, value_format);
+}
+                      
+static float get_voice_VOLUME(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
+  if (plugin->patch == NULL)
+    return 0;
+  else
+    return get_voice_value(plugin->patch->voices[num].volume, -70, 70, value_format);
+}
+
+static void set_voice_START(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
+  set_voice_value(plugin,
+                  plugin->patch==NULL ? NULL : &plugin->patch->voices[num].start,
+                  0, 1000,
+                  native_value, scaled_value, value_format);
+}
+                      
+static float get_voice_START(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
+  if (plugin->patch == NULL)
+    return 0;
+  else
+    return get_voice_value(plugin->patch->voices[num].start, 0, 1000, value_format);
+}
+
+static void set_voice_LENGTH(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
+  set_voice_value(plugin,
+                  plugin->patch==NULL ? NULL : &plugin->patch->voices[num].length,
+                  0, 1000,
+                  native_value, scaled_value, value_format);
+}
+                      
+static float get_voice_LENGTH(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
+  if (plugin->patch == NULL)
+    return 0;
+  else
+    return get_voice_value(plugin->patch->voices[num].length, 0, 1000, value_format);
+}
+
+static void set_voice_PAN(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
+  set_voice_value(plugin,
+                  plugin->patch==NULL ? NULL : &plugin->patch->voices[num].pan,
+                  -1, 1,
+                  native_value, scaled_value, value_format);
+}
+                      
+static float get_voice_PAN(const struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
+  if (plugin->patch == NULL)
+    return 0;
+  else
+    return get_voice_value(plugin->patch->voices[num].pan, -1, 1, value_format);
+}
+
+static void set_voice_CHANCE(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
+  if(value_format==EFFECT_FORMAT_NATIVE)
+    scaled_value = scale_double(native_value, 0, 256, 0, 1);
+  else if (scaled_value >= 1)
+    native_value = 256;
+  else
+    native_value = round(scale_double(scaled_value, 0, 1, 0, 256));
+
+  native_value = R_BOUNDARIES(0, native_value, 256);
+             
+  if (plugin->patch != NULL) {
+
+    safe_float_write(&plugin->patch->voices[num].chance, native_value);
+    
     //printf("3. Chance %d: %f\n", num, plugin->patch->voices[num].chance);
     update_instrument_gui(plugin);
   }
 }
                       
-static float get_chance(struct SoundPlugin *plugin, int num){
-  if (plugin->patch != NULL) {
-    return scale_double(plugin->patch->voices[num].chance, 0, 256, 0, 1);
-  } else
+static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
+  if (plugin->patch==NULL)
     return 1;
+  
+  if (value_format==EFFECT_FORMAT_NATIVE)
+    return plugin->patch->voices[num].chance;
+  else
+    return scale_double(plugin->patch->voices[num].chance, 0, 256, 0, 1);
 }
+
 
 #define SET_ATOMIC_ON_OFF(on_off, value) { \
     {                                                                   \
@@ -1616,68 +1770,6 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       }
       break;
 
-
-      
-    case EFFNUM_VOICE1_ONOFF:
-      set_voice_onoff(plugin, 0, value);
-      break;
-      
-    case EFFNUM_VOICE2_ONOFF:
-      set_voice_onoff(plugin, 1, value);
-      break;
-      
-    case EFFNUM_VOICE3_ONOFF:
-      set_voice_onoff(plugin, 2, value);
-      break;
-      
-    case EFFNUM_VOICE4_ONOFF:
-      set_voice_onoff(plugin, 3, value);
-      break;
-      
-    case EFFNUM_VOICE5_ONOFF:
-      set_voice_onoff(plugin, 4, value);
-      break;
-      
-    case EFFNUM_VOICE6_ONOFF:
-      set_voice_onoff(plugin, 5, value);
-      break;
-      
-    case EFFNUM_VOICE7_ONOFF:
-      set_voice_onoff(plugin, 6, value);
-      break;
-
-
-      
-    case EFFNUM_CHANCE1:
-      set_chance(plugin, 0, value);
-      break;
-      
-    case EFFNUM_CHANCE2:
-      set_chance(plugin, 1, value);
-      break;
-      
-    case EFFNUM_CHANCE3:
-      set_chance(plugin, 2, value);
-      break;
-      
-    case EFFNUM_CHANCE4:
-      set_chance(plugin, 3, value);
-      break;
-      
-    case EFFNUM_CHANCE5:
-      set_chance(plugin, 4, value);
-      break;
-      
-    case EFFNUM_CHANCE6:
-      set_chance(plugin, 5, value);
-      break;
-      
-    case EFFNUM_CHANCE7:
-      set_chance(plugin, 6, value);
-      break;
-
-
-      
       // fix. Must call GUI function, and then the GUI function calls COMPRESSOR_set_parameter.
     case EFFNUM_COMP_RATIO:
       //printf("Setting ratio to %f\n",value);
@@ -1749,6 +1841,32 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
         
         break;
       }
+
+#define SET_VOICE(name, n1, n2)                                         \
+      case EFFNUM_VOICE##n2##_##name:                                   \
+        set_voice_##name(plugin, n1, store_value_native, store_value_scaled, value_format); \
+        break;
+      
+#define SET_ALL_VOICES(name)                       \
+      SET_VOICE(name, 0, 1);                       \
+      SET_VOICE(name, 1, 2);                       \
+      SET_VOICE(name, 2, 3);                       \
+      SET_VOICE(name, 3, 4);                       \
+      SET_VOICE(name, 4, 5);                       \
+      SET_VOICE(name, 5, 6);                       \
+      SET_VOICE(name, 6, 7);      
+
+      SET_ALL_VOICES(ONOFF);
+      SET_ALL_VOICES(TRANSPOSE);
+      SET_ALL_VOICES(VOLUME);
+      SET_ALL_VOICES(START);
+      SET_ALL_VOICES(LENGTH);
+      SET_ALL_VOICES(PAN);
+      SET_ALL_VOICES(CHANCE);
+
+#undef SET_ALL_VOICES
+#undef SET_VOICE
+      
 
     default:
       RError("2. Unknown effect number: %d (%d). %s / %s",effect_num,system_effect,plugin->type->type_name,plugin->type->name);
@@ -1918,36 +2036,6 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
   case EFFNUM_CONTROLS_SHOW_GUI:
     return plugin->show_controls_gui==true ? 1.0 : 0.0f;
 
-  case EFFNUM_VOICE1_ONOFF:
-    return get_voice_onoff(plugin, 0);
-  case EFFNUM_VOICE2_ONOFF:
-    return get_voice_onoff(plugin, 1);
-  case EFFNUM_VOICE3_ONOFF:
-    return get_voice_onoff(plugin, 2);
-  case EFFNUM_VOICE4_ONOFF:
-    return get_voice_onoff(plugin, 3);
-  case EFFNUM_VOICE5_ONOFF:
-    return get_voice_onoff(plugin, 4);
-  case EFFNUM_VOICE6_ONOFF:
-    return get_voice_onoff(plugin, 5);
-  case EFFNUM_VOICE7_ONOFF:
-    return get_voice_onoff(plugin, 6);
-    
-  case EFFNUM_CHANCE1:
-    return get_chance(plugin, 0);
-  case EFFNUM_CHANCE2:
-    return get_chance(plugin, 1);
-  case EFFNUM_CHANCE3:
-    return get_chance(plugin, 2);
-  case EFFNUM_CHANCE4:
-    return get_chance(plugin, 3);
-  case EFFNUM_CHANCE5:
-    return get_chance(plugin, 4);
-  case EFFNUM_CHANCE6:
-    return get_chance(plugin, 5);
-  case EFFNUM_CHANCE7:
-    return get_chance(plugin, 6);
-    
   case EFFNUM_COMP_RATIO:
     return COMPRESSOR_get_parameter(plugin->compressor, COMP_EFF_RATIO);
   case EFFNUM_COMP_THRESHOLD:
@@ -1973,6 +2061,31 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
   case EFFNUM_EDITOR_ONOFF:
     return ATOMIC_GET(plugin->editor_is_on)==true ? 1.0 : 0.0f;
 #endif
+
+#define GET_VOICE(name, n1, n2)                                 \
+    case EFFNUM_VOICE##n2##_##name:                             \
+      return get_voice_##name(plugin, n1, value_format);        \
+      break;
+    
+#define GET_ALL_VOICES(name)                       \
+    GET_VOICE(name, 0, 1);                         \
+    GET_VOICE(name, 1, 2);                         \
+    GET_VOICE(name, 2, 3);                         \
+    GET_VOICE(name, 3, 4);                         \
+    GET_VOICE(name, 4, 5);                         \
+    GET_VOICE(name, 5, 6);                         \
+    GET_VOICE(name, 6, 7);
+    
+    GET_ALL_VOICES(ONOFF);
+    GET_ALL_VOICES(TRANSPOSE);
+    GET_ALL_VOICES(VOLUME);
+    GET_ALL_VOICES(START);
+    GET_ALL_VOICES(LENGTH);
+    GET_ALL_VOICES(PAN);
+    GET_ALL_VOICES(CHANCE);
+        
+#undef GET_ALL_VOICES
+#undef GET_VOICE
 
   default:
     RError("3. Unknown effect number: %d (%d). %s / %s",effect_num,system_effect_num,plugin->type->type_name,plugin->type->name);
