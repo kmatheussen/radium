@@ -759,7 +759,7 @@ static void add_patch_effects_to_menu(vector_t *menu, vector_t *patch_effects, s
     }
   }
 
-  VECTOR_push_back(menu, "----------Note duplicator");
+  VECTOR_push_back(menu, "----------Note duplicator effects");
   VECTOR_push_back(patch_effects, NULL);
   
   const int num_voice_effects = (NUM_SYSTEM_EFFECTS-EFFNUM_VOICE1_ONOFF) / NUM_PATCH_VOICES; // = 2

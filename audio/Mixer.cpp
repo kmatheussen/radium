@@ -869,8 +869,10 @@ struct Mixer{
       // Wait for our jack cycle
       jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
     
-      if((int)num_frames!=_buffer_size)
+      if((int)num_frames!=_buffer_size){
+        R_ASSERT_NON_RELEASE(false);
         printf("What???\n");
+      }
 
       if (ATOMIC_GET(g_request_to_pause_plugins)==true){
         ATOMIC_SET(g_request_to_pause_plugins, false);

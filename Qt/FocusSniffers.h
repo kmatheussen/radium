@@ -228,11 +228,22 @@ class FocusSnifferQTextEdit : public GL_PauseCaller, public QTextEdit{
 
 class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
   public:                                                               
-  bool dontsniff;                                                       
- FocusSnifferQSpinBox(QWidget *parent_ = NULL, const char *name = "gakk")  
-   : QSpinBox(parent_),dontsniff(false)                                     
-    {                                                                   
-    }                                                                   
+  bool dontsniff;
+
+  std::function<void(void)> _show_popup_menu;
+  
+  FocusSnifferQSpinBox(QWidget *parent_ = NULL, const char *name = "gakk")  
+    : QSpinBox(parent_),dontsniff(false)                                     
+  {                                                                   
+  }
+  
+  void contextMenuEvent(QContextMenuEvent *event){
+    if (_show_popup_menu) {
+      _show_popup_menu();
+    } else
+      QSpinBox::contextMenuEvent(event);
+  }
+  
   void focusInEvent ( QFocusEvent *e ) override {                                 
     printf("Got focusInEvent\n");
     if(dontsniff==false)
@@ -240,7 +251,8 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
     GL_lock();
     QSpinBox::focusInEvent(e);                                             
     GL_unlock();
-  }                                                                     
+  }
+  
   void focusOutEvent ( QFocusEvent *e ) override {                                
     printf("Got focusOutEvent\n");
     if(dontsniff==false) {
@@ -249,13 +261,15 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
     GL_lock();
     QSpinBox::focusOutEvent(e);                                            
     GL_unlock();
-  }                                                                     
+  }
+  
   void hideEvent (QHideEvent * event_) override {
     if(dontsniff==false) {
       release_keyboard_focus();
     }                                 
     QSpinBox::hideEvent(event_);          
-  }                                   
+  }
+  
   void keyPressEvent ( QKeyEvent * event_ ) override {                             
     if(event_->key()==Qt::Key_Escape){                                   
       GL_lock();                                                        
@@ -263,7 +277,8 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
       GL_unlock();                                                      
     }                                                                   
     QSpinBox::keyPressEvent(event_);                                        
-  }                                                                     
+  }
+  
   void 	wheelEvent ( QWheelEvent * event_ ) override {
     printf("Got wheel event\n");
     QSpinBox::wheelEvent(event_);
@@ -273,11 +288,22 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
 
 class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
   public:                                                               
-  bool dontsniff;                                                       
+  bool dontsniff;
+
+  std::function<void(void)> _show_popup_menu;
+  
   FocusSnifferQDoubleSpinBox(QWidget *parent_ = NULL, const char *name = "gakk")  
    : QDoubleSpinBox(parent_),dontsniff(false)                                     
   {                                                                   
-  }                                                                   
+  }
+  
+  void contextMenuEvent(QContextMenuEvent *event){
+    if (_show_popup_menu) {
+      _show_popup_menu();
+    } else
+      QDoubleSpinBox::contextMenuEvent(event);
+  }
+  
   void focusInEvent ( QFocusEvent *e ) override {                                 
     printf("Got focusInEvent\n");
     if(dontsniff==false)

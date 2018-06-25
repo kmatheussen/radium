@@ -1033,7 +1033,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
         args[1].float_num = voice_notenum;
         args[2].int_num = voice_id;
         args[3].float_num = voice_velocity;
-        args[4].float_num = apply_pan_to_pan(note.pan, voice->pan);
+        args[4].float_num = apply_pan_to_pan(note.pan, scale(voice->pan, -90, 90, -1, 1));
        
         // voicenum
         args[5].int_num &= ~(0xff);
