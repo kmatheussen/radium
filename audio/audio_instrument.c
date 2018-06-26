@@ -116,17 +116,30 @@ static void AUDIO_playnote(struct SeqTrack *seqtrack, struct Patch *patch, note_
   SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_play_note_to_plugin, &args[0], 8, SCHEDULER_NOTE_ON_PRIORITY);
 }
 
-static int64_t RT_scheduled_send_note_volume_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
-  struct Patch *patch = (struct Patch*)args[0].pointer;
+static void set_note_volume_now(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, int64_t time){
+  
+  /*
+  // Modulators are not latency-compensated, so this would be incorrect if volume is set by a modulator. Instead, voice velocity is applied in RT_PATCH_play_note and RT_PATCH_change_velocity.
+  //
 
+  const struct PatchVoice &voice = patch->voices[note.voicenum];
+  note.velocity *= get_voice_velocity(voice);
+  */
+  
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL || plugin->type->set_note_volume == NULL)
-    return DONT_RESCHEDULE;
+    return;
+
+  plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
+}
+
+static int64_t RT_scheduled_send_note_volume_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
+  struct Patch *patch = (struct Patch*)args[0].pointer;
 
   const note_t note = create_note_from_args(&args[1]);
 
-  plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
+  set_note_volume_now(seqtrack, patch, note, time);
 
   return DONT_RESCHEDULE;
 }
@@ -140,7 +153,7 @@ static void AUDIO_changevelocity(struct SeqTrack *seqtrack, struct Patch *patch,
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
-    plugin->type->set_note_volume(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
+    set_note_volume_now(seqtrack, patch, note, time);
     return;
   }
 

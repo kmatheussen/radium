@@ -39,17 +39,18 @@ static void RT_scheduled_hold_velocity_do(struct SeqTrack *seqtrack,
 #if DO_DEBUG
     printf("  Sending HOLD velocity %x at %d\n",val,(int)time);
 #endif
-    
-    val *= seqblock->curr_gain;
-  
+
     note->has_sent_seqblock_volume_automation_this_block = true;
+
+    note->curr_velocity = TRACK_get_velocity(track, val); // The logical behavior would be to use velocity1->velocity, but we don't have access to track in the function 'RT_PATCH_voice_volume_has_changed'.
+    note->curr_velocity_time = time;
 
     RT_PATCH_change_velocity(seqtrack,
                              patch,
                              create_note_t(seqblock,
                                            note->id,
                                            note->note,
-                                           TRACK_get_velocity(track,val),
+                                           note->curr_velocity * seqblock->curr_gain,
                                            0,
                                            ATOMIC_GET(track->midi_channel),
                                            0,
@@ -60,8 +61,9 @@ static void RT_scheduled_hold_velocity_do(struct SeqTrack *seqtrack,
   }
 
   const struct Velocities *velocity2 = velocity1==NULL ? note->velocities : NextVelocity(velocity1);
-  if (velocity2 != NULL)
+  if (velocity2 != NULL){
     RT_schedule_velocity(seqtrack, time, seqblock, track, note, velocity2, false);
+  }
 }
 
 static int64_t RT_scheduled_hold_velocity(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
@@ -106,22 +108,26 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
   int val2 = velocity2==NULL ? note->velocity_end : velocity2->velocity;
     
   int val = time1==time2 ? val2 : scale(time, time1, time2, val1, val2); // We get divide by zero in scale() if time1==time2
-    
-  val *= seqblock->curr_gain;
   
-  note->has_sent_seqblock_volume_automation_this_block = true;
-
-  if (val != last_val) {
+  if (val != last_val || note->scheduler_must_send_velocity_next_block) {
 #if DO_DEBUG
     printf("  Sending velocity %x at %d\n",val,(int)time);
 #endif
+
+    note->has_sent_seqblock_volume_automation_this_block = true;
+    
+    if (note->scheduler_must_send_velocity_next_block)
+      note->scheduler_must_send_velocity_next_block = false;
+    
+    note->curr_velocity = TRACK_get_velocity(track, val);
+    note->curr_velocity_time = time;
     
     RT_PATCH_change_velocity(seqtrack,
                              patch,
                              create_note_t(seqblock,
                                            note->id,
                                            note->note,
-                                           TRACK_get_velocity(track,val),
+                                           note->curr_velocity * seqblock->curr_gain,
                                            0,
                                            ATOMIC_GET(track->midi_channel),
                                            0,
@@ -135,13 +141,17 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
     
     if (velocity2 != NULL)
       RT_schedule_velocity(seqtrack, time, seqblock, track, note, velocity2, true);
-
+    
+    note->scheduler_may_send_velocity_next_block = false;
+    
     return DONT_RESCHEDULE;
     
   } else {
     
     args[6].int32_num = val;
 
+    note->scheduler_may_send_velocity_next_block = true;
+    
     return R_MIN(time2, time + RADIUM_BLOCKSIZE);
     
   }

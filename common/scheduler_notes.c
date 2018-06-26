@@ -32,7 +32,8 @@ static int64_t RT_scheduled_stop_note(struct SeqTrack *seqtrack, int64_t time, u
                                   note->note,
                                   ATOMIC_GET(track->midi_channel)
                                   );
-    
+
+    note->curr_velocity_time = 0;
     RT_PATCH_stop_note(seqtrack, patch,note2,time);
     
   }
@@ -187,10 +188,13 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
 
     int64_t sample_pos = R_MAX(0, time - note_time) / (pc->playtype==PLAYSONG ? 1.0 : ATOMIC_DOUBLE_GET(seqblock->block->reltempo));
 
+    note->curr_velocity = TRACK_get_velocity(track,note->velocity); // The logical behavior would be to use note->velocity, but we don't have access to track in the function 'RT_PATCH_voice_volume_has_changed.
+    note->curr_velocity_time = time;
+
     note_t note2 = create_note_t(seqblock,
                                  note->id,
                                  note->note,
-                                 TRACK_get_velocity(track,note->velocity),
+                                 note->curr_velocity,
                                  TRACK_get_pan(track),
                                  ATOMIC_GET(track->midi_channel),
                                  0,
