@@ -346,6 +346,7 @@ bool OS_has_conf_filename(QString filename){
   return true;
 }
 
+/*
 static QString get_custom_conf_filename(QString filename){
   int error;
   QDir dir = get_dot_radium_dir(&error);
@@ -359,7 +360,8 @@ static QString get_custom_conf_filename(QString filename){
 
   return info.absoluteFilePath();
 }
-  
+*/
+
 QString OS_get_conf_filename(QString filename){
   QString path;
 

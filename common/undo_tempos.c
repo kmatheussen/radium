@@ -39,7 +39,7 @@ static void *Undo_Do_Tempos(
 );
 
 
-void ADD_UNDO_FUNC(Tempos(
+static void ADD_UNDO_FUNC(Tempos(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	NInt tracknum,

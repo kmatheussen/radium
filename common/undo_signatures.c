@@ -40,7 +40,7 @@ static void *Undo_Do_Signatures(
 );
 
 
-void ADD_UNDO_FUNC(Signatures(
+static void ADD_UNDO_FUNC(Signatures(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	NInt tracknum,

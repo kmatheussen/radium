@@ -55,9 +55,6 @@ bool g_scheme_has_inited1 = false;
 bool g_scheme_has_inited2 = false;
 
 
-extern "C" {
-  void init_radium_s7(s7_scheme *s7);
-}
 
 namespace{
   static int g_evals = 0;

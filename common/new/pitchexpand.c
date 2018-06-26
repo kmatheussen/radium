@@ -93,7 +93,7 @@ static void PExpand_DoIt(
 }
 
 
-void PExpandRange(
+static void PExpandRange(
 		  struct WBlocks *wblock,
 		  float scalefactor
 ){
@@ -122,7 +122,7 @@ void PExpandRange(
 
 }
 
-void PExpandTrack(
+static void PExpandTrack(
 	struct Blocks *block,
 	struct Tracks *track,
 	float scalefactor
@@ -137,7 +137,7 @@ void PExpandTrack(
         PExpand_DoIt(track->notes,&p1,&p2,scalefactor);
 }
 
-void PExpandBlock(
+static void PExpandBlock(
 		  struct Blocks *block,
 		  float scalefactor
 ){

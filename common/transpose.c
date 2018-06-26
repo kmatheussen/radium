@@ -40,7 +40,7 @@ static float getTransposed(float val, int trans){
     return val;  
 }
 
-void Transpose_note(
+static void Transpose_note(
 	struct Notes *note,
 	int trans
 ){
@@ -75,7 +75,7 @@ static void Transpose_notes(
 }
 
 
-void TransposeRange(
+static void TransposeRange(
 	struct WBlocks *wblock,
 	int trans
 ){
@@ -96,7 +96,7 @@ void TransposeRange(
 
 }
 
-void TransposeTrack(
+static void TransposeTrack(
 	struct Tracks *track,
 	int trans
 ){
@@ -109,7 +109,7 @@ void TransposeTrack(
 
 }
 
-void TransposeBlock(
+static void TransposeBlock(
 	struct Blocks *block,
 	int trans
 ){

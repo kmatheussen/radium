@@ -14,11 +14,11 @@
 
 #if FOR_WINDOWS
 #include <windows.h>
-static void sleep_1second(void){
+static inline void sleep_1second(void){
   Sleep(MSECS_PER_SEC);
 }
 #else
-static void sleep_1second(void){
+static inline void sleep_1second(void){
   usleep(1000*1000);
 }
 #endif

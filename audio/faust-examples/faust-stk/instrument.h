@@ -58,7 +58,7 @@ double LookupTable::getValue(double x)
 //********************************
 //stick for modal synthesis
 //********************************
-float readMarmstk1(int index){
+static inline float readMarmstk1(int index){
 	static float marmstk1[TABLE_SIZE/4] = {
 		0.000579833984375, -0.003417968750000, 0.015930175781250, -0.037689208984375, 0.062866210937500, 
 		0.168640136718750, -0.226287841796875, -0.020233154296875, 0.017120361328125, 0.032745361328125, 

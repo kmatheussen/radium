@@ -369,7 +369,7 @@ void AUDIO_set_patch_attributes(struct Patch *patch, void *patchdata) {
   patch->instrument=get_audio_instrument();
 }
 
-void AUDIO_set_permanent_id(struct Patch *patch, struct SoundPlugin *plugin){
+static void AUDIO_set_permanent_id(struct Patch *patch, struct SoundPlugin *plugin){
   R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
   
   if (plugin == get_main_pipe())

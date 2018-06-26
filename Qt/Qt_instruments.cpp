@@ -116,11 +116,12 @@ static void updateMidiPortsWidget(MIDI_instrument_widget *instrument);
 static MIDI_instrument_widget *create_midi_instrument(struct Patch *patch);
 static Audio_instrument_widget *create_audio_instrument_widget(struct Patch *patch, bool is_loading);
 
+#if 0 //def WITH_FAUST_DEV
 namespace{
-class Faust_Plugin_widget;
+  class Faust_Plugin_widget;
 }
 static Faust_Plugin_widget *AUDIOWIDGET_get_faust_plugin_widget(Audio_instrument_widget *audio_instrument_widget);
-
+#endif
 
 const char **get_ccnames(void){
   static bool is_inited = false;

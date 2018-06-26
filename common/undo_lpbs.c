@@ -40,7 +40,7 @@ static void *Undo_Do_LPBs(
                           );
 
 
-void ADD_UNDO_FUNC(LPBs(
+static void ADD_UNDO_FUNC(LPBs(
                         struct Tracker_Windows *window,
                         struct Blocks *block,
                         NInt tracknum,

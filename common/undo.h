@@ -33,8 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     }                                                                   \
   }while(0)
 
-#define ADD_UNDO_FUNC(sign)                     \
-  UNDOPREFIX ## sign
+#define ADD_UNDO_FUNC(sign)                       UNDOPREFIX ## sign
 
 typedef void *(*UndoFunction)(
                               struct Tracker_Windows *window,

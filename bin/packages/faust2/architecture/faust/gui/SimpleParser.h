@@ -126,14 +126,14 @@ inline bool parseMenuItem(const char*& p, string& name, double& value)
 // ---------------------------------------------------------------------
 
 // Report a parsing error
-static bool parseError(const char*& p, const char* errmsg)
+static inline bool parseError(const char*& p, const char* errmsg)
 {
     std::cerr << "Parse error : " << errmsg << " here : " << p << std::endl;
     return true;
 }
 
 // Parse character x, but don't report error if fails
-static bool tryChar(const char*& p, char x)
+static inline bool tryChar(const char*& p, char x)
 {
     skipBlank(p);
     if (x == *p) {

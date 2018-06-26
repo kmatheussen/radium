@@ -64,7 +64,7 @@ extern PyObject *gotkeyFunc;
 static PyObject *Integers_py[EVENT_DASMAX];
 static PyObject *Lists_py[12];
 
-void init_pyobjects(void){
+static void init_pyobjects(void){
 	int lokke;
 
 	for(lokke=0;lokke<EVENT_DASMAX;lokke++){

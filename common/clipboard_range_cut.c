@@ -60,7 +60,7 @@ void CutRange_notes(
 }
 
 
-void CutRange_stops(
+static void CutRange_stops(
                     struct Stops **tostop,
                     const struct Stops *fromstop,
                     const Place *p1,
@@ -131,7 +131,7 @@ void CutRange(
     Does only remove all notes in the ranged
     area. (decided to wait with FXes)
 **********************************************/
-void CutRangedRange(
+static void CutRangedRange(
                     struct WBlocks *wblock
 ){
 

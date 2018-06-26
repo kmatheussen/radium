@@ -533,9 +533,11 @@ static char *create_creator_string(const LADSPA_Descriptor *descriptor){
 }
 
 // This function is suppressed from tsan. (not working though, can't get full backtrace)
+/*
 static const LADSPA_Descriptor *call_ladspa_get_descriptor_func(LADSPA_Descriptor_Function get_descriptor_func, int i){
   return get_descriptor_func(i);
 }
+*/
 
 static void add_ladspa_plugin_type(const QFileInfo &file_info){
   //return; // <- TODO: ThreadSanitizer complains on somethine when loading each ladspa plugins, but there is no proper backtrace so I haven't taken the time to find the cause of it yet.

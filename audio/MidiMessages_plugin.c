@@ -288,7 +288,7 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time
   }    
 }
 
-float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
+static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
 
   int value = data->values[effect_num];

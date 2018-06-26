@@ -157,7 +157,7 @@ static void Quantitize_range(
 
 }
 
-void Quantitize_track(
+static void Quantitize_track(
 	struct Blocks *block,
 	struct Tracks *track
 ){
@@ -185,7 +185,7 @@ void Quantitize_track(
 }
 
 
-void Quantitize_block(
+static void Quantitize_block(
 	struct Blocks *block
 ){
 	struct Tracks *track=block->tracks;

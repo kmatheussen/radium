@@ -1643,7 +1643,9 @@ void PATCH_turn_voice_off(struct Patch *patch, int voicenum){
   }PLAYER_unlock();
 }
 
-void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, float new_transpose){
+
+/*
+static void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, float new_transpose){
   PLAYER_lock();{
     bool was_on = patch->voices[voicenum].is_on;
 
@@ -1703,7 +1705,44 @@ void RT_PATCH_voice_volume_has_changed(struct Patch *patch, int voicenum){
 
   }
 }
+#if 0
+void RT_PATCH_voice_pitch_has_changed(struct Patch *patch, int voicenum){
+  const struct PatchVoice &voice = patch->voices[voicenum];
 
+  if(voice.is_on){
+
+    radium::PlayerRecursiveLock lock;
+
+    for(const linked_note_t *linked_note = patch->playing_notes ; linked_note!=NULL ; linked_note=linked_note->next) {
+      
+      struct Notes *editor_note = linked_note->editor_note;
+      
+      if (editor_note!=NULL && editor_note->scheduler_may_send_velocity_next_block){
+        // This causes voice volume change to be applied the next block instead of the current (i.e. 64 frames later).
+        // But that's not a big deal. The alternative is sending twice as many velocity messages, which can be a problem
+        // when messages are scheduled because of latency compensation.
+        editor_note->scheduler_must_send_velocity_next_block = true;
+        continue;
+      }
+
+      note_t note = linked_note->note;
+
+      if (editor_note != NULL)
+        note.pitch = editor_note->curr_pitch;
+
+      int64_t time = 0;
+      if (editor_note != NULL && is_really_playing()) // Without the is_really_playing() test the scheduler is filled up after song ends.
+        time = editor_note->curr_pitch_time + 1; // Add one to ensure it is sent after a note velocity event was scheduled.
+      
+      RT_PATCH_change_pitch(linked_note->seqtrack,
+                            patch,
+                            note,
+                            time);
+    }
+
+  }
+}
+#endif
 
 // Note: This function does not guarantee that all notes are stopped. A note can be scheduled
 // to start playing after this function returns.

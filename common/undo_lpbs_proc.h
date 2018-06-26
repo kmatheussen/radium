@@ -16,7 +16,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#ifndef TRACKER_INCLUDE
+#ifndef _RADIUM_COMMON_UNDO_LPBS_PROC_H
+#define _RADIUM_COMMON_UNDO_LPBS_PROC_H
 
 extern LANGSPEC void ADD_UNDO_FUNC(
                           LPBs_CurrPos(

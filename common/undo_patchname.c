@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_instruments_proc.h"
 #include "../mixergui/QM_chip.h"
 
-#include "undo_patchvoice_proc.h"
+#include "undo_patchname_proc.h"
 
 // Also undo/redoes the forward_event boolean variable. Event destinations are stored in the mixer gui undo/redo system.
 

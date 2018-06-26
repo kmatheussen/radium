@@ -769,16 +769,17 @@ static void setScrollTransform(const GE_Context *c, vl::Actor *actor, T2_data *t
 }
 
 
+/*
 static int get_key_from_pen_width(float pen_width){
   int ret = pen_width * 10;
   if (ret==0)
     ret = 1;
   return ret;
 }
-
 static float get_pen_width_from_key(int key){
   return (float)key/10.0;
 }
+*/
 
 typedef QMap<int,                        // <- z
              QHash<int,                  // <- block slice (from calculated from y)

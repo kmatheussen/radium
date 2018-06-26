@@ -100,6 +100,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_gui_proc.h"
 #include "../api/api_various_proc.h"
 #include "../api/api_instruments_proc.h"
+#include "../api/api_common_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -1787,6 +1788,8 @@ void Ptask2Mtask(void){
 #include "../common/gfx_proc.h"
 #include "../common/gfx_op_queue_proc.h"
 #include "../common/player_proc.h"
+#include "../common/Ptask2Mtask_proc.h"
+
 
 //#define TEST_GC
 
@@ -1794,7 +1797,7 @@ void Ptask2Mtask(void){
 #  include "gc.h"
 #endif
 
-extern LANGSPEC void P2MUpdateSongPosCallBack(void);
+
 
 enum RT_MESSAGE_STATUS {
   RT_MESSAGE_READY,
@@ -2638,7 +2641,7 @@ void assertRadiumInHomeDirectory(void){
 //#include "google/profiler.h"
 
 //extern LANGSPEC int dasmain(int argc,char **argv);
-extern LANGSPEC int radium_main(char *arg);
+//extern LANGSPEC int radium_main(char *arg);
 //extern LANGSPEC int GC_dont_gc;
 //int radium_main(int argc,char **argv){
 
@@ -2669,7 +2672,7 @@ extern void TIME_init(void);
 extern void UPDATECHECKER_doit(void);
 
 
-int radium_main(char *arg){
+int radium_main(const char *arg){
 
   TIME_init();
 
@@ -3170,7 +3173,6 @@ extern "C" {
     abort();
   }
 #endif
-  extern void initradium(void);
 }
 
 

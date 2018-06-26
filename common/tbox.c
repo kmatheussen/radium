@@ -32,7 +32,8 @@ bool insideTBox(TBox *tbox,int x,int y){
 	return true;
 }
 
-bool TboxInsideTBox(TBox *tbox1,TBox *tbox2){
+/*
+static bool TboxInsideTBox(TBox *tbox1,TBox *tbox2){
   if(
      tbox1->x1 >= tbox2->x1 &&
      tbox1->x2 <= tbox2->x2 &&
@@ -42,7 +43,7 @@ bool TboxInsideTBox(TBox *tbox1,TBox *tbox2){
 
   return false;
 }
-
+*/
 
 void TBOX_within(TBox *in,TBox *within){
   in->x1=R_BOUNDARIES(within->x1,in->x1,within->x2);
@@ -51,8 +52,8 @@ void TBOX_within(TBox *in,TBox *within){
   in->y2=R_BOUNDARIES(within->y1,in->y2,within->y2);
 }
 
-
-bool TboxOverlapTBox(TBox *tbox1,TBox *tbox2){
+#if 0
+static bool TboxOverlapTBox(TBox *tbox1,TBox *tbox2){
   if(
      tbox1->x1 >= tbox2->x1 &&
      tbox1->x1 <= tbox2->x2
@@ -76,7 +77,7 @@ bool TboxOverlapTBox(TBox *tbox1,TBox *tbox2){
   return false;
 }
 		     
-bool TBoxOnlyOverLapTBox_Y(TBox *tbox1,TBox *tbox2){
+static bool TBoxOnlyOverLapTBox_Y(TBox *tbox1,TBox *tbox2){
   if(
      tbox1->x1==tbox2->x1 &&
      tbox1->x2==tbox2->x2
@@ -86,7 +87,7 @@ bool TBoxOnlyOverLapTBox_Y(TBox *tbox1,TBox *tbox2){
   return false;
 }
 
-bool TBoxOnlyOverLapTBox_X(TBox *tbox1,TBox *tbox2){
+static bool TBoxOnlyOverLapTBox_X(TBox *tbox1,TBox *tbox2){
   if(
      tbox1->y1==tbox2->y1 &&
      tbox1->y2==tbox2->y2
@@ -96,25 +97,30 @@ bool TBoxOnlyOverLapTBox_X(TBox *tbox1,TBox *tbox2){
   return false;
 }
 
-void TBoxSquize_Y(TBox *from,TBox *to){
+static void TBoxSquize_Y(TBox *from,TBox *to){
   to->y1=R_MIN(to->y1,from->y1);
   from->y2=R_MAX(to->y2,from->y2);
 }
 
-void TBoxSquize_X(TBox *from,TBox *to){
+static void TBoxSquize_X(TBox *from,TBox *to){
   to->x1=R_MIN(to->x1,from->x1);
   from->x2=R_MAX(to->x2,from->x2);
 }
 
 
-bool TBoxSquize(TBox *from,TBox *to){
+
+static bool TBoxSquize(TBox *from,TBox *to){
   return false;
 }
+
 
 
 /* "from" and "overlap" overlaps, so we change "overlap" and
    make "to", to make 3 TBoxes that doesn't overlap.
 */
-void TBoxMake2Into3(TBox *from,TBox *overlap,TBox *to){
+
+static void TBoxMake2Into3(TBox *from,TBox *overlap,TBox *to){
   
 }
+
+#endif

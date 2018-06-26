@@ -252,7 +252,7 @@ endif
 # -Wunused-parameter
 
 # OPT is C flags
-OPT=$(COMMONOPT) -Wstrict-prototypes -std=gnu99
+OPT=$(COMMONOPT) -Wstrict-prototypes -Wmissing-prototypes -std=gnu99
 # -D_FORTIFY_SOURCE=2 -O2
 
 CPUOPT ?=
@@ -265,7 +265,7 @@ endif
 # -pg
 
 # CPPOPT is CPP flags
-CPPOPT = $(COMMONOPT) -Wno-unused-function -DNDEBUG  # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
+CPPOPT = $(COMMONOPT) -DNDEBUG  # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
 # -Wno-class-memaccess added because of Qt.
 # -Wno-parentheses added because of boost.
 
@@ -1776,7 +1776,7 @@ undo_mixer_connections.o: $(QM)undo_mixer_connections.c
 #	$(CC) $(OPT) $(QM)undo_chip_addremove.c
 
 Jack_plugin.o: audio/Jack_plugin.c weakjack/weak_libjack.def weakjack/weak_libjack.h weakjack/weak_libjack.c
-	$(CC) $(OPT) audio/Jack_plugin.c $(JACKOPT) -Wno-error=deprecated-declarations
+	$(CC) $(OPT) audio/Jack_plugin.c $(JACKOPT) -Wno-error=deprecated-declarations -Wno-missing-prototypes 
 
 find_jack_library.o: windows/find_jack_library.cpp
 	$(CCC) windows/find_jack_library.cpp $(QTOPT)
@@ -1827,7 +1827,7 @@ Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
 
 
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW)
+FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp

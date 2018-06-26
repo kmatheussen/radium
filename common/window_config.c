@@ -58,7 +58,7 @@ void SelectEditFont(
 }
 #endif
 
-void SelectLeftSliderWidth(
+static void SelectLeftSliderWidth(
 	struct Tracker_Windows *window,
 	ReqType reqtype
 ){
@@ -87,7 +87,7 @@ void SelectLeftSliderWidth(
         SETTINGS_write_int("left_slider_width",newwidth);
 }
 
-void SelectBottomSliderHeight(
+static void SelectBottomSliderHeight(
 	struct Tracker_Windows *window,
 	ReqType reqtype
 ){
@@ -119,7 +119,7 @@ void SelectBottomSliderHeight(
 
 extern int beat_opacity;
 
-void SetBeatOpacity(
+static void SetBeatOpacity(
 	struct Tracker_Windows *window,
 	ReqType reqtype
 ){
@@ -148,7 +148,7 @@ void SetBeatOpacity(
 
 extern int first_beat_opacity;
 
-void SetFirstBeatOpacity(
+static void SetFirstBeatOpacity(
 	struct Tracker_Windows *window,
 	ReqType reqtype
 ){
@@ -177,7 +177,7 @@ void SetFirstBeatOpacity(
 
 extern int line_opacity;
 
-void SetLineOpacity(
+static void SetLineOpacity(
 	struct Tracker_Windows *window,
 	ReqType reqtype
 ){

@@ -1239,8 +1239,10 @@ public slots:
 
 
 
+/*
 static void ensure_widget_is_created(void){
 }
+*/
 
 static QPointer<Preferences> g_preferences_widget;
 

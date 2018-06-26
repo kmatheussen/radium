@@ -50,7 +50,7 @@ static void SetRange(
 
 
 
-void MarkRange(
+static void MarkRange(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	NInt track,
@@ -152,7 +152,7 @@ void MarkRange_CurrPos(struct Tracker_Windows *window){
 }
 
 
-void CancelRange(
+static void CancelRange(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){

@@ -77,7 +77,7 @@ static void BackWards_notes(
 	LegalizeNotes(wblock->block,wtrack->track);
 }
 
-void BackWardsRange(
+static void BackWardsRange(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){
@@ -98,7 +98,7 @@ void BackWardsRange(
 
 }
 
-void BackWardsTrack(
+static void BackWardsTrack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
@@ -112,7 +112,7 @@ void BackWardsTrack(
 }
 
 
-void BackWardsBlock(
+static void BackWardsBlock(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock
 ){

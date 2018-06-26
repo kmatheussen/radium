@@ -41,6 +41,8 @@ extern "C"
  */
 int have_libjack(void);
 
+void init_weak_jack(void);
+  
 #ifdef __cplusplus
 }
 #endif

@@ -31,6 +31,7 @@ int find_realline_for_end_pitch(const struct WBlocks *wblock, const Place *p){
   return realline;
 }
 
+/*
 static void insert_place(Trs &trs, const TrackRealline2 &tr){
   for(int i=0 ; i<trs.size() ; i++){ // could be optimized by using binary search, but binary search is hard to get correct. That speedup is not needed for now anyway.
     const TrackRealline2 &tr2 = trs.at(i);
@@ -43,6 +44,7 @@ static void insert_place(Trs &trs, const TrackRealline2 &tr){
 
   trs.push_back(tr);
 }
+*/
 
 static void add_tr(const struct WBlocks *wblock, Trss &trss, const TrackRealline2 &tr){
   int realline;
