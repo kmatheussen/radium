@@ -2600,6 +2600,7 @@ void setPlaylistBlock(int pos, int blocknum){
 }
 */
 
+/*
 static double get_block_length(struct Blocks *block){
   double time = getBlockSTimeLength(block);
 
@@ -2607,6 +2608,7 @@ static double get_block_length(struct Blocks *block){
 
   return time / (double)MIXER_get_sample_rate();
 }
+*/
 
 int64_t getBlockLength(int blocknum, int windownum){
   const struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);

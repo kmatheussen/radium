@@ -85,7 +85,9 @@ extern void DC_SSS(const char *string,const char *string2);
 
 extern void DC_fgets(void);
 extern int DC_LoadI(void);
+extern unsigned int DC_LoadUI(void);
 extern int64_t DC_LoadL(void);
+extern uint64_t DC_LoadUL(void);
 extern float DC_LoadF(void);
 extern double DC_LoadD(void);
 extern uint_32 DC_LoadU32(void);

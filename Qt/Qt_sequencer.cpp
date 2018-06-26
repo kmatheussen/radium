@@ -241,7 +241,9 @@ static void myFilledPolygon(QPainter &p, QPointF *points, int num_points, const 
   p.setPen(pen);
 }
 
+/*
 static void g_position_widgets(void);
+*/
 
 static QPoint skewedPoint(QWidget *widget, const QPoint &p, int dx, int dy){
   QPoint p2 = widget->mapToGlobal(p);
@@ -2801,10 +2803,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
 static Sequencer_widget *g_sequencer_widget = NULL;
 
+/*
 static void g_position_widgets(void){
   if (g_sequencer_widget != NULL)
     g_sequencer_widget->position_widgets();
 }
+*/
 
 QWidget *SEQUENCER_getWidget(void){
   R_ASSERT(g_sequencer_widget != NULL);

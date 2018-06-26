@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "disk_localzooms_proc.h"
 
 
-void SaveLocalZooms_Uplevel(struct LocalZooms *localzoom){
+static void SaveLocalZooms_Uplevel(struct LocalZooms *localzoom){
 
 	while(localzoom!=NULL){
 		DC_start("LOCALZOOM");
@@ -71,7 +71,7 @@ DC_end();
 
 
 
-void LoadLocalZooms_Uplevel(struct LocalZooms **to){
+static void LoadLocalZooms_Uplevel(struct LocalZooms **to){
 	int ret;
 
 	struct LocalZooms *localzoom;

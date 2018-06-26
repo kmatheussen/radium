@@ -255,10 +255,11 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
     window->must_redraw = true;
 }
 
+/*
 void TRACK_make_monophonic_destructively_CurrPos(struct Tracker_Windows *window){
   TRACK_make_monophonic_destructively(window->wblock->wtrack->track);
 }
-
+*/
 
 
 

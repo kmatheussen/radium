@@ -21,6 +21,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern "C" {
 #endif
 
+int
+#ifdef _AMIGA
+__stdargs __saveds
+#endif
+radium_main(const char *arg);
+
+extern void initradium(void);
+
 extern const char *pullErrorMessage(void);
 extern void printExceptionIfError(void);
 extern void throwExceptionIfError(void); // Warning, is likely to cause a longjmp!
@@ -153,23 +161,23 @@ extern dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *
 
 #include "../common/OS_string_proc.h"
 
-static const wchar_t *w_path_to_path(const char *w_path){
+static inline const wchar_t *w_path_to_path(const char *w_path){
   return STRING_fromBase64(STRING_create(w_path));
 }
 
-static const wchar_t *w_path_to_path(const wchar_t *w_path){
+static inline const wchar_t *w_path_to_path(const wchar_t *w_path){
   return STRING_fromBase64(w_path);
 }
 
-static QString w_to_qstring(const char* w_path){
+static inline QString w_to_qstring(const char* w_path){
   return STRING_get_qstring(w_path_to_path(w_path));
 }
 
-static const char* qstring_to_w(const QString path){
+static inline const char* qstring_to_w(const QString path){
   return talloc_strdup(path.toUtf8().toBase64().constData());
 }
 
-static const char* path_to_w_path(const wchar_t *path){
+static inline const char* path_to_w_path(const wchar_t *path){
   const QString path2 = STRING_get_qstring(path);
   const QByteArray path2_base64 = path2.toUtf8().toBase64();
   return talloc_strdup(path2_base64.constData());

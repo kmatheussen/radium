@@ -455,7 +455,8 @@ void ExpandLineCurrPos(
 	window->must_redraw = true;
 }
 
-int FindNumReallinesFor(const struct LocalZooms *localzoom){
+/*
+static int FindNumReallinesFor(const struct LocalZooms *localzoom){
 	int ret=0;
 
 	while(localzoom!=NULL){
@@ -468,6 +469,7 @@ int FindNumReallinesFor(const struct LocalZooms *localzoom){
 	}
 	return ret;
 }
+*/
 
 void Unexpand(struct Tracker_Windows *window,struct WBlocks *wblock,int realline){
 
@@ -594,7 +596,7 @@ void Zoom(struct Tracker_Windows *window,struct WBlocks *wblock,int numtozoom){
         window->must_redraw = true;
 }
 
-void LineZoomBlock_internal(struct Tracker_Windows *window, struct WBlocks *wblock, int num_lines, bool update_curr_realline){
+static void LineZoomBlock_internal(struct Tracker_Windows *window, struct WBlocks *wblock, int num_lines, bool update_curr_realline){
 
   int realline;
 

@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "api_gui_proc.h"
 
+#include "radium_proc.h"
 #include "api_common_proc.h"
 
 
@@ -50,9 +51,9 @@ int
 #ifdef _AMIGA
 __stdargs __saveds
 #endif
-radium_main(char *arg);
+radium_main(const char *arg);
 
-void init_radium(char *arg,PyObject *gkf){
+void init_radium(const char *arg,PyObject *gkf){
 	static bool started=false;
 
 	if(started==true) return;

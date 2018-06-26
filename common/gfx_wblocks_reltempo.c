@@ -3,6 +3,8 @@
 #include "gfx_slider_proc.h"
 
 
+#include "gfx_wblocks_reltempo_proc.h"
+
 
 void DrawBlockRelTempo(
 	struct Tracker_Windows *window,

@@ -2499,6 +2499,7 @@ hash_t *MW_get_connections_state(const vector_t *patches){
 }
 
 // Return NULL if the connection doesn't exist. Used by a/b testing to avoid recreating all connections when changing a/b number.
+/*
 static SuperConnection *get_connection(int64_t id_from, int64_t id_to, bool is_event_connection){
   auto super_connections = get_connections();
   for(auto *connection : super_connections){
@@ -2512,7 +2513,7 @@ static SuperConnection *get_connection(int64_t id_from, int64_t id_to, bool is_e
 
   return NULL;
 }
-
+*/
 
 
 hash_t *MW_get_state(const vector_t *patches, bool include_ab){
@@ -2874,6 +2875,7 @@ static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plug
   }
 }
 
+/*
 static bool in_patches(const vector_t *patches, int64_t id){
   VECTOR_FOR_EACH(struct Patch *, patch, patches){
     if (patch->id==id)
@@ -2882,6 +2884,7 @@ static bool in_patches(const vector_t *patches, int64_t id){
   
   return false;
 }
+*/
 
 static void apply_ab_connections_state(hash_t *connections){
 

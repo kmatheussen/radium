@@ -615,6 +615,7 @@ void DISK_cleanup(void){
   g_temporary_files.clear();
 }
 
+#if defined(FOR_WINDOWS)
 static QString file_to_string(QString filename){
   QFile file(filename);
   bool ret = file.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -626,6 +627,7 @@ static QString file_to_string(QString filename){
     }
   return "(unable to open file -"+filename+"-)";
 }
+#endif
 
 // 'program' must be placed in the program bin path.
 // The returned value must be manually freed.

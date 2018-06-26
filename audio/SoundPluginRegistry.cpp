@@ -636,58 +636,8 @@ void PR_add_plugin_container(SoundPluginTypeContainer *container){
   PR_add_menu_entry(PluginMenuEntry::container(container));
 }
 
-//extern "C" void create_sine_plugin(void);
-extern void create_bus_plugins(bool only_pipe);
-extern void create_seqtrack_plugin(void);
-extern void create_timeskew_plugin(void);
-extern void create_patchbay_plugin(void);
+
 #include "VST_plugins_proc.h"
-extern void create_juce_plugins(void);
-extern void create_ladspa_plugins(void);
-extern void create_sample_plugin(void);
-extern "C" void create_fluidsynth_plugin(void);
-extern void create_pd_plugin(void);
-extern void create_modulator_plugin(void);
-
-extern "C" void create_midimessages_plugin(void);
-  
-extern void create_zita_rev_plugin(void);
-extern void create_faust_tapiir_plugin(void);
-extern void create_faust_multibandcomp_plugin(void);
-
-#ifdef WITH_FAUST_DEV
-extern void create_faust_plugin(void);
-#endif
-
-extern void create_faust_system_eq_plugin(void);
-extern void create_faust_system_tremolo_plugin(void);
-extern void create_faust_system_lowpass_plugin(void);
-extern void create_faust_system_highpass_plugin(void);
-extern void create_faust_system_lowshelf_plugin(void);
-extern void create_faust_system_highshelf_plugin(void);
-//extern void create_faust_system_delay_plugin(void);
-
-extern void create_stk_bass_plugin(void);
-extern void create_stk_bowed_plugin(void);
-extern void create_stk_blow_bottle_plugin(void);
-extern void create_stk_blow_hole_plugin(void);
-extern void create_stk_brass_plugin(void);
-extern void create_stk_clarinet_plugin(void);
-extern void create_stk_flute_plugin(void);
-extern void create_stk_flute_stk_plugin(void);
-extern void create_stk_glass_harmonica_plugin(void);
-extern void create_stk_harpsi_plugin(void);
-extern void create_stk_modal_bar_plugin(void);
-extern void create_stk_NLF_eks_plugin(void);
-extern void create_stk_NLF_fm_plugin(void);
-extern void create_stk_piano_plugin(void);
-extern void create_stk_saxophony_plugin(void);
-extern void create_stk_sitar_plugin(void);
-extern void create_stk_tibetan_bowl_plugin(void);
-extern void create_stk_tuned_bar_plugin(void);
-extern void create_stk_uni_bar_plugin(void);
-extern void create_stk_voice_form_plugin(void);
-
 
 void PR_set_init_vst_first(void){
   SETTINGS_write_bool("init_vst_first", true);

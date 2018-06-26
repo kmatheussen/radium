@@ -39,7 +39,7 @@ static void *Undo_Do_Swings(
 );
 
 
-void ADD_UNDO_FUNC(Swings(
+static void ADD_UNDO_FUNC(Swings(
 	struct Tracker_Windows *window,
 	struct Blocks *block,
 	NInt tracknum,

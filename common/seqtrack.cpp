@@ -154,10 +154,6 @@ static inline int64_t get_seqblock_duration(const struct SeqBlock *seqblock){
   return seqblock->t.time2 - seqblock->t.time;
 }
 
-static int64_t SEQBLOCK_get_seq_time(const struct SeqBlock *seqblock, int64_t blocktime){
-  return seqblock->t.time + blocktime_to_seqtime(seqblock, blocktime);
-}
-
 static void move_seqblock(struct SeqBlock *seqblock, int64_t new_start){
   int64_t duration = get_seqblock_duration(seqblock);
 
@@ -1586,6 +1582,7 @@ void SEQTRACK_delete_gfx_gfx_seqblock(struct SeqTrack *seqtrack, const struct Se
   VECTOR_remove(&seqtrack->gfx_gfx_seqblocks, seqblock);
 }
 
+/*
 static const struct SeqBlock *get_prev_seqblock(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
   int pos = VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
   R_ASSERT_RETURN_IF_FALSE2(pos!=-1, NULL);
@@ -1611,6 +1608,7 @@ static const struct SeqBlock *get_next_seqblock(const struct SeqTrack *seqtrack,
 
   return NULL;
 }
+*/
 
 // 'how_much' can be negative.
 void SEQTRACK_move_all_seqblocks_to_the_right_of(struct SeqTrack *seqtrack, int seqblocknum, int64_t how_much){

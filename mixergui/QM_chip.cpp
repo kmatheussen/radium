@@ -155,11 +155,13 @@ static void get_note_indicator_coordinates(int &x1, int &y1, int &x2, int &y2){
   y2 -= 3;
 }
 
+/*
 static int get_note_indicator_x2(void){
   int x1,x2,y1,y2;
   get_note_indicator_coordinates(x1,y1,x2,y2);
   return x2;
 }
+*/
 
 void CHIP_get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_name_coordinates(x1,y1,x2,y2);
@@ -595,10 +597,12 @@ static Chip *get_chip_from_patch_id(QGraphicsScene *scene, int64_t patch_id, boo
   return CHIP_get(scene, patch);
 }
 
+/*
 static bool connect(QGraphicsScene *scene, Chip *from, int from_portnum, Chip *to, int to_portnum){
   return SP_add_link(to->_sound_producer, to_portnum, 
                      from->_sound_producer, from_portnum);
 }
+*/
 
 static bool econnect(QGraphicsScene *scene, Chip *from, Chip *to){
   if (SP_add_elink(to->_sound_producer, from->_sound_producer) == false)
@@ -2305,12 +2309,14 @@ void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connecti
     MODULATOR_apply_connections_state(HASH_get_dyn(connections, "modulator_connections"));
 }
 
+/*
 static void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new){
   changes::AudioGraph changes;
 
   CONNECTION_create_from_state2(scene, changes, state, patch_id_old, patch_id_new, -1, -1, true);
   CONNECTIONS_apply_changes(scene, changes);
 }
+*/
 
 void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections, bool all_patches_are_always_supposed_to_be_here)
 {

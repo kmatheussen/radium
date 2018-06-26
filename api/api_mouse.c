@@ -155,9 +155,6 @@ void setMouseTrackToReltempo(void){
 }
 
 
-bool mousePointerInMixer(void){
-  return MW_has_mouse_pointer();
-}
 
 // placement (block time)
 ///////////////////////////////////////////////////
@@ -230,17 +227,6 @@ Place getNextPlaceInGridFromY(float y, int blocknum, int windownum) {
                        );
 }
 
-
-// bpm
-///////////////////////////////////////////////////
-int getNumBPMs(int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if (wblock==NULL)
-    return 0;
-
-  return ListFindNumElements3((struct ListHeader3*)wblock->block->tempos);
-}
 
 
 // reltempo
@@ -3412,6 +3398,10 @@ int getScreenHeight(int windownum){
 
   Area ret = GetScreenSize(window);
   return ret.x2;
+}
+
+bool mousePointerInMixer(void){
+  return MW_has_mouse_pointer();
 }
 
 float g_mouse_dx = 0;

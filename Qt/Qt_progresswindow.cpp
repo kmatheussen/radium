@@ -27,6 +27,7 @@ static const QString message_split_string = "_____SPLIT______";
 static QString g_main_message;
 static QTextBrowser *progressWindow = NULL;
 
+/*
 static int longest_line(QString text){
   int ret = 0;
   for(auto line : text.split("\n"))
@@ -35,6 +36,7 @@ static int longest_line(QString text){
 
   return ret;
 }
+*/
 
 class MyTimer : public QTimer{
 public:

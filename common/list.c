@@ -157,7 +157,7 @@ void ListAddElement3_a(
         before before that in the list.
 
 ******************************************************************************/
-
+/*
 void ListAddElement0(
                      void *voidlistroot,
                      struct ListHeader0 *element
@@ -171,6 +171,7 @@ void ListAddElement0(
   listroot->root = element;
   element->next = old_first;
 }
+*/
 
 void ListAddElement1(
 	void *voidlistroot,

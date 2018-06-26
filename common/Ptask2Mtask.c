@@ -65,6 +65,8 @@ int default_scrolls_per_second = 20;
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
 
+#include "Ptask2Mtask_proc.h"
+
 
 // Simpler version when using opengl
 void P2MUpdateSongPosCallBack(void){

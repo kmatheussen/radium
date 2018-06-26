@@ -390,7 +390,7 @@ static char *MIDIGetPatchData(struct Patch *patch, const char *key){
   return "";
 }
 
-void MIDIclosePatch(struct Patch *patch){
+static void MIDIclosePatch(struct Patch *patch){
 	return;
 }
 
@@ -652,7 +652,7 @@ void MIDI_init_track(struct Tracks *track){
 	track->midi_instrumentdata=tid;
 }
 
-void MIDIStopPlaying(struct Instruments *instrument){
+static void MIDIStopPlaying(struct Instruments *instrument){
   /*
   double times[R_MAX(1, instrument->patches.num_elements)];
   int i=0;

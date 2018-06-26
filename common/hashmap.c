@@ -46,7 +46,7 @@ static int find_next_prime_number(int number){
 
 // Bob Jenkins's One-at-a-Time hash
 // copied from http://eternallyconfuzzled.com/tuts/algorithms/jsw_tut_hashing.aspx
-unsigned int oat_hash(const char *key, int i_i)
+static unsigned int oat_hash(const char *key, int i_i)
 {
   unsigned h = 0;
   int len = (int)strlen(key);

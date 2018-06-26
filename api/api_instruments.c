@@ -71,6 +71,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "api_common_proc.h"
 
 
+#include "api_instruments_proc.h"
+
+
+
 extern struct Root *root;
 
 
@@ -358,7 +362,7 @@ const char *getAudioInstrumentDescription(const_char* container_name, const_char
   return talloc_format("1%s:%s:%s", container_name, type_name, plugin_name);
 }
 
-bool get_type_name_from_description(const char *instrument_description, const char **container_name, const char **type_name, const char **plugin_name){
+static bool get_type_name_from_description(const char *instrument_description, const char **container_name, const char **type_name, const char **plugin_name){
   if (instrument_description[0]=='1'){
 
     char *descr = talloc_strdup(instrument_description);
@@ -1493,7 +1497,7 @@ bool hasEventConnection(int64_t source_id, int64_t dest_id){
   return MW_are_econnected(source, dest);
 }
 
-bool get_connection_gain_enabled(int64_t source_id, int64_t dest_id, float *gain, bool *is_enabled, bool show_error_if_not_connected){
+static bool get_connection_gain_enabled(int64_t source_id, int64_t dest_id, float *gain, bool *is_enabled, bool show_error_if_not_connected){
   struct Patch *source = getAudioPatchFromNum(source_id);
   if(source==NULL)
     return false;

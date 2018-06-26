@@ -26,6 +26,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 
 
+#include "undo_notes_proc.h"
+
+
+
 struct Undo_Notes{
 	struct Notes *notes;
 	struct Stops *stops;

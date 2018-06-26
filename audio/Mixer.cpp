@@ -147,10 +147,11 @@ void THREADING_drop_player_thread_priority(void){
   jack_drop_real_time_scheduling(GET_CURRENT_THREAD());
 }
 
+#if 0
 static void PLAYER_drop_same_priority(void){
   THREADING_drop_player_thread_priority();
 }
-
+#endif
 
 
 static void check_jackd_arguments(void){

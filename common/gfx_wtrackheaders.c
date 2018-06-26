@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern char *NotesTexts3[];
 
-void DrawWTrackNames(
+static void DrawWTrackNames(
                      struct Tracker_Windows *window,
                      const struct WBlocks *wblock,
                      int starttrack,

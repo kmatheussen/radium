@@ -91,7 +91,7 @@ static bool PasteRange_FXs(
 }
 
 
-void PasteRange_pitches(
+static void PasteRange_pitches(
                         const struct Blocks *block,
                         struct Pitches **topitch,
                         const struct Pitches *frompitch,
@@ -113,7 +113,7 @@ void PasteRange_pitches(
 	PasteRange_pitches(block,topitch,NextPitch(frompitch),place);
 }
 
-void PasteRange_notes(
+static void PasteRange_notes(
                       const struct Blocks *block,
                       struct Tracks *track,
                       const struct Notes *fromnote,
@@ -146,7 +146,7 @@ void PasteRange_notes(
 }
 
 
-void PasteRange_stops(
+static void PasteRange_stops(
 	struct Blocks *block,
 	struct Tracks *track,
 	struct Stops *fromstop,
@@ -169,7 +169,7 @@ void PasteRange_stops(
 }
 
 
-void PasteRange(
+static void PasteRange(
 	struct Blocks *block,
 	NInt tracknum,
 	const Place *place

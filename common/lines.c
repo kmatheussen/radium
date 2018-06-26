@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Root *root;
 struct Blocks *blocktobelongtoforinsertlines_notes_a_terrible_hack;
 
-void InsertLines_notes(
+static void InsertLines_notes(
 	void *tonote,
 	struct ListHeader3 *l,
 	int line,
@@ -81,7 +81,7 @@ void InsertLines_notes(
 }
 
 
-void InsertLines_localzooms(
+static void InsertLines_localzooms(
 	void *tolocalzoom,
 	struct ListHeader3 *l,
 	int line,

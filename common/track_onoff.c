@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-void SwitchTrackOnOff(
+static void SwitchTrackOnOff(
 	struct Tracks *track
 ){
   if(track->onoff==1){
@@ -34,7 +34,7 @@ void SwitchTrackOnOff(
   }
 }
 
-void SwitchAllTracksOnOff(
+static void SwitchAllTracksOnOff(
 	NInt tracknum
 ){
 	struct Blocks *block=root->song->blocks;
@@ -88,7 +88,7 @@ void SoloTrack_CurrPos(
         window->must_redraw = true;
 }
 
-void AllTracksOn(
+static void AllTracksOn(
 	NInt tracknum
 ){
 	struct Blocks *block=root->song->blocks;

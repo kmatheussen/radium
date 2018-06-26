@@ -299,9 +299,11 @@ bool DC_isVariable(void){
 }
 */
 
+/*
 int DC_getType(void){
 	return dc.type;
 }
+*/
 
 int DC_Next(void){
 

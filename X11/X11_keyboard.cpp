@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "X11.h"
 
-#if USE_QT4
+#ifndef USE_QT5
 #include <X11/Xlib.h>
 #endif
 
@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_system_proc.h"
 
 
-#if USE_QT4
+#ifndef USE_QT5
 static int keycode_to_keynum[256]; // "A KeyCode represents a physical (or logical) key. KeyCodes lie in the inclusive range [8,255]" (keyboard-encoding.html)
 #endif
 
@@ -215,7 +215,7 @@ static int keysym_to_keynum(KeySym keysym) {
 # undef S
 }
 
-#if USE_QT4
+#ifndef USE_QT5
 static void init_keynums(XEvent *event){
   static bool inited_keynums = false;
 
@@ -410,11 +410,13 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
 }
 #endif
 
+
+#ifndef USE_QT5
+
 static bool event_is_arrow2(KeySym keysym){
   return keysym==XK_Down || keysym==XK_Up || keysym==XK_Right || keysym==XK_Left || keysym==XK_Page_Up || keysym==XK_Page_Down;
 }
 
-#ifdef USE_QT4
 static bool event_is_arrow(XKeyEvent *event){
   KeySym keysym = XkbKeycodeToKeysym(event->display, event->keycode, 0, 0);
   return event_is_arrow2(keysym);

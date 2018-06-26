@@ -46,7 +46,7 @@ static void *Undo_Do_NotesAndFXs(
                                  void *pointer
                                  );
 
-void ADD_UNDO_FUNC(
+static void ADD_UNDO_FUNC(
                    NotesAndFXs(
                                struct Tracker_Windows *window,
                                struct Blocks *block,

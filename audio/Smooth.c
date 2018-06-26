@@ -137,6 +137,7 @@ void SMOOTH_copy_sound(const Smooth *smooth, float *dst, const float *src, int n
   }
 }
 
+#if 0
 void SMOOTH_apply_volume_using_inverted_values(const Smooth *smooth, float *sound, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
@@ -152,6 +153,7 @@ void SMOOTH_apply_volume_using_inverted_values(const Smooth *smooth, float *soun
         sound[i] *= volume;
   }
 }
+#endif
 
 void SMOOTH_mix_sounds_raw(float *target, const float *source, int num_frames, float start_volume, float end_volume){
 

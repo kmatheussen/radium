@@ -202,7 +202,7 @@ void UpdateAllFXNodeLines(
 }
 #endif
 
-int getNumUsedFX(struct Tracks *track){
+static int getNumUsedFX(struct Tracks *track){
 	int ret;
 	ret=track->fxs.num_elements;
 
@@ -214,7 +214,7 @@ int getNumUsedFX(struct Tracks *track){
   FUNCTION
     Just a way to get the same fx corresponding to 'num'.
 ******************************************************************/
-struct FX *getTrackFX(struct Tracks *track,int num){
+static struct FX *getTrackFX(struct Tracks *track,int num){
   if (num >= track->fxs.num_elements){
     RError("Error at function getTrackFX in file fxlines.c\n");
     return NULL;

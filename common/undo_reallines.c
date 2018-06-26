@@ -41,7 +41,7 @@ static void *Undo_Do_Reallines(
 );
 
 
-void ADD_UNDO_FUNC(Reallines(
+static void ADD_UNDO_FUNC(Reallines(
                              struct Tracker_Windows *window,
                              struct WBlocks *wblock,
                              NInt tracknum,

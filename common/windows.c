@@ -76,7 +76,8 @@ void UpdateTrackerWindowCoordinates(struct Tracker_Windows *window){
   FUNCTION
     Is ment to be called instead of clearing all of the window, to avoid flicker.
 *********************************************************************/
-void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
+#if !USE_OPENGL
+static void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
   const int color = 0;
   struct WBlocks *wblock = window->wblock;
 
@@ -157,6 +158,8 @@ void ClearUnusedWindowsAreas(struct Tracker_Windows *window){
 #endif
 
 }
+
+#endif
 
 
 /**************************************************************************

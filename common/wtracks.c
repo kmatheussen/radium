@@ -84,7 +84,7 @@ struct WTracks *WTRACK_new(void){
   return wtrack;
 }
 
-void NewWTrack(
+static void NewWTrack(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -208,7 +208,7 @@ int WTRACKS_getWidth(const struct Tracker_Windows *window,
 
 /* Update all wtrackcoordinates starting from "wtrack". */
 
-void UpdateWTrackCoordinates(
+static void UpdateWTrackCoordinates(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -471,7 +471,7 @@ void UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 }
 
 
-void SetNoteLength(
+static void SetNoteLength(
 	struct Tracker_Windows *window,
 	struct WTracks *wtrack,
 	int size

@@ -87,15 +87,23 @@ static DEFINE_ATOMIC(bool, g_dont_report) = false;
 
 
 namespace local{
+  
+#if !defined(CRASHREPORTER_BIN)
+  
 static QString toBase64(QString s){
   //return s.toLocal8Bit().toBase64();
   return s.toUtf8().toBase64();
 }
 
+#endif
+  
+#if defined(CRASHREPORTER_BIN)
+  
 static QString fromBase64(QString encoded){
   //return QString::fromLocal8Bit(QByteArray::fromBase64(encoded.toLocal8Bit()).data());
   return QString::fromUtf8(QByteArray::fromBase64(encoded.toUtf8()).data());
 }
+#endif
 }
 
 
@@ -111,6 +119,7 @@ static QString file_to_string(QString filename){
   return "(unable to open file -"+filename+"-)";
 }
 
+#if defined(CRASHREPORTER_BIN)
 static void delete_file(QString filename){
   QFile::remove(filename);
 }
@@ -121,7 +130,7 @@ static void clear_file(QString filename){
   file.write("");
   file.close();
 }
-
+#endif
 
 #if !defined(CRASHREPORTER_BIN)
 

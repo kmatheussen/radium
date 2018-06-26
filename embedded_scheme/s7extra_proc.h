@@ -2,7 +2,10 @@
 extern "C" {
 #endif
 
+
   #ifdef S7_VERSION
+  void init_radium_s7(s7_scheme *s7);
+  
   bool s7extra_is_place(s7_pointer place);
   Place s7extra_place(s7_scheme *s7, s7_pointer place);
   s7_pointer s7extra_make_place(s7_scheme *radiums7_sc, Place place);

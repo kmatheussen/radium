@@ -60,7 +60,7 @@ static void Invert_notes(
 }
 
 
-void InvertRange(
+static void InvertRange(
 	struct WBlocks *wblock
 ){
 	struct Tracks *track;
@@ -80,7 +80,7 @@ void InvertRange(
 
 }
 
-void InvertTrack(
+static void InvertTrack(
 	struct Blocks *block,
 	struct Tracks *track
 ){
@@ -92,7 +92,7 @@ void InvertTrack(
 	Invert_notes(track->notes,&p1,&p2,true,0,0);
 }
 
-void InvertBlock(
+static void InvertBlock(
 	struct Blocks *block
 ){
 	struct Tracks *track=block->tracks;

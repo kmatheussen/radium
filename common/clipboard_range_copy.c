@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern struct Range *range;
 
 
-void CopyRange_velocities(
+static void CopyRange_velocities(
                           struct Velocities **tovelocity,
                           const struct Velocities *fromvelocity,
                           const Place *p1,
@@ -56,7 +56,7 @@ void CopyRange_velocities(
 }
 
 
-void CopyRange_pitches(
+static void CopyRange_pitches(
                        struct Pitches **topitch,
                        const struct Pitches *frompitch,
                        const Place *p1,

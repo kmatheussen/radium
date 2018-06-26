@@ -541,6 +541,7 @@ int GFX_MakeRandomCustomColor(int colornum){
 }
 
 
+/*
 static bool is_configurable_color(enum ColorNums colornum){
   if (colornum==BLACK_COLOR_NUM)
     return false;
@@ -551,7 +552,7 @@ static bool is_configurable_color(enum ColorNums colornum){
 
   return true;
 }
-
+*/
 
 static const ColorConfig get_color_config(enum ColorNums colornum){
   int i=0;
