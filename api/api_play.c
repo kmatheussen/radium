@@ -81,6 +81,10 @@ void setSongPos(int64_t pos){
   }
 }
 
+int64_t getSongPos(void){
+  return ATOMIC_DOUBLE_GET(pc->song_abstime);
+}
+
 void playSongFromPos(int64_t pos){
   PlaySong(pos);
 }
