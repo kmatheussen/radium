@@ -1490,6 +1490,15 @@ static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
 }
 
 int createSeqblock(int seqtracknum, int blocknum, int64_t pos, int64_t endpos){
+  if (seqtracknum==-1)
+    seqtracknum = getCurrSeqtrack();
+
+  if (blocknum==-1)
+    blocknum = currentBlock(-1);
+
+  if (pos==-1)
+    pos = getSongPos();
+  
   VALIDATE_TIME(pos, -1);
   
   struct SeqTrack *seqtrack = getBlockSeqtrackFromNum(seqtracknum);
