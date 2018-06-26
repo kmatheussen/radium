@@ -1268,6 +1268,12 @@ struct Notes{
 #if !defined(RELEASE)
         bool has_automatically_sent_seqblock_volume_automation_this_block;
 #endif
+        bool scheduler_may_send_velocity_next_block;
+        bool scheduler_must_send_velocity_next_block; // Can only be set to true if sheduler_may_send_velocity_next_block==true.
+
+        float curr_velocity;
+        int64_t curr_velocity_time;
+  
         int64_t id;
 };
 #define NextNote(a) ((struct Notes *)((a)->l.next))

@@ -923,7 +923,7 @@ static void Patch_removePlayingNote(struct Patch *patch, int64_t note_id, struct
   Patch_removePlayingVoice(&patch->playing_notes, note_id, seqtrack, seqblock);
 }
 
-static float get_voice_velocity(const struct PatchVoice &voice){
+static inline float get_voice_velocity(const struct PatchVoice &voice){
   if (voice.volume < MIN_PATCHVOICE_VOLUME)
     return 0;
   else if (voice.volume <= MID_PATCHVOICE_VOLUME)
@@ -964,13 +964,20 @@ static void RT_play_voice(struct SeqTrack *seqtrack, struct Patch *patch, const 
 static int64_t RT_scheduled_play_voice(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
-  const note_t note = create_note_from_args(&args[1]);
+  note_t note = create_note_from_args(&args[1]);
 
   //printf("playing scheduled play note: %d. time: %d, velocity: %d\n",notenum,(int)time,velocity);
   //return;
 
   //printf("___RT_scheduled_play_voice. time: %d\n", (int)time);
 
+  // Arguably, applying voice velocity here is incorrect. The reason for doing it here is to avoid different modulation phases for each voice when having different "start" values, and volume is modulated.
+  // But applying in RT_PATCH_play_note could also create some interesting effects.
+  // Hard to tell what's best/worst though. Maybe add an option later.
+
+  const struct PatchVoice &voice = patch->voices[(int)note.voicenum];
+  note.velocity *= get_voice_velocity(voice);
+    
   RT_play_voice(seqtrack,
                 patch,
                 note,
@@ -1015,7 +1022,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
   if (!Patch_addPlayingNote(patch, note, editor_note, seqtrack))
     return note.id;
 
-  float sample_rate = MIXER_get_sample_rate();
+  float sample_rate = pc->pfreq;
 
   union SuperType args[8];
   args[0].pointer = patch;
@@ -1029,7 +1036,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
 
       float voice_notenum = note.pitch + voice.transpose;
       if (voice_notenum > 0) {
-        float voice_velocity = note.velocity * get_voice_velocity(voice) * curr_gain;
+        float voice_velocity = note.velocity * curr_gain;
         int64_t voice_id = note.id + i;
         
         args[1].float_num = voice_notenum;
@@ -1204,9 +1211,11 @@ static void RT_change_voice_velocity(struct SeqTrack *seqtrack, struct Patch *pa
 #endif
 
   //printf("222. vel: %f\n",note.velocity);
-    
+  
   if (Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock)){
     //printf("333. vel: %f\n",note.velocity);
+
+
     patch->changevelocity(seqtrack,patch,note,time);
   }
 
@@ -1217,11 +1226,18 @@ static void RT_change_voice_velocity(struct SeqTrack *seqtrack, struct Patch *pa
 static int64_t RT_scheduled_change_voice_velocity(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
-  const note_t note = create_note_from_args(&args[1]);
+  note_t note = create_note_from_args(&args[1]);
 
   //printf("stopping scheduled play note: %d. time: %d, velocity: %d\n",notenum,(int)time,velocity);
   //return;
 
+  // Arguably, applying voice velocity here is incorrect. The reason for doing it here is to avoid different modulation phases for each voice when having different "start" values, and volume is modulated.
+  // But applying in RT_PATCH_change_velocity could also create some interesting effects.
+  // Hard to tell what's best/worst though. Maybe add an option later.
+
+  const struct PatchVoice &voice = patch->voices[(int)note.voicenum];
+  note.velocity *= get_voice_velocity(voice);
+  
   RT_change_voice_velocity(seqtrack, patch,note,time);
 
   return DONT_RESCHEDULE;
@@ -1247,11 +1263,9 @@ void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, co
 
       if (voice_notenum > 0) {
         int64_t voice_id = note.id + i;
-        float voice_velocity = note.velocity * get_voice_velocity(voice);
-        
+
         args[1].float_num = voice_notenum;
         args[2].int_num = voice_id;
-        args[3].float_num = voice_velocity;
         
         // voicenum
         args[5].int_num &= ~(0xff);
@@ -1646,11 +1660,9 @@ void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, float new_t
 */
 
 
-void RT_PATCH_voice_volume_has_changed(struct Patch *patch, int voicenum){ // float old_volume, float new_volume){ 
+void RT_PATCH_voice_volume_has_changed(struct Patch *patch, int voicenum){
   
   const struct PatchVoice &voice = patch->voices[voicenum];
-
-  //float voice_velocity = get_voice_velocity(voice);
 
   if(voice.is_on){
 
@@ -1658,22 +1670,35 @@ void RT_PATCH_voice_volume_has_changed(struct Patch *patch, int voicenum){ // fl
 
     for(const linked_note_t *linked_note = patch->playing_notes ; linked_note!=NULL ; linked_note=linked_note->next) {
       
-      struct Notes *note = linked_note->editor_note;
+      struct Notes *editor_note = linked_note->editor_note;
       
-      if (note!=NULL && note->has_sent_seqblock_volume_automation_this_block==false){
+      if (editor_note!=NULL && editor_note->scheduler_may_send_velocity_next_block){
         // This causes voice volume change to be applied the next block instead of the current (i.e. 64 frames later).
         // But that's not a big deal. The alternative is sending twice as many velocity messages, which can be a problem
         // when messages are scheduled because of latency compensation.
+        editor_note->scheduler_must_send_velocity_next_block = true;
         continue;
       }
+
+      note_t note = linked_note->note;
+
+      if (editor_note != NULL)
+        note.velocity = editor_note->curr_velocity;
+
+      if (note.seqblock != NULL)
+        note.velocity *= note.seqblock->curr_gain;
+
+      int64_t time = 0;
+      if (editor_note != NULL && is_really_playing()) // Without the is_really_playing() test the scheduler is filled up after song ends.
+        time = editor_note->curr_velocity_time + 1; // Add one to ensure it is sent after a note velocity event was scheduled.
       
       RT_PATCH_change_velocity(linked_note->seqtrack,
                                patch,
-                               linked_note->note,
-                               0);
+                               note,
+                               time);
 
-      if (note != NULL)
-        note->has_sent_seqblock_volume_automation_this_block = true;
+      if (editor_note != NULL)
+        editor_note->has_sent_seqblock_volume_automation_this_block = true;
     }
 
   }

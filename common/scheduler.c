@@ -136,6 +136,7 @@ static bool schedule_event(struct SeqTrack *seqtrack, event_t *event, int64_t se
 
   if(scheduler->queue_size > QUEUE_SIZE-2){
     printf("SCHEDULER: queue full. Skipping.\n"); // Can happen if playing very fast. Should perhaps use RT_message instead.
+    R_ASSERT_NON_RELEASE(false);
     return false;
   }
   
