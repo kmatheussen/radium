@@ -924,12 +924,12 @@ static void Patch_removePlayingNote(struct Patch *patch, int64_t note_id, struct
 }
 
 static inline float get_voice_velocity(const struct PatchVoice &voice){
-  if (voice.volume < MIN_PATCHVOICE_VOLUME)
+  if (voice.volume <= MIN_PATCHVOICE_VOLUME)
     return 0;
-  else if (voice.volume <= MID_PATCHVOICE_VOLUME)
-    return scale(voice.volume,MIN_PATCHVOICE_VOLUME,MID_PATCHVOICE_VOLUME, 0, 2);
+  else if (voice.volume <= MAX_PATCHVOICE_VOLUME)
+    return scale(voice.volume,MIN_PATCHVOICE_VOLUME,MAX_PATCHVOICE_VOLUME, 0, 2);
   else
-    return scale(voice.volume, MID_PATCHVOICE_VOLUME, MAX_PATCHVOICE_VOLUME, 2, 7);
+    return scale(voice.volume, MAX_PATCHVOICE_VOLUME, 70, 2, 7);
 }
 
 void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
