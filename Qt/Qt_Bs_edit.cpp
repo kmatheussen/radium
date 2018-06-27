@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MyQButton.h"
 
 #include "../common/OS_Bs_edit_proc.h"
+#include "Qt_Bs_edit_proc.h"
 
 
 
@@ -61,7 +62,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QListWidgetItem>
 
 
-#include "Qt_Bs_edit_proc.h"
 
 
 
@@ -990,12 +990,22 @@ static BlockSelector *g_bs = NULL;
 static bool g_is_hidden = false;
 
 
-QWidget *create_blockselector(){
+QWidget *create_blockselector(void){
   ScopedVisitors v;
 
   g_bs = new BlockSelector (NULL);
 
   return g_bs;
+}
+
+void PLAYLIST_insert(void){
+  ScopedVisitors v;
+  g_bs->add_to_playlist();
+}
+
+void PLAYLIST_remove(void){
+  ScopedVisitors v;
+  g_bs->remove_from_playlist();
 }
 
 void BS_resizewindow(void){

@@ -1437,6 +1437,13 @@ void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
 }
 
 
+void playlistInsert(void){
+  PLAYLIST_insert();
+}
+
+void playlistRemove(void){
+  PLAYLIST_remove();
+}
 
 static void get_seqblock_start_and_end_seqtime(const struct SeqTrack *seqtrack,
                                                const struct SeqBlock *seqblock,
