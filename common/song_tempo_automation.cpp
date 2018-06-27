@@ -354,7 +354,7 @@ static bool absabstime_scales_linearly_with_abstime(double time){ // time can be
 }
                                                     
 // A little bit tricky to calculate this more efficiently when we want a very accurate value. Fortunately, the song needs to be several hours long before noticing that it's slow.
-int64_t get_absabstime_from_abstime(double goal){
+static int64_t get_absabstime_from_abstime(double goal){
 
   int64_t absabstime = 0;
   double abstime = 0.0;

@@ -73,7 +73,7 @@ static double g_time = 0;
 static double g_curr_playing_start_time = 0;
 static double g_curr_playing_duration = 0;
 
-void RT_BACKUP_reset_timer(void){
+static void RT_BACKUP_reset_timer(void){
   g_time = TIME_get_ms();
   g_curr_playing_start_time = 0;
   g_curr_playing_duration = 0;

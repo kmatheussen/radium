@@ -185,10 +185,13 @@ extern LANGSPEC float SEQTRACK_get_y2(int seqtracknum);
 #ifdef __cplusplus
 extern void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack, int64_t start_time = -1, int64_t end_time = -1);
 extern void SEQTRACK_update(const struct SeqTrack *seqtrack, int64_t start_time = -1, int64_t end_time = -1);
-#else
+#endif
+
 extern LANGSPEC void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_update(const struct SeqTrack *seqtrack);
-#endif
+
+
+
 
 //extern LANGSPEC void SEQTRACK_recreate(int seqtracknum);
 

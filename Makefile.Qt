@@ -235,7 +235,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DUSE_GFX_OP_QUEUE -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_63_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing
+COMMONOPT = -c $(RADIUM_BFD_CFLAGS) `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_63_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers
 #-Wstrict-overflow=4 -Wsuggest-attribute=format -Wstringop-overflow=4
 #-Wsuggest-final-types -Wsuggest-final-methods
 
@@ -265,7 +265,7 @@ endif
 # -pg
 
 # CPPOPT is CPP flags
-CPPOPT = $(COMMONOPT) -DNDEBUG  # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
+CPPOPT = $(COMMONOPT) -Wmissing-declarations -DNDEBUG  # NDEBUG must be defined to avoid runtime checks in Visualization Library. assert() is not used in radium, so it shouldnt be a problem.
 # -Wno-class-memaccess added because of Qt.
 # -Wno-parentheses added because of boost.
 
@@ -1499,7 +1499,7 @@ bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
 	@echo "Changed (bin/radium_error_message):"
 	@echo $?
 	@echo
-	$(CCC) -Wall -Werror $(P)Qt_Error.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DCOMPILE_EXECUTABLE $(QT_GUI_CFLAGS) -o errormessagebin.o
+	$(CCC) -Wall -Werror $(P)Qt_Error.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DCOMPILE_EXECUTABLE $(QT_GUI_CFLAGS) -o errormessagebin.o -Wno-missing-declarations
 	$(LINKER) `cat buildtype.opt` errormessagebin.o -o bin/radium_error_message $(QT_GUI_LDFLAGS)
 	rm errormessagebin.o
 
@@ -1509,7 +1509,7 @@ bin/radium_progress_window: $(P)Qt_progresswindow.cpp
 	rm radium_progress_window.o
 
 bin/radium_check_jack_status: audio/KillJackd.cpp Jack_plugin.o find_jack_library.o # Jack_plugin.o depends on all the weakjack things
-	$(CCC) -Wall -Werror audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -o radium_check_jack_status.o -Wno-error=deprecated-declarations
+	$(CCC) -Wall -Werror audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++11 -DCOMPILE_EXECUTABLE -o radium_check_jack_status.o -Wno-error=deprecated-declarations -Wno-missing-declarations
 	$(LINKER) `cat buildtype.opt` radium_check_jack_status.o find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) -o bin/radium_check_jack_status $(FPIC)
 	rm radium_check_jack_status.o
 
@@ -1517,7 +1517,7 @@ Qt_progresswindow.o: $(BUILD_DEPENDENCIES) $(P)Qt_progresswindow.cpp
 	$(CCC) $(P)Qt_progresswindow.cpp $(QTOPT) -DP_SERVER
 
 KillJackd.o:$(BUILD_DEPENDENCIES) audio/KillJackd.cpp weakjack/weak_libjack.c
-	$(CCC) audio/KillJackd.cpp $(QTOPT)
+	$(CCC) audio/KillJackd.cpp $(QTOPT) -Wno-missing-declarations
 
 Rational.o: $(BUILD_DEPENDENCIES) $(P)Rational.cpp
 	$(CCC) $(P)Rational.cpp $(QTOPT)
@@ -1653,7 +1653,7 @@ ifeq (,$(findstring clang,$(CC)))
 endif
 
 radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c $(API)radium_proc.h
-	$(CC) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING)
+	$(CC) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING) -Wno-missing-field-initializers
 
 $(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
 	cd $(API) ; bash makeradiumwrap_c.sh $(PYTHONEXE) ; cd ..
@@ -1827,7 +1827,7 @@ Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
 
 
 FAUST_DEPENDENCIES = $(WHICHFAUST) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function
+FAUST_OPTS = $(QTOPT) $(CPUOPT) -Ibin/packages/faust2/architecture $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations
 
 Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES)
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
@@ -2217,7 +2217,7 @@ bin/radium_crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
 	@echo
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -o crashbin.o
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -Wno-missing-declarations -o crashbin.o
 	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm crashbin.o
 
@@ -2341,7 +2341,7 @@ endif
 
 
 qhttpconnection.o: bin/packages/qhttpserver-master/src/qhttpconnection.cpp
-	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS) #$(QHTTPCONNECTIONFLAGS)
+	$(CCC) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS) -Wno-missing-declarations #$(QHTTPCONNECTIONFLAGS)
 qhttprequest.o: bin/packages/qhttpserver-master/src/qhttprequest.cpp
 	$(CCC) -c bin/packages/qhttpserver-master/src/qhttprequest.cpp $(QHTTPSERVERFLAGS)
 qhttpresponse.o: bin/packages/qhttpserver-master/src/qhttpresponse.cpp

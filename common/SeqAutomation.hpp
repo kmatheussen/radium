@@ -606,7 +606,7 @@ public:
   dyn_t get_state(hash_t *(*get_node_state)(const T &node)) const {
     int size = _automation.size();
     
-    dynvec_t ret = {0};
+    dynvec_t ret = {};
     
     for(int i = 0 ; i < size ; i++)
       DYNVEC_push_back(ret, DYN_create_hash(get_node_state(_automation.at(i))));

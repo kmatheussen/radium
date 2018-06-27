@@ -387,8 +387,8 @@ struct EnvelopeFollowerGenerator : public Generator {
 
 private:
   
-  double fRec1[2] = {0};
-  double fRec0[2] = {0};
+  double fRec1[2] = {};
+  double fRec0[2] = {};
   double fConst0 = (1.0f / R_MIN(1.92e+05f, R_MAX(1.0f, FAUSTFLOAT(pc->pfreq))));
 
 
@@ -524,7 +524,7 @@ public:
       HASH_put_int(state, "modulator_patch_id", modulator_patch->id);
     }
 
-    dynvec_t targets = {0};
+    dynvec_t targets = {};
     
     for(auto *target : *_targets)
       DYNVEC_push_back(&targets, target->get_state());
@@ -813,7 +813,7 @@ void MODULATOR_add_target(int64_t modulator_id, const struct Patch *patch, int e
 
 void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect_num, bool do_replace){
 
-  vector_t v = {0};
+  vector_t v = {};
 
   int create_new = VECTOR_push_back(&v, "Create new envelope modulator");
   VECTOR_push_back(&v, "--------------");
@@ -950,7 +950,7 @@ dynvec_t MODULATOR_get_modulator_targets(int64_t modulator_patch_id){
 }
 
 dyn_t MODULATOR_get_connections_state(void){
-  dynvec_t vec = {0};
+  dynvec_t vec = {};
 
   for(auto *modulator : g_modulators2)
     DYNVEC_push_back(&vec, DYN_create_hash(modulator->get_state()));

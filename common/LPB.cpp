@@ -147,7 +147,7 @@ void RemoveLPB(struct Blocks *block,struct LPBs *lpb){
   }PC_StopPause(NULL);
 }
 
-void RemoveLPBs(struct Blocks *block,Place *p1,Place *p2){
+static void RemoveLPBs(struct Blocks *block,Place *p1,Place *p2){
   PC_Pause();{
     ListRemoveElements3(&block->lpbs,p1,p2);
     TIME_block_LPBs_have_changed(block);

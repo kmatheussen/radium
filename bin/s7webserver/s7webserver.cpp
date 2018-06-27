@@ -142,7 +142,7 @@ static void set_s7webserver_current_responder(s7_scheme *sc, S7WebServerResponde
 }
 
 
-extern s7_pointer RADIUM_SCHEME_eval2(const char *code);
+#include "../../embedded_scheme/s7_radium_proc.h"
 
 
 void S7WebServerResponder::reply()

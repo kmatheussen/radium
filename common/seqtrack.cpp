@@ -677,7 +677,7 @@ static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64
   return ret;
 }
 
-int64_t find_closest_barorbeat_start(int seqtracknum, int64_t seqtime, WhatToFind what){
+static int64_t find_closest_barorbeat_start(int seqtracknum, int64_t seqtime, WhatToFind what){
 
   //struct SeqTrack *pos_seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
   struct SeqTrack *seqtrack = find_closest_seqtrack_with_barorbeat_start(seqtracknum);
@@ -1252,7 +1252,7 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_sa
   return seqtrack;
 }
 
-hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_old_format */){
+static hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_old_format */){
   hash_t *state = HASH_create(seqtrack->seqblocks.num_elements);
 
   HASH_put_bool(state, "for_audiofiles", seqtrack->for_audiofiles);
@@ -1513,7 +1513,7 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
 
 // Compatibility with old songs
 struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
-  vector_t seqblocks = {0};
+  vector_t seqblocks = {};
   
   struct SeqTrack *seqtrack = SEQTRACK_create(NULL, -1, false);
     
@@ -1988,7 +1988,7 @@ int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime, end_seqtime);
 }
 
-int insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
+static int insert_gfx_gfx_block(struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
   seqblock->is_selected = true;
 
   vector_t *seqblocks = &seqtrack->gfx_gfx_seqblocks;
@@ -2614,7 +2614,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     else
       reset_recording_config(&song->default_recording_config);
     
-    vector_t seqtracks = {0};
+    vector_t seqtracks = {};
 
     {
       int num_seqtracks = HASH_get_array_size(state, "seqtracks");

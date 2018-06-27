@@ -150,11 +150,11 @@ void EVENTLOG_add_event(const char *log_entry){
  g_time_log[pos] = TIME_get_ms();
 }
 
-QString get_event_string(int pos, double time_now){
+static QString get_event_string(int pos, double time_now){
   return QString(QString::number((time_now - g_time_log[pos])/1000.0, 'f', 6) + ": " + g_event_log[pos]) + "\n";
 }
 
-QString get_event_log(int event_pos, double time_now){
+static QString get_event_log(int event_pos, double time_now){
   QString ret;
   
   for(int i=event_pos-1; i>=0 ; i--)

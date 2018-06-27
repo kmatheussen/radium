@@ -1219,7 +1219,7 @@ extern "C" {
 }
 
 
-bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool is_juce_plugin, const char *container_type_name){
+static bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier, bool is_juce_plugin, const char *container_type_name){
   QString filename = file_info.absoluteFilePath();
 
   //fprintf(stderr,"Trying to open \"%s\"\n",filename.toUtf8().constData());

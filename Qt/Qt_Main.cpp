@@ -2668,9 +2668,6 @@ static bool g_load_new_song=true;
 static char *g_songfile_from_commandline = NULL;
 static QString g_startup_path;
 
-extern void TIME_init(void);
-extern void UPDATECHECKER_doit(void);
-
 
 int radium_main(const char *arg){
 
@@ -3213,9 +3210,9 @@ static void qunsetenv(const char *varName)
 #endif
 
 #ifdef USE_QT5
-void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+static void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 #else
-  void myMessageOutput(QtMsgType type, const char *localMsg)
+static void myMessageOutput(QtMsgType type, const char *localMsg)
 #endif
 
 {

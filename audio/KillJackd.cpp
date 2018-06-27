@@ -35,7 +35,7 @@ static DEFINE_ATOMIC(bool, g_has_called_process) = false;
 static jack_port_t *input_port1, *input_port2;
 static jack_port_t *output_port1, *output_port2;
 
-int process (jack_nframes_t nframes, void *arg){
+static int process (jack_nframes_t nframes, void *arg){
   jack_default_audio_sample_t *in1, *in2, *out1, *out2;
   
   in1 = (jack_default_audio_sample_t*)jack_port_get_buffer (input_port1, nframes);
@@ -310,7 +310,7 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
   }
 
   if (message != ""){
-    vector_t v = {0};
+    vector_t v = {};
     
     int ignore = VECTOR_push_back(&v, "Try to run anyway");
     int kill = VECTOR_push_back(&v, "Stop the jack process! (Strongly recommended)");

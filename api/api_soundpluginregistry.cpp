@@ -300,7 +300,7 @@ static DiskOpReturn save_entries_to_disk(const QVector<hash_t*> &entries, const 
   if (hash==NULL)
     return DiskOpReturn::THIS_ONE_FAILED;
   
-  dynvec_t dynvec = {0};
+  dynvec_t dynvec = {};
     
   for(hash_t *hash : entries)
     DYNVEC_push_back(dynvec, DYN_create_hash(hash));
@@ -395,7 +395,7 @@ static bool load_entries_from_diskcache(dynvec_t &ret, const SoundPluginTypeCont
 }
 
 int API_get_num_entries_in_disk_container(SoundPluginTypeContainer *container){
-  dynvec_t ret = {0};
+  dynvec_t ret = {};
   if (load_entries_from_diskcache(ret, container, "")==false)
     return -1;
   return ret.num_elements;

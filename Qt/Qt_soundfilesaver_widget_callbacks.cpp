@@ -395,24 +395,24 @@ public slots:
 
 static QPointer<Soundfilesaver_widget> widget=NULL;
 
-extern "C"{
-  void SOUNDFILESAVERGUI_open(void){
 
-    if(widget==NULL){
-      widget = new Soundfilesaver_widget(g_main_window);
-    }
-    
+void SOUNDFILESAVERGUI_open(void){
+  
+  if(widget==NULL){
+    widget = new Soundfilesaver_widget(g_main_window);
+  }
+  
 #if 1
-    safeShow(widget);
+  safeShow(widget);
 #else
-    safeExec(widget, true);
+  safeExec(widget, true);
 #endif
-  }
-
-  void SOUNDFILESAVERGUI_stop(const char *message){
-    ATOMIC_SET(widget->_timer.async_message, V_strdup(message));
-  }
 }
+
+void SOUNDFILESAVERGUI_stop(const char *message){
+  ATOMIC_SET(widget->_timer.async_message, V_strdup(message));
+}
+
 
 #include "mQt_soundfilesaver_widget_callbacks.cpp"
 

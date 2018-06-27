@@ -442,7 +442,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       callPeakCallback();
     }
 
-    AudioMeterPeaks _fallback_peaks = {0};
+    AudioMeterPeaks _fallback_peaks = {};
 
     AudioMeterPeaks &get_audio_meter_peaks(void){
       if(_patch->instrument==get_MIDI_instrument()){
@@ -5511,7 +5511,7 @@ int64_t gui_getParentGui(int64_t guinum){
   return API_get_gui_from_widget(w);
 }
 
-bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
+static bool gui_setParent2(int64_t guinum, int64_t parentgui, bool mustBeWindow){
   //return false;
   
   Gui *gui = get_gui(guinum);

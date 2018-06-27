@@ -3003,10 +3003,11 @@ float SEQNAV_get_right_handle_x(void){
   return SEQNAV_get_x1() + g_sequencer_widget->_navigator_widget.get_x2();
 }
 
+/*
 void SEQNAV_update(void){
   g_sequencer_widget->_navigator_widget.update();
 }
-
+*/
 
 
 // sequencer looping
