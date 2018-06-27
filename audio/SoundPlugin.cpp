@@ -1061,10 +1061,15 @@ static float get_voice_value(const float voice_value, float min_native, float ma
 }
 
 static void set_voice_TRANSPOSE(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
+  struct Patch *patch = const_cast<struct Patch*>(plugin->patch);
+  
   set_voice_value(plugin,
-                  plugin->patch==NULL ? NULL : &plugin->patch->voices[num].transpose,
+                  patch==NULL ? NULL : &patch->voices[num].transpose,
                   -100, 100,
                   native_value, scaled_value, value_format);
+
+  if(patch != NULL)
+    RT_PATCH_voice_pitch_has_changed(patch, num);
 }
                       
 static float get_voice_TRANSPOSE(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){

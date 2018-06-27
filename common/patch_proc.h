@@ -87,6 +87,7 @@ extern LANGSPEC void PATCH_turn_voice_on(struct Patch *patch, int voicenum);
 extern LANGSPEC void PATCH_turn_voice_off(struct Patch *patch, int voicenum);
 //extern LANGSPEC void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, float new_tranpose);
 extern LANGSPEC void RT_PATCH_voice_volume_has_changed(struct Patch *patch, int voicenum);
+extern LANGSPEC void RT_PATCH_voice_pitch_has_changed(struct Patch *patch, int voicenum);
 
 extern LANGSPEC int PATCH_get_peaks(struct Patch *patch,
                                     float notenum, 

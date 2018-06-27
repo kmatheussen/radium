@@ -34,6 +34,7 @@ static int64_t RT_scheduled_stop_note(struct SeqTrack *seqtrack, int64_t time, u
                                   );
 
     note->curr_velocity_time = 0;
+    note->curr_pitch_time = 0;
     RT_PATCH_stop_note(seqtrack, patch,note2,time);
     
   }
@@ -191,9 +192,15 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
     note->curr_velocity = TRACK_get_velocity(track,note->velocity); // The logical behavior would be to use note->velocity, but we don't have access to track in the function 'RT_PATCH_voice_volume_has_changed.
     note->curr_velocity_time = time;
 
+    note->curr_pitch = note->note;
+    note->curr_pitch_time = time;
+
+    note->scheduler_may_send_velocity_next_block = false;
+    note->scheduler_may_send_pitch_next_block = false;
+
     note_t note2 = create_note_t(seqblock,
                                  note->id,
-                                 note->note,
+                                 note->curr_pitch,
                                  note->curr_velocity,
                                  TRACK_get_pan(track),
                                  ATOMIC_GET(track->midi_channel),
@@ -205,7 +212,7 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
 
     //printf("  scheduler_notes.c. Playing note at %d. Velocity: %f. Pitch: %f. Sample pos: %d\n",(int)time, note2.velocity, note2.pitch, (int)sample_pos);
     RT_PATCH_play_note(seqtrack, patch, note2, note, time);
-
+    
     bool schedule_pitches_and_velocities = true;
     if (sample_pos>0 && (patch->instrument==get_audio_instrument() && ATOMIC_GET(((SoundPlugin*)patch->patchdata)->enable_sample_seek)==false))
       schedule_pitches_and_velocities = false; // Temporary hack to prevent CPU spike while starting to play in the middle of a block. Proper solution should be applied in the next release.

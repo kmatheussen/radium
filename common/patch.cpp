@@ -1706,7 +1706,7 @@ void RT_PATCH_voice_volume_has_changed(struct Patch *patch, int voicenum){
 
   }
 }
-#if 0
+
 void RT_PATCH_voice_pitch_has_changed(struct Patch *patch, int voicenum){
   const struct PatchVoice &voice = patch->voices[voicenum];
 
@@ -1718,11 +1718,11 @@ void RT_PATCH_voice_pitch_has_changed(struct Patch *patch, int voicenum){
       
       struct Notes *editor_note = linked_note->editor_note;
       
-      if (editor_note!=NULL && editor_note->scheduler_may_send_velocity_next_block){
-        // This causes voice volume change to be applied the next block instead of the current (i.e. 64 frames later).
-        // But that's not a big deal. The alternative is sending twice as many velocity messages, which can be a problem
+      if (editor_note!=NULL && editor_note->scheduler_may_send_pitch_next_block){
+        // This causes voice pitch change to be applied the next block instead of the current (i.e. 64 frames later).
+        // But that's not a big deal. The alternative is sending twice as many pitch messages, which can be a problem
         // when messages are scheduled because of latency compensation.
-        editor_note->scheduler_must_send_velocity_next_block = true;
+        editor_note->scheduler_must_send_pitch_next_block = true;
         continue;
       }
 
@@ -1733,7 +1733,7 @@ void RT_PATCH_voice_pitch_has_changed(struct Patch *patch, int voicenum){
 
       int64_t time = 0;
       if (editor_note != NULL && is_really_playing()) // Without the is_really_playing() test the scheduler is filled up after song ends.
-        time = editor_note->curr_pitch_time + 1; // Add one to ensure it is sent after a note velocity event was scheduled.
+        time = editor_note->curr_pitch_time + 1; // Add one to ensure it is sent after a note pitch event was scheduled.
       
       RT_PATCH_change_pitch(linked_note->seqtrack,
                             patch,
@@ -1743,7 +1743,7 @@ void RT_PATCH_voice_pitch_has_changed(struct Patch *patch, int voicenum){
 
   }
 }
-#endif
+
 
 // Note: This function does not guarantee that all notes are stopped. A note can be scheduled
 // to start playing after this function returns.
