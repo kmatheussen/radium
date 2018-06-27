@@ -1594,9 +1594,11 @@ public:
 
 static vl::ref<MyQtThreadedWidget> widget;
 
+/*
 QSurfaceFormat GL_get_qsurface_format(void){
   return QGLFormat::toSurfaceFormat(widget->format());
 }
+*/
 
 #if !USE_QT5
 static bool use_estimated_vblank_questionmark(){

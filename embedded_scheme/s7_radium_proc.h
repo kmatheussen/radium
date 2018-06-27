@@ -1,0 +1,7 @@
+
+#ifndef _RADIUM_EMBEDDED_SCHEME_S7_RADIUM_PROC_H
+#define _RADIUM_EMBEDDED_SCHEME_S7_RADIUM_PROC_H
+
+s7_pointer RADIUM_SCHEME_eval2(const char *code);
+
+#endif

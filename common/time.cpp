@@ -944,7 +944,7 @@ STime Place2STime(
 
 
 // Precalculate timing for all line starts. (optimization)
-struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChange *time_changes, int num_elements){//const struct STimeChange **tchanges){
+static struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChange *time_changes, int num_elements){//const struct STimeChange **tchanges){
 
   struct STimes *stimes = (struct STimes*)talloc(sizeof(struct STimes)*(1+num_lines));
 
@@ -1045,7 +1045,7 @@ static dyn_t get_fallback_timings(const struct Blocks *block, const dyn_t dynbea
 
   // Didn't work. Just return plain timing.
   {
-    dynvec_t ret = {0};
+    dynvec_t ret = {};
     
     hash_t *hash = HASH_create(3);
     HASH_put_float(hash, ":x1", bpm*lpb);

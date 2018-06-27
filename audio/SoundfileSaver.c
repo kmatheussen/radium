@@ -45,8 +45,6 @@ static const wchar_t *g_filename = NULL;
 static float g_post_writing_left;
 
 
-extern void SOUNDFILESAVERGUI_stop(const char *message);
-
 enum SaveState{
   BEFORE_WRITING,
   IS_WRITING,

@@ -71,6 +71,8 @@ extern LANGSPEC void DISK_cleanup(void);
 extern disk_t *DISK_open_for_writing(QString filename);
 extern disk_t *DISK_open_for_reading(QString filename);
 
+extern disk_t *DISK_open_binary_for_writing(QString filename);
+
 extern QString g_file_at_end;
 QString DISK_read_qstring_line(disk_t *disk); // returns g_file_at_end if end of file
 int DISK_write_qstring(disk_t *disk, QString s);

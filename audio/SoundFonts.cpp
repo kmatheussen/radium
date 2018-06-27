@@ -44,20 +44,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 using namespace std;
 
 // Taken from sf2dump.cpp by Grigor Iliev
-template<class T> inline std::string ToString(T o) {
+template<class T> static inline std::string ToString(T o) {
     std::stringstream ss;
     ss << o;
     return ss.str();
 }
 
 // Taken from sf2dump.cpp by Grigor Iliev
-template<class T> inline string GetValue(T val) {
+template<class T> static inline string GetValue(T val) {
   if (val == (T)sf2::NONE) return "NONE";
     return ToString(val);
 }
 
 // Taken from sf2dump.cpp by Grigor Iliev.
-string GetSampleType(uint16_t type) {
+static string GetSampleType(uint16_t type) {
     switch(type) {
         case sf2::Sample::MONO_SAMPLE       : return "Mono Sample";
         case sf2::Sample::RIGHT_SAMPLE      : return "Right Sample";

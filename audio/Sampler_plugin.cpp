@@ -2708,7 +2708,7 @@ const wchar_t *SAMPLER_get_filename_display(struct SoundPlugin *plugin){
   return data->filename;
 }
 
-static SoundPluginType plugin_type = {0};
+static SoundPluginType plugin_type = {};
 
 static void init_plugin_type(void){
 

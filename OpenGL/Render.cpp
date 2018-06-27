@@ -268,7 +268,7 @@ static void draw_skewed_box(const struct Tracker_Windows *window,
 }
 
 
-void create_double_border(
+static void create_double_border(
                           float x, int y, int y2,
                           enum UseScissors use_scissors
                           )
@@ -295,7 +295,7 @@ void create_double_border(
   }
 }
 
-void create_single_border(
+static void create_single_border(
                           int x, int y, int y2,
                           enum UseScissors use_scissors
                           )
@@ -304,7 +304,7 @@ void create_single_border(
 }
 
 
-void create_single_linenum_border(
+static void create_single_linenum_border(
                                   int x, int y, int y2,
                                   enum UseScissors use_scissors
                                   )
@@ -691,7 +691,7 @@ struct TempoGraph{
   float max;  
 };
 
-const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
+static const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   TempoGraph tg = {}; //(struct TempoGraph*)talloc(sizeof(struct TempoGraph));
   
   static int times_size = 0;
@@ -1129,7 +1129,7 @@ static void create_reltempotrack(const struct Tracker_Windows *window, struct WB
 /************************************
     block borders
  ************************************/
-void create_block_borders(
+static void create_block_borders(
                           const struct Tracker_Windows *window,
                           const struct WBlocks *wblock
                           ){
@@ -1211,7 +1211,7 @@ void create_block_borders(
 /************************************
    tracks
  ************************************/
-void create_track_borders(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
+static void create_track_borders(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
   int y1=get_realline_y1(window, 0);
   int y2=get_realline_y2(window, wblock->num_reallines-1);
   
@@ -2893,7 +2893,6 @@ static void gl_create_thread(){
 
 #include <gc.h>
 
-extern void processEventsALittleBit(void);
 extern bool g_qtgui_has_started,g_qtgui_has_stopped;
 
 void GL_create(const struct Tracker_Windows *window){

@@ -97,7 +97,7 @@ static void setContent(QString message){
   progressWindow->setHtml("<p><pre>\n\n</pre><center><b>" + g_main_message + "</b></center><p><pre>\n\n\n</pre><blockquote>" + message + "</blockquote>");
 }
 
-void process_OpenProgress(QString message, QRect rect){
+static void process_OpenProgress(QString message, QRect rect){
   delete progressWindow;
 
   g_main_message = message;
@@ -121,14 +121,14 @@ void process_OpenProgress(QString message, QRect rect){
   progressWindow->activateWindow();
 }
 
-void process_ShowProgressMessage(QString message, QRect rect){
+static void process_ShowProgressMessage(QString message, QRect rect){
   if (progressWindow == NULL)
     process_OpenProgress("...", rect);
 
   setContent(message);
 }
 
-void process_CloseProgress(void){
+static void process_CloseProgress(void){
   delete progressWindow;
   progressWindow = NULL;
 }

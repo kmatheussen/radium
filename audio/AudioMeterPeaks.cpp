@@ -116,7 +116,7 @@ void AUDIOMETERPEAKS_call_very_often(int ms, int what_to_update){
 }
 
 AudioMeterPeaks AUDIOMETERPEAKS_create(int num_channels){
-  AudioMeterPeaks peaks = {0};
+  AudioMeterPeaks peaks = {};
 
   peaks.num_channels = num_channels;
 

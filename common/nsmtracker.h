@@ -3046,5 +3046,16 @@ struct NoteAdds_block{
 };
 
 
+
+/********* Various declarations ********************/
+
+extern LANGSPEC void SONGPROPERTIES_open(void);
+extern LANGSPEC void COMMENTDIALOG_open(void);
+extern LANGSPEC void UPDATECHECKER_doit(void);
+extern LANGSPEC void processEventsALittleBit(void);
+extern LANGSPEC void MONOTONIC_TIMER_init(void);
+
+
+
 #endif
 

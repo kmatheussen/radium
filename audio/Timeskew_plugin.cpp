@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define TIMESKEW_MIN -1000.0
 #define TIMESKEW_MAX 1000.0
 
-static SoundPluginType timeskew_type = {0};
+static SoundPluginType timeskew_type = {};
 
 namespace{
   

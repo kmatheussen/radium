@@ -69,7 +69,8 @@ extern LANGSPEC void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch 
 extern LANGSPEC void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch,const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch,const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_send_raw_midi_message(struct SeqTrack *seqtrack, struct Patch *patch, uint32_t msg, STime time);
-
+extern LANGSPEC void PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg);
+  
 extern LANGSPEC int64_t PATCH_play_note(struct Patch *patch,const note_t note);
 extern LANGSPEC void PATCH_stop_note(struct Patch *patch,const note_t note);
 extern LANGSPEC void PATCH_change_velocity(struct Patch *patch,const note_t note);

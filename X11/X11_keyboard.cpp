@@ -430,8 +430,8 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
 
   static bool last_event_was_key_press = false;
   static bool last_event_was_key_release = false;
-  static xcb_key_press_event_t last_key_press = {0};
-  static xcb_key_release_event_t last_key_release = {0};
+  static xcb_key_press_event_t last_key_press = {};
+  static xcb_key_release_event_t last_key_release = {};
 
   if(0)
     printf("last_key_press_not_used %p %d\n", &last_key_press, last_event_was_key_press);

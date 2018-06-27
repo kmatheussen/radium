@@ -124,7 +124,7 @@ struct Notes *GetCurrNote(struct Tracker_Windows *window){
     Set the _end attributes for note 'note'.
     Finds next note to stop at, or block length.
 **************************************************************/
-void SetEndAttributes(
+static void SetEndAttributes(
 	const struct Blocks *block,
 	const struct Tracks *track,
 	struct Notes *note
@@ -773,7 +773,7 @@ vector_t FindAllNotes(
                       const Place *placement
                       )
 {
-  vector_t ret = {0};
+  vector_t ret = {};
   
   struct Notes *note = track->notes;
   while(note != NULL) {
@@ -829,7 +829,7 @@ vector_t FindAllNotesCurrPos(struct Tracker_Windows *window){
   
   struct Notes *note = FindNoteOnSubTrack(wtrack, subtrack, &realline->l.p);
   if (note!=NULL){
-    vector_t ret = {0};
+    vector_t ret = {};
     VECTOR_push_back(&ret, note);
     return ret;
   }

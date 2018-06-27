@@ -1711,7 +1711,7 @@ dyn_t getBlockUsageInSequencer(void){
     }END_VECTOR_FOR_EACH;
   }END_VECTOR_FOR_EACH;
 
-  dynvec_t dynvec = {0};
+  dynvec_t dynvec = {};
 
   for(int i=0;i<num_blocks;i++)
     DYNVEC_push_back(&dynvec, DYN_create_int(ret[i]));
@@ -2083,7 +2083,7 @@ void setSeqblockFadeOut(double fadeout, int seqblocknum, int seqtracknum){
 
 
 dyn_t getFadeShapes(void){
-  dynvec_t dynvec = {0};
+  dynvec_t dynvec = {};
 
   for(int i = 0 ; i<NUM_FADE_SHAPES ; i++)
     if (i != FADE_CUSTOM)

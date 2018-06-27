@@ -42,7 +42,11 @@ static inline void VECTOR_ensure_space_for_one_more_element(vector_t *v){
 
 // Might save some cpu cycles if creating a large vector with known size (firstmost in the memory allocator). It probably makes no practicaly difference though.
 static inline vector_t VECTOR_create(int size){
+#ifdef __cplusplus
+  vector_t v = {};
+#else
   vector_t v = {0};
+#endif
   v.num_elements = v.num_elements_allocated = size;
   v.elements = (void**)talloc(size*(int)sizeof(void*));
   return v;

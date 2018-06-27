@@ -56,7 +56,7 @@ void PRESET_set_last_used_filename(const wchar_t *wfilename){
 /****************************************/
 
 static vector_t get_all_files_in_path(const wchar_t *wpath, QString ends_with){
-  vector_t ret = {0};
+  vector_t ret = {};
 
   if (g_last_preset_path=="")
     g_last_preset_path = QCoreApplication::applicationDirPath();
@@ -203,7 +203,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
 static int64_t PRESET_load_multipreset(hash_t *state, const char *name, bool inc_usage_number, float x, float y){
 
   struct Patch *first_patch = NULL;
-  vector_t patches = {0};
+  vector_t patches = {};
   
   hash_t *patches_state = HASH_get_hash(state, "patches");
   int num_presets = HASH_get_array_size(patches_state, "patch");
@@ -300,7 +300,7 @@ bool PRESET_has_copy(void){
 /************** SAVE ********************/
 /****************************************/
 
-hash_t *get_preset_state(const vector_t *patches){
+static hash_t *get_preset_state(const vector_t *patches){
   bool is_multipreset = patches->num_elements > 1;
 
   hash_t *state;

@@ -72,6 +72,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../audio/Faust_plugins_proc.h"
 #include "../audio/SampleReader_proc.h"
+#include "../audio/SoundfileSaver_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 #include "../embedded_scheme/s7extra_proc.h"
@@ -625,17 +626,14 @@ void quit(void){
   if(doquit==true) printf("doquit is really true.\n");
 }
 
-extern LANGSPEC void SOUNDFILESAVERGUI_open(void);
 void saveSoundfile(void){
   SOUNDFILESAVERGUI_open();
 }
 
-extern LANGSPEC void COMMENTDIALOG_open(void);
 void openCommentDialog(void){
   COMMENTDIALOG_open();
 }
 
-extern LANGSPEC void SONGPROPERTIES_open(void);
 void openSongPropertiesDialog(void){
   SONGPROPERTIES_open();
 }

@@ -5,6 +5,8 @@ extern "C"{
   // Both of these should be very efficient.
   extern double TIME_get_ms(void); // Calls gettimeofday.
   extern double monotonic_seconds(void); // Calls a monotonic high resolution monotonic timer.
+
+  extern void TIME_init(void);
   
 #ifdef __cplusplus
 }

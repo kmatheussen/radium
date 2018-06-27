@@ -483,7 +483,7 @@ float CHIP_get_pos_y(const struct Patch *patch){
   return chip->y();
 }
 
-void CHIP_set_pos(Chip *chip, float x, float y){
+static void CHIP_set_pos(Chip *chip, float x, float y){
   chip->setPos(x,y);
   printf("       Remake: CHIP_set_pos\n");
   remakeMixerStrips(-2);

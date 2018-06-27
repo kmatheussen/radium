@@ -35,11 +35,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/placement_proc.h"
 #include "../common/visual_proc.h"
 
-#include "scheme_proc.h"
-#include "s7extra_proc.h"
-
 #include "../api/api_common_proc.h"
 #include "../api/api_proc.h"
+
+
+#include "scheme_proc.h"
+#include "s7extra_proc.h"
+#include "s7_radium_proc.h"
 
 
 extern struct TEvent tevent;
@@ -303,7 +305,7 @@ static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
 static dynvec_t s7extra_array(s7_scheme *s7, s7_pointer vector){
   ProtectedS7Pointer protect(vector); // Not sure if this is necessary. (doesn't the iterator below hold a pointer to the vector?)
   
-  dynvec_t dynvec = {0};
+  dynvec_t dynvec = {};
 
   ProtectedS7Pointer iterator(s7_make_iterator(s7, vector));
 
@@ -343,7 +345,7 @@ static dyn_t create_dyn_from_s7(s7_scheme *s7, s7_pointer s, bool undefinedIsErr
     return DYN_create_array(s7extra_array(s7, s));
 
   if (s7_is_null(s7, s)){
-    dynvec_t vec = {0};
+    dynvec_t vec = {};
     return DYN_create_array(vec);
   }    
 

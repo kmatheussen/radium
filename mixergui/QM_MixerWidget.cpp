@@ -2377,7 +2377,7 @@ static void get_patches_min_x_y(const vector_t *patches, float &min_x, float &mi
   }     
 }
 
-char *get_patch_key(struct Patch *patch){
+static char *get_patch_key(struct Patch *patch){
   static char temp[128];
   sprintf(temp, "%" PRId64, patch->id);
   return temp;

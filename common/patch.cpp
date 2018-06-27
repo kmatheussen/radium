@@ -1423,6 +1423,7 @@ void RT_PATCH_send_raw_midi_message(struct SeqTrack *seqtrack, struct Patch *pat
   }
 }
 
+
 void PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg){
   PLAYER_lock();{
     RT_PATCH_send_raw_midi_message(RT_get_curr_seqtrack(),patch,msg,RT_get_curr_seqtrack()->start_time);

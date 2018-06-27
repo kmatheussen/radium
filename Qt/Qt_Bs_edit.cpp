@@ -61,6 +61,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QListWidgetItem>
 
 
+#include "Qt_Bs_edit_proc.h"
+
+
+
 namespace{
 
 class QListBox : public QListWidget{

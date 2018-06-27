@@ -226,7 +226,7 @@ static double xi_get_frequency(disk_t *file, int note, int sample_num){
 //
 // Also, the interface for loading xi intruments with libsndfile is currently too limited, so we have to parse the files manually anyway.
 
-bool load_xi_instrument(Data *data,const wchar_t *filename, bool set_loop_on_off){
+static bool load_xi_instrument(Data *data,const wchar_t *filename, bool set_loop_on_off){
   
   EVENTLOG_add_event(talloc_format("load_xi_instrument -%S-", filename));
   bool ret=false;
