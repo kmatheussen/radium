@@ -116,6 +116,9 @@ static void AUDIO_playnote(struct SeqTrack *seqtrack, struct Patch *patch, note_
   SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_play_note_to_plugin, &args[0], 8, SCHEDULER_NOTE_ON_PRIORITY);
 }
 
+
+// velocity
+
 static void set_note_volume_now(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, int64_t time){
   
   /*
@@ -166,6 +169,8 @@ static void AUDIO_changevelocity(struct SeqTrack *seqtrack, struct Patch *patch,
   SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_note_volume_to_plugin, &args[0], 8, SCHEDULER_VELOCITY_PRIORITY);
 }
 
+// pitch
+
 static int64_t RT_scheduled_send_note_pitch_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
 
@@ -204,6 +209,51 @@ static void AUDIO_changepitch(struct SeqTrack *seqtrack, struct Patch *patch,not
   
   SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_note_pitch_to_plugin, &args[0], 8, SCHEDULER_PITCH_PRIORITY);
 }
+
+
+// pan
+
+static int64_t RT_scheduled_send_note_pan_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
+  struct Patch *patch = (struct Patch*)args[0].pointer;
+
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL || plugin->type->set_note_volume == NULL)
+    return DONT_RESCHEDULE;
+
+  const note_t note = create_note_from_args(&args[1]);
+
+  plugin->type->set_note_pan(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
+
+  return DONT_RESCHEDULE;
+}
+
+static void AUDIO_changepan(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time){
+  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+
+  if(plugin==NULL || plugin->type->set_note_pan == NULL)
+    return;
+
+  RT_PLUGIN_touch(plugin);
+    
+  const int latency = RT_SP_get_input_latency(plugin->sp);
+
+  if (latency == 0) {
+    plugin->type->set_note_pan(plugin, PLAYER_get_block_delta_time(seqtrack, time), note); 
+    return;
+  }
+
+  time += ((double)latency * get_note_reltempo(note));
+
+  union SuperType args[8];
+  args[0].pointer = patch;
+  put_note_into_args(&args[1], note);
+  
+  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_note_pan_to_plugin, &args[0], 8, SCHEDULER_PAN_PRIORITY);
+}
+
+
+// raw midi
 
 static int64_t RT_scheduled_send_raw_midi_to_plugin(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Patch *patch = (struct Patch*)args[0].pointer;
@@ -359,6 +409,7 @@ void AUDIO_set_patch_attributes(struct Patch *patch, void *patchdata) {
   patch->stopnote       = AUDIO_stopnote;
   patch->changevelocity = AUDIO_changevelocity;
   patch->changepitch    = AUDIO_changepitch;
+  patch->changepan    = AUDIO_changepan;
   patch->sendrawmidimessage = AUDIO_sendrawmidimessage;
   patch->closePatch     = AUDIO_closePatch;
   patch->changeTrackPan = AUDIO_changeTrackPan;

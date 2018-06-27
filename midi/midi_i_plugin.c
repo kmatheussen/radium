@@ -299,10 +299,13 @@ static void MIDIchangevelocity(struct SeqTrack *seqtrack,struct Patch *patch,not
 }
 
 
-static void MIDIchangepitch(struct SeqTrack *seqtrack,struct Patch *patch,note_t note,STime time){ // never called
+static void MIDIchangepitch(struct SeqTrack *seqtrack,struct Patch *patch,note_t note,STime time){
 }
 
-static void MIDIsendrawmidimessage(struct SeqTrack *seqtrack,struct Patch *patch,uint32_t msg,STime time, double block_reltempo){ // never called
+static void MIDIchangepan(struct SeqTrack *seqtrack,struct Patch *patch,note_t note,STime time){
+}
+
+static void MIDIsendrawmidimessage(struct SeqTrack *seqtrack,struct Patch *patch,uint32_t msg,STime time, double block_reltempo){
 }
 
 /******************** patch **************************/
@@ -588,6 +591,7 @@ void MIDI_InitPatch(struct Patch *patch) {
   patch->stopnote=MIDIstopnote;
   patch->changevelocity=MIDIchangevelocity;
   patch->changepitch=MIDIchangepitch;
+  patch->changepan=MIDIchangepan;
   patch->sendrawmidimessage=MIDIsendrawmidimessage;
   patch->closePatch=MIDIclosePatch;
   patch->changeTrackPan=MIDIchangeTrackPan;
