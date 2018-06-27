@@ -47,8 +47,9 @@ enum SchedulerPriority{
   SCHEDULER_RAWMIDIMESSAGE_PRIORITY = 3,
   SCHEDULER_NOTE_OFF_PRIORITY       = 4,
   SCHEDULER_NOTE_ON_PRIORITY        = 5,
-  SCHEDULER_VELOCITY_PRIORITY       = 6, // Note that the end velocity is never sent out at note_end time. If it had, those velocities must have been scheduled with priorith 0.
+  SCHEDULER_VELOCITY_PRIORITY       = 6, // Note that the end velocity is never sent out at note_end time. If it had, those velocities must have been scheduled with priority 0.
   SCHEDULER_PITCH_PRIORITY          = 6, // Same here, I think.
+  SCHEDULER_PAN_PRIORITY            = 6, // Same here, I think.
 
   SCHEDULER_LOWEST_NOTE_PRIORITY    = 7, // Used when note off starts at the same time as note on. Must be higher than pitch and velocity priority.
 };

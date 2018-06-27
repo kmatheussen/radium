@@ -339,6 +339,7 @@ typedef struct SoundPluginType{
   void (*play_note)(struct SoundPlugin *plugin, int block_delta_time, note_t note);
   void (*set_note_volume)(struct SoundPlugin *plugin, int block_delta_time, note_t note);
   void (*set_note_pitch)(struct SoundPlugin *plugin, int block_delta_time, note_t note);
+  void (*set_note_pan)(struct SoundPlugin *plugin, int block_delta_time, note_t note);
   void (*send_raw_midi_message)(struct SoundPlugin *plugin, int block_delta_time, uint32_t msg);
   void (*stop_note)(struct SoundPlugin *plugin, int block_delta_time, note_t note);
 

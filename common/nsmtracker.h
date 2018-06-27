@@ -1403,6 +1403,7 @@ struct Patch{
   void (*playnote)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
   void (*changevelocity)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
   void (*changepitch)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
+  void (*changepan)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
   void (*sendrawmidimessage)(struct SeqTrack *seqtrack, struct Patch *patch,uint32_t msg,STime time,double block_reltempo); // note on, note off, and polyphonic aftertouch are/should not be sent using sendmidimessage. sysex is not supported either.
   void (*stopnote)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
   void (*closePatch)(struct Patch *patch);

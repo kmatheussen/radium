@@ -1126,10 +1126,15 @@ static float get_voice_LENGTH(struct SoundPlugin *plugin, int num, enum ValueFor
 }
 
 static void set_voice_PAN(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
+  struct Patch *patch = const_cast<struct Patch*>(plugin->patch);
+  
   set_voice_value(plugin,
-                  plugin->patch==NULL ? NULL : &plugin->patch->voices[num].pan,
+                  patch==NULL ? NULL : &patch->voices[num].pan,
                   MIN_PATCHVOICE_PAN, MAX_PATCHVOICE_PAN,
                   native_value, scaled_value, value_format);
+
+  if(patch != NULL)
+    RT_PATCH_voice_pan_has_changed(patch, num);
 }
                       
 static float get_voice_PAN(const struct SoundPlugin *plugin, int num, enum ValueFormat value_format){

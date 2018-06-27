@@ -1244,7 +1244,7 @@ static int64_t RT_scheduled_change_voice_velocity(struct SeqTrack *seqtrack, int
 }
 
 // Does NOT add envelope volume
-void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
+static void RT_PATCH_change_velocity2(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time, int voicenum){
   //printf("111. vel: %f\n",note.velocity);
 
   float sample_rate = MIXER_get_sample_rate();
@@ -1257,7 +1257,7 @@ void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, co
   for(i=0;i<NUM_PATCH_VOICES;i++){
     const struct PatchVoice &voice = patch->voices[i];
 
-    if(voice.is_on==true){
+    if(voice.is_on==true && (voicenum==-1 || voicenum==i)){
 
       float voice_notenum = note.pitch + voice.transpose;
 
@@ -1276,6 +1276,10 @@ void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, co
       }
     }
   }
+}
+
+void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
+  RT_PATCH_change_velocity2(seqtrack, patch, note, time, -1);
 }
 
 void PATCH_change_velocity(struct Patch *patch, const note_t note){
@@ -1323,7 +1327,7 @@ static int64_t RT_scheduled_change_voice_pitch(struct SeqTrack *seqtrack, int64_
   return DONT_RESCHEDULE;
 }
 
-void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
+static void RT_PATCH_change_pitch2(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time, int voicenum){
   //printf("vel: %d\n",pitch);
 
   float sample_rate = MIXER_get_sample_rate();
@@ -1337,7 +1341,7 @@ void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const
   for(i=0;i<NUM_PATCH_VOICES;i++){
     const struct PatchVoice &voice = patch->voices[i];
 
-    if(voice.is_on==true){
+    if(voice.is_on==true && (voicenum==-1 || voicenum==i)){
 
       float voice_notenum = note.pitch + voice.transpose;
       if (voice_notenum > 0){
@@ -1356,9 +1360,96 @@ void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const
   }
 }
 
+void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
+  RT_PATCH_change_pitch2(seqtrack, patch, note, time, -1);
+}
+
 void PATCH_change_pitch(struct Patch *patch, const note_t note){
   PLAYER_lock();{
     RT_PATCH_change_pitch(RT_get_curr_seqtrack(), patch,note,RT_get_curr_seqtrack()->start_time);
+  }PLAYER_unlock();
+}
+
+
+
+////////////////////////////////////
+// Change pan
+
+void RT_PATCH_send_change_pan_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
+  int i;
+
+  if (patch->instrument==get_audio_instrument())
+    RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
+  
+  for(i = 0; i<patch->num_event_receivers; i++) {
+    struct Patch *receiver = patch->event_receivers[i];
+    RT_PATCH_change_pan(seqtrack, receiver, note, time);
+  }
+}
+
+static void RT_change_voice_pan(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
+  //printf(" A 4: %f\n", note.pan);
+  
+  //printf("Calling patch->changeptitch %d %f\n",notenum,pan);
+  if (Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock))
+    patch->changepan(seqtrack, patch,note,time);
+
+  if(patch->forward_events)
+    RT_PATCH_send_change_pan_to_receivers(seqtrack, patch, note, time);
+}
+
+static int64_t RT_scheduled_change_voice_pan(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
+  struct Patch *patch = (struct Patch*)args[0].pointer;
+
+  const note_t note = create_note_from_args(&args[1]);
+
+  RT_change_voice_pan(seqtrack,patch,note,time);
+
+  return DONT_RESCHEDULE;
+}
+
+static void RT_PATCH_change_pan2(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time, int voicenum){
+  //printf("vel: %d\n",pan);
+
+  float sample_rate = MIXER_get_sample_rate();
+
+  union SuperType args[8];
+  args[0].pointer = patch;
+  put_note_into_args(&args[1], note);
+     
+
+  int i;
+  for(i=0;i<NUM_PATCH_VOICES;i++){
+    const struct PatchVoice &voice = patch->voices[i];
+
+    if(voice.is_on==true && (voicenum==-1 || voicenum==i)){
+
+      float voice_notenum = note.pitch + voice.transpose;
+            
+      if (voice_notenum > 0) {
+        int64_t voice_id = note.id + i;
+        
+        args[2].int_num = voice_id;
+        
+        args[4].float_num = apply_pan_to_pan(note.pan, scale(voice.pan, MIN_PATCHVOICE_PAN, MAX_PATCHVOICE_PAN, -1, 1));
+        
+        // voicenum
+        args[5].int_num &= ~(0xff);
+        args[5].int_num |= i;
+        
+        SCHEDULER_add_event(seqtrack, time + voice.start*sample_rate/1000, RT_scheduled_change_voice_pan, &args[0], 8, SCHEDULER_PAN_PRIORITY);
+      }
+    }
+  }
+}
+
+void RT_PATCH_change_pan(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
+  RT_PATCH_change_pan2(seqtrack, patch, note, time, -1);
+}
+
+void PATCH_change_pan(struct Patch *patch, const note_t note){
+  PLAYER_lock();{
+    RT_PATCH_change_pan(RT_get_curr_seqtrack(), patch,note,RT_get_curr_seqtrack()->start_time);
   }PLAYER_unlock();
 }
 
@@ -1695,10 +1786,11 @@ void RT_PATCH_voice_volume_has_changed(struct Patch *patch, int voicenum){
       if (editor_note != NULL && is_really_playing()) // Without the is_really_playing() test the scheduler is filled up after song ends.
         time = editor_note->curr_velocity_time + 1; // Add one to ensure it is sent after a note velocity event was scheduled.
       
-      RT_PATCH_change_velocity(linked_note->seqtrack,
-                               patch,
-                               note,
-                               time);
+      RT_PATCH_change_velocity2(linked_note->seqtrack,
+                                patch,
+                                note,
+                                time,
+                                voicenum);
 
       if (editor_note != NULL)
         editor_note->has_sent_seqblock_volume_automation_this_block = true;
@@ -1735,10 +1827,34 @@ void RT_PATCH_voice_pitch_has_changed(struct Patch *patch, int voicenum){
       if (editor_note != NULL && is_really_playing()) // Without the is_really_playing() test the scheduler is filled up after song ends.
         time = editor_note->curr_pitch_time + 1; // Add one to ensure it is sent after a note pitch event was scheduled.
       
-      RT_PATCH_change_pitch(linked_note->seqtrack,
-                            patch,
-                            note,
-                            time);
+      RT_PATCH_change_pitch2(linked_note->seqtrack,
+                             patch,
+                             note,
+                             time,
+                             voicenum);
+    }
+  }
+}
+
+void RT_PATCH_voice_pan_has_changed(struct Patch *patch, int voicenum){
+  const struct PatchVoice &voice = patch->voices[voicenum];
+
+  if(voice.is_on){
+
+    radium::PlayerRecursiveLock lock;
+
+    for(const linked_note_t *linked_note = patch->playing_notes ; linked_note!=NULL ; linked_note=linked_note->next) {
+      
+      //struct Notes *editor_note = linked_note->editor_note;
+      
+      note_t note = linked_note->note;
+
+      RT_PATCH_change_pan2(linked_note->seqtrack,
+                           patch,
+                           note,
+                           0,
+                           voicenum
+                           );
     }
 
   }

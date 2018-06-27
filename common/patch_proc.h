@@ -59,6 +59,7 @@ extern LANGSPEC void RT_PATCH_send_play_note_to_receivers(struct SeqTrack *seqtr
 extern LANGSPEC void RT_PATCH_send_stop_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_send_change_velocity_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_send_change_pitch_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note,STime time);
+extern LANGSPEC void RT_PATCH_send_change_pan_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_send_raw_midi_message_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, uint32_t msg, STime time);
 
 extern LANGSPEC bool Patch_addPlayingVoice(linked_note_t **rootp, const note_t note, struct SeqTrack *seqtrack);
@@ -68,6 +69,7 @@ extern LANGSPEC int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Pat
 extern LANGSPEC void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch,const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch,const note_t note,STime time);
+extern LANGSPEC void RT_PATCH_change_pan(struct SeqTrack *seqtrack, struct Patch *patch,const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_send_raw_midi_message(struct SeqTrack *seqtrack, struct Patch *patch, uint32_t msg, STime time);
 extern LANGSPEC void PATCH_send_raw_midi_message(struct Patch *patch, uint32_t msg);
   
@@ -78,6 +80,7 @@ extern LANGSPEC void PATCH_stop_all_notes(struct Patch *patch);
 extern LANGSPEC void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
 extern LANGSPEC void PATCH_stopNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
 extern LANGSPEC void PATCH_change_pitch(struct Patch *patch,const note_t note);
+extern LANGSPEC void PATCH_change_pan(struct Patch *patch,const note_t note);
 
 extern LANGSPEC void RT_FX_treat_fx(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,int skip, FX_when when);
 //extern LANGSPEC void FX_treat_fx(struct FX *fx,int val,int skip);
@@ -88,7 +91,8 @@ extern LANGSPEC void PATCH_turn_voice_off(struct Patch *patch, int voicenum);
 //extern LANGSPEC void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, float new_tranpose);
 extern LANGSPEC void RT_PATCH_voice_volume_has_changed(struct Patch *patch, int voicenum);
 extern LANGSPEC void RT_PATCH_voice_pitch_has_changed(struct Patch *patch, int voicenum);
-
+extern LANGSPEC void RT_PATCH_voice_pan_has_changed(struct Patch *patch, int voicenum);
+  
 extern LANGSPEC int PATCH_get_peaks(struct Patch *patch,
                                     float notenum, 
                                     int ch, 

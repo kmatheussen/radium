@@ -1133,6 +1133,28 @@ static void set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
   }
 }
 
+static void set_note_pan(struct SoundPlugin *plugin, int time, note_t note){
+  Data *data = (Data*)plugin->data;
+
+  if (ATOMIC_GET(data->recording_status)==IS_RECORDING)
+    return;
+
+  Voice *voice = data->voices_playing;
+
+  //printf("Setting pan to %f.\n",note.pan);
+
+  while(voice!=NULL){
+
+    if(is_note(note, voice->note_id, voice->seqblock)){
+      
+      voice->pan = get_pan_vals_vector(note.pan,voice->sample->ch==-1?1:2);
+      
+    }
+
+    voice = voice->next;
+  }
+}
+
 static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
 
   Data *data = (Data*)plugin->data;
@@ -2732,6 +2754,7 @@ static void init_plugin_type(void){
  plugin_type.play_note        = play_note;
  plugin_type.set_note_volume  = set_note_volume;
  plugin_type.set_note_pitch   = set_note_pitch;
+ plugin_type.set_note_pan     = set_note_pan;
  plugin_type.stop_note        = stop_note;
 
  plugin_type.player_is_stopped = player_is_stopped;
