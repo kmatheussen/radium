@@ -1270,9 +1270,13 @@ struct Notes{
 #endif
         bool scheduler_may_send_velocity_next_block;
         bool scheduler_must_send_velocity_next_block; // Can only be set to true if sheduler_may_send_velocity_next_block==true.
-
         float curr_velocity;
         int64_t curr_velocity_time;
+  
+        bool scheduler_may_send_pitch_next_block;
+        bool scheduler_must_send_pitch_next_block;
+        float curr_pitch;
+        int64_t curr_pitch_time;
   
         int64_t id;
 };

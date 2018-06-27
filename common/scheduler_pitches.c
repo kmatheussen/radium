@@ -42,10 +42,13 @@ static void RT_scheduled_hold_pitch_do(struct SeqTrack *seqtrack,
 #if DO_DEBUG
     printf("  Sending HOLD pitch %f at %d\n",val,(int)time);
 #endif
+
+    note->curr_pitch = val;
+    note->curr_pitch_time = time;
     
     RT_PATCH_change_pitch(seqtrack,
                           patch,
-                          create_note_t2(seqblock, note->id, val),
+                          create_note_t2(seqblock, note->id, note->curr_pitch),
                           time
                           );
   }
@@ -134,23 +137,36 @@ static int64_t RT_scheduled_glide_pitch(struct SeqTrack *seqtrack, int64_t time,
     printf("  Sending pitch %f at %d\n",val,(int)time);
 #endif
 
-    if (time==time1 || val1!=val2)
+    if (time==time1 || val1!=val2 || note->scheduler_must_send_pitch_next_block) {
+
+      if (note->scheduler_must_send_pitch_next_block)
+        note->scheduler_must_send_pitch_next_block = false;
+
+      note->curr_pitch = val;
+      note->curr_pitch_time = time;
+
       RT_PATCH_change_pitch(seqtrack,
                             patch,
-                            create_note_t2(seqblock, note->id, val),
+                            create_note_t2(seqblock, note->id, note->curr_pitch),
                             time
                             );
+    }
   }
   
   if (time >= time2) {
     
     if (pitch2 != NULL)
       RT_schedule_pitch(seqtrack, time, seqblock, track, note, pitch2, true);
+
+    note->scheduler_may_send_pitch_next_block = false;
     
     return DONT_RESCHEDULE;
     
   } else {
 
+    if (doit)
+      note->scheduler_may_send_pitch_next_block = true;
+    
     return R_MIN(time2, time + RADIUM_BLOCKSIZE);
     
   }
