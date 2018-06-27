@@ -515,25 +515,31 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 }
 
 void SelectPrevWBlock(struct Tracker_Windows *window){
-  SelectWBlock(window,ListPrevElement1(&window->wblocks->l,&window->wblock->l));
+  BS_SelectBlocklistPos(BS_GetCurrBlocklistPos()-1);
+  //SelectWBlock(window,ListPrevElement1(&window->wblocks->l,&window->wblock->l));
 }
 
 void SelectNextWBlock(struct Tracker_Windows *window){
-  SelectWBlock(window,NextWBlock(window->wblock));
+  BS_SelectBlocklistPos(BS_GetCurrBlocklistPos()+1);
+  //SelectWBlock(window,NextWBlock(window->wblock));
 }
 
 void SelectPrevPlaylistWBlock(struct Tracker_Windows *window){
+  /*
   struct SeqBlock *seqblock = BS_GetPrevPlaylistBlock();
   if (seqblock==NULL)
     return;
+  */
   
   BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()-1);
 }
 
 void SelectNextPlaylistWBlock(struct Tracker_Windows *window){
+  /*
   struct SeqBlock *seqblock = BS_GetNextPlaylistBlock();
   if (seqblock==NULL)
     return;
+  */
   
   BS_SelectPlaylistPos(BS_GetCurrPlaylistPos()+1);
 }

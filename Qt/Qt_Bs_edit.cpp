@@ -1158,12 +1158,41 @@ void BS_SelectBlock(struct Blocks *block){
   g_bs->blocklist.setSelected(block->l.num, true);
 }
 
+void BS_SelectBlocklistPos(int pos){
+  {
+    ScopedVisitors v;
+    printf("selectblocklistpos %d, %d. Length: %d\n",pos, pos % (g_bs->blocklist.count()), g_bs->blocklist.count());
+
+    pos = pos % int(g_bs->blocklist.count());
+
+    int safe = 1000;
+    while(pos < 0 && safe > 0){
+      pos += g_bs->blocklist.count();
+      safe--;
+    }
+
+    g_bs->blocklist.setSelected(pos, true);
+  }
+
+  g_bs->blocklist_highlighted(pos);
+  //selectBlock(pos, -1);
+  //g_bs->blocklist.setSelected(pos, true);
+  
+  printf("selectblocklistpos. Curr pos: %d", g_bs->blocklist.currentRow());
+}
+
 void BS_SelectPlaylistPos(int pos){
   {
     ScopedVisitors v;
-    //printf("selectplaylistpos %d\n",pos);
-    if(pos==-1)
-      return;
+    printf("selectplaylistpos %d, %d. Length: %d\n",pos, pos % (g_bs->playlist.count()), g_bs->playlist.count());
+
+    pos = pos % int(g_bs->playlist.count());
+
+    int safe = 1000;
+    while(pos < 0 && safe > 0){
+      pos += g_bs->playlist.count();
+      safe--;
+    }
     
     g_bs->playlist.setSelected(pos, true);
   }
@@ -1192,6 +1221,11 @@ struct Blocks *BS_GetBlockFromPos(int pos){
   return g_bs->get_block_from_pos(pos);
 }
 */
+
+int BS_GetCurrBlocklistPos(void){
+  ScopedVisitors v;
+  return g_bs->blocklist.currentRow();
+}
 
 int BS_GetCurrPlaylistPos(void){
   ScopedVisitors v;
