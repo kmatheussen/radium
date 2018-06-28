@@ -146,9 +146,11 @@ float SEQBLOCK_get_max_sample_gain(const struct SeqTrack *seqtrack, const struct
 }
 
 
+/*
 static inline int64_t get_seqblock_endtime(const struct SeqBlock *seqblock){
   return seqblock->t.time2;
 }
+*/
 
 static inline int64_t get_seqblock_duration(const struct SeqBlock *seqblock){
   return seqblock->t.time2 - seqblock->t.time;

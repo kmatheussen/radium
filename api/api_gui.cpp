@@ -276,7 +276,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
   */
 
 
-
+#if 0
 static inline QColor getQColor(int64_t color){
 #if QT_VERSION >= 0x056000
   return QColor(QRgba64::fromRgba64(color));
@@ -286,6 +286,7 @@ static inline QColor getQColor(int64_t color){
   return col;
 #endif
 }
+#endif
 
 static QColor getQColor(const_char* colorname){
   QColor color = get_config_qcolor(colorname);
