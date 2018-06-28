@@ -1497,8 +1497,7 @@ void RT_PATCH_send_raw_midi_message(struct SeqTrack *seqtrack, struct Patch *pat
 
   float sample_rate = MIXER_get_sample_rate();
     
-  int i;
-  for(i=0;i<NUM_PATCH_VOICES;i++){
+  for(int i=0;i<NUM_PATCH_VOICES;i++){
     const struct PatchVoice &voice = patch->voices[i];
 
     if(voice.is_on==true){
@@ -1762,6 +1761,9 @@ void RT_PATCH_voice_volume_has_changed(struct Patch *patch, int voicenum){
 
     radium::PlayerRecursiveLock lock;
 
+    if (voice.only_set_new_volume_when_note_on)
+      return;
+    
     for(const linked_note_t *linked_note = patch->playing_notes ; linked_note!=NULL ; linked_note=linked_note->next) {
       
       struct Notes *editor_note = linked_note->editor_note;
@@ -1806,6 +1808,9 @@ void RT_PATCH_voice_pitch_has_changed(struct Patch *patch, int voicenum){
 
     radium::PlayerRecursiveLock lock;
 
+    if (voice.only_set_new_transpose_when_note_on)
+      return;
+
     for(const linked_note_t *linked_note = patch->playing_notes ; linked_note!=NULL ; linked_note=linked_note->next) {
       
       struct Notes *editor_note = linked_note->editor_note;
@@ -1842,6 +1847,9 @@ void RT_PATCH_voice_pan_has_changed(struct Patch *patch, int voicenum){
   if(voice.is_on){
 
     radium::PlayerRecursiveLock lock;
+
+    if (voice.only_set_new_pan_when_note_on)
+      return;
 
     for(const linked_note_t *linked_note = patch->playing_notes ; linked_note!=NULL ; linked_note=linked_note->next) {
       

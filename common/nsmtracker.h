@@ -1318,6 +1318,10 @@ struct PatchVoice{
   float pan;
   enum TimeFormat time_format;
   float chance;
+
+  bool only_set_new_transpose_when_note_on; // protect write by player lock
+  bool only_set_new_volume_when_note_on; // protect write by player lock
+  bool only_set_new_pan_when_note_on; // protect write by player lock
 };
 
 #define NUM_PATCH_VOICES 7

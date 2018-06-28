@@ -347,7 +347,7 @@ int64_t createAudioInstrument(const_char *type_name, const_char *plugin_name, co
   //MW_move_chip_to_slot(patch, x, y); // Ensure it is placed in a slot. (x and y comes from mouse positions, which are not necessarily slotted). <--- Changed. x and y must be slotted before calling this function.
   
   {
-    struct SoundPlugin *plugin = patch->patchdata;
+    struct SoundPlugin *plugin = static_cast<struct SoundPlugin*>(patch->patchdata);
     PR_inc_plugin_usage_number(plugin->type);
   }
 
@@ -367,7 +367,7 @@ static bool get_type_name_from_description(const char *instrument_description, c
 
     char *descr = talloc_strdup(instrument_description);
     int sep_pos = 1;
-    int sep_poss[2] = {0};
+    int sep_poss[2] = {};
     int sep_n = 0;
     while(sep_n < 2){
       char c = descr[sep_pos];
@@ -477,9 +477,9 @@ dyn_t getAllSinglePresetsInPath(const_char* path){
     
   vector_t rec_presets = PRESET_get_all_rec_files_in_path(wpath);
   
-  dynvec_t ret = {0};
+  dynvec_t ret = {};
 
-  VECTOR_FOR_EACH(wchar_t *path, &rec_presets){
+  VECTOR_FOR_EACH(const wchar_t *, path, &rec_presets){
     DYNVEC_push_back(&ret, DYN_create_string(STRING_toBase64(path)));
   }END_VECTOR_FOR_EACH;
   
@@ -491,9 +491,9 @@ dyn_t getAllMultiPresetsInPath(const_char* path){
     
   vector_t rec_presets = PRESET_get_all_mrec_files_in_path(wpath);
 
-  dynvec_t ret = {0};
+  dynvec_t ret = {};
 
-  VECTOR_FOR_EACH(wchar_t *path, &rec_presets){
+  VECTOR_FOR_EACH(const wchar_t *, path, &rec_presets){
     DYNVEC_push_back(&ret, DYN_create_string(STRING_toBase64(path)));
   }END_VECTOR_FOR_EACH;
   
@@ -528,7 +528,7 @@ const_char* getInstrumentEffectName(int effect_num, int64_t instrument_id){
     return "";
   }
     
-  return talloc_strdup(elements->elements[effect_num]);
+  return talloc_strdup((const char*)elements->elements[effect_num]);
 }
 
 bool hasPureData(void){
@@ -820,7 +820,7 @@ const_char* getInstrumentEffectColor(int64_t instrument_id, const_char* effect_n
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
     handleError("Instrument #%d has been closed", (int)instrument_id);
-    return false;
+    return "";
   }
 
   int effect_num = get_effect_num(patch, effect_name);
@@ -829,6 +829,75 @@ const_char* getInstrumentEffectColor(int64_t instrument_id, const_char* effect_n
 
   return GFX_get_colorname_from_color(GFX_get_color(get_effect_color(plugin, effect_num)));
 }
+
+bool getNoteDuplicatorSetNewValueImmediately(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+#define C(Name, Bool)                                                   \
+  else if (!strcmp(Name, effect_name))                                  \
+    return !Bool
+  
+#define CT(Num)                                                         \
+  C("System Transpose Voice " # Num, patch->voices[Num-1].only_set_new_transpose_when_note_on)
+#define CV(Num)                                                         \
+  C("System Volume Voice " # Num, patch->voices[Num-1].only_set_new_volume_when_note_on)
+#define CP(Num)                                                         \
+  C("System Pan Voice " # Num, patch->voices[Num-1].only_set_new_pan_when_note_on)
+    
+    
+  if (false)
+    return false;
+  CT(1);CT(2);CT(3);CT(4);CT(5);CT(6);CT(7);
+  CV(1);CV(2);CV(3);CV(4);CV(5);CV(6);CV(7);
+  CP(1);CP(2);CP(3);CP(4);CP(5);CP(6);CP(7);
+
+  
+  handleError("getNoteDuplicatorSetNewValueImmediately: Unsupported effect \"%s\"", effect_name);
+  return false;
+
+#undef CP
+#undef CV
+#undef CT
+#undef C
+}
+
+void setNoteDuplicatorSetNewValueImmediately(int64_t instrument_id, const_char* effect_name, bool set_immediately){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+#define C(Name, Bool)                                                   \
+  else if (!strcmp(Name, effect_name)) do{                              \
+      radium::PlayerLock lock;                                          \
+      Bool = !set_immediately;                                          \
+    }while(0)                                                           \
+      
+#define CT(Num)                                                         \
+  C("System Transpose Voice " # Num, patch->voices[Num-1].only_set_new_transpose_when_note_on)
+#define CV(Num)                                                         \
+  C("System Volume Voice " # Num, patch->voices[Num-1].only_set_new_volume_when_note_on)
+#define CP(Num)                                                         \
+  C("System Pan Voice " # Num, patch->voices[Num-1].only_set_new_pan_when_note_on)
+  
+  if (false)
+    return;
+  CT(1);CT(2);CT(3);CT(4);CT(5);CT(6);CT(7);
+  CV(1);CV(2);CV(3);CV(4);CV(5);CV(6);CV(7);
+  CP(1);CP(2);CP(3);CP(4);CP(5);CP(6);CP(7);
+  else {
+    handleError("setNoteDuplicatorSetNewValueImmediately: Unsupported effect \"%s\"", effect_name);
+  }
+  
+  
+
+#undef CP
+#undef CV
+#undef CT
+#undef C
+}
+
 
 // midi learn
 ///////////////
@@ -1093,7 +1162,7 @@ int64_t getMIDIInstrumentId(int instrument_num){
     handleError("No instrument #%d", (int)instrument_num);
     return -1;
   }
-  struct Patch *patch = get_MIDI_instrument()->patches.elements[instrument_num];
+  struct Patch *patch = (struct Patch*)get_MIDI_instrument()->patches.elements[instrument_num];
   return patch->id;
 }
 
@@ -1106,7 +1175,7 @@ int64_t getAudioInstrumentId(int instrument_num){
     handleError("No instrument #%d", (int)instrument_num);
     return -1;
   }
-  struct Patch *patch = get_audio_instrument()->patches.elements[instrument_num];
+  struct Patch *patch = (struct Patch*)get_audio_instrument()->patches.elements[instrument_num];
   return patch->id;
 }
 
@@ -1262,10 +1331,10 @@ const_char* getInstrumentInfo(int64_t instrument_id){
 }
 
 dyn_t getSelectedInstruments(void){
-  dynvec_t ret = {0};
+  dynvec_t ret = {};
   vector_t patches = MW_get_selected_patches();
 
-  VECTOR_FOR_EACH(struct Patch *patch,&patches){
+  VECTOR_FOR_EACH(struct Patch *, patch,&patches){
     DYNVEC_push_back(&ret, DYN_create_int(patch->id));
   }END_VECTOR_FOR_EACH;
 
@@ -1275,7 +1344,7 @@ dyn_t getSelectedInstruments(void){
 int numSelectedInstruments(void){
   int ret = 0;
   
-  VECTOR_FOR_EACH(struct Patch *patch, &get_audio_instrument()->patches){
+  VECTOR_FOR_EACH(struct Patch *, patch, &get_audio_instrument()->patches){
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     if (plugin!=NULL && ATOMIC_GET(plugin->is_selected))
       ret++;
@@ -1784,7 +1853,7 @@ const char *getModulatorDescription(int64_t instrument_id, const char *effect_na
 }
 
 dyn_t getModulatorInstruments(void){
-  dynvec_t dynvec = {0};
+  dynvec_t dynvec = {};
 
   const dyn_t dynstate = MODULATOR_get_connections_state();
   const dynvec_t *vec = dynstate.array;
@@ -1996,8 +2065,8 @@ void midi_setInputPort(void){
 
 #define NUM_IDS 2048
 static int playnote_ids_pos = 0;
-static int64_t playnote_ids[NUM_IDS] = {0};
-static float initial_pitches[NUM_IDS] = {0};
+static int64_t playnote_ids[NUM_IDS] = {};
+static float initial_pitches[NUM_IDS] = {};
 
 int playNote(float pitch, float velocity, float pan, int midi_channel, int64_t instrument_id){
   struct Patch *patch = getPatchFromNum(instrument_id);
@@ -2095,7 +2164,7 @@ bool hasNativeInstrumentGui(int64_t instrument_id){
   if(patch==NULL)
     return false;
 
-  struct SoundPlugin *plugin = patch->patchdata;
+  struct SoundPlugin *plugin = (struct SoundPlugin *)patch->patchdata;
 
   if (plugin != NULL){
     
@@ -2122,7 +2191,7 @@ bool showInstrumentGui(int64_t instrument_id, int64_t parentgui, bool show_instr
   struct Instruments *instrument = get_audio_instrument();
   instrument->PP_Update(instrument,patch,false);
   
-  struct SoundPlugin *plugin = patch->patchdata;
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin != NULL){
     
     if(plugin->type->show_gui != NULL) {
@@ -2164,7 +2233,7 @@ bool hideInstrumentGui(int64_t instrument_id){
   //struct Instruments *instrument = get_audio_instrument();
   //instrument->PP_Update(instrument,patch,false);
   
-  struct SoundPlugin *plugin = patch->patchdata;
+  struct SoundPlugin *plugin = (struct SoundPlugin *)patch->patchdata;
   if (plugin != NULL){
 
     PLUGIN_close_gui(plugin);
@@ -2187,7 +2256,7 @@ bool instrumentGuiIsVisible(int64_t instrument_id, int64_t parentgui){
   //struct Instruments *instrument = get_audio_instrument();
   //instrument->PP_Update(instrument,patch,false);
   
-  struct SoundPlugin *plugin = patch->patchdata;
+  struct SoundPlugin *plugin = (struct SoundPlugin *)patch->patchdata;
   if (plugin != NULL)
     return PLUGIN_gui_is_visible(plugin, parentgui);
   else
@@ -2199,7 +2268,7 @@ void internal_instrumentGuiHasBeenHidden(int64_t instrument_id){
   if(patch==NULL)
     return;
 
-  struct SoundPlugin *plugin = patch->patchdata;
+  struct SoundPlugin *plugin = (struct SoundPlugin *)patch->patchdata;
   if (plugin != NULL)
     PLUGIN_call_me_when_gui_closes(plugin);
   else{
@@ -2236,7 +2305,7 @@ void showInstrumentInfo(dyn_t instrument_id_or_description, int64_t parentgui){
     if(patch==NULL)
       return;
   
-    struct SoundPlugin *plugin = patch->patchdata;
+    struct SoundPlugin *plugin = (struct SoundPlugin *)patch->patchdata;
     if (plugin != NULL)
       PLUGIN_show_info_window(plugin->type, plugin, parentgui);
     
@@ -2310,10 +2379,10 @@ struct EffectMonitor{
 };
 
 static int64_t g_effect_monitor_id = 0;
-static vector_t g_effect_monitors = {0};
+static vector_t g_effect_monitors = {};
 
 static struct EffectMonitor *find_effect_monitor_from_id(int64_t id){
-  VECTOR_FOR_EACH(struct EffectMonitor *effect_monitor, &g_effect_monitors){
+  VECTOR_FOR_EACH(struct EffectMonitor *, effect_monitor, &g_effect_monitors){
     if (effect_monitor->id==id)
       return effect_monitor;
   }END_VECTOR_FOR_EACH;
@@ -2359,7 +2428,7 @@ int64_t addEffectMonitor(const char *effect_name, int64_t instrument_id, bool mo
   }
     */
     
-  struct EffectMonitor *effect_monitor = talloc(sizeof(struct EffectMonitor));
+  struct EffectMonitor *effect_monitor = (struct EffectMonitor *)talloc(sizeof(struct EffectMonitor));
 
   effect_monitor->id = g_effect_monitor_id++;
   effect_monitor->patch = patch;
@@ -2394,7 +2463,7 @@ void removeEffectMonitor(int64_t effect_monitor_id){
 
 
 void API_instruments_call_regularly(void){
-  VECTOR_FOR_EACH(struct EffectMonitor *effect_monitor, &g_effect_monitors){
+  VECTOR_FOR_EACH(struct EffectMonitor *, effect_monitor, &g_effect_monitors){
     struct Patch *patch = effect_monitor->patch;
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     if(plugin!=NULL){
