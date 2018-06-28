@@ -42,7 +42,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #define USE_EMBEDDED_NATIVE_WINDOW 0
+
+#if JUCE_LINUX
+#define CHANGE_GUI_VISIBILITY_INSTEAD_OF_REOPENING 0 // Seems to be some bugs in juce when opening vst guis.
+#else
 #define CHANGE_GUI_VISIBILITY_INSTEAD_OF_REOPENING 1 // There was a good reason this wasn't enabled earlier, but I don't remember that reason. Seems to work now though.
+#endif
+
 #define TRY_TO_RESIZE_EDITOR 0 // This doesn't seem to work, except for the juce demo plugin. Instead change window size when plugin gui size changes (and not the other way).
     
 
@@ -1623,8 +1629,8 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
   } else {
     data->window->setVisible(true);
     ret = true;
-  }
 #endif
+  }
 
     });
 
