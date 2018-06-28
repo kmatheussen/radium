@@ -41,17 +41,20 @@ static void SavePatchVoice(struct PatchVoice *voice, int voicenum){
     DC_SSF("pan", voice->pan);
     DC_SSI("time_format",voice->time_format);
     DC_SSI("chance", voice->chance);
+    DC_SSB("only_set_new_transpose_when_note_on", voice->only_set_new_transpose_when_note_on);
+    DC_SSB("only_set_new_volume_when_note_on", voice->only_set_new_volume_when_note_on);
+    DC_SSB("only_set_new_pan_when_note_on", voice->only_set_new_pan_when_note_on);
   }
   DC_end();
 }
 
 static void LoadPatchVoice(struct PatchVoice *voice){
   static char *objs[0] = {};
-  static char *vars[8] = {"is_on","transpose","volume","start","length","pan","time_format","chance"};
+  static char *vars[11] = {"is_on","transpose","volume","start","length","pan","time_format","chance", "only_set_new_transpose_when_note_on", "only_set_new_volume_when_note_on", "only_set_new_pan_when_note_on"};
 
   voice->chance = 256; // For older songs
   
-  GENERAL_LOAD(0,8);
+  GENERAL_LOAD(0,11);
 
  var0:
   voice->is_on = DC_LoadB();
@@ -78,8 +81,14 @@ static void LoadPatchVoice(struct PatchVoice *voice){
   voice->chance = DC_LoadI();
   goto start;
 var8:
+  voice->only_set_new_transpose_when_note_on = DC_LoadB();
+  goto start;
 var9:
+  voice->only_set_new_volume_when_note_on = DC_LoadB();
+  goto start;
 var10:
+  voice->only_set_new_pan_when_note_on = DC_LoadB();
+  goto start;
 var11:
 var12:
 var13:

@@ -1069,6 +1069,27 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                             (set! modulator-id (<ra> :create-modulator)))
                                         (<ra> :add-modulator instrument-id effect-name modulator-id)
                                         (post-undo-block-callback))))))))))
+
+   ;; Disabled transpose and volume since "Set new value when starting to play note" doesn't work when there's pitch glide or velocity glide in the editor.
+   ;;
+   (and (or ;;(string-starts-with? effect-name "System Transpose Voice ")
+            ;;(string-starts-with? effect-name "System Volume Voice ")
+            (string-starts-with? effect-name "System Pan Voice "))
+        (list
+         "--------------"
+         (list
+          :radio-buttons
+          (list "Set new value immediately"
+                :check (<ra> :get-note-duplicator-set-new-value-immediately instrument-id effect-name)
+                (lambda (ison)
+                  (if ison
+                      (<ra> :set-note-duplicator-set-new-value-immediately instrument-id effect-name #t))))
+          (list "Set new value when starting to play note"
+                :check (not (<ra> :get-note-duplicator-set-new-value-immediately instrument-id effect-name))
+                (lambda (ison)
+                  (if ison
+                      (<ra> :set-note-duplicator-set-new-value-immediately instrument-id effect-name #f)))))))
+   
    ))
   
 

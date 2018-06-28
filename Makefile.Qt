@@ -1626,8 +1626,8 @@ api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.c $(API)radium_proc.h
 api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp $(API)radium_proc.h
 	$(CCC)  $(API)api_various.cpp $(QTOPT) -DVERSION=\"$(VERSION)\"
 
-api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.c $(API)radium_proc.h $(API)api_instruments_proc.h
-	$(CC)  $(API)api_instruments.c $(OPT)
+api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp $(API)radium_proc.h $(API)api_instruments_proc.h
+	$(CCC)  $(API)api_instruments.cpp $(QTOPT)
 
 api_soundpluginregistry.o:  $(BUILD_DEPENDENCIES) $(API)api_soundpluginregistry.cpp $(API)radium_proc.h $(API)api_instruments_proc.h
 #	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
