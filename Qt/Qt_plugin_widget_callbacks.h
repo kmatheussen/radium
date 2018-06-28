@@ -903,13 +903,23 @@ public slots:
     VECTOR_push_back(&v, "Load FXB or FXP file");
     VECTOR_push_back(&v, "Save FXB (standard VST bank format)");
     VECTOR_push_back(&v, "Save FXP (standard VST preset format)");
+
+    IsAlive is_alive(this);
     
-    switch(GFX_Menu(root->song->tracker_windows, NULL, "", v, true)){
-    case 0: LoadFXBP(); break;
-    case 1: SaveFXBP(true); break;
-    case 2: SaveFXBP(false); break;
-    default: break;
-    }
+    GFX_Menu3(v,[is_alive, this](int num, bool onoff){
+        if (!is_alive || _patch->patchdata==NULL)
+          return;
+
+        switch(num){
+          case 0: LoadFXBP(); break;
+          case 1: SaveFXBP(true); break;
+          case 2: SaveFXBP(false); break;
+          default: break;
+        }
+      });
+
+    //switch(GFX_Menu(root->song->tracker_windows, NULL, "", v, true)){
+    //}
   }
 
   void on_record_button_clicked(){
