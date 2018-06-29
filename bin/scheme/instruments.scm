@@ -1072,7 +1072,8 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
    ;; Disabled transpose and volume since "Set new value when starting to play note" doesn't work when there's pitch glide or velocity glide in the editor.
    ;;
-   (and (or ;;(string-starts-with? effect-name "System Transpose Voice ")
+   (and effect-name
+        (or ;;(string-starts-with? effect-name "System Transpose Voice ")
             ;;(string-starts-with? effect-name "System Volume Voice ")
             (string-starts-with? effect-name "System Pan Voice "))
         (list
