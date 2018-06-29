@@ -1417,11 +1417,11 @@
                                       (popup-menu "Reset" reset-tempo-multiplier
                                                   "Apply tempo" apply-tempo-multiplier-to-block
                                                   (list
-                                                   "add MIDI learn"
+                                                   "Add MIDI learn"
                                                    :enabled (not (<ra> :has-block-multiplier-midi-learn))
                                                    ra:add-block-multiplier-midi-learn)
                                                   (list
-                                                   "remove MIDI learn"
+                                                   "Remove MIDI learn"
                                                    :enabled (<ra> :has-block-multiplier-midi-learn)
                                                    ra:remove-block-multiplier-midi-learn))
                                       #t)

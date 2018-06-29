@@ -1087,6 +1087,8 @@ void BS_UpdatePlayList(void){
   int num_items = g_bs->playlist.count();
   int num_iterations = R_MAX(num_elements, num_items);
 
+  bool has_modified = false;
+  
   QVector<QListWidgetItem*> to_remove;
   
   int pos = 0;
@@ -1097,7 +1099,8 @@ void BS_UpdatePlayList(void){
     if (element==NULL) {
 
       to_remove.push_back(item);
-
+      has_modified = true;
+      
     } else {
 
       QString new_text;
@@ -1111,14 +1114,20 @@ void BS_UpdatePlayList(void){
         pos++;
       }
       
-      if (item==NULL)
+      if (item==NULL) {
         g_bs->playlist.insertItem(new_text);
-      else if (new_text != item->text())
+        has_modified = true;
+      } else if (new_text != item->text()) {
         item->setText(new_text);
+        has_modified = true;
+      }
     }
 
   }
 
+  if (has_modified==false)
+    return;
+  
   for(auto *item : to_remove)
     delete item;
   
@@ -1161,7 +1170,7 @@ void BS_SelectBlock(struct Blocks *block){
 void BS_SelectBlocklistPos(int pos){
   {
     ScopedVisitors v;
-    printf("selectblocklistpos %d, %d. Length: %d\n",pos, pos % (g_bs->blocklist.count()), g_bs->blocklist.count());
+    //printf("selectblocklistpos %d, %d. Length: %d\n",pos, pos % (g_bs->blocklist.count()), g_bs->blocklist.count());
 
     pos = pos % int(g_bs->blocklist.count());
 
@@ -1178,14 +1187,13 @@ void BS_SelectBlocklistPos(int pos){
   //selectBlock(pos, -1);
   //g_bs->blocklist.setSelected(pos, true);
   
-  printf("selectblocklistpos. Curr pos: %d", g_bs->blocklist.currentRow());
+  //printf("selectblocklistpos. Curr pos: %d", g_bs->blocklist.currentRow());
 }
 
 void BS_SelectPlaylistPos(int pos){
   {
     ScopedVisitors v;
-    printf("selectplaylistpos %d, %d. Length: %d\n",pos, pos % (g_bs->playlist.count()), g_bs->playlist.count());
-
+    //printf("selectplaylistpos %d, %d. Length: %d\n",pos, pos % (g_bs->playlist.count()), g_bs->playlist.count());
     pos = pos % int(g_bs->playlist.count());
 
     int safe = 1000;

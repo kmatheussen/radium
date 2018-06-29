@@ -2,7 +2,7 @@ Changes 5.7.9 -> 5.8.1:
 * VST/Linux: Close and reopen native GUI instead of hiding and
   showing. Fixes some situations where the position and size of GUI
   elements becomes screwed up.
-* Playlist: Add renoise-compatible keybindings. (https://users.notam02.no/~kjetism/radium/forum/viewtopic.php?f=7&t=53&p=148#p146)
+* Playlist: Add Renoise-compatible keybindings. (https://users.notam02.no/~kjetism/radium/forum/viewtopic.php?f=7&t=53&p=148#p146)
 * Manual: Inform about the "Edit" tab in the keybindings file.
 * Note duplicator: Hear changes immediately when changing volume and
   transpose. (Don't have to wait until a note is played.)
