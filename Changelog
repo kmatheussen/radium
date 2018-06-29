@@ -1,3 +1,10 @@
+Changes 5.8.1 -> 5.8.2:
+* Mixer: Fix error message showing up when right clicking in certain
+  places.
+* Playlist: Don't update playlist unnecessarily when timing is
+  changed in the editor (and probably other situations).
+
+
 Changes 5.7.9 -> 5.8.1:
 * VST/Linux: Close and reopen native GUI instead of hiding and
   showing. Fixes some situations where the position and size of GUI
