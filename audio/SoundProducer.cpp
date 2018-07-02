@@ -1273,7 +1273,8 @@ public:
     for(auto *link : to_remove)
       delete link;
 
-    GFX_ScheduleInstrumentRedraw(g_currpatch);
+    if (g_currpatch != NULL)
+      GFX_ScheduleInstrumentRedraw(g_currpatch);
 
     return true;
   }

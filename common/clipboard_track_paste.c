@@ -47,7 +47,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_pause_proc.h"
 #include "fxlines_legalize_proc.h"
 #include "notes_legalize_proc.h"
-#include "../midi/midi_fx_proc.h"
 #include "notes_proc.h"
 #include "windows_proc.h"
 #include "wblocks_proc.h"
@@ -55,11 +54,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_track_copy_proc.h"
 #include "patch_proc.h"
 #include "instruments_proc.h"
-#include "../api/api_proc.h"
-#include "../audio/audio_instrument_proc.h"
 #include "swingtext_proc.h"
 
+#include "../midi/midi_fx_proc.h"
+
+#include "../api/api_proc.h"
+
+#include "../audio/audio_instrument_proc.h"
+
+#include "../Qt/Qt_instruments_proc.h"
+
+
 #include "clipboard_track_paste_proc.h"
+
 
 
 extern struct Swing *cb_swing;
@@ -97,9 +104,15 @@ static void make_patches_usable(struct Tracks *track){
       
       track->patch = new_patch;
     }
-    
-    R_ASSERT_RETURN_IF_FALSE(track->patch->patchdata != NULL);
 
+    if (track->patch->patchdata==NULL){
+      R_ASSERT(track->patch->instrument == get_MIDI_instrument()); // This can happen if deleting all unused midi instruments.
+      if (g_currpatch == track->patch)
+        g_currpatch = NULL;
+      track->patch = NULL;
+      return;
+    }
+    
     VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
       struct FX *fx = fxs->fx;
       

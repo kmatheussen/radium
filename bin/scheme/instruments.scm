@@ -1127,14 +1127,15 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
   (if (null? unused-MIDI-instruments)
       (show-async-message :text "There are no unused MIDI instruments in this song")
-      (show-async-message :text "Are you sure? You can not undo this operation."
+      (show-async-message :text "Are you sure? All undo data will be deleted."
                           :buttons (list "Yes" "No")
                           :is-modal #f
                           :callback (lambda (res)
-                                      (if (string=? "Yes" res)
-                                          (ignore-undo-block
-                                           (lambda ()
-                                             (for-each ra:delete-instrument unused-MIDI-instruments))))))))
+                                      (when (string=? "Yes" res)
+                                        (ignore-undo-block
+                                         (lambda ()
+                                           (for-each ra:delete-instrument unused-MIDI-instruments)))
+                                        (<ra> :reset-undo))))))
 
 #!
 (delete-all-unused-MIDI-instruments)

@@ -609,7 +609,7 @@ public slots:
 
     {
       PATCH_set_name(_patch.data(), new_name.toUtf8().constData());
-      g_currpatch->name_is_edited = true;
+      _patch->name_is_edited = true;
 
       struct Tracker_Windows *window = root->song->tracker_windows;
       window->must_redraw = true; // update track headers to the new name

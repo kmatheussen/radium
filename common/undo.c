@@ -93,8 +93,6 @@ int64_t g_curr_undo_generation = 0;  // used by autobackup
 
 static int undo_is_open=0;
 
-extern struct Patch *g_currpatch;
-
 static bool currently_undoing = false;
 
 static bool showing_star_in_filename = false;
