@@ -698,6 +698,9 @@ static void update_audio_instrument_widget(Audio_instrument_widget *instrument, 
 }
 
 void GFX_update_instrument_widget(struct Patch *patch){
+  if (patch==NULL)
+    return;
+  
   if(patch->instrument==get_MIDI_instrument()){
     printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
 
@@ -857,7 +860,8 @@ void GFX_update_instrument_patch_gui(struct Patch *patch){
 }
 
 static void tab_name_has_changed(QWidget *tab, QString new_name) {
-
+  R_ASSERT_RETURN_IF_FALSE(g_currpatch != NULL);
+  
   if (g_currpatch->name_is_edited)
     return;
 
@@ -1016,7 +1020,7 @@ void MIXERSTRIP_call_regularly(void){
     return;
   }
 
-  if (g_currpatch != last_patch && patch_can_be_used_for_mixer_strip(g_currpatch)){
+  if (g_currpatch != NULL && g_currpatch != last_patch && patch_can_be_used_for_mixer_strip(g_currpatch)){
 
     last_patch = NULL;
 

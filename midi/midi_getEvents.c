@@ -24,12 +24,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_i_plugin_proc.h"
 #include "../common/playerclass.h"
 
+#include "../Qt/Qt_instruments_proc.h"
+
+
 #include "midi_getEvents_proc.h"
 #include "OS_midigfx_proc.h"
 
-extern struct Patch *g_currpatch;
-extern struct Root *root;
-extern PlayerClass *pc;
+
 extern bool useOx90ForNoteOff;
 
 // Only used by the gtk1 midi instruments window

@@ -625,6 +625,9 @@ static void make_inactive(struct Patch *patch, bool force_removal){
     return;
   }
 
+  if (patch==g_currpatch)
+    g_currpatch = NULL;
+  
   PATCH_stop_all_notes(patch);
 
   PATCH_handle_editor_and_automation_when_replacing_patch(patch, NULL);

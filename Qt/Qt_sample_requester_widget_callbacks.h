@@ -588,7 +588,7 @@ class Sample_requester_widget : public QWidget
 
     if(successfully_selected==true && ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED){
       //printf("playing note 1\n");
-      PATCH_play_note(g_currpatch, create_note_t(NULL, -1, 12*_preview_octave, 0.5f, 0.0f, 0, 0, 0));
+      PATCH_play_note(_patch.data(), create_note_t(NULL, -1, 12*_preview_octave, 0.5f, 0.0f, 0, 0, 0));
     }
   }
 
@@ -655,7 +655,7 @@ class Sample_requester_widget : public QWidget
     if(SAMPLER_set_new_sample(plugin,STRING_create(filename),file_list->currentRow()-1)==true){
       if(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED){
         //printf("playing note 2\n");
-        PATCH_play_note(g_currpatch, create_note_t(NULL, -1, 12*_preview_octave, 0.5f, 0.0f, 0, 0, 0));
+        PATCH_play_note(_patch.data(), create_note_t(NULL, -1, 12*_preview_octave, 0.5f, 0.0f, 0, 0, 0));
       }
       update_sample_name_label(filename);
     }
