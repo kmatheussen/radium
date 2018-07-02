@@ -22,8 +22,9 @@ DC_end();
 }
 
 struct Instruments *LoadInstrument(void){
-	static char *objs[1]={
-		"PATCH"
+	static char *objs[2]={
+                "PATCH",
+                "PATCH_V2"
 	};
 	static char *vars[1]={
 		"instrumentname"
@@ -31,7 +32,7 @@ struct Instruments *LoadInstrument(void){
         char *instrument_name = NULL;
 	struct Instruments *instrument=NULL;
 
-	GENERAL_LOAD(1,1)
+	GENERAL_LOAD(2,1)
 
 
 var0:
@@ -49,9 +50,19 @@ obj0:
           instrument = get_MIDI_instrument();
         }
           
-        PATCH_add_to_instrument(LoadPatch());
+        PATCH_add_to_instrument(LoadPatchV1());
+	goto start;
+        
+obj1:
+        if(instrument==NULL) {
+          RError("Instrument==NULL in disk_instrument.c. instrument_name: \"%s\", strcmp returns: %d, get_audio_instrument() returns: %p",instrument_name,strcmp("Audio instrument",instrument_name),get_audio_instrument());
+          instrument = get_MIDI_instrument();
+        }
+          
+        PATCH_add_to_instrument(LoadPatchV2());
 	goto start;
 
+        
 var1:
 var2:
 var3:
@@ -74,7 +85,6 @@ var19:
  var20:
  var21:
         
-obj1:
 obj2:
 obj3:
 obj4:

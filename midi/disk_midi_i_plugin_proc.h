@@ -14,7 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-extern void SaveMIDIPatchData(void *pd);
-extern void LoadMIDIPatchData(struct PatchData *patchdata);
+extern LANGSPEC hash_t *MIDI_get_patchdata_state(const void *pd);
+extern LANGSPEC void MIDI_apply_state_to_patchdata(void *pd, const hash_t *state);
+
+extern LANGSPEC void SaveMIDIPatchData(const void *pd);
+extern LANGSPEC void LoadMIDIPatchData(struct PatchData *patchdata);
 
 

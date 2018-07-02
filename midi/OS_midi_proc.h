@@ -27,12 +27,12 @@ typedef void* MidiPortOs;
 extern LANGSPEC void OS_InitMidiTiming(void);
 
 
-extern LANGSPEC char **MIDI_OS_get_connected_input_ports(int *retsize); // returns ports we are connected to
+extern LANGSPEC const char **MIDI_OS_get_connected_input_ports(int *retsize); // returns ports we are connected to
 
-extern LANGSPEC char **MIDI_getOutputPortOsNames(int *retsize); // returns all ports that's possible to connect to (whether we are connected or not)
-extern LANGSPEC char **MIDI_getInputPortOsNames(int *retsize); // returns all ports that's possible to connect to (whether we are connected or not)
+extern LANGSPEC const char **MIDI_getOutputPortOsNames(int *retsize); // returns all ports that's possible to connect to (whether we are connected or not)
+extern LANGSPEC const char **MIDI_getInputPortOsNames(int *retsize); // returns all ports that's possible to connect to (whether we are connected or not)
 
-extern LANGSPEC char *MIDI_getDefaultOutputPort(void);
+extern LANGSPEC const char *MIDI_getDefaultOutputPort(void);
 
 
 // DeleteMidi(midinode);

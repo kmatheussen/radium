@@ -29,6 +29,14 @@
 extern struct Root *root;
 
 
+#if defined(RELEASE)
+#  define SAVE_NEW_FORMAT 0 // Going to test the new format a few releases first.
+#else
+#  define SAVE_NEW_FORMAT 1
+#endif
+
+
+#if !SAVE_NEW_FORMAT
 static void SavePatchVoice(struct PatchVoice *voice, int voicenum){
   DC_start("VOICE");
   DC_SaveI(voicenum);
@@ -47,6 +55,7 @@ static void SavePatchVoice(struct PatchVoice *voice, int voicenum){
   }
   DC_end();
 }
+#endif
 
 static void LoadPatchVoice(struct PatchVoice *voice){
   static char *objs[0] = {};
@@ -114,6 +123,7 @@ end:
   return;
 }
 
+#if !SAVE_NEW_FORMAT
 static void SavePatchVoices(struct Patch *patch){
   DC_start("VOICES");
 
@@ -127,6 +137,7 @@ static void SavePatchVoices(struct Patch *patch){
 
   DC_end();
 }
+#endif
 
 static void LoadPatchVoices(struct Patch *patch){
   static char *objs[1] = {"VOICE"};
@@ -196,6 +207,16 @@ void SavePatches(vector_t *v){
   for(i=0;i<v->num_elements;i++){
     struct Patch *patch=v->elements[i];
 
+#if SAVE_NEW_FORMAT
+    
+    DC_start("PATCH_V2");
+    {
+      HASH_save(PATCH_get_state(patch), dc.file);
+    }
+    DC_end();
+
+#else
+    
     DC_start("PATCH");
     {
       DC_SaveL(patch->id);
@@ -222,11 +243,21 @@ void SavePatches(vector_t *v){
 
     }
     DC_end();
+    
+#endif
+    
   }
 }
 
 
-struct Patch *LoadPatch(void){
+struct Patch *LoadPatchV2(void){
+  struct Patch *patch = PATCH_create_from_state(HASH_load(dc.file));
+  DC_fgets();
+    
+  return patch;
+}
+
+struct Patch *LoadPatchV1(void){
         bool is_MIDI_instrument = false;
 
 	static char *objs[2]={

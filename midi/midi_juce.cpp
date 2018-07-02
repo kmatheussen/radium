@@ -177,10 +177,10 @@ void OS_GoodPutMidi(MidiPortOs port,
 }
 
 
-static char** string_array_to_char_array(const juce::StringArray &devices, int *retsize){
+static const char** string_array_to_char_array(const juce::StringArray &devices, int *retsize){
   *retsize = devices.size();
   
-  char **ret = (char**)talloc(sizeof(char*)*devices.size());
+  const char **ret = (const char**)talloc(sizeof(const char*)*devices.size());
   
   for(int i=0 ; i < devices.size() ; i++)
     ret[i] = talloc_strdup(devices[i].toUTF8());
@@ -188,10 +188,10 @@ static char** string_array_to_char_array(const juce::StringArray &devices, int *
   return ret;
 }
 
-char **MIDI_OS_get_connected_input_ports(int *retsize){ // returns ports we are connected to
+const char **MIDI_OS_get_connected_input_ports(int *retsize){ // returns ports we are connected to
   *retsize = g_inports.size();
   
-  char **ret = (char**)talloc(sizeof(char*)*g_inports.size());
+  const char **ret = (const char**)talloc(sizeof(const char*)*g_inports.size());
 
   for (int i = 0 ; i < g_inports.size() ; i++)
     ret[i] = talloc_strdup(g_inports[i]->midi_input->getName().toUTF8());
@@ -199,18 +199,18 @@ char **MIDI_OS_get_connected_input_ports(int *retsize){ // returns ports we are 
   return ret;
 }
 
-char **MIDI_getInputPortOsNames(int *retsize){ // returns all ports that's possible to connect to (whether we are connected or not)
+const char **MIDI_getInputPortOsNames(int *retsize){ // returns all ports that's possible to connect to (whether we are connected or not)
   juce::StringArray devices = juce::MidiInput::getDevices();
   return string_array_to_char_array(devices, retsize);
 }
 
 
-char **MIDI_getOutputPortOsNames(int *retsize){ // returns all ports that's possible to connect to (whether we are connected or not)
+const char **MIDI_getOutputPortOsNames(int *retsize){ // returns all ports that's possible to connect to (whether we are connected or not)
   juce::StringArray devices = juce::MidiOutput::getDevices();
   return string_array_to_char_array(devices, retsize);
 }
 
-char *MIDI_getDefaultOutputPort(void){
+const char *MIDI_getDefaultOutputPort(void){
   juce::StringArray devices = juce::MidiOutput::getDevices();
   if (devices.size()==0)
     return NULL;

@@ -316,7 +316,7 @@ static void updateMidiPortsWidget(MIDI_instrument_widget *instrument){
   int item_num = 0;
 
   int num_ports;
-  char **portnames = MIDI_getPortNames(&num_ports,false);
+  const char **portnames = MIDI_getPortNames(&num_ports,false);
 
   while(instrument->port->count()>0)
     instrument->port->removeItem(0);

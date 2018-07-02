@@ -1270,7 +1270,7 @@ static void AUDIO_remove_patchdata(struct Patch *patch){
 }
 
 static void AUDIO_setPatchData(struct Patch *patch, const char *key, const char *value, bool program_state_is_valid){}
-static char *AUDIO_getPatchData(struct Patch *patch, const char *key){
+static const char *AUDIO_getPatchData(struct Patch *patch, const char *key){
   return NULL;
 }
 
