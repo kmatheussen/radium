@@ -319,8 +319,14 @@ static hash_t *PATCHVOICE_get_state(const struct PatchVoice &voice){
   HASH_put_float(state, "volume", voice.volume);
   HASH_put_float(state, "start", voice.start);
   HASH_put_float(state, "length", voice.length);
+  HASH_put_float(state, "pan", voice.pan);
+  HASH_put_int(state, "chance", voice.chance);
   HASH_put_int(state, "time_format", voice.time_format);
-  
+
+  HASH_put_bool(state, "only_set_new_transpose_when_note_on", voice.only_set_new_transpose_when_note_on);
+  HASH_put_bool(state, "only_set_new_volume_when_note_on", voice.only_set_new_volume_when_note_on);
+  HASH_put_bool(state, "only_set_new_pan_when_note_on", voice.only_set_new_pan_when_note_on);
+
   return state;
 }
 
@@ -330,9 +336,25 @@ static void apply_patchvoice_state(struct PatchVoice &voice, hash_t *state){
   voice.volume = HASH_get_float(state, "volume");
   voice.start = HASH_get_float(state, "start");
   voice.length = HASH_get_float(state, "length");
+  
+  if (HASH_has_key(state, "pan"))
+    voice.pan = HASH_get_float(state, "pan");
+  
+  if (HASH_has_key(state, "chance"))
+    voice.pan = HASH_get_int(state, "chance");
+  
   voice.time_format = (TimeFormat)HASH_get_int(state, "time_format");
+
+  if (HASH_has_key(state, "only_set_new_transpose_when_note_on"))
+    voice.only_set_new_transpose_when_note_on = HASH_get_bool(state, "only_set_new_transpose_when_note_on");
+  
+  if (HASH_has_key(state, "only_set_new_volume_when_note_on"))
+    voice.only_set_new_volume_when_note_on = HASH_get_bool(state, "only_set_new_volume_when_note_on");
+
+  if (HASH_has_key(state, "only_set_new_pan_when_note_on"))
+    voice.only_set_new_pan_when_note_on = HASH_get_bool(state, "only_set_new_pan_when_note_on");  
 }
-                                                
+
 hash_t *PATCH_get_state(const struct Patch *patch){
   hash_t *state = HASH_create(5);
 
@@ -383,6 +405,7 @@ hash_t *PATCHES_get_state(const vector_t *patches, bool put_in_array){
   return patches_state;
 }
 
+// Used when loading preset.
 static void apply_patch_state(struct Patch *patch, hash_t *state){
   R_ASSERT(state!=NULL && HASH_has_key(state, "___radium_patch_state_v3"));
   patch->forward_events = HASH_get_int(state, "forward_events")==1 ? true : false;
