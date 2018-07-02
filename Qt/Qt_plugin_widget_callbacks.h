@@ -899,7 +899,7 @@ public slots:
     if (_is_initing)
       return;
 
-    vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
+    vector_t v = {};
     VECTOR_push_back(&v, "Load FXB or FXP file");
     VECTOR_push_back(&v, "Save FXB (standard VST bank format)");
     VECTOR_push_back(&v, "Save FXP (standard VST preset format)");
@@ -978,14 +978,54 @@ public slots:
     else if (sel==stereo)
       SAMPLER_start_recording(plugin, pathdir, 2, false);
   }
+
+  void saveit(void){
+    vector_t patches = {};
+    VECTOR_push_back(&patches, _patch.data());
+    PRESET_save(&patches, true, API_get_gui_from_existing_widget(this->window()));    
+  }
   
   void on_save_button_clicked(){
     if (_is_initing)
       return;
 
-    vector_t patches = {};
-    VECTOR_push_back(&patches, _patch.data());
-    PRESET_save(&patches, true, API_get_gui_from_existing_widget(this->window()));
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    
+    bool can_embed = QString("Sample Player")==plugin->type->type_name || QString("FluidSynth")==plugin->type->type_name;
+    
+    if (can_embed) {
+
+      vector_t v = {};
+      VECTOR_push_back(&v, "Save");
+      int save_embedded = VECTOR_push_back(&v, "Save, with embedded sample");
+
+      IsAlive is_alive(this);
+      
+      GFX_Menu3(v, [save_embedded, is_alive, this](int num, bool onoff){
+                  
+          if (!is_alive || _patch->patchdata==NULL || num < 0)
+            return;
+
+          printf("NUM: %d. save_mebedded: %d\n", num, save_embedded);
+          
+          bool old_embed = g_embed_samples;
+          
+          if (num==save_embedded)
+            g_embed_samples = true;
+          
+          saveit();
+
+          if (num==save_embedded)
+            g_embed_samples = old_embed;
+          
+        });
+      
+    } else {
+
+      saveit();
+
+    }
+    
   }
 
   void on_load_button_clicked(){      
