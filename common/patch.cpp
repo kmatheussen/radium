@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_instruments_proc.h"
 #include "../api/api_proc.h"
 #include "../midi/midi_i_plugin_proc.h"
+#include "../midi/disk_midi_i_plugin_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "../midi/midi_fx_proc.h"
 #include "../audio/audio_instrument_proc.h"
@@ -367,10 +368,16 @@ hash_t *PATCH_get_state(const struct Patch *patch){
     HASH_put_hash_at(state, "patchvoice", i, PATCHVOICE_get_state(patch->voices[i]));
 
   if (patch->instrument==get_audio_instrument()) {
+    
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
     R_ASSERT(plugin!=NULL);
     if (plugin!=NULL)
       HASH_put_hash(state, "audio", PLUGIN_get_state(plugin));
+    
+  } else {
+
+    HASH_put_hash(state, "MIDI", MIDI_get_patchdata_state(patch->patchdata));
+    
   }
 
   // We add some more info, for future compatibility. We're not currently using any of these, but perhaps it is used later.
@@ -381,7 +388,7 @@ hash_t *PATCH_get_state(const struct Patch *patch){
   HASH_put_chars(state, "color", GFX_get_colorname_from_color(patch->color));
   HASH_put_chars(state, "comment", patch->comment);
   HASH_put_chars(state, "instrument", patch->instrument==get_audio_instrument() ? "audio" : "MIDI");
-  
+
   return state;
 }
 
@@ -423,6 +430,29 @@ static void apply_patch_state(struct Patch *patch, hash_t *state){
     patch->comment = HASH_get_chars(state, "comment");
 }
 
+// Used when loading song.
+struct Patch *PATCH_create_from_state(hash_t *state){
+  struct Patch *patch=PATCH_alloc();
+  patch->is_usable = true;
+  
+  apply_patch_state(patch, state);
+
+  patch->id = HASH_get_int(state, "id");
+  patch->name_is_edited = HASH_get_int(state, "name_is_edited")==1 ? true : false;
+  
+  if (STRING_equals(HASH_get_string(state, "instrument"), "audio")){
+    
+    AUDIO_set_patch_attributes(patch, NULL);
+    
+  } else {
+
+    MIDI_InitPatch(patch);
+
+    MIDI_apply_state_to_patchdata(patch->patchdata, HASH_get_hash(state, "MIDI"));
+  }
+    
+  return patch;
+}
 
 // Only called from PATCH_create_audio and undo create patch.
 //

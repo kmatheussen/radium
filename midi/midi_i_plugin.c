@@ -369,7 +369,7 @@ void MIDISetPatchData(struct Patch *patch, const char *key, const char *value, b
     GFX_Message2(NULL, program_state_is_valid, "MIDISetPatchData: Unknown key \"%s\" for midi instrument", key);
 }
 
-static char *MIDIGetPatchData(struct Patch *patch, const char *key){
+static const char *MIDIGetPatchData(struct Patch *patch, const char *key){
   if(false){
 
   }else if(!strcasecmp(key,"port")){
@@ -436,7 +436,7 @@ static struct PatchData *createPatchData(void) {
   }
 
   {
-    char *portname = MIDI_getDefaultOutputPort();
+    const char *portname = MIDI_getDefaultOutputPort();
     if (portname==NULL)
       portname = "default";
     patchdata->midi_port = MIDIgetPort(NULL,NULL,portname,false);
@@ -447,7 +447,7 @@ static struct PatchData *createPatchData(void) {
 
 static struct MidiPort *g_midi_ports = NULL;
 
-static bool is_member(char *name, char**names){
+static bool is_member(const char *name, const char**names){
   int i=0;
   while(names[i]!=NULL){
     if(!strcmp(name,names[i]))
@@ -457,9 +457,9 @@ static bool is_member(char *name, char**names){
   return false;
 }
 
-char **MIDI_getPortNames(int *retsize, bool is_input){
+const char **MIDI_getPortNames(int *retsize, bool is_input){
   int num_os_names;
-  char **os_names = is_input ? MIDI_getInputPortOsNames(&num_os_names) : MIDI_getOutputPortOsNames(&num_os_names);
+  const char **os_names = is_input ? MIDI_getInputPortOsNames(&num_os_names) : MIDI_getOutputPortOsNames(&num_os_names);
 
   int num_midi_ports = 0;
   struct MidiPort *midi_port = g_midi_ports;
@@ -470,7 +470,7 @@ char **MIDI_getPortNames(int *retsize, bool is_input){
   }
 
   *retsize = num_os_names;
-  char **ret = talloc((num_os_names+num_midi_ports+1)*sizeof(char*));
+  const char **ret = talloc((num_os_names+num_midi_ports+1)*sizeof(char*));
   memcpy(ret,os_names,sizeof(char*)*num_os_names);
 
   // Add existing ports;
@@ -490,10 +490,10 @@ char **MIDI_getPortNames(int *retsize, bool is_input){
 
 extern struct Root *root;
 
-char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool is_input, bool program_state_is_valid){
+const char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool is_input, bool program_state_is_valid){
   int num_ports;
 
-  char **portnames=MIDI_getPortNames(&num_ports, is_input);
+  const char **portnames=MIDI_getPortNames(&num_ports, is_input);
   vector_t v={0};
   int i;
 
@@ -546,10 +546,10 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,cons
   }
 
   int num_input_ports;
-  char **input_port_names = MIDI_OS_get_connected_input_ports(&num_input_ports);
+  const char **input_port_names = MIDI_OS_get_connected_input_ports(&num_input_ports);
   for(int i=0;i<num_input_ports;i++){
     printf("   Testing -%s- vs. -%s-\n", input_port_names[i], midi_port->name);
-    char *portname = midi_port->name;
+    const char *portname = midi_port->name;
     if (!strncmp(portname,"Radium: ",8))
       portname += 8;
 

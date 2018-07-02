@@ -1006,7 +1006,7 @@ public slots:
           if (!is_alive || _patch->patchdata==NULL || num < 0)
             return;
 
-          printf("NUM: %d. save_mebedded: %d\n", num, save_embedded);
+          //printf("NUM: %d. save_mebedded: %d\n", num, save_embedded);
           
           bool old_embed = g_embed_samples;
           

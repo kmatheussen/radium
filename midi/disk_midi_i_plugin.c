@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "../common/disk.h"
+#include "../common/hashmap_proc.h"
+
 #include "midi_i_plugin.h"
 #include "midi_i_plugin_proc.h"
 
@@ -25,8 +27,69 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "disk_midi_i_plugin_proc.h"
 
+hash_t *MIDI_get_patchdata_state(const void *pd){
+  const struct PatchData *patchdata = pd;
+  
+  hash_t *state = HASH_create(15);
+  
+  HASH_put_chars(state, "clustername",patchdata->midi_port->name);
+  HASH_put_int(state, "channel",patchdata->channel);
+  HASH_put_int(state, "preset",patchdata->preset);
+  HASH_put_int(state, "LSB",patchdata->LSB);
+  HASH_put_int(state, "MSB",patchdata->MSB);
 
-void SaveMIDIPatchData(void *pd){
+  HASH_put_bool(state, "volumeonoff",patchdata->volumeonoff);
+  HASH_put_int(state, "volume",patchdata->volume);
+  HASH_put_bool(state, "panonoff",patchdata->panonoff);
+  HASH_put_int(state, "pan",patchdata->pan);
+
+  dynvec_t vec = {0};
+  
+  for(int num=0;num<8;num++){
+    hash_t *cc = HASH_create(5);
+    
+    HASH_put_chars(cc, "name", patchdata->ccnames[num]);
+    HASH_put_bool(cc, "onoff", patchdata->ccsonoff[num]);
+    HASH_put_int(cc, "cc", patchdata->cc[num]);
+    HASH_put_int(cc, "value", patchdata->ccvalues[num]);
+    
+    DYNVEC_push_back(&vec, DYN_create_hash(cc));
+  }
+
+  HASH_put_dyn(state, "controlchange", DYN_create_array(vec));
+
+  return state;
+}
+
+void MIDI_apply_state_to_patchdata(void *pd, const hash_t *state){
+  struct PatchData *patchdata = pd;
+  const char *clustername = HASH_get_chars(state, "clustername");
+  
+  patchdata->midi_port = MIDIgetPort(NULL,NULL,clustername,false);
+
+  patchdata->channel = HASH_get_int(state, "channel");
+  patchdata->preset = HASH_get_int(state, "preset");
+  patchdata->LSB = HASH_get_int(state, "LSB");
+  patchdata->MSB = HASH_get_int(state, "MSB");
+
+  patchdata->volumeonoff = HASH_get_bool(state, "volumeonoff");
+  patchdata->volume = HASH_get_int(state, "volume");
+  patchdata->panonoff = HASH_get_bool(state, "panonoff");
+  patchdata->pan = HASH_get_int(state, "pan");
+
+  const dynvec_t *vec = HASH_get_dyn(state, "controlchange").array;
+  
+  for(int num=0;num<8;num++){
+    const hash_t *cc = vec->elements[num].hash;
+    
+    patchdata->ccnames[num] = HASH_get_chars(cc, "name");
+    patchdata->ccsonoff[num]= HASH_get_bool(cc, "onoff");
+    patchdata->cc[num] = HASH_get_int(cc, "cc");
+    patchdata->ccvalues[num] = HASH_get_int(cc, "value");
+  }
+}
+
+void SaveMIDIPatchData(const void *pd){
 	struct PatchData *patchdata=(struct PatchData *)pd;
 DC_start("PATCHDATA");
 

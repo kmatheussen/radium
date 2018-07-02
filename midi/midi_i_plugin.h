@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct MidiPort{
   struct MidiPort *next;
-  char *name;
+  const char *name;
 
   MidiPortOs port;
 
@@ -49,7 +49,7 @@ struct PatchData{
 	char pan;
 
 	bool ccsonoff[8];
-	char *ccnames[8];
+	const char *ccnames[8];
         char cc[8];
 	char ccvalues[8];
 };

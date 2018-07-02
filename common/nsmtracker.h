@@ -1568,7 +1568,7 @@ struct Instruments{
         void (*remove_patchdata)(struct Patch *patch);
 
 	void (*setPatchData)(struct Patch *patch, const char *key, const char *value, bool program_state_is_valid);
-	char *(*getPatchData)(struct Patch *patch, const char *key);
+	const char *(*getPatchData)(struct Patch *patch, const char *key);
 };
 #define INSTRUMENT_FAILED 0
 #define INSTRUMENT_SUCCESS 1
