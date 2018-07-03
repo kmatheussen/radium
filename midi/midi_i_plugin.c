@@ -566,7 +566,7 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,cons
         int yes = VECTOR_push_back(&v, "Yes");
         int yes_dont_ask_again = VECTOR_push_back(&v, "Yes (don't ask again)");
         
-        int result = GFX_Message2(&v, program_state_is_valid, "Are you sure you want to connect to \"%s\"? We are also connected to an input port with the same name. If this device sends out its input, you risk starting a recursive connection that's impossible to stop.", midi_port->name);
+        int result = GFX_Message2(&v, program_state_is_valid, "Are you sure you want to connect to \"%s\"? We are also connected to an input port with the same name. If this device sends out its input, you risk starting a recursive connection that will be impossible to stop.", midi_port->name);
 
         if (result==yes_dont_ask_again)
           HASH_put_bool(dont_ask_again, portname, true);
