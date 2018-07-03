@@ -382,11 +382,16 @@ hash_t *PATCH_get_state(const struct Patch *patch){
 
   // We add some more info, for future compatibility. We're not currently using any of these, but perhaps it is used later.
   HASH_put_int(state, "id", patch->id);
+  
   HASH_put_int(state, "name_is_edited", patch->name_is_edited ? 1 : 0);
   HASH_put_chars(state, "name", patch->name);
+  
   //HASH_put_int(state, "colornum", patch->colornum);
   HASH_put_chars(state, "color", GFX_get_colorname_from_color(patch->color));
   HASH_put_chars(state, "comment", patch->comment);
+  HASH_put_bool(state, "wide_mixer_strip", patch->wide_mixer_strip);
+  
+  HASH_put_chars(state, "uuid", patch->uuid);  
   HASH_put_chars(state, "instrument", patch->instrument==get_audio_instrument() ? "audio" : "MIDI");
 
   return state;
@@ -439,7 +444,11 @@ struct Patch *PATCH_create_from_state(hash_t *state){
 
   patch->id = HASH_get_int(state, "id");
   patch->name_is_edited = HASH_get_int(state, "name_is_edited")==1 ? true : false;
-  
+  patch->uuid = HASH_get_chars(state, "uuid");
+
+  if (HASH_has_key(state, "wide_mixer_strip"))
+    patch->wide_mixer_strip = HASH_get_bool(state, "wide_mixer_strip");  
+
   if (STRING_equals(HASH_get_string(state, "instrument"), "audio")){
     
     AUDIO_set_patch_attributes(patch, NULL);
