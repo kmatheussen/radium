@@ -338,10 +338,13 @@ static struct FX *selectFX(
           for(lokke=0;lokke<10000;lokke++)
             VECTOR_push_back(&v,talloc_format("extra %d",lokke));
 #endif
-
+          
+          VECTOR_push_back(&v,"----------");
           VECTOR_push_back(&v,"New FX");
+          
           int selection=GFX_Menu(window,NULL,"Select FX",v,true);
           if(selection==-1) return NULL;
+          
           if(selection<num_usedFX) return getTrackFX(track,selection);
 	}
 
