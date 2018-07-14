@@ -979,7 +979,7 @@ int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const 
   if (is_main_thread && has_player_lock==false)
     EVENTLOG_add_event(talloc_strdup(message));
 
-  if (!is_main_thread || has_player_lock || g_num_running_resize_events > 0 || g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || g_radium_runs_custom_exec || QApplication::activeModalWidget()!=NULL || !g_curr_popup_qmenu.isNull() || QApplication::activePopupWidget()!=NULL || a_modal_widget_is_open()){
+  if (!is_main_thread || has_player_lock || g_num_running_resize_events > 0 || g_qt_is_painting || g_is_loading || g_qtgui_has_started==false || g_qtgui_has_stopped==true || g_radium_runs_custom_exec || QApplication::activeModalWidget()!=NULL || !g_curr_popup_qmenu.isNull() || QApplication::activePopupWidget()!=NULL || a_modal_widget_is_open()){
     
     return SYSTEM_show_message_menu(buttons, message);
     
