@@ -268,6 +268,10 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
   }
 
+  ~Bottom_bar_widget(){
+    g_bottom_bars.removeOne(this);
+  }
+  
   void enterEvent(QEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
