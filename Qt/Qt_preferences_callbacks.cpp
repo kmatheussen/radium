@@ -630,7 +630,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         delete midi_input_layout->itemAt(0)->widget();
 
       int num_input_ports;
-      char **input_port_names = MIDI_OS_get_connected_input_ports(&num_input_ports);
+      const char **input_port_names = MIDI_OS_get_connected_input_ports(&num_input_ports);
       for(int i=0;i<num_input_ports;i++){
         MidiInput *l = new MidiInput(this, input_port_names[i]);
         midi_input_layout->addWidget(l);
