@@ -2655,6 +2655,8 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
     }
   }
 
+  bool has_shown_error = false;
+  
   // A/B
   if (state_version==plugin_type_version) {
     if (HASH_has_key(state, "ab")){
@@ -2669,15 +2671,30 @@ SoundPlugin *PLUGIN_create_from_state(hash_t *state, bool is_loading){
         plugin->ab_is_valid[i] = HASH_get_bool_at(ab_state, "is_valid", i);
 
         if (plugin->ab_is_valid[i]){
-          plugin->ab_states[i] = (hash_t*)replace_gc_root(plugin->ab_states[i], HASH_get_hash_at(ab_state, "ab_state", i));
           
           hash_t *values_state = HASH_get_hash_at(ab_state, "ab_values", i);
-          for(int n=0;n<num_effects;n++)
-            if (HASH_has_key_at(values_state,"value",n)){
-              plugin->ab_values[i][n] = HASH_get_float_at(values_state,"value",n);
-            } else{
-              RError("Non-release: Unknown key %s / %d while loading A/B values.\n", "value", n);
+          
+          if (HASH_get_array_size(values_state, "value") != num_effects) {
+
+            if (has_shown_error == false){
+              addMessage(talloc_format("Could not load A/B settings for %s / %s since the number of effects have changed", type_name, name));
+              has_shown_error = true;
             }
+            
+            plugin->ab_is_valid[i] = false;
+            
+          } else {
+
+            plugin->ab_states[i] = (hash_t*)replace_gc_root(plugin->ab_states[i], HASH_get_hash_at(ab_state, "ab_state", i));
+
+            for(int n=0;n<num_effects;n++)
+              if (HASH_has_key_at(values_state,"value",n)){
+                plugin->ab_values[i][n] = HASH_get_float_at(values_state,"value",n);
+              } else{
+                RError("Non-release: Unknown key %s / %d while loading A/B values.\n", "value", n);
+              }
+            
+          }
         }
       }
       
