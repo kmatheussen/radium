@@ -946,9 +946,14 @@ static int show_gfx_message(vector_t *buttons, bool program_state_is_valid, QStr
 }
 
 int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const char *fmt,...){
-  if (buttons!=NULL)
-    R_ASSERT(THREADING_is_main_thread());
-
+  bool is_main_thread = THREADING_is_main_thread();
+  bool has_player_lock = PLAYER_current_thread_has_lock();
+  
+  if (buttons!=NULL){
+    R_ASSERT(is_main_thread);
+    R_ASSERT(!has_player_lock);
+  }
+  
   char message[1000];
   va_list argp;
   
@@ -959,14 +964,22 @@ int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const 
 
   R_ASSERT_NON_RELEASE(g_radium_runs_custom_exec==false);
 
+#if !defined(RELEASE)
   if (g_user_interaction_enabled==false){
-    const char *message2 = talloc_format("  TESTING. show_gfx_message: %s. Num buttons: %d. Autoreturning false.\n", message, buttons==NULL ? 0 : buttons->num_elements);
-    addMessage(message2);
-    puts(message2);
-    return 0;
+    if (is_main_thread){
+      const char *message2 = talloc_format("  TESTING. show_gfx_message: %s. Num buttons: %d. Autoreturning false.\n", message, buttons==NULL ? 0 : buttons->num_elements);
+      addMessage(message2);
+      puts(message2);
+      return 0;
+    }
   }
-  
-  if (!THREADING_is_main_thread() || g_num_running_resize_events > 0 || g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || g_radium_runs_custom_exec || QApplication::activeModalWidget()!=NULL || !g_curr_popup_qmenu.isNull() || QApplication::activePopupWidget()!=NULL || a_modal_widget_is_open()){
+#endif
+
+    
+  if (is_main_thread && has_player_lock==false)
+    EVENTLOG_add_event(talloc_strdup(message));
+
+  if (!is_main_thread || has_player_lock || g_num_running_resize_events > 0 || g_qt_is_painting || g_is_loading || g_qtgui_has_stopped==true || g_radium_runs_custom_exec || QApplication::activeModalWidget()!=NULL || !g_curr_popup_qmenu.isNull() || QApplication::activePopupWidget()!=NULL || a_modal_widget_is_open()){
     
     return SYSTEM_show_message_menu(buttons, message);
     

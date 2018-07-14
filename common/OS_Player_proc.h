@@ -58,7 +58,6 @@ extern LANGSPEC void RT_PLAYER_runner_unlock(void);
 
 extern LANGSPEC bool PLAYER_current_thread_has_lock(void);
 extern LANGSPEC bool PLAYER_someone_has_player_lock(void);
-extern LANGSPEC bool PLAYER_player_has_player_lock(void);
 
 extern LANGSPEC void StartPlayer(void);
 
