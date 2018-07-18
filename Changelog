@@ -1,3 +1,44 @@
+Changes 5.8.2 -> 5.8.4:
+* Program log: Add menu command to program log. Might help track down
+  some crashes reported by the crash reporter.
+* Sequencer: Options to configure granulation parameters for audio
+  files. Right click stretch area and select "Granulation parameters".
+* Sequencer: GUI to set gain/resampler type/granulation parameters
+  for audio files.
+* Instrument/load: Ignore A/B setting when the number of effects
+  have changed. This change also prevents the assertion window to
+  pop up, and possibly other problems.
+* Startup: Show message windows in safe mode during startup. Might
+  fix some crashes reported by the crash reporter.
+* Log: Log all messages shown in message windows.
+* Bottom bar: Hopefully fixed a crash happening when closing window
+  with bottom bars.
+* Editor: Add a separator between list of used fx and "New FX" in
+  the automation popup menu.
+* Internal: Same way to load and save instrument settings when
+  loading/saving song and loading/saving presets. Not enabled in
+  release mode yet.
+* Instrument: Option to save presets with embedded samples.
+* Presets: Save "pan" and "chance" in preset files.
+* MIDI: Fix crashes that could happen after selecting "Delete all
+  unused MIDI instruments"
+* API:
+  * New functions: setSeqblockGrainOverlap,
+    getSeqblockGrainOverlap, setSeqblockGrainLength,
+    getSeqblockGrainLength, setSeqblockGrainJitter,
+    getSeqblockGrainJitter, setSeqblockGrainRamp,
+    getSeqblockGrainRamp, getSeqblockResamplerType,
+    getSeqblockSeqtrackNum, getSeqblockSeqblockNum,
+    addSeqblockDeletedCallback, removeSeqblockDeletedCallback.
+  * Changed setSeqblockGain/getSeqblockGain/getMaxSeqblockSampleGain
+    to take seqblockid as parameter instead of
+    seqblocknum+seqtracknum.
+  * Make it possible to let the second argument for
+    gui_horizontalIntSlider/gui_horizontalSlider/
+    gui_verticalIntSlider/gui_verticalSlider be a function that
+    returns text, instead of text.
+
+
 Changes 5.8.1 -> 5.8.2:
 * Mixer: Fix error message showing up when right clicking in certain
   places.
