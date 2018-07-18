@@ -11,9 +11,6 @@ typedef struct _hash_t hash_t;
 struct _dynvec_t;
 typedef struct _dynvec_t dynvec_t;
 
-struct _func_t;
-typedef struct _func_t func_t;
-
 enum DynType{
   UNINITIALIZED_TYPE = 0, // Must be 0
   STRING_TYPE,

@@ -155,9 +155,12 @@ public slots:
       char temp[500];
       this->checkval = this->checkval==1?0:1; // switch value.
       sprintf(temp,python_command,checkval?"1":"0");
+      EVENTLOG_add_event(talloc_format("menu: %s", temp));
       DO_GFX(PyRun_SimpleString(temp));
-    }else
+    }else{
+      EVENTLOG_add_event(talloc_format("menu: %s", python_command));
       DO_GFX(PyRun_SimpleString(python_command));
+    }
     
     // closeRequester(); What?
     
