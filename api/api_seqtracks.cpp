@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "api_common_proc.h"
 
+#include "api_seqtracks_proc.h"
 #include "radium_proc.h"
 
 extern struct TEvent tevent;
@@ -755,41 +756,175 @@ float getSeqAutomationNodeY(int nodenum, int automationnum, int seqtracknum){
 
 
 
-// seqblock gain
+// seqblock gain and so forth
 /////////////////////////////
 
-void setSeqblockGain(float new_gain, int seqblocknum, int seqtracknum){
+static void maybe_make_seqblock_undo(int64_t seqblockid){
+  static int64_t last_seqblockid = -1;
+  static double last_undo_time = -1;
+  static int last_undo_num = -1;
+
+  double curr_time = TIME_get_ms();
+  int curr_undo_num = Undo_num_undos();
+
+  if (seqblockid != last_seqblockid)
+    goto do_undo;
+  
+  if (curr_time > last_undo_time+1000)
+    goto do_undo;
+
+  if (curr_undo_num != last_undo_num)
+    goto do_undo;
+
+  return;
+  
+ do_undo:  
+  undoSequencer();
+  last_undo_num = curr_undo_num + 1;
+  last_undo_time = curr_time;
+  last_seqblockid = seqblockid;
+}
+
+void setSeqblockGain(float new_gain, int64_t seqblockid){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
   if (seqblock==NULL)
     return;
 
-  undoSequencer();
+  maybe_make_seqblock_undo(seqblockid);
   SEQBLOCK_set_gain(seqtrack, seqblock, new_gain);
 }
 
-float getSeqblockGain(int seqblocknum, int seqtracknum){
+float getSeqblockGain(int64_t seqblockid){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
   if (seqblock==NULL)
     return 1.0;
 
   return SEQBLOCK_get_gain(seqtrack, seqblock);
 }
 
-float getMaxSeqblockSampleGain(int seqblocknum, int seqtracknum){
+float getMaxSeqblockSampleGain(int64_t seqblockid){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
   if (seqblock==NULL)
     return 1.0;
 
-  if (seqblock->block != NULL){
-    handleError("getMaxSeqblockSampleGain: seqblock %d in seqtrack %d does not hold an audio file.", seqblocknum, seqtracknum);
-    return 1.0;
-  }
-    
   return SEQBLOCK_get_max_sample_gain(seqtrack, seqblock);
 }
+
+void setSeqblockGrainOverlap(double new_gf, int64_t seqblockid){ //int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+  maybe_make_seqblock_undo(seqblockid);
+  SEQTRACKPLUGIN_set_grain_overlap(plugin, seqblock->sample_id, new_gf);
+}
+
+double getSeqblockGrainOverlap(int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return 2.0;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, 50);
+
+  return SEQTRACKPLUGIN_get_grain_overlap(plugin, seqblock->sample_id);
+}
+
+void setSeqblockGrainLength(double new_gf, int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+  maybe_make_seqblock_undo(seqblockid);
+  SEQTRACKPLUGIN_set_grain_length(plugin, seqblock->sample_id, new_gf);
+}
+
+double getSeqblockGrainLength(int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return 50.0;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, 50);
+
+  return SEQTRACKPLUGIN_get_grain_length(plugin, seqblock->sample_id);
+}
+
+void setSeqblockGrainJitter(double new_jitter, int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+  maybe_make_seqblock_undo(seqblockid);
+  SEQTRACKPLUGIN_set_grain_jitter(plugin, seqblock->sample_id, new_jitter);
+}
+
+double getSeqblockGrainJitter(int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return 50.0;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, 50);
+
+  return SEQTRACKPLUGIN_get_grain_jitter(plugin, seqblock->sample_id);
+}
+
+void setSeqblockGrainRamp(double new_ramp, int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+
+  maybe_make_seqblock_undo(seqblockid);
+  SEQTRACKPLUGIN_set_grain_ramp(plugin, seqblock->sample_id, new_ramp);
+}
+
+double getSeqblockGrainRamp(int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return 0.33;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, 0.33);
+
+  return SEQTRACKPLUGIN_get_grain_ramp(plugin, seqblock->sample_id);
+}
+
+int getSeqblockResamplerType(int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getAudioSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return RESAMPLER_SINC1;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)seqtrack->patch->patchdata;  
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, RESAMPLER_SINC1);
+
+  return SEQTRACKPLUGIN_get_resampler_type(plugin, seqblock->sample_id);
+}
+
 
 
 
@@ -2173,6 +2308,71 @@ int64_t getSeqblockId(int seqblocknum, int seqtracknum){
   return seqblock->id;
 }
 
+int getSeqblockSeqtrackNum(int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return -1;
+
+  return get_seqtracknum(seqtrack);
+}
+
+int getSeqblockSeqblockNum(int64_t seqblockid){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
+  if (seqblock==NULL)
+    return -1;
+
+  return get_seqblocknum(seqtrack, seqblock);
+}
+
+namespace{
+  struct SDC{
+    int64_t id;
+    func_t *callback;
+  };
+}
+static QVector<SDC> g_seqblock_deleted_callbacks;
+
+void addSeqblockDeletedCallback(int64_t seqblockid, func_t *callback){
+  s7extra_protect(callback);
+  SDC sdc = {seqblockid, callback};
+  g_seqblock_deleted_callbacks.push_back(sdc);
+}
+                                
+void removeSeqblockDeletedCallback(int64_t seqblockid, func_t *callback){
+  int i = 0;
+  for(auto &sdc : g_seqblock_deleted_callbacks){
+    if(seqblockid==sdc.id && callback==sdc.callback){
+      s7extra_unprotect(callback);
+      g_seqblock_deleted_callbacks.remove(i);
+      return;
+    }
+    i++;
+  }
+
+  handleError("removeSeqblockDeletedCallback: Could not find deleted callback for id #%d and callback %p\n", (int)seqblockid, callback);
+}
+
+void API_seqblock_has_been_deleted(int64_t seqblockid){
+  QVector<SDC> to_remove;
+  
+  for(auto &sdc : g_seqblock_deleted_callbacks){
+    if(seqblockid==sdc.id){
+      S7CALL(void_void, sdc.callback);
+      to_remove.push_back(sdc);
+    }
+  }
+
+  for(auto &sdc : to_remove)
+    removeSeqblockDeletedCallback(sdc.id, sdc.callback);
+}
+
+void API_all_seqblocks_have_been_deleted(void){
+  while(g_seqblock_deleted_callbacks.size() > 0)
+    API_seqblock_has_been_deleted(g_seqblock_deleted_callbacks[0].id);
+}
+  
 static void remove_unused_seqblocks_from_seqblocks_z_order(struct SeqTrack *seqtrack){
 
   QSet<int64_t> used;

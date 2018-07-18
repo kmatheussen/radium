@@ -82,7 +82,7 @@ private:
   
 public:
   
-  Granulator(int num_ch, GranulatorCallback *callback)
+  Granulator(int num_ch, double max_grain_size_in_seconds, double max_grain_frequency_in_seconds, GranulatorCallback *callback)
     : _num_ch(num_ch)
     , _clm_granulators((mus_any**)calloc(sizeof(mus_any*), num_ch))
       //, _curr_buffer((float**)calloc(sizeof(float*), num_ch))
@@ -90,12 +90,12 @@ public:
   {
 
     mus_float_t expansion = 1.0;
-    mus_float_t length = 0.15;
     mus_float_t scaler = 0.6;
+    mus_float_t grain_length = 0.05;
     mus_float_t hop = 0.05;
     mus_float_t ramp = 0.4;
     mus_float_t jitter = 1.0;
-    int max_size = 1;
+    //int max_size = 1;
 
     unsigned long seed = mus_rand_seed();
 
@@ -105,12 +105,12 @@ public:
       _buffers[ch].init(ch, callback);
       _clm_granulators[ch] = mus_make_granulate(Granulator::static_get_next_raw_sample,
                                                 expansion,
-                                                length,
+                                                grain_length,
                                                 scaler,
                                                 hop,
                                                 ramp,
                                                 jitter,
-                                                max_size,
+                                                (max_grain_size_in_seconds + max_grain_frequency_in_seconds) * pc->pfreq,
                                                 NULL,
                                                 &_buffers[ch]);
 

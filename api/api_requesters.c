@@ -283,7 +283,7 @@ void colorDialog(const char *initial_color, int64_t parentguinum, func_t* callba
 
 const_char* requestMidiPort(void){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return "";
-  char *ret = MIDIrequestPortName(window, g_requester, false, true);
+  const char *ret = MIDIrequestPortName(window, g_requester, false, true);
   if(ret==NULL)
     ret="";
   return ret;

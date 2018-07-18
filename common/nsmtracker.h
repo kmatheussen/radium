@@ -833,6 +833,8 @@ static inline const char *DYN_type_name(enum DynType type){
       return "ARRAY_TYPE";
     case RATIO_TYPE:
       return "RATIO_TYPE";
+    case FUNC_TYPE:
+      return "FUNC_TYPE";
     case BOOL_TYPE:
       return "BOOL_TYPE";
   }
@@ -881,6 +883,8 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
       return DYNVEC_equal(a1.array, a2.array);
     case RATIO_TYPE:
       return RATIO_equal(*a1.ratio, *a2.ratio);
+    case FUNC_TYPE:
+      return a1.func==a2.func;
     case BOOL_TYPE:
       return a1.bool_number==a2.bool_number;
   }
@@ -910,6 +914,12 @@ static inline dyn_t DYN_create_string_from_chars(const char *chars){
   return DYN_create_string_dont_copy(STRING_create(chars));
 }
 
+static inline dyn_t DYN_create_func(func_t *func){
+  dyn_t a;
+  a.type = FUNC_TYPE;
+  a.func = func;
+  return a;  
+}
 
 static inline bool DYN_check_type(const dyn_t dyn, enum DynType type, const char *error){
   if (dyn.type != type){

@@ -59,6 +59,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define FADE_IN_MS 2
 #endif
 
+#define MAX_GRAIN_LENGTH_IN_SECONDS 1.0
+#define MAX_GRAIN_FREQUENCY_IN_SECONDS 2.0
 
 //#define HOW_MUCH_NONSTRETCHED_TO_PREPARE (0.05 * 0.015
 //#define HOW_MUCH_NONSTRETCHED_TO_PREPARE_BEFORE_STARTING 0.2
@@ -121,11 +123,11 @@ public:
     radium::Resampler *_resampler;
     radium::SampleReader *_reader;
 
-    ResamplerData(int ch, radium::SampleReader *reader)
+    ResamplerData(int ch, enum ResamplerType resampler_type, radium::SampleReader *reader)
       : _ch(ch)
       , _reader(reader)
     {
-      _resampler = RESAMPLER_create(ResamplerData::RT_src_callback, 1, this, RESAMPLER_SINC1);
+      _resampler = RESAMPLER_create(ResamplerData::RT_src_callback, 1, this, resampler_type);
       _buffer = (float*)calloc(sizeof(float), RESAMPLER_BUFFER_SIZE);
     }
 
@@ -151,17 +153,17 @@ public:
   double _resampler_ratio = 1.0; // Note: Must be set between processing buffers so that channels aren't resampled differently.
 
 
-  MyReader(radium::SampleReader *reader)
+  MyReader(radium::SampleReader *reader, enum ResamplerType resampler_type)
     : _reader(reader)
     , _num_ch(SAMPLEREADER_get_num_channels(reader))
-    , _granulator(_num_ch, this)
+    , _granulator(_num_ch, MAX_GRAIN_LENGTH_IN_SECONDS, MAX_GRAIN_FREQUENCY_IN_SECONDS, this)
   {
     
     SMOOTH_init(&_volume, 0.0f, MIXER_get_buffer_size());
     
     _resamplers = (ResamplerData**)calloc(sizeof(ResamplerData*), _num_ch);
     for(int ch=0 ; ch<_num_ch ; ch++)
-      _resamplers[ch] = new ResamplerData(ch, reader);
+      _resamplers[ch] = new ResamplerData(ch, resampler_type, reader);
 
     double samplerate = SAMPLEREADER_get_samplerate(reader);
 
@@ -541,10 +543,20 @@ struct Sample{
 
   radium::DiskPeaks *_peaks;
 
+  enum ResamplerType _resampler_type;
+    
   radium::GcHolder<const struct SeqBlock> _seqblock;
   Seqblock_Type _type;
   
   float _pitch = 1.0;
+
+  double _grain_overlap = 2;
+  double _grain_length = 50; // in ms
+  double _grain_jitter = 1.0;
+  double _grain_ramp = 0.33;
+  double _grain_volume_compensation = 1.0;
+  
+  DEFINE_ATOMIC(bool, _has_updates) = true;
   
   const int _num_ch;
   const int64_t _total_num_frames_in_sample;
@@ -561,12 +573,13 @@ struct Sample{
 
   radium::LockAsserter lockAsserter;
   
-  Sample(const wchar_t *filename, radium::SampleReader *reader1, radium::SampleReader *reader2, const struct SeqBlock *seqblock, Seqblock_Type type)
+  Sample(const wchar_t *filename, radium::SampleReader *reader1, radium::SampleReader *reader2, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type)
     : _filename(wcsdup(filename))
       //, _reader(NULL) //new MyReader(reader))
       //, _fade_out_reader(new MyReader(fade_out_reader))
     , _reader_holding_permanent_samples(SAMPLEREADER_create(filename))
     , _peaks(DISKPEAKS_get(filename))
+    , _resampler_type(resampler_type)
     , _seqblock(seqblock)
     , _type(type)
     , _num_ch(SAMPLEREADER_get_num_channels(reader1))
@@ -589,8 +602,8 @@ struct Sample{
 
     // prepare readers.
     {
-      _free_readers.push_back(new MyReader(reader1));
-      _free_readers.push_back(new MyReader(reader2));
+      _free_readers.push_back(new MyReader(reader1, _resampler_type));
+      _free_readers.push_back(new MyReader(reader2, _resampler_type));
 
       _num_readers = 2;
 
@@ -766,7 +779,7 @@ struct Sample{
       if (samplereader==NULL)
         return;
       //printf("     =========SAMPLE c/d: Alloced 2: %p\n", samplereader);
-      allocated_reader = new MyReader(samplereader); // light operation
+      allocated_reader = new MyReader(samplereader, _resampler_type); // light operation
     }
     
     MyReader *reader;
@@ -918,8 +931,52 @@ struct Sample{
       for(int ch=0;ch<_num_ch;ch++)
         mus_set_increment(_curr_reader->_granulator._clm_granulators[ch], _seqblock->t.stretch);
 
+      if (true || ATOMIC_COMPARE_AND_SET_BOOL(_has_updates, true, false)){ // TODO: Fix the _has_updates thing.
+        
+        double grain_length = _grain_length * pc->pfreq / 1000.0; // in samples
+        double grain_frequency = grain_length / _grain_overlap; // in samples
+        
+        double grain_jitter = _grain_jitter;
+        double grain_ramp = _grain_ramp * grain_length;
+        
+        if (grain_length > MAX_GRAIN_LENGTH_IN_SECONDS*pc->pfreq){
+#if !defined(RELEASE)
+          printf("    RT: Illegal grain length: %f > %f\n", grain_length, MAX_GRAIN_LENGTH_IN_SECONDS*pc->pfreq);
+#endif
+          grain_length = MAX_GRAIN_LENGTH_IN_SECONDS*pc->pfreq;
+        }
+        
+        if (grain_frequency > MAX_GRAIN_FREQUENCY_IN_SECONDS*pc->pfreq){
+#if !defined(RELEASE)
+          printf("    RT: Illegal grain frequency: %f > %f\n", grain_length, MAX_GRAIN_FREQUENCY_IN_SECONDS*pc->pfreq);
+#endif
+          grain_frequency = MAX_GRAIN_FREQUENCY_IN_SECONDS*pc->pfreq;
+        }
+        
+        for(int ch=0;ch<_num_ch;ch++){
+          mus_set_hop(_curr_reader->_granulator._clm_granulators[ch], grain_frequency);
+          mus_set_length(_curr_reader->_granulator._clm_granulators[ch], grain_length);
+          mus_set_offset(_curr_reader->_granulator._clm_granulators[ch], grain_jitter);
+          mus_set_ramp(_curr_reader->_granulator._clm_granulators[ch], grain_ramp);
+        }
+
+        /*
+        double ramp = 0.4;
+        double grain_frequency2 = grain_frequency*1000;
+        double grain_length2 = grain_length * 1000.0 / (double)pc->pfreq;
+        grain_length2 = grain_length2 * (1.0 - ramp);
+        
+        double grain_often = grain_frequency2 / grain_length2;
+        _grain_volume_compensation = R_MIN(pow(grain_often, 0.3), 1.0);
+        */
+        
+#if !defined(RELEASE)
+        //printf("   Grain volume compensation: %f (frequency: %f / Length: %f). grain_often: %f.\n", _grain_volume_compensation, grain_frequency2, grain_length2, grain_often);
+#endif        
+      }
+      
       // Set volume
-      _curr_reader->set_volume(_seqblock->curr_gain);
+      _curr_reader->set_volume(_seqblock->curr_gain * _grain_volume_compensation);
 
       // Add samples
       _curr_reader->RT_add_samples(num_frames, outputs);
@@ -1425,7 +1482,7 @@ static void set_num_visible_outputs(SoundPlugin *plugin){
   plugin->num_visible_outputs = new_visible_channels;
 }
 
-static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqBlock *seqblock, enum Seqblock_Type type){
+static int64_t add_sample(Data *data, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, enum Seqblock_Type type){
   R_ASSERT(THREADING_is_main_thread());
   
   radium::SampleReader *reader1 = SAMPLEREADER_create(filename);
@@ -1448,7 +1505,7 @@ static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqB
 
   //printf("     =========SAMPLE c/d: Alloced 4: %p\n", reader2);
   
-  Sample *sample = new Sample(filename, reader1, reader2, seqblock, type);
+  Sample *sample = new Sample(filename, reader1, reader2, resampler_type, seqblock, type);
 
   switch(type){ 
   case Seqblock_Type::REGULAR:
@@ -1469,7 +1526,7 @@ static int64_t add_sample(Data *data, const wchar_t *filename, const struct SeqB
   return sample->_id;
 }
 
-int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock, Seqblock_Type type){
+int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, SoundPlugin *plugin, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type){
   R_ASSERT(THREADING_is_main_thread());
   
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
@@ -1479,7 +1536,7 @@ int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, SoundPlugin *plugin
   if (type==Seqblock_Type::RECORDING)
     return INITIAL_RECORDER_ID;
 
-  int64_t ret = add_sample(data, filename, seqblock, type);
+  int64_t ret = add_sample(data, filename, resampler_type, seqblock, type);
 
   //printf("   ADD (is_gfx: %d). NUM samples: %d.  NUM gfx samples: %d\n", is_gfx, data->_samples.size(), data->_gfx_samples.size());
 
@@ -1855,6 +1912,21 @@ radium::Peaks **SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id){
   return sample->_peaks->_peaks;
 }
 
+/*
+void SEQTRACKPLUGIN_set_resampler_ratio(const SoundPlugin *plugin, int64_t id, double new_ratio){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 1.0);
+
+  if (id <= HIGHEST_RECORDER_ID)
+    return 1.0;
+  
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return 1.0;
+
+  return sample->_resampler_ratio;
+}
+*/
+
 double SEQTRACKPLUGIN_get_resampler_ratio(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 1.0);
 
@@ -1868,6 +1940,104 @@ double SEQTRACKPLUGIN_get_resampler_ratio(const SoundPlugin *plugin, int64_t id)
   return sample->_resampler_ratio;
 }
 
+void SEQTRACKPLUGIN_set_grain_overlap(SoundPlugin *plugin, int64_t id, double new_gf){
+  R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return;
+  safe_double_write(&sample->_grain_overlap, new_gf); //R_MAX(0.000001, new_gf / 1000.0f));
+  ATOMIC_SET(sample->_has_updates, true);
+  
+  printf("  SETTING it to %f\n", sample->_grain_overlap);
+}
+
+double SEQTRACKPLUGIN_get_grain_overlap(const struct SoundPlugin *plugin, int64_t id){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 50);
+
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return 50;
+  
+  return safe_double_read(&sample->_grain_overlap); // * 1000.0f;
+}
+    
+void SEQTRACKPLUGIN_set_grain_length(SoundPlugin *plugin, int64_t id, double new_gf){
+  R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return;
+  safe_double_write(&sample->_grain_length, new_gf); //R_MAX(1, new_gf * (double)pc->pfreq / 1000.0));
+  ATOMIC_SET(sample->_has_updates, true);
+  
+  printf("  SETTING length to %f\n", new_gf);
+}
+
+double SEQTRACKPLUGIN_get_grain_length(const struct SoundPlugin *plugin, int64_t id){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 50);
+
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return 50;
+  
+  return (double)safe_double_read(&sample->_grain_length);// * 1000.0 / (double)pc->pfreq;
+}
+    
+void SEQTRACKPLUGIN_set_grain_jitter(struct SoundPlugin *plugin, int64_t id, double new_gf){
+  R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return;
+  safe_double_write(&sample->_grain_jitter, R_BOUNDARIES(0, new_gf, 1));
+  ATOMIC_SET(sample->_has_updates, true);
+  
+  printf("  SETTING jitter to %f\n", sample->_grain_jitter);
+}
+
+double SEQTRACKPLUGIN_get_grain_jitter(const struct SoundPlugin *plugin, int64_t id){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 50);
+
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return 50;
+  
+  return safe_double_read(&sample->_grain_jitter);
+}
+    
+void SEQTRACKPLUGIN_set_grain_ramp(struct SoundPlugin *plugin, int64_t id, double new_gf){
+  R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return;
+  safe_double_write(&sample->_grain_ramp, R_BOUNDARIES(0, new_gf, 0.5));
+  ATOMIC_SET(sample->_has_updates, true);
+  
+  printf("  SETTING ramp to %f\n", sample->_grain_ramp);
+}
+
+double SEQTRACKPLUGIN_get_grain_ramp(const struct SoundPlugin *plugin, int64_t id){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 33.3);
+
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return 33.3;
+  
+  return safe_double_read(&sample->_grain_ramp);
+}
+    
+enum ResamplerType SEQTRACKPLUGIN_get_resampler_type(const struct SoundPlugin *plugin, int64_t id){
+  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), RESAMPLER_SINC1);
+
+  Sample *sample = get_sample(plugin, id, true, true, true);
+  if (sample==NULL)
+    return RESAMPLER_SINC1;
+
+  return sample->_resampler_type;
+}
+    
 /*
 void SEQTRACKPLUGIN_set_interior_start(struct SoundPlugin *plugin, int64_t id, int64_t interior_start){
   R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));

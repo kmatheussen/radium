@@ -11,6 +11,8 @@ typedef struct _hash_t hash_t;
 struct _dynvec_t;
 typedef struct _dynvec_t dynvec_t;
 
+struct _func_t;
+typedef struct _func_t func_t;
 
 enum DynType{
   UNINITIALIZED_TYPE = 0, // Must be 0
@@ -20,6 +22,7 @@ enum DynType{
   HASH_TYPE,
   ARRAY_TYPE,
   RATIO_TYPE,
+  FUNC_TYPE,
   BOOL_TYPE // must be placed last (see below)
 };
 
@@ -34,6 +37,7 @@ typedef struct{
     hash_t *hash;
     dynvec_t *array;
     Ratio *ratio;
+    func_t *func;
     bool bool_number;
   };
 } dyn_t;

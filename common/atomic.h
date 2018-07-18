@@ -194,6 +194,10 @@ static inline void safe_float_write(float *pos, float value){
   *pos = value;
 }
 
+static inline void safe_double_write(double *pos, double value){
+  *pos = value;
+}
+
 static inline void safe_volatile_float_write(volatile float *pos, float value){
   *pos = value;
 }
@@ -203,6 +207,10 @@ static inline float safe_volatile_float_read(volatile const float *pos){
 }
 
 static inline float safe_float_read(const float *pos){
+  return *pos;
+}
+
+static inline double safe_double_read(const double *pos){
   return *pos;
 }
 

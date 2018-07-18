@@ -2988,21 +2988,26 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     bool _is_int;
     QString _text;
+    func_t *_get_text;
     double _min,_max;
     QVector<func_t*> _funcs;
     
   public:
     
-    Slider(Qt::Orientation orientation, const char *text, double min, double curr, double max, bool is_int)
+    Slider(Qt::Orientation orientation, const wchar_t *text, func_t *get_text, double min, double curr, double max, bool is_int)
       : MyQSlider(orientation)
       , Gui(this)
       , _is_int(is_int)
-      , _text(text)
+      , _text(STRING_get_qstring(text))
+      , _get_text(get_text)
       , _min(min)
       , _max(max)
     {
 
       R_ASSERT(min!=max);
+
+      if (_get_text != NULL)
+        s7extra_protect(_get_text);
 
       if (orientation==Qt::Vertical){ // Weird Qt vertical slider behavor.
         double temp = max;
@@ -3030,21 +3035,33 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     ~Slider(){
       for(func_t *func : _funcs)
         s7extra_unprotect(func);
+
+      if (_get_text != NULL)
+        s7extra_unprotect(_get_text);
     }
 
     OVERRIDERS(MyQSlider);
+
+    void set_get_text_func(func_t *get_text){
+      _get_text = get_text;
+    }
     
     void value_setted(int value){
       ScopedEventHandlerTracker event_handler_tracker;
 
       double scaled_value = scale_double(value, minimum(), maximum(), _min, _max);
+
+      if (_get_text != NULL)
+        SLIDERPAINTER_set_string(_painter, S7CALL(charpointer_dyn, _get_text, DYN_create_float(scaled_value)));
       
       if (_is_int) {
-        SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value));
+        if (_get_text == NULL)
+          SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value));
         for(func_t *func : _funcs)
           S7CALL(void_int,func, scaled_value);
       } else {
-        SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value, 'f', 2));
+        if (_get_text == NULL)
+          SLIDERPAINTER_set_string(_painter, _text + QString::number(scaled_value, 'f', 2));
         for(func_t *func : _funcs)
           S7CALL(void_double,func, scaled_value);
       }
@@ -3112,6 +3129,21 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QLabel);
   };
 
+  static int64_t create_slider(Qt::Orientation orientation, dyn_t textorfunc, double min, double curr, double max, bool is_int){
+    const wchar_t *text = L"";
+    func_t *get_text = NULL;
+    
+    if (textorfunc.type==STRING_TYPE)
+      text = textorfunc.string;
+    else if (textorfunc.type==FUNC_TYPE)
+      get_text = textorfunc.func;
+    else {
+      handleError("Create slider: 'textorfunc' must be text or function. Found %s", DYN_type_name(textorfunc.type));
+      return -1;
+    }
+    return (new radium_gui::Slider(orientation, text, get_text, min, curr, max, is_int))->get_gui_num();
+  }
+  
   struct MyFocusSnifferQLineEdit : FocusSnifferQLineEdit{
     Q_OBJECT;
   public:
@@ -4291,38 +4323,39 @@ int64_t gui_radiobutton(const_char *text, bool is_checked){
   return (new RadioButton(text, is_checked))->get_gui_num();
 }
 
-int64_t gui_horizontalIntSlider(const_char *text, int min, int curr, int max){
+int64_t gui_horizontalIntSlider(dyn_t textorfunc, int min, int curr, int max){
   if(min==max){
     handleError("Gui slider: minimum and maximum value is the same");
     return -1;
   }
   //return -1;
-  return (new radium_gui::Slider(Qt::Horizontal, text, min, curr, max, true))->get_gui_num();
+  return create_slider(Qt::Horizontal, textorfunc, min, curr, max, true);
 }
-int64_t gui_horizontalSlider(const_char *text, double min, double curr, double max){
+int64_t gui_horizontalSlider(dyn_t textorfunc, double min, double curr, double max){
   if(min==max){
     handleError("Gui slider: minimum and maximum value is the same");
     return -1;
   }
   //return -1;
-  return (new radium_gui::Slider(Qt::Horizontal, text, min, curr, max, false))->get_gui_num();
+  return create_slider(Qt::Horizontal, textorfunc, min, curr, max, false);
 }
-int64_t gui_verticalIntSlider(const_char *text, int min, int curr, int max){
+int64_t gui_verticalIntSlider(dyn_t textorfunc, int min, int curr, int max){
   if(min==max){
     handleError("Gui slider: minimum and maximum value is the same");
     return -1;
   }
   //return -1;
-  return (new radium_gui::Slider(Qt::Vertical, text, min, curr, max, true))->get_gui_num();
+  return create_slider(Qt::Vertical, textorfunc, min, curr, max, true);
 }
-int64_t gui_verticalSlider(const_char *text, double min, double curr, double max){
+int64_t gui_verticalSlider(dyn_t textorfunc, double min, double curr, double max){
   if(min==max){
     handleError("Gui slider: minimum and maximum value is the same");
     return -1;
   }
   //return -1;
-  return (new radium_gui::Slider(Qt::Vertical, text, min, curr, max, false))->get_gui_num();
+  return create_slider(Qt::Vertical, textorfunc, min, curr, max, false);
 }
+
 
 int64_t gui_verticalLayout(void){
   //return -1;

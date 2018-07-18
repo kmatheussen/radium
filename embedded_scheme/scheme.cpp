@@ -349,6 +349,9 @@ static dyn_t create_dyn_from_s7(s7_scheme *s7, s7_pointer s, bool undefinedIsErr
     return DYN_create_array(vec);
   }    
 
+  if (s7_is_procedure(s))
+    return DYN_create_func((func_t*)s);
+  
   if(undefinedIsError){
     //if (g_user_interaction_enabled==false)
     //  abort(); // Something is wrong with the script. Call abort here to get backtrace.
@@ -510,6 +513,8 @@ s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
       return dynvec_to_s7(radiums7_sc, *dyn.array);
     case RATIO_TYPE:
       return s7_make_ratio(radiums7_sc, dyn.ratio->numerator, dyn.ratio->denominator);
+    case FUNC_TYPE:
+      return (s7_pointer)dyn.func;
     case BOOL_TYPE:
       return s7_make_boolean(radiums7_sc, dyn.bool_number);
   }
@@ -1231,6 +1236,28 @@ int64_t s7extra_callFunc_int_int_dyn(const func_t *func, int64_t arg1, const dyn
 
 int64_t s7extra_callFunc2_int_int_dyn(const char *funcname, int64_t arg1, const dyn_t arg2){
   return s7extra_callFunc_int_int_dyn((const func_t*)find_scheme_value(s7, funcname), arg1, arg2);
+}
+
+const char *s7extra_callFunc_charpointer_dyn(const func_t *func, const dyn_t arg1){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              s7_list(s7,
+                                      2,
+                                      (s7_pointer)func,
+                                      Protect(s7extra_make_dyn(s7, arg1)).v
+                                      )
+                              );
+  if(!s7_is_string(ret)){
+    handleError("Callback did not return an integer");
+    return "";
+  }else{
+    return talloc_strdup(s7_string(ret));
+  }
+}
+
+const char *s7extra_callFunc2_charpointer_dyn(const char *funcname, const dyn_t arg1){
+  return s7extra_callFunc_charpointer_dyn((const func_t*)find_scheme_value(s7, funcname), arg1);
 }
 
 void s7extra_protect(void *v){

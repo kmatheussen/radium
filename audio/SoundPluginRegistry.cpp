@@ -680,7 +680,7 @@ void PR_init_plugin_types(void){
 
     static bool has_run = false;
     if (has_run==false){
-      GFX_ShowProgressMessage("Adding LADSPA plugins... (This could take some time if realtime virus scanning is enabled)");
+      GFX_ShowProgressMessage("Adding LADSPA plugins... (This may take some time if realtime virus scanning is enabled)");
       has_run = true;
     } else {
       GFX_ShowProgressMessage("Adding LADSPA plugins...");

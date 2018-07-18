@@ -6257,7 +6257,11 @@
                                                   (set! new-seqblocks-state (maybe-add-autofades new-seqblocks-state seqblocknum))
                                                   (when new-seqblocks-state
                                                     (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
-                                                    (<ra> :apply-gfx-seqblocks seqtracknum)))))        
+                                                    (<ra> :apply-gfx-seqblocks seqtracknum))))
+                                          (list "Granulation parameters"
+                                                :enabled (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum)))
+                                                (lambda ()
+                                                  (create-audio-seqblock-gui seqblocknum seqtracknum))))
                               #t)))))))
 
 (define (split-sample-seqblock pos seqtracknum seqblocknum)
@@ -6421,7 +6425,7 @@
                                           (let ((get-old-gain (lambda ()
                                                                 (db-to-text (if (and seqblocknum
                                                                                      (not blocknum))
-                                                                                (<ra> :gain-to-db (<ra> :get-seqblock-gain seqblocknum seqtracknum))
+                                                                                (<ra> :gain-to-db (<ra> :get-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum)))
                                                                                 0.0)
                                                                             #t))))
                                             (list
@@ -6432,23 +6436,25 @@
                                                (define new (<ra> :request-float (<-> "New gain (now: " (get-old-gain) ")")
                                                                  -1000
                                                                  1000))
-                                               (<ra> :set-seqblock-gain (<ra> :db-to-gain new) seqblocknum seqtracknum))))
+                                               (<ra> :set-seqblock-gain (<ra> :db-to-gain new) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))
 
                                           (let* ((is-enabled (and seqblocknum
                                                                   (not blocknum)))
                                                  (get-normalized-gain (lambda ()
                                                                         (if is-enabled
-                                                                            (let ((max-gain (<ra> :get-max-seqblock-sample-gain seqblocknum seqtracknum)))
-                                                                              (if (> max-gain 0)
-                                                                                  (/ 1.0 max-gain)
-                                                                                  100))
+                                                                            (get-normalized-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                                             1.0))))
                                             (list
                                              (<-> "Set normalized gain (" (db-to-text (<ra> :gain-to-db (get-normalized-gain)) #t) ")")
                                              :enabled is-enabled
                                              (lambda ()
-                                               (<ra> :set-seqblock-gain (get-normalized-gain) seqblocknum seqtracknum))))
-                                           
+                                               (<ra> :set-seqblock-gain (get-normalized-gain) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))
+
+                                          (list "Preferences"
+                                                :enabled (and seqblocknum (not blocknum))
+                                                (lambda ()
+                                                  (create-audio-seqblock-gui seqblocknum seqtracknum)))
+                              
                                           "--------------------"
                                           
                                           (list (if (> (<ra> :get-num-selected-seqblocks) 1)

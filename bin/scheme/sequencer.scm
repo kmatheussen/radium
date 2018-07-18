@@ -12,6 +12,12 @@
 (define *curr-seqtrack-color* (ra:gui_mix-colors *current-mixer-strip-border-color* "black" 0.6))
 ;;(define *curr-seqtrack-color* (<gui> :mix-colors *current-mixer-strip-border-color* "white" 0.92))
 
+(define (get-normalized-seqblock-gain seqblockid)
+  (let ((max-gain (<ra> :get-max-seqblock-sample-gain seqblockid)))
+    (if (> max-gain 0)
+        (/ 1.0 max-gain)
+        100)))
+
 (define (get-seqtrack-background-color gui seqtracknum)
   (if (not (<ra> :seqtrack-for-audiofiles seqtracknum))
       *curr-seqtrack-color*
