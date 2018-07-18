@@ -111,6 +111,9 @@ cd ..
 
 rm -fr sndlib
 tar xvzf sndlib.tar.gz
+cd sndlib
+patch -p0 <../sndlib.patch
+cd ..
 
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/

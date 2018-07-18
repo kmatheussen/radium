@@ -1,0 +1,34 @@
+--- clm.c	2017-11-30 20:03:30.000000000 +0100
++++ clm_new.c	2018-07-18 14:07:47.488878939 +0200
+@@ -13786,6 +13786,12 @@
+ static mus_long_t grn_set_location(mus_any *ptr, mus_long_t val) {((grn_info *)ptr)->randx = (unsigned long)val; return(val);}
+ 
+ static mus_float_t grn_jitter(mus_any *ptr) {return(((grn_info *)ptr)->jitter);}
++static mus_float_t grn_set_jitter(mus_any *ptr, mus_float_t val){
++  grn_info *gen = (grn_info *)ptr;
++  gen->jitter = val;
++  gen->s20 = 2 * (int)(val * gen->output_hop);
++  gen->s50 = (int)(val * gen->output_hop * 0.4);
++}
+ 
+ static mus_float_t run_granulate(mus_any *ptr, mus_float_t unused1, mus_float_t unused2) {return(mus_granulate(ptr, NULL));}
+ 
+@@ -13830,7 +13836,7 @@
+   MUS_NOT_SPECIAL,
+   &grn_closure,
+   0,
+-  &grn_jitter, 0, 0, 0, 0, 0, 
++  &grn_jitter, &grn_set_jitter, 0, 0, 0, 0, 
+   &grn_hop, &grn_set_hop, 
+   &grn_ramp, &grn_set_ramp,
+   0, 0, 0, 0, 
+@@ -13882,7 +13888,8 @@
+   spd->s50 = (int)(jitter * sampling_rate * hop * 0.4);
+   spd->out_data_len = outlen;
+   spd->out_data = (mus_float_t *)calloc(spd->out_data_len, sizeof(mus_float_t));
+-  spd->in_data_len = outlen + spd->s20 + 1;
++  //spd->in_data_len = outlen + spd->s20 + 1;
++  spd->in_data_len = outlen + (sampling_rate * hop) + 1;
+   spd->in_data = (mus_float_t *)malloc(spd->in_data_len * sizeof(mus_float_t));
+   spd->rd = input; 
+   spd->block_rd = NULL;
