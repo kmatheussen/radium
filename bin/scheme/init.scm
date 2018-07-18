@@ -536,6 +536,7 @@
   (my-require 'mouse.scm)
   (my-require 'mixer-strips.scm)
   (my-require 'pluginmanager.scm)
+  (my-require 'seqblock_audio.scm)
 
   (assert-functions-called-from-evalScheme)
 

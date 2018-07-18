@@ -540,6 +540,85 @@ struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct Se
   return (*seqtrack)->seqblocks.elements[seqblocknum];
 }
 
+struct SeqBlock *getAudioSeqblockFromNum(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return NULL;
+
+  if (seqblocknum < 0 || seqblocknum >= seqtrack->seqblocks.num_elements){
+    handleError("Sequencer block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+    return NULL;
+  }
+
+  struct SeqBlock *seqblock = seqtrack->seqblocks.elements[seqblocknum];
+  if (seqblock->block!=NULL){
+    handleError("Sequencer block #%d in sequencer track %d is not an audio file", seqblocknum, seqtracknum);
+    return NULL;
+  }
+
+  return seqblock;
+}
+
+struct SeqBlock *getAudioSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack){
+  (*seqtrack) = getAudioSeqtrackFromNum(seqtracknum);
+  if ((*seqtrack)==NULL)
+    return NULL;
+
+  if (seqblocknum < 0 || seqblocknum >= (*seqtrack)->seqblocks.num_elements){
+    handleError("Sequencer block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+    return NULL;
+  }
+
+  struct SeqBlock *seqblock = (*seqtrack)->seqblocks.elements[seqblocknum];
+  if (seqblock->block!=NULL){
+    handleError("Sequencer block #%d in sequencer track %d is not an audio file", seqblocknum, seqtracknum);
+    return NULL;
+  }
+
+  return seqblock;
+}
+
+struct SeqBlock *getSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
+  VECTOR_FOR_EACH(struct SeqTrack *seqtrack2, &root->song->seqtracks){
+    VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack2->seqblocks){
+      if (seqblock->id == seqblock_id){
+        *seqtrack = seqtrack2;
+        return seqblock;
+      }
+    }END_VECTOR_FOR_EACH;
+  }END_VECTOR_FOR_EACH;
+
+  handleError("Sequencer block with id #%d not found", (int)seqblock_id);
+  
+  return NULL;
+}
+  
+                                      
+struct SeqBlock *getSeqblockFromId(int64_t seqblock_id){
+  struct SeqTrack *seqtrack;
+  return getSeqblockFromIdA(seqblock_id, &seqtrack);
+}
+
+struct SeqBlock *getAudioSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblock_id, seqtrack);
+  if (seqblock==NULL)
+    return NULL;
+
+  if (seqblock->block!=NULL){
+    handleError("Sequencer block with id #%d is not an audio file", (int)seqblock_id);
+    return NULL;
+  }
+
+  return seqblock;
+
+}
+
+struct SeqBlock *getAudioSeqblockFromId(int64_t seqblock_id){
+  struct SeqTrack *seqtrack;
+  return getAudioSeqblockFromIdA(seqblock_id, &seqtrack);
+}
+
+
 struct SeqBlock *getGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack){
   (*seqtrack) = getSeqtrackFromNum(seqtracknum);
   if ((*seqtrack)==NULL)

@@ -44,7 +44,7 @@ extern LANGSPEC void SEQTRACKPLUGIN_prepare_to_play(struct SoundPlugin *plugin, 
 extern LANGSPEC vector_t SEQTRACKPLUGIN_get_all_used_audio_filenames(struct SoundPlugin *plugin);
   
 extern LANGSPEC void SEQTRACKPLUGIN_clear_resampler_warning_hashmap(void);
-extern LANGSPEC int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *filename, const struct SeqBlock *seqblock, enum Seqblock_Type type);
+extern LANGSPEC int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, enum Seqblock_Type type);
 
 extern LANGSPEC void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *path); // Called when user enables the "R" checkbox.
 extern LANGSPEC bool SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin); // Called when user disables the "R" checkbox.
@@ -64,6 +64,17 @@ extern LANGSPEC unsigned int SEQTRACKPLUGIN_get_sample_color(const struct SoundP
 //extern LANGSPEC unsigned int SEQTRACKPLUGIN_get_sample_color(const struct SoundPlugin *plugin, int64_t id);
 //extern LANGSPEC void SEQTRACKPLUGIN_set_sample_color(const SoundPlugin *plugin, int64_t id, unsigned int new_color);
 extern LANGSPEC double SEQTRACKPLUGIN_get_resampler_ratio(const struct SoundPlugin *plugin, int64_t id);
+
+extern LANGSPEC void SEQTRACKPLUGIN_set_grain_overlap(struct SoundPlugin *plugin, int64_t id, double new_gf);
+extern LANGSPEC double SEQTRACKPLUGIN_get_grain_overlap(const struct SoundPlugin *plugin, int64_t id);
+extern LANGSPEC void SEQTRACKPLUGIN_set_grain_length(struct SoundPlugin *plugin, int64_t id, double new_gf);
+extern LANGSPEC double SEQTRACKPLUGIN_get_grain_length(const struct SoundPlugin *plugin, int64_t id);
+extern LANGSPEC void SEQTRACKPLUGIN_set_grain_jitter(struct SoundPlugin *plugin, int64_t id, double new_jitter);
+extern LANGSPEC double SEQTRACKPLUGIN_get_grain_jitter(const struct SoundPlugin *plugin, int64_t id);
+extern LANGSPEC void SEQTRACKPLUGIN_set_grain_ramp(struct SoundPlugin *plugin, int64_t id, double new_ramp);
+extern LANGSPEC double SEQTRACKPLUGIN_get_grain_ramp(const struct SoundPlugin *plugin, int64_t id);
+
+extern LANGSPEC enum ResamplerType SEQTRACKPLUGIN_get_resampler_type(const struct SoundPlugin *plugin, int64_t id);
 
 #ifdef __cplusplus
 namespace radium{

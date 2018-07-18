@@ -142,6 +142,9 @@ extern "C" {
   int64_t s7extra_callFunc_int_int_dyn(const func_t *func, int64_t arg1, const dyn_t arg2);
   int64_t s7extra_callFunc2_int_int_dyn(const char *funcname, int64_t arg1, const dyn_t arg2);
 
+  const char *s7extra_callFunc_charpointer_dyn(const func_t *func, const dyn_t arg1);
+  const char *s7extra_callFunc2_charpointer_dyn(const char *funcname, const dyn_t arg1);
+
   void s7extra_callFunc_void_charpointer(const func_t *func, const char* arg1);
 
   func_t *s7extra_get_func_from_funcname_for_storing(const char *funcname); // Must be used when storing the pointer. (gc-protected) Must NOT be used if the function is called again and again. (leaks memory)

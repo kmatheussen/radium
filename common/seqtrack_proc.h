@@ -413,6 +413,10 @@ static inline int get_seqtracknum(const struct SeqTrack *seqtrack){
   return VECTOR_find_pos(&root->song->seqtracks, seqtrack);
 }
 
+static inline int get_seqblocknum(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  return VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
+}
+
 #if defined(USE_QT4) && defined(QSTRING_H)
 
 struct SoundPlugin;

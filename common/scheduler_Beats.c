@@ -108,7 +108,7 @@ static int64_t RT_scheduled_Beat(struct SeqTrack *seqtrack, int64_t time, union 
   const struct SeqBlock *seqblock = args[0].const_pointer;
 
   Beat_Iterator *iterator = &seqtrack->beat_iterator;
-  R_ASSERT_RETURN_IF_FALSE2(iterator->is_active==true, DONT_RESCHEDULE);
+  R_ASSERT_RETURN_IF_FALSE2(iterator->is_active==true, DONT_RESCHEDULE); // Gotten one hit from this assertion via the crash reporter (linux, not custom build)). Don't know how that it is possible.
 
   if(iterator->play_id != ATOMIC_GET(pc->play_id)){
     R_ASSERT(false);

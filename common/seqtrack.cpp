@@ -55,7 +55,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SampleReader_proc.h"
 #include "../audio/Peaks.hpp"
 
+#include "../api/api_seqtracks_proc.h"
+
+
 #include "seqtrack_proc.h"
+
 
 static int seqblocks_comp(const void *a, const void *b){
   const struct SeqBlock *s1 = (const struct SeqBlock *)a;
@@ -409,7 +413,7 @@ static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct 
   return seqblock;
 }
 
-static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, const dyn_t envelope_state, double state_samplerate, int64_t seqtime, Seqblock_Type type){
+static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, enum ResamplerType resampler_type, const dyn_t envelope_state, double state_samplerate, int64_t seqtime, Seqblock_Type type){
  
   if (seqtrack->for_audiofiles==false)
     return NULL;
@@ -433,7 +437,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
   
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
 
-  seqblock->sample_id = SEQTRACKPLUGIN_add_sample(seqtrack, plugin, filename, seqblock, type);
+  seqblock->sample_id = SEQTRACKPLUGIN_add_sample(seqtrack, plugin, filename, resampler_type, seqblock, type);
   if (seqblock->sample_id==-1)
     return NULL;
 
@@ -795,6 +799,12 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
     if (seqblock->name != NULL)
       HASH_put_string(state, ":name", seqblock->name);
 
+    HASH_put_int(state, ":resampler-type", (int)SEQTRACKPLUGIN_get_resampler_type(plugin, seqblock->sample_id));
+    
+    HASH_put_float(state, ":grain-overlap", SEQTRACKPLUGIN_get_grain_overlap(plugin, seqblock->sample_id));
+    HASH_put_float(state, ":grain-length", SEQTRACKPLUGIN_get_grain_length(plugin, seqblock->sample_id));
+    HASH_put_float(state, ":grain-jitter", SEQTRACKPLUGIN_get_grain_jitter(plugin, seqblock->sample_id));
+    HASH_put_float(state, ":grain-ramp", SEQTRACKPLUGIN_get_grain_ramp(plugin, seqblock->sample_id));
   }
   
   HASH_put_int(state, ":start-time", seqblock->t.time);
@@ -1082,11 +1092,26 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
 
     if (g_is_loading || g_is_saving)
       filename = OS_loading_get_resolved_file_path(filename, false);
-                                      
-    seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, envelope, state_samplerate, time, type);
+
+    enum ResamplerType resampler_type = RESAMPLER_SINC1;
+    if (HASH_has_key(state, ":resampler-type"))
+      resampler_type = (enum ResamplerType)HASH_get_int32(state, ":resampler-type");
+      
+    seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, resampler_type, envelope, state_samplerate, time, type);
     if (seqblock==NULL)
       return NULL;
 
+    if (HASH_has_key(state, ":grain-overlap")){
+      
+      SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+      R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
+      
+      SEQTRACKPLUGIN_set_grain_overlap(plugin, seqblock->sample_id, HASH_get_float(state, ":grain-overlap"));
+      SEQTRACKPLUGIN_set_grain_length(plugin, seqblock->sample_id, HASH_get_float(state, ":grain-length"));
+      SEQTRACKPLUGIN_set_grain_jitter(plugin, seqblock->sample_id, HASH_get_float(state, ":grain-jitter"));
+      SEQTRACKPLUGIN_set_grain_ramp(plugin, seqblock->sample_id, HASH_get_float(state, ":grain-ramp"));
+    }
+    
     if (HASH_has_key(state, ":name"))
       seqblock->name = HASH_get_string(state, ":name");
     
@@ -1570,6 +1595,8 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
     RT_legalize_seqtrack_timing(seqtrack, NULL);  // Shouldn't be necessary, but we call it just in case.
   }
 
+  API_seqblock_has_been_deleted(seqblock->id);
+  
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 
 #if !defined(RELEASE)
@@ -1577,7 +1604,6 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
   if(seqblock->block != NULL) // Can't release sample seqblock memory here since it may still be used in Seqtrack_plugin.cpp.
     tfree((void*)seqblock); // Only for debugging.
 #endif
-
 }
 
 void SEQTRACK_delete_gfx_gfx_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
@@ -2016,7 +2042,7 @@ static struct SeqBlock *create_sample_seqblock(struct SeqTrack *seqtrack, int se
   if (end_seqtime != -1)
     R_ASSERT_RETURN_IF_FALSE2(end_seqtime > seqtime, NULL);
 
-  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, g_uninitialized_dyn, -1, -1, type);
+  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, RESAMPLER_SINC1, g_uninitialized_dyn, -1, -1, type);
   if (seqblock==NULL)
     return NULL;
 
@@ -2252,6 +2278,10 @@ static void call_me_after_seqtrack_has_been_removed(struct SeqTrack *seqtrack){
 
     deleteInstrument(patch->id);
   }
+
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+    API_seqblock_has_been_deleted(seqblock->id);
+  }END_VECTOR_FOR_EACH;
 }
 
 void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos){
