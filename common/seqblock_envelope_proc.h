@@ -12,7 +12,6 @@ extern LANGSPEC void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void);
 
 struct SeqblockEnvelope *SEQBLOCK_ENVELOPE_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t automation_state, double state_samplerate);
 void SEQBLOCK_ENVELOPE_free(struct SeqblockEnvelope *seqblockenvelope);
-int SEQBLOCK_ENVELOPE_get_num_automations(struct SeqblockEnvelope *seqblockenvelope);
 double SEQBLOCK_ENVELOPE_get_db(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
 double SEQBLOCK_ENVELOPE_get_seqtime(struct SeqblockEnvelope *seqblockenvelope, int nodenum);
 int SEQBLOCK_ENVELOPE_get_logtype(struct SeqblockEnvelope *seqblockenvelope, int nodenum);

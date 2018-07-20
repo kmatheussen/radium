@@ -123,40 +123,245 @@ static AutomationNode create_node_from_state(hash_t *state, double state_sampler
 }
 
 
-struct Automation{
-  radium::SeqAutomation<AutomationNode> automation;
+struct SeqblockAutomation{
+
+  radium::GcHolder<struct SeqTrack> _seqtrack;
+  radium::GcHolder<struct SeqBlock> _seqblock;
+
+  radium::SeqAutomation<AutomationNode> _automation;
 
   bool islegalnodenum(int nodenum) const {
-    return nodenum>=0 && (nodenum<=automation.size()-1);
+    return nodenum>=0 && (nodenum<=_automation.size()-1);
   }
 
   dyn_t get_state(void) const {
-    return automation.get_state(get_node_state);
+    return _automation.get_state(get_node_state);
   }
 
-  Automation()
+  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock)
+    : _seqtrack(seqtrack)
+    , _seqblock(seqblock)
   {
     SEQBLOCK_ENVELOPE_cancel_curr_automation();
   }
 
-  Automation(const dyn_t state, double state_samplerate){
+  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t state, double state_samplerate)
+    : SeqblockAutomation(seqtrack, seqblock)
+  {
     if (state.type != UNINITIALIZED_TYPE)
-      automation.create_from_state(state, create_node_from_state, state_samplerate);
+      _automation.create_from_state(state, create_node_from_state, state_samplerate);
   }
 
-  ~Automation(){
+  ~SeqblockAutomation(){
     assert_no_curr_seqtrack();
+  }
+
+    
+  double get_value(int nodenum){
+    R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), 0.5);
+    return _automation.at(nodenum).value;
+  }
+  
+  double get_time(int nodenum){
+    double seqblock_start = get_seqblock_noninterior_start(_seqblock.data());
+    R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), seqblock_start);
+    return _automation.at(nodenum).time + seqblock_start;
+  }
+
+  int get_logtype(int nodenum){    
+    R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), 0);
+    return _automation.at(nodenum).logtype;
+  }
+
+  int add_node(double seqtime, double value, int logtype){
+    if (seqtime < 0)
+      seqtime = 0;
+    
+    auto *seqblock = _seqblock.data();
+    
+    double time =
+      R_BOUNDARIES(0,
+                   (seqtime - get_seqblock_noninterior_start(seqblock)) / seqblock->t.stretch,
+                   seqblock->t.default_duration
+                   );
+    
+    int ret = _automation.add_node(create_node(time, value, logtype));
+    
+    SEQTRACK_update(_seqtrack.data());
+
+    return ret;
+  }
+
+  void delete_node(int nodenum){
+    R_ASSERT_RETURN_IF_FALSE(islegalnodenum(nodenum));
+    
+    if (_automation.size()<=2){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+    
+    _automation.delete_node(nodenum);
+    
+    SEQTRACK_update(_seqtrack.data());
+  }
+
+  void set_curr_node(int nodenum){
+    R_ASSERT_RETURN_IF_FALSE(islegalnodenum(nodenum));
+    
+    if (_automation.get_curr_nodenum() != nodenum){
+      _automation.set_curr_nodenum(nodenum);
+      SEQTRACK_update(_seqtrack.data());
+    }
+  }
+
+  void cancel_curr_node(void){
+    _automation.set_curr_nodenum(-1);
+    SEQTRACK_update(_seqtrack.data());
+  }
+
+  void set_node(int nodenum, double seqtime, double value, int logtype){
+    R_ASSERT_RETURN_IF_FALSE(islegalnodenum(nodenum));
+    
+    int size = _automation.size();
+    
+    const AutomationNode *prev = nodenum==0 ? NULL : &_automation.at(nodenum-1);
+    AutomationNode node = _automation.at(nodenum);
+    const AutomationNode *next = nodenum==size-1 ? NULL : &_automation.at(nodenum+1);
+    
+    double mintime = prev==NULL ? 0 : prev->time; //next==NULL ? R_MAX(R_MAX(node.time, seqtime), SONG_get_length()) : prev->time;
+    double maxtime = next==NULL ? _seqblock->t.default_duration : next->time;
+    
+    //printf("     nodenum: %d.  mintime: %f, seqtime: %f, maxtime: %f. next: %p\n",nodenum,mintime,(seqtime - get_seqblock_noninterior_start(seqblock)),maxtime,NULL);
+    double time = R_BOUNDARIES(mintime,
+                               (seqtime - get_seqblock_noninterior_start(_seqblock.data())) / _seqblock->t.stretch,
+                               maxtime
+                               );
+    
+    node.time = time;
+    node.value = value;
+    node.logtype = logtype;
+    
+    _automation.replace_node(nodenum, node);
+    
+    SEQTRACK_update(_seqtrack.data());
+  }
+
+  void seqblock_duration_has_changed(int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock){
+    
+    AutomationNode *last_node = NULL;
+    int new_size = 0;
+    bool reduced = false;
+    
+    int i = 0;
+    for(AutomationNode &node : _automation){
+      last_node = &node;
+      new_size = i + 1;
+      
+      if (node.time > new_duration){
+        reduced = true;
+        //printf("   1. Setting last node time to %d. (old: %d)\n", (int)new_duration, (int)last_node->time);
+        last_node->time = new_duration;
+        break;
+      }
+      i++;
+    }
+    
+    if (reduced==true){
+      
+      R_ASSERT_RETURN_IF_FALSE(new_size >= 2);
+      
+      if(_automation.size() > new_size){
+        radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause_lock(lock);
+        
+        while(_automation.size() > new_size){
+          //printf("   Remoing node %d\n", automation.automation.size()-1);
+          _automation.delete_node(_automation.size()-1);      
+        }
+      }
+      
+    } else {
+      
+      R_ASSERT_RETURN_IF_FALSE(last_node!=NULL);
+      //printf("   2. Setting last node time to %d. (old: %d)\n", (int)new_duration, (int)last_node->time);
+      last_node->time = new_duration;
+      
+    }
+    
+  }
+
+  
+  static float get_node_x2(const SeqblockAutomation *seqblockenvelope, const AutomationNode &node, double start_time, double end_time, float x1, float x2) {
+    //int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, node.time);
+    
+    //printf("      GET_NODE_X2 returned %f - %f. start_time: %f, end_time: %f\n",abstime/48000.0, scale(abstime, start_time, end_time, x1, x2), start_time/48000.0, end_time/48000.0);  
+    double duration = seqblockenvelope->_seqblock->t.default_duration;
+    return scale(node.time, 0, duration, x1, x2);
+  }
+
+  static float get_node_x_callback(const AutomationNode &node, double start_time, double end_time, float x1, float x2, void *data){ 
+    return get_node_x2((const struct SeqblockAutomation*)data, node, start_time, end_time, x1, x2);
+  }
+
+  float get_node_x(int nodenum) const {
+
+    R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), 0);
+
+    double start_time = SEQUENCER_get_visible_start_time();
+    double end_time = SEQUENCER_get_visible_end_time();
+    
+    double noninterior_start = get_seqblock_noninterior_start(_seqblock.data());
+    double noninterior_end = get_seqblock_noninterior_end(_seqblock.data());
+    
+    double t_x1 = SEQUENCER_get_x1();
+    double t_x2 = SEQUENCER_get_x2();
+    
+    float x1 = scale_double(noninterior_start,
+                            start_time, end_time,
+                            t_x1, t_x2);
+    float x2 = scale_double(noninterior_end,
+                            start_time, end_time,
+                            t_x1, t_x2);
+    
+    const AutomationNode &node = _automation.at(nodenum);
+    
+    return SeqblockAutomation::get_node_x2(this, node, start_time, end_time, x1, x2);
+  }
+
+  static float get_node_y_callback(const AutomationNode &node, float y1, float y2){
+#if 0
+    return scale(db2gain(node.value),
+                 db2gain(MIN_DB), db2gain(MAX_SEQBLOCK_VOLUME_ENVELOPE_DB),
+                 y2, y1);
+#else
+    return scale(node.value,
+                 MIN_DB, MAX_SEQBLOCK_VOLUME_ENVELOPE_DB,
+                 y2, y1);
+#endif
+  }
+
+  double get_node_y(int seqtracknum, int nodenum) const {
+    float y1 = SEQTRACK_get_y1(seqtracknum) + SEQBLOCK_get_header_height();
+    float y2 = SEQTRACK_get_y2(seqtracknum);
+    
+    R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), 0);
+    
+    return SeqblockAutomation::get_node_y_callback(_automation.at(nodenum), y1, y2);
+  }
+
+  void paint(QPainter *p, float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2) {
+    
+    //_automation.set_do_paint_nodes(paint_nodes);
+    
+    _automation.paint(p, x1, y1, x2, y2, 0, 1, QColor("white"), SeqblockAutomation::get_node_y_callback, SeqblockAutomation::get_node_x_callback, this, QColor(80,20,200,50), seqblock_x1, seqblock_x2);
   }
 };
 
 }
 
-struct SeqblockEnvelope {
+struct SeqblockEnvelope : public SeqblockAutomation{
   
 private:
   
-  //struct SeqTrack *_seqtrack; // Not used, but can be practical when debugging.
-
 #if !defined(RELEASE)
   int magic = 918342; // Check that we are freeing the correct data.
 #endif
@@ -164,15 +369,8 @@ private:
   
 public:
 
-  struct SeqTrack *_seqtrack;
-  struct SeqBlock *_seqblock;
-
-  Automation _automation;
-  
   SeqblockEnvelope(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, double state_samplerate, const dyn_t state = g_uninitialized_dyn)
-    : _seqtrack(seqtrack)
-    , _seqblock(seqblock)
-    , _automation(state, state_samplerate)
+    : SeqblockAutomation(seqtrack, seqblock, state, state_samplerate)
   {
     SEQBLOCK_ENVELOPE_cancel_curr_automation();
 
@@ -180,10 +378,8 @@ public:
 
       double duration = seqblock->t.default_duration;
 
-      _automation.automation.add_node(create_node(0, 1.0, LOGTYPE_LINEAR));
-      //_automation.automation.add_node(create_node(duration/4, 0.8, LOGTYPE_LINEAR));
-      //_automation.automation.add_node(create_node(duration/2, 0.8, LOGTYPE_LINEAR));
-      _automation.automation.add_node(create_node(duration, 1.0, LOGTYPE_LINEAR));
+      _automation.add_node(create_node(0, 1.0, LOGTYPE_LINEAR));
+      _automation.add_node(create_node(duration, 1.0, LOGTYPE_LINEAR));
     }
   }
 
@@ -201,10 +397,6 @@ public:
 
     assert_no_curr_seqtrack();
   }
-  
-  dyn_t get_state(void) const {
-    return _automation.get_state();
-  }
 };
  
 
@@ -216,96 +408,40 @@ void SEQBLOCK_ENVELOPE_free(struct SeqblockEnvelope *seqblockenvelope){
   delete seqblockenvelope;
 }
 
-int SEQBLOCK_ENVELOPE_get_num_automations(struct SeqblockEnvelope *seqblockenvelope){
-  return seqblockenvelope->_automation.automation.size();
-}
-
 double SEQBLOCK_ENVELOPE_get_db(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
-
-  struct Automation &automation = seqblockenvelope->_automation;
-  R_ASSERT_RETURN_IF_FALSE2(automation.islegalnodenum(nodenum), 0.5);
-
-  return automation.automation.at(nodenum).value;
+  return seqblockenvelope->get_value(nodenum);
 }
 
 double SEQBLOCK_ENVELOPE_get_seqtime(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
-
-  struct Automation &automation = seqblockenvelope->_automation;
-  R_ASSERT_RETURN_IF_FALSE2(automation.islegalnodenum(nodenum), 0.5);
-
-  return automation.automation.at(nodenum).time + get_seqblock_noninterior_start(seqblockenvelope->_seqblock);
+  return seqblockenvelope->get_time(nodenum);
 }
 
 int SEQBLOCK_ENVELOPE_get_logtype(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
-
-  struct Automation &automation = seqblockenvelope->_automation;
-  R_ASSERT_RETURN_IF_FALSE2(automation.islegalnodenum(nodenum), 0);
-
-  return automation.automation.at(nodenum).logtype;
+  return seqblockenvelope->get_logtype(nodenum);
 }
 
 int SEQBLOCK_ENVELOPE_get_num_nodes(struct SeqblockEnvelope *seqblockenvelope){
 
-  struct Automation &automation = seqblockenvelope->_automation;
-  return automation.automation.size();
+  return seqblockenvelope->_automation.size();
 }
   
 
 int SEQBLOCK_ENVELOPE_add_node(struct SeqblockEnvelope *seqblockenvelope, double seqtime, double db, int logtype){
-  if (seqtime < 0)
-    seqtime = 0;
-
-  auto *seqblock = seqblockenvelope->_seqblock;
-
-  struct Automation &automation = seqblockenvelope->_automation;
-
-  db = R_BOUNDARIES(MIN_DB, db, MAX_DB);
-
-  double time =
-    R_BOUNDARIES(0,
-                 (seqtime - get_seqblock_noninterior_start(seqblock)) / seqblock->t.stretch,
-                 seqblock->t.default_duration
-                 );
-
-  int ret = automation.automation.add_node(create_node(time, db, logtype));
-  
-  SEQTRACK_update(seqblockenvelope->_seqtrack);
-  
-  return ret;
+  double value = R_BOUNDARIES(MIN_DB, db, MAX_DB);
+    
+  return seqblockenvelope->add_node(seqtime, value, logtype);
 }
                               
 void SEQBLOCK_ENVELOPE_delete_node(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
-
-  struct Automation &automation = seqblockenvelope->_automation;
-  R_ASSERT_RETURN_IF_FALSE(automation.islegalnodenum(nodenum));
-
-  if (automation.automation.size()<=2){
-    R_ASSERT_NON_RELEASE(false);
-    return;
-  }
-
-  automation.automation.delete_node(nodenum);
-
-  SEQTRACK_update(seqblockenvelope->_seqtrack);
+  seqblockenvelope->delete_node(nodenum);
 }
 
 void SEQBLOCK_ENVELOPE_set_curr_node(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
-
-  struct Automation &automation = seqblockenvelope->_automation;
-  R_ASSERT_RETURN_IF_FALSE(automation.islegalnodenum(nodenum));
-
-  if (automation.automation.get_curr_nodenum() != nodenum){
-    automation.automation.set_curr_nodenum(nodenum);
-    SEQTRACK_update(seqblockenvelope->_seqtrack);
-  }
+  seqblockenvelope->set_curr_node(nodenum);
 }
 
 void SEQBLOCK_ENVELOPE_cancel_curr_node(struct SeqblockEnvelope *seqblockenvelope){
-
-  struct Automation &automation = seqblockenvelope->_automation;
-
-  automation.automation.set_curr_nodenum(-1);
-  SEQTRACK_update(seqblockenvelope->_seqtrack);
+  seqblockenvelope->cancel_curr_node();
 }
 
 // Legal to call even if there is already a current automation.
@@ -314,21 +450,20 @@ void SEQBLOCK_ENVELOPE_set_curr_automation(struct SeqTrack *seqtrack, struct Seq
   
   struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
   
-  struct Automation &automation = seqblockenvelope->_automation;
-  if (automation.automation.do_paint_nodes()){
+  if (seqblockenvelope->_automation.do_paint_nodes()){
     
     R_ASSERT_NON_RELEASE(seqtrack==g_curr_seqblock_envelope_seqtrack);
     R_ASSERT_NON_RELEASE(seqblock==g_curr_seqblock_envelope_seqblock);
     
   } else {
 
-    automation.automation.set_do_paint_nodes(true);
+    seqblockenvelope->_automation.set_do_paint_nodes(true);
     SEQTRACK_update(seqtrack);
     
   }
   
-  g_curr_seqblock_envelope_seqtrack=seqtrack;
-  g_curr_seqblock_envelope_seqblock=seqblock;
+  g_curr_seqblock_envelope_seqtrack = seqtrack;
+  g_curr_seqblock_envelope_seqblock = seqblock;
 }
 
 // May be called if it there is no current automation.
@@ -339,7 +474,6 @@ void SEQBLOCK_ENVELOPE_cancel_curr_automation(void){
   if (seqtrack==NULL){
 
     
-    
   } else {
 
     struct SeqBlock *seqblock = g_curr_seqblock_envelope_seqblock;
@@ -348,10 +482,8 @@ void SEQBLOCK_ENVELOPE_cancel_curr_automation(void){
     SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
     R_ASSERT_RETURN_IF_FALSE(seqblockenvelope!=NULL);
     
-    Automation &automation = seqblockenvelope->_automation;
-    
-    if (automation.automation.do_paint_nodes()){
-      automation.automation.set_do_paint_nodes(false);
+    if (seqblockenvelope->_automation.do_paint_nodes()){
+      seqblockenvelope->_automation.set_do_paint_nodes(false);
       SEQTRACK_update(seqtrack);
     }else{
       R_ASSERT_NON_RELEASE(false);
@@ -363,81 +495,13 @@ void SEQBLOCK_ENVELOPE_cancel_curr_automation(void){
 
 
 void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int nodenum, double seqtime, double db, int logtype){
-  struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
-
-  struct Automation &automation = seqblockenvelope->_automation;
-  R_ASSERT_RETURN_IF_FALSE(automation.islegalnodenum(nodenum));
-
-  int size = automation.automation.size();
-
-  const AutomationNode *prev = nodenum==0 ? NULL : &automation.automation.at(nodenum-1);
-  AutomationNode node = automation.automation.at(nodenum);
-  const AutomationNode *next = nodenum==size-1 ? NULL : &automation.automation.at(nodenum+1);
-
-  double mintime = prev==NULL ? 0 : prev->time; //next==NULL ? R_MAX(R_MAX(node.time, seqtime), SONG_get_length()) : prev->time;
-  double maxtime = next==NULL ? seqblock->t.default_duration : next->time;
-
-  //printf("     nodenum: %d.  mintime: %f, seqtime: %f, maxtime: %f. next: %p\n",nodenum,mintime,(seqtime - get_seqblock_noninterior_start(seqblock)),maxtime,NULL);
-  double time = R_BOUNDARIES(mintime,
-                             (seqtime - get_seqblock_noninterior_start(seqblock)) / seqblock->t.stretch,
-                             maxtime
-                             );
-  
-  db = R_BOUNDARIES(MIN_DB, db, MAX_DB);
-
-  node.time = time;
-  node.value = db;
-  node.logtype = logtype;
-
-  automation.automation.replace_node(nodenum, node);
-
-  SEQTRACK_update(seqtrack);
+  double value = R_BOUNDARIES(MIN_DB, db, MAX_DB);
+  seqblock->envelope->set_node(nodenum, seqtime, value, logtype);
 }
 
 void SEQBLOCK_ENVELOPE_duration_changed(struct SeqBlock *seqblock, int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock){
-
   struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
-
-  struct Automation &automation = seqblockenvelope->_automation;
-
-  AutomationNode *last_node = NULL;
-  int new_size = 0;
-  bool reduced = false;
-
-  int i = 0;
-  for(AutomationNode &node : automation.automation){
-    last_node = &node;
-    new_size = i + 1;
-
-    if (node.time > new_duration){
-      reduced = true;
-      //printf("   1. Setting last node time to %d. (old: %d)\n", (int)new_duration, (int)last_node->time);
-      last_node->time = new_duration;
-      break;
-    }
-    i++;
-  }
-
-  if (reduced==true){
-
-    R_ASSERT_RETURN_IF_FALSE(new_size >= 2);
-    
-    if(automation.automation.size() > new_size){
-      radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause_lock(lock);
-      
-      while(automation.automation.size() > new_size){
-        //printf("   Remoing node %d\n", automation.automation.size()-1);
-        automation.automation.delete_node(automation.automation.size()-1);      
-      }
-    }
-
-  } else {
-
-    R_ASSERT_RETURN_IF_FALSE(last_node!=NULL);
-    //printf("   2. Setting last node time to %d. (old: %d)\n", (int)new_duration, (int)last_node->time);
-    last_node->time = new_duration;
-
-  }
+  seqblockenvelope->seqblock_duration_has_changed(new_duration, lock);
 }
 
 static void RT_handle_seqblock_volume_automation(linked_note_t *linked_notes, struct Patch *patch, struct SoundPlugin *plugin, const int play_id){
@@ -562,10 +626,10 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
 
       double new_db = 0.0;
       if (seqblock->envelope_enabled)
-        seqblockenvelope->_automation.automation.RT_get_value(pos, new_db, NULL, true);
+        seqblockenvelope->_automation.RT_get_value(pos, new_db, NULL, true);
 
 #if DO_DEBUG
-      seqblockenvelope->_automation.automation.print();
+      seqblockenvelope->_automation.print();
       printf("new_db: %f. Pos: %f\n\n", new_db, pos);
 #endif
 
@@ -725,78 +789,19 @@ dyn_t SEQBLOCK_ENVELOPE_get_state(const struct SeqblockEnvelope *seqblockenvelop
 }
 
 void SEQBLOCK_ENVELOPE_apply_state(struct SeqblockEnvelope *seqblockenvelope, const dyn_t envelope_state, double state_samplerate){
-  seqblockenvelope->_automation.automation.create_from_state(envelope_state, create_node_from_state, state_samplerate);
-  SEQTRACK_update(seqblockenvelope->_seqtrack);
-}
-
-
-static float get_node_x2(const struct SeqblockEnvelope *seqblockenvelope, const AutomationNode &node, double start_time, double end_time, float x1, float x2){
-  //int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, node.time);
-
-  //printf("      GET_NODE_X2 returned %f - %f. start_time: %f, end_time: %f\n",abstime/48000.0, scale(abstime, start_time, end_time, x1, x2), start_time/48000.0, end_time/48000.0);  
-  double duration = seqblockenvelope->_seqblock->t.default_duration;
-  return scale(node.time, 0, duration, x1, x2);
-}
-
-static float get_node_x(const AutomationNode &node, double start_time, double end_time, float x1, float x2, void *data){
-  return get_node_x2((const struct SeqblockEnvelope*)data, node, start_time, end_time, x1, x2);
+  seqblockenvelope->_automation.create_from_state(envelope_state, create_node_from_state, state_samplerate);
+  SEQTRACK_update(seqblockenvelope->_seqtrack.data());
 }
 
 float SEQBLOCK_ENVELOPE_get_node_x(const struct SeqblockEnvelope *seqblockenvelope, int nodenum){
-
-  const struct Automation &automation = seqblockenvelope->_automation;
-  R_ASSERT_RETURN_IF_FALSE2(automation.islegalnodenum(nodenum), 0);
-
-  double start_time = SEQUENCER_get_visible_start_time();
-  double end_time = SEQUENCER_get_visible_end_time();
-
-  double noninterior_start = get_seqblock_noninterior_start(seqblockenvelope->_seqblock);
-  double noninterior_end = get_seqblock_noninterior_end(seqblockenvelope->_seqblock);
-
-  double t_x1 = SEQUENCER_get_x1();
-  double t_x2 = SEQUENCER_get_x2();
-  
-  float x1 = scale_double(noninterior_start,
-                          start_time, end_time,
-                          t_x1, t_x2);
-  float x2 = scale_double(noninterior_end,
-                          start_time, end_time,
-                          t_x1, t_x2);
-  
-  const AutomationNode &node = automation.automation.at(nodenum);
-
-  return get_node_x2(seqblockenvelope, node, start_time, end_time, x1, x2);
-}
-
-static float get_node_y(const AutomationNode &node, float y1, float y2){
-#if 0
-  return scale(db2gain(node.value),
-               db2gain(MIN_DB), db2gain(MAX_SEQBLOCK_VOLUME_ENVELOPE_DB),
-               y2, y1);
-#else
-  return scale(node.value,
-               MIN_DB, MAX_SEQBLOCK_VOLUME_ENVELOPE_DB,
-               y2, y1);
-#endif
+  return seqblockenvelope->get_node_x(nodenum);
 }
 
 float SEQBLOCK_ENVELOPE_get_node_y(const struct SeqblockEnvelope *seqblockenvelope, int seqtracknum, int nodenum){
-  float y1 = SEQTRACK_get_y1(seqtracknum) + SEQBLOCK_get_header_height();
-  float y2 = SEQTRACK_get_y2(seqtracknum);
-  
-  const struct Automation &automation = seqblockenvelope->_automation;
-  R_ASSERT_RETURN_IF_FALSE2(automation.islegalnodenum(nodenum), 0);
-
-  return get_node_y(automation.automation.at(nodenum), y1, y2);
+  return seqblockenvelope->get_node_y(seqtracknum, nodenum);
 }
 
 void SEQBLOCK_ENVELOPE_paint(QPainter *p, const struct SeqBlock *seqblock, float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2){
-
   struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
-
-  struct Automation &automation = seqblockenvelope->_automation;
-  
-  //automation.automation.set_do_paint_nodes(paint_nodes);
-
-  automation.automation.paint(p, x1, y1, x2, y2, 0, 1, QColor("white"), get_node_y, get_node_x, seqblockenvelope, QColor(80,20,200,50), seqblock_x1, seqblock_x2); //get_node_y, get_node_x, seqblockenvelope);
+  seqblockenvelope->paint(p, x1, y1, x2, y2, paint_nodes, seqblock_x1, seqblock_x2);
 }
