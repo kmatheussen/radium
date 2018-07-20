@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "tracks_proc.h"
 #include "undo_blocks_proc.h"
+#include "undo_sequencer_proc.h"
 #include "wtracks_proc.h"
 #include "cursor_proc.h"
 #include "visual_proc.h"
@@ -248,6 +249,13 @@ void Block_set_name(struct Blocks *block, const char *new_name){
   BS_UpdatePlayList();
 }
 
+static void create_undo(struct Tracker_Windows *window){
+  UNDO_OPEN();{
+    ADD_UNDO(Sequencer());
+    ADD_UNDO(Block_CurrPos(window));
+  }UNDO_CLOSE();
+}
+
 void Block_Properties_CurrPos(
 	struct Tracker_Windows *window
 ){
@@ -275,7 +283,7 @@ void Block_Properties_CurrPos(
         bool has_made_undo = false;
 
 	if(blockname!=NULL){
-          ADD_UNDO(Block_CurrPos(window));
+          create_undo(window);
           has_made_undo = true;
           Block_set_name(wblock->block, blockname);
         }
@@ -287,7 +295,7 @@ void Block_Properties_CurrPos(
 	}
 
         if (has_made_undo==false)
-          ADD_UNDO(Block_CurrPos(window));
+          create_undo(window);
 
 	Block_Properties(block,num_tracks,num_lines);
 
