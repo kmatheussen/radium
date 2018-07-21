@@ -453,7 +453,6 @@ static TempoAutomationNode create_node_from_state(hash_t *state, double state_sa
                      HASH_get_int32(state, "logtype"));
 }
 
-
 void TEMPOAUTOMATION_create_from_state(hash_t *state, double state_samplerate){
   g_max_tempo = HASH_get_float(state, "max_tempo");
   g_tempo_automation.create_from_state(HASH_get_dyn(state, "nodes"), create_node_from_state, state_samplerate);
@@ -507,7 +506,7 @@ float TEMPOAUTOMATION_get_node_x(int nodenum){
   return scale(node1.time, start_time, end_time, x1, x2);
 }
 
-static float get_node_y(const TempoAutomationNode &node, float y1, float y2){
+static float get_node_y(const TempoAutomationNode &node, float y1, float y2, void *data){
   return get_node_y(&node, y1, y2);
 }
 
@@ -517,7 +516,7 @@ float TEMPOAUTOMATION_get_node_y(int nodenum){
   
   const TempoAutomationNode &node1 = g_tempo_automation.at(nodenum);
   
-  return get_node_y(node1, y1, y2);
+  return get_node_y(node1, y1, y2, NULL);
 }
 
 void TEMPOAUTOMATION_paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time){
