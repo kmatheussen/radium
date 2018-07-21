@@ -115,20 +115,54 @@ static hash_t *get_node_state(const AutomationNode &node){
   return state;
 }
 
+/*
 static AutomationNode create_node_from_state(hash_t *state, double state_samplerate){
   double time = HASH_get_float(state, ":seqtime");
   return create_node(state_samplerate < 0 ? time : time*(double)pc->pfreq/state_samplerate,
                      HASH_get_float(state, ":db"),
                      HASH_get_int32(state, ":logtype"));
 }
+*/
 
-
-struct SeqblockAutomation{
+struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>{
 
   radium::GcHolder<struct SeqTrack> _seqtrack;
   radium::GcHolder<struct SeqBlock> _seqblock;
 
   radium::SeqAutomation<AutomationNode> _automation;
+
+  double _min_value;
+  double _max_value;
+  const char *_value_name;
+  
+  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, double min_value, double max_value, const char *value_name)
+    : _seqtrack(seqtrack)
+    , _seqblock(seqblock)
+    , _min_value(min_value)
+    , _max_value(max_value)
+    , _value_name(value_name)
+  {
+    SEQBLOCK_ENVELOPE_cancel_curr_automation();
+  }
+
+  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t state, double state_samplerate, double min_value, double max_value, const char *value_name)
+    : SeqblockAutomation(seqtrack, seqblock, min_value, max_value, value_name)
+  {
+    if (state.type != UNINITIALIZED_TYPE)
+      _automation.create_from_state(state, this, state_samplerate);
+  }
+
+  ~SeqblockAutomation(){
+    assert_no_curr_seqtrack();
+  }
+
+
+  AutomationNode create_node_from_state(hash_t *state, double state_samplerate) const override {
+    double time = HASH_get_float(state, ":seqtime");
+    return create_node(state_samplerate < 0 ? time : time*(double)pc->pfreq/state_samplerate,
+                       HASH_get_float(state, _value_name),
+                       HASH_get_int32(state, ":logtype"));
+  }
 
   bool islegalnodenum(int nodenum) const {
     return nodenum>=0 && (nodenum<=_automation.size()-1);
@@ -138,25 +172,6 @@ struct SeqblockAutomation{
     return _automation.get_state(get_node_state);
   }
 
-  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock)
-    : _seqtrack(seqtrack)
-    , _seqblock(seqblock)
-  {
-    SEQBLOCK_ENVELOPE_cancel_curr_automation();
-  }
-
-  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t state, double state_samplerate)
-    : SeqblockAutomation(seqtrack, seqblock)
-  {
-    if (state.type != UNINITIALIZED_TYPE)
-      _automation.create_from_state(state, create_node_from_state, state_samplerate);
-  }
-
-  ~SeqblockAutomation(){
-    assert_no_curr_seqtrack();
-  }
-
-    
   double get_value(int nodenum){
     R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), 0.5);
     return _automation.at(nodenum).value;
@@ -184,6 +199,8 @@ struct SeqblockAutomation{
                    (seqtime - get_seqblock_noninterior_start(seqblock)) / seqblock->t.stretch,
                    seqblock->t.default_duration
                    );
+    
+    value = R_BOUNDARIES(_min_value, value, _max_value);
     
     int ret = _automation.add_node(create_node(time, value, logtype));
     
@@ -236,6 +253,8 @@ struct SeqblockAutomation{
                                (seqtime - get_seqblock_noninterior_start(_seqblock.data())) / _seqblock->t.stretch,
                                maxtime
                                );
+
+    value = R_BOUNDARIES(_min_value, value, _max_value);
     
     node.time = time;
     node.value = value;
@@ -327,14 +346,16 @@ struct SeqblockAutomation{
     return SeqblockAutomation::get_node_x2(this, node, start_time, end_time, x1, x2);
   }
 
-  static float get_node_y_callback(const AutomationNode &node, float y1, float y2){
+  static float get_node_y_callback(const AutomationNode &node, float y1, float y2, void *data){
 #if 0
     return scale(db2gain(node.value),
                  db2gain(MIN_DB), db2gain(MAX_SEQBLOCK_VOLUME_ENVELOPE_DB),
                  y2, y1);
 #else
+    const SeqblockAutomation *seqblockautomation = static_cast<const SeqblockAutomation*>(data);
+    
     return scale(node.value,
-                 MIN_DB, MAX_SEQBLOCK_VOLUME_ENVELOPE_DB,
+                 seqblockautomation->_min_value, seqblockautomation->_max_value,  // MIN_DB, MAX_SEQBLOCK_VOLUME_ENVELOPE_DB,
                  y2, y1);
 #endif
   }
@@ -345,7 +366,7 @@ struct SeqblockAutomation{
     
     R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), 0);
     
-    return SeqblockAutomation::get_node_y_callback(_automation.at(nodenum), y1, y2);
+    return SeqblockAutomation::get_node_y_callback(_automation.at(nodenum), y1, y2, (void*)this);
   }
 
   void paint(QPainter *p, float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2) {
@@ -370,7 +391,7 @@ private:
 public:
 
   SeqblockEnvelope(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, double state_samplerate, const dyn_t state = g_uninitialized_dyn)
-    : SeqblockAutomation(seqtrack, seqblock, state, state_samplerate)
+    : SeqblockAutomation(seqtrack, seqblock, state, state_samplerate, MIN_DB, MAX_SEQBLOCK_VOLUME_ENVELOPE_DB, ":db")
   {
     SEQBLOCK_ENVELOPE_cancel_curr_automation();
 
@@ -427,9 +448,7 @@ int SEQBLOCK_ENVELOPE_get_num_nodes(struct SeqblockEnvelope *seqblockenvelope){
   
 
 int SEQBLOCK_ENVELOPE_add_node(struct SeqblockEnvelope *seqblockenvelope, double seqtime, double db, int logtype){
-  double value = R_BOUNDARIES(MIN_DB, db, MAX_DB);
-    
-  return seqblockenvelope->add_node(seqtime, value, logtype);
+  return seqblockenvelope->add_node(seqtime, db, logtype);
 }
                               
 void SEQBLOCK_ENVELOPE_delete_node(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
@@ -495,8 +514,7 @@ void SEQBLOCK_ENVELOPE_cancel_curr_automation(void){
 
 
 void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int nodenum, double seqtime, double db, int logtype){
-  double value = R_BOUNDARIES(MIN_DB, db, MAX_DB);
-  seqblock->envelope->set_node(nodenum, seqtime, value, logtype);
+  seqblock->envelope->set_node(nodenum, seqtime, db, logtype);
 }
 
 void SEQBLOCK_ENVELOPE_duration_changed(struct SeqBlock *seqblock, int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock){
@@ -609,6 +627,116 @@ static void RT_clear_all_volume_automation_block_statuses(void){
   RT_clear_all_volume_automation_block_statuses(&get_audio_instrument()->patches);
 }
 
+static void RT_set_seqblock_volume_envelope_values(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const double pos, const int64_t seqblock_pos_start, const int64_t seqblock_pos_end){
+  struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
+
+  double new_db = 0.0;
+  if (seqblock->envelope_enabled)
+    seqblockenvelope->_automation.RT_get_value(pos, new_db, NULL, true);
+
+#if DO_DEBUG
+  seqblockenvelope->_automation.print();
+  printf("new_db: %f. Pos: %f\n\n", new_db, pos);
+#endif
+
+  // Add envelope gain.
+  //
+  if (fabs(new_db-seqblock->envelope_db) > 0.0001){
+
+    //printf("new db: %f. Old: %f (old gain: %f)\n", new_db, seqblock->envelope_db, seqblock->curr_gain);
+
+    seqblock->curr_gain_changed_this_block = true;
+    seqblock->envelope_db = new_db;
+
+    if (new_db==0.0)
+      seqblock->curr_gain = 1.0;
+    else
+      seqblock->curr_gain = db2gain(new_db);
+
+  } else {
+
+    seqblock->curr_gain_changed_this_block = false;
+
+    //printf("new db: xxx\n");
+        
+  }
+
+      
+  // Add sample gain.
+  //
+  if (fabsf(seqblock->gain-1.0f) > 0.0001f){
+
+    if (seqblock->curr_gain_changed_this_block) {
+          
+      seqblock->curr_gain *= seqblock->gain;
+          
+    } else {
+          
+      seqblock->curr_gain = seqblock->gain;
+      seqblock->curr_gain_changed_this_block = true;
+          
+    }
+  }
+
+      
+  // Add fade out/in gain.
+  //
+  if (seqblock->fadein > 0.0 || seqblock->fadeout > 0.0){
+
+    if (seqblock_pos_end > 0){
+
+      int64_t seqblock_duration = seqblock->t.time2 - seqblock->t.time;          
+                    
+      double scaled_pos = (double)seqblock_pos_start / (double)seqblock_duration;
+
+      if (scaled_pos > 1){
+            
+        R_ASSERT_NON_RELEASE(false);
+            
+      } else if (scaled_pos < 0){
+
+        // why no assertion here? (missing comment)
+
+      } else {
+
+        if (scaled_pos < seqblock->fadein){
+
+          double fadein_pos = scale_double(scaled_pos,
+                                           0, seqblock->fadein,
+                                           0, 1);
+              
+          double fadein = seqblock->fade_in_envelope->get_y(fadein_pos);
+              
+          if (seqblock->curr_gain_changed_this_block)
+            seqblock->curr_gain *= fadein;
+          else {
+            seqblock->curr_gain = fadein;
+            seqblock->curr_gain_changed_this_block = true;
+          }
+        }
+            
+        if (scaled_pos > (1.0-seqblock->fadeout)) {
+              
+          double fadeout_pos = scale_double(scaled_pos,
+                                            1.0-seqblock->fadeout, 1,
+                                            0, 1);
+
+          double fadeout = seqblock->fade_out_envelope->get_y(fadeout_pos);
+
+          if (seqblock->curr_gain_changed_this_block)
+            seqblock->curr_gain *= fadeout;
+          else {
+            seqblock->curr_gain = fadeout;
+            seqblock->curr_gain_changed_this_block = true;
+          }
+        }
+            
+      }
+    }
+  }
+
+}
+
 static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
   R_ASSERT_NON_RELEASE(is_playing_song());
 
@@ -619,119 +747,13 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
 
     if (end_time >= seqblock->t.time && start_time <= seqblock->t.time2){
 
-      struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
+      int64_t seqblock_pos_start = start_time - seqblock->t.time;
+      int64_t seqblock_pos_end = end_time - seqblock->t.time;
 
       double s1 = get_seqblock_noninterior_start(seqblock);
       double pos = (start_time-s1) / seqblock->t.stretch;
 
-      double new_db = 0.0;
-      if (seqblock->envelope_enabled)
-        seqblockenvelope->_automation.RT_get_value(pos, new_db, NULL, true);
-
-#if DO_DEBUG
-      seqblockenvelope->_automation.print();
-      printf("new_db: %f. Pos: %f\n\n", new_db, pos);
-#endif
-
-      // Add envelope gain.
-      //
-      if (fabs(new_db-seqblock->envelope_db) > 0.0001){
-
-        //printf("new db: %f. Old: %f (old gain: %f)\n", new_db, seqblock->envelope_db, seqblock->curr_gain);
-
-        seqblock->curr_gain_changed_this_block = true;
-        seqblock->envelope_db = new_db;
-
-        if (new_db==0.0)
-          seqblock->curr_gain = 1.0;
-        else
-          seqblock->curr_gain = db2gain(new_db);
-
-      } else {
-
-        seqblock->curr_gain_changed_this_block = false;
-
-        //printf("new db: xxx\n");
-        
-      }
-
-      
-      // Add sample gain.
-      //
-      if (fabsf(seqblock->gain-1.0f) > 0.0001f){
-
-        if (seqblock->curr_gain_changed_this_block) {
-          
-          seqblock->curr_gain *= seqblock->gain;
-          
-        } else {
-          
-          seqblock->curr_gain = seqblock->gain;
-          seqblock->curr_gain_changed_this_block = true;
-          
-        }
-      }
-
-      
-      // Add fade out/in gain.
-      //
-      if (seqblock->fadein > 0.0 || seqblock->fadeout > 0.0){
-
-        int64_t seqblock_start_pos = start_time - seqblock->t.time;
-        int64_t seqblock_end_pos = end_time - seqblock->t.time;
-
-        if (seqblock_end_pos > 0){
-
-          int64_t seqblock_duration = seqblock->t.time2 - seqblock->t.time;          
-                    
-          double scaled_pos = (double)seqblock_start_pos / (double)seqblock_duration;
-
-          if (scaled_pos > 1){
-            
-            R_ASSERT_NON_RELEASE(false);
-            
-          } else if (scaled_pos < 0){
-
-            // why no assertion here? (missing comment)
-
-          } else {
-
-            if (scaled_pos < seqblock->fadein){
-
-              double fadein_pos = scale_double(scaled_pos,
-                                               0, seqblock->fadein,
-                                               0, 1);
-              
-              double fadein = seqblock->fade_in_envelope->get_y(fadein_pos);
-              
-              if (seqblock->curr_gain_changed_this_block)
-                seqblock->curr_gain *= fadein;
-              else {
-                seqblock->curr_gain = fadein;
-                seqblock->curr_gain_changed_this_block = true;
-              }
-            }
-            
-            if (scaled_pos > (1.0-seqblock->fadeout)) {
-              
-              double fadeout_pos = scale_double(scaled_pos,
-                                            1.0-seqblock->fadeout, 1,
-                                            0, 1);
-
-              double fadeout = seqblock->fade_out_envelope->get_y(fadeout_pos);
-
-              if (seqblock->curr_gain_changed_this_block)
-                seqblock->curr_gain *= fadeout;
-              else {
-                seqblock->curr_gain = fadeout;
-                seqblock->curr_gain_changed_this_block = true;
-              }
-            }
-            
-          }
-        }
-      }
-
+      RT_set_seqblock_volume_envelope_values(seqtrack, seqblock, pos, seqblock_pos_start, seqblock_pos_end);
     }
 
   }END_VECTOR_FOR_EACH;
@@ -789,7 +811,7 @@ dyn_t SEQBLOCK_ENVELOPE_get_state(const struct SeqblockEnvelope *seqblockenvelop
 }
 
 void SEQBLOCK_ENVELOPE_apply_state(struct SeqblockEnvelope *seqblockenvelope, const dyn_t envelope_state, double state_samplerate){
-  seqblockenvelope->_automation.create_from_state(envelope_state, create_node_from_state, state_samplerate);
+  seqblockenvelope->_automation.create_from_state(envelope_state, seqblockenvelope, state_samplerate);
   SEQTRACK_update(seqblockenvelope->_seqtrack.data());
 }
 

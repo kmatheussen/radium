@@ -554,7 +554,6 @@ struct Sample{
   double _grain_length = 50; // in ms
   double _grain_jitter = 1.0;
   double _grain_ramp = 0.33;
-  double _grain_volume_compensation = 1.0;
   
   DEFINE_ATOMIC(bool, _has_updates) = true;
   
@@ -976,7 +975,7 @@ struct Sample{
       }
       
       // Set volume
-      _curr_reader->set_volume(_seqblock->curr_gain * _grain_volume_compensation);
+      _curr_reader->set_volume(_seqblock->curr_gain);
 
       // Add samples
       _curr_reader->RT_add_samples(num_frames, outputs);

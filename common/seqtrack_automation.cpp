@@ -866,7 +866,7 @@ float SEQTRACK_AUTOMATION_get_node_x(struct SeqtrackAutomation *seqtrackautomati
   return get_node_x2(seqtrack, node, start_time, end_time, x1, x2);
 }
 
-static float get_node_y(const AutomationNode &node, float y1, float y2){
+static float get_node_y(const AutomationNode &node, float y1, float y2, void *data){
   return scale(node.value, 0, 1, y2, y1);
 }
 
@@ -879,7 +879,7 @@ float SEQTRACK_AUTOMATION_get_node_y(struct SeqtrackAutomation *seqtrackautomati
   struct Automation *automation = seqtrackautomation->_automations[automationnum];
   R_ASSERT_RETURN_IF_FALSE2(automation->islegalnodenum(nodenum), 0);
 
-  return get_node_y(automation->automation.at(nodenum), y1, y2);
+  return get_node_y(automation->automation.at(nodenum), y1, y2, NULL);
 }
 
 void SEQTRACK_AUTOMATION_paint(QPainter *p, const struct SeqTrack *seqtrack, float x1, float y1, float x2, float y2, double start_time, double end_time){

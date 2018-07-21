@@ -32,6 +32,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 namespace radium{
 
+  
+template <typename T> struct NodeFromStateProvider{
+  virtual T create_node_from_state(hash_t *state, double state_samplerate) const = 0;
+  virtual ~NodeFromStateProvider() = default; // Crazy c++ stuff. https://www.securecoding.cert.org/confluence/display/cplusplus/OOP52-CPP.+Do+not+delete+a+polymorphic+object+without+a+virtual+destructor
+};
+
+
 template <typename T> class SeqAutomation{
   
 private:
@@ -434,7 +441,7 @@ public:
   }
 
   void paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time, const QColor &color,
-             float (*get_y)(const T &node, float y1, float y2),
+             float (*get_y)(const T &node, float y1, float y2, void *data),
              float (*get_x)(const T &node, double start_time, double end_time, float x1, float x2, void *data) = NULL,
              void *data = NULL,
              const QColor fill_color = QColor(),
@@ -473,7 +480,7 @@ public:
       if (start_i < 0)
         start_i = i;
 
-      float y_a = get_y(node1, y1, y2);
+      float y_a = get_y(node1, y1, y2, data);
 
       if (next_is_hold && x_a>=x1){
         points[size] = QPointF(x_a, points[size-1].y());
@@ -573,7 +580,7 @@ public:
   }
 
 
-  void create_from_state(const dyn_t &dynstate, T (*create_node_from_state)(hash_t *,double), double state_samplerate){
+  void create_from_state(const dyn_t &dynstate, const NodeFromStateProvider<T> *nsp, double state_samplerate){
     _automation.clear();
 
     if (dynstate.type==HASH_TYPE) {
@@ -586,14 +593,14 @@ public:
       int size = HASH_get_array_size(state, "node");
       
       for(int i = 0 ; i < size ; i++)
-        add_node(create_node_from_state(HASH_get_hash_at(state, "node", i), state_samplerate));
+        add_node(nsp->create_node_from_state(HASH_get_hash_at(state, "node", i), state_samplerate));
 
     } else if (dynstate.type==ARRAY_TYPE) {
 
       const dynvec_t *vec = dynstate.array;
       
       for(const dyn_t &dyn : vec)
-        add_node(create_node_from_state(dyn.hash, state_samplerate));
+        add_node(nsp->create_node_from_state(dyn.hash, state_samplerate));
 
     } else {
       
@@ -602,7 +609,25 @@ public:
     }
   }
   
+  void create_from_state(const dyn_t &dynstate, T (*create_node_from_state_func)(hash_t *,double), double state_samplerate){
 
+    struct MyProvider : public NodeFromStateProvider<T> {
+      T (*_create_node_from_state_func)(hash_t *,double);
+      
+      MyProvider(T (*create_node_from_state_func)(hash_t *,double))
+        : _create_node_from_state_func(create_node_from_state_func)
+      {}
+      
+      T create_node_from_state(hash_t *state, double state_samplerate) const {
+        return _create_node_from_state_func(state, state_samplerate);
+      }      
+    };
+
+    MyProvider myprovider(create_node_from_state_func);
+    
+    create_from_state(dynstate, &myprovider, state_samplerate);
+  }
+  
   dyn_t get_state(hash_t *(*get_node_state)(const T &node)) const {
     int size = _automation.size();
     
