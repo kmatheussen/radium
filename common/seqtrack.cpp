@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileInfo>
 #include <QSet>
 
-#define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
+#define RADIUM_ACCESS_SEQBLOCK_AUTOMATION 1
 
 #include "nsmtracker.h"
 #include "player_proc.h"
@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Bs_edit_proc.h"
 #include "song_tempo_automation_proc.h"
 #include "seqtrack_automation_proc.h"
-#include "seqblock_envelope_proc.h"
+#include "seqblock_automation_proc.h"
 #include "patch_proc.h"
 #include "Semaphores.hpp"
 #include "Dynvec_proc.h"
@@ -332,7 +332,12 @@ static void seqblockgcfinalizer(void *actual_mem_start, void *user_data){
   struct SeqBlock *seqblock = (struct SeqBlock*)user_data;
   //printf("FINALIZING seqtrack\n");
   //getchar();
-  SEQBLOCK_ENVELOPE_free(seqblock->envelope);
+  SEQBLOCK_AUTOMATION_free(seqblock->envelope);
+
+  SEQBLOCK_AUTOMATION_free(seqblock->grain_overlap_automation);
+  SEQBLOCK_AUTOMATION_free(seqblock->grain_length_automation);
+  SEQBLOCK_AUTOMATION_free(seqblock->grain_jitter_automation);
+  SEQBLOCK_AUTOMATION_free(seqblock->grain_ramp_automation);
 
   delete seqblock->fade_in_envelope;
   delete seqblock->fade_out_envelope;
@@ -387,7 +392,7 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
 
   if(seqtrack != NULL){
     R_ASSERT(false==PLAYER_current_thread_has_lock());
-    seqblock->envelope = SEQBLOCK_ENVELOPE_create(seqtrack, seqblock, envelope_state, state_samplerate);
+    seqblock->envelope = SEQBLOCK_AUTOMATION_create(seqtrack, seqblock, envelope_state, state_samplerate);
     GC_register_finalizer(seqblock, seqblockgcfinalizer, seqblock, NULL, NULL);
   }else{
     R_ASSERT(true==PLAYER_current_thread_has_lock());
@@ -448,7 +453,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
     int64_t duration = SEQTRACKPLUGIN_get_total_num_frames_for_sample(plugin, seqblock->sample_id);
   
     default_duration_changed(seqblock, duration);  
-    SEQBLOCK_ENVELOPE_duration_changed(seqblock, duration, NULL);
+    SEQBLOCK_AUTOMATION_duration_changed(seqblock, duration, NULL);
 
     /*
       // Don't think we can do this here since this code could be called when undoing. It's probably good enough when it's being done in SEQTRACK_insert_sample.
@@ -841,7 +846,7 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
   HASH_put_chars(state, ":fade-out-shape", fade_shape_to_string(seqblock->fade_out_envelope->_shape));
 
   HASH_put_bool(state, ":envelope-enabled", seqblock->envelope_enabled);
-  HASH_put_dyn(state, ":envelope", SEQBLOCK_ENVELOPE_get_state(seqblock->envelope));
+  HASH_put_dyn(state, ":envelope", SEQBLOCK_AUTOMATION_get_state(seqblock->envelope));
 
   return state;
 }
@@ -1843,7 +1848,7 @@ bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
   if (is_playing_song)
     more_things_to_do = RT_SEQTRACK_AUTOMATION_called_per_block(seqtrack);
 
-  RT_SEQBLOCK_ENVELOPE_called_before_editor(seqtrack);
+  RT_SEQBLOCK_AUTOMATION_called_before_editor(seqtrack);
   
   if (seqtrack->patch !=NULL ) {
   
@@ -1892,7 +1897,7 @@ void SEQUENCER_timing_has_changed(radium::PlayerLockOnlyIfNeeded &lock){
           
           seqblock->t.interior_end = default_duration;
 
-          SEQBLOCK_ENVELOPE_duration_changed(seqblock, default_duration, &lock);
+          SEQBLOCK_AUTOMATION_duration_changed(seqblock, default_duration, &lock);
 
           lock.maybe_pause(iterator666);
         }
@@ -2753,7 +2758,7 @@ static hash_t *get_envelopes_state(const struct SeqTrack *seqtrack){
   hash_t *state = HASH_create(seqtrack->seqblocks.num_elements);
 
   VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-    dyn_t envelope = SEQBLOCK_ENVELOPE_get_state(seqblock->envelope);
+    dyn_t envelope = SEQBLOCK_AUTOMATION_get_state(seqblock->envelope);
     HASH_put_dyn_at(state, "seqblockenvelope", iterator666, envelope);
   }END_VECTOR_FOR_EACH;  
 
@@ -2782,7 +2787,7 @@ static void apply_envelopes_state(const struct SeqTrack *seqtrack, const hash_t 
   VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     
     const dyn_t envelope = HASH_get_dyn_at(envelopes, "seqblockenvelope", iterator666);
-    SEQBLOCK_ENVELOPE_apply_state(seqblock->envelope, envelope, -1);
+    SEQBLOCK_AUTOMATION_apply_state(seqblock->envelope, envelope, -1);
     
   }END_VECTOR_FOR_EACH;  
 }

@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/SeqAutomation.hpp"
 #include "../common/Array.hpp"
 #include "../common/undo_sequencer_proc.h"
+#include "../common/seqblock_automation_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"

@@ -2621,7 +2621,7 @@ struct SeqBlockTimings{
   double stretch;
 };
 
-struct SeqblockEnvelope;
+struct SeqblockAutomation;
 
 // Note: The values 0,1,2,3,4,5,6 are used directly in bin/scheme/mouse.scm. Probably simplest not to change any of the types, and just append new types to the end.
 enum SeqblockBoxSelected{
@@ -2636,7 +2636,7 @@ enum SeqblockBoxSelected{
 
 static inline int get_system_fontheight(void);
 
-#ifdef RADIUM_ACCESS_SEQBLOCK_ENVELOPE
+#ifdef RADIUM_ACCESS_SEQBLOCK_AUTOMATION
 #include "../audio/Envelope.hpp"
 #endif
 
@@ -2669,7 +2669,7 @@ struct SeqBlock{
   double fadein; // value between 0 and 1
   double fadeout; // value between 0 and 1
 
-#if RADIUM_ACCESS_SEQBLOCK_ENVELOPE
+#if RADIUM_ACCESS_SEQBLOCK_AUTOMATION
   radium::Envelope *fade_in_envelope;
   radium::Envelope *fade_out_envelope;
 #else
@@ -2684,8 +2684,14 @@ struct SeqBlock{
 
   bool envelope_enabled;
   float envelope_db;     // db version of envelope_volume
-  struct SeqblockEnvelope *envelope;
-  
+  struct SeqblockAutomation *envelope;
+
+  struct SeqblockAutomation *grain_overlap_automation;
+  struct SeqblockAutomation *grain_length_automation;
+  struct SeqblockAutomation *grain_jitter_automation;
+  struct SeqblockAutomation *grain_ramp_automation;
+
+
   // 'start_time' and 'end_time' are absolute times.
   // They are only used the main thread.
   //

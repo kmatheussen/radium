@@ -22,12 +22,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QSet>
 
-#define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
+#define RADIUM_ACCESS_SEQBLOCK_AUTOMATION 1
 
 #include "../common/nsmtracker.h"
 #include "../common/seqtrack_proc.h"
 #include "../common/seqtrack_automation_proc.h"
-#include "../common/seqblock_envelope_proc.h"
+#include "../common/seqblock_automation_proc.h"
 #include "../common/song_tempo_automation_proc.h"
 #include "../common/time_proc.h"
 #include "../common/undo_sequencer_proc.h"
@@ -932,7 +932,7 @@ int getSeqblockResamplerType(int64_t seqblockid){
 //////////////////////////////////
 
 #define VALIDATE_ENV_NODENUM(ret)                                           \
-  if (nodenum < 0 || nodenum >= SEQBLOCK_ENVELOPE_get_num_nodes(seqblock->envelope)){ \
+  if (nodenum < 0 || nodenum >= SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->envelope)){ \
     handleError("There is no node #%d in sequencer block #%d in sequencer track #%d", nodenum, seqblocknum, seqtracknum); \
     return ret;                                                          \
   }
@@ -985,7 +985,7 @@ float getSeqblockEnvelopeDb(int nodenum, int seqblocknum, int seqtracknum){
 
   VALIDATE_ENV_NODENUM(-1);
 
-  return SEQBLOCK_ENVELOPE_get_db(seqblock->envelope, nodenum);
+  return SEQBLOCK_AUTOMATION_get_db(seqblock->envelope, nodenum);
 }
 
 int64_t getSeqblockEnvelopeTime(int nodenum, int seqblocknum, int seqtracknum){
@@ -996,7 +996,7 @@ int64_t getSeqblockEnvelopeTime(int nodenum, int seqblocknum, int seqtracknum){
 
   VALIDATE_ENV_NODENUM(-1);
 
-  return SEQBLOCK_ENVELOPE_get_seqtime(seqblock->envelope, nodenum);
+  return SEQBLOCK_AUTOMATION_get_seqtime(seqblock->envelope, nodenum);
 }
 
 int getSeqblockEnvelopeLogtype(int nodenum, int seqblocknum, int seqtracknum){
@@ -1006,7 +1006,7 @@ int getSeqblockEnvelopeLogtype(int nodenum, int seqblocknum, int seqtracknum){
 
   VALIDATE_ENV_NODENUM(-1);
 
-  return SEQBLOCK_ENVELOPE_get_logtype(seqblock->envelope, nodenum);
+  return SEQBLOCK_AUTOMATION_get_logtype(seqblock->envelope, nodenum);
 }
 
 int getNumSeqblockEnvelopeNodes(int seqblocknum, int seqtracknum){
@@ -1014,7 +1014,7 @@ int getNumSeqblockEnvelopeNodes(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return -1;
 
-  return SEQBLOCK_ENVELOPE_get_num_nodes(seqblock->envelope);
+  return SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->envelope);
 }
 
 int addSeqblockEnvelopeNode(int64_t time, float db, int logtype, int seqblocknum, int seqtracknum){
@@ -1027,7 +1027,7 @@ int addSeqblockEnvelopeNode(int64_t time, float db, int logtype, int seqblocknum
     
   undoSequencerEnvelopes();
 
-  return SEQBLOCK_ENVELOPE_add_node(seqblock->envelope, time, db, logtype);
+  return SEQBLOCK_AUTOMATION_add_node(seqblock->envelope, time, db, logtype);
 }
 
 void deleteSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
@@ -1036,13 +1036,13 @@ void deleteSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return;
 
-  if (nodenum==0 || nodenum==SEQBLOCK_ENVELOPE_get_num_nodes(seqblock->envelope)-1){
-    SEQBLOCK_ENVELOPE_set(seqtrack,
+  if (nodenum==0 || nodenum==SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->envelope)-1){
+    SEQBLOCK_AUTOMATION_set(seqtrack,
                           seqblock,
                           nodenum,
-                          SEQBLOCK_ENVELOPE_get_seqtime(seqblock->envelope, nodenum),
+                          SEQBLOCK_AUTOMATION_get_seqtime(seqblock->envelope, nodenum),
                           0.0,
-                          SEQBLOCK_ENVELOPE_get_logtype(seqblock->envelope, nodenum)
+                          SEQBLOCK_AUTOMATION_get_logtype(seqblock->envelope, nodenum)
                           );
     return;
   }
@@ -1052,7 +1052,7 @@ void deleteSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
 
   undoSequencerEnvelopes();
 
-  SEQBLOCK_ENVELOPE_delete_node(seqblock->envelope, nodenum);
+  SEQBLOCK_AUTOMATION_delete_node(seqblock->envelope, nodenum);
 }
 
 void setCurrSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
@@ -1062,7 +1062,7 @@ void setCurrSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
 
   VALIDATE_ENV_NODENUM();
 
-  SEQBLOCK_ENVELOPE_set_curr_node(seqblock->envelope, nodenum);
+  SEQBLOCK_AUTOMATION_set_curr_node(seqblock->envelope, nodenum);
 }
 
 void cancelCurrSeqblockEnvelopeNode(int seqblocknum, int seqtracknum){
@@ -1070,7 +1070,7 @@ void cancelCurrSeqblockEnvelopeNode(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return;
 
-  SEQBLOCK_ENVELOPE_cancel_curr_node(seqblock->envelope);
+  SEQBLOCK_AUTOMATION_cancel_curr_node(seqblock->envelope);
 }
 
 void setCurrSeqblockEnvelope(int seqblocknum, int seqtracknum){
@@ -1079,12 +1079,12 @@ void setCurrSeqblockEnvelope(int seqblocknum, int seqtracknum){
   if (seqblock==NULL)
     return;
 
-  SEQBLOCK_ENVELOPE_set_curr_automation(seqtrack, seqblock);
+  SEQBLOCK_AUTOMATION_set_curr_automation(seqtrack, seqblock);
 }
 
 void cancelCurrSeqblockEnvelope(void){
   //printf("   cancelCurrSeqblockEnvelope called\n");
-  SEQBLOCK_ENVELOPE_cancel_curr_automation();
+  SEQBLOCK_AUTOMATION_cancel_curr_automation();
 }
 
 void setSeqblockEnvelopeNode(int64_t time, float db, int logtype, int nodenum, int seqblocknum, int seqtracknum){
@@ -1096,7 +1096,7 @@ void setSeqblockEnvelopeNode(int64_t time, float db, int logtype, int nodenum, i
   VALIDATE_ENV_NODENUM();
   VALIDATE_ENV_TIME(time,)
     
-  SEQBLOCK_ENVELOPE_set(seqtrack, seqblock, nodenum, time, db, logtype);
+  SEQBLOCK_AUTOMATION_set(seqtrack, seqblock, nodenum, time, db, logtype);
 }
 
 float getSeqblockEnvelopeNodeX(int nodenum, int seqblocknum, int seqtracknum){
@@ -1106,7 +1106,7 @@ float getSeqblockEnvelopeNodeX(int nodenum, int seqblocknum, int seqtracknum){
 
   VALIDATE_ENV_NODENUM(0);
 
-  return SEQBLOCK_ENVELOPE_get_node_x(seqblock->envelope, nodenum);
+  return SEQBLOCK_AUTOMATION_get_node_x(seqblock->envelope, nodenum);
 }
 
 float getSeqblockEnvelopeNodeY(int nodenum, int seqblocknum, int seqtracknum){
@@ -1116,7 +1116,7 @@ float getSeqblockEnvelopeNodeY(int nodenum, int seqblocknum, int seqtracknum){
 
   VALIDATE_ENV_NODENUM(0);
 
-  return SEQBLOCK_ENVELOPE_get_node_y(seqblock->envelope, seqtracknum, nodenum);
+  return SEQBLOCK_AUTOMATION_get_node_y(seqblock->envelope, seqtracknum, nodenum);
 }
 
 
