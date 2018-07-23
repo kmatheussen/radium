@@ -16,7 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define DO_DEBUG 0
 
-#define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
+#define RADIUM_ACCESS_SEQBLOCK_AUTOMATION 1
 
 #include "nsmtracker.h"
 #include "hashmap_proc.h"
@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #pragma clang diagnostic pop
 
 
-#include "seqblock_envelope_proc.h"
+#include "seqblock_automation_proc.h"
 
 
 #if 0 // Very inefficient since Envelope::get_y is not a const method. ('_last_i' will be set back to 1 very often)
@@ -64,7 +64,7 @@ radium::Envelope g_symmetric_fade_out = radium::Envelope(FADE_SYMMETRIC, 1.0, fa
 
 
 
-// g_curr_seqblock_envelope_seqtrack is set to NULL by ~SeqblockEnvelope or SEQBLOCK_ENVELOPE_cancel_curr_automation.
+// g_curr_seqblock_envelope_seqtrack is set to NULL by ~SeqblockEnvelope or SEQBLOCK_AUTOMATION_cancel_curr_automation.
 // Note that it not possible for a seqtrack to be valid, and its seqtrack->seqblockenvelope gain to be invalid, or
 // vice versa, so it's fine using the SeqblockEnvelope destructor for setting this value to NULL when the seqtrack is deleted.
 static struct SeqTrack *g_curr_seqblock_envelope_seqtrack = NULL;
@@ -115,6 +115,9 @@ static hash_t *get_node_state(const AutomationNode &node){
   return state;
 }
 
+}
+
+
 /*
 static AutomationNode create_node_from_state(hash_t *state, double state_samplerate){
   double time = HASH_get_float(state, ":seqtime");
@@ -134,6 +137,8 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
   double _min_value;
   double _max_value;
   const char *_value_name;
+
+  bool _is_enabled = false;
   
   SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, double min_value, double max_value, const char *value_name)
     : _seqtrack(seqtrack)
@@ -142,7 +147,7 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
     , _max_value(max_value)
     , _value_name(value_name)
   {
-    SEQBLOCK_ENVELOPE_cancel_curr_automation();
+    SEQBLOCK_AUTOMATION_cancel_curr_automation();
   }
 
   SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t state, double state_samplerate, double min_value, double max_value, const char *value_name)
@@ -377,7 +382,7 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
   }
 };
 
-}
+namespace{
 
 struct SeqblockEnvelope : public SeqblockAutomation{
   
@@ -393,7 +398,7 @@ public:
   SeqblockEnvelope(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, double state_samplerate, const dyn_t state = g_uninitialized_dyn)
     : SeqblockAutomation(seqtrack, seqblock, state, state_samplerate, MIN_DB, MAX_SEQBLOCK_VOLUME_ENVELOPE_DB, ":db")
   {
-    SEQBLOCK_ENVELOPE_cancel_curr_automation();
+    SEQBLOCK_AUTOMATION_cancel_curr_automation();
 
     if (state.type == UNINITIALIZED_TYPE) {
 
@@ -411,63 +416,66 @@ public:
 #endif
 
     if (g_curr_seqblock_envelope_seqblock!=NULL && g_curr_seqblock_envelope_seqblock->envelope==this){
-      set_no_curr_seqtrack(); // It's a little bit unclear what data is available and not right now. We can think through the situation, and probably conclude that it's fine to call SEQBLOCK_ENVELOPE_cancel_curr_automation() no matter what, but this is also fine, probably clearer, and much simpler since we don't have to worry whether it's safe to call SEQBLOCK_ENVELOPE_cancel_curr_automation.
+      set_no_curr_seqtrack(); // It's a little bit unclear what data is available and not right now. We can think through the situation, and probably conclude that it's fine to call SEQBLOCK_AUTOMATION_cancel_curr_automation() no matter what, but this is also fine, probably clearer, and much simpler since we don't have to worry whether it's safe to call SEQBLOCK_AUTOMATION_cancel_curr_automation.
     } else {
-      SEQBLOCK_ENVELOPE_cancel_curr_automation();
+      SEQBLOCK_AUTOMATION_cancel_curr_automation();
     }
 
     assert_no_curr_seqtrack();
   }
 };
+
+}
+
  
 
-struct SeqblockEnvelope *SEQBLOCK_ENVELOPE_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t automation_state, double state_samplerate){
+struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t automation_state, double state_samplerate){
   return new SeqblockEnvelope(seqtrack, seqblock, state_samplerate, automation_state);
 }
 
-void SEQBLOCK_ENVELOPE_free(struct SeqblockEnvelope *seqblockenvelope){
+void SEQBLOCK_AUTOMATION_free(struct SeqblockAutomation *seqblockenvelope){  // note: seqblockenvelope might be NULL.
   delete seqblockenvelope;
 }
 
-double SEQBLOCK_ENVELOPE_get_db(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
+double SEQBLOCK_AUTOMATION_get_db(struct SeqblockAutomation *seqblockenvelope, int nodenum){
   return seqblockenvelope->get_value(nodenum);
 }
 
-double SEQBLOCK_ENVELOPE_get_seqtime(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
+double SEQBLOCK_AUTOMATION_get_seqtime(struct SeqblockAutomation *seqblockenvelope, int nodenum){
   return seqblockenvelope->get_time(nodenum);
 }
 
-int SEQBLOCK_ENVELOPE_get_logtype(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
+int SEQBLOCK_AUTOMATION_get_logtype(struct SeqblockAutomation *seqblockenvelope, int nodenum){
   return seqblockenvelope->get_logtype(nodenum);
 }
 
-int SEQBLOCK_ENVELOPE_get_num_nodes(struct SeqblockEnvelope *seqblockenvelope){
+int SEQBLOCK_AUTOMATION_get_num_nodes(struct SeqblockAutomation *seqblockenvelope){
 
   return seqblockenvelope->_automation.size();
 }
   
 
-int SEQBLOCK_ENVELOPE_add_node(struct SeqblockEnvelope *seqblockenvelope, double seqtime, double db, int logtype){
+int SEQBLOCK_AUTOMATION_add_node(struct SeqblockAutomation *seqblockenvelope, double seqtime, double db, int logtype){
   return seqblockenvelope->add_node(seqtime, db, logtype);
 }
                               
-void SEQBLOCK_ENVELOPE_delete_node(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
+void SEQBLOCK_AUTOMATION_delete_node(struct SeqblockAutomation *seqblockenvelope, int nodenum){
   seqblockenvelope->delete_node(nodenum);
 }
 
-void SEQBLOCK_ENVELOPE_set_curr_node(struct SeqblockEnvelope *seqblockenvelope, int nodenum){
+void SEQBLOCK_AUTOMATION_set_curr_node(struct SeqblockAutomation *seqblockenvelope, int nodenum){
   seqblockenvelope->set_curr_node(nodenum);
 }
 
-void SEQBLOCK_ENVELOPE_cancel_curr_node(struct SeqblockEnvelope *seqblockenvelope){
+void SEQBLOCK_AUTOMATION_cancel_curr_node(struct SeqblockAutomation *seqblockenvelope){
   seqblockenvelope->cancel_curr_node();
 }
 
 // Legal to call even if there is already a current automation.
-void SEQBLOCK_ENVELOPE_set_curr_automation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
-  SEQBLOCK_ENVELOPE_cancel_curr_automation();
+void SEQBLOCK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
+  SEQBLOCK_AUTOMATION_cancel_curr_automation();
   
-  struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
+  struct SeqblockAutomation *seqblockenvelope = seqblock->envelope;
   
   if (seqblockenvelope->_automation.do_paint_nodes()){
     
@@ -486,7 +494,7 @@ void SEQBLOCK_ENVELOPE_set_curr_automation(struct SeqTrack *seqtrack, struct Seq
 }
 
 // May be called if it there is no current automation.
-void SEQBLOCK_ENVELOPE_cancel_curr_automation(void){
+void SEQBLOCK_AUTOMATION_cancel_curr_automation(void){
   
   struct SeqTrack *seqtrack = g_curr_seqblock_envelope_seqtrack;
   
@@ -498,7 +506,7 @@ void SEQBLOCK_ENVELOPE_cancel_curr_automation(void){
     struct SeqBlock *seqblock = g_curr_seqblock_envelope_seqblock;
     R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
 
-    SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
+    SeqblockAutomation *seqblockenvelope = seqblock->envelope;
     R_ASSERT_RETURN_IF_FALSE(seqblockenvelope!=NULL);
     
     if (seqblockenvelope->_automation.do_paint_nodes()){
@@ -513,12 +521,12 @@ void SEQBLOCK_ENVELOPE_cancel_curr_automation(void){
 }
 
 
-void SEQBLOCK_ENVELOPE_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int nodenum, double seqtime, double db, int logtype){
+void SEQBLOCK_AUTOMATION_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int nodenum, double seqtime, double db, int logtype){
   seqblock->envelope->set_node(nodenum, seqtime, db, logtype);
 }
 
-void SEQBLOCK_ENVELOPE_duration_changed(struct SeqBlock *seqblock, int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock){
-  struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
+void SEQBLOCK_AUTOMATION_duration_changed(struct SeqBlock *seqblock, int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock){
+  struct SeqblockAutomation *seqblockenvelope = seqblock->envelope;
   seqblockenvelope->seqblock_duration_has_changed(new_duration, lock);
 }
 
@@ -628,7 +636,7 @@ static void RT_clear_all_volume_automation_block_statuses(void){
 }
 
 static void RT_set_seqblock_volume_envelope_values(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const double pos, const int64_t seqblock_pos_start, const int64_t seqblock_pos_end){
-  struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
+  struct SeqblockAutomation *seqblockenvelope = seqblock->envelope;
 
   double new_db = 0.0;
   if (seqblock->envelope_enabled)
@@ -751,17 +759,29 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
       int64_t seqblock_pos_end = end_time - seqblock->t.time;
 
       double s1 = get_seqblock_noninterior_start(seqblock);
-      double pos = (start_time-s1) / seqblock->t.stretch;
+      double time = (start_time-s1) / seqblock->t.stretch;
 
-      RT_set_seqblock_volume_envelope_values(seqtrack, seqblock, pos, seqblock_pos_start, seqblock_pos_end);
+      RT_set_seqblock_volume_envelope_values(seqtrack, seqblock, time, seqblock_pos_start, seqblock_pos_end);
     }
 
   }END_VECTOR_FOR_EACH;
 }
 
+bool RT_seqblock_automation_is_enabled(struct SeqblockAutomation *automation){
+  return automation->_is_enabled;
+}
+
+bool RT_maybe_get_seqblock_automation_value(struct SeqblockAutomation *automation, double time, double &value){
+  if (automation->_is_enabled==false)
+    return false;
+  
+  automation->_automation.RT_get_value(time, value, NULL, true);
+  return true;
+}
+                                     
 
 // Called from player.c
-void RT_SEQBLOCK_ENVELOPE_called_before_scheduler(void){
+void RT_SEQBLOCK_AUTOMATION_called_before_scheduler(void){
   if (is_playing_song()==false)
     return;
   
@@ -770,7 +790,7 @@ void RT_SEQBLOCK_ENVELOPE_called_before_scheduler(void){
 
 
 // Called from seqtrack.cpp
-void RT_SEQBLOCK_ENVELOPE_called_before_editor(struct SeqTrack *seqtrack){
+void RT_SEQBLOCK_AUTOMATION_called_before_editor(struct SeqTrack *seqtrack){
   if (is_playing_song()==false)
     return;
 
@@ -778,7 +798,7 @@ void RT_SEQBLOCK_ENVELOPE_called_before_editor(struct SeqTrack *seqtrack){
 }
 
 // Called from player.c
-void RT_SEQBLOCK_ENVELOPE_called_after_scheduler_and_before_audio(void){
+void RT_SEQBLOCK_AUTOMATION_called_after_scheduler_and_before_audio(void){
   if (is_playing_song()==false)
     return;
 
@@ -786,7 +806,7 @@ void RT_SEQBLOCK_ENVELOPE_called_after_scheduler_and_before_audio(void){
 }
 
 // Called from player.c
-void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void){
+void RT_SEQBLOCK_AUTOMATION_called_when_player_stopped(void){
 #if 1
   ALL_SEQTRACKS_FOR_EACH(){
 
@@ -806,24 +826,24 @@ void RT_SEQBLOCK_ENVELOPE_called_when_player_stopped(void){
 
 
 
-dyn_t SEQBLOCK_ENVELOPE_get_state(const struct SeqblockEnvelope *seqblockenvelope){
+dyn_t SEQBLOCK_AUTOMATION_get_state(const struct SeqblockAutomation *seqblockenvelope){
   return seqblockenvelope->get_state();
 }
 
-void SEQBLOCK_ENVELOPE_apply_state(struct SeqblockEnvelope *seqblockenvelope, const dyn_t envelope_state, double state_samplerate){
+void SEQBLOCK_AUTOMATION_apply_state(struct SeqblockAutomation *seqblockenvelope, const dyn_t envelope_state, double state_samplerate){
   seqblockenvelope->_automation.create_from_state(envelope_state, seqblockenvelope, state_samplerate);
   SEQTRACK_update(seqblockenvelope->_seqtrack.data());
 }
 
-float SEQBLOCK_ENVELOPE_get_node_x(const struct SeqblockEnvelope *seqblockenvelope, int nodenum){
+float SEQBLOCK_AUTOMATION_get_node_x(const struct SeqblockAutomation *seqblockenvelope, int nodenum){
   return seqblockenvelope->get_node_x(nodenum);
 }
 
-float SEQBLOCK_ENVELOPE_get_node_y(const struct SeqblockEnvelope *seqblockenvelope, int seqtracknum, int nodenum){
+float SEQBLOCK_AUTOMATION_get_node_y(const struct SeqblockAutomation *seqblockenvelope, int seqtracknum, int nodenum){
   return seqblockenvelope->get_node_y(seqtracknum, nodenum);
 }
 
-void SEQBLOCK_ENVELOPE_paint(QPainter *p, const struct SeqBlock *seqblock, float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2){
-  struct SeqblockEnvelope *seqblockenvelope = seqblock->envelope;
+void SEQBLOCK_AUTOMATION_paint(QPainter *p, const struct SeqBlock *seqblock, float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2){
+  struct SeqblockAutomation *seqblockenvelope = seqblock->envelope;
   seqblockenvelope->paint(p, x1, y1, x2, y2, paint_nodes, seqblock_x1, seqblock_x2);
 }

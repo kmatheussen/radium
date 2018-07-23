@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
-#define RADIUM_ACCESS_SEQBLOCK_ENVELOPE 1
+#define RADIUM_ACCESS_SEQBLOCK_AUTOMATION 1
 #include "../common/nsmtracker.h"
 
 #include "Qt_MyQCheckBox.h"
@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../embedded_scheme/scheme_proc.h"
 #include "../common/seqtrack_automation_proc.h"
 #include "../common/song_tempo_automation_proc.h"
-#include "../common/seqblock_envelope_proc.h"
+#include "../common/seqblock_automation_proc.h"
 #include "../common/tracks_proc.h"
 #include "../common/player_proc.h"
 #include "../common/OS_Bs_edit_proc.h"
@@ -1101,7 +1101,7 @@ public:
         painter->setClipping(true);
 
         painter->setOpacity(0.05);
-        SEQBLOCK_ENVELOPE_paint(painter, seqblock, ni_x1, y1, ni_x2, y2, true, x1, x2);
+        SEQBLOCK_AUTOMATION_paint(painter, seqblock, ni_x1, y1, ni_x2, y2, true, x1, x2);
         painter->setOpacity(1.0);
 
         painter->setClipping(false);
@@ -1114,7 +1114,7 @@ public:
           painter->setClipping(true);
         }
 
-        SEQBLOCK_ENVELOPE_paint(painter, seqblock, ni_x1, y1, ni_x2, y2, is_current, x1, x2);
+        SEQBLOCK_AUTOMATION_paint(painter, seqblock, ni_x1, y1, ni_x2, y2, is_current, x1, x2);
 
         if(!draw_all)
           painter->setClipping(false);
