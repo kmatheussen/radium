@@ -415,7 +415,7 @@ public:
       abort();
 #endif
 
-    if (g_curr_seqblock_envelope_seqblock!=NULL && g_curr_seqblock_envelope_seqblock->envelope==this){
+    if (g_curr_seqblock_envelope_seqblock!=NULL && g_curr_seqblock_envelope_seqblock->automations[SAT_VOLUME]==this){
       set_no_curr_seqtrack(); // It's a little bit unclear what data is available and not right now. We can think through the situation, and probably conclude that it's fine to call SEQBLOCK_AUTOMATION_cancel_curr_automation() no matter what, but this is also fine, probably clearer, and much simpler since we don't have to worry whether it's safe to call SEQBLOCK_AUTOMATION_cancel_curr_automation.
     } else {
       SEQBLOCK_AUTOMATION_cancel_curr_automation();
@@ -429,7 +429,7 @@ public:
 
  
 
-struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t automation_state, double state_samplerate){
+struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t automation_state, double state_samplerate){
   return new SeqblockEnvelope(seqtrack, seqblock, state_samplerate, automation_state);
 }
 
@@ -480,10 +480,8 @@ void SEQBLOCK_AUTOMATION_cancel_curr_node(struct SeqblockAutomation *seqblockenv
 }
 
 // Legal to call even if there is already a current automation.
-void SEQBLOCK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
+void SEQBLOCK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct SeqblockAutomation *seqblockenvelope){
   SEQBLOCK_AUTOMATION_cancel_curr_automation();
-  
-  struct SeqblockAutomation *seqblockenvelope = seqblock->envelope;
   
   if (seqblockenvelope->_automation.do_paint_nodes()){
     
@@ -514,14 +512,11 @@ void SEQBLOCK_AUTOMATION_cancel_curr_automation(void){
     struct SeqBlock *seqblock = g_curr_seqblock_envelope_seqblock;
     R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
 
-    SeqblockAutomation *seqblockenvelope = seqblock->envelope;
-    R_ASSERT_RETURN_IF_FALSE(seqblockenvelope!=NULL);
-    
-    if (seqblockenvelope->_automation.do_paint_nodes()){
+    for(int i=0;i<NUM_SATS;i++){
+      if (i==NUM_EDITOR_BLOCK_SATS && seqblock->block!=NULL)
+        break;
+      SeqblockAutomation *seqblockenvelope = seqblock->automations[i];
       seqblockenvelope->_automation.set_do_paint_nodes(false);
-      SEQTRACK_update(seqtrack);
-    }else{
-      R_ASSERT_NON_RELEASE(false);
     }
   }
 
@@ -529,12 +524,11 @@ void SEQBLOCK_AUTOMATION_cancel_curr_automation(void){
 }
 
 
-void SEQBLOCK_AUTOMATION_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int nodenum, double seqtime, double db, int logtype){
-  seqblock->envelope->set_node(nodenum, seqtime, db, logtype);
+void SEQBLOCK_AUTOMATION_set(struct SeqblockAutomation *seqblockenvelope, int nodenum, double seqtime, double db, int logtype){
+  seqblockenvelope->set_node(nodenum, seqtime, db, logtype);
 }
 
-void SEQBLOCK_AUTOMATION_duration_changed(struct SeqBlock *seqblock, int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock){
-  struct SeqblockAutomation *seqblockenvelope = seqblock->envelope;
+void SEQBLOCK_AUTOMATION_duration_changed(struct SeqblockAutomation *seqblockenvelope, int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock){
   seqblockenvelope->seqblock_duration_has_changed(new_duration, lock);
 }
 
@@ -644,7 +638,7 @@ static void RT_clear_all_volume_automation_block_statuses(void){
 }
 
 static void RT_set_seqblock_volume_envelope_values(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const double pos, const int64_t seqblock_pos_start, const int64_t seqblock_pos_end){
-  struct SeqblockAutomation *seqblockenvelope = seqblock->envelope;
+  struct SeqblockAutomation *seqblockenvelope = seqblock->automations[SAT_VOLUME];
 
   double new_db = 0.0;
   if (seqblockenvelope->_is_enabled)
@@ -859,7 +853,6 @@ float SEQBLOCK_AUTOMATION_get_node_y(const struct SeqblockAutomation *seqblocken
   return seqblockenvelope->get_node_y(seqtracknum, nodenum);
 }
 
-void SEQBLOCK_AUTOMATION_paint(QPainter *p, const struct SeqBlock *seqblock, float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2){
-  struct SeqblockAutomation *seqblockenvelope = seqblock->envelope;
+void SEQBLOCK_AUTOMATION_paint(QPainter *p, struct SeqblockAutomation *seqblockenvelope, float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2){
   seqblockenvelope->paint(p, x1, y1, x2, y2, paint_nodes, seqblock_x1, seqblock_x2);
 }

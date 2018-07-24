@@ -2647,6 +2647,34 @@ enum Seqblock_Type{
   RECORDING
 };
 
+enum Seqblock_Automation_Type{
+  SAT_VOLUME = 0,
+  SAT_GRAIN_OVERLAP,
+  SAT_GRAIN_LENGTH,
+  SAT_GRAIN_JITTER,
+  SAT_GRAIN_RAMP,
+  NUM_SATS
+};
+
+#define NUM_EDITOR_BLOCK_SATS SAT_GRAIN_OVERLAP
+
+static inline const char *sat_to_string(enum Seqblock_Automation_Type sat){
+  switch(sat){
+    case SAT_VOLUME:
+      return "Volume";
+    case SAT_GRAIN_OVERLAP:
+      return "Grain Overlap";
+    case SAT_GRAIN_LENGTH:
+      return "Grain Length";
+    case SAT_GRAIN_JITTER:
+      return "Grain Jitter";
+    case SAT_GRAIN_RAMP:
+      return "Grain Ramp";
+    default:
+      R_ASSERT(false);
+      return "Unknown";
+  }
+}
 
 struct SeqBlock{
   int64_t id;
@@ -2683,13 +2711,16 @@ struct SeqBlock{
   bool curr_gain_changed_this_block; // set to true or false each block.
 
   float envelope_db;     // db version of envelope_volume
+
+  struct SeqblockAutomation *automations[NUM_SATS];
+  /*
   struct SeqblockAutomation *envelope;
 
   struct SeqblockAutomation *grain_overlap_automation;
   struct SeqblockAutomation *grain_length_automation;
   struct SeqblockAutomation *grain_jitter_automation;
   struct SeqblockAutomation *grain_ramp_automation;
-
+  */
 
   // 'start_time' and 'end_time' are absolute times.
   // They are only used the main thread.

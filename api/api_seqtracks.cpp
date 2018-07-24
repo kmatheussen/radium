@@ -931,9 +931,19 @@ int getSeqblockResamplerType(int64_t seqblockid){
 // Sequencer block volume envelope
 //////////////////////////////////
 
+#define VALIDATE_SEQBLOCK_AUTOMATIONNUM(ret)                                     \
+  if (automationnum < 0 || automationnum >= NUM_SATS){                  \
+    handleError("There is no automationnum #%d in seqblock #%d in seqtrack #%d", automationnum, seqblocknum, seqtracknum); \
+    return ret;                                                         \
+  }                                                                     \
+  if (seqblock->block==NULL && automationnum >= NUM_EDITOR_BLOCK_SATS) {                     \
+    handleError("Automation \"%s\" in sequencer block #%d in sequencer track #%d is not supported since it is not an audiofile seqblock", sat_to_string((enum Seqblock_Automation_Type)automationnum), seqblocknum, seqtracknum); \
+    return ret;                                                         \
+  }
+
 #define VALIDATE_ENV_NODENUM(ret)                                           \
-  if (nodenum < 0 || nodenum >= SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->envelope)){ \
-    handleError("There is no node #%d in sequencer block #%d in sequencer track #%d", nodenum, seqblocknum, seqtracknum); \
+  if (nodenum < 0 || nodenum >= SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->automations[automationnum])){ \
+    handleError("There is no node #%d for %s in sequencer block #%d in sequencer track #%d", nodenum, sat_to_string((enum Seqblock_Automation_Type)automationnum), seqblocknum, seqtracknum); \
     return ret;                                                          \
   }
 
@@ -949,12 +959,25 @@ int getSeqblockResamplerType(int64_t seqblockid){
     return ret;                                                 \
   }
 
+int getNumSeqblockAutomations(int seqblocknum, int seqtracknum){
+ struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+  if (seqblock==NULL)
+    return 0;
+
+  if (seqblock->block==NULL)
+    return NUM_EDITOR_BLOCK_SATS;
+  else
+    return NUM_SATS;
+}
+
 bool getSeqblockAutomationEnabled(int automationnum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
-    return -1;
+    return false;
 
-  return RT_seqblock_automation_is_enabled(seqblock->envelope);
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM(false);
+
+  return RT_seqblock_automation_is_enabled(seqblock->automations[automationnum]);
   //return seqblock->envelope_enabled;
 }
 void setSeqblockAutomationEnabled(bool is_enabled, int automationnum, int seqblocknum, int seqtracknum){
@@ -962,12 +985,14 @@ void setSeqblockAutomationEnabled(bool is_enabled, int automationnum, int seqblo
   if (seqblock==NULL)
     return;
 
-  if (RT_seqblock_automation_is_enabled(seqblock->envelope)==is_enabled)
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM();
+
+  if (RT_seqblock_automation_is_enabled(seqblock->automations[automationnum])==is_enabled)
     return;
 
   undoSequencer();
 
-  SEQBLOCK_AUTOMATION_set_enabled(seqblock->envelope, is_enabled);
+  SEQBLOCK_AUTOMATION_set_enabled(seqblock->automations[automationnum], is_enabled);
 }
 
 float getSeqblockAutomationMinValue(int automationnum, int seqblocknum, int seqtracknum){
@@ -975,7 +1000,9 @@ float getSeqblockAutomationMinValue(int automationnum, int seqblocknum, int seqt
   if (seqblock==NULL)
     return 0;
 
-  return SEQBLOCK_AUTOMATION_get_min_value(seqblock->envelope);
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM(0);
+
+  return SEQBLOCK_AUTOMATION_get_min_value(seqblock->automations[automationnum]);
 }
 
 float getSeqblockAutomationMaxValue(int automationnum, int seqblocknum, int seqtracknum){
@@ -983,7 +1010,9 @@ float getSeqblockAutomationMaxValue(int automationnum, int seqblocknum, int seqt
   if (seqblock==NULL)
     return 1;
 
-  return SEQBLOCK_AUTOMATION_get_max_value(seqblock->envelope);
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM(1);
+
+  return SEQBLOCK_AUTOMATION_get_max_value(seqblock->automations[automationnum]);
 }
 
 float getSeqblockAutomationValue(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
@@ -991,9 +1020,10 @@ float getSeqblockAutomationValue(int nodenum, int automationnum, int seqblocknum
   if (seqblock==NULL)
     return -1;
 
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM(-1);
   VALIDATE_ENV_NODENUM(-1);
 
-  return SEQBLOCK_AUTOMATION_get_value(seqblock->envelope, nodenum);
+  return SEQBLOCK_AUTOMATION_get_value(seqblock->automations[automationnum], nodenum);
 }
 
 int64_t getSeqblockAutomationTime(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
@@ -1002,9 +1032,10 @@ int64_t getSeqblockAutomationTime(int nodenum, int automationnum, int seqblocknu
   if (seqblock==NULL)
     return -1;
 
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM(-1);
   VALIDATE_ENV_NODENUM(-1);
 
-  return SEQBLOCK_AUTOMATION_get_seqtime(seqblock->envelope, nodenum);
+  return SEQBLOCK_AUTOMATION_get_seqtime(seqblock->automations[automationnum], nodenum);
 }
 
 int getSeqblockAutomationLogtype(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
@@ -1012,9 +1043,10 @@ int getSeqblockAutomationLogtype(int nodenum, int automationnum, int seqblocknum
   if (seqblock==NULL)
     return -1;
 
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM(-1);
   VALIDATE_ENV_NODENUM(-1);
 
-  return SEQBLOCK_AUTOMATION_get_logtype(seqblock->envelope, nodenum);
+  return SEQBLOCK_AUTOMATION_get_logtype(seqblock->automations[automationnum], nodenum);
 }
 
 int getNumSeqblockAutomationNodes(int automationnum, int seqblocknum, int seqtracknum){
@@ -1022,7 +1054,9 @@ int getNumSeqblockAutomationNodes(int automationnum, int seqblocknum, int seqtra
   if (seqblock==NULL)
     return -1;
 
-  return SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->envelope);
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM(0);
+
+  return SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->automations[automationnum]);
 }
 
 int addSeqblockAutomationNode(int64_t time, float db, int logtype, int automationnum, int seqblocknum, int seqtracknum){
@@ -1031,11 +1065,12 @@ int addSeqblockAutomationNode(int64_t time, float db, int logtype, int automatio
   if (seqblock==NULL)
     return -1;
 
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM(-1);
   VALIDATE_ENV_TIME(time, -1)
     
   undoSequencerEnvelopes();
 
-  return SEQBLOCK_AUTOMATION_add_node(seqblock->envelope, time, db, logtype);
+  return SEQBLOCK_AUTOMATION_add_node(seqblock->automations[automationnum], time, db, logtype);
 }
 
 void deleteSeqblockAutomationNode(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
@@ -1044,14 +1079,15 @@ void deleteSeqblockAutomationNode(int nodenum, int automationnum, int seqblocknu
   if (seqblock==NULL)
     return;
 
-  if (nodenum==0 || nodenum==SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->envelope)-1){
-    SEQBLOCK_AUTOMATION_set(seqtrack,
-                          seqblock,
-                          nodenum,
-                          SEQBLOCK_AUTOMATION_get_seqtime(seqblock->envelope, nodenum),
-                          0.0,
-                          SEQBLOCK_AUTOMATION_get_logtype(seqblock->envelope, nodenum)
-                          );
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM();
+
+  if (nodenum==0 || nodenum==SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->automations[automationnum])-1){
+    SEQBLOCK_AUTOMATION_set(seqblock->automations[automationnum],
+                            nodenum,
+                            SEQBLOCK_AUTOMATION_get_seqtime(seqblock->automations[automationnum], nodenum),
+                            0.0,
+                            SEQBLOCK_AUTOMATION_get_logtype(seqblock->automations[automationnum], nodenum)
+                            );
     return;
   }
 
@@ -1060,7 +1096,7 @@ void deleteSeqblockAutomationNode(int nodenum, int automationnum, int seqblocknu
 
   undoSequencerEnvelopes();
 
-  SEQBLOCK_AUTOMATION_delete_node(seqblock->envelope, nodenum);
+  SEQBLOCK_AUTOMATION_delete_node(seqblock->automations[automationnum], nodenum);
 }
 
 void setCurrSeqblockAutomationNode(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
@@ -1068,9 +1104,10 @@ void setCurrSeqblockAutomationNode(int nodenum, int automationnum, int seqblockn
   if (seqblock==NULL)
     return;
 
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM();
   VALIDATE_ENV_NODENUM();
 
-  SEQBLOCK_AUTOMATION_set_curr_node(seqblock->envelope, nodenum);
+  SEQBLOCK_AUTOMATION_set_curr_node(seqblock->automations[automationnum], nodenum);
 }
 
 void cancelCurrSeqblockAutomationNode(int automationnum, int seqblocknum, int seqtracknum){
@@ -1078,7 +1115,9 @@ void cancelCurrSeqblockAutomationNode(int automationnum, int seqblocknum, int se
   if (seqblock==NULL)
     return;
 
-  SEQBLOCK_AUTOMATION_cancel_curr_node(seqblock->envelope);
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM();
+
+  SEQBLOCK_AUTOMATION_cancel_curr_node(seqblock->automations[automationnum]);
 }
 
 void setCurrSeqblockAutomation(int automationnum, int seqblocknum, int seqtracknum){
@@ -1087,7 +1126,9 @@ void setCurrSeqblockAutomation(int automationnum, int seqblocknum, int seqtrackn
   if (seqblock==NULL)
     return;
 
-  SEQBLOCK_AUTOMATION_set_curr_automation(seqtrack, seqblock);
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM();
+
+  SEQBLOCK_AUTOMATION_set_curr_automation(seqtrack, seqblock, seqblock->automations[automationnum]);
 }
 
 void cancelCurrSeqblockAutomation(void){
@@ -1101,10 +1142,11 @@ void setSeqblockAutomationNode(int64_t time, float db, int logtype, int nodenum,
   if (seqblock==NULL)
     return;
 
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM();
   VALIDATE_ENV_NODENUM();
   VALIDATE_ENV_TIME(time,)
     
-  SEQBLOCK_AUTOMATION_set(seqtrack, seqblock, nodenum, time, db, logtype);
+  SEQBLOCK_AUTOMATION_set(seqblock->automations[automationnum], nodenum, time, db, logtype);
 }
 
 float getSeqblockAutomationNodeX(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
@@ -1112,9 +1154,10 @@ float getSeqblockAutomationNodeX(int nodenum, int automationnum, int seqblocknum
   if (seqblock==NULL)
     return 0;
 
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM(0);
   VALIDATE_ENV_NODENUM(0);
 
-  return SEQBLOCK_AUTOMATION_get_node_x(seqblock->envelope, nodenum);
+  return SEQBLOCK_AUTOMATION_get_node_x(seqblock->automations[automationnum], nodenum);
 }
 
 float getSeqblockAutomationNodeY(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
@@ -1122,9 +1165,10 @@ float getSeqblockAutomationNodeY(int nodenum, int automationnum, int seqblocknum
   if (seqblock==NULL)
     return 0;
 
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM(0);
   VALIDATE_ENV_NODENUM(0);
 
-  return SEQBLOCK_AUTOMATION_get_node_y(seqblock->envelope, seqtracknum, nodenum);
+  return SEQBLOCK_AUTOMATION_get_node_y(seqblock->automations[automationnum], seqtracknum, nodenum);
 }
 
 
