@@ -2682,7 +2682,6 @@ struct SeqBlock{
   float curr_gain; // gain for the current audio block. Calculated from envelope+gain+fadein+fadeout.
   bool curr_gain_changed_this_block; // set to true or false each block.
 
-  bool envelope_enabled;
   float envelope_db;     // db version of envelope_volume
   struct SeqblockAutomation *envelope;
 

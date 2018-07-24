@@ -12,7 +12,9 @@ extern LANGSPEC void RT_SEQBLOCK_AUTOMATION_called_when_player_stopped(void);
 
 struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t automation_state, double state_samplerate);
 void SEQBLOCK_AUTOMATION_free(struct SeqblockAutomation *seqblockenvelope);
-double SEQBLOCK_AUTOMATION_get_db(struct SeqblockAutomation *seqblockenvelope, int nodenum);
+double SEQBLOCK_AUTOMATION_get_min_value(struct SeqblockAutomation *seqblockenvelope);
+double SEQBLOCK_AUTOMATION_get_max_value(struct SeqblockAutomation *seqblockenvelope);
+double SEQBLOCK_AUTOMATION_get_value(struct SeqblockAutomation *seqblockenvelope, int nodenum);
 double SEQBLOCK_AUTOMATION_get_seqtime(struct SeqblockAutomation *seqblockenvelope, int nodenum);
 int SEQBLOCK_AUTOMATION_get_logtype(struct SeqblockAutomation *seqblockenvelope, int nodenum);
 int SEQBLOCK_AUTOMATION_get_num_nodes(struct SeqblockAutomation *seqblockenvelope);
@@ -38,6 +40,7 @@ float SEQBLOCK_AUTOMATION_get_node_y(const struct SeqblockAutomation *seqblocken
 void SEQBLOCK_AUTOMATION_paint(QPainter *p, const struct SeqBlock *seqblock, float x1, float y1, float x2, float y, bool paint_nodes, float seqblock_x1, float seqblock_x2);
 
 bool RT_seqblock_automation_is_enabled(struct SeqblockAutomation *automation);
+void SEQBLOCK_AUTOMATION_set_enabled(struct SeqblockAutomation *automation, bool enabled);
 bool RT_maybe_get_seqblock_automation_value(struct SeqblockAutomation *automation, double time, double &value);
   
 #endif

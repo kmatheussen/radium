@@ -949,46 +949,54 @@ int getSeqblockResamplerType(int64_t seqblockid){
     return ret;                                                 \
   }
 
-bool getSeqblockEnvelopeEnabled( int seqblocknum, int seqtracknum){
+bool getSeqblockAutomationEnabled(int automationnum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return -1;
 
-  return seqblock->envelope_enabled;
+  return RT_seqblock_automation_is_enabled(seqblock->envelope);
+  //return seqblock->envelope_enabled;
 }
-void setSeqblockEnvelopeEnabled(bool is_enabled, int seqblocknum, int seqtracknum){
+void setSeqblockAutomationEnabled(bool is_enabled, int automationnum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return;
 
-  if (seqblock->envelope_enabled==is_enabled)
+  if (RT_seqblock_automation_is_enabled(seqblock->envelope)==is_enabled)
     return;
 
   undoSequencer();
-  
-  {
-    radium::PlayerLock lock(is_playing_song());
-    seqblock->envelope_enabled = is_enabled;
-  }
 
-  SEQUENCER_update(SEQUPDATE_TIME);
+  SEQBLOCK_AUTOMATION_set_enabled(seqblock->envelope, is_enabled);
 }
 
-float getSeqblockEnvelopeMaxDb(void){
-  return MAX_SEQBLOCK_VOLUME_ENVELOPE_DB;
+float getSeqblockAutomationMinValue(int automationnum, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return 0;
+
+  return SEQBLOCK_AUTOMATION_get_min_value(seqblock->envelope);
 }
 
-float getSeqblockEnvelopeDb(int nodenum, int seqblocknum, int seqtracknum){
+float getSeqblockAutomationMaxValue(int automationnum, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return 1;
+
+  return SEQBLOCK_AUTOMATION_get_max_value(seqblock->envelope);
+}
+
+float getSeqblockAutomationValue(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)
     return -1;
 
   VALIDATE_ENV_NODENUM(-1);
 
-  return SEQBLOCK_AUTOMATION_get_db(seqblock->envelope, nodenum);
+  return SEQBLOCK_AUTOMATION_get_value(seqblock->envelope, nodenum);
 }
 
-int64_t getSeqblockEnvelopeTime(int nodenum, int seqblocknum, int seqtracknum){
+int64_t getSeqblockAutomationTime(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
@@ -999,7 +1007,7 @@ int64_t getSeqblockEnvelopeTime(int nodenum, int seqblocknum, int seqtracknum){
   return SEQBLOCK_AUTOMATION_get_seqtime(seqblock->envelope, nodenum);
 }
 
-int getSeqblockEnvelopeLogtype(int nodenum, int seqblocknum, int seqtracknum){
+int getSeqblockAutomationLogtype(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)
     return -1;
@@ -1009,7 +1017,7 @@ int getSeqblockEnvelopeLogtype(int nodenum, int seqblocknum, int seqtracknum){
   return SEQBLOCK_AUTOMATION_get_logtype(seqblock->envelope, nodenum);
 }
 
-int getNumSeqblockEnvelopeNodes(int seqblocknum, int seqtracknum){
+int getNumSeqblockAutomationNodes(int automationnum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)
     return -1;
@@ -1017,7 +1025,7 @@ int getNumSeqblockEnvelopeNodes(int seqblocknum, int seqtracknum){
   return SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->envelope);
 }
 
-int addSeqblockEnvelopeNode(int64_t time, float db, int logtype, int seqblocknum, int seqtracknum){
+int addSeqblockAutomationNode(int64_t time, float db, int logtype, int automationnum, int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
@@ -1030,7 +1038,7 @@ int addSeqblockEnvelopeNode(int64_t time, float db, int logtype, int seqblocknum
   return SEQBLOCK_AUTOMATION_add_node(seqblock->envelope, time, db, logtype);
 }
 
-void deleteSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
+void deleteSeqblockAutomationNode(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);;
   if (seqblock==NULL)
@@ -1055,7 +1063,7 @@ void deleteSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
   SEQBLOCK_AUTOMATION_delete_node(seqblock->envelope, nodenum);
 }
 
-void setCurrSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
+void setCurrSeqblockAutomationNode(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)
     return;
@@ -1065,7 +1073,7 @@ void setCurrSeqblockEnvelopeNode(int nodenum, int seqblocknum, int seqtracknum){
   SEQBLOCK_AUTOMATION_set_curr_node(seqblock->envelope, nodenum);
 }
 
-void cancelCurrSeqblockEnvelopeNode(int seqblocknum, int seqtracknum){
+void cancelCurrSeqblockAutomationNode(int automationnum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)
     return;
@@ -1073,7 +1081,7 @@ void cancelCurrSeqblockEnvelopeNode(int seqblocknum, int seqtracknum){
   SEQBLOCK_AUTOMATION_cancel_curr_node(seqblock->envelope);
 }
 
-void setCurrSeqblockEnvelope(int seqblocknum, int seqtracknum){
+void setCurrSeqblockAutomation(int automationnum, int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
@@ -1082,12 +1090,12 @@ void setCurrSeqblockEnvelope(int seqblocknum, int seqtracknum){
   SEQBLOCK_AUTOMATION_set_curr_automation(seqtrack, seqblock);
 }
 
-void cancelCurrSeqblockEnvelope(void){
-  //printf("   cancelCurrSeqblockEnvelope called\n");
+void cancelCurrSeqblockAutomation(void){
+  //printf("   cancelCurrSeqblockAutomation called\n");
   SEQBLOCK_AUTOMATION_cancel_curr_automation();
 }
 
-void setSeqblockEnvelopeNode(int64_t time, float db, int logtype, int nodenum, int seqblocknum, int seqtracknum){
+void setSeqblockAutomationNode(int64_t time, float db, int logtype, int nodenum, int automationnum, int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
   if (seqblock==NULL)
@@ -1099,7 +1107,7 @@ void setSeqblockEnvelopeNode(int64_t time, float db, int logtype, int nodenum, i
   SEQBLOCK_AUTOMATION_set(seqtrack, seqblock, nodenum, time, db, logtype);
 }
 
-float getSeqblockEnvelopeNodeX(int nodenum, int seqblocknum, int seqtracknum){
+float getSeqblockAutomationNodeX(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)
     return 0;
@@ -1109,7 +1117,7 @@ float getSeqblockEnvelopeNodeX(int nodenum, int seqblocknum, int seqtracknum){
   return SEQBLOCK_AUTOMATION_get_node_x(seqblock->envelope, nodenum);
 }
 
-float getSeqblockEnvelopeNodeY(int nodenum, int seqblocknum, int seqtracknum){
+float getSeqblockAutomationNodeY(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
   struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
   if (seqblock==NULL)
     return 0;
