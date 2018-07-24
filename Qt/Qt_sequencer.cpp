@@ -1074,7 +1074,7 @@ public:
   }
   
   void draw_volume_envelope(QPainter *painter, const QRectF &rect, const struct SeqBlock *seqblock){
-    if (RT_seqblock_automation_is_enabled(seqblock->envelope)){
+    if (RT_seqblock_automation_is_enabled(seqblock->automations[SAT_VOLUME])){
 
       qreal x1,y1,x2,y2;
       rect.getCoords(&x1, &y1, &x2, &y2);
@@ -1101,7 +1101,7 @@ public:
         painter->setClipping(true);
 
         painter->setOpacity(0.05);
-        SEQBLOCK_AUTOMATION_paint(painter, seqblock, ni_x1, y1, ni_x2, y2, true, x1, x2);
+        SEQBLOCK_AUTOMATION_paint(painter, seqblock->automations[SAT_VOLUME], ni_x1, y1, ni_x2, y2, true, x1, x2);
         painter->setOpacity(1.0);
 
         painter->setClipping(false);
@@ -1114,7 +1114,7 @@ public:
           painter->setClipping(true);
         }
 
-        SEQBLOCK_AUTOMATION_paint(painter, seqblock, ni_x1, y1, ni_x2, y2, is_current, x1, x2);
+        SEQBLOCK_AUTOMATION_paint(painter, seqblock->automations[SAT_VOLUME], ni_x1, y1, ni_x2, y2, is_current, x1, x2);
 
         if(!draw_all)
           painter->setClipping(false);

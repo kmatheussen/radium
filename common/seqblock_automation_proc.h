@@ -10,7 +10,7 @@ extern LANGSPEC void RT_SEQBLOCK_AUTOMATION_called_when_player_stopped(void);
 
 #ifdef __cplusplus
 
-struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t automation_state, double state_samplerate);
+struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t automation_state, double state_samplerate);
 void SEQBLOCK_AUTOMATION_free(struct SeqblockAutomation *seqblockenvelope);
 double SEQBLOCK_AUTOMATION_get_min_value(struct SeqblockAutomation *seqblockenvelope);
 double SEQBLOCK_AUTOMATION_get_max_value(struct SeqblockAutomation *seqblockenvelope);
@@ -22,12 +22,12 @@ int SEQBLOCK_AUTOMATION_add_node(struct SeqblockAutomation *seqblockenvelope, do
 void SEQBLOCK_AUTOMATION_delete_node(struct SeqblockAutomation *seqblockenvelope, int nodenum);
 void SEQBLOCK_AUTOMATION_set_curr_node(struct SeqblockAutomation *seqblockenvelope, int nodenum);
 void SEQBLOCK_AUTOMATION_cancel_curr_node(struct SeqblockAutomation *seqblockenvelope);
-void SEQBLOCK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock);
+void SEQBLOCK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct SeqblockAutomation *seqblockenvelope);
 
 // May be called if it there is no current automation.
 void SEQBLOCK_AUTOMATION_cancel_curr_automation(void);
-void SEQBLOCK_AUTOMATION_set(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int nodenum, double seqtime, double db, int lotype);
-void SEQBLOCK_AUTOMATION_duration_changed(struct SeqBlock *seqblock, int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock);
+void SEQBLOCK_AUTOMATION_set(struct SeqblockAutomation *seqblockenvelope, int nodenum, double seqtime, double db, int lotype);
+void SEQBLOCK_AUTOMATION_duration_changed(struct SeqblockAutomation *seqblockenvelope, int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock);
 
 ////////////////////////
 
@@ -37,7 +37,7 @@ dyn_t SEQBLOCK_AUTOMATION_get_state(const struct SeqblockAutomation *seqblockenv
 void SEQBLOCK_AUTOMATION_apply_state(struct SeqblockAutomation *seqblockenvelope, const dyn_t envelope_state, double state_samplerate);
 float SEQBLOCK_AUTOMATION_get_node_x(const struct SeqblockAutomation *seqblockenvelope, int nodenum);
 float SEQBLOCK_AUTOMATION_get_node_y(const struct SeqblockAutomation *seqblockenvelope, int seqtracknum, int nodenum);
-void SEQBLOCK_AUTOMATION_paint(QPainter *p, const struct SeqBlock *seqblock, float x1, float y1, float x2, float y, bool paint_nodes, float seqblock_x1, float seqblock_x2);
+void SEQBLOCK_AUTOMATION_paint(QPainter *p, struct SeqblockAutomation *seqblockenvelope, float x1, float y1, float x2, float y, bool paint_nodes, float seqblock_x1, float seqblock_x2);
 
 bool RT_seqblock_automation_is_enabled(struct SeqblockAutomation *automation);
 void SEQBLOCK_AUTOMATION_set_enabled(struct SeqblockAutomation *automation, bool enabled);
