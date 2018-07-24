@@ -1074,7 +1074,7 @@ public:
   }
   
   void draw_volume_envelope(QPainter *painter, const QRectF &rect, const struct SeqBlock *seqblock){
-    if (seqblock->envelope_enabled){
+    if (RT_seqblock_automation_is_enabled(seqblock->envelope)){
 
       qreal x1,y1,x2,y2;
       rect.getCoords(&x1, &y1, &x2, &y2);

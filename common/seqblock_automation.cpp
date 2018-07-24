@@ -437,7 +437,15 @@ void SEQBLOCK_AUTOMATION_free(struct SeqblockAutomation *seqblockenvelope){  // 
   delete seqblockenvelope;
 }
 
-double SEQBLOCK_AUTOMATION_get_db(struct SeqblockAutomation *seqblockenvelope, int nodenum){
+double SEQBLOCK_AUTOMATION_get_min_value(struct SeqblockAutomation *seqblockenvelope){
+  return seqblockenvelope->_min_value;
+}
+
+double SEQBLOCK_AUTOMATION_get_max_value(struct SeqblockAutomation *seqblockenvelope){
+  return seqblockenvelope->_max_value;
+}
+
+double SEQBLOCK_AUTOMATION_get_value(struct SeqblockAutomation *seqblockenvelope, int nodenum){
   return seqblockenvelope->get_value(nodenum);
 }
 
@@ -639,7 +647,7 @@ static void RT_set_seqblock_volume_envelope_values(struct SeqTrack *seqtrack, st
   struct SeqblockAutomation *seqblockenvelope = seqblock->envelope;
 
   double new_db = 0.0;
-  if (seqblock->envelope_enabled)
+  if (seqblockenvelope->_is_enabled)
     seqblockenvelope->_automation.RT_get_value(pos, new_db, NULL, true);
 
 #if DO_DEBUG
@@ -769,6 +777,14 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
 
 bool RT_seqblock_automation_is_enabled(struct SeqblockAutomation *automation){
   return automation->_is_enabled;
+}
+
+void SEQBLOCK_AUTOMATION_set_enabled(struct SeqblockAutomation *automation, bool enabled){
+  {
+    radium::PlayerLock lock(is_playing_song());
+    automation->_is_enabled = enabled;
+  }
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 bool RT_maybe_get_seqblock_automation_value(struct SeqblockAutomation *automation, double time, double &value){

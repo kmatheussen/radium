@@ -446,6 +446,12 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
   if (seqblock->sample_id==-1)
     return NULL;
 
+  seqblock->grain_overlap_automation = SEQBLOCK_AUTOMATION_create(seqtrack, seqblock, g_uninitialized_dyn, 0);
+  seqblock->grain_length_automation = SEQBLOCK_AUTOMATION_create(seqtrack, seqblock, g_uninitialized_dyn, 0);
+  seqblock->grain_jitter_automation = SEQBLOCK_AUTOMATION_create(seqtrack, seqblock, g_uninitialized_dyn, 0);
+  seqblock->grain_ramp_automation = SEQBLOCK_AUTOMATION_create(seqtrack, seqblock, g_uninitialized_dyn, 0);
+
+  
   seqblock->sample_filename_without_path = STRING_copy(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, false));
 
   if (type != Seqblock_Type::RECORDING) {
@@ -845,7 +851,7 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
   HASH_put_chars(state, ":fade-in-shape", fade_shape_to_string(seqblock->fade_in_envelope->_shape));
   HASH_put_chars(state, ":fade-out-shape", fade_shape_to_string(seqblock->fade_out_envelope->_shape));
 
-  HASH_put_bool(state, ":envelope-enabled", seqblock->envelope_enabled);
+  HASH_put_bool(state, ":envelope-enabled", RT_seqblock_automation_is_enabled(seqblock->envelope));
   HASH_put_dyn(state, ":envelope", SEQBLOCK_AUTOMATION_get_state(seqblock->envelope));
 
   return state;
@@ -1209,7 +1215,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
   }
 
   if (HASH_has_key(state, ":envelope-enabled"))
-    seqblock->envelope_enabled = HASH_get_bool(state, ":envelope-enabled");
+    SEQBLOCK_AUTOMATION_set_enabled(seqblock->envelope, HASH_get_bool(state, ":envelope-enabled"));
 
   if (HASH_has_key(state, ":gain"))
     seqblock->gain = HASH_get_float(state, ":gain");
