@@ -529,7 +529,7 @@ void replaceAllSeqAutomation(int64_t old_instrument, int64_t new_instrument){
   SEQTRACK_AUTOMATION_replace_all_automations(old_patch, new_patch);
 }
 
-int getNumSeqAutomations(int seqtracknum){
+int getNumSeqtrackAutomations(int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return 0;
@@ -619,7 +619,7 @@ int getSeqAutomationLogtype(int nodenum, int automationnum, int seqtracknum){
   return SEQTRACK_AUTOMATION_get_logtype(seqtrack->seqtrackautomation, automationnum, nodenum);
 }
 
-int getNumSeqAutomationNodes(int automationnum, int seqtracknum){
+int getNumSeqtrackAutomationNodes(int automationnum, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
