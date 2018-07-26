@@ -185,7 +185,7 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
   double get_time(int nodenum){
     double seqblock_start = get_seqblock_noninterior_start(_seqblock.data());
     R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), seqblock_start);
-    return _automation.at(nodenum).time + seqblock_start;
+    return _automation.at(nodenum).time*_seqblock->t.stretch + seqblock_start;
   }
 
   int get_logtype(int nodenum){    
