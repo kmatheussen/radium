@@ -5544,7 +5544,7 @@
 (define-match get-closest-seqautomation-0
   Automation-Num Automation-Num        _ _ :> #f
   Automation-Num Total-Automation-Nums X Y :> (min-seqautomation/distance (get-closest-seqautomation-1 2
-                                                                                                       (<ra> :get-num-seq-automation-nodes Automation-Num *current-seqtrack-num*)
+                                                                                                       (<ra> :get-num-seqtrack-automation-nodes Automation-Num *current-seqtrack-num*)
                                                                                                        Automation-Num
                                                                                                        X Y
                                                                                                        (<ra> :get-seq-automation-node-x 0 Automation-Num *current-seqtrack-num*)
@@ -5673,7 +5673,7 @@
                                                     (define (get-nodebox $num)
                                                       (get-common-node-box (<ra> :get-seq-automation-node-x $num automationnum seqtracknum)
                                                                            (<ra> :get-seq-automation-node-y $num automationnum seqtracknum)))
-                                                    (match (list (find-node-horizontal X Y get-nodebox (<ra> :get-num-seq-automation-nodes automationnum seqtracknum)))
+                                                    (match (list (find-node-horizontal X Y get-nodebox (<ra> :get-num-seqtrack-automation-nodes automationnum seqtracknum)))
                                                            (existing-box Num Box) :> (begin
                                                                                        (define Time (scale X
                                                                                                            (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
@@ -5742,13 +5742,13 @@
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
                      *current-seqautomation/distance*
-                     (*current-seqautomation/distance* :automation-num)
+                     (not (*current-seqautomation/distance* :seqblock))
                      (let ((automationnum (*current-seqautomation/distance* :automation-num))
                            (seqtracknum (*current-seqautomation/distance* :seqtrack)))
                        (define (get-nodebox $num)
                          (get-common-node-box (<ra> :get-seq-automation-node-x $num automationnum seqtracknum)
                                               (<ra> :get-seq-automation-node-y $num automationnum seqtracknum)))
-                       (define Num (match (list (find-node-horizontal $x $y get-nodebox (<ra> :get-num-seq-automation-nodes automationnum seqtracknum)))
+                       (define Num (match (list (find-node-horizontal $x $y get-nodebox (<ra> :get-num-seqtrack-automation-nodes automationnum seqtracknum)))
                                           (existing-box Num Box) :> Num
                                           A                      :> #f))
                        (if (<ra> :shift-pressed)
@@ -5771,7 +5771,7 @@
                                              :check (and Num (= (<ra> :get-seq-automation-logtype Num automationnum seqtracknum)
                                                                 *logtype-linear*))
                                              :enabled (and Num
-                                                           (< Num (- (<ra> :get-num-seq-automation-nodes automationnum seqtracknum) 1)))
+                                                           (< Num (- (<ra> :get-num-seqtrack-automation-nodes automationnum seqtracknum) 1)))
                                              (lambda (maybe)
                                                (<ra> :undo-sequencer-automations)
                                                (<ra> :set-seq-automation-node
@@ -5788,13 +5788,13 @@
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and *current-seqautomation/distance*
-              (*current-seqautomation/distance* :automation-num)
+              (not (*current-seqautomation/distance* :seqblock))
               (let ((automationnum (*current-seqautomation/distance* :automation-num))
                     (seqtracknum (*current-seqautomation/distance* :seqtrack)))
                 (define (get-nodebox $num)
                   (get-common-node-box (<ra> :get-seq-automation-node-x $num automationnum seqtracknum)
                                        (<ra> :get-seq-automation-node-y $num automationnum seqtracknum)))
-                (match (list (find-node-horizontal $x $y get-nodebox (<ra> :get-num-seq-automation-nodes automationnum seqtracknum)))
+                (match (list (find-node-horizontal $x $y get-nodebox (<ra> :get-num-seqtrack-automation-nodes automationnum seqtracknum)))
                        (existing-box Num Box) :> (begin
                                                    (set-seqnode-statusbar-text Num)
                                                    (<ra> :set-curr-seq-automation-node Num automationnum seqtracknum)

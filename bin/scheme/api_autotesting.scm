@@ -175,7 +175,7 @@
 
                    ((eq? varname 'automationnum)
                     (assert (eq? type 'int))
-                    (chances 0.9 (integer-myrand 0 (1- (<ra> :get-num-seq-automations 0)))
+                    (chances 0.9 (integer-myrand 0 (1- (<ra> :get-num-seqtrack-automations 0)))
                              (integer-myrand -1000 1000)))
 
                    ((eq? varname 'nodenum)
