@@ -4109,6 +4109,7 @@
                 (and (= Button *right-button*)
                      (not (<ra> :shift-pressed))
                      *current-seqblock-info*
+                     (not *current-seqautomation/distance*)
                      (let* ((seqtracknum (*current-seqblock-info* :seqtracknum))
                             (seqblocknum (*current-seqblock-info* :seqblocknum))
                             (is-fade-in (inside-box (<ra> :get-box seqblock-left-fade seqblocknum seqtracknum) X Y))
