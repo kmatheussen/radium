@@ -5694,7 +5694,7 @@
                                        (seqtracknum (*current-seqautomation/distance* :seqtrack)))
                                    (<ra> :get-seq-automation-node-y Num automationnum seqtracknum)))
                         :Make-undo (lambda (_)
-                                     (<ra> :undo-sequencer-automations))
+                                     (<ra> :undo-seqtrack-automations))
                         :Create-new-node (lambda (X Y callback)
                                            (let ((automationnum (*current-seqautomation/distance* :automation-num))
                                                  (seqtracknum (*current-seqautomation/distance* :seqtrack)))
@@ -5773,7 +5773,7 @@
                                              :enabled (and Num
                                                            (< Num (- (<ra> :get-num-seqtrack-automation-nodes automationnum seqtracknum) 1)))
                                              (lambda (maybe)
-                                               (<ra> :undo-sequencer-automations)
+                                               (<ra> :undo-seqtrack-automations)
                                                (<ra> :set-seq-automation-node
                                                      (<ra> :get-seq-automation-time Num automationnum seqtracknum)
                                                      (<ra> :get-seq-automation-value Num automationnum seqtracknum)
