@@ -618,7 +618,7 @@ void PATCH_handle_editor_and_automation_when_replacing_patch(struct Patch *old_p
 
   // 1. Sequencer automation
   //
-  ADD_UNDO(SeqAutomations());
+  ADD_UNDO(SeqtrackAutomations());
   SEQTRACK_AUTOMATION_replace_all_automations(old_patch, new_patch);
 
   struct Tracker_Windows *window = root->song->tracker_windows;

@@ -97,11 +97,11 @@ void undoSeqblockFades(int seqblocknum, int seqtracknum){
 }
 
 void undoSequencerEnvelopes(void){
-  ADD_UNDO(SeqEnvelopes());
+  ADD_UNDO(SeqblockAutomations());
 }
 
 void undoSequencerAutomations(void){
-  ADD_UNDO(SeqAutomations());
+  ADD_UNDO(SeqtrackAutomations());
 }
 
 void undoSequencer(void){
