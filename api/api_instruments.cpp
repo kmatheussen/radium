@@ -1039,7 +1039,7 @@ bool addAutomationToCurrentSequencerTrack(int64_t instrument_id, const_char* eff
   if (seqtrack == NULL)
     return false;
   
-  undoSequencerAutomations();
+  undoSeqtrackAutomations();
   
   float value_ = PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
   

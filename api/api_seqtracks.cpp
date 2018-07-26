@@ -96,11 +96,11 @@ void undoSeqblockFades(int seqblocknum, int seqtracknum){
   ADD_UNDO(SeqblockFades(seqtracknum, seqblocknum));
 }
 
-void undoSequencerEnvelopes(void){
+void undoSeqblockAutomations(void){
   ADD_UNDO(SeqblockAutomations());
 }
 
-void undoSequencerAutomations(void){
+void undoSeqtrackAutomations(void){
   ADD_UNDO(SeqtrackAutomations());
 }
 
@@ -510,7 +510,7 @@ int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, i
     return -1;
   }
   
-  undoSequencerAutomations();
+  undoSeqtrackAutomations();
 
   return SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, time1, value1, LOGTYPE_LINEAR, time2, value2);
 }
@@ -524,7 +524,7 @@ void replaceAllSeqAutomation(int64_t old_instrument, int64_t new_instrument){
   if(new_patch==NULL)
     return;
 
-  undoSequencerAutomations();
+  undoSeqtrackAutomations();
 
   SEQTRACK_AUTOMATION_replace_all_automations(old_patch, new_patch);
 }
@@ -637,7 +637,7 @@ int addSeqAutomationNode(int64_t time, float value, int logtype, int automationn
   VALIDATE_AUTOMATIONNUM(-1);
   VALIDATE_TIME(time, -1)
     
-  undoSequencerAutomations();
+  undoSeqtrackAutomations();
 
   return SEQTRACK_AUTOMATION_add_node(seqtrack->seqtrackautomation, automationnum, time, value, logtype);
 }
@@ -650,7 +650,7 @@ void deleteSeqAutomationNode(int nodenum, int automationnum, int seqtracknum){
   VALIDATE_AUTOMATIONNUM();
   VALIDATE_NODENUM();
 
-  undoSequencerAutomations();
+  undoSeqtrackAutomations();
 
   SEQTRACK_AUTOMATION_delete_node(seqtrack->seqtrackautomation, automationnum, nodenum);
 }
@@ -1068,7 +1068,7 @@ int addSeqblockAutomationNode(int64_t time, float db, int logtype, int automatio
   VALIDATE_SEQBLOCK_AUTOMATIONNUM(-1);
   VALIDATE_ENV_TIME(time, -1)
     
-  undoSequencerEnvelopes();
+  undoSeqblockAutomations();
 
   return SEQBLOCK_AUTOMATION_add_node(seqblock->automations[automationnum], time, db, logtype);
 }
@@ -1094,7 +1094,7 @@ void deleteSeqblockAutomationNode(int nodenum, int automationnum, int seqblocknu
 
   VALIDATE_ENV_NODENUM();
 
-  undoSequencerEnvelopes();
+  undoSeqblockAutomations();
 
   SEQBLOCK_AUTOMATION_delete_node(seqblock->automations[automationnum], nodenum);
 }
