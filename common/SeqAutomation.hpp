@@ -655,13 +655,13 @@ public:
     create_from_state(dynstate, &myprovider, state_samplerate);
   }
   
-  dyn_t get_state(hash_t *(*get_node_state)(const T &node)) const {
+  dyn_t get_state(hash_t *(*get_node_state)(const T &node, void*), void *data) const {
     int size = _automation.size();
     
     dynvec_t ret = {};
     
     for(int i = 0 ; i < size ; i++)
-      DYNVEC_push_back(ret, DYN_create_hash(get_node_state(_automation.at(i))));
+      DYNVEC_push_back(ret, DYN_create_hash(get_node_state(_automation.at(i), data)));
     
     return DYN_create_array(ret);
   }

@@ -2656,7 +2656,7 @@ enum Seqblock_Automation_Type{
   NUM_SATS
 };
 
-#define NUM_EDITOR_BLOCK_SATS SAT_GRAIN_OVERLAP
+#define NUM_EDITOR_BLOCK_SATS (SAT_VOLUME+1)
 
 static inline const char *sat_to_string(enum Seqblock_Automation_Type sat){
   switch(sat){
@@ -2736,6 +2736,9 @@ struct SeqBlock{
   */
 };
 
+static inline int SEQBLOCK_num_automations(const struct SeqBlock *seqblock){
+  return seqblock->block!=NULL ? NUM_EDITOR_BLOCK_SATS : NUM_SATS;
+}
 
 static inline double get_note_reltempo(note_t note){
   if (note.seqblock==NULL)

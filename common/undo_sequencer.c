@@ -73,7 +73,7 @@ static void *Undo_Do_Sequencer(
 // 2. Just automation. (doesn't require player to pause when modified) //
 /////////////////////////////////////////////////////////////////////////
 
-static void *Undo_Do_SeqAutomations(
+static void *Undo_Do_SeqtrackAutomations(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -82,7 +82,7 @@ static void *Undo_Do_SeqAutomations(
 );
 
 
-void ADD_UNDO_FUNC(SeqAutomations(void)){
+void ADD_UNDO_FUNC(SeqtrackAutomations(void)){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
   Undo_Add_dont_stop_playing(
@@ -91,12 +91,12 @@ void ADD_UNDO_FUNC(SeqAutomations(void)){
                              window->curr_track,
                              window->wblock->curr_realline,
                              SEQUENCER_get_automations_state(),
-                             Undo_Do_SeqAutomations,
-                             "SeqAutomations"
+                             Undo_Do_SeqtrackAutomations,
+                             "SeqtrackAutomations"
                              );
 }
 
-static void *Undo_Do_SeqAutomations(
+static void *Undo_Do_SeqtrackAutomations(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -115,7 +115,7 @@ static void *Undo_Do_SeqAutomations(
 // 3. Just block envelope. (doesn't require player to pause when modified) //
 /////////////////////////////////////////////////////////////////////////////
 
-static void *Undo_Do_SeqEnvelopes(
+static void *Undo_Do_SeqSeqblockAutomation(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -123,7 +123,7 @@ static void *Undo_Do_SeqEnvelopes(
 	void *pointer
 );
 
-void ADD_UNDO_FUNC(SeqEnvelopes(void)){
+void ADD_UNDO_FUNC(SeqblockAutomation(int automationnum, int seqblocknum, int seqtracknum)){
   struct Tracker_Windows *window = root->song->tracker_windows;
 
   Undo_Add_dont_stop_playing(
@@ -131,24 +131,20 @@ void ADD_UNDO_FUNC(SeqEnvelopes(void)){
                              window->wblock->l.num,
                              window->curr_track,
                              window->wblock->curr_realline,
-                             SEQUENCER_get_envelopes_state(),
-                             Undo_Do_SeqEnvelopes,
-                             "SeqEnvelopes"
+                             SEQUENCER_get_seqblock_automation_state(automationnum, seqblocknum, seqtracknum),
+                             Undo_Do_SeqSeqblockAutomation,
+                             "SeqSeqblockAutomation"
                              );
 }
 
-static void *Undo_Do_SeqEnvelopes(
+static void *Undo_Do_SeqSeqblockAutomation(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	int realline,
 	void *pointer
 ){
-  hash_t *ret = SEQUENCER_get_envelopes_state();
-
-  SEQUENCER_create_envelopes_from_state(pointer);
-
-  return ret;
+  return SEQUENCER_create_seqblock_automation_from_state(pointer, true);
 }
 
 
@@ -214,7 +210,7 @@ void ADD_UNDO_FUNC(SeqblockFades(int seqtracknum, int seqblocknum)){
                              window->wblock->curr_realline,
                              seq_fades,
                              Undo_Do_SeqblockFades,
-                             "SeqEnvelopes"
+                             "SeqSeqblockFades"
                              );
 }
 

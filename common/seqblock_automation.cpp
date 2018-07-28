@@ -64,27 +64,27 @@ radium::Envelope g_symmetric_fade_out = radium::Envelope(FADE_SYMMETRIC, 1.0, fa
 
 
 
-// g_curr_seqblock_envelope_seqtrack is set to NULL by ~SeqblockEnvelope or SEQBLOCK_AUTOMATION_cancel_curr_automation.
+// g_curr_seqblock_automation_seqtrack is set to NULL by ~SeqblockEnvelope or SEQBLOCK_AUTOMATION_cancel_curr_automation.
 // Note that it not possible for a seqtrack to be valid, and its seqtrack->seqblockenvelope gain to be invalid, or
 // vice versa, so it's fine using the SeqblockEnvelope destructor for setting this value to NULL when the seqtrack is deleted.
-static struct SeqTrack *g_curr_seqblock_envelope_seqtrack = NULL;
-static struct SeqBlock *g_curr_seqblock_envelope_seqblock = NULL;
+static struct SeqTrack *g_curr_seqblock_automation_seqtrack = NULL;
+static struct SeqBlock *g_curr_seqblock_automation_seqblock = NULL;
 
 static void assert_no_curr_seqtrack(void){
-  if (g_curr_seqblock_envelope_seqtrack != NULL){
+  if (g_curr_seqblock_automation_seqtrack != NULL){
     R_ASSERT_NON_RELEASE(false);
-    g_curr_seqblock_envelope_seqtrack = NULL;
+    g_curr_seqblock_automation_seqtrack = NULL;
   }
 
-  if (g_curr_seqblock_envelope_seqblock != NULL){
+  if (g_curr_seqblock_automation_seqblock != NULL){
     R_ASSERT_NON_RELEASE(false);
-    g_curr_seqblock_envelope_seqblock = NULL;
+    g_curr_seqblock_automation_seqblock = NULL;
   }
 }
 
 static void set_no_curr_seqtrack(void){
-  g_curr_seqblock_envelope_seqtrack = NULL;
-  g_curr_seqblock_envelope_seqblock = NULL;
+  g_curr_seqblock_automation_seqtrack = NULL;
+  g_curr_seqblock_automation_seqblock = NULL;
 }
 
 
@@ -105,11 +105,11 @@ static AutomationNode create_node(double seqtime, double db, int logtype){
   return node;
 }
 
-static hash_t *get_node_state(const AutomationNode &node){
+static hash_t *get_node_state(const AutomationNode &node, void *data){
   hash_t *state = HASH_create(5);
   
   HASH_put_float(state, ":seqtime", node.time);
-  HASH_put_float(state, ":db", node.value);
+  HASH_put_float(state, (const char*)data, node.value);
   HASH_put_int(state, ":logtype", node.logtype);
 
   return state;
@@ -129,44 +129,145 @@ static AutomationNode create_node_from_state(hash_t *state, double state_sampler
 
 struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>{
 
-  radium::GcHolder<struct SeqTrack> _seqtrack;
+  radium::GcHolder<struct SeqTrack> _seqtrack; // This is a memory leak! (seqblock/seqtrack are freed by finalizer, but finalizer is never run because it is held here)
   radium::GcHolder<struct SeqBlock> _seqblock;
+
+  enum Seqblock_Automation_Type _sat;
 
   radium::SeqAutomation<AutomationNode> _automation;
 
   double _min_value;
+  double _default_value;
   double _max_value;
-  const char *_value_name;
 
   bool _is_enabled = false;
   
-  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, double min_value, double max_value, const char *value_name)
+  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t state, double state_samplerate)
     : _seqtrack(seqtrack)
     , _seqblock(seqblock)
-    , _min_value(min_value)
-    , _max_value(max_value)
-    , _value_name(value_name)
+    , _sat(sat)
+    , _min_value(0.0)
+    , _default_value(0.0)
+    , _max_value(1.0)
   {
+
+    switch(_sat){
+
+      case SAT_VOLUME:
+        _min_value = MIN_DB;
+        _max_value = MAX_SEQBLOCK_VOLUME_ENVELOPE_DB;
+        _default_value = 0.0;
+        break;
+
+      case SAT_GRAIN_OVERLAP:
+        _min_value = 0.1;
+        _max_value = 50.0;
+        _default_value = 2.0;
+        break;
+
+      case SAT_GRAIN_LENGTH:
+        _min_value = 0.1;
+        _max_value = 1000.0;
+        _default_value = 50.0;
+        break;
+
+      case SAT_GRAIN_JITTER:
+        _min_value = 0.0;
+        _max_value = 1.0;
+        _default_value = 1.0;
+        break;
+
+      case SAT_GRAIN_RAMP:
+        _min_value = 0.0;
+        _max_value = 0.5;
+        _default_value = 0.4;
+        break;
+
+      default:
+        R_ASSERT(false);
+        break;
+    }
+
+    R_ASSERT(_default_value >= _min_value);
+    R_ASSERT(_default_value <= _max_value);
+
     SEQBLOCK_AUTOMATION_cancel_curr_automation();
+
+    R_ASSERT(state_samplerate != 0);
+
+    if (state.type != UNINITIALIZED_TYPE) {
+
+      create_from_state(state, state_samplerate);
+
+    } else {
+
+      double duration = seqblock->t.default_duration;
+
+      _automation.add_node(create_node(0, _default_value, LOGTYPE_LINEAR));
+      _automation.add_node(create_node(duration, _default_value, LOGTYPE_LINEAR));
+    }
   }
 
-  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const dyn_t state, double state_samplerate, double min_value, double max_value, const char *value_name)
-    : SeqblockAutomation(seqtrack, seqblock, min_value, max_value, value_name)
-  {
-    if (state.type != UNINITIALIZED_TYPE)
-      _automation.create_from_state(state, this, state_samplerate);
-  }
+  ~SeqblockAutomation(){ 
+    if (g_curr_seqblock_automation_seqblock!=NULL && g_curr_seqblock_automation_seqblock->automations[_sat]==this){
+      set_no_curr_seqtrack(); // It's a little bit unclear what data is available and not right now. We can think through the situation, and probably conclude that it's fine to call SEQBLOCK_AUTOMATION_cancel_curr_automation() no matter what, but this is also fine, probably clearer, and much simpler since we don't have to worry whether it's safe to call SEQBLOCK_AUTOMATION_cancel_curr_automation.
+    } else {
+      SEQBLOCK_AUTOMATION_cancel_curr_automation();
+    }
 
-  ~SeqblockAutomation(){
     assert_no_curr_seqtrack();
   }
 
+  void create_from_state(const dyn_t state, double state_samplerate){
+    dyn_t automation_state = state;
+    
+    if (state.type==HASH_TYPE){
+      automation_state = HASH_get_dyn(state.hash, ":nodes");
+      _is_enabled = HASH_has_key(state.hash, ":enabled") && HASH_get_bool(state.hash, ":enabled");
+    }
+    
+    _automation.create_from_state(automation_state, this, state_samplerate);
+  }
+
+  const char *get_value_name(void) const {
+    if (_sat==SAT_VOLUME)
+      return ":db"; // compatibility with old songs.
+    else
+      return ":value";
+  }
 
   AutomationNode create_node_from_state(hash_t *state, double state_samplerate) const override {
     double time = HASH_get_float(state, ":seqtime");
-    return create_node(state_samplerate < 0 ? time : time*(double)pc->pfreq/state_samplerate,
-                       HASH_get_float(state, _value_name),
+    return create_node(state_samplerate <= 0 ? time : time*(double)pc->pfreq/state_samplerate,
+                       HASH_get_float(state, get_value_name()),
                        HASH_get_int32(state, ":logtype"));
+  }
+
+  const char *get_display_string(double value) const {
+    switch(_sat){
+
+      case SAT_VOLUME:
+        if (value <= MIN_DB)
+          return "~inf";
+        else
+          return talloc_format("%.1f dB", value);
+
+      case SAT_GRAIN_OVERLAP:
+        return talloc_format("%.2f X", value);
+
+      case SAT_GRAIN_LENGTH:
+        return talloc_format("%.2f ms", value);
+
+      case SAT_GRAIN_JITTER:
+        return talloc_format("%.2f%%", pow(value, 3.0) * 100.0);
+
+      case SAT_GRAIN_RAMP:
+        return talloc_format("%.2f%%", value * 100.0);
+
+      default:
+        R_ASSERT(false);
+        return "error";
+    }
   }
 
   bool islegalnodenum(int nodenum) const {
@@ -174,7 +275,10 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
   }
 
   dyn_t get_state(void) const {
-    return _automation.get_state(get_node_state);
+    hash_t *state = HASH_create(2);
+    HASH_put_dyn(state, ":nodes", _automation.get_state(get_node_state, (void*)(get_value_name())));
+    HASH_put_bool(state, ":enabled", _is_enabled);
+    return DYN_create_hash(state);
   }
 
   double get_value(int nodenum){
@@ -378,59 +482,20 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
     
     //_automation.set_do_paint_nodes(paint_nodes);
     
-    _automation.paint(p, x1, y1, x2, y2, 0, 1, QColor("white"), SeqblockAutomation::get_node_y_callback, SeqblockAutomation::get_node_x_callback, this, QColor(80,20,200,50), seqblock_x1, seqblock_x2);
+    QColor fill_color;
+    if (_sat==SAT_VOLUME)
+      fill_color = QColor(80,20,200,50);
+
+    QColor color = get_qcolor((enum ColorNums)(AUTOMATION1_COLOR_NUM + _sat));
+
+    _automation.paint(p, x1, y1, x2, y2, 0, 1, color, SeqblockAutomation::get_node_y_callback, SeqblockAutomation::get_node_x_callback, this, fill_color, seqblock_x1, seqblock_x2);
   }
 };
 
-namespace{
 
-struct SeqblockEnvelope : public SeqblockAutomation{
-  
-private:
-  
-#if !defined(RELEASE)
-  int magic = 918342; // Check that we are freeing the correct data.
-#endif
-
-  
-public:
-
-  SeqblockEnvelope(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, double state_samplerate, const dyn_t state = g_uninitialized_dyn)
-    : SeqblockAutomation(seqtrack, seqblock, state, state_samplerate, MIN_DB, MAX_SEQBLOCK_VOLUME_ENVELOPE_DB, ":db")
-  {
-    SEQBLOCK_AUTOMATION_cancel_curr_automation();
-
-    if (state.type == UNINITIALIZED_TYPE) {
-
-      double duration = seqblock->t.default_duration;
-
-      _automation.add_node(create_node(0, 1.0, LOGTYPE_LINEAR));
-      _automation.add_node(create_node(duration, 1.0, LOGTYPE_LINEAR));
-    }
-  }
-
-  ~SeqblockEnvelope(){
-#if !defined(RELEASE)
-    if (magic != 918342)
-      abort();
-#endif
-
-    if (g_curr_seqblock_envelope_seqblock!=NULL && g_curr_seqblock_envelope_seqblock->automations[SAT_VOLUME]==this){
-      set_no_curr_seqtrack(); // It's a little bit unclear what data is available and not right now. We can think through the situation, and probably conclude that it's fine to call SEQBLOCK_AUTOMATION_cancel_curr_automation() no matter what, but this is also fine, probably clearer, and much simpler since we don't have to worry whether it's safe to call SEQBLOCK_AUTOMATION_cancel_curr_automation.
-    } else {
-      SEQBLOCK_AUTOMATION_cancel_curr_automation();
-    }
-
-    assert_no_curr_seqtrack();
-  }
-};
-
-}
-
- 
 
 struct SeqblockAutomation *SEQBLOCK_AUTOMATION_create(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t automation_state, double state_samplerate){
-  return new SeqblockEnvelope(seqtrack, seqblock, state_samplerate, automation_state);
+  return new SeqblockAutomation(seqtrack, seqblock, sat, automation_state, state_samplerate);
 }
 
 void SEQBLOCK_AUTOMATION_free(struct SeqblockAutomation *seqblockenvelope){  // note: seqblockenvelope might be NULL.
@@ -441,8 +506,16 @@ double SEQBLOCK_AUTOMATION_get_min_value(struct SeqblockAutomation *seqblockenve
   return seqblockenvelope->_min_value;
 }
 
+double SEQBLOCK_AUTOMATION_get_default_value(struct SeqblockAutomation *seqblockenvelope){
+  return seqblockenvelope->_default_value;
+}
+
 double SEQBLOCK_AUTOMATION_get_max_value(struct SeqblockAutomation *seqblockenvelope){
   return seqblockenvelope->_max_value;
+}
+
+const char *SEQBLOCK_AUTOMATION_get_display_string(struct SeqblockAutomation *seqblockenvelope, double value){
+  return seqblockenvelope->get_display_string(value);
 }
 
 double SEQBLOCK_AUTOMATION_get_value(struct SeqblockAutomation *seqblockenvelope, int nodenum){
@@ -485,8 +558,8 @@ void SEQBLOCK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, struct S
   
   if (seqblockenvelope->_automation.do_paint_nodes()){
     
-    R_ASSERT_NON_RELEASE(seqtrack==g_curr_seqblock_envelope_seqtrack);
-    R_ASSERT_NON_RELEASE(seqblock==g_curr_seqblock_envelope_seqblock);
+    R_ASSERT_NON_RELEASE(seqtrack==g_curr_seqblock_automation_seqtrack);
+    R_ASSERT_NON_RELEASE(seqblock==g_curr_seqblock_automation_seqblock);
     
   } else {
 
@@ -495,26 +568,25 @@ void SEQBLOCK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, struct S
     
   }
   
-  g_curr_seqblock_envelope_seqtrack = seqtrack;
-  g_curr_seqblock_envelope_seqblock = seqblock;
+  g_curr_seqblock_automation_seqtrack = seqtrack;
+  g_curr_seqblock_automation_seqblock = seqblock;
 }
 
 // May be called if it there is no current automation.
 void SEQBLOCK_AUTOMATION_cancel_curr_automation(void){
   
-  struct SeqTrack *seqtrack = g_curr_seqblock_envelope_seqtrack;
+  struct SeqTrack *seqtrack = g_curr_seqblock_automation_seqtrack;
   
   if (seqtrack==NULL){
 
     
   } else {
 
-    struct SeqBlock *seqblock = g_curr_seqblock_envelope_seqblock;
+    struct SeqBlock *seqblock = g_curr_seqblock_automation_seqblock;
     R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
 
-    for(int i=0;i<NUM_SATS;i++){
-      if (i==NUM_EDITOR_BLOCK_SATS && seqblock->block!=NULL)
-        break;
+    int num_automations = SEQBLOCK_num_automations(seqblock);
+    for(int i=0;i<num_automations;i++){
       SeqblockAutomation *seqblockenvelope = seqblock->automations[i];
       seqblockenvelope->_automation.set_do_paint_nodes(false);
     }
@@ -836,12 +908,15 @@ void RT_SEQBLOCK_AUTOMATION_called_when_player_stopped(void){
 
 
 
+// only used for undo/redo
 dyn_t SEQBLOCK_AUTOMATION_get_state(const struct SeqblockAutomation *seqblockenvelope){
   return seqblockenvelope->get_state();
 }
 
+// only used for undo/redo
 void SEQBLOCK_AUTOMATION_apply_state(struct SeqblockAutomation *seqblockenvelope, const dyn_t envelope_state, double state_samplerate){
-  seqblockenvelope->_automation.create_from_state(envelope_state, seqblockenvelope, state_samplerate);
+  R_ASSERT(state_samplerate != 0);
+  seqblockenvelope->create_from_state(envelope_state, state_samplerate);
   SEQTRACK_update(seqblockenvelope->_seqtrack.data());
 }
 

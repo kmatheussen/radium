@@ -96,7 +96,7 @@ static AutomationNode create_node(double seqtime, double value, int logtype){
   return node;
 }
 
-static hash_t *get_node_state(const AutomationNode &node){
+static hash_t *get_node_state(const AutomationNode &node, void*){
   hash_t *state = HASH_create(5);
   
   HASH_put_float(state, "seqtime", node.time);
@@ -131,7 +131,7 @@ struct Automation{
     hash_t *state = HASH_create(3);
     HASH_put_int(state, "patch", patch->id);
     HASH_put_chars(state, "effect_name", effect_num==-1 ? "<effect not found>" : PLUGIN_get_effect_name(plugin, effect_num));
-    HASH_put_dyn(state, "automation", automation.get_state(get_node_state));
+    HASH_put_dyn(state, "automation", automation.get_state(get_node_state, NULL));
     return state;
   }
 
