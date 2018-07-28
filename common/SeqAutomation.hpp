@@ -520,16 +520,15 @@ public:
       paint_lines = false;
     }
 
-    // 2. Background fill
-    if (paint_lines && fill_color.isValid()) {
+    if (paint_lines && true) {
 
       float first_x = points[0].x();
       float first_y = points[0].y();
       float last_x = points[size-1].x();
       float last_y = points[size-1].y();
-
+      
       int fill_size;
-
+      
       if (fill_x1 == -1){
         points[size]   = QPointF(last_x, y2);
         points[size+1] = QPointF(first_x, y2);
@@ -541,16 +540,44 @@ public:
         points[size+3] = QPointF(x1, first_y);
         fill_size = size+4;
       }
-
+        
       //for(int i=0 ; i < size+2 ; i++)
       //  printf("  %d/%d: %d , %d  (y1: %f, y2: %f)\n", i, size, (int)points[i].x(), (int)points[i].y(), y1, y2);
-
-      p->setPen(Qt::NoPen);
-      p->setBrush(fill_color);
       
-      p->drawPolygon(points, fill_size);
+      if (fill_color.isValid()) {
 
-      p->setBrush(Qt::NoBrush);
+        // 2. Background fill
+        
+        p->setPen(Qt::NoPen);
+        p->setBrush(fill_color);
+        
+        p->drawPolygon(points, fill_size);
+        
+        p->setBrush(Qt::NoBrush);
+
+      } else {
+
+        // 3. stipled line.
+        p->setOpacity(0.35);
+
+#if 0
+        QPen pen(color);
+        pen.setWidthF(_paint_nodes ? root->song->tracker_windows->systemfontheight / 3 : root->song->tracker_windows->systemfontheight / 6);
+        p->setPen(pen);
+
+        p->drawPolygon(points, fill_size);
+#else
+        p->setPen(Qt::NoPen);
+        p->setBrush(color);
+        
+        p->drawPolygon(points, fill_size);
+        
+        p->setBrush(Qt::NoBrush);
+#endif
+        p->setOpacity(1.0);
+
+      }
+
     }
     
     // 3. Lines
