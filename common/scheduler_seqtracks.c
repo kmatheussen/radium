@@ -301,7 +301,10 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
   ATOMIC_DOUBLE_SET(block->player_time, -100.0); // Stop gfx rendering since we are soon going to change the values of seqtrack->end_time and friends.
 
   int64_t seq_start_time = Place2STime(block, &place); // When playing block, seqtime==blocktime.
-              
+
+  static struct SeqBlock seqblock = {0};
+  SEQBLOCK_init(NULL, &seqblock, block, NULL, -1, NULL, 0);
+                
   PLAYER_lock();{
 
     pc->playtype = playtype;
@@ -322,9 +325,6 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
     
     atomic_pointer_write_relaxed((void**)&seqtrack->curr_seqblock, NULL);
     
-    static struct SeqBlock seqblock = {0};
-    SEQBLOCK_init(NULL, &seqblock, block, g_uninitialized_dyn, -1, NULL, 0);
-      
     union SuperType args[G_NUM_ARGS];
     
     args[0].pointer = &seqblock;

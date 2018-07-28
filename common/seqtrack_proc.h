@@ -117,7 +117,7 @@ extern LANGSPEC void SEQTRACK_call_me_very_often(void);
 extern LANGSPEC void SONG_call_me_before_starting_to_play_song(int64_t abstime);
 
 // 'seqblock' must be nulled out before calling.
-extern LANGSPEC void SEQBLOCK_init(struct SeqTrack *from_seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const dyn_t envelope, double state_samplerate, bool *track_is_disabled, int64_t time);
+extern LANGSPEC void SEQBLOCK_init(struct SeqTrack *from_seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const hash_t *seqblock_state, double state_samplerate, bool *track_is_disabled, int64_t time);
   
 // sequencer gfx
 #ifdef USE_QT4
@@ -371,8 +371,11 @@ extern LANGSPEC void SONG_init(void);
 extern LANGSPEC hash_t *SEQUENCER_get_automations_state(void);
 extern LANGSPEC void SEQUENCER_create_automations_from_state(hash_t *state);
 
-extern LANGSPEC hash_t *SEQUENCER_get_envelopes_state(void);
-extern LANGSPEC void SEQUENCER_create_envelopes_from_state(hash_t *state);
+extern LANGSPEC hash_t *SEQUENCER_get_seqblock_automation_state(int automationnum, int seqblocknum, int seqtracknum);
+extern LANGSPEC hash_t *SEQUENCER_create_seqblock_automation_from_state(hash_t *state, bool return_old);
+
+extern LANGSPEC hash_t *SEQUENCER_get_seqblock_automations_state(void);
+extern LANGSPEC void SEQUENCER_create_seqblock_automations_from_state(hash_t *state);
 
 extern LANGSPEC void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double new_tempo_multiplier);
 

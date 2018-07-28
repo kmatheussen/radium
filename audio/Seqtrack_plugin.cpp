@@ -546,7 +546,8 @@ struct Sample{
 
   enum ResamplerType _resampler_type;
     
-  radium::GcHolder<const struct SeqBlock> _seqblock;
+  radium::GcHolder<const struct SeqBlock> _seqblock; // FIX: memory leak. (_seqblock memory can never be reclaimed)
+  radium::GcHolder<const struct SeqTrack> _seqtrack;
   Seqblock_Type _type;
   
   float _pitch = 1.0;
@@ -573,7 +574,7 @@ struct Sample{
 
   radium::LockAsserter lockAsserter;
   
-  Sample(const wchar_t *filename, radium::SampleReader *reader1, radium::SampleReader *reader2, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type)
+  Sample(const wchar_t *filename, radium::SampleReader *reader1, radium::SampleReader *reader2, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, const struct SeqTrack *seqtrack, Seqblock_Type type)
     : _filename(wcsdup(filename))
       //, _reader(NULL) //new MyReader(reader))
       //, _fade_out_reader(new MyReader(fade_out_reader))
@@ -581,6 +582,7 @@ struct Sample{
     , _peaks(DISKPEAKS_get(filename))
     , _resampler_type(resampler_type)
     , _seqblock(seqblock)
+    , _seqtrack(seqtrack)
     , _type(type)
     , _num_ch(SAMPLEREADER_get_num_channels(reader1))
     , _total_num_frames_in_sample(SAMPLEREADER_get_total_num_frames_in_sample(reader1))
@@ -932,9 +934,23 @@ struct Sample{
         mus_set_increment(_curr_reader->_granulator._clm_granulators[ch], _seqblock->t.stretch);
 
       if (true || ATOMIC_COMPARE_AND_SET_BOOL(_has_updates, true, false)){ // TODO: Fix the _has_updates thing.
+
+        double grain_overlap = _grain_overlap;
+
+        {
+          const int64_t start_time = _seqtrack->start_time;
+          const int64_t end_time = _seqtrack->end_time;
+          if (end_time >= _seqblock->t.time && start_time <= _seqblock->t.time2){
+
+            double s1 = get_seqblock_noninterior_start(_seqblock.data());
+            double time = (start_time-s1) / _seqblock->t.stretch;
+
+            RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_GRAIN_OVERLAP], time, grain_overlap);
+          }
+        }
         
         double grain_length = _grain_length * pc->pfreq / 1000.0; // in samples
-        double grain_frequency = grain_length / _grain_overlap; // in samples
+        double grain_frequency = grain_length / grain_overlap; // in samples
         
         double grain_jitter = _grain_jitter;
         double grain_ramp = _grain_ramp * grain_length;
@@ -1482,7 +1498,7 @@ static void set_num_visible_outputs(SoundPlugin *plugin){
   plugin->num_visible_outputs = new_visible_channels;
 }
 
-static int64_t add_sample(Data *data, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, enum Seqblock_Type type){
+static int64_t add_sample(Data *data, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, const struct SeqTrack *seqtrack, enum Seqblock_Type type){
   R_ASSERT(THREADING_is_main_thread());
   
   radium::SampleReader *reader1 = SAMPLEREADER_create(filename);
@@ -1505,7 +1521,7 @@ static int64_t add_sample(Data *data, const wchar_t *filename, enum ResamplerTyp
 
   //printf("     =========SAMPLE c/d: Alloced 4: %p\n", reader2);
   
-  Sample *sample = new Sample(filename, reader1, reader2, resampler_type, seqblock, type);
+  Sample *sample = new Sample(filename, reader1, reader2, resampler_type, seqblock, seqtrack, type);
 
   switch(type){ 
   case Seqblock_Type::REGULAR:
@@ -1536,7 +1552,7 @@ int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, SoundPlugin *plugin
   if (type==Seqblock_Type::RECORDING)
     return INITIAL_RECORDER_ID;
 
-  int64_t ret = add_sample(data, filename, resampler_type, seqblock, type);
+  int64_t ret = add_sample(data, filename, resampler_type, seqblock, seqtrack, type);
 
   //printf("   ADD (is_gfx: %d). NUM samples: %d.  NUM gfx samples: %d\n", is_gfx, data->_samples.size(), data->_gfx_samples.size());
 
@@ -1949,7 +1965,7 @@ void SEQTRACKPLUGIN_set_grain_overlap(SoundPlugin *plugin, int64_t id, double ne
   safe_double_write(&sample->_grain_overlap, new_gf); //R_MAX(0.000001, new_gf / 1000.0f));
   ATOMIC_SET(sample->_has_updates, true);
   
-  printf("  SETTING it to %f\n", sample->_grain_overlap);
+  //printf("  SETTING it to %f\n", sample->_grain_overlap);
 }
 
 double SEQTRACKPLUGIN_get_grain_overlap(const struct SoundPlugin *plugin, int64_t id){
@@ -1971,7 +1987,7 @@ void SEQTRACKPLUGIN_set_grain_length(SoundPlugin *plugin, int64_t id, double new
   safe_double_write(&sample->_grain_length, new_gf); //R_MAX(1, new_gf * (double)pc->pfreq / 1000.0));
   ATOMIC_SET(sample->_has_updates, true);
   
-  printf("  SETTING length to %f\n", new_gf);
+  //printf("  SETTING length to %f\n", new_gf);
 }
 
 double SEQTRACKPLUGIN_get_grain_length(const struct SoundPlugin *plugin, int64_t id){
@@ -1993,7 +2009,7 @@ void SEQTRACKPLUGIN_set_grain_jitter(struct SoundPlugin *plugin, int64_t id, dou
   safe_double_write(&sample->_grain_jitter, R_BOUNDARIES(0, new_gf, 1));
   ATOMIC_SET(sample->_has_updates, true);
   
-  printf("  SETTING jitter to %f\n", sample->_grain_jitter);
+  //printf("  SETTING jitter to %f\n", sample->_grain_jitter);
 }
 
 double SEQTRACKPLUGIN_get_grain_jitter(const struct SoundPlugin *plugin, int64_t id){
@@ -2015,7 +2031,7 @@ void SEQTRACKPLUGIN_set_grain_ramp(struct SoundPlugin *plugin, int64_t id, doubl
   safe_double_write(&sample->_grain_ramp, R_BOUNDARIES(0, new_gf, 0.5));
   ATOMIC_SET(sample->_has_updates, true);
   
-  printf("  SETTING ramp to %f\n", sample->_grain_ramp);
+  //printf("  SETTING ramp to %f\n", sample->_grain_ramp);
 }
 
 double SEQTRACKPLUGIN_get_grain_ramp(const struct SoundPlugin *plugin, int64_t id){

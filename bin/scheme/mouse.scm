@@ -3806,7 +3806,7 @@
 
 (define (get-sequencer-conf-menues)
   (list 
-        "-------- Timeline"
+        "-------- Sequencer timeline"
         (list
          :radio-buttons
          (list "Free"
@@ -3823,7 +3823,7 @@
                (lambda (val)
                  (<ra> :set-seqpunching val)
                  (c-display "new punch in/out:" val))))
-        "------- Configuration" ;;Various"
+        "------- Sequencer configuration" ;;Various"
         (list "Show song tempo automation"
               :check (<ra> :seqtempo-visible)
               (lambda (doit)
@@ -5505,7 +5505,7 @@
 
 (define (get-current-seqautomationnum)
   (and *current-seqautomation/distance*
-       (*current-seqautomation/distance* :automation-num)))
+       (not (*current-seqautomation/distance* :seqblock))))
 (define (get-current-seqautomation-distance)
   (and *current-seqautomation/distance*
        (*current-seqautomation/distance* :distance)))
@@ -5558,9 +5558,7 @@
                                                                                                        Y)))
 
 
-(define *0* 0)
-
-(define (get-closest-seqblock-automation automationnum x y)
+(define (get-closest-seqblock-automation-0 automationnum x y)
   (define width/2 (<ra> :get-half-of-node-width))
 
   (define seqtracknum (*current-seqblock-info* :seqtracknum))
@@ -5585,7 +5583,7 @@
                   (dist (get-distance-vertical x y x1 y1 x2 y2 (<ra> :get-seqblock-automation-logtype (1- n) automationnum seqblocknum seqtracknum))))
              (if (<= dist *seqnode-min-distance*)
                  (min-seqautomation/distance (make-seqautomation/distance :seqtrack *current-seqtrack-num*
-                                                                          :automation-num #f
+                                                                          :automation-num automationnum
                                                                           :distance (begin
                                                                                       ;;(c-display " DIST volume envelope:" dist)
                                                                                       dist)
@@ -5597,12 +5595,24 @@
           (else
            (next)))))
 
+(define-match get-closest-seqblock-automation
+  Automation-Num Automation-Num        _ _ :> #f
+  Automation-Num Total-Automation-Nums X Y :> (min-seqautomation/distance (and (<ra> :get-seqblock-automation-enabled
+                                                                                     Automation-Num
+                                                                                     (*current-seqblock-info* :seqblocknum)
+                                                                                     (*current-seqblock-info* :seqtracknum))
+                                                                               (get-closest-seqblock-automation-0 Automation-Num X Y))
+                                                                          (get-closest-seqblock-automation (1+ Automation-Num) Total-Automation-Nums X Y)))
+
 (define (get-closest-seqautomation X Y)
   (and *current-seqtrack-num*
-       (min-seqautomation/distance (get-closest-seqautomation-0 0 (<ra> :get-num-seq-automations *current-seqtrack-num*) X Y)
+       (min-seqautomation/distance (get-closest-seqautomation-0 0 (<ra> :get-num-seqtrack-automations *current-seqtrack-num*) X Y)
                                    (and *current-seqblock-info*
-                                        (<ra> :get-seqblock-automation-enabled *0* (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
-                                        (get-closest-seqblock-automation *0* X Y)))))
+                                        (get-closest-seqblock-automation 0
+                                                                         (<ra> :get-num-seqblock-automations
+                                                                               (*current-seqblock-info* :seqblocknum)
+                                                                               (*current-seqblock-info* :seqtracknum))
+                                                                         X Y)))))
 
 
 #||
@@ -5620,7 +5630,7 @@
                   (<ra> :cancel-curr-seq-automation)
                   (<ra> :cancel-curr-seqblock-automation))
 
-                 ((*current-seqautomation/distance* :automation-num)
+                 ((not (*current-seqautomation/distance* :seqblock))
                   (<ra> :cancel-curr-seqblock-automation)
                   (set-seqblock-selected-box 0 -1 -1)
                   (let* ((automationnum (*current-seqautomation/distance* :automation-num))
@@ -5638,8 +5648,12 @@
                   (<ra> :cancel-curr-seq-automation)
                   (set-seqblock-selected-box 0 -1 -1)
                   (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
-                  (set-editor-statusbar "Volume envelope")
-                  (<ra> :set-curr-seqblock-automation *0* (*current-seqautomation/distance* :seqblock) (*current-seqautomation/distance* :seqtrack)))
+                  (set-editor-statusbar (<-> (<ra> :get-seqblock-automation-name (*current-seqautomation/distance* :automation-num))
+                                             " automation"))
+                  (<ra> :set-curr-seqblock-automation
+                        (*current-seqautomation/distance* :automation-num)
+                        (*current-seqautomation/distance* :seqblock)
+                        (*current-seqautomation/distance* :seqtrack)))
 
                  (else
                   (assert #f))))))
@@ -5665,7 +5679,7 @@
 ;; move and create sequencer automation
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-seqautomation/distance*
-                                             (*current-seqautomation/distance* :automation-num)
+                                             (not (*current-seqautomation/distance* :seqblock))
                                              (<ra> :get-box sequencer)))
 
                         :Get-existing-node-info (lambda (X Y callback)
@@ -5811,15 +5825,17 @@
 
 (define (set-seqblock-automation-node-statusbar-text Num)
   (let* ((seqblocknum (*current-seqautomation/distance* :seqblock))
-         (seqtracknum (*current-seqautomation/distance* :seqtrack)))
-    (set-editor-statusbar (<-> "Volume: "
-                                   (let ((db (<ra> :get-seqblock-automation-value Num *0* seqblocknum seqtracknum)))
-                                     (<-> ;(<ra> :get-seqblock-automation-value Num seqblocknum seqtracknum)
-                                          ;" : "
-                                          (db-to-text db #t)))))))
+         (seqtracknum (*current-seqautomation/distance* :seqtrack))
+         (automationnum (*current-seqautomation/distance* :automation-num)))
+    (set-editor-statusbar (<-> (<ra> :get-seqblock-automation-name automationnum) ": "
+                               (let ((value (<ra> :get-seqblock-automation-value Num automationnum seqblocknum seqtracknum)))
+                                 (<ra> :get-seqblock-automation-display-string value automationnum seqblocknum seqtracknum))))))
+;                                 (<-> ;(<ra> :get-seqblock-automation-value Num seqblocknum seqtracknum)
+                                        ;" : "
+ ;                                 (db-to-text db #t)))))))
 
 
-;; move and create seqblock volume envelope
+;; move and create seqblock automation
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-seqautomation/distance*
                                              (*current-seqautomation/distance* :seqblock)
@@ -5827,11 +5843,12 @@
 
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
-                                                        (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                                                        (seqtracknum (*current-seqautomation/distance* :seqtrack))
+                                                        (automationnum (*current-seqautomation/distance* :automation-num)))
                                                     (define (get-nodebox $num)
-                                                      (get-common-node-box (<ra> :get-seqblock-automation-node-x $num *0* seqblocknum seqtracknum)
-                                                                           (<ra> :get-seqblock-automation-node-y $num *0* seqblocknum seqtracknum)))
-                                                    (match (list (find-node-horizontal X Y get-nodebox (<ra> :get-num-seqblock-automation-nodes *0* seqblocknum seqtracknum)))
+                                                      (get-common-node-box (<ra> :get-seqblock-automation-node-x $num automationnum seqblocknum seqtracknum)
+                                                                           (<ra> :get-seqblock-automation-node-y $num automationnum seqblocknum seqtracknum)))
+                                                    (match (list (find-node-horizontal X Y get-nodebox (<ra> :get-num-seqblock-automation-nodes automationnum seqblocknum seqtracknum)))
                                                            (existing-box Num Box) :> (begin
                                                                                        (define Time (scale X
                                                                                                            (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
@@ -5847,28 +5864,34 @@
                         
                         :Get-x (lambda (Num)
                                  (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
-                                       (seqtracknum (*current-seqautomation/distance* :seqtrack)))
-                                   (<ra> :get-seqblock-automation-node-x Num *0* seqblocknum seqtracknum)))
+                                       (seqtracknum (*current-seqautomation/distance* :seqtrack))
+                                       (automationnum (*current-seqautomation/distance* :automation-num)))
+                                   (<ra> :get-seqblock-automation-node-x Num automationnum seqblocknum seqtracknum)))
                         :Get-y (lambda (Num)
                                  (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
-                                       (seqtracknum (*current-seqautomation/distance* :seqtrack)))
-                                   (<ra> :get-seqblock-automation-node-y Num *0* seqblocknum seqtracknum)))
+                                       (seqtracknum (*current-seqautomation/distance* :seqtrack))
+                                       (automationnum (*current-seqautomation/distance* :automation-num)))
+                                   (<ra> :get-seqblock-automation-node-y Num automationnum seqblocknum seqtracknum)))
                         :Make-undo (lambda (_)
-                                     (<ra> :undo-sequencer-envelopes))
+                                     (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
+                                           (seqtracknum (*current-seqautomation/distance* :seqtrack))
+                                           (automationnum (*current-seqautomation/distance* :automation-num)))
+                                       (<ra> :undo-seqblock-automation automationnum seqblocknum seqtracknum)))
                         :Create-new-node (lambda (X Y callback)
                                            (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
-                                                 (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                                                 (seqtracknum (*current-seqautomation/distance* :seqtrack))
+                                                 (automationnum (*current-seqautomation/distance* :automation-num)))
                                              (define Time (scale X
                                                                  (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
                                                                  (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
                                              (define PositionTime (if (<ra> :control-pressed)
                                                                       Time
                                                                       (<ra> :get-seq-gridded-time (floor Time) 0 (<ra> :get-seq-automation-grid-type))))
-                                             (define min-value (<ra> :get-seqblock-automation-min-value *0* seqblocknum seqtracknum))
-                                             (define max-value (<ra> :get-seqblock-automation-max-value *0* seqblocknum seqtracknum))
+                                             (define min-value (<ra> :get-seqblock-automation-min-value automationnum seqblocknum seqtracknum))
+                                             (define max-value (<ra> :get-seqblock-automation-max-value automationnum seqblocknum seqtracknum))
                                              (define db (scale Y (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) max-value min-value))
                                              (c-display "db1" db ". Y:" Y)
-                                             (define Num (<ra> :add-seqblock-automation-node (floor PositionTime) db *logtype-linear* *0* seqblocknum seqtracknum))
+                                             (define Num (<ra> :add-seqblock-automation-node (floor PositionTime) db *logtype-linear* automationnum seqblocknum seqtracknum))
                                              (if (= -1 Num)
                                                #f
                                                (begin
@@ -5879,18 +5902,19 @@
                                         (set-grid-type #f))
                         :Move-node (lambda (Num Time Y)
                                      (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
-                                           (seqtracknum (*current-seqautomation/distance* :seqtrack)))
-                                       (define min-value (<ra> :get-seqblock-automation-min-value *0* seqblocknum seqtracknum))
-                                       (define max-value (<ra> :get-seqblock-automation-max-value *0* seqblocknum seqtracknum))
+                                           (seqtracknum (*current-seqautomation/distance* :seqtrack))
+                                           (automationnum (*current-seqautomation/distance* :automation-num)))
+                                       (define min-value (<ra> :get-seqblock-automation-min-value automationnum seqblocknum seqtracknum))
+                                       (define max-value (<ra> :get-seqblock-automation-max-value automationnum seqblocknum seqtracknum))
                                        (define db (between min-value
                                                            (scale Y (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) max-value min-value)
                                                            max-value))
-                                       (define logtype (<ra> :get-seqblock-automation-logtype Num *0* seqblocknum seqtracknum))
+                                       (define logtype (<ra> :get-seqblock-automation-logtype Num automationnum seqblocknum seqtracknum))
                                        (set! Time (floor Time))
                                        (if (not (<ra> :control-pressed))
                                            (set! Time (<ra> :get-seq-gridded-time Time 0 (<ra> :get-seq-automation-grid-type))))
                                        (c-display "db" db ". Y:" Y)
-                                       (<ra> :set-seqblock-automation-node Time db logtype Num *0* seqblocknum seqtracknum)
+                                       (<ra> :set-seqblock-automation-node Time db logtype Num automationnum seqblocknum seqtracknum)
                                        ;;(c-display "NUM:" Num ", Time:" (/ Time 48000.0) ", Value:" Value)
                                        Num))
                         :Publicize (lambda (Num)
@@ -5903,6 +5927,9 @@
                         :Get-guinum (lambda () (<gui> :get-sequencer-gui))
                         :Get-pixels-per-value-unit #f
                         )         
+#!!
+(pretty-print (<ra> :get-seqblocks-state 1))
+!!#
 
 ;; delete block volume envelope node / popupmenu
 (add-mouse-cycle
@@ -5912,68 +5939,72 @@
                      *current-seqautomation/distance*
                      (*current-seqautomation/distance* :seqblock)
                      (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
-                           (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                           (seqtracknum (*current-seqautomation/distance* :seqtrack))
+                           (automationnum (*current-seqautomation/distance* :automation-num)))
                        (define (get-nodebox $num)
-                         (get-common-node-box (<ra> :get-seqblock-automation-node-x $num *0* seqblocknum seqtracknum)
-                                              (<ra> :get-seqblock-automation-node-y $num *0* seqblocknum seqtracknum)))
-                       (define Num (match (list (find-node-horizontal $x $y get-nodebox (<ra> :get-num-seqblock-automation-nodes *0* seqblocknum seqtracknum)))
+                         (get-common-node-box (<ra> :get-seqblock-automation-node-x $num automationnum seqblocknum seqtracknum)
+                                              (<ra> :get-seqblock-automation-node-y $num automationnum seqblocknum seqtracknum)))
+                       (define Num (match (list (find-node-horizontal $x $y get-nodebox (<ra> :get-num-seqblock-automation-nodes automationnum seqblocknum seqtracknum)))
                                           (existing-box Num Box) :> Num
                                           A                      :> #f))
                        (if (<ra> :shift-pressed)
-                           (if Num
-                               (<ra> :delete-seqblock-automation-node Num *0* seqblocknum seqtracknum))
+                           (when Num
+                             (<ra> :undo-seqblock-automation automationnum seqblocknum seqtracknum)
+                             (<ra> :delete-seqblock-automation-node Num automationnum seqblocknum seqtracknum))
                            (popup-menu (list "Delete"
                                              :enabled Num
                                              (lambda ()
-                                               (<ra> :delete-seqblock-automation-node Num *0* seqblocknum seqtracknum)))
-                                       (list "Reset (set value to 0.0 dB)"
-                                            :enabled Num
-                                             (lambda ()
-                                               (<ra> :undo-sequencer-envelopes)
-                                               (<ra> :set-seqblock-automation-node
-                                                     (<ra> :get-seqblock-automation-time Num *0* seqblocknum seqtracknum)
-                                                     0.0
-                                                     (<ra> :get-seqblock-automation-logtype Num *0* seqblocknum seqtracknum)
-                                                     Num
-                                                     *0* 
-                                                     seqblocknum
-                                                     seqtracknum)))
+                                               (<ra> :delete-seqblock-automation-node Num automationnum seqblocknum seqtracknum)))
+                                       (let ((default-value (<ra> :get-seqblock-automation-default-value automationnum seqblocknum seqtracknum)))
+                                         (list (<-> "Reset (set value to " (<ra> :get-seqblock-automation-display-string default-value automationnum seqblocknum seqtracknum) ")")
+                                               :enabled Num
+                                               (lambda ()
+                                                 (<ra> :undo-seqblock-automation automationnum seqblocknum seqtracknum)
+                                                 (<ra> :set-seqblock-automation-node
+                                                       (<ra> :get-seqblock-automation-time Num automationnum seqblocknum seqtracknum)
+                                                       default-value
+                                                       (<ra> :get-seqblock-automation-logtype Num automationnum seqblocknum seqtracknum)
+                                                       Num
+                                                       automationnum
+                                                       seqblocknum
+                                                       seqtracknum))))
                                        (list "Glide to next break point"
                                              :check (and Num
-                                                         (= (<ra> :get-seqblock-automation-logtype Num *0* seqblocknum seqtracknum)
+                                                         (= (<ra> :get-seqblock-automation-logtype Num automationnum seqblocknum seqtracknum)
                                                             *logtype-linear*))
                                              :enabled Num
                                              (lambda (maybe)
-                                               (<ra> :undo-sequencer-envelopes)
+                                               (<ra> :undo-seqblock-automation automationnum seqblocknum seqtracknum)
                                                (<ra> :set-seqblock-automation-node
-                                                     (<ra> :get-seqblock-automation-time Num *0* seqblocknum seqtracknum)
-                                                     (<ra> :get-seqblock-automation-value Num *0* seqblocknum seqtracknum)
+                                                     (<ra> :get-seqblock-automation-time Num automationnum seqblocknum seqtracknum)
+                                                     (<ra> :get-seqblock-automation-value Num automationnum seqblocknum seqtracknum)
                                                      (if maybe *logtype-linear* *logtype-hold*)
                                                      Num
-                                                     *0* 
+                                                     automationnum
                                                      seqblocknum
                                                      seqtracknum)))
                                        ))
                        #t)))))
 
-;; highlight current seq block volume envelope node
+;; highlight current seqblock autmation node
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
          (and *current-seqautomation/distance*
               (*current-seqautomation/distance* :seqblock)
               (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
-                    (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                    (seqtracknum (*current-seqautomation/distance* :seqtrack))
+                    (automationnum (*current-seqautomation/distance* :automation-num)))
                 (define (get-nodebox $num)
-                  (get-common-node-box (<ra> :get-seqblock-automation-node-x $num *0* seqblocknum seqtracknum)
-                                       (<ra> :get-seqblock-automation-node-y $num *0* seqblocknum seqtracknum)))
-                (match (list (find-node-horizontal $x $y get-nodebox (<ra> :get-num-seqblock-automation-nodes *0* seqblocknum seqtracknum)))
+                  (get-common-node-box (<ra> :get-seqblock-automation-node-x $num automationnum seqblocknum seqtracknum)
+                                       (<ra> :get-seqblock-automation-node-y $num automationnum seqblocknum seqtracknum)))
+                (match (list (find-node-horizontal $x $y get-nodebox (<ra> :get-num-seqblock-automation-nodes automationnum seqblocknum seqtracknum)))
                        (existing-box Num Box) :> (begin
                                                    (set-seqblock-automation-node-statusbar-text Num)
-                                                   (<ra> :set-curr-seqblock-automation-node Num *0* seqblocknum seqtracknum)
+                                                   (<ra> :set-curr-seqblock-automation-node Num automationnum seqblocknum seqtracknum)
                                                    #t)
                        A                      :> (begin
                                                    ;;(c-display "**Didnt get it:" A)
-                                                   (<ra> :cancel-curr-seqblock-automation-node *0* seqblocknum seqtracknum)
+                                                   (<ra> :cancel-curr-seqblock-automation-node automationnum seqblocknum seqtracknum)
                                                    #f))))))
 
 
@@ -6353,313 +6384,331 @@
                                       (only-select-one-seqblock seqblocknum seqtracknum)
                                       (<ra> :select-seqblock #t seqblocknum seqtracknum)))
 
-                              (popup-menu (list
-                                           "Insert existing block"
-                                           :enabled for-blocks
-                                           (lambda ()
-                                             (let ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                               (if (= 1 (<ra> :get-num-blocks))
-                                                   (<ra> :create-seqblock seqtracknum 0 pos)                                          
-                                                   (apply popup-menu
-                                                          (map (lambda (blocknum)
-                                                                 (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
-                                                                       (lambda ()
-                                                                         (<ra> :create-seqblock seqtracknum blocknum pos))))
-                                                               (iota (<ra> :get-num-blocks))))))))
-                                          
-                                          ;;   Sub menues version. It looks better, but it is less convenient.
-                                          ;;"Insert existing block" (map (lambda (blocknum)
-                                          ;;                               (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
-                                          ;;                                     (lambda ()
-                                          ;;                                       (let ((pos (get-sequencer-pos-from-x X)))
-                                          ;;                                         (<ra> :add-block-to-seqtrack seqtracknum blocknum pos))
-                                          ;;                                       (<ra> :select-block blocknum))))
-                                          ;;                             (iota (<ra> :get-num-blocks)))
-                                          
-                                          (list                                          
-                                           "Insert current block"
-                                           :enabled for-blocks
-                                           (lambda ()
-                                             (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
-                                                    (blocknum (<ra> :current-block)))
-                                               (<ra> :create-seqblock seqtracknum blocknum pos))))
-                                          
-                                          (list                                           
-                                           "Insert new block"
-                                           :enabled for-blocks
-                                           (lambda ()
-                                             (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
-                                                    (blocknum (<ra> :append-block)))
-                                               (<ra> :create-seqblock seqtracknum blocknum pos))))
-                                          
-                                          (list
-                                           "Insert new block from disk (BETA)"
-                                           :enabled for-blocks
-                                           (lambda ()
-                                             (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
-                                                    (num-blocks (<ra> :get-num-blocks)))
-                                               (<ra> :load-block "")
-                                               (if (not (= num-blocks (<ra> :get-num-blocks)))
-                                                   (<ra> :create-seqblock seqtracknum num-blocks pos)))))
-                                          "--------------------"
-                                          (if (<ra> :release-mode)
-                                              '()
-                                              (list                                               
-                                               "Insert my soundfile"
-                                               :enabled for-audiofiles
+                              (popup-menu (if (not for-blocks)
+                                              #f
+                                              (list
+                                               "--------------------Editor blocks"
+                                               "Insert existing block"
+                                               :enabled for-blocks
                                                (lambda ()
+                                                 (let ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
+                                                   (if (= 1 (<ra> :get-num-blocks))
+                                                       (<ra> :create-seqblock seqtracknum 0 pos)                                          
+                                                       (apply popup-menu
+                                                               (map (lambda (blocknum)
+                                                                      (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                                                                            (lambda ()
+                                                                              (<ra> :create-seqblock seqtracknum blocknum pos))))
+                                                                    (iota (<ra> :get-num-blocks)))))))
+                                               
+                                               ;;   Sub menues version. It looks better, but it is less convenient.
+                                               ;;"Insert existing block" (map (lambda (blocknum)
+                                               ;;                               (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                                               ;;                                     (lambda ()
+                                               ;;                                       (let ((pos (get-sequencer-pos-from-x X)))
+                                               ;;                                         (<ra> :add-block-to-seqtrack seqtracknum blocknum pos))
+                                               ;;                                       (<ra> :select-block blocknum))))
+                                               ;;                             (iota (<ra> :get-num-blocks)))
+                                               
+                                               (list                                          
+                                                "Insert current block"
+                                                :enabled for-blocks
+                                                (lambda ()
+                                                  (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
+                                                         (blocknum (<ra> :current-block)))
+                                                    (<ra> :create-seqblock seqtracknum blocknum pos))))
+                                               
+                                               (list                                           
+                                                "Insert new block"
+                                                :enabled for-blocks
+                                                (lambda ()
+                                                  (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
+                                                         (blocknum (<ra> :append-block)))
+                                                    (<ra> :create-seqblock seqtracknum blocknum pos))))
+                                               
+                                               (list
+                                                "Insert new block from disk (BETA)"
+                                                :enabled for-blocks
+                                                (lambda ()
+                                                  (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type)))
+                                                         (num-blocks (<ra> :get-num-blocks)))
+                                                    (<ra> :load-block "")
+                                                    (if (not (= num-blocks (<ra> :get-num-blocks)))
+                                                        (<ra> :create-seqblock seqtracknum num-blocks pos)))))))
+                                          (if (not for-audiofiles)
+                                              #f
+                                              (list
+                                               "--------------------Audio files"
+                                               (if (<ra> :release-mode)
+                                                   '()
+                                                   (list                                               
+                                                    "Insert my soundfile"
+                                                    :enabled for-audiofiles
+                                                    (lambda ()
                                                  (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
                                                    ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong_24000.wav") pos))))
-                                                   (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
-                                              ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
-                                              )
-                                          ;;
-                                          (list
-                                           "Insert new audio file"
-                                           :enabled for-audiofiles
-                                           (lambda ()
-                                             (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                               (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
-                                                                      (lambda (filename)
-                                                                        (<ra> :create-sample-seqblock seqtracknum filename pos))))))
-                                          (list
-                                           "Split audio file (S)"
-                                           :enabled (and seqblocknum
-                                                         (not blocknum))
-                                           (lambda ()
-                                             (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                               (split-sample-seqblock pos seqtracknum seqblocknum))))
-
-                                          (let ((get-old-gain (lambda ()
-                                                                (db-to-text (if (and seqblocknum
-                                                                                     (not blocknum))
-                                                                                (<ra> :gain-to-db (<ra> :get-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum)))
-                                                                                0.0)
-                                                                            #t))))
-                                            (list
-                                             (<-> "Set gain (now: " (get-old-gain) ")")
-                                             :enabled (and seqblocknum
-                                                           (not blocknum)) ;; FIX: Need to ensure new envelope values aren't continually sent to the instruments before enabling gain for editor seqblocks.
-                                             (lambda ()
-                                               (define new (<ra> :request-float (<-> "New gain (now: " (get-old-gain) ")")
-                                                                 -1000
-                                                                 1000))
-                                               (<ra> :set-seqblock-gain (<ra> :db-to-gain new) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))
-
-                                          (let* ((is-enabled (and seqblocknum
-                                                                  (not blocknum)))
-                                                 (get-normalized-gain (lambda ()
-                                                                        (if is-enabled
-                                                                            (get-normalized-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum))
-                                                                            1.0))))
-                                            (list
-                                             (<-> "Set normalized gain (" (db-to-text (<ra> :gain-to-db (get-normalized-gain)) #t) ")")
-                                             :enabled is-enabled
-                                             (lambda ()
-                                               (<ra> :set-seqblock-gain (get-normalized-gain) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))
-
-                                          (list "Preferences"
-                                                :enabled (and seqblocknum (not blocknum))
+                                                   ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
+                                                   (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
+                                                   ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
+                                                   )
+                                               ;;
+                                               (list
+                                                "Insert new audio file"
+                                                :enabled for-audiofiles
                                                 (lambda ()
-                                                  (create-audio-seqblock-gui seqblocknum seqtracknum)))
+                                                  (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
+                                                    (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
+                                                                           (lambda (filename)
+                                                                             (<ra> :create-sample-seqblock seqtracknum filename pos))))))
+                                               (list
+                                                "Split audio file (S)"
+                                                :enabled (and seqblocknum
+                                                              (not blocknum))
+                                                (lambda ()
+                                                  (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
+                                                    (split-sample-seqblock pos seqtracknum seqblocknum))))
+                                               
+                                               (let ((get-old-gain (lambda ()
+                                                                     (db-to-text (if (and seqblocknum
+                                                                                          (not blocknum))
+                                                                                     (<ra> :gain-to-db (<ra> :get-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum)))
+                                                                                     0.0)
+                                                                                 #t))))
+                                                 (list
+                                                  (<-> "Set gain (now: " (get-old-gain) ")")
+                                                  :enabled (and seqblocknum
+                                                                (not blocknum)) ;; FIX: Need to ensure new envelope values aren't continually sent to the instruments before enabling gain for editor seqblocks.
+                                                  (lambda ()
+                                                    (define new (<ra> :request-float (<-> "New gain (now: " (get-old-gain) ")")
+                                                                      -1000
+                                                                      1000))
+                                                    (<ra> :set-seqblock-gain (<ra> :db-to-gain new) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))
+                                               
+                                               (let* ((is-enabled (and seqblocknum
+                                                                       (not blocknum)))
+                                                      (get-normalized-gain (lambda ()
+                                                                             (if is-enabled
+                                                                                 (get-normalized-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum))
+                                                                                 1.0))))
+                                                 (list
+                                                  (<-> "Set normalized gain (" (db-to-text (<ra> :gain-to-db (get-normalized-gain)) #t) ")")
+                                                  :enabled is-enabled
+                                                  (lambda ()
+                                                    (<ra> :set-seqblock-gain (get-normalized-gain) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))))
+                                               
+                                          (if (not seqblock-info)
+                                              #f
+                                              (list
                               
-                                          "--------------------"
-                                          
-                                          (list (if (> (<ra> :get-num-selected-seqblocks) 1)
-                                                    "Copy sequencer blocks"
-                                                    "Copy sequencer block")
-                                                :enabled (seqblock-selected?)
-                                                ra:copy-selected-seqblocks)
-                                          
-                                          (list (if (> (<ra> :get-num-selected-seqblocks) 1)
-                                                    "Cut sequencer blocks"
-                                                    "Cut sequencer block")
-                                                :enabled (seqblock-selected?)
-                                                ra:cut-selected-seqblocks)
-                                          
-                                          (list (if (> (<ra> :get-num-selected-seqblocks) 1)
-                                                    "Delete sequencer blocks"
-                                                    "Delete sequencer block")
-                                                :enabled (seqblock-selected?)
-                                                ra:delete-selected-seqblocks)
-                                          
-                                          (list (if (> (<ra> :get-num-selected-seqblocks) 1)
-                                                    "Paste sequencer blocks"
-                                                    "Paste sequencer block")
-                                                :enabled (not (empty? *seqblock-clipboard*))
-                                                (lambda ()
-                                                  (let ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
-                                                    (<ra> :paste-seqblocks seqtracknum pos))))
-                                          
-                                          "--------------------"
-                                          
-                                          ;;(list "Replace with current block"
-                                          ;;      :enabled seqblock-info
-                                          ;;      (lambda ()
-                                          ;;        (undo-block
-                                          ;;         (lambda ()
-                                          ;;           (define pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
-                                          ;;           (<ra> :delete-seqblock seqblocknum seqtracknum)                 
-                                          ;;           (<ra> :add-block-to-seqtrack seqtracknum (<ra> :current-block) pos)))))
-                                          
-                                          (list (if (pair? seqblock-infos) "Replace blocks with existing block" "Replace with existing block")
-                                                :enabled (and for-blocks
-                                                              (or seqblock-info (pair? seqblock-infos)))
-                                                (lambda ()
-                                                  (apply popup-menu
-                                                         (map (lambda (blocknum)
-                                                                (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
-                                                                      (lambda ()
-                                                                        (undo-block
-                                                                         (lambda ()
-                                                                           (for-each (lambda (seqblock-info)
-                                                                                       (let* ((seqblocknum (seqblock-info :seqblocknum))
-                                                                                              (seqtracknum (seqblock-info :seqtracknum))
-                                                                                              (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
-                                                                                         (set! *current-seqblock-info* #f)
-                                                                                         (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                                                                         (<ra> :create-seqblock seqtracknum blocknum pos)))
-                                                                                     (if (null? seqblock-infos)
-                                                                                         (list seqblock-info)
-                                                                                         seqblock-infos))))
-                                                                        (<ra> :select-block blocknum))))                                                         
-                                                              (iota (<ra> :get-num-blocks))))))
-                                                
-                                          ;;   Sub menues version. It looks better, but it is less convenient.
-                                          ;;(list "Replace with existing block"
-                                          ;;      :enabled seqblock-info
-                                          ;;      (if seqblock-info
-                                          ;;          (let ((pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
-                                          ;;            (map (lambda (blocknum)
-                                          ;;                   (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
-                                          ;;                         (lambda ()
-                                          ;;                           (undo-block
-                                          ;;                            (lambda ()
-                                          ;;                              (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                          ;;                              (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
-                                          ;;                           (<ra> :select-block blocknum))))                                                         
-                                          ;;                 (iota (<ra> :get-num-blocks))))
-                                          ;;          (lambda ()
-                                          ;;            #f)))
-
-                                          ;; Doesn't make sense since we select block under mouse when right-clicking on it.
-                                          ;;(list "Replace with current block"
-                                          ;;      :enabled seqblock-info
-                                          ;;      (lambda ()
-                                          ;;        (let ((pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
-                                          ;;              (blocknum (<ra> :current-block)))
-                                          ;;          (undo-block
-                                          ;;           (lambda ()
-                                          ;;             (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                          ;;             (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
-                                          ;;          (<ra> :select-block blocknum))))
-                                          
-                                          (list (if (pair? seqblock-infos) "Replace blocks with new block" "Replace with new block")
-                                                :enabled (and for-blocks
-                                                              (or (pair? seqblock-infos)
-                                                                  seqblock-info))
-                                                (lambda ()
-                                                  (let ((blocknum (<ra> :append-block)))
-                                                    (undo-block
+                                               "--------------------Seqblock"
+                                               
+                                               (list (if (> (<ra> :get-num-selected-seqblocks) 1)
+                                                         "Copy sequencer blocks"
+                                                         "Copy sequencer block")
+                                                     :enabled (seqblock-selected?)
+                                                     ra:copy-selected-seqblocks)
+                                               
+                                               (list (if (> (<ra> :get-num-selected-seqblocks) 1)
+                                                         "Cut sequencer blocks"
+                                                         "Cut sequencer block")
+                                                     :enabled (seqblock-selected?)
+                                                     ra:cut-selected-seqblocks)
+                                               
+                                               (list (if (> (<ra> :get-num-selected-seqblocks) 1)
+                                                         "Delete sequencer blocks"
+                                                         "Delete sequencer block")
+                                                     :enabled (seqblock-selected?)
+                                                     ra:delete-selected-seqblocks)
+                                               
+                                               (list (if (> (<ra> :get-num-selected-seqblocks) 1)
+                                                         "Paste sequencer blocks"
+                                                         "Paste sequencer block")
+                                                     :enabled (not (empty? *seqblock-clipboard*))
                                                      (lambda ()
-                                                       (for-each (lambda (seqblock-info)
-                                                                   (let* ((seqblocknum (seqblock-info :seqblocknum))
-                                                                          (seqtracknum (seqblock-info :seqtracknum))
-                                                                          (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
-                                                                     (set! *current-seqblock-info* #f)
-                                                                     (<ra> :delete-seqblock seqblocknum seqtracknum)
-                                                                     (<ra> :create-seqblock seqtracknum blocknum pos)))
-                                                                 (if (null? seqblock-infos)
-                                                                     (list seqblock-info)
-                                                                     seqblock-infos))))
-                                                    (<ra> :select-block blocknum))))
-                                          
-                                          ;;"-----------------"
-                                          "------------------"
+                                                       (let ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
+                                                         (<ra> :paste-seqblocks seqtracknum pos))))
+                                               
+                                               "--------------------"
+                                               
+                                               ;;(list "Replace with current block"
+                                               ;;      :enabled seqblock-info
+                                               ;;      (lambda ()
+                                               ;;        (undo-block
+                                               ;;         (lambda ()
+                                               ;;           (define pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+                                               ;;           (<ra> :delete-seqblock seqblocknum seqtracknum)                 
+                                               ;;           (<ra> :add-block-to-seqtrack seqtracknum (<ra> :current-block) pos)))))
+                                               
+                                               (list (if (pair? seqblock-infos) "Replace blocks with existing block" "Replace with existing block")
+                                                     :enabled (and for-blocks
+                                                                   (or seqblock-info (pair? seqblock-infos)))
+                                                     (lambda ()
+                                                       (apply popup-menu
+                                                              (map (lambda (blocknum)
+                                                                     (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                                                                           (lambda ()
+                                                                             (undo-block
+                                                                              (lambda ()
+                                                                                (for-each (lambda (seqblock-info)
+                                                                                            (let* ((seqblocknum (seqblock-info :seqblocknum))
+                                                                                                   (seqtracknum (seqblock-info :seqtracknum))
+                                                                                                   (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                                                                                              (set! *current-seqblock-info* #f)
+                                                                                              (<ra> :delete-seqblock seqblocknum seqtracknum)
+                                                                                              (<ra> :create-seqblock seqtracknum blocknum pos)))
+                                                                                          (if (null? seqblock-infos)
+                                                                                              (list seqblock-info)
+                                                                                              seqblock-infos))))
+                                                                             (<ra> :select-block blocknum))))                                                         
+                                                                   (iota (<ra> :get-num-blocks))))))
+                                               
+                                               ;;   Sub menues version. It looks better, but it is less convenient.
+                                               ;;(list "Replace with existing block"
+                                               ;;      :enabled seqblock-info
+                                               ;;      (if seqblock-info
+                                               ;;          (let ((pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                                               ;;            (map (lambda (blocknum)
+                                               ;;                   (list (<-> blocknum ": " (<ra> :get-block-name blocknum))
+                                               ;;                         (lambda ()
+                                               ;;                           (undo-block
+                                               ;;                            (lambda ()
+                                               ;;                              (<ra> :delete-seqblock seqblocknum seqtracknum)
+                                               ;;                              (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
+                                               ;;                           (<ra> :select-block blocknum))))                                                         
+                                               ;;                 (iota (<ra> :get-num-blocks))))
+                                               ;;          (lambda ()
+                                               ;;            #f)))
 
-                                          (list (if (pair? seqblock-infos) "Clone blocks" "Clone block")
-                                                :enabled (and blocknum
-                                                              (or (pair? seqblock-infos) seqblock-info)
-                                                              (not (<ra> :is-playing-song)))
-                                                (lambda ()
-                                                  (<ra> :select-block blocknum)
-                                                  (<ra> :copy-block)
-                                                  (undo-block
-                                                   (lambda ()
-                                                     (for-each (lambda (seqblock-info)
-                                                                 (define new-blocknum (<ra> :append-block))
-                                                                 (<ra> :select-block new-blocknum)
-                                                                 (<ra> :paste-block))
-                                                               (if (null? seqblock-infos)
-                                                                   (list seqblock-info)
-                                                                   seqblock-infos))))))
-                                          
-                                          (list "Configure block"
-                                                :enabled (and blocknum seqblock-info (not (<ra> :is-playing-song)))
-                                                (lambda ()
-                                                  (<ra> :select-block blocknum)
-                                                  (<ra> :config-block)))
+                                               ;; Doesn't make sense since we select block under mouse when right-clicking on it.
+                                               ;;(list "Replace with current block"
+                                               ;;      :enabled seqblock-info
+                                               ;;      (lambda ()
+                                               ;;        (let ((pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+                                               ;;              (blocknum (<ra> :current-block)))
+                                               ;;          (undo-block
+                                               ;;           (lambda ()
+                                               ;;             (<ra> :delete-seqblock seqblocknum seqtracknum)
+                                               ;;             (<ra> :add-block-to-seqtrack seqtracknum blocknum pos)))
+                                               ;;          (<ra> :select-block blocknum))))
+                                               
+                                               (list (if (pair? seqblock-infos) "Replace blocks with new block" "Replace with new block")
+                                                     :enabled (and for-blocks
+                                                                   (or (pair? seqblock-infos)
+                                                                       seqblock-info))
+                                                     (lambda ()
+                                                       (let ((blocknum (<ra> :append-block)))
+                                                         (undo-block
+                                                          (lambda ()
+                                                            (for-each (lambda (seqblock-info)
+                                                                        (let* ((seqblocknum (seqblock-info :seqblocknum))
+                                                                               (seqtracknum (seqblock-info :seqtracknum))
+                                                                               (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                                                                          (set! *current-seqblock-info* #f)
+                                                                          (<ra> :delete-seqblock seqblocknum seqtracknum)
+                                                                          (<ra> :create-seqblock seqtracknum blocknum pos)))
+                                                                      (if (null? seqblock-infos)
+                                                                          (list seqblock-info)
+                                                                          seqblock-infos))))
+                                                         (<ra> :select-block blocknum))))
+                                               
+                                               ;;"-----------------"
+                                               "------------------"
 
-                                          (list
-                                           "Rename"
-                                           (lambda ()
-                                             (let* ((old-name (<ra> :get-seqblock-name seqblocknum seqtracknum))
-                                                    (new-name (<ra> :request-string "New name:" #t old-name)))
-                                               (when (and (not (string=? new-name ""))
-                                                          (not (string=? new-name old-name)))
-                                                 (<ra> :set-seqblock-name new-name seqblocknum seqtracknum)))))
+                                               (list (if (pair? seqblock-infos) "Clone blocks" "Clone block")
+                                                     :enabled (and blocknum
+                                                                   (or (pair? seqblock-infos) seqblock-info)
+                                                                   (not (<ra> :is-playing-song)))
+                                                     (lambda ()
+                                                       (<ra> :select-block blocknum)
+                                                       (<ra> :copy-block)
+                                                       (undo-block
+                                                        (lambda ()
+                                                          (for-each (lambda (seqblock-info)
+                                                                      (define new-blocknum (<ra> :append-block))
+                                                                      (<ra> :select-block new-blocknum)
+                                                                      (<ra> :paste-block))
+                                                                    (if (null? seqblock-infos)
+                                                                        (list seqblock-info)
+                                                                        seqblock-infos))))))
+                                               
+                                               (list "Configure block"
+                                                     :enabled (and blocknum seqblock-info (not (<ra> :is-playing-song)))
+                                                     (lambda ()
+                                                       (<ra> :select-block blocknum)
+                                                       (<ra> :config-block)))
 
-                                          (list "Configure color"
+                                               (list
+                                                "Rename"
                                                 :enabled seqblock-info
                                                 (lambda ()
-                                                  (if blocknum
-                                                      (<ra> :color-dialog (<ra> :get-block-color blocknum) -1
-                                                            (lambda (color)
-                                                              (<ra> :set-block-color color blocknum)))
-                                                  (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
-                                                    (<ra> :color-dialog (<ra> :get-audiofile-color filename) -1
-                                                          (lambda (color)
-                                                            (<ra> :set-audiofile-color color filename)))))))
+                                                  (let* ((old-name (<ra> :get-seqblock-name seqblocknum seqtracknum))
+                                                         (new-name (<ra> :request-string "New name:" #t old-name)))
+                                                    (when (and (not (string=? new-name ""))
+                                                               (not (string=? new-name old-name)))
+                                                      (<ra> :set-seqblock-name new-name seqblocknum seqtracknum)))))
+
+                                               (list "Configure color"
+                                                     :enabled seqblock-info
+                                                     (lambda ()
+                                                       (if blocknum
+                                                           (<ra> :color-dialog (<ra> :get-block-color blocknum) -1
+                                                                 (lambda (color)
+                                                                   (<ra> :set-block-color color blocknum)))
+                                                           (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
+                                                             (<ra> :color-dialog (<ra> :get-audiofile-color filename) -1
+                                                                   (lambda (color)
+                                                                     (<ra> :set-audiofile-color color filename)))))))
+                                               
+                                               (list "Generate new color"
+                                                     :enabled seqblock-info
+                                                     (lambda ()
+                                                       (let ((color (<ra> :generate-new-color 0.9)))
+                                                         (if blocknum
+                                                             (<ra> :set-block-color color blocknum)
+                                                             (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
+                                                               (<ra> :set-audiofile-color color filename))))))
+                                               
+                                               (list "Enable/disable editor tracks"
+                                                     :enabled (and blocknum seqblocknum)
+                                                     (lambda ()
+                                                       (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))
+
+                                               (list "Configure audio file parameters"
+                                                     :enabled (and seqblocknum (not blocknum))
+                                                     (lambda ()
+                                                       (create-audio-seqblock-gui seqblocknum seqtracknum)))
+
+                                               ;;(list "Reset stretch"
+                                               ;;      :enabled (and seqblocknum
+                                               ;;                    (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
+                                               ;;      (lambda ()
+                                               ;;        (c-display "stretch:" (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
+                                               ;;        (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+                                               ;;        (define blocklength (<ra> :get-block-length blocknum))
+                                               ;;        (<ra> :position-seqblock start-time (+ start-time blocklength) seqblocknum seqtracknum)
+                                               ;;        (c-display "hepp")))
+                                               
+                                               ;;
+                                               ;;(list "Remove pause"
+                                               ;;      :enabled #f
+                                               ;;      (lambda ()
+                                               ;;        #f))
+
+                                               "-----------------Seqblock Automation"
+                                               
+                                               (map (lambda (automationnum)
+                                                      (list (<-> (<ra> :get-seqblock-automation-name automationnum) " automation")
+                                                            :check (and seqblocknum (<ra> :get-seqblock-automation-enabled automationnum seqblocknum seqtracknum))
+                                                            :enabled seqblocknum
+                                                            (lambda (enable)
+                                                              (<ra> :set-seqblock-automation-enabled enable automationnum seqblocknum seqtracknum))))
+                                                    (iota (<ra> :get-num-seqblock-automations seqblocknum seqtracknum)))))
+
                                           
-                                          (list "Generate new color"
-                                                :enabled seqblock-info
-                                                (lambda ()
-                                                  (let ((color (<ra> :generate-new-color 0.9)))
-                                                    (if blocknum
-                                                        (<ra> :set-block-color color blocknum)
-                                                        (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
-                                                          (<ra> :set-audiofile-color color filename))))))
-                                          
-                                          (list "Enable envelope"
-                                                :check (and seqblocknum (<ra> :get-seqblock-automation-enabled *0* seqblocknum seqtracknum))
-                                                :enabled seqblocknum
-                                                (lambda (enable)
-                                                  (<ra> :set-seqblock-automation-enabled enable *0* seqblocknum seqtracknum)))
 
-                                          (list "Enable/disable editor tracks"
-                                                :enabled (and blocknum seqblocknum)
-                                                (lambda ()
-                                                  (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))
+                                          "-----------------Seqtrack Automation"
 
-                                          ;;(list "Reset stretch"
-                                          ;;      :enabled (and seqblocknum
-                                          ;;                    (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
-                                          ;;      (lambda ()
-                                          ;;        (c-display "stretch:" (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
-                                          ;;        (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
-                                          ;;        (define blocklength (<ra> :get-block-length blocknum))
-                                          ;;        (<ra> :position-seqblock start-time (+ start-time blocklength) seqblocknum seqtracknum)
-                                          ;;        (c-display "hepp")))
-                                                
-                                          ;;
-                                          ;;(list "Remove pause"
-                                          ;;      :enabled #f
-                                          ;;      (lambda ()
-                                          ;;        #f))
-
-                                          "-----------------"
-
-                                          "New automation" (lambda ()
+                                          "New" (lambda ()
                                                              (create-sequencer-automation seqtracknum X Y))
 
                                           ;;"-----------------"

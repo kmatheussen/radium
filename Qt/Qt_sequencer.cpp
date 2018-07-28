@@ -1073,52 +1073,58 @@ public:
 
   }
   
-  void draw_volume_envelope(QPainter *painter, const QRectF &rect, const struct SeqBlock *seqblock){
-    if (RT_seqblock_automation_is_enabled(seqblock->automations[SAT_VOLUME])){
+  void draw_seqblock_automations(QPainter *painter, const QRectF &rect, const struct SeqBlock *seqblock){
+    int num_automations = SEQBLOCK_num_automations(seqblock);
 
-      qreal x1,y1,x2,y2;
-      rect.getCoords(&x1, &y1, &x2, &y2);
+    for(int i=0 ; i<num_automations;i++){
 
-      double noninterior_start = get_seqblock_noninterior_start(seqblock);
-      double noninterior_end = get_seqblock_noninterior_end(seqblock);
+      struct SeqblockAutomation *automation = seqblock->automations[i];
 
-      qreal ni_x1 = scale_double(noninterior_start,
-                                 _start_time, _end_time,
-                                 t_x1, t_x2);
-      qreal ni_x2 = scale_double(noninterior_end,
-                                 _start_time, _end_time,
-                                 t_x1, t_x2);
+      if (RT_seqblock_automation_is_enabled(automation)){
+        qreal x1,y1,x2,y2;
+        rect.getCoords(&x1, &y1, &x2, &y2);
+
+        double noninterior_start = get_seqblock_noninterior_start(seqblock);
+        double noninterior_end = get_seqblock_noninterior_end(seqblock);
+
+        qreal ni_x1 = scale_double(noninterior_start,
+                                   _start_time, _end_time,
+                                   t_x1, t_x2);
+        qreal ni_x2 = scale_double(noninterior_end,
+                                   _start_time, _end_time,
+                                   t_x1, t_x2);
       
-      bool draw_all = seqblock->t.interior_start==0 && seqblock->t.interior_end==seqblock->t.default_duration;
-      bool is_current = seqblock==g_curr_seqblock;
-      //printf("draw_all: %d. is_current: %d. x1: %f, x1: %f, x2: %f, x2: %f\n", draw_all, is_current, x1, ni_x1, x2, ni_x2);
+        bool draw_all = seqblock->t.interior_start==0 && seqblock->t.interior_end==seqblock->t.default_duration;
+        bool is_current = seqblock==g_curr_seqblock;
+        //printf("draw_all: %d. is_current: %d. x1: %f, x1: %f, x2: %f, x2: %f\n", draw_all, is_current, x1, ni_x1, x2, ni_x2);
 
-      // 1. (before start_interior and after end_interior)
-      if(is_current && !draw_all){
-        QRegion clip(ni_x1, y1, x1-ni_x1, rect.height());
-        clip = clip.united(QRect(x2, y1, ni_x2-x2, rect.height()));
-        painter->setClipRegion(clip);
-        painter->setClipping(true);
-
-        painter->setOpacity(0.05);
-        SEQBLOCK_AUTOMATION_paint(painter, seqblock->automations[SAT_VOLUME], ni_x1, y1, ni_x2, y2, true, x1, x2);
-        painter->setOpacity(1.0);
-
-        painter->setClipping(false);
-      }
-
-      // 2. (rect)
-      {
-        if(!draw_all){
-          painter->setClipRect(rect);
+        // 1. (before start_interior and after end_interior)
+        if(is_current && !draw_all){
+          QRegion clip(ni_x1, y1, x1-ni_x1, rect.height());
+          clip = clip.united(QRect(x2, y1, ni_x2-x2, rect.height()));
+          painter->setClipRegion(clip);
           painter->setClipping(true);
+
+          painter->setOpacity(0.05);
+          SEQBLOCK_AUTOMATION_paint(painter, automation, ni_x1, y1, ni_x2, y2, true, x1, x2);
+          painter->setOpacity(1.0);
+
+          painter->setClipping(false);
         }
 
-        SEQBLOCK_AUTOMATION_paint(painter, seqblock->automations[SAT_VOLUME], ni_x1, y1, ni_x2, y2, is_current, x1, x2);
+        // 2. (rect)
+        {
+          if(!draw_all){
+            painter->setClipRect(rect);
+            painter->setClipping(true);
+          }
 
-        if(!draw_all)
-          painter->setClipping(false);
-      }
+          SEQBLOCK_AUTOMATION_paint(painter, automation, ni_x1, y1, ni_x2, y2, is_current, x1, x2);
+
+          if(!draw_all)
+            painter->setClipping(false);
+        }
+      }      
     }
   }
 
@@ -1438,7 +1444,7 @@ public:
       draw_interface(&p, seqblock, rect_without_header);
     }
 
-    draw_volume_envelope(&p, rect_without_header, seqblock);
+    draw_seqblock_automations(&p, rect_without_header, seqblock);
 
     return true;
   }

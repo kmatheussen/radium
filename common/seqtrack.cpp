@@ -349,12 +349,14 @@ static void default_duration_changed(struct SeqBlock *seqblock, int64_t default_
   seqblock->t.interior_end = default_duration;
 }
 
+
+
 static int64_t g_seqblock_id = 0;
 static int64_t new_seqblock_id(void){
   return g_seqblock_id++;
 }
 
-void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const dyn_t envelope_state, double state_samplerate, bool *track_is_disabled, int64_t time){
+void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const hash_t *seqblock_state, double state_samplerate, bool *track_is_disabled, int64_t time){
   
   seqblock->id = new_seqblock_id();
   
@@ -383,22 +385,57 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
   seqblock->fadein = 0;
   seqblock->fadeout = 0;
 
-  seqblock->fade_in_envelope = new radium::Envelope(FADE_LINEAR, 1.0, true);
-  seqblock->fade_out_envelope = new radium::Envelope(FADE_LINEAR, 1.0, false);
-
   if(seqtrack != NULL){
+
     R_ASSERT(false==PLAYER_current_thread_has_lock());
-    seqblock->automations[SAT_VOLUME] = SEQBLOCK_AUTOMATION_create(seqtrack, seqblock, SAT_VOLUME, envelope_state, state_samplerate);
+
+    {
+      dynvec_t automations = {};
+      if (seqblock_state!=NULL && HASH_has_key(seqblock_state, ":automations"))
+        automations = HASH_get_array(seqblock_state, ":automations");
+      
+      int num_automations = SEQBLOCK_num_automations(seqblock);
+      
+      for(int i=0;i<num_automations;i++){
+        dyn_t automation_state = g_uninitialized_dyn;
+        if (i < automations.num_elements)
+          automation_state = automations.elements[i];
+        
+        seqblock->automations[i] = SEQBLOCK_AUTOMATION_create(seqtrack, seqblock, (enum Seqblock_Automation_Type)i, automation_state, state_samplerate);
+      }
+    }
+
+    // compatibility old songs
+    //
+    if (seqblock_state != NULL && HASH_has_key(seqblock_state, ":envelope")){
+      {
+        const dyn_t envelope_state = HASH_get_dyn(seqblock_state, ":envelope");
+        SEQBLOCK_AUTOMATION_apply_state(seqblock->automations[SAT_VOLUME], envelope_state, state_samplerate);
+      }
+
+      if (HASH_has_key(seqblock_state, ":envelope-enabled")){
+        const bool envelope_enabled = HASH_get_bool(seqblock_state, ":envelope-enabled");
+        SEQBLOCK_AUTOMATION_set_enabled(seqblock->automations[SAT_VOLUME], envelope_enabled);
+      }
+    }
+
+
+    seqblock->fade_in_envelope = new radium::Envelope(FADE_LINEAR, 1.0, true);
+    seqblock->fade_out_envelope = new radium::Envelope(FADE_LINEAR, 1.0, false);
+
     GC_register_finalizer(seqblock, seqblockgcfinalizer, seqblock, NULL, NULL);
+
   }else{
-    R_ASSERT(true==PLAYER_current_thread_has_lock());
-  }
+
+    // Happens when starting to play block.
+
+  }  
 
   seqblock->curr_gain = 1.0;
   seqblock->envelope_db = 0.0;
 }
 
-static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct Blocks *block, const dyn_t envelope_state, double state_samplerate, int64_t time){
+static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct Blocks *block, const hash_t *state, double state_samplerate, int64_t time){
   if (seqtrack->for_audiofiles==true)
     return NULL;
   
@@ -406,7 +443,7 @@ static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct 
   SEQBLOCK_init(seqtrack,
                 seqblock,
                 block,
-                envelope_state,
+                state,
                 state_samplerate,
                 (bool*)talloc_atomic_clean(sizeof(bool)*MAX_DISABLED_SEQBLOCK_TRACKS),
                 time
@@ -414,7 +451,7 @@ static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct 
   return seqblock;
 }
 
-static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, enum ResamplerType resampler_type, const dyn_t envelope_state, double state_samplerate, int64_t seqtime, Seqblock_Type type){
+static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int seqtracknum, const wchar_t *filename, enum ResamplerType resampler_type, const hash_t *state, double state_samplerate, int64_t seqtime, Seqblock_Type type){
  
   if (seqtrack->for_audiofiles==false)
     return NULL;
@@ -422,11 +459,13 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
   if (ensure_seqtrack_has_instrument(seqtrack)==false)
     return NULL;
 
+  R_ASSERT(state_samplerate!=0);
+
   struct SeqBlock *seqblock = (struct SeqBlock*)talloc(sizeof(struct SeqBlock));
   SEQBLOCK_init(seqtrack,
                 seqblock,
                 NULL,
-                envelope_state,
+                state,
                 state_samplerate,
                 NULL,
                 seqtime 
@@ -442,10 +481,6 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
   if (seqblock->sample_id==-1)
     return NULL;
 
-  for(int i=NUM_EDITOR_BLOCK_SATS;i<NUM_SATS;i++)
-    seqblock->automations[i] = SEQBLOCK_AUTOMATION_create(seqtrack, seqblock, (enum Seqblock_Automation_Type)i, g_uninitialized_dyn, 0);
-
-  
   seqblock->sample_filename_without_path = STRING_copy(SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, false));
 
   if (type != Seqblock_Type::RECORDING) {
@@ -453,8 +488,13 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
     int64_t duration = SEQTRACKPLUGIN_get_total_num_frames_for_sample(plugin, seqblock->sample_id);
   
     default_duration_changed(seqblock, duration);
-    for(int i=NUM_EDITOR_BLOCK_SATS;i<NUM_SATS;i++)  
-      SEQBLOCK_AUTOMATION_duration_changed(seqblock->automations[i], duration, NULL);
+
+    if (state == NULL) {
+      int num_automations = SEQBLOCK_num_automations(seqblock);
+
+      for(int i=0;i<num_automations;i++)
+        SEQBLOCK_AUTOMATION_duration_changed(seqblock->automations[i], duration, NULL);
+    }
 
     /*
       // Don't think we can do this here since this code could be called when undoing. It's probably good enough when it's being done in SEQTRACK_insert_sample.
@@ -846,8 +886,19 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
   HASH_put_chars(state, ":fade-in-shape", fade_shape_to_string(seqblock->fade_in_envelope->_shape));
   HASH_put_chars(state, ":fade-out-shape", fade_shape_to_string(seqblock->fade_out_envelope->_shape));
 
-  HASH_put_bool(state, ":envelope-enabled", RT_seqblock_automation_is_enabled(seqblock->automations[SAT_VOLUME]));
-  HASH_put_dyn(state, ":envelope", SEQBLOCK_AUTOMATION_get_state(seqblock->automations[SAT_VOLUME]));
+  /*
+  if (g_is_saving) { // so that we can load song into older versions of Radium.
+    HASH_put_bool(state, ":envelope-enabled", RT_seqblock_automation_is_enabled(seqblock->automations[SAT_VOLUME]));
+    HASH_put_dyn(state, ":envelope", SEQBLOCK_AUTOMATION_get_state(seqblock->automations[SAT_VOLUME]));
+  }
+  */
+
+  int num_automations = SEQBLOCK_num_automations(seqblock);
+  dynvec_t automations = {};
+  for(int i=0;i<num_automations;i++)
+    DYNVEC_push_back(&automations, SEQBLOCK_AUTOMATION_get_state(seqblock->automations[i]));
+
+  HASH_put_dyn(state, ":automations", DYN_create_array(automations));
 
   return state;
 }
@@ -1071,10 +1122,6 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     interior_end   = round(double(interior_end) * adjust_for_samplerate);
   }
 
-  dyn_t envelope = g_uninitialized_dyn;
-  if (HASH_has_key(state, ":envelope"))
-    envelope = HASH_get_dyn(state, ":envelope");
-
   struct SeqBlock *seqblock;
 
   if (HASH_has_key(state, ":blocknum")){
@@ -1086,7 +1133,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     R_ASSERT_RETURN_IF_FALSE3(block!=NULL, error_type, NULL,
                               "Block %d not found", blocknum);
 
-    seqblock = SEQBLOCK_create_block(seqtrack, block, envelope, state_samplerate, time);
+    seqblock = SEQBLOCK_create_block(seqtrack, block, state, state_samplerate, time);
     if (seqblock==NULL)
       return NULL;
     
@@ -1103,7 +1150,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     if (HASH_has_key(state, ":resampler-type"))
       resampler_type = (enum ResamplerType)HASH_get_int32(state, ":resampler-type");
       
-    seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, resampler_type, envelope, state_samplerate, time, type);
+    seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, resampler_type, state, state_samplerate, time, type);
     if (seqblock==NULL)
       return NULL;
 
@@ -1209,8 +1256,8 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     }
   }
 
-  if (HASH_has_key(state, ":envelope-enabled"))
-    SEQBLOCK_AUTOMATION_set_enabled(seqblock->automations[SAT_VOLUME], HASH_get_bool(state, ":envelope-enabled"));
+  //if (HASH_has_key(state, ":envelope-enabled"))
+  //  SEQBLOCK_AUTOMATION_set_enabled(seqblock->automations[SAT_VOLUME], HASH_get_bool(state, ":envelope-enabled"));
 
   if (HASH_has_key(state, ":gain"))
     seqblock->gain = HASH_get_float(state, ":gain");
@@ -1554,7 +1601,7 @@ struct SeqTrack *SEQTRACK_create_from_playlist(const int *playlist, int len){
     VECTOR_push_back(&seqblocks,
                      SEQBLOCK_create_block(seqtrack,
                                            (struct Blocks *)ListFindElement1(&root->song->blocks->l,playlist[pos]),
-                                           g_uninitialized_dyn,
+                                           NULL,
                                            -1,
                                            -1));
   
@@ -1898,8 +1945,8 @@ void SEQUENCER_timing_has_changed(radium::PlayerLockOnlyIfNeeded &lock){
           
           seqblock->t.interior_end = default_duration;
 
-          for(int i=0;i<NUM_SATS;i++)
-            SEQBLOCK_AUTOMATION_duration_changed(seqblock->automations[i], default_duration, &lock);
+          //for(int i=0;i<NUM_SATS;i++)
+          //  SEQBLOCK_AUTOMATION_duration_changed(seqblock->automations[i], default_duration, &lock);
 
           lock.maybe_pause(iterator666);
         }
@@ -2017,7 +2064,7 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
 }
 
 int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime, int64_t end_seqtime){
-  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, block, g_uninitialized_dyn, -1, -1);
+  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, block, NULL, -1, -1);
   if (seqblock==NULL)
     return -1;
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime, end_seqtime);
@@ -2049,7 +2096,7 @@ static struct SeqBlock *create_sample_seqblock(struct SeqTrack *seqtrack, int se
   if (end_seqtime != -1)
     R_ASSERT_RETURN_IF_FALSE2(end_seqtime > seqtime, NULL);
 
-  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, RESAMPLER_SINC1, g_uninitialized_dyn, -1, -1, type);
+  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, RESAMPLER_SINC1, NULL, -1, -1, type);
   if (seqblock==NULL)
     return NULL;
 
@@ -2521,7 +2568,7 @@ void SONG_init(void){
   
   VECTOR_ensure_space_for_one_more_element(&root->song->seqtracks);
   
-  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, root->song->blocks, g_uninitialized_dyn, -1, -1);
+  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, root->song->blocks, NULL, -1, -1);
 
   SEQUENCER_init(root->song);
   
@@ -2719,7 +2766,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
 }
 
 
-
+// Only used by undo/redo
 hash_t *SEQUENCER_get_automations_state(void){
   hash_t *state = HASH_create(root->song->seqtracks.num_elements);
 
@@ -2731,6 +2778,7 @@ hash_t *SEQUENCER_get_automations_state(void){
   return state;
 }
 
+// Only used by undo/redo
 void SEQUENCER_create_automations_from_state(hash_t *state){
   R_ASSERT_NON_RELEASE(g_is_loading==false);
   
@@ -2755,58 +2803,102 @@ void SEQUENCER_create_automations_from_state(hash_t *state){
   SEQUENCER_update(SEQUPDATE_TIME);
 }
 
+// Only used by undo/redo
+hash_t *SEQUENCER_get_seqblock_automation_state(int automationnum, int seqblocknum, int seqtracknum){
+  hash_t *hash = HASH_create(4);
 
-static hash_t *get_envelopes_state(const struct SeqTrack *seqtrack){
-  hash_t *state = HASH_create(seqtrack->seqblocks.num_elements);
+  HASH_put_int(hash, "automationnum", automationnum);
 
-  VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-    dyn_t envelope = SEQBLOCK_AUTOMATION_get_state(seqblock->automations[SAT_VOLUME]);
-    HASH_put_dyn_at(state, "seqblockenvelope", iterator666, envelope);
-  }END_VECTOR_FOR_EACH;  
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum>=0, hash);
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum<root->song->seqtracks.num_elements, hash);
 
-  return state;
+  struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+
+  R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, hash);
+  R_ASSERT_RETURN_IF_FALSE2(seqblocknum<seqtrack->seqblocks.num_elements, hash);
+
+  struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
+
+  R_ASSERT_RETURN_IF_FALSE2(automationnum>=0, hash);
+  R_ASSERT_RETURN_IF_FALSE2(automationnum < SEQBLOCK_num_automations(seqblock), hash);
+
+  HASH_put_int(hash, "seqblocknum", seqblocknum);
+  HASH_put_int(hash, "seqtracknum", seqtracknum);
+  HASH_put_dyn(hash, "automation", SEQBLOCK_AUTOMATION_get_state(seqblock->automations[automationnum]));
+
+  return hash;
 }
 
-hash_t *SEQUENCER_get_envelopes_state(void){
-  hash_t *state = HASH_create(root->song->seqtracks.num_elements);
+// Only used by undo/redo
+hash_t *SEQUENCER_create_seqblock_automation_from_state(hash_t *state, bool return_old){
 
-  VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
-    
-    hash_t *seqtrack_state = get_envelopes_state(seqtrack);
-    HASH_put_hash_at(state, "seqtrackenvelopes", iterator666, seqtrack_state);
-    
-  }END_VECTOR_FOR_EACH;
+  R_ASSERT_RETURN_IF_FALSE2(state!=NULL, NULL);
 
-  return state;
+  R_ASSERT_RETURN_IF_FALSE2(HASH_has_key(state, "automationnum"), NULL);
+  
+  if (false==HASH_has_key(state, "seqblocknum"))
+    return NULL;
+
+  int automationnum = HASH_get_int32(state, "automationnum");
+  int seqblocknum = HASH_get_int32(state, "seqblocknum");
+  int seqtracknum = HASH_get_int32(state, "seqtracknum");
+
+  hash_t *ret = NULL;
+
+  if (return_old)
+    ret = SEQUENCER_get_seqblock_automation_state(automationnum, seqblocknum, seqtracknum);
+
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum>=0, ret);
+  R_ASSERT_RETURN_IF_FALSE2(seqtracknum<root->song->seqtracks.num_elements, ret);
+
+  struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+
+  R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, ret);
+  R_ASSERT_RETURN_IF_FALSE2(seqblocknum<seqtrack->seqblocks.num_elements, ret);
+
+  struct SeqBlock *seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
+
+  R_ASSERT_RETURN_IF_FALSE2(automationnum>=0, ret);
+  R_ASSERT_RETURN_IF_FALSE2(automationnum < SEQBLOCK_num_automations(seqblock), ret);
+
+  const dyn_t automation = HASH_get_dyn(state, "automation");
+
+  SEQBLOCK_AUTOMATION_apply_state(seqblock->automations[automationnum], automation, -1);
+
+  return ret;
 }
 
-static void apply_envelopes_state(const struct SeqTrack *seqtrack, const hash_t *envelopes){
+// Only used by undo/redo
+/*
+static void apply_seqblock_automations_state(const struct SeqTrack *seqtrack, const hash_t *seqblock_automations){
   R_ASSERT_NON_RELEASE(g_is_loading==false);
   
-  int num_seqblocks = HASH_get_array_size(envelopes, "seqblockenvelope");
+  int num_seqblocks = HASH_get_array_size(seqblock_automations, "seqblockenvelope");
   R_ASSERT_RETURN_IF_FALSE(num_seqblocks == seqtrack->seqblocks.num_elements);
 
   VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     
-    const dyn_t envelope = HASH_get_dyn_at(envelopes, "seqblockenvelope", iterator666);
+    const dyn_t envelope = HASH_get_dyn_at(seqblock_automations, "seqblockenvelope", iterator666);
     SEQBLOCK_AUTOMATION_apply_state(seqblock->automations[SAT_VOLUME], envelope, -1);
-    
+
   }END_VECTOR_FOR_EACH;  
 }
 
-void SEQUENCER_create_envelopes_from_state(hash_t *state){
-  int num_seqtracks = HASH_get_array_size(state, "seqtrackenvelopes");
+// Only used by undo/redo
+void SEQUENCER_create_seqblock_automations_from_state(hash_t *state){
+  int num_seqtracks = HASH_get_array_size(state, "seqblock_automations");
   R_ASSERT_RETURN_IF_FALSE(num_seqtracks > 0);
   R_ASSERT_RETURN_IF_FALSE(num_seqtracks == root->song->seqtracks.num_elements);
   
   for(int i = 0 ; i < num_seqtracks ; i++){
     struct SeqTrack *seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[i];
 
-    apply_envelopes_state(seqtrack, HASH_get_hash_at(state, "seqtrackenvelopes", i));
+    apply_seqblock_automations_state(seqtrack, HASH_get_hash_at(state, "seqblock_automations", i));
   }
 
   SEQUENCER_update(SEQUPDATE_TIME);
 }
+*/
 
 // When playing song, block->tempo_multiplier is ignored. Instead seqblocks are stretched.
 void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double new_tempo_multiplier){

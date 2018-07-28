@@ -460,7 +460,7 @@ void TEMPOAUTOMATION_create_from_state(hash_t *state, double state_samplerate){
   SEQUENCER_update(SEQUPDATE_SONGTEMPO);
 }
 
-static hash_t *get_node_state(const TempoAutomationNode &node){
+static hash_t *get_node_state(const TempoAutomationNode &node, void*){
   hash_t *state = HASH_create(5);
   
   HASH_put_float(state, "abstime", node.time);
@@ -474,7 +474,7 @@ static hash_t *get_node_state(const TempoAutomationNode &node){
 hash_t *TEMPOAUTOMATION_get_state(void){
   hash_t *state = HASH_create(2);
 
-  HASH_put_dyn(state, "nodes", g_tempo_automation.get_state(get_node_state));
+  HASH_put_dyn(state, "nodes", g_tempo_automation.get_state(get_node_state, NULL));
   HASH_put_bool(state, "is_visible", SEQTEMPO_is_visible());
   HASH_put_float(state, "max_tempo", g_max_tempo);
   
