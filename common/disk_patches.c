@@ -14,6 +14,17 @@
 #endif
 
 
+
+/*****************************************************************
+                         NOTE!
+
+  This is legacy code, for loading old songs.
+  Saving and loading is now taken care of in common/patch.cpp.
+
+*****************************************************************/
+
+
+
 #include "../midi/dummy/OS_midi_spesific.h"
 
 #include "../midi/midi_i_plugin.h"
@@ -30,13 +41,15 @@ extern struct Root *root;
 
 
 #if defined(RELEASE)
-#  define SAVE_NEW_FORMAT 0 // Going to test the new format a few releases first.
+//#  define SAVE_NEW_FORMAT 0 // Going to test the new format a few releases first.
+#  define SAVE_NEW_FORMAT 1
 #else
 #  define SAVE_NEW_FORMAT 1
 #endif
 
 
 #if !SAVE_NEW_FORMAT
+#error "should not be necessary anymore"
 static void SavePatchVoice(struct PatchVoice *voice, int voicenum){
   DC_start("VOICE");
   DC_SaveI(voicenum);
