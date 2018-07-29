@@ -5599,8 +5599,9 @@
   Automation-Num Automation-Num        _ _ :> #f
   Automation-Num Total-Automation-Nums X Y :> (min-seqautomation/distance (and (<ra> :get-seqblock-automation-enabled
                                                                                      Automation-Num
-                                                                                     (*current-seqblock-info* :seqblocknum)
-                                                                                     (*current-seqblock-info* :seqtracknum))
+                                                                                     (<ra> :get-seqblock-id
+                                                                                           (*current-seqblock-info* :seqblocknum)
+                                                                                           (*current-seqblock-info* :seqtracknum)))
                                                                                (get-closest-seqblock-automation-0 Automation-Num X Y))
                                                                           (get-closest-seqblock-automation (1+ Automation-Num) Total-Automation-Nums X Y)))
 
@@ -6698,10 +6699,10 @@
                                                
                                                (map (lambda (automationnum)
                                                       (list (<-> (<ra> :get-seqblock-automation-name automationnum) " automation")
-                                                            :check (and seqblocknum (<ra> :get-seqblock-automation-enabled automationnum seqblocknum seqtracknum))
+                                                            :check (and seqblocknum (<ra> :get-seqblock-automation-enabled automationnum (<ra> :get-seqblock-id seqblocknum seqtracknum)))
                                                             :enabled seqblocknum
                                                             (lambda (enable)
-                                                              (<ra> :set-seqblock-automation-enabled enable automationnum seqblocknum seqtracknum))))
+                                                              (<ra> :set-seqblock-automation-enabled enable automationnum (<ra> :get-seqblock-id seqblocknum seqtracknum)))))
                                                     (iota (<ra> :get-num-seqblock-automations seqblocknum seqtracknum)))))
 
                                           

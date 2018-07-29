@@ -42,6 +42,13 @@
 ;                                                <ra> :set-seqblock-gain (get-normalized-seqblock-gain seqblockid) seqblockid)
 ;                                         (
 
+  (define volume-automation-checkbox (<gui> :checkbox "Volume automation" (<ra> :get-seqblock-automation-enabled 0 seqblockid) #f
+                                            (lambda (ison)
+                                              (when started
+                                                (<ra> :set-seqblock-automation-enabled ison 0 seqblockid)))))
+
+  (<gui> :add gain-group volume-automation-checkbox)
+
   (<gui> :add main-layout gain-group)
 
   (when #t
@@ -109,24 +116,37 @@
   ;                                   (<ra> :set-seqblock-grain-frequency val seqblockid)))))
 
   (define grain-group (<gui> :group "Granular synthesis"))
+
+  (define (add-parameter automationnum slider)
+    (define is-enabled (<ra> :get-seqblock-automation-enabled automationnum seqblockid))
+    (<gui> :set-enabled slider (not is-enabled))
+    (define checkbox (<gui> :checkbox "" is-enabled #f
+                                          (lambda (ison)
+                                            (when started
+                                              (<ra> :set-seqblock-automation-enabled ison automationnum seqblockid)
+                                              (<gui> :set-enabled slider (not ison))))))
+    (<gui> :set-tool-tip checkbox "Automation enabled")
+    (<gui> :add grain-group (<gui> :horizontal-layout
+                                   slider
+                                   checkbox)))
+
+  (add-parameter 1 (<gui> :horizontal-slider "Grain overlap (X): " 0.1 grain-overlap 50
+                          (lambda (val)
+                            (when started
+                              ;;(set! grain-frequency (get-grain-frequency val))
+                              ;;(c-display "  Grain OVERLAP (X):" grain- ". overlap:" val)
+                              ;;(<ra> :set-seqblock-grain-frequency grain-frequency seqblockid)
+                              (<ra> :set-seqblock-grain-overlap val seqblockid)
+                              ))))
   
-  (<gui> :add grain-group (<gui> :horizontal-slider "Grain overlap (X): " 0.1 grain-overlap 50
-                                 (lambda (val)
-                                   (when started
-                                     ;;(set! grain-frequency (get-grain-frequency val))
-                                     ;;(c-display "  Grain OVERLAP (X):" grain- ". overlap:" val)
-                                     ;;(<ra> :set-seqblock-grain-frequency grain-frequency seqblockid)
-                                     (<ra> :set-seqblock-grain-overlap val seqblockid)
-                                     ))))
-  
-  (<gui> :add grain-group (<gui> :horizontal-slider "Grain length (ms): " 0.1 grain-length 1000
+  (add-parameter 2 (<gui> :horizontal-layout
+                          (<gui> :horizontal-slider "Grain length (ms): " 0.1 grain-length 1000
                                  (lambda (val)
                                    (when started
                                      (c-display "  Grain Frequency LENGTH (ms):" val)
                                      ;;(set! grain-length val)
                                      ;;(set! grain-frequency (get-grain-frequency grain-overlap))
-                                     (<ra> :set-seqblock-grain-length val seqblockid)))))
-;;                                     (<ra> :set-seqblock-grain-frequency grain-frequency seqblockid)))))
+                                     (<ra> :set-seqblock-grain-length val seqblockid))))))
 
   (define (slider->jitter slider-value)
     (set! slider-value (/ slider-value 100.0))
@@ -147,15 +167,15 @@
                                    (set! val (slider->jitter val))
                                    (c-display "  Grain Frequency JITTER (%):" (* 100 val))
                                    (<ra> :set-seqblock-grain-jitter val seqblockid)))))
-  
-  (<gui> :add grain-group jitter-slider)
 
-  (<gui> :add grain-group (<gui> :horizontal-slider "Grain ramp (%): " 0 (* 100 (<ra> :get-seqblock-grain-ramp seqblockid)) 50
-                                 (lambda (val)
-                                   (when started
-                                     (set! val (/ val 100.0))
-                                     (c-display "  Grain RAMP (%):" (* 100 val))
-                                     (<ra> :set-seqblock-grain-ramp val seqblockid)))))
+  (add-parameter 3 jitter-slider)
+
+  (add-parameter 4 (<gui> :horizontal-slider "Grain ramp (%): " 0 (* 100 (<ra> :get-seqblock-grain-ramp seqblockid)) 50
+                          (lambda (val)
+                            (when started
+                              (set! val (/ val 100.0))
+                              (c-display "  Grain RAMP (%):" (* 100 val))
+                              (<ra> :set-seqblock-grain-ramp val seqblockid)))))
   
 
   (<gui> :add main-layout grain-group)

@@ -2647,6 +2647,7 @@ enum Seqblock_Type{
   RECORDING
 };
 
+// Note: If changing order here, seqblock_audio.scm must be updated.
 enum Seqblock_Automation_Type{
   SAT_VOLUME = 0,
   SAT_GRAIN_OVERLAP,
