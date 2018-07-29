@@ -937,6 +937,11 @@ struct Sample{
 
         double grain_overlap = _grain_overlap;
 
+        double grain_length = _grain_length;
+        
+        double grain_jitter = _grain_jitter;
+        double grain_ramp = _grain_ramp;
+        
         {
           const int64_t start_time = _seqtrack->start_time;
           const int64_t end_time = _seqtrack->end_time;
@@ -946,15 +951,19 @@ struct Sample{
             double time = (start_time-s1) / _seqblock->t.stretch;
 
             RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_GRAIN_OVERLAP], time, grain_overlap);
+            RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_GRAIN_LENGTH], time, grain_length);
+            RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_GRAIN_JITTER], time, grain_jitter);
+            RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_GRAIN_RAMP], time, grain_ramp);
           }
         }
         
-        double grain_length = _grain_length * pc->pfreq / 1000.0; // in samples
+        grain_length *= pc->pfreq / 1000.0; // convert to samples
         double grain_frequency = grain_length / grain_overlap; // in samples
-        
-        double grain_jitter = _grain_jitter;
-        double grain_ramp = _grain_ramp * grain_length;
-        
+
+        grain_ramp *= grain_length;
+
+        //printf("length: %f (%f). frequency: %f. jitter: %f. ramp: %f\n", grain_length, grain_length*1000.0/pc->pfreq, grain_frequency, grain_jitter, grain_ramp);
+
         if (grain_length > MAX_GRAIN_LENGTH_IN_SECONDS*pc->pfreq){
 #if !defined(RELEASE)
           printf("    RT: Illegal grain length: %f > %f\n", grain_length, MAX_GRAIN_LENGTH_IN_SECONDS*pc->pfreq);
