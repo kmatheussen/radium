@@ -546,7 +546,7 @@ struct Sample{
 
   enum ResamplerType _resampler_type;
     
-  radium::GcHolder<const struct SeqBlock> _seqblock; // FIX: memory leak. (_seqblock memory can never be reclaimed)
+  radium::GcHolder<const struct SeqBlock> _seqblock; // Don't think this causes memory leak. Sample instances are stored in the audio instrument, not in the seqblock.
   radium::GcHolder<const struct SeqTrack> _seqtrack;
   Seqblock_Type _type;
   
