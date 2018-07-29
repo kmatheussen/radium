@@ -941,6 +941,16 @@ int getSeqblockResamplerType(int64_t seqblockid){
     return ret;                                                         \
   }
 
+#define VALIDATE_SEQBLOCK_AUTOMATIONNUM2(ret)                                     \
+  if (automationnum < 0 || automationnum >= NUM_SATS){                  \
+    handleError("There is no automationnum #%d in seqblock with id #%d", automationnum, (int)seqblockid); \
+    return ret;                                                         \
+  }                                                                     \
+  if (seqblock->block!=NULL && automationnum >= NUM_EDITOR_BLOCK_SATS) {                     \
+    handleError("Automation \"%s\" in seqblock with id #%d is not supported since it is not an audiofile seqblock", sat_to_string((enum Seqblock_Automation_Type)automationnum), (int)seqblockid); \
+    return ret;                                                         \
+  }
+
 #define VALIDATE_ENV_NODENUM(ret)                                           \
   if (nodenum < 0 || nodenum >= SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->automations[automationnum])){ \
     handleError("There is no node #%d for %s in sequencer block #%d in sequencer track #%d", nodenum, sat_to_string((enum Seqblock_Automation_Type)automationnum), seqblocknum, seqtracknum); \
@@ -976,22 +986,22 @@ const_char* getSeqblockAutomationName(int automationnum){
   return sat_to_string((enum Seqblock_Automation_Type)automationnum);
 }
 
-bool getSeqblockAutomationEnabled(int automationnum, int seqblocknum, int seqtracknum){
-  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+bool getSeqblockAutomationEnabled(int automationnum, int64_t seqblockid){
+  struct SeqBlock *seqblock = getSeqblockFromId(seqblockid);
   if (seqblock==NULL)
     return false;
 
-  VALIDATE_SEQBLOCK_AUTOMATIONNUM(false);
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM2(false);
 
   return RT_seqblock_automation_is_enabled(seqblock->automations[automationnum]);
   //return seqblock->envelope_enabled;
 }
-void setSeqblockAutomationEnabled(bool is_enabled, int automationnum, int seqblocknum, int seqtracknum){
-  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
+void setSeqblockAutomationEnabled(bool is_enabled, int automationnum, int64_t seqblockid){
+  struct SeqBlock *seqblock = getSeqblockFromId(seqblockid);
   if (seqblock==NULL)
     return;
 
-  VALIDATE_SEQBLOCK_AUTOMATIONNUM();
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM2();
 
   if (RT_seqblock_automation_is_enabled(seqblock->automations[automationnum])==is_enabled)
     return;
