@@ -129,8 +129,8 @@ static AutomationNode create_node_from_state(hash_t *state, double state_sampler
 
 struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>{
 
-  radium::GcHolder<struct SeqTrack> _seqtrack; // This is a memory leak! (seqblock/seqtrack are freed by finalizer, but finalizer is never run because it is held here)
-  radium::GcHolder<struct SeqBlock> _seqblock;
+  struct SeqTrack *_seqtrack; // not necessary to gc-protect. seqblockautomation is freed from the seqblock finalizer.
+  struct SeqBlock *_seqblock; // not necessary to gc-protect. seqblockautomation is freed from the seqblock finalizer.
 
   enum Seqblock_Automation_Type _sat;
 
@@ -287,7 +287,7 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
   }
   
   double get_time(int nodenum){
-    double seqblock_start = get_seqblock_noninterior_start(_seqblock.data());
+    double seqblock_start = get_seqblock_noninterior_start(_seqblock);
     R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), seqblock_start);
     return _automation.at(nodenum).time*_seqblock->t.stretch + seqblock_start;
   }
@@ -301,7 +301,7 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
     if (seqtime < 0)
       seqtime = 0;
     
-    auto *seqblock = _seqblock.data();
+    auto *seqblock = _seqblock;
     
     double time =
       R_BOUNDARIES(0,
@@ -313,7 +313,7 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
     
     int ret = _automation.add_node(create_node(time, value, logtype));
     
-    SEQTRACK_update(_seqtrack.data());
+    SEQTRACK_update(_seqtrack);
 
     return ret;
   }
@@ -328,7 +328,7 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
     
     _automation.delete_node(nodenum);
     
-    SEQTRACK_update(_seqtrack.data());
+    SEQTRACK_update(_seqtrack);
   }
 
   void set_curr_node(int nodenum){
@@ -336,13 +336,13 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
     
     if (_automation.get_curr_nodenum() != nodenum){
       _automation.set_curr_nodenum(nodenum);
-      SEQTRACK_update(_seqtrack.data());
+      SEQTRACK_update(_seqtrack);
     }
   }
 
   void cancel_curr_node(void){
     _automation.set_curr_nodenum(-1);
-    SEQTRACK_update(_seqtrack.data());
+    SEQTRACK_update(_seqtrack);
   }
 
   void set_node(int nodenum, double seqtime, double value, int logtype){
@@ -359,7 +359,7 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
     
     //printf("     nodenum: %d.  mintime: %f, seqtime: %f, maxtime: %f. next: %p\n",nodenum,mintime,(seqtime - get_seqblock_noninterior_start(seqblock)),maxtime,NULL);
     double time = R_BOUNDARIES(mintime,
-                               (seqtime - get_seqblock_noninterior_start(_seqblock.data())) / _seqblock->t.stretch,
+                               (seqtime - get_seqblock_noninterior_start(_seqblock)) / _seqblock->t.stretch,
                                maxtime
                                );
 
@@ -371,7 +371,7 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
     
     _automation.replace_node(nodenum, node);
     
-    SEQTRACK_update(_seqtrack.data());
+    SEQTRACK_update(_seqtrack);
   }
 
   void seqblock_duration_has_changed(int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock){
@@ -437,8 +437,8 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
     double start_time = SEQUENCER_get_visible_start_time();
     double end_time = SEQUENCER_get_visible_end_time();
     
-    double noninterior_start = get_seqblock_noninterior_start(_seqblock.data());
-    double noninterior_end = get_seqblock_noninterior_end(_seqblock.data());
+    double noninterior_start = get_seqblock_noninterior_start(_seqblock);
+    double noninterior_end = get_seqblock_noninterior_end(_seqblock);
     
     double t_x1 = SEQUENCER_get_x1();
     double t_x2 = SEQUENCER_get_x2();
@@ -917,7 +917,7 @@ dyn_t SEQBLOCK_AUTOMATION_get_state(const struct SeqblockAutomation *seqblockenv
 void SEQBLOCK_AUTOMATION_apply_state(struct SeqblockAutomation *seqblockenvelope, const dyn_t envelope_state, double state_samplerate){
   R_ASSERT(state_samplerate != 0);
   seqblockenvelope->create_from_state(envelope_state, state_samplerate);
-  SEQTRACK_update(seqblockenvelope->_seqtrack.data());
+  SEQTRACK_update(seqblockenvelope->_seqtrack);
 }
 
 float SEQBLOCK_AUTOMATION_get_node_x(const struct SeqblockAutomation *seqblockenvelope, int nodenum){
