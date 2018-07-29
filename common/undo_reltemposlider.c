@@ -1,6 +1,7 @@
 
 
 #include "nsmtracker.h"
+#include "seqtrack_proc.h"
 
 #include "undo.h"
 
@@ -51,6 +52,7 @@ static void *Undo_Do_RelTempoSlider(
 	float reltempo=ATOMIC_DOUBLE_GET(wblock->block->reltempo);
 
 	ATOMIC_DOUBLE_SET(wblock->block->reltempo, u_rts->reltempo);
+        SEQUENCER_block_changes_tempo_multiplier(wblock->block, u_rts->reltempo);
 
 	u_rts->reltempo=reltempo;
 
