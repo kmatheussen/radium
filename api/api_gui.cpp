@@ -3780,7 +3780,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
   };
 
-  static MyUiLoader g_uiloader;
+  static MyUiLoader *get_uiloader(void){
+    static MyUiLoader *uiloader = NULL;
+    if (uiloader==NULL)
+      uiloader = new MyUiLoader;
+    return uiloader;
+  }
 }
 
 
@@ -3856,11 +3861,11 @@ int64_t gui_ui(const_char *filename){
     return -1;
   }
   
-  QWidget *widget = g_uiloader.load(&file);
+  QWidget *widget = get_uiloader()->load(&file);
   file.close();
 
   if (widget==NULL){
-    handleError("Unable to open \"%s\": %s", filename, g_uiloader.errorString().toUtf8().constData());
+    handleError("Unable to open \"%s\": %s", filename, get_uiloader()->errorString().toUtf8().constData());
     return -1;
   }
   
