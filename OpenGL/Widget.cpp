@@ -2106,8 +2106,8 @@ QWidget *GL_create_widget(QWidget *parent){
         int result = GFX_Message(&v,
                                  "<strong>Intel OpenGL driver detected.</strong>"
                                  "<p>"
-                                 "<ol>"
-                                 "<li>For best performance, the Intel Xorg driver should be configured like this:"
+                                 //"<ol>"
+                                 "For best performance, the Intel Xorg driver should be configured like this:"
                                  "<p>"
                                  "<pre>"
                                  "Section \"Device\"\n"
@@ -2125,9 +2125,11 @@ QWidget *GL_create_widget(QWidget *parent){
                                  "case you see tearing or the scrolling is not silky smooth, you might want to check "
                                  "your X configuration. You might also want to download the latest version "
                                  "of the driver, which can be found here: <a href=\"https://01.org/linuxgraphics/\">https://01.org/linuxgraphics/</a>"
+#if 0
                                  "<p>"
                                  "<p>"
                                  "<li>In addition, vsync in Radium should be turned off. You do this by going to the \"Edit\" menu and select \"Preferences\"."
+#endif
                                  "</ol>"
                                  );
 
