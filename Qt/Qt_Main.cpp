@@ -3216,7 +3216,6 @@ static void myMessageOutput(QtMsgType type, const char *localMsg)
 #endif
 
 {
-
 #ifdef USE_QT5
   QByteArray localMsg = msg.toLocal8Bit();
 #endif
@@ -3841,6 +3840,9 @@ int main(int argc, char **argv){
   Py_Finalize();
 
   fprintf(stderr,"          ENDING B 2\n");
+
+  PLUGINHOST_shut_down();
+  //msleep(5000);
 
   //abort();
   fprintf(stderr, "My pid: %d\n",(int)getpid());
