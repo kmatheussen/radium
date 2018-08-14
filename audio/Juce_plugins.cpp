@@ -844,7 +844,10 @@ namespace{
       this->setOpaque(true);
       this->addToDesktop();//getDesktopWindowStyleFlags());
 
-      static auto *lookandfeel = new juce::LookAndFeel_V3();
+      static juce::LookAndFeel_V3 *lookandfeel = NULL;
+      if (lookandfeel==NULL)
+        lookandfeel = new juce::LookAndFeel_V3();
+
       this->setLookAndFeel(lookandfeel);
       
       if(try_to_resize_editor())
@@ -1663,12 +1666,13 @@ static juce::AudioPluginInstance *create_audio_instance(const TypeData *type_dat
   
   static bool inited=false;
 
-  static juce::AudioPluginFormatManager formatManager;
+  static juce::AudioPluginFormatManager *formatManager = NULL;
     
   if (inited==false){
     //const MMLock mmLock;
     run_on_message_thread([&](){
-        formatManager.addDefaultFormats();
+        formatManager = new juce::AudioPluginFormatManager;
+        formatManager->addDefaultFormats();
         inited=true;
       });
   }
@@ -1686,7 +1690,7 @@ static juce::AudioPluginInstance *create_audio_instance(const TypeData *type_dat
     
     {
       // const MMLock mmLock; Leads to deadlock. Also, AudioPluginFormat::createInstanceFromDescription is explicitly made to handle calls not made from the message thread.
-      instance = formatManager.createPluginInstance(description, sample_rate, block_size, errorMessage);
+      instance = formatManager->createPluginInstance(description, sample_rate, block_size, errorMessage);
     }
     
     if (instance==NULL){
@@ -2765,6 +2769,8 @@ void PLUGINHOST_save_fxp(SoundPlugin *plugin, wchar_t *filename){
   save_fxbp(plugin, filename, false);
 }
 
+static JuceThread *g_juce_thread = NULL;
+
 void PLUGINHOST_init(void){
 #if TEST_GET_MAX_VAL
   testing();
@@ -2785,10 +2791,10 @@ void PLUGINHOST_init(void){
 
   if (g_use_custom_mm_thread){
 
-    JuceThread *juce_thread = new JuceThread;
-    juce_thread->startThread();
+    g_juce_thread = new JuceThread;
+    g_juce_thread->startThread();
     
-    while(juce_thread->isInited.get()==0)
+    while(g_juce_thread->isInited.get()==0)
       juce::Thread::sleep(20);
     
   } else {
@@ -2799,6 +2805,19 @@ void PLUGINHOST_init(void){
   
   //juce::Font::setDefaultSansSerifFont
   
+}
+
+void PLUGINHOST_shut_down(void){
+  printf(" PLUGINHOST_shut_down: about to...\n");
+
+  juce::MessageManager::getInstance()->stopDispatchLoop();
+
+  if (g_juce_thread != NULL)
+    g_juce_thread->stopThread(5000);
+
+  juce::MessageManager::getInstance()->deleteInstance();
+
+  printf(" PLUGINHOST_shut_down: Got it\n");
 }
 
 #endif // defined(COMPILING_JUCE_PLUGINS_O)
