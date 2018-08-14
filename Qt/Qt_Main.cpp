@@ -3841,6 +3841,7 @@ int main(int argc, char **argv){
 
   fprintf(stderr,"          ENDING B 2\n");
 
+  DISKPEAKS_stop();
   PLUGINHOST_shut_down();
   //msleep(5000);
 

@@ -58,10 +58,13 @@ private:
 static DiskPeaksThread g_disk_peaks_thread;
 }
 
+// Note: Is called twice.
 void DISKPEAKS_stop(void){
-  g_disk_peaks_thread.requestInterruption();
-  radium::g_disk_peaks_queue.put(NULL);
-  g_disk_peaks_thread.wait(10000);
+  if (g_disk_peaks_thread.isRunning()){
+    g_disk_peaks_thread.requestInterruption();
+    radium::g_disk_peaks_queue.put(NULL);
+    g_disk_peaks_thread.wait(10000);
+  }  
 }
 
 static QHash<QString,radium::DiskPeaks*> g_diskpeaks;
