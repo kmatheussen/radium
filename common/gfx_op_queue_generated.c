@@ -181,7 +181,7 @@ void QUEUE_GFX_Text(struct Tracker_Windows* tvisual, enum ColorNums color, const
   queue_element_t *el = get_next_element(tvisual->op_queue); 
   el->type = ENUM_GFX_Text ; 
   el->i1 = color ; 
-  memcpy(el->s2, text, R_MIN(strlen(text)+1,62)); 
+  memcpy(el->s2, text, R_MIN((int)strlen(text)+1,62)); 
   el->i3 = x ; 
   el->i4 = y ; 
   el->i5 = width ; 

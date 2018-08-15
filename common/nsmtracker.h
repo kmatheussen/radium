@@ -217,10 +217,22 @@ extern double g_last_time_mouse_pointer_was_moved_by_the_program; // Only used i
 #include <OS_Visual.h>
 
 
+#if 0
 #define R_MAX(a,b) (((a)>(b))?(a):(b))
 #define R_MIN(a,b) (((a)<(b))?(a):(b))
 #define R_ABS(a) ((a)<0?(-(a)):(a))
-#define R_BOUNDARIES(min,b,max) (R_MIN(R_MAX((min),(b)),(max)))
+#else
+#define R_MAX(a,b) ({ typeof(a) aTEMP = (a); typeof(b) bTEMP = (b); aTEMP > bTEMP ? aTEMP : bTEMP; })
+#define R_MIN(a,b) ({ typeof(a) aTEMP = (a); typeof(b) bTEMP = (b); aTEMP < bTEMP ? aTEMP : bTEMP; })
+#define R_ABS(a) ({ typeof(a) aTEMP = (a) ; aTEMP<0?-aTEMP:aTEMP;})
+#endif
+
+#if defined(RELEASE)
+#  define R_BOUNDARIES(min,b,max) ({ typeof(min) minTEMP = (min); typeof(b) bTEMP = (b); typeof(max) maxTEMP = (max); bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
+#else
+#  define R_BOUNDARIES(min,b,max) ({ typeof(min) minTEMP = (min); typeof(b) bTEMP = (b); typeof(max) maxTEMP = (max); maxTEMP < minTEMP ? (abort(),minTEMP) : bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
+#endif
+
 
 #define R_ASSERT_MESSAGE(a)                                             \
   do{                                                                   \

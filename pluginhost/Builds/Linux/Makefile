@@ -23,7 +23,7 @@ ifeq ($(CONFIG),Debug)
   CPPFLAGS := $(COMMONCPPFLAGS) -D "DEBUG=1"
 
   CFLAGS += $(CPPFLAGS) $(TARGET_ARCH) -g -ggdb -O0 -I../../../Qt `cat ../../../flagopts.opt`
-  CXXFLAGS += $(CFLAGS) -std=c++11
+  CXXFLAGS += $(CFLAGS) -std=gnu++11
   LDFLAGS += $(TARGET_ARCH) -L$(BINDIR) -L$(LIBDIR) -L/usr/X11R6/lib/ -lX11 -lXext -lXinerama -lasound -ldl -lfreetype -lpthread -lrt 
 
   TARGET ?= libMyPluginHost.a
