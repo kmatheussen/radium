@@ -389,7 +389,7 @@ private:
   
   double fRec1[2] = {};
   double fRec0[2] = {};
-  double fConst0 = (1.0f / R_MIN(1.92e+05f, R_MAX(1.0f, FAUSTFLOAT(pc->pfreq))));
+  double fConst0 = (1.0f / std::min(1.92e+05f, std::max(1.0f, FAUSTFLOAT(pc->pfreq))));
 
 
 public:

@@ -1958,7 +1958,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
         int num_vamps = _vamps.size();
         bool vamps_to_paint[R_MAX(1, num_vamps)];
-        memset(vamps_to_paint, 0, R_MAX(1, sizeof(bool)*num_vamps));
+        memset(vamps_to_paint, 0, R_MAX((size_t)1, sizeof(bool)*num_vamps));
         
         int num_vamps_to_paint;
         bool only_vamps_needs_to_be_painted = getVampsToPaint(event, vamps_to_paint, already_painted_areas, num_vamps_to_paint);

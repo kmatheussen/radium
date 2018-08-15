@@ -205,7 +205,7 @@ void GFX_BitBlt(
                                  (let ((type (car arg))
                                        (name (cadr arg)))
                                    (if (or (string=? type "char*") (string=? type "const char*"))
-                                       (c-display (<-> "  memcpy(el->" (get-element-slot-name type n) ", " name ", R_MIN(strlen(" name ")+1,62));"))
+                                       (c-display (<-> "  memcpy(el->" (get-element-slot-name type n) ", " name ", R_MIN((int)strlen(" name ")+1,62));"))
                                        (c-display (<-> "  el->" (get-element-slot-name type n)) "=" name ";"))))
                                (cdr args)
                                (iota (1- (length args))))
