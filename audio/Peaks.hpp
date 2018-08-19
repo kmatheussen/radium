@@ -521,7 +521,7 @@ private:
         qfloat16 min=data[i*2], max=data[i*2+1];
 #if !defined(RELEASE)
         if(!proper_isnormal(min) || !proper_isnormal(max)){
-          printf("min: %f. max: %f.\n", (float)min, (float)max, (float)data[i*2], (float)data[i*2+1]);
+          printf("min: %f. max: %f.\n", (float)min, (float)max);
           abort();
         }
 #endif
