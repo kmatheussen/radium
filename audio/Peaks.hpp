@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include <inttypes.h>
+#include <math.h>
 
 #include <QFloat16>
 
@@ -32,7 +33,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define SAMPLES_PER_PEAK 64 // TODO: This value must be dynamic and placed in the Peaks class. The value must be set higher than 64 if the sample is so long that a 32 bit int becomes too small to use as index. (Need around a 32 day (maybe +32/-16, haven't calculated exactly) long sample (16 days for 96Khz samples) for this to be a problem though, but you never know)
 
-
+static inline bool proper_isnormal(float val){
+  return val==0.0 || isnormal(val);
+}
 
 static inline int unit_ceiling(int value, int unit){
   if ( (value % unit) == 0)
@@ -63,15 +66,21 @@ public:
     : min(min)
     , max(max)
   {    
+    R_ASSERT_NON_RELEASE(proper_isnormal((float)min));
+    R_ASSERT_NON_RELEASE(proper_isnormal((float)max));
+    R_ASSERT_NON_RELEASE(max >= min);
+
     R_ASSERT_NON_RELEASE(sizeof(qfloat16)==2);
   }
 
   Peak(const Peak &other)
-    : Peak(other.min, other.max)
+    : min(other.min)
+    , max(other.max)
   {}
 
   Peak()
-    : Peak(FLT_MAX, FLT_MIN)
+    : min(1)
+    , max(-1)
   {}
 
   qfloat16 get_min(void) const {
@@ -101,13 +110,13 @@ public:
   
   void scale(float scaleval){
     R_ASSERT_RETURN_IF_FALSE(has_data());
-    
+    R_ASSERT_NON_RELEASE(proper_isnormal(scaleval));
     min *= scaleval;
     max *= scaleval;
   }
   
   bool has_data(void) const {
-    return min != FLT_MAX;
+    return max >= min; //min != FLT_MAX;
   }
   
   void merge(const Peak &peak) {
@@ -509,7 +518,14 @@ private:
       
       for(int i = 0 ; i<num_peaks ; i++){
 #if READ_EVERYTHING_AT_ONCE
-        _peaks[ch]->add(Peak(data[i*2], data[i*2+1]));
+        qfloat16 min=data[i*2], max=data[i*2+1];
+#if !defined(RELEASE)
+        if(!proper_isnormal(min) || !proper_isnormal(max)){
+          printf("min: %f. max: %f.\n", (float)min, (float)max, (float)data[i*2], (float)data[i*2+1]);
+          abort();
+        }
+#endif
+        _peaks[ch]->add(Peak(min,max));
 #else
         float minmax[2];
         
