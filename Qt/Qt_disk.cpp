@@ -43,7 +43,8 @@ const wchar_t *DISK_get_absolute_file_path(const wchar_t *wfilename){
 
 int64_t DISK_get_creation_time(const wchar_t *wfilename){
   QFileInfo info(STRING_get_qstring(wfilename));
-  return info.created().toMSecsSinceEpoch();
+  info.setCaching(false);
+  return info.lastModified().toMSecsSinceEpoch();
 }
 
 bool DISK_file_exists(const wchar_t *wfilename){
