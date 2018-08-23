@@ -18,12 +18,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define RADIUM_ACCESS_SEQBLOCK_AUTOMATION 1
 
+#include <memory>
+
 #include "nsmtracker.h"
 #include "hashmap_proc.h"
 #include "patch_proc.h"
 #include "seqtrack_proc.h"
 #include "instruments_proc.h"
 #include "Vector.hpp"
+#include "Array.hpp"
 #include "../Qt/Qt_mix_colors.h"
 #include "../Qt/Qt_colors_proc.h"
 #include "SeqAutomation.hpp"
@@ -31,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundProducer_proc.h"
 //#include "../audio/Envelope.hpp"
+#include "../audio/Juce_plugins_proc.h"
 
 #include "song_tempo_automation_proc.h"
 
@@ -44,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "seqblock_automation_proc.h"
 
+#define MAX_STRETCH 5
 
 #if 0 // Very inefficient since Envelope::get_y is not a const method. ('_last_i' will be set back to 1 very often)
 
@@ -127,6 +132,14 @@ static AutomationNode create_node_from_state(hash_t *state, double state_sampler
 }
 */
 
+
+
+struct TimeConversionTable{
+  double stretch_automation_compensation;
+  int num_time_conversion_table_elements;
+  int64_t *time_conversion_table; // Array that maps seqtime -> sample position. (necessary when automating stretch or speed)    
+};
+
 struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>{
 
   struct SeqTrack *_seqtrack; // not necessary to gc-protect. seqblockautomation is freed from the seqblock finalizer.
@@ -141,14 +154,25 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
   double _max_value;
 
   bool _is_enabled = false;
+
+  bool _is_temporary;
+
+private:
+
+  // Not making copies anywyere (except in make_copy). Adding these to detect bugs.
+  SeqblockAutomation(const SeqblockAutomation&) = delete;
+  SeqblockAutomation& operator=(const SeqblockAutomation&) = delete;
+
+public:
   
-  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t state, double state_samplerate)
+  SeqblockAutomation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, enum Seqblock_Automation_Type sat, const dyn_t state, double state_samplerate, bool is_temporary = false)
     : _seqtrack(seqtrack)
     , _seqblock(seqblock)
     , _sat(sat)
     , _min_value(0.0)
     , _default_value(0.0)
     , _max_value(1.0)
+    , _is_temporary(is_temporary)
   {
 
     switch(_sat){
@@ -183,6 +207,12 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
         _default_value = 0.4;
         break;
 
+      case SAT_STRETCH:
+        _min_value = -MAX_STRETCH + 1;
+        _max_value = MAX_STRETCH - 1;
+        _default_value = 0.0;
+        break;
+
       default:
         R_ASSERT(false);
         break;
@@ -191,7 +221,8 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
     R_ASSERT(_default_value >= _min_value);
     R_ASSERT(_default_value <= _max_value);
 
-    SEQBLOCK_AUTOMATION_cancel_curr_automation();
+    if (false==_is_temporary)
+      SEQBLOCK_AUTOMATION_cancel_curr_automation();
 
     R_ASSERT(state_samplerate != 0);
 
@@ -206,9 +237,17 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
       _automation.add_node(create_node(0, _default_value, LOGTYPE_LINEAR));
       _automation.add_node(create_node(duration, _default_value, LOGTYPE_LINEAR));
     }
+
+    if (_sat==SAT_STRETCH){
+      _automation.new_rt_data_has_been_created_data = this;
+      _automation.new_rt_data_has_been_created = SeqblockAutomation::new_rt_data_has_been_created;
+    }
   }
 
   ~SeqblockAutomation(){ 
+    if (_is_temporary)
+      return;
+
     if (g_curr_seqblock_automation_seqblock!=NULL && g_curr_seqblock_automation_seqblock->automations[_sat]==this){
       set_no_curr_seqtrack(); // It's a little bit unclear what data is available and not right now. We can think through the situation, and probably conclude that it's fine to call SEQBLOCK_AUTOMATION_cancel_curr_automation() no matter what, but this is also fine, probably clearer, and much simpler since we don't have to worry whether it's safe to call SEQBLOCK_AUTOMATION_cancel_curr_automation.
     } else {
@@ -217,6 +256,114 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
 
     assert_no_curr_seqtrack();
   }
+
+  double get_stretch_from_automation(double value) const {
+    if (value < 0.0)
+      return 1.0 / (1.0 - value);
+    else
+      return value + 1.0;
+  }
+
+  struct SeqblockAutomation *make_copy(void) const {
+    dyn_t state = get_state();
+
+    return new SeqblockAutomation(_seqtrack, _seqblock, _sat, state, -1, true);
+  }
+
+private:
+
+  // TODO: This function needs to be memoized so that we don't have to calculate for every pixel when moving a seqblock with stretch automation.
+  TimeConversionTable get_time_conversion_table(void) {
+
+    R_ASSERT(_sat==SAT_STRETCH);
+
+    if(false==_is_enabled){
+      TimeConversionTable table;
+      table.stretch_automation_compensation = 1.0;
+      table.num_time_conversion_table_elements = 0;
+      table.time_conversion_table = NULL;
+      return table;
+    }
+
+    //const SoundPlugin *plugin = (SoundPlugin*) _seqtrack->patch->patchdata;
+    //const double resample_ratio = SEQTRACKPLUGIN_get_resampler_ratio(plugin, _seqblock->sample_id);
+
+    double total_automation_time = 0;
+    const double total_time = _seqblock->t.num_samples; //default_duration / resample_ratio; //2.0;//(s2-s1);
+    int num_elements = total_time / RADIUM_BLOCKSIZE;
+    
+    int64_t *ret = (int64_t*)talloc_atomic(sizeof(int64_t)*(num_elements+1));
+
+    bool has_shown_error = false;
+
+    //_automation.print();
+
+    for(int i=0 ; i<num_elements ; i++){
+      double stretch;
+
+      double value = 0.0;
+      //int64_t pos = i*RADIUM_BLOCKSIZE;
+      int64_t pos = scale(i, 0, num_elements, 0, _seqblock->t.default_duration);
+      if(_automation.RT_get_value(pos, value, NULL, true)==false){
+        if (!has_shown_error){
+          printf("222_RT_get_value returned false for %d (total: %f)\n", i, total_time);
+          has_shown_error=true;
+        }
+        stretch = 1.0;
+      }else
+        stretch = get_stretch_from_automation(value);
+
+      /*
+        speed = distance / time;
+        distance = speed * time
+        time = distance / speed;
+      */
+      ret[i] = total_automation_time;
+
+      //printf("%d: %d\n", i*RADIUM_BLOCKSIZE, (int)ret[i]);
+
+      total_automation_time += RADIUM_BLOCKSIZE / stretch;
+    }
+
+    ret[num_elements] = total_automation_time;
+
+    TimeConversionTable table;
+    table.stretch_automation_compensation = ((double)total_automation_time / total_time);
+    table.num_time_conversion_table_elements = num_elements;
+    table.time_conversion_table = ret;
+
+    //printf("   DIFF: %f - %f\n", total_automation_time, total_time);
+
+    return table;
+  }
+
+public:
+
+  void calculate_time_conversion_table(void){
+    R_ASSERT_RETURN_IF_FALSE(_sat==SAT_STRETCH);
+
+    TimeConversionTable table = get_time_conversion_table();
+    {
+      radium::PlayerLock lock;
+      _seqblock->stretch_automation_compensation = table.stretch_automation_compensation;
+      _seqblock->num_time_conversion_table_elements = table.num_time_conversion_table_elements;
+      _seqblock->time_conversion_table = table.time_conversion_table;
+    }
+  }
+
+
+private:
+
+  // TODO: Add *automation argument (automation-to-be), and call this function before using it in RT.
+  static void new_rt_data_has_been_created(void *data){
+    auto *seqautomation = static_cast<SeqblockAutomation*>(data);
+
+    SEQBLOCK_calculate_time_conversion_table(seqautomation->_seqblock, true);
+  }
+
+  
+
+public:
 
   void create_from_state(const dyn_t state, double state_samplerate){
     dyn_t automation_state = state;
@@ -263,6 +410,9 @@ struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>
 
       case SAT_GRAIN_RAMP:
         return talloc_format("%.2f%%", value * 100.0);
+
+      case SAT_STRETCH:
+        return talloc_format("%.2f X", get_stretch_from_automation(value));
 
       default:
         R_ASSERT(false);
@@ -563,6 +713,7 @@ void SEQBLOCK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, struct S
     
   } else {
 
+    //printf("SET DO PAINT NODES\n");
     seqblockenvelope->_automation.set_do_paint_nodes(true);
     SEQTRACK_update(seqtrack);
     
@@ -584,6 +735,8 @@ void SEQBLOCK_AUTOMATION_cancel_curr_automation(void){
 
     struct SeqBlock *seqblock = g_curr_seqblock_automation_seqblock;
     R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
+
+    //printf("   CANCELLING curr automation: %s\n", JUCE_get_backtrace());
 
     int num_automations = SEQBLOCK_num_automations(seqblock);
     for(int i=0;i<num_automations;i++){
@@ -858,9 +1011,32 @@ bool RT_maybe_get_seqblock_automation_value(struct SeqblockAutomation *automatio
     return false;
   
   automation->_automation.RT_get_value(time, value, NULL, true);
+
+  if (automation->_sat==SAT_STRETCH){
+    double value1 = automation->get_stretch_from_automation(value);
+    value = value1 * automation->_seqblock->stretch_automation_compensation;
+
+    //printf("automation speed: %f / %f. compensation: %f. Time: %f\n", value1, value, automation->_seqblock->stretch_automation_compensation, time);
+  }
+
   return true;
 }
-                                     
+
+void SEQBLOCK_calculate_time_conversion_table(struct SeqBlock *seqblock, bool seqblock_is_live){
+  if (seqblock->block!=NULL)
+    return;
+
+  auto *stretch = seqblock->automations[SAT_STRETCH];
+  R_ASSERT_RETURN_IF_FALSE(stretch!=NULL);
+
+  if (seqblock_is_live) {
+    std::unique_ptr<SeqblockAutomation> c(stretch->make_copy());  // Make a copy so that we can access the RT functions safely from the main thread.
+    c->calculate_time_conversion_table();
+  } else {
+    stretch->calculate_time_conversion_table();
+  }
+}
+
 
 // Called from player.c
 void RT_SEQBLOCK_AUTOMATION_called_before_scheduler(void){

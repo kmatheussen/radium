@@ -5914,7 +5914,7 @@
                                        (set! Time (floor Time))
                                        (if (not (<ra> :control-pressed))
                                            (set! Time (<ra> :get-seq-gridded-time Time 0 (<ra> :get-seq-automation-grid-type))))
-                                       (c-display "db" db ". Y:" Y)
+                                       (c-display "db" db ". Y:" Y ". Time:" Time)
                                        (<ra> :set-seqblock-automation-node Time db logtype Num automationnum seqblocknum seqtracknum)
                                        ;;(c-display "NUM:" Num ", Time:" (/ Time 48000.0) ", Value:" Value)
                                        Num))

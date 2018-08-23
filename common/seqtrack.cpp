@@ -78,25 +78,25 @@ static hash_t *get_state_from_recording_config(const struct SeqtrackRecordingCon
 static struct SeqtrackRecordingConfig get_recording_config_from_state(const hash_t *state);
 
 
+static int64_t get_seqblock_num_samples(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  R_ASSERT_RETURN_IF_FALSE2(seqblock->block==NULL, pc->pfreq);
+
+  R_ASSERT_RETURN_IF_FALSE2(seqblock->sample_id>=0, pc->pfreq);
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, pc->pfreq);
+  
+  struct SoundPlugin *plugin = (struct SoundPlugin*) seqtrack->patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, pc->pfreq);
+  
+  int64_t num_samples = SEQTRACKPLUGIN_get_total_num_frames_for_sample(plugin, seqblock->sample_id);
+  R_ASSERT_RETURN_IF_FALSE2(num_samples>0, pc->pfreq);
+  
+  return num_samples;
+}
+
 static int64_t get_seqblock_stime_default_duration(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
-  if (seqblock->block==NULL) {
-    
-    R_ASSERT_RETURN_IF_FALSE2(seqblock->sample_id>=0, pc->pfreq);
-    R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, pc->pfreq);
-    
-    struct SoundPlugin *plugin = (struct SoundPlugin*) seqtrack->patch->patchdata;
-    R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, pc->pfreq);
-    
-    int64_t num_frames = SEQTRACKPLUGIN_get_total_num_frames_for_sample(plugin, seqblock->sample_id);
-    R_ASSERT_RETURN_IF_FALSE2(num_frames>0, pc->pfreq);
-    
-    return num_frames;
-    
-  } else {
-    
-    return getBlockSTimeLength(seqblock->block);
-    
-  }
+  R_ASSERT_RETURN_IF_FALSE2(seqblock->block!=NULL, pc->pfreq);
+
+  return getBlockSTimeLength(seqblock->block);
 }
 
 void SEQBLOCK_set_gain(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, float gain){  
@@ -339,12 +339,41 @@ static void seqblockgcfinalizer(void *actual_mem_start, void *user_data){
   delete seqblock->fade_out_envelope;
 }
 
-static void default_duration_changed(struct SeqBlock *seqblock, int64_t default_duration){
+static int64_t get_default_duration_from_num_samples(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t num_samples){
+  R_ASSERT_RETURN_IF_FALSE2(seqblock->block==NULL, pc->pfreq);
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, pc->pfreq);
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch->patchdata!=NULL, pc->pfreq);
+
+  if (num_samples < 0)
+    num_samples = get_seqblock_num_samples(seqtrack, seqblock);
+
+  const SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+  const double resample_ratio = SEQTRACKPLUGIN_get_resampler_ratio(plugin, seqblock->sample_id);
+
+  return (double)num_samples * resample_ratio;
+}
+
+static void set_default_duration_and_num_samples(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t num_samples){
+  R_ASSERT_RETURN_IF_FALSE(seqblock->block==NULL);
+
+  if (num_samples < 0)
+    num_samples = get_seqblock_num_samples(seqtrack, seqblock);
+
+  seqblock->t.num_samples = num_samples;
+  seqblock->t.default_duration = get_default_duration_from_num_samples(seqtrack, seqblock, num_samples);
+}
+
+static void default_duration_changed(struct SeqBlock *seqblock, int64_t default_duration, int64_t num_samples){
   R_ASSERT(default_duration > 0);
+  R_ASSERT(num_samples >= 0);
+
+  if (num_samples > 0)
+    R_ASSERT(seqblock->block==NULL);
   
   seqblock->t.time2 = seqblock->t.time + default_duration;
   
   seqblock->t.default_duration = default_duration;
+  seqblock->t.num_samples = num_samples;
 
   seqblock->t.interior_end = default_duration;
 }
@@ -367,13 +396,13 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
   seqblock->t.time = time;
 
   if (block != NULL) {
-    default_duration_changed(seqblock, getBlockSTimeLength(block));
+    default_duration_changed(seqblock, getBlockSTimeLength(block), 0);
     
     seqblock->t.start_place = p_Create(0,0,1);
     
     seqblock->t.end_place = p_Create(block->num_lines,0,1);
   }else{
-    default_duration_changed(seqblock, 48000);
+    default_duration_changed(seqblock, 48000, 48000);
   }
   
   seqblock->t.stretch = 1.0;
@@ -433,7 +462,10 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
 
   seqblock->curr_gain = 1.0;
   seqblock->envelope_db = 0.0;
+
+  seqblock->stretch_automation_compensation = 1.0;
 }
+
 
 static struct SeqBlock *SEQBLOCK_create_block(struct SeqTrack *seqtrack, struct Blocks *block, const hash_t *state, double state_samplerate, int64_t time){
   if (seqtrack->for_audiofiles==true)
@@ -485,9 +517,11 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
 
   if (type != Seqblock_Type::RECORDING) {
 
-    int64_t duration = SEQTRACKPLUGIN_get_total_num_frames_for_sample(plugin, seqblock->sample_id);
-  
-    default_duration_changed(seqblock, duration);
+    set_default_duration_and_num_samples(seqtrack, seqblock, -1);
+
+    int64_t duration = seqblock->t.default_duration;
+
+    default_duration_changed(seqblock, duration, seqblock->t.num_samples);
 
     if (state == NULL) {
       int num_automations = SEQBLOCK_num_automations(seqblock);
@@ -1154,11 +1188,10 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     if (seqblock==NULL)
       return NULL;
 
-    if (HASH_has_key(state, ":grain-overlap")){
-      
-      SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-      R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
-      
+    SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
+    R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
+
+    if (HASH_has_key(state, ":grain-overlap")){      
       SEQTRACKPLUGIN_set_grain_overlap(plugin, seqblock->sample_id, HASH_get_float(state, ":grain-overlap"));
       SEQTRACKPLUGIN_set_grain_length(plugin, seqblock->sample_id, HASH_get_float(state, ":grain-length"));
       SEQTRACKPLUGIN_set_grain_jitter(plugin, seqblock->sample_id, HASH_get_float(state, ":grain-jitter"));
@@ -1167,22 +1200,20 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     
     if (HASH_has_key(state, ":name"))
       seqblock->name = HASH_get_string(state, ":name");
-    
   }
 
   
-  int64_t default_duration = get_seqblock_stime_default_duration(seqtrack, seqblock);
+  int64_t default_duration = seqblock->block!=NULL ? get_seqblock_stime_default_duration(seqtrack, seqblock) : get_default_duration_from_num_samples(seqtrack, seqblock, -1);
 
   if (interior_end > default_duration){
 
-    if (llabs(interior_end-default_duration) < 16) { // Avoid minor rounding errors
+    if (llabs(interior_end - default_duration) < 16) { // Avoid minor rounding errors
 
-      int64_t diff = interior_end-interior_start;
-      
       interior_end = default_duration;
 
       // In case interior_start and interior_end are very crammed together.
       if (interior_start >= interior_end){
+        int64_t diff = interior_end-interior_start;
         interior_start -= diff;
         if (interior_start < 0)
           interior_start = 0;
@@ -1206,8 +1237,8 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
         
         bool show_rerror = seqblock->block==NULL;
 #if defined(RELEASE)
-        if (show_rerror==true && fabs(interior_end-default_duration) < 16)
-          show_rerror = false;  // Don't show error if it's caused by a rounding error.
+        if (show_rerror==true && fabs(interior_end - default_duration) < 16)
+          show_rerror = false;  // Don't show error if it could be caused by a rounding error.
 #endif
         
         if (show_rerror)
@@ -1282,6 +1313,8 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     seqblock->fade_in_envelope = new radium::Envelope(inshape, 1.0, true);
     seqblock->fade_out_envelope = new radium::Envelope(outshape, 1.0, false);
   }
+
+  SEQBLOCK_calculate_time_conversion_table(seqblock, false);
 
   return seqblock;
 }
@@ -1941,7 +1974,7 @@ void SEQUENCER_timing_has_changed(radium::PlayerLockOnlyIfNeeded &lock){
           else
             seqblock->t.time2 = seqblock->t.time + round(stretch*(double)default_duration);
           
-          seqblock->t.default_duration = default_duration;
+          seqblock->t.default_duration = default_duration; // Note: seqblock->block!=NULL
           
           seqblock->t.interior_end = default_duration;
 
@@ -2102,12 +2135,12 @@ static struct SeqBlock *create_sample_seqblock(struct SeqTrack *seqtrack, int se
 
   if (type==Seqblock_Type::RECORDING) {
     
-    seqblock->t.default_duration = end_seqtime - seqtime;
-    default_duration_changed(seqblock, seqblock->t.default_duration);
+    int64_t duration = end_seqtime - seqtime;
+    default_duration_changed(seqblock, duration, duration);
     
   } else {
-    
-    seqblock->t.default_duration = get_seqblock_stime_default_duration(seqtrack, seqblock);
+
+    set_default_duration_and_num_samples(seqtrack, seqblock, get_seqblock_num_samples(seqtrack, seqblock));
     
   }
   

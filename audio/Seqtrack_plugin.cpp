@@ -482,8 +482,8 @@ public:
   }
 
 
-  void prepare_for_playing(int64_t sample_start_pos, double stretch, bool do_fade_in, radium::FutureSignalTrackingSemaphore *gotit){
-    _do_granulate = fabs(stretch - 1.0) > 0.001;
+  void prepare_for_playing(const int64_t sample_start_pos, const struct SeqBlock *seqblock, bool do_fade_in, radium::FutureSignalTrackingSemaphore *gotit){
+    _do_granulate = RT_seqblock_automation_is_enabled(seqblock->automations[SAT_STRETCH]) || fabs(seqblock->t.stretch - 1.0) > 0.001;
     
     for(int ch=0;ch<_num_ch;ch++){
       mus_reset(_granulator._clm_granulators[ch]);
@@ -499,7 +499,7 @@ public:
       prepare_for_fadein();
 
     // TODO: This number should be dynamically calculated somehow depending on how long time it takes to read from disk.
-    int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE_BEFORE_STARTING) * (double)pc->pfreq / (stretch * _resampler_ratio);
+    int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE_BEFORE_STARTING) * (double)pc->pfreq / (seqblock->t.stretch * _resampler_ratio);
 
     for(int ch=0;ch<_num_ch;ch++)
       how_much_to_prepare = R_MAX(how_much_to_prepare,
@@ -509,7 +509,7 @@ public:
     {
       LOCKASSERTER_EXCLUSIVE(&lockAsserter);
       
-      SAMPLEREADER_prepare_to_play(_reader, sample_start_pos / _resampler_ratio, how_much_to_prepare, gotit);
+      SAMPLEREADER_prepare_to_play(_reader, sample_start_pos, how_much_to_prepare, gotit);
     }
 
     //printf("      ====   %p has now been prepared\n", this);
@@ -751,26 +751,49 @@ struct Sample{
     if (seqtime >= _seqblock->t.time2)
       return;
 
-    int64_t sample_start_pos;
+    int64_t sample_start_pos1;
+
+    int64_t p_interior_start = _seqblock->t.interior_start / _resampler_ratio;
+    int64_t p_interior_end = _seqblock->t.interior_end / _resampler_ratio;
 
     if(seqtime <= _seqblock->t.time)
-      sample_start_pos = _seqblock->t.interior_start;
+      sample_start_pos1 = p_interior_start;
     else
-      sample_start_pos = scale_int64(seqtime,
-                                     _seqblock->t.time, _seqblock->t.time2,
-                                     _seqblock->t.interior_start, _seqblock->t.interior_end);
+      sample_start_pos1 = scale_int64(seqtime,
+                                      _seqblock->t.time, _seqblock->t.time2,
+                                      p_interior_start, p_interior_end);
     //printf("sample_start_pos: %d. _interior_start: %d. _seqblock->t.time: %d. %d vs. %d\n",int(sample_start_pos), int(_seqblock->t.interior_start), int(_seqblock->t.time), int(_seqblock->t.time2-_seqblock->t.time), int(_seqblock->t.interior_end-_seqblock->t.interior_start));
     //sample_start_pos = _interior_start + seqtime - _seqblock->t.time;
     
+    if (sample_start_pos1 < 0){
+      R_ASSERT(false);
+      sample_start_pos1 = 0;
+    }
+    
+    if (sample_start_pos1 >= p_interior_end){
+      R_ASSERT(false);
+      return;
+    }
+
+    int64_t sample_start_pos = get_stretch_automation_sample_pos(_seqblock.data(), sample_start_pos1);
+
+    /*
+    printf("sample_start_pos1: %d. interior start: %f / %d. end: %f / %d. _resampler_ratio: %f\n", (int)sample_start_pos1,
+           (double)_seqblock->t.interior_start / pc->pfreq, (int)p_interior_start,
+           (double)_seqblock->t.interior_end / pc->pfreq, (int)p_interior_end,
+           _resampler_ratio);
+    */
+
     if (sample_start_pos < 0){
       R_ASSERT(false);
       return;
     }
     
-    if (sample_start_pos >= _seqblock->t.interior_end){
+    if (sample_start_pos >= _seqblock->t.num_samples){
       R_ASSERT(false);
       return;
     }
+
 
     //printf("  PREPARE TO PLAY. Time: %f. sample_start_pos: %f\n", (double)seqtime / (double)pc->pfreq, (double)sample_start_pos / (double)pc->pfreq);
     
@@ -813,8 +836,9 @@ struct Sample{
       
     }
 
-    bool do_fade_in = sample_start_pos > _seqblock->t.interior_start;
-    reader->prepare_for_playing(sample_start_pos, _seqblock->t.stretch, do_fade_in, gotit);
+    bool do_fade_in = sample_start_pos > p_interior_start;
+    //printf("do_fade_in: %d. %d > %d. Sample_start_pos: %f\n", do_fade_in, (int)sample_start_pos, (int)p_interior_start, (double)sample_start_pos/pc->pfreq);
+    reader->prepare_for_playing(sample_start_pos, _seqblock.data(), do_fade_in, gotit);
 
     {
       _curr_reader = reader; // Don't need player lock here since _is_playing==false now.
@@ -929,18 +953,16 @@ struct Sample{
     if (is_playing && _curr_reader != NULL){ // move the _is_playing test above here instead. Note: Must check 'is_playing' before '_curr_reader' to avoid tsan hit.
       LOCKASSERTER_EXCLUSIVE(&_curr_reader->lockAsserter);
 
-      // Set expansion (stretch/expansion has probably not changed since last time, but this is a light operation)
-      for(int ch=0;ch<_num_ch;ch++)
-        mus_set_increment(_curr_reader->_granulator._clm_granulators[ch], _seqblock->t.stretch);
-
       if (true || ATOMIC_COMPARE_AND_SET_BOOL(_has_updates, true, false)){ // TODO: Fix the _has_updates thing.
-
+        
         double grain_overlap = _grain_overlap;
-
+        
         double grain_length = _grain_length;
         
         double grain_jitter = _grain_jitter;
         double grain_ramp = _grain_ramp;
+        
+        double stretch = _seqblock->t.stretch;
         
         {
           const int64_t start_time = _seqtrack->start_time;
@@ -948,12 +970,16 @@ struct Sample{
           if (end_time >= _seqblock->t.time && start_time <= _seqblock->t.time2){
 
             double s1 = get_seqblock_noninterior_start(_seqblock.data());
-            double time = (start_time-s1) / _seqblock->t.stretch;
+            double time = (start_time-s1) / stretch;
 
             RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_GRAIN_OVERLAP], time, grain_overlap);
             RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_GRAIN_LENGTH], time, grain_length);
             RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_GRAIN_JITTER], time, grain_jitter);
             RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_GRAIN_RAMP], time, grain_ramp);
+
+            double automation_stretch;
+            if (RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_STRETCH], time, automation_stretch))
+              stretch *= automation_stretch;
           }
         }
         
@@ -962,7 +988,7 @@ struct Sample{
 
         grain_ramp *= grain_length;
 
-        //printf("length: %f (%f). frequency: %f. jitter: %f. ramp: %f\n", grain_length, grain_length*1000.0/pc->pfreq, grain_frequency, grain_jitter, grain_ramp);
+        //printf("length: %f (%f). frequency: %f. jitter: %f. ramp: %f. Stretch: %f\n", grain_length, grain_length*1000.0/pc->pfreq, grain_frequency, grain_jitter, grain_ramp, stretch);
 
         if (grain_length > MAX_GRAIN_LENGTH_IN_SECONDS*pc->pfreq){
 #if !defined(RELEASE)
@@ -983,6 +1009,7 @@ struct Sample{
           mus_set_length(_curr_reader->_granulator._clm_granulators[ch], grain_length);
           mus_set_offset(_curr_reader->_granulator._clm_granulators[ch], grain_jitter);
           mus_set_ramp(_curr_reader->_granulator._clm_granulators[ch], grain_ramp);
+          mus_set_increment(_curr_reader->_granulator._clm_granulators[ch], stretch);
         }
 
         /*
@@ -1806,10 +1833,10 @@ bool SEQTRACKPLUGIN_can_be_deleted(SoundPlugin *plugin){
   return true;
 }
 
-int SEQTRACKPLUGIN_get_num_samples(SoundPlugin *plugin){
+int SEQTRACKPLUGIN_get_num_samples(const SoundPlugin *plugin){
   R_ASSERT(THREADING_is_main_thread());
   
-  Data *data = (Data*)plugin->data;
+  const Data *data = (const Data*)plugin->data;
 
   return data->_samples.size();
 }
@@ -1844,17 +1871,7 @@ int64_t SEQTRACKPLUGIN_get_total_num_frames_for_sample(const SoundPlugin *plugin
   if (sample==NULL)
     return -1;
 
-  int64_t num_frames = sample->_total_num_frames_in_sample;
-  
-  bool do_resampling = sample->_do_resampling;
-
-  if (!do_resampling)
-    return num_frames;
-
-  double resampler_ratio = sample->_resampler_ratio;
-  
-  return (double)num_frames * resampler_ratio;
-  //return sample->_interior_end - sample->_interior_start;
+  return sample->_total_num_frames_in_sample;
 }
 
 /*

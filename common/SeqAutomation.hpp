@@ -68,6 +68,8 @@ public:
   {
   }
 
+  void *new_rt_data_has_been_created_data = NULL;
+  void (*new_rt_data_has_been_created)(void *data) = NULL;
 
 private:
   
@@ -86,11 +88,13 @@ private:
     return (const struct RT*)rt;
   }
 
-
   void create_new_rt_data(void){
     const struct RT *new_rt_tempo_automation = create_rt();
 
     _rt.set_new_pointer((void*)new_rt_tempo_automation);
+
+    if (new_rt_data_has_been_created != NULL)
+      new_rt_data_has_been_created(new_rt_data_has_been_created_data);
   }
 
 
@@ -172,7 +176,7 @@ public:
 private:
 
   // Based on pseudocode for the function BinarySearch_Left found at https://rosettacode.org/wiki/Binary_search
-  int BinarySearch_Left(const struct RT *rt, double value, int low, int high) {   // initially called with low = 0, high = N - 1
+  int BinarySearch_Left(const struct RT *rt, double value, int low, int high) const {   // initially called with low = 0, high = N - 1
       // invariants: value  > A[i] for all i < low
       //             value <= A[i] for all i > high
       if (high < low)
@@ -186,14 +190,14 @@ private:
         return BinarySearch_Left(rt, value, mid+1, high);
   }
   
-  int last_search_pos = 1;
+  int _last_search_pos = 1;
 
 public:
 
   // Note: Value is not set if rt->num_nodes==0, even if always_set_value==true.  
   bool RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL, bool always_set_value = false){
 
-    R_ASSERT_NON_RELEASE(last_search_pos > 0);
+    R_ASSERT_NON_RELEASE(_last_search_pos > 0);
 
     RT_AtomicPointerStorage_ScopedUsage rt_pointer(&_rt);
       
@@ -235,7 +239,7 @@ public:
       
       const T *node1;
       const T *node2;
-      int i = last_search_pos;
+      int i = _last_search_pos;
 
       if (i<rt->num_nodes){
         node1 = &rt->nodes[i-1];
@@ -247,7 +251,7 @@ public:
       i = BinarySearch_Left(rt, time, 0, rt->num_nodes-1);
       R_ASSERT_NON_RELEASE(i>0);
       
-      last_search_pos = i;
+      _last_search_pos = i;
       node1 = &rt->nodes[i-1];
       node2 = &rt->nodes[i];
 

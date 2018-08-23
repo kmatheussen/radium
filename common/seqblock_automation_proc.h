@@ -2,6 +2,35 @@
 #define RADIUM_COMMON_SEQBLOCK_AUTOMATION_PROC_H
 
 
+extern LANGSPEC void SEQBLOCK_calculate_time_conversion_table(struct SeqBlock *seqblock, bool seqblock_is_live);
+
+static inline int64_t get_sample_pos_from_seqtime(const struct SeqBlock *seqblock, int64_t seqtime){
+  return 0;
+}
+
+static inline int64_t get_stretch_automation_sample_pos(const struct SeqBlock *seqblock, int64_t sample_pos){  
+  if (seqblock->time_conversion_table==NULL) //false==RT_seqblock_automation_is_enabled(seqblock->automations[SAT_STRETCH]))
+    return sample_pos;
+
+  int pos = sample_pos / RADIUM_BLOCKSIZE;
+  int size = seqblock->num_time_conversion_table_elements;
+
+  if (pos <= 0){
+
+    R_ASSERT_NON_RELEASE(pos==0);
+    return 0;
+
+  }
+
+  if (pos > size){
+
+    R_ASSERT_NON_RELEASE(false);
+    pos = size;
+
+  }
+
+  return seqblock->time_conversion_table[pos] / seqblock->stretch_automation_compensation;  
+}
 
 extern LANGSPEC void RT_SEQBLOCK_AUTOMATION_called_before_scheduler(void);
 extern LANGSPEC void RT_SEQBLOCK_AUTOMATION_called_before_editor(struct SeqTrack *seqtrack);
@@ -44,7 +73,7 @@ void SEQBLOCK_AUTOMATION_paint(QPainter *p, struct SeqblockAutomation *seqblocke
 bool RT_seqblock_automation_is_enabled(struct SeqblockAutomation *automation);
 void SEQBLOCK_AUTOMATION_set_enabled(struct SeqblockAutomation *automation, bool enabled);
 bool RT_maybe_get_seqblock_automation_value(struct SeqblockAutomation *automation, double time, double &value);
-  
+
 #endif
 
 #endif
