@@ -352,7 +352,7 @@ private:
 
       float *input0 = inputs[0];
       float *output0 = outputs[0];
-      float *output1 = outputs[0];
+      float *output1 = outputs[1];
       
       for(int i=0;i<num_frames;i++){
         
