@@ -8,6 +8,9 @@ if ! file $XCB_LIB_DIR ; then
     exit -1
 fi
 
+# To avoid buggy qt plugins from crashing radium (very common).
+unset QT_QPA_PLATFORMTHEME
+
 export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG=fatal-criticals gdb --args bin/radium_linux.bin $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter
