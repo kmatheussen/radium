@@ -795,7 +795,9 @@ public:
     R_ASSERT_NON_RELEASE(time2 >= time1);
         
     if (time2 <= time1)
-      return;
+      return;    
+
+    int64_t p_time2 = get_stretch_automation_sample_pos(seqblock, R_MIN(seqblock->t.default_duration, time2));
 
     const double pixels_per_peak = R_MAX(2.7, root->song->tracker_windows->systemfontheight / 6.5);
     double width = x2-x1;
@@ -815,7 +817,7 @@ public:
 
       QPointF points[num_points*2];
 
-      int64_t last_used_end_time = time1;
+      int64_t p_last_used_end_time = get_stretch_automation_sample_pos(seqblock, time1);
 
       const float m = 0.3f; // half minimum waveform height (to avoid blank gfx for silent audio)
           
@@ -828,18 +830,23 @@ public:
 
         if (has_data){
               
-          int64_t start_time = last_used_end_time;
-          int64_t end_time = R_BOUNDARIES(start_time,
-                                          scale_int64(i,
-                                                      0, num_points,
-                                                      time1, time2),
-                                          time2);
-              
-          R_ASSERT_NON_RELEASE(end_time >= start_time);
+          int64_t p_start_time = p_last_used_end_time;
 
-          if (end_time > start_time) {
+          int64_t end_time1 = scale_int64(i,
+                                          0, num_points,
+                                          time1, time2);
+          int64_t p_end_time2 = get_stretch_automation_sample_pos(seqblock, end_time1);
+          int64_t p_end_time = R_BOUNDARIES(p_start_time,
+                                            p_end_time2,
+                                            p_time2);
+
+          //printf("%d: %f -> %f (1: %d. 2: %d. time1: %d, time2: %d. p_time2: %d)\n", i, (double)p_start_time / pc->pfreq, (double)p_end_time / pc->pfreq, (int)end_time1, (int)p_end_time2, (int)time1, (int)time2, (int)p_time2);
+
+          R_ASSERT_NON_RELEASE(p_end_time >= p_start_time);
+
+          if (p_end_time > p_start_time) {
                 
-            const radium::Peak peak = peaks[ch]->get(start_time, end_time);
+            const radium::Peak peak = peaks[ch]->get(p_start_time, p_end_time);
 
             double min,max;
                 
@@ -855,7 +862,9 @@ public:
             min_y = scale_double(min, -1, 1, y1+m, y2   ) - m;
             max_y = scale_double(max, -1, 1, y1,   y2-m ) + m;
 
-            last_used_end_time = end_time;
+            //if (i > 160)
+            //  printf("   %d: min: %f, y1: %f, y2: %f\n", i, min, y1, y2);
+            p_last_used_end_time = p_end_time;
           }
               
         }
@@ -869,10 +878,17 @@ public:
 
         points[num_points*2-i].setX(x);
         points[num_points*2-i].setY(max_y);
+
+        //if (i > 160){
+        //  printf("%d: %f, %f -> %f, %f. num_points: %d, x1,x2: %f, %f\n", i, x, min_y, x, max_y, num_points, x1, x2);
+        //}
       }
 
       myFilledPolygon(p, points, num_points*2, color);
     }
+
+
+    //printf("  DRAW: %f -> %f\n", (double)time1/pc->pfreq, (double)time2/pc->pfreq);
   }
   
   void paintSampleGraphics(QPainter &p, const QRectF &rect, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type){
@@ -900,7 +916,7 @@ public:
       if (peaks != NULL){
 
         const double resample_ratio = SEQTRACKPLUGIN_get_resampler_ratio(plugin, seqblock->sample_id);
-          
+
         const double x1 = rect.x();
         const double x2 = rect.x() + rect.width();
         const int64_t time1 = seqblock->t.interior_start / resample_ratio;

@@ -151,7 +151,6 @@ bool InitProgram(void){
 #endif
 
 	printf("Initialization finished.\n");
-
 	return ret;
 }
 

@@ -2610,16 +2610,16 @@ struct SeqBlockTimings{
   int64_t time2;
 
   
-  int64_t default_duration; // Usually has value Place2Stime(end_place)-Place2Stime(start_place). Also used to set the stretch value.
-
+  int64_t default_duration; // Has value Place2Stime(end_place)-Place2Stime(start_place), or num_samples/resample_ratio.
+  int64_t num_samples; // Only used if seqblock->block==NULL.
   
   Place start_place; // usually {0,0,1} (not used yet). Only used if block!=NULL
 
   Place end_place;   // usually {num_lines,0,1} (not used yet)
 
   bool is_looping;
-  int64_t interior_start; // seqtime version of start_place (non-stretched value)
-  int64_t interior_end;   // seqtime version of end_place (non-stretched value)
+  int64_t interior_start; // seqtime version of start_place. Non-stretched value. Divide by resampling ratio to get sample pos.
+  int64_t interior_end;   // seqtime version of end_place. Non-stretched value. Divide by resampling ratio to get sample pos.
 
   //int64_t noninterior_start; // The seqtime start if interior_start==0
   //int64_t noninterior_end; // The seqtime end if interior_end==0
@@ -2666,6 +2666,7 @@ enum Seqblock_Automation_Type{
   SAT_GRAIN_LENGTH,
   SAT_GRAIN_JITTER,
   SAT_GRAIN_RAMP,
+  SAT_STRETCH,
   NUM_SATS
 };
 
@@ -2683,6 +2684,8 @@ static inline const char *sat_to_string(enum Seqblock_Automation_Type sat){
       return "Grain Jitter";
     case SAT_GRAIN_RAMP:
       return "Grain Ramp";
+    case SAT_STRETCH:
+      return "Stretch";
     default:
       R_ASSERT(false);
       return "Unknown";
@@ -2726,6 +2729,13 @@ struct SeqBlock{
   float envelope_db;     // db version of envelope_volume
 
   struct SeqblockAutomation *automations[NUM_SATS];
+
+  double stretch_automation_compensation;
+
+  int num_time_conversion_table_elements;
+  int64_t *time_conversion_table; // Maps sample position -> sample position. Used when automating stretch.
+
+
   /*
   struct SeqblockAutomation *envelope;
 

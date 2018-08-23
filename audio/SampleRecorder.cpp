@@ -627,3 +627,9 @@ void SampleRecorder_Init(void){
   g_sample_recorder_thread.start();
 }
 
+/*
+void SampleRecorder_shut_down(void){
+  if (g_sample_recorder_thread.isRunning()){
+  }
+}
+*/

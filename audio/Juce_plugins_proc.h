@@ -23,6 +23,7 @@ void PLUGINHOST_save_fxb(struct SoundPlugin *plugin, wchar_t *filename);
 void PLUGINHOST_save_fxp(struct SoundPlugin *plugin, wchar_t *filename);
 
 void PLUGINHOST_init(void);
+void PLUGINHOST_shut_down(void);
 
 #ifdef __cplusplus
 #include "../common/Mutex.hpp"

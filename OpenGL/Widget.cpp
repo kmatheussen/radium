@@ -1272,6 +1272,8 @@ private:
         openglContext()->swapBuffers();
       }
 
+      //printf("update: %fms\n", time_estimator.get_vblank());
+
 #if !defined(FOR_MACOSX)      
       if (doHighCpuOpenGlProtection()) {
         double vblank = GL_get_vblank();
