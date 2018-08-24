@@ -436,6 +436,10 @@ public:
     return _automation.at(nodenum).value;
   }
   
+  double get_value_for_time(int64_t time){
+    return _automation.get_value(time);
+  }
+  
   double get_time(int nodenum){
     double seqblock_start = get_seqblock_noninterior_start(_seqblock);
     R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), seqblock_start);
@@ -670,6 +674,10 @@ const char *SEQBLOCK_AUTOMATION_get_display_string(struct SeqblockAutomation *se
 
 double SEQBLOCK_AUTOMATION_get_value(struct SeqblockAutomation *seqblockenvelope, int nodenum){
   return seqblockenvelope->get_value(nodenum);
+}
+
+double SEQBLOCK_AUTOMATION_get_value_for_time(struct SeqblockAutomation *seqblockenvelope, int64_t time){
+  return seqblockenvelope->get_value_for_time(time);
 }
 
 double SEQBLOCK_AUTOMATION_get_seqtime(struct SeqblockAutomation *seqblockenvelope, int nodenum){

@@ -376,7 +376,7 @@ static int64_t get_absabstime_from_abstime(double goal){
     if (i==size) {
       tempo = 1.0;
     } else {
-      if (!g_tempo_automation.RT_get_value(abstime, node1, node2, tempo, custom_get_value)){
+      if (!g_tempo_automation.get_value(abstime, node1, node2, tempo, custom_get_value)){
         i++;
         if (i<size){          
           node1 = node2;

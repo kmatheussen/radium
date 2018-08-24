@@ -5649,8 +5649,25 @@
                   (<ra> :cancel-curr-seq-automation)
                   (set-seqblock-selected-box 0 -1 -1)
                   (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
-                  (set-editor-statusbar (<-> (<ra> :get-seqblock-automation-name (*current-seqautomation/distance* :automation-num))
-                                             " automation"))
+                  (define seqtracknum (*current-seqautomation/distance* :seqtrack))
+                  (define seqblocknum (*current-seqautomation/distance* :seqblock))
+                  (define automationnum (*current-seqautomation/distance* :automation-num))
+                  (define mouse-time (scale X
+                                            (<ra> :get-seqtrack-x1 seqtracknum) (<ra> :get-seqtrack-x2 seqtracknum)
+                                            (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                  (define seqblock-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+                  (set-editor-statusbar (<-> (<ra> :get-seqblock-automation-name automationnum) ": "
+                                             (<ra> :get-seqblock-automation-display-string 
+                                                   (<ra> :get-seqblock-automation-value-for-time
+                                                         (floor (/ (- mouse-time seqblock-time)
+                                                                   (<ra> :get-seqblock-stretch seqblocknum seqtracknum)))
+                                                         automationnum seqblocknum seqtracknum)
+                                                   automationnum seqblocknum seqtracknum)))
+                  (c-display "------------Setting"          
+                             (*current-seqautomation/distance* :automation-num)
+                             (*current-seqautomation/distance* :seqblock)
+                             (*current-seqautomation/distance* :seqtrack))
+
                   (<ra> :set-curr-seqblock-automation
                         (*current-seqautomation/distance* :automation-num)
                         (*current-seqautomation/distance* :seqblock)

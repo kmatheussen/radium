@@ -132,7 +132,7 @@ public:
     return at(size()-1);
   }
   
-  double RT_get_value(double time, const T *node1, const T *node2, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL) const {
+  double get_value(double time, const T *node1, const T *node2, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL) const {
     const double time1 = node1->time;
     const double time2 = node2->time;
     
@@ -160,12 +160,31 @@ public:
     }
   }
 
-  bool RT_get_value(double time, const T *node1, const T *node2, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2)) const {
+  double get_value(double time, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL) const {
+    int size = _automation.size();
+
+    if (size==0)
+      return 0;
+
+    if (size==1)
+      return _automation.at(0).value;
+
+    int nodenum = get_node_num(time);
+    if (nodenum==-1)
+      return _automation.at(0).value;
+
+    if (nodenum >= size-1)
+      return _automation.at(nodenum-1).value;
+
+    return get_value((double)time, &_automation.at(nodenum), &_automation.at(nodenum+1), custom_get_value);
+  }
+
+  bool get_value(double time, const T *node1, const T *node2, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2)) const {
     const double time1 = node1->time;
     const double time2 = node2->time;
     
     if (time >= time1 && time < time2){
-      value = RT_get_value(time, node1, node2, custom_get_value);
+      value = get_value(time, node1, node2, custom_get_value);
       return true;
     } else {
       return false;
@@ -190,14 +209,19 @@ private:
         return BinarySearch_Left(rt, value, mid+1, high);
   }
   
-  int _last_search_pos = 1;
+  int _RT_last_search_pos = 1;
+
+  /*
+  bool get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL, bool always_set_value = false){
+  }
+  */
 
 public:
 
   // Note: Value is not set if rt->num_nodes==0, even if always_set_value==true.  
   bool RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL, bool always_set_value = false){
 
-    R_ASSERT_NON_RELEASE(_last_search_pos > 0);
+    R_ASSERT_NON_RELEASE(_RT_last_search_pos > 0);
 
     RT_AtomicPointerStorage_ScopedUsage rt_pointer(&_rt);
       
@@ -239,7 +263,7 @@ public:
       
       const T *node1;
       const T *node2;
-      int i = _last_search_pos;
+      int i = _RT_last_search_pos;
 
       if (i<rt->num_nodes){
         node1 = &rt->nodes[i-1];
@@ -251,12 +275,12 @@ public:
       i = BinarySearch_Left(rt, time, 0, rt->num_nodes-1);
       R_ASSERT_NON_RELEASE(i>0);
       
-      _last_search_pos = i;
+      _RT_last_search_pos = i;
       node1 = &rt->nodes[i-1];
       node2 = &rt->nodes[i];
 
     gotit:      
-      value = RT_get_value(time, node1, node2, custom_get_value);
+      value = get_value(time, node1, node2, custom_get_value);
       return true;
     }
     
@@ -283,24 +307,12 @@ public:
 
   int get_node_num(double time) const {
     int size = _automation.size();
-    if (size==0)
-      return 0;
-    if (size==1)
-      return 1;
-    
-    double time1 = at(0).time;
-    //R_ASSERT_RETURN_IF_FALSE2(time1==0,1);
 
-    for(int i=1;i<size;i++){
-      double time2 = at(i).time;
-      
-      if (time >= time1 && time < time2)
-        return i;
-      
-      time1 = time2;
-    }
-    
-    return size;
+    for(int i=0;i<size;i++)
+      if (time < at(i).time)
+        return i-1;
+
+    return size-1;
   }
 
   int add_node(const T &node){
@@ -311,7 +323,7 @@ public:
     if (time < 0)
       time = 0;
     
-    int nodenum = get_node_num(time);
+    int nodenum = get_node_num(time)+1;
     
     _automation.insert(nodenum, node);
 

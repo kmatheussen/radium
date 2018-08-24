@@ -1062,6 +1062,17 @@ float getSeqblockAutomationValue(int nodenum, int automationnum, int seqblocknum
   return SEQBLOCK_AUTOMATION_get_value(seqblock->automations[automationnum], nodenum);
 }
 
+float getSeqblockAutomationValueForTime(int64_t time, int automationnum, int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  if (seqblock==NULL)
+    return -1;
+
+  VALIDATE_SEQBLOCK_AUTOMATIONNUM(-1);
+  VALIDATE_ENV_TIME(time, -1)
+
+  return SEQBLOCK_AUTOMATION_get_value_for_time(seqblock->automations[automationnum], time);
+}
+
 int64_t getSeqblockAutomationTime(int nodenum, int automationnum, int seqblocknum, int seqtracknum){
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
