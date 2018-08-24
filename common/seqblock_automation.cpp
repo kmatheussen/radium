@@ -412,7 +412,7 @@ public:
         return talloc_format("%.2f%%", value * 100.0);
 
       case SAT_STRETCH:
-        return talloc_format("%.2f X", get_stretch_from_automation(value));
+        return talloc_format("%.2fX", _seqblock->stretch_automation_compensation*get_stretch_from_automation(value)*_seqblock->t.stretch);
 
       default:
         R_ASSERT(false);
