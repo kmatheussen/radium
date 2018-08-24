@@ -46,6 +46,7 @@ double SEQBLOCK_AUTOMATION_get_default_value(struct SeqblockAutomation *seqblock
 double SEQBLOCK_AUTOMATION_get_max_value(struct SeqblockAutomation *seqblockenvelope);
 const char *SEQBLOCK_AUTOMATION_get_display_string(struct SeqblockAutomation *seqblockenvelope, double value);
 double SEQBLOCK_AUTOMATION_get_value(struct SeqblockAutomation *seqblockenvelope, int nodenum);
+double SEQBLOCK_AUTOMATION_get_value_for_time(struct SeqblockAutomation *seqblockenvelope, int64_t time);
 double SEQBLOCK_AUTOMATION_get_seqtime(struct SeqblockAutomation *seqblockenvelope, int nodenum);
 int SEQBLOCK_AUTOMATION_get_logtype(struct SeqblockAutomation *seqblockenvelope, int nodenum);
 int SEQBLOCK_AUTOMATION_get_num_nodes(struct SeqblockAutomation *seqblockenvelope);
