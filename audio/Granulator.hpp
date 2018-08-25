@@ -94,7 +94,7 @@ public:
     mus_float_t grain_length = 0.05;
     mus_float_t hop = 0.05;
     mus_float_t ramp = 0.4;
-    mus_float_t jitter = 1.0;
+    mus_float_t jitter = 0.0;
     //int max_size = 1;
 
     unsigned long seed = mus_rand_seed();

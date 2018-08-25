@@ -198,7 +198,7 @@ public:
       case SAT_GRAIN_JITTER:
         _min_value = 0.0;
         _max_value = 1.0;
-        _default_value = 1.0;
+        _default_value = 0.0;
         break;
 
       case SAT_GRAIN_RAMP:

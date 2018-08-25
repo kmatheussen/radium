@@ -554,7 +554,7 @@ struct Sample{
 
   double _grain_overlap = 2;
   double _grain_length = 50; // in ms
-  double _grain_jitter = 1.0;
+  double _grain_jitter = 0.0;
   double _grain_ramp = 0.33;
   
   DEFINE_ATOMIC(bool, _has_updates) = true;
