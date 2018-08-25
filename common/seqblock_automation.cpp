@@ -273,7 +273,7 @@ public:
 private:
 
   // TODO: This function needs to be memoized so that we don't have to calculate for every pixel when moving a seqblock with stretch automation.
-  TimeConversionTable get_time_conversion_table(void) {
+  TimeConversionTable get_time_conversion_table(void) const {
 
     R_ASSERT(_sat==SAT_STRETCH);
 
@@ -288,41 +288,67 @@ private:
     //const SoundPlugin *plugin = (SoundPlugin*) _seqtrack->patch->patchdata;
     //const double resample_ratio = SEQTRACKPLUGIN_get_resampler_ratio(plugin, _seqblock->sample_id);
 
-    double total_automation_time = 0;
     const double total_time = _seqblock->t.num_samples; //default_duration / resample_ratio; //2.0;//(s2-s1);
     int num_elements = total_time / RADIUM_BLOCKSIZE;
     
     int64_t *ret = (int64_t*)talloc_atomic(sizeof(int64_t)*(num_elements+1));
 
-    bool has_shown_error = false;
+    double total_automation_time = 0;
 
     //_automation.print();
 
-    for(int i=0 ; i<num_elements ; i++){
-      double stretch;
+    {
+      int nodepos = 1;
+      int num_nodes = _automation.size();
+      const AutomationNode *node1 = &_automation.at(0);
+      const AutomationNode *node2 = &_automation.at(1);
+      double time = 0;
+      double time_inc = (double)_seqblock->t.default_duration / (double)num_elements;
+      
+      for(int i=0 ; i<num_elements ; i++, time+=time_inc){
+        
+        double value;
+        
+        if (time < node1->time){
+          
+          value = node1->value;
+          //printf("BEFORE %d/%d: %f %f\n", i, num_elements, time, node1->time);
 
-      double value = 0.0;
-      //int64_t pos = i*RADIUM_BLOCKSIZE;
-      int64_t pos = scale(i, 0, num_elements, 0, _seqblock->t.default_duration);
-      if(_automation.RT_get_value(pos, value, NULL, true)==false){
-        if (!has_shown_error){
-          printf("222_RT_get_value returned false for %d (total: %f)\n", i, total_time);
-          has_shown_error=true;
+        } else {
+          
+          if (nodepos==num_nodes) {
+            
+          label1:      
+            value = node2->value;
+            //printf("AFTER %d/%d: %f %f\n", i, num_elements, time, node2->time);
+
+          } else if (time <= node2->time) {
+            
+          label2:
+            value = _automation.get_value(time, node1, node2);
+            
+          } else {
+            
+            do{
+              nodepos++;
+              if(nodepos==num_nodes){
+                goto label1;
+              }
+              node1 = node2;
+              node2 = &_automation.at(nodepos);
+            } while(time > node2->time);
+            
+            goto label2;
+          }
         }
-        stretch = 1.0;
-      }else
-        stretch = get_stretch_from_automation(value);
-
-      /*
-        speed = distance / time;
-        distance = speed * time
-        time = distance / speed;
-      */
-      ret[i] = total_automation_time;
-
-      //printf("%d: %d\n", i*RADIUM_BLOCKSIZE, (int)ret[i]);
-
-      total_automation_time += RADIUM_BLOCKSIZE / stretch;
+        
+        double stretch = get_stretch_from_automation(value);
+        ret[i] = total_automation_time;
+        
+        //printf("%d: %d\n", i*RADIUM_BLOCKSIZE, (int)ret[i]);
+        
+        total_automation_time += RADIUM_BLOCKSIZE / stretch;
+      }
     }
 
     ret[num_elements] = total_automation_time;
@@ -332,14 +358,14 @@ private:
     table.num_time_conversion_table_elements = num_elements;
     table.time_conversion_table = ret;
 
-    //printf("   DIFF: %f - %f\n", total_automation_time, total_time);
+    //printf("   DIFF: %f - %f. Compensation: %f\n", total_automation_time, total_time, table.stretch_automation_compensation);
 
     return table;
   }
 
 public:
 
-  void calculate_time_conversion_table(void){
+  void calculate_time_conversion_table(void) const {
     R_ASSERT_RETURN_IF_FALSE(_sat==SAT_STRETCH);
 
     TimeConversionTable table = get_time_conversion_table();
@@ -1037,12 +1063,7 @@ void SEQBLOCK_calculate_time_conversion_table(struct SeqBlock *seqblock, bool se
   auto *stretch = seqblock->automations[SAT_STRETCH];
   R_ASSERT_RETURN_IF_FALSE(stretch!=NULL);
 
-  if (seqblock_is_live) {
-    std::unique_ptr<SeqblockAutomation> c(stretch->make_copy());  // Make a copy so that we can access the RT functions safely from the main thread.
-    c->calculate_time_conversion_table();
-  } else {
-    stretch->calculate_time_conversion_table();
-  }
+  stretch->calculate_time_conversion_table();
 }
 
 

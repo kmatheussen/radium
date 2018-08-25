@@ -137,7 +137,10 @@ public:
     const double time2 = node2->time;
     
     const int logtype1 = node1->logtype;
-    
+
+    R_ASSERT_NON_RELEASE(time >= time1);
+    R_ASSERT_NON_RELEASE(time <= time2);
+
     if (logtype1==LOGTYPE_LINEAR) {
       
       if (time1==time2) {

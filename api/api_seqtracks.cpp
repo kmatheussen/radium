@@ -1042,7 +1042,7 @@ double getSeqblockAutomationDefaultValue(int automationnum, int seqblocknum, int
 }
 
 const_char* getSeqblockAutomationDisplayString(double value, int automationnum, int seqblocknum, int seqtracknum){
-  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);;
+  struct SeqBlock *seqblock = getSeqblockFromNum(seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return "unknown";
 
