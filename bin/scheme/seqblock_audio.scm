@@ -23,14 +23,14 @@
 
 (define (create-audio-seqblock-gui seqblocknum seqtracknum)
   (define seqblockid (<ra> :get-seqblock-id seqblocknum seqtracknum))
-  (define started #f)
+  (define has-started #f)
   (define main-layout (<gui> :vertical-layout));flow-layout))
 
   (define gain-group (<gui> :group "Gain"))
 
   (define gain-slider (<gui> :horizontal-slider "Gain (Db): " -35 (<ra> :get-seqblock-gain seqblockid) 35
                              (lambda (db)
-                               (when started
+                               (when has-started
                                  (<ra> :set-seqblock-gain (<ra> :db-to-gain db) seqblockid)))))
   
   (<gui> :add gain-group (<gui> :horizontal-layout
@@ -44,7 +44,7 @@
 
   (define volume-automation-checkbox (<gui> :checkbox "Volume automation" (<ra> :get-seqblock-automation-enabled 0 seqblockid) #f
                                             (lambda (ison)
-                                              (when started
+                                              (when has-started
                                                 (<ra> :set-seqblock-automation-enabled ison 0 seqblockid)))))
 
   (<gui> :add gain-group volume-automation-checkbox)
@@ -56,7 +56,7 @@
     (define resampler-group (<gui> :group (<-> "Resampling (ratio: " (two-decimal-string ratio) ")")))
 
     (define (set type)
-      (when started
+      (when has-started
         (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
         (c-display "type:" type ". seqtracknum:" seqtracknum)
         (define seqblocks (map (lambda (seqblock)
@@ -88,14 +88,14 @@
                                                     :curr 1
                                                     :max 100
                                                     :callback (lambda (val)
-                                                                (when started
+                                                                (when has-started
                                                                   (c-display "got" val)))))
         )
     
     (<gui> :add main-layout resampler-group)
 
-    (if (= 1.0 ratio)
-        (<gui> :set-enabled resampler-group #f))
+    ;;(if (= 1.0 ratio)
+    ;;    (<gui> :set-enabled resampler-group #f))
     )
   
   ;; Grain
@@ -111,7 +111,7 @@
     
   ;(<gui> :add main-layout (<gui> :horizontal-slider "Grain frequency (ms): " 0.1 grain-frequency 1000
   ;                               (lambda (val)
-  ;                                 (when started
+  ;                                 (when has-started
   ;                                   (c-display "  Grain Frequency FREQ1 (ms):" val)
   ;                                   (<ra> :set-seqblock-grain-frequency val seqblockid)))))
 
@@ -122,7 +122,7 @@
     (<gui> :set-enabled slider (not is-enabled))
     (define checkbox (<gui> :checkbox "" is-enabled #f
                                           (lambda (ison)
-                                            (when started
+                                            (when has-started
                                               (<ra> :set-seqblock-automation-enabled ison automationnum seqblockid)
                                               (<gui> :set-enabled slider (not ison))))))
     (<gui> :set-tool-tip checkbox "Automation enabled")
@@ -132,7 +132,7 @@
 
   (add-parameter 1 (<gui> :horizontal-slider "Grain overlap (X): " 0.1 grain-overlap 50
                           (lambda (val)
-                            (when started
+                            (when has-started
                               ;;(set! grain-frequency (get-grain-frequency val))
                               ;;(c-display "  Grain OVERLAP (X):" grain- ". overlap:" val)
                               ;;(<ra> :set-seqblock-grain-frequency grain-frequency seqblockid)
@@ -142,7 +142,7 @@
   (add-parameter 2 (<gui> :horizontal-layout
                           (<gui> :horizontal-slider "Grain length (ms): " 0.1 grain-length 1000
                                  (lambda (val)
-                                   (when started
+                                   (when has-started
                                      (c-display "  Grain Frequency LENGTH (ms):" val)
                                      ;;(set! grain-length val)
                                      ;;(set! grain-frequency (get-grain-frequency grain-overlap))
@@ -163,7 +163,7 @@
     
   (define jitter-slider (<gui> :horizontal-slider get-grain-jitter-text 0 (jitter->slider (<ra> :get-seqblock-grain-jitter seqblockid)) 100
                                (lambda (val)
-                                 (when started
+                                 (when has-started
                                    (set! val (slider->jitter val))
                                    (c-display "  Grain Frequency JITTER (%):" (* 100 val))
                                    (<ra> :set-seqblock-grain-jitter val seqblockid)))))
@@ -172,13 +172,28 @@
 
   (add-parameter 4 (<gui> :horizontal-slider "Grain ramp (%): " 0 (* 100 (<ra> :get-seqblock-grain-ramp seqblockid)) 50
                           (lambda (val)
-                            (when started
+                            (when has-started
                               (set! val (/ val 100.0))
                               (c-display "  Grain RAMP (%):" (* 100 val))
                               (<ra> :set-seqblock-grain-ramp val seqblockid)))))
   
-
   (<gui> :add main-layout grain-group)
+
+
+  (let ((stretch-checkbox (<gui> :checkbox "Stretch automation" 
+                                 (<ra> :get-seqblock-automation-enabled 5 seqblockid)
+                                 #f
+                                 (lambda (ison)
+                                   (when has-started
+                                     (<ra> :set-seqblock-automation-enabled ison 5 seqblockid)))))
+        (speed-checkbox (<gui> :checkbox "Speed automation" 
+                               (<ra> :get-seqblock-automation-enabled 6 seqblockid)
+                               #f
+                               (lambda (ison)
+                                 (when has-started
+                                   (<ra> :set-seqblock-automation-enabled ison 6 seqblockid))))))
+    (<gui> :add main-layout
+           (<gui> :horizontal-layout stretch-checkbox speed-checkbox)))
 
   (when #f
     (define apply-button (<gui> :button "Apply!"
@@ -191,7 +206,7 @@
                                  (lambda ()
                                    (<gui> :close main-layout))))
   
-  (set! started #t)
+  (set! has-started #t)
 
   (define old-gui (*seqblock-guis* seqblockid))
   (if old-gui
