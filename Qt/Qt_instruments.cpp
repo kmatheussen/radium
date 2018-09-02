@@ -107,7 +107,7 @@ namespace{
 class Audio_instrument_widget;
 }
 
-static void tab_name_has_changed(QWidget *tab, QString new_name);
+static bool tab_name_has_changed(QWidget *tab, QString new_name);
 //static void tab_selected();
 static MIDI_instrument_widget *get_midi_instrument_widget(struct Patch *patch);
 //static Audio_instrument_widget *get_audio_instrument_widget_from_patchdata(void *patchdata);
@@ -859,11 +859,11 @@ void GFX_update_instrument_patch_gui(struct Patch *patch){
 #endif
 }
 
-static void tab_name_has_changed(QWidget *tab, QString new_name) {
-  R_ASSERT_RETURN_IF_FALSE(g_currpatch != NULL);
+static bool tab_name_has_changed(QWidget *tab, QString new_name) {
+  R_ASSERT_RETURN_IF_FALSE2(g_currpatch != NULL, false);
   
   if (g_currpatch->name_is_edited)
-    return;
+    return false;
 
   if(new_name==""){
     //name_widget->setText("pip");
@@ -871,11 +871,14 @@ static void tab_name_has_changed(QWidget *tab, QString new_name) {
   }
 
   {
+    printf("         tab_name_has_changed -%s-\n", new_name.toUtf8().constData());
     PATCH_set_name(g_currpatch, new_name.toUtf8().constData());
 
     struct Tracker_Windows *window = root->song->tracker_windows;
     window->must_redraw = true; // update track headers to the new name
   }
+
+  return true;
 }
 
 #if 0
