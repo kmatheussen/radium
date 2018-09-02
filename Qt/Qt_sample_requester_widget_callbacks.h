@@ -807,7 +807,9 @@ public slots:
   void on_file_list_itemActivated ( QListWidgetItem * item ){
     bool was_normal_file = item!=NULL && !item->text().endsWith("/");
     //on_file_list_itemPressed(item);
+
     handle_item_pressed(item->text());
+
     if(was_normal_file){
 
       QString name;
@@ -817,12 +819,18 @@ public slots:
       else
         name = item->text();
 
-      _instrument_name_widget->setText(name);
+      R_ASSERT(g_currpatch==_patch.data());
 
       //audio_instrument_widget->on_name_widget_editingFinished()
       file_list->setCurrentItem(NULL);
-      tab_name_has_changed(_instrument_widget,name);
-      CHIP_update((SoundPlugin*)_patch->patchdata);
+
+      R_ASSERT(g_currpatch==_patch.data());
+
+      if (tab_name_has_changed(_instrument_widget,name)) {
+        _instrument_name_widget->update(); //setText(name);
+        CHIP_update((SoundPlugin*)_patch->patchdata);
+      }
+
       set_editor_focus();
     }
   }
