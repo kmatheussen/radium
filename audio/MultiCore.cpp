@@ -503,8 +503,11 @@ static int get_num_cpus_from_config(void){
   if (default_num_cpus==-1)
     default_num_cpus = QThread::idealThreadCount();
 
-  if (default_num_cpus<1 || default_num_cpus>64) // ensure sane value
+  if (default_num_cpus<1)
     default_num_cpus = 1;
+
+  if (default_num_cpus>25)
+    default_num_cpus = 256; // ensure sane value
 
   return SETTINGS_read_int32(settings_key, default_num_cpus);
 }

@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -654,7 +654,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>16</number>
+             <number>64</number>
             </property>
             <property name="value">
              <number>1</number>
@@ -7033,7 +7033,7 @@ you should check this box.
             <x>0</x>
             <y>0</y>
             <width>614</width>
-            <height>564</height>
+            <height>562</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -9647,7 +9647,7 @@ you should check this box.
                <x>0</x>
                <y>0</y>
                <width>983</width>
-               <height>298</height>
+               <height>296</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -9864,8 +9864,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
   <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>
