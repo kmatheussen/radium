@@ -337,13 +337,13 @@ static void apply_patchvoice_state(struct PatchVoice &voice, hash_t *state){
   voice.volume = HASH_get_float(state, "volume");
   voice.start = HASH_get_float(state, "start");
   voice.length = HASH_get_float(state, "length");
-  
+
   if (HASH_has_key(state, "pan"))
     voice.pan = HASH_get_float(state, "pan");
   
   if (HASH_has_key(state, "chance"))
-    voice.pan = HASH_get_int(state, "chance");
-  
+    voice.chance = HASH_get_int(state, "chance");
+
   voice.time_format = (TimeFormat)HASH_get_int(state, "time_format");
 
   if (HASH_has_key(state, "only_set_new_transpose_when_note_on"))
