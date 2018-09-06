@@ -1,34 +1,70 @@
---- clm.c	2017-11-30 20:03:30.000000000 +0100
-+++ clm_new.c	2018-07-18 14:07:47.488878939 +0200
-@@ -13786,6 +13786,12 @@
- static mus_long_t grn_set_location(mus_any *ptr, mus_long_t val) {((grn_info *)ptr)->randx = (unsigned long)val; return(val);}
+--- clm_org.c	2018-09-06 10:21:37.500575870 +0200
++++ clm.c	2018-09-06 10:20:18.738221969 +0200
+@@ -13781,8 +13781,21 @@
+ static mus_float_t grn_scaler(mus_any *ptr) {return(((grn_info *)ptr)->amp);}
+ static mus_float_t grn_set_scaler(mus_any *ptr, mus_float_t val) {((grn_info *)ptr)->amp = val; return(val);}
  
- static mus_float_t grn_jitter(mus_any *ptr) {return(((grn_info *)ptr)->jitter);}
-+static mus_float_t grn_set_jitter(mus_any *ptr, mus_float_t val){
-+  grn_info *gen = (grn_info *)ptr;
-+  gen->jitter = val;
-+  gen->s20 = 2 * (int)(val * gen->output_hop);
-+  gen->s50 = (int)(val * gen->output_hop * 0.4);
++static void grn_set_s20_and_s50(grn_info *gen)
++{
++  gen->s20 = 2 * (int)(gen->jitter * gen->output_hop);  /* was *.05 here and *.02 below */
++   /* added "2 *" 21-Mar-05 and replaced irandom with (grn)mus_irandom below */
++  gen->s50 = (int)(gen->jitter * gen->output_hop * 0.4); 
++}
++
+ static mus_float_t grn_frequency(mus_any *ptr) {return(((mus_float_t)((grn_info *)ptr)->output_hop) / (mus_float_t)sampling_rate);}
+-static mus_float_t grn_set_frequency(mus_any *ptr, mus_float_t val) {((grn_info *)ptr)->output_hop = (int)((mus_float_t)sampling_rate * val); return(val);}
++static mus_float_t grn_set_frequency(mus_any *ptr, mus_float_t val)
++{
++  grn_info *gen = ((grn_info *)ptr);
++  gen->output_hop = (int)((mus_float_t)sampling_rate * val);
++  grn_set_s20_and_s50(gen);
++  return(val);
 +}
  
- static mus_float_t run_granulate(mus_any *ptr, mus_float_t unused1, mus_float_t unused2) {return(mus_granulate(ptr, NULL));}
+ static void *grn_closure(mus_any *rd) {return(((grn_info *)rd)->closure);}
+ static void *grn_set_closure(mus_any *rd, void *e) {((grn_info *)rd)->closure = e; return(e);}
+@@ -13802,7 +13815,12 @@
+ }
  
-@@ -13830,7 +13836,7 @@
-   MUS_NOT_SPECIAL,
-   &grn_closure,
-   0,
--  &grn_jitter, 0, 0, 0, 0, 0, 
-+  &grn_jitter, &grn_set_jitter, 0, 0, 0, 0, 
-   &grn_hop, &grn_set_hop, 
-   &grn_ramp, &grn_set_ramp,
-   0, 0, 0, 0, 
-@@ -13882,7 +13888,8 @@
-   spd->s50 = (int)(jitter * sampling_rate * hop * 0.4);
+ static mus_long_t grn_hop(mus_any *ptr) {return(((grn_info *)ptr)->output_hop);}
+-static mus_long_t grn_set_hop(mus_any *ptr, mus_long_t val) {((grn_info *)ptr)->output_hop = (int)val; return(val);}
++static mus_long_t grn_set_hop(mus_any *ptr, mus_long_t val) {
++  grn_info *gen = ((grn_info *)ptr);
++  gen->output_hop = (int)val;
++  grn_set_s20_and_s50(gen);
++  return(val);
++}
+ 
+ static mus_long_t grn_ramp(mus_any *ptr) {return(((grn_info *)ptr)->rmp);}
+ 
+@@ -13825,8 +13843,7 @@
+ { 
+   grn_info *gen = (grn_info *)ptr; 
+   gen->jitter = val; 
+-  gen->s20 = 2 * (int)(val * gen->output_hop); 
+-  gen->s50 = (int)(val * gen->output_hop * 0.4); 
++  grn_set_s20_and_s50(gen);
+   return(val);
+ } 
+ 
+@@ -13921,9 +13938,7 @@
+   spd->jitter = jitter;
+   spd->output_hop = (int)(hop * sampling_rate);
+   spd->input_hop = (int)((mus_float_t)(spd->output_hop) / expansion);
+-  spd->s20 = 2 * (int)(jitter * sampling_rate * hop); /* was *.05 here and *.02 below */
+-   /* added "2 *" 21-Mar-05 and replaced irandom with (grn)mus_irandom below */
+-  spd->s50 = (int)(jitter * sampling_rate * hop * 0.4);
++  grn_set_s20_and_s50(spd);
    spd->out_data_len = outlen;
    spd->out_data = (mus_float_t *)calloc(spd->out_data_len, sizeof(mus_float_t));
--  spd->in_data_len = outlen + spd->s20 + 1;
-+  //spd->in_data_len = outlen + spd->s20 + 1;
-+  spd->in_data_len = outlen + (sampling_rate * hop) + 1;
-   spd->in_data = (mus_float_t *)malloc(spd->in_data_len * sizeof(mus_float_t));
-   spd->rd = input; 
-   spd->block_rd = NULL;
+   /* spd->in_data_len = outlen + spd->s20 + 1; */
+@@ -14104,7 +14119,8 @@
+       
+       /* set location of next grain calculation */
+       spd->ctr = 0;
+-      spd->cur_out = spd->output_hop + grn_irandom(spd, 2 * spd->s50) - (spd->s50 >> 1); 
++      spd->cur_out = spd->output_hop + grn_irandom(spd, 2*spd->s50) - spd->s50;
++      //spd->cur_out = spd->output_hop + grn_irandom(spd, 2 * spd->s50) - spd->s50;
+       /* this form suggested by Marc Lehmann */
+       /* "2 *" added 21-Mar-05 and irandom replaced with mus_irandom, grn_irandom 28-Feb-06 */
+       /* use of gen-local random sequence suggested by Kjetil Matheussen (to keep multi-channel grns in sync) */
