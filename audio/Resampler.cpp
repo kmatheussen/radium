@@ -178,23 +178,41 @@ struct SincResampler : public Resampler{
   }
 
   int read(double ratio,int num_frames, float *out) override {
+
+    // sndlib only handle ratios of 1/256 -> 256
+    {
+      if (ratio <= 1/256.0){
+        RT_message("Resampler: Ratio less than 1/256: %f", ratio);
+#if !defined(RELEASE)
+        abort();
+#endif
+        ratio = 1/256.0;
+      }
+      if (ratio > 256.0){
+        RT_message("Resampler: Ratio higher than 256: %f", ratio);
+#if !defined(RELEASE)
+        abort();
+#endif
+        ratio = 256.0;
+      }
+    }
+    
     if(_last_ratio != ratio){
-      if(_last_ratio >= 0.0)
+      if(_last_ratio >= 0.0){        
         src_set_ratio(_src_state, ratio);
+      }
       _last_ratio = ratio;
     }
 
     int ret = (int)src_callback_read(_src_state, ratio, num_frames, out);
 
     if(ret==0){
-#if !defined(RELEASE)
       if(src_error(_src_state)!=0)
-        RT_message("Error? %d: \"%s\". ratio: %f\n",
-                   src_error(_src_state),
-                   src_strerror(src_error(_src_state)),
-                   ratio);
-#endif
-      return 0;
+        RError("libsamplerate returned an error: %d: \"%s\". ratio: %f\n",
+               src_error(_src_state),
+               src_strerror(src_error(_src_state)),
+               ratio);
+      return R_MIN(num_frames, 1); // Return 1 instead of 0 to maybe avoid crashes here and there.
     }else
       return ret;
   }
