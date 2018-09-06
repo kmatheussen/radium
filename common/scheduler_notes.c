@@ -174,9 +174,9 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
 
   } else {
 
-    if (note->chance==0x100)
+    if (note->chance==MAX_PATCHVOICE_CHANCE)
       doit = true;
-    else if (note->chance > rnd(0x100))
+    else if (note->chance > rnd(MAX_PATCHVOICE_CHANCE))
       doit = true;
     else
       doit = false;

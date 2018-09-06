@@ -242,32 +242,42 @@ void PATCH_handle_fx_when_theres_a_new_patch_for_track(struct Blocks *block, str
   old_patch->instrument->handle_fx_when_a_patch_has_been_replaced(old_patch, new_patch, block, track, has_paused);
 }
 
+// Note: patchvoice is nulled out before calling
+void PATCHVOICE_set_defaults(struct PatchVoice *voice, int voicenum){
+  if (voicenum==0)
+    voice->is_on=true;
+
+  switch(voicenum){
+    case 0:
+      voice->is_on=true;
+      break;
+    case 1:
+      voice->transpose=12;
+      break;
+    case 2:
+      voice->transpose=19;
+      break;
+    case 3:
+      voice->transpose=24;
+      break;
+    case 4:
+      voice->transpose=-12;
+      break;
+    case 5:
+      voice->transpose=-24;
+      break;
+    case 6:
+      voice->transpose=0.25;
+      break;
+  }
+
+  voice->time_format = TIME_IN_MS;
+  voice->chance = MAX_PATCHVOICE_CHANCE;
+}
 
 void PATCH_init_voices(struct Patch *patch){
-  patch->voices[0].is_on=true;
-
-  patch->voices[1].transpose=12;
-  patch->voices[2].transpose=19;
-  patch->voices[3].transpose=24;
-  patch->voices[4].transpose=-12;
-  patch->voices[5].transpose=-24;
-  patch->voices[6].transpose=0.25;
-
-  patch->voices[0].time_format = TIME_IN_MS;
-  patch->voices[1].time_format = TIME_IN_MS;
-  patch->voices[2].time_format = TIME_IN_MS;
-  patch->voices[3].time_format = TIME_IN_MS;
-  patch->voices[4].time_format = TIME_IN_MS;
-  patch->voices[5].time_format = TIME_IN_MS;
-  patch->voices[6].time_format = TIME_IN_MS;
-  
-  patch->voices[0].chance = 256;
-  patch->voices[1].chance = 256;
-  patch->voices[2].chance = 256;
-  patch->voices[3].chance = 256;
-  patch->voices[4].chance = 256;
-  patch->voices[5].chance = 256;
-  patch->voices[6].chance = 256;
+  for(int i=0;i<NUM_PATCH_VOICES;i++)
+    PATCHVOICE_set_defaults(&patch->voices[i], i);
 }
 
 struct Patch *PATCH_alloc(void){
@@ -1097,7 +1107,7 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
   for(i=0;i<NUM_PATCH_VOICES;i++){
     const struct PatchVoice &voice = patch->voices[i];
 
-    if(voice.is_on==true && (voice.chance==256 || voice.chance > rnd(256))){
+    if(voice.is_on==true && (voice.chance==MAX_PATCHVOICE_CHANCE || voice.chance > rnd(MAX_PATCHVOICE_CHANCE))){
 
       float voice_notenum = note.pitch + voice.transpose;
       if (voice_notenum > 0) {

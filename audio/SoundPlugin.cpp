@@ -1017,6 +1017,26 @@ static void update_instrument_gui(struct SoundPlugin *plugin){
   }
 }
 
+namespace{
+  struct Voice{
+    struct PatchVoice _default_voice = {};
+    struct PatchVoice *_voice;
+    
+    Voice(const struct SoundPlugin *plugin, int num){
+      if (plugin->patch==NULL) {
+
+        PATCHVOICE_set_defaults(&_default_voice, num);
+        _voice = &_default_voice;
+        
+      } else {
+        
+        _voice = &plugin->patch->voices[num];
+        
+      }
+    }
+  };
+}
+                   
 static void set_voice_ONOFF(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
   if (plugin->patch != NULL) {
     bool new_val = native_value>=0.5;
@@ -1028,12 +1048,11 @@ static void set_voice_ONOFF(struct SoundPlugin *plugin, int num, float &native_v
     }
   }
 }
-                      
+
 static float get_voice_ONOFF(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
-  if (plugin->patch != NULL) {
-    return plugin->patch->voices[num].is_on ? 1.0 : 0.0;
-  } else
-    return num==0 ? 1.0 : 0.0;
+  const Voice voice(plugin, num);
+
+  return voice._voice->is_on ? 1.0 : 0.0;
 }
 
 static void set_voice_value(struct SoundPlugin *plugin, float *voice_value, float min_native, float max_native, float &native_value, float &scaled_value, enum ValueFormat value_format){
@@ -1073,10 +1092,9 @@ static void set_voice_TRANSPOSE(struct SoundPlugin *plugin, int num, float &nati
 }
                       
 static float get_voice_TRANSPOSE(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
-  if (plugin->patch == NULL)
-    return 0;
-  else
-    return get_voice_value(plugin->patch->voices[num].transpose, -100, 100, value_format);
+  const Voice voice(plugin, num);
+
+  return get_voice_value(voice._voice->transpose, -100, 100, value_format);
 }
 
 static void set_voice_VOLUME(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
@@ -1091,10 +1109,9 @@ static void set_voice_VOLUME(struct SoundPlugin *plugin, int num, float &native_
 }
                       
 static float get_voice_VOLUME(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
-  if (plugin->patch == NULL)
-    return 0;
-  else
-    return get_voice_value(plugin->patch->voices[num].volume, MIN_PATCHVOICE_VOLUME, MAX_PATCHVOICE_VOLUME, value_format);
+  const Voice voice(plugin, num);
+
+  return get_voice_value(voice._voice->volume, MIN_PATCHVOICE_VOLUME, MAX_PATCHVOICE_VOLUME, value_format);
 }
 
 static void set_voice_START(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
@@ -1105,10 +1122,9 @@ static void set_voice_START(struct SoundPlugin *plugin, int num, float &native_v
 }
                       
 static float get_voice_START(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
-  if (plugin->patch == NULL)
-    return 0;
-  else
-    return get_voice_value(plugin->patch->voices[num].start, 0, 1000, value_format);
+  const Voice voice(plugin, num);
+
+  return get_voice_value(voice._voice->start, 0, 1000, value_format);
 }
 
 static void set_voice_LENGTH(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
@@ -1119,10 +1135,9 @@ static void set_voice_LENGTH(struct SoundPlugin *plugin, int num, float &native_
 }
                       
 static float get_voice_LENGTH(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
-  if (plugin->patch == NULL)
-    return 0;
-  else
-    return get_voice_value(plugin->patch->voices[num].length, 0, 1000, value_format);
+  const Voice voice(plugin, num);
+
+  return get_voice_value(voice._voice->length, 0, 1000, value_format);
 }
 
 static void set_voice_PAN(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
@@ -1138,10 +1153,9 @@ static void set_voice_PAN(struct SoundPlugin *plugin, int num, float &native_val
 }
                       
 static float get_voice_PAN(const struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
-  if (plugin->patch == NULL)
-    return 0;
-  else
-    return get_voice_value(plugin->patch->voices[num].pan, MIN_PATCHVOICE_PAN, MAX_PATCHVOICE_PAN, value_format);
+  const Voice voice(plugin, num);
+
+  return get_voice_value(voice._voice->pan, MIN_PATCHVOICE_PAN, MAX_PATCHVOICE_PAN, value_format);
 }
 
 static void set_voice_CHANCE(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
@@ -1164,13 +1178,9 @@ static void set_voice_CHANCE(struct SoundPlugin *plugin, int num, float &native_
 }
                       
 static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFormat value_format){
-  if (plugin->patch==NULL)
-    return 1;
-  
-  if (value_format==EFFECT_FORMAT_NATIVE)
-    return plugin->patch->voices[num].chance;
-  else
-    return scale_double(plugin->patch->voices[num].chance, 0, 256, 0, 1);
+  const Voice voice(plugin, num);
+
+  return get_voice_value(voice._voice->chance, MIN_PATCHVOICE_CHANCE, MAX_PATCHVOICE_CHANCE, value_format);
 }
 
 
