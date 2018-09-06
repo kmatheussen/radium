@@ -6466,7 +6466,8 @@
                                                  (let* ((pos (<ra> :get-seq-gridded-time (get-sequencer-pos-from-x X) seqtracknum (<ra> :get-seq-block-grid-type))))
                                                    ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong_24000.wav") pos))))
                                                    ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
-                                                   (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
+                                                   ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
+                                                   (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/390514__tylean__counting-1-to-10.wav") pos))))
                                                    ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
                                                    )
                                                ;;
@@ -6686,15 +6687,14 @@
                                                              (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
                                                                (<ra> :set-audiofile-color color filename))))))
                                                
-                                               (list "Enable/disable editor tracks"
-                                                     :enabled (and blocknum seqblocknum)
-                                                     (lambda ()
-                                                       (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))
-
-                                               (list "Configure audio file parameters"
-                                                     :enabled (and seqblocknum (not blocknum))
-                                                     (lambda ()
-                                                       (create-audio-seqblock-gui seqblocknum seqtracknum)))
+                                               (if (not blocknum)
+                                                   '()
+                                                   (list
+                                                    "-----------------Editor Seqblock"
+                                                    (list "Enable/disable editor tracks"
+                                                          :enabled (and blocknum seqblocknum)
+                                                          (lambda ()
+                                                            (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))))
 
                                                ;;(list "Reset stretch"
                                                ;;      :enabled (and seqblocknum
@@ -6712,16 +6712,24 @@
                                                ;;      (lambda ()
                                                ;;        #f))
 
-                                               "-----------------Seqblock Automation"
-                                               
-                                               (map (lambda (automationnum)
-                                                      (list (<-> (<ra> :get-seqblock-automation-name automationnum) " automation")
-                                                            :check (and seqblocknum (<ra> :get-seqblock-automation-enabled automationnum (<ra> :get-seqblock-id seqblocknum seqtracknum)))
-                                                            :enabled seqblocknum
-                                                            (lambda (enable)
-                                                              (<ra> :set-seqblock-automation-enabled enable automationnum (<ra> :get-seqblock-id seqblocknum seqtracknum)))))
-                                                    (iota (<ra> :get-num-seqblock-automations seqblocknum seqtracknum)))))
-
+                                               (if blocknum
+                                                   '()
+                                                   (list
+                                                    "-----------------Audio Seqblock"
+                                                    
+                                                    (map (lambda (automationnum)
+                                                           (list (<-> (<ra> :get-seqblock-automation-name automationnum) " automation")
+                                                                 :check (and seqblocknum (<ra> :get-seqblock-automation-enabled automationnum (<ra> :get-seqblock-id seqblocknum seqtracknum)))
+                                                                 :enabled seqblocknum
+                                                                 (lambda (enable)
+                                                                   (<ra> :set-seqblock-automation-enabled enable automationnum (<ra> :get-seqblock-id seqblocknum seqtracknum)))))
+                                                         (butlast (iota (<ra> :get-num-seqblock-automations seqblocknum seqtracknum))))
+                                                    
+                                                    (list "Settings"
+                                                          :enabled (and seqblocknum (not blocknum))
+                                                          (lambda ()
+                                                            (create-audio-seqblock-gui seqblocknum seqtracknum)))))))
+                                          
                                           
 
                                           "-----------------Seqtrack Automation"

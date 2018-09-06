@@ -54,7 +54,7 @@ private:
       _num_frames = 0;
       _pos = 0;
     }
-    
+
     float get_sample(void){
       if (_pos==_num_frames){
         _samples = _callback->get_next_granulator_sample_block(_ch, _num_frames);
@@ -110,10 +110,14 @@ public:
                                                 hop,
                                                 ramp,
                                                 jitter,
-                                                (max_grain_size_in_seconds + max_grain_frequency_in_seconds) * pc->pfreq,
+                                                64, //RADIUM_BLOCKSIZE * 2,  // [1]
                                                 NULL,
                                                 &_buffers[ch]);
-
+      /*
+        [1] We get lag in speed automation if this value is too high.
+        Another problem with a too high value here is cluttered CPU usage since we read a lot of data less often rather than reading less data often.
+        Earlier we used: (max_grain_size_in_seconds + max_grain_frequency_in_seconds) * pc->pfreq
+       */
       mus_set_location(_clm_granulators[ch], seed); // make sure all channels use the same random seed.
     }
     
@@ -123,9 +127,16 @@ public:
     for(int ch=0;ch<_num_ch;ch++)
       mus_free(_clm_granulators[ch]);
     
+    free(_clm_granulators);
+      
     delete[] _buffers;
   }
-      
+
+  void reset(void){
+    for(int ch=0;ch<_num_ch;ch++)
+      mus_reset(_clm_granulators[ch]);
+  }
+  
   void RT_process(float **output2, int num_frames) const {
 
     for(int ch=0;ch<_num_ch;ch++){
