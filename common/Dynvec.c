@@ -74,11 +74,11 @@ void DYN_save(disk_t *file, const dyn_t dyn){
       DYNVEC_save(file, *dyn.array);
     break;
   case RATIO_TYPE:
-    RError("Func type not supported when saving hash to disk");
-    break;
-  case FUNC_TYPE:
     DISK_printf(file,"%" PRId64 "\n",dyn.ratio->numerator);
     DISK_printf(file,"%" PRId64 "\n",dyn.ratio->denominator);
+    break;
+  case FUNC_TYPE:
+    RError("Func type not supported when saving hash to disk");
     break;
   case BOOL_TYPE:
     DISK_printf(file,"%d\n",dyn.bool_number ? 1 : 0);
