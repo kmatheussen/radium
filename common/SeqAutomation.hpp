@@ -132,6 +132,16 @@ public:
     return at(size()-1);
   }
   
+  double get_value(double time, double time1, double time2, int logtype1, double value1, double value2) const {
+    if (logtype1==LOGTYPE_LINEAR) {
+      if (time1==time2)        
+        return (value1 + value2) / 2.0;
+      else
+        return scale_double(time, time1, time2, value1, value2);
+    } else
+      return value1;
+  }
+
   double get_value(double time, const T *node1, const T *node2, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL) const {
     const double time1 = node1->time;
     const double time2 = node2->time;
@@ -141,26 +151,10 @@ public:
     R_ASSERT_NON_RELEASE(time >= time1);
     R_ASSERT_NON_RELEASE(time <= time2);
 
-    if (logtype1==LOGTYPE_LINEAR) {
-      
-      if (time1==time2) {
-        
-        return (node1->value + node2->value) / 2.0;
-        
-      } else {
-        
-        if (custom_get_value != NULL)        
-          return custom_get_value(time, node1, node2);
-        else
-          return scale_double(time, time1, time2, node1->value, node2->value);
-        
-      }
-      
-    } else {
-      
-      return node1->value;
-      
-    }
+    if (custom_get_value!=NULL && logtype1==LOGTYPE_LINEAR && time1!=time2)
+      return custom_get_value(time, node1, node2);
+    else
+      return get_value(time, time1, time2, logtype1, node1->value, node2->value);
   }
 
   double get_value(double time, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL) const {
@@ -685,6 +679,80 @@ public:
     return DYN_create_array(ret);
   }
 
+};
+
+template <typename T> 
+class SeqAutomationIterator{
+  const SeqAutomation<T> &_automation;
+
+#if !defined(RELEASE)
+  double _prev_time = -1;
+#endif
+
+  int _size;
+  int _n;
+  const T *_node2 = NULL;
+  double _time1;
+  double _time2;
+  double _value1;
+  double _value2;
+  int _logtype1;
+
+public:
+  SeqAutomationIterator(const SeqAutomation<T> &automation)
+    : _automation(automation)
+    , _size(automation.size())
+  {
+    R_ASSERT_RETURN_IF_FALSE(_size > 0);
+
+    const T &_node1 = _automation.at(0);
+    _time1 = _node1.time;
+    _value1 = _node1.value;
+    _logtype1 = _node1.logtype;
+
+    _n = 1;
+
+    if (_size >= 2){
+      _node2 = &_automation.at(_n);
+      _time2 = _node2->time;
+      _value2 = _node2->value;
+    } else {
+      _value2 = _value1; // Used in case there is only one node.
+    }
+  }
+
+  double get_value(double time){
+#if !defined(RELEASE)
+    if(time<0)
+      abort();
+    if(time<=_prev_time)
+      abort();
+    _prev_time = time;
+#endif
+
+    if (_n==_size)
+      return _value2;
+
+    if (time < _time1)
+      return _value1;
+
+    while(time > _time2){
+      _n++;
+
+      if (_n==_size)
+        return _value2;
+
+      _time1 = _time2;
+      _value1 = _value2;
+      _logtype1 = _node2->logtype;
+
+      _node2 = &_automation.at(_n);
+      _time2 = _node2->time;
+      _value2 = _node2->value;
+    }
+
+    return _automation.get_value(time, _time1, _time2, _logtype1, _value1, _value2);
+  }
 };
 
 }

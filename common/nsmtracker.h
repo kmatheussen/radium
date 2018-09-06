@@ -390,7 +390,6 @@ static inline double midi_to_hz(double midi){
 }
 #endif
 
-
 typedef struct{
   const char *filename;
   const char *function_name;
@@ -670,6 +669,31 @@ struct ListHeaderP{
 *********************************************************************/
 
 #include "playerclass.h"
+
+static inline double ms_to_s(double ms){
+  return ms / 1000.0;
+}
+
+static inline double s_to_ms(double s){
+  return s * 1000.0;
+}
+
+static inline double frames_to_s(double frames){
+  return frames / (double) pc->pfreq;
+}
+
+static inline double s_to_frames(double s){
+  return s * (double)pc->pfreq;
+}
+
+static inline double ms_to_frames(double ms){
+  return s_to_frames(ms_to_s(ms));
+}
+
+static inline double frames_to_ms(double frames){
+  return s_to_ms(frames_to_s(frames));
+}
+
 
 
 
@@ -2667,6 +2691,7 @@ enum Seqblock_Automation_Type{
   SAT_GRAIN_JITTER,
   SAT_GRAIN_RAMP,
   SAT_STRETCH,
+  SAT_SPEED,
   NUM_SATS
 };
 
@@ -2686,6 +2711,8 @@ static inline const char *sat_to_string(enum Seqblock_Automation_Type sat){
       return "Grain Ramp";
     case SAT_STRETCH:
       return "Stretch";
+    case SAT_SPEED:
+      return "Speed";
     default:
       R_ASSERT(false);
       return "Unknown";
@@ -2731,10 +2758,10 @@ struct SeqBlock{
   struct SeqblockAutomation *automations[NUM_SATS];
 
   double stretch_automation_compensation;
+  double speed_automation_compensation;
 
   int num_time_conversion_table_elements;
   int64_t *time_conversion_table; // Maps sample position -> sample position. Used when automating stretch.
-
 
   /*
   struct SeqblockAutomation *envelope;

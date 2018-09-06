@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "hashmap_proc.h"
 #include "patch_proc.h"
 #include "seqtrack_proc.h"
+#include "player_pause_proc.h"
 #include "instruments_proc.h"
 #include "Vector.hpp"
 #include "Array.hpp"
@@ -35,6 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundProducer_proc.h"
 //#include "../audio/Envelope.hpp"
 #include "../audio/Juce_plugins_proc.h"
+
+#include "../api/api_proc.h"
 
 #include "song_tempo_automation_proc.h"
 
@@ -135,9 +138,10 @@ static AutomationNode create_node_from_state(hash_t *state, double state_sampler
 
 
 struct TimeConversionTable{
-  double stretch_automation_compensation;
-  int num_time_conversion_table_elements;
-  int64_t *time_conversion_table; // Array that maps seqtime -> sample position. (necessary when automating stretch or speed)    
+  double stretch_automation_compensation = 1.0;
+  double speed_automation_compensation = 1.0;
+  int num_time_conversion_table_elements = 0;
+  int64_t *time_conversion_table = NULL; // Array that maps seqtime -> sample position. (necessary when automating stretch or speed)    
 };
 
 struct SeqblockAutomation : public radium::NodeFromStateProvider<AutomationNode>{
@@ -213,6 +217,12 @@ public:
         _default_value = 0.0;
         break;
 
+      case SAT_SPEED:
+        _min_value = -MAX_STRETCH + 1;
+        _max_value = MAX_STRETCH - 1;
+        _default_value = 0.0;
+        break;
+
       default:
         R_ASSERT(false);
         break;
@@ -238,7 +248,7 @@ public:
       _automation.add_node(create_node(duration, _default_value, LOGTYPE_LINEAR));
     }
 
-    if (_sat==SAT_STRETCH){
+    if (_sat==SAT_STRETCH || _sat==SAT_SPEED){
       _automation.new_rt_data_has_been_created_data = this;
       _automation.new_rt_data_has_been_created = SeqblockAutomation::new_rt_data_has_been_created;
     }
@@ -257,14 +267,21 @@ public:
     assert_no_curr_seqtrack();
   }
 
-  double get_stretch_from_automation(double value) const {
+  static double get_stretch_from_automation(double value) {
     if (value < 0.0)
       return 1.0 / (1.0 - value);
     else
       return value + 1.0;
   }
 
-  struct SeqblockAutomation *make_copy(void) const {
+  static double get_speed_from_automation(double value) {
+    if (value < 0.0)
+      return 1.0 - value;
+    else
+      return 1.0 / (1.0 + value);
+  }
+
+  SeqblockAutomation *make_copy(void) const {
     dyn_t state = get_state();
 
     return new SeqblockAutomation(_seqtrack, _seqblock, _sat, state, -1, true);
@@ -272,92 +289,126 @@ public:
 
 private:
 
-  // TODO: This function needs to be memoized so that we don't have to calculate for every pixel when moving a seqblock with stretch automation.
-  TimeConversionTable get_time_conversion_table(void) const {
+  static void apply_to_time_conversion_table_single(int num_elements, int64_t *ret, radium::SeqAutomationIterator<AutomationNode> &iterator, const enum Seqblock_Automation_Type _sat, const double time_inc, double &total_automation_time) {
 
-    R_ASSERT(_sat==SAT_STRETCH);
+    total_automation_time = 0;
+    double time = 0.0;
 
-    if(false==_is_enabled){
-      TimeConversionTable table;
-      table.stretch_automation_compensation = 1.0;
-      table.num_time_conversion_table_elements = 0;
-      table.time_conversion_table = NULL;
-      return table;
+    for(int i=0 ; i<num_elements ; i++, time+=time_inc){
+      
+      ret[i] = total_automation_time;
+        
+      double value = iterator.get_value(time);
+      double stretch_or_speed = _sat==SAT_SPEED ? SeqblockAutomation::get_speed_from_automation(value) : SeqblockAutomation::get_stretch_from_automation(value);
+      
+      total_automation_time += RADIUM_BLOCKSIZE / stretch_or_speed;
     }
+
+    ret[num_elements] = total_automation_time;
+  }
+
+  static void apply_to_time_conversion_table_double(int num_elements, int64_t *ret, radium::SeqAutomationIterator<AutomationNode> &stretch_iterator, radium::SeqAutomationIterator<AutomationNode> &speed_iterator, const double time_inc, double &total_stretch, double &total_speed) {
+
+    total_stretch = 0;
+    total_speed = 0;
+    double total_automation_time = 0;
+    double time = 0.0;
+
+    for(int i=0 ; i<num_elements ; i++, time+=time_inc){
+      
+      ret[i] = total_automation_time;
+        
+      double stretch_value = stretch_iterator.get_value(time);
+      double stretch = SeqblockAutomation::get_stretch_from_automation(stretch_value);
+      double stretch_duration = RADIUM_BLOCKSIZE / stretch;
+      total_stretch += stretch_duration;
+      
+      double speed_value = speed_iterator.get_value(time);
+      double speed = SeqblockAutomation::get_speed_from_automation(speed_value); 
+      double speed_duration = RADIUM_BLOCKSIZE / speed;
+      total_speed += speed_duration;
+     
+      total_automation_time += stretch_duration + speed_duration;
+    }
+
+    ret[num_elements] = total_automation_time;
+  }
+
+  // TODO: This function needs to be memoized so that we don't have to calculate for every pixel when moving a seqblock with stretch automation.
+  static TimeConversionTable get_time_conversion_table(struct SeqBlock *seqblock) {
+    TimeConversionTable table;
+      
+    const auto *stretch = seqblock->automations[SAT_STRETCH];
+    R_ASSERT_RETURN_IF_FALSE2(stretch!=NULL, table);
+
+    const auto *speed = seqblock->automations[SAT_SPEED];
+    R_ASSERT_RETURN_IF_FALSE2(speed!=NULL, table);
+
+    bool stretch_enabled = stretch->_is_enabled;
+    bool speed_enabled = speed->_is_enabled;
+
+    if(!stretch_enabled && !speed_enabled)
+      return table;
 
     //const SoundPlugin *plugin = (SoundPlugin*) _seqtrack->patch->patchdata;
     //const double resample_ratio = SEQTRACKPLUGIN_get_resampler_ratio(plugin, _seqblock->sample_id);
 
-    const double total_time = _seqblock->t.num_samples; //default_duration / resample_ratio; //2.0;//(s2-s1);
+    const double total_time = seqblock->t.num_samples; //default_duration / resample_ratio; //2.0;//(s2-s1);
     int num_elements = total_time / RADIUM_BLOCKSIZE;
     
-    int64_t *ret = (int64_t*)talloc_atomic(sizeof(int64_t)*(num_elements+1));
-
-    double total_automation_time = 0;
+    int64_t *array = (int64_t*)talloc_atomic(sizeof(int64_t)*(num_elements+1));
 
     //_automation.print();
 
-    {
-      int nodepos = 1;
-      int num_nodes = _automation.size();
-      const AutomationNode *node1 = &_automation.at(0);
-      const AutomationNode *node2 = &_automation.at(1);
-      double time = 0;
-      double time_inc = (double)_seqblock->t.default_duration / (double)num_elements;
-      
-      for(int i=0 ; i<num_elements ; i++, time+=time_inc){
-        
-        double value;
-        
-        if (time < node1->time){
-          
-          value = node1->value;
-          //printf("BEFORE %d/%d: %f %f\n", i, num_elements, time, node1->time);
+    double time_inc = (double)seqblock->t.default_duration / (double)num_elements;
 
-        } else {
-          
-          if (nodepos==num_nodes) {
-            
-          label1:      
-            value = node2->value;
-            //printf("AFTER %d/%d: %f %f\n", i, num_elements, time, node2->time);
+    double total_stretch = total_time;
+    double total_speed = total_time;
 
-          } else if (time <= node2->time) {
-            
-          label2:
-            value = _automation.get_value(time, node1, node2);
-            
-          } else {
-            
-            do{
-              nodepos++;
-              if(nodepos==num_nodes){
-                goto label1;
-              }
-              node1 = node2;
-              node2 = &_automation.at(nodepos);
-            } while(time > node2->time);
-            
-            goto label2;
-          }
-        }
-        
-        double stretch = get_stretch_from_automation(value);
-        ret[i] = total_automation_time;
-        
-        //printf("%d: %d\n", i*RADIUM_BLOCKSIZE, (int)ret[i]);
-        
-        total_automation_time += RADIUM_BLOCKSIZE / stretch;
-      }
+    radium::SeqAutomationIterator<AutomationNode> stretch_iterator(stretch->_automation);
+    radium::SeqAutomationIterator<AutomationNode> speed_iterator(speed->_automation);
+
+    const bool do_stretch = stretch->_is_enabled;
+    const bool do_speed = speed->_is_enabled;
+
+    if (do_stretch && do_speed)
+      SeqblockAutomation::apply_to_time_conversion_table_double(num_elements, array, stretch_iterator, speed_iterator, time_inc, total_stretch, total_speed);
+    else if (do_stretch)
+      SeqblockAutomation::apply_to_time_conversion_table_single(num_elements, array, stretch_iterator, SAT_STRETCH, time_inc, total_stretch);
+    else if (do_speed)
+      SeqblockAutomation::apply_to_time_conversion_table_single(num_elements, array, speed_iterator, SAT_SPEED, time_inc, total_speed);
+    else
+      R_ASSERT(false);
+
+    table.stretch_automation_compensation = total_stretch / total_time;
+    table.num_time_conversion_table_elements = num_elements;
+    table.time_conversion_table = array;
+
+    if (do_stretch){
+      table.stretch_automation_compensation = total_stretch / total_time;
+    } else {
+      table.stretch_automation_compensation = 0.0;
     }
 
-    ret[num_elements] = total_automation_time;
+    if (do_speed){
+      table.speed_automation_compensation = total_speed / total_time;
+    } else {
+      table.speed_automation_compensation = 0.0;
+    }
 
-    TimeConversionTable table;
-    table.stretch_automation_compensation = ((double)total_automation_time / total_time);
-    table.num_time_conversion_table_elements = num_elements;
-    table.time_conversion_table = ret;
+    /*
+    if (do_stretch && do_speed){
 
+      // todo: apply stretch.
+      table.speed_automation_compensation = total_speed / total_time;
+
+    } else {
+      table.speed_automation_compensation = total_speed / total_time;
+    }
+    */
+    
+    //printf("    Stretch comp: %f. Speed comp: %f. total_time: %f, total_stretch: %f, total_speed: %f\n", table.stretch_automation_compensation, table.speed_automation_compensation, total_time, total_stretch, total_speed);
+    //table.stretch_automation_compensation
     //printf("   DIFF: %f - %f. Compensation: %f\n", total_automation_time, total_time, table.stretch_automation_compensation);
 
     return table;
@@ -365,15 +416,14 @@ private:
 
 public:
 
-  void calculate_time_conversion_table(void) const {
-    R_ASSERT_RETURN_IF_FALSE(_sat==SAT_STRETCH);
-
-    TimeConversionTable table = get_time_conversion_table();
+  static void calculate_time_conversion_table(struct SeqBlock *seqblock) {
+    TimeConversionTable table = SeqblockAutomation::get_time_conversion_table(seqblock);
     {
       radium::PlayerLock lock;
-      _seqblock->stretch_automation_compensation = table.stretch_automation_compensation;
-      _seqblock->num_time_conversion_table_elements = table.num_time_conversion_table_elements;
-      _seqblock->time_conversion_table = table.time_conversion_table;
+      seqblock->stretch_automation_compensation = table.stretch_automation_compensation;
+      seqblock->speed_automation_compensation = table.speed_automation_compensation;
+      seqblock->num_time_conversion_table_elements = table.num_time_conversion_table_elements;
+      seqblock->time_conversion_table = table.time_conversion_table;
     }
   }
 
@@ -382,6 +432,7 @@ private:
 
   // TODO: Add *automation argument (automation-to-be), and call this function before using it in RT.
   static void new_rt_data_has_been_created(void *data){
+
     auto *seqautomation = static_cast<SeqblockAutomation*>(data);
 
     SEQBLOCK_calculate_time_conversion_table(seqautomation->_seqblock, true);
@@ -438,7 +489,10 @@ public:
         return talloc_format("%.2f%%", value * 100.0);
 
       case SAT_STRETCH:
-        return talloc_format("%.2fX", _seqblock->stretch_automation_compensation*get_stretch_from_automation(value)*_seqblock->t.stretch);
+        return talloc_format("%.2fX", _seqblock->stretch_automation_compensation*SeqblockAutomation::get_stretch_from_automation(value)*_seqblock->t.stretch);
+
+      case SAT_SPEED:
+        return talloc_format("%.2fX", _seqblock->speed_automation_compensation*(1.0/get_speed_from_automation(value)));
 
       default:
         R_ASSERT(false);
@@ -1033,10 +1087,19 @@ bool RT_seqblock_automation_is_enabled(struct SeqblockAutomation *automation){
 }
 
 void SEQBLOCK_AUTOMATION_set_enabled(struct SeqblockAutomation *automation, bool enabled){
+
+  bool need_to_recalculate_time_conversion_table = automation->_sat==SAT_STRETCH || automation->_sat==SAT_SPEED;
+    
+  radium::PlayerPause pause(is_playing_song() && need_to_recalculate_time_conversion_table);
+  
   {
     radium::PlayerLock lock(is_playing_song());
     automation->_is_enabled = enabled;
   }
+
+  if (need_to_recalculate_time_conversion_table)
+    SEQBLOCK_calculate_time_conversion_table(automation->_seqblock, true);
+      
   SEQUENCER_update(SEQUPDATE_TIME);
 }
 
@@ -1047,11 +1110,13 @@ bool RT_maybe_get_seqblock_automation_value(struct SeqblockAutomation *automatio
   automation->_automation.RT_get_value(time, value, NULL, true);
 
   if (automation->_sat==SAT_STRETCH){
-    double value1 = automation->get_stretch_from_automation(value);
+    double value1 = SeqblockAutomation::get_stretch_from_automation(value);
     value = value1 * automation->_seqblock->stretch_automation_compensation;
 
     //printf("automation speed: %f / %f. compensation: %f. Time: %f\n", value1, value, automation->_seqblock->stretch_automation_compensation, time);
-  }
+
+  } else if (automation->_sat==SAT_SPEED)
+    value = SeqblockAutomation::get_speed_from_automation(value) * automation->_seqblock->speed_automation_compensation;
 
   return true;
 }
@@ -1060,10 +1125,7 @@ void SEQBLOCK_calculate_time_conversion_table(struct SeqBlock *seqblock, bool se
   if (seqblock->block!=NULL)
     return;
 
-  auto *stretch = seqblock->automations[SAT_STRETCH];
-  R_ASSERT_RETURN_IF_FALSE(stretch!=NULL);
-
-  stretch->calculate_time_conversion_table();
+  SeqblockAutomation::calculate_time_conversion_table(seqblock);
 }
 
 
