@@ -32,6 +32,7 @@ extern LANGSPEC void PATCH_handle_fxs_when_fx_names_have_changed(struct Patch *p
   
 extern LANGSPEC void PATCH_reset_time(void);
 extern LANGSPEC void PATCH_init_voices(struct Patch *patch);
+extern LANGSPEC void PATCHVOICE_set_defaults(struct PatchVoice *patchvoice, int voicenum); // note that patchvoice must be nulled out before calling.
 extern LANGSPEC hash_t *PATCH_get_state(const struct Patch *patch);
 extern LANGSPEC hash_t *PATCHES_get_state(const vector_t *patches, bool put_in_array);
 extern LANGSPEC struct Patch *PATCH_create_from_state(hash_t *state);
