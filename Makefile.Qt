@@ -1309,7 +1309,7 @@ Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom_bar
 Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
 	$(CCC) $(P)Qt_Time.cpp $(QTOPT)
 
-Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp
+Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp common/seqblock_automation_proc.h
 	$(CCC) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT)
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
@@ -1815,7 +1815,7 @@ SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS
 SampleReader.o: audio/SampleReader.cpp
 	$(CCC) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
 
-Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/Granulator.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h
+Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/Granulator.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h
 	$(CCC) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT)
 
 FluidSynth_plugin.o: audio/FluidSynth_plugin.c

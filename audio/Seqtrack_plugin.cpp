@@ -69,7 +69,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define HOW_MUCH_TO_PREPARE 2 // in seconds. TODO: We need to slowly increase the buffer from 0.1 to 2. TODO2: Make these two numbers configurable.
 #define HOW_MUCH_TO_PREPARE_BEFORE_STARTING 2 //in seconds
 
-#define RESAMPLER_BUFFER_SIZE 1024
+#define RESAMPLER_BUFFER_SIZE 64 //(RADIUM_BLOCKSIZE*2) //1024
+// TODO: print out how often data is picked up, and so forth. It probably picks up more when stretch is high.
+
+
 
 // This is the instrument that is bounded to ONE track in the sequencer.
 
@@ -99,7 +102,7 @@ struct MyReader : public radium::GranulatorCallback{
   radium::LockAsserter lockAsserter;
 
 private:
-
+  
   float _curr_fade_volume;
   
   float _fadeout_inc;
@@ -150,9 +153,10 @@ public:
   };
 
   ResamplerData **_resamplers;
+  bool _do_constant_resampling = false;
   bool _do_resampling = false;
   double _resampler_ratio = 1.0; // Note: Must be set between processing buffers so that channels aren't resampled differently.
-
+  double _curr_automation_resampler_ratio = 1.0;
 
   MyReader(radium::SampleReader *reader, enum ResamplerType resampler_type)
     : _reader(reader)
@@ -182,7 +186,8 @@ public:
       }
 
       _resampler_ratio = (double)pc->pfreq / samplerate;
-      _do_resampling = true;
+      _do_constant_resampling = true;
+
     }
   }
     
@@ -229,20 +234,33 @@ private:
       R_ASSERT(total_read <= num_frames);
     }
   }
-
+public:
+  const struct SeqBlock *_seqblock;
+private:
+  int _total_num_frames = 0; // for debugging
   // granulator callback
   float *get_next_granulator_sample_block(const int ch, int &num_frames) override {
-    //printf("   ************************** ASKING for %d frames\n", num_frames);
+    //printf("   ************************** ASKING for %d frames (total: %d / %d. num_frames_on_disk: %d)\n", num_frames, _total_num_frames, _total_num_frames2, (int)SAMPLEREADER_get_total_num_frames_in_sample(_reader));
     if (_do_resampling){
+      double automation_speed;
+      if (_seqblock==NULL || false==RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_SPEED], _total_num_frames, automation_speed)){
+        //printf("_______________ RT_maybe_get_seqblock_automation_value returned false %p\n", _seqblock);
+        automation_speed = 1.0;
+      }
+      double ratio = _resampler_ratio * automation_speed;
 
-      num_frames = RESAMPLER_read(_resamplers[ch]->_resampler, _resampler_ratio, RESAMPLER_BUFFER_SIZE, _resamplers[ch]->_buffer);
+      //double ratio = _resampler_ratio * _curr_automation_resampler_ratio;
+      num_frames = RESAMPLER_read(_resamplers[ch]->_resampler, ratio, RESAMPLER_BUFFER_SIZE, _resamplers[ch]->_buffer);
+      _total_num_frames += num_frames;
 
       return _resamplers[ch]->_buffer;
 
     } else {
 
-      return RT_SAMPLEREADER_get_buffer(_reader, ch, num_frames);
+      auto ret = RT_SAMPLEREADER_get_buffer(_reader, ch, num_frames);
+      _total_num_frames += num_frames;
 
+      return ret;
     }
   }
 
@@ -254,13 +272,20 @@ private:
       int pos = 0;
       while (samples_left > 0){
 
-        int num_frames_read = RESAMPLER_read(_resamplers[ch]->_resampler, _resampler_ratio, samples_left, &output2[ch][pos]);
+        double ratio = _resampler_ratio * _curr_automation_resampler_ratio;
 
-        R_ASSERT_RETURN_IF_FALSE(num_frames_read > 0);
+        int num_frames_read = RESAMPLER_read(_resamplers[ch]->_resampler, ratio, samples_left, &output2[ch][pos]);
+
+        if (num_frames_read==0){
+          R_ASSERT_NON_RELEASE(false);
+          return;
+        }
         
         pos += num_frames_read;
         samples_left -= num_frames_read;
       }
+
+      R_ASSERT_NON_RELEASE(samples_left==0);
     }
   }
 
@@ -383,7 +408,12 @@ private:
   
 public:
   
+  int _total_num_frames2 = 0; // for debugging
+
   void RT_add_samples(int num_frames, float **outputs){
+    //printf(" *** total: %d\n", _total_num_frames2);
+    _total_num_frames2 += num_frames;
+
     SMOOTH_called_per_block(&_volume);
     
     if (_curr_fade_volume < 1.0)
@@ -484,11 +514,12 @@ public:
 
   void prepare_for_playing(const int64_t sample_start_pos, const struct SeqBlock *seqblock, bool do_fade_in, radium::FutureSignalTrackingSemaphore *gotit){
     _do_granulate = RT_seqblock_automation_is_enabled(seqblock->automations[SAT_STRETCH]) || fabs(seqblock->t.stretch - 1.0) > 0.001;
+    _do_resampling = _do_constant_resampling || RT_seqblock_automation_is_enabled(seqblock->automations[SAT_SPEED]);
+
+    _granulator.reset();
     
-    for(int ch=0;ch<_num_ch;ch++){
-      mus_reset(_granulator._clm_granulators[ch]);
+    for(int ch=0;ch<_num_ch;ch++)
       RESAMPLER_reset(_resamplers[ch]->_resampler);
-    }
 
     _has_set_volume = false; // To avoid smoothly gliding from previous volume (the last time we played) to the current.
       
@@ -980,11 +1011,20 @@ struct Sample{
             double automation_stretch;
             if (RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_STRETCH], time, automation_stretch))
               stretch *= automation_stretch;
+
+            _curr_reader->_seqblock=_seqblock.data();
+            /*
+            double automation_speed;
+            if (false==RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_SPEED], time, automation_speed))
+              _curr_reader->_curr_automation_resampler_ratio = 1.0;
+            else
+              _curr_reader->_curr_automation_resampler_ratio = automation_speed;
+            */
           }
         }
         
-        grain_length *= pc->pfreq / 1000.0; // convert to samples
-        double grain_frequency = grain_length / grain_overlap; // in samples
+        grain_length = ms_to_frames(grain_length);
+        double grain_frequency = (grain_length / grain_overlap);
 
         grain_ramp *= grain_length;
 

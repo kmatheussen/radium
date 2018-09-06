@@ -1160,13 +1160,13 @@ static float get_voice_PAN(const struct SoundPlugin *plugin, int num, enum Value
 
 static void set_voice_CHANCE(struct SoundPlugin *plugin, int num, float &native_value, float &scaled_value, enum ValueFormat value_format){
   if(value_format==EFFECT_FORMAT_NATIVE)
-    scaled_value = scale_double(native_value, 0, 256, 0, 1);
+    scaled_value = scale_double(native_value, MIN_PATCHVOICE_CHANCE, MAX_PATCHVOICE_CHANCE, 0, 1);
   else if (scaled_value >= 1)
-    native_value = 256;
+    native_value = MAX_PATCHVOICE_CHANCE;
   else
-    native_value = round(scale_double(scaled_value, 0, 1, 0, 256));
+    native_value = round(scale_double(scaled_value, 0, 1, MIN_PATCHVOICE_CHANCE, MAX_PATCHVOICE_CHANCE));
 
-  native_value = R_BOUNDARIES(0, native_value, 256);
+  native_value = R_BOUNDARIES(MIN_PATCHVOICE_CHANCE, native_value, MAX_PATCHVOICE_CHANCE);
              
   if (plugin->patch != NULL) {
 

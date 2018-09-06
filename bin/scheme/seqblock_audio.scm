@@ -193,7 +193,9 @@
                                  (when has-started
                                    (<ra> :set-seqblock-automation-enabled ison 6 seqblockid))))))
     (<gui> :add main-layout
-           (<gui> :horizontal-layout stretch-checkbox speed-checkbox)))
+           ;;(<gui> :horizontal-layout stretch-checkbox speed-checkbox)
+           (<gui> :horizontal-layout stretch-checkbox)
+           ))
 
   (when #f
     (define apply-button (<gui> :button "Apply!"

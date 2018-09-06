@@ -3532,6 +3532,9 @@ int main(int argc, char **argv){
   
   QCoreApplication::setLibraryPaths(QStringList());  
 
+#if QT_VERSION_MAJOR == 5 && QT_VERSION_MINOR == 9
+  QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+#endif
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 
 #ifndef USE_QT5
