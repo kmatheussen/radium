@@ -113,13 +113,12 @@ public:
     QListWidget::mousePressEvent(event);
 
     if(_last_button==Qt::RightButton) { // Prevent Qt from emiting doubleclick signals when right-clicking.
-    
-      if(is_blocklist && shiftPressed()==false){
-        
-        //printf("mouse pressed %d %d %p\n",(int)event->buttons(),is_blocklist,item);
-        
-        evalScheme("(FROM_C-show-blocklist-popup-menu)");
-        
+
+      if (shiftPressed()==false){
+        if(is_blocklist)
+          evalScheme("(FROM_C-show-blocklist-popup-menu)");
+        else
+          evalScheme("(FROM_C-show-playlist-popup-menu)");
       }
 
       event->accept();

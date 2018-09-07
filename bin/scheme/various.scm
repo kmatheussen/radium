@@ -755,6 +755,50 @@
      (<ra> :show-hide-playlist -1)
      )))
 
+(define (have-pauses-in-seqtrack? seqtracknum)
+    (let loop ((seqblocks (to-list (<ra> :get-seqblocks-state seqtracknum)))
+               (time 0))
+      (if (null? seqblocks)
+          #f
+          (let* ((seqblock (car seqblocks))
+                 (start (seqblock :start-time))
+                 (end (seqblock :end-time)))
+            (if (not (= start time))
+                #t
+                (loop (cdr seqblocks)
+                      end))))))
+  
+(define (delete-all-pauses-in-seqtrack seqtracknum)
+  (define new-seqblocks
+    (let loop ((seqblocks (to-list (<ra> :get-seqblocks-state seqtracknum)))
+               (time 0))
+      (if (null? seqblocks)
+          '()
+          (let* ((seqblock (car seqblocks))
+                 (start (seqblock :start-time))
+                 (end (seqblock :end-time))
+                 (duration (- end start))
+                 (new-end (+ time duration)))
+            (cons (copy-hash seqblock
+                             :start-time time
+                             :end-time new-end)
+                  (loop (cdr seqblocks)
+                        new-end))))))
+  (<ra> :create-gfx-seqblocks-from-state new-seqblocks seqtracknum)
+  (<ra> :undo-sequencer)
+  (<ra> :apply-gfx-seqblocks seqtracknum))
+
+#!
+(pp (delete-all-pauses-in-seqtrack 1))
+!#
+
+(define (FROM_C-show-playlist-popup-menu)
+  (define seqtracknum (<ra> :get-curr-seqtrack))
+  (popup-menu
+   "Delete all pauses"
+   :enabled (have-pauses-in-seqtrack? seqtracknum)
+   (lambda ()
+     (delete-all-pauses-in-seqtrack seqtracknum))))     
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Load song, "are you sure?" requester 
