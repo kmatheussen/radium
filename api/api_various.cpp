@@ -918,6 +918,8 @@ void selectBlock(int blocknum, int windownum){
                                              );
   if(wblock==NULL) return;
 
+  EVENTLOG_add_event("selectBlock");
+                     
   PC_PauseNoMessage();{
     if(wblock->curr_realline == wblock->num_reallines-1)
       wblock->curr_realline = 0;
