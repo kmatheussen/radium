@@ -792,13 +792,17 @@
 (pp (delete-all-pauses-in-seqtrack 1))
 !#
 
-(define (FROM_C-show-playlist-popup-menu)
-  (define seqtracknum (<ra> :get-curr-seqtrack))
-  (popup-menu
+(define (get-delete-all-pauses-menu-entry seqtracknum)
+  (list
    "Delete all pauses"
    :enabled (have-pauses-in-seqtrack? seqtracknum)
    (lambda ()
-     (delete-all-pauses-in-seqtrack seqtracknum))))     
+     (delete-all-pauses-in-seqtrack seqtracknum))))
+
+(define (FROM_C-show-playlist-popup-menu)
+  (define seqtracknum (<ra> :get-curr-seqtrack))
+  (popup-menu
+   (get-delete-all-pauses-menu-entry seqtracknum)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Load song, "are you sure?" requester 

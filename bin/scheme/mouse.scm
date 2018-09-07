@@ -6514,7 +6514,9 @@
                                                   :enabled is-enabled
                                                   (lambda ()
                                                     (<ra> :set-seqblock-gain (get-normalized-gain) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))))
-                                               
+                                          
+                                          (get-delete-all-pauses-menu-entry seqtracknum)
+                                          
                                           (if (not seqblock-info)
                                               #f
                                               (list
