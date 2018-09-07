@@ -92,7 +92,7 @@ public:
         
         fprintf(stderr, "rc: %d\n", (int)rc);
                 
-        if(rc!=KERN_ABORTED && rc!=KERN_SUCCESS)
+        if(rc!=KERN_ABORTED)
           RError("RC: %d\n", (int)rc);
 
         msleep(1000);
