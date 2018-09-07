@@ -797,7 +797,7 @@ public:
     if (time2 <= time1)
       return;    
 
-    int64_t p_time2 = get_stretch_automation_sample_pos(seqblock, R_MIN(seqblock->t.default_duration, time2));
+    int64_t p_time2 = get_stretch_automation_sample_pos(seqblock, R_MIN(seqblock->t.num_samples, time2));
 
     const double pixels_per_peak = R_MAX(2.7, root->song->tracker_windows->systemfontheight / 6.5);
     double width = x2-x1;
