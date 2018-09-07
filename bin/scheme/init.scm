@@ -495,6 +495,7 @@
     ra:set-instrument-color
     FROM_C-reconfigure-sequencer-left-part
     FROM_C-show-blocklist-popup-menu
+    FROM_C-show-playlist-popup-menu
     load
     show-note-duplicator-popup-menu
     ))
