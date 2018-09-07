@@ -84,7 +84,19 @@ public:
 
     void wait()
     {
-        semaphore_wait(m_sema);
+      
+      for(;;){
+        kern_return_t rc = semaphore_wait(m_sema);
+        if (rc==KERN_SUCCESS)
+          break;
+        
+        fprintf(stderr, "rc: %d\n", (int)rc);
+                
+        if(rc!=KERN_ABORTED && rc!=KERN_SUCCESS)
+          RError("RC: %d\n", (int)rc);
+
+        msleep(1000);
+      }
     }
 
     void signal()
