@@ -837,10 +837,12 @@ public slots:
     if(num_visitors>0) // event created internally
       return;
 
-    printf("block high num: %d\n",num);
+    EVENTLOG_add_event("BlockSelector::blocklist_highlighted");
+    //printf("block high num: %d\n",num);
 
     struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
-
+    R_ASSERT_RETURN_IF_FALSE(seqtrack!=NULL);
+    
     if (seqtrack->for_audiofiles==true)
       _last_selected_audiofilenum = num;
     else
@@ -1179,9 +1181,13 @@ void BS_SelectBlocklistPos(int pos){
       safe--;
     }
 
+    EVENTLOG_add_event("BS_SelectBlocklistPos 1");
+    
     g_bs->blocklist.setSelected(pos, true);
   }
 
+  EVENTLOG_add_event("BS_SelectBlocklistPos 2");
+  
   g_bs->blocklist_highlighted(pos);
   //selectBlock(pos, -1);
   //g_bs->blocklist.setSelected(pos, true);

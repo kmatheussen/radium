@@ -351,6 +351,7 @@ void selectPrevBlock(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
+        EVENTLOG_add_event("selectPrevBlock");
 	SelectPrevWBlock(window);
 }
 

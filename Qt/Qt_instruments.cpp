@@ -848,10 +848,13 @@ void InstrumentWidget_delete(struct Patch *patch){
 
 void GFX_update_instrument_patch_gui(struct Patch *patch){
   //printf("Called GFX_update_instrument_patch_gui for patch \"%s\"\n",patch==NULL?"<>":patch->name);
-  if(patch!=NULL && patch->patchdata!=NULL && patch->instrument->PP_Update!=NULL)
-    patch->instrument->PP_Update(patch->instrument,
-                                 patch,
-                                 false);
+  if(patch!=NULL && patch->patchdata!=NULL){
+    R_ASSERT_RETURN_IF_FALSE(patch->instrument != NULL);
+    if (patch->instrument->PP_Update!=NULL)
+      patch->instrument->PP_Update(patch->instrument,
+                                   patch,
+                                   false);
+  }
 #if 0
   if(wblock->wtrack->track->patch!=NULL && wblock->wtrack->track->patch->instrument->PP_Update!=NULL)
     wblock->wtrack->track->patch->instrument->PP_Update(wblock->wtrack->track->patch->instrument,

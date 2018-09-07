@@ -444,9 +444,13 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
         
       if(wblock==NULL) return;
 
+      R_ASSERT_RETURN_IF_FALSE(window!=NULL);
+      
       if (window->wblock==wblock && window->curr_block==wblock->l.num)
         return;
 
+
+      EVENTLOG_add_event("SelectWBlock 1");
       
       g_assert_not_stopping_player++; // A lot of things happens here. Assert that we are not stopping the player.
       
@@ -473,6 +477,10 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
           ATOMIC_WRITE(wblock->wtrack, ListFindElement1(&wblock->wtracks->l,window->curr_track));
           }
       */
+
+      R_ASSERT_RETURN_IF_FALSE(wblock->wtrack!=NULL);
+
+      EVENTLOG_add_event("SelectWBlock 2");
       
       NInt newcurrtrack=wblock->wtrack->l.num;
       int newcurrtracksub=window->curr_track_sub;
@@ -495,9 +503,12 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
       
       //window->must_redraw = true;
 
+      EVENTLOG_add_event("SelectWBlock 3");
+      
       BS_SelectBlock(wblock->block);
       
       if(false==is_playing() && false==PlayerIsCurrentlyPlayingLoop()){
+        R_ASSERT_RETURN_IF_FALSE(wblock->wtrack->track != NULL);
         GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
       }
       
@@ -507,6 +518,8 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
       
       GE_set_curr_realline(wblock->curr_realline);
 
+      EVENTLOG_add_event("SelectWBlock 4");
+      
       SEQUENCER_update(SEQUPDATE_TIME);
       
       window->must_redraw = true;
@@ -515,6 +528,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock){
 }
 
 void SelectPrevWBlock(struct Tracker_Windows *window){
+  EVENTLOG_add_event("SelectPrevWBlock");
   BS_SelectBlocklistPos(BS_GetCurrBlocklistPos()-1);
   //SelectWBlock(window,ListPrevElement1(&window->wblocks->l,&window->wblock->l));
 }
