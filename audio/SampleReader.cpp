@@ -257,7 +257,7 @@ namespace{
 
 
 class SampleProvider;
-static radium::Mutex g_sample_providers_mutex;
+static radium::Mutex g_sample_providers_mutex; // Obtained when accessing g_sample_providers from a different thread than the main thread.
 static QHash<QString, SampleProvider*> g_sample_providers;
 
   
@@ -1432,6 +1432,7 @@ void SAMPLEREADER_dec_users_undo_callback(void *data){
 }
   
 
+// can be called from any thread, but not while holding player lock.
 bool SAMPLEREADER_has_file(const wchar_t *filename){
   R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
   
