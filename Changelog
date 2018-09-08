@@ -1,3 +1,66 @@
+Changes 5.8.4 -> 5.8.6:
+* Instrument/Mixer: Fix wrong default chance value when changing
+  to a different A/B (default value was 1 instead of 256).
+* Editor: Fix wrong pan value when pasting sound objects. Bug
+  introduced in 5.8.4
+* Audio: Began speed automation, but it"s not working yet, and GUI
+  has been disabled.
+* Audio: Fix memory leak in granulation.
+* Audio: Fix cluttered CPU usage in granulation and resampling.
+* Sequencer: Reorganized seqblock popup menu a bit.
+* Audio: Handle appropriately when samplerate ratio is too low or
+  too high for libsamplerate.
+* Sndlib: Fix so that increasing jitter doesn't increase sound length
+  when stretching audiofile in the sequencer.
+* Packages: Update sndlib to latest version.
+* Qt: Fix Qt error message about shared opengl context when building
+  with Qt 5.9.
+* Audio: Increased maximum number of CPUs from 16 to 64
+* Instrument widget: Don't update patch widget name for a name that
+  has been edited manually when double clicking sample name in the
+  audio file requester.
+* Sequencer: Let jitter be 0% by default (granulation).
+* Sequencer: Show current seqblock automation value in status bar
+  when mouse is placed between two nodes.
+* Sequencer: Fix tiny fade-in for mono files when starting to play
+  in the middle of a file. Caused by type. Earlier you could hear
+  a click in the right channel.
+* Peaks: Fix recreating the peak file when audio file have been
+  modified since last time peak file was created.
+* Peaks: Fix peak values sometimes having the value "inf", causing
+  malformed waveforms.
+* Jack: Don't crash during startup when jack server is not running.
+* System: Shut down Juce properly before exiting program.
+* Linux/OpenGL: Don't recommend to turn off vsync if using Intel GFX
+  (a very long time since that made sense).
+* Linux: Prevent buggy Qt plugins from crashing radium.
+* GUI: Prevent Qt from loading plugins during static initialization.
+* Editor: Fix undoing/redoing tempo multiplier. (Seqblock stretch
+  values were not updated)
+* Sequencer: Automation for granular synthesis parameters, including
+  stretch.
+* Sequencer: Reorganized the popup menus a bit.
+* Audio: Fix possible audio underruns when starting to play block.
+* Sequencer: When painting automation, also paint a filled
+  transparent area below the lines.
+* Sequencer: Show correct popup menu when right-clicking an
+  automation node which is on top of a seqblock fade square.
+* Sequencer: Don't change time value when resetting the value of
+  a seqblock automation node, when seqblock is stretched.
+* Editor: Ensure sequencer state is the same when undoing changing
+  block properties.
+* API:
+  * Renamed undoSequencerAutomations -> undoSeqtrackAutomations,
+    undoSequencerEnvelopes -> undoSeqblockAutomations,
+    getNumSeqAutomationNodes -> getNumSeqtrackAutomationNodes,
+    getNumSeqAutomations -> getNumSeqtrackAutomations
+  * Deleted undoSeqblockAutomations.
+  * New functions: getNumSeqblockAutomations, undoSeqblockAutomation,
+    getSeqblockAutomationName, getSeqblockAutomationDefaultValue,
+    getSeqblockAutomationDisplayString,
+    getSeqblockAutomationValueForTime
+
+
 Changes 5.8.2 -> 5.8.4:
 * Program log: Add menu command to program log. Might help track down
   some crashes reported by the crash reporter.
