@@ -1,4 +1,11 @@
 Changes 5.8.4 -> 5.8.6:
+* Blocklist: Add various assertions and logging in order to fix
+  a crash bug happening when selecting previous block (reported
+  via crash reporter).
+* OSX: Try to avoid an extra assertion report that has popped up
+  recently when program crashes.
+* Sequencer: Add "Delete all pauses" entry to the popup menu
+* Playlist: Add option to delete all pauses
 * Instrument/Mixer: Fix wrong default chance value when changing
   to a different A/B (default value was 1 instead of 256).
 * Editor: Fix wrong pan value when pasting sound objects. Bug
