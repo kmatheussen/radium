@@ -38,7 +38,7 @@ static QString get_latest_diagnostic_report(void){
   QDateTime start_time = QDateTime::currentDateTime();
   QDateTime start_time_plus_40_seconds = QDateTime(start_time).addSecs(140); // we only wait 140 seconds for the file to be created
 
-  QDateTime start_time_minus_30_seconds = QDateTime(start_time).addSecs(-30);
+  QDateTime start_time_minus_60_seconds = QDateTime(start_time).addSecs(-60);
 
   while(QDateTime::currentDateTime() < start_time_plus_40_seconds) {
 
@@ -76,9 +76,9 @@ static QString get_latest_diagnostic_report(void){
 
       //ret += "4\n";
       
-      QDateTime file_time = file_info.created();
+      QDateTime file_time = file_info.lastModified();
       
-      if (file_time < start_time_minus_30_seconds)
+      if (file_time < start_time_minus_60_seconds)
         continue;
 
       //ret += "5\n";
