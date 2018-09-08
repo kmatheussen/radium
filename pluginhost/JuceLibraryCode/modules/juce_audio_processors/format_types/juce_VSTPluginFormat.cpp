@@ -58,7 +58,7 @@ using namespace Vst2;
  #endif
 
  extern "C" void _fpreset();
- extern "C" void _clearfp();
+// extern "C" void _clearfp();
 #elif ! JUCE_WINDOWS
  static void _fpreset() {}
  static void _clearfp() {}
