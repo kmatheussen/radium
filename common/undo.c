@@ -218,13 +218,22 @@ void ResetUndo(void){
 }
 
 bool Undo_are_you_sure_questionmark(void){
+  EVENTLOG_add_event("Undo_are_you_sure_questionmark 1");
+  
   int num_undos = Undo_num_undos_since_last_save();
 
-  const vector_t deletable_audiofiles = SAMPLEREADER_get_all_deletable_filenames();
-  const bool num_deletable_audio_files = deletable_audiofiles.num_elements;
-    
-  const bool has_deletable_audio_files = num_deletable_audio_files > 0;
+  EVENTLOG_add_event("Undo_are_you_sure_questionmark 2");
   
+  const vector_t deletable_audiofiles = SAMPLEREADER_get_all_deletable_filenames();
+  
+  EVENTLOG_add_event("Undo_are_you_sure_questionmark 3");
+  
+  const bool num_deletable_audio_files = deletable_audiofiles.num_elements;
+
+  EVENTLOG_add_event("Undo_are_you_sure_questionmark 4");
+  
+  const bool has_deletable_audio_files = num_deletable_audio_files > 0;
+
   bool boolret = true;
 
   ReqType reqtype = NULL;
