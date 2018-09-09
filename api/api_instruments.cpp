@@ -257,6 +257,8 @@ void setInstrumentForTrack(int64_t instrument_id, int tracknum, int blocknum, in
     if (old_patch != NULL)
       PATCH_handle_fx_when_theres_a_new_patch_for_track(wblock->block, wtrack->track, old_patch, new_patch, &has_paused);
 
+    new_patch->has_been_assigned_to_editor_track = true;
+    
     {
       SCOPED_PLAYER_LOCK_IF_PLAYING();
       wtrack->track->patch = new_patch;
@@ -529,6 +531,14 @@ const_char* getInstrumentEffectName(int effect_num, int64_t instrument_id){
   }
     
   return talloc_strdup((const char*)elements->elements[effect_num]);
+}
+
+bool instrumentHasBeenUsed(int64_t instrument_id){
+  struct Patch *patch = getPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  return patch->has_been_assigned_to_editor_track;
 }
 
 bool hasPureData(void){

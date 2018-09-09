@@ -1230,7 +1230,7 @@ hash_t *AUDIO_get_audio_patch_state(struct Patch *patch){
    *
   */
 #if !RELEASE
-  if (CHIP_get_pos_x(patch) < -8000 || CHIP_get_pos_y(patch) < -8000)
+  if (CHIP_get_pos_x(patch) < -80000 || CHIP_get_pos_y(patch) < -80000)
     abort();
 #endif
   

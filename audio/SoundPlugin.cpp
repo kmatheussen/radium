@@ -2194,7 +2194,7 @@ bool PLUGIN_open_gui(SoundPlugin *plugin, int64_t parentgui){
   parentgui = gui_getParentWindow(parentgui);
 
 #if !defined(RELEASE)
-  {
+  if(QString(plugin->type->type_name) != "Faust Dev"){
     auto *widget = API_gui_get_widget(p2);
     auto *window = widget->window();
     int64_t p3 = API_get_gui_from_existing_widget(window);
