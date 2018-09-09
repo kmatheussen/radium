@@ -188,6 +188,10 @@ if(track==NULL) return;
            track->patch=NULL;
          }else{
            track->patch=PATCH_get_from_id(track->patch->id);
+           if(track->patch!=NULL)
+             track->patch->has_been_assigned_to_editor_track = true;
+           else
+             R_ASSERT(false);
          }
 
         DLoadNotes(newroot, track, track->notes);
