@@ -656,7 +656,9 @@ void PATCH_handle_editor_and_automation_when_replacing_patch(struct Patch *old_p
         has_paused = true;
       }
 
-      new_patch->has_been_assigned_to_editor_track = true;
+      if (new_patch != NULL)
+        new_patch->has_been_assigned_to_editor_track = true;
+
       track->patch = new_patch;                  
     }
 
