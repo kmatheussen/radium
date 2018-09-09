@@ -1,3 +1,15 @@
+Changes 5.8.6 -> 5.8.7:
+* Editor: Only show used instruments in the bottom part of the
+  popup menu to select instrument for a track. Also added a sub
+  menu containing all instruments.
+* Menus: Add "Show/Hide Edit" to the Windows menu.
+* Build: Make sure sndlib is rebuilt when it's been updated.
+* Build: Fix building sndlib.
+* OSX: Trying to fix obtaining diagnostic reports file for the 
+  crash/assertion reporter.
+* API: instrumentHasBeenUsed
+
+
 Changes 5.8.4 -> 5.8.6:
 * Blocklist: Add various assertions and logging in order to fix
   a crash bug happening when selecting previous block (reported
