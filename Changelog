@@ -1,3 +1,13 @@
+Changes 5.8.7 -> 5.8.8:
+* Build: Fix build when user has installed system version of
+  Qscintilla.
+* Build: Fix building sndlib
+* Editor: Fix mark instruments as being assigned to an editor
+  track.
+* Editor: Fix crash when deleting an instrument assigned
+  to an editor track
+
+
 Changes 5.8.6 -> 5.8.7:
 * Editor: Only show used instruments in the bottom part of the
   popup menu to select instrument for a track. Also added a sub
