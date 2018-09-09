@@ -1,4 +1,6 @@
 Changes 5.8.7 -> 5.8.8:
+* Build: Fix build when user has installed system version of
+  Qscintilla.
 * Build: Fix building sndlib
 * Editor: Fix mark instruments as being assigned to an editor
   track.
