@@ -68,3 +68,14 @@
        /* this form suggested by Marc Lehmann */
        /* "2 *" added 21-Mar-05 and irandom replaced with mus_irandom, grn_irandom 28-Feb-06 */
        /* use of gen-local random sequence suggested by Kjetil Matheussen (to keep multi-channel grns in sync) */
+--- vct.h~	2018-04-22 23:46:07.000000000 +0200
++++ vct.h	2018-09-09 10:04:46.431307970 +0200
+@@ -1,6 +1,8 @@
+ #ifndef VCT_H
+ #define VCT_H
+ 
++#include "xen.h"
++
+ #if HAVE_SCHEME
+   typedef struct s7_cell vct;
+ #else
