@@ -73,6 +73,8 @@ void MIDIGetEvents(
       
       if( ! is_playing()){
 	window->wblock->wtrack->track->patch=patch;
+        if (patch != NULL)
+          patch->has_been_assigned_to_editor_track = true;
 	DrawWTrackHeader(window,window->wblock,window->wblock->wtrack);
       }
       instrument->PP_Update(instrument,patch,false);

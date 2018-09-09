@@ -334,6 +334,8 @@ static void LoadOctaBlock(
 			PlaceSetLastPos(wblock->block,&note->end);
 			ListAddElement3(&wtrack->track->notes,&note->l);
 		}
+                if (patch!=NULL)
+                  patch->has_been_assigned_to_editor_track = true;
 		wtrack->track->patch=patch;
 	}
 
