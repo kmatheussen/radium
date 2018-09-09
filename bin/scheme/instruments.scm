@@ -1164,6 +1164,28 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                      (= 1 (num-new-instruments)))
             (<ra> :autoposition-instrument id-instrument)
             (<ra> :connect-audio-instrument-to-main-pipe id-instrument))))))
+
+  (define (get-instrument-entries only-if-used)
+    (list
+     (and (> (length midi-instruments) 0)
+          (list "----------"
+                (map (lambda (num instrument-id)
+                       (and (or (not only-if-used)
+                                (<ra> :instrument-has-been-used instrument-id))
+                            (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
+                                  (lambda ()
+                                    (load instrument-id)))))
+                     (iota (length midi-instruments))
+                     midi-instruments)))
+     "----------"
+     (map (lambda (num instrument-id)
+            (and (or (not only-if-used)
+                     (<ra> :instrument-has-been-used instrument-id))
+                 (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
+                       (lambda ()
+                         (load instrument-id)))))
+          (iota (length instruments-before))
+          instruments-before)))
     
   (popup-menu
    "<New MIDI Instrument>" (lambda ()
@@ -1195,21 +1217,9 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                                (load (<ra> :clone-audio-instrument instrument-id))))))
                                  (iota (length instruments-before))
                                  instruments-before)
-   (and (> (length midi-instruments) 0)
-        (list "----------"
-              (map (lambda (num instrument-id)
-                     (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
-                           (lambda ()
-                             (load instrument-id))))
-                   (iota (length midi-instruments))
-                   midi-instruments)))
-   "----------"
-   (map (lambda (num instrument-id)
-          (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
-                (lambda ()
-                  (load instrument-id))))
-        (iota (length instruments-before))
-        instruments-before)))
+   "All instruments" (get-instrument-entries #f)
+   (get-instrument-entries #t))
+  )
      
 #||
 (select-track-instrument 0)

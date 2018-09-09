@@ -1443,6 +1443,8 @@ struct Patch{
   
   bool is_usable; // If pasting a track with this patch, this flag tells whether the patch can be used on the new track.
   hash_t *state; // If is_usable==false, this field contains the plugin state.
+
+  bool has_been_assigned_to_editor_track;
   
   bool name_is_edited;
   const char *name;
