@@ -2317,7 +2317,7 @@ sndlib_built: bin/packages/sndlib/clm.c
 	echo 1 >sndlib_built
 
 bin/packages/sndlib/clm.c: bin/packages/sndlib.tar.gz bin/packages/sndlib.patch
-	cd bin/packages && rm -fr sndlib && tar xvzf sndlib.tar.gz && cd sndlib && patch -p0 <../sndlib.patch && touch clm.h
+	cd bin/packages && rm -fr sndlib && tar xvzf sndlib.tar.gz && cd sndlib && patch -p0 <../sndlib.patch && touch clm.c
 
 
 
