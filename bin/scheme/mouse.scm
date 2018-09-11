@@ -1633,10 +1633,16 @@
                                                 (c-display "channelnum2:" channelnum tracknum)
                                                 (<ra> :set-track-midi-channel channelnum tracknum))))))
               (let ((instrument-id (<ra> :get-instrument-for-track  *current-track-num*)))
-                (list "Configure instrument color"
-                      :enabled (>= instrument-id 0)
-                      (lambda ()
-                        (show-instrument-color-dialog -1 instrument-id))))
+                (list
+                 (list "Configure instrument color"
+                       :enabled (>= instrument-id 0)
+                       (lambda ()
+                         (show-instrument-color-dialog -1 instrument-id)))
+                 (list "Generate new instrument color"
+                       :enabled (>= instrument-id 0)
+                       (lambda ()
+                         (<ra> :set-instrument-color (<ra> :generate-new-color 0.9) instrument-id)))))
+
               "-------"
               (cadr (swingtext-popup-elements))
               (cadr (centtext-popup-elements))
