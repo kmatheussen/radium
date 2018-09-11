@@ -6635,7 +6635,7 @@
                                                ;;"-----------------"
                                                "------------------"
 
-                                               (list (if (pair? seqblock-infos) "Clone blocks" "Clone block")
+                                               (list (if (pair? seqblock-infos) "Clone editor blocks" "Clone editor block")
                                                      :enabled (and blocknum
                                                                    (or (pair? seqblock-infos) seqblock-info)
                                                                    (not (<ra> :is-playing-song)))
