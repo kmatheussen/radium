@@ -148,7 +148,7 @@ const_char* readLineFromFile(int64_t disknum){
     return "";
   }
 
-  const_char* ret = DISK_read_trimmed_line(disk);
+  const_char* ret = DISK_readline(disk);
   if (ret==NULL){
     handleError("readLineFromFile: Attempting to read past end of file");
     return "";
