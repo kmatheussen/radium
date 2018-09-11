@@ -12,7 +12,28 @@ class NullWriter(object):
 class RadiumMock:
     def addMessage(self, message):
         print "MESSAGE: "+message
-
+    def appendFilePaths(self, path1, path2):
+        return path1 + "/" + path2
+    def getHomePath(self):
+        return "/home/kjetil"
+    def getPath(self, path):
+        return path
+    def fileExists(self, filename):
+        return True
+    def openFileForReading(self, filename):
+        return open(filename).readlines()
+    def fileAtEnd(self, disk):
+        return len(disk)==0
+    def readLineFromFile(self, disk):
+        return disk.pop(0).rstrip();
+    def closeFile(self, disk):
+        if not type(disk) == list:
+            disk.close()
+    def openFileForWriting(self, filename):
+        return open(filename, 'w')
+    def writeToFile(self, disk, text):
+        disk.write(text)
+        
 if __name__ == "__main__" or sys.g_program_path=='__main__':
     radium = RadiumMock()
 else:
@@ -226,5 +247,5 @@ def FROM_C_remove_keybinding_from_conf_file(keybinding, command):
 
 if __name__ == "__main__":
     #update_conf_file("#gakkgakk")
-    insert_new_line_into_conf_file("a b : 903588")
+    insert_new_line_into_conf_file("a b : 90")
 
