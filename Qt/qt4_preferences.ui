@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>6</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -5846,7 +5846,7 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
      </widget>
      <widget class="QWidget" name="tab_3">
       <attribute name="title">
-       <string>Windows</string>
+       <string>GUI</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
        <item row="6" column="0" colspan="2">
@@ -7032,8 +7032,8 @@ you should check this box.
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>614</width>
-            <height>562</height>
+            <width>398</width>
+            <height>28</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -9646,8 +9646,8 @@ you should check this box.
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>983</width>
-               <height>296</height>
+               <width>100</width>
+               <height>30</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -9864,8 +9864,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_3"/>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>
