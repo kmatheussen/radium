@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_pause_proc.h"
 #include "../common/undo_tracks_proc.h"
 
-#include "midi_i_plugin.h"
+#include "midi_instrument.h"
 
 #include "midi_playfromstart_proc.h"
 #include "midi_fx_proc.h"
@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#include "midi_i_plugin_proc.h"
+#include "midi_instrument_proc.h"
 
 
 
@@ -343,7 +343,8 @@ static void MIDIchangeTrackPan(int newpan,const struct Tracks *track){
 */
 
 static struct PatchData *getPatchData(struct Patch *patch){
-  return patch->patchdata;
+  R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, NULL);
+  return (struct PatchData *)patch->patchdata;
 }
 
 void MIDISetPatchData(struct Patch *patch, const char *key, const char *value, bool program_state_is_valid){
@@ -398,7 +399,7 @@ static void MIDIclosePatch(struct Patch *patch){
 }
 
 static struct PatchData *createPatchData(void) {
-  struct PatchData *patchdata=talloc(sizeof(struct PatchData));
+  struct PatchData *patchdata=(struct PatchData *)talloc(sizeof(struct PatchData));
   patchdata->preset=-1;
   patchdata->MSB=-1;
   patchdata->LSB=-1;
@@ -470,7 +471,7 @@ const char **MIDI_getPortNames(int *retsize, bool is_input){
   }
 
   *retsize = num_os_names;
-  const char **ret = talloc((num_os_names+num_midi_ports+1)*sizeof(char*));
+  const char **ret = (const char**)talloc((num_os_names+num_midi_ports+1)*sizeof(char*));
   memcpy(ret,os_names,sizeof(char*)*num_os_names);
 
   // Add existing ports;
@@ -494,7 +495,7 @@ const char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype,
   int num_ports;
 
   const char **portnames=MIDI_getPortNames(&num_ports, is_input);
-  vector_t v={0};
+  vector_t v={};
   int i;
 
 #if defined(FOR_WINDOWS)
@@ -539,7 +540,7 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,cons
   }
 
   if (midi_port == NULL){
-    midi_port = talloc(sizeof(struct MidiPort));
+    midi_port = (struct MidiPort*)talloc(sizeof(struct MidiPort));
     midi_port->name = talloc_strdup(name);
     midi_port->port = MIDI_getMidiPortOs(window,reqtype,name);
     created_new_port = true;
@@ -560,7 +561,7 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,cons
         dont_ask_again = HASH_create(10);
 
       if (HASH_has_key(dont_ask_again, portname)==false){
-        vector_t v = {0};
+        vector_t v = {};
         
         int no = VECTOR_push_back(&v, "No");(void)no;
         int yes = VECTOR_push_back(&v, "Yes");
@@ -652,7 +653,7 @@ void MIDICloseInstrument(struct Instruments *instrument){
 
 void MIDI_init_track(struct Tracks *track){
 	struct TrackInstrumentData *tid;
-	tid=talloc(sizeof(struct TrackInstrumentData));
+	tid=(struct TrackInstrumentData *)talloc(sizeof(struct TrackInstrumentData));
 	track->midi_instrumentdata=tid;
 }
 
@@ -663,7 +664,7 @@ static void MIDIStopPlaying(struct Instruments *instrument){
   double time = TIME_get_ms();
   */
   
-  VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
+  VECTOR_FOR_EACH(struct Patch *, patch, &instrument->patches){
     struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
     struct MidiPort *midi_port = patchdata->midi_port;
     int ch;
@@ -700,7 +701,7 @@ static void handle_fx_when_patch_is_replaced(struct Blocks *block,
 {
   bool has_made_undo = false;
 
-  VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+  VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
     struct FX *fx = fxs->fx;
     if (fx->patch == old_patch) {
       

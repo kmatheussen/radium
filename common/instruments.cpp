@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "patch_proc.h"
 
 #include "instruments_proc.h"
-#include "../midi/midi_i_plugin_proc.h"
+#include "../midi/midi_instrument_proc.h"
 #include "../audio/audio_instrument_proc.h"
 
 

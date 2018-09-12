@@ -97,7 +97,7 @@ end:
 }
 
 
-#include "../midi/midi_i_plugin_proc.h"
+#include "../midi/midi_instrument_proc.h"
 #include "../midi/midi_fx_proc.h"
 #include "../midi/disk_midi_fx_proc.h"
 #include "../midi/midi_playfromstart_proc.h"

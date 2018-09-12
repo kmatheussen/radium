@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../OpenGL/Render_proc.h"
 #include "../audio/MultiCore_proc.h"
 #include "../midi/midi_i_input_proc.h"
-#include "../midi/midi_i_plugin_proc.h"
+#include "../midi/midi_instrument_proc.h"
 #include "../midi/midi_menues_proc.h"
 #include "../midi/OS_midi_proc.h"
 

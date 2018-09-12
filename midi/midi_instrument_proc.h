@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef MIDI_I_PLUGIN_PROC_H
 #define MIDI_I_PLUGIN_PROC_H
 
-#include "midi_i_plugin.h"
+#include "midi_instrument.h"
 
 extern LANGSPEC bool MIDI_get_use_0x90_for_note_off(void);
 extern LANGSPEC void MIDI_set_use_0x90_for_note_off(bool doit);

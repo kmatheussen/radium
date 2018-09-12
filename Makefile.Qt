@@ -388,7 +388,7 @@ OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o cocoa_Keyboard.o do.o
 OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_disk.o api_noteedit.o api_velocities.o api_pitches.o api_timing.o api_support.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_soundpluginregistry.o api_requesters.o api_mouse.o api_seqtracks.o api_gui.o
 
 #Midi
-OBJ14=disk_midi_fx.o disk_midi_i_plugin.o midi_fx.o midi_i_plugin.o midi_playfromstart.o midi_i_input.o midi_menues.o
+OBJ14=disk_midi_fx.o disk_midi_instrument.o midi_fx.o midi_instrument.o midi_playfromstart.o midi_i_input.o midi_menues.o
 # alsaseq_midi.o
 
 #Faust plugins
@@ -1696,8 +1696,8 @@ gfx_request.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_request.c
 
 midi_playfromstart.o:  $(BUILD_DEPENDENCIES)  midi/midi_playfromstart.c
 	$(CC)  midi/midi_playfromstart.c $(OPT) 
-midi_i_plugin.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_plugin.c
-	$(CC)  midi/midi_i_plugin.c $(OPT) 
+midi_instrument.o:  $(BUILD_DEPENDENCIES)  midi/midi_instrument.cpp
+	$(CCC)  midi/midi_instrument.cpp $(CPPOPT) 
 midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.cpp  midi/midi_i_input_proc.h common/Vector.hpp
 	$(CCC)  midi/midi_i_input.cpp $(QTOPT) $(JACKOPT)
 midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.c
@@ -1707,8 +1707,8 @@ midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.c
 #	$(CC)  midi/disk_midi_mymidilinks.c $(OPT) 
 # TODO
 
-disk_midi_i_plugin.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_i_plugin.c $(CD)disk.h
-	$(CC)  midi/disk_midi_i_plugin.c $(OPT) 
+disk_midi_instrument.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_instrument.c $(CD)disk.h
+	$(CC)  midi/disk_midi_instrument.c $(OPT) 
 disk_midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_fx.c $(CD)disk.h
 	$(CC)  midi/disk_midi_fx.c $(OPT) 
 alsaseq_midi.o:  $(BUILD_DEPENDENCIES)  midi/alsaseq/alsaseq_midi.c
@@ -2183,8 +2183,8 @@ SoundFonts.o: audio/SoundFonts.cpp
 	$(CCC) audio/SoundFonts.cpp $(QTOPT) -Ibin/packages/libgig/src/
 # `$(PKG) --cflags glib-2.0`
 
-audio_instrument.o: audio/audio_instrument.c $(CD)disk.h audio/SoundPluginRegistry_proc.h
-	$(CC) audio/audio_instrument.c $(OPT)
+audio_instrument.o: audio/audio_instrument.cpp $(CD)disk.h audio/SoundPluginRegistry_proc.h
+	$(CCC) audio/audio_instrument.cpp $(QTOPT)
 
 Smooth.o: audio/Smooth.c audio/Smooth_proc.h
 	$(CC) audio/Smooth.c $(OPT) $(CPUOPT)
