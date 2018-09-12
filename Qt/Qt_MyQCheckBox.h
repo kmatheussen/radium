@@ -206,6 +206,115 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
       MyQCheckBox_OnlyCustomPainting::contextMenuEvent(event);
   }
 
+  void show_checkbox_popup_menu(void){
+    
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+
+    vector_t options = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
+    
+    bool has_midi_learn = PLUGIN_has_midi_learn(plugin, _effect_num);
+    bool doing_random_change = PLUGIN_get_random_behavior(plugin, _effect_num);
+    int64_t modulator_id = MODULATOR_get_id(_patch.data(), _effect_num);
+    
+    int delete_pd = -10;
+    int reset = -10;
+    
+    int remove_midi_learn = -10;
+    int midi_relearn = -10;
+    int add_midi_learn = -10;
+    
+    int remove_modulator=-10;
+    int replace_modulator=-10;
+    int add_modulator=-10;
+      
+    int add_random = -10;
+    int remove_random = -10;
+
+    if(_is_a_pd_slider){
+      /*
+        VECTOR_push_back(&options, "Set Symbol Name");
+        VECTOR_push_back(&options, "Set Type");
+        VECTOR_push_back(&options, "Set Minimum Value");
+        VECTOR_push_back(&options, "Set Maximum Value");
+      */
+      delete_pd = VECTOR_push_back(&options, "Delete");
+    } else {
+      reset = VECTOR_push_back(&options, "Reset");
+      //VECTOR_push_back(&options, "Set Value");
+    }
+
+    VECTOR_push_back(&options, "--------------");
+
+    if (has_midi_learn){
+      remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
+      midi_relearn = VECTOR_push_back(&options, "MIDI Relearn");
+    }else{
+      add_midi_learn = VECTOR_push_back(&options, "MIDI Learn");
+    }      
+
+    VECTOR_push_back(&options, "--------------");
+
+    if(modulator_id >= 0){
+      remove_modulator=VECTOR_push_back(&options, talloc_format("Remove Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
+      replace_modulator=VECTOR_push_back(&options, talloc_format("Replace Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
+    } else {
+      add_modulator=VECTOR_push_back(&options, "Assign Modulator");
+    }
+
+    VECTOR_push_back(&options, "--------------");
+
+    if (_effect_num < plugin->type->num_effects){
+      if (doing_random_change)
+        remove_random = VECTOR_push_back(&options, "Don't change value when pressing \"Random\"");
+      else
+        add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
+    }
+
+    IsAlive is_alive(this);
+    
+    GFX_Menu3(options,[=](int command, bool onoff){
+
+        if (!is_alive || _patch->patchdata==NULL)
+          return;
+
+        //printf("command: %d, _patch.data(): %p, is_audio: %d\n",command, _patch.data(), _patch.data()!=NULL && _patch->instrument==get_audio_instrument());
+        
+        if (command==delete_pd)
+          PD_delete_controller(plugin, _effect_num);
+        
+        else if (command==reset)
+          PLUGIN_reset_one_effect(plugin,_effect_num);
+        
+        else if (command==remove_random)
+          PLUGIN_set_random_behavior(plugin, _effect_num, false);
+        
+        else if (command==add_random)
+          PLUGIN_set_random_behavior(plugin, _effect_num, true);
+        
+        else if (command==add_midi_learn)
+          PLUGIN_add_midi_learn(plugin, _effect_num);
+        
+        else if (command==remove_midi_learn)
+          PLUGIN_remove_midi_learn(plugin, _effect_num, true);
+        
+        else if (command==midi_relearn) {
+          PLUGIN_remove_midi_learn(plugin, _effect_num, true);
+          PLUGIN_add_midi_learn(plugin, _effect_num);
+        }
+        else if (command==remove_modulator){
+          MODULATOR_remove_target(modulator_id, _patch.data(), _effect_num);
+          
+        }else if (command==replace_modulator){
+          MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, true);
+          
+        }else if (command==add_modulator){
+          MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, false);
+        }
+
+        GFX_update_instrument_widget(_patch.data());
+      });
+  }      
+
   void mousePressEvent ( QMouseEvent * event ) override
   {
 
@@ -241,110 +350,12 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
         return;
       }
       
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      event->accept();
 
 #ifdef COMPILING_RADIUM
-      vector_t options = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
-
-      bool has_midi_learn = PLUGIN_has_midi_learn(plugin, _effect_num);
-      bool doing_random_change = PLUGIN_get_random_behavior(plugin, _effect_num);
-      int64_t modulator_id = MODULATOR_get_id(_patch.data(), _effect_num);
-      
-      int delete_pd = -10;
-      int reset = -10;
-
-      int remove_midi_learn = -10;
-      int midi_relearn = -10;
-      int add_midi_learn = -10;
-
-      int remove_modulator=-10;
-      int replace_modulator=-10;
-      int add_modulator=-10;
-
-      int add_random = -10;
-      int remove_random = -10;
-
-      if(_is_a_pd_slider){
-        /*
-        VECTOR_push_back(&options, "Set Symbol Name");
-        VECTOR_push_back(&options, "Set Type");
-        VECTOR_push_back(&options, "Set Minimum Value");
-        VECTOR_push_back(&options, "Set Maximum Value");
-        */
-        delete_pd = VECTOR_push_back(&options, "Delete");
-      } else {
-        reset = VECTOR_push_back(&options, "Reset");
-        //VECTOR_push_back(&options, "Set Value");
-      }
-
-      VECTOR_push_back(&options, "--------------");
-
-      if (has_midi_learn){
-        remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
-        midi_relearn = VECTOR_push_back(&options, "MIDI Relearn");
-      }else{
-        add_midi_learn = VECTOR_push_back(&options, "MIDI Learn");
-      }      
-
-      VECTOR_push_back(&options, "--------------");
-
-      if(modulator_id >= 0){
-        remove_modulator=VECTOR_push_back(&options, talloc_format("Remove Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
-        replace_modulator=VECTOR_push_back(&options, talloc_format("Replace Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
-      } else {
-        add_modulator=VECTOR_push_back(&options, "Assign Modulator");
-      }
-
-      VECTOR_push_back(&options, "--------------");
-
-      if (_effect_num < plugin->type->num_effects){
-        if (doing_random_change)
-          remove_random = VECTOR_push_back(&options, "Don't change value when pressing \"Random\"");
-        else
-          add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
-      }
-      
-      int command = GFX_Menu(root->song->tracker_windows, NULL, "", options, true);
-
-      //printf("command: %d, _patch.data(): %p, is_audio: %d\n",command, _patch.data(), _patch.data()!=NULL && _patch->instrument==get_audio_instrument());
-
-      if (command==delete_pd)
-        PD_delete_controller(plugin, _effect_num);
-      
-      else if (command==reset)
-        PLUGIN_reset_one_effect(plugin,_effect_num);
-
-      else if (command==remove_random)
-        PLUGIN_set_random_behavior(plugin, _effect_num, false);
-      
-      else if (command==add_random)
-        PLUGIN_set_random_behavior(plugin, _effect_num, true);
-      
-      else if (command==add_midi_learn)
-        PLUGIN_add_midi_learn(plugin, _effect_num);
-          
-      else if (command==remove_midi_learn)
-        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
-      
-      else if (command==midi_relearn) {
-        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
-        PLUGIN_add_midi_learn(plugin, _effect_num);
-      }
-      else if (command==remove_modulator){
-        MODULATOR_remove_target(modulator_id, _patch.data(), _effect_num);
-        
-      }else if (command==replace_modulator){
-        MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, true);
-        
-      }else if (command==add_modulator){
-        MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, false);
-      }
-
-      GFX_update_instrument_widget(_patch.data());
-      
+      show_checkbox_popup_menu();
 #endif // COMPILING_RADIUM
 
-      event->accept();
     }
   }
 
