@@ -515,7 +515,7 @@ void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window){
 
 void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
 
-  auto callback = [=](struct FX *fx){
+  auto callback = [window, wblock, wtrack](struct FX *fx){
     if(fx==NULL) return;
 
     Place place;

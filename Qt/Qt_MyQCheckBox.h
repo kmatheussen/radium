@@ -272,7 +272,7 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting {
 
     IsAlive is_alive(this);
     
-    GFX_Menu3(options,[=](int command, bool onoff){
+    GFX_Menu3(options,[is_alive, this, plugin, modulator_id, delete_pd, reset, remove_random, add_random, add_midi_learn, remove_midi_learn, midi_relearn, remove_modulator, replace_modulator, add_modulator](int command, bool onoff){
 
         if (!is_alive || _patch->patchdata==NULL)
           return;
