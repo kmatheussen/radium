@@ -579,6 +579,9 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
       
   //if(system(QString(QCoreApplication::applicationDirPath() + "/crashreporter " + key + " " + QString::number(getpid()) + "&").toAscii())==-1) { // how to fix utf-8 here ?
   QString a = "LD_LIBRARY_PATH=" + QString(getenv("LD_LIBRARY_PATH"));
+#if defined(FOR_MACOSX)
+  a = "sleep 5 && " + a; // Seems like this one tricks the system to create diagnostic report before the crashreporter finishes.
+#endif
   QString full_command = a + " " + program + " " + arg1 + " " + arg2 + " " + arg3 + " " + arg4;
 
   if (wait_until_finished==false)
