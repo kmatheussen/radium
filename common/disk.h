@@ -63,46 +63,46 @@ typedef struct{
 extern DiskClass dc;
 #endif
 
-extern void DC_SaveCleanString(const char *string);
-extern void DC_SaveST(const char *string);
-extern void DC_SaveS(const char *string);
-extern void DC_SaveI(int integer);
-extern void DC_SaveUI(unsigned int integer);
-extern void DC_SaveL(int64_t integer);
-extern void DC_SaveN(int64_t integer);
-extern void DC_SaveUL(uint64_t integer);
-extern void DC_SaveP(uint64_t integer);
-extern void DC_SaveF(float integer);
-extern void DC_SaveB(bool integer);
-extern void DC_SSI(const char *string,int integer);
-extern void DC_SSB(const char *string,bool integer);
-extern void DC_SSUI(const char *string,unsigned int integer);
-extern void DC_SSL(const char *string,int64_t integer);
-extern void DC_SSF(const char *string,float integer);
-extern void DC_SSN(const char *string,int64_t integer);
-extern void DC_SSUL(const char *string,uint64_t integer);
-extern void DC_SSS(const char *string,const char *string2);
+extern LANGSPEC void DC_SaveCleanString(const char *string);
+extern LANGSPEC void DC_SaveST(const char *string);
+extern LANGSPEC void DC_SaveS(const char *string);
+extern LANGSPEC void DC_SaveI(int integer);
+extern LANGSPEC void DC_SaveUI(unsigned int integer);
+extern LANGSPEC void DC_SaveL(int64_t integer);
+extern LANGSPEC void DC_SaveN(int64_t integer);
+extern LANGSPEC void DC_SaveUL(uint64_t integer);
+extern LANGSPEC void DC_SaveP(uint64_t integer);
+extern LANGSPEC void DC_SaveF(float integer);
+extern LANGSPEC void DC_SaveB(bool integer);
+extern LANGSPEC void DC_SSI(const char *string,int integer);
+extern LANGSPEC void DC_SSB(const char *string,bool integer);
+extern LANGSPEC void DC_SSUI(const char *string,unsigned int integer);
+extern LANGSPEC void DC_SSL(const char *string,int64_t integer);
+extern LANGSPEC void DC_SSF(const char *string,float integer);
+extern LANGSPEC void DC_SSN(const char *string,int64_t integer);
+extern LANGSPEC void DC_SSUL(const char *string,uint64_t integer);
+extern LANGSPEC void DC_SSS(const char *string,const char *string2);
 
-extern void DC_fgets(void);
-extern int DC_LoadI(void);
-extern unsigned int DC_LoadUI(void);
-extern int64_t DC_LoadL(void);
-extern uint64_t DC_LoadUL(void);
-extern float DC_LoadF(void);
-extern double DC_LoadD(void);
-extern uint_32 DC_LoadU32(void);
-extern NInt DC_LoadN(void);
-extern char *DC_LoadS(void);
-extern char *DC_LoadSNoMatterWhat(void);
-extern bool DC_LoadB(void);
+extern LANGSPEC void DC_fgets(void);
+extern LANGSPEC int DC_LoadI(void);
+extern LANGSPEC unsigned int DC_LoadUI(void);
+extern LANGSPEC int64_t DC_LoadL(void);
+extern LANGSPEC uint64_t DC_LoadUL(void);
+extern LANGSPEC float DC_LoadF(void);
+extern LANGSPEC double DC_LoadD(void);
+extern LANGSPEC uint_32 DC_LoadU32(void);
+extern LANGSPEC NInt DC_LoadN(void);
+extern LANGSPEC char *DC_LoadS(void);
+extern LANGSPEC char *DC_LoadSNoMatterWhat(void);
+extern LANGSPEC bool DC_LoadB(void);
 
-extern void *DC_doalloc(int size);
-extern void *DC_doalloc_atomic(int size);
+extern LANGSPEC void *DC_doalloc(int size);
+extern LANGSPEC void *DC_doalloc_atomic(int size);
 
-extern int DC_Next(void);
-extern void DC_SkipBlock(void);
+extern LANGSPEC int DC_Next(void);
+extern LANGSPEC void DC_SkipBlock(void);
 
-extern int DC_whatString(char **variables,int num);
+extern LANGSPEC int DC_whatString(char **variables,int num);
 
 extern float disk_load_version;
 extern int curr_disk_line;
