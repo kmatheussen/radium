@@ -938,13 +938,13 @@ public slots:
     int mono   = VECTOR_push_back(&v, "Mono from input connection");
     int stereo = VECTOR_push_back(&v, "Stereo from input connections");
 
-    wchar_t *pathdir;
+    QString pathdir;
 
     if (saveRecordedAudioFilesInBrowserPath() || dc.filename == NULL){
 
       auto *sample_requester_widget = AUDIOWIDGET_get_sample_requester_widget(_patch.data());
       //printf("dir: %p\n", sample_requester_widget->_dir);
-      pathdir = STRING_create(SAMPLEREQUESTER_get_path(sample_requester_widget));
+      pathdir = SAMPLEREQUESTER_get_path(sample_requester_widget);
 
     } else {
 
@@ -963,20 +963,27 @@ public slots:
 
       }
       
-      pathdir = STRING_create(dir.absolutePath());
+      pathdir = dir.absolutePath();
 
     }
 
-    int sel = GFX_Menu(root->song->tracker_windows, NULL, "", v, true);
+    IsAlive is_alive(this);
     
-    if (sel==mono_main)
-      SAMPLER_start_recording(plugin, pathdir, 1, true);
-    else if (sel==stereo_main)
-      SAMPLER_start_recording(plugin, pathdir, 2, true);
-    else if (sel==mono)
-      SAMPLER_start_recording(plugin, pathdir, 1, false);
-    else if (sel==stereo)
-      SAMPLER_start_recording(plugin, pathdir, 2, false);
+    GFX_Menu3(v,[is_alive, this, plugin, pathdir, mono_main, stereo_main, mono, stereo](int sel, bool onoff){
+
+        if (!is_alive || _patch->patchdata==NULL)
+          return;
+
+        if (sel==mono_main)
+          SAMPLER_start_recording(plugin, STRING_create(pathdir), 1, true);
+        else if (sel==stereo_main)
+          SAMPLER_start_recording(plugin, STRING_create(pathdir), 2, true);
+        else if (sel==mono)
+          SAMPLER_start_recording(plugin, STRING_create(pathdir), 1, false);
+        else if (sel==stereo)
+          SAMPLER_start_recording(plugin, STRING_create(pathdir), 2, false);
+      });
+    
   }
 
   void saveit(void){
