@@ -585,7 +585,7 @@ void MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track, std::f
 	for(int lokke=0;lokke<MIDI_NUM_FX;lokke++)
           VECTOR_push_back(&v,midi_fxs_fullnames[lokke]);
 
-        GFX_Menu3(v,[window, track, callback, v](int selection, bool onoff){
+        GFX_Menu3(v,[window, track, callback](int selection, bool onoff){
 
             if(-1==selection)
               return;
