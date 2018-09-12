@@ -61,8 +61,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
 
-#include "midi_i_plugin.h"
-#include "midi_i_plugin_proc.h"
+#include "midi_instrument.h"
+#include "midi_instrument_proc.h"
 #include "midi_proc.h"
 
 #include "midi_i_input_proc.h"

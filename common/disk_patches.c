@@ -27,9 +27,9 @@
 
 #include "../midi/dummy/OS_midi_spesific.h"
 
-#include "../midi/midi_i_plugin.h"
-#include "../midi/midi_i_plugin_proc.h"
-#include "../midi/disk_midi_i_plugin_proc.h"
+#include "../midi/midi_instrument.h"
+#include "../midi/midi_instrument_proc.h"
+#include "../midi/disk_midi_instrument_proc.h"
 
 #include "../audio/audio_instrument_proc.h"
 

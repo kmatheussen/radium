@@ -1587,7 +1587,7 @@ enum{
 struct Tracker_Windows;
 struct Blocks;
 struct Tracks;
-struct Instruments{
+struct Instruments{ 
 	struct ListHeader1 l;
 
 	const char *instrumentname;

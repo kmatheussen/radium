@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "../common/disk.h"
-#include "midi_i_plugin.h"
+#include "midi_instrument.h"
 #include "midi_fx_proc.h"
 
 #include "disk_midi_fx_proc.h"

@@ -24,10 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#ifndef TRACKER_INCLUDE
-
-extern void MIDISaveFX(struct FX *fx,const struct Tracks *track);
-extern void *MIDILoadFX(struct FX *fx,const struct Tracks *track);
-
-#endif
+extern LANGSPEC void MIDISaveFX(struct FX *fx,const struct Tracks *track);
+extern LANGSPEC void *MIDILoadFX(struct FX *fx,const struct Tracks *track);
 

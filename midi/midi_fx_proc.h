@@ -16,25 +16,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#include "midi_i_plugin.h"
+#include "midi_instrument.h"
 
 
-extern void MIDI_treatFX(struct FX *fx,int val,const struct Tracks *track,int skip);
-extern void MIDI_closeFX(struct FX *fx,const struct Tracks *track);
+extern LANGSPEC void MIDI_treatFX(struct FX *fx,int val,const struct Tracks *track,int skip);
+extern LANGSPEC void MIDI_closeFX(struct FX *fx,const struct Tracks *track);
 
 extern LANGSPEC void MIDI_set_effect_value(const struct Patch *patch, STime time, int effect_num, float scaled_value); // MIDI version of SOUNDPLUGIN_set_effect_value
 
 extern LANGSPEC int MIDI_get_effect_num(const struct Patch *patch, const char *effect_name, char **error_message);
   
-extern bool MIDISetTreatFX(struct FX *fx,struct MIDI_FX *midi_fx);
+extern LANGSPEC bool MIDISetTreatFX(struct FX *fx,struct MIDI_FX *midi_fx);
 
-struct FX *MIDI_createFX(const struct Tracks *track, struct Patch *patch, int effect_num);
-vector_t *MIDI_getFxNames(const struct Patch *patch);
+extern LANGSPEC struct FX *MIDI_createFX(const struct Tracks *track, struct Patch *patch, int effect_num);
+extern LANGSPEC vector_t *MIDI_getFxNames(const struct Patch *patch);
 
-extern int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx);
+extern LANGSPEC int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx);
 
-extern void *MIDI_CopyInstrumentData(const struct Tracks *track);
-
-
-
-
+extern LANGSPEC void *MIDI_CopyInstrumentData(const struct Tracks *track);

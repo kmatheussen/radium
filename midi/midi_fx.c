@@ -25,8 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "../common/vector_proc.h"
-#include "midi_i_plugin.h"
-#include "midi_i_plugin_proc.h"
+#include "midi_instrument.h"
+#include "midi_instrument_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/instruments_proc.h"
 #include <string.h>

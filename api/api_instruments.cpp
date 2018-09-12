@@ -33,8 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../embedded_scheme/s7extra_proc.h"
 
-#include "../midi/midi_i_plugin.h"
-#include "../midi/midi_i_plugin_proc.h"
+#include "../midi/midi_instrument.h"
+#include "../midi/midi_instrument_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "../midi/midi_menues_proc.h"
 

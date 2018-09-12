@@ -20,12 +20,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/disk.h"
 #include "../common/hashmap_proc.h"
 
-#include "midi_i_plugin.h"
-#include "midi_i_plugin_proc.h"
+#include "midi_instrument.h"
+#include "midi_instrument_proc.h"
 
 #include "OS_midi_proc.h"
 
-#include "disk_midi_i_plugin_proc.h"
+#include "disk_midi_instrument_proc.h"
 
 hash_t *MIDI_get_patchdata_state(const void *pd){
   const struct PatchData *patchdata = pd;
