@@ -291,7 +291,7 @@ struct MyQSlider : public QSlider {
 
     IsAlive is_alive(this);
     
-    GFX_Menu3(options,[=](int command, bool onoff){
+    GFX_Menu3(options,[is_alive, this, plugin, modulator_id, pd_delete, reset, remove_midi_learn, midi_relearn, midi_learn, remove_modulator, replace_modulator, add_modulator, record, remove_random, add_random, add_automation_to_current_editor_track, add_automation_to_current_sequencer_track](int command, bool onoff){
 
         if (!is_alive || _patch->patchdata==NULL)
           return;

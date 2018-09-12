@@ -177,7 +177,7 @@ public:
   }
 
   const wchar_t* get_from_another_thread(void) const {
-    R_ASSERT_NON_RELEASE(!THREADING_is_main_thread());
+    R_ASSERT_NON_RELEASE(!THREADING_is_main_thread() || PLAYER_current_thread_has_lock());
     return string->string;
   }
 
