@@ -197,6 +197,184 @@ struct MyQSlider : public QSlider {
     event_->accept();
   }
 
+  void show_slider_popup_menu(void){
+    bool is_audio_instrument = _patch->instrument==get_audio_instrument() ;
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      
+    vector_t options = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
+
+    bool has_midi_learn = is_audio_instrument && PLUGIN_has_midi_learn(plugin, _effect_num);
+    bool is_recording_automation = is_audio_instrument && PLUGIN_is_recording_automation(plugin, _effect_num);
+    bool doing_random_change = is_audio_instrument && PLUGIN_get_random_behavior(plugin, _effect_num);
+    int64_t modulator_id = MODULATOR_get_id(_patch.data(), _effect_num);
+      
+    int pd_delete=-10;
+    int reset=-10;
+      
+    int remove_midi_learn=-10;
+    int midi_relearn=-10;
+    int midi_learn=-10;
+      
+    int remove_modulator=-10;
+    int replace_modulator=-10;
+    int add_modulator=-10;
+      
+    int record=-10;
+    int add_automation_to_current_editor_track=-10;
+    int add_automation_to_current_sequencer_track=-10;
+    int add_random = -10;
+    int remove_random = -10;
+      
+    if (is_audio_instrument) {
+
+      if(_is_a_pd_slider){
+        /*
+          VECTOR_push_back(&options, "Set Symbol Name");
+          VECTOR_push_back(&options, "Set Type");
+          VECTOR_push_back(&options, "Set Minimum Value");
+          VECTOR_push_back(&options, "Set Maximum Value");
+        */
+        pd_delete = VECTOR_push_back(&options, "Delete");
+      } else {
+          
+        reset=VECTOR_push_back(&options, "Reset");
+          
+        //VECTOR_push_back(&options, "Set Value");
+      }
+        
+      VECTOR_push_back(&options, "--------------");
+        
+      if (has_midi_learn){
+        remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
+        midi_relearn = VECTOR_push_back(&options, "MIDI relearn");
+      }else{
+        midi_learn = VECTOR_push_back(&options, "MIDI Learn");
+      }
+
+      VECTOR_push_back(&options, "--------------");
+
+    }
+
+    if(modulator_id >= 0){
+      remove_modulator=VECTOR_push_back(&options, talloc_format("Remove Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
+      replace_modulator=VECTOR_push_back(&options, talloc_format("Replace Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
+    } else {
+      add_modulator=VECTOR_push_back(&options, "Assign Modulator");
+    }
+
+    if (is_audio_instrument) {
+
+      VECTOR_push_back(&options, "--------------");
+        
+      if (!is_recording_automation)
+        record = VECTOR_push_back(&options, "Record");
+        
+      VECTOR_push_back(&options, "--------------");
+        
+      add_automation_to_current_editor_track = VECTOR_push_back(&options, "Add automation to current editor track");
+      add_automation_to_current_sequencer_track = VECTOR_push_back(&options, "Add automation to current sequencer track");
+        
+      VECTOR_push_back(&options, "--------------");
+        
+      if (_effect_num < plugin->type->num_effects){
+        if (doing_random_change)
+          remove_random = VECTOR_push_back(&options, "Don't change value when pressing \"Random\"");
+        else
+          add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
+      }
+    }
+      
+    //VECTOR_push_back(&options, "");
+      
+    //VECTOR_push_back(&options, "Set Value");
+
+    IsAlive is_alive(this);
+    
+    GFX_Menu3(options,[=](int command, bool onoff){
+
+        if (!is_alive || _patch->patchdata==NULL)
+          return;
+
+        //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
+        
+        if (command==pd_delete)
+          PD_delete_controller(plugin, _effect_num);
+        
+        else if (command==reset)
+          PLUGIN_reset_one_effect(plugin,_effect_num);
+        
+        else if (command==remove_midi_learn)
+          PLUGIN_remove_midi_learn(plugin, _effect_num, true);
+        
+        else if (command==midi_relearn)
+          {
+            PLUGIN_remove_midi_learn(plugin, _effect_num, true);
+            PLUGIN_add_midi_learn(plugin, _effect_num);
+          }
+        
+        else if (command==midi_learn)
+          PLUGIN_add_midi_learn(plugin, _effect_num);
+        
+        else if (command==remove_modulator){
+          MODULATOR_remove_target(modulator_id, _patch.data(), _effect_num);
+          
+        }else if (command==replace_modulator){
+          MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, true);
+          
+        }else if (command==add_modulator){
+          MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, false);
+          
+        }else if (command==record)
+          PLUGIN_set_recording_automation(plugin, _effect_num, true);
+        
+        else if (command==remove_random)
+          PLUGIN_set_random_behavior(plugin, _effect_num, false);
+        
+        else if (command==add_random)
+          PLUGIN_set_random_behavior(plugin, _effect_num, true);
+        
+        else if (command==add_automation_to_current_editor_track) {
+          
+          addAutomationToCurrentEditorTrack(_patch->id, getInstrumentEffectName(_effect_num, _patch->id));
+          
+        } else if (command==add_automation_to_current_sequencer_track) {
+          
+          addAutomationToCurrentSequencerTrack(_patch->id, getInstrumentEffectName(_effect_num, _patch->id));
+          
+        }
+      
+       
+        GFX_update_instrument_widget(_patch.data());
+        
+#if 0
+        else if(command==1){
+          char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
+          if(s!=NULL){
+            float value = OS_get_double_from_string(s);
+            printf("value: %f\n",value);
+            setValue(value);
+          }
+        }
+        
+#else
+#if 0
+        else if(command==1 && _patch.data()!=NULL && _patch->instrument==get_audio_instrument()){
+          SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+          char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
+          if(s!=NULL){
+            float value = OS_get_double_from_string(s);
+            ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num));
+            PLUGIN_set_effect_value(plugin, -1, _effect_num, value, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
+            GFX_update_instrument_widget(_patch.data());
+          }
+        }
+#endif
+#endif
+
+      });
+  }
+  
   // mousePressEvent 
   void mousePressEvent ( QMouseEvent * event_ ) override
   {
@@ -226,177 +404,8 @@ struct MyQSlider : public QSlider {
       if(_patch.data()==NULL || _patch->patchdata == NULL) //  _patch->instrument!=get_audio_instrument() 
         return;
       
-      bool is_audio_instrument = _patch->instrument==get_audio_instrument() ;
-
-      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
-
 #ifdef COMPILING_RADIUM
-      vector_t options = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
-
-      bool has_midi_learn = is_audio_instrument && PLUGIN_has_midi_learn(plugin, _effect_num);
-      bool is_recording_automation = is_audio_instrument && PLUGIN_is_recording_automation(plugin, _effect_num);
-      bool doing_random_change = is_audio_instrument && PLUGIN_get_random_behavior(plugin, _effect_num);
-      int64_t modulator_id = MODULATOR_get_id(_patch.data(), _effect_num);
-      
-      int pd_delete=-10;
-      int reset=-10;
-      
-      int remove_midi_learn=-10;
-      int midi_relearn=-10;
-      int midi_learn=-10;
-      
-      int remove_modulator=-10;
-      int replace_modulator=-10;
-      int add_modulator=-10;
-      
-      int record=-10;
-      int add_automation_to_current_editor_track=-10;
-      int add_automation_to_current_sequencer_track=-10;
-      int add_random = -10;
-      int remove_random = -10;
-      
-      if (is_audio_instrument) {
-
-        if(_is_a_pd_slider){
-          /*
-            VECTOR_push_back(&options, "Set Symbol Name");
-            VECTOR_push_back(&options, "Set Type");
-            VECTOR_push_back(&options, "Set Minimum Value");
-            VECTOR_push_back(&options, "Set Maximum Value");
-          */
-          pd_delete = VECTOR_push_back(&options, "Delete");
-        } else {
-          
-          reset=VECTOR_push_back(&options, "Reset");
-          
-          //VECTOR_push_back(&options, "Set Value");
-        }
-        
-        VECTOR_push_back(&options, "--------------");
-        
-        if (has_midi_learn){
-          remove_midi_learn = VECTOR_push_back(&options, "Remove MIDI Learn");
-          midi_relearn = VECTOR_push_back(&options, "MIDI relearn");
-        }else{
-          midi_learn = VECTOR_push_back(&options, "MIDI Learn");
-        }
-
-        VECTOR_push_back(&options, "--------------");
-
-      }
-
-      if(modulator_id >= 0){
-        remove_modulator=VECTOR_push_back(&options, talloc_format("Remove Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
-        replace_modulator=VECTOR_push_back(&options, talloc_format("Replace Modulator (%s)", getModulatorDescription2(_patch->id, _effect_num)));
-      } else {
-        add_modulator=VECTOR_push_back(&options, "Assign Modulator");
-      }
-
-      if (is_audio_instrument) {
-
-        VECTOR_push_back(&options, "--------------");
-        
-        if (!is_recording_automation)
-          record = VECTOR_push_back(&options, "Record");
-        
-        VECTOR_push_back(&options, "--------------");
-        
-        add_automation_to_current_editor_track = VECTOR_push_back(&options, "Add automation to current editor track");
-        add_automation_to_current_sequencer_track = VECTOR_push_back(&options, "Add automation to current sequencer track");
-        
-        VECTOR_push_back(&options, "--------------");
-        
-        if (_effect_num < plugin->type->num_effects){
-          if (doing_random_change)
-            remove_random = VECTOR_push_back(&options, "Don't change value when pressing \"Random\"");
-          else
-            add_random = VECTOR_push_back(&options, "Change value when pressing \"Random\"");
-        }
-      }
-      
-      //VECTOR_push_back(&options, "");
-      
-      //VECTOR_push_back(&options, "Set Value");
-
-      int command = GFX_Menu(root->song->tracker_windows, NULL, "", options, true);
-
-      //printf("command: %d, _patch: %p, is_audio: %d\n",command, _patch, _patch!=NULL && _patch->instrument==get_audio_instrument());
-
-      if (command==pd_delete)
-        PD_delete_controller(plugin, _effect_num);
-
-      else if (command==reset)
-        PLUGIN_reset_one_effect(plugin,_effect_num);
-
-      else if (command==remove_midi_learn)
-        PLUGIN_remove_midi_learn(plugin, _effect_num, true);
-
-      else if (command==midi_relearn)
-        {
-          PLUGIN_remove_midi_learn(plugin, _effect_num, true);
-          PLUGIN_add_midi_learn(plugin, _effect_num);
-        }
-      
-      else if (command==midi_learn)
-        PLUGIN_add_midi_learn(plugin, _effect_num);
-
-      else if (command==remove_modulator){
-        MODULATOR_remove_target(modulator_id, _patch.data(), _effect_num);
-      
-      }else if (command==replace_modulator){
-        MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, true);
-
-      }else if (command==add_modulator){
-        MODULATOR_maybe_create_and_add_target(_patch.data(), _effect_num, false);
-      
-      }else if (command==record)
-        PLUGIN_set_recording_automation(plugin, _effect_num, true);
-
-      else if (command==remove_random)
-        PLUGIN_set_random_behavior(plugin, _effect_num, false);
-
-      else if (command==add_random)
-        PLUGIN_set_random_behavior(plugin, _effect_num, true);
-      
-      else if (command==add_automation_to_current_editor_track) {
-
-        addAutomationToCurrentEditorTrack(_patch->id, getInstrumentEffectName(_effect_num, _patch->id));
-
-      } else if (command==add_automation_to_current_sequencer_track) {
-
-        addAutomationToCurrentSequencerTrack(_patch->id, getInstrumentEffectName(_effect_num, _patch->id));
-
-      }
-      
-       
-        
-      GFX_update_instrument_widget(_patch.data());
-        
-#if 0
-      else if(command==1){
-        char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
-        if(s!=NULL){
-          float value = OS_get_double_from_string(s);
-          printf("value: %f\n",value);
-          setValue(value);
-        }
-      }
-
-#else
-#if 0
-      else if(command==1 && _patch.data()!=NULL && _patch->instrument==get_audio_instrument()){
-        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-        char *s = GFX_GetString(root->song->tracker_windows,NULL, (char*)"new value");
-        if(s!=NULL){
-          float value = OS_get_double_from_string(s);
-          ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num));
-          PLUGIN_set_effect_value(plugin, -1, _effect_num, value, PLUGIN_STORED_TYPE, PLUGIN_STORE_VALUE, FX_single);
-          GFX_update_instrument_widget(_patch.data());
-        }
-      }
-#endif
-#endif
+      show_slider_popup_menu();
 #endif // COMPILING_RADIUM
 
       event_->accept();
