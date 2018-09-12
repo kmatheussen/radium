@@ -14,6 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#ifndef _RADIUM_COMMON_OS_VISUAL_INPUT_H
+#define _RADIUM_COMMON_OS_VISUAL_INPUT_H
+
 #include "visual_proc.h"
 
 
@@ -90,12 +93,22 @@ extern LANGSPEC float GFX_GetFloat(struct Tracker_Windows *tvisual,ReqType reqty
 extern LANGSPEC char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqtype,const char *text,bool program_state_is_valid);
 
 #ifdef __cplusplus
+
 #include <functional>
+
 void GFX_Menu3(
                const vector_t &v,
                std::function<void(int,bool)> callback
                );
+
+#include "../api/api_requesters_proc.h"
+
+static inline void GFX_SimpleMenu(const char *texts, std::function<void(int,bool)> callback3){
+  return API_simplePopupMenu(texts, callback3);
+}
+
 #endif
+
 
 extern LANGSPEC int GFX_Menu2(
                               struct Tracker_Windows *tvisual,
@@ -181,3 +194,5 @@ extern LANGSPEC void *PIANOROLLHEADER_create(void);
 extern LANGSPEC void PIANOROLLHEADER_assignTrack(void *pianorollheader, int blocknum, int tracknum);
 extern LANGSPEC void PIANOROLLHEADER_show(const struct WBlocks *wblock, void *pianorollheader, int x, int y, int x2, int y2);
 extern LANGSPEC void PIANOROLLHEADER_hide(void *pianorollheader);
+
+#endif

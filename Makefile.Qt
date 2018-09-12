@@ -1142,8 +1142,8 @@ undo_patchvoice.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchvoice.c
 undo_patchname.o:  $(BUILD_DEPENDENCIES) $(CD)undo_patchname.c
 	$(CC) $(CD)undo_patchname.c $(OPT)
 
-window_config.o:  $(BUILD_DEPENDENCIES) $(CD)window_config.c
-	$(CC) $(CD)window_config.c $(OPT)
+window_config.o:  $(BUILD_DEPENDENCIES) $(CD)window_config.cpp
+	$(CCC) $(CD)window_config.cpp $(CPPOPT)
 
 PEQ_clock.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_clock.c $(CD)playerclass.h
 	$(CC) $(CD)PEQ_clock.c $(OPT)
@@ -1637,8 +1637,8 @@ api_soundpluginregistry.o:  $(BUILD_DEPENDENCIES) $(API)api_soundpluginregistry.
 #	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC)  $(API)api_soundpluginregistry.cpp $(QTOPT)
 
-api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.c $(API)radium_proc.h
-	$(CC)  $(API)api_requesters.c $(OPT)
+api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.cpp $(API)radium_proc.h
+	$(CCC)  $(API)api_requesters.cpp $(QTOPT)
 
 api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.c $(API)radium_proc.h
 	$(CC)  $(API)api_mouse.c $(OPT)

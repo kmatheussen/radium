@@ -236,7 +236,7 @@ float requestFloat(const_char *text, float min, float max, bool standalone, cons
 const_char* requestString(const_char *text, bool standalone, const_char* default_value){
   PREREQ("");
 
-  char *ret = GFX_GetString(window, requester, text, true);
+  const char *ret = GFX_GetString(window, requester, text, true);
     
   if(ret==NULL)
     ret="";
@@ -246,11 +246,18 @@ const_char* requestString(const_char *text, bool standalone, const_char* default
   return ret;
 }
 
+void API_simplePopupMenu(const char *texts, std::function<void(int,bool)> callback3){
+  const vector_t vec = GFX_MenuParser(texts, "%");
+  return GFX_Menu3(vec,callback3);
+}
+
+/*
 int simplePopupMenu(const char *texts){
   struct Tracker_Windows *window=getWindowFromNum(-1);
   const vector_t vec = GFX_MenuParser(texts, "%");
   return GFX_Menu(window, NULL,"",vec,true);
 }
+*/
 
 void popupMenu(dyn_t strings, func_t* callback){
   struct Tracker_Windows *window=getWindowFromNum(-1);
@@ -300,7 +307,7 @@ const_char* showMessage(const char *text, dyn_t buttons){
     return "";
   }
   
-  vector_t v={0};
+  vector_t v={};
   for(int i=0;i<buttons.array->num_elements;i++){
     dyn_t button = buttons.array->elements[i];
     if (button.type!=STRING_TYPE){

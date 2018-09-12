@@ -18,15 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-
-
-#ifndef TRACKER_INCLUDE
-
-void Window_config(
+extern LANGSPEC void Window_config(
 	struct Tracker_Windows *window
 );
-
-#endif
 
 

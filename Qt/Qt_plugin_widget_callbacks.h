@@ -630,12 +630,18 @@ public:
   void ab_rightclicked(int num){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     int curr=plugin->curr_ab_num;
+
+    IsAlive is_alive(this);
     
-    if (simplePopupMenu(talloc_format("%sReset",curr==num?"[disabled]":""))==0){
-      PLUGIN_reset_ab(plugin, num);
-      update_ab_buttons();
-      AUDIOWIDGET_redraw_ab(_patch.data());
-    }
+    GFX_SimpleMenu(talloc_format("%sReset",curr==num?"[disabled]":""), [is_alive, this, plugin, num](int command, bool onoff){
+
+        if (!is_alive || _patch->patchdata==NULL)
+          return;
+
+        PLUGIN_reset_ab(plugin, num);
+        update_ab_buttons();
+        AUDIOWIDGET_redraw_ab(_patch.data());
+      });
   }
 
 
