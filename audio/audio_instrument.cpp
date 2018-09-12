@@ -440,8 +440,8 @@ static void AUDIO_set_permanent_id(struct Patch *patch, struct SoundPlugin *plug
 }
 
 void AUDIO_update_all_permanent_ids(void){
-  VECTOR_FOR_EACH(struct Patch *patch, &get_audio_instrument()->patches){
-    AUDIO_set_permanent_id(patch, patch->patchdata);
+  VECTOR_FOR_EACH(struct Patch *, patch, &get_audio_instrument()->patches){
+    AUDIO_set_permanent_id(patch, (struct SoundPlugin*)patch->patchdata);
   }END_VECTOR_FOR_EACH;
 }
 
@@ -740,7 +740,7 @@ static void init_fx(struct FX *fx, int effect_num, const char *name, struct Soun
   fx->effect_num      = effect_num;
   //fx->fxdata          = fxdata;
 
-  fx->name    = talloc_strdup(name);
+  fx->name    = (const char*)talloc_strdup(name);
   fx->min     = 0;
   fx->max     = MAX_FX_VAL;
   fx->closeFX = AUDIO_close_FX;
@@ -763,7 +763,7 @@ static vector_t *AUDIO_getFxNames(const struct Patch *patch){
   //PLUGIN_touch(plugin);
   
   int num_effects = plugin_type->num_effects+NUM_SYSTEM_EFFECTS;
-  vector_t *v=talloc(sizeof(vector_t));
+  vector_t *v=(vector_t *)talloc(sizeof(vector_t));
 
   int i;
   for(i=0;i<num_effects;i++) {
@@ -783,7 +783,7 @@ static struct FX *AUDIO_createFX(const struct Tracks *track, struct Patch *patch
 
   PLUGIN_touch(plugin);
   
-  struct FX *fx=talloc(sizeof(struct FX));
+  struct FX *fx=(struct FX *)talloc(sizeof(struct FX));
   fx->patch = patch;
 
   const char *name = PLUGIN_get_effect_name(plugin, effect_num);
@@ -799,7 +799,7 @@ typedef struct{
 } PatchEffect;
 
 static PatchEffect *create_patch_effect(struct Patch *patch, int effect_num){
-  PatchEffect *pe=talloc(sizeof(PatchEffect));
+  PatchEffect *pe=(PatchEffect *)talloc(sizeof(PatchEffect));
   pe->patch = patch;
   pe->effect_num = effect_num;
   return pe;
@@ -830,7 +830,7 @@ static void add_patch_effects_to_menu(vector_t *menu, vector_t *patch_effects, s
       
   for(int voicenum=0;voicenum<NUM_PATCH_VOICES;voicenum++){
 
-    VECTOR_push_back(menu, talloc_format("[submenu start]Voice %d",voicenum+1));
+    VECTOR_push_back(menu, (const char*)talloc_format("[submenu start]Voice %d",voicenum+1));
     VECTOR_push_back(patch_effects, NULL);
     
     for(int i=0;i<num_voice_effects;i++){
@@ -865,8 +865,8 @@ static void add_patch_effects_to_menu(vector_t *menu, vector_t *patch_effects, s
 static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx){
   const char *menutitle="Select FX";
 
-  vector_t v = {0};
-  vector_t patch_effects = {0};
+  vector_t v = {};
+  vector_t patch_effects = {};
   
 
 #if 1 // Enable selecting fx from other instruments
@@ -878,7 +878,7 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
     VECTOR_push_back(&v, "[submenu start]Other instruments");
     VECTOR_push_back(&patch_effects, NULL);
     
-    VECTOR_FOR_EACH(struct Patch *patch,&all_patches){
+    VECTOR_FOR_EACH(struct Patch *, patch,&all_patches){
 
       if (patch != track->patch){
         
@@ -924,14 +924,14 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
   if(-1==selection)
     return FX_FAILED;
 
-  PatchEffect *pe = patch_effects.elements[selection];
+  PatchEffect *pe = (PatchEffect *)patch_effects.elements[selection];
   R_ASSERT(pe!=NULL);
 
   if (pe!=NULL){
     
     fx->patch = pe->patch;
 
-    char *name = v.elements[selection];
+    const char *name = (const char*)v.elements[selection];
     //if (pe->patch != track->patch)
     //  name = talloc_format("%s (%s)",name, pe->patch->name);
     
@@ -956,7 +956,7 @@ static void AUDIO_save_FX(struct FX *fx,const struct Tracks *track){
 
 static void *AUDIO_LoadFX(struct FX *fx,const struct Tracks *track){
   static char **objs=NULL;
-  static char *vars[2]={"num","name"};
+  static char *vars[2]={talloc_strdup("num"),talloc_strdup("name")};
 
   init_fx(fx,0,"Effect name was not set in file (\?\?\?)",NULL);
 
@@ -1014,11 +1014,11 @@ void DLoadAudioInstrument(void){
       struct Patch *patch = track->patch;
 
       if (patch!=NULL && patch->instrument == get_audio_instrument()) {
-        VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+        VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
           struct FX *fx = fxs->fx;
           struct Patch *fx_patch = fx->patch;
           
-          SoundPlugin *plugin = fx_patch->patchdata;
+          SoundPlugin *plugin = (SoundPlugin *)fx_patch->patchdata;
           if(plugin!=NULL){
             fx->name = PLUGIN_get_new_name_if_name_has_changed(plugin, fx->name);
             int effect_num = PLUGIN_get_effect_num(plugin, fx->name, NULL);
@@ -1038,7 +1038,7 @@ void DLoadAudioInstrument(void){
   }
 
   vector_t patches = get_audio_instrument()->patches;
-  VECTOR_FOR_EACH(struct Patch *patch, &patches){
+  VECTOR_FOR_EACH(struct Patch *, patch, &patches){
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     R_ASSERT(plugin!=NULL);
     PLUGIN_DLoad(plugin);
@@ -1056,8 +1056,8 @@ static void AUDIO_CloseInstrument(struct Instruments *instrument){}
 static void AUDIO_StopPlaying(struct Instruments *instrument){
   R_ASSERT(PLAYER_current_thread_has_lock());
   
-  VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
-    SoundPlugin *plugin = patch->patchdata;
+  VECTOR_FOR_EACH(struct Patch *, patch, &instrument->patches){
+    SoundPlugin *plugin = (SoundPlugin *)patch->patchdata;
     if (plugin!=NULL && plugin->type->player_is_stopped != NULL){
       PLAYER_maybe_pause_lock_a_little_bit(iterator666);
       plugin->type->player_is_stopped(plugin);
@@ -1068,9 +1068,9 @@ static void AUDIO_StopPlaying(struct Instruments *instrument){
 static void AUDIO_RT_StopPlaying(struct Instruments *instrument){
   R_ASSERT(PLAYER_current_thread_has_lock());
   
-  VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
+  VECTOR_FOR_EACH(struct Patch *, patch, &instrument->patches){
     
-    SoundPlugin *plugin = patch->patchdata;
+    SoundPlugin *plugin = (SoundPlugin *)patch->patchdata;
     if (plugin!=NULL && plugin->type->RT_player_is_stopped != NULL)
       plugin->type->RT_player_is_stopped(plugin);
     
@@ -1091,7 +1091,7 @@ static void *AUDIO_CopyInstrumentData(const struct Tracks *track){
 }
 
 static void AUDIO_PlaySongHook(struct Instruments *instrument, int64_t abstime){
-  VECTOR_FOR_EACH(struct Patch *patch,&instrument->patches){
+  VECTOR_FOR_EACH(struct Patch *, patch,&instrument->patches){
 
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     
@@ -1111,7 +1111,7 @@ static void AUDIO_PlaySongHook(struct Instruments *instrument, int64_t abstime){
   SONG_call_me_before_starting_to_play_song(abstime); // calls PLUGIN_call_me_before_starting_to_play_song_MIDDLE (and other things).
 
   
-  VECTOR_FOR_EACH(struct Patch *patch,&instrument->patches){
+  VECTOR_FOR_EACH(struct Patch *, patch,&instrument->patches){
 
     struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
     PLUGIN_call_me_before_starting_to_play_song_END(plugin);
@@ -1137,7 +1137,7 @@ static void handle_fx_when_patch_is_replaced(struct Blocks *block,
   {
     int i;
     for(i=0 ; i < track->fxs.num_elements ; i++){
-      struct FXs *fxs = track->fxs.elements[i];
+      struct FXs *fxs = (struct FXs *)track->fxs.elements[i];
       struct FX *fx = fxs->fx;
       
       if (fx->patch == old_patch) {
@@ -1296,7 +1296,7 @@ bool AUDIO_is_permanent_patch(struct Patch *patch){
 }
 
 static struct Patch *get_patch_for_plugin(SoundPlugin *plugin){
-  VECTOR_FOR_EACH(struct Patch *patch,&get_audio_instrument()->patches){
+  VECTOR_FOR_EACH(struct Patch *, patch,&get_audio_instrument()->patches){
     if(patch->patchdata==plugin)
       return patch;
   }END_VECTOR_FOR_EACH;
