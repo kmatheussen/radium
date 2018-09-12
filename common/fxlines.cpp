@@ -74,7 +74,7 @@ void MakeWFXNodesCallBack(
 	}
 
 
-	WFXNodes *wfxnode2 = talloc(sizeof(WFXNodes));
+	WFXNodes *wfxnode2 = (WFXNodes *)talloc(sizeof(WFXNodes));
 
 	wfxnode2->type=TRE_FXLINE;
 	wfxnode2->subtype=fxextrainfo->color;
@@ -88,7 +88,7 @@ void MakeWFXNodesCallBack(
 //	wtrack->wfxnodes[realline]=wfxnode2;
 
 	if(firstlast==NODELINE_FIRST || firstlast==NODELINE_FIRSTANDLAST){
-		WFXNodes *wfxnode = talloc(sizeof(WFXNodes));
+                WFXNodes *wfxnode = (WFXNodes *)talloc(sizeof(WFXNodes));
 
 		wfxnode->type=TRE_FXNODE;
 		wfxnode->subtype=fxextrainfo->color;
@@ -110,7 +110,7 @@ void MakeWFXNodesCallBack(
 	){
 
 		if(firstlast==NODELINE_LAST || firstlast==NODELINE_FIRSTANDLAST){
-			WFXNodes *wfxnode = talloc(sizeof(WFXNodes));
+                        WFXNodes *wfxnode = (WFXNodes *)talloc(sizeof(WFXNodes));
 
 			wfxnode->type=TRE_FXNODE;
 			wfxnode->subtype=fxextrainfo->color;
@@ -140,9 +140,9 @@ void UpdateFXNodeLines(
 	struct FXNodeLines *prev;
 	struct FXNodeLines *fxnode;
 
-	struct FXextrainfo fxextrainfo={0};
+	struct FXextrainfo fxextrainfo={};
 
-        wtrack->wfxnodes=talloc(sizeof(WFXNodes *) * wblock->num_reallines);
+        wtrack->wfxnodes=(WFXNodes *)talloc(sizeof(WFXNodes *) * wblock->num_reallines);
 
 	while(fx!=NULL){
 		fxextrainfo.FXs=fx;
@@ -234,7 +234,7 @@ void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float ol
 
       if (track->patch == patch) {
 
-        VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+        VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
 
           struct FX *fx = fxs->fx;
 
@@ -308,7 +308,7 @@ static const char *get_track_fx_display_name(struct Tracks *track, struct FX *fx
   if (track->patch==fx->patch)
     return fx->name;
   else
-    return talloc_format("%s (%s)", fx->name, fx->patch->name);
+    return (const char*)talloc_format("%s (%s)", fx->name, fx->patch->name);
 }
 
 static struct FX *selectFX(
@@ -330,7 +330,7 @@ static struct FX *selectFX(
 
 	if(num_usedFX>0){
           int lokke;
-          vector_t v={0};
+          vector_t v={};
           for(lokke=0;lokke<num_usedFX;lokke++)
             VECTOR_push_back(&v,get_track_fx_display_name(wtrack->track, getTrackFX(track,lokke)));
 
@@ -348,7 +348,7 @@ static struct FX *selectFX(
           if(selection<num_usedFX) return getTrackFX(track,selection);
 	}
 
-	fx=talloc(sizeof(struct FX));
+	fx=(struct FX*)talloc(sizeof(struct FX));
 
         fx->patch = patch;
         
@@ -372,7 +372,7 @@ int AddFXNodeLine(
                   int val,
                   const Place *p1
 ){
-	struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
+       struct FXNodeLines *fxnodeline=(struct FXNodeLines *)talloc(sizeof(struct FXNodeLines));
 
         int ret;
         
@@ -390,11 +390,11 @@ int AddFXNodeLine(
 static void AddNewTypeOfFxNodeLine(struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *p2, int val){
   //printf("new, fxnum: %d, wtrack->fx->fx->effect_num:%d\n",fx->num,wtrack->track->fxs==NULL?-1000:wtrack->track->fx->effect_num);
   
-  struct FXs *fxs=talloc(sizeof(struct FXs));
+  struct FXs *fxs=(struct FXs *)talloc(sizeof(struct FXs));
   fxs->fx=fx;
   VECTOR_push_back(&wtrack->track->fxs, fxs);
   
-  struct FXNodeLines *fxnodeline=talloc(sizeof(struct FXNodeLines));
+  struct FXNodeLines *fxnodeline=(struct FXNodeLines *)talloc(sizeof(struct FXNodeLines));
   fxnodeline->val=val;
   PlaceCopy(&fxnodeline->l.p,p2);
   ListAddElement3(&fxs->fxnodelines,&fxnodeline->l);
@@ -405,7 +405,7 @@ static void AddNewTypeOfFxNodeLine(struct Tracker_Windows *window, const struct 
 
 static struct FXs *get_fxs_for_fx(struct Tracks *track, struct FX *fx){
   //printf("Calling get_fxs_for_fx for track %p. num_fxs: %d\n", track, track->fxs.num_elements);
-  VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+  VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
     //printf("   Comp %d/%d, %p/%p\n", fxs->fx->effect_num, fx->effect_num, fxs->fx->patch, fx->patch);
     if (fxs->fx->effect_num == fx->effect_num && fxs->fx->patch == fx->patch)
       return fxs;
@@ -474,7 +474,9 @@ void AddFXNodeLineCustomFxAndPos(struct Tracker_Windows *window, struct WBlocks 
                   
   AddFXNodeLineCurrPosInternal(window, wblock, wtrack, fx, p, scaled_val);
 }
-  
+
+/*
+// not used anymore.
 void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window){
   struct WBlocks *wblock = window->wblock;
   float x = tevent.x;
@@ -511,6 +513,7 @@ void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window){
     }PC_StopPause(NULL);
   }
 }
+*/
 
 void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
   
