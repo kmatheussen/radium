@@ -1700,8 +1700,8 @@ midi_instrument.o:  $(BUILD_DEPENDENCIES)  midi/midi_instrument.cpp
 	$(CCC)  midi/midi_instrument.cpp $(CPPOPT) 
 midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.cpp  midi/midi_i_input_proc.h common/Vector.hpp
 	$(CCC)  midi/midi_i_input.cpp $(QTOPT) $(JACKOPT)
-midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.c
-	$(CC)  midi/midi_fx.c $(OPT) 
+midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.cpp
+	$(CCC)  midi/midi_fx.cpp $(CPPOPT) 
 
 #disk_midi_mymidilinks.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_mymidilinks.c
 #	$(CC)  midi/disk_midi_mymidilinks.c $(OPT) 
