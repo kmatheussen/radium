@@ -272,29 +272,33 @@ public slots:
   void ShowReltempoPopup(const QPoint& pos)
   {
     printf("GOTIT reltempo\n");
-    if (simplePopupMenu("hide tempo multiplier track")==0)
+    GFX_SimpleMenu("hide tempo multiplier track", [](int command, bool onoff){
       showHideReltempoTrack(-1);
+      });
   }
 
   void ShowBPMPopup(const QPoint& pos)
   {
     printf("GOTIT bpm\n");
-    if (simplePopupMenu("hide BPM track")==0)
-      showHideBPMTrack(-1);
+    GFX_SimpleMenu("hide BPM track", [](int command, bool onoff){
+        showHideBPMTrack(-1);
+      });
   }
 
   void ShowLPBPopup(const QPoint& pos)
   {
     printf("GOTIT lpb\n");
-    if (simplePopupMenu("hide LPB track")==0)
-      showHideLPBTrack(-1);
+    GFX_SimpleMenu("hide LPB track", [](int command, bool onoff){
+        showHideLPBTrack(-1);
+      });
   }
 
   void ShowSignaturePopup(const QPoint& pos)
   {
     printf("GOTIT signature\n");
-    if (simplePopupMenu("hide time signature track")==0)
-      showHideSignatureTrack(-1);
+    GFX_SimpleMenu("hide time signature track", [](int command, bool onoff){
+        showHideSignatureTrack(-1);
+      });
   }
 
   void ShowLZPopup(const QPoint&){

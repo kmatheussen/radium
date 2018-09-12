@@ -229,10 +229,16 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
 
   void ab_rightclicked(int num){
     if (get_ab_checkbox(num)->_last_pressed_button==Qt::RightButton){
-      if (simplePopupMenu(talloc_format("%sReset",MW_get_curr_ab()==num?"[disabled]":""))==0){
-        MW_reset_ab(num);
-        update_ab_buttons(false);
-      }
+      
+      IsAlive is_alive(this);
+      
+      GFX_SimpleMenu(talloc_format("%sReset",MW_get_curr_ab()==num?"[disabled]":""), [is_alive, this, num](int command, bool onoff){
+          if (!is_alive)
+            return;
+          
+          MW_reset_ab(num);
+          update_ab_buttons(false);
+        });
     }
   }
 

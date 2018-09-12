@@ -326,22 +326,25 @@ public slots:
   void ShowBPMPopup(const QPoint& pos)
   {
     printf("GOTIT bpm\n");
-    if (simplePopupMenu("show BPM track")==0)
-      showHideBPMTrack(-1);
+    GFX_SimpleMenu("show BPM track", [](int command, bool onoff){
+        showHideBPMTrack(-1);
+      });
   }
 
   void ShowLPBPopup(const QPoint& pos)
   {
     printf("GOTIT lpb\n");
-    if (simplePopupMenu("show LPB track")==0)
-      showHideLPBTrack(-1);
+    GFX_SimpleMenu("show LPB track", [](int command, bool onoff){
+        showHideLPBTrack(-1);
+      });
   }
 
   void ShowSignaturePopup(const QPoint& pos)
   {
     printf("GOTIT signature\n");
-    if (simplePopupMenu("show time signature track")==0)
-      showHideSignatureTrack(-1);
+    GFX_SimpleMenu("show time signature track", [](int command, bool onoff){
+        showHideSignatureTrack(-1);
+      });
   }
 
   void on_signature_editingFinished(){

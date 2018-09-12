@@ -240,7 +240,7 @@ void Window_config(
 ){
 	ReqType reqtype=GFX_OpenReq(window,30,12,"Select which variable to modify:");
 
-        vector_t v={0};
+        vector_t v={};
         int leftsliderwidth    = VECTOR_push_back(&v,"Left Slider width");
         int bottomsliderheight = VECTOR_push_back(&v,"Bottom Slider height");
         int firstbeat          = VECTOR_push_back(&v, "First Beat Line color opacity");
