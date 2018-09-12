@@ -1,3 +1,28 @@
+Changes 5.8.8 -> 5.8.9:
+* GUI: Disabled the remaining usage of synchronized popup menus
+  (only the menu to select MIDI port was left). The command line
+  interface menu will be used instead to select MIDI port.
+* GUI: Replaced lots of minor synchronized popup menus with async
+  popup menus. Might fix various subtle problems.
+* Sampler: Make record button popup menu async.
+* GUI: Make slider popup menu async.
+* GUI: Make checkbox popup menu async.
+* Editor: Use async menus to select automation. Workaround for a
+  bug in the popup menus of Qt on OSX.
+* OSX: Another attempt to fix including the diagnostic report in
+  crash reports.
+* Edit: Fix right-clicking an edit button sometimes destroying
+  parts of the users keybindings file.
+* Preferences: Rename the "Windows" tab to "Gui".
+* Editor: Add "Generate new instrument color" option to the track
+  header popup menu.
+* Sequencer: Change "Clone block" to "Clone editor block" in the
+  popup menu.
+* API:
+  * Changed readLineFromFile to not strip whitespace.
+  * Removed: simplePopupMenu.
+
+
 Changes 5.8.7 -> 5.8.8:
 * Build: Fix build when user has installed system version of
   Qscintilla.
