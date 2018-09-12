@@ -33,6 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Amiga_colors_proc.h"
 #endif
 
+#include "api_requesters_proc.h"
+
 #include "api_common_proc.h"
 
 extern struct Root *root;

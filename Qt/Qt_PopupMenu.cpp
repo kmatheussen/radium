@@ -86,7 +86,9 @@ namespace{
       : QMenu(parent)
       , _callback(callback)
     {
-
+      
+      R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
+      
       if(_callback!=NULL)
         s7extra_protect(_callback);
     }
@@ -229,6 +231,8 @@ namespace{
       , result(result)
       , is_checkable(is_checkable)
     {
+      R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
+      
       if(is_async)
         R_ASSERT(result==NULL);
     }
@@ -390,6 +394,8 @@ static QMenu *create_qmenu(
                            int *result
                            )
 {
+  R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
+    
   MyQMenu *menu = new MyQMenu(NULL, is_async, callback2);
   menu->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -588,7 +594,8 @@ static int GFX_QtMenu(
                 bool program_state_is_valid
                 )
 {
-
+  R_ASSERT_RETURN_IF_FALSE2(is_async==true, -1); // Lots of trouble with non-async menus. (triggers qt bugs)
+  
   if(is_async){
     R_ASSERT(callback2!=NULL || callback3);
     R_ASSERT_RETURN_IF_FALSE2(program_state_is_valid, -1);
@@ -635,6 +642,8 @@ int GFX_Menu2(
               bool program_state_is_valid
               )
 {
+  R_ASSERT_RETURN_IF_FALSE2(is_async==true, -1); // Lots of trouble with non-async menus. (triggers qt bugs)
+  
   if(is_async){
     R_ASSERT_RETURN_IF_FALSE2(callback!=NULL, -1);
     R_ASSERT_RETURN_IF_FALSE2(program_state_is_valid, 1);
@@ -656,7 +665,19 @@ int GFX_Menu(
              bool program_state_is_valid
              )
 {
-  return GFX_Menu2(tvisual, reqtype, seltext, v, NULL, false, program_state_is_valid);
+  bool created_reqtype = reqtype==NULL;
+
+  if (created_reqtype)
+    reqtype = GFX_OpenReq(tvisual,-1, -1, "");
+  
+  int ret = GFX_ReqTypeMenu(tvisual,reqtype,seltext,v, program_state_is_valid);
+
+  if (created_reqtype)
+    GFX_CloseReq(tvisual, reqtype);
+
+  return ret;
+  
+  //return GFX_Menu2(tvisual, reqtype, seltext, v, NULL, false, program_state_is_valid);
 }
 
 // The returned vector can be used as argument for GFX_Menu.

@@ -3857,7 +3857,7 @@ int main(int argc, char **argv){
 #endif
 
   // Linux/debug usually hangs when exiting. (qxcb thread)
-#if defined(FOR_LINUX) && !defined(RELEASE)
+#if 0 //defined(FOR_LINUX) && !defined(RELEASE)
   kill(getpid(), SIGKILL);
 #endif
   
