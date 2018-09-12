@@ -82,7 +82,7 @@ static struct MIDI_FX MIDI_fxs[MIDI_NUM_FX]={
 	{"Other CC",0,0,OTHER_CC}
 };
 
-static char *midi_fxs_fullnames[MIDI_NUM_FX]={
+static const char *midi_fxs_fullnames[MIDI_NUM_FX]={
 	"Program Change",
 
 	"-----------------------",
@@ -512,7 +512,7 @@ static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *mid
         fx->effect_num = midi_fx->effect_num;
 
         int num_fx_colors = AUTOMATION8_COLOR_NUM - AUTOMATION1_COLOR_NUM;
-        fx->color = AUTOMATION1_COLOR_NUM + (fx->effect_num%num_fx_colors);
+        fx->color = (enum ColorNums)(AUTOMATION1_COLOR_NUM + (fx->effect_num%num_fx_colors));
 
 	fx->fxdata=midi_fx;
 
@@ -530,7 +530,7 @@ static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *mid
         
         fx->defaultFXValue = MIDI_default_FX_value;
   
-	usmf          = talloc(sizeof(struct UsedTrackMidiCCs));
+	usmf          = (struct UsedTrackMidiCCs*)talloc(sizeof(struct UsedTrackMidiCCs));
 	usmf->next    = tid->usmf;
 	tid->usmf     = usmf;
 	usmf->midi_fx = midi_fx;
@@ -550,10 +550,10 @@ struct FX *MIDI_createFX(const struct Tracks *track, struct Patch *patch, int ef
 
   struct MIDI_FX *midi_fx = &MIDI_fxs[effect_num];
         
-  struct FX *fx=talloc(sizeof(struct FX));
+  struct FX *fx=(struct FX *)talloc(sizeof(struct FX));
 
   int num_fx_colors = AUTOMATION8_COLOR_NUM - AUTOMATION1_COLOR_NUM;
-  fx->color = AUTOMATION1_COLOR_NUM + (effect_num%num_fx_colors);
+  fx->color = (enum ColorNums)(AUTOMATION1_COLOR_NUM + (effect_num%num_fx_colors));
 
   fx->patch = patch;
 
@@ -565,7 +565,7 @@ struct FX *MIDI_createFX(const struct Tracks *track, struct Patch *patch, int ef
 
 
 vector_t *MIDI_getFxNames(const struct Patch *patch){
-  vector_t *v=talloc(sizeof(vector_t));
+  vector_t *v=(vector_t*)talloc(sizeof(vector_t));
   //RError("MIDI_getFxNames is not implemented");
 
   int lokke;
@@ -586,7 +586,7 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
 
 	ReqType reqtype;
 
-        vector_t v={0};
+        vector_t v={};
 
 	for(lokke=0;lokke<MIDI_NUM_FX;lokke++)
           VECTOR_push_back(&v,midi_fxs_fullnames[lokke]);
@@ -603,7 +603,7 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
 		if(midi_fx->effect_num==-1) continue;
 
 		if(midi_fx->effect_num==OTHER_CC){
-			midi_fx=talloc(sizeof(struct MIDI_FX));
+                        midi_fx=(struct MIDI_FX*)talloc(sizeof(struct MIDI_FX));
 
 			reqtype=GFX_OpenReq(window,30,10,"");
 
@@ -618,7 +618,7 @@ int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct F
 			if(midi_fx->effect_num<16){
                                 int onlymsb=-1;
 				while(onlymsb==-1){
-                                  vector_t v={0};
+                                  vector_t v={};
                                   VECTOR_push_back(&v,"7");
                                   VECTOR_push_back(&v,"14");
                                   onlymsb=GFX_Menu(window,reqtype,"Resolution?",v,true);
@@ -661,11 +661,11 @@ void *MIDI_CopyInstrumentData(const struct Tracks *track){
 	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
 	struct UsedTrackMidiCCs *usmf=tid->usmf;
 	struct UsedTrackMidiCCs *to_usmf;
-	struct TrackInstrumentData *to=talloc(sizeof(struct TrackInstrumentData));
+	struct TrackInstrumentData *to=(struct TrackInstrumentData *)talloc(sizeof(struct TrackInstrumentData));
 	struct UsedTrackMidiCCs **to_to_usmf=&to->usmf;
 
 	while(usmf!=NULL){
-		to_usmf=talloc(sizeof(struct UsedTrackMidiCCs));
+                to_usmf=(struct UsedTrackMidiCCs *)talloc(sizeof(struct UsedTrackMidiCCs));
 		*to_to_usmf=to_usmf;
 		to_usmf->midi_fx=usmf->midi_fx;
 		to_to_usmf=&to_usmf->next;
