@@ -822,8 +822,8 @@ temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes.c
 instruments.o:  $(BUILD_DEPENDENCIES) $(CD)instruments.cpp
 	$(CCC) $(CD)instruments.cpp $(CPPOPT)
 
-fxlines.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines.c
-	$(CC) $(CD)fxlines.c $(OPT)
+fxlines.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines.cpp
+	$(CCC) $(CD)fxlines.cpp $(CPPOPT)
 
 
 tbox.o:  $(BUILD_DEPENDENCIES) $(CD)tbox.c
