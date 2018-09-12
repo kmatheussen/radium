@@ -311,10 +311,11 @@ static const char *get_track_fx_display_name(struct Tracks *track, struct FX *fx
     return (const char*)talloc_format("%s (%s)", fx->name, fx->patch->name);
 }
 
-static struct FX *selectFX(
+static void selectFX(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
-	struct WTracks *wtrack
+	struct WTracks *wtrack,
+        std::function<void(struct FX*)> callback
 ){
 
   struct Tracks *track = wtrack->track;
@@ -322,45 +323,42 @@ static struct FX *selectFX(
   
   if(patch==NULL) {
     selectInstrumentForTrack(track->l.num);
-    return NULL;
+    return;
   }
-  
-	struct FX *fx;
-	int num_usedFX=getNumUsedFX(track);
 
-	if(num_usedFX>0){
-          int lokke;
-          vector_t v={};
-          for(lokke=0;lokke<num_usedFX;lokke++)
-            VECTOR_push_back(&v,get_track_fx_display_name(wtrack->track, getTrackFX(track,lokke)));
+  int num_usedFX=getNumUsedFX(track);
 
+  if(num_usedFX>0){
+    int lokke;
+    vector_t v={};
+    for(lokke=0;lokke<num_usedFX;lokke++)
+      VECTOR_push_back(&v,get_track_fx_display_name(wtrack->track, getTrackFX(track,lokke)));
+    
 #if 0
-          for(lokke=0;lokke<10000;lokke++)
-            VECTOR_push_back(&v,talloc_format("extra %d",lokke));
+    for(lokke=0;lokke<10000;lokke++)
+      VECTOR_push_back(&v,talloc_format("extra %d",lokke));
 #endif
-          
-          VECTOR_push_back(&v,"----------");
-          VECTOR_push_back(&v,"New FX");
-          
-          int selection=GFX_Menu(window,NULL,"Select FX",v,true);
-          if(selection==-1) return NULL;
-          
-          if(selection<num_usedFX) return getTrackFX(track,selection);
-	}
-
-	fx=(struct FX*)talloc(sizeof(struct FX));
-
-        fx->patch = patch;
+    
+    VECTOR_push_back(&v,"----------");
+    VECTOR_push_back(&v,"New FX");
+    
+    GFX_Menu3(v,[num_usedFX, callback, window, track, patch](int selection, bool onoff){
+        if (selection==-1)
+          return;
         
-	if(
-		patch->instrument->getFX(window,track,fx)
-		==
-		FX_FAILED
-	){
-		return NULL;
-	}
+        if(selection<num_usedFX)
+          callback(getTrackFX(track,selection));
+        else
+          patch->instrument->getFX(window,track,callback);
+      });
 
-	return fx;
+    return;
+    
+  } else {
+
+    patch->instrument->getFX(window,track,callback);
+
+  }
 }
 
 
@@ -516,18 +514,21 @@ void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window){
 */
 
 void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack){
-  
-  struct FX *fx=selectFX(window,wblock,wtrack);
-  if(fx==NULL) return;
 
-  Place place;
-  PlaceCopy(&place, &wblock->reallines[wblock->curr_realline]->l.p);
+  auto callback = [=](struct FX *fx){
+    if(fx==NULL) return;
 
-  ADD_UNDO(FXs_CurrPos(window));
-
-  PC_Pause();{
-    AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, 0.5);
-  }PC_StopPause(NULL);
+    Place place;
+    PlaceCopy(&place, &wblock->reallines[wblock->curr_realline]->l.p);
+    
+    ADD_UNDO(FXs_CurrPos(window));
+    
+    PC_Pause();{
+      AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, 0.5);
+    }PC_StopPause(NULL);
+  };
+    
+  selectFX(window,wblock,wtrack, callback);
 }
 
 

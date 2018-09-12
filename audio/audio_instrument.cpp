@@ -862,8 +862,8 @@ static void add_patch_effects_to_menu(vector_t *menu, vector_t *patch_effects, s
   }
 }
 
-static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx){
-  const char *menutitle="Select FX";
+static void AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track, std::function<void(struct FX*)> callback){
+  //const char *menutitle="Select FX";
 
   vector_t v = {};
   vector_t patch_effects = {};
@@ -919,28 +919,33 @@ static int AUDIO_getFX(struct Tracker_Windows *window,const struct Tracks *track
 #endif
   
   add_patch_effects_to_menu(&v, &patch_effects, track->patch);
-  
-  int selection=GFX_Menu(window,NULL,menutitle,v,true);
-  if(-1==selection)
-    return FX_FAILED;
 
-  PatchEffect *pe = (PatchEffect *)patch_effects.elements[selection];
-  R_ASSERT(pe!=NULL);
+  GFX_Menu3(v,[v, patch_effects, callback](int selection, bool onoff){
+      
+      if(-1==selection)
+        return;
+      
+      PatchEffect *pe = (PatchEffect *)patch_effects.elements[selection];
+      R_ASSERT(pe!=NULL);
 
-  if (pe!=NULL){
+      if (pe!=NULL){
+
+        struct FX *fx = (struct FX*)talloc(sizeof(struct FX));
+        
+        fx->patch = pe->patch;
+        
+        const char *name = (const char*)v.elements[selection];
+        //if (pe->patch != track->patch)
+        //  name = talloc_format("%s (%s)",name, pe->patch->name);
+        
+        init_fx(fx,pe->effect_num, name, (struct SoundPlugin*)(pe->patch->patchdata));
+        
+        return callback(fx);
+        
+      }
+
+    });
     
-    fx->patch = pe->patch;
-
-    const char *name = (const char*)v.elements[selection];
-    //if (pe->patch != track->patch)
-    //  name = talloc_format("%s (%s)",name, pe->patch->name);
-    
-    init_fx(fx,pe->effect_num, name, (struct SoundPlugin*)(pe->patch->patchdata));
-
-    return FX_SUCCESS;
-    
-  } else
-    return FX_FAILED;
 }
 
 static void AUDIO_save_FX(struct FX *fx,const struct Tracks *track){

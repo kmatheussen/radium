@@ -509,6 +509,8 @@ static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *mid
 	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
 	struct UsedTrackMidiCCs *usmf;
 
+        fx->patch = track->patch;
+        
         fx->effect_num = midi_fx->effect_num;
 
         int num_fx_colors = AUTOMATION8_COLOR_NUM - AUTOMATION1_COLOR_NUM;
@@ -555,8 +557,6 @@ struct FX *MIDI_createFX(const struct Tracks *track, struct Patch *patch, int ef
   int num_fx_colors = AUTOMATION8_COLOR_NUM - AUTOMATION1_COLOR_NUM;
   fx->color = (enum ColorNums)(AUTOMATION1_COLOR_NUM + (effect_num%num_fx_colors));
 
-  fx->patch = patch;
-
   if (init_fx(track, fx, midi_fx)==FX_FAILED)
     return NULL;
   
@@ -576,81 +576,85 @@ vector_t *MIDI_getFxNames(const struct Patch *patch){
   return v;
 }
 
-int MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track,struct FX *fx){
+void MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track, std::function<void(struct FX*)> callback){
 
-	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
-	struct MIDI_FX *midi_fx;
-
-	int lokke,selection;
-	const char *menutitle="Select FX";
-
-	ReqType reqtype;
+	//const char *menutitle="Select FX";
 
         vector_t v={};
 
-	for(lokke=0;lokke<MIDI_NUM_FX;lokke++)
+	for(int lokke=0;lokke<MIDI_NUM_FX;lokke++)
           VECTOR_push_back(&v,midi_fxs_fullnames[lokke]);
 
-	for(;;){
-                selection=GFX_Menu(window,NULL,menutitle,v,true);
-		if(-1==selection){
-			return FX_FAILED;
-		}
-		midi_fx=&MIDI_fxs[selection];
+        GFX_Menu3(v,[window, track, callback, v](int selection, bool onoff){
 
-		menutitle="FX already used";
-
-		if(midi_fx->effect_num==-1) continue;
-
-		if(midi_fx->effect_num==OTHER_CC){
-                        midi_fx=(struct MIDI_FX*)talloc(sizeof(struct MIDI_FX));
-
-			reqtype=GFX_OpenReq(window,30,10,"");
-
-			midi_fx->effect_num=GFX_GetInteger(window,reqtype,"CC >",0,127,true);
-			if(midi_fx->effect_num==-1){
-				GFX_CloseReq(window,reqtype);
-				return FX_FAILED;
-			}
-
-			midi_fx->max=127;
-
-			if(midi_fx->effect_num<16){
-                                int onlymsb=-1;
-				while(onlymsb==-1){
-                                  vector_t v={};
-                                  VECTOR_push_back(&v,"7");
-                                  VECTOR_push_back(&v,"14");
-                                  onlymsb=GFX_Menu(window,reqtype,"Resolution?",v,true);
-				}
-				if(onlymsb==1){
-					midi_fx->effect_num+=128;
-					midi_fx->max=0x3fff;
-				}
-			}
-
-			if(isFXUsed(tid,midi_fx)) continue;
-
-                      again:
-                        while(midi_fx->name==NULL)
-                          midi_fx->name=GFX_GetString(window,reqtype,"Name >",true);
-                                
-                        for(lokke=0;lokke<(int)strlen(midi_fx->name);lokke++){
-                          if(midi_fx->name[lokke]==':' || midi_fx->name[lokke]=='/'){
-                            midi_fx->name=GFX_GetString(window,reqtype,"(Name can not contain ':' or '/') >",true);
-                            goto again;
-                          }
-                        }
-
-			GFX_CloseReq(window,reqtype);
-			break;
-		}
-
-		if( ! isFXUsed(tid,midi_fx)) break;
-	}
-
-        
-        return init_fx(track, fx, midi_fx);
+            if(-1==selection)
+              return;
+            
+            struct MIDI_FX *midi_fx = &MIDI_fxs[selection];
+            
+            struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
+            
+            //menutitle="FX already used";
+            
+            if(midi_fx->effect_num==-1){
+              MIDIgetFX(window, track, callback);
+              return;
+            }
+            
+            if(midi_fx->effect_num==OTHER_CC){
+              midi_fx=(struct MIDI_FX*)talloc(sizeof(struct MIDI_FX));
+              
+              ReqType reqtype = GFX_OpenReq(window,30,10,"");
+              
+              midi_fx->effect_num=GFX_GetInteger(window,reqtype,"CC >",0,127,true);
+              if(midi_fx->effect_num==-1){
+                GFX_CloseReq(window,reqtype);
+                return;
+              }
+              
+              midi_fx->max=127;
+              
+              if(midi_fx->effect_num<16){
+                int onlymsb=-1;
+                while(onlymsb==-1){
+                  vector_t v={};
+                  VECTOR_push_back(&v,"7");
+                  VECTOR_push_back(&v,"14");
+                  onlymsb=GFX_Menu(window,reqtype,"Resolution?",v,true);
+                }
+                if(onlymsb==1){
+                  midi_fx->effect_num+=128;
+                  midi_fx->max=0x3fff;
+                }
+              }
+              
+              if(isFXUsed(tid,midi_fx)){
+                GFX_addMessage("CC %d is already used", midi_fx->effect_num);
+                GFX_CloseReq(window,reqtype);
+                return;
+              }
+              
+            again:
+              while(midi_fx->name==NULL)
+                midi_fx->name=GFX_GetString(window,reqtype,"Name >",true);
+              
+              for(int lokke=0;lokke<(int)strlen(midi_fx->name);lokke++){
+                if(midi_fx->name[lokke]==':' || midi_fx->name[lokke]=='/'){
+                  midi_fx->name=GFX_GetString(window,reqtype,"(Name can not contain ':' or '/') >",true);
+                  goto again;
+                }
+              }
+              
+              GFX_CloseReq(window,reqtype);
+            }
+            
+            if( ! isFXUsed(tid,midi_fx)){
+              struct FX *fx = (struct FX*)talloc(sizeof(struct FX));        
+              init_fx(track, fx, midi_fx);
+              
+              callback(fx);
+            }
+          });
 }
 
 
