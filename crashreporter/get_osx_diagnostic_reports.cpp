@@ -36,7 +36,7 @@ static QString get_latest_diagnostic_report(void){
   QString ret="";
   
   QDateTime start_time = QDateTime::currentDateTime();
-  QDateTime start_time_plus_40_seconds = QDateTime(start_time).addSecs(140); // we only wait 140 seconds for the file to be created
+  QDateTime start_time_plus_40_seconds = QDateTime(start_time).addSecs(40); // we only wait 40 seconds for the file to be created
 
   QDateTime start_time_minus_60_seconds = QDateTime(start_time).addSecs(-60);
 
@@ -75,9 +75,11 @@ static QString get_latest_diagnostic_report(void){
         continue;
 
       //ret += "4\n";
-      
+
       QDateTime file_time = file_info.lastModified();
-      
+
+      //printf("file_name: %s. Time: %s. Minus60: %s\n", file_name.toUtf8().constData(), file_time.toString("hh:mm:ss.zzz").toUtf8().constData(), start_time_minus_60_seconds.toString("hh:mm:ss.zzz").toUtf8().constData());
+
       if (file_time < start_time_minus_60_seconds)
         continue;
 
@@ -91,7 +93,7 @@ static QString get_latest_diagnostic_report(void){
       return file_to_string(file_path);    
     }
 
-    QThread::msleep(1000);
+    QThread::msleep(5000);
   }
 
   return "(Unable to find diagnostics)"+ret;
