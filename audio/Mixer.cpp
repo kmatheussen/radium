@@ -1536,13 +1536,28 @@ void MIXER_set_all_non_realtime(bool is_non_realtime){
 
 
 void MIXER_start_saving_soundfile(void){
+  EVENTLOG_add_event("MIXER_request_start_saving_soundfile Enter");
+  
   RSEMAPHORE_reset(g_freewheeling_has_started); // Must do this in case a different jack client started freewheeling since last call to sem_init.
+  
+  EVENTLOG_add_event("MIXER_request_start_saving_soundfile Step 1");
+  
   jack_set_freewheel(g_jack_client, 1);
+  
+  EVENTLOG_add_event("MIXER_request_start_saving_soundfile Step 2");
+  
   RSEMAPHORE_wait(g_freewheeling_has_started,1);
+  
+  EVENTLOG_add_event("MIXER_request_start_saving_soundfile Leave");
 }
 
 void MIXER_request_stop_saving_soundfile(void){
+  EVENTLOG_add_event("MIXER_request_stop_saving_soundfile Enter");
+  
   jack_set_freewheel(g_jack_client, 0);
+  
+  EVENTLOG_add_event("MIXER_request_stop_saving_soundfile Leave");
+  
   printf("REQUEST to stop saving received\n");
 }
 
