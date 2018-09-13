@@ -63,6 +63,8 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
   
   void save(QString filename){
 
+    EVENTLOG_add_event(talloc_format("Saving sound \"%s\"", filename.toUtf8().constData()));
+    
     const char *error_string;
 
     int format;
