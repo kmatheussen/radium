@@ -13,6 +13,12 @@ fi
 
 TARGET=$1/radium
 
+if [ -d "$TARGET" ]; then
+    echo "Directory $TARGET already exist. Please uninstall program first"
+    exit -1
+fi
+
+
 echo $TARGET
 
 mkdir -p $TARGET
