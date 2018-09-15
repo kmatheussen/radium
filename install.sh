@@ -12,7 +12,7 @@ PREFIX=$1
 
 mkdir -p "$PREFIX"
 
-TARGET=$1/radium
+TARGET="$PREFIX/radium"
 
 if [ -d "$TARGET" ]; then
     echo "Directory $TARGET already exist. Please uninstall program first"
