@@ -1,8 +1,15 @@
 #!/bin/bash
 
 set -e
+set -x
 
 PREFIX=$1
+
+if [ ! -d "$PREFIX" ]; then
+    echo "Directory $PREFIX does not exist"
+    exit -1
+fi
+
 
 TARGET=$1/radium
 
