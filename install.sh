@@ -21,7 +21,7 @@ mkdir -p "$TARGET/packages"
 
 cp -a packages/s7 "$TARGET/packages/"
 rm -f "$TARGET/packages/s7/*.o"
-rm -f "$TARGET/packages/s7/sndlib"
+rm -fr "$TARGET/packages/s7/sndlib"
 
 mkdir -p "$TARGET/packages/faust2"
 cp -a packages/faust2/examples "$TARGET/packages/faust2/"
