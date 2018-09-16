@@ -133,17 +133,9 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   if(MIXER_is_saving()){
 
-    if(!strcmp(type->name,"System Out")){
-      
-      R_ASSERT(type->num_inputs==2);
+    if (GFX_OS_patch_is_system_out((struct Patch*)plugin->patch))
       SOUNDFILESAVER_write(inputs, type->num_inputs, num_frames);
-      
-    } else if(!strcmp(type->name,"System Out 8")){
-      
-      R_ASSERT(type->num_inputs==8);
-      SOUNDFILESAVER_write(inputs, type->num_inputs, num_frames);
-      
-    }
+    
   }
 
   {
