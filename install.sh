@@ -3,6 +3,9 @@
 set -e
 set -x
 
+THIS_DIR="$(dirname "$(readlink -f "$0")")"
+
+
 PREFIX=$1
 
 #if [ ! -d "$PREFIX" ]; then
@@ -24,9 +27,32 @@ echo $TARGET
 
 mkdir -p "$TARGET"
 
-cd bin
+cd "$THIS_DIR/bin"
+
+can_copy() {
+    if [[ "$1" = *"packages"* ]]; then
+        return 1 # in bash, 1 is false and 0 is true.
+    elif [[ "$1" = *.rad ]]; then
+        return 1
+    elif [[ "$1" = *.bak ]]; then
+        return 1
+    elif [[ "$1" = *_audio ]]; then
+        return 1
+    elif [[ "$1" = *.wav ]]; then
+        return 1
+    elif [[ "$1" = *.radium_peaks ]]; then
+        return 1
+    elif [[ "$1" = *.rec ]]; then
+        return 1
+    elif [[ "$1" = *.mrec ]]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
 for a in * ; do
-    if ! [[ "$a" = "packages" ]]; then
+    if can_copy "$a"; then
         cp -a "$a" "$TARGET/"
     fi
 done
