@@ -84,13 +84,13 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
       format |= SF_FORMAT_PCM_32;
     else
       format |= SF_FORMAT_FLOAT;
-    
+
     enum SOUNDFILESAVER_what what_to_save
       = save_range_button->isChecked()==true ? SAVE_RANGE
       : save_block_button->isChecked()==true ? SAVE_BLOCK
       : SAVE_SONG;
     
-    if(SOUNDFILESAVER_save(STRING_create(filename), what_to_save, MIXER_get_sample_rate(), format, post_silence_spin->value(), (enum ResamplerType)interpolation_type->currentIndex(), &error_string)==false){
+    if(SOUNDFILESAVER_save(STRING_create(filename), what_to_save, MIXER_get_sample_rate(), format, num_channels->value(), post_silence_spin->value(), (enum ResamplerType)interpolation_type->currentIndex(), &error_string)==false){
 
       //QMessageBox msgBox;
       
@@ -345,6 +345,11 @@ public slots:
 
   void on_post_silence_spin_editingFinished(){
     post_silence_spin->clearFocus();
+    set_editor_focus();
+  }
+
+  void on_num_channels_editingFinished(){
+    num_channels->clearFocus();
     set_editor_focus();
   }
 

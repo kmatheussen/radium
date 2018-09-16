@@ -83,7 +83,7 @@ namespace radium{
 #endif
 
 extern LANGSPEC int MIXER_get_buffer_size(void);
-extern LANGSPEC int MIXER_get_jack_block_size(void);
+extern int g_jackblock_size; // Should only be accessed from player thread
 
 extern LANGSPEC struct SoundPlugin *MIXER_get_soundplugin(const char *type_name, const char *name);
 extern LANGSPEC struct Patch *MIXER_get_bus(int bus_num);

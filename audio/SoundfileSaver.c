@@ -43,6 +43,7 @@ static bool g_saving_was_successful = true;
 static SNDFILE *g_sndfile;
 static const wchar_t *g_filename = NULL;
 static float g_post_writing_left;
+static int g_num_ch;
 
 
 enum SaveState{
@@ -115,7 +116,7 @@ void SOUNDFILESAVER_request_stop(void){
   ATOMIC_SET(stop_requested, true);
 }
 
-bool SOUNDFILESAVER_write(float **outputs, int num_frames){
+bool SOUNDFILESAVER_write(float **outputs, int num_ch, int num_frames){
  PaUtil_FullMemoryBarrier();
 
  if (ATOMIC_GET(stop_requested)){
@@ -132,12 +133,15 @@ bool SOUNDFILESAVER_write(float **outputs, int num_frames){
 
   bool ret=true;
   int i;
-  float interleaved_data[num_frames*2];
+  float interleaved_data[num_frames*g_num_ch];
 
   int pos=0;
   for(i=0;i<num_frames;i++){
-    interleaved_data[pos++] = outputs[0][i];
-    interleaved_data[pos++] = outputs[1][i];
+    for(int ch=0;ch<g_num_ch;ch++)
+      if(ch<num_ch)
+        interleaved_data[pos++] = outputs[ch][i];
+      else
+        interleaved_data[pos++] = 0.0;
   }
 
   //printf("Writing %d frames\n",num_frames);
@@ -163,17 +167,19 @@ bool SOUNDFILESAVER_write(float **outputs, int num_frames){
   return ret;
 }
 
-bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, float post_recording_length, enum ResamplerType min_resampler_type, const char **error_string){
+bool SOUNDFILESAVER_save(const wchar_t *filename, enum SOUNDFILESAVER_what what_to_save, float samplerate, int libsndfile_format, int num_ch, float post_recording_length, enum ResamplerType min_resampler_type, const char **error_string){
 
   PlayStop();
 
+  g_num_ch = num_ch;
+  
   set_resamplers(true, min_resampler_type);
   
   {
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
     
     sf_info.samplerate = samplerate;
-    sf_info.channels = 2;
+    sf_info.channels = num_ch;
     sf_info.format = libsndfile_format;
     
     {

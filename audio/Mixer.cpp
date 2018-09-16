@@ -528,7 +528,8 @@ static void RT_MIXER_check_if_at_least_two_soundproducers_are_selected(void);
 
 jack_time_t jackblock_delta_time = 0;
 
-DEFINE_ATOMIC(int, jackblock_size) = 0;
+int g_jackblock_size = 0; // Should only be accessed from player thread
+static DEFINE_ATOMIC(int, g_jackblock_size2) = 0;
 static DEFINE_ATOMIC(STime, jackblock_cycle_start_stime) = 0;
 static DEFINE_ATOMIC(STime, jackblock_last_frame_stime) = 0;
 static DEFINE_ATOMIC(Blocks *, jackblock_block) = NULL;
@@ -922,7 +923,9 @@ struct Mixer{
         struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
         struct SeqBlock *curr_seqblock = seqtrack==NULL ? NULL : seqtrack->curr_seqblock;
         
-        ATOMIC_SET(jackblock_size, num_frames);
+        g_jackblock_size = num_frames;
+        ATOMIC_SET(g_jackblock_size2, g_jackblock_size);
+        
         if (seqtrack!=NULL)
           ATOMIC_SET(jackblock_cycle_start_stime, seqtrack->end_time);
         else
@@ -1573,7 +1576,7 @@ STime MIXER_get_block_delta_time(STime time){
 int MIXER_get_main_inputs(const float **audio, int max_num_ch){
   int num_ch = R_MIN(NUM_SYSTEM_INPUT_JACK_PORTS, max_num_ch);
   for(int i=0;i<num_ch;i++)
-    audio[i] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[i],ATOMIC_GET(jackblock_size))) + jackblock_delta_time;
+    audio[i] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[i],g_jackblock_size)) + jackblock_delta_time;
   return num_ch;
 }
 
@@ -1618,7 +1621,7 @@ static bool fill_in_time_position2(time_position_t *time_position){
     
     jackblock_cycle_start_stime2 = ATOMIC_GET(jackblock_cycle_start_stime);
     jackblock_last_frame_stime2  = ATOMIC_GET(jackblock_last_frame_stime);
-    jackblock_size2              = ATOMIC_GET(jackblock_size);
+    jackblock_size2              = ATOMIC_GET(g_jackblock_size2);
     block                        = ATOMIC_GET(jackblock_block);
     seqtime                      = ATOMIC_GET(jackblock_seqtime);
     song_tempo_multiplier        = ATOMIC_DOUBLE_GET(jackblock_song_tempo_multiplier);
@@ -1774,10 +1777,6 @@ float MIXER_get_sample_rate(void){
 
 int MIXER_get_buffer_size(void){
   return RADIUM_BLOCKSIZE; //g_mixer->_buffer_size;
-}
-
-int MIXER_get_jack_block_size(void){
-  return ATOMIC_GET(jackblock_size);
 }
 
 // Returns first sound plugin in mixer that matches type_name and name. name can be NULL.
