@@ -326,8 +326,9 @@ public:
   void update_position(void) override;
 };
 
-class Chip : public QGraphicsItem
+class Chip : public QGraphicsItem, public QObject
 {
+  
 public:
 
   void init_new_plugin(void);
