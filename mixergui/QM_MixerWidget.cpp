@@ -1235,7 +1235,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   int unmute_all = -1;
   int show_gui = -1;
   
-  int64_t parentgui = API_get_gui_from_existing_widget(g_mixer_widget->window());
+  int64_t parentguinum = API_get_gui_from_existing_widget(g_mixer_widget->window());
   
   bool has_sampler_instrument = false;
   VECTOR_FOR_EACH(struct Patch *,patch,&patches){
@@ -1327,7 +1327,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     VECTOR_push_back(&v, "--------");
 
     bool is_enabled = hasNativeInstrumentGui(patch->id);
-    bool is_visible = is_enabled && instrumentGuiIsVisible(patch->id, parentgui);
+    bool is_visible = is_enabled && instrumentGuiIsVisible(patch->id, parentguinum);
 
     if (!is_enabled)
       show_gui = VECTOR_push_back(&v, "[disabled][check off]Show GUI");
@@ -1339,117 +1339,149 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     instrument_info = VECTOR_push_back(&v, "Show info");
   }
 
-  int64_t parentguinum = API_get_gui_from_existing_widget(g_mixer_widget->window());
-      
-  int sel = GFX_Menu(NULL, NULL, NULL, v, true);
-
-  if (sel==-1) {
-    
-  } else if (sel==insert) {
-    
-    mouserelease_create_chip(scene, mouse_x, mouse_y);
-    
-  } else if (sel==replace) {
-
-    mouserelease_replace_patch(scene, mouse_x, mouse_y);
-    
-  } else if (sel==solo) {
-
-    MW_solo(patches, true);
-    
-  } else if (sel==unsolo) {
-
-    MW_solo(patches, false);
-    
-  } else if (sel==mute) {
-
-    MW_mute(patches, true);
-    
-  } else if (sel==unmute) {
-
-    MW_mute(patches, false);
-    
-  } else if (sel==unsolo_all) {
-
-    MW_solo(get_audio_instrument()->patches, false);
-    
-  } else if (sel==mute_all) {
-
-    MW_mute(get_audio_instrument()->patches, true);
-    
-  } else if (sel==unmute_all) {
-
-    MW_mute(get_audio_instrument()->patches, false);
-    
-  } else if (sel==copy) {
-
-    MW_copy();
-    
-  } else if (sel==cut) {
-
-    MW_cut2(mouse_x, mouse_y, true);
-      
-  } else if (sel==delete_) {
-
-    MW_delete2(mouse_x, mouse_y, true);
-    
-  } else if (sel==save) {
-    
-    PRESET_save(&patches, false, parentguinum);
-
-  } else if (sel==show_mixer_strips) {
-
-    int num_rows = R_BOUNDARIES(1, 1 + (patches.num_elements / 6), 3);
-    dynvec_t instruments = {};
-    
-    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
-      DYNVEC_push_back(&instruments, DYN_create_int(patch->id));
-    }END_VECTOR_FOR_EACH;
-    
-    showMixerStrips2(num_rows, DYN_create_array(instruments));
-    
-  } else if (sel==config_color) {
-
-    QString command = QString("(show-instrument-color-dialog ") + QString::number(parentguinum) + " " + QString::number(CHIP_get_patch(chip_under)->id);
-
-    VECTOR_FOR_EACH(struct Patch *,patch,&patches){
-      if (patch!=CHIP_get_patch(chip_under))
-        command += " " + QString::number(patch->id);
-    }END_VECTOR_FOR_EACH;
-
-    command += ")";
-    //}UNDO_CLOSE();
-
-    evalScheme(talloc_strdup(command.toUtf8().constData()));
-
-  } else if (sel==generate_new_color) {
-
-    QString command = QString("(ra:set-instrument-color (ra:generate-new-color 0.9) ") + QString::number(CHIP_get_patch(chip_under)->id) + ")";
-    evalScheme(talloc_strdup(command.toUtf8().constData()));
-
-  } else if (sel==instrument_info) {
-    
-    showInstrumentInfo(DYN_create_int(CHIP_get_patch(chip_under)->id), parentguinum);
-
-  } else if (sel==show_gui) {
-
-    struct Patch *patch = CHIP_get_patch(chip_under);
-    struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-    
-    if (instrumentGuiIsVisible(patch->id, parentgui))
-      PLUGIN_close_gui(plugin);
-    else
-      PLUGIN_open_gui(plugin, parentgui);
-        
-  } else if (sel==random) {
-
-    setRandomSampleForAllSelectedInstruments();
   
-  } else {
+  IsAlive is_alive(chip_under);
+
+  // Not safe to store gc objects in a c++ closure. (At least I think so.)
+  QVector<int64_t> patch_ids;
+  VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+    patch_ids.push_back(patch->id);
+  }END_VECTOR_FOR_EACH;
+
+#define sels insert,replace,solo,unsolo,mute,unmute,unsolo_all,mute_all,unmute_all,copy,cut,delete_,save,show_mixer_strips,config_color,generate_new_color,show_gui,random,instrument_info
+  
+  GFX_Menu3(v,[is_alive, chip_under, scene, patch_ids, sels, mouse_x, mouse_y, parentguinum](int sel, bool onoff){
+      
+#undef sels
+      
+      if (!is_alive)
+        return;
+
+      vector_t patches = {};
+      
+      for(int64_t patch_id : patch_ids){
+        struct Patch *patch = PATCH_get_from_id(patch_id);
+        
+        if(patch==NULL || patch->patchdata==NULL){
+          if(patch->patchdata==NULL)
+            R_ASSERT(false);
+          R_ASSERT_NON_RELEASE(false);
+          return;
+        }
+        
+        VECTOR_push_back(&patches, patch);
+      }
+
+      R_ASSERT(parentguinum == API_get_gui_from_existing_widget(g_mixer_widget->window()));
+
+      if (sel==-1) {
     
-    R_ASSERT(false);
+      } else if (sel==insert) {
     
-  }
+        mouserelease_create_chip(scene, mouse_x, mouse_y);
+        
+      } else if (sel==replace) {
+        
+        mouserelease_replace_patch(scene, mouse_x, mouse_y);
+        
+      } else if (sel==solo) {
+        
+        MW_solo(patches, true);
+        
+      } else if (sel==unsolo) {
+        
+        MW_solo(patches, false);
+        
+      } else if (sel==mute) {
+        
+        MW_mute(patches, true);
+        
+      } else if (sel==unmute) {
+        
+        MW_mute(patches, false);
+        
+      } else if (sel==unsolo_all) {
+        
+        MW_solo(get_audio_instrument()->patches, false);
+        
+      } else if (sel==mute_all) {
+
+        MW_mute(get_audio_instrument()->patches, true);
+        
+      } else if (sel==unmute_all) {
+        
+        MW_mute(get_audio_instrument()->patches, false);
+        
+      } else if (sel==copy) {
+        
+        MW_copy();
+        
+      } else if (sel==cut) {
+        
+        MW_cut2(mouse_x, mouse_y, true);
+        
+      } else if (sel==delete_) {
+        
+        MW_delete2(mouse_x, mouse_y, true);
+        
+      } else if (sel==save) {
+        
+        PRESET_save(&patches, false, parentguinum);
+        
+      } else if (sel==show_mixer_strips) {
+        
+        int num_rows = R_BOUNDARIES(1, 1 + (patches.num_elements / 6), 3);
+        dynvec_t instruments = {};
+        
+        VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+          DYNVEC_push_back(&instruments, DYN_create_int(patch->id));
+        }END_VECTOR_FOR_EACH;
+        
+        showMixerStrips2(num_rows, DYN_create_array(instruments));
+        
+      } else if (sel==config_color) {
+        
+        QString command = QString("(show-instrument-color-dialog ") + QString::number(parentguinum) + " " + QString::number(CHIP_get_patch(chip_under)->id);
+        
+        VECTOR_FOR_EACH(struct Patch *,patch,&patches){
+          if (patch!=CHIP_get_patch(chip_under))
+            command += " " + QString::number(patch->id);
+        }END_VECTOR_FOR_EACH;
+        
+        command += ")";
+        //}UNDO_CLOSE();
+        
+        evalScheme(talloc_strdup(command.toUtf8().constData()));
+        
+      } else if (sel==generate_new_color) {
+        
+        QString command = QString("(ra:set-instrument-color (ra:generate-new-color 0.9) ") + QString::number(CHIP_get_patch(chip_under)->id) + ")";
+        evalScheme(talloc_strdup(command.toUtf8().constData()));
+        
+      } else if (sel==instrument_info) {
+        
+        showInstrumentInfo(DYN_create_int(CHIP_get_patch(chip_under)->id), parentguinum);
+        
+      } else if (sel==show_gui) {
+        
+        struct Patch *patch = CHIP_get_patch(chip_under);
+        struct SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+        
+        if (instrumentGuiIsVisible(patch->id, parentguinum))
+          PLUGIN_close_gui(plugin);
+        else
+          PLUGIN_open_gui(plugin, parentguinum);
+        
+      } else if (sel==random) {
+        
+        setRandomSampleForAllSelectedInstruments();
+        
+      } else {
+        
+        R_ASSERT(false);
+        
+      }
+    });
 
   return true;
 }
