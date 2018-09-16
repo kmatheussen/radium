@@ -121,13 +121,11 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
     clean_prev();
     
     if (plugins_to_save.is_empty()){
-      //QMessageBox msgBox;
-        
-      msgBox->setText("All files saved");
-      //msgBox->setInformativeText(message);
-      msgBox->setStandardButtons(QMessageBox::Ok);
 
-      safeShow(msgBox); 
+      msgBox->hide();
+      
+      showAsyncMessage("All files saved");
+      
       return;
     }
 
