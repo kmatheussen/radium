@@ -418,7 +418,7 @@ static void unlock_player_from_nonrt_thread(int iteration){
 
 void PLAYER_maybe_pause_lock_a_little_bit(int iteration){
   
-  R_ASSERT_NON_RELEASE(!THREADING_is_player_thread());
+  R_ASSERT_NON_RELEASE(!THREADING_is_player_or_runner_thread());
   R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
 
   bool player_wants_lock = ATOMIC_GET(g_player_wants_player_lock);
@@ -442,7 +442,7 @@ void PLAYER_maybe_pause_lock_a_little_bit(int iteration){
 
 void PLAYER_lock(void){
 
-  R_ASSERT(!THREADING_is_player_thread());
+  R_ASSERT(!THREADING_is_player_or_runner_thread());
 
 #if 0 //!defined(RELEASE)
   printf("  PLAYER_LOCK  \n");
@@ -464,17 +464,21 @@ void PLAYER_lock(void){
 }
 
 void PLAYER_unlock(void){
-  R_ASSERT(!THREADING_is_player_thread());
+  R_ASSERT(!THREADING_is_player_or_runner_thread());
 
   unlock_player_from_nonrt_thread(-1);
 }
 
 void RT_PLAYER_runner_lock(void){
+  R_ASSERT_NON_RELEASE(THREADING_is_player_or_runner_thread());
+  
   LOCK_LOCK(player_runner_lock);
   g_current_thread_has_player_runner_lock = true;
 }
 
 void RT_PLAYER_runner_unlock(void){
+  R_ASSERT_NON_RELEASE(THREADING_is_player_or_runner_thread());
+  
   g_current_thread_has_player_runner_lock = false;
   LOCK_UNLOCK(player_runner_lock);
 }
