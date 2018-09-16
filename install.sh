@@ -68,11 +68,18 @@ rm -fr "$TARGET/packages/s7/sndlib"
 mkdir -p "$TARGET/packages/faust2"
 cp -a packages/faust2/examples "$TARGET/packages/faust2/"
 cp -a packages/faust2/architecture "$TARGET/packages/faust2/"
+rm -fr "$TARGET/packages/faust2/architecture/webaudio"
+rm -fr "$TARGET/packages/faust2/architecture/osclib"
 
 # pure data
 cp -a packages/libpd-master "$TARGET/packages/"
 cd "$TARGET/packages/libpd-master"
 make clean
 rm -f libpds.o
+cd "$THIS_DIR/bin"
 
-
+# libxcb
+cp -a packages/libxcb-1.13 "$TARGET/packages/"
+cd "$TARGET/packages/libxcb-1.13/src"
+rm -f *.o
+cd "$THIS_DIR/bin"
