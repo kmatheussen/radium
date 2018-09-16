@@ -170,8 +170,10 @@ namespace{
   }
   
   void run_on_message_thread(std::function<void(void)> callback){
-    R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
-    juce::MessageManager::getInstance()->callFunctionOnMessageThread(run_callback, &callback);
+    if (THREADING_is_main_thread())
+      juce::MessageManager::getInstance()->callFunctionOnMessageThread(run_callback, &callback);
+    else
+      R_ASSERT(false); // Calling callFunctionOnMessageThread on a player thread can cause deadlock.
   }
   
   /*
@@ -2098,9 +2100,20 @@ static void set_non_realtime(struct SoundPlugin *plugin, bool is_non_realtime){
   Data *data = (Data*)plugin->data;
   juce::AudioPluginInstance *instance = data->audio_instance;
 
-  run_on_message_thread([&](){
-      instance->setNonRealtime(is_non_realtime);
-    });
+  // run_on_message_thread([&](){...} here makes Radium hang on OSX and Windows.
+      
+  if (THREADING_is_player_or_runner_thread()) {
+
+    // There will probably be a data race here if RT_process is called from a different runner. But it shouldn't be a problem.
+    // (I didn't want to think about whether it's safe to have a custom mutex here when writing this code.)
+    instance->setNonRealtime(is_non_realtime);
+    
+  } else {
+    
+    radium::PlayerRecursiveLock lock; // It's not documented in Juce, but setNonRealtime() should be called from the audio process thread.
+    instance->setNonRealtime(is_non_realtime);
+    
+  }
 }
 
 static SoundPluginType *create_plugin_type(const juce::PluginDescription &description, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
