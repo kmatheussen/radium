@@ -118,7 +118,6 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
   return data;
 }
 
-extern DEFINE_ATOMIC(int, jackblock_size);
 extern jack_time_t jackblock_delta_time;
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
@@ -134,28 +133,32 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   if(MIXER_is_saving()){
 
-    if(!strcmp(type->name,"System Out"))
-      SOUNDFILESAVER_write(inputs, num_frames);
-
-    else if(!strcmp(type->name,"System Out 8"))
-      SOUNDFILESAVER_write(inputs, num_frames);
-
+    if(!strcmp(type->name,"System Out")){
+      
+      R_ASSERT(type->num_inputs==2);
+      SOUNDFILESAVER_write(inputs, type->num_inputs, num_frames);
+      
+    } else if(!strcmp(type->name,"System Out 8")){
+      
+      R_ASSERT(type->num_inputs==8);
+      SOUNDFILESAVER_write(inputs, type->num_inputs, num_frames);
+      
+    }
   }
 
   {
     int ch;
-    int jackblock_size = ATOMIC_GET(jackblock_size);
     
     for(ch=0;ch<type->num_inputs;ch++)
       if (data->output_ports[ch]!=NULL)
-        memcpy(((float*)jack_port_get_buffer(data->output_ports[ch],jackblock_size))+jackblock_delta_time,
+        memcpy(((float*)jack_port_get_buffer(data->output_ports[ch],g_jackblock_size))+jackblock_delta_time,
                inputs[ch],
                sizeof(float)*num_frames);
     
     for(ch=0;ch<type->num_outputs;ch++)
       if (data->input_ports[ch]!=NULL)
         memcpy(outputs[ch],
-               ((float*)jack_port_get_buffer(data->input_ports[ch],jackblock_size))+jackblock_delta_time,
+               ((float*)jack_port_get_buffer(data->input_ports[ch],g_jackblock_size))+jackblock_delta_time,
                sizeof(float)*num_frames);
     
   }

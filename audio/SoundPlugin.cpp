@@ -2991,7 +2991,7 @@ bool RT_PLUGIN_can_autosuspend(SoundPlugin *plugin, int64_t time){
     delay += (plugin->delay_time * MIXER_get_sample_rate() / 1000);
     
     // The timing logic is a little bit uncertain, so we add one jack block just to be sure.
-    delay += MIXER_get_jack_block_size();
+    delay += g_jackblock_size;
 
     // ...and we add some frames to eliminate rounding errors and possibly other minor things (system filters, etc.). (important for instruments that implement RT_get_audio_tail_length)
     delay += 64;
