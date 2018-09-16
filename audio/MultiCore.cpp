@@ -200,6 +200,8 @@ public:
   void run() override {
     AVOIDDENORMALS;
 
+    THREADING_init_runner_thread_type();
+      
     touch_stack();
 
 #ifdef FOR_MACOSX
