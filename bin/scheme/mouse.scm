@@ -16,7 +16,6 @@
   (or (= *left-button* Button)
       (= *right-button* Button)))
 
-
 (define *last-statusbar-id* -1)
 
 (define (set-editor-statusbar text)
@@ -1157,6 +1156,10 @@
 (define (set-left-interior-status-bar2 interior-start)
   (set-editor-statusbar (<-> "----|: " (get-interior-displayable-string interior-start))))
 
+(define (set-right-interior-status-bar2 seqblocknum seqtracknum interior-end)
+  (set-editor-statusbar (<-> "|----: " (get-interior-displayable-string (- (get-original-seqblock-duration seqblocknum seqtracknum)
+                                                                           interior-end)))))
+
 (define (set-left-interior-status-bar seqblocknum seqtracknum)
   ;;(c-display "setting" seqblocknum seqtracknum)
   (set-seqblock-selected-box 5 seqblocknum seqtracknum)
@@ -1165,8 +1168,7 @@
 (define (set-right-interior-status-bar seqblocknum seqtracknum)
   (set-seqblock-selected-box 6 seqblocknum seqtracknum)
 
-  (set-editor-statusbar (<-> "|----: " (get-interior-displayable-string (- (get-original-seqblock-duration seqblocknum seqtracknum)
-                                                                               (<ra> :get-seqblock-interior-end seqblocknum seqtracknum))))))
+  (set-right-interior-status-bar2 seqblocknum seqtracknum (<ra> :get-seqblock-interior-end seqblocknum seqtracknum)))
 
 (define *old-selected-box-seqblocknum* -1)
 (define *old-selected-box-seqtracknum* -1)
@@ -4270,6 +4272,7 @@
 
 
 (define gakkgakk-has-moved-left-interior #f)
+(define gakkgakk-left-interior-value 0)
 
 ;; left handle
 (add-node-mouse-handler :Get-area-box (lambda()
@@ -4351,6 +4354,8 @@
                                      ;;(<ra> :apply-gfx-seqblocks new-seqblocks-state)
 
                                      (set! gakkgakk-has-moved-left-interior #t)
+                                     (set! gakkgakk-left-interior-value new-interior-start)
+                                     
                                      (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
                                      
                                      (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
@@ -4359,9 +4364,8 @@
                                      seqblock-info)
                         
                         :Publicize (lambda (seqblock-info)
-                                     (define seqtracknum (seqblock-info :seqtracknum))
-                                     (define seqblocknum (seqblock-info :seqblocknum))
-                                     (set-left-interior-status-bar seqblocknum seqtracknum))
+                                     (set-left-interior-status-bar2 gakkgakk-left-interior-value)
+                                     )
                         
                         :Get-pixels-per-value-unit (lambda (seqblock-info)
                                                      (get-seqblock-interior-pixels-per-value-unit seqblock-info))
@@ -4381,6 +4385,7 @@
 
 
 (define gakkgakk-has-moved-right-interior #f)
+(define gakkgakk-right-interior-value 0)
 
 ;; right handle
 (add-node-mouse-handler :Get-area-box (lambda()
@@ -4465,6 +4470,7 @@
                                      ;;(<ra> :apply-gfx-seqblocks new-seqblocks-state)
 
                                      (set! gakkgakk-has-moved-right-interior #t)
+                                     (set! gakkgakk-right-interior-value new-interior-end)
                                      (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
 
                                      (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
@@ -4475,7 +4481,8 @@
                         :Publicize (lambda (seqblock-info)
                                      (define seqtracknum (seqblock-info :seqtracknum))
                                      (define seqblocknum (seqblock-info :seqblocknum))
-                                     (set-right-interior-status-bar seqblocknum seqtracknum))
+                                     (set-right-interior-status-bar2 seqblocknum seqtracknum  gakkgakk-right-interior-value)
+                                     )
                         
                         :Get-pixels-per-value-unit (lambda (seqblock-info)
                                                      (get-seqblock-interior-pixels-per-value-unit seqblock-info))
@@ -5669,10 +5676,10 @@
                                                                    (<ra> :get-seqblock-stretch seqblocknum seqtracknum)))
                                                          automationnum seqblocknum seqtracknum)
                                                    automationnum seqblocknum seqtracknum)))
-                  (c-display "------------Setting"          
-                             (*current-seqautomation/distance* :automation-num)
-                             (*current-seqautomation/distance* :seqblock)
-                             (*current-seqautomation/distance* :seqtrack))
+                  '(c-display "------------Setting"          
+                              (*current-seqautomation/distance* :automation-num)
+                              (*current-seqautomation/distance* :seqblock)
+                              (*current-seqautomation/distance* :seqtrack))
 
                   (<ra> :set-curr-seqblock-automation
                         (*current-seqautomation/distance* :automation-num)
