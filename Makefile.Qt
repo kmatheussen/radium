@@ -1643,7 +1643,7 @@ api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.cpp $(API)radium_
 api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.c $(API)radium_proc.h
 	$(CC)  $(API)api_mouse.c $(OPT)
 
-api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.cpp $(API)radium_proc.h audio/Envelope.hpp
+api_seqtracks.o:  $(BUILD_DEPENDENCIES)  $(API)api_seqtracks.cpp $(API)radium_proc.h audio/Envelope.hpp common/seqblock_automation_proc.h
 	$(CCC)  $(API)api_seqtracks.cpp $(QTOPT)
 
 api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp $(API)radium_proc.h Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h
@@ -1812,7 +1812,7 @@ Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c audi
 SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS_string_proc.h
 	$(CCC) $(QTOPT) audio/SampleRecorder.cpp $(SNDFILEOPT)
 
-SampleReader.o: audio/SampleReader.cpp
+SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
 	$(CCC) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
 
 Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/Granulator.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h
