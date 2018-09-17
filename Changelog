@@ -1,3 +1,18 @@
+Changes 5.8.9 -> 5.9.0:
+* Soundfile saver: Make the "All files saved" dialog modal, and
+  fix keyboard focus.
+* Soundfile saver: Only save audio from current "system out", the
+  one that has slider in the bottom bars.
+* Soundfile saver: Option to set number of channels
+* Modular mixer: Fix sound object popup menu.
+* Soundfile saver: Avoid freezing on OSX and Windows when saving
+  multiple soundfiles.
+* OpenGL: Hide Mesa startup warning for AMD devices (Teteros)
+* Build: Silence missing libxaw warning (Teteros)
+* Build: install.sh script to create radium directory in /opt and
+  other places.
+
+
 Changes 5.8.8 -> 5.8.9:
 * GUI: Disabled the remaining usage of synchronized popup menus
   (only the menu to select MIDI port was left). The command line
