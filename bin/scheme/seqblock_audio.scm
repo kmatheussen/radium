@@ -193,8 +193,8 @@
                                  (when has-started
                                    (<ra> :set-seqblock-automation-enabled ison 6 seqblockid))))))
     (<gui> :add main-layout
-           ;;(<gui> :horizontal-layout stretch-checkbox speed-checkbox)
-           (<gui> :horizontal-layout stretch-checkbox)
+           (<gui> :horizontal-layout stretch-checkbox speed-checkbox)
+           ;;(<gui> :horizontal-layout stretch-checkbox)
            ))
 
   (when #f
@@ -230,6 +230,7 @@
                (<ra> :remove-seqblock-deleted-callback seqblockid seqblock-deleted-callback))
            (set! (*seqblock-guis* seqblockid) #f)))
 
+  (<gui> :set-takes-keyboard-focus main-layout #f)
   (<gui> :set-parent main-layout -1)
   (<gui> :show main-layout)
   (<gui> :set-window-title main-layout (<ra> :get-seqblock-name seqblocknum seqtracknum))
