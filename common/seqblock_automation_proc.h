@@ -60,7 +60,7 @@ void SEQBLOCK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, struct S
 // May be called if it there is no current automation.
 void SEQBLOCK_AUTOMATION_cancel_curr_automation(void);
 void SEQBLOCK_AUTOMATION_set(struct SeqblockAutomation *seqblockenvelope, int nodenum, double seqtime, double db, int lotype);
-void SEQBLOCK_AUTOMATION_duration_changed(struct SeqblockAutomation *seqblockenvelope, int64_t new_duration, radium::PlayerLockOnlyIfNeeded *lock);
+void SEQBLOCK_AUTOMATION_default_duration_changed(struct SeqblockAutomation *seqblockenvelope, int64_t new_default_duration, radium::PlayerLockOnlyIfNeeded *lock); // safe to call even if default duration hasn't changed.
 
 ////////////////////////
 

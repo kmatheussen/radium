@@ -355,6 +355,69 @@ public:
             
   }
 
+  void cut_after(double time){
+    R_ASSERT_RETURN_IF_FALSE(_automation.size() > 0);
+    
+    if (time >= _automation.last().time)
+      return;
+        
+    QVector<T> new_automation;
+    
+    if (time <= 0){
+      
+      RError("radium::SeqAutomation::cut_after: Time<=0. Time: %f\n", time);
+      T node = _automation.at(0);
+      node.time = 0;      
+      new_automation.push_back(node);
+      node.time = 10;
+      new_automation.push_back(node);
+            
+    } else if (_automation.at(0).time >= time || _automation.size()==1) {
+      
+      T node = _automation.at(0);
+      
+      node.time = 0;      
+      new_automation.push_back(node);
+      
+      node.time = time;
+      new_automation.push_back(node);
+      
+    } else {
+    
+      T node1;
+      T node2;
+      
+      for(const auto &node : _automation){
+        
+        if (node.time <= time) {
+          
+          node1 = node;
+          new_automation.push_back(node);
+          
+        } else {
+          
+          node2 = node;
+          break;
+          
+        }
+        
+      }
+
+      T node = node1;
+      node.time = time;
+      
+      if (node.logtype == LOGTYPE_LINEAR)        
+        node.value = scale(time, node1.time, node2.time, node1.value, node2.value);
+
+      new_automation.push_back(node);
+      
+    }
+
+    _automation = new_automation;
+    
+    create_new_rt_data();    
+  }
+  
   void reset(void){
     _automation.clear();
     create_new_rt_data();
