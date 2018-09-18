@@ -528,7 +528,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
       int num_automations = SEQBLOCK_num_automations(seqblock);
 
       for(int i=0;i<num_automations;i++)
-        SEQBLOCK_AUTOMATION_duration_changed(seqblock->automations[i], duration, NULL);
+        SEQBLOCK_AUTOMATION_default_duration_changed(seqblock->automations[i], duration, NULL);
     }
 
     /*
@@ -1979,15 +1979,27 @@ void SEQUENCER_timing_has_changed(radium::PlayerLockOnlyIfNeeded &lock){
           
           seqblock->t.interior_end = default_duration;
 
-          //for(int i=0;i<NUM_SATS;i++)
-          //  SEQBLOCK_AUTOMATION_duration_changed(seqblock->automations[i], default_duration, &lock);
-
           lock.maybe_pause(iterator666);
         }
       }
     }END_VECTOR_FOR_EACH;
 
   }END_VECTOR_FOR_EACH;
+
+  
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+
+      for(int i=0;i<SEQBLOCK_num_automations(seqblock);i++)
+        SEQBLOCK_AUTOMATION_default_duration_changed(seqblock->automations[i], seqblock->t.default_duration, &lock);
+
+      lock.maybe_pause(iterator666);
+      
+    }END_VECTOR_FOR_EACH;
+
+  }END_VECTOR_FOR_EACH;
+
 }
 
 /*
