@@ -8,6 +8,11 @@ THIS_DIR="$(dirname "$(readlink -f "$0")")"
 
 PREFIX=$1
 
+if ! [[ "$PREFIX" = /* ]]; then
+    echo "$PREFIX is not an absolute path"
+    exit -2
+fi
+
 #if [ ! -d "$PREFIX" ]; then
 #    echo "Directory $PREFIX does not exist"
 #    exit -1
