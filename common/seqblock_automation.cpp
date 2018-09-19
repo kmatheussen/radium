@@ -608,29 +608,6 @@ public:
     SEQTRACK_update(_seqtrack);
   }
 
-  void seqblock_default_duration_has_changed(int64_t new_default_duration, radium::PlayerLockOnlyIfNeeded *lock){
-    
-    AutomationNode *last_node = NULL;
-    
-    for(AutomationNode &node : _automation){
-      last_node = &node;
-      
-      if (node.time > new_default_duration){
-        radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause(lock);
-        _automation.cut_after(new_default_duration);
-        return;
-      }
-    }
-    
-    R_ASSERT_RETURN_IF_FALSE(last_node!=NULL);
-
-    //printf("   2. Setting last node time to %d. (old: %d)\n", (int)new_duration, (int)last_node->time);
-
-    // Try without. Seqblock automation should handle it.
-    //last_node->time = new_duration;
-  }
-
-  
   static float get_node_x2(const SeqblockAutomation *seqblockenvelope, const AutomationNode &node, double start_time, double end_time, float x1, float x2) {
     //int64_t abstime = get_abstime_from_seqtime(seqtrack, NULL, node.time);
     
@@ -821,7 +798,7 @@ void SEQBLOCK_AUTOMATION_set(struct SeqblockAutomation *seqblockenvelope, int no
 }
 
 void SEQBLOCK_AUTOMATION_default_duration_changed(struct SeqblockAutomation *seqblockenvelope, int64_t new_default_duration, radium::PlayerLockOnlyIfNeeded *lock){
-  seqblockenvelope->seqblock_default_duration_has_changed(new_default_duration, lock);
+  seqblockenvelope->_automation.duration_has_changed(new_default_duration, lock);
 }
 
 static void RT_handle_seqblock_volume_automation(linked_note_t *linked_notes, struct Patch *patch, struct SoundPlugin *plugin, const int play_id){
