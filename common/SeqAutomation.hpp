@@ -417,6 +417,58 @@ public:
     
     create_new_rt_data();    
   }
+
+  void extend_last_node(double new_duration, radium::PlayerLockOnlyIfNeeded *lock){
+    R_ASSERT_RETURN_IF_FALSE(_automation.size() > 0);
+    
+    T &last_node = _automation.last();
+
+    R_ASSERT_RETURN_IF_FALSE(last_node.time < new_duration);
+                             
+    last_node.time = new_duration;
+
+    {
+      radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause(lock);
+      create_new_rt_data();
+    }
+  }
+  
+  void duration_has_changed(double new_duration, radium::PlayerLockOnlyIfNeeded *lock){
+    int size = _automation.size();
+    
+    R_ASSERT_RETURN_IF_FALSE(size > 0);
+      
+    T &last_node = _automation.last();
+    
+    if (new_duration==last_node.time)
+      return;
+    
+    for(T &node : _automation){
+      if (node.time > new_duration){
+        radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause(lock);
+        cut_after(new_duration);
+        return;
+      }
+    }
+
+    if (size > 1){
+      
+      T second_last_node = _automation.at(size-2);
+      
+      if (second_last_node.value == last_node.value)
+        return extend_last_node(new_duration, lock);
+        
+    }
+    
+    {
+      radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause(lock);
+      
+      T new_node = last_node;
+      new_node.time = new_duration;
+      
+      add_node(new_node);
+    }
+  }
   
   void reset(void){
     _automation.clear();
