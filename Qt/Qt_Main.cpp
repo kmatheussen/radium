@@ -737,11 +737,13 @@ protected:
       }
       
       static double last_pressed_key_time = 0;
+      static int last_pressed_undo_num = 0;
 
       double time_now = TIME_get_ms();
 
       if (is_key_press) {
-        
+
+        last_pressed_undo_num = Undo_num_undos();
         last_pressed_key_time = time_now;
         last_pressed_key = modifier;
                
@@ -750,15 +752,19 @@ protected:
         // key release:
 
         if (editor_has_keyboard_focus()==true) {
+          
           if( (time_now - last_pressed_key_time) < 1000/4){ // i.e. only play if holding the key less than 0.25 seconds.
+            
             if(modifier==last_pressed_key && modifier==EVENT_ALT_R) {
               PlayBlockFromStart(window,true); // true == do_loop
             }
             
-            if(modifier==last_pressed_key && modifier==EVENT_SHIFT_R) {
+            if(modifier==last_pressed_key && modifier==EVENT_SHIFT_R && Undo_num_undos()==last_pressed_undo_num && QGuiApplication::mouseButtons()==Qt::NoButton) {
               PlayBlockFromStart(window,true); // true == do_loop
             }
+            
           }
+          
         }
       }
 
