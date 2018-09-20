@@ -840,7 +840,7 @@
           (define type (entry :type))
           (define mcallback (lambda ()
                               (callback entry)))
-          ;;(c-display entry)
+          ;;(c-display "ENTRY" entry)
           (cond ((string=? type "NORMAL")
                  (cons (list (entry :name)
                              :enabled (can-spr-entry-be-used? entry instrconf)
@@ -898,7 +898,9 @@
 (define *popup-menu-args-cache-instrconf* #f)
 (define *popup-menu-args-cache-generation* -1)
 (define *popup-menu-args-cache-args* #f)
+(define *popup-menu-args-cache-preset-in-clipboard* #f)
 (define *popup-menu-curr-callback* #f)
+
 
 #||
 (pp (length (<ra> :get-sound-plugin-registry #t)))
@@ -916,7 +918,8 @@
   (set! *popup-menu-curr-callback* callback) ;; Since there should never be more than one popup open at the same time, this should work, hopefully.
   
   (let ((curr-generation (<ra> :get-sound-plugin-registry-generation)))
-    (when (or (not (= curr-generation *popup-menu-args-cache-generation*))
+    (when (or (not (eq? *popup-menu-args-cache-preset-in-clipboard* (<ra> :instrument-preset-in-clipboard)))
+              (not (= curr-generation *popup-menu-args-cache-generation*))
               (not (same-instrconf-with-regards-to-filtering? *popup-menu-args-cache-instrconf*
                                                               instrconf))
               (not (eq? (*popup-menu-args-cache-instrconf* :parentgui) ;; parentgui is used when openening new popup menues, plugin manager, file selector, etc.
@@ -925,6 +928,7 @@
       ;;(c-display "REGENERATING CACHE")
       (set! *popup-menu-args-cache-instrconf* instrconf)
       (set! *popup-menu-args-cache-generation* curr-generation)
+      (set! *popup-menu-args-cache-preset-in-clipboard* (<ra> :instrument-preset-in-clipboard))
       (set! *popup-menu-args-cache-args*
             (get-popup-menu-args (append (list "Plugin Manager"
                                                (lambda ()
