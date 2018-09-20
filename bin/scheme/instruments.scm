@@ -877,7 +877,7 @@
                              mcallback)
                        (loop (cdr entries))))
                 ((string=? type "PASTE_PRESET")
-                 (cons (list "Paste sound objects(s)"
+                 (cons (list "Paste" ;; sound objects(s)"
                              :enabled (and (instrconf :include-load-preset)
                                            (<ra> :instrument-preset-in-clipboard))
                              mcallback)
