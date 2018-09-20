@@ -67,10 +67,13 @@ void ScrollEditorDown(struct Tracker_Windows *window,int num_lines){
 	}
 
 	if(num_lines/getScrollMultiplication()==1 || num_lines/getScrollMultiplication()==-1)
-		Scroll_play_down(wblock,wblock->curr_realline,wblock->curr_realline+num_lines-1);
+          Scroll_play_down(wblock,wblock->curr_realline,wblock->curr_realline+num_lines-1);
 
-	if(wblock->curr_realline+num_lines < wblock->num_reallines){
+	if(wblock->curr_realline < wblock->num_reallines-1) {
+
+          num_lines = R_MIN(num_lines, wblock->num_reallines-1-wblock->curr_realline); //wblock->curr_realline+num_lines < wblock->num_reallines){
 	  Scroll_scroll(window,num_lines);
+          
 	}else{
 		/* When on the bottom line. */
 
