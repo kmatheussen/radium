@@ -1865,7 +1865,7 @@ const char *getModulatorDescription(int64_t instrument_id, const char *effect_na
 dyn_t getModulatorInstruments(void){
   dynvec_t dynvec = {};
 
-  const dyn_t dynstate = MODULATOR_get_connections_state();
+  const dyn_t dynstate = MODULATORS_get_connections_state(); // Using this function as a way to get a list of all modulator instruments. (easier than filtering modulators from the list of all patches)
   const dynvec_t *vec = dynstate.array;
   
   for(int i = 0 ; i < vec->num_elements ; i++){

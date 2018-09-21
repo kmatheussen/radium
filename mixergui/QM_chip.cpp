@@ -2306,7 +2306,7 @@ void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connecti
   CONNECTIONS_apply_changes(scene, changes);
 
   if (HASH_has_key(connections, "modulator_connections"))
-    MODULATOR_apply_connections_state(HASH_get_dyn(connections, "modulator_connections"));
+    MODULATORS_apply_connections_state(HASH_get_dyn(connections, "modulator_connections"));
 }
 
 /*
@@ -2329,7 +2329,7 @@ void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *con
   CONNECTIONS_apply_changes(scene, changes);
 
   if (HASH_has_key(connections, "modulator_connections"))
-    MODULATOR_apply_connections_state(HASH_get_dyn(connections, "modulator_connections"));
+    MODULATORS_apply_connections_state(HASH_get_dyn(connections, "modulator_connections"));
 }
 
 // Called from MW_create_from_state, which is called from Presets.cpp.

@@ -1215,6 +1215,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
   
   vector_t v = {};
 
+  int connect_to_main_pipe = -1;
   int insert = -1;
   int replace = -1;
   int copy = -1;
@@ -1284,6 +1285,9 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
       VECTOR_push_back(&v, "--------");
     }
 
+    if (plugin->type->num_outputs>0 && getNumOutAudioConnections(patch->id)==0)
+      connect_to_main_pipe = VECTOR_push_back(&v, "Connect to main pipe");
+      
     insert = VECTOR_push_back(&v, "Insert"); // sound object");
     replace = VECTOR_push_back(&v, AUDIO_is_permanent_patch(patch) ? "[disabled]Replace" : "Replace"); // sound object");
     
@@ -1348,7 +1352,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
     patch_ids.push_back(patch->id);
   }END_VECTOR_FOR_EACH;
 
-#define sels insert,replace,solo,unsolo,mute,unmute,unsolo_all,mute_all,unmute_all,copy,cut,delete_,save,show_mixer_strips,config_color,generate_new_color,show_gui,random,instrument_info
+#define sels connect_to_main_pipe,insert,replace,solo,unsolo,mute,unmute,unsolo_all,mute_all,unmute_all,copy,cut,delete_,save,show_mixer_strips,config_color,generate_new_color,show_gui,random,instrument_info
   
   GFX_Menu3(v,[is_alive, chip_under, scene, patch_ids, sels, mouse_x, mouse_y, parentguinum](int sel, bool onoff){
       
@@ -1376,6 +1380,9 @@ static bool mousepress_save_presets_etc(MyScene *scene, QGraphicsSceneMouseEvent
 
       if (sel==-1) {
     
+      } else if (sel==connect_to_main_pipe) {
+        connectAudioInstrumentToMainPipe(CHIP_get_patch(chip_under)->id);
+          
       } else if (sel==insert) {
     
         mouserelease_create_chip(scene, mouse_x, mouse_y);
@@ -2525,7 +2532,7 @@ hash_t *MW_get_connections_state(const vector_t *patches){
   
   HASH_put_int(connections, "num_connections", num_connections);
 
-  HASH_put_dyn(connections, "modulator_connections", MODULATOR_get_connections_state());
+  HASH_put_dyn(connections, "modulator_connections", MODULATORS_get_connections_state());
 
   return connections;
 }
