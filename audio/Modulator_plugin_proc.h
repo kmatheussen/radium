@@ -28,8 +28,9 @@ extern LANGSPEC int64_t *MODULATOR_get_ids(int *num_modulators);
 extern LANGSPEC const char *MODULATOR_get_description(int64_t modulator_id);
 extern LANGSPEC dynvec_t MODULATOR_get_modulator_targets(int64_t modulator_patch_id);
 extern LANGSPEC bool MODULATOR_is_modulator(int64_t modulator_patch_id);
-extern LANGSPEC dyn_t MODULATOR_get_connections_state(void);
-extern LANGSPEC void MODULATOR_apply_connections_state(const dyn_t state);
+
+extern LANGSPEC dyn_t MODULATORS_get_connections_state(void);
+extern LANGSPEC void MODULATORS_apply_connections_state(const dyn_t state);
 
 #endif
 

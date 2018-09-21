@@ -949,7 +949,7 @@ dynvec_t MODULATOR_get_modulator_targets(int64_t modulator_patch_id){
   return *dyn.array;
 }
 
-dyn_t MODULATOR_get_connections_state(void){
+dyn_t MODULATORS_get_connections_state(void){
   dynvec_t vec = {};
 
   for(auto *modulator : g_modulators2)
@@ -969,8 +969,10 @@ static Modulator *get_modulator_from_patch_id(int64_t patch_id){
   return NULL;
 }
 
-void MODULATOR_apply_connections_state(const dyn_t dynstate){
+void MODULATORS_apply_connections_state(const dyn_t dynstate){
   R_ASSERT_RETURN_IF_FALSE(dynstate.type==ARRAY_TYPE);
+
+  printf("  --Modulator connections Array length: %d\n", dynstate.array->num_elements);
   
   for(const dyn_t modulator_state : dynstate.array){
     R_ASSERT_RETURN_IF_FALSE(modulator_state.type==HASH_TYPE);
@@ -979,6 +981,8 @@ void MODULATOR_apply_connections_state(const dyn_t dynstate){
     Modulator *modulator = get_modulator_from_patch_id(patch_id);
     R_ASSERT_RETURN_IF_FALSE(modulator!=NULL);
 
+    printf("  patch_id: %d\n", (int)patch_id);
+    
     modulator->apply_state(modulator_state.hash);
   }
 }
@@ -1369,6 +1373,9 @@ static void create_state(struct SoundPlugin *plugin, hash_t *state){
   Modulator *modulator = static_cast<Modulator*>(plugin->data);
 
   HASH_put_int(state, "creation_time", modulator->_creation_time);
+
+  // Not sure if we want this.
+  //HASH_put_hash(state, "modulator_state", modulator->get_state()); // "modulator_state" is only used when copy/pasting and saving/loading .rec/.mrec files, and not when saving/loading song.
 }
 
 static int RT_get_audio_tail_length(struct SoundPlugin *plugin){
