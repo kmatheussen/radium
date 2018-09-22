@@ -1313,7 +1313,6 @@ Place p_Scale(const Place x, const Place x1, const Place x2, const Place y1, con
   }
 }
 
-
 bool quantitize_note(const struct Blocks *block, struct Notes *note) {
   ScopedEvalTracker eval_tracker;
 
@@ -1328,7 +1327,7 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note) {
                            
   s7_pointer result = catch_call(s7,
                                  s7_list(s7,
-                                         5,
+                                         6,
                                          scheme_func,
                                          place_to_ratio(&note->l.p),
                                          place_to_ratio(&note->end),
@@ -1496,7 +1495,7 @@ const char *SCHEME_get_history(void){
   
   s7_pointer s7s = s7_call(s7,
                            find_scheme_value(s7, funcname),
-                           s7_list(s7, 0)
+                           s7_nil(s7)
                            );
 
   return s7_string(s7s);
