@@ -5245,6 +5245,7 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
   //printf("Child parent: %p\n", child->_widget->parent());
 #if !defined(RELEASE)
   if(child->_widget->parent()!=NULL){
+    //printf("Error: gui_add: child->_widget->parent()!=NULL\n");
     handleError("gui_add: child->_widget->parent()!=NULL");
     return;
   }

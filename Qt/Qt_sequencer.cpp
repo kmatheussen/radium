@@ -269,12 +269,17 @@ static double get_seqblock_xsplit2(double seqblock_x1, double seqblock_x2){
 
 static double get_seqblock_ysplit1(double seqblock_y1, double seqblock_y2){
   double y1 = seqblock_y1;
-  return y1 + (seqblock_y2-y1) / 3;
+  return y1 + (seqblock_y2-y1) / 4;
 }
 
 static double get_seqblock_ysplit2(double seqblock_y1, double seqblock_y2){
   double y1 = seqblock_y1;
-  return seqblock_y2 - (seqblock_y2-y1) / 3;
+  return y1 + (seqblock_y2-y1) / 2;
+}
+
+static double get_seqblock_ysplit3(double seqblock_y1, double seqblock_y2){
+  double y1 = seqblock_y1;
+  return seqblock_y2 - (seqblock_y2-y1) / 4;
 }
 
 static QPoint mapFromEditor(QWidget *widget, QPoint point){
@@ -930,10 +935,10 @@ public:
           QColor interior_waveform_color = waveform_color;
           interior_waveform_color.setAlpha(70);
           
-          const double interior_start_length = seqblock->t.interior_start * seqblock->t.stretch;
+          const double interior_start_length = seqblock->t.interior_start * seqblock->t.stretch  * seqblock->t.speed;
           const double noninterior_start = seqblock->t.time - interior_start_length;
 
-          const double interior_end_length = (seqblock->t.default_duration - seqblock->t.interior_end) * seqblock->t.stretch;
+          const double interior_end_length = (seqblock->t.default_duration - seqblock->t.interior_end) * seqblock->t.stretch * seqblock->t.speed;
           const double noninterior_end = seqblock->t.time2 + interior_end_length;
 
           const double i1_x1 = scale_double(noninterior_start,
@@ -1155,6 +1160,7 @@ public:
 
     double ysplit1 = get_seqblock_ysplit1(y1, y2);
     double ysplit2 = get_seqblock_ysplit2(y1, y2);
+    double ysplit3 = get_seqblock_ysplit3(y1, y2);
 
     double width = root->song->tracker_windows->systemfontheight / 4;
     double sel_width = width*2;
@@ -1169,98 +1175,168 @@ public:
     QPen sel_pen(color);
     sel_pen.setWidthF(sel_width);
 
-    /* Vertical lines */
     
-    // xsplit1 vertical line 1, left
-    if (seqblock->block==NULL){
-      if (seqblock->selected_box==SB_INTERIOR_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-      QLineF line1b(xsplit1,ysplit1,
-                    xsplit1,ysplit2);
-      painter->drawLine(line1b);
-      
-      // xsplit1 vertical line 2, right
-      if (seqblock->selected_box==SB_INTERIOR_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-      QLineF line2b(xsplit2,ysplit1,
-                    xsplit2,ysplit2);
-      painter->drawLine(line2b);
+    /* Vertical lines (Ys) */
+    //////////////////////////
+    
+    // fade
+    {
+      if (seqblock->selected_box==SB_FADE_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line1a(xsplit1, y1 + border,
+                    xsplit1, ysplit1);
+      painter->drawLine(line1a);
+
+      if (seqblock->selected_box==SB_FADE_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line2a(xsplit2,y1 + border,xsplit2,ysplit1);
+      painter->drawLine(line2a);
     }
 
-    // xsplit1 vertical line 0, left
-    if (seqblock->selected_box==SB_FADE_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-    QLineF line1a(xsplit1, y1 + border,
-                  xsplit1, ysplit1);
-    painter->drawLine(line1a);
 
-    // xsplit1 vertical line 2, left
-    if (seqblock->selected_box==SB_STRETCH_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-    QLineF line1c(xsplit1,ysplit2,xsplit1,y2-border);
-    painter->drawLine(line1c);
+    if (seqblock->block==NULL){
 
-    // xsplit2 vertical line 0, right
-    if (seqblock->selected_box==SB_FADE_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-    QLineF line2a(xsplit2,y1 + border,xsplit2,ysplit1);
-    painter->drawLine(line2a);
+      // interior
+      {
+        if (seqblock->selected_box==SB_INTERIOR_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+        QLineF line1b(xsplit1,ysplit1,
+                      xsplit1,ysplit2);
+        painter->drawLine(line1b);
+        
+        // xsplit1 vertical line 2, right
+        if (seqblock->selected_box==SB_INTERIOR_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+        QLineF line2b(xsplit2,ysplit1,
+                    xsplit2,ysplit2);
+        painter->drawLine(line2b);
+      }
+      
+      // speed
+      {
+        if (seqblock->selected_box==SB_SPEED_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+        QLineF line1b(xsplit1,ysplit2,
+                      xsplit1,ysplit3);
+        painter->drawLine(line1b);
+        
+        // xsplit1 vertical line 2, right
+        if (seqblock->selected_box==SB_SPEED_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+        QLineF line2b(xsplit2,ysplit2,
+                      xsplit2,ysplit3);
+        painter->drawLine(line2b);
+      }
+    }
 
-    // xsplit2 vertical line 2, right
-    if (seqblock->selected_box==SB_STRETCH_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-    QLineF line2c(xsplit2,ysplit2,xsplit2,y2-border);
-    painter->drawLine(line2c);
+    // stretch
+    {
+      if (seqblock->selected_box==SB_STRETCH_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line1c(xsplit1,ysplit3,xsplit1,y2-border);
+      painter->drawLine(line1c);
+      
+      if (seqblock->selected_box==SB_STRETCH_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line2c(xsplit2,ysplit3,xsplit2,y2-border);
+      painter->drawLine(line2c);
+    }
 
-
-    /* Horizontal lines */
     
-    // ysplit1 horizontal line, left
-    if (seqblock->selected_box==SB_FADE_LEFT || seqblock->selected_box==SB_INTERIOR_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-    QLineF line3a(x1+border, ysplit1, xsplit1-border, ysplit1);
-    painter->drawLine(line3a);
-    
-    // ysplit1 horizontal line, right
-    if (seqblock->selected_box==SB_FADE_RIGHT || seqblock->selected_box==SB_INTERIOR_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-    QLineF line3b(xsplit2+border, ysplit1, x2-border, ysplit1);
-    painter->drawLine(line3b);
+    /* Horizontal lines (Xs) */
+    //////////////////////////
 
-    // ysplit2 horizontal line
-    if (seqblock->selected_box==SB_STRETCH_LEFT || seqblock->selected_box==SB_INTERIOR_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-    QLineF line4a(x1+border, ysplit2, xsplit1-border, ysplit2);
-    painter->drawLine(line4a);
+    // ysplit1 (fade | interior)
+    {
+      // left
+      if (seqblock->selected_box==SB_FADE_LEFT || seqblock->selected_box==SB_INTERIOR_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line3a(x1+border, ysplit1, xsplit1-border, ysplit1);
+      painter->drawLine(line3a);
+      
+      // right
+      if (seqblock->selected_box==SB_FADE_RIGHT || seqblock->selected_box==SB_INTERIOR_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line3b(xsplit2+border, ysplit1, x2-border, ysplit1);
+      painter->drawLine(line3b);
+    }
     
-    // ysplit2 horizontal line
-    if (seqblock->selected_box==SB_STRETCH_RIGHT || seqblock->selected_box==SB_INTERIOR_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
-    QLineF line4b(xsplit2+border, ysplit2, x2-border, ysplit2);
-    painter->drawLine(line4b);
+    // ysplit2 (interior | speed)
+    if(seqblock->block==NULL){
+      // left
+      if (seqblock->selected_box==SB_INTERIOR_LEFT || seqblock->selected_box==SB_SPEED_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line4a(x1+border, ysplit2, xsplit1-border, ysplit2);
+      painter->drawLine(line4a);
     
-    //myDrawText(*painter, _blury_areaF, "hello");
+      // right
+      if (seqblock->selected_box==SB_INTERIOR_RIGHT || seqblock->selected_box==SB_SPEED_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line4b(xsplit2+border, ysplit2, x2-border, ysplit2);
+      painter->drawLine(line4b);
+    }
+    
+    // ysplit3 (speed | stretch)
+    {
+      // left
+      if (seqblock->selected_box==SB_SPEED_LEFT || seqblock->selected_box==SB_STRETCH_LEFT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line4a(x1+border, ysplit3, xsplit1-border, ysplit3);
+      painter->drawLine(line4a);
 
-    if (seqblock->selected_box==SB_STRETCH_LEFT){
-      myFillRect(*painter,
-                 QRectF(QPointF(x1+border, ysplit2),
-                        QPointF(xsplit1, y2-border)),
-                 fill_color);
-    } else if (seqblock->selected_box==SB_STRETCH_RIGHT){
-      myFillRect(*painter,
-                 QRectF(QPointF(xsplit2, ysplit2),
-                        QPointF(x2-border, y2-border)),
-                 fill_color);
-    } else if (seqblock->selected_box==SB_INTERIOR_LEFT){
-      myFillRect(*painter,
-                 QRectF(QPointF(x1+border, ysplit1),
-                        QPointF(xsplit1, ysplit2)),
-                 fill_color);
-    } else if (seqblock->selected_box==SB_INTERIOR_RIGHT){
-      myFillRect(*painter,
-                 QRectF(QPointF(xsplit2, ysplit1),
-                        QPointF(x2-border, ysplit2)),
-                 fill_color);
-    } else if (seqblock->selected_box==SB_FADE_LEFT){
-      myFillRect(*painter,
-                 QRectF(QPointF(x1+border, y1+border),
-                        QPointF(xsplit1, ysplit1)),
-                 fill_color);
-    } else if (seqblock->selected_box==SB_FADE_RIGHT){
-      myFillRect(*painter,
-                 QRectF(QPointF(xsplit2, y1+border),
-                        QPointF(x2-border, ysplit1)),
-                 fill_color);
+      // right
+      if (seqblock->selected_box==SB_STRETCH_RIGHT || seqblock->selected_box==SB_STRETCH_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
+      QLineF line4b(xsplit2+border, ysplit3, x2-border, ysplit3);
+      painter->drawLine(line4b);
+    }
+
+    
+    // fill selected box
+    //
+    {
+      border *= 0.5;
+      
+      if (false) {
+
+        // fade
+        /////////
+      } else if (seqblock->selected_box==SB_FADE_LEFT){
+        myFillRect(*painter,
+                   QRectF(QPointF(x1+border, y1+border),
+                          QPointF(xsplit1, ysplit1)),
+                   fill_color);
+      } else if (seqblock->selected_box==SB_FADE_RIGHT){
+        myFillRect(*painter,
+                   QRectF(QPointF(xsplit2, y1+border),
+                          QPointF(x2-border, ysplit1)),
+                   fill_color);
+
+        // interior
+        ///////////
+      } else if (seqblock->selected_box==SB_INTERIOR_LEFT){
+        myFillRect(*painter,
+                   QRectF(QPointF(x1+border, ysplit1),
+                          QPointF(xsplit1, ysplit2)),
+                   fill_color);
+      } else if (seqblock->selected_box==SB_INTERIOR_RIGHT){
+        myFillRect(*painter,
+                   QRectF(QPointF(xsplit2, ysplit1),
+                          QPointF(x2-border, ysplit2)),
+                   fill_color);
+
+        // speed
+        ///////////
+      } else if (seqblock->selected_box==SB_SPEED_LEFT){
+        myFillRect(*painter,
+                   QRectF(QPointF(x1+border, ysplit2),
+                          QPointF(xsplit1, ysplit3)),
+                   fill_color);
+      } else if (seqblock->selected_box==SB_SPEED_RIGHT){
+        myFillRect(*painter,
+                   QRectF(QPointF(xsplit2, ysplit2),
+                          QPointF(x2-border, ysplit3)),
+                   fill_color);
+      
+        // stretch
+        ///////////
+      } else if (seqblock->selected_box==SB_STRETCH_LEFT){
+        myFillRect(*painter,
+                   QRectF(QPointF(x1+border, ysplit3),
+                          QPointF(xsplit1, y2-border)),
+                   fill_color);
+      } else if (seqblock->selected_box==SB_STRETCH_RIGHT){
+        myFillRect(*painter,
+                   QRectF(QPointF(xsplit2, ysplit3),
+                          QPointF(x2-border, y2-border)),
+                   fill_color);
+      }
     }
   }
 
@@ -3158,7 +3234,6 @@ float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum){
   return mapToEditorY(g_sequencer_widget, w.t_y2);
 }
 
-// seqblock left stretch
 
 #define SEQBLOCK_handles(Name, Yfunc1, Yfunc2)                        \
                                                                         \
@@ -3217,9 +3292,16 @@ static float yfunc_ysplit2(int seqblocknum, int seqtracknum){
                               );
 }
 
+static float yfunc_ysplit3(int seqblocknum, int seqtracknum){
+  return get_seqblock_ysplit3(SEQBLOCK_get_y1(seqblocknum, seqtracknum) + get_block_header_height(),
+                              SEQBLOCK_get_y2(seqblocknum, seqtracknum)
+                              );
+}
+
 SEQBLOCK_handles(fade, yfunc_ysplit0, yfunc_ysplit1);
 SEQBLOCK_handles(interior, yfunc_ysplit1, yfunc_ysplit2);
-SEQBLOCK_handles(stretch, yfunc_ysplit2, SEQBLOCK_get_y2);
+SEQBLOCK_handles(speed, yfunc_ysplit2, yfunc_ysplit3);
+SEQBLOCK_handles(stretch, yfunc_ysplit3, SEQBLOCK_get_y2);
 
 
 

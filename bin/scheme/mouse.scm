@@ -1160,32 +1160,47 @@
   (set-editor-statusbar (<-> "|----: " (get-interior-displayable-string (- (get-original-seqblock-duration seqblocknum seqtracknum)
                                                                            interior-end)))))
 
-(define (set-left-interior-status-bar seqblocknum seqtracknum)
-  ;;(c-display "setting" seqblocknum seqtracknum)
-  (set-seqblock-selected-box 5 seqblocknum seqtracknum)
-  (set-left-interior-status-bar2 (<ra> :get-seqblock-interior-start seqblocknum seqtracknum)))
-
-(define (set-right-interior-status-bar seqblocknum seqtracknum)
-  (set-seqblock-selected-box 6 seqblocknum seqtracknum)
-
-  (set-right-interior-status-bar2 seqblocknum seqtracknum (<ra> :get-seqblock-interior-end seqblocknum seqtracknum)))
-
+;; see enum SeqblockBoxSelected in nsmtracker.h
+(define (get-selected-box-num boxname)
+  (cond ((eq? boxname 'non) 0)
+        ((eq? boxname 'fade-left) 1)
+        ((eq? boxname 'fade-right) 2)
+        ((eq? boxname 'interior-left) 3)
+        ((eq? boxname 'interior-right) 4)
+        ((eq? boxname 'speed-left) 5)
+        ((eq? boxname 'speed-right) 6)
+        ((eq? boxname 'stretch-left) 7)
+        ((eq? boxname 'stretch-right) 8)
+        (else
+         (c-display "************** boxname:" boxname)
+         (assert #f))))
+        
 (define *old-selected-box-seqblocknum* -1)
 (define *old-selected-box-seqtracknum* -1)
 (define (set-seqblock-selected-box which-one seqblocknum seqtracknum)
   ;;(c-display "   setting " which-one seqblocknum seqtracknum " old: " *old-selected-box-seqblocknum* *old-selected-box-seqtracknum*)
-  (when (and (>= *old-selected-box-seqtracknum* 0)
+  (when (and #f (>= *old-selected-box-seqtracknum* 0)
              (< *old-selected-box-seqtracknum* (<ra> :get-num-seqtracks))
              (>= *old-selected-box-seqblocknum* 0)
-             (< *old-selected-box-seqblocknum* (<ra> :get-num-seqblocks *old-selected-box-seqtracknum*)))    
-    ;;(c-display "UNSETTING")
-    (<ra> :set-seqblock-selected-box 0 *old-selected-box-seqblocknum* *old-selected-box-seqtracknum*))
+             (< *old-selected-box-seqblocknum* (<ra> :get-num-seqblocks *old-selected-box-seqtracknum*)))
+    ;;(c-display (history-ow!))
+    ;;(c-display "UNSETTING ")
+    (<ra> :set-seqblock-selected-box (get-selected-box-num 'non) *old-selected-box-seqblocknum* *old-selected-box-seqtracknum*))
   
   (set! *old-selected-box-seqblocknum* seqblocknum)
   (set! *old-selected-box-seqtracknum* seqtracknum)
 
   (if (>= seqblocknum 0)
-      (<ra> :set-seqblock-selected-box which-one seqblocknum seqtracknum)))
+      (<ra> :set-seqblock-selected-box (get-selected-box-num which-one) seqblocknum seqtracknum)))
+
+(define (set-left-interior-status-bar seqblocknum seqtracknum)
+  ;;(c-display "setting" seqblocknum seqtracknum)
+  (set-seqblock-selected-box 'interior-left seqblocknum seqtracknum)
+  (set-left-interior-status-bar2 (<ra> :get-seqblock-interior-start seqblocknum seqtracknum)))
+
+(define (set-right-interior-status-bar seqblocknum seqtracknum)
+  (set-seqblock-selected-box 'interior-right seqblocknum seqtracknum)
+  (set-right-interior-status-bar2 seqblocknum seqtracknum (<ra> :get-seqblock-interior-end seqblocknum seqtracknum)))
 
 (define (set-fade-status-bar is-left seqblocknum seqtracknum)
   (define (get-displayable-string value)
@@ -1203,10 +1218,10 @@
 
   (if is-left
       (begin
-        (set-seqblock-selected-box 1 seqblocknum seqtracknum)
+        (set-seqblock-selected-box 'fade-left seqblocknum seqtracknum)
         (set-editor-statusbar (<-> "Fade in: " (get-displayable-string (<ra> :get-seqblock-fade-in seqblocknum seqtracknum)))))
       (begin
-        (set-seqblock-selected-box 2 seqblocknum seqtracknum)
+        (set-seqblock-selected-box 'fade-right seqblocknum seqtracknum)
         (set-editor-statusbar (<-> "Fade out: " (get-displayable-string (<ra> :get-seqblock-fade-out seqblocknum seqtracknum)))))))
 
 
@@ -1245,7 +1260,7 @@
                ((and (inside-box (<ra> :get-box sequencer) X Y)
                      (not *current-seqautomation/distance*))
                 (if (not *current-seqblock-info*)
-                    (set-seqblock-selected-box 0 -1 -1))
+                    (set-seqblock-selected-box 'non -1 -1))
                 (cond (*current-seqblock-info*
                        (define seqblock-info *current-seqblock-info*)
                        (define seqtracknum (seqblock-info :seqtracknum))
@@ -1262,12 +1277,24 @@
 
                              ((inside-box (<ra> :get-box seqblock-right-stretch seqblocknum seqtracknum) X Y)
                               (set-editor-statusbar (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
-                              (set-seqblock-selected-box 4 seqblocknum seqtracknum)
+                              (set-seqblock-selected-box 'stretch-right seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
                              ((inside-box (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y)
                               (set-editor-statusbar (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
-                              (set-seqblock-selected-box 3 seqblocknum seqtracknum)
+                              (set-seqblock-selected-box 'stretch-left seqblocknum seqtracknum)
+                              (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+
+                             ((and holds-sample
+                                   (inside-box (<ra> :get-box seqblock-right-speed seqblocknum seqtracknum) X Y))
+                              (set-editor-statusbar (<-> "Speed: " (two-decimal-string (<ra> :get-seqblock-speed seqblocknum seqtracknum))))
+                              (set-seqblock-selected-box 'speed-right seqblocknum seqtracknum)
+                              (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+                             
+                             ((and holds-sample
+                                   (inside-box (<ra> :get-box seqblock-left-speed seqblocknum seqtracknum) X Y))
+                              (set-editor-statusbar (<-> "Speed: " (two-decimal-string (<ra> :get-seqblock-speed seqblocknum seqtracknum))))
+                              (set-seqblock-selected-box 'speed-left seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
                              ((and holds-sample
@@ -1283,7 +1310,7 @@
                              (else                              
                               (set-editor-statusbar (two-decimal-string (/ (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
                                                                                (<ra> :get-sample-rate))))
-                              (set-seqblock-selected-box 0 seqblocknum seqtracknum)
+                              (set-seqblock-selected-box 'non seqblocknum seqtracknum)
                               ;;(c-display "setting open hand")
                               (set-mouse-pointer ra:set-open-hand-mouse-pointer (<gui> :get-sequencer-gui))))
                        ;;(c-display "hepp")
@@ -4161,7 +4188,7 @@
 (define (get-seqblock-interior-pixels-per-value-unit seqblock-info)
   (define seqtracknum (seqblock-info :seqtracknum))
   (define seqblocknum (seqblock-info :seqblocknum))
-  (let ((ret (* (<ra> :get-seqblock-stretch seqblocknum seqtracknum)
+  (let ((ret (* (<ra> :get-seqblock-stretch-speed seqblocknum seqtracknum)
                 (get-sequencer-pixels-per-value-unit))))
     ;;(c-display "ret:" ret (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
     ret))
@@ -4203,7 +4230,7 @@
                                 (= 0 seqblocknum))))
   (define use-grid (not not-use-grid))
 
-  (define stretch (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
+  (define stretch (<ra> :get-seqblock-stretch-speed seqblocknum seqtracknum))
   (define t1 (seqblock :start-time))
   (define i1 (seqblock :interior-start))
   (define i2 (seqblock :interior-end))
@@ -4240,7 +4267,7 @@
 
   (define original-duration (get-original-seqblock-duration seqblocknum seqtracknum))
 
-  (define stretch (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
+  (define stretch (<ra> :get-seqblock-stretch-speed seqblocknum seqtracknum))
   (define t1 (seqblock :start-time))
   (define i1 (seqblock :interior-start))
   (define s1 (- t1 (* i1 stretch)))
@@ -4358,6 +4385,7 @@
                                      
                                      (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
                                      
+                                     (set-seqblock-selected-box 'interior-left seqblocknum seqtracknum)
                                      (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
                                      
                                      (set-grid-type #t)
@@ -4473,6 +4501,7 @@
                                      (set! gakkgakk-right-interior-value new-interior-end)
                                      (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
 
+                                     (set-seqblock-selected-box 'interior-right seqblocknum seqtracknum)
                                      (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
                                      
                                      (set-grid-type #t)
@@ -4701,11 +4730,86 @@
   )
 
 
+;; The 'Value' format is number of frames since start of song.
+(define (move-seqblock-speedstretch Value seqtracknum seqblocknum seqblock seqblocks is-stretch is-left min-value max-value curr-pos)
 
-(define-class (<set-seqblock-stretch> :seqtracknum
-                                      :seqblocknum
-                                      :is-left)
+  (define is-right (not is-left))
+  (define is-speed (not is-stretch))
+  (define is-sample (seqblock :sample))
+  (define is-block (seqblock :blocknum))
+  (define num-seqblocks (length seqblocks))
   
+  (define new-pos-nongridded (floor Value))
+    
+    (define new-pos (if (or (= 1 (num-seqblocks-in-sequencer))
+                            (<ra> :control-pressed))
+                        new-pos-nongridded
+                        (<ra> :get-seq-gridded-time (floor Value) 0 (<ra> :get-seq-block-grid-type))))
+    
+    (if is-left
+        (set! new-pos (min max-value new-pos))
+        (set! new-pos (max min-value new-pos)))
+
+    (set! new-pos (max 0
+                       (floor new-pos)))
+
+    ;;(c-display "---------new-pos:" new-pos ". Value:" Value "this->max-value:" (this->max-value))
+
+    (set-grid-type #t)
+
+    (define curr-speed (seqblock :speed))
+    
+    (when (or is-sample
+              (not (seqblock-is-overlapping-with-another-block-seqblock seqblocks
+                                                                        seqblocknum
+                                                                        (if is-left new-pos #f)
+                                                                        (if is-right new-pos #f))))
+      (define new-seqblock (if is-left
+                               (copy-hash seqblock
+                                          :start-time new-pos)
+                               (copy-hash seqblock
+                                          :end-time new-pos)))
+      (when is-speed
+        (define old-duration (- (seqblock :end-time)
+                                (seqblock :start-time)))
+        (define new-duration (- (new-seqblock :end-time)
+                                (new-seqblock :start-time)))
+        (define old-speed (seqblock :speed))
+        (set! curr-speed (* (/ new-duration old-duration)
+                            old-speed))
+        (set! (new-seqblock :speed) curr-speed)
+        (c-display "old-speed:" old-speed ". new_speed:" (new-seqblock :speed) ". old-duration:" old-duration ". new-duration:" new-duration)
+        )
+        
+      (define new-seqblocks-state (copy seqblocks))
+      (set! (new-seqblocks-state seqblocknum) new-seqblock)
+      (set! new-seqblocks-state (maybe-add-autofades new-seqblocks-state seqblocknum))
+      (when new-seqblocks-state
+        ;;(set! new-seqblocks-state (sort! new-seqblocks-state
+        ;;                                 (lambda (a b)
+        ;;                                   (< (a :start-time)
+        ;;                                      (b :start-time)))))
+        ;;(assert-seqblocks-state new-seqblocks-state)
+        (set! curr-pos new-pos)
+        ;;(if (= 0 seqtracknum)
+        ;;    (c-display "state:" (pp new-seqblocks-state)))
+        (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)        
+        (set-seqblock-selected-box (if is-left 'stretch-left 'stretch-right)
+                                   seqblocknum seqtracknum)
+        (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
+        )
+      )
+    
+    (assert (= (length seqblocks) num-seqblocks))
+    (list curr-pos
+          curr-speed)
+)
+
+(define-class (<set-seqblock-speedstretch> :seqtracknum
+                                           :seqblocknum
+                                           :is-stretch
+                                           :is-left)
+  (define is-speed (not is-stretch))
   (define is-right (not is-left))
 
   (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
@@ -4714,7 +4818,8 @@
   (set! *current-seqblocks-state* seqblocks)
 
   (define curr-pos (seqblock :start-time))
-
+  (define curr-speed (seqblock :speed))
+  
   (define is-sample (seqblock :sample))
   (define is-block (seqblock :blocknum))
 
@@ -4756,64 +4861,22 @@
      (get-min-seqblock-duration2 *min-seqblock-width*))
 
   :publicize ()
-  (begin
-    (define stretch (/ (- (if is-right
-                              curr-pos
-                              (seqblock :end-time))
-                          (if is-left
-                              curr-pos
-                              (seqblock :start-time)))
-                       (- (seqblock :interior-end)
-                          (seqblock :interior-start))))
-    (set-editor-statusbar (<-> "Stretch: " (two-decimal-string stretch))))
-
+  (if is-stretch
+      (let ((stretch (/ (- (if is-right
+                               curr-pos
+                               (seqblock :end-time))
+                           (if is-left
+                               curr-pos
+                               (seqblock :start-time)))
+                        (- (seqblock :interior-end)
+                           (seqblock :interior-start)))))
+        (set-editor-statusbar (<-> "Stretch: " (two-decimal-string stretch))))
+      (set-editor-statusbar (<-> "Speed: " (two-decimal-string curr-speed))))
+  
   :move (Value Y)
-  (begin
-    ;;(c-display "VALUE" Value)
-    
-    (define new-pos-nongridded (floor Value))
-    
-    (define new-pos (if (or (= 1 (num-seqblocks-in-sequencer))
-                            (<ra> :control-pressed))
-                        new-pos-nongridded
-                        (<ra> :get-seq-gridded-time (floor Value) 0 (<ra> :get-seq-block-grid-type))))
-    
-    (if is-left
-        (set! new-pos (min (this->max-value) new-pos))
-        (set! new-pos (max (this->min-value) new-pos)))
-
-    (set! new-pos (max 0
-                       (floor new-pos)))
-
-    ;;(c-display "---------new-pos:" new-pos ". Value:" Value "this->max-value:" (this->max-value))
-
-    (set-grid-type #t)
-    
-    (when (or is-sample
-              (not (seqblock-is-overlapping-with-another-block-seqblock seqblocks seqblocknum (if is-left new-pos #f) (if is-right new-pos #f))))
-      (define new-seqblock (if is-left
-                               (copy-hash seqblock
-                                          :start-time new-pos)
-                               (copy-hash seqblock
-                                          :end-time new-pos)))
-      (define new-seqblocks-state (copy seqblocks))
-      (set! (new-seqblocks-state seqblocknum) new-seqblock)
-      (set! new-seqblocks-state (maybe-add-autofades new-seqblocks-state seqblocknum))
-      (when new-seqblocks-state
-        ;;(set! new-seqblocks-state (sort! new-seqblocks-state
-        ;;                                 (lambda (a b)
-        ;;                                   (< (a :start-time)
-        ;;                                      (b :start-time)))))
-        ;;(assert-seqblocks-state new-seqblocks-state)
-        (set! curr-pos new-pos)
-        ;;(if (= 0 seqtracknum)
-        ;;    (c-display "state:" (pp new-seqblocks-state)))
-        (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
-        (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
-        )
-      )
-    
-    (assert (= (length seqblocks) num-seqblocks))
+  (let ((gakk (move-seqblock-speedstretch Value seqtracknum seqblocknum seqblock seqblocks is-stretch is-left (this->min-value) (this->max-value) curr-pos)))
+    (set! curr-pos (car gakk))
+    (set! curr-speed (cadr gakk))
     #t)
 
   :release ()
@@ -4821,35 +4884,39 @@
     (maybe-make-undo)
     (<ra> :apply-gfx-seqblocks seqtracknum)))
 
-(define (create-seqblock-stretch-handler is-left)
+(define (create-seqblock-speedstretch-handler is-stretch is-left)
   (add-node-mouse-handler :Get-area-box (lambda()
                                           (and *current-seqblock-info*
                                                (not *current-seqautomation/distance*)
-                                               (let ((box (if is-left
-                                                              (<ra> :get-box seqblock-left-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
-                                                              (<ra> :get-box seqblock-right-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum)))))
+                                               (let ((box (if is-stretch
+                                                              (if is-left
+                                                                  (<ra> :get-box seqblock-left-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
+                                                                  (<ra> :get-box seqblock-right-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum)))
+                                                              (if is-left
+                                                                  (<ra> :get-box seqblock-left-speed (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
+                                                                  (<ra> :get-box seqblock-right-speed (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))))))
                                                  ;;(c-display "BOX:" (box-to-string box))
                                                  box)))
                           :Get-existing-node-info (lambda (X Y callback)
                                                     (define seqblock-info *current-seqblock-info*)
                                                     (define seqtracknum (seqblock-info :seqtracknum))
                                                     (define seqblocknum (seqblock-info :seqblocknum))
-                                                    (define set-stretch (<new> :set-seqblock-stretch seqtracknum seqblocknum is-left))
-                                                    (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
-                                                    (callback set-stretch
+                                                    (define set-speedstretch (<new> :set-seqblock-speedstretch seqtracknum seqblocknum is-stretch is-left))
+                                                    (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))                                                    
+                                                    (callback set-speedstretch
                                                               (if is-left
                                                                   (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
                                                                   (<ra> :get-seqblock-end-time seqblocknum seqtracknum))
                                                               Y))
                           
-                          :Get-min-value (lambda (set-stretch)
+                          :Get-min-value (lambda (set-speedstretch)
                                            (if is-left
                                                0 ;; The move-seqblock-stretch-left class takes care of finding more accurate minimum value.
-                                               (set-stretch :min-value)))
+                                               (set-speedstretch :min-value)))
                           
-                          :Get-max-value (lambda (set-stretch)
+                          :Get-max-value (lambda (set-speedstretch)
                                            (if is-left
-                                               (set-stretch :max-value)
+                                               (set-speedstretch :max-value)
                                                #f))
                           
                           :Get-x (lambda (info) #f)
@@ -4862,18 +4929,18 @@
                                              (assert #f)
                                              #f)
                           
-                          :Release-node (lambda (set-stretch)
-                                          (set-stretch :release))
+                          :Release-node (lambda (set-speedstretch)
+                                          (set-speedstretch :release))
                           
-                          :Move-node (lambda (set-stretch Value Y)
-                                       (set-stretch :move Value Y)
-                                       set-stretch)
+                          :Move-node (lambda (set-speedstretch Value Y)
+                                       (set-speedstretch :move Value Y)
+                                       set-speedstretch)
                           
                           
-                          :Publicize (lambda (set-stretch)
-                                       (set-stretch :publicize))
+                          :Publicize (lambda (set-speedstretch)
+                                       (set-speedstretch :publicize))
 
-                          :Get-pixels-per-value-unit (lambda (set-stretch)
+                          :Get-pixels-per-value-unit (lambda (set-speedstretch)
                                                        (get-sequencer-pixels-per-value-unit))
                           
                           :Use-Place #f
@@ -4885,8 +4952,10 @@
                           :Forgiving-box #f
                           ))
 
-(create-seqblock-stretch-handler #t)
-(create-seqblock-stretch-handler #f)
+(create-seqblock-speedstretch-handler #t #t)
+(create-seqblock-speedstretch-handler #t #f)
+(create-seqblock-speedstretch-handler #f #t)
+(create-seqblock-speedstretch-handler #f #f)
 
 
 ;; seqblock move
@@ -5582,7 +5651,7 @@
   (let loop ((n 1)
              (x1 (<ra> :get-seqblock-automation-node-x 0 automationnum seqblocknum seqtracknum))
              (x2 (<ra> :get-seqblock-automation-node-x 1 automationnum seqblocknum seqtracknum)))
-    ;;(c-display "N:" n total-nodes x1 x2)
+        ;;(c-display "N:" n total-nodes x1 x2)
     (define (next)
       (if (< n (1- total-nodes))
           (loop (1+ n)
@@ -5604,8 +5673,8 @@
                                                                           :seqblock seqblocknum)
                                              (next))
                  (next))))
-          ;((> x (+ x2) width/2)
-          ; #f)
+                                        ;((> x (+ x2) width/2)
+                                        ; #f)
           (else
            (next)))))
 
@@ -5634,6 +5703,13 @@
 (get-closest-seqautomation (<ra> :get-mouse-pointer-x) (<ra> :get-mouse-pointer-y))
 ||#
 
+(define (get-seq-automation-display-name automationnum seqtracknum)
+  (define instrument-id (<ra> :get-seq-automation-instrument-id automationnum seqtracknum))
+  (define instrument-name (<ra> :get-instrument-name instrument-id))
+  (define effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
+  (define effect-name (<ra> :get-instrument-effect-name effect-num instrument-id))  
+  (<-> instrument-name "/" effect-name))
+   
 ;; Highlight current seq automation / seqblock envelope
 (add-mouse-move-handler
  :move (lambda (Button X Y)
@@ -5647,21 +5723,17 @@
 
                  ((not (*current-seqautomation/distance* :seqblock))
                   (<ra> :cancel-curr-seqblock-automation)
-                  (set-seqblock-selected-box 0 -1 -1)
+                  (set-seqblock-selected-box 'non -1 -1)
                   (let* ((automationnum (*current-seqautomation/distance* :automation-num))
-                         (seqtracknum (*current-seqautomation/distance* :seqtrack))
-                         (instrument-id (<ra> :get-seq-automation-instrument-id automationnum seqtracknum))
-                         (instrument-name (<ra> :get-instrument-name instrument-id))
-                         (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
-                         (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
+                         (seqtracknum (*current-seqautomation/distance* :seqtrack)))
                     (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
-                    (set-editor-statusbar (<-> instrument-name "/" effect-name))
+                    (set-editor-statusbar (get-seq-automation-display-name automationnum seqtracknum))
                     (<ra> :set-curr-seq-automation (*current-seqautomation/distance* :automation-num)
                           (*current-seqautomation/distance* :seqtrack))))
 
                  ((*current-seqautomation/distance* :seqblock)
                   (<ra> :cancel-curr-seq-automation)
-                  (set-seqblock-selected-box 0 -1 -1)
+                  (set-seqblock-selected-box 'non -1 -1)
                   (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
                   (define seqtracknum (*current-seqautomation/distance* :seqtrack))
                   (define seqblocknum (*current-seqautomation/distance* :seqblock))
@@ -5674,7 +5746,7 @@
                                              (<ra> :get-seqblock-automation-display-string 
                                                    (<ra> :get-seqblock-automation-value-for-time
                                                          (floor (/ (- mouse-time seqblock-time)
-                                                                   (<ra> :get-seqblock-stretch seqblocknum seqtracknum)))
+                                                                   (<ra> :get-seqblock-stretch-speed seqblocknum seqtracknum)))
                                                          automationnum seqblocknum seqtracknum)
                                                    automationnum seqblocknum seqtracknum)))
                   '(c-display "------------Setting"          
@@ -5828,6 +5900,11 @@
                                                      Num
                                                      automationnum
                                                      seqtracknum)))
+                                       "-------------"
+                                       (list (<-> (get-seq-automation-display-name automationnum seqtracknum) " enabled")
+                                             :check #t
+                                             (lambda (maybe)
+                                               (<ra> :set-seq-automation-enabled automationnum seqtracknum maybe)))
                                        ))
                        #t)))))
 
@@ -5922,7 +5999,7 @@
                                              (define min-value (<ra> :get-seqblock-automation-min-value automationnum seqblocknum seqtracknum))
                                              (define max-value (<ra> :get-seqblock-automation-max-value automationnum seqblocknum seqtracknum))
                                              (define db (scale Y (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) max-value min-value))
-                                             (c-display "db1" db ". Y:" Y)
+                                             ;;(c-display "db1" db ". Y:" Y)
                                              (define Num (<ra> :add-seqblock-automation-node (floor PositionTime) db *logtype-linear* automationnum seqblocknum seqtracknum))
                                              (if (= -1 Num)
                                                #f
@@ -5945,7 +6022,7 @@
                                        (set! Time (floor Time))
                                        (if (not (<ra> :control-pressed))
                                            (set! Time (<ra> :get-seq-gridded-time Time 0 (<ra> :get-seq-automation-grid-type))))
-                                       (c-display "db" db ". Y:" Y ". Time:" Time)
+                                       ;;(c-display "db" db ". Y:" Y ". Time:" Time)
                                        (<ra> :set-seqblock-automation-node Time db logtype Num automationnum seqblocknum seqtracknum)
                                        ;;(c-display "NUM:" Num ", Time:" (/ Time 48000.0) ", Value:" Value)
                                        Num))
@@ -6015,7 +6092,11 @@
                                                      automationnum
                                                      seqblocknum
                                                      seqtracknum)))
-                                       ))
+                                       "------------"
+                                       (list (<-> (<ra> :get-seqblock-automation-name automationnum) " automation enabled")
+                                             :check #t
+                                             (lambda (enable)
+                                               (<ra> :set-seqblock-automation-enabled enable automationnum (<ra> :get-seqblock-id seqblocknum seqtracknum))))))
                        #t)))))
 
 ;; highlight current seqblock autmation node
@@ -6313,11 +6394,12 @@
                                                   (define duration (get-nonstretched-seqblock-duration seqblocknum seqtracknum))
                                                   (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
                                                   (define seqblock (seqblocks seqblocknum))
+                                                  (define speed (seqblock :speed))
                                                   (define new-seqblock (if is-right
                                                                            (copy-hash seqblock
-                                                                                      :end-time (+ (seqblock :start-time) duration))
+                                                                                      :end-time (+ (seqblock :start-time) (floor (* speed duration))))
                                                                            (copy-hash seqblock
-                                                                                      :start-time (- (seqblock :end-time) duration))))
+                                                                                      :start-time (- (seqblock :end-time) (floor (* speed duration))))))
                                                   (if (and is-left
                                                            (< (new-seqblock :start-time) 0))
                                                       (set! new-seqblock (copy-hash new-seqblock
@@ -6341,7 +6423,7 @@
      (define seqblocks-state (to-list (<ra> :get-seqblocks-state seqtracknum)))
      (define seqblock (seqblocks-state seqblocknum))
      
-     (define stretch (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
+     (define stretch (<ra> :get-seqblock-stretch-speed seqblocknum seqtracknum))
      (define t1 (seqblock :start-time))
      (define i1 (seqblock :interior-start))
      (define i2 (seqblock :interior-end))
@@ -6754,15 +6836,10 @@
                                           "-----------------Seqtrack Automation"
 
                                           "New" (lambda ()
-                                                             (create-sequencer-automation seqtracknum X Y))
+                                                  (create-sequencer-automation seqtracknum X Y))
 
                                           (map (lambda (automationnum)
-                                                 (c-display "AUTOMATIONNUM " automationnum)
-                                                 (define instrument-id (<ra> :get-seq-automation-instrument-id automationnum seqtracknum))
-                                                 (define instrument-name (<ra> :get-instrument-name instrument-id))
-                                                 (define effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
-                                                 (define effect-name (<ra> :get-instrument-effect-name effect-num instrument-id))
-                                                 (list (<-> instrument-name "/" effect-name)
+                                                 (list (get-seq-automation-display-name automationnum seqtracknum)
                                                        :check (<ra> :get-seq-automation-enabled automationnum seqtracknum)
                                                        (lambda (checked)
                                                          (<ra> :set-seq-automation-enabled automationnum seqtracknum checked)
