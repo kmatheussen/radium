@@ -562,6 +562,28 @@ int getNumSeqtrackAutomations(int seqtracknum){
     return ret;                                                 \
   }
 
+bool getSeqAutomationEnabled(int automationnum, int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return -1;
+
+  VALIDATE_AUTOMATIONNUM(-1);
+
+  return SEQTRACK_AUTOMATION_is_enabled(seqtrack->seqtrackautomation, automationnum);
+}
+
+void setSeqAutomationEnabled(int automationnum, int seqtracknum, bool is_enabled){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  VALIDATE_AUTOMATIONNUM();
+
+  undoSeqtrackAutomations();
+    
+  SEQTRACK_AUTOMATION_set_enabled(seqtrack->seqtrackautomation, automationnum, is_enabled);
+}
+
 int64_t getSeqAutomationInstrumentId(int automationnum, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)

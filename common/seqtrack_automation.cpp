@@ -120,7 +120,8 @@ struct Automation{
   int effect_num = -1;
   double last_value = -1.0;
   QColor color;
-
+  bool _is_enabled = true;
+  
   bool islegalnodenum(int nodenum){
     return nodenum>=0 && (nodenum<=automation.size()-1);
   }
@@ -131,6 +132,7 @@ struct Automation{
     hash_t *state = HASH_create(3);
     HASH_put_int(state, "patch", patch->id);
     HASH_put_chars(state, "effect_name", effect_num==-1 ? "<effect not found>" : PLUGIN_get_effect_name(plugin, effect_num));
+    HASH_put_bool(state, "is_enabled", _is_enabled);
     HASH_put_dyn(state, "automation", automation.get_state(get_node_state, NULL));
     return state;
   }
@@ -153,6 +155,9 @@ struct Automation{
   }
 
   Automation(hash_t *state, double state_samplerate){
+    if(HASH_has_key(state, "is_enabled"))
+      _is_enabled = HASH_get_bool(state, "is_enabled");
+    
     patch = PATCH_get_from_id(HASH_get_int(state, "patch"));
     automation.create_from_state(HASH_get_dyn(state, "automation"), create_node_from_state, state_samplerate);
 
@@ -310,7 +315,7 @@ public:
 
 private:
   
-  Automation *find_automation(struct Patch *patch, int effect_num, bool may_return_null=false){
+  Automation *find_automation(struct Patch *patch, int effect_num, bool may_return_null=false) const {
     for(auto *automation : _automations)
       if (automation->patch==patch && automation->effect_num==effect_num)
         return automation;
@@ -323,8 +328,40 @@ private:
 
 
 public:
+
+  bool is_enabled(const Automation *automation) const {
+    return automation->_is_enabled;
+  }
+    
+  bool is_enabled(struct Patch *patch, int effect_num) const {
+    Automation *automation = find_automation(patch, effect_num);
+    if (automation==NULL)
+      return false;
+
+    return is_enabled(automation);
+  }
+
+  void set_enabled(Automation *automation, bool is_enabled) {
+    if (automation->_is_enabled==is_enabled)
+      return;
+
+    {
+      radium::PlayerLock lock;
+      automation->_is_enabled = is_enabled;
+    }
+    
+    update(_seqtrack);
+  }
   
-  bool islegalautomation(int automationnum){
+  void set_enabled(struct Patch *patch, int effect_num, bool is_enabled){
+    Automation *automation = find_automation(patch, effect_num);
+    if (automation==NULL)
+      return;
+    
+    set_enabled(automation, is_enabled);
+  }
+  
+  bool islegalautomation(int automationnum) const {
     return automationnum>=0 && (automationnum<=_automations.size()-1);
   }
 
@@ -479,6 +516,17 @@ struct Patch *SEQTRACK_AUTOMATION_get_patch(struct SeqtrackAutomation *seqtracka
 int SEQTRACK_AUTOMATION_get_effect_num(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
   R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), 0);
   return seqtrackautomation->_automations[automationnum]->effect_num;
+}
+
+bool SEQTRACK_AUTOMATION_is_enabled(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
+  R_ASSERT_RETURN_IF_FALSE2(seqtrackautomation->islegalautomation(automationnum), false);
+  return seqtrackautomation->is_enabled(seqtrackautomation->_automations[automationnum]);
+}
+// husk load/save
+void SEQTRACK_AUTOMATION_set_enabled(struct SeqtrackAutomation *seqtrackautomation, int automationnum, bool is_enabled){
+  R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
+  seqtrackautomation->set_enabled(seqtrackautomation->_automations[automationnum], is_enabled);
+  SEQUENCER_update(SEQUPDATE_TIME);
 }
 
 double SEQTRACK_AUTOMATION_get_value(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum){
@@ -680,6 +728,9 @@ void SEQTRACK_AUTOMATION_call_me_before_starting_to_play_song_MIDDLE(struct SeqT
 
   for(auto *automation : seqtrack->seqtrackautomation->_automations){
 
+    if (automation->_is_enabled==false)
+      continue;
+
     /*
     printf("    Init automation patch \"%s\". Abstime: %d (%d), Start: %f, [0]: %f. [2]: %f, Cont: %d\n",           
            automation->patch->name,
@@ -754,6 +805,9 @@ bool RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
   R_ASSERT_RETURN_IF_FALSE2(seqtrack->seqtrackautomation!=NULL, more_things_to_do);
 
   for(auto *automation : seqtrack->seqtrackautomation->_automations){
+    if (automation->_is_enabled==false)
+      continue;
+    
     struct Patch *patch = automation->patch;
     int effect_num = automation->effect_num;
 
@@ -884,6 +938,12 @@ float SEQTRACK_AUTOMATION_get_node_y(struct SeqtrackAutomation *seqtrackautomati
 
 void SEQTRACK_AUTOMATION_paint(QPainter *p, const struct SeqTrack *seqtrack, float x1, float y1, float x2, float y2, double start_time, double end_time){
 
-  for(auto *automation : seqtrack->seqtrackautomation->_automations)
-    automation->automation.paint(p, x1, y1, x2, y2, start_time, end_time, automation->color, get_node_y, get_node_x, (void*)seqtrack);
+  for(auto *automation : seqtrack->seqtrackautomation->_automations){
+    QColor color = automation->color;
+    if(!automation->_is_enabled)
+      color.setAlpha(20);
+    automation->automation.paint(p, x1, y1, x2, y2, start_time, end_time,
+                                 color,
+                                 get_node_y, get_node_x, (void*)seqtrack);
+  }
 }

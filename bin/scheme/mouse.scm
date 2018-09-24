@@ -5557,14 +5557,15 @@
 
 (define-match get-closest-seqautomation-0
   Automation-Num Automation-Num        _ _ :> #f
-  Automation-Num Total-Automation-Nums X Y :> (min-seqautomation/distance (get-closest-seqautomation-1 2
-                                                                                                       (<ra> :get-num-seqtrack-automation-nodes Automation-Num *current-seqtrack-num*)
-                                                                                                       Automation-Num
-                                                                                                       X Y
-                                                                                                       (<ra> :get-seq-automation-node-x 0 Automation-Num *current-seqtrack-num*)
-                                                                                                       (<ra> :get-seq-automation-node-y 0 Automation-Num *current-seqtrack-num*)
-                                                                                                       (<ra> :get-seq-automation-node-x 1 Automation-Num *current-seqtrack-num*)
-                                                                                                       (<ra> :get-seq-automation-node-y 1 Automation-Num *current-seqtrack-num*))
+  Automation-Num Total-Automation-Nums X Y :> (min-seqautomation/distance (and (<ra> :get-seq-automation-enabled Automation-Num *current-seqtrack-num*)
+                                                                               (get-closest-seqautomation-1 2
+                                                                                                            (<ra> :get-num-seqtrack-automation-nodes Automation-Num *current-seqtrack-num*)
+                                                                                                            Automation-Num
+                                                                                                            X Y
+                                                                                                            (<ra> :get-seq-automation-node-x 0 Automation-Num *current-seqtrack-num*)
+                                                                                                            (<ra> :get-seq-automation-node-y 0 Automation-Num *current-seqtrack-num*)
+                                                                                                            (<ra> :get-seq-automation-node-x 1 Automation-Num *current-seqtrack-num*)
+                                                                                                            (<ra> :get-seq-automation-node-y 1 Automation-Num *current-seqtrack-num*)))
                                                                           (get-closest-seqautomation-0 (1+ Automation-Num)
                                                                                                        Total-Automation-Nums
                                                                                                        X
@@ -6755,6 +6756,20 @@
                                           "New" (lambda ()
                                                              (create-sequencer-automation seqtracknum X Y))
 
+                                          (map (lambda (automationnum)
+                                                 (c-display "AUTOMATIONNUM " automationnum)
+                                                 (define instrument-id (<ra> :get-seq-automation-instrument-id automationnum seqtracknum))
+                                                 (define instrument-name (<ra> :get-instrument-name instrument-id))
+                                                 (define effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
+                                                 (define effect-name (<ra> :get-instrument-effect-name effect-num instrument-id))
+                                                 (list (<-> instrument-name "/" effect-name)
+                                                       :check (<ra> :get-seq-automation-enabled automationnum seqtracknum)
+                                                       (lambda (checked)
+                                                         (<ra> :set-seq-automation-enabled automationnum seqtracknum checked)
+                                                         (c-display "checked" checked)))
+                                                 )
+                                               (iota (<ra> :get-num-seqtrack-automations seqtracknum)))
+                                          
                                           ;;"-----------------"
                                           ;;
                                           ;;"Insert sequencer track" (lambda ()
