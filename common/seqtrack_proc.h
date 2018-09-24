@@ -83,7 +83,7 @@ static inline double get_seqblock_noninterior_start(const struct SeqBlock *seqbl
   if (i1==0)
     return t1;
 
-  double stretch = timing->stretch;
+  double stretch = timing->stretch * timing->speed;
 
   if (stretch==1.0)
     return t1 - i1;
@@ -101,7 +101,7 @@ static inline double get_seqblock_noninterior_end(const struct SeqBlock *seqbloc
   if(i2==0)
     return t2;
 
-  double stretch = timing->stretch;
+  double stretch = timing->stretch * timing->speed;
 
   if (stretch==1.0)
     return t2 + i2;
@@ -258,6 +258,18 @@ extern LANGSPEC float SEQBLOCK_get_right_interior_x1(int seqblocknum, int seqtra
 extern LANGSPEC float SEQBLOCK_get_right_interior_y1(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_right_interior_x2(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_right_interior_y2(int seqblocknum, int seqtracknum);
+
+// seqblock left speed
+extern LANGSPEC float SEQBLOCK_get_left_speed_x1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_speed_y1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_speed_x2(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_left_speed_y2(int seqblocknum, int seqtracknum);
+
+// seqblock right speed
+extern LANGSPEC float SEQBLOCK_get_right_speed_x1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_speed_y1(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_speed_x2(int seqblocknum, int seqtracknum);
+extern LANGSPEC float SEQBLOCK_get_right_speed_y2(int seqblocknum, int seqtracknum);
 
 // seqblock left stretch
 extern LANGSPEC float SEQBLOCK_get_left_stretch_x1(int seqblocknum, int seqtracknum);

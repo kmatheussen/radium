@@ -29,8 +29,7 @@ static inline int64_t get_stretch_automation_sample_pos(const struct SeqBlock *s
 
   }
 
-  //printf("comp: %f (%f, %f)\n", (seqblock->stretch_automation_compensation + seqblock->speed_automation_compensation), seqblock->stretch_automation_compensation, seqblock->speed_automation_compensation);
-  return seqblock->time_conversion_table[pos] / (seqblock->stretch_automation_compensation + seqblock->speed_automation_compensation);
+  return seqblock->time_conversion_table[pos] / seqblock->stretchspeed_automation_compensation;
 }
 
 extern LANGSPEC void RT_SEQBLOCK_AUTOMATION_called_before_scheduler(void);

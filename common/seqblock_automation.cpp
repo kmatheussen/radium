@@ -48,7 +48,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
 #pragma clang diagnostic pop
 
-
 #include "seqblock_automation_proc.h"
 
 #define MAX_STRETCH 5
@@ -140,6 +139,7 @@ static AutomationNode create_node_from_state(hash_t *state, double state_sampler
 struct TimeConversionTable{
   double stretch_automation_compensation = 1.0;
   double speed_automation_compensation = 1.0;
+  double stretchspeed_automation_compensation = 1.0;
   int num_time_conversion_table_elements = 0;
   int64_t *time_conversion_table = NULL; // Array that maps seqtime -> sample position. (necessary when automating stretch or speed)    
 };
@@ -328,7 +328,7 @@ private:
       double speed_duration = RADIUM_BLOCKSIZE / speed;
       total_speed += speed_duration;
      
-      total_automation_time += stretch_duration + speed_duration;
+      total_automation_time += RADIUM_BLOCKSIZE / (stretch * speed);
     }
 
     ret[num_elements] = total_automation_time;
@@ -349,9 +349,6 @@ private:
 
     if(!stretch_enabled && !speed_enabled)
       return table;
-
-    //const SoundPlugin *plugin = (SoundPlugin*) _seqtrack->patch->patchdata;
-    //const double resample_ratio = SEQTRACKPLUGIN_get_resampler_ratio(plugin, _seqblock->sample_id);
 
     const double total_time = seqblock->t.num_samples; //default_duration / resample_ratio; //2.0;//(s2-s1);
     int num_elements = total_time / RADIUM_BLOCKSIZE;
@@ -381,36 +378,39 @@ private:
       R_ASSERT(false);
 
     table.stretch_automation_compensation = total_stretch / total_time;
+    table.speed_automation_compensation = total_speed / total_time;
     table.num_time_conversion_table_elements = num_elements;
     table.time_conversion_table = array;
 
+    //printf("1. stretch c: %f. speed c: %f. total c: %f. total time: %f\n", table.stretch_automation_compensation, table.speed_automation_compensation, g_total, total_time);
+    
     if (do_stretch){
       table.stretch_automation_compensation = total_stretch / total_time;
+      table.stretchspeed_automation_compensation = table.stretch_automation_compensation;
     } else {
-      table.stretch_automation_compensation = 0.0;
+      table.stretch_automation_compensation = 1.0;
     }
 
+    //printf("2. stretch c: %f. speed c: %f. total c: %f. total time: %f\n", table.stretch_automation_compensation, table.speed_automation_compensation, g_total, total_time);
+    
     if (do_speed){
       table.speed_automation_compensation = total_speed / total_time;
+      table.stretchspeed_automation_compensation = table.speed_automation_compensation;
     } else {
-      table.speed_automation_compensation = 0.0;
+      table.speed_automation_compensation = 1.0;
     }
 
-    /*
-    if (do_stretch && do_speed){
-
-      // todo: apply stretch.
-      table.speed_automation_compensation = total_speed / total_time;
-
-    } else {
-      table.speed_automation_compensation = total_speed / total_time;
-    }
-    */
+    //printf("3. stretch c: %f. speed c: %f. total c: %f. total time: %f\n", table.stretch_automation_compensation, table.speed_automation_compensation, g_total, total_time);
     
-    //printf("    Stretch comp: %f. Speed comp: %f. total_time: %f, total_stretch: %f, total_speed: %f\n", table.stretch_automation_compensation, table.speed_automation_compensation, total_time, total_stretch, total_speed);
-    //table.stretch_automation_compensation
-    //printf("   DIFF: %f - %f. Compensation: %f\n", total_automation_time, total_time, table.stretch_automation_compensation);
-
+    if (do_stretch && do_speed){
+      double uncompensated_duration = array[num_elements];
+      table.stretchspeed_automation_compensation = uncompensated_duration / total_time;
+      table.speed_automation_compensation = uncompensated_duration / total_stretch;
+      
+      //printf("4. stretch c: %f. speed c: %f. total c: %f. uncompensated duration: %f. total_stretch: %f. total_speed: %f. total time: %f\n", table.stretch_automation_compensation, table.speed_automation_compensation, g_total, uncompensated_duration, total_stretch, total_speed, total_time);
+    }
+    
+    
     return table;
   }
 
@@ -422,6 +422,7 @@ public:
       radium::PlayerLock lock;
       seqblock->stretch_automation_compensation = table.stretch_automation_compensation;
       seqblock->speed_automation_compensation = table.speed_automation_compensation;
+      seqblock->stretchspeed_automation_compensation = table.stretchspeed_automation_compensation;
       seqblock->num_time_conversion_table_elements = table.num_time_conversion_table_elements;
       seqblock->time_conversion_table = table.time_conversion_table;
     }
@@ -523,7 +524,7 @@ public:
   double get_time(int nodenum){
     double seqblock_start = get_seqblock_noninterior_start(_seqblock);
     R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), seqblock_start);
-    return _automation.at(nodenum).time*_seqblock->t.stretch + seqblock_start;
+    return _automation.at(nodenum).time*_seqblock->t.stretch*_seqblock->t.speed + seqblock_start;
   }
 
   int get_logtype(int nodenum){    
@@ -539,7 +540,7 @@ public:
     
     double time =
       R_BOUNDARIES(0,
-                   (seqtime - get_seqblock_noninterior_start(seqblock)) / seqblock->t.stretch,
+                   (seqtime - get_seqblock_noninterior_start(seqblock)) / (seqblock->t.stretch*seqblock->t.speed),
                    seqblock->t.default_duration
                    );
     
@@ -593,7 +594,7 @@ public:
     
     //printf("     nodenum: %d.  mintime: %f, seqtime: %f, maxtime: %f. next: %p\n",nodenum,mintime,(seqtime - get_seqblock_noninterior_start(seqblock)),maxtime,NULL);
     double time = R_BOUNDARIES(mintime,
-                               (seqtime - get_seqblock_noninterior_start(_seqblock)) / _seqblock->t.stretch,
+                               (seqtime - get_seqblock_noninterior_start(_seqblock)) / (_seqblock->t.stretch*_seqblock->t.speed),
                                maxtime
                                );
 
@@ -1030,7 +1031,7 @@ static void RT_set_seqblock_volume_automation_values(struct SeqTrack *seqtrack){
       int64_t seqblock_pos_end = end_time - seqblock->t.time;
 
       double s1 = get_seqblock_noninterior_start(seqblock);
-      double time = (start_time-s1) / seqblock->t.stretch;
+      double time = (start_time-s1) / (seqblock->t.stretch*seqblock->t.speed);
 
       RT_set_seqblock_volume_envelope_values(seqtrack, seqblock, time, seqblock_pos_start, seqblock_pos_end);
     }
@@ -1069,6 +1070,7 @@ bool RT_maybe_get_seqblock_automation_value(struct SeqblockAutomation *automatio
     double value1 = SeqblockAutomation::get_stretch_from_automation(value);
     value = value1 * automation->_seqblock->stretch_automation_compensation;
 
+    //printf("Stretch: %f (%f * %f)\n", value, value1, g_total);
     //printf("automation speed: %f / %f. compensation: %f. Time: %f\n", value1, value, automation->_seqblock->stretch_automation_compensation, time);
 
   } else if (automation->_sat==SAT_SPEED)

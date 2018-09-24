@@ -446,8 +446,7 @@ public:
     for(T &node : _automation){
       if (node.time > new_duration){
         radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause(lock);
-        cut_after(new_duration);
-        return;
+        return cut_after(new_duration);
       }
     }
 

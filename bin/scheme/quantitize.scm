@@ -49,7 +49,7 @@
       (keep-original-note-length!))
 
   (define (legalize-length!)
-    (c-display "calling legalize-length? " (>= new-start new-end))
+    (c-display "calling legalize-length? " (>= new-start new-end) ". type:" type)
     (if (>= new-start new-end)
         (cond ((= type 1) ;; move-start-to-previous
                (set! new-start (quantitize new-start q))

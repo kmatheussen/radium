@@ -2664,19 +2664,25 @@ struct SeqBlockTimings{
   // Only used for converting stime -> seqtime a little bit faster. Updated when the result of end_time-time or getBlockSTimeLength(seqblock->block) changes.
   // Must not be used to find seqblock duration (i.e end_time-time).
   double stretch;
+  
+  // Same format as stretch. E.g. 0.5 = double tempo, 2.0 = half tempo.
+  // Contrary to stretch, this value is stored in state, and is not the same as expected duration divided by actual duration.
+  double speed;
 };
 
 struct SeqblockAutomation;
 
-// Note: The values 0,1,2,3,4,5,6 are used directly in bin/scheme/mouse.scm. Probably simplest not to change any of the types, and just append new types to the end.
+// If changing this one, also change 'get-selected-box-num' in mouse.scm
 enum SeqblockBoxSelected{
   SB_NO_SELECTED,
   SB_FADE_LEFT,
   SB_FADE_RIGHT,
+  SB_INTERIOR_LEFT,
+  SB_INTERIOR_RIGHT,
+  SB_SPEED_LEFT,
+  SB_SPEED_RIGHT,
   SB_STRETCH_LEFT,
   SB_STRETCH_RIGHT,
-  SB_INTERIOR_LEFT,
-  SB_INTERIOR_RIGHT
 };
 
 static inline int get_system_fontheight(void);
@@ -2768,6 +2774,7 @@ struct SeqBlock{
 
   double stretch_automation_compensation;
   double speed_automation_compensation;
+  double stretchspeed_automation_compensation;
 
   int num_time_conversion_table_elements;
   int64_t *time_conversion_table; // Maps sample position -> sample position. Used when automating stretch.

@@ -187,8 +187,12 @@ static void set_seqblock_stretch(const struct SeqTrack *seqtrack, struct SeqBloc
   double reltempo = seqblock->block==NULL ? 1.0 : ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
 
   seqblock->t.stretch = (double)get_seqblock_duration(seqblock) / (double)(seqblock->t.interior_end - seqblock->t.interior_start);
+  seqblock->t.stretch /= seqblock->t.speed;
+  
   if (reltempo != 1.0)
     seqblock->t.stretch_without_tempo_multiplier = seqblock->t.stretch * reltempo;
+
+  //seqblock->t.speed = 1.0;
 }
 
 
@@ -406,6 +410,7 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
   }
   
   seqblock->t.stretch = 1.0;
+  seqblock->t.speed = 1.0;
 
   seqblock->t.stretch_without_tempo_multiplier = 1.0;
 
@@ -465,6 +470,7 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
 
   seqblock->stretch_automation_compensation = 1.0;
   seqblock->speed_automation_compensation = 1.0;
+  seqblock->stretchspeed_automation_compensation = 1.0;
 }
 
 
@@ -894,6 +900,8 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
   HASH_put_int(state, ":interior-start", seqblock->t.interior_start);
   HASH_put_int(state, ":interior-end", seqblock->t.interior_end);
 
+  HASH_put_float(state, ":speed", seqblock->t.speed);
+
   HASH_put_float(state, ":samplerate", MIXER_get_sample_rate());
 
   if (seqblock->track_is_disabled != NULL) {
@@ -1071,11 +1079,17 @@ static bool get_value(const hash_t *state,
                       enum DynType expected_type,
                       T (*get_value_func)(const hash_t *state, const char *key),
                       enum ShowAssertionOrThrowAPIException error_type,
-                      T &ret
-){
-  if (HASH_has_key(state, key)==false)
-    return SHOW_ERROR(false, "Sequencer block state does not contain the key %s", key);
-
+                      T &ret,
+                      bool must_have = true
+                      )
+{
+  if (HASH_has_key(state, key)==false){
+    if (must_have)
+      return SHOW_ERROR(false, "Sequencer block state does not contain the key %s", key);
+    else
+      return false;
+  }
+  
   if (HASH_get_type(state, key) != expected_type)
     return SHOW_ERROR(false, "Wrong type in hash table for key \"%s\" when loading sequencer block. Expected %s, found %s",
                       key,
@@ -1156,6 +1170,10 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     interior_start = round(double(interior_start) * adjust_for_samplerate);
     interior_end   = round(double(interior_end) * adjust_for_samplerate);
   }
+
+  double speed;
+  if (get_value(state, ":speed", FLOAT_TYPE, HASH_get_float, error_type, speed, false)==false)
+    speed = 1.0;
 
   struct SeqBlock *seqblock;
 
@@ -1260,7 +1278,9 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
   seqblock->t.time2 = time2;
   seqblock->t.interior_start = interior_start;
   seqblock->t.interior_end = interior_end;
- 
+
+  seqblock->t.speed = speed;
+  
   set_seqblock_stretch(seqtrack, seqblock);
 
   R_ASSERT(seqblock->t.time2 > seqblock->t.time);
@@ -2976,8 +2996,9 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
 
         double stretch_without_tempo_multiplier = is_loading_old_song ? 1.0 : seqblock->t.stretch_without_tempo_multiplier;
 
-        seqblock->t.stretch = stretch_without_tempo_multiplier / new_tempo_multiplier;
-
+        seqblock->t.stretch = (stretch_without_tempo_multiplier / new_tempo_multiplier) / seqblock->t.speed;
+        //seqblock->t.speed = 1.0;
+        
         int64_t new_time2 = seqblock->t.time + (nonstretched_seqblock_duration * seqblock->t.stretch);
         if (new_time2 < seqblock->t.time + 64){
           //R_ASSERT_NON_RELEASE(new_time2 > seqblock->t.time);

@@ -2210,6 +2210,66 @@ float getSeqblockRightInteriorY2(int seqblocknum, int seqtracknum){
   return SEQBLOCK_get_right_interior_y2(seqblocknum, seqtracknum);
 }
 
+// seqblock left speed area
+
+float getSeqblockLeftSpeedX1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_speed_x1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftSpeedY1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_speed_y1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftSpeedX2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_speed_x2(seqblocknum, seqtracknum);
+}
+
+float getSeqblockLeftSpeedY2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_left_speed_y2(seqblocknum, seqtracknum);
+}
+
+// seqblock right speed area
+
+float getSeqblockRightSpeedX1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_speed_x1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightSpeedY1(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_speed_y1(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightSpeedX2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_speed_x2(seqblocknum, seqtracknum);
+}
+
+float getSeqblockRightSpeedY2(int seqblocknum, int seqtracknum){
+  if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
+    return 0;
+  
+  return SEQBLOCK_get_right_speed_y2(seqblocknum, seqtracknum);
+}
+
 // seqblock left stretch area
 
 float getSeqblockLeftStretchX1(int seqblocknum, int seqtracknum){
@@ -2401,6 +2461,24 @@ double getSeqblockStretch(int seqblocknum, int seqtracknum){
     return 1;
 
   return seqblock->t.stretch;
+}
+
+double getSeqblockSpeed(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 1;
+
+  return seqblock->t.speed;
+}
+
+double getSeqblockStretchSpeed(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
+  if (seqblock==NULL)
+    return 1;
+
+  return seqblock->t.stretch * seqblock->t.speed;
 }
 
 double getSeqblockResampleRatio(int seqblocknum, int seqtracknum){
