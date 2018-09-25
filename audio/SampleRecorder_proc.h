@@ -53,6 +53,7 @@ extern void RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance
 extern void RT_SampleRecorder_stop_recording(radium::SampleRecorderInstance *instance);
 extern int SampleRecorder_Get_Num_Instances(void);
 extern void SampleRecorder_Init(void);
+extern void SampleRecorder_shut_down(void);
 
 #endif
 
