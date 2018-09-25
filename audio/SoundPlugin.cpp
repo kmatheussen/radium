@@ -2532,13 +2532,14 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
       values[i] = HASH_get_float(effects, effect_name);
 
       // Fix faulty chance values written to disk for songs with disk version 0.96.
-      if (g_is_loading)
+      if(g_is_loading)
         if (disk_load_version>0.955 && disk_load_version<0.965)
           if (QString(effect_name).startsWith("System Chance Voice "))
             if(fabsf(values[i]-1.0f) < 0.001f){
               values[i] = 256.0;
               if(has_given_warning_about_chance==false){
-                GFX_addMessage("Note: Changed note duplicator chance values from 1 to 256. Most likely, these values were wrongfully saved as 1 instead of 256 because of an earlier bug in the program.");
+                if(false==is_radium_internal_file(dc.filename_with_full_path))
+                  GFX_addMessage("Note: Changed note duplicator chance values from 1 to 256. Most likely, these values were wrongfully saved as 1 instead of 256 because of an earlier bug in the program.");
                 has_given_warning_about_chance = true;
               }
             }

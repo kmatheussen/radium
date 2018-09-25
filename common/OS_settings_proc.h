@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define SCANNED_PLUGINS_DIRNAME "scanned_plugins"
 
+#include "OS_string_proc.h"
+
 extern LANGSPEC void OS_set_loading_path(const wchar_t *filename);
 extern LANGSPEC void OS_unset_loading_path(void);
 extern LANGSPEC const wchar_t *OS_loading_get_resolved_file_path(const wchar_t *path, bool program_state_is_valid);
@@ -33,6 +35,11 @@ extern LANGSPEC void OS_set_argv0(char *argv0);
 extern LANGSPEC const char *OS_get_program_path(void);
 extern LANGSPEC const wchar_t *OS_get_program_path2(void);
 extern LANGSPEC const wchar_t *OS_get_dot_radium_path(bool use_gc_alloc);
+
+static inline bool is_radium_internal_file(const wchar_t *filename){
+  return STRING_starts_with2(STRING_to_upper(filename), STRING_to_upper(OS_get_program_path2()));
+}
+
 
 extern LANGSPEC bool OS_config_key_is_color(const char *key);
 
