@@ -5902,11 +5902,18 @@
                                                      Num
                                                      automationnum
                                                      seqtracknum)))
-                                       "-------------"
-                                       (list (<-> (get-seq-automation-display-name automationnum seqtracknum) " enabled")
+                                       (<-> "-------------" ) ;;(get-seq-automation-display-name automationnum seqtracknum))
+                                       (list (<-> "Enabled (" (get-seq-automation-display-name automationnum seqtracknum) ")")
                                              :check #t
                                              (lambda (maybe)
                                                (<ra> :set-seq-automation-enabled automationnum seqtracknum maybe)))
+                                       (list (<-> "Remove (delete all break points)")
+                                             (lambda ()
+                                               (undo-block
+                                                (lambda ()
+                                                  (define num-automations (<ra> :get-num-seqtrack-automations seqtracknum))
+                                                  (while (= num-automations (<ra> :get-num-seqtrack-automations seqtracknum))
+                                                    (<ra> :delete-seq-automation-node 0 automationnum seqtracknum))))))
                                        ))
                        #t)))))
 
