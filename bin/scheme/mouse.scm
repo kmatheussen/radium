@@ -6884,7 +6884,7 @@
                         :Get-x2 (lambda (_)
                                   (<ra> :get-seqnav-x2))
                         :Get-min-value (lambda (_)
-                                         (- (<ra> :get-seqnav-right-size-handle-x2) (<ra> :get-seqnav-right-size-handle-x1)))
+                                         (1- (<ra> :get-seqnav-left-size-handle-x1)))
                         :Get-max-value (lambda (_)
                                          (<ra> :get-seqnav-x2))
                         ;;(<ra> :get-seqnav-x2))
