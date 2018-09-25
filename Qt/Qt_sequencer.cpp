@@ -445,7 +445,11 @@ static double get_visible_song_length(void){
 }
 
 static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play_time, double end_play_time) {
-      
+
+  double pos = R_MAX(0, scale_double(e->x(), x1, x2, start_play_time, end_play_time));
+  //printf("pos: %f, _start/end: %f / %f. x: %d\n", (double)pos/48000.0, (double)start_play_time / 48000.0, (double)end_play_time / 48000.0, e->x());
+
+
   if (  (e->modifiers() & Qt::ControlModifier) || (e->modifiers() & Qt::ShiftModifier)) {
 
     double nav_start_time = SEQUENCER_get_visible_start_time();
@@ -458,26 +462,45 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
     double how_much = range / 10.0;
      
     if (e->modifiers() & Qt::ControlModifier) {
+
+      // CTRL. Zoom in / out
       
       if (e->delta() > 0) {
+
+        // Zoom in
         
         new_start = nav_start_time + how_much;
         new_end = nav_end_time - how_much;
         
       } else {
+
+        // Zoom out
         
         new_start = nav_start_time - how_much;
         new_end = nav_end_time + how_much;
         
       }
-      
+
       if (fabs(new_end-new_start) < 400 || new_end<=new_start) {
+        
+        // Zooming in too much.
+        
         new_start = middle - 200;
         new_end = middle + 200;
       }
       
+      {
+        // Make sure time under mouse pointer is still the same.
+        double new_pos = scale_double(e->x(), x1, x2, new_start, new_end);
+        double delta = new_pos - pos;
+        new_start -= delta;
+        new_end -= delta;
+      }
+      
     } else {
 
+      // SHIFT. Scroll left /right
+      
       if (e->delta() > 0) {
         
         new_start = nav_start_time + how_much;
@@ -506,9 +529,6 @@ static void handle_wheel_event(QWheelEvent *e, int x1, int x2, double start_play
     SEQUENCER_set_visible_start_and_end_time(new_start, new_end);
 
   } else {
-
-    double pos = R_MAX(0, scale_double(e->x(), x1, x2, start_play_time, end_play_time));
-    //printf("pos: %f, _start/end: %f / %f. x: %d\n", (double)pos/48000.0, (double)start_play_time / 48000.0, (double)end_play_time / 48000.0, e->x());
 
     if (e->delta() > 0)
       PlaySong(pos);
