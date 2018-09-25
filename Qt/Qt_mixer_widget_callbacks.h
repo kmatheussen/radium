@@ -32,7 +32,6 @@ bool g_pause_scroll_area_updates_when_resizing = false;
 
 
 
-static QSlider *g_zoom_slider = NULL;
 //static QWidget *g_view = NULL;
 
 extern bool g_pause_scroll_area_updates_when_resizing;
@@ -40,6 +39,9 @@ extern bool g_pause_scroll_area_updates_when_resizing;
 
 class MyQGraphicsView : public QGraphicsView{
 public:
+
+  QSlider *widget_zoom_slider;
+
   MyQGraphicsView(QWidget *parent)
     : QGraphicsView(parent)
   {
@@ -65,13 +67,22 @@ public:
   
   void wheelEvent(QWheelEvent *e) override
   {
-    if(g_zoom_slider!=NULL){
+    
+    if(widget_zoom_slider!=NULL){
+      
       if (e->modifiers() & Qt::ControlModifier) {
+
+        // Zooming in / out
+        
         if (e->delta() > 0)
-          g_zoom_slider->setValue(g_zoom_slider->value() + 6);
+          widget_zoom_slider->setValue(widget_zoom_slider->value() + 6);
         else
-          g_zoom_slider->setValue(g_zoom_slider->value() - 6);
+          widget_zoom_slider->setValue(widget_zoom_slider->value() - 6);
+        
       } else if (e->modifiers() & Qt::ShiftModifier) {
+
+        // Scrolling left / right
+        
         QScrollBar *scrollbar = horizontalScrollBar();
         if(scrollbar!=NULL){
           if (e->delta() > 0)
@@ -79,7 +90,11 @@ public:
           else
             scrollbar->setValue(scrollbar->value()+70);
         }
+        
       } else {
+
+        // Scrolling up / down
+        
         QScrollBar *scrollbar = verticalScrollBar();
         if(scrollbar!=NULL){
           if (e->delta() > 0)
@@ -88,7 +103,9 @@ public:
             scrollbar->setValue(scrollbar->value()+70);
         }
         //QGraphicsView::wheelEvent(e);
+        
       }
+      
     }
 
     e->accept();
@@ -135,7 +152,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     initing = true;
     
     setupUi(this);
-    g_zoom_slider = zoom_slider;
+    view->widget_zoom_slider = zoom_slider;
     zoom_slider->hide();
     
     // Tro to find default zoom level based on system font
@@ -663,6 +680,8 @@ public slots:
     matrix.scale(scale, scale);
     matrix.rotate(_rotate);
 
+    view->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
+    
     view->setMatrix(matrix);
   }
 
