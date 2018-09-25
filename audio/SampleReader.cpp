@@ -392,7 +392,7 @@ public:
     _num_ch = sf_info.channels;
     _samplerate = sf_info.samplerate;
     _num_frames = sf_info.frames;
-    _num_slices = _num_frames / SLICE_SIZE;
+    _num_slices = ceil((double)_num_frames / (double)SLICE_SIZE);
 
     _slices = (Slice*)V_calloc(_num_slices, sizeof(Slice)); //SLICE_SIZE*_num_ch*sizeof(float));
 
@@ -521,19 +521,45 @@ public:
 
     bool samples_are_valid = false;
 
-
+    //RT_message("Testing RT message. pos %" PRId64 " in file %S. Max pos: %" PRId64 ". (%s)" , pos, _filename, _num_frames, sf_strerror(sndfile));
+    
     if (sndfile != NULL){
+      
       if (sf_seek(sndfile, pos, SEEK_SET) != pos){
-        QString s = STRING_get_qstring(_filename); 
-        RT_message("Unable to seek to pos %" PRId64 " in file %s. Max pos: %" PRId64 ". (%s)" , pos, s.toLocal8Bit().constData(), _num_frames, sf_strerror(sndfile));
+
+        RT_message("Unable to seek to pos %" PRId64 " in file %S. Max pos: %" PRId64 ". (%s)" , pos, _filename, _num_frames, sf_strerror(sndfile));
+        
       } else {
-        if (sf_readf_float(sndfile, _num_ch==1 ? slicebuffer->samples : interleaved_samples, SLICE_SIZE) <=0 ){
-          QString s = STRING_get_qstring(_filename); 
-          RT_message("Unable to read from pos %" PRId64 " in file %s. Max pos: %" PRId64 ". (%s)", pos, s.toLocal8Bit().constData(), _num_frames, sf_strerror(sndfile));
+        
+        float *buffer = _num_ch==1 ? slicebuffer->samples : interleaved_samples;
+        
+        int num_frames_read = sf_readf_float(sndfile, buffer, SLICE_SIZE);
+        
+        if (num_frames_read <= 0){
+          
+          RT_message("Unable to read from pos %" PRId64 " in file %S. Max pos: %" PRId64 ". (%s)", pos, _filename, _num_frames, sf_strerror(sndfile));
+
         } else {
+
+          if (num_frames_read < SLICE_SIZE) {
+
+            if (slice_num != _num_slices-1)            
+              RT_message("Unable to read full slice from pos %" PRId64 " in file %S. Slice %d / %d. Number of frames read: %d. Max pos: %" PRId64 ". (%s)",
+                         pos, _filename,
+                         (int)num_frames_read, (int)slice_num, (int)_num_slices,
+                         _num_frames, sf_strerror(sndfile));
+              
+            // reached end of file. (unless there was an error)
+            memset(buffer + (num_frames_read*_num_ch), 0, sizeof(float)*(SLICE_SIZE-num_frames_read)*_num_ch);
+
+          }
+          
           samples_are_valid = true;
+          
         }
+          
       }
+        
     }
 
 
@@ -1235,9 +1261,12 @@ public:
     
     int64_t slice_num = _pos / SLICE_SIZE;
 
-    if(slice_num >= _provider->_num_slices)
-      return RT_return_empty(samples, num_frames);
+    //printf("slice_num: %d. num_slices: %d. num_frames: %d\n", (int)slice_num, (int)_provider->_num_slices, (int)_provider->_num_frames);
 
+    if(slice_num >= _provider->_num_slices){
+      return RT_return_empty(samples, num_frames);
+    }
+    
     // Check this one after slice_num >= _provider->_num_slices, since _sndfile is supposed to be NULL when that happens.
     /*
       Commented out since _sndfile can be NULL if all slices were already there when calling prepare_to_play
