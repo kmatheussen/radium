@@ -484,7 +484,8 @@ typedef struct SoundPlugin{
   float *last_written_effect_values_native; // Is set regardless of StoreitType.
   float *last_written_effect_values_scaled; // Is set regardless of StoreitType.
   
-  float *initial_effect_values; // Used when resetting. Native format.
+  float *initial_effect_values_native; // Used when resetting.
+  float *initial_effect_values_scaled; // Used when resetting.
   bool *do_random_change;       // Used when selecting "Random".
 
   struct SongInitAutomationHelper *songinit_automation_helper; // Used when starting to play in the middle of a song.

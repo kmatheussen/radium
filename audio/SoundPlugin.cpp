@@ -547,7 +547,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
     plugin->stored_effect_values_scaled = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
     plugin->last_written_effect_values_native = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
     plugin->last_written_effect_values_scaled = (float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
-    plugin->initial_effect_values=(float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->initial_effect_values_native=(float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
+    plugin->initial_effect_values_scaled=(float*)V_calloc(sizeof(float),plugin_type->num_effects+NUM_SYSTEM_EFFECTS);
     
 #if 0
     for(i=0;i<plugin_type->num_effects+NUM_SYSTEM_EFFECTS;i++)
@@ -559,7 +560,8 @@ SoundPlugin *PLUGIN_create(SoundPluginType *plugin_type, hash_t *plugin_state, b
       
       plugin->last_written_effect_values_native[i]  = plugin->stored_effect_values_native[i];
       plugin->last_written_effect_values_scaled[i]  = plugin->stored_effect_values_scaled[i];
-      plugin->initial_effect_values[i]       = plugin->stored_effect_values_native[i];
+      plugin->initial_effect_values_native[i]       = plugin->stored_effect_values_native[i];
+      plugin->initial_effect_values_scaled[i]       = plugin->stored_effect_values_scaled[i];
     }
 
     // ??
@@ -609,7 +611,8 @@ void PLUGIN_delete(SoundPlugin *plugin){
 
   
   V_free(plugin->do_random_change);
-  V_free(plugin->initial_effect_values);
+  V_free(plugin->initial_effect_values_native);
+  V_free(plugin->initial_effect_values_scaled);
   V_free(plugin->last_written_effect_values_native);
   V_free(plugin->last_written_effect_values_scaled);
   V_free(plugin->stored_effect_values_native);
@@ -2566,7 +2569,7 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
   
   // 2. Store system effects
   for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
-    float val = has_value[i] ? values[i] : plugin->initial_effect_values[i];
+    float val = has_value[i] ? values[i] : plugin->initial_effect_values_native[i];
     PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
     
     /*
@@ -2589,7 +2592,7 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
       for(int i=0 ; i<type->num_effects ; i++){
         PLAYER_maybe_pause_lock_a_little_bit(i);
         
-        float val = has_value[i] ? values[i] : plugin->initial_effect_values[i];
+        float val = has_value[i] ? values[i] : plugin->initial_effect_values_native[i];
         PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
       }
       
@@ -3042,7 +3045,7 @@ void PLUGIN_reset(SoundPlugin *plugin){
       PLUGIN_set_effect_value(plugin,
                               0,
                               i,
-                              plugin->initial_effect_values[i],
+                              plugin->initial_effect_values_native[i],
                               STORE_VALUE,
                               FX_single,
                               EFFECT_FORMAT_NATIVE);
@@ -3055,7 +3058,7 @@ void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
   
   ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num));
-  PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values[effect_num], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+  PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values_native[effect_num], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 }
 
 static float get_rand(void){
