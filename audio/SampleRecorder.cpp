@@ -239,9 +239,11 @@ public:
 
     sndfile = radium_sf_open(filename, SFM_WRITE, &sf_info);
 
-    if(sndfile==NULL)
+    if(sndfile==NULL) {
       RT_message("Unable to create file \"%s\": %s",filename.toUtf8().constData(), sf_strerror(NULL));
-
+      return;
+    }
+      
     success = true;
   }
 
@@ -281,6 +283,8 @@ public:
     }
 
     // Append a smpl chunk
+    ///////////////////////////////////
+    
     QFile f(filename);
     if (f.open(QIODevice::WriteOnly | QIODevice::Append)==false){
       RT_message("Unable to append smpl chunk to \"%s\". That is strange.",filename.toUtf8().constData());
@@ -332,7 +336,9 @@ public:
     return true;
   }
 
+  
 private:
+  
   void flush(void){
     R_ASSERT_RETURN_IF_FALSE(sndfile!=NULL);
 
@@ -364,7 +370,9 @@ private:
     non_written_slices.clear();
   }
 
+  
 public:
+  
   void treat_slice(RecordingSlice *slice){
     if (sndfile==NULL)
       return;
