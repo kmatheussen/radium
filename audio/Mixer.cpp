@@ -1411,7 +1411,9 @@ void MIXER_stop(void){
   
   R_ASSERT(g_mixer->_rjack_client != NULL);
   R_ASSERT(has_been_called==false);
-    
+
+  SampleRecorder_shut_down();
+  
   if (g_mixer->_rjack_client != NULL)
     jack_client_close(g_mixer->_rjack_client);
 

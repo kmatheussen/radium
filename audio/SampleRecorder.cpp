@@ -391,7 +391,10 @@ public:
   }
 
   ~SampleRecorderThread(){
+    stop_thread();
+  }
 
+  void stop_thread(void){
     if (!isRunning())
       return;
     
@@ -627,9 +630,8 @@ void SampleRecorder_Init(void){
   g_sample_recorder_thread.start();
 }
 
-/*
+
 void SampleRecorder_shut_down(void){
-  if (g_sample_recorder_thread.isRunning()){
-  }
+  g_sample_recorder_thread.stop_thread();
 }
-*/
+
