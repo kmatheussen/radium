@@ -760,6 +760,24 @@ static int get_effect_num(const struct Patch *patch, const_char* effect_name){
   return effect_num;
 }
 
+float getDefaultInstrumentEffect(int64_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("Instrument #%d has been closed", (int)instrument_id);
+    return 0.0;
+  }
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if (effect_num < 0)
+    return 0.0f;
+  
+  return plugin->initial_effect_values_scaled[effect_num];
+}
+
 static void post_set_effect(struct Patch *patch, struct SoundPlugin *plugin, const char *effect_name){
   if (!strcmp(effect_name, "System Volume") ||
       !strcmp(effect_name, "System In") ||
