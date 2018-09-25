@@ -50,14 +50,28 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
         
 	int length1=DISK_write(dc.file,type);
         int length2=DISK_write(dc.file,"\n");
-	int length3=DISK_printf(dc.file,"%s\n",OS_get_string_from_double(DISKVERSION));
-
+	int length3=DISK_printf(dc.file,"%s\n\n", OS_get_string_from_double(DISKVERSION));
+        
 	if(length1<0 || length2<0 || length3<0){
-          GFX_Message2(NULL, true, "Unable to write to file \"%S\".", filename);
+          const char *error = DISK_get_error(dc.file);
+          GFX_Message2(NULL, true, "Unable to write to file \"%S\": %s.", filename, error!=NULL ? error : "Unable to write data");
           DISK_close_and_delete(dc.file);
           return false;
 	}
 
+        hash_t *configuration = HASH_create(3);
+        HASH_put_int(configuration, "version_major", radiumMajorVersion());
+        HASH_put_int(configuration, "version_minor", radiumMinorVersion());
+        HASH_put_int(configuration, "version_revision", radiumRevisionVersion());
+        HASH_save(configuration, dc.file);
+        
+        const char *error = DISK_get_error(dc.file);
+        if (error != NULL){
+          GFX_Message2(NULL, true, "Unable to write to file \"%S\": %s", filename, error);
+          DISK_close_and_delete(dc.file);
+          return false;
+        }
+        
         return true;
 }
 

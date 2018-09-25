@@ -105,7 +105,10 @@ extern LANGSPEC void DC_SkipBlock(void);
 extern LANGSPEC int DC_whatString(char **variables,int num);
 
 extern float disk_load_version;
-extern int curr_disk_line;
+extern int g_disk_load_radium_version_major;
+extern int g_disk_load_radium_version_minor;
+extern int g_disk_load_radium_version_revision;
+extern int g_curr_disk_line;
 
 #include "list_proc.h"
 

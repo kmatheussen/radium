@@ -64,6 +64,9 @@ extern NInt currpatch;
 #endif
 
 float disk_load_version;
+int g_disk_load_radium_version_major = -1;
+int g_disk_load_radium_version_minor = -1;
+int g_disk_load_radium_version_revision = -1;
 
 bool g_is_loading = false;
 
@@ -74,12 +77,12 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
         
         dc.has_warned_about_acc_rit = false;
         
-        curr_disk_line = 0;
+        g_curr_disk_line = 0;
 
 	dc.file=DISK_open_for_reading(filename);
 	if(dc.file==NULL){
           GFX_Message2(NULL,true,"Could not open \"%S\" for loading\n",filename);
-          return false;
+          goto failed;
 	}
 
         dc.filename_with_full_path = DISK_get_absolute_file_path(filename);
@@ -87,19 +90,18 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
 	DC_fgets();
         if (dc.success==false) {
           GFX_Message2(NULL,true,"Loading failed. File too short. (1)\n");
-          return false;
+          goto failed;
         }
         
 	if(strcmp(type,dc.ls)){
           GFX_Message2(NULL,true,"First line in song was not '%s', but '%s'. Last: %d\n",type,dc.ls,dc.ls[strlen(dc.ls)-1]);
-          DISK_close_and_delete(dc.file);
-          return false;
+          goto failed;
 	}
 
 	disk_load_version=DC_LoadF();
         if (dc.success==false){
           GFX_Message2(NULL,true,"Loading failed. File too short. (2)\n");
-          return false;
+          goto failed;
         }
 
 	if(disk_load_version>0.4201 && disk_load_version<0.50){
@@ -128,11 +130,49 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
 
         if(disk_load_version>DISKVERSION+0.0001){
           GFX_Message2(NULL,true,"Need a newer version of Radium to load this file. The file version is %f, while this program only supports %f.\n",disk_load_version,DISKVERSION);
-          return false;
+          goto failed;
         }else{
           printf("Song diskVersion: %f\n",disk_load_version);
         }
 
+        if (dc.success==false){
+          GFX_Message2(NULL, true, "Loading failed. File too short. (3)\n");
+          return false;
+        }
+          
+        if (disk_load_version < 0.975){
+          
+          g_disk_load_radium_version_major = -1;
+          
+        } else {
+
+          hash_t *configuration = HASH_load(dc.file);
+
+          if (configuration==NULL)
+            goto failed;
+
+          if (false==HASH_has_key(configuration, "version_major")
+              || false==HASH_has_key(configuration, "version_minor")
+              || false==HASH_has_key(configuration, "version_revision")
+              )
+            {
+              GFX_Message2(NULL, true, "Something is wrong with the file. Could not find radium version information.");
+              goto failed;
+            }
+          
+          const char *error = DISK_get_error(dc.file);
+          if (error != NULL){
+            GFX_Message2(NULL, true, "Unable to read from file \"%S\": %s", filename, error);
+            goto failed;
+          }
+
+          g_disk_load_radium_version_major = HASH_get_int(configuration, "version_major");
+          g_disk_load_radium_version_minor = HASH_get_int(configuration, "version_minor");
+          g_disk_load_radium_version_revision = HASH_get_int(configuration, "version_revision");
+          
+          printf("Song radium version: %d.%d.%d\n", g_disk_load_radium_version_major, g_disk_load_radium_version_minor, g_disk_load_radium_version_revision);
+        }
+        
 	dc.filename=filename;
 
         dc.embedded_files_dirname = DISK_get_absolute_file_path(STRING_append(filename,
@@ -144,11 +184,20 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
 
 	DC_Next();
         if (dc.success==false){
-          GFX_Message2(NULL,true,"Loading failed. File too short. (3)\n");
+          GFX_Message2(NULL,true,"Loading failed. File too short. (6)\n");
           return false;
         }
         
         return true;
+
+
+ failed:        
+        if (dc.file != NULL)
+          DISK_close_and_delete(dc.file);
+        
+        dc.file = NULL;
+        
+        return false;
 }
   
 static bool Load(const wchar_t *filename){

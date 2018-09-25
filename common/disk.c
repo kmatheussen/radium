@@ -155,17 +155,17 @@ void DC_SSS(const char *string,const char *string2){
 /*************************************************************
               LOAD FUNCTIONS
 *************************************************************/
-int curr_disk_line;
+int g_curr_disk_line;
 
 static void DC_fgetsNoMatterWhat(void){
-        curr_disk_line++;
+        g_curr_disk_line++;
 
 	char *ret = dc.ls = DISK_read_trimmed_line(dc.file);
 
 	if(ret==NULL){
           GFX_Message(NULL, "Unable to read string from file \"%S\". Line: %d.",
                       DISK_get_filename(dc.file),
-                      curr_disk_line
+                      g_curr_disk_line
                       );
           dc.success=false;
           return;
@@ -323,7 +323,7 @@ int DC_Next(void){
 			dc.type=LS_ENDOBJECT;
 			break;
 		default:
-                  RError("DC_Next: Unknown type: \"%s\". Line: %d ",dc.ret,curr_disk_line);
+                  RError("DC_Next: Unknown type: \"%s\". Line: %d ",dc.ret,g_curr_disk_line);
                   dc.success=false;
                   return LS_ERROR;
 	}
@@ -362,7 +362,7 @@ int DC_whatString(char **variables,int num){
                            "Error. Unknown identifier '%s', dc.type=%s., line: %d\n",
                            string,
                            dc.type==LS_VARIABLE?"LS_VARIABLE":dc.type==LS_OBJECT?"LS_OBJECT":"UNKNOWN",
-                           curr_disk_line
+                           g_curr_disk_line
                            );
                     dc.success=false;
                     return LS_ERROR;

@@ -107,7 +107,7 @@ static wchar_t *das_read_line(disk_t *file){
 
   wchar_t *line = DISK_read_wchar_line(file);
 
-  //printf("%d: -%S-\n", curr_disk_line, line);
+  //printf("%d: -%S-\n", g_curr_disk_line, line);
   
   if(line==NULL){
     GFX_Message(NULL, "End of file before finished reading array");
