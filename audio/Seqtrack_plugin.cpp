@@ -139,7 +139,7 @@ public:
     , _resampler2(_num_ch, resampler_type, NULL)
   {
     
-    SMOOTH_init(&_volume, 0.0f, MIXER_get_buffer_size());
+    SMOOTH_init_immediate_smoothing(&_volume, 0.0f, RADIUM_BLOCKSIZE);
 
     double samplerate = SAMPLEREADER_get_samplerate(reader);
 
@@ -233,8 +233,7 @@ public:
       RT_get_samples_from_disk(do_add ? temp_buffers : outputs, num_frames);
       
     }
-    
-
+        
     // 3. Apply volume
     //
     if (do_add){
@@ -257,7 +256,8 @@ public:
       
     }
 
-    //printf("volume: %f. _num_ch: %d. num_frames: %d\n", _volume, _num_ch, num_frames);
+    //SMOOTH_print("volume: ", &_volume); printf("_num_ch: %d. num_frames: %d\n", _num_ch, num_frames);
+    
     /*
     // This is not correct when adding.
     float volume = _volume;
@@ -997,11 +997,9 @@ struct Sample{
         
         double grain_often = grain_frequency2 / grain_length2;
         _grain_volume_compensation = R_MIN(pow(grain_often, 0.3), 1.0);
+        //printf("   Grain volume compensation: %f (frequency: %f / Length: %f). grain_often: %f.\n", _grain_volume_compensation, grain_frequency2, grain_length2, grain_often);
         */
         
-#if !defined(RELEASE)
-        //printf("   Grain volume compensation: %f (frequency: %f / Length: %f). grain_often: %f.\n", _grain_volume_compensation, grain_frequency2, grain_length2, grain_often);
-#endif        
       }
       
       // Set volume
@@ -1065,10 +1063,11 @@ struct Sample{
       } else {
         
         if (atomic_pointer_read_relaxed((void**)&seqtrack->curr_sample_seqblock)==_seqblock.data()){
-          atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, NULL);
+          atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, NULL); // For rendering name of sample in editor when this seqtrack is current seqtrack.
           GFX_ScheduleEditorRedraw();
         }
-        
+
+        //printf("Calling RT_stop_playing\n");
         RT_stop_playing(false);
       }
     }
