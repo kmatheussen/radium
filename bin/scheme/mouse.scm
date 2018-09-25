@@ -4108,6 +4108,8 @@
 
                                        (set-grid-type #t)
 
+                                       ;;(c-display "Value:" Value)
+                                       
                                        (if is-left
                                            (<ra> :set-seqblock-fade-in Value seqblocknum seqtracknum)
                                            (<ra> :set-seqblock-fade-out (- 1 Value) seqblocknum seqtracknum))

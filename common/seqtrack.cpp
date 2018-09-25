@@ -535,6 +535,9 @@ static struct SeqBlock *SEQBLOCK_create_sample(struct SeqTrack *seqtrack, int se
 
       for(int i=0;i<num_automations;i++)
         SEQBLOCK_AUTOMATION_default_duration_changed(seqblock->automations[i], duration, NULL);
+
+      double default_fadeout = getDefaultAudiofileFadeout();
+      seqblock->fadeout = R_MIN(0.5, ms_to_frames(default_fadeout) / (double)duration);
     }
 
     /*

@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>6</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="OpenGL">
       <attribute name="title">
@@ -3484,186 +3484,217 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
         </layout>
        </item>
        <item>
-        <widget class="QGroupBox" name="groupBox_13">
-         <property name="title">
-          <string>Grid</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_10">
-          <item row="0" column="3">
-           <widget class="QGroupBox" name="groupBox_9">
-            <property name="title">
-             <string>Loop Start/Stop</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_14">
-             <item>
-              <widget class="QRadioButton" name="loop_no_grid">
-               <property name="toolTip">
-                <string>Tip: There is no grid when pressing CTRL either</string>
-               </property>
-               <property name="text">
-                <string>No Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="loop_line_grid">
-               <property name="text">
-                <string>Line Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="loop_beat_grid">
-               <property name="text">
-                <string>Beat Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="loop_bar_grid">
-               <property name="text">
-                <string>Bar Grid</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QGroupBox" name="groupBox_8">
-            <property name="title">
-             <string>Tempo Automation</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_13">
-             <item>
-              <widget class="QRadioButton" name="tempo_no_grid">
-               <property name="toolTip">
-                <string>Tip: There is no grid when pressing CTRL either</string>
-               </property>
-               <property name="text">
-                <string>No Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="tempo_line_grid">
-               <property name="text">
-                <string>Line Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="tempo_beat_grid">
-               <property name="text">
-                <string>Beat Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="tempo_bar_grid">
-               <property name="text">
-                <string>Bar Grid</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QGroupBox" name="groupBox_7">
-            <property name="title">
-             <string>Effect Automation</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_12">
-             <item>
-              <widget class="QRadioButton" name="automation_no_grid">
-               <property name="toolTip">
-                <string>Tip: There is no grid when pressing CTRL either</string>
-               </property>
-               <property name="text">
-                <string>No Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="automation_line_grid">
-               <property name="text">
-                <string>Line Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="automation_beat_grid">
-               <property name="text">
-                <string>Beat Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="automation_bar_grid">
-               <property name="text">
-                <string>Bar Grid</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QGroupBox" name="groupBox_6">
-            <property name="title">
-             <string>Moving Blocks</string>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_11">
-             <item>
-              <widget class="QRadioButton" name="block_no_grid">
-               <property name="toolTip">
-                <string>Tip: There is no grid when pressing CTRL either</string>
-               </property>
-               <property name="text">
-                <string>No Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="block_line_grid">
-               <property name="text">
-                <string>Line Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="block_beat_grid">
-               <property name="text">
-                <string>Beat Grid</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QRadioButton" name="block_bar_grid">
-               <property name="text">
-                <string>Bar Grid</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item row="0" column="4">
-           <spacer name="horizontalSpacer_14">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <item>
+          <widget class="QGroupBox" name="groupBox_13">
+           <property name="title">
+            <string>Grid</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_10">
+            <item row="0" column="3">
+             <widget class="QGroupBox" name="groupBox_9">
+              <property name="title">
+               <string>Loop Start/Stop</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_14">
+               <item>
+                <widget class="QRadioButton" name="loop_no_grid">
+                 <property name="toolTip">
+                  <string>Tip: There is no grid when pressing CTRL either</string>
+                 </property>
+                 <property name="text">
+                  <string>No Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="loop_line_grid">
+                 <property name="text">
+                  <string>Line Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="loop_beat_grid">
+                 <property name="text">
+                  <string>Beat Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="loop_bar_grid">
+                 <property name="text">
+                  <string>Bar Grid</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QGroupBox" name="groupBox_8">
+              <property name="title">
+               <string>Tempo Automation</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_13">
+               <item>
+                <widget class="QRadioButton" name="tempo_no_grid">
+                 <property name="toolTip">
+                  <string>Tip: There is no grid when pressing CTRL either</string>
+                 </property>
+                 <property name="text">
+                  <string>No Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="tempo_line_grid">
+                 <property name="text">
+                  <string>Line Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="tempo_beat_grid">
+                 <property name="text">
+                  <string>Beat Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="tempo_bar_grid">
+                 <property name="text">
+                  <string>Bar Grid</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QGroupBox" name="groupBox_7">
+              <property name="title">
+               <string>Effect Automation</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_12">
+               <item>
+                <widget class="QRadioButton" name="automation_no_grid">
+                 <property name="toolTip">
+                  <string>Tip: There is no grid when pressing CTRL either</string>
+                 </property>
+                 <property name="text">
+                  <string>No Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="automation_line_grid">
+                 <property name="text">
+                  <string>Line Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="automation_beat_grid">
+                 <property name="text">
+                  <string>Beat Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="automation_bar_grid">
+                 <property name="text">
+                  <string>Bar Grid</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QGroupBox" name="groupBox_6">
+              <property name="title">
+               <string>Moving Blocks</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_11">
+               <item>
+                <widget class="QRadioButton" name="block_no_grid">
+                 <property name="toolTip">
+                  <string>Tip: There is no grid when pressing CTRL either</string>
+                 </property>
+                 <property name="text">
+                  <string>No Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="block_line_grid">
+                 <property name="text">
+                  <string>Line Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="block_beat_grid">
+                 <property name="text">
+                  <string>Beat Grid</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="block_bar_grid">
+                 <property name="text">
+                  <string>Bar Grid</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_16">
+           <property name="title">
+            <string>Audio files</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_19">
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <item>
+               <widget class="QDoubleSpinBox" name="default_fadeout">
+                <property name="decimals">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_21">
+                <property name="text">
+                 <string>Default fade out (ms)</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_14">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
        <item>
         <spacer name="verticalSpacer_3">
@@ -7032,8 +7063,8 @@ you should check this box.
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>398</width>
-            <height>28</height>
+            <width>614</width>
+            <height>564</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -9646,8 +9677,8 @@ you should check this box.
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>100</width>
-               <height>30</height>
+               <width>983</width>
+               <height>298</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -9864,8 +9895,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroup_2"/>
  </buttongroups>
 </ui>
