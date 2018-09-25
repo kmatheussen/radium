@@ -671,7 +671,7 @@ void openAboutWindow(void){
   double vblank = GL_get_vblank();
   
   GFX_addMessage(
-              "<center><b>Radium "  VERSION "</b></center>"
+              "<center><b>Radium " RADIUM_VERSION "</b></center>"
               "<p>"
               "OpenGL vendor: \"%s\"<br>"
               "OpenGL renderer: \"%s\"<br>"
@@ -2362,6 +2362,21 @@ const_char* getQualifierName(const_char *qualifier){
   
 bool isFullVersion(void){
   return FULL_VERSION==1;
+}
+
+int radiumMajorVersion(void){
+  static int val = QString(RADIUM_VERSION).split(".")[0].toInt();
+  return val;
+}
+
+int radiumMinorVersion(void){
+  static int val = QString(RADIUM_VERSION).split(".")[1].toInt();
+  return val;
+}
+
+int radiumRevisionVersion(void){
+  static int val = QString(RADIUM_VERSION).split(".")[2].toInt();
+  return val;
 }
 
 

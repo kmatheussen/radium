@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-VERSION = 5.9.0
+RADIUM_VERSION = 5.9.0
 
 
 #----------------USER SETTINGS-------------------------------
@@ -1486,7 +1486,7 @@ Qt_path_resolver.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_path_resolve
 	$(CCC) $(P)Qt_path_resolver.cpp $(QTOPT)
 
 Qt_settings.o: $(BUILD_DEPENDENCIES) $(P)EditorWidget.h $(P)Qt_settings.cpp
-	$(CCC) $(P)Qt_settings.cpp $(QTOPT) $(SNDFILEOPT)
+	$(CCC) $(P)Qt_settings.cpp $(QTOPT) $(SNDFILEOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
 
 Qt_disk.o: $(BUILD_DEPENDENCIES) $(P)Qt_disk.cpp
 	$(CCC) $(P)Qt_disk.cpp $(QTOPT)
@@ -1528,13 +1528,13 @@ Rational.o: $(BUILD_DEPENDENCIES) $(P)Rational.cpp
 
 Qt_check_for_updates.o: $(BUILD_DEPENDENCIES) $(P)Qt_check_for_updates.cpp
 	$(MOC) $(P)/Qt_check_for_updates.cpp >$(P)/mQt_check_for_updates.cpp
-	$(CCC) $(P)Qt_check_for_updates.cpp $(QTOPT) -DVERSION=\"$(VERSION)\"
+	$(CCC) $(P)Qt_check_for_updates.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
 
 Qt_AutoBackups.o: $(BUILD_DEPENDENCIES) $(P)Qt_AutoBackups.cpp audio/SampleRecorder_proc.h
-	$(CCC) $(P)Qt_AutoBackups.cpp $(QTOPT) -DVERSION=\"$(VERSION)\"
+	$(CCC) $(P)Qt_AutoBackups.cpp $(QTOPT)
 
 flowlayout.o: $(BUILD_DEPENDENCIES) $(P)flowlayout.cpp $(P)flowlayout.h
-	$(CCC) $(P)flowlayout.cpp $(QTOPT) -DVERSION=\"$(VERSION)\"
+	$(CCC) $(P)flowlayout.cpp $(QTOPT)
 
 posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
 	$(CC) posix/posix_settings.c $(OPT)
@@ -1628,7 +1628,7 @@ api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.c $(API)radium_proc.h
 	$(CC)  $(API)api_undo.c $(OPT)
 
 api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp $(API)radium_proc.h
-	$(CCC)  $(API)api_various.cpp $(QTOPT) -DVERSION=\"$(VERSION)\"
+	$(CCC)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
 
 api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp $(API)radium_proc.h $(API)api_instruments_proc.h
 	$(CCC)  $(API)api_instruments.cpp $(QTOPT)
@@ -2221,7 +2221,7 @@ bin/radium_crashreporter: crashreporter/crashreporter.cpp $(API)radium_proc.h
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
 	@echo
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DVERSION=\"$(VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -Wno-missing-declarations -o crashbin.o
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) -Wno-missing-declarations -o crashbin.o
 	$(LINKER) `cat buildtype.opt` crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm crashbin.o
 
@@ -2233,7 +2233,7 @@ crashreporter.o: crashreporter/crashreporter.cpp
 	@echo "Changed (crashreporter.o):"
 	@echo $?
 	@echo
-	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DVERSION=\"$(VERSION)\" $(IS_LINUX_BINARY)
+	$(CCC) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(IS_LINUX_BINARY)
 
 crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
 	if ! $(CC) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS) ; then \

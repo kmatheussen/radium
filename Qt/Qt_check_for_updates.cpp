@@ -70,7 +70,7 @@ static void set_last_informed_version(QString version){
   SETTINGS_write_string("latest_informed_update_version", version.toUtf8().constData());
 }
 #else
-#define VERSION "2.0.0"
+#define RADIUM_VERSION "2.0.0"
 static QString last_informed_version(void){
   return "9.9.9";
 }
@@ -79,16 +79,16 @@ static void set_last_informed_version(QString version){}
 #endif
 
 static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
-  fprintf(stderr,"newestversion: -%s-, VERSION: -%s-, last_informed: -%s-\n",newestversion.toUtf8().constData(), VERSION, last_informed_version().toUtf8().constData());
+  fprintf(stderr,"newestversion: -%s-, VERSION: -%s-, last_informed: -%s-\n",newestversion.toUtf8().constData(), RADIUM_VERSION, last_informed_version().toUtf8().constData());
   //abort();
-  if (false || (hasNewer(newestversion, VERSION) && last_informed_version()!=newestversion)) {
-    printf("Version %s of Radium is available for download at http://users.notam02.no/~kjetism/radium (%s)\n", newestversion.toUtf8().constData(), VERSION);
+  if (false || (hasNewer(newestversion, RADIUM_VERSION) && last_informed_version()!=newestversion)) {
+    printf("Version %s of Radium is available for download at http://users.notam02.no/~kjetism/radium (%s)\n", newestversion.toUtf8().constData(), RADIUM_VERSION);
     //MyQMessageBox *msgBox = new MyQMessageBox;
     MyQMessageBox *msgBox = MyQMessageBox::create(false, g_main_window);
     msgBox->setAttribute(Qt::WA_DeleteOnClose);
 
     msgBox->setIcon(QMessageBox::Information);
-    msgBox->setText("You are running Radium V" VERSION ".<p>"
+    msgBox->setText("You are running Radium V" RADIUM_VERSION ".<p>"
                    "A newer version (V" + newestversion + ") is available for download at <A href=\"http://users.notam02.no/~kjetism/radium\">http://users.notam02.no/~kjetism/radium</a>");
     msgBox->setStandardButtons(QMessageBox::Ok);
 
@@ -96,7 +96,7 @@ static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
     
     set_last_informed_version(newestversion);
   } else
-    printf("Nope, %s is actually newer than (or just as old) as %s\n", VERSION, newestversion.toUtf8().constData());
+    printf("Nope, %s is actually newer than (or just as old) as %s\n", RADIUM_VERSION, newestversion.toUtf8().constData());
 }
 
 
@@ -164,7 +164,7 @@ namespace{
 
         QString all(text2);
 
-        QString searchString = "radium_64bit_windows-" VERSION "-demo";
+        QString searchString = "radium_64bit_windows-" RADIUM_VERSION "-demo";
  
         int startPos = all.indexOf(searchString);
 
@@ -176,7 +176,7 @@ namespace{
           msgBox->setAttribute(Qt::WA_DeleteOnClose);
           
           msgBox->setIcon(QMessageBox::Warning);
-          msgBox->setText("You are running Radium V" VERSION ".<p>"
+          msgBox->setText("You are running Radium V" RADIUM_VERSION ".<p>"
                           "This version is known to be unstable.");
           msgBox->setStandardButtons(QMessageBox::Ok);
           

@@ -688,7 +688,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   
   QString tosend = QString(additional_information) + "\n\n";
   
-  tosend += VERSION "\n\n";
+  tosend += RADIUM_VERSION "\n\n";
 
   tosend += "OS version: " + QSysInfo::productVersion() + "\n\n";
     

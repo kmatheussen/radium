@@ -241,7 +241,7 @@ public:
     return ret;
   }
 
-  QString error_to_string(QFile::FileError error){
+  const char *error_to_string(QFile::FileError error){
     switch(error){
       case QFile::NoError: {
         R_ASSERT(false);
@@ -268,16 +268,24 @@ public:
     return "Unknown error";
   }
 
+  const char* get_error(void){
+    QFile::FileError error = file()->error();
+    if (error == QFileDevice::NoError)
+      return NULL;
+
+    return error_to_string(error);
+  }
+  
   bool close(void){
     bool ret = true;
 
     if (type==READ) {
 
       file()->close();
-    
-      QFile::FileError error = file()->error();
-      if (error != 0) {
-        GFX_Message(NULL, "Error %s file: %s",type==WRITE ? "writing to" : "reading from", error_to_string(error).toUtf8().constData());
+
+      const char *error = get_error();
+      if (error != NULL){
+        GFX_Message(NULL, "Error %s file %S: %s",type==WRITE ? "writing to" : "reading from", STRING_create(filename), error);
         ret = false;
       }
 
@@ -394,6 +402,10 @@ disk_t *DISK_open_binary_for_reading(const wchar_t *wfilename){
   }
   
   return disk;
+}
+
+const char* DISK_get_error(disk_t *disk){
+  return disk->get_error();
 }
 
 wchar_t *DISK_get_filename(disk_t *disk){

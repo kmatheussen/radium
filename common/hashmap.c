@@ -715,8 +715,8 @@ void HASH_save(const hash_t *hash, disk_t *file){
 static wchar_t *read_line(disk_t *file){
 
   wchar_t *line = DISK_read_wchar_line(file);
-
-  //printf("%d: -%S-\n", curr_disk_line, line);
+    
+  //printf("%d: -%S-\n", g_curr_disk_line, line);
   
   if(line==NULL){
     GFX_Message(NULL, "End of file before finished reading hash map");
@@ -730,7 +730,9 @@ static wchar_t *read_line(disk_t *file){
 
 hash_t *HASH_load(disk_t *file){
 
-  wchar_t *line = READ_LINE(file);
+  wchar_t *line = L"";
+  while(STRING_starts_with(line, "#") || STRING_equals2(STRING_trim(line), L""))
+    line = READ_LINE(file);
   
   int version;
   if(STRING_equals(line,">> HASH MAP BEGIN")){
@@ -745,7 +747,7 @@ hash_t *HASH_load(disk_t *file){
     int try_anyway = VECTOR_push_back(&v, "Try anyway (program might crash and/or behave unstable)");
     int ok = VECTOR_push_back(&v, "Ok");
 
-    int res = GFX_Message(&v, "Need a newer version or Radium to load this file");
+    int res = GFX_Message(&v, "Need a newer version of Radium to load this file");
 
     if (res!=try_anyway)
       return NULL;
