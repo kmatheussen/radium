@@ -6867,11 +6867,17 @@
 
 ;; right size handle in navigator
 (add-horizontal-handler :Get-handler-data (lambda (X Y)
+                                            (define left-box (<ra> :get-box seqnav-left-size-handle))
                                             (define box (<ra> :get-box seqnav-right-size-handle))
                                             ;;(c-display "  RIGHT box" box
                                             ;;           (inside-box box X Y)
                                             ;;           (<ra> :get-seqnav-right-size-handle-x2))
-                                            (and (inside-box box X Y)
+                                            (and (or (inside-box box X Y)
+                                                     (and (inside-box left-box X Y) ;; To avoid forcing the user to zoom out to move the navigator.
+                                                          (< (box :x1)
+                                                             (left-box :x2))
+                                                          (<= (left-box :x1)
+                                                              (+ 3 (<ra> :get-sequencer-x1)))))
                                                  (<ra> :get-seqnav-right-size-handle-x2)))
                         :Get-x1 (lambda (_)
                                   (1- (<ra> :get-seqnav-left-size-handle-x1)))
