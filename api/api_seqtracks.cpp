@@ -1553,6 +1553,24 @@ void setIsJackTimebaseMaster(bool doit){
   MIXER_set_jack_timebase_master(doit);
 }
 
+static double g_default_audiofile_fadeout = 10.0;
+
+double getDefaultAudiofileFadeout(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_default_audiofile_fadeout = SETTINGS_read_double("default_audiofile_fadeout", g_default_audiofile_fadeout);
+    has_inited = true;
+  }
+
+  return g_default_audiofile_fadeout;
+}
+
+void setDefaultAudiofileFadeout(double default_audiofile_fadeout){
+  g_default_audiofile_fadeout = default_audiofile_fadeout;
+  SETTINGS_write_double("default_audiofile_fadeout", default_audiofile_fadeout);
+}
+
 
 int64_t getSeqGriddedTime(int64_t pos, int seqtracknum, const_char* type){
   //R_ASSERT_NON_RELEASE(seqtracknum==0);

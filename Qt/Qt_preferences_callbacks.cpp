@@ -584,6 +584,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         loop_beat_grid->setChecked(true);
       else if (!strcmp(getSeqLoopGridType(), "bar"))
         loop_bar_grid->setChecked(true);
+
+      default_fadeout->setValue(getDefaultAudiofileFadeout());
     }
 
     // Windows
@@ -1078,7 +1080,19 @@ public slots:
         setSeqLoopGridType("bar");
   }
 
+  void on_default_fadeout_valueChanged(double val){
+    if (_initing==false)
+      setDefaultAudiofileFadeout(val);
+  }
 
+  void on_default_fadeout_editingFinished(){
+    set_editor_focus();
+
+    GL_lock();{
+      default_fadeout->clearFocus();
+    }GL_unlock();
+  }
+  
   // colors
   void color_changed(const QColor &col){
     //printf("HAPP! %s\n",col.name().toUtf8().constData());
