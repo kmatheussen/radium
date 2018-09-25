@@ -5,16 +5,35 @@
 #include "../common/nsmtracker.h"
 #include "Smooth_proc.h"
 
-void SMOOTH_init(Smooth *smooth, float value, int blocksize){
+static void init_it(Smooth *smooth, float value, int blocksize, int smooth_length){
+
+  if(blocksize!=RADIUM_BLOCKSIZE){
+    R_ASSERT(false);
+    blocksize=RADIUM_BLOCKSIZE;
+  }
+
+  if (smooth_length!=RADIUM_BLOCKSIZE && smooth_length!=DEFAULT_SMOOTH_LENGTH){
+    R_ASSERT(false);
+    smooth_length = DEFAULT_SMOOTH_LENGTH;
+  }
 
   memset(smooth, 0, sizeof(Smooth));
 
   smooth->target_audio_will_be_modified = true;      
 
-  smooth->num_values = blocksize;
+  smooth->smooth_length = smooth_length;
+    
+  //smooth->num_values = blocksize;
   smooth->values = V_calloc(sizeof(float), blocksize);
-
+  
   SMOOTH_force_target_value(smooth, value);
+}
+
+void SMOOTH_init(Smooth *smooth, float value, int blocksize){
+  init_it(smooth, value, blocksize, DEFAULT_SMOOTH_LENGTH);
+}
+void SMOOTH_init_immediate_smoothing(Smooth *smooth, float value, int blocksize){
+  init_it(smooth, value, blocksize, RADIUM_BLOCKSIZE);
 }
 
 void SMOOTH_force_target_value(Smooth *smooth, float value){
@@ -23,13 +42,15 @@ void SMOOTH_force_target_value(Smooth *smooth, float value){
   smooth->value = value;
 
   int i;
-  for(i=0;i<smooth->num_values;i++)
+  for(i=0;i<RADIUM_BLOCKSIZE;i++)
     smooth->values[i] = value;
 }
 
+/*
 void SMOOTH_new_blocksize(Smooth *smooth, int blocksize){
   smooth->values = V_realloc(smooth->values, sizeof(float)*blocksize); // this function is never called. blocksize is hardcoded to 64.
 }
+*/
 
 void SMOOTH_release(Smooth *smooth){
   V_free(smooth->values);
@@ -60,7 +81,7 @@ void SMOOTH_update_target_audio_will_be_modified_value(Smooth *smooth){
 void SMOOTH_called_per_block(Smooth *smooth){
   R_ASSERT_NON_RELEASE(smooth->target_audio_will_be_modified==true);
     
-  int num_values = smooth->num_values;
+  //int num_values = smooth->num_values;
 
   float next_target_value = safe_volatile_float_read(&smooth->next_target_value); // Only one read. smooth->next_target_value can be written at any time from any thread.
 
@@ -68,7 +89,7 @@ void SMOOTH_called_per_block(Smooth *smooth){
 
     if(smooth->smoothing_is_necessary==true){
       int i;
-      for(i=0;i<num_values;i++) // shouldn't be necessary.
+      for(i=0;i<RADIUM_BLOCKSIZE;i++) // shouldn't be necessary.
         smooth->values[i] = next_target_value;
 
       smooth->smoothing_is_necessary = false;
@@ -82,15 +103,32 @@ void SMOOTH_called_per_block(Smooth *smooth){
     if(smooth->pos==0)
       smooth->target_value = next_target_value;
 
-    int i;
-    for(i=0;i<num_values;i++){
-      smooth->values[i] = scale(smooth->pos + i,
-                                0, SMOOTH_LENGTH,
-                                smooth->value, smooth->target_value);
+    const float start_value = smooth->value;
+    const float end_value = smooth->target_value;
+    
+    if(smooth->smooth_length==RADIUM_BLOCKSIZE) {
+
+      R_ASSERT_RETURN_IF_FALSE(smooth->pos==0);
+      
+      for(int i=0;i<RADIUM_BLOCKSIZE;i++){
+        smooth->values[i] = scale(i,
+                                  0, 64,
+                                  start_value, end_value);
+      }
+
+    } else {
+
+      R_ASSERT_NON_RELEASE(smooth->smooth_length==DEFAULT_SMOOTH_LENGTH);
+      
+      for(int i=0;i<RADIUM_BLOCKSIZE;i++){
+        smooth->values[i] = scale(smooth->pos + i,
+                                  0, DEFAULT_SMOOTH_LENGTH,
+                                  start_value, end_value);
+      }
     }
     
-    smooth->pos += num_values;
-    if(smooth->pos==SMOOTH_LENGTH){
+    smooth->pos += RADIUM_BLOCKSIZE;
+    if(smooth->pos==smooth->smooth_length){
       smooth->value = smooth->target_value;
       smooth->pos = 0;
     }

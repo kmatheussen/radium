@@ -18,27 +18,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define AUDIO_SMOOTH_PROC_H
 
 // Must be a multiple of RADIUM_BLOCKSIZE
-#define SMOOTH_LENGTH 1024
+#define DEFAULT_SMOOTH_LENGTH 1024
 
 typedef struct{
-  float* values;
+  float *values;
 
   volatile float next_target_value;
   float target_value;
   float value;
 
-  int num_values; // same as RADIUM_BLOCKSIZE. (i.e. 64)
+  int smooth_length;
+  //int num_values; // same as RADIUM_BLOCKSIZE. (i.e. 64)
   int pos; // between 0 and SMOOTH_LENGTH (in intervals of 64)
 
   bool smoothing_is_necessary;
   volatile bool target_audio_will_be_modified;
 } Smooth;
 
+
+static inline void SMOOTH_print(const char *s, const Smooth *smooth){
+  printf("%s[0]: %f -> [%d]: %f. pos: %d. num_values: %d. smooth_length: %d\n",
+         s,
+         smooth->values[0], RADIUM_BLOCKSIZE-1, smooth->values[RADIUM_BLOCKSIZE-1],
+         smooth->pos,
+         64, //smooth->num_values,
+         smooth->smooth_length);
+}
+
+
 typedef struct{
   float vals [2][2];
 } Panvals;
-
-
 
 // Copied from https://github.com/kmatheussen/soundengine/blob/master/SoundObject.java (written by me)
 //
@@ -91,8 +101,10 @@ static inline Panvals get_pan_vals_vector(float pan, int num_source_channels){
 }
 
 
-extern LANGSPEC void SMOOTH_init(Smooth *smooth, float value, int blocksize);
-extern LANGSPEC void SMOOTH_new_blocksize(Smooth *smooth, int blockframes);
+extern LANGSPEC void SMOOTH_init(Smooth *smooth, float value, int blocksize); // smooth_length = DEFAULT_SMOOTH_LENGTH
+extern LANGSPEC void SMOOTH_init_immediate_smoothing(Smooth *smooth, float value, int blocksize); // smooth_length = RADIUM_BLOCKSIZE
+
+//extern LANGSPEC void SMOOTH_new_blocksize(Smooth *smooth, int blockframes);
 extern LANGSPEC void SMOOTH_release(Smooth *smooth);
 extern LANGSPEC void SMOOTH_force_target_value(Smooth *smooth, float value);
 extern LANGSPEC void SMOOTH_set_target_value(Smooth *smooth, float value);
