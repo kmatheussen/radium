@@ -2844,9 +2844,11 @@ void setFxnode(int fxnodenum, float value, Place place, int fxnum, int tracknum,
   if (fx==NULL)
     return;
 
-  R_ASSERT(value >= 0.0f);
-  R_ASSERT(value <= 1.0f);
-
+  if(value < 0.0f || value > 1.0){
+    handleError("setFxnode: Value must be between 0 and 1, not %f. fxnodenum: %d, fxnum: %d, tracknum: %d, blocknum: %d", value, fxnodenum, fxnum, tracknum, blocknum);
+    return;
+  }
+  
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fx);
   if (fxnodenum < 0 || fxnodenum>=nodes->num_elements) {
     handleError("There is no fx node %d for fx %d in track %d in block %d",fxnodenum, fxnum, tracknum, blocknum);
