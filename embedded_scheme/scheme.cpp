@@ -1558,6 +1558,9 @@ dyn_t SCHEME_eval_withreturn(const char *code){
 
 // called from s7webserver.
 s7_pointer RADIUM_SCHEME_eval2(const char *code){
+
+  SCHEME_eval("(if *message-gui* (<gui> :hide *message-gui*))");   // For developing.
+    
   s7extra_add_history(__func__, CR_FORMATEVENT("========== RADIUM_SCHEME_eval2 (Code from s7webserver.)\n\n"));
   return catch_call(s7,
                     s7_list(s7,
