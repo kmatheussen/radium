@@ -1149,7 +1149,8 @@ int64_t PATCH_play_note(struct Patch *patch, const note_t note){
   int64_t ret;
   
   PLAYER_lock();{
-    ret = RT_PATCH_play_note(RT_get_curr_seqtrack(), patch, note, NULL, RT_get_curr_seqtrack()->start_time);
+    auto *seqtrack = RT_get_curr_seqtrack();
+    ret = RT_PATCH_play_note(seqtrack, patch, note, NULL, seqtrack->start_time);
   }PLAYER_unlock();
 
   return ret;
