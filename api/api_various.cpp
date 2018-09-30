@@ -2653,7 +2653,7 @@ int getLogtypeLinear(void){
 }
 
 Place getCursorPlace(int blocknum, int windownum){
-  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);if(wblock==NULL) return place(0,0,1);
+  struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);if(wblock==NULL) return p_Create(0,0,1);
 
   return wblock->reallines[wblock->curr_realline]->l.p;
 }

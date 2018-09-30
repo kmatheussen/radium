@@ -381,9 +381,9 @@ int addNote3(float notevalue,float velocity,
              int end_line,int end_counter,int end_dividor,
              int tracknum, int blocknum, int windownum)
 {
-  Place start = place(line,counter,dividor);
+  Place start = p_Create(line,counter,dividor);
 
-  Place end = place(end_line, end_counter, end_dividor);
+  Place end = p_Create(end_line, end_counter, end_dividor);
 
   return addNote(notevalue, velocity, start, end, tracknum, blocknum, windownum);
 }
@@ -449,7 +449,7 @@ Place getNoteStart(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
   if(note==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
 
   return note->l.p;
 }
@@ -458,7 +458,7 @@ Place getNoteEnd(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
   if(note==NULL)
-    return place(1,0,1);
+    return p_Create(1,0,1);
 
   return note->end;
 }

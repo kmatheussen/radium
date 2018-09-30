@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define COMMON_PLACEMENT_PROC_H
 
 static inline Place p_Create(int line, int counter, int dividor) {
-  // Uncomment here. place() is used more for calculation
+  // Uncomment here. p_Create() is used more for calculation
   /*
   R_ASSERT(line >= 0);
   R_ASSERT(counter >= 0);
@@ -50,9 +50,11 @@ static inline bool p_is_same_place(Place place){
 }
 
 // todo: Delete this function. 'place' is usually used as a variable name.
-static inline Place place(int line, int counter, int dividor) {
+/*
+static inline Place p_Create(int line, int counter, int dividor) {
   return p_Create(line, counter, dividor);
 }
+*/
 
 static inline void ValidatePlace(const Place *place){
   if (place==NULL)
@@ -90,15 +92,15 @@ static inline Place place_from_64(int64_t line, int64_t num, int64_t den){
     int dividor = MAX_UINT32;
 
     if (counter >= dividor)
-      ret = place((int)line+1, 0, 1);
+      ret = p_Create((int)line+1, 0, 1);
     else
-      ret = place((int)line, counter, dividor);
+      ret = p_Create((int)line, counter, dividor);
     
   } else {
 
     R_ASSERT(num < INT_MAX);
       
-    ret = place((int)line, (int)num, (int)den);
+    ret = p_Create((int)line, (int)num, (int)den);
     
   }
 
@@ -439,7 +441,7 @@ static inline Place *PlaceGetLastPos(const struct Blocks *block){
 }
 
 static inline Place p_Last_Pos(const struct Blocks *block){
-  return place(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
+  return p_Create(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
 }
 
 #define SetAbsoluteLastPlace(place, block) do{        \
@@ -450,7 +452,7 @@ static inline Place p_Last_Pos(const struct Blocks *block){
   }while(0)
 
 static inline Place p_Absolute_Last_Pos(const struct Blocks *block){
-  return place(block->num_lines, 0, 1);
+  return p_Create(block->num_lines, 0, 1);
 }
 
 static inline const char* PlaceToString(const Place *a){

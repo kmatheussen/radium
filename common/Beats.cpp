@@ -32,7 +32,7 @@ namespace{
     LPBs *lpb;
     LPBHolder(Blocks *block, int default_lpb) {
       root_lpb.l.next = (ListHeader3*)block->lpbs;
-      root_lpb.l.p = place(0,0,1);
+      root_lpb.l.p = p_Create(0,0,1);
       root_lpb.lpb = default_lpb;
       lpb = &root_lpb;
     }
@@ -51,8 +51,8 @@ namespace{
 }
 
 static Place get_measure_length_in_quarters(Ratio signature, int lpb){
-  Place ratio = place(0,(int)signature.numerator,(int)signature.denominator);
-  Place four_lpb = place(4*lpb, 0, 1);
+  Place ratio = p_Create(0,(int)signature.numerator,(int)signature.denominator);
+  Place four_lpb = p_Create(4*lpb, 0, 1);
 
   return p_Mul(ratio,
                four_lpb
@@ -61,7 +61,7 @@ static Place get_measure_length_in_quarters(Ratio signature, int lpb){
 
 static Place get_beat_length_in_measurement(Ratio signature, int lpb){
   return p_Div(get_measure_length_in_quarters(signature, lpb),
-               place((int)signature.numerator,0,1)
+               p_Create((int)signature.numerator,0,1)
                );
 }
 
@@ -72,7 +72,7 @@ struct Beats *Beats_get(struct Blocks *block, Ratio default_signature, int defau
   int bar_num = 1;
   
   Signatures first;
-  first.l.p = place(0,0,1);
+  first.l.p = p_Create(0,0,1);
   first.signature = default_signature;
 
   LPBHolder lpb_holder(block, default_lpb);

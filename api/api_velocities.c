@@ -84,7 +84,7 @@ Place getVelocityPlace(int velocitynum, dyn_t dynnote, int tracknum, int blocknu
   if (velocity==NULL){
 
     if (note==NULL)
-      return place(0,0,1);
+      return p_Create(0,0,1);
 
     else if (velocitynum==0)
       return note->l.p;

@@ -58,7 +58,7 @@ Place getPitchPlace(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int
   if (pitch==NULL){
 
     if (note==NULL)
-      return place(0,0,1);
+      return p_Create(0,0,1);
 
     else if (pitchnum==0)
       return note->l.p;

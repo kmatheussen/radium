@@ -195,7 +195,7 @@ static Place number_to_place(s7_scheme *s7, s7_pointer number, const char **erro
         R_ASSERT_NON_RELEASE(false);
       return p_Create(0,0,1);
     }
-    return place((int)s7_integer(number), 0, 1);
+    return p_Create((int)s7_integer(number), 0, 1);
   }
   
   if (s7_is_real(number)) {
@@ -221,7 +221,7 @@ static Place number_to_place(s7_scheme *s7, s7_pointer number, const char **erro
   
   RError("scheme.cpp/number_to_place: input parameter was not a number. returning 0. is_number: %d, is_integer: %d, is_ratio: %d, is_real: %d, value: %f, is_complex: %d, is_ulong: %d\n\n\n",s7_is_number(number),s7_is_integer(number),s7_is_ratio(number),s7_is_real(number),s7_number_to_real(s7,number),s7_is_complex(number),s7_is_ulong(number));
     
-  return place(0,0,1);
+  return p_Create(0,0,1);
 }
 
 
@@ -420,7 +420,7 @@ bool s7extra_get_boolean(s7_scheme *s7, s7_pointer s, const char **error){
 Place s7extra_get_place(s7_scheme *s7, s7_pointer s, const char **error){
 
   if (s7_is_symbol(s) && !strcmp(s7_symbol_name(s), "same-place"))
-    return p_Create(-1,0,0);
+    return g_same_place;
 
   bool legal = s7_is_rational(s);
 

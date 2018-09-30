@@ -230,7 +230,7 @@ void setQuantitizeType(int type){
 
 // TODO. Should return ratio
 Place getGrid(void){
-  return place(0, (int)root->grid_numerator, (int)root->grid_denominator);
+  return p_Create(0, (int)root->grid_numerator, (int)root->grid_denominator);
 }
 
 void configQuantitize(int windownum){
