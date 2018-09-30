@@ -500,7 +500,7 @@ private:
     
     if(has_inited==false){
       
-      fill_brush = QBrush(get_color(color, Qt::white, 300, 0.3));
+      fill_brush = QBrush(get_color(color, Qt::white, 300, 0.7));
       
       pen1 = QPen(get_color(color, Qt::white, 100, 0.3));
       pen1.setWidthF(width);
