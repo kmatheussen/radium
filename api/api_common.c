@@ -132,7 +132,8 @@ void handleError_internal(const char *fmt,...){
   printException(message);
 
 #if !defined(RELEASE)
-  printf("HISTORY:\n%s\n",SCHEME_get_history());
+  // WARNING! This screwes up backtrace. Instead of getting the history up to this point, we only get a lot of entries from history_ow! in init.scm.
+  //printf("HISTORY:\n%s\n",SCHEME_get_history());
 #endif
 
   vector_t v = {0};
@@ -360,7 +361,7 @@ struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **wi
       
   struct Velocities *velocity = ListFindElement3_num_r0(&(*note)->velocities->l, velocitynum-1);
   if (velocity==NULL){
-    handleError("There is no velocity #%d in note %d in track #%d in block #%d",velocitynum,(int)(*note)->id,tracknum,blocknum);
+    handleError("There is no velocity #%d in note with id \"%d\" in track #%d in block #%d",velocitynum,(int)(*note)->id,tracknum,blocknum);
     return NULL;
   }
 
@@ -520,7 +521,7 @@ struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum){
     return NULL;
 
   if (seqblocknum < 0 || seqblocknum >= seqtrack->seqblocks.num_elements){
-    handleError("Sequencer block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+    handleError("Seqblock #%d not found in seqtrack %d", seqblocknum, seqtracknum);
     return NULL;
   }
 
@@ -533,7 +534,7 @@ struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct Se
     return NULL;
 
   if (seqblocknum < 0 || seqblocknum >= (*seqtrack)->seqblocks.num_elements){
-    handleError("Sequencer block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+    handleError("Seqblock #%d not found in seqtrack %d", seqblocknum, seqtracknum);
     return NULL;
   }
 
@@ -546,13 +547,13 @@ struct SeqBlock *getAudioSeqblockFromNum(int seqblocknum, int seqtracknum){
     return NULL;
 
   if (seqblocknum < 0 || seqblocknum >= seqtrack->seqblocks.num_elements){
-    handleError("Sequencer block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+    handleError("Seqblock #%d not found in seqtrack %d", seqblocknum, seqtracknum);
     return NULL;
   }
 
   struct SeqBlock *seqblock = seqtrack->seqblocks.elements[seqblocknum];
   if (seqblock->block!=NULL){
-    handleError("Sequencer block #%d in sequencer track %d is not an audio file", seqblocknum, seqtracknum);
+    handleError("Seqblock #%d in seqtrack %d is not an audio file", seqblocknum, seqtracknum);
     return NULL;
   }
 
@@ -565,13 +566,13 @@ struct SeqBlock *getAudioSeqblockFromNumA(int seqblocknum, int seqtracknum, stru
     return NULL;
 
   if (seqblocknum < 0 || seqblocknum >= (*seqtrack)->seqblocks.num_elements){
-    handleError("Sequencer block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
+    handleError("Seqblock #%d not found in seqtrack %d", seqblocknum, seqtracknum);
     return NULL;
   }
 
   struct SeqBlock *seqblock = (*seqtrack)->seqblocks.elements[seqblocknum];
   if (seqblock->block!=NULL){
-    handleError("Sequencer block #%d in sequencer track %d is not an audio file", seqblocknum, seqtracknum);
+    handleError("Seqblock #%d in seqtrack %d is not an audio file", seqblocknum, seqtracknum);
     return NULL;
   }
 
