@@ -326,7 +326,7 @@ int getBPM(int num, int blocknum, int windownum){
 Place getBPMPlace(int num, int blocknum, int windownum){
   struct BPMs *bpm = getBPMFromNum(windownum, blocknum, num);
   if (bpm==NULL)
-    return place(-1,0,1);
+    return p_Create(0,0,1);
   else
     return bpm->l.p;
 }
@@ -430,10 +430,11 @@ void setTemponode(int num, float value, Place place, int blocknum, int windownum
     handleError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
     return;
     
-  } else if (place.line < 0) {
+  } else if (p_is_same_place(place)) {    
     temponode = ListFindElement3_num(&block->temponodes->l, num);
 
   } else {
+    if(place.line < 0){handleError("Negative place");}
     temponode = (struct TempoNodes *)ListMoveElement3_FromNum_ns(&block->temponodes, num, &place, NULL, NULL);
     R_ASSERT_RETURN_IF_FALSE(temponode!=NULL);
   }

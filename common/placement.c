@@ -322,6 +322,8 @@ Place *PlaceGetFirstPos(void){
 }
 */
 
+Place g_same_place = {-999999,999999,999999};
+
 /**********************************************************
   FUNCTION
     Sets 'p' to the realline-placement. If realline
