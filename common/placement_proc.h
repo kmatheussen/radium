@@ -26,12 +26,27 @@ static inline Place p_Create(int line, int counter, int dividor) {
   R_ASSERT(dividor > 0);
   R_ASSERT(dividor <= MAX_UINT32);
   */
-  
+
+  if(dividor==0){
+    R_ASSERT(false);
+    dividor=1;
+  }
+
   Place place;
   place.line = line;
   place.counter = counter;
   place.dividor = dividor;
   return place;
+}
+
+
+extern Place g_same_place;
+
+static inline bool p_is_same_place(Place place){
+  return
+    place.line==g_same_place.line &&
+    place.counter==g_same_place.counter &&
+    place.dividor==g_same_place.dividor;
 }
 
 // todo: Delete this function. 'place' is usually used as a variable name.
@@ -47,6 +62,7 @@ static inline void ValidatePlace(const Place *place){
   //R_ASSERT(place->counter >= 0); TODO! Put back this test when counter is signed.
   R_ASSERT(place->counter < place->dividor);
   //R_ASSERT(place->dividor > 0); TODO! Put back this test when dividor is signed.
+  R_ASSERT(place->dividor != 0);
   R_ASSERT(place->dividor <= MAX_UINT32);
 }
 
@@ -106,7 +122,11 @@ static inline Ratio ratio_from_place(const Place place){
   return make_ratio(place.counter + place.line*place.dividor, place.dividor);
 }
 
-static inline Place *PlaceCreate(int line, int counter, int dividor) {  
+static inline Place *PlaceCreate(int line, int counter, int dividor) {
+  if (dividor==0){
+    R_ASSERT(false);
+    dividor=1;
+  }
   Place *place=(Place*)talloc(sizeof(Place));  
   place->line = line;
   place->counter = counter;

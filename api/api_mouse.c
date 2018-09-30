@@ -1397,7 +1397,7 @@ dyn_t movePianonote(int pianonotenum, float value, Place place, dyn_t dynnote, i
 
   window->must_redraw_editor = true;
 
-  if (place.line < 0)
+  if (p_is_same_place(place))
     return dynnote;
 
   if (validate_place(place)==false)
@@ -1439,8 +1439,8 @@ dyn_t movePianonoteStart(int pianonotenum, float value, Place place, dyn_t dynno
   note->note = R_BOUNDARIES(1, value, 127);
     
   window->must_redraw_editor = true;
-    
-  if (place.line < 0)
+
+  if (p_is_same_place(place))
     return dynnote;
 
   if (validate_place(place)==false)
@@ -1529,7 +1529,7 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place, dyn_t dynnote
              
     // 1. Change pitch value
     setPitchnum2(logtype==LOGTYPE_HOLD ? pitchnum : pitchnum + 1,
-                 value, p_Create(-1, 0, 1),
+                 value, g_same_place,
                  tracknum, blocknum, windownum,
                  false
                  );
@@ -1550,10 +1550,10 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place, dyn_t dynnote
       note->pitch_end = R_BOUNDARIES(1, value, 127);
     else
       note->note = R_BOUNDARIES(1, value, 127);
-  
-    if (place.line < 0)
-      return dynnote;
 
+    if (p_is_same_place(place))
+      return dynnote;
+    
     if (validate_place(place)==false)
       return dynnote;
     
@@ -1928,7 +1928,7 @@ static int getPitchnumLogtype_internal(int pitchnum, struct Tracks *track){
 
   if (is_end_pitch)
     return LOGTYPE_IRRELEVANT;
-  if (pitch==NULL)
+  else if (pitch==NULL)
     return note->pitch_first_logtype;
   else
     return pitch->logtype;
@@ -2175,7 +2175,10 @@ static int setPitchnum2(int num, float value, Place place, int tracknum, int blo
     if (value > 0)
       pitch->note = clamped_value;
 
-    if (place.line >= 0) {
+    if (!p_is_same_place(place)){
+      
+      if(place.line < 0){handleError("Negative place");return num;}
+      
       Place firstLegalPlace,lastLegalPlace;
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
       PlaceTilLimit(&lastLegalPlace, &note->end);
@@ -2193,7 +2196,7 @@ static int setPitchnum2(int num, float value, Place place, int tracknum, int blo
     if (value > 0)
       note->pitch_end = clamped_value;
     
-    if (place.line >= 0) {
+    if (!p_is_same_place(place)){
       MoveEndNote(block, track, note, &place, true);
       return getPitchNum(track, note, NULL, true);
     }
@@ -2204,6 +2207,7 @@ static int setPitchnum2(int num, float value, Place place, int tracknum, int blo
       note->note = clamped_value;
 
     if (place.line >= 0) {
+      if(place.line < 0){handleError("Negative place");return num;}
       MoveNote(block, track, note, &place, replace_note_ends);
       return getPitchNum(track, note, NULL, false);
     }
@@ -2858,7 +2862,10 @@ void setFxnode(int fxnodenum, float value, Place place, int fxnum, int tracknum,
   struct Node *node = nodes->elements[fxnodenum];
   struct FXNodeLines *fxnodeline = (struct FXNodeLines *)node->element;
   
-  if (place.line >= 0){
+  if (!p_is_same_place(place)){
+
+    if(place.line < 0){handleError("Negative place");return;}
+
     Place *last_pos = PlaceGetLastPos(wblock->block);
     
     {
@@ -2881,9 +2888,8 @@ void setFxnodeF(int fxnodenum, float value, float floatplace, int fxnum, int tra
   if (floatplace >= 0.0f)
     Float2Placement(floatplace, &place);
   else {
-    place.line = -1;
-    place.counter = 0;
-    place.dividor = 1;
+    R_ASSERT_NON_RELEASE(false); // Don't know if this is a legal situation.
+    place = g_same_place;
   }
   
   return setFxnode(fxnodenum, value, place, fxnum, tracknum, blocknum, windownum);

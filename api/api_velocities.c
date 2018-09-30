@@ -219,22 +219,31 @@ dyn_t setVelocity(float value, Place place, int velocitynum, dyn_t dynnote, int 
   if (velocitynum==0) {
     
     note->velocity = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
-    if (place.line>=0)
+    if (!p_is_same_place(place)){
+      if(place.line < 0){handleError("Negative place");return dynnote;}
       return MoveNote(block, track, note, &place, true);
+    }
     
   } else if (velocitynum==nodes->num_elements-1) {
     
     note->velocity_end = R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
-    if (place.line>=0)
+    if (!p_is_same_place(place)){
+      if(place.line < 0){handleError("Negative place");return dynnote;}
       MoveEndNote(block, track, note, &place, true);
-
+    }
+    
   } else {
 
     struct Velocities *velocity;
 
-    if (place.line < 0 ) {
+    if (p_is_same_place(place)){
+      
       velocity = ListFindElement3_num(&note->velocities->l, velocitynum-1);
+      
     } else {
+      
+      if(place.line < 0){handleError("Negative place");return dynnote;}
+      
       Place firstLegalPlace,lastLegalPlace;
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
       PlaceTilLimit(&lastLegalPlace, &note->end);
@@ -245,6 +254,7 @@ dyn_t setVelocity(float value, Place place, int velocitynum, dyn_t dynnote, int 
         velocity = (struct Velocities*)ListMoveElement3_FromNum_ns(&note->velocities, velocitynum-1, &place, &firstLegalPlace, &lastLegalPlace);
         NOTE_validate(block, track, note);
       }
+      
     }
     
     velocity->velocity=R_BOUNDARIES(0,value*MAX_VELOCITY,MAX_VELOCITY);
@@ -257,9 +267,8 @@ dyn_t setVelocityF(float value, float floatplace, int velocitynum, dyn_t dynnote
   Place place;
   
   if (floatplace < 0) {
-    place.line=-1;
-    place.counter=0;
-    place.dividor=1;
+    R_ASSERT_NON_RELEASE(false); // Don't know if this is a legal situation.
+    place = g_same_place;
   }else
     Float2Placement(floatplace, &place);
   return setVelocity(value, place, velocitynum, dynnote, tracknum, blocknum, windownum);

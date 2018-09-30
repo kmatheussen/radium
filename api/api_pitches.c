@@ -209,22 +209,27 @@ dyn_t setPitch(float value, Place place, int pitchnum, dyn_t dynnote, int trackn
   if (pitchnum==0) {
     
     note->note = value;
-    if (place.line>=0)
+    if (!p_is_same_place(place)){
+      if(place.line < 0){handleError("Negative place");return dynnote;}
       return MoveNote(block, track, note, &place, true);
+    }
     
   } else if (pitchnum==nodes->num_elements-1) {
     
     note->pitch_end = value;
-    if (place.line>=0)
+    if (!p_is_same_place(place)){
+      if(place.line < 0){handleError("Negative place");return dynnote;}
       MoveEndNote(block, track, note, &place, true);
-
+    }
+    
   } else {
 
     struct Pitches *pitch;
 
-    if (place.line < 0 ) {
+    if (p_is_same_place(place)){
       pitch = ListFindElement3_num(&note->pitches->l, pitchnum-1);
     } else {
+      if(place.line < 0){handleError("Negative place");return dynnote;}
       Place firstLegalPlace,lastLegalPlace;
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
       PlaceTilLimit(&lastLegalPlace, &note->end);
@@ -246,10 +251,9 @@ dyn_t setPitchF(float value, float floatplace, int pitchnum, dyn_t dynnote, int 
   Place place;
   
   if (floatplace < 0) {
-    
-    place.line=-1;
-    place.counter=0;
-    place.dividor=1;
+
+    R_ASSERT_NON_RELEASE(false); // Don't know if this is a legal situation.
+    place = g_same_place;
     
   }else {
     
