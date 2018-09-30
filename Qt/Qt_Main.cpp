@@ -2425,6 +2425,26 @@ void MoveAbsPointer(struct Tracker_Windows *tvisual, float x, float y){
 #endif
 }
 
+uint64_t GetMouseButtons(void){
+  uint64_t ret = 0;
+  uint64_t hepp = (uint64_t)QApplication::mouseButtons();
+
+  R_ASSERT(TR_LEFTMOUSEDOWN < 64);
+  R_ASSERT(TR_RIGHTMOUSEDOWN < 64);
+  R_ASSERT(TR_MIDDLEMOUSEDOWN < 64);
+  
+  if (hepp & Qt::LeftButton)
+    ret |= (2<<TR_LEFTMOUSEDOWN);
+  
+  if (hepp & Qt::RightButton)
+    ret |= (2<<TR_RIGHTMOUSEDOWN);
+  
+  if (hepp & Qt::MiddleButton)
+    ret |= (2<<TR_MIDDLEMOUSEDOWN);
+
+  return ret;
+}
+
 WPoint GetPointerPos(struct Tracker_Windows *tvisual){
   WPoint ret;
   QPoint pos;

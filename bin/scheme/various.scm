@@ -812,3 +812,8 @@
 ;;  (define gui (<gui> :vertical-layout))
   
 
+
+(define (place-to-string place)
+  (if (eq? 'same-place place)
+      'same-place
+      (<-> (* 1.0 place))))
