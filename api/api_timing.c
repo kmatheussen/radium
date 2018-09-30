@@ -68,7 +68,7 @@ void setMainSignature(int numerator, int denominator){
 }
 
 Place getMainSignature(void){
-  return place(0,(int)root->signature.numerator,(int)root->signature.denominator);
+  return p_Create(0,(int)root->signature.numerator,(int)root->signature.denominator);
 }
 
 int numSignatures(int blocknum, int windownum){
@@ -124,9 +124,9 @@ int addSignature3(int numerator, int denominator,
 Place getSignature(int signaturenum, int blocknum, int windownum){
   struct Signatures *signature = getSignatureFromNum(windownum, blocknum, signaturenum);
   if (signature==NULL)
-    return place(0,-1,1);
+    return p_Create(0,-1,1);
   else
-    return place(0, (int)signature->signature.numerator, (int)signature->signature.denominator);
+    return p_Create(0, (int)signature->signature.numerator, (int)signature->signature.denominator);
 }
 
 /******************* LPBs *************************/
@@ -369,17 +369,17 @@ Place getTemponodePlace(int num, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
 
   struct Blocks *block = wblock->block;
   struct TempoNodes *temponode = ListFindElement3_num(&block->temponodes->l, num);
   if (temponode==NULL) {
     handleError("No temponode %d in block %d%s",num,blocknum,blocknum==-1?" (i.e. current block)":"");
-    return place(0,0,1);
+    return p_Create(0,0,1);
   }
 
   if (temponode->l.next==NULL)  // don't expose weirdness to the scripting interface.
-    return place(block->num_lines,0,1);
+    return p_Create(block->num_lines,0,1);
   
   return temponode->l.p;
 }
@@ -533,7 +533,7 @@ dyn_t API_getAllTemponodes(const struct Blocks *block){
   while(temponode != NULL){
     hash_t *hash = HASH_create(3);
 
-    const Place p = temponode->l.next==NULL ? place(block->num_lines,0,1) : temponode->l.p; // don't expose weirdness to the scripting interface.
+    const Place p = temponode->l.next==NULL ? p_Create(block->num_lines,0,1) : temponode->l.p; // don't expose weirdness to the scripting interface.
     
     HASH_put_dyn(hash, ":place", DYN_create_place(p));
     HASH_put_float(hash, ":tempo-multiplier", RelTempo2RealRelTempo(temponode->reltempo));

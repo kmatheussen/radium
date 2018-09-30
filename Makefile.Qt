@@ -1410,12 +1410,14 @@ $(P)Qt_mixer_direction_menu.h: $(BUILD_DEPENDENCIES) $(P)qt4_mixer_direction_men
 
 
 
-Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(P)Qt_soundfilesaver_widget.h
+Qt_soundfilesaver_widget_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(P)Qt_soundfilesaver_widget.h $(P)mQt_soundfilesaver_widget_callbacks.cpp
 	$(CCC) $(P)Qt_soundfilesaver_widget_callbacks.cpp $(QTOPT)  $(SNDFILEOPT)
+
+$(P)mQt_soundfilesaver_widget_callbacks.cpp: $(P)Qt_soundfilesaver_widget_callbacks.cpp
+	cd $(P) && $(MOC) Qt_soundfilesaver_widget_callbacks.cpp >mQt_soundfilesaver_widget_callbacks.cpp
 
 $(P)Qt_soundfilesaver_widget.h: $(BUILD_DEPENDENCIES) $(P)qt4_soundfilesaver_widget.ui $(P)Qt_soundfilesaver_widget_callbacks.cpp
 	cd $(P) && $(UIC) qt4_soundfilesaver_widget.ui | sed s/protected/public/ | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_soundfilesaver_widget.h
-	cd $(P) && $(MOC) Qt_soundfilesaver_widget_callbacks.cpp >mQt_soundfilesaver_widget_callbacks.cpp
 
 
 

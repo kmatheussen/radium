@@ -174,7 +174,7 @@ int getNumTracksInRange(void){
 
 Place getRangeLength(void){
   if (range==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
 
   return range->length;
 }
@@ -251,7 +251,7 @@ Place getRangeStartPlace(int blocknum, int windownum){
                            );
 
   if(wblock==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
 
   if (p_Greater_Than(wblock->rangey1, p_Last_Pos(wblock->block)))
     return p_Last_Pos(wblock->block);
@@ -270,7 +270,7 @@ Place getRangeEndPlace(int blocknum, int windownum){
                            );
 
   if(wblock==NULL)
-    return place(1,0,1);
+    return p_Create(1,0,1);
 
   if (p_Greater_Than(wblock->rangey1, p_Create(wblock->block->num_lines, 0, 1)))
     return p_Create(wblock->block->num_lines, 0, 1);

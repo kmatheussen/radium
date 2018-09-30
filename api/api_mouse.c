@@ -186,7 +186,7 @@ Place getPlaceInGridFromY(float y, int blocknum, int windownum) {
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
 
   // This is a hack, but it's a relatively clean one, and modifying GetReallineAndPlaceFromY is a quite major work (old code, hard to understand, it should be rewritten).
   float abs_y = (y-wblock->t.y1) + wblock->top_realline*window->fontheight;
@@ -214,7 +214,7 @@ Place getNextPlaceInGridFromY(float y, int blocknum, int windownum) {
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
 
   // This is a hack, but it's a relatively clean one, and modifying GetReallineAndPlaceFromY is a quite major work (old code, hard to understand, it should be rewritten).
   float abs_y = (y-wblock->t.y1) + wblock->top_realline*window->fontheight;
@@ -1903,7 +1903,7 @@ Place getPitchStart(int pitchnum,  dyn_t dynnote, int tracknum, int blocknum, in
   struct WTracks *wtrack;
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
 
   bool is_end_pitch = false;
   struct Notes *note = NULL;
@@ -1941,7 +1941,7 @@ Place getPitchnumLogtype(int num,  int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack;
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
 
   return getPitchnumLogtype_internal(num, wtrack->track);
 }
@@ -2617,12 +2617,12 @@ Place getFxnodePlace(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
   struct WTracks *wtrack;
   struct FXs *fxs = getFXsFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, fxnum);
   if (fxs==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
   
   const vector_t *nodes = GetFxNodes(window, wblock, wtrack, fxs);
   struct Node *node = VECTOR_get2(nodes, fxnodenum, "fx node");
   if (node==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
 
   struct FXNodeLines *fxnodeline = (struct FXNodeLines*)node->element;
 
@@ -3029,23 +3029,23 @@ extern struct Range *range;
 
 Place getFxrangenodePlace(int fxnodenum, int fxnum, int rangetracknum){
   if (range==NULL)
-    return place(0,0,1);
+    return p_Create(0,0,1);
 
   if (rangetracknum >= range->num_tracks || rangetracknum < 0 || fxnum < 0){
     handleError("rangetracknum >= range->num_tracks: %d >= %d (fxnum: %d)",rangetracknum, range->num_tracks, fxnum);
-    return place(0,0,1);
+    return p_Create(0,0,1);
   }
   
   struct FXs *fxs = VECTOR_get2(&range->fxs[rangetracknum], fxnum, "fxs");
   if (fxs==NULL){
-    return place(0,0,1);
+    return p_Create(0,0,1);
   }
   
   struct FXNodeLines *fxnodeline = ListFindElement3_num_r0(&fxs->fxnodelines->l, fxnodenum);
 
   if (fxnodeline==NULL){
     handleError("getFxrangenodeValue: fxnodenum >= getNumFxrangenodes: %d >= %d",fxnodenum, getNumFxrangenodes(fxnum, rangetracknum));
-    return place(0,0,1);
+    return p_Create(0,0,1);
   }
 
   return fxnodeline->l.p;
