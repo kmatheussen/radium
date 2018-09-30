@@ -972,11 +972,6 @@
   )
 
 
-(define-struct editorautomation-node
-  :place
-  :x
-  :logtype)
-
 (define-struct editorautomation-move
   :Num
   :nodes
@@ -5331,6 +5326,7 @@
   (add-node-mouse-handler :Get-area-box (lambda()
                                           (and *current-seqblock-info*
                                                (not *current-seqautomation/distance*)
+                                               (or is-stretch (<ra> :seqtrack-for-audiofiles (*current-seqblock-info* :seqtracknum)))
                                                (let ((box (if is-stretch
                                                               (if is-left
                                                                   (<ra> :get-box seqblock-left-stretch (*current-seqblock-info* :seqblocknum) (*current-seqblock-info* :seqtracknum))
