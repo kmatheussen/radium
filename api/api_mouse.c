@@ -1151,12 +1151,17 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
   if (what_to_get==PIANONOTE_INFO_VALUE){
     if (pianonotenum==0)
       return note->note;
-    
-    //if (pianonotenum==getNumPianonotes(notenum,tracknum,blocknum,windownum))
-    //  return note->end_pitch;
-    
+
     struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
     if (pitch==NULL){
+
+      if (ListFindNumElements3(&note->pitches->l)+1==pianonotenum){
+        if (pianonotenum==1 && note->pitch_end == 0)
+          return note->note;
+        else
+          return note->pitch_end;
+      }
+    
       handleError("There is no pianonote #%d in note %d in track #%d in block #%d",pianonotenum,(int)note->id,tracknum,blocknum);
       return 0;
     }
@@ -1276,10 +1281,10 @@ static void setPianoNoteValues(float value, int pianonotenum, struct Notes *note
   
 }
 
-static Place getPianoNotePlace(int pianonotenum, struct Notes *note){
+static Place get_pianonote_place(int pianonotenum, struct Notes *note){
   if (pianonotenum==0)
     return note->l.p;
-  
+
   struct Pitches *pitch = ListFindElement3_num_r0(&note->pitches->l, pianonotenum-1);
   if (pitch==NULL){
     handleError("There is no pianonote %d",pianonotenum);
@@ -1289,6 +1294,19 @@ static Place getPianoNotePlace(int pianonotenum, struct Notes *note){
   return pitch->l.p;
 }
 
+Place getPianonotePlace(int pianonotenum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  if (note==NULL)
+    return p_Create(0,0,1);
+
+  if (ListFindNumElements3(&note->pitches->l)+1==pianonotenum)
+    return note->end;
+  
+  return get_pianonote_place(pianonotenum, note);
+}
 
 static int getPitchNumFromPianonoteNum(int pianonotenum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
@@ -1407,7 +1425,7 @@ dyn_t movePianonote(int pianonotenum, float value, Place place, dyn_t dynnote, i
   
   struct Tracks *track = wtrack->track;
 
-  Place old_place = getPianoNotePlace(pianonotenum, note);
+  Place old_place = get_pianonote_place(pianonotenum, note);
   float old_floatplace = GetfloatFromPlace(&old_place);
   float diff      = floatplace - old_floatplace;
 
@@ -1978,6 +1996,28 @@ void setPitchnumLogtype(int logtype, int pitchnum, int tracknum, int blocknum, i
   setPitchnumLogtype2(logtype, pitchnum, wtrack->track);
 }
 
+int getNotenumForPitchnum(int pitchnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+
+  if (wtrack==NULL)
+    return -1;
+
+  struct Tracks *track = wtrack->track;
+  
+  bool is_end_pitch = false;
+  struct Notes *note = NULL;
+  struct Pitches *pitch = NULL;
+
+  if (getPitch(pitchnum, &pitch, &note, &is_end_pitch, track)==false)
+    return -1;
+
+  R_ASSERT_RETURN_IF_FALSE2(note!=NULL, -1);
+  
+  return ListPosition3(&track->notes->l, &note->l);
+}
+
 
 
 static int getReallineForPitch(const struct WBlocks *wblock, struct Pitches *pitch, struct Notes *note, bool is_end_pitch){
@@ -2102,6 +2142,33 @@ float getPitchnumY(int num, int tracknum, int blocknum, int windownum){
 
 float getPitchnumValue(int pitchnum, int tracknum, int blocknum, int windownum){
   return getPitchInfo(PITCH_INFO_VALUE, pitchnum, tracknum, blocknum, windownum);
+}
+
+Place getPitchnumPlace(int pitchnum, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+
+  if (wtrack==NULL)
+    return p_Create(0,0,1);
+
+  struct Tracks *track = wtrack->track;
+  
+  bool is_end_pitch = false;
+  struct Notes *note = NULL;
+  struct Pitches *pitch = NULL;
+
+  if (getPitch(pitchnum, &pitch, &note, &is_end_pitch, track)==false)
+    return p_Create(0,0,1);
+
+  R_ASSERT_RETURN_IF_FALSE2(note!=NULL, p_Create(0,0,1));
+
+  if (is_end_pitch)
+    return note->end;
+  else if (pitch==NULL)
+    return note->l.p;
+  else
+    return pitch->l.p;
 }
 
 void setCurrentPitchnum(int num, int tracknum, int blocknum){
@@ -3257,11 +3324,19 @@ bool extraPressed(void){
 
 bool metaPressed(void){
   //return LeftExtra(tevent.keyswitch);
-  return MetaPressed();
+  return MetaPressed(); // osx: ctrl.
 }
 
 bool altPressed(void){
-  return AltPressed(); //AnyAlt(tevent.keyswitch);
+  return AltPressed();
+}
+
+bool alt2Pressed(void){
+#if FOR_MACOSX
+  return MetaPressed(); // osx: ctrl.
+#else
+  return AltPressed();
+#endif
 }
 
 
@@ -3355,6 +3430,16 @@ void moveAbsMousePointer(float x, float y, int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if (window!=NULL)
     MoveAbsPointer(window, x, y);
+}
+
+bool isLeftMousePressed(void){
+  return GetMouseButtons() & (2<<TR_LEFTMOUSEDOWN);
+}
+bool isRightMousePressed(void){
+  return GetMouseButtons() & (2<<TR_RIGHTMOUSEDOWN);
+}
+bool isMiddleMousePressed(void){
+  return GetMouseButtons() & (2<<TR_MIDDLEMOUSEDOWN);
 }
 
 float getMousePointerX(int windownum){

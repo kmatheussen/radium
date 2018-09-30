@@ -243,12 +243,36 @@
            *mouse-cycles*))
 
 (define *check-mouse-shift-key* #t)
+
+(define (move-all-nodes?)
+  '(c-display "move-all:"
+              *check-mouse-shift-key*
+              (<ra> :shift-pressed)
+              (<ra> :control2-pressed)
+              "left:" (<ra> :is-left-mouse-pressed)
+              "right:" (<ra> :is-right-mouse-pressed)
+              "middle:" (<ra> :is-middle-mouse-pressed))
+  
+  (if #t
+      (if #t
+          (if (or #t (<ra> :release-mode))
+              (<ra> :alt2-pressed)
+              (<ra> :control-pressed))
+          (or (<ra> :is-middle-mouse-pressed)
+              (and (<ra> :is-left-mouse-pressed)
+                   (<ra> :is-right-mouse-pressed))))
+      (and *check-mouse-shift-key*
+           (<ra> :shift-pressed)
+           (<ra> :control2-pressed))))
+
 (define (only-y-direction)
   (and *check-mouse-shift-key*
+       (not (<ra> :control2-pressed))
        (<ra> :shift-pressed)))
 
 (define (only-x-direction)
-  (<ra> :control2-pressed))
+  (and (not (<ra> :shift-pressed))
+       (<ra> :control2-pressed)))
 
 (delafina (add-delta-mouse-handler :press :move-and-release :release #f :mouse-pointer-is-hidden-func #f)
   (define prev-x #f)
@@ -724,6 +748,25 @@
                (else
                 (find-node-horizontal $x $y $get-node-box $num-nodes (1+ $num)))))))
 
+(delafina (find-closest-node-horizontal :$x
+                                        :$get-node-box
+                                        :$num-nodes)
+  (let loop ((min-distance 10000000000)
+             (closest-num #f)
+             ($num 0))
+    (if (= $num $num-nodes)
+        closest-num
+        (let* ((box ($get-node-box $num))
+               (box-x (/ (+ (box :x1) (box :x2)) 2))
+               (distance (abs (- $x box-x))))
+          (if (< distance min-distance)
+              (loop distance
+                    $num
+                    (1+ $num))
+              (loop min-distance
+                    closest-num
+                    (1+ $num)))))))
+
 
 (define-struct move-node-handler
   :move
@@ -927,6 +970,18 @@
   (push-back! *create-new-node-mouse-cycles* create-new-node-mouse-cycle)
 
   )
+
+
+(define-struct editorautomation-node
+  :place
+  :x
+  :logtype)
+
+(define-struct editorautomation-move
+  :Num
+  :nodes
+  :start-Place
+  :notenum #f)
 
       
 
@@ -1845,6 +1900,17 @@
              (c-display "inside" $x $y))))
 ||#
 
+
+(define-struct temponode-info
+  :place
+  :value)
+
+(define (get-temponode-infos)
+  (map (lambda (num)
+         (make-temponode-info :place (<ra> :get-temponode-place num)
+                              :value (<ra> :get-temponode-value num)))
+       (iota (<ra> :get-num-temponodes))))
+
 (define (show-temponode-in-statusbar value)
   (define actual-value (if (< value 0) ;; see reltempo.c
                            (/ 1
@@ -1869,34 +1935,75 @@
          1
          (- (1- (<ra> :get-temponode-max)))
          (1- (<ra> :get-temponode-max))))
-         
+
+(define (find-closest-temponode Y)
+  (find-closest-node (<ra> :get-num-temponodes)
+                     (lambda (nodenum)
+                       (abs (- Y (<ra> :get-temponode-y nodenum))))))
+
 (add-node-mouse-handler :Get-area-box (lambda () (and (<ra> :reltempo-track-visible) (<ra> :get-box temponode-area)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (match (list (find-node X Y get-temponode-box (<ra> :get-num-temponodes)))
-                                                         (existing-box Num Box) :> (callback Num (temponodeval->01 (<ra> :get-temponode-value Num)) (Box :y))
-                                                         _                      :> #f))
-                        :Get-min-value (lambda (_) 0);(- (1- (<ra> :get-temponode-max))))
-                        :Get-max-value (lambda (_) 1);(1- (<ra> :get-temponode-max)))
-                        :Get-x (lambda (Num)
-                                 (<ra> :get-temponode-x Num))
-                        :Get-y (lambda (Num) (<ra> :get-temponode-y Num))
-                        :Make-undo (lambda (_) (ra:undo-temponodes))
+                                                  (let ((Num (match (list (find-node X Y get-temponode-box (<ra> :get-num-temponodes)))
+                                                                    (existing-box Num Box) :> Num
+                                                                    _                      :> (and (move-all-nodes?)
+                                                                                                   (find-closest-temponode Y)))))
+                                                    (and Num
+                                                         (callback (make-editorautomation-move :Num Num
+                                                                                               :nodes (get-temponode-infos)
+                                                                                               :start-Place (get-place-from-y 0 Y))
+                                                                   0 Y))))
+                                                         
+                        :Get-min-value (lambda (_)
+                                         -1);(- (1- (<ra> :get-temponode-max))))
+                        :Get-max-value (lambda (_)
+                                         1);(1- (<ra> :get-temponode-max)))
+                        :Get-x (lambda (editormove)
+                                 (<ra> :get-temponode-x (editormove :Num)))
+                        :Get-y (lambda (editormove)
+                                 (<ra> :get-temponode-y (editormove :Num)))
+                        :Make-undo (lambda (_)
+                                     (ra:undo-temponodes))
                         :Create-new-node (lambda (X Place callback)
                                            (define Value (scale X (<ra> :get-temponode-area-x1) (<ra> :get-temponode-area-x2) 0 1))
                                            (define Num (<ra> :add-temponode (01->temponodeval Value) Place))
                                            (if (= -1 Num)
                                                #f
-                                               (callback Num (temponodeval->01 (<ra> :get-temponode-value Num)))))
-                        :Move-node (lambda (Num Value Place)
-                                     (<ra> :set-temponode Num (01->temponodeval Value) Place)
-                                     (define new-value (<ra> :get-temponode-value Num)) ;; might differ from Value
-                                     ;;(c-display "Place/New:" Place (<ra> :get-temponode-value Num))
-                                     (temponodeval->01 new-value)
-                                     Num
+                                               ;;(callback Num (temponodeval->01 (<ra> :get-temponode-value Num)))))
+                                               (callback (make-editorautomation-move :Num Num
+                                                                                     :nodes (get-temponode-infos)
+                                                                                     :start-Place Place)
+                                                         0)))
+                        
+                        :Move-node (lambda (editormove delta-Value Place)
+                                     (define-constant delta-Place (if (eq? 'same-place Place)
+                                                                      Place
+                                                                      (- Place (editormove :start-Place))))
+                                     (define-constant nodes (editormove :nodes))
+                                     (define temponode-info (nodes (editormove :Num)))
+
+                                     (define (doit temponode-info temponodenum)
+                                       (define Value (between 0
+                                                              (+ delta-Value (temponodeval->01 (temponode-info :value)))
+                                                              1))
+                                       ;;(c-display "delta-place:" delta-Place ". vel-place:" (velocity-info :place))
+                                       (define Place (if (eq? 'same-place delta-Place)
+                                                         'same-place
+                                                         (max 0 (+ delta-Place (temponode-info :place)))))
+
+                                       (<ra> :set-temponode temponodenum (01->temponodeval Value) Place))
+
+                                     (if (move-all-nodes?)
+                                         (for-each doit
+                                                   nodes
+                                                   (iota (length nodes)))
+                                         (doit temponode-info (editormove :Num)))
+
+                                     editormove
                                      )
-                        :Publicize (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
-                                     (set-indicator-temponode Num)
-                                     (show-temponode-in-statusbar (<ra> :get-temponode-value Num)))
+                        
+                        :Publicize (lambda (editormove) ;; this version works though. They are, or at least, should be, 100% functionally similar.
+                                     (set-indicator-temponode (editormove :Num))
+                                     (show-temponode-in-statusbar (<ra> :get-temponode-value (editormove :Num))))
                         :Get-pixels-per-value-unit #f
                         )                        
 
@@ -1974,6 +2081,26 @@
           #f))
 ||#
 
+(define-struct pitchnum-info
+  :place
+  :value
+  :Num)  
+
+(define (get-pitchnum-infos notenum tracknum)
+  (define num-pitchnums (<ra> :get-num-pitchnums tracknum))
+  (let loop ((pitchnum 0))
+    (if  (= pitchnum num-pitchnums)
+         '()
+         (let ((notenum2 (<ra> :get-notenum-for-pitchnum pitchnum tracknum)))
+           (cond ((< notenum2 notenum)
+                  (loop (1+ pitchnum)))
+                 ((> notenum2 notenum)
+                  '())
+                 (else
+                  (cons (make-pitchnum-info :place (<ra> :get-pitchnum-place pitchnum tracknum)
+                                            :value (<ra> :get-pitchnum-value pitchnum tracknum)
+                                            :Num pitchnum)
+                        (loop (1+ pitchnum)))))))))
 
 (define-match get-min-pitch-in-current-track-0
   N N   #f           :> 0
@@ -2007,28 +2134,44 @@
                                         (<ra> :get-num-pitchnums *current-track-num*)
                                         #f)))
 
+(define (find-closest-pitchnum tracknum Y)
+  (find-closest-node (<ra> :get-num-pitchnums tracknum)
+                     (lambda (nodenum)
+                       (abs (- Y (<ra> :get-pitchnum-y nodenum tracknum))))))
+
 ;; add and move pitch
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
                                              (<ra> :get-box track-notes *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  '(c-display "hepp"
-                                                              (may-be-a-resize-point-in-track X Y *current-track-num*)
-                                                              (list (find-node X Y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*))))
-                                                  (and *current-track-num*
-                                                       (not (may-be-a-resize-point-in-track X Y *current-track-num*))
-                                                       (match (list (find-node X Y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*)))
-                                                              (existing-box Num Box) :> (callback Num (<ra> :get-pitchnum-value Num *current-track-num*) (Box :y))
-                                                              _                      :> #f)))
+                                                  (let* ((num-pitchnums (<ra> :get-num-pitchnums *current-track-num*))
+                                                         (Num (match (list (find-node X Y get-pitchnum-box num-pitchnums))
+                                                                     (existing-box Num Box) :> Num
+                                                                     _                      :> (and (> num-pitchnums 0)
+                                                                                                    (move-all-nodes?)
+                                                                                                    (find-closest-pitchnum *current-track-num* Y)))))
+                                                    (and Num
+                                                         (let* ((notenum (<ra> :get-notenum-for-pitchnum Num *current-track-num*))
+                                                                (pitchnum-infos (get-pitchnum-infos notenum *current-track-num*)))
+                                                           (callback (make-editorautomation-move :Num (- Num
+                                                                                                         ((car pitchnum-infos) :Num))
+                                                                                                 :nodes pitchnum-infos
+                                                                                                 :start-Place (get-place-from-y 0 Y)
+                                                                                                 :notenum notenum)
+                                                                     0 Y)))))
                         :Get-min-value (lambda (_)
-                                         (get-min-pitch-in-current-track))
+                                         -128)
+                        ;;(get-min-pitch-in-current-track))
                         :Get-max-value (lambda (_)
-                                         (get-max-pitch-in-current-track))
-                        :Get-x (lambda (Num)
+                                         128)
+                        ;;(get-max-pitch-in-current-track))
+                        :Get-x (lambda (editormove)
                                  ;;(c-display "    NUM----> " Num)
-                                 (<ra> :get-pitchnum-x Num *current-track-num*))
-                        :Get-y (lambda (Num)
-                                 (<ra> :get-pitchnum-y Num *current-track-num*))
+                                 (define pitchnum-info (editormove :nodes (editormove :Num)))
+                                 (<ra> :get-pitchnum-x (pitchnum-info :Num) *current-track-num*))
+                        :Get-y (lambda (editormove)
+                                 (define pitchnum-info (editormove :nodes (editormove :Num)))
+                                 (<ra> :get-pitchnum-y (pitchnum-info :Num) *current-track-num*))
                         :Make-undo (lambda (_) (<ra> :undo-notes *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            (if (place-is-last-place Place)
@@ -2042,17 +2185,70 @@
                                                  (define Num (<ra> :add-pitchnum Value Place *current-track-num*))
                                                  (if (= -1 Num)
                                                      #f
-                                                     (callback Num (<ra> :get-pitchnum-value Num *current-track-num*))))))
-                        :Move-node (lambda (Num Value Place)                                     
-                                     (<ra> :set-pitchnum Num
-                                                        (if (<ra> :control-pressed)
-                                                            Value
-                                                            (round Value))
-                                                        Place
-                                                        *current-track-num*))
-                        :Publicize (lambda (Num)
-                                     (set-indicator-pitchnum Num *current-track-num*)
-                                     (set-editor-statusbar (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value Num *current-track-num*)))))
+                                                     (let* ((notenum (<ra> :get-notenum-for-pitchnum Num *current-track-num*))
+                                                            (pitchnum-infos (get-pitchnum-infos notenum *current-track-num*)))
+                                                       (callback (make-editorautomation-move :Num (- Num
+                                                                                                     ((car pitchnum-infos) :Num))
+                                                                                             :nodes pitchnum-infos
+                                                                                             :start-Place Place
+                                                                                             :notenum notenum)
+                                                                 0))))))
+                        
+                        :Move-node (lambda (editormove delta-Value Place)
+                                     (define-constant delta-Place (if (eq? 'same-place Place)
+                                                                      Place
+                                                                      (- Place (editormove :start-Place))))
+                                     (define-constant nodes (editormove :nodes))
+
+                                     (define notenum (editormove :notenum))
+                                     (define pianonotenum (editormove :Num))
+
+                                     (define move-func-and-pianonotenum
+                                       (cond ((move-all-nodes?)
+                                              (list ra:move-pianonote
+                                                    0))
+                                             ((= pianonotenum (- (<ra> :get-num-pitches notenum *current-track-num*)
+                                                                 1))
+                                              (list ra:move-pianonote-end
+                                                    (- pianonotenum 1)))
+                                             (else
+                                              (list ra:move-pianonote-start
+                                                    pianonotenum))))
+
+                                     (define move-func (car move-func-and-pianonotenum))
+                                     (set! pianonotenum (cadr move-func-and-pianonotenum))
+
+                                     (define pitchnum-info (nodes pianonotenum))
+
+                                     (define Value (between 0
+                                                            (+ delta-Value (pitchnum-info :value))
+                                                            128))
+                                     
+                                     (define Place (if (eq? 'same-place delta-Place)
+                                                       'same-place
+                                                       (max 0 (+ delta-Place (pitchnum-info :place)))))
+
+                                     ;;(c-display "Value/delta-Value/pitchnumvalue:" Value delta-Value (pitchnum-info :value))
+                                     ;;(c-display "Place/delta-Place/pitchnumplace:" (map place-to-string (list Place delta-Place (pitchnum-info :place))))
+                                     
+                                     (define new-notenum
+                                       (move-func pianonotenum
+                                                  (if (<ra> :control-pressed)
+                                                      Value
+                                                      (round Value))
+                                                  Place
+                                                  notenum
+                                                  *current-track-num*))
+
+                                     (copy-hash editormove
+                                                :notenum new-notenum)
+                                     )
+                        
+                        :Publicize (lambda (editormove)
+                                     (define pitchnum-info (editormove :nodes (editormove :Num)))
+                                     (set-indicator-pitchnum (pitchnum-info :Num) *current-track-num*)
+                                     (set-editor-statusbar (<-> "Pitch: " (two-decimal-string (<ra> :get-pitchnum-value (pitchnum-info :Num) *current-track-num*)))))
+                        
                         :Get-pixels-per-value-unit (lambda (_)
                                                      5.0)
                         )
@@ -2233,7 +2429,7 @@
   (callback info
             (if is-end-pitch 
                 (<ra> :get-note-end-pitch (info :notenum)
-                                       (info :tracknum))
+                                          (info :tracknum))
                 (<ra> :get-pianonote-value (if portamento-enabled
                                             value-pianonote-num
                                             0)
@@ -2318,6 +2514,9 @@
                                                             (pianonote-info :notenum)
                                                             (pianonote-info :tracknum)))
                         :Move-node (lambda (pianonote-info Value Place)
+                                     (define pianonotenum (pianonote-info :pianonotenum))
+                                     (define notenum (pianonote-info :notenum))
+                                     (define tracknum (pianonote-info :tracknum))
                                      ;;(c-display "moving to. Value: " Value ", Place: " Place " type: " (pianonote-info :move-type) " pianonotenum:" (pianonote-info :pianonotenum))
                                      (define func
                                        (cond ((eq? (pianonote-info :move-type)
@@ -2332,12 +2531,40 @@
                                              (else
                                               (c-display "UNKNOWN pianonote-info type: " (pianonote-info :move-type))
                                               #f)))
+
+                                     (when (and (not (eq? (pianonote-info :move-type)
+                                                          *pianonote-move-all*))
+                                                (move-all-nodes?))               
+                                       (let* ((pianonotenum2 (if (eq? (pianonote-info :move-type)
+                                                                      *pianonote-move-end*)
+                                                                 (1+ pianonotenum)
+                                                                 pianonotenum))
+                                              (diff-Value (- (<ra> :get-pianonote-value pianonotenum2 notenum tracknum)
+                                                             (<ra> :get-pianonote-value 0 notenum tracknum)))
+                                              (diff-Place (if (eq? Place 'same-place)
+                                                              Place
+                                                              (- (<ra> :get-pianonote-place pianonotenum2 notenum tracknum)
+                                                                 (<ra> :get-pianonote-place 0 notenum tracknum)))))                                                                       
+                                         (set! Value (- Value diff-Value))
+                                         (set! Place (if (or (eq? Place 'same-place)
+                                                             (eq? diff-Place 'same-place))
+                                                         Place
+                                                         (- Place diff-Place)))
+                                         '(c-display pianonotenum2 ":diff-Place:" diff-Place
+                                                     ". 1:" (* 1.0 (<ra> :get-pianonote-place 0 notenum tracknum))
+                                                     ". 2:" (* 1.0 (<ra> :get-pianonote-place pianonotenum2 notenum tracknum)))
+                                         '(c-display pianonotenum2 ":diff-Value:" diff-Value
+                                                     ". 1:" (* 1.0 (<ra> :get-pianonote-value 0 notenum tracknum))
+                                                     ". 2:" (* 1.0 (<ra> :get-pianonote-value pianonotenum2 notenum tracknum)))
+                                         (set! pianonotenum 0)
+                                         (set! func ra:move-pianonote)))
+                                             
                                      ;(c-display "value:" (<ra> :control-pressed) (if (<ra> :control-pressed)
                                      ;                                             Value
                                      ;                                             (round Value))
                                      ;           Value)
                                      (define new-notenum
-                                       (func (pianonote-info :pianonotenum)
+                                       (func pianonotenum
                                              (if (<ra> :control-pressed)
                                                  Value
                                                  (round Value))
@@ -2379,7 +2606,6 @@
 
                         :Forgiving-box #f
                         )
-
 
 
 ;; highlight current pianonote
@@ -2639,9 +2865,35 @@
   :notenum
   :velocitynum
   :value
-  :y  
+  :place
+  :logtype
+  :x
+  :y
   )
 
+(delafina (make-velocity-info2 :velocitynum
+                               :notenum
+                               :tracknum
+                               :x #f
+                               :y #f
+                               :value #f
+                               :place #f
+                               :logtype #f)
+  (make-velocity-info :velocitynum velocitynum
+                      :notenum notenum
+                      :tracknum tracknum
+                      :value (or value (<ra> :get-velocity-value velocitynum notenum tracknum))
+                      :place (or place (<ra> :get-velocity-place velocitynum notenum tracknum))
+                      :logtype (or logtype (<ra> :get-velocity-logtype velocitynum notenum tracknum))
+                      :x (or x (<ra> :get-velocity-x velocitynum notenum tracknum))
+                      :y (or y (<ra> :get-velocity-y velocitynum notenum tracknum))
+                      ))
+
+(define (get-velocity-infos notenum tracknum)
+  (map (lambda (velocitynum)
+         (make-velocity-info2 velocitynum notenum tracknum))
+       (iota (<ra> :get-num-velocities notenum tracknum))))
+                               
 (define (velocity-info-rating Y Vi)
   (define velocity-y (<ra> :get-velocity-y (Vi :velocitynum) (Vi :notenum) (Vi :tracknum)))
   (cond ((and (= 0
@@ -2688,12 +2940,7 @@
                                                              (highest-rated-velocity-info Y
                                                                                           (list (get-velocity-2 X Y Tracknum Notenum (1+ Velocitynum) Total-Velocities)
                                                                                                 (and (inside-box box X Y)
-                                                                                                     (make-velocity-info :velocitynum Velocitynum
-                                                                                                                         :notenum Notenum
-                                                                                                                         :tracknum Tracknum
-                                                                                                                         :value (<ra> :get-velocity-value Velocitynum Notenum Tracknum)
-                                                                                                                         :y (box :y)
-                                                                                                                         )))))))
+                                                                                                     (make-velocity-info2 Velocitynum Notenum Tracknum (box :x) (box :y))))))))
 
 (define-match get-velocity-1
   X Y Tracknum Notenum Notenum     :> #f
@@ -2775,29 +3022,85 @@
                                         (<ra> :get-velocity-x 1 *current-note-num* *current-track-num*)
                                         (<ra> :get-velocity-y 1 *current-note-num* *current-track-num*))))
 
+(define (find-closest-node num-nodes get-distance)
+  (let loop ((nodenum 0)
+             (shortest-num -1)
+             (shortest-distance 9999999999))
+    (if (= nodenum num-nodes)
+        shortest-num
+        (let ((distance (get-distance nodenum)))
+          (if (< distance shortest-distance)
+              (loop (1+ nodenum)
+                    nodenum
+                    distance)
+              (loop (1+ nodenum)
+                    shortest-num
+                    shortest-distance))))))
 
+(define (find-closest-velocity tracknum notenum Y)
+  (find-closest-node (<ra> :get-num-velocities notenum tracknum)
+                     (lambda (nodenum)
+                       (abs (- Y (<ra> :get-velocity-y nodenum notenum tracknum))))))
+                                     
 
 ;; add and move velocity
+;;
+;; Note: We don't use (velocity-info :notenum) here, instead we use (editormove :notenum), so we don't have to update (velocity-info :notenum) for all velocities when notenum changes.
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
                                              (<ra> :get-box track-fx *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (let ((velocity-info (get-velocity-info X Y *current-track-num*)))
                                                     ;;(c-display "vel-info:" velocity-info)
-                                                    (and velocity-info
-                                                         (callback velocity-info
-                                                                   (velocity-info :value)
-                                                                   (velocity-info :y)))))
-                        :Get-min-value (lambda (_) 0.0)
-                        :Get-max-value (lambda (_) 1.0)
-                        :Get-x (lambda (info)
-                                 (<ra> :get-velocity-x (info :velocitynum)
-                                       (info :notenum)
+                                                    ;;(c-display "infos:" (velocity-info :notenum) *current-track-num*)
+                                                    (define notenum (cond (velocity-info
+                                                                           (velocity-info :notenum))
+                                                                          ((and *current-note-num*
+                                                                                (move-all-nodes?))
+                                                                           *current-note-num*)
+                                                                          (else
+                                                                           #f)))
+                                                    (define velocitynum (cond (velocity-info
+                                                                               (velocity-info :velocitynum))
+                                                                              (notenum
+                                                                               (find-closest-velocity *current-track-num* notenum Y))
+                                                                              (else
+                                                                               #f)))
+                                                    (and velocitynum
+                                                         (callback (make-editorautomation-move :Num velocitynum
+                                                                                               :nodes (get-velocity-infos notenum
+                                                                                                                          *current-track-num*)
+                                                                                               :start-Place (get-place-from-y 0 Y)
+                                                                                               :notenum notenum)
+                                                                   0 Y))))                                                 
+                        :Get-min-value (lambda (editormove)
+                                         (define info (editormove :nodes (editormove :Num)))
+                                         (if (move-all-nodes?)
+                                             -1.0
+                                             (- (info :value))))
+                        :Get-max-value (lambda (editormove)
+                                         (define info (editormove :nodes (editormove :Num)))
+                                         (if (move-all-nodes?)
+                                             1.0
+                                             (- 1.0 (info :value))))
+                        :Get-pixels-per-value-unit (lambda (editormove)
+                                                     (- (<ra> :get-track-fx-x2)
+                                                        (<ra> :get-track-fx-x1)))
+                        :Get-x (lambda (editormove)
+                                 (define info (editormove :nodes (editormove :Num)))
+                                 (<ra> :get-velocity-x
+                                       (info :velocitynum)
+                                       (editormove :notenum)
                                        (info :tracknum)))
-                        :Get-y (lambda (info) (<ra> :get-velocity-y (info :velocitynum)
-                                                    (info :notenum)
-                                                    (info :tracknum)))
-                        :Make-undo (lambda (info) (<ra> :undo-notes (info :tracknum)))
+                        :Get-y (lambda (editormove)
+                                 (define info (editormove :nodes (editormove :Num)))
+                                 (<ra> :get-velocity-y
+                                       (info :velocitynum)
+                                       (editormove :notenum)
+                                       (info :tracknum)))
+                        :Make-undo (lambda (editormove)
+                                     (define info (editormove :nodes (editormove :Num)))
+                                     (<ra> :undo-notes (info :tracknum)))
                         :Create-new-node (lambda (X Place callback)
                                            ;;(c-display "a" Place)
                                            (and *current-note-num*
@@ -2812,30 +3115,50 @@
                                                   (define Num (<ra> :add-velocity-dont-display-errors Value Place *current-note-num* *current-track-num*))
                                                   (if (= -1 Num)
                                                       #f
-                                                      (callback (make-velocity-info :tracknum *current-track-num*
-                                                                                    :notenum *current-note-num*
-                                                                                    :velocitynum Num
-                                                                                    :value Value
-                                                                                    :y #f ;; dont need it.
-                                                                                    )
-                                                                (<ra> :get-velocity-value Num *current-note-num* *current-track-num*))))))
-                        :Publicize (lambda (velocity-info)
-                                              (set-indicator-velocity-node (velocity-info :velocitynum)
-                                                                           (velocity-info :notenum)
-                                                                           (velocity-info :tracknum))
-                                              (define value (<ra> :get-velocity-value (velocity-info :velocitynum)
-                                                                                   (velocity-info :notenum)
-                                                                                   (velocity-info :tracknum)))
-                                              (set-velocity-statusbar-text value))
-                        :Move-node (lambda (velocity-info Value Place)
-                                     (define note-num (<ra> :set-velocity Value Place (velocity-info :velocitynum) (velocity-info :notenum) (velocity-info :tracknum)))
-                                     (make-velocity-info :tracknum (velocity-info :tracknum)
-                                                         :notenum note-num
-                                                         :velocitynum (velocity-info :velocitynum)
-                                                         :value (velocity-info :value)
-                                                         :y (velocity-info :y)))
+                                                      (callback (make-editorautomation-move :Num Num
+                                                                                            :nodes (get-velocity-infos *current-note-num*
+                                                                                                                       *current-track-num*)
+                                                                                            :start-Place Place
+                                                                                            :notenum *current-note-num*)
+                                                                0)))))
+                        :Publicize (lambda (editormove)
+                                     (define velocity-info (editormove :nodes (editormove :Num)))
+                                     (set-indicator-velocity-node (velocity-info :velocitynum)
+                                                                  (editormove :notenum)
+                                                                  (velocity-info :tracknum))
+                                     (define value (<ra> :get-velocity-value (velocity-info :velocitynum)
+                                                         (editormove :notenum)
+                                                         (velocity-info :tracknum)))
+                                     (set-velocity-statusbar-text value))
+                        :Move-node (lambda (editormove delta-Value Place)
+                                     (define-constant delta-Place (if (eq? 'same-place Place)
+                                                                      Place
+                                                                      (- Place (editormove :start-Place))))
+                                     (define-constant nodes (editormove :nodes))
+                                     (define velocity-info (nodes (editormove :Num)))
+                                     (define notenum (editormove :notenum))
+                                     
+                                     (define (doit velocity-info)
+                                       (define velocitynum (velocity-info :velocitynum))
+                                       (define Value (+ delta-Value (velocity-info :value)))
+                                       ;;(c-display "delta-place:" delta-Place ". vel-place:" (velocity-info :place))
+                                       (define Place (if (eq? 'same-place delta-Place)
+                                                         'same-place
+                                                         (max 0 (+ delta-Place (velocity-info :place)))))
+                                       ;;(c-display "velocitynum:" velocitynum "val/place:" Value Place "delta-Place:" delta-Place)
+                                       (set! notenum (<ra> :set-velocity Value Place velocitynum notenum (velocity-info :tracknum))))
+
+                                     (if (move-all-nodes?)
+                                         (for-each doit
+                                                   nodes)
+                                         (doit velocity-info))
+                        
+                                     (copy-hash editormove
+                                                :notenum notenum))
                         )
 
+    
+    
 ;; delete velocity (shift + right mouse)
 (add-mouse-cycle
  (make-mouse-cycle
@@ -3061,9 +3384,20 @@
   :fxnum
   :fxnodenum
   :value
+  :place
   :y  
   )
 
+(define (get-fxnode-infos fxnum tracknum)
+  (map (lambda (fxnodenum)
+         (make-fxnode-info :tracknum tracknum
+                           :fxnum fxnum
+                           :fxnodenum fxnodenum
+                           :value (<ra> :get-fxnode-value fxnodenum fxnum tracknum)
+                           :place (<ra> :get-fxnode-place fxnodenum fxnum tracknum)
+                           :y (<ra> :get-fxnode-y fxnodenum fxnum tracknum)))
+       (iota (<ra> :get-num-fxnodes fxnum tracknum))))
+                           
 (define (fxnode-info-rating Y Fi)
   (define fxnode-y (<ra> :get-fxnode-y (Fi :fxnodenum) (Fi :fxnum) (Fi :tracknum)))
   (cond ((and (= 0
@@ -3107,6 +3441,7 @@
                                                                                                               :fxnum Fxnum
                                                                                                               :tracknum Tracknum
                                                                                                               :value (<ra> :get-fxnode-value Fxnodenum Fxnum Tracknum)
+                                                                                                              :place (<ra> :get-fxnode-place Fxnodenum Fxnum Tracknum)
                                                                                                               :y (box :y)
                                                                                                               )))))))
 
@@ -3200,6 +3535,11 @@
 (define (get-closest-fx X Y)
   (get-closest-fx-0 0 (<ra> :get-num-fxs *current-track-num*) X Y))
 
+(define (find-closest-fxnode tracknum fxnum Y)
+  (find-closest-node (<ra> :get-num-fxnodes fxnum tracknum)
+                     (lambda (nodenum)
+                       (abs (- Y (<ra> :get-fxnode-y nodenum fxnum tracknum))))))
+
 #||
 (<ra> :get-num-fxs 0)
 ||#
@@ -3210,18 +3550,50 @@
                                              (<ra> :get-box track-fx *current-track-num*)))
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (let ((fxnode-info (get-fxnode-info X Y *current-track-num*)))
-                                                    (and fxnode-info
-                                                         (callback fxnode-info (fxnode-info :value) (fxnode-info :y)))))
-                        :Get-min-value (lambda (fxnode-info)
-                                         (<ra> :get-fx-min-value (fxnode-info :fxnum)))
-                        :Get-max-value (lambda (fxnode-info)
-                                         (<ra> :get-fx-max-value (fxnode-info :fxnum)))
-                        :Get-x (lambda (info) (<ra> :get-fxnode-x (info :fxnodenum)
-                                                               (info :fxnum)
-                                                               (info :tracknum)))
-                        :Get-y (lambda (info) (<ra> :get-fxnode-y (info :fxnodenum)
-                                                               (info :fxnum)
-                                                               (info :tracknum)))
+                                                    ;; bruk (get-current-fxnum) for å finne current fxnum
+                                                    (if fxnode-info
+                                                        (callback (make-editorautomation-move :Num (fxnode-info :fxnodenum)
+                                                                                              :nodes (get-fxnode-infos (fxnode-info :fxnum)
+                                                                                                                       *current-track-num*)
+                                                                                              :start-Place (get-place-from-y 0 Y))
+                                                                  0 Y)
+                                                        (let ((fxnum (get-current-fxnum)))
+                                                          (and (move-all-nodes?)
+                                                               fxnum
+                                                               (let ((fxnodenum (find-closest-fxnode fxnum *current-track-num* Y)))
+                                                                 (callback (make-editorautomation-move :Num fxnodenum
+                                                                                                       :nodes (get-fxnode-infos fxnum *current-track-num*)
+                                                                                                       :start-Place (get-place-from-y 0 Y))
+                                                                           0 Y)))))))
+                                                                   
+                        :Get-min-value (lambda (editormove)
+                                         (define fxnode-info (editormove :nodes (editormove :Num)))
+                                         (define minval (<ra> :get-fx-min-value (fxnode-info :fxnum)))
+                                         (define maxval (<ra> :get-fx-max-value (fxnode-info :fxnum)))
+                                         (define range (- maxval minval))                               
+                                         (if (move-all-nodes?)
+                                             (- range)
+                                             (- minval
+                                                (fxnode-info :value))))
+                        :Get-max-value (lambda (editormove)
+                                         (define fxnode-info (editormove :nodes (editormove :Num)))
+                                         (define minval (<ra> :get-fx-min-value (fxnode-info :fxnum)))
+                                         (define maxval (<ra> :get-fx-max-value (fxnode-info :fxnum)))
+                                         (define range (- maxval minval))                               
+                                         (if (move-all-nodes?)
+                                             range
+                                             (- maxval
+                                                (fxnode-info :value))))
+                        :Get-x (lambda (editormove)
+                                 (define info (editormove :nodes (editormove :Num)))
+                                 (<ra> :get-fxnode-x (info :fxnodenum)
+                                       (info :fxnum)
+                                       (info :tracknum)))
+                        :Get-y (lambda (editormove)
+                                 (define info (editormove :nodes (editormove :Num)))
+                                 (<ra> :get-fxnode-y (info :fxnodenum)
+                                       (info :fxnum)
+                                       (info :tracknum)))
                         :Make-undo (lambda (_) (<ra> :undo-fxs *current-track-num*))
                         :Create-new-node (lambda (X Place callback)
                                            (define Fxnum (get-current-fxnum))
@@ -3233,22 +3605,44 @@
                                                   (define Nodenum (<ra> :add-fxnode Value Place Fxnum *current-track-num*))
                                                   (if (= -1 Nodenum)
                                                       #f
-                                                      (callback (make-fxnode-info :tracknum *current-track-num*
-                                                                                  :fxnum Fxnum
-                                                                                  :fxnodenum Nodenum
-                                                                                  :value Value
-                                                                                  :y #f ;; dont need it.
-                                                                                  )
-                                                                (<ra> :get-fxnode-value Nodenum Fxnum *current-track-num*))))))
-                        :Publicize (lambda (fxnode-info)
+                                                      (callback (make-editorautomation-move :Num Nodenum
+                                                                                            :nodes (get-fxnode-infos Fxnum
+                                                                                                                     *current-track-num*)
+                                                                                            :start-Place Place)
+                                                                0)))))
+                        :Publicize (lambda (editormove)
+                                     (define fxnode-info (editormove :nodes (editormove :Num)))
                                      (set-indicator-fxnode (fxnode-info :fxnodenum)
                                                            (fxnode-info :fxnum)
                                                            (fxnode-info :tracknum))
                                      (set-editor-statusbar (<ra> :get-fx-string (fxnode-info :fxnodenum) (fxnode-info :fxnum) (fxnode-info :tracknum))))
 
-                        :Move-node (lambda (fxnode-info Value Place)                                     
-                                     (<ra> :set-fxnode (fxnode-info :fxnodenum) Value Place (fxnode-info :fxnum) (fxnode-info :tracknum))
-                                     fxnode-info)
+                        :Move-node (lambda (editormove delta-Value Place)
+                                     (define-constant delta-Place (if (eq? 'same-place Place)
+                                                                      Place
+                                                                      (- Place (editormove :start-Place))))
+                                     (define-constant nodes (editormove :nodes))
+                                     (define fxnode-info (editormove :nodes (editormove :Num)))
+                                     (define fxnum (fxnode-info :fxnum))
+                                     (define tracknum (fxnode-info :tracknum))
+                                     
+                                     (define (doit fxnode-info)
+                                       (define fxnodenum (fxnode-info :fxnodenum))
+                                       (define Value (between (<ra> :get-fx-min-value (fxnode-info :fxnum))
+                                                              (+ delta-Value (fxnode-info :value))
+                                                              (<ra> :get-fx-max-value (fxnode-info :fxnum))))                                                              
+                                       ;;(c-display "delta-place:" delta-Place ". vel-place:" (velocity-info :place))
+                                       (define Place (if (eq? 'same-place delta-Place)
+                                                         'same-place
+                                                         (max 0 (+ delta-Place (fxnode-info :place)))))
+                                       (<ra> :set-fxnode fxnodenum Value Place fxnum tracknum))
+
+                                     (if (move-all-nodes?)
+                                         (for-each doit
+                                                   nodes)
+                                         (doit fxnode-info))
+
+                                     editormove)
                         )
 
 ;; Delete fx node (shift + right mouse)
@@ -3593,6 +3987,17 @@
       (scale Y y1 mid max-tempo 1)
       (scale Y mid y2 1 (/ 1 max-tempo))))
 
+(define (get-seqtempo-automation-node nodenum)
+  (make-seqautomation-node
+   :time (<ra> :get-seqtempo-abstime nodenum)
+   :y (<ra> :get-seqtemponode-y nodenum)
+   :logtype (<ra> :get-seqtempo-logtype nodenum)))
+
+(define (get-seqtempo-nodes)
+  (map (lambda (nodenum)
+         (get-seqtempo-automation-node nodenum))
+       (iota (<ra> :get-num-seqtemponodes))))
+
 (define (get-highest-seqtemp-value)
   (apply max (map (lambda (n)
                     (<ra> :get-seqtempo-value n))
@@ -3602,19 +4007,30 @@
                                         (and (<ra> :seqtempo-visible)
                                              (<ra> :get-box seqtempo-area)))
                         :Get-existing-node-info (lambda (X Y callback)
-                                                  (match (list (find-node-horizontal X Y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
+                                                  (define num-nodes (<ra> :get-num-seqtemponodes))
+                                                  (match (list (find-node-horizontal X Y get-seqtemponode-box num-nodes))
                                                          (existing-box Num Box) :> (begin
                                                                                      ;;(c-display "EXISTING " Num)
-                                                                                     (define Time (scale X
-                                                                                                         (<ra> :get-seqtempo-area-x1) (<ra> :get-seqtempo-area-x2)
-                                                                                                         (<ra> :get-sequencer-visible-start-time) (<ra> :get-sequencer-visible-end-time)))
+                                                                                     (define Time (get-sequencer-time X))
                                                                                      (set-grid-type #t)
-                                                                                     (callback Num Time Y))
-                                                         _                      :> #f))
-                        :Get-min-value (lambda (_)
-                                         (<ra> :get-sequencer-visible-start-time))
-                        :Get-max-value (lambda (_)
-                                         (<ra> :get-sequencer-visible-end-time))
+                                                                                     (callback (make-seqautomation-move :nodes (get-seqtempo-nodes)
+                                                                                                                        :Num Num
+                                                                                                                        :start-Y Y)
+                                                                                               0 Y))
+                                                         _                      :> (and (move-all-nodes?)
+                                                                                        (let ((closest-node-num (find-closest-node-horizontal X
+                                                                                                                                              get-seqtemponode-box
+                                                                                                                                              num-nodes)))
+                                                                                          (set-grid-type #t)
+                                                                                          (<ra> :set-curr-seqtemponode closest-node-num)
+                                                                                          (callback (make-seqautomation-move :nodes (get-seqtempo-nodes)
+                                                                                                                             :Num closest-node-num
+                                                                                                                             :start-Y Y)
+                                                                                                    0 Y)))))
+                        ;;:Get-min-value (lambda (_)
+                        ;;                 (<ra> :get-sequencer-visible-start-time))
+                        ;;:Get-max-value (lambda (_)
+                        ;;                 (<ra> :get-sequencer-visible-end-time))
                         :Get-x (lambda (Num) (<ra> :get-seqtemponode-x Num))
                         :Get-y (lambda (Num) (<ra> :get-seqtemponode-y Num))
                         :Make-undo (lambda (_)              
@@ -3633,27 +4049,51 @@
                                                #f
                                                (begin
                                                  (set-grid-type #t)
-                                                 (callback Num Time))))
-                        :Release-node (lambda (Num)
+                                                 (<ra> :set-curr-seqtemponode Num)
+                                                 (callback (make-seqautomation-move :nodes (get-seqtempo-nodes)
+                                                                                    :Num Num
+                                                                                    :start-Y Y)
+                                                           0))))
+                        :Release-node (lambda (seqmove)
                                         (set-grid-type #f))
-                        :Move-node (lambda (Num Time Y)
-                                     (define TempoMul (get-seqtempo-value Y))
-                                     (define logtype (<ra> :get-seqtempo-logtype Num))
-                                     (if (not (<ra> :control-pressed))
-                                         (set! Time (<ra> :get-seq-gridded-time (floor Time) 0 (<ra> :get-seq-tempo-grid-type))))
-                                     (<ra> :set-seqtemponode Time TempoMul logtype Num)
-                                     ;;(c-display "NUM:" Num ", Time:" Time ", TempoMul:" TempoMul)
-                                     Num
-                                     )
-                        :Publicize (lambda (Num) ;; this version works though. They are, or at least, should be, 100% functionally similar.
-                                     (set-editor-statusbar (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value Num))))
-                                     (<ra> :set-curr-seqtemponode Num)
+                        :Move-node (lambda (seqmove Time Y)
+                                     (define-constant seqmove seqmove)
+                                     (define-constant Time Time)
+                                     (define-constant delta-Y (- Y (seqmove :start-Y)))
+                                     (define-constant nodes (seqmove :nodes))
+
+                                     ;;(c-display "NODES:\n" (pp nodes))
+                                     
+                                     (define (doit Num node)
+                                       (define new-Time (round (max 0 (+ Time (node :time)))))
+                                       (define new-Y (+ delta-Y (node :y)))
+                                       (define TempoMul (get-seqtempo-value new-Y))
+                                       (define logtype (node :logtype))
+                                       (if (not (<ra> :control-pressed))
+                                           (set! new-Time (<ra> :get-seq-gridded-time new-Time 0 (<ra> :get-seq-tempo-grid-type))))
+                                       (<ra> :set-seqtemponode new-Time TempoMul logtype Num))
+                                     
+                                     (if (move-all-nodes?)
+                                         (for-each (lambda (Num node)
+                                                     (doit Num
+                                                           node))
+                                                   (iota (length nodes))
+                                                   nodes)
+                                         (doit (seqmove :Num) (nodes (seqmove :Num))))
+                                     
+                                     seqmove)
+                        :Publicize (lambda (seqmove) ;; this version works though. They are, or at least, should be, 100% functionally similar.
+                                     (set-editor-statusbar (<-> "Tempo: " (two-decimal-string (<ra> :get-seqtempo-value (seqmove :Num)))))
+                                     ;;(<ra> :set-curr-seqtemponode Num)
                                      #f)
                         
                         :Use-Place #f
                         :Mouse-pointer-func ra:set-normal-mouse-pointer
                         :Get-guinum (lambda () (<gui> :get-sequencer-gui))
-                        :Get-pixels-per-value-unit #f
+                        :Get-pixels-per-value-unit (lambda (seqmove)
+                                                     (/ ((<ra> :get-box sequencer) :width)
+                                                        (- (<ra> :get-sequencer-visible-end-time)
+                                                           (<ra> :get-sequencer-visible-start-time))))
                         )                        
 
 
@@ -5777,9 +6217,32 @@
          (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
          (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
     (set-editor-statusbar (<-> effect-name ": "
-                                   (two-decimal-string (<ra> :get-seq-automation-value Num automationnum seqtracknum))))))
-  
+                               (two-decimal-string (<ra> :get-seq-automation-value Num automationnum seqtracknum))))))
 
+
+
+
+(define-struct seqautomation-node
+  :time
+  :y
+  :logtype)
+
+(define (get-seqautomation-node nodenum automationnum seqtracknum)
+  (define-constant nodenum nodenum)
+  (make-seqautomation-node :time (<ra> :get-seq-automation-time nodenum automationnum seqtracknum)
+                           :y (<ra> :get-seq-automation-node-y nodenum automationnum seqtracknum)
+                           :logtype (<ra> :get-seq-automation-logtype nodenum automationnum seqtracknum)))
+
+(define (get-seqautomation-nodes automationnum seqtracknum)
+  (map (lambda (nodenum)
+         (get-seqautomation-node nodenum automationnum seqtracknum))
+       (iota (<ra> :get-num-seqtrack-automation-nodes automationnum seqtracknum))))
+
+
+(define-struct seqautomation-move
+  :nodes
+  :Num
+  :start-Y)
 
 ;; move and create sequencer automation
 (add-node-mouse-handler :Get-area-box (lambda ()
@@ -5793,24 +6256,42 @@
                                                     (define (get-nodebox $num)
                                                       (get-common-node-box (<ra> :get-seq-automation-node-x $num automationnum seqtracknum)
                                                                            (<ra> :get-seq-automation-node-y $num automationnum seqtracknum)))
-                                                    (match (list (find-node-horizontal X Y get-nodebox (<ra> :get-num-seqtrack-automation-nodes automationnum seqtracknum)))
+                                                    (define num-nodes (<ra> :get-num-seqtrack-automation-nodes automationnum seqtracknum))
+                                                    (match (list (find-node-horizontal X Y get-nodebox num-nodes))
                                                            (existing-box Num Box) :> (begin
-                                                                                       (define Time (get-sequencer-time X))
                                                                                        (set-grid-type #t)
-                                                                                       (callback Num Time Y))
-                                                           _                      :> #f)))
-                        :Get-min-value (lambda (_)
-                                         (<ra> :get-sequencer-visible-start-time))
-                        :Get-max-value (lambda (_)
-                                         (<ra> :get-sequencer-visible-end-time))
-                        :Get-x (lambda (Num)
-                                 (let ((automationnum (*current-seqautomation/distance* :automation-num))
-                                       (seqtracknum (*current-seqautomation/distance* :seqtrack)))
-                                   (<ra> :get-seq-automation-node-x Num automationnum seqtracknum)))
-                        :Get-y (lambda (Num)
-                                 (let ((automationnum (*current-seqautomation/distance* :automation-num))
-                                       (seqtracknum (*current-seqautomation/distance* :seqtrack)))
-                                   (<ra> :get-seq-automation-node-y Num automationnum seqtracknum)))
+                                                                                       (callback (make-seqautomation-move :nodes (get-seqautomation-nodes automationnum seqtracknum)
+                                                                                                                          :Num Num
+                                                                                                                          :start-Y Y)
+                                                                                                 0 Y))
+                                                           ;;Time Y))
+                                                           _                      :> (and (move-all-nodes?)
+                                                                                          (let ((closest-node-num (find-closest-node-horizontal X
+                                                                                                                                                get-nodebox
+                                                                                                                                                num-nodes)))
+                                                                                            (set-grid-type #t)
+                                                                                            (<ra> :set-curr-seq-automation-node closest-node-num automationnum seqtracknum)
+                                                                                            (callback (make-seqautomation-move :nodes (get-seqautomation-nodes automationnum seqtracknum)
+                                                                                                                               :Num closest-node-num
+                                                                                                                               :start-Y Y)
+                                                                                                      0 Y))))))
+                                                                                            
+                        ;;:Get-min-value (lambda (Num)
+                        ;;                 (if (pair? Num)
+                        ;;                     #f
+                        ;;                     (<ra> :get-sequencer-visible-start-time)))
+                        ;;:Get-max-value (lambda (Num)
+                        ;;                 (if (pair? Num)
+                        ;;                     #f
+                        ;;                     (<ra> :get-sequencer-visible-end-time)))
+                        ;;:Get-x (lambda (Num)
+                        ;;         (let ((automationnum (*current-seqautomation/distance* :automation-num))
+                        ;;               (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                        ;;           (<ra> :get-seq-automation-node-x Num automationnum seqtracknum)))
+                        ;;:Get-y (lambda (Num)
+                        ;;         (let ((automationnum (*current-seqautomation/distance* :automation-num))
+                        ;;               (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                        ;;           (<ra> :get-seq-automation-node-y Num automationnum seqtracknum)))
                         :Make-undo (lambda (_)
                                      (<ra> :undo-seqtrack-automations))
                         :Create-new-node (lambda (X Y callback)
@@ -5822,36 +6303,62 @@
                                                                       (<ra> :get-seq-gridded-time (floor Time) 0 (<ra> :get-seq-automation-grid-type))))
                                              (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
                                              (define Num (<ra> :add-seq-automation-node (floor PositionTime) Value *logtype-linear* automationnum seqtracknum))
-                                             (if (= -1 Num)
-                                               #f
-                                               (begin
-                                                 (set-grid-type #t)
-                                                 (callback Num Time)))))
-                        :Release-node (lambda (Num)
+                                             '(c-display "NUM:" Num "\n"
+                                                         "lenght:" (length (get-seqautomation-nodes automationnum seqtracknum))
+                                                         "node:" ((get-seqautomation-nodes automationnum seqtracknum) Num)
+                                                         "nodes:" (pp (get-seqautomation-nodes automationnum seqtracknum)))
+                                             (if (< Num 0)
+                                                 #f
+                                                 (begin
+                                                   (set-grid-type #t)
+                                                   (<ra> :set-curr-seq-automation-node Num automationnum seqtracknum)
+                                                   (callback (make-seqautomation-move :nodes (get-seqautomation-nodes automationnum seqtracknum)
+                                                                                      :Num Num
+                                                                                      :start-Y Y)
+                                                             0)))))
+                        :Release-node (lambda (seqmove)
                                         (set-grid-type #f))
-                        :Move-node (lambda (Num Time Y)
+                        :Move-node (lambda (seqmove Time Y)
+                                     ;;(c-display "MOVE-Nod:" seqmove)
+                                     (define-constant seqmove seqmove)
+                                     (define-constant Time Time)
+                                     (define-constant delta-Y (- Y (seqmove :start-Y)))
                                      (let ((automationnum (*current-seqautomation/distance* :automation-num))
-                                           (seqtracknum (*current-seqautomation/distance* :seqtrack)))
-                                       (define Value (scale Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
-                                       (define logtype (<ra> :get-seq-automation-logtype Num automationnum seqtracknum))
-                                       (set! Time (floor Time))
-                                       (if (not (<ra> :control-pressed))
-                                           (set! Time (<ra> :get-seq-gridded-time Time 0 (<ra> :get-seq-automation-grid-type))))
-                                       (<ra> :set-seq-automation-node Time Value logtype Num automationnum seqtracknum)
-                                       ;;(c-display "NUM:" Num ", Time:" (/ Time 48000.0) ", Value:" Value)
-                                       Num))
-                        :Publicize (lambda (Num)
-                                     (set-seqnode-statusbar-text Num)
-                                     ;;(<ra> :set-curr-seqtemponode Num)
-                                     #f)
-                        
+                                           (seqtracknum (*current-seqautomation/distance* :seqtrack))
+                                           (nodes (seqmove :nodes))
+                                           (Num (seqmove :Num)))
+                                       (define (doit Num node)
+                                         (define new-Time (round (max 0 (+ Time (node :time)))))
+                                         (define new-Y (+ delta-Y (node :y)))
+                                         (define new-Value (scale new-Y (<ra> :get-seqtrack-y1 seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) 1 0))
+                                         (if (not (<ra> :control-pressed))
+                                             (set! new-Time (<ra> :get-seq-gridded-time new-Time 0 (<ra> :get-seq-automation-grid-type))))
+                                         ;;(c-display Num ": new-TIME:" new-Time ", new-Value:" new-Value)
+                                         (<ra> :set-seq-automation-node new-Time new-Value (node :logtype) Num automationnum seqtracknum)
+                                         ;;(c-display "NUM:" Num ", Time:" (/ Time 48000.0) ", Value:" Value)
+                                         )
+                                       (if (or (not Num)
+                                               (move-all-nodes?))
+                                           (for-each (lambda (Num node)
+                                                       (doit Num
+                                                             node))
+                                                     (iota (length nodes))
+                                                     nodes)
+                                           (doit Num (nodes Num))))
+                                     seqmove)
+                        :Publicize (lambda (seqmove)
+                                     (set-seqnode-statusbar-text (seqmove :Num)))
                         :Use-Place #f
                         :Mouse-pointer-func ra:set-normal-mouse-pointer
                         :Get-guinum (lambda () (<gui> :get-sequencer-gui))
-                        :Get-pixels-per-value-unit #f
+                        :Get-pixels-per-value-unit (lambda (seqmove)
+                                                     (/ ((<ra> :get-box sequencer) :width)
+                                                        (- (<ra> :get-sequencer-visible-end-time)
+                                                           (<ra> :get-sequencer-visible-start-time))))
                         )         
+  
 
-
+                           
 ;; delete seqautomation / popupmenu
 (add-mouse-cycle
  (make-mouse-cycle
@@ -5950,8 +6457,8 @@
                                                    #f))))))
 
 
-;; seqblock volume automation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; seqblock automation
+;;;;;;;;;;;;;;;;;;;;;;
 
 (define (set-seqblock-automation-node-statusbar-text Num)
   (let* ((seqblocknum (*current-seqautomation/distance* :seqblock))
@@ -5964,6 +6471,18 @@
                                         ;" : "
  ;                                 (db-to-text db #t)))))))
 
+
+
+(define (get-seqblock-automation-node nodenum automationnum seqblocknum seqtracknum) 
+  (make-seqautomation-node
+   :time (<ra> :get-seqblock-automation-time nodenum automationnum seqblocknum seqtracknum)
+   :y (<ra> :get-seqblock-automation-node-y nodenum automationnum seqblocknum seqtracknum)
+   :logtype (<ra> :get-seqblock-automation-logtype nodenum automationnum seqblocknum seqtracknum)))
+
+(define (get-seqblock-automation-nodes automationnum seqblocknum seqtracknum)
+  (map (lambda (nodenum)
+         (get-seqblock-automation-node nodenum automationnum seqblocknum seqtracknum))
+       (iota (<ra> :get-num-seqblock-automation-nodes automationnum seqblocknum seqtracknum))))
 
 ;; move and create seqblock automation
 (add-node-mouse-handler :Get-area-box (lambda ()
@@ -5978,17 +6497,30 @@
                                                     (define (get-nodebox $num)
                                                       (get-common-node-box (<ra> :get-seqblock-automation-node-x $num automationnum seqblocknum seqtracknum)
                                                                            (<ra> :get-seqblock-automation-node-y $num automationnum seqblocknum seqtracknum)))
-                                                    (match (list (find-node-horizontal X Y get-nodebox (<ra> :get-num-seqblock-automation-nodes automationnum seqblocknum seqtracknum)))
+                                                    (define num-nodes (<ra> :get-num-seqblock-automation-nodes automationnum seqblocknum seqtracknum))
+                                                    (match (list (find-node-horizontal X Y get-nodebox num-nodes))
                                                            (existing-box Num Box) :> (begin
                                                                                        (define Time (get-sequencer-time X))
                                                                                        (set-grid-type #t)
                                                                                        (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
-                                                                                       (callback Num Time Y))
-                                                           _                      :> #f)))
-                        :Get-min-value (lambda (_)
-                                         (<ra> :get-sequencer-visible-start-time))
-                        :Get-max-value (lambda (_)
-                                         (<ra> :get-sequencer-visible-end-time))
+                                                                                       (callback (make-seqautomation-move :nodes (get-seqblock-automation-nodes automationnum seqblocknum seqtracknum)
+                                                                                                                          :Num Num
+                                                                                                                          :start-Y Y)
+                                                                                                 0 Y))
+                                                           _                      :> (and (move-all-nodes?)
+                                                                                          (let ((closest-node-num (find-closest-node-horizontal X
+                                                                                                                                                get-nodebox
+                                                                                                                                                num-nodes)))
+                                                                                            (set-grid-type #t)
+                                                                                            (<ra> :set-curr-seqblock-automation-node closest-node-num automationnum seqblocknum seqtracknum)
+                                                                                            (callback (make-seqautomation-move :nodes (get-seqblock-automation-nodes automationnum seqblocknum seqtracknum)
+                                                                                                                               :Num closest-node-num
+                                                                                                                               :start-Y Y)
+                                                                                                      0 Y))))))
+                        ;;:Get-min-value (lambda (_)
+                        ;;                 (<ra> :get-sequencer-visible-start-time))
+                        ;;:Get-max-value (lambda (_)
+                        ;;                 (<ra> :get-sequencer-visible-end-time))
                         
                         :Get-x (lambda (Num)
                                  (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
@@ -6023,35 +6555,64 @@
                                                (begin
                                                  (set-grid-type #t)
                                                  (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
-                                                 (callback Num Time)))))
-                        :Release-node (lambda (Num)
+                                                 (<ra> :set-curr-seqblock-automation-node Num automationnum seqblocknum seqtracknum)
+                                                 (callback (make-seqautomation-move :nodes (get-seqblock-automation-nodes automationnum seqblocknum seqtracknum)
+                                                                                    :Num Num
+                                                                                    :start-Y Y)
+                                                           0)))))
+                        :Release-node (lambda (seqmove)
                                         (set-grid-type #f))
-                        :Move-node (lambda (Num Time Y)
+                        :Move-node (lambda (seqmove Time Y)
+                                     (define-constant seqmove seqmove)
+                                     (define-constant Time Time)
+                                     (define-constant delta-Y (- Y (seqmove :start-Y)))
+                                     ;;(c-display "TIME/Y:" (/ Time 44100.0) Y)
                                      (let ((seqblocknum (*current-seqautomation/distance* :seqblock))
                                            (seqtracknum (*current-seqautomation/distance* :seqtrack))
-                                           (automationnum (*current-seqautomation/distance* :automation-num)))
+                                           (automationnum (*current-seqautomation/distance* :automation-num))
+                                           (nodes (seqmove :nodes))
+                                           (Num (seqmove :Num)))
+
+                                       ;;(c-display "NODES:\n" (pp nodes))
                                        (define min-value (<ra> :get-seqblock-automation-min-value automationnum seqblocknum seqtracknum))
                                        (define max-value (<ra> :get-seqblock-automation-max-value automationnum seqblocknum seqtracknum))
-                                       (define db (between min-value
-                                                           (scale Y (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum) (<ra> :get-seqtrack-y2 seqtracknum) max-value min-value)
-                                                           max-value))
-                                       (define logtype (<ra> :get-seqblock-automation-logtype Num automationnum seqblocknum seqtracknum))
-                                       (set! Time (floor Time))
-                                       (if (not (<ra> :control-pressed))
-                                           (set! Time (<ra> :get-seq-gridded-time Time 0 (<ra> :get-seq-automation-grid-type))))
-                                       ;;(c-display "db" db ". Y:" Y ". Time:" Time)
-                                       (<ra> :set-seqblock-automation-node Time db logtype Num automationnum seqblocknum seqtracknum)
-                                       ;;(c-display "NUM:" Num ", Time:" (/ Time 48000.0) ", Value:" Value)
-                                       Num))
-                        :Publicize (lambda (Num)
-                                     (set-seqblock-automation-node-statusbar-text Num)
+
+                                       (define y1 (<ra> :get-seqblock-header-y2 seqblocknum seqtracknum))
+                                       (define y2 (<ra> :get-seqtrack-y2 seqtracknum))
+                                       
+                                       (define (doit Num node)
+                                         (define new-Time (round (max 0 (+ Time (node :time)))))
+                                         (define new-Y (+ delta-Y (node :y)))
+                                         
+                                         (define new-Value (between min-value
+                                                                    (scale new-Y y1 y2 max-value min-value)
+                                                                    max-value))
+                                         
+                                         (if (not (<ra> :control-pressed))
+                                             (set! new-Time (<ra> :get-seq-gridded-time new-Time 0 (<ra> :get-seq-automation-grid-type))))
+                                         ;;(c-display "new-Value" new-Value ". Y:" Y ". Time:" Time)
+                                         (<ra> :set-seqblock-automation-node new-Time new-Value (node :logtype) Num automationnum seqblocknum seqtracknum)
+                                         ;;(c-display "NUM:" Num ", Time:" (/ new-Time 44100.0) ", Value:" new-Value ", min/max:" min-value max-value ", new-Y:" new-Y "y1/Y/y2:" y1 Y y2)
+                                         )
+                                       (if (move-all-nodes?)
+                                           (for-each (lambda (Num node)
+                                                       (doit Num
+                                                             node))
+                                                     (iota (length nodes))
+                                                     nodes)
+                                           (doit Num (nodes Num))))
+                                     seqmove)
+                        :Publicize (lambda (seqmove)
+                                     (set-seqblock-automation-node-statusbar-text (seqmove :Num))
                                      ;;(<ra> :set-curr-seqtemponode Num)
-                                     #f)
-                        
+                                     #f)                        
                         :Use-Place #f
                         :Mouse-pointer-func ra:set-normal-mouse-pointer
                         :Get-guinum (lambda () (<gui> :get-sequencer-gui))
-                        :Get-pixels-per-value-unit #f
+                        :Get-pixels-per-value-unit (lambda (seqmove)
+                                                     (/ ((<ra> :get-box sequencer) :width)
+                                                        (- (<ra> :get-sequencer-visible-end-time)
+                                                           (<ra> :get-sequencer-visible-start-time))))
                         )         
 #!!
 (pretty-print (<ra> :get-seqblocks-state 1))

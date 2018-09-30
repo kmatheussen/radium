@@ -405,13 +405,18 @@ void undoTemponodes(void){
   ADD_UNDO(TempoNodes_CurrPos(window));
 }
 
-void setTemponode(int num, float value, Place place, int blocknum, int windownum){
+void setTemponode(int num, double value, Place place, int blocknum, int windownum){
 
   struct Tracker_Windows *window;
   struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
   if (wblock==NULL)
     return;
-
+  
+  if(value < -1000000 || value > 1000000){
+    handleError("setTemponode: value too extreme: %f", value);
+    return;
+  }
+    
   //printf("Set temponode. value: %f. Place: %f\n",value,floatplace);
   
   struct Blocks *block = wblock->block;
