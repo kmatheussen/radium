@@ -261,11 +261,12 @@ static int get_block_header_height(void) {
 }
 
 static double get_seqblock_xsplit1(double seqblock_x1, double seqblock_x2){
-  return seqblock_x1 + (seqblock_x2-seqblock_x1) / 4;
+  
+  return seqblock_x1 + R_MIN(root->song->tracker_windows->systemfontheight*10, (seqblock_x2-seqblock_x1) / 4);
 }
 
 static double get_seqblock_xsplit2(double seqblock_x1, double seqblock_x2){
-  return seqblock_x2 - (seqblock_x2-seqblock_x1) / 4;
+  return seqblock_x2 - R_MIN(root->song->tracker_windows->systemfontheight*10, (seqblock_x2-seqblock_x1) / 4);
 }
 
 static double get_seqblock_ysplit1(double seqblock_y1, double seqblock_y2){
