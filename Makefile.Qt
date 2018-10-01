@@ -1629,7 +1629,7 @@ api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c $(API)radium_proc
 api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.c $(API)radium_proc.h
 	$(CC)  $(API)api_undo.c $(OPT)
 
-api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp $(API)radium_proc.h
+api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp $(API)radium_proc.h bin/packages/s7/s7.c
 	$(CCC)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
 
 api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp $(API)radium_proc.h $(API)api_instruments_proc.h
@@ -2279,8 +2279,10 @@ S7AlignmentSanitize=
 endif
 
 ifeq ($(BUILDTYPE), DEBUG)
-	S7OPTS += -DDEBUGGING=1 -DWITH_PROFILE=1 -DWITH_MULTITHREAD_CHECKS=1 -DS7_ALIGNED #-DWITH_GMP
+	S7OPTS += -DS7_DEBUGGING=1 -DWITH_PROFILE=1 -DWITH_MULTITHREAD_CHECKS=1 -DS7_ALIGNED #-DWITH_GMP
 endif
+
+S7OPTS += -DS7_ALIGNED
 
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
 	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
@@ -2327,13 +2329,13 @@ bin/packages/sndlib/clm.c: bin/packages/sndlib.tar.gz bin/packages/sndlib.patch
 #	$(CC) $(OPT) audio/clm.c -Iembedded_scheme -I/home/kjetil/snd-17/
 
 
-s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp
+s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp bin/packages/s7/s7.c
 	$(CCC) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall -Werror -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++11
 
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp
 
-scheme.o: embedded_scheme/scheme.cpp $(API)radium_proc.h
+scheme.o: embedded_scheme/scheme.cpp $(API)radium_proc.h bin/packages/s7/s7.c
 	$(CCC) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
 
 QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -D_REENTRANT #-fno-sanitize=undefined
@@ -2375,7 +2377,7 @@ http_parser.o: bin/packages/qhttpserver-master/http-parser/http_parser.c
 radium_s7_wrap.o: api/radium_s7_wrap.c $(API)radium_proc.h
 	$(CC) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
 
-api/radium_s7_wrap.c: bin/protoconfparser.py api/protos.conf
+api/radium_s7_wrap.c: bin/protoconfparser.py api/protos.conf bin/packages/s7/s7.c
 	cd api && $(PYTHONEXE) ../bin/protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c
 
 bin/scheme/api_protos.scm: bin/protos.conf bin/protoconfparser.py 
