@@ -1056,8 +1056,8 @@ void SEQBLOCK_AUTOMATION_set_enabled(struct SeqblockAutomation *automation, bool
 
   if (need_to_recalculate_time_conversion_table)
     SEQBLOCK_calculate_time_conversion_table(automation->_seqblock, true);
-      
-  SEQUENCER_update(SEQUPDATE_TIME);
+
+  SEQTRACK_update(automation->_seqtrack);
 }
 
 bool RT_maybe_get_seqblock_automation_value(struct SeqblockAutomation *automation, double time, double &value){

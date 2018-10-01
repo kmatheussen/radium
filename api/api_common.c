@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/instruments_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/visual_proc.h"
+#include "../common/seqtrack_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -528,17 +529,17 @@ struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum){
   return seqtrack->seqblocks.elements[seqblocknum];
 }
 
-struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack){
+struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack, bool use_gfx_if_possible){
   (*seqtrack) = getSeqtrackFromNum(seqtracknum);
   if ((*seqtrack)==NULL)
     return NULL;
 
-  if (seqblocknum < 0 || seqblocknum >= (*seqtrack)->seqblocks.num_elements){
+  if (seqblocknum < 0 || seqblocknum >= gfx_seqblocks2(*seqtrack, use_gfx_if_possible)->num_elements){
     handleError("Seqblock #%d not found in seqtrack %d", seqblocknum, seqtracknum);
     return NULL;
   }
 
-  return (*seqtrack)->seqblocks.elements[seqblocknum];
+  return gfx_seqblocks2(*seqtrack, use_gfx_if_possible)->elements[seqblocknum];
 }
 
 struct SeqBlock *getAudioSeqblockFromNum(int seqblocknum, int seqtracknum){
