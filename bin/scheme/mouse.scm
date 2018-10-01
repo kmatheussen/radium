@@ -5216,7 +5216,7 @@
         (set! curr-speed (* (/ new-duration old-duration)
                             old-speed))
         (set! (new-seqblock :speed) curr-speed)
-        (c-display "old-speed:" old-speed ". new_speed:" (new-seqblock :speed) ". old-duration:" old-duration ". new-duration:" new-duration)
+        ;;(c-display "old-speed:" old-speed ". new_speed:" (new-seqblock :speed) ". old-duration:" old-duration ". new-duration:" new-duration)
         )
         
       (define new-seqblocks-state (copy seqblocks))
@@ -7058,10 +7058,11 @@
                               (define blocknum (and seqblock-info
                                                     (<ra> :seqblock-holds-block seqblocknum seqtracknum)
                                                     (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
-                              (if seqblock-info
-                                  (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
-                                      (only-select-one-seqblock seqblocknum seqtracknum)
-                                      (<ra> :select-seqblock #t seqblocknum seqtracknum)))
+
+                              ;;(if seqblock-info
+                              ;;    (if (not (<ra> :is-seqblock-selected seqblocknum seqtracknum))
+                              ;;        (only-select-one-seqblock seqblocknum seqtracknum)
+                              ;;        (<ra> :select-seqblock #t seqblocknum seqtracknum)))
 
                               (popup-menu (if (not for-blocks)
                                               #f
