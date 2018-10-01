@@ -144,7 +144,7 @@ extern struct SeqTrack *getAudioSeqtrackFromNum(int seqtracknum);
 extern struct SeqTrack *getBlockSeqtrackFromNum(int seqtracknum);
 
 extern struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum);
-extern struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
+extern struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack, bool use_gfx_if_possible);
 extern struct SeqBlock *getAudioSeqblockFromNum(int seqblocknum, int seqtracknum);
 extern struct SeqBlock *getAudioSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack);

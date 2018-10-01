@@ -1504,7 +1504,8 @@ void SEQTRACK_cancel_gfx_seqblocks(struct SeqTrack *seqtrack){
   seqtrack->gfx_seqblocks = NULL;
   SEQTRACKPLUGIN_assert_samples2(seqtrack);
 
-  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
+  SEQTRACK_update(seqtrack);
+  SEQUENCER_update(SEQUPDATE_PLAYLIST|SEQUPDATE_NAVIGATOR);
 }
 
 void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtracknum, bool seqtrack_is_live){
@@ -1551,7 +1552,8 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
   SEQTRACKPLUGIN_assert_samples2(seqtrack);
 
   R_ASSERT(len1==seqtrack->seqblocks.num_elements);
-  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
+  SEQTRACK_update(seqtrack);
+  SEQUENCER_update(SEQUPDATE_PLAYLIST|SEQUPDATE_NAVIGATOR);
   R_ASSERT(len1==seqtrack->seqblocks.num_elements);
 }
 

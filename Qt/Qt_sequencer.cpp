@@ -1481,8 +1481,8 @@ public:
 
     draw_fades(p, rect_without_header, seqtrack, seqblock);
   }
-  
-  bool paintSeqBlock(QPainter &p, const QRegion &update_region, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type){
+
+  bool paintSeqBlock(QPainter &p, const QRegion &update_region, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int seqtracknum, int seqblocknum, Seqblock_Type type){
     //QPoint mousep = _sequencer_widget->mapFromGlobal(QCursor::pos());
 
     QRectF rect;
@@ -1566,7 +1566,7 @@ public:
     SEQTRACK_AUTOMATION_paint(&p, seqtrack, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
   }
 
-  void paint(const QRegion &update_region, QPainter &p, const struct SeqTrack *seqtrack) {
+  void paint(const QRegion &update_region, QPainter &p, const struct SeqTrack *seqtrack, int seqtracknum) {
     RETURN_IF_DATA_IS_INACCESSIBLE();
     
     //printf("  PAINTING %d %d -> %d %d\n",t_x1,t_y1,t_x2,t_y2);
@@ -1593,7 +1593,7 @@ public:
       //printf("  seqblocks size: %d. (%d %d)\n", seqblocks.size(), _seqtrack->seqblocks.num_elements, _seqtrack->gfx_seqblocks==NULL ? -1 : _seqtrack->gfx_seqblocks->num_elements);
       
       for(int i=seqblocks.size()-1 ; i>=0 ; i--)
-        paintSeqBlock(p, update_region, seqtrack, seqblocks.at(i), type);
+        paintSeqBlock(p, update_region, seqtrack, seqblocks.at(i), seqtracknum, i, type);
     }
   }
 
@@ -1673,7 +1673,7 @@ public:
       
       VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
         Seqblocks_widget seqblocks_widget = get_seqblocks_widget(iterator666, true);
-        seqblocks_widget.paint(update_region, p, seqtrack);
+        seqblocks_widget.paint(update_region, p, seqtrack, iterator666);
       }END_VECTOR_FOR_EACH;
       
     }
@@ -2943,14 +2943,11 @@ struct Sequencer_widget : public MouseTrackerQWidget {
           color.setAlpha(120);
           p.fillRect(ev->rect(), color);
 
+          /*
           p.setPen(QColor("black"));
           p.drawRect(ev->rect());
           p.drawText(ev->rect(), QString::number(num_calls));
-
-          p.drawRect(QRect(209, 116, 1067, 86));
-          p.setPen(QColor("white"));
-          p.drawRect(QRect(208, 208, 1069, 30));
-
+          */
         });
     }
   }
@@ -3442,15 +3439,15 @@ void SEQTRACK_update(const struct SeqTrack *seqtrack){
 
 // Note: Might be called from a different thread than the main thread. (DiskPeak thread calls this function)
 void SEQUENCER_update(uint32_t what){
-#if 0
+  D({
   static int i=0;
   printf("%d: SEQUENCER_update called Main: %d. Has lock: %d. Time: %d. Header: %d. Trackorder: %d. Playlist: %d. Navigator: %d\n%s\n\n",
          i++,
          THREADING_is_main_thread(),PLAYER_current_thread_has_lock(),
          what&SEQUPDATE_TIME, what&SEQUPDATE_HEADERS, what&SEQUPDATE_TRACKORDER, what&SEQUPDATE_PLAYLIST, what&SEQUPDATE_NAVIGATOR,
-         "" //JUCE_get_backtrace()
+         (ATOMIC_GET(root->editonoff) || !(what&SEQUPDATE_TIME) )? "" : JUCE_get_backtrace()
          );
-#endif
+});
 
   if (THREADING_is_main_thread()==false || g_sequencer_widget==NULL || PLAYER_current_thread_has_lock() || g_qt_is_painting){
     R_ASSERT_NON_RELEASE( (what & SEQUPDATE_HEADERS)==false);

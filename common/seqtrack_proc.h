@@ -406,6 +406,13 @@ static inline const vector_t *gfx_seqblocks(const struct SeqTrack *seqtrack){
     return &seqtrack->seqblocks;
 }
   
+static inline const vector_t *gfx_seqblocks2(const struct SeqTrack *seqtrack, bool use_gfx_if_possible){
+  if(use_gfx_if_possible && seqtrack->gfx_seqblocks != NULL)
+    return seqtrack->gfx_seqblocks;
+  else
+    return &seqtrack->seqblocks;
+}
+  
 static inline const wchar_t *get_seqblock_sample_name(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool full_path){
   R_ASSERT_RETURN_IF_FALSE2(seqblock->block==NULL, L"");
   R_ASSERT_RETURN_IF_FALSE2(seqtrack->patch!=NULL, L"");
