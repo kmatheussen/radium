@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MyQCheckBox.h"
 #include "Qt_MyQSlider.h"
 #include "Qt_Bs_edit_proc.h"
+#include "Qt_Fonts_proc.h"
 
 #include "../embedded_scheme/scheme_proc.h"
 #include "../common/seqtrack_automation_proc.h"
@@ -282,7 +283,7 @@ static double get_seqblock_ysplit3(double seqblock_y1, double seqblock_y2){
   return seqblock_y2 - (seqblock_y2-y1) / 4;
 }
 
-static QPoint mapFromEditor(QWidget *widget, QPoint point){
+QPoint mapFromEditor(QWidget *widget, QPoint point){
   QPoint global = g_editor->isVisible()
     ? g_editor->mapToGlobal(point)
     : QPoint(point.x()-10000, point.y()-10000);
@@ -291,7 +292,7 @@ static QPoint mapFromEditor(QWidget *widget, QPoint point){
   return widget->mapFromGlobal(global);
 }
 
-static QPoint mapToEditor(QWidget *widget, QPoint point){
+QPoint mapToEditor(QWidget *widget, QPoint point){
   if (!g_editor->isVisible())
     return skewedPoint(widget, point, 10000, 10000);
   
@@ -1640,6 +1641,8 @@ public:
 
   double t_x1=0,t_y1=0,t_x2=50,t_y2=50;
   double t_width=0,t_height=0;
+
+  QRectF t_rect;
   
   void position_widgets(double x1, double y1, double x2, double y2){
     t_x1 = x1;
@@ -1648,6 +1651,7 @@ public:
     t_y2 = y2;
     t_width = t_x2-t_x1;
     t_height = t_y2-t_y1;
+    t_rect = QRectF(t_x1, t_y1, t_x2-t_x1, t_y2-t_y1);
   }  
 
   void set_seqblocks_is_selected(const QRect &selection_rect){
@@ -1665,10 +1669,14 @@ public:
   }
 
   void paint(const QRegion &update_region, QPainter &p){
-    VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
-      Seqblocks_widget seqblocks_widget = get_seqblocks_widget(iterator666, true);
-      seqblocks_widget.paint(update_region, p, seqtrack);
-    }END_VECTOR_FOR_EACH;
+    if(update_region.intersects(t_rect.toAlignedRect())){
+      
+      VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+        Seqblocks_widget seqblocks_widget = get_seqblocks_widget(iterator666, true);
+        seqblocks_widget.paint(update_region, p, seqtrack);
+      }END_VECTOR_FOR_EACH;
+      
+    }
   }
 
   Seqblocks_widget get_seqblocks_widget(int seqtracknum, bool include_border){
@@ -1698,7 +1706,7 @@ struct SongTempoAutomation_widget {
   const double &_end_time;
    
   double t_x1,t_y1,t_x2,t_y2,width,height;
-  QRectF _rect;
+  QRectF t_rect;
    
   SongTempoAutomation_widget(const double &start_time, const double &end_time)
     : _start_time(start_time)
@@ -1715,15 +1723,19 @@ struct SongTempoAutomation_widget {
     height = t_y2-t_y1;
     width = t_x2-t_x1;
     
-    _rect = QRectF(t_x1, t_y1, width, height);
+    t_rect = QRectF(t_x1, t_y1, width, height);
   }
 
   void paint(const QRegion &update_region, QPainter &p){
-
-    myFillRect(p, _rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
     
-    //printf("height: %d\n",height());
-    TEMPOAUTOMATION_paint(&p, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
+    if(update_region.intersects(t_rect.toAlignedRect())){
+  
+      myFillRect(p, t_rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
+    
+      //printf("height: %d\n",height());
+      TEMPOAUTOMATION_paint(&p, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
+      
+    }
   }
 
 };
@@ -2165,7 +2177,7 @@ public:
   double get_x2(void){
     return get_x2(get_visible_song_length()*MIXER_get_sample_rate());
   }
-  
+
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();
 
@@ -2231,8 +2243,8 @@ public:
           
         }END_VECTOR_FOR_EACH;
       }END_VECTOR_FOR_EACH;
-    }
 
+    }
 
     // Navigator
     //
@@ -2710,6 +2722,15 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     
     double x_start = scale_double(start, _start_time, _end_time, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2);
     double x_end = scale_double(end, _start_time, _end_time, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2);
+    
+    QRectF rect1(_seqtracks_widget.t_x1, y1, x_start - _seqtracks_widget.t_x1,  y2);
+    QRectF rect2(x_end, y1, _seqtracks_widget.t_x2 - x_end,  y2);
+
+    bool paintrect1 = x_start > _seqtracks_widget.t_x1 && update_region.intersects(rect1.toAlignedRect());
+    bool paintrect2 = x_end < _seqtracks_widget.t_x2 && update_region.intersects(rect2.toAlignedRect());
+    
+    if (!paintrect1 && !paintrect2)
+      return;
 
     QColor mix = is_looping ? QColor("blue") : QColor("red");
     QColor gray = get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM);
@@ -2719,14 +2740,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     p.setPen(Qt::NoPen);
     p.setBrush(grayout_color);
 
-    if (x_start > _seqtracks_widget.t_x1){
-      QRectF rect(_seqtracks_widget.t_x1, y1, x_start - _seqtracks_widget.t_x1,  y2);
-      p.drawRect(rect);
+    if (paintrect1){
+      p.drawRect(rect1);
     }
-
-    if (x_end < _seqtracks_widget.t_x2) {
-      QRectF rect(x_end, y1, _seqtracks_widget.t_x2 - x_end,  y2);
-      p.drawRect(rect);
+    
+    if (paintrect2){
+      p.drawRect(rect2);
     }
   }
       
@@ -2826,8 +2845,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void paintEvent (QPaintEvent *ev) override {
+    if (workingQRegionContains(childrenRegion(), ev->region())){ // We get a paint event with the area under the navigator widget when _navigator_widget->update() is called.
+      //printf("skipped painting area below children widgets\n");
+      return;
+    }
+    
     D(static int num_calls = 0;
-      printf("   SEQ paintEvent called %d, %d -> %d, %d (%d)\n", ev->rect().x(), ev->rect().y(), ev->rect().width(), ev->rect().height(),num_calls++)
+      printf("   SEQ paintEvent called %d, %d -> %d, %d (%d)\n", ev->rect().x(), ev->rect().y(), ev->rect().x()+ev->rect().width(), ev->rect().y()+ev->rect().height(), num_calls++);
+      //printf("              navigator: %d, %d -> %d, %d\n", _navigator_widget.x(), _navigator_widget.y(), _navigator_widget.x()+_navigator_widget.rect().width(), _navigator_widget.y()+_navigator_widget.rect().height());
       );
 
     
@@ -2872,7 +2897,11 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
       p.setClipRect(QRectF(_seqtracks_widget.t_x1, 0, _seqtracks_widget.t_width, height()));
 
-      _seqtracks_widget.paint(ev->region(), p);
+      {
+
+        _seqtracks_widget.paint(ev->region(), p);
+
+      }
       
       if (_songtempoautomation_widget.is_visible)
         _songtempoautomation_widget.paint(ev->region(), p);
@@ -2887,6 +2916,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       
       if (_has_selection_rectangle)
         paintSelectionRectangle(ev->region(), p);
+
     }
 
     // Paint seqtrack borders, seqtrack automation, and cursor
@@ -2906,6 +2936,22 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         _seqtracks_widget.paint_automation(ev->region(), p);    
         paintCursor(ev->region(), p);
       }
+
+      // Debugging update.
+      D({
+          QColor color(GFX_MakeRandomColor());
+          color.setAlpha(120);
+          p.fillRect(ev->rect(), color);
+
+          p.setPen(QColor("black"));
+          p.drawRect(ev->rect());
+          p.drawText(ev->rect(), QString::number(num_calls));
+
+          p.drawRect(QRect(209, 116, 1067, 86));
+          p.setPen(QColor("white"));
+          p.drawRect(QRect(208, 208, 1069, 30));
+
+        });
     }
   }
 
@@ -2969,6 +3015,7 @@ float SEQUENCER_get_left_part_y2(void){
 }
 
 void SEQUENCER_WIDGET_initialize(QWidget *main_window){
+  R_ASSERT(g_sequencer_widget==NULL);
   g_sequencer_widget = new Sequencer_widget(main_window);
 }
 
@@ -3432,7 +3479,7 @@ void SEQUENCER_update(uint32_t what){
 
     if (what & SEQUPDATE_SONGTEMPO){
       if (g_sequencer_widget->_songtempoautomation_widget.is_visible)
-        g_sequencer_widget->update(g_sequencer_widget->_songtempoautomation_widget._rect.toAlignedRect());
+        g_sequencer_widget->update(g_sequencer_widget->_songtempoautomation_widget.t_rect.toAlignedRect());
     }
     
     if (what & SEQUPDATE_TIMELINE){

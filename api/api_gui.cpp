@@ -1365,25 +1365,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       vamp->call_regularly(_widget);
     }
 
-    // QRegion::contains doesn't work.
-    bool workingQRegionContains(const QRegion &region, const QRect &rect2) const{
-      for(const QRect &rect : region){
-        if (rect.contains(rect2))
-          return true;
-      }
-      return false;
-    }
-
-    bool workingQRegionContains(const QRegion &region, const QRegion &region2) const{
-      for(const QRect &rect2 : region2){
-        for(const QRect &rect : region){
-          if (rect.contains(rect2)==false)
-            return false;
-        }
-      }
-      return true;
-    }
-    
     // Returns true if only vamps needs to be painted.
     bool getVampsToPaint(const QPaintEvent *event, bool *vamps_to_paint, const QRegion &already_painted_areas, int &num_vamps_to_paint) const {
       num_vamps_to_paint = 0;
@@ -4138,6 +4119,30 @@ int64_t gui_getSequencerGui(void){
 
 int64_t gui_getInstrumentGui(void){
   return API_get_gui_from_existing_widget(getInstrumentsWidget());
+}
+
+double gui_getEditorDistanceX(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  
+  if (gui==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return 0;
+  }
+
+  QPoint p1 = mapToEditor(gui->_widget, QPoint(0, 0));
+  return p1.x();
+}
+
+double gui_getEditorDistanceY(int64_t guinum){
+  Gui *gui = get_gui(guinum);
+  
+  if (gui==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return 0;
+  }
+
+  QPoint p1 = mapToEditor(gui->_widget, QPoint(0, 0));
+  return p1.y();
 }
 
 /////// Callbacks

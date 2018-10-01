@@ -55,6 +55,26 @@ extern QPointer<QMenu> g_curr_popup_qmenu;
 
 typedef QPointer<QObject> IsAlive;
 
+extern QPoint mapFromEditor(QWidget *widget, QPoint point); // Defined in Qt_sequencer.cpp
+extern QPoint mapToEditor(QWidget *widget, QPoint point); // Defined in Qt_sequencer.cpp
+
+// QRegion::contains doesn't work.
+static inline bool workingQRegionContains(const QRegion &region, const QRect &rect2){
+  for(const QRect &rect : region){
+    if (rect.contains(rect2))
+      return true;
+  }
+  return false;
+}
+
+static inline bool workingQRegionContains(const QRegion &region, const QRegion &region2){
+  for(const QRect &rect2 : region2)
+    if(workingQRegionContains(region, rect2)==false)
+      return false;
+
+  return true;
+}
+
 
 static QPoint getCentrePosition(QWidget *parent, int width, int height, QRect parentRect = QRect()){
 
