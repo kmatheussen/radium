@@ -7393,7 +7393,7 @@
                                                (list "Generate new color"
                                                      :enabled seqblock-info
                                                      (lambda ()
-                                                       (let ((color (<ra> :generate-new-color 0.9)))
+                                                       (let ((color (<ra> :generate-new-block-color 1.0)))
                                                          (if blocknum
                                                              (<ra> :set-block-color color blocknum)
                                                              (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))

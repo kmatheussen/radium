@@ -69,8 +69,9 @@ void NewBlock(
 	block->temponodes->l.next= &temponode->l;
 	block->lasttemponode=temponode;
 
-        block->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.82f);
-
+        //block->color = GFX_mix_colors(GFX_MakeRandomColor(), GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM), 0.82f);
+        block->color = GFX_MakeRandomBlockColor();
+        
         TIME_everything_in_block_has_changed(block); // Create timings for bars and so forth, needed when calling TIME_block_num_tracks_have_changed in AppendTrack.
 
 	for(lokke=0;lokke<block->num_tracks;lokke++){

@@ -374,10 +374,13 @@ public:
     }
     
     {
+      /*
       QColor color(GFX_MakeRandomColor());
-      color = color.lighter();
+      color = color.lighter(170);
       //QColor color = get_qcolor(SEQUENCER_BLOCK_DEFAULT_AUDIO_FILE_COLOR_NUM);
       _color = color.rgb();
+      */
+      _color = GFX_MakeRandomBlockColor();
     }
     
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
