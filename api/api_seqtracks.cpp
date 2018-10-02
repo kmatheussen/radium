@@ -2483,7 +2483,10 @@ double getSeqblockStretch(int seqblocknum, int seqtracknum, bool use_gfx_if_poss
   if (seqblock==NULL)
     return 1;
 
-  return seqblock->t.stretch;
+  if(seqblock_is_stretched(seqblock))    
+    return seqblock->t.stretch;
+  else
+    return 1.0;
 }
 
 double getSeqblockSpeed(int seqblocknum, int seqtracknum, bool use_gfx_if_possible){
@@ -2492,7 +2495,10 @@ double getSeqblockSpeed(int seqblocknum, int seqtracknum, bool use_gfx_if_possib
   if (seqblock==NULL)
     return 1;
 
-  return seqblock->t.speed;
+  if (seqblock_is_speeded(seqblock))
+    return seqblock->t.speed;
+  else
+    return 1.0;
 }
 
 double getSeqblockStretchSpeed(int seqblocknum, int seqtracknum){
