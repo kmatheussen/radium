@@ -5232,7 +5232,9 @@
         ;;(if (= 0 seqtracknum)
         ;;    (c-display "state:" (pp new-seqblocks-state)))
         (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)        
-        (set-seqblock-selected-box (if is-left 'stretch-left 'stretch-right)
+        (set-seqblock-selected-box (if is-speed
+                                       (if is-left 'speed-left 'speed-right)
+                                       (if is-left 'stretch-left 'stretch-right))
                                    seqblocknum seqtracknum)
         (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
         )
@@ -5312,10 +5314,12 @@
       (set-editor-statusbar (<-> "Speed: " (two-decimal-string curr-speed))))
   
   :move (Value Y)
-  (let ((gakk (move-seqblock-speedstretch Value seqtracknum seqblocknum seqblock seqblocks is-stretch is-left (this->min-value) (this->max-value) curr-pos)))
-    (set! curr-pos (car gakk))
-    (set! curr-speed (cadr gakk))
-    #t)
+  (begin
+    ;;(c-display "Value:" Value)
+    (let ((gakk (move-seqblock-speedstretch Value seqtracknum seqblocknum seqblock seqblocks is-stretch is-left (this->min-value) (this->max-value) curr-pos)))
+      (set! curr-pos (car gakk))
+      (set! curr-speed (cadr gakk))
+      #t))
 
   :release ()
   (begin
@@ -6941,7 +6945,6 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
-                (c-display "WARNING: Fix Reset stretch")
                 (and (= Button *right-button*)
                      (not (<ra> :shift-pressed))
                      *current-seqblock-info*
@@ -6955,7 +6958,6 @@
                               (popup-menu (list "Reset stretch"
                                                 :enabled (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum)))
                                                 (lambda ()
-                                                  (c-display "stretch:" (<ra> :get-seqblock-stretch seqblocknum seqtracknum))
                                                   (define duration (get-nonstretched-seqblock-duration seqblocknum seqtracknum))
                                                   (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
                                                   (define seqblock (seqblocks seqblocknum))
@@ -6977,7 +6979,53 @@
                                                     (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
                                                     (<ra> :apply-gfx-seqblocks seqtracknum))))
                                           (list "Granulation parameters"
-                                                :enabled (not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum)))
+                                                :enabled #t ;;(not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum)))
+                                                (lambda ()
+                                                  (create-audio-seqblock-gui seqblocknum seqtracknum))))
+                              #t)))))))
+
+;; seqblock speed handle menu
+(add-mouse-cycle
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (and (= Button *right-button*)
+                     (not (<ra> :shift-pressed))
+                     *current-seqblock-info*
+                     (let* ((seqtracknum (*current-seqblock-info* :seqtracknum))
+                            (seqblocknum (*current-seqblock-info* :seqblocknum))
+                            (is-left (inside-box (<ra> :get-box seqblock-left-speed seqblocknum seqtracknum) X Y))
+                            (is-right (not is-left)))
+                       (and (or is-left
+                                (inside-box (<ra> :get-box seqblock-right-speed seqblocknum seqtracknum) X Y))
+                            (begin
+                              (popup-menu (list "Reset speed"
+                                                :enabled (not (= 1.0 (<ra> :get-seqblock-speed seqblocknum seqtracknum)))
+                                                (lambda ()
+                                                  (define duration (get-nonstretched-seqblock-duration seqblocknum seqtracknum))
+                                                  (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
+                                                  (define seqblock (seqblocks seqblocknum))
+                                                  (define stretch (<ra> :get-seqblock-stretch seqblocknum seqtracknum));;(/ (get-original-seqblock-duration seqblocknum seqtracknum)
+;;                                                                     duration))
+                                                  (define new-seqblock (if is-right
+                                                                           (copy-hash seqblock
+                                                                                      :end-time (+ (seqblock :start-time) (floor (* stretch duration)))
+                                                                                      :speed 1.0)
+                                                                           (copy-hash seqblock
+                                                                                      :start-time (- (seqblock :end-time) (floor (* stretch duration)))
+                                                                                      :speed 1.0)))
+                                                  (if (and is-left
+                                                           (< (new-seqblock :start-time) 0))
+                                                      (set! new-seqblock (copy-hash new-seqblock
+                                                                                    :start-time 0
+                                                                                    :end-time (+ (new-seqblock :end-time) (- (new-seqblock :start-time))))))
+                                                  (define new-seqblocks-state (copy seqblocks))
+                                                  (set! (new-seqblocks-state seqblocknum) new-seqblock)
+                                                  (set! new-seqblocks-state (maybe-add-autofades new-seqblocks-state seqblocknum))
+                                                  (when new-seqblocks-state
+                                                    (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
+                                                    (<ra> :apply-gfx-seqblocks seqtracknum))))
+                                          (list "Resampler parameters"
+                                                :enabled #t ;;(not (= 1.0 (<ra> :get-seqblock-stretch seqblocknum seqtracknum)))
                                                 (lambda ()
                                                   (create-audio-seqblock-gui seqblocknum seqtracknum))))
                               #t)))))))
