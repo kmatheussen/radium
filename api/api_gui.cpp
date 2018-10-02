@@ -5991,6 +5991,13 @@ const_char* generateNewColor(float mix_background){
                                       );
 }
 
+const_char* generateNewBlockColor(float mix_background){
+  return GFX_get_colorname_from_color(GFX_mix_colors(GFX_MakeRandomBlockColor(),
+                                                     GFX_get_color(HIGH_EDITOR_BACKGROUND_COLOR_NUM),
+                                                     mix_background)
+                                      );
+}
+
 static inline void setStyleSheetRecursively(QWidget *widget, const_char* stylesheet){
   if (widget != NULL){
     widget->setStyleSheet(stylesheet);
