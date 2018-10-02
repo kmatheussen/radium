@@ -7082,7 +7082,7 @@
                 (let ((seqblocknum (seqblock-info :seqblocknum)))
                   (and (not (<ra> :seqblock-holds-block seqblocknum seqtracknum))
                        (let* ((X (<ra> :get-mouse-pointer-x))
-                              (seqpos (round (get-sequencer-time)))
+                              (seqpos (round (get-sequencer-time X)))
                               (pos (if use-grid
                                        (<ra> :get-seq-gridded-time seqpos seqtracknum (<ra> :get-seq-block-grid-type))
                                        seqpos)))
