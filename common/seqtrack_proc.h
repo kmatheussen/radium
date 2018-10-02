@@ -71,6 +71,13 @@ static inline int64_t blocktime_to_seqtime(const struct SeqBlock *seqblock, cons
   return blocktime_to_seqtime2(seqblock->t.stretch, blocktime);
 }
 
+static inline double seqblock_is_stretched(const struct SeqBlock *seqblock){
+  return fabs(seqblock->t.stretch - 1.0) > 0.00001;
+}
+
+static inline double seqblock_is_speeded(const struct SeqBlock *seqblock){
+  return fabs(seqblock->t.speed - 1.0) > 0.00001;
+}
 
 struct SoundPlugin;
 

@@ -427,8 +427,8 @@ public:
 
 
   void prepare_for_playing(const int64_t sample_start_pos, const struct SeqBlock *seqblock, bool do_fade_in, radium::FutureSignalTrackingSemaphore *gotit){
-    _do_granulate = RT_seqblock_automation_is_enabled(seqblock->automations[SAT_STRETCH]) || fabs(seqblock->t.stretch - 1.0) > 0.001;
-    _do_resampling = _do_constant_resampling || seqblock->t.speed!=1.0 || RT_seqblock_automation_is_enabled(seqblock->automations[SAT_SPEED]);
+    _do_granulate = RT_seqblock_automation_is_enabled(seqblock->automations[SAT_STRETCH]) || seqblock_is_stretched(seqblock);
+    _do_resampling = _do_constant_resampling || seqblock_is_speeded(seqblock) || RT_seqblock_automation_is_enabled(seqblock->automations[SAT_SPEED]);
 
     _granulator.reset();
     _resampler2.reset();

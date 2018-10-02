@@ -1994,11 +1994,10 @@ void SEQUENCER_timing_has_changed(radium::PlayerLockOnlyIfNeeded &lock){
 
           lock.lock();
             
-          double stretch = seqblock->t.stretch;
-          if (stretch==1.0)
+          if (seqblock_is_stretched(seqblock))
             seqblock->t.time2 = seqblock->t.time + default_duration;
           else
-            seqblock->t.time2 = seqblock->t.time + round(stretch*(double)default_duration);
+            seqblock->t.time2 = seqblock->t.time + round(seqblock->t.stretch*(double)default_duration);
           
           seqblock->t.default_duration = default_duration; // Note: seqblock->block!=NULL
           
