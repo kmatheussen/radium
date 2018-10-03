@@ -1,5 +1,8 @@
 (provide 'mouse.scm)
 
+(my-require 'sequencer.scm)
+
+
 (define-constant *left-button* 1) ;; TR_LEFTMOUSE
 (define-constant *middle-button* 3) ;; TR_MIDDLEMOUSE
 (define-constant *right-button* 5) ;; TR_RIGHTMOUSE
@@ -1189,42 +1192,6 @@
 ;; status bar and Update mouse pointer shape when moved above various things
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (get-interior-displayable-string value)
-  (if (= value 0)
-      "0.00s"
-      (let ((seconds (/ value
-                        (<ra> :get-sample-rate))))
-        (if (< seconds 0.01)
-            (let* ((ms (* 1000 seconds))                         
-                   (sms (two-decimal-string ms)))
-              (if (string=? sms "0.00")
-                  "0.01s"
-                  (<-> sms "ms")))
-            (<-> (two-decimal-string seconds) "s")))))
-
-
-(define (set-left-interior-status-bar2 interior-start)
-  (set-editor-statusbar (<-> "----|: " (get-interior-displayable-string interior-start))))
-
-(define (set-right-interior-status-bar2 seqblocknum seqtracknum interior-end)
-  (set-editor-statusbar (<-> "|----: " (get-interior-displayable-string (- (get-original-seqblock-duration seqblocknum seqtracknum)
-                                                                           interior-end)))))
-
-;; see enum SeqblockBoxSelected in nsmtracker.h
-(define (get-selected-box-num boxname)
-  (cond ((eq? boxname 'non) 0)
-        ((eq? boxname 'fade-left) 1)
-        ((eq? boxname 'fade-right) 2)
-        ((eq? boxname 'interior-left) 3)
-        ((eq? boxname 'interior-right) 4)
-        ((eq? boxname 'speed-left) 5)
-        ((eq? boxname 'speed-right) 6)
-        ((eq? boxname 'stretch-left) 7)
-        ((eq? boxname 'stretch-right) 8)
-        (else
-         (c-display "************** boxname:" boxname)
-         (assert #f))))
-        
 (define *old-selected-box-seqblocknum* -1)
 (define *old-selected-box-seqtracknum* -1)
 (define (set-seqblock-selected-box which-one seqblocknum seqtracknum)
@@ -1242,38 +1209,6 @@
 
   (if (>= seqblocknum 0)
       (<ra> :set-seqblock-selected-box (get-selected-box-num which-one) seqblocknum seqtracknum)))
-
-(define (set-left-interior-status-bar seqblocknum seqtracknum)
-  ;;(c-display "setting" seqblocknum seqtracknum)
-  (set-seqblock-selected-box 'interior-left seqblocknum seqtracknum)
-  (set-left-interior-status-bar2 (<ra> :get-seqblock-interior-start seqblocknum seqtracknum)))
-
-(define (set-right-interior-status-bar seqblocknum seqtracknum)
-  (set-seqblock-selected-box 'interior-right seqblocknum seqtracknum)
-  (set-right-interior-status-bar2 seqblocknum seqtracknum (<ra> :get-seqblock-interior-end seqblocknum seqtracknum)))
-
-(define (set-fade-status-bar is-left seqblocknum seqtracknum)
-  (define (get-displayable-string value)
-    (<-> (if (= value 0)
-             "0.00"
-             (let* ((ms (* 1000
-                           (/ (* value (- (<ra> :get-seqblock-end-time seqblocknum seqtracknum)
-                                          (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
-                              (<ra> :get-sample-rate))))
-                    (sms (two-decimal-string ms)))
-               (if (string=? sms "0.00")
-                   "0.01"
-                   sms)))
-         "ms"))
-
-  (if is-left
-      (begin
-        (set-seqblock-selected-box 'fade-left seqblocknum seqtracknum)
-        (set-editor-statusbar (<-> "Fade in: " (get-displayable-string (<ra> :get-seqblock-fade-in seqblocknum seqtracknum)))))
-      (begin
-        (set-seqblock-selected-box 'fade-right seqblocknum seqtracknum)
-        (set-editor-statusbar (<-> "Fade out: " (get-displayable-string (<ra> :get-seqblock-fade-out seqblocknum seqtracknum)))))))
-
 
 (add-mouse-move-handler
  :move (lambda ($button X Y)
@@ -1326,24 +1261,24 @@
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
                              ((inside-box (<ra> :get-box seqblock-right-stretch seqblocknum seqtracknum) X Y)
-                              (set-editor-statusbar (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
+                              (set-editor-statusbar (get-stretch-string seqblocknum seqtracknum))
                               (set-seqblock-selected-box 'stretch-right seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
                              ((inside-box (<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum) X Y)
-                              (set-editor-statusbar (<-> "Stretch: " (two-decimal-string (<ra> :get-seqblock-stretch seqblocknum seqtracknum))))
+                              (set-editor-statusbar (get-stretch-string seqblocknum seqtracknum))
                               (set-seqblock-selected-box 'stretch-left seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
                              ((and holds-sample
                                    (inside-box (<ra> :get-box seqblock-right-speed seqblocknum seqtracknum) X Y))
-                              (set-editor-statusbar (<-> "Speed: " (two-decimal-string (<ra> :get-seqblock-speed seqblocknum seqtracknum))))
+                              (set-editor-statusbar (get-speed-string seqblocknum seqtracknum))
                               (set-seqblock-selected-box 'speed-right seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
                              ((and holds-sample
                                    (inside-box (<ra> :get-box seqblock-left-speed seqblocknum seqtracknum) X Y))
-                              (set-editor-statusbar (<-> "Speed: " (two-decimal-string (<ra> :get-seqblock-speed seqblocknum seqtracknum))))
+                              (set-editor-statusbar (get-speed-string seqblocknum seqtracknum))
                               (set-seqblock-selected-box 'speed-left seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
 
@@ -4830,7 +4765,7 @@
                                      seqblock-info)
                         
                         :Publicize (lambda (seqblock-info)
-                                     (set-left-interior-status-bar2 gakkgakk-left-interior-value)
+                                     (set-left-interior-status-bar2 #f #f gakkgakk-left-interior-value)
                                      )
                         
                         :Get-pixels-per-value-unit (lambda (seqblock-info)

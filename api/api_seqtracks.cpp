@@ -157,6 +157,7 @@ void unsetSequencerSelectionRectangle(void){
 
 
 
+
 float getSeqnavX1(void){
   return SEQNAV_get_x1();
 }
@@ -2378,7 +2379,13 @@ void setSeqblockSelectedBox(int which_one, int seqblocknum, int seqtracknum){
   
 }
 
-
+int getSeqblockSelectedBox(void){
+  if (g_curr_seqblock == NULL)
+    return 0;
+  else
+    return g_curr_seqblock->selected_box;  
+}
+  
 
 // seqblock fade in/out
 

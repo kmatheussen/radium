@@ -2672,7 +2672,7 @@ struct SeqBlockTimings{
 
 struct SeqblockAutomation;
 
-// If changing this one, also change 'get-selected-box-num' in mouse.scm
+// If changing this one, also change 'get-selected-box-num' in sequencer.scm
 enum SeqblockBoxSelected{
   SB_NO_SELECTED,
   SB_FADE_LEFT,
@@ -2691,12 +2691,14 @@ static inline int get_system_fontheight(void);
 #include "../audio/Envelope.hpp"
 #endif
 
-enum Seqblock_Type{
+#ifdef __cplusplus
+enum class Seqblock_Type{
   REGULAR,
   GFX, // When moving or changing seqblocks.
   GFX_GFX, // When moving a copy of several seqblocks (orange transparent color)
   RECORDING
 };
+#endif
 
 // Note: If changing order here, seqblock_audio.scm must be updated.
 enum Seqblock_Automation_Type{
