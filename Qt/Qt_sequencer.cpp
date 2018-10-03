@@ -3103,7 +3103,10 @@ void SEQUENCER_set_visible_end_time(int64_t val){
 }
 
 void SEQUENCER_set_grid_type(enum GridType grid_type){
-  g_sequencer_widget->_grid_type = grid_type;
+  if(g_sequencer_widget->_grid_type != grid_type){
+    g_sequencer_widget->_grid_type = grid_type;
+    SEQUENCER_update(SEQUPDATE_TIME);
+  }
 }
 
 void SEQUENCER_set_selection_rectangle(float x1, float y1, float x2, float y2){
