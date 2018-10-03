@@ -5992,6 +5992,8 @@
      (<ra> :set-sequencer-selection-rectangle min-x min-y max-x max-y)
      )
 
+   (define has-dragged #f)
+   
    (make-mouse-cycle
     :press-func (lambda ($button $x $y)
                   ;;(c-display "in-sequencer: " (inside-box (<ra> :get-box sequencer) $x $y) (< $y (<ra> :get-seqnav-y1)))
@@ -6001,14 +6003,18 @@
                        (begin
                          (set! *selection-rectangle-start-x* $x)
                          (set! *selection-rectangle-start-y* $y)
+                         (set! has-dragged #f)
                          #t)))
     
     :drag-func  (lambda ($button $x $y)
+                  (set! has-dragged #t)
                   (set-rect! $x $y))
     
     :release-func (lambda ($button $x $y)
                     ;;(set-rect! $x $y)
-                    (<ra> :unset-sequencer-selection-rectangle)
+                    (if has-dragged
+                        (<ra> :unset-sequencer-selection-rectangle)
+                        (<ra> :unset-all-selected-seqblocks))                        
                     ))))
 
 
