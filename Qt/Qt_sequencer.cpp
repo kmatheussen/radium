@@ -624,20 +624,33 @@ public:
     return get_seqblock_x2((struct SeqTrack*)root->song->seqtracks.elements[seqtracknum], seqblocknum);
   }
 
+  QRectF get_seqblock_rect(const struct SeqBlock *seqblock) const {
+    double x1 = get_seqblock_x1(seqblock);
+    double x2 = get_seqblock_x2(seqblock);
+    
+    return QRectF(x1,t_y1+1,x2-x1,t_height-2);
+  }
+  
+  void update_seqblock(const struct SeqBlock *seqblock) const {
+    if (seqblock_is_visible(seqblock))
+      SEQUENCER_getWidget()->update(get_seqblock_rect(seqblock).toAlignedRect());
+  }
+  
   void set_seqblocks_is_selected(const struct SeqTrack *seqtrack, const QRect &selection_rect){
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
 
-      if (seqblock->t.time < _end_time && seqblock->t.time2 >= _start_time) {
-        double x1 = get_seqblock_x1(seqblock);
-        double x2 = get_seqblock_x2(seqblock);
-
-        QRect rect(x1,t_y1+1,x2-x1,t_height-2);
-        
-        seqblock->is_selected = rect.intersects(selection_rect);
-      } else {
-        seqblock->is_selected = false;
+      bool new_val = false;
+      
+      if (seqblock_is_visible(seqblock)){
+        QRectF rect = get_seqblock_rect(seqblock);
+        new_val = rect.intersects(selection_rect);
       }
 
+      if (new_val != seqblock->is_selected) {
+        update_seqblock(seqblock);
+        seqblock->is_selected = new_val;
+      }
+      
     }END_VECTOR_FOR_EACH;
      
   }
@@ -1501,16 +1514,9 @@ public:
     {
       if (seqblock_is_visible(seqblock)==false)
         return false;
+
+      rect = get_seqblock_rect(seqblock);
       
-      double x1 = get_seqblock_x1(seqblock);
-      double x2 = get_seqblock_x2(seqblock);
-      //if (i==1)
-      //  printf("   %d: %f, %f. %f %f\n", iterator666, x1, x2, seqblock->start_time / 44100.0, seqblock->end_time / 44100.0);
-
-      rect = QRectF(x1,t_y1+1,x2-x1,t_height-2);
-
-      //printf("%p: Start: %f, End: %f. X1: %f, X2: %f\n", seqblock, start_time, end_time, x1,x2);
-
       if (false==update_region.intersects(rect.toAlignedRect()))
         return false;
     }
@@ -2761,7 +2767,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   void paintSelectionRectangle(const QRegion &update_region, QPainter &p) const {
     QColor grayout_color = QColor(220,220,220,0x40); //get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM);
 
-    p.setPen(Qt::black);
+    QPen pen(Qt::black);
+    p.setPen(pen);
     p.setBrush(grayout_color);
 
     p.drawRect(_selection_rectangle);
@@ -3100,6 +3107,8 @@ void SEQUENCER_set_grid_type(enum GridType grid_type){
 }
 
 void SEQUENCER_set_selection_rectangle(float x1, float y1, float x2, float y2){
+  bool was_selected = g_sequencer_widget->_has_selection_rectangle;
+    
   g_sequencer_widget->_has_selection_rectangle = true;
   QPoint p1 = mapFromEditor(g_sequencer_widget, QPoint(x1, y1));
   QPoint p2 = mapFromEditor(g_sequencer_widget, QPoint(x2, y2));
@@ -3133,16 +3142,51 @@ void SEQUENCER_set_selection_rectangle(float x1, float y1, float x2, float y2){
   if (_y1 > _y2)
     _y1 = _y2;
   
-
-  const QRect &old_rect = g_sequencer_widget->_selection_rectangle;
   const QRect new_rect(p1, p2);
+  const QRect new_draw_rect = new_rect.adjusted(-1,-1,1,1);
+
+  if (was_selected==false){
+    
+    g_sequencer_widget->update(new_rect);
+
+  } else {
+    
+    const QRect &old_draw_rect = g_sequencer_widget->_selection_rectangle.adjusted(-1,-1,1,1);
+
+    QRegion region(new_draw_rect);
+    region = region.xored(QRegion(old_draw_rect));
+
+    QRegion new_border(new_draw_rect);
+    new_border -= new_rect.adjusted(2,2,-2,-2);
+
+    QRegion old_border(old_draw_rect);
+    old_border -= old_draw_rect.adjusted(2,2,-2,-2);
+
+    region += new_border;
+    region += old_border;
+
+    /*
+    int i = 0;
+    for(const auto &rect : region){
+      printf("%d: %d, %d -> %d, %d (w: %d, h: %d)\n", i++, rect.x(), rect.y(), rect.x()+rect.width(), rect.y()+rect.height(), rect.width(), rect.height());
+    }
+    printf("\n");
+    */
+    
+    g_sequencer_widget->update(region);
+
+    
+    
+  }
   
+  /*
   int seqtrack1 = R_MIN(getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y())), mapToEditorY(g_sequencer_widget, getSeqtrackNumFromY(new_rect.y())));
   int seqtrack2 = R_MAX(getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y()+old_rect.height())), getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, new_rect.y()+new_rect.height())));
 
   for(int seqtracknum=seqtrack1 ; seqtracknum < seqtrack2+1 ; seqtracknum++)
     SEQTRACK_update((struct SeqTrack*)root->song->seqtracks.elements[seqtracknum]);
-    
+  */
+  
   g_sequencer_widget->_selection_rectangle = new_rect;
   
   g_sequencer_widget->set_seqblocks_is_selected();
@@ -3467,15 +3511,7 @@ void SEQBLOCK_update(const struct SeqTrack *seqtrack, const struct SeqBlock *seq
   int seqtracknum = get_seqtracknum(seqtrack);
   
   const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, false);
-  
-  if (w.seqblock_is_visible(seqblock)==false)
-    return;
-  
-  double x1 = w.get_seqblock_x1(seqblock);
-  double x2 = w.get_seqblock_x2(seqblock);
-
-  g_sequencer_widget->update(floor(x1), floor(w.t_y1),
-                             ceil(x2-x1), ceil(w.t_height));
+  w.update_seqblock(seqblock);
 }
 
 // Note: Might be called from a different thread than the main thread. (DiskPeak thread calls this function)
