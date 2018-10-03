@@ -210,7 +210,7 @@ void appendSeqtrack(bool for_audiofiles){
   undoSequencer();
   SEQUENCER_append_seqtrack(NULL, for_audiofiles);
 
-  setCurrSeqtrack(root->song->seqtracks.num_elements -1);
+  setCurrSeqtrack(root->song->seqtracks.num_elements - 1);
 }
 
 void insertSeqtrack(bool for_audiofiles, int pos){
@@ -253,16 +253,25 @@ void setCurrSeqtrack(int seqtracknum){
   if (seqtrack==NULL)
     return;
 
-  if (true || seqtracknum != ATOMIC_GET(root->song->curr_seqtracknum)){ // We always go in here since the function is sometimes called just for the update() calls.
+  int old = ATOMIC_GET(root->song->curr_seqtracknum);
+  
+  //if (true || seqtracknum != ATOMIC_GET(root->song->curr_seqtracknum)){ // We always go in here since the function is sometimes called just for the update() calls.
+  
+  if (seqtracknum != old){
 
+    if (old >= 0 && old < root->song->seqtracks.num_elements){
+      SEQTRACK_update_with_borders(getSeqtrackFromNum(old));
+    }
+      
     ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
-    SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_TIME|SEQUPDATE_PLAYLIST);
-    BS_UpdateBlockList();
-    
+    SEQTRACK_update_with_borders(seqtrack);
+    SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_PLAYLIST|SEQUPDATE_BLOCKLIST);
+
     struct Patch *patch = seqtrack->patch;
     if(patch!=NULL)
       patch->instrument->PP_Update(patch->instrument, patch, false);
   }
+
 }
 
 int getCurrSeqtrack(void){

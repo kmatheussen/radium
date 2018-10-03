@@ -5989,7 +5989,8 @@
      (define max-x (max $x *selection-rectangle-start-x*))
      (define max-y (max $y *selection-rectangle-start-y*))
      ;;(c-display min-x min-y max-x max-y)
-     (<ra> :set-sequencer-selection-rectangle min-x min-y max-x max-y))
+     (<ra> :set-sequencer-selection-rectangle min-x min-y max-x max-y)
+     )
 
    (make-mouse-cycle
     :press-func (lambda ($button $x $y)
@@ -6006,8 +6007,9 @@
                   (set-rect! $x $y))
     
     :release-func (lambda ($button $x $y)
-                    (set-rect! $x $y)
-                    (<ra> :unset-sequencer-selection-rectangle)))))
+                    ;;(set-rect! $x $y)
+                    (<ra> :unset-sequencer-selection-rectangle)
+                    ))))
 
 
 

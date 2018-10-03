@@ -2285,6 +2285,17 @@ public:
 
 };
 
+static inline int getSeqtrackNumFromY(float y){
+  for(int seqtracknum=0;seqtracknum<root->song->seqtracks.num_elements;seqtracknum++){
+    //printf("y: %f. %d: %f\n", y, seqtracknum, getSeqtrackY1(seqtracknum));
+    if (y <= getSeqtrackY2(seqtracknum))
+      return seqtracknum;
+  }
+  
+  return root->song->seqtracks.num_elements-1;
+}
+
+
 struct Sequencer_widget : public MouseTrackerQWidget {
 
   int _old_width = 600;
@@ -2409,16 +2420,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     e->acceptProposedAction();
   }
   
-
-  int getSeqtrackNumFromY(float y){
-    for(int seqtracknum=0;seqtracknum<root->song->seqtracks.num_elements;seqtracknum++){
-      //printf("y: %f. %d: %f\n", y, seqtracknum, getSeqtrackY1(seqtracknum));
-      if (y < getSeqtrackY2(seqtracknum))
-        return seqtracknum;
-    }
-
-    return root->song->seqtracks.num_elements-1;
-  }
 
   void dropEvent(QDropEvent *event) override {
     printf("               GOT DOP\n");
@@ -2877,7 +2878,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
                                           QRegion(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1,
                                                   _seqtracks_widget.t_width, _seqtracks_widget.t_height)
                                           );
-
+    
     // Paint seqblocks and seqtrack backround
     //
     if(seqtracks_are_painted){
@@ -3126,17 +3127,35 @@ void SEQUENCER_set_selection_rectangle(float x1, float y1, float x2, float y2){
     _y1 = _y2;
   
 
-  g_sequencer_widget->_selection_rectangle = QRect(p1, p2);
+  const QRect &old_rect = g_sequencer_widget->_selection_rectangle;
+  const QRect new_rect(p1, p2);
+  
+  int seqtrack1 = R_MIN(getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y())), mapToEditorY(g_sequencer_widget, getSeqtrackNumFromY(new_rect.y())));
+  int seqtrack2 = R_MAX(getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y()+old_rect.height())), getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, new_rect.y()+new_rect.height())));
 
+  for(int seqtracknum=seqtrack1 ; seqtracknum < seqtrack2+1 ; seqtracknum++)
+    SEQTRACK_update((struct SeqTrack*)root->song->seqtracks.elements[seqtracknum]);
+    
+  g_sequencer_widget->_selection_rectangle = new_rect;
+  
   g_sequencer_widget->set_seqblocks_is_selected();
-
-  g_sequencer_widget->update();
 }
 
 void SEQUENCER_unset_selection_rectangle(void){
+  if(g_sequencer_widget->_has_selection_rectangle==false)
+    return;
+  
   g_sequencer_widget->_has_selection_rectangle = false;
 
-  g_sequencer_widget->update();
+  const QRect &old_rect = g_sequencer_widget->_selection_rectangle;
+  
+  int seqtrack1 = getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y()));
+  int seqtrack2 = getSeqtrackNumFromY(mapToEditorY(g_sequencer_widget, old_rect.y()+old_rect.height()));
+  
+  for(int seqtracknum=seqtrack1 ; seqtracknum < seqtrack2+1 ; seqtracknum++)
+    SEQTRACK_update((struct SeqTrack*)root->song->seqtracks.elements[seqtracknum]);
+
+  //g_sequencer_widget->update(g_sequencer_widget->_selection_rectangle);
 }
 
 
