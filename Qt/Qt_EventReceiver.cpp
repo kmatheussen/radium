@@ -140,6 +140,15 @@ void EditorWidget::paintEvent( QPaintEvent *e ){
 //void EditorWidget::showEvent ( QShowEvent * event )
 #endif
 
+static void update_seqtracks_with_current_editor_block(void){
+  if(root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+
+  SEQUENCER_update_seqblocks_holding_editor_block(root->song->tracker_windows->wblock->block);
+}
+
 void EditorWidget::updateEditor(){
   if(g_is_starting_up==true)
     return;
@@ -182,7 +191,8 @@ void EditorWidget::updateEditor(){
     UpdateWBlockCoordinates(this->window, this->window->wblock);
     GFX_UpdateUpperLeft(window, window->wblock);
     UpdateAllPianoRollHeaders(window, window->wblock);
-    SEQUENCER_update(SEQUPDATE_TIME);
+
+    update_seqtracks_with_current_editor_block();
     
     update();
 
@@ -193,7 +203,7 @@ void EditorWidget::updateEditor(){
   if (this->window->must_redraw_editor==true){
     GL_create(this->window);
     if (!is_playing())
-      SEQUENCER_update(SEQUPDATE_TIME);
+      update_seqtracks_with_current_editor_block();
     this->window->must_redraw_editor=false;
   }
 }

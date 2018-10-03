@@ -568,6 +568,15 @@ public:
     , _rect(QRectF(x1, y1, x2-x1, y2-y1))
   {
   }
+
+  bool seqblock_is_visible(const struct SeqBlock *seqblock) const {
+    if (seqblock->t.time >= _end_time)
+      return false;
+    else if (seqblock->t.time2 < _start_time)
+      return false;
+    else
+      return true;
+  }
   
   double get_seqblock_x1(const struct SeqBlock *seqblock) const {
     return scale_double(seqblock->t.time, _start_time, _end_time, t_x1, t_x2);
@@ -1490,9 +1499,7 @@ public:
 
     // First check if we need to paint it.
     {
-      if (seqblock->t.time >= _end_time)
-        return false;
-      if (seqblock->t.time2 < _start_time)
+      if (seqblock_is_visible(seqblock)==false)
         return false;
       
       double x1 = get_seqblock_x1(seqblock);
@@ -3456,6 +3463,20 @@ void SEQTRACK_update(const struct SeqTrack *seqtrack){
   update(seqtrack, false, -1, -1);
 }
 
+void SEQBLOCK_update(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  int seqtracknum = get_seqtracknum(seqtrack);
+  
+  const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, false);
+  
+  if (w.seqblock_is_visible(seqblock)==false)
+    return;
+  
+  double x1 = w.get_seqblock_x1(seqblock);
+  double x2 = w.get_seqblock_x2(seqblock);
+
+  g_sequencer_widget->update(floor(x1), floor(w.t_y1),
+                             ceil(x2-x1), ceil(w.t_height));
+}
 
 // Note: Might be called from a different thread than the main thread. (DiskPeak thread calls this function)
 void SEQUENCER_update(uint32_t what){
