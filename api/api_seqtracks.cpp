@@ -2909,6 +2909,21 @@ bool isSeqblockSelected(int seqblocknum, int seqtracknum){
   return seqblock->is_selected;
 }
 
+void unsetAllSelectedSeqblocks(void){
+  bool do_update=false;
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+      if(seqblock->is_selected==true){
+        seqblock->is_selected=false;
+        do_update=true;
+      }
+    }END_VECTOR_FOR_EACH;
+  }END_VECTOR_FOR_EACH;
+
+  if(do_update)
+    SEQUENCER_update(SEQUPDATE_TIME);
+}
+
 bool isSeqblockTrackEnabled(int tracknum, int seqblocknum, int seqtracknum){
   if (tracknum < 0 || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS){
     handleError("setSeqblockTrackEnabled: Illegal tracknum: %d", tracknum);
