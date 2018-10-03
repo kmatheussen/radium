@@ -24,6 +24,7 @@ class QPaintEvent;
 class QMouseEvent;
 class QEvent;
 class QResizeEvent;
+class QPainter;
 
 QVector<QWidget*> MIXERSTRIPS_get_all_widgets(void);
 QWidget *MIXERSTRIPS_get_curr_widget(void);
@@ -35,6 +36,8 @@ int64_t API_get_gui_from_existing_widget(QWidget *widget);
 #if defined(QREGION_H)
 void API_run_paint_event_for_custom_widget(QWidget *widget, QPaintEvent *ev, const QRegion &already_painted_areas);
 #endif
+
+bool API_run_custom_gui_paint_function(QWidget *widget, QPainter *p, const QRegion *region, std::function<void(void)> func);
 
 bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);
 bool API_run_mouse_move_event_for_custom_widget(QWidget *widget, QMouseEvent *ev);

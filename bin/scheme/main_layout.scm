@@ -3,7 +3,8 @@
 
 
 (my-require 'notem.scm)
-(my-require 'sequencer.scm)
+(my-require 'seqtrack-headers.scm)
+(my-require 'seqblock-paint.scm)
 
 
 

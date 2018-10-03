@@ -44,7 +44,9 @@ extern LANGSPEC void SEQTRACKPLUGIN_prepare_to_play(struct SoundPlugin *plugin, 
 extern LANGSPEC vector_t SEQTRACKPLUGIN_get_all_used_audio_filenames(struct SoundPlugin *plugin);
   
 extern LANGSPEC void SEQTRACKPLUGIN_clear_resampler_warning_hashmap(void);
-extern LANGSPEC int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, enum Seqblock_Type type);
+#if __cplusplus
+extern int64_t SEQTRACKPLUGIN_add_sample(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type);
+#endif
 
 extern LANGSPEC void SEQTRACKPLUGIN_enable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin, const wchar_t *path); // Called when user enables the "R" checkbox.
 extern LANGSPEC bool SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack, struct SoundPlugin *plugin); // Called when user disables the "R" checkbox.
@@ -52,7 +54,9 @@ extern LANGSPEC bool SEQTRACKPLUGIN_disable_recording(struct SeqTrack *seqtrack,
 extern LANGSPEC void SEQTRACKPLUGIN_apply_gfx_samples(struct SoundPlugin *plugin);
 extern LANGSPEC void SEQTRACKPLUGIN_assert_samples(const struct SoundPlugin *plugin);
 extern LANGSPEC void SEQTRACKPLUGIN_assert_samples2(const struct SeqTrack *seqtrack);
-extern LANGSPEC void SEQTRACKPLUGIN_request_remove_sample(struct SoundPlugin *plugin, int64_t id, enum Seqblock_Type type); // Note: Make sure seqtrack->curr_sample_seqblock is updated. In seqtrack.cpp, use prepare_remove_sample_from_seqblock instead.
+#if __cplusplus
+extern void SEQTRACKPLUGIN_request_remove_sample(struct SoundPlugin *plugin, int64_t id, Seqblock_Type type); // Note: Make sure seqtrack->curr_sample_seqblock is updated. In seqtrack.cpp, use prepare_remove_sample_from_seqblock instead.
+#endif
 extern LANGSPEC bool SEQTRACKPLUGIN_can_be_deleted(struct SoundPlugin *plugin);
 extern LANGSPEC int SEQTRACKPLUGIN_get_num_samples(const struct SoundPlugin *plugin);
 

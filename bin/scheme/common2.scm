@@ -634,8 +634,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
                     (display args)
                     (newline)))
            *try-finally-failed-return-value*)))
-  
-  
+
 ;;
 ;;
 ;;

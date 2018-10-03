@@ -1,5 +1,5 @@
 
-(provide 'sequencer.scm)
+(provide 'seqtrack-headers.scm)
 
 ;;(my-require 'area.scm)
 (my-require 'gui.scm)
@@ -1224,6 +1224,3 @@
 (FROM_C-reconfigure-sequencer-left-part)
 !!#
 
-
-
-;;(<gui> :height *testgui*)

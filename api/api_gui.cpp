@@ -1876,6 +1876,29 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       return maybePaintBackgroundColor(event, p);
     }
 
+    bool paintEvent3(QPainter *p, const QRegion *region, std::function<void(void)> func){
+      bool ret = true;
+      
+      _current_painter = p;
+      _current_region = region;
+      
+      int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
+
+      func();
+      
+      if (g_scheme_failed==true && gui_isOpen(guinum))
+        _paint_callback_failed = TIME_get_ms() + 5000;
+      
+      ret = gui_isOpen(guinum);  // Check if we have been deleted in the meantime.
+      
+      if (ret){
+        _current_painter = NULL;
+        _current_region = NULL;
+      }
+
+      return ret;
+    }
+    
     // Returns true if 'this' is still alive. (sometimes the paint callback triggers deletion.)
     bool paintEvent2(QPaintEvent *event, const bool *vamps_to_paint) {
       TRACK_PAINT();
@@ -1901,23 +1924,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         event->accept();
 
       if (_paint_callback != NULL) {
-        p.setRenderHints(QPainter::Antialiasing,true);
-        
-        _current_painter = &p;
-        _current_region = &event->region();
-        
-        int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
-        
-        S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
-        if (g_scheme_failed==true && gui_isOpen(guinum))
-          _paint_callback_failed = TIME_get_ms() + 5000;
 
-        ret = gui_isOpen(guinum);  // Check if we have been deleted in the mean time.
+        p.setRenderHints(QPainter::Antialiasing,true);
+      
+        ret = paintEvent3(&p, &event->region(),
+                          [this](){
+                            S7CALL(void_int_int,_paint_callback, _widget->width(), _widget->height());
+                          });
         
-        if (ret){
-          _current_painter = NULL;
-          _current_region = NULL;
-        }
       }
 
       if (ret)
@@ -2163,7 +2177,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         flags |= Qt::AlignHCenter;
 
 
-      
       QFont font;
         
       if (scale_font_size) {
@@ -4018,6 +4031,25 @@ void API_run_paint_event_for_custom_widget(QWidget *widget, QPaintEvent *ev, con
 
   gui->paintEvent(ev, already_painted_areas);
 }
+
+bool API_run_custom_gui_paint_function(QWidget *widget, QPainter *p, const QRegion *region, std::function<void(void)> func){
+  Gui *gui = g_gui_from_widgets.value(widget);
+  if (gui==NULL){
+    API_get_gui_from_existing_widget(widget);
+    gui = g_gui_from_widgets.value(widget);
+    if (gui==NULL){
+      fprintf(stderr, "     API_run_custom_gui_paint_function: No Gui created for widget %p\n", widget);
+      R_ASSERT_NON_RELEASE(false);
+      return false;
+    }
+  }
+
+  //printf("seq guinum: %d\n",(int)gui->_gui_num);
+  bool ret = gui->paintEvent3(p, region, func);
+  p->setFont(QFont()); // 'drawText' doesn't clean up font type afterwards.
+  return ret;
+}
+
 
 bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, QMouseEvent *ev){
   ScopedEventHandlerTracker event_handler_tracker;

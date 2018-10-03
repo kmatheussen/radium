@@ -1048,7 +1048,7 @@ public:
         }
         
         // Draw track
-        paintEditorTrack(p, x1, t_y1, x2, t_y2, seqblock, block, track, blocklen, type);
+        paintEditorTrack(p, x1, t_y1, x2, t_y2, seqblock, block, track, blocklen, type==Seqblock_Type::GFX_GFX);
         
         track = NextTrack(track);
       }
@@ -1193,6 +1193,8 @@ public:
     }
   }
 
+#if 0
+    // Now drawn in seqblock-painter.scm
   void draw_interface(QPainter *painter, const struct SeqBlock *seqblock, const QRectF &_blury_areaF){
     qreal x1,y1,x2,y2;
     _blury_areaF.getCoords(&x1, &y1, &x2, &y2);
@@ -1219,7 +1221,6 @@ public:
     QPen sel_pen(color);
     sel_pen.setWidthF(sel_width);
 
-    
     /* Vertical lines (Ys) */
     //////////////////////////
     
@@ -1233,6 +1234,7 @@ public:
       if (seqblock->selected_box==SB_FADE_RIGHT) painter->setPen(sel_pen);  else  painter->setPen(pen);
       QLineF line2a(xsplit2,y1 + border,xsplit2,ysplit1);
       painter->drawLine(line2a);
+
     }
 
 
@@ -1383,6 +1385,7 @@ public:
       }
     }
   }
+#endif
 
   void paintSelected(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, Seqblock_Type type){
     //printf("Seqblock: %p, %d\n", seqblock, seqblock->is_selected);
@@ -1568,9 +1571,26 @@ public:
       
 #endif
       
-      draw_interface(&p, seqblock, rect_without_header);
+      //draw_interface(&p, seqblock, rect_without_header);
     }
 
+
+    // We paint some stuff in scheme as well (seqpaint.scm)
+    if (type==Seqblock_Type::REGULAR || type==Seqblock_Type::GFX){
+      R_ASSERT(seqblocknum>=0);
+      API_run_custom_gui_paint_function(SEQUENCER_getWidget(),
+                                        &p, &update_region,
+                                        [this,seqtracknum,seqblocknum](){
+                                          static func_t *seqpaint_func = NULL;
+                                          if (seqpaint_func==NULL || !releaseMode()){
+                                            //printf("new seqpaintfunc\n");
+                                            seqpaint_func = s7extra_get_func_from_funcname("FROM_C-paint-seqblock-stuff");
+                                          }
+                                          S7CALL(void_int_int, seqpaint_func, seqtracknum, seqblocknum);
+                                        });
+    }else
+      R_ASSERT(seqblocknum==-1);
+    
     draw_seqblock_automations(&p, rect_without_header, seqblock);
 
     return true;
@@ -1585,29 +1605,40 @@ public:
     
     //printf("  PAINTING %d %d -> %d %d\n",t_x1,t_y1,t_x2,t_y2);
 
+    /*
     QColor background_color
       = seqtrack==(const struct SeqTrack*)root->song->seqtracks.elements[ATOMIC_GET(root->song->curr_seqtracknum)]
       ? get_seqtrack_background_color(seqtrack).lighter(110)
       : get_seqtrack_background_color(seqtrack).darker(110);
 
 
-      myFillRect(p, _rect, background_color);
-      
+    myFillRect(p, _rect, background_color);
+    */
+    
     for(int i=0;i<3;i++){
       Seqblock_Type type
-        = i==0 ? REGULAR
-        : i==1 ? GFX_GFX
-        : RECORDING;
+        = i==0 ? Seqblock_Type::REGULAR
+        : i==1 ? Seqblock_Type::GFX_GFX
+        : Seqblock_Type::RECORDING;
 
       QVector<struct SeqBlock*> seqblocks
-        = type==REGULAR ? SEQTRACK_get_seqblocks_in_z_order(seqtrack, false)
-        : type==GFX_GFX ? SEQTRACK_get_seqblocks_in_z_order(seqtrack, true)
+        = type==Seqblock_Type::REGULAR ? SEQTRACK_get_seqblocks_in_z_order(seqtrack, false)
+        : type==Seqblock_Type::GFX_GFX ? SEQTRACK_get_seqblocks_in_z_order(seqtrack, true)
         : VECTOR_get_qvector<struct SeqBlock*>(&seqtrack->recording_seqblocks);
       
       //printf("  seqblocks size: %d. (%d %d)\n", seqblocks.size(), _seqtrack->seqblocks.num_elements, _seqtrack->gfx_seqblocks==NULL ? -1 : _seqtrack->gfx_seqblocks->num_elements);
       
-      for(int i=seqblocks.size()-1 ; i>=0 ; i--)
-        paintSeqBlock(p, update_region, seqtrack, seqblocks.at(i), seqtracknum, i, type);
+      for(int i=seqblocks.size()-1 ; i>=0 ; i--){
+        struct SeqBlock *seqblock = seqblocks.at(i);
+        
+        int seqblocknum;
+        if (type==Seqblock_Type::REGULAR || type==Seqblock_Type::GFX)
+          seqblocknum = get_gfxseqblocknum(seqtrack, seqblock);
+        else
+          seqblocknum = -1;
+        
+        paintSeqBlock(p, update_region, seqtrack, seqblocks.at(i), seqtracknum, seqblocknum, type);
+      }
     }
   }
 
@@ -2876,14 +2907,18 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     bool seqtracks_are_painted = ev->rect().right() >= _seqtracks_widget.t_x1;
 
+#define ERASE_FIRST 1
+    
     // Erase background
     //
+#if ERASE_FIRST
     if(seqtracks_are_painted){ // This is strange, but if we don't do this here, some graphical artifacts are shown in the left part of the headers.
       TRACK_PAINT();
       
       QPainter p(this);
       p.eraseRect(ev->rect());
     }
+#endif
     
     // Paint seqtrack headers (left part)
     //
@@ -2903,12 +2938,14 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
       QPainter p(this);
 
-#if 1
+#if !ERASE_FIRST
       QRect erase_rect(rect());
       erase_rect.setLeft(_seqtracks_widget.t_x1);
       p.eraseRect(erase_rect); // We don't paint everything.
 #endif
- 
+
+#undef ERASE_FIRST
+      
       p.setRenderHints(QPainter::Antialiasing,true);    
 
       p.setClipRect(QRectF(_seqtracks_widget.t_x1, 0, _seqtracks_widget.t_width, height()));

@@ -447,6 +447,14 @@ static inline int get_seqblocknum(const struct SeqTrack *seqtrack, const struct 
   return VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
 }
 
+static inline int get_gfxseqblocknum(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  return VECTOR_find_pos(gfx_seqblocks(seqtrack), seqblock);
+}
+
+static inline int get_gfxgfxseqblocknum(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+  return VECTOR_find_pos(&seqtrack->gfx_gfx_seqblocks, seqblock);
+}
+
 #if defined(USE_QT4) && defined(QSTRING_H)
 
 struct SoundPlugin;
