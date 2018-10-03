@@ -757,6 +757,21 @@ void GFX_update_all_instrument_widgets(void){
 
 static bool called_from_pp_update = false;
 
+static bool patch_used_in_current_editor_block(struct Patch *patch){
+  if(root==NULL || root->song==NULL || root->song->tracker_windows==NULL || root->song->tracker_windows->wblock==NULL || root->song->tracker_windows->wblock->block==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+  
+  struct Tracks *track = root->song->tracker_windows->wblock->block->tracks;
+  while(track != NULL){
+    if(track->patch==patch)
+      return true;
+    track = NextTrack(track);
+  }
+  return false;
+}
+
 void GFX_PP_Update(struct Patch *patch, bool is_loading){
   printf("GFX_PP_Update %s\n", patch==NULL?"(null)":patch->name);
   
@@ -780,7 +795,6 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
       
       g_instruments_widget->tabs->setCurrentWidget(instrument);
       MW_update_all_chips();
-      root->song->tracker_windows->must_redraw = true;
 
       MIDI_SetThroughPatch(patch);
 
@@ -797,8 +811,7 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
       //if (instrument->_sample_requester_widget != NULL && !is_loading)
       //  instrument->_sample_requester_widget->update_file_list_if_needed();
 
-      MW_update_all_chips();
-      root->song->tracker_windows->must_redraw = true;
+      MW_update_all_chips();      
 
       MIDI_SetThroughPatch(patch);
 
@@ -806,6 +819,12 @@ void GFX_PP_Update(struct Patch *patch, bool is_loading){
       RError("PP_Update: Don't know how to handle instrument %p",patch->instrument);
     }
 
+    // background color for editor tracks assigned to current instrument are slightly different than background color for non-current instruments.
+    if(patch!=NULL && patch_used_in_current_editor_block(patch))
+      root->song->tracker_windows->must_redraw = true;
+    else if (g_currpatch != NULL && patch_used_in_current_editor_block(g_currpatch))
+      root->song->tracker_windows->must_redraw = true;
+    
     g_currpatch = patch;
     redrawMixerStrips(false);
 
