@@ -2336,6 +2336,15 @@ QVector<struct SeqBlock*> SEQTRACK_get_seqblocks_in_z_order(const struct SeqTrac
   return ret;
 }
 
+void SEQUENCER_update_seqblocks_holding_editor_block(struct Blocks *block){
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+      if (seqblock->block==block)
+        SEQBLOCK_update(seqtrack, seqblock);
+    }END_VECTOR_FOR_EACH;
+  }END_VECTOR_FOR_EACH;
+}
+
 void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
   R_ASSERT_RETURN_IF_FALSE(block!=NULL);
   
