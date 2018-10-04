@@ -32,6 +32,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 namespace radium{
 
+// Default T struct for SeqAutomation
+struct AutomationNode{
+  double time; // seqtime format
+  double value;
+  int logtype;
+};
+
+static inline bool nodes_are_not_equal(const radium::AutomationNode &node1, const radium::AutomationNode &node2){
+  return node1.time!=node2.time || node1.value!=node2.value || node1.logtype!=node2.logtype;
+}
+
+static inline bool nodes_are_equal(const radium::AutomationNode &node1, const radium::AutomationNode &node2){
+  return node1.time==node2.time && node1.value==node2.value && node1.logtype==node2.logtype;
+}
+
   
 template <typename T> struct NodeFromStateProvider{
   virtual T create_node_from_state(hash_t *state, double state_samplerate) const = 0;
@@ -71,6 +86,10 @@ public:
   void *new_rt_data_has_been_created_data = NULL;
   void (*new_rt_data_has_been_created)(void *data) = NULL;
 
+  const QVector<T> &get_qvector(void) const {
+    return _automation;
+  }
+  
 private:
   
   int get_size(int num_nodes) const {

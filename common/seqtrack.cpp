@@ -468,9 +468,9 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
   seqblock->curr_gain = 1.0;
   seqblock->envelope_db = 0.0;
 
-  seqblock->stretch_automation_compensation = 1.0;
-  seqblock->speed_automation_compensation = 1.0;
-  seqblock->stretchspeed_automation_compensation = 1.0;
+  seqblock->conversion_table.stretch_automation_compensation = 1.0;
+  seqblock->conversion_table.speed_automation_compensation = 1.0;
+  seqblock->conversion_table.stretchspeed_automation_compensation = 1.0;
 }
 
 
