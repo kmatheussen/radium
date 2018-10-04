@@ -7182,7 +7182,8 @@
                                                                        (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
                                                      (num-selected (<ra> :get-num-selected-seqblocks))
                                                      (num-selected-with-current (+ num-selected
-                                                                                   (if is-selected
+                                                                                   (if (or (not seqblocknum)
+                                                                                           is-selected)
                                                                                        0
                                                                                        1))))
                                                 (list
