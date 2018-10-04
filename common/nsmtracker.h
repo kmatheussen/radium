@@ -2736,6 +2736,15 @@ static inline const char *sat_to_string(enum Seqblock_Automation_Type sat){
   }
 }
 
+struct StretchspeedTimeConversionTable{
+  double stretch_automation_compensation;
+  double speed_automation_compensation;
+  double stretchspeed_automation_compensation;
+  
+  int num_elements;
+  int64_t *array; // Array that maps seqtime -> sample position. (necessary when automating stretch or speed)    
+};
+
 struct SeqBlock{
   int64_t id;
 
@@ -2774,33 +2783,15 @@ struct SeqBlock{
 
   struct SeqblockAutomation *automations[NUM_SATS];
 
+  struct StretchspeedTimeConversionTable conversion_table;
+
+  /*
   double stretch_automation_compensation;
   double speed_automation_compensation;
   double stretchspeed_automation_compensation;
 
   int num_time_conversion_table_elements;
-  int64_t *time_conversion_table; // Maps sample position -> sample position. Used when automating stretch.
-
-  /*
-  struct SeqblockAutomation *envelope;
-
-  struct SeqblockAutomation *grain_overlap_automation;
-  struct SeqblockAutomation *grain_length_automation;
-  struct SeqblockAutomation *grain_jitter_automation;
-  struct SeqblockAutomation *grain_ramp_automation;
-  */
-
-  // 'start_time' and 'end_time' are absolute times.
-  // They are only used the main thread.
-  //
-  // Note that these two values are NOT updated when seqblock->time or seqblock->block is changed.
-  // Instead, the function SEQTRACK_update_seqblock_start_and_end_times or the function SEQTRACK_update_seqblock_gfx_start_and_end_times
-  // must be called right before reading any of these two variables.
-  // (using these two variables is functional programming in disguise. We could have had a function returning
-  //  a vector with all these values instead, but that would have been more inconvenient and slower (although speed probably doesn't matter here).)
-  /*
-  double start_time; // in seconds. TODO: Change to frames.
-  double end_time; // in seconds. TODO: Change to frames.
+  int64_t *time_conversion_table; // Maps sample position -> sample position. Used when automating stretch or speed.
   */
 };
 

@@ -4,16 +4,27 @@
 
 extern LANGSPEC void SEQBLOCK_calculate_time_conversion_table(struct SeqBlock *seqblock, bool seqblock_is_live);
 
-static inline int64_t get_sample_pos_from_seqtime(const struct SeqBlock *seqblock, int64_t seqtime){
-  return 0;
+static inline double get_stretch_from_automation(double value) {
+  if (value < 0.0)
+    return 1.0 / (1.0 - value);
+  else
+    return value + 1.0;
 }
 
+static inline double get_speed_from_automation(double value) {
+  if (value < 0.0)
+    return 1.0 - value;
+  else
+    return 1.0 / (1.0 + value);
+}
+
+
 static inline int64_t get_stretch_automation_sample_pos(const struct SeqBlock *seqblock, int64_t sample_pos){  
-  if (seqblock->time_conversion_table==NULL) //false==RT_seqblock_automation_is_enabled(seqblock->automations[SAT_STRETCH]))
+  if (seqblock->conversion_table.array==NULL)
     return sample_pos;
 
   int pos = sample_pos / RADIUM_BLOCKSIZE;
-  int size = seqblock->num_time_conversion_table_elements;
+  int size = seqblock->conversion_table.num_elements;
 
   if (pos <= 0){
 
@@ -29,7 +40,7 @@ static inline int64_t get_stretch_automation_sample_pos(const struct SeqBlock *s
 
   }
 
-  return seqblock->time_conversion_table[pos] / seqblock->stretchspeed_automation_compensation;
+  return seqblock->conversion_table.array[pos] / seqblock->conversion_table.stretchspeed_automation_compensation;
 }
 
 extern LANGSPEC void RT_SEQBLOCK_AUTOMATION_called_before_scheduler(void);
@@ -71,7 +82,11 @@ float SEQBLOCK_AUTOMATION_get_node_x(const struct SeqblockAutomation *seqblocken
 float SEQBLOCK_AUTOMATION_get_node_y(const struct SeqblockAutomation *seqblockenvelope, int seqtracknum, int nodenum);
 void SEQBLOCK_AUTOMATION_paint(QPainter *p, struct SeqblockAutomation *seqblockenvelope, float x1, float y1, float x2, float y, bool paint_nodes, float seqblock_x1, float seqblock_x2);
 
-bool RT_seqblock_automation_is_enabled(struct SeqblockAutomation *automation);
+#include "SeqAutomation.hpp"
+
+const radium::SeqAutomation<radium::AutomationNode> &SEQBLOCK_AUTOMATION_get_SeqAutomation(const struct SeqblockAutomation *automation);
+
+bool RT_seqblock_automation_is_enabled(const struct SeqblockAutomation *automation);
 void SEQBLOCK_AUTOMATION_set_enabled(struct SeqblockAutomation *automation, bool enabled);
 bool RT_maybe_get_seqblock_automation_value(struct SeqblockAutomation *automation, double time, double &value);
 

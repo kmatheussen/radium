@@ -1378,10 +1378,12 @@ bool SAMPLEREADER_remove_filename_from_filenames(const wchar_t *filename){
 
 vector_t SAMPLEREADER_get_all_deletable_filenames(void){
   vector_t ret = {};
-  for(const auto *provider : g_sample_providers.values())
-    if (provider->_file_can_be_deleted)
+  for(const auto *provider : g_sample_providers.values()){
+    R_ASSERT_NON_RELEASE(provider!=NULL); // I have no idea why, but provider was NULL once when exiting the program.
+    if (provider!=NULL && provider->_file_can_be_deleted)
       VECTOR_push_back(&ret, talloc_wcsdup(provider->_filename));
-
+  }
+  
   return ret;
 }
 
