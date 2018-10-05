@@ -1,0 +1,8 @@
+#ifndef _RADIUM_COMMON_SEQBLOCK_STRETCHSPEED_PROC_H
+#define _RADIUM_COMMON_SEQBLOCK_STRETCHSPEED_PROC_H
+
+extern LANGSPEC void SEQBLOCK_STRETCHSPEED_call_me_very_often(void);
+
+extern LANGSPEC void SEQBLOCK_STRETCHSPEED_call_me_when_seqblock_is_released(const struct SeqBlock *seqblock);
+
+#endif

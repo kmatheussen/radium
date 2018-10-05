@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "song_tempo_automation_proc.h"
 #include "seqtrack_automation_proc.h"
 #include "seqblock_automation_proc.h"
+#include "seqblock_stretchspeed_proc.h"
 #include "patch_proc.h"
 #include "Semaphores.hpp"
 #include "Dynvec_proc.h"
@@ -252,7 +253,7 @@ static bool ensure_seqtrack_has_instrument(struct SeqTrack *seqtrack){
 
 
 void SEQTRACK_call_me_very_often(void){
-  if (is_called_every_ms(500))
+  if (is_called_every_ms(500)) {
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
 
       if (ensure_seqtrack_has_instrument(seqtrack)==true){
@@ -274,6 +275,9 @@ void SEQTRACK_call_me_very_often(void){
       }
 
     }END_VECTOR_FOR_EACH;
+
+    SEQBLOCK_STRETCHSPEED_call_me_very_often();
+  }
 }
 
 
@@ -343,6 +347,8 @@ static void seqblockgcfinalizer(void *actual_mem_start, void *user_data){
 
   delete seqblock->fade_in_envelope;
   delete seqblock->fade_out_envelope;
+
+  SEQBLOCK_STRETCHSPEED_call_me_when_seqblock_is_released(seqblock);
 }
 
 static int64_t get_default_duration_from_num_samples(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t num_samples){

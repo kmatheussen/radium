@@ -757,8 +757,10 @@ namespace radium{
       return t;
     }
     void set(T *new_t){
-      replace_gc_root(t, new_t);
-      t = new_t;
+      if(t != new_t){
+        replace_gc_root(t, new_t);
+        t = new_t;
+      }
     }
     T *data(void) const {
       return t;
@@ -774,20 +776,25 @@ static inline T add_gc_root(T root){
   if(g_global_roots.num_elements > 10000)
     printf("\n\n\n  ==================   GC_ROOT(1) size: %d =================== \n\n\n\n\n", g_global_roots.num_elements);
 #endif
+  //printf("  Add. gc_root size: %d\n", g_global_roots.num_elements);
   return root;
 }
 
 static inline void remove_gc_root(const void *root){
-  if(root != NULL)
+  if(root != NULL){
     VECTOR_remove(&g_global_roots, root);
+    //printf("  Remove. gc_root size: %d\n", g_global_roots.num_elements);
+  }
 }
 
 template<typename T>
 static inline T replace_gc_root(T old_root, T new_root){
-  if(old_root != NULL)
-    remove_gc_root(old_root);
-  if(new_root!=NULL)
-    add_gc_root(new_root);
+  if (old_root!=new_root){
+    if(old_root != NULL)
+      remove_gc_root(old_root);
+    if(new_root!=NULL)
+      add_gc_root(new_root);
+  }
   return new_root;
 }
 
@@ -800,19 +807,24 @@ static inline void *add_gc_root(void *root){
   if(g_global_roots.num_elements > 10000)
     printf("\n\n\n  ==================   GC_ROOT(2) size: %d =================== \n\n\n\n\n", g_global_roots.num_elements);
 #endif
+  //printf("  Add. gc_root size: %d\n", g_global_roots.num_elements);
   return root;
 }
 
 static inline void remove_gc_root(const void *root){
-  if(root!=NULL)
+  if(root!=NULL){
     VECTOR_remove(&g_global_roots, root);
+    printf("  Remove. gc_root size: %d\n", g_global_roots.num_elements);
+  }
 }
 
 static inline void *replace_gc_root(const void *old_root, void *new_root){
-  if(old_root!=NULL)
-    remove_gc_root(old_root);
-  if(new_root!=NULL)
-    add_gc_root(new_root);
+  if (old_root!=new_root){
+    if(old_root!=NULL)
+      remove_gc_root(old_root);
+    if(new_root!=NULL)
+      add_gc_root(new_root);
+  }
   return new_root;
 }
 
