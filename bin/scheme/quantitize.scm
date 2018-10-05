@@ -125,17 +125,24 @@
                                quant-type-range))
 
   (<gui> :set-value (quant-type-guis (1- (<ra> :get-quantitize-type))) #t)
+
+  (define curr-quantitize-type (<ra> :get-quantitize-type))
+  
+  (<ra> :schedule 1000
+        (lambda ()
+          ;;(c-display "hepp" quant-gui)
+          (if (not (<gui> :is-open quant-gui))
+              #f
+              (let ((new-quantitize-type (<ra> :get-quantitize-type)))                    
+                (if (not (= curr-quantitize-type new-quantitize-type))
+                    (let ((type-gui (quant-type-guis (- new-quantitize-type 1))))
+                      (<gui> :set-value type-gui #t)
+                      (set! curr-quantitize-type new-quantitize-type)))
+                (if (<ra> :release-mode)
+                    (+ 400 (random 100))
+                    40))))) ;; low value because there was a bug happening now and then inside here. Trying to provoce it more often by setting this value lower.
+  
   (for-each (lambda (type-gui n)
-              (<ra> :schedule 1000
-                    (lambda ()
-                      (if (<gui> :is-open type-gui)
-                          (begin
-                            (if (and (= (<ra> :get-quantitize-type)
-                                        n)
-                                     (not (<gui> :get-value type-gui)))
-                                (<gui> :set-value type-gui #t))                                
-                            (+ 400 (random 100)))
-                          #f)))
               (<gui> :add-callback type-gui
                      (lambda (is-on)
                        (when is-on

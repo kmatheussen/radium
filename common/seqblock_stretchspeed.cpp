@@ -89,7 +89,6 @@ static const StretchspeedTimeConversionTable default_table = {
   .array = NULL
 };
 
-// TODO: This function needs to be memoized so that we don't have to calculate for every pixel when moving a seqblock with stretch automation.
 static StretchspeedTimeConversionTable get_time_conversion_table(struct SeqBlock *seqblock, const struct SeqblockAutomation *stretch, const struct SeqblockAutomation *speed) {
   StretchspeedTimeConversionTable table = default_table;
 
@@ -304,6 +303,7 @@ static void CACHE_release(const StretchspeedTimeConversionTable &table){
     if (cached->_table.array==table.array){      
       int now = cached->dec_users();
       D(printf("  Decced %d -> %d\n", now+1, now););
+      (void)now;
       break;      
     }
   }
