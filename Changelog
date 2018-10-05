@@ -1,3 +1,130 @@
+Changes 5.9.0 -> 5.9.4:
+* Update S7 scheme interpreter.
+* Sequencer: Make it faster to move and edit seqblocks with stretch
+  or speed automation.
+* Sequencer: Fix minor memory leak.
+* Sequencer: New look for the interface for fade in/out, interior,
+  speed, and stretch. The values themselves are also drawn on top
+  of the seqblocks themselves.
+* Sequencer: Redraw everything when grid type changes.
+* Sequencer: Only repaint seqblocks holding current editor block
+  when editor is repainted.
+* Sequencer: Optimize redrawing when selecting seqblocks
+  (i.e. the selection rectange).
+* Editor/Sequencer: Don't update graphics when changing current
+  instrument and neither the previous nor current current instrument
+  is used in the current editor block.
+* Sequencer: Make seqblock colors a little bit less lighter,
+  more saturated, and less transparent.
+* Sequencer: Fix popup menu for the stretch boxes sometimes being
+  activated also after resetting stretch.
+* Sequencer: Don't set seqblock under mouse as selected (i.e. a
+  greenish color) when right-clicking it.
+* Sequencer: Set a sensible maximum width of the interface handles.
+  I.e. if a seqblock is 100000 pixels wide, the handles are not 25000
+  pixels wide, as they were before.
+* Sequencer: Optimized drawing a little bit.
+* Manual: Document how to break grid while editing automation.
+* Sequencer: Paint automation nodes in a less transparent color.
+* Manual: Documented moving all automation nodes, plus some general
+  improvements to the mouse section
+* Automation: When pressing the Alt key (OSX: Ctrl key), all break
+  points are moved. Goes for all automation editing in the editor
+  and sequencer.
+* Sequencer: Add "Reset" and "Add default value node" options to
+  the seqtrack automation popup menu.
+* Sequencer: Add "Remove (delete all break points)" option to popup
+  menu for seqtrack automation.
+* Sequencer: Fix slightly off navigator position when dragging the
+  right handle.
+* Sequencer: Fix stuck navigator. When the right handle was moved
+  as far as possible to the left, the only way out was to zoom out.
+  This has been fixed.
+* Disk: Include Radium version in .rad files.
+* Load: Don't show message about having to change note duplicator
+  values because of an earlier bug when loading any of the
+  demo songs.
+* Modular mixer: Zoom to / from mouse pointer position, not to
+  the middle of the window.
+* Sequencer: Make sure time at mouse pointer is still the same
+  when zooming in/out using the scroll wheel. I.e. zoom towards
+  the mouse, not towards the middle of the screen.
+* Audio file recorder: Don't start recording if we failed to
+  open file.
+* Sequencer: Set default fadeout value for new audio files
+  to 10ms. This value is configurable, and can also be
+  turned off.
+* Sequencer: Fix fade out for audio files not working very well
+  (it could cause pops) if value was less than around 100ms,
+  plug fix a general tiny lag in volume automation and fade in.
+* Sequencer: Fix sample reader not providing the last frames of
+  a sound file. Somewhere between 0 and 4096 frames were always
+  skipped. This caused small pops if the sound file wasn't
+  silent the last 85ms or so.
+* Internal: Wait until sample recorder thread has shut down
+  before exiting. Fixes Qt error message during shut down in
+  debug mode, and possibly other things.
+* Sequencer: Resampler ratio seqblock automation.
+* Sequencer: Add left and rigth "speed" seqblock boxes, similar
+  to the "stretch" boxes.
+* Sequencer: Option to enable/disable seqblock automation
+  to the node popup menu.
+* Sequencer: Option to enable/disable a seqtrack automation.
+* Quantitize: Fix "behavior if a note becomes too short after
+  quantization". For some releases, the option "keep original
+  length" was always used no matter what the option was set to.
+* Mixer: Add "Connect to main pipe" entry to the top of the
+  sound object popup menu if instrument has audio out and it
+  isn't connected to anything. (Very often you want to connect
+  this object to the main pipe.)
+* Mixer: Rename "Paste sound object(s)" popup menu option to
+  just "Paste".
+* Mixer: Fix "Paste sound object(s)" popup menu option. It was
+  usually not enabled even when there was sound object(s) in
+  the clipboard.
+* Editor: If cursor is placed on last line, jump to line 1 if
+  pressing the End key.
+* Editor: Never scroll to line 1 unless cursor is placed on last
+  line. E.g. if block has 32 lines and cursor is placed on line
+  16, scroll to line 31 and not line 1 if pressing page down.
+* Player: Don't play current editor block when releasing left
+  shift key if a mouse button is pressed since the left shift
+  key was pressed.
+* Player: Don't play current editor block when releasing left
+  if the number of undos have changed since the left shift key was
+  pressed.
+* Sequencer: Properly extend seqblock automation length when
+  seqblock length has been extended.
+* Seqblock: Don"t obtain keyboard focus in the seqblock settings
+  widget.
+* Sequencer: Also reduce seqblock automation length if seqblock
+  length has been reduced.
+* Sequencer: Put back the "Volume automation" entry in the editor
+  seqblock popup menu. By accident, it disappeared somewhere
+  between 5.8.1 and 5.8.6
+* Sequencer: Show current interior value (i.e. "|---" "---|") in
+  realtime in the status bar when changing an interior value.
+* API:
+  * New functions: getSeqAutomationEnabled,
+    setSeqAutomationEnabled, getSeqblockLeftSpeedX1,
+    getSeqblockLeftSpeedY1, getSeqblockLeftSpeedX2,
+    getSeqblockLeftSpeedY2, getSeqblockRightSpeedX1,
+    getSeqblockRightSpeedY1, getSeqblockRightSpeedX2,
+    getSeqblockRightSpeedY2, getSeqblockSpeed,
+    getSeqblockStretchSpeed, getDefaultAudiofileFadeout,
+    setDefaultAudiofileFadeout, getDefaultInstrumentEffect,
+    getSeqblockInteriorStart, getSeqblockInteriorEnd,
+    getSeqblockSelectedBox
+  * Add optional argument "use_gfx_if_possible" to
+    getSeqblockStartTime, getSeqblockEndTime,
+    getSeqblockStretch, getSeqblockSpeed,
+  * Fix backtrace in message window when exception is thrown
+    in the C API.
+  * Don't show assertion reporter when an illegal value
+    is sent to setFxnode. Just throw normal API exception.
+    
+
+
 Changes 5.8.9 -> 5.9.0:
 * Soundfile saver: Make the "All files saved" dialog modal, and
   fix keyboard focus.
