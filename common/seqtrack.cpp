@@ -333,9 +333,11 @@ void SONG_call_me_before_starting_to_play_song(int64_t seqtime){
 
   
 static void seqblockgcfinalizer(void *actual_mem_start, void *user_data){
-  struct SeqBlock *seqblock = (struct SeqBlock*)user_data;
-  //printf("FINALIZING seqtrack\n");
+  struct SeqBlock *seqblock = (struct SeqBlock*)actual_mem_start;
+  //printf("=============================FINALIZING seqblock\n");
+  //abort();
   //getchar();
+  
   for(int i = 0 ; i < NUM_SATS; i++)
     SEQBLOCK_AUTOMATION_free(seqblock->automations[i]);
 
@@ -457,7 +459,7 @@ void SEQBLOCK_init(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct 
     seqblock->fade_in_envelope = new radium::Envelope(FADE_LINEAR, 1.0, true);
     seqblock->fade_out_envelope = new radium::Envelope(FADE_LINEAR, 1.0, false);
 
-    GC_register_finalizer(seqblock, seqblockgcfinalizer, seqblock, NULL, NULL);
+    GC_register_finalizer(seqblock, seqblockgcfinalizer, NULL, NULL, NULL);
 
   }else{
 
@@ -1344,9 +1346,10 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
 }
 
 static void seqtrackgcfinalizer(void *actual_mem_start, void *user_data){
-  struct SeqTrack *seqtrack = (struct SeqTrack*)user_data;
+  struct SeqTrack *seqtrack = (struct SeqTrack*)actual_mem_start;
   //printf("FINALIZING seqtrack\n");
   //getchar();
+  //abort();
   SEQTRACK_AUTOMATION_free(seqtrack->seqtrackautomation);
 }
 
@@ -1384,8 +1387,8 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_sa
 
   seqtrack->note_gain = 1.0;
   
-  GC_register_finalizer(seqtrack, seqtrackgcfinalizer, seqtrack, NULL, NULL);
-
+  GC_register_finalizer(seqtrack, seqtrackgcfinalizer, NULL, NULL, NULL);
+  
   return seqtrack;
 }
 
