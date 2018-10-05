@@ -72,7 +72,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define RESAMPLER_BUFFER_SIZE 64 //(RADIUM_BLOCKSIZE*2) //1024
 // TODO: print out how often data is picked up, and so forth. It probably picks up more when stretch is high.
 
+/*
+namespace radium{
+  template <typename T>
+  struct GcHolder2{
 
+  private:
+    T *t;
+
+    GcHolder2(const GcHolder2&) = delete;
+    GcHolder2& operator=(const GcHolder2&) = delete;
+
+  public:
+    GcHolder2(T *t = NULL)
+      : t(t)
+    {  
+    }
+    ~GcHolder2(){
+    }
+    T *operator->() const {
+      return t;
+    }
+    void set(T *new_t){
+    }
+    T *data(void) const {
+      return t;
+    }
+  };
+}
+*/
 
 // This is the instrument that is bounded to ONE track in the sequencer.
 

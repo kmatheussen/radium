@@ -835,7 +835,9 @@ void PATCH_call_very_often(void){
 }
 
 static void add_linked_note(linked_note_t **root, linked_note_t *note);
+#if !defined(RELEASE)
 static int num_linked_notes(linked_note_t *root);
+#endif
 static void reset_unused_linked_notes(void);
   
 // Called when loading new song
@@ -880,12 +882,14 @@ static void reset_unused_linked_notes(void){
     add_linked_note(&g_unused_linked_notes, &notes[i]);
 }
 
+#if !defined(RELEASE)
 static int num_linked_notes(linked_note_t *root){
   int ret = 0;
   for(linked_note_t *note = root ; note!=NULL ; note=note->next)
     ret++;
   return ret;
 }
+#endif
 
 static void add_linked_note(linked_note_t **rootp, linked_note_t *note){
   linked_note_t *root = *rootp;
