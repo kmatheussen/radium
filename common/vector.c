@@ -103,6 +103,15 @@ void VECTOR_delete(vector_t *v, int pos){
   v->elements[v->num_elements]=NULL;
 }
 
+#if 1
+// I think element is usually in the end of the vector, not the beginning.
+int VECTOR_find_pos(const vector_t *v, const void *element){
+  for(int i=v->num_elements-1 ; i>=0 ; i--)
+    if(v->elements[i]==element)
+      return i;
+  return -1;
+}
+#else
 int VECTOR_find_pos(const vector_t *v, const void *element){
   int i;
   for(i=0;i<v->num_elements;i++)
@@ -110,6 +119,7 @@ int VECTOR_find_pos(const vector_t *v, const void *element){
       return i;
   return -1;
 }
+#endif
 
 bool VECTOR_is_in_vector(const vector_t *v, const void *element){
   return VECTOR_find_pos(v,element)>=0;
