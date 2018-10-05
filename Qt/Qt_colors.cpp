@@ -490,6 +490,7 @@ static QColor get_next_color(void){
 
   QColor color;
 
+#if 1
   //color.setHsvF(h, 0.9, 0.95);
   if (h > 0.135 && h < 0.470) {
     float middle = 0.33; //(0.470 + 0.135) / 2.0;
@@ -513,6 +514,7 @@ static QColor get_next_color(void){
                              
     color.setHsvF(h, saturation, value);
   } else
+#endif
     color.setHsvF(h, 0.9, 0.95);
 
   h += golden_ratio_conjugate;
@@ -528,7 +530,7 @@ unsigned int GFX_MakeRandomColor(void){//int blendcolornum, float blendfactor){
 }
 
 unsigned int GFX_MakeRandomBlockColor(void){
-  QColor color = get_next_color().darker(150);
+  QColor color = get_next_color().lighter(115);
   return color.rgb();
 }
   

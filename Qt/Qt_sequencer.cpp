@@ -944,17 +944,20 @@ public:
     const int header_height = get_block_header_height();
 
     QColor waveform_color = get_block_qcolor(SEQUENCER_WAVEFORM_COLOR_NUM, type);
-    QColor background_color = get_sample_color(seqtrack, seqblock).lighter(250);
-    background_color.setAlpha(128);
+    QColor background_color = get_sample_color(seqtrack, seqblock).lighter(200);
     if (type==Seqblock_Type::GFX_GFX)
       background_color = half_alpha(mix_colors(background_color, get_qcolor(SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM), 0.5), type);
+    else
+      background_color = mix_colors(background_color, get_seqtrack_background_color(seqtrack), 0.25).lighter(150);
+
+    background_color.setAlpha(180);
     
+    myFillRect(p, rect, background_color);
+
     const SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
     //    R_ASSERT(plugin!=NULL); // Commented out. Plugin can be NULL during loading.
 
     if (plugin != NULL){
-
-      myFillRect(p, rect, background_color);
 
       // Solution: Paint 3 waveforms:
       // 1. Interior start (in a lot more transparent color)
