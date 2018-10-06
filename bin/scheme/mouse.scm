@@ -6933,6 +6933,9 @@
         (set! *curr-seqblock-track-on-off-window* window)))
 
   (set! starting #f)
+
+  (<gui> :set-window-title window (<ra> :get-block-name blocknum))
+  
   window
   )
 
