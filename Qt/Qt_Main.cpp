@@ -131,15 +131,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SampleReader_proc.h"
 #include "../audio/Peaks.hpp"
 
-
-#ifdef __linux__
-#include <X11/Xlib.h>
-//#include "../X11/X11_Bs_edit_proc.h"
-//#include "../X11/X11_MidiProperties_proc.h"
-//#include "../X11/X11_ClientMessages_proc.h"
-#include "../X11/X11_Qtstuff_proc.h"
-#endif
-
 #include "../common/OS_Bs_edit_proc.h"
 //#include "../X11/X11_Ptask2Mtask_proc.h"
 #include "../posix/posix_Player_proc.h"
@@ -2804,10 +2795,6 @@ int radium_main(const char *arg){
   //ProfilerStop();
 
   posix_InitPlayer();
-
-#ifdef __linux__
-  X11_StartQtStuff();
-#endif
 
   QWidget *block_selector = create_blockselector();
 

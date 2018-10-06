@@ -179,7 +179,6 @@ extern LANGSPEC void GFX_PlayListWindowToFront(void);
 extern LANGSPEC void GFX_PlayListWindowToBack(void);
 extern LANGSPEC void GFX_InstrumentWindowToFront(void);
 extern LANGSPEC void GFX_InstrumentWindowToBack(void);
-extern LANGSPEC void GFX_HelpWindowToFront(void);
 
 extern LANGSPEC void GFX_toggleFullScreen(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_toggleCurrWindowFullScreen(void);
@@ -204,9 +203,6 @@ extern LANGSPEC void GFX_ShowMixer(void);
 extern LANGSPEC void GFX_HideMixer(void);
 
 extern LANGSPEC bool GFX_InstrumentWindowIsVisible(void);
-
-extern LANGSPEC void GFX_MaximizeEditorWindow(struct Tracker_Windows *tvisual);
-extern LANGSPEC void GFX_MinimizeEditorWindow(struct Tracker_Windows *tvisual);
 
 //extern LANGSPEC void GFX_ConfigColors(struct Tracker_Windows *tvisual);
 #if USE_QT4

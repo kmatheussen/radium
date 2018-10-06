@@ -67,7 +67,6 @@ char *GFX_ReadStringFromPythonCommand(char *pythoncommand){
 
 
 #ifndef GUIISQT
-
 char *GFX_GetLoadFileName(
 	struct Tracker_Windows *tvisual,
 	ReqType reqtype,
