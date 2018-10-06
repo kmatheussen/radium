@@ -49,8 +49,9 @@
 
 
 ;; Sequencer painting function. Try to minimize gc.
-(define-expansion (call-maybe-paint-box seqtracknum seqblocknum)
-  `(begin
+
+(define-expansion (call-maybe-paint-box)
+  `(let ((selected-box (<ra> :get-seqblock-selected-box)))
      ,@(map (lambda (box boxnum touched? get-text background-color)
               `(if (and (or ,(if (memv boxnum '(1 2 7 8)) #t #f)
                             is-sample)
@@ -59,7 +60,7 @@
                    (paint-seqblock-box gui seqtracknum seqblocknum
                                        (map-box ,box)
                                        (and is-current-seqblock
-                                            (= ,boxnum (<ra> :get-seqblock-selected-box)))
+                                            (= ,boxnum selected-box))
                                        (,get-text seqblocknum seqtracknum)
                                        ,background-color
                                        )))
@@ -72,22 +73,23 @@
                   '(<ra> :get-box seqblock-left-stretch seqblocknum seqtracknum)
                   '(<ra> :get-box seqblock-right-stretch seqblocknum seqtracknum))
             '(1 2 3 4 5 6 7 8)
-            (list fade-left-touched? fade-right-touched?
-                  left-interior-touched? right-interior-touched?
-                  speed-touched? speed-touched?
-                  stretch-touched? stretch-touched?)
-            (list get-fade-string-left get-fade-string-right
-                  get-left-interior-string get-right-interior-string
-                  get-speed-string get-speed-string
-                  get-stretch-string get-stretch-string)
+            '(fade-left-touched? fade-right-touched?
+              left-interior-touched? right-interior-touched?
+              speed-touched? speed-touched?
+              stretch-touched? stretch-touched?)
+            '(get-fade-string-left get-fade-string-right
+              get-left-interior-string get-right-interior-string
+              get-speed-string get-speed-string
+              get-stretch-string get-stretch-string)
             '("green" "green"
               "blue" "blue"
               "red" "red"
               "yellow" "yellow")
             )))
 
+
 #!!
-(pretty-print (macroexpand (call-maybe-paint-box 1 0)))
+(pretty-print (macroexpand (call-maybe-paint-box)))
 !!#
 
 (define (FROM_C-paint-seqblock-stuff seqtracknum seqblocknum)
@@ -110,8 +112,9 @@
                                       (<ra> :get-curr-seqblock-under-mouse))))
   
   (define is-sample (<ra> :seqblock-holds-sample seqblocknum seqtracknum))
-  
-  (call-maybe-paint-box 1 0)
-  )
+
+  (call-maybe-paint-box)
+)
+
 
 
