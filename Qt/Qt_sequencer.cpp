@@ -1583,7 +1583,7 @@ public:
       R_ASSERT(seqblocknum>=0);
       API_run_custom_gui_paint_function(SEQUENCER_getWidget(),
                                         &p, &update_region,
-                                        [this,seqtracknum,seqblocknum](){
+                                        [seqtracknum,seqblocknum](){
                                           static func_t *seqpaint_func = NULL;
                                           if (seqpaint_func==NULL || !releaseMode()){
                                             //printf("new seqpaintfunc\n");
