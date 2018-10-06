@@ -146,7 +146,7 @@ static bool smooth_scrolling(void){
 
 static bool g_draw_colored_seqblock_tracks = true;
 
-SeqBlock *g_curr_seqblock = NULL;
+SeqBlock *g_curr_seqblock_under_mouse = NULL;
 
 
 /* Custom font drawing code */
@@ -977,7 +977,7 @@ public:
         const double y1 = rect.y() + header_height;
         const double y2 = rect.y() + rect.height();
 
-        if (seqblock==g_curr_seqblock){
+        if (seqblock==g_curr_seqblock_under_mouse){
 
           QColor interior_waveform_color = waveform_color;
           interior_waveform_color.setAlpha(70);
@@ -1163,7 +1163,7 @@ public:
                                    t_x1, t_x2);
       
         bool draw_all = seqblock->t.interior_start==0 && seqblock->t.interior_end==seqblock->t.default_duration;
-        bool is_current = seqblock==g_curr_seqblock;
+        bool is_current = seqblock==g_curr_seqblock_under_mouse;
         //printf("draw_all: %d. is_current: %d. x1: %f, x1: %f, x2: %f, x2: %f\n", draw_all, is_current, x1, ni_x1, x2, ni_x2);
 
         // 1. (before start_interior and after end_interior)
@@ -1530,7 +1530,7 @@ public:
     int header_height = get_block_header_height();
     const QRectF rect_without_header = rect.adjusted(0, header_height, 0, 0);
 
-    if(seqblock != g_curr_seqblock){ //!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
+    if(seqblock != g_curr_seqblock_under_mouse){ //!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
 
       paintSeqBlockElements(p, rect, rect_without_header, seqtrack, seqblock, type);
 

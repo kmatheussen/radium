@@ -132,8 +132,6 @@ extern LANGSPEC void SEQBLOCK_init(struct SeqTrack *from_seqtrack, struct SeqBlo
 extern QWidget *SEQUENCER_getWidget(void);
 #endif
 
-extern struct SeqBlock *g_curr_seqblock;
-
 extern LANGSPEC float SEQUENCER_get_x1(void);
 extern LANGSPEC float SEQUENCER_get_x2(void);
 extern LANGSPEC float SEQUENCER_get_y1(void);

@@ -1582,6 +1582,25 @@ void setDefaultAudiofileFadeout(double default_audiofile_fadeout){
 }
 
 
+static bool g_do_auto_crossfades = true;
+
+bool doAutoCrossfades(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_do_auto_crossfades = SETTINGS_read_bool("do_auto_crossfades", g_do_auto_crossfades);
+    has_inited = true;
+  }
+
+  return g_do_auto_crossfades;
+}
+
+void setDoAutoCrossfades(double default_do_auto_crossfades){
+  g_do_auto_crossfades = default_do_auto_crossfades;
+  SETTINGS_write_bool("do_auto_crossfades", g_do_auto_crossfades);
+}
+
+
 int64_t getSeqGriddedTime(int64_t pos, int seqtracknum, const_char* type){
   //R_ASSERT_NON_RELEASE(seqtracknum==0);
   if (seqtracknum != 0)
@@ -1962,7 +1981,7 @@ void setCurrSeqblockUnderMouse(int seqblocknum, int seqtracknum){
   g_curr_seqblocknum_under_mouse = seqblocknum;
   g_curr_seqtracknum_under_mouse = seqtracknum;
     
-  g_curr_seqblock = seqblock;
+  g_curr_seqblock_under_mouse = seqblock;
 
   static func_t *func = NULL;
   if (func==NULL)
@@ -1984,7 +2003,7 @@ int getCurrSeqtrackUnderMouse(void){
 }
 
 void cancelCurrSeqblockUnderMouse(void){
-  g_curr_seqblock = NULL;
+  g_curr_seqblock_under_mouse = NULL;
   g_curr_seqblocknum_under_mouse = -1;
   g_curr_seqtracknum_under_mouse = -1;
   SEQUENCER_update(SEQUPDATE_TIME);
@@ -2380,10 +2399,10 @@ void setSeqblockSelectedBox(int which_one, int seqblocknum, int seqtracknum){
 }
 
 int getSeqblockSelectedBox(void){
-  if (g_curr_seqblock == NULL)
+  if (g_curr_seqblock_under_mouse == NULL)
     return 0;
   else
-    return g_curr_seqblock->selected_box;  
+    return g_curr_seqblock_under_mouse->selected_box;  
 }
   
 

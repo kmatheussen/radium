@@ -586,6 +586,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         loop_bar_grid->setChecked(true);
 
       default_fadeout->setValue(getDefaultAudiofileFadeout());
+      auto_crossfades->setChecked(doAutoCrossfades());
     }
 
     // Windows
@@ -1092,7 +1093,12 @@ public slots:
       default_fadeout->clearFocus();
     }GL_unlock();
   }
-  
+
+  void on_auto_crossfades_toggled(bool val){
+    if (_initing==false)
+      setDoAutoCrossfades(val);
+  }
+
   // colors
   void color_changed(const QColor &col){
     //printf("HAPP! %s\n",col.name().toUtf8().constData());

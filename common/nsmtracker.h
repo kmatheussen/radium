@@ -2807,6 +2807,9 @@ struct SeqBlock{
   */
 };
 
+//extern struct SeqBlock *g_curr_seqblock;
+extern struct SeqBlock *g_curr_seqblock_under_mouse;
+
 static inline int SEQBLOCK_num_automations(const struct SeqBlock *seqblock){
   return seqblock->block!=NULL ? NUM_EDITOR_BLOCK_SATS : NUM_SATS;
 }

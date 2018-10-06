@@ -5082,23 +5082,26 @@
            (loop (1+ n))))))
 
 (define (maybe-add-autofades seqblocks seqblocknum)
-  (define seqblock (seqblocks seqblocknum))
-  (define fade-seqblocks (find-seqblocks-to-autofade seqblocks seqblocknum))
-  (if (not fade-seqblocks)
+  (if (not (<ra> :do-auto-crossfades))
       seqblocks
-      (let* ((seqblocknum1 (car fade-seqblocks))
-             (seqblocknum2 (cadr fade-seqblocks))
-             (seqblock1 (seqblocks seqblocknum1))
-             (seqblock2 (seqblocks seqblocknum2)))
-        (cond ((and (seqblock1 :blocknum)
-                    (seqblock2 :blocknum))
-               #f)  ;; no overlaps for editor blocks
-              ((seqblock1 :blocknum)
-               seqblocks)
-              ((seqblock2 :blocknum)
-               seqblocks)
-              (else
-               (auto-add-fades-to-seqblocks seqblocks seqblocknum1 seqblocknum2))))))
+      (begin
+        (define seqblock (seqblocks seqblocknum))
+        (define fade-seqblocks (find-seqblocks-to-autofade seqblocks seqblocknum))
+        (if (not fade-seqblocks)
+            seqblocks
+            (let* ((seqblocknum1 (car fade-seqblocks))
+                   (seqblocknum2 (cadr fade-seqblocks))
+                   (seqblock1 (seqblocks seqblocknum1))
+                   (seqblock2 (seqblocks seqblocknum2)))
+              (cond ((and (seqblock1 :blocknum)
+                          (seqblock2 :blocknum))
+                     #f)  ;; no overlaps for editor blocks
+                    ((seqblock1 :blocknum)
+                     seqblocks)
+                    ((seqblock2 :blocknum)
+                     seqblocks)
+                    (else
+                     (auto-add-fades-to-seqblocks seqblocks seqblocknum1 seqblocknum2))))))))
 
 
 ;; find minimum block length (don't want seqblocks to be so narrow that they disappear)
