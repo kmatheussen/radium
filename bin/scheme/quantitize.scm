@@ -127,7 +127,7 @@
   (<gui> :set-value (quant-type-guis (1- (<ra> :get-quantitize-type))) #t)
 
   (define curr-quantitize-type (<ra> :get-quantitize-type))
-  
+
   (<ra> :schedule 1000
         (lambda ()
           ;;(c-display "hepp" quant-gui)
