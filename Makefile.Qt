@@ -381,9 +381,9 @@ OBJ12= Qt_instruments.o Qt_visual.o GTK_visual.o Qt_Main.o Qt_endprogram.o Qt_Ev
 OBJ_POSIX=posix_settings.o posix_Player.o 
 
 # Two of the following three must be set empty by the build script.
-OBJ_X11 ?= X11_keyboard.o X11_disk.o X11_Qtstuff.o
-OBJ_WIN ?= X11_disk.o X11_Qtstuff.o W_Keyboard.o
-OBJ_MACOSX ?= X11_disk.o X11_Qtstuff.o cocoa_Keyboard.o do.o
+OBJ_X11 ?= X11_keyboard.o X11_disk.o
+OBJ_WIN ?= X11_disk.o W_Keyboard.o
+OBJ_MACOSX ?= X11_disk.o cocoa_Keyboard.o do.o
 
 #Python
 OBJ13=radium_wrap.o api_common.o api_keyplay.o api_keyplayedit.o api_navigate.o api_disk.o api_noteedit.o api_velocities.o api_pitches.o api_timing.o api_support.o wrapfunclist.o api_trackonoff.o api_zoom.o api_notemanipulate.o api_play.o api_clipboard.o api_undo.o api_various.o api_instruments.o api_soundpluginregistry.o api_requesters.o api_mouse.o api_seqtracks.o api_gui.o
@@ -424,7 +424,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 BUILD_DEPENDENCIES = $(API)radium_proc.h buildtype.opt flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 
-PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/X11_Qtstuff.py bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so bin/scheme/api_protos.scm
+PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so bin/scheme/api_protos.scm
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 all:
@@ -507,7 +507,6 @@ run-valgrind:
 	BUILDTYPE=DEBUG CFLAGS="-DMEMORY_DEBUG" ./build_linux.sh -j7 && rm -f memory.o Mixer.o SoundProducer.o && cd bin && valgrind --suppressions=../valgrind-python.supp --suppressions=../Qt47supp.txt --suppressions=../libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./radium
 # --dont-load-new-song
 #	make -j3 && cd bin && valgrind gdb --args $(PYTHONEXE) start.py keybindings.conf
-#	killall -9 X11_Qtstuff.py radium
 	rm -f Mixer.o SoundProducer.o memory.o
 
 # --tool=memcheck --read-var-info=yes --track-origins=yes
@@ -646,14 +645,6 @@ bin/protos.conf: $(API)protos.conf
 	echo "#The file is copied from ../python/ during make-process." >>bin/protos.conf
 	cat $(API)protos.conf >>bin/protos.conf
 
-bin/X11_Qtstuff.py: X11/X11_Qtstuff.py Makefile
-	rm -f bin/X11_Qtstuff.py
-	echo "#!$(PYTHONEXE)" >bin/X11_Qtstuff.py
-	echo "" >>bin/X11_Qtstuff.py
-	echo "#Do not edit, this file is automaticly generated." >>bin/X11_Qtstuff.py
-	echo "" >>bin/X11_Qtstuff.py
-	cat X11/X11_Qtstuff.py >>bin/X11_Qtstuff.py
-	chmod a+rx bin/X11_Qtstuff.py
 
 
 #-----------------COMPILING-----------------------------
@@ -1236,9 +1227,6 @@ posix_Player.o:  $(BUILD_DEPENDENCIES) posix/posix_Player.c
 
 X11_ReqType.o:  $(BUILD_DEPENDENCIES) X11/X11_ReqType.c 
 	$(CC) X11/X11_ReqType.c $(OPT)
-
-X11_Qtstuff.o:  $(BUILD_DEPENDENCIES) X11/X11_Qtstuff.c 
-	$(CC) X11/X11_Qtstuff.c $(OPT)
 
 X11_instrument.o:  $(BUILD_DEPENDENCIES) X11/X11_instrument.c
 	$(CC) X11/X11_instrument.c $(OPT)

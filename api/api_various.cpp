@@ -102,10 +102,6 @@ void playListWindowToFront(void){
 void instrumentWindowToFront(void){
 	GFX_InstrumentWindowToFront();
 }
-void helpWindowToFront(void){
-	GFX_HelpWindowToFront();
-}
-
 void setMixerRotate(float rotate){
   MW_set_rotate(rotate);
 }
@@ -203,16 +199,6 @@ bool showMixerStripOnLeftSide(void){
 void setShowMixerStripOnLeftSide(bool val){
   g_showMixerStripOnLeftSide = val;
   SETTINGS_write_bool("show_mixer_strip_on_left_side", val);
-}
-
-
-void maximizeEditorWindow(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  GFX_MaximizeEditorWindow(window);
-}
-void minimizeEditorWindow(int windownum){
-  struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
-  GFX_MinimizeEditorWindow(window);
 }
 
 void toggleCurrWindowFullScreen(void){
