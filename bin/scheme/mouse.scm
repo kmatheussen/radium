@@ -4958,7 +4958,47 @@
       (and (<= start2 start1)
            (> end2 start1))))
   
-
+(define (get-prev-seqblock-end pos seqblocks seqblocknum) 
+  (define num-seqblocks (length seqblocks))
+  (let loop ((n 0)
+             (best 0))
+    (cond ((>= n num-seqblocks)
+           best)
+          ((= n seqblocknum)
+           (loop (1+ n) best))
+          (else
+           (let ((seqblock (seqblocks n)))
+             (if (not seqblock)
+                 (loop (1+ n) best)
+                 (let ((end (seqblock :end-time)))
+                   (cond ((>= end pos)
+                          (loop (1+ n) best))
+                         ((> end best)
+                          (loop (1+ n) end))
+                         (else
+                          (loop (1+ n) best))))))))))
+ 
+(define (get-next-seqblock-start pos seqblocks seqblocknum) 
+  (define num-seqblocks (length seqblocks))
+  (let loop ((n 0)
+             (best #f))
+    (cond ((>= n num-seqblocks)
+           best)
+          ((= n seqblocknum)
+           (loop (1+ n) best))
+          (else
+           (let ((seqblock (seqblocks n)))
+             (if (not seqblock)
+                 (loop (1+ n) best)
+                 (let ((start (seqblock :start-time)))
+                   (cond ((< start pos)
+                          (loop (1+ n) best))
+                         ((or (not best)
+                              (< start best))
+                          (loop (1+ n) start))
+                         (else
+                          (loop (1+ n) best))))))))))
+ 
 (delafina (seqblock-is-overlapping-with-another-block-seqblock :seqblocks
                                                                :seqblocknum
                                                                :new-start
@@ -4979,10 +5019,10 @@
         #f
         (cond ((= n seqblocknum)
                (loop (1+ n)))
-
+              
               ((and ((seqblocks n) :blocknum)
                     (seqblocks-overlap? seqblock1 (seqblocks n)))
-               #t)
+               n)
               
               (else
                (loop (1+ n)))))))
@@ -5102,15 +5142,20 @@
   (+ start-time (get-min-seqblock-duration min-num-pixels seqblock-info))
   )
 
+#!!
+(load "mouse.scm")
+!!#
 
 ;; The 'Value' format is number of frames since start of song.
-(define (move-seqblock-speedstretch Value seqtracknum seqblocknum seqblock seqblocks is-stretch is-left min-value max-value curr-pos)
+(define (move-seqblock-speedstretch Value seqtracknum seqblocknum seqblock seqblocks is-stretch is-left min-right-value max-left-value curr-pos)
 
   (define is-right (not is-left))
   (define is-speed (not is-stretch))
   (define is-sample (seqblock :sample))
   (define is-block (seqblock :blocknum))
   (define num-seqblocks (length seqblocks))
+
+  (define allowed-to-overlap is-sample)
   
   (define new-pos-nongridded (floor Value))
     
@@ -5118,21 +5163,41 @@
                             (<ra> :control-pressed))
                         new-pos-nongridded
                         (<ra> :get-seq-gridded-time (floor Value) 0 (<ra> :get-seq-block-grid-type))))
-    
+
+    ;; Limit shrinking size
     (if is-left
-        (set! new-pos (min max-value new-pos))
-        (set! new-pos (max min-value new-pos)))
+        (set! new-pos (min max-left-value new-pos))
+        (set! new-pos (max min-right-value new-pos)))
 
-    (set! new-pos (max 0
-                       (floor new-pos)))
+    ;; Limit expanding size
+    (when (not allowed-to-overlap)
+      (if is-left
+          (let ((prev-end (get-prev-seqblock-end (1+ (seqblock :start-time)) seqblocks seqblocknum)))
+            (set! new-pos (max new-pos
+                               prev-end)))
+          
+          (let ((next-start (get-next-seqblock-start (1+ (seqblock :start-time)) seqblocks seqblocknum)))
+            (if next-start
+                (set! new-pos (min new-pos
+                                   next-start))))))
+    
+    
+    (set! new-pos (max 0 (floor new-pos)))
 
-    ;;(c-display "---------new-pos:" new-pos ". Value:" Value "this->max-value:" (this->max-value))
+    ;;(c-display "---------new-pos:" new-pos ". Value:" Value "min/max-value:" min-right-value max-left-value)
 
     (set-grid-type #t)
 
     (define curr-speed (seqblock :speed))
+
+    ;;(c-display "is-overlapping:" (or is-sample
+    ;;                                 (seqblock-is-overlapping-with-another-block-seqblock seqblocks
+    ;;                                                                                      seqblocknum
+    ;;                                                                                      (if is-left new-pos #f)
+    ;;                                                                                      (if is-right new-pos #f))))
     
-    (when (or is-sample
+    (when (or #t ;; We don't overlap here since we limited pos in "limit expanding size" above.
+              allowed-to-overlap
               (not (seqblock-is-overlapping-with-another-block-seqblock seqblocks
                                                                         seqblocknum
                                                                         (if is-left new-pos #f)
@@ -5153,10 +5218,13 @@
         (set! (new-seqblock :speed) curr-speed)
         ;;(c-display "old-speed:" old-speed ". new_speed:" (new-seqblock :speed) ". old-duration:" old-duration ". new-duration:" new-duration)
         )
-        
+      
       (define new-seqblocks-state (copy seqblocks))
       (set! (new-seqblocks-state seqblocknum) new-seqblock)
       (set! new-seqblocks-state (maybe-add-autofades new-seqblocks-state seqblocknum))
+      
+      ;;(c-display "new-seqblocks-state:" new-seqblocks-state)
+      
       (when new-seqblocks-state
         ;;(set! new-seqblocks-state (sort! new-seqblocks-state
         ;;                                 (lambda (a b)
@@ -5226,12 +5294,12 @@
   :curr-pos ()
   curr-pos
 
-  :min-value ()
+  :min-right-value ()
   (+ 1
      (seqblock :start-time)
      (get-min-seqblock-duration2 *min-seqblock-width*))
 
-  :max-value ()
+  :max-left-value ()
   (- (1- (seqblock :end-time))
      (get-min-seqblock-duration2 *min-seqblock-width*))
 
@@ -5251,7 +5319,7 @@
   :move (Value Y)
   (begin
     ;;(c-display "Value:" Value)
-    (let ((gakk (move-seqblock-speedstretch Value seqtracknum seqblocknum seqblock seqblocks is-stretch is-left (this->min-value) (this->max-value) curr-pos)))
+    (let ((gakk (move-seqblock-speedstretch Value seqtracknum seqblocknum seqblock seqblocks is-stretch is-left (this->min-right-value) (this->max-left-value) curr-pos)))
       (set! curr-pos (car gakk))
       (set! curr-speed (cadr gakk))
       #t))
@@ -5290,11 +5358,11 @@
                           :Get-min-value (lambda (set-speedstretch)
                                            (if is-left
                                                0 ;; The move-seqblock-stretch-left class takes care of finding more accurate minimum value.
-                                               (set-speedstretch :min-value)))
+                                               (set-speedstretch :min-right-value)))
                           
                           :Get-max-value (lambda (set-speedstretch)
                                            (if is-left
-                                               (set-speedstretch :max-value)
+                                               (set-speedstretch :max-left-value)
                                                #f))
                           
                           :Get-x (lambda (info) #f)
