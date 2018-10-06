@@ -5313,8 +5313,8 @@
                                (seqblock :start-time)))
                         (- (seqblock :interior-end)
                            (seqblock :interior-start)))))
-        (set-editor-statusbar (<-> "Stretch: " (two-decimal-string stretch))))
-      (set-editor-statusbar (<-> "Speed: " (two-decimal-string curr-speed))))
+        (set-editor-statusbar (get-stretch-string2 stretch)))
+      (set-editor-statusbar (get-speed-string2 curr-speed)))
   
   :move (Value Y)
   (begin
@@ -5584,11 +5584,15 @@
 
   (push-seqblock-to-top! seqtracknum (seqblock :id))
 
-  (define curr-pos (seqblock :start-time))
+  (define start-pos (seqblock :start-time))
+  (define curr-pos start-pos)
 
   (define is-sample (seqblock :sample))
   (define is-block (seqblock :blocknum))
 
+  (define allowed-to-overlap is-sample)
+  (define allowed-to-swap is-block)
+  
   (define num-seqblocks (length seqblocks))
 
   (define seqblock-length (- (seqblock :end-time)
@@ -5602,7 +5606,8 @@
   (define (set-new-seqblocks! new-seqblocks new-seqblocknum)
     (set! seqblocks new-seqblocks)
     (set! seqblocknum new-seqblocknum)
-    (set! seqblock (seqblocks seqblocknum)))
+    (set! seqblock (seqblocks seqblocknum))
+    (set! start-pos (seqblock :start-time)))
 
   (define (both-seqtracks-are-same-type seqtracknum new-seqtracknum)
     (eq? (<ra> :seqtrack-for-audiofiles seqtracknum)
@@ -5667,7 +5672,7 @@
   :move (Value Y)
   (begin
     ;;(<ra> :select-seqblock #t seqblocknum seqtracknum) ;; to avoid flickering
-    
+
     (define new-seqtracknum (or (get-seqtracknum (1+ (<ra> :get-seqtrack-x1 0)) Y)
                                 seqtracknum))
     ;;(c-display "  Y" Y new-seqtracknum)
@@ -5678,6 +5683,9 @@
                             (<ra> :control-pressed))
                         new-pos-nongridded
                         (<ra> :get-seq-gridded-time (floor Value) 0 (<ra> :get-seq-block-grid-type))))
+
+    (define moving-left (< new-pos start-pos))
+    (define moving-right (not moving-left))
     
     (set-grid-type #t)
     
@@ -5688,39 +5696,66 @@
     
     ;;(pretty-print seqblocks)
     
-    ;; maybe swap forward
-    (if is-block
-        (let loop ((has-changed #f))
-          (define seqblocknum2 (find-seqblock-to-forward-autoswap-with seqblocks seqblocknum new-pos-nongridded))
-          (cond (seqblocknum2
-                 ;;(c-display "BEFORE swap:::")
-                 ;;(pretty-print seqblocks)(newline)
-                 (set-new-seqblocks! (swap-seqblocks seqblocks seqblocknum seqblocknum2 #t) seqblocknum2)
-                 ;;(c-display "   swapped forward")
-                 (loop #t))
-                (has-changed
-                 (set! curr-pos (seqblock :start-time))
-                 (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
-                 (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
-                 ))))
-    
-    ;; maybe swap backward
-    (if is-block
-        (let loop ((has-changed #f))
-          (define seqblocknum1 (find-seqblock-to-backward-autoswap-with seqblocks seqblocknum new-pos-nongridded))
-          (cond (seqblocknum1
-                 (set-new-seqblocks! (swap-seqblocks seqblocks seqblocknum1 seqblocknum #f) seqblocknum1)
-                 ;;(c-display "   swapped forward")
-                 (loop #t))
-                (has-changed
-                 (set! curr-pos (seqblock :start-time))
-                 (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
-                 (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
-                 ))))
+
+    (define has-swapped
+      (and allowed-to-swap
+           (let ((swapped-forward 
+                  ;;
+                  ;; maybe swap forward
+                  ;;
+                  (let loop ((has-changed #f))
+                    (define seqblocknum2 (find-seqblock-to-forward-autoswap-with seqblocks seqblocknum new-pos-nongridded))
+                    (cond (seqblocknum2
+                           ;;(c-display "BEFORE swap:::")
+                           ;;(pretty-print seqblocks)(newline)
+                           (set-new-seqblocks! (swap-seqblocks seqblocks seqblocknum seqblocknum2 #t) seqblocknum2)
+                           ;;(c-display "   swapped forward")
+                           (loop #t))
+                          (has-changed
+                           (set! curr-pos (seqblock :start-time))
+                           (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
+                           (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
+                           has-changed)
+                          (else
+                           #f))))
+                 (swapped-backwards
+                  ;;
+                  ;; maybe swap backward
+                  ;;
+                  (let loop ((has-changed #f))
+                    (define seqblocknum1 (find-seqblock-to-backward-autoswap-with seqblocks seqblocknum new-pos-nongridded))
+                    (cond (seqblocknum1
+                           (set-new-seqblocks! (swap-seqblocks seqblocks seqblocknum1 seqblocknum #f) seqblocknum1)
+                           ;;(c-display "   swapped forward")
+                           (loop #t))
+                          (has-changed
+                           (set! curr-pos (seqblock :start-time))
+                           (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
+                           (<ra> :set-curr-seqblock-under-mouse seqblocknum seqtracknum)
+                           has-changed)
+                          (else
+                           #f)))))
+             (or swapped-forward
+                 swapped-backwards))))
 
     ;;(c-display "overlapping?" (seqblock-is-overlapping-with-another-block-seqblock seqblocks seqblocknum new-pos))
 
-    (when (or is-sample
+    ;;(c-display "moving-left:" moving-left)
+    
+    (when (not allowed-to-overlap)
+      (if moving-left
+          (let ((prev-end (get-prev-seqblock-end (1+ start-pos) seqblocks seqblocknum)))
+            (set! new-pos (max new-pos
+                               prev-end)))
+          
+          (let ((next-start (get-next-seqblock-start (1+ start-pos) seqblocks seqblocknum)))
+            (if next-start
+                (set! new-pos (min new-pos
+                                   (- next-start seqblock-length)))))))
+
+    
+    (when (or #t ;; We took care of overlapping right above
+              allowed-to-overlap
               (not (seqblock-is-overlapping-with-another-block-seqblock seqblocks seqblocknum new-pos)))
       (define diff (- new-pos
                       (seqblock :start-time)))
