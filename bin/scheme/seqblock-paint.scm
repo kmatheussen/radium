@@ -91,17 +91,16 @@
 #!!
 (pretty-print (macroexpand (call-maybe-paint-box)))
 !!#
-
 (define (FROM_C-paint-seqblock-stuff seqtracknum seqblocknum)
   (define gui (<gui> :get-sequencer-gui))
   (define map-x
     (let ((dx (<gui> :get-editor-distance-x gui)))
       (lambda (x)
-        (round (- x dx)))))
+        (- x dx))))
   (define map-y
     (let ((dy (<gui> :get-editor-distance-y gui)))
       (lambda (y)
-        (round (- y dy)))))
+        (- y dy))))
   (define (map-box box)
     (make-box2 (map-x (box :x1)) (map-y (box :y1))
                (map-x (box :x2)) (map-y (box :y2))))
