@@ -1572,34 +1572,41 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
   if (HASH_has_key(state, "automation"))
     automation_state = HASH_get_hash(state, "automation");
 
+  bool has_for_audiofiles_key = HASH_has_key(state, "for_audiofiles");
+  
   bool for_audiofiles = false; // fix, maybe
-  if (HASH_has_key(state, "for_audiofiles"))
+  if (has_for_audiofiles_key)
     for_audiofiles = HASH_get_bool(state, "for_audiofiles");
 
   struct SeqTrack *seqtrack = SEQTRACK_create(automation_state, state_samplerate, for_audiofiles);
   struct SeqTrack *seqtrack_extra = NULL; // For loading older songs. In older songs, both audiofiles and editor blocks could be placed in all seqtracks. (and they still can, probably, but it makes very little sense to allow it)
 
+  if(seqtrack->for_audiofiles==false) R_ASSERT(seqtrack->patch==NULL);
+  
   if (HASH_has_key(state, "use_custom_recording_config"))
     seqtrack->use_custom_recording_config = HASH_get_bool(state, "use_custom_recording_config");
   
   if (HASH_has_key(state, "recording_config"))
     seqtrack->custom_recording_config = get_recording_config_from_state(HASH_get_hash(state, "recording_config"));
-  
+
+  struct Patch *patch = NULL;
   
   if (HASH_has_key(state, "patch_id")){
     int64_t patch_id = HASH_get_int(state, "patch_id");
     if (patch_id >= 0){
-      struct Patch *patch = PATCH_get_from_id(patch_id);
-      if (patch != NULL) {
-        seqtrack->patch = patch;
-      } else {
-        R_ASSERT(false);
-      }
+      patch = PATCH_get_from_id(patch_id);
+      R_ASSERT(patch!=NULL);
     } else {
       R_ASSERT(false);
     }
   }
 
+  if(seqtrack->for_audiofiles){
+    R_ASSERT(has_for_audiofiles_key);
+    R_ASSERT(patch!=NULL);
+    seqtrack->patch = patch;
+  }
+  
   if (HASH_has_key(state, "name"))
     seqtrack->name = HASH_get_chars(state, "name");
 
@@ -1629,9 +1636,16 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
       
     } else {
     
+      R_ASSERT(false==has_for_audiofiles_key);
+      R_ASSERT(true==seqblock_for_audiofiles);
+      R_ASSERT(false==for_audiofiles);
+      
       if (seqtrack_extra==NULL){
-        seqtrack_extra = SEQTRACK_create(NULL, state_samplerate, !for_audiofiles);
+        seqtrack_extra = SEQTRACK_create(NULL, state_samplerate, true);
         seqtrack_extra->gfx_seqblocks = &gfx_seqblocks_extra;
+
+        R_ASSERT(patch!=NULL);
+        seqtrack_extra->patch = patch;
       }
       
       struct SeqBlock *seqblock = SEQBLOCK_create_from_state(seqtrack_extra, seqtracknum+1, seqblock_state, error_type, Seqblock_Type::GFX);
@@ -1646,7 +1660,19 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
   SEQTRACK_apply_gfx_seqblocks(seqtrack, seqtracknum, false);
   if (seqtrack_extra != NULL)
     SEQTRACK_apply_gfx_seqblocks(seqtrack_extra, seqtracknum, false);
-
+  
+  if(seqtrack->for_audiofiles==false)
+    R_ASSERT(seqtrack->patch==NULL);
+  
+  if(seqtrack_extra!=NULL){
+    R_ASSERT(false==has_for_audiofiles_key);
+    
+    R_ASSERT(seqtrack_extra->for_audiofiles==true);
+    R_ASSERT(seqtrack_extra->patch!=NULL);
+    
+    R_ASSERT(seqtrack->for_audiofiles==false);
+    R_ASSERT(seqtrack->patch==NULL);    
+  }
 
   {
     QVector<SeqTrack*> ret;
