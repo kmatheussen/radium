@@ -1,3 +1,25 @@
+Changes 5.9.4 -> 5.9.5:
+* Update S7.
+* Sequencer: Fix assertion reporter popping up, and sometimes
+  also crashes, when saving a song that was originally created
+  before audio seqtracks and editor seqtracks were separated.
+* Sequencer: Fix erratic font size changes for the text in the
+  seqblock handles when the play cursor has been set in fixed
+  position.
+* Sequencer: Make automatic crossfades optional.
+* Sequencer: Make sure we are able to move editor seqblocks as close
+  as possible other seqblocks without overlapping.
+* Sequencer: Set window title of the "Enable/disable editor tracks"
+  window to the name of the editor block the seqblock uses.
+* Sequencer: Make sure we are able to stretch editor seqblocks as
+  much as possible without overlapping another seqblock.
+* Manual: Improve Mouse section of the manual a little bit.
+* Sequencer: Fix undefined behavior (including crashes) that might
+  happen when redrawing.
+* API: doAutoCrossfades, setDoAutoCrossfades
+ 
+
+
 Changes 5.9.0 -> 5.9.4:
 * Update S7 scheme interpreter.
 * Sequencer: Make it faster to move and edit seqblocks with stretch
