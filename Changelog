@@ -16,7 +16,10 @@ Changes 5.9.4 -> 5.9.5:
 * Manual: Improve Mouse section of the manual a little bit.
 * Sequencer: Fix undefined behavior (including crashes) that might
   happen when redrawing.
-* API: doAutoCrossfades, setDoAutoCrossfades
+* API:
+  * Added: doAutoCrossfades, setDoAutoCrossfades
+  * Removed: helpWindowToFront, maximizeEditorWindow,
+    minimizeEditorWindow
  
 
 
