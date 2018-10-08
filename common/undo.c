@@ -758,7 +758,7 @@ currently_undoing = true;
            GFX_update_instrument_widget(current_patch);
          }
 
-         window->must_redraw_editor = true; // We do this instead of calling GE_set_curr_realline. GE_set_curr_realline can also cause flickering if editor is redrawn at the same time.
+         window->must_redraw = true; // We do this instead of calling GE_set_curr_realline. GE_set_curr_realline can also cause flickering if editor is redrawn at the same time.
          //GE_set_curr_realline(wblock->curr_realline);
 
          // Unnecessary, and can cause a small flicker.
