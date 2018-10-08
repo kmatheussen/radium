@@ -551,7 +551,9 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
             return args[0].varname + separator + self.get_arg_list(args[1:])
 
     # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
-    def write_s7_call_c_function(self,oh):
+    def write_s7_call_c_function(self,oh, include_label):
+        if include_label:
+            oh.write(" gotit:;\n");
         if false: #"set" in self.proc.varname:
             oh.write("  EVENTLOG_add_event(\"" + self.proc.varname + " [sc]\"); ")
         else:
@@ -582,14 +584,16 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         #oh.write("  s7_gc_protect(radiums7_sc, radiums7_args);\n"); # Just testing
         oh.write("\n")
 
-
+        include_label = False
+        
         for n in range(len(self.args)):
             arg = self.args[n]
 
             if arg.default != "":
                  oh.write("  if (s7_is_null(radiums7_sc, radiums7_args)) {\n")
                  self.write_s7_defaults(oh, self.args[n:]) # arg2 = 9 ; arg3 = 10, ...
-                 oh.write("  ") ; self.write_s7_call_c_function(oh) # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+                 include_label = True
+                 oh.write("    goto gotit;\n") #;  self.write_s7_call_c_function(oh) # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
                  oh.write("  }\n")
 
             oh.write("  if (!s7_is_pair(radiums7_args))\n")
@@ -614,7 +618,7 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         oh.write("  if (!s7_is_null(radiums7_sc, radiums7_args))\n")
         oh.write('    return s7_wrong_number_of_args_error(radiums7_sc, "'+s7funcname+': wrong number of args: ~A", org_radiums7_args);\n')
         oh.write("\n")
-        self.write_s7_call_c_function(oh) # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
+        self.write_s7_call_c_function(oh, include_label) # return s7_make_integer(radiums7_sc, add2_secondargumenthasdefaultvalue9(arg1, arg2));
         oh.write("}\n")
         oh.write("\n")
         
