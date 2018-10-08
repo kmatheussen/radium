@@ -141,6 +141,7 @@ struct Automation{
     : patch(patch)
     , effect_num(effect_num)
   {
+    
     SEQTRACK_AUTOMATION_cancel_curr_automation();
     
     SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
@@ -805,6 +806,7 @@ bool RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
   R_ASSERT_RETURN_IF_FALSE2(seqtrack->seqtrackautomation!=NULL, more_things_to_do);
 
   for(auto *automation : seqtrack->seqtrackautomation->_automations){
+    
     if (automation->_is_enabled==false)
       continue;
     
@@ -831,44 +833,58 @@ bool RT_SEQTRACK_AUTOMATION_called_per_block(const struct SeqTrack *seqtrack){
       }
 
       double value;
-      if (automation->automation.RT_get_value(seqtime+latency, value)){
+      switch(automation->automation.RT_get_value(seqtime+latency, value)){
 
-        if (value != automation->last_value){
-          FX_when when;
-          if (automation->last_value < -0.5)
-            when = FX_start;
-          else
-            when = FX_middle;
+        case radium::SeqAutomationReturnType::VALUE_OK:{
 
-          RT_PLUGIN_touch(plugin);
+          if (value != automation->last_value){
+            FX_when when;
+            if (automation->last_value < -0.5)
+              when = FX_start;
+            else
+              when = FX_middle;
+            
+            RT_PLUGIN_touch(plugin);
+            
+            PLUGIN_set_effect_value(plugin,0,effect_num,value, DONT_STORE_VALUE, when, EFFECT_FORMAT_SCALED);
+            automation->last_value = value;
+          }
+          
+          more_things_to_do = true;
 
-          PLUGIN_set_effect_value(plugin,0,effect_num,value, DONT_STORE_VALUE, when, EFFECT_FORMAT_SCALED);
-          automation->last_value = value;
+          break;
+          
         }
 
-        more_things_to_do = true;
+        case radium::SeqAutomationReturnType::NO_VALUES_YET:{
 
-      } else {
-
-        if (automation->last_value > -0.5){
+          R_ASSERT_NON_RELEASE(automation->last_value == -1.0);
+          more_things_to_do = true;
+          automation->last_value = -1.0;
+          break;
+          
+        }
+  
+        case radium::SeqAutomationReturnType::NO_MORE_VALUES:{
+          
           RT_PLUGIN_touch(plugin);
 
           const AutomationNode &last_node = automation->automation.at(automation->automation.size()-1);
-                  
           PLUGIN_set_effect_value(plugin,0,effect_num, last_node.value, DONT_STORE_VALUE, FX_end, EFFECT_FORMAT_SCALED); // Make sure last value is sent out with FX_end. This also ensures last value is sent when the second last node is LOGTYPE_HOLD.
           automation->last_value = -1.0;
-
-        } else {
-
-          more_things_to_do = true; // We haven't started the automation yet.
-
+          
+          //more_things_to_do = false; // Already set to false.
+          break;
+            
         }
-
+        
       }
-    }
       
+    }
   }
 
+  //if(more_things_to_do)
+  
   return more_things_to_do;
 }
 

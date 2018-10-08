@@ -54,6 +54,14 @@ template <typename T> struct NodeFromStateProvider{
 };
 
 
+enum class SeqAutomationReturnType{
+  VALUE_OK,
+  NO_VALUES_YET,
+  NO_MORE_VALUES,
+};
+
+
+
 template <typename T> class SeqAutomation{
   
 private:
@@ -69,7 +77,6 @@ private:
   int _curr_nodenum = -1;
 
   AtomicPointerStorage _rt;
-
 
   // Double free / using data after free, if trying to copy data.
   SeqAutomation(const SeqAutomation&) = delete;
@@ -235,7 +242,7 @@ private:
 public:
 
   // Note: Value is not set if rt->num_nodes==0, even if always_set_value==true.  
-  bool RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL, bool always_set_value = false){
+  SeqAutomationReturnType RT_get_value(double time, double &value, double (*custom_get_value)(double time, const T *node1, const T *node2) = NULL, bool always_set_value = false){
 
     R_ASSERT_NON_RELEASE(_RT_last_search_pos > 0);
 
@@ -244,63 +251,71 @@ public:
     const struct RT *rt = (const struct RT*)rt_pointer.get_pointer();
 
     if (rt!=NULL) {
+
+      const int num_nodes = rt->num_nodes;
       
-      if (rt->num_nodes==0)
-        return false;
+      if (num_nodes==0) {
+        
+        return SeqAutomationReturnType::NO_MORE_VALUES;
                 
-      if (rt->num_nodes==1){
+      } else if (time < rt->nodes[0].time){
         
         if (always_set_value)
           value = rt->nodes[0].value;
         
-        return false;
-      }
-      
-      if (time < rt->nodes[0].time){
+        return SeqAutomationReturnType::NO_VALUES_YET;
         
-        if (always_set_value)
-          value = rt->nodes[0].value;
-
-        return false;
-      }
-      
-      if (time == rt->nodes[0].time){
+      } else if (time == rt->nodes[0].time) {
+        
         value = rt->nodes[0].value;
-        return true;
-      }
+        
+        return SeqAutomationReturnType::VALUE_OK;
 
-      if (time > rt->nodes[rt->num_nodes-1].time){
+      } else if (num_nodes==1) {
+        
+        if (always_set_value)
+          value = rt->nodes[0].value;
+        
+        return SeqAutomationReturnType::NO_MORE_VALUES;
+        
+      } else if (time > rt->nodes[num_nodes-1].time){
 
         if (always_set_value)
-          value = rt->nodes[rt->num_nodes-1].value;
-
-        return false;
-      }
+          value = rt->nodes[num_nodes-1].value;
+        
+        return SeqAutomationReturnType::NO_MORE_VALUES;
+        
+      } else {
       
-      const T *node1;
-      const T *node2;
-      int i = _RT_last_search_pos;
-
-      if (i<rt->num_nodes){
+        const T *node1;
+        const T *node2;
+        int i = _RT_last_search_pos;
+        
+        R_ASSERT_NON_RELEASE(i >= 0);
+        
+        if (i<num_nodes){
+          node1 = &rt->nodes[i-1];
+          node2 = &rt->nodes[i];
+          if (time >= node1->time && time <= node2->time) // Same position in array as last time. No need to do binary search. This is the path we usually take.
+            goto gotit;
+        }
+        
+        i = BinarySearch_Left(rt, time, 0, num_nodes-1);
+        R_ASSERT_NON_RELEASE(i>0);
+        
+        _RT_last_search_pos = i;
         node1 = &rt->nodes[i-1];
         node2 = &rt->nodes[i];
-        if (time >= node1->time && time <= node2->time) // Same position in array as last time. No need to do binary search. This is the path we usually take.
-          goto gotit;
+        
+      gotit:
+        
+        value = get_value(time, node1, node2, custom_get_value);
+        return SeqAutomationReturnType::VALUE_OK;
+
       }
-
-      i = BinarySearch_Left(rt, time, 0, rt->num_nodes-1);
-      R_ASSERT_NON_RELEASE(i>0);
-      
-      _RT_last_search_pos = i;
-      node1 = &rt->nodes[i-1];
-      node2 = &rt->nodes[i];
-
-    gotit:      
-      value = get_value(time, node1, node2, custom_get_value);
-      return true;
     }
-    
-    return false; //rt_tempo_automation->nodes[rt_tempo_automation->num-1].value;
+
+    return SeqAutomationReturnType::NO_MORE_VALUES;
   }
 
   /*
