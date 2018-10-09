@@ -69,7 +69,7 @@ tr:nth-child(even) {
           </div>
         <LI><a onclick="showHide('playlist')" href="#!">Playlist</A>
           <div id="playlist" style="display: none">
-            The <b>playlist</b> is a textual representation of the current track in the <a onclick="showHide('sequencer')" href="#!">sequencer</a>. The playlist does not display more information than the sequencer, but it can be more convenient to use, especially if there is only one track in the sequencer.
+            The <b>playlist</b> is a textual representation of the current seqtrack in the <a onclick="showHide('sequencer')" href="#!">sequencer</a>. The playlist does not display more information than the sequencer, but it can be more convenient to use, especially if there is only one seqtrack.
           </div>
         <LI> <a onclick="showHide('mixer')" href="#!">Mixer</A> <!-- <A href="mixer.html">Mixer</A> -->
 
@@ -154,10 +154,11 @@ A: Right-click the name of the mixer strip, and select "Delete". Or shift+right 
             <LI> <a onclick="showHide('sequencer')" href="#!">Sequencer</a>
               <div id="sequencer" style="display: none">
                 <UL>
-                  <LI> The sequencer lets you select when a block starts playing. Initially there is only one sequencer track,
-                    but more tracks can be added by clicking one of the "+ ..." buttons in the lower left corner.
+                  <LI> The sequencer lets you select when a block starts playing. Initially there is only one sequencer track ("seqtrack"),
+                    but more seqtracks can be added by clicking one of the "+ ..." buttons in the lower left corner.
                   <LI> Use the popup menu to add effect automations, tempo automations, loop start and end positions, and other operations.
                   <LI> To quickly start playing at the position of the mouse cursor, scroll the mouse wheel <b>up</b>, and stop by scrolling <b>down</b>.
+                  <LI> To record audio, click the "R" button in the seqtrack header of audio seqtracks, and start playing. To configure number of audio channels and where to get audio from, right-click the "R" button. You might also want to select beforehand when to start and stop recording, and you can do this by by right-clicking in the seqblock area and select the "Punch in/out" option under "Sequencer timeline".
                   <LI> For information about the different types of fade in and fade out shapes, look in the Ardour manual <A href="http://manual.ardour.org/editing-and-arranging/create-region-fades-and-crossfades/">here</A>.
                 </UL>
               </div>
