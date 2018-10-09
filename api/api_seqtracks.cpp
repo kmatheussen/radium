@@ -1177,10 +1177,12 @@ void deleteSeqblockAutomationNode(int nodenum, int automationnum, int seqblocknu
   VALIDATE_SEQBLOCK_AUTOMATIONNUM();
 
   if (nodenum==0 || nodenum==SEQBLOCK_AUTOMATION_get_num_nodes(seqblock->automations[automationnum])-1){
+    undoSeqblockAutomation(automationnum, seqblocknum, seqtracknum);
+    
     SEQBLOCK_AUTOMATION_set(seqblock->automations[automationnum],
                             nodenum,
                             SEQBLOCK_AUTOMATION_get_seqtime(seqblock->automations[automationnum], nodenum),
-                            0.0,
+                            SEQBLOCK_AUTOMATION_get_default_value(seqblock->automations[automationnum]),
                             SEQBLOCK_AUTOMATION_get_logtype(seqblock->automations[automationnum], nodenum)
                             );
     return;

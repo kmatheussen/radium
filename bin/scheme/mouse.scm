@@ -1943,14 +1943,23 @@
   :press-func (lambda ($button $x $y)
                 (and (= $button *right-button*)
                      (<ra> :reltempo-track-visible)
-                     (inside-box (<ra> :get-box temponode-area) $x $y)                                     
-                     (match (list (find-node $x $y get-temponode-box (<ra> :get-num-temponodes)))
-                            (existing-box Num Box) :> (begin
-                                                        (<ra> :undo-temponodes)
-                                                        (<ra> :delete-temponode Num)
-                                                        #t)
-                            _                      :> #f)))))
-
+                     (inside-box (<ra> :get-box temponode-area) $x $y)
+                     (if (<ra> :alt2-pressed)
+                         (undo-block
+                          (lambda ()
+                            (<ra> :undo-temponodes)
+                            (while (> (<ra> :get-num-temponodes) 2)
+                              (<ra> :delete-temponode 1))
+                            (<ra> :delete-temponode 0)
+                            (<ra> :delete-temponode 1)
+                            #t))
+                         (match (list (find-node $x $y get-temponode-box (<ra> :get-num-temponodes)))
+                                (existing-box Num Box) :> (begin
+                                                            (<ra> :undo-temponodes)
+                                                            (<ra> :delete-temponode Num)
+                                                            #t)
+                                _                      :> #f))))))
+ 
 ;; highlight current temponode
 (add-mouse-move-handler
  :move (lambda ($button $x $y)
@@ -1979,6 +1988,37 @@
                              (1- num-nodes)
                              notenum
                              tracknum)))
+
+
+(define *current-note-num* #f)
+
+
+(define-match get-note-num-0
+  _____ ________ Num Num   :> #f
+  Place Subtrack Num Total :> (if (and (>= Place
+                                           (<ra> :get-note-start Num *current-track-num*))
+                                       (<  Place
+                                           (<ra> :get-note-end Num *current-track-num*))
+                                       (=  Subtrack
+                                           (<ra> :get-note-subtrack Num *current-track-num*)))
+                                  Num
+                                  (get-note-num-0 Place
+                                                  Subtrack
+                                                  (1+ Num)
+                                                  Total)))
+                                                 
+(define-match get-note-num
+  X Y :> (get-note-num-0 (<ra> :get-place-from-y Y)
+                         *current-subtrack-num*
+                         0
+                         (<ra> :get-num-notes *current-track-num*)))
+
+;; Set *current-note-num*
+(add-mouse-move-handler
+ :move (lambda ($button $x $y)
+         (set! *current-note-num* (and *current-subtrack-num*
+                                       (get-note-num $x $y)))))
+
 
 ;; pitches
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2193,9 +2233,20 @@
                      *current-track-num*
                      (inside-box (<ra> :get-box track-notes *current-track-num*) $x $y)
                      (match (list (find-node $x $y get-pitchnum-box (<ra> :get-num-pitchnums *current-track-num*)))
-                            (existing-box Num Box) :> (begin
-                                                        (<ra> :undo-notes *current-track-num*)
-                                                        (<ra> :delete-pitchnum Num *current-track-num*)
+                            (existing-box Num Box) :> (let ((notenum (<ra> :get-notenum-for-pitchnum Num *current-track-num*)))
+                                                        (if (<ra> :alt2-pressed)
+                                                            (undo-block
+                                                             (lambda ()
+                                                               ;;(c-display "NUM pianonotes:" (<ra> :get-num-pianonotes notenum *current-track-num*))
+                                                               (<ra> :undo-notes *current-track-num*)
+                                                               (while (> (<ra> :get-num-pianonotes notenum *current-track-num*) 1)
+                                                                 (<ra> :delete-pianonote 1 notenum *current-track-num*))
+                                                               ;;(<ra> :delete-pianonote 0 notenum *current-track-num*)
+                                                               ;;(<ra> :delete-pianonote 1 notenum *current-track-num*)
+                                                               ))
+                                                            (begin
+                                                              (<ra> :undo-notes *current-track-num*)
+                                                              (<ra> :delete-pitchnum Num *current-track-num*)))
                                                         #t)
                             _                      :> #f)))))
 
@@ -2580,11 +2631,16 @@
                      (inside-box (<ra> :get-box track-pianoroll *current-track-num*) $x $y)
                      (let ((pianonote-info (get-pianonote-info $x $y *current-track-num*)))
                        (and pianonote-info
-                            (begin
-                              (<ra> :undo-notes (pianonote-info :tracknum))
-                              (<ra> :delete-pianonote 0
-                                    (pianonote-info :notenum)
-                                    (pianonote-info :tracknum))
+                            (let ((notenum (pianonote-info :notenum))
+                                  (tracknum (pianonote-info :tracknum)))
+                              (<ra> :undo-notes tracknum)
+                              (if (<ra> :alt2-pressed)
+                                  (while (> (<ra> :get-num-pianonotes notenum *current-track-num*) 1)
+                                    (<ra> :delete-pianonote 1 notenum tracknum))
+                                  (<ra> :delete-pianonote
+                                        (pianonote-info :pianonotenum)
+                                        notenum
+                                        tracknum))
                               #t)))))))
 
                                
@@ -2899,36 +2955,6 @@
 (<ra> :get-velocity-x 1 0 0)
 (<ra> :get-velocity-y 1 0 0)
 ||#
-
-(define *current-note-num* #f)
-
-
-(define-match get-note-num-0
-  _____ ________ Num Num   :> #f
-  Place Subtrack Num Total :> (if (and (>= Place
-                                           (<ra> :get-note-start Num *current-track-num*))
-                                       (<  Place
-                                           (<ra> :get-note-end Num *current-track-num*))
-                                       (=  Subtrack
-                                           (<ra> :get-note-subtrack Num *current-track-num*)))
-                                  Num
-                                  (get-note-num-0 Place
-                                                  Subtrack
-                                                  (1+ Num)
-                                                  Total)))
-                                                 
-(define-match get-note-num
-  X Y :> (get-note-num-0 (<ra> :get-place-from-y Y)
-                         *current-subtrack-num*
-                         0
-                         (<ra> :get-num-notes *current-track-num*)))
-
-;; Set *current-note-num*
-(add-mouse-move-handler
- :move (lambda ($button $x $y)
-         (set! *current-note-num* (and *current-subtrack-num*
-                                       (get-note-num $x $y)))))
-
          
 (define-match get-shortest-velocity-distance-0
   ___ _________ X Y X1 Y1 X2 Y2 :> (get-distance X Y X1 Y1 X2 Y2) :where (and (>= Y Y1)
@@ -3101,12 +3127,23 @@
                        (define velocity-info (get-velocity-info X Y *current-track-num*))
                        ;;(c-display "got velocity info " velocity-info)
                        (and velocity-info
-                            (begin
-                              (<ra> :undo-notes (velocity-info :tracknum))
-                              (<ra> :delete-velocity
-                                    (velocity-info :velocitynum)
-                                    (velocity-info :notenum)
-                                    (velocity-info :tracknum))
+                            (let ((notenum (velocity-info :notenum))
+                                  (tracknum (velocity-info :tracknum)))
+                              (<ra> :undo-notes tracknum)
+                              (if (<ra> :alt2-pressed)
+                                  (begin
+                                    (while (> (<ra> :get-num-velocities tracknum) 2)
+                                      (<ra> :delete-velocity 1 notenum tracknum))
+                                    (<ra> :set-velocity
+                                          (<ra> :get-velocity-value 0 notenum tracknum)
+                                          (<ra> :get-velocity-place 1 notenum tracknum)
+                                          1
+                                          notenum
+                                          tracknum ))
+                                  (<ra> :delete-velocity
+                                        (velocity-info :velocitynum)
+                                        notenum
+                                        tracknum))
                               #t)))))))
 
 ;; velocity popup
@@ -3575,6 +3612,11 @@
                                      editormove)
                         )
 
+(define (delete-all-fxnodes fxnum tracknum)
+  (while (> (<ra> :get-num-fxnodes fxnum tracknum) 2)
+    (<ra> :delete-fxnode 1 fxnum tracknum))
+  (<ra> :delete-fxnode 0 fxnum tracknum))
+  
 ;; Delete fx node (shift + right mouse)
 (add-mouse-cycle
  (make-mouse-cycle
@@ -3586,12 +3628,16 @@
                      (begin
                        (define fxnode-info (get-fxnode-info X Y *current-track-num*))
                        (and fxnode-info
-                            (begin
-                              (<ra> :undo-fxs *current-track-num*)
-                              (<ra> :delete-fxnode
-                                    (fxnode-info :fxnodenum)
-                                    (fxnode-info :fxnum)
-                                    (fxnode-info :tracknum))
+                            (let ((fxnum (fxnode-info :fxnum))
+                                  (tracknum (fxnode-info :tracknum)))
+                              (if (<ra> :alt2-pressed)
+                                  (undo-block
+                                   (lambda ()
+                                     (delete-all-fxnodes fxnum tracknum)))
+                                  (<ra> :delete-fxnode
+                                        (fxnode-info :fxnodenum)
+                                        fxnum
+                                        tracknum))
                               #t)))))))
 
 ;; fx popup
@@ -3654,9 +3700,16 @@
                      *current-track-num*
                      (inside-box (<ra> :get-box track-fx *current-track-num*) X Y)
                      (<ra> :select-track *current-track-num*)
-                     (<ra> :request-fx *current-track-num*)
-                     #t))))
-
+                     (let ((fxnum (<ra> :get-mouse-fx *current-track-num*)))
+                       (if (and ;;*current-fx/distance*
+                                (>= fxnum 0)
+                                (<ra> :alt2-pressed)
+                                (<ra> :shift-pressed))
+                           (undo-block
+                            (lambda ()
+                              (delete-all-fxnodes fxnum *current-track-num*)))
+                           (<ra> :request-fx *current-track-num*))
+                       #t)))))
 
 (define (get-full-fx-name fxnum tracknum)
   (define fxname (<ra> :get-fx-name fxnum tracknum))
@@ -4034,56 +4087,74 @@
                 (and (= $button *right-button*)
                      (<ra> :seqtempo-visible)                     
                      (inside-box (<ra> :get-box seqtempo-area) $x $y)
-                     (begin
-                       (define Num (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
-                                          (existing-box Num Box) :> Num
-                                          _                      :> #f))
-                       (if (<ra> :shift-pressed)
-                           (when Num
-                             ;;(c-display "  Deleting" Num)
-                             (<ra> :undo-seqtempo)
-                             (<ra> :delete-seqtemponode Num))
-                           (popup-menu (list "Delete"
-                                             :enabled (and Num (> Num 0) (< Num (1- (<ra> :get-num-seqtemponodes))))
-                                             (lambda ()
-                                               (<ra> :undo-seqtempo)
-                                               (<ra> :delete-seqtemponode Num)))
-                                       (list "Reset (set value to 1.0)"
-                                             :enabled Num
-                                             (lambda ()
-                                               (<ra> :undo-seqtempo)
-                                               (<ra> :set-seqtemponode
-                                                     (<ra> :get-seqtempo-abstime Num)
-                                                     1.0
-                                                     (<ra> :get-seqtempo-logtype Num)
-                                                     Num)))
-                                       (list "Glide to next node"
-                                             :check (and Num (= (<ra> :get-seqtempo-logtype Num)
-                                                                *logtype-linear*))
-                                             :enabled Num
-                                             (lambda (maybe)
-                                               (<ra> :undo-seqtempo)
-                                               (<ra> :set-seqtemponode
-                                                     (<ra> :get-seqtempo-abstime Num)
-                                                     (<ra> :get-seqtempo-value Num)
-                                                     (if maybe *logtype-linear* *logtype-hold*)
-                                                     Num)))
-                                       (list "Set maximum tempo"
-                                             (lambda ()
-                                               (define highest (get-highest-seqtemp-value))
-                                               (define now (<ra> :get-seqtempo-max-tempo))
-                                               (define new (<ra> :request-float (<-> "Max tempo automation value (now: "
-                                                                                     (two-decimal-string now) " ("
-                                                                                     (two-decimal-string highest) "-1000000): ")
-                                                                                highest
-                                                                                1000000))
-                                               (if (> new highest)
-                                                   (<ra> :set-seqtempo-max-tempo new))))
+                     (if (and (<ra> :shift-pressed)
+                              (<ra> :alt2-pressed))
+                         (begin
+                           (<ra> :undo-seqtempo)
+                           (while (> (<ra> :get-num-seqtemponodes) 2)
+                             (<ra> :delete-seqtemponode 1))
+                           (<ra> :set-seqtemponode
+                                 (<ra> :get-seqtempo-abstime 0)
+                                 1.0
+                                 (<ra> :get-seqtempo-logtype 0)
+                                 0)
+                           (<ra> :set-seqtemponode
+                                 (<ra> :get-seqtempo-abstime 1)
+                                 1.0
+                                 (<ra> :get-seqtempo-logtype 1)
+                                 1)
+                           #t)
+                         (begin
+                           (define Num (match (list (find-node-horizontal $x $y get-seqtemponode-box (<ra> :get-num-seqtemponodes)))
+                                              (existing-box Num Box) :> Num
+                                              _                      :> #f))
+                           (if (and (<ra> :shift-pressed)
+                                    Num)
+                               (begin                       
+                                 ;;(c-display "  Deleting" Num)
+                                 (<ra> :undo-seqtempo)
+                                 (<ra> :delete-seqtemponode Num))
+                               (popup-menu (list "Delete"
+                                                 :enabled (and Num (> Num 0) (< Num (1- (<ra> :get-num-seqtemponodes))))
+                                                 (lambda ()
+                                                   (<ra> :undo-seqtempo)
+                                                   (<ra> :delete-seqtemponode Num)))
+                                           (list "Reset (set value to 1.0)"
+                                                 :enabled Num
+                                                 (lambda ()
+                                                   (<ra> :undo-seqtempo)
+                                                   (<ra> :set-seqtemponode
+                                                         (<ra> :get-seqtempo-abstime Num)
+                                                         1.0
+                                                         (<ra> :get-seqtempo-logtype Num)
+                                                         Num)))
+                                           (list "Glide to next node"
+                                                 :check (and Num (= (<ra> :get-seqtempo-logtype Num)
+                                                                    *logtype-linear*))
+                                                 :enabled Num
+                                                 (lambda (maybe)
+                                                   (<ra> :undo-seqtempo)
+                                                   (<ra> :set-seqtemponode
+                                                         (<ra> :get-seqtempo-abstime Num)
+                                                         (<ra> :get-seqtempo-value Num)
+                                                         (if maybe *logtype-linear* *logtype-hold*)
+                                                         Num)))
+                                           (list "Set maximum tempo"
+                                                 (lambda ()
+                                                   (define highest (get-highest-seqtemp-value))
+                                                   (define now (<ra> :get-seqtempo-max-tempo))
+                                                   (define new (<ra> :request-float (<-> "Max tempo automation value (now: "
+                                                                                         (two-decimal-string now) " ("
+                                                                                         (two-decimal-string highest) "-1000000): ")
+                                                                     highest
+                                                                     1000000))
+                                                   (if (> new highest)
+                                                       (<ra> :set-seqtempo-max-tempo new))))
+                                           
 
-
-                                       (get-sequencer-conf-menues)
-                                       ))
-                       #t)))))
+                                           (get-sequencer-conf-menues)
+                                           ))
+                           #t))))))
 
  
 ;; highlight current seqtemponode
@@ -6534,8 +6605,12 @@
                                           (existing-box Num Box) :> Num
                                           A                      :> #f))
                        (if (<ra> :shift-pressed)
-                           (if Num
-                               (<ra> :delete-seq-automation-node Num automationnum seqtracknum))
+                           (cond ((<ra> :alt2-pressed)
+                                  (undo-block
+                                   (lambda ()
+                                     (remove-seqtrack-automation seqtracknum automationnum))))
+                                 (Num
+                                  (<ra> :delete-seq-automation-node Num automationnum seqtracknum)))
                            (popup-menu (list "Delete" ;; (Shift + right mouse)"
                                              :enabled Num
                                              (lambda ()
@@ -6804,7 +6879,19 @@
 (pretty-print (<ra> :get-seqblocks-state 1))
 !!#
 
-;; delete block volume envelope node / popupmenu
+(define (remove-seqblock-automation seqtracknum seqblocknum automationnum)
+  (let loop ((safety 1000)
+             (num-nodes (<ra> :get-num-seqblock-automation-nodes automationnum seqblocknum seqtracknum)))
+    (when (and (> safety 0)
+               (> num-nodes 2))
+      (<ra> :delete-seqblock-automation-node 1 automationnum seqblocknum seqtracknum)
+      (c-display num-nodes)
+      (loop (- safety 1)
+            (<ra> :get-num-seqblock-automation-nodes automationnum seqblocknum seqtracknum)))
+    (<ra> :delete-seqblock-automation-node 0 automationnum seqblocknum seqtracknum) ;; reset first node
+    (<ra> :delete-seqblock-automation-node 1 automationnum seqblocknum seqtracknum))) ;; reset last node
+
+;; delete seqblock node(s) / seqblock popupmenu
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda ($button $x $y)
@@ -6821,9 +6908,12 @@
                                           (existing-box Num Box) :> Num
                                           A                      :> #f))
                        (if (<ra> :shift-pressed)
-                           (when Num
-                             (<ra> :undo-seqblock-automation automationnum seqblocknum seqtracknum)
-                             (<ra> :delete-seqblock-automation-node Num automationnum seqblocknum seqtracknum))
+                           (cond ((<ra> :alt2-pressed)
+                                  (undo-block
+                                   (lambda ()
+                                     (remove-seqblock-automation seqtracknum seqblocknum automationnum))))
+                                 (Num
+                                  (<ra> :delete-seqblock-automation-node Num automationnum seqblocknum seqtracknum)))
                            (popup-menu (list "Delete"
                                              :enabled Num
                                              (lambda ()
