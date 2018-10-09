@@ -187,10 +187,10 @@ static const GlyphpathAndWidth &getGlyphpathAndWidth(const QFont &font, const QC
   return glyphpathCache[c];
 }
 
-static bool g_is_drawing_seqtrack = false;
+static bool g_is_drawing_sequencer_time = false;
 
 void myDrawText(QPainter *painter, QRectF rect, QString text, int flags){
-  if (g_is_drawing_seqtrack && is_playing() && pc->playtype==PLAYSONG && smooth_scrolling()){
+  if (g_is_drawing_sequencer_time && is_playing() && pc->playtype==PLAYSONG && smooth_scrolling()){
 
     // Paint glyphs manually. QPainter::drawText doesn't have floating point precision.
     int len=text.length();
@@ -2001,6 +2001,8 @@ struct Timeline_widget : public MouseTrackerQWidget {
     TRACK_PAINT();
 
     RETURN_IF_DATA_IS_INACCESSIBLE();
+
+    radium::ScopedBoolean scoped_boolean_is_drawing_sequencer_time(g_is_drawing_sequencer_time);
     
     QPainter p(this);
 
@@ -2901,8 +2903,6 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void paintEvent (QPaintEvent *ev) override {
-    radium::ScopedBoolean scoped_boolean_is_drawing_seqtrack(g_is_drawing_seqtrack);
-    
     if (workingQRegionContains(childrenRegion(), ev->region())){ // We get a paint event with the area under the navigator widget when _navigator_widget->update() is called.
       //printf("skipped painting area below children widgets\n");
       return;
@@ -2944,6 +2944,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     if(seqtracks_are_painted){
       // Need to put TRACK_PAINT in a different scope than the call to API_run_paint_event_for_custom_widget.
       TRACK_PAINT();
+
+      radium::ScopedBoolean scoped_boolean_is_drawing_sequencer_time(g_is_drawing_sequencer_time);
       
       //printf("Painting seq\n");
 
