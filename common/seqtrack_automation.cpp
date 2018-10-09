@@ -279,7 +279,7 @@ public:
   }
   */
   
-  int add_automation(struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2){
+  int add_automation(struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2, int &nodenum1, int &nodenum2){
     Automation *automation = find_automation(patch, effect_num, true);
 
     bool already_here;
@@ -291,8 +291,8 @@ public:
       automation = new Automation(patch, effect_num);
     }
 
-    automation->automation.add_node(create_node(seqtime1, value1, logtype));
-    int ret = automation->automation.add_node(create_node(seqtime2, value2, logtype));
+    nodenum1 = automation->automation.add_node(create_node(seqtime1, value1, logtype));
+    nodenum2 = automation->automation.add_node(create_node(seqtime2, value2, logtype));
     
     if (already_here==false){
       _automations.ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
@@ -311,7 +311,7 @@ public:
     
     update(_seqtrack);
     
-    return ret;
+    return _automations.find_pos(automation);
   }
 
 private:
@@ -501,8 +501,19 @@ void SEQTRACK_AUTOMATION_replace_all_automations(struct Patch *old_patch, struct
   SEQUENCER_update(SEQUPDATE_TIME);
 }
 
-int SEQTRACK_AUTOMATION_add_automation(struct SeqtrackAutomation *seqtrackautomation, struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2){
-  return seqtrackautomation->add_automation(patch, effect_num, seqtime1, value1, logtype, seqtime2, value2);
+int SEQTRACK_AUTOMATION_add_automation(struct SeqtrackAutomation *seqtrackautomation, struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2, int *nodenum1, int *nodenum2){
+  
+  int nodenum1b,nodenum2b;
+  
+  int automationnum = seqtrackautomation->add_automation(patch, effect_num, seqtime1, value1, logtype, seqtime2, value2, nodenum1b, nodenum2b);
+  
+  if (nodenum1!=NULL)
+    *nodenum1 = nodenum1b;
+  
+  if (nodenum2!=NULL)
+    *nodenum2 = nodenum2b;
+  
+  return automationnum;
 }
 
 int SEQTRACK_AUTOMATION_get_num_automations(struct SeqtrackAutomation *seqtrackautomation){

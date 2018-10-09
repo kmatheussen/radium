@@ -1077,7 +1077,7 @@ bool addAutomationToCurrentSequencerTrack(int64_t instrument_id, const_char* eff
   
   int64_t pos2 = pos1 + visible_duration / 10;
   
-  SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, pos1, value_, LOGTYPE_LINEAR, pos2, value_);
+  SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, pos1, value_, LOGTYPE_LINEAR, pos2, value_, NULL, NULL);
 
   return true;
 }

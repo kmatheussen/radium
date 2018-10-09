@@ -493,7 +493,7 @@ void resetSeqtrackRecordingOptions(int seqtracknum){
 // Sequencer track automation
 //////////////////////////////////////////
 
-int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, int effect_num, int64_t instrument_id, int seqtracknum){
+static int add_seq_automation(int64_t time1, float value1, int64_t time2, float value2, int effect_num, int64_t instrument_id, int seqtracknum, int *nodenum1, int *nodenum2){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return -1;
@@ -522,7 +522,23 @@ int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, i
   
   undoSeqtrackAutomations();
 
-  return SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, time1, value1, LOGTYPE_LINEAR, time2, value2);
+  return SEQTRACK_AUTOMATION_add_automation(seqtrack->seqtrackautomation, patch, effect_num, time1, value1, LOGTYPE_LINEAR, time2, value2, nodenum1, nodenum2);
+}
+
+int addSeqAutomation(int64_t time1, float value1, int64_t time2, float value2, int effect_num, int64_t instrument_id, int seqtracknum){
+  return add_seq_automation(time1, value1, time2, value2, effect_num, instrument_id, seqtracknum, NULL, NULL);
+}
+  
+dyn_t addSeqAutomation2(int64_t time1, float value1, int64_t time2, float value2, int effect_num, int64_t instrument_id, int seqtracknum){
+  int nodenum1=-1, nodenum2=-1;
+  int automationnum = add_seq_automation(time1, value1, time2, value2, effect_num, instrument_id, seqtracknum, &nodenum1, &nodenum2);
+  
+  hash_t *hash = HASH_create(3);
+  HASH_put_int(hash, ":nodenum1", nodenum1);
+  HASH_put_int(hash, ":nodenum2", nodenum2);
+  HASH_put_int(hash, ":automationnum", automationnum);
+  
+  return DYN_create_hash(hash);
 }
 
 void replaceAllSeqAutomation(int64_t old_instrument, int64_t new_instrument){
