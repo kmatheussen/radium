@@ -2366,4 +2366,10 @@ void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *
   }
 
   CONNECTIONS_apply_changes(scene, changes);
+
+  /*
+  if (HASH_has_key(connections, "modulator_connections")){
+    MODULATORS_apply_connections_state(HASH_get_dyn(connections, "modulator_connections"));
+  }
+  */
 }

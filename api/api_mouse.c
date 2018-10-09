@@ -3076,6 +3076,23 @@ void setMouseFx(int fxnum, int tracknum, int blocknum, int windownum){
   }
 }
 
+int getMouseFx(int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return -1;
+
+  struct FXs *fxs = wblock->mouse_fxs;
+
+  VECTOR_FOR_EACH(struct FXs *fxs2, &wtrack->track->fxs){
+    if(fxs==fxs2)
+      return iterator666;
+  }END_VECTOR_FOR_EACH;
+
+  return -1;
+}
+
 void undoFxs(int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
