@@ -140,7 +140,7 @@
                       (set! curr-quantitize-type new-quantitize-type)))
                 (if (<ra> :release-mode)
                     (+ 400 (random 100))
-                    40))))) ;; low value because there was a bug happening now and then inside here. Trying to provoce it more often by setting this value lower.
+                    2))))) ;; low value because there was a bug happening now and then inside here. Trying to provoce it more often by setting this value lower.
   
   (for-each (lambda (type-gui n)
               (<gui> :add-callback type-gui
