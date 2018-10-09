@@ -6232,7 +6232,8 @@
                   (define automationnum (*current-seqautomation/distance* :automation-num))
                   (define mouse-time (get-sequencer-time X))
                   (define seqblock-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
-                  (set-editor-statusbar (<-> (<ra> :get-seqblock-automation-name automationnum) ": "
+                  (set-editor-statusbar (<-> (<ra> :get-seqblock-automation-name automationnum)                                             
+                                             ": "
                                              (<ra> :get-seqblock-automation-display-string 
                                                    (<ra> :get-seqblock-automation-value-for-time
                                                          (floor (/ (- mouse-time seqblock-time)
@@ -6262,10 +6263,10 @@
   (let* ((automationnum (*current-seqautomation/distance* :automation-num))
          (seqtracknum (*current-seqautomation/distance* :seqtrack))
          (instrument-id (<ra> :get-seq-automation-instrument-id automationnum seqtracknum))
-         ;;(instrument-name (<ra> :get-instrument-name instrument-id))
+         (instrument-name (<ra> :get-instrument-name instrument-id))
          (effect-num (<ra> :get-seq-automation-effect-num automationnum seqtracknum))
          (effect-name (<ra> :get-instrument-effect-name effect-num instrument-id)))
-    (set-editor-statusbar (<-> effect-name ": "
+    (set-editor-statusbar (<-> instrument-name "/" effect-name ": "
                                (two-decimal-string (<ra> :get-seq-automation-value Num automationnum seqtracknum))))))
 
 
