@@ -155,25 +155,23 @@ namespace{
   struct GlyphpathAndWidth{
     QPainterPath path;
     float width;
-    QFontMetricsF fn;
-    GlyphpathAndWidth(QPainterPath _path, float _width, const QFontMetricsF &_fn)
+    GlyphpathAndWidth(const QPainterPath _path, float _width)
       : path(_path)
       , width(_width)
-      , fn(_fn)
     {}
     GlyphpathAndWidth()
       : width(0.0f)
-      , fn(QFontMetricsF(QApplication::font()))
     {}
   };
 }
 
-static GlyphpathAndWidth getGlyphpathAndWidth(const QFont &font, const QChar c){
+static const GlyphpathAndWidth &getGlyphpathAndWidth(const QFont &font, const QChar c){
+  static QHash<const QChar,GlyphpathAndWidth> glyphpathCache;
+
   static QFont cacheFont = font;
   static QRawFont rawFont = QRawFont::fromFont(font);
-  static QHash<QChar,GlyphpathAndWidth> glyphpathCache;
   static QFontMetricsF fn(font);
-
+  
   if (font != cacheFont){
     glyphpathCache.clear();
     cacheFont = font;
@@ -181,45 +179,50 @@ static GlyphpathAndWidth getGlyphpathAndWidth(const QFont &font, const QChar c){
     fn = QFontMetrics(font);
   }
 
-  if (glyphpathCache.contains(c))
-    return glyphpathCache[c];
-
-
-  QVector<quint32> indexes = rawFont.glyphIndexesForString(c);
-
-  GlyphpathAndWidth g(rawFont.pathForGlyph(indexes[0]), fn.width(c), fn);
+  if (!glyphpathCache.contains(c)){
+    const QVector<quint32> indexes = rawFont.glyphIndexesForString(c);    
+    glyphpathCache[c] = GlyphpathAndWidth(rawFont.pathForGlyph(indexes[0]), fn.width(c));
+  }
   
-  glyphpathCache[c] = g;
-
-  return g;
+  return glyphpathCache[c];
 }
 
-static void myDrawText(QPainter &painter, QRectF rect, QString text, QTextOption option = QTextOption(Qt::AlignLeft | Qt::AlignTop)){
-  if (is_playing() && pc->playtype==PLAYSONG && smooth_scrolling()){
+static bool g_is_drawing_seqtrack = false;
+
+void myDrawText(QPainter *painter, QRectF rect, QString text, int flags){
+  if (g_is_drawing_seqtrack && is_playing() && pc->playtype==PLAYSONG && smooth_scrolling()){
 
     // Paint glyphs manually. QPainter::drawText doesn't have floating point precision.
     int len=text.length();
 
     double x = rect.x();
-    double y = -1;
+    double y = rect.y();
+
+    const QFont &font = painter->font();
+
+    QFontMetrics fm(font);      
+    y += fm.ascent();
     
-    QBrush brush = painter.pen().brush();
+    if (flags & Qt::AlignVCenter){
+      y += (rect.height()-fm.height()) / 2.0;
+    }
+    
+    QBrush brush = painter->pen().brush();
     
     for(int i=0; i<len; i++){
-      GlyphpathAndWidth g = getGlyphpathAndWidth(painter.font(), text.at(i));
-      if (y < 0)
-        y = rect.y()+g.fn.ascent();//+g.fn.descent();//height();//2+rect.height()/2;      
-      painter.save();
-      painter.translate(x, y);
-      painter.fillPath(g.path,brush);
-      painter.restore();
+      const GlyphpathAndWidth &g = getGlyphpathAndWidth(font, text.at(i));
+      painter->save();
+      painter->translate(x, y);
+      painter->fillPath(g.path,brush);
+      painter->restore();
       
       x += g.width;
     }
   } else {
-    
+
+    QTextOption option((Qt::Alignment)flags);
     option.setWrapMode(QTextOption::NoWrap);
-    painter.drawText(rect, text, option);
+    painter->drawText(rect, text, option);
     
   } 
 }
@@ -1121,7 +1124,7 @@ public:
 
       // seqblock name
       p.setPen(text_color);
-      myDrawText(p, rect.adjusted(2,1,-4,-(rect.height()-header_height)), get_seqblock_name(seqtrack, seqblock));
+      myDrawText(&p, rect.adjusted(2,1,-4,-(rect.height()-header_height)), get_seqblock_name(seqtrack, seqblock));
     }
 
     // Seqblock border
@@ -2103,7 +2106,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
             p.setPen(text_color);
             
             QRectF rect(x + 2, 2, width_, height());                 
-            myDrawText(p, rect, QString::number(barnum));             
+            myDrawText(&p, rect, QString::number(barnum));             
             
             last_x = x;
           }
@@ -2166,7 +2169,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
           draw_filled_triangle(p, x-t1, y1, x+t1, y1, x, y2);
         
           QRectF rect(x + t1 + 4, 2, width(), height());
-          myDrawText(p, rect, seconds_to_timestring(time));
+          myDrawText(&p, rect, seconds_to_timestring(time));
         }
 
         time += inc_time;
@@ -2282,7 +2285,10 @@ public:
 
           if(rect.height() > root->song->tracker_windows->systemfontheight*1.3){
             p.setPen(text_color);
+
+            // This is the navigator. We don't need to use myDrawText here.
             //myDrawText(p, rect.adjusted(2,1,-1,-1), QString::number(block->l.num) + ": " + block->name);
+            
             p.drawText(rect.adjusted(2,1,-1,-1), get_seqblock_name(seqtrack, seqblock), QTextOption(Qt::AlignLeft | Qt::AlignTop));
           }
           
@@ -2895,6 +2901,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   void paintEvent (QPaintEvent *ev) override {
+    radium::ScopedBoolean scoped_boolean_is_drawing_seqtrack(g_is_drawing_seqtrack);
+    
     if (workingQRegionContains(childrenRegion(), ev->region())){ // We get a paint event with the area under the navigator widget when _navigator_widget->update() is called.
       //printf("skipped painting area below children widgets\n");
       return;
