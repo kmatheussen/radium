@@ -413,6 +413,27 @@ enum WhetherToDeleteUnusedRecordingTakes{
   URTT_ALWAYS=2
 };
 
+#ifdef __cplusplus
+namespace radium{
+  class ScopedBoolean{
+    bool &_abool;
+  public:
+    ScopedBoolean(bool &abool)
+      : _abool(abool)
+    {
+      R_ASSERT(_abool==false);
+      _abool = true;
+    }
+
+    ~ScopedBoolean(){
+      R_ASSERT(_abool==true);
+      _abool = false;
+    }
+  };    
+};
+#endif
+
+
 /*********************************************************************
 	time.h
 *********************************************************************/

@@ -75,6 +75,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/lzqlineedit.h"
 #include "../Qt/Timer.hpp"
 #include "../Qt/MySplitter.hpp"
+#include "../Qt/Qt_sequencer_proc.h"
 
 #include "../common/visual_proc.h"
 #include "../common/seqtrack_proc.h"
@@ -2228,13 +2229,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         }
         
         QRect rect2(0,0,rect.height(),rect.width());
-        painter->drawText(rect2, flags, draw_text);
+        //painter->drawText(rect2, flags, draw_text);
+        myDrawText(painter, rect2, draw_text, flags);
 
         painter->restore();
 
       } else {
 
-        painter->drawText(rect, flags, draw_text);
+        //painter->drawText(rect, flags, draw_text);
+        myDrawText(painter, rect, draw_text, flags);
       
       }
 

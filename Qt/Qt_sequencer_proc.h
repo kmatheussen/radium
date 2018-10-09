@@ -8,4 +8,9 @@ void SEQUENCER_WIDGET_call_very_often(void);
 
 QWidget *SEQUENCER_WIDGET_get_widget(void);
 
+class QPainter;
+
+void myDrawText(QPainter *painter, QRectF rect, QString text, int flags = Qt::AlignLeft | Qt::AlignTop);
+
+
 #endif
