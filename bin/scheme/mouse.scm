@@ -2682,9 +2682,9 @@
                                            "Glide to next note at mouse position" :enabled (can-glide-from-here-to-next-note?) glide-from-here-to-next-note
                                            "Delete Note" delete-note
                                            "--------"
-                                           "Delete break point" :enabled (> num-pianonotes 1) delete-pitch
-                                           "Add break point at mouse position" add-pitch
-                                           (list "Glide to next break point"
+                                           "Delete node" :enabled (> num-pianonotes 1) delete-pitch
+                                           "Add node at mouse position" add-pitch
+                                           (list "Glide to next node"
                                                  :check (if (< num-pianonotes 2)
                                                             portamento-enabled
                                                             (not is-holding))
@@ -4057,7 +4057,7 @@
                                                      1.0
                                                      (<ra> :get-seqtempo-logtype Num)
                                                      Num)))
-                                       (list "Glide to next break point"
+                                       (list "Glide to next node"
                                              :check (and Num (= (<ra> :get-seqtempo-logtype Num)
                                                                 *logtype-linear*))
                                              :enabled Num
@@ -6456,7 +6456,7 @@
                                                            automationnum
                                                            seqtracknum)))))
                                              
-                                       (list "Glide to next break point"
+                                       (list "Glide to next node"
                                              :check (and Num (= (<ra> :get-seq-automation-logtype Num automationnum seqtracknum)
                                                                 *logtype-linear*))
                                              :enabled (and Num
@@ -6475,7 +6475,7 @@
                                              :check #t
                                              (lambda (maybe)
                                                (<ra> :set-seq-automation-enabled automationnum seqtracknum maybe)))
-                                       (list (<-> "Remove (delete all break points)")
+                                       (list (<-> "Remove (delete all nodes)")
                                              (lambda ()
                                                (undo-block
                                                 (lambda ()
@@ -6704,7 +6704,7 @@
                                                        automationnum
                                                        seqblocknum
                                                        seqtracknum))))
-                                       (list "Glide to next break point"
+                                       (list "Glide to next node"
                                              :check (and Num
                                                          (= (<ra> :get-seqblock-automation-logtype Num automationnum seqblocknum seqtracknum)
                                                             *logtype-linear*))
