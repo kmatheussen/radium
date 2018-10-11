@@ -2682,6 +2682,11 @@ void msleep(int ms){
   //usleep(1000*ms); // usleep only works in the range 0->1000000
 }
 
+double getMs(void){
+  return TIME_get_ms();
+}
+
+
 bool releaseMode(void){
 #if defined(RELEASE)
   return true;

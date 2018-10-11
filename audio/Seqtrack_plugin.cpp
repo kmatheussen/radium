@@ -1729,7 +1729,7 @@ void SEQTRACKPLUGIN_apply_gfx_samples(SoundPlugin *plugin){
 
   R_ASSERT(aft==bef+bef_gfx);
   R_ASSERT(aft_gfx==0);
-  printf("   APPLY. NUM samples: %d.  NUM gfx samples: %d. Bef: %d / %d\n", aft, aft_gfx, bef, bef_gfx);
+  //printf("   APPLY. NUM samples: %d.  NUM gfx samples: %d. Bef: %d / %d\n", aft, aft_gfx, bef, bef_gfx);
 }
 
 // For debugging only.
