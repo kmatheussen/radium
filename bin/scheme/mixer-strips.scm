@@ -804,51 +804,21 @@
                          #f ;; midi-learn instrument-id
                          #f ;; effect-name
                          gui))
-  
+
 (define (paint-horizontal-instrument-slider widget instrument-id value text is-enabled is-current get-automation-data text-x1 x1 y1 x2 y2 color)
-
-  (define pos (scale value 0 1 x1 x2))
-  (<gui> :filled-box widget (<gui> :get-background-color widget) x1 y1 x2 y2)
-  (<gui> :filled-box widget "black" (1+ x1) (1+ y1) (1- x2) (1- y2) 5 5)
-  (<gui> :filled-box widget color x1 y1 pos y2 5 5)
-  
-  ;;(if (= (<ra> :get-current-instrument) instrument-id)
-  ;;    (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
-  
-  (define w 1.2)
-  (define w2 (* 2 w))
-  (define w3 (* 3 w))
-  
-  (if get-automation-data
-      (get-automation-data
-       (lambda (value color)
-         (let* ((w (if is-current w3 1))
-                (x (between 0 (scale value 0 1 (+ x1 w) (- x2 w)) x2)))
-           (<gui> :draw-line
-                  widget color
-                  x (+ y1 w)
-                  x (- y2 w)
-                  2.0)))))
-  
-  
-  ;;(if show-tooltip
-  ;;    (set-tooltip-and-statusbar text))
-  
-  (define text-color (if (not is-enabled)
-                         (<gui> :mix-colors *text-color* "#ff000000" 0.5)
-                         *text-color*))
-  
-  (<gui> :draw-text widget text-color text
-         (floor (+ (/ (get-fontheight) 4) text-x1)) y1 (- x2 4) y2
-         #t ;; wrap-lines
-         #f ;; align top
-         #t) ;; align left
-
-  ;; border
-  (if is-current
-      (<gui> :draw-box widget *current-mixer-strip-border-color* (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 5 5) ;; "#aa111144"
-      (<gui> :draw-box widget "gray"      x1 y1 x2 y2   0.8 5 5))
-  )
+  (paint-horizontal-slider :widget widget
+                           :value value
+                           :text text
+                           :x1 x1
+                           :y1 y1
+                           :x2 x2
+                           :y2 y2
+                           :color color
+                           :is-enabled is-enabled
+                           :is-current is-current
+                           :get-automation-data get-automation-data
+                           :text-x1 text-x1
+                           ))
   
 (define (strip-slider first-instrument-id
                       parent-instrument-id

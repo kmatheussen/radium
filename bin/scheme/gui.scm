@@ -361,6 +361,63 @@
           
           layout)
 
+(delafina (paint-horizontal-slider :widget
+                                   :value ;; between 0 and 1
+                                   :text
+                                   :x1 2
+                                   :y1 2
+                                   :x2 (- (<gui> :width widget) 2)
+                                   :y2 (- (<gui> :height widget) 2)
+                                   :color "gray"
+                                   :is-enabled #t
+                                   :is-current #f
+                                   :get-automation-data #f
+                                   :text-x1 (+ x1 2)
+                                   )
+
+  (define pos (scale value 0 1 x1 x2))
+  (<gui> :filled-box widget (<gui> :get-background-color widget) x1 y1 x2 y2)
+  (<gui> :filled-box widget "black" (1+ x1) (1+ y1) (1- x2) (1- y2) 5 5)
+  (<gui> :filled-box widget color x1 y1 pos y2 5 5)
+  
+  ;;(if (= (<ra> :get-current-instrument) instrument-id)
+  ;;    (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
+  
+  (define w 1.2)
+  (define w2 (* 2 w))
+  (define w3 (* 3 w))
+  
+  (if get-automation-data
+      (get-automation-data
+       (lambda (value color)
+         (let* ((w (if is-current w3 1))
+                (x (between 0 (scale value 0 1 (+ x1 w) (- x2 w)) x2)))
+           (<gui> :draw-line
+                  widget color
+                  x (+ y1 w)
+                  x (- y2 w)
+                  2.0)))))
+  
+  
+  ;;(if show-tooltip
+  ;;    (set-tooltip-and-statusbar text))
+  
+  (define text-color (if (not is-enabled)
+                         (<gui> :mix-colors *text-color* "#ff000000" 0.5)
+                         *text-color*))
+  
+  (<gui> :draw-text widget text-color text
+         (floor (+ (/ (get-fontheight) 4) text-x1)) y1 (- x2 4) y2
+         #t ;; wrap-lines
+         #f ;; align top
+         #t) ;; align left
+
+  ;; border
+  (if is-current
+      (<gui> :draw-box widget *current-mixer-strip-border-color* (+ x1 w) (+ y1 w) (- x2 w) (- y2 w) w3 5 5) ;; "#aa111144"
+      (<gui> :draw-box widget "gray"      x1 y1 x2 y2   0.8 5 5))
+  )
+  
 
 (define (ra:gui_do-alpha gui alpha func)
   (<gui> :set-paint-opacity gui alpha)
@@ -379,11 +436,18 @@
                                 (<ra> :close-requester))))))
 
 (define (disable-gui-updates-block gui block)
-  (<gui> :disable-updates gui)
-  (try-finally :try block
-               :finally (lambda ()
-                          (<gui> :enable-updates gui)
-                          )))
+  (if (not (<gui> :is-open gui))
+      (let ((message (<-> "Error! disable-gui-updates-block: GUI " gui " is closed.")))
+        (display "\n\n\n ==============   " message " ===============\n\n\n")
+        (<ra> :show-message message)
+        (c-display (safe-history-ow!))
+        (assert #f))
+      (begin
+        (<gui> :disable-updates gui)
+        (try-finally :try block
+                     :finally (lambda ()
+                                (<gui> :enable-updates gui)
+                                )))))
 
 (delafina (reopen-gui-at-curr-pos :gui
                                   :parentgui -1
@@ -474,7 +538,8 @@
 (define (show-message-gui message)
   (<ra> :schedule 0 ;; In case we are called from a paint callback. Not only isn't the message displayed if we call directly, we also end up in an infinite loop since this function is called from various error handlers.
         (lambda ()
-          (when (not *message-gui*)
+          (when (or (not *message-gui*)
+                    (not (<gui> :is-open *message-gui*)))
             (define buttonlayout (<gui> :horizontal-layout))
             (<gui> :set-layout-spacing buttonlayout 2 0 2 0 2)
             

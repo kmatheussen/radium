@@ -5,6 +5,81 @@
 (my-require 'instruments.scm)
 (my-require 'area.scm)
 
+(define (midi-to-hz midi)
+  (* 440
+     (expt 2 (/ (- midi 69)
+                12))))
+
+(define (hz-to-midi hz)
+  (assert (> hz 0))
+  (+ 69
+     (* 12
+        (/ (log (/ hz
+                   440))
+           (log 2)))))
+
+(define-class (<seqblock-gui-functions>)
+  ;; Speed 1.0 = pitch 0
+  ;; Speed 2.0 = pitch -12
+  ;; Speed 4.0 = pitch -24
+  ;; speed 0.5 = pitch 12
+  ;; speed 0.25 = pitch 24
+
+  :get-slider-from-pitch (pitch)
+  (scale pitch
+         -24 24
+         0 1)
+  
+  :get-pitch-from-slider (slider)
+  (scale slider
+         0 1
+         -24 24)
+  
+  :get-pitch-from-speed (speed)
+  (- (hz-to-midi (* (/ 1.0 speed)
+                    440))
+     69)
+
+  :get-speed-from-pitch (pitch)
+  (/ 440
+     (midi-to-hz (+ 69 pitch)))
+  
+  :get-slider-from-speed (speed)
+  (this->get-slider-from-pitch (this->get-pitch-from-speed speed))
+  
+  :get-speed-from-slider (slider)
+  (this->get-speed-from-pitch (this->get-pitch-from-slider slider))
+  )
+
+#!!
+(define funcs (<new> :seqblock-gui-functions))
+(funcs :get-pitch-from-speed (scale -3
+                                    0 -12
+                                    1.0 0.5))
+(funcs :get-pitch-from-speed 0.5)
+(funcs :get-pitch-from-speed 2.0)
+(funcs :get-pitch-from-speed 1.0)
+(funcs :get-pitch-from-speed 1.5)
+(funcs :get-pitch-from-speed 2.0)
+(funcs :get-pitch-from-speed 2.5)
+(funcs :get-speed-from-pitch 0)
+(funcs :get-speed-from-pitch -15.86313713864835)
+
+(funcs :get-slider-from-speed 2.0)
+(funcs :get-slider-from-speed 0.5)
+
+(funcs :get-slider-from-speed 0.12)
+(funcs :get-slider-from-speed 0.25)
+(funcs :get-slider-from-speed 0.5)
+(funcs :get-slider-from-speed 1.5)
+(funcs :get-slider-from-speed 2.0)
+(funcs :get-slider-from-speed 4.0)
+(funcs :get-slider-from-speed 4.5)
+
+(<ra> :get-seqblock-speed 0 1)
+
+!!#
+
 
 #||
 * Resampler type
@@ -22,6 +97,8 @@
 (define *seqblock-guis* (make-hash-table 32 =))
 
 (define (create-audio-seqblock-gui seqblocknum seqtracknum)
+  (define funcs (<new> :seqblock-gui-functions))
+  
   (define seqblockid (<ra> :get-seqblock-id seqblocknum seqtracknum))
   (define has-started #f)
   (define main-layout (<gui> :vertical-layout));flow-layout))
@@ -58,7 +135,7 @@
     (define (set type)
       (when has-started
         (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
-        (c-display "type:" type ". seqtracknum:" seqtracknum)
+        ;;(c-display "type:" type ". seqtracknum:" seqtracknum)
         (define seqblocks (map (lambda (seqblock)
                                  (if (= (seqblock :id)
                                         seqblockid)
@@ -91,6 +168,105 @@
                                                                 (when has-started
                                                                   (c-display "got" val)))))
         )
+
+    (begin
+      
+      (define pitch-group (<gui> :group "Pitch"))
+      
+      (define curr-pitch 0)
+      
+      (define pitch-slider #f)
+      (define pitch-text-input #f)
+
+      (define (pitch-is-different a b)
+        (>= (abs (- a b))
+            0.01))
+
+      (define last-change-time -10000)
+      
+      (define (set-new-pitch! new-pitch)
+        ;;(c-display "new-pitch/old-pitch" new-pitch curr-pitch)
+        (when (pitch-is-different new-pitch curr-pitch)
+
+          (define time (<ra> :get-ms))
+          (when (> time
+                   (+ last-change-time 1000))
+            (<ra> :undo-sequencer)
+            (set! last-change-time time))
+          
+          (set! curr-pitch new-pitch)
+          (define new-speed (funcs :get-speed-from-pitch new-pitch))
+          
+          (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
+          (define seqblock (seqblocks seqblocknum))
+          (define new-seqblock (copy-hash seqblock
+                                          :speed new-speed))
+          ;;(pretty-print new-seqblock)
+          (set! (seqblocks seqblocknum) new-seqblock)
+          (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
+          (<ra> :apply-gfx-seqblocks seqtracknum)
+
+          (if (pitch-is-different (<gui> :get-value pitch-slider) new-pitch)
+              (<gui> :set-value pitch-slider (funcs :get-slider-from-pitch new-pitch)))
+          (if (pitch-is-different (<gui> :get-value pitch-text-input) new-pitch)              
+              (<gui> :set-value pitch-text-input new-pitch))
+          ))
+
+      (define-struct those-things
+        :speed
+        :slider-value
+        :pitch)
+
+      (delafina (get-those-things :speed (<ra> :get-seqblock-speed seqblocknum seqtracknum))
+        (make-those-things :speed speed
+                           :slider-value (funcs :get-slider-from-speed speed)
+                           :pitch (funcs :get-pitch-from-speed speed)))
+
+      (let ((those-things (get-those-things)))
+        (set! curr-pitch (those-things :pitch))
+        (set! pitch-slider (<gui> :horizontal-slider "" 0 (those-things :slider-value) 1
+                                  (lambda (slider)
+                                    (when has-started
+                                      (set-new-pitch! (funcs :get-pitch-from-slider slider))))))
+        
+        (<gui> :set-size-policy pitch-slider #t #t)
+        
+        (<gui> :add-paint-callback pitch-slider
+               (lambda (width height)
+                 (let ((those-things (get-those-things)))
+                   (paint-horizontal-slider :widget pitch-slider
+                                            :value (those-things :slider-value)
+                                            :text (<-> "Pitch: " (two-decimal-string (those-things :pitch)))))))
+
+        (set! pitch-text-input (<gui> :float-text -48 (those-things :pitch) 48
+                                      (lambda (new-pitch)
+                                        (set-new-pitch! new-pitch)
+                                        )))
+        )
+
+      (<ra> :schedule 100
+            (lambda ()
+              (and (<gui> :is-open pitch-slider)
+                   (<gui> :is-open pitch-text-input)
+                   (let ((those-things (get-those-things)))
+                     (set-new-pitch! (those-things :pitch))
+                     100))))
+      
+      (<gui> :add pitch-group (<gui> :horizontal-layout
+                                     pitch-slider
+                                     pitch-text-input
+                                     (<gui> :button "Reset"
+                                            (lambda ()
+                                              (<gui> :set-value pitch-slider 0.5)))))
+
+      ;(define checkbox (<gui> :checkbox "Show pitch slider in seqblock" #f #f
+      ;                        (lambda (ison)
+      ;                          (when has-started
+      ;                            (c-display ison)))))
+      ;(<gui> :add pitch-group checkbox)
+      
+      (<gui> :add resampler-group pitch-group))
+
     
     (<gui> :add main-layout resampler-group)
 
@@ -237,8 +413,8 @@
   )
 
 
-(if (not *is-initializing*)
-    (create-audio-seqblock-gui 0 1))
+;;(if (not *is-initializing*)
+;;    (create-audio-seqblock-gui 0 1))
 
 
 

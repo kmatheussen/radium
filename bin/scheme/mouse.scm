@@ -7790,8 +7790,6 @@
                                           ;;                           (<ra> :append-seqtrack))
                                           (get-sequencer-conf-menues)
                                           ))))))))
-                                                                                 
-
 
 ;; right size handle in navigator
 (add-horizontal-handler :Get-handler-data (lambda (X Y)

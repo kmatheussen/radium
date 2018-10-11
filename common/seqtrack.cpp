@@ -1186,6 +1186,11 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
   if (get_value(state, ":speed", FLOAT_TYPE, HASH_get_float, error_type, speed, false)==false)
     speed = 1.0;
 
+  R_ASSERT_RETURN_IF_FALSE3(speed > 0,
+                            error_type, NULL,
+                            "Illegal sequencer block speed value. It must be larger than 0. Got %f", speed
+                            );
+  
   struct SeqBlock *seqblock;
 
   if (HASH_has_key(state, ":blocknum")){
