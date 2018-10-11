@@ -68,7 +68,7 @@
   (set-right-interior-status-bar2 seqblocknum seqtracknum (<ra> :get-seqblock-interior-end seqblocknum seqtracknum #t)))
 
 (define (get-speed-string2 value)
-  (<-> "Speed: " (two-decimal-string value)))
+  (<-> "Speed: " (two-decimal-string (/ 1.0 value))))
 
 (define (get-speed-string seqblocknum seqtracknum)
   (get-speed-string2 (<ra> :get-seqblock-speed seqblocknum seqtracknum #t)))
