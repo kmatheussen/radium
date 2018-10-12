@@ -3459,6 +3459,10 @@ bool isMiddleMousePressed(void){
   return GetMouseButtons() & (2<<TR_MIDDLEMOUSEDOWN);
 }
 
+double getDoubleClickInterval(void){
+  return GetDoubleClickInterval();
+}
+
 float getMousePointerX(int windownum){
   struct Tracker_Windows *window = getWindowFromNum(windownum);
   if (window==NULL)

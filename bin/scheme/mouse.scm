@@ -240,6 +240,10 @@
   (push-back! *mouse-cycles*
               $mouse-cycle))
 
+(define (add-mouse-cycle-front $mouse-cycle)
+  (push! *mouse-cycles*
+         $mouse-cycle))
+
 (define (get-mouse-cycle $button $x $y)
   (find-if (lambda (cycle)
              ((cycle :press-func) $button $x $y))
@@ -3954,8 +3958,67 @@
   
 
 
-;; sequencer tempo automation
+;; Double-click seqblock
+;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+
+(define-struct clicked-seqblock
+  :seqtracknum
+  :seqblocknum
+  :x
+  :y
+  :time (<ra> :get-ms))
+
+(define *clicked-seqblock* #f)
+
+(add-mouse-cycle-front (make-mouse-cycle
+                  :press-func (lambda (Button X Y)
+                                (let ((seqtracknum *current-seqtrack-num*))
+                                  ;;(c-display "seqtracknum" seqtracknum)
+                                  (when (and seqtracknum
+                                             (= Button *left-button*)
+                                             (not *current-seqautomation/distance*))
+                                    (<ra> :set-curr-seqtrack seqtracknum)
+                                    (let ((seqblock-info *current-seqblock-info*))
+                                      ;;(c-display "get-existing " seqblock-info X Y seqtracknum)
+                                      (if seqblock-info
+                                          (let* ((seqtracknum (and seqblock-info (seqblock-info :seqtracknum)))
+                                                 (seqblocknum (and seqblock-info (seqblock-info :seqblocknum))))
+                                            (c-display "aiai:" seqtracknum seqblocknum (and *clicked-seqblock*
+                                                                                            (- (<ra> :get-ms)
+                                                                                               (*clicked-seqblock* :time))))
+                                            (if (and *clicked-seqblock*
+                                                     (= seqtracknum (*clicked-seqblock* :seqtracknum))
+                                                     (= seqblocknum (*clicked-seqblock* :seqblocknum))
+                                                     (= X (*clicked-seqblock* :x))
+                                                     (= Y (*clicked-seqblock* :y))
+                                                     (< (- (<ra> :get-ms)
+                                                           (*clicked-seqblock* :time))
+                                                        (<ra> :get-double-click-interval)))
+                                                (begin
+                                                  (c-display "double-clicked")
+                                                  (set! *clicked-seqblock* #f)
+                                                  (define blocknum (and seqblock-info
+                                                                        (<ra> :seqblock-holds-block seqblocknum seqtracknum)
+                                                                        (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
+                                                  (if blocknum
+                                                      (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)
+                                                      (create-audio-seqblock-gui seqblocknum seqtracknum)))
+                                                (set! *clicked-seqblock* (make-clicked-seqblock :seqtracknum seqtracknum
+                                                                                                :seqblocknum seqblocknum
+                                                                                                :x X
+                                                                                                :y Y))))))))
+                                #f)
+                  :drag-func  #f
+                  :release-func #f))
+                                                                    
+
+
+
+;; sequencer tempo automation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+
 (define (get-seqtemponode-box $num)
   (get-common-node-box (<ra> :get-seqtemponode-x $num)
                        (<ra> :get-seqtemponode-y $num)))
@@ -7722,7 +7785,7 @@
                                                                  (<ra> :select-block blocknum)
                                                                  (<ra> :config-block)))
                                                          
-                                                         (list "Enable/disable editor tracks"
+                                                         (list "Enable/disable editor tracks (double click)"
                                                                :enabled (and blocknum seqblocknum)
                                                                (lambda ()
                                                                  (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))))
@@ -7752,7 +7815,7 @@
                                                          (map create-automation-entry
                                                               (iota (<ra> :get-num-seqblock-automations seqblocknum seqtracknum)))
                                                          
-                                                         (list "Settings"
+                                                         (list "Settings (double click)"
                                                                :enabled (and seqblocknum (not blocknum))
                                                                (lambda ()
                                                                  (create-audio-seqblock-gui seqblocknum seqtracknum))))))))))
