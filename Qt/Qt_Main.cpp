@@ -2436,6 +2436,10 @@ uint64_t GetMouseButtons(void){
   return ret;
 }
 
+double GetDoubleClickInterval(void){
+  return QApplication::doubleClickInterval();
+}
+
 WPoint GetPointerPos(struct Tracker_Windows *tvisual){
   WPoint ret;
   QPoint pos;

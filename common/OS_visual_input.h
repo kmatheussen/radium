@@ -67,6 +67,7 @@ extern LANGSPEC void MoveAbsPointer(struct Tracker_Windows *tvisual, float x, fl
 extern LANGSPEC WPoint GetPointerPos(struct Tracker_Windows *tvisual);
 extern LANGSPEC WPoint GetAbsPointerPos(struct Tracker_Windows *tvisual);
 extern LANGSPEC uint64_t GetMouseButtons(void); // Returns TR_LEFTMOUSEDOWN<<2|TR_RIGHTMOUSEDOWN<<2|TR_MIDDLEOUSEDOWN<<2;
+extern LANGSPEC double GetDoubleClickInterval(void);
 extern LANGSPEC Area GetScreenSize(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void MouseMoveRelative(float x, float y, float dx, float dy); // Called from windows.
