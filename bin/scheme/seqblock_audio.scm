@@ -80,7 +80,6 @@
 
 !!#
 
-
 #||
 * Resampler type
 * Resampler factor / Pitch
@@ -129,8 +128,10 @@
   (<gui> :add main-layout gain-group)
 
   (when #t
-    (define ratio (<ra> :get-seqblock-resample-ratio seqblocknum seqtracknum))
-    (define resampler-group (<gui> :group (<-> "Resampling (ratio: " (two-decimal-string ratio) ")")))
+    (define ratio (<ra> :get-seqblock-resample-ratio seqblockid))
+    (define resampler-group (if #t
+                                main-layout
+                                (<gui> :group (<-> "Resampling / pitch"))))
 
     (define (set type)
       (when has-started
@@ -149,14 +150,16 @@
       )
 
     (define resampler-type (<ra> :get-seqblock-resampler-type seqblockid))
+
     
-    (<gui> :add resampler-group (<gui> :horizontal-layout
-                                       (<gui> :text "Type:     ")
-                                       (<gui> :radiobutton "Sample and hold" (= resampler-type 0) (lambda (doit) (if doit (set 0))))
-                                       (<gui> :radiobutton "Linear" (= resampler-type 1) (lambda (doit) (if doit (set 1))))
-                                       (<gui> :radiobutton "Cubic" (= resampler-type 2) (lambda (doit) (if doit (set 2))))
-                                       (<gui> :radiobutton "Sinc1" (= resampler-type 3) (lambda (doit) (if doit (set 3))))
-                                       (<gui> :radiobutton "Sinc2" (= resampler-type 4) (lambda (doit) (if doit (set 4))))))
+    (<gui> :add resampler-group (<gui> :group (<-> "Resampler type")
+                                       (<gui> :horizontal-layout
+                                              ;;(<gui> :text "Resampler Type:     ")
+                                              (<gui> :radiobutton "Sample and hold" (= resampler-type 0) (lambda (doit) (if doit (set 0))))
+                                              (<gui> :radiobutton "Linear" (= resampler-type 1) (lambda (doit) (if doit (set 1))))
+                                              (<gui> :radiobutton "Cubic" (= resampler-type 2) (lambda (doit) (if doit (set 2))))
+                                              (<gui> :radiobutton "Sinc1" (= resampler-type 3) (lambda (doit) (if doit (set 3))))
+                                              (<gui> :radiobutton "Sinc2" (= resampler-type 4) (lambda (doit) (if doit (set 4)))))))
     (if #f
         (<gui> :add resampler-group (<gui-number-input> "Rate: "
                                                         :input-type 'float
@@ -185,6 +188,9 @@
       (define last-change-time -10000)
       
       (define (set-new-pitch! new-pitch)
+        (set! seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
+        (set! seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
+        
         ;;(c-display "new-pitch/old-pitch" new-pitch curr-pitch)
         (when (pitch-is-different new-pitch curr-pitch)
 
@@ -196,7 +202,7 @@
           
           (set! curr-pitch new-pitch)
           (define new-speed (funcs :get-speed-from-pitch new-pitch))
-          
+
           (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
           (define seqblock (seqblocks seqblocknum))
           (define new-seqblock (copy-hash seqblock
@@ -216,8 +222,8 @@
         :speed
         :slider-value
         :pitch)
-
-      (delafina (get-those-things :speed (<ra> :get-seqblock-speed seqblocknum seqtracknum))
+      
+      (delafina (get-those-things :speed (<ra> :get-seqblock-speed seqblockid))
         (make-those-things :speed speed
                            :slider-value (funcs :get-slider-from-speed speed)
                            :pitch (funcs :get-pitch-from-speed speed)))
@@ -236,7 +242,7 @@
                  (let ((those-things (get-those-things)))
                    (paint-horizontal-slider :widget pitch-slider
                                             :value (those-things :slider-value)
-                                            :text (<-> "Pitch: " (two-decimal-string (those-things :pitch)))))))
+                                            :text (two-decimal-string (those-things :pitch))))))
 
         (set! pitch-text-input (<gui> :float-text -48 (those-things :pitch) 48
                                       (lambda (new-pitch)
@@ -253,6 +259,7 @@
                      100))))
       
       (<gui> :add pitch-group (<gui> :horizontal-layout
+                                     ;;(<gui> :text "Pitch:   ")
                                      pitch-slider
                                      pitch-text-input
                                      (<gui> :button "Reset"
@@ -263,12 +270,14 @@
       ;                        (lambda (ison)
       ;                          (when has-started
       ;                            (c-display ison)))))
-      ;(<gui> :add pitch-group checkbox)
+      ;;(<gui> :add pitch-group checkbox)
       
-      (<gui> :add resampler-group pitch-group))
+      (<gui> :add resampler-group pitch-group)
+      )
 
-    
-    (<gui> :add main-layout resampler-group)
+
+    (if (not (= resampler-group main-layout))
+        (<gui> :add main-layout resampler-group))
 
     ;;(if (= 1.0 ratio)
     ;;    (<gui> :set-enabled resampler-group #f))
@@ -369,7 +378,8 @@
                                  (when has-started
                                    (<ra> :set-seqblock-automation-enabled ison 6 seqblockid))))))
     (<gui> :add main-layout
-           (<gui> :horizontal-layout stretch-checkbox speed-checkbox)
+           (<gui> :group "Stretch and speed automation"
+                  (<gui> :horizontal-layout stretch-checkbox speed-checkbox))
            ;;(<gui> :horizontal-layout stretch-checkbox)
            ))
 

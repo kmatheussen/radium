@@ -1983,47 +1983,68 @@ void applyGfxSeqblocks(int seqtracknum){
 
 // seqblocks
 
-static int g_curr_seqblocknum_under_mouse = -1;
-static int g_curr_seqtracknum_under_mouse = -1;
+static int64_t g_curr_seqblockid_under_mouse = -1;
 
-void setCurrSeqblockUnderMouse(int seqblocknum, int seqtracknum){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getGfxSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack);
-  if (seqblock==NULL)
-    return;
+void setCurrSeqblockUnderMouse(int64_t seqblockid){
+  GET_VARS_FROM_SEQBLOCK_ID(seqblockid, true,)
 
-  struct SeqTrack *old_seqtrack_under_mouse = seqtrack;
-  if (g_curr_seqtracknum_under_mouse!=seqtracknum && g_curr_seqtracknum_under_mouse >= 0 && g_curr_seqtracknum_under_mouse < root->song->seqtracks.num_elements)
-    old_seqtrack_under_mouse = getSeqtrackFromNum(g_curr_seqtracknum_under_mouse);
-
-  g_curr_seqblocknum_under_mouse = seqblocknum;
-  g_curr_seqtracknum_under_mouse = seqtracknum;
-    
-  g_curr_seqblock_under_mouse = seqblock;
-
-  static func_t *func = NULL;
-  if (func==NULL)
-    func = s7extra_get_func_from_funcname_for_storing("FROM_C-update-seqblock-track-on-off-configuration");
+  g_curr_seqblock_under_mouse = seqblock;    
+  g_curr_seqblockid_under_mouse = seqblockid;
   
-  S7CALL(void_int_int, func, seqtracknum, seqblocknum);
+  static int s_prev_curr_seqtracknum_under_mouse = -1;
+  
+  struct SeqTrack *prev_seqtrack_under_mouse = NULL;
+  
+  if (s_prev_curr_seqtracknum_under_mouse != seqtracknum
+      && s_prev_curr_seqtracknum_under_mouse >= 0
+      && s_prev_curr_seqtracknum_under_mouse < root->song->seqtracks.num_elements)
+    prev_seqtrack_under_mouse = getSeqtrackFromNum(s_prev_curr_seqtracknum_under_mouse);
+
+  s_prev_curr_seqtracknum_under_mouse = seqtracknum;
+
+  //printf("   CURR seqblocknum: %d\n", seqblocknum);
+  
+  if(seqblock->block != NULL){
+    static func_t *func = NULL;
+    if (func==NULL)
+      func = s7extra_get_func_from_funcname_for_storing("FROM_C-update-seqblock-track-on-off-configuration");
+  
+    S7CALL(void_int_int, func, seqtracknum, seqblocknum);
+  }
   
   SEQTRACK_update(seqtrack);
-  if (seqtrack!=old_seqtrack_under_mouse)
-    SEQTRACK_update(old_seqtrack_under_mouse);
+  if (prev_seqtrack_under_mouse != NULL)
+    SEQTRACK_update(prev_seqtrack_under_mouse);
+
 }
 
+int64_t getCurrSeqblockIdUnderMouse(void){
+  return g_curr_seqblockid_under_mouse;
+}
+  
 int getCurrSeqblockUnderMouse(void){
-  return g_curr_seqblocknum_under_mouse;
+  int seqblocknum, seqtracknum;
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblockid_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
+  if (seqblock==NULL)
+    return -1;
+
+  return seqblocknum;
 }
 
 int getCurrSeqtrackUnderMouse(void){
-  return g_curr_seqtracknum_under_mouse;
+  int seqblocknum, seqtracknum;
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblockid_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
+  if (seqblock==NULL)
+    return -1;
+
+  return seqtracknum;
 }
 
 void cancelCurrSeqblockUnderMouse(void){
   g_curr_seqblock_under_mouse = NULL;
-  g_curr_seqblocknum_under_mouse = -1;
-  g_curr_seqtracknum_under_mouse = -1;
+  g_curr_seqblockid_under_mouse = -1;
   SEQUENCER_update(SEQUPDATE_TIME);
 }
 
@@ -2530,45 +2551,33 @@ bool setSeqblockFadeShape(const_char *shape, bool is_fadein, int seqblocknum, in
 
 // move seqblock / set stretch
 
-double getSeqblockStretch(int seqblocknum, int seqtracknum, bool use_gfx_if_possible){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, use_gfx_if_possible);
-  if (seqblock==NULL)
-    return 1;
-
+double getSeqblockStretch(int64_t seqblockid,  bool use_gfx_if_possible){
+  GET_VARS_FROM_SEQBLOCK_ID(seqblockid, use_gfx_if_possible, 1.0)
+    
   if(seqblock_is_stretched(seqblock))    
     return seqblock->t.stretch;
   else
     return 1.0;
 }
 
-double getSeqblockSpeed(int seqblocknum, int seqtracknum, bool use_gfx_if_possible){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, use_gfx_if_possible);
-  if (seqblock==NULL)
-    return 1;
-
+double getSeqblockSpeed(int64_t seqblockid, bool use_gfx_if_possible){
+  GET_VARS_FROM_SEQBLOCK_ID(seqblockid, use_gfx_if_possible, 1.0)
+    
   if (seqblock_is_speeded(seqblock))
     return seqblock->t.speed;
   else
     return 1.0;
 }
 
-double getSeqblockStretchSpeed(int seqblocknum, int seqtracknum){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, false);
-  if (seqblock==NULL)
-    return 1;
+double getSeqblockStretchSpeed(int64_t seqblockid, bool use_gfx_if_possible){
+  GET_VARS_FROM_SEQBLOCK_ID(seqblockid, use_gfx_if_possible, 1.0)
 
   return seqblock->t.stretch * seqblock->t.speed;
 }
 
-double getSeqblockResampleRatio(int seqblocknum, int seqtracknum){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, false);
-  if (seqblock==NULL)
-    return 1;
-
+double getSeqblockResampleRatio(int64_t seqblockid, bool may_use_gfx){
+  GET_VARS_FROM_SEQBLOCK_ID(seqblockid, may_use_gfx, 1.0)
+    
   if (seqblock->block != NULL){
     handleError("getSeqblockResampleRatio: Seqblock %d in Seqtrack %d holds a block and not a sample", seqblocknum, seqtracknum);
     return 1.0;
@@ -3012,17 +3021,17 @@ void setSeqblockTrackEnabled(bool is_enabled, int tracknum, int seqblocknum, int
   }
 }
 
-bool seqblockHoldsBlock(int seqblocknum, int seqtracknum){
+bool seqblockHoldsBlock(int seqblocknum, int seqtracknum, bool use_gfx_if_possible){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, false);
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, use_gfx_if_possible);
   if (seqblock==NULL)
     return false;
   return seqblock->block != NULL;
 }
 
-bool seqblockHoldsSample(int seqblocknum, int seqtracknum){
+bool seqblockHoldsSample(int seqblocknum, int seqtracknum, bool use_gfx_if_possible){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, false);
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, use_gfx_if_possible);
   if (seqblock==NULL)
     return false;
   return seqblock->block==NULL;

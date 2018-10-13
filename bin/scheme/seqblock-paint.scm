@@ -53,15 +53,26 @@
 (define-expansion (call-maybe-paint-box)
   `(let ((selected-box (<ra> :get-seqblock-selected-box)))
      ,@(map (lambda (box boxnum touched? get-text background-color)
+              (assert (eq? (pair? touched?) (pair? get-text)))
+              (define use-seqblockid (pair? touched?))
+              (define args (if use-seqblockid
+                               '(seqblockid)
+                               '(seqblocknum seqtracknum)))
+              (set! touched? (if use-seqblockid
+                                 (car touched?)
+                                 touched?))
+              (set! get-text (if use-seqblockid
+                                 (car get-text)
+                                 get-text))
               `(if (and (or ,(if (memv boxnum '(1 2 7 8)) #t #f)
                             is-sample)
                         (or is-current-seqblock
-                            (,touched? seqblocknum seqtracknum)))
+                            (,touched? ,@args)))
                    (paint-seqblock-box gui seqtracknum seqblocknum
                                        (map-box ,box)
                                        (and is-current-seqblock
                                             (= ,boxnum selected-box))
-                                       (,get-text seqblocknum seqtracknum)
+                                       (,get-text ,@args)
                                        ,background-color
                                        )))
             (list '(<ra> :get-box seqblock-left-fade seqblocknum seqtracknum)
@@ -75,12 +86,12 @@
             '(1 2 3 4 5 6 7 8)
             '(fade-left-touched? fade-right-touched?
               left-interior-touched? right-interior-touched?
-              speed-touched? speed-touched?
-              stretch-touched? stretch-touched?)
+              (speed-touched?) (speed-touched?)
+              (stretch-touched?) (stretch-touched?))
             '(get-fade-string-left get-fade-string-right
               get-left-interior-string get-right-interior-string
-              get-speed-string get-speed-string
-              get-stretch-string get-stretch-string)
+              (get-speed-string) (get-speed-string)
+              (get-stretch-string) (get-stretch-string))
             '("green" "green"
               "blue" "blue"
               "red" "red"
@@ -91,7 +102,7 @@
 #!!
 (pretty-print (macroexpand (call-maybe-paint-box)))
 !!#
-(define (FROM_C-paint-seqblock-stuff seqtracknum seqblocknum)
+(define (FROM_C-paint-seqblock-stuff seqtracknum seqblocknum seqblockid)
   (define gui (<gui> :get-sequencer-gui))
   (define map-x
     (let ((dx (<gui> :get-editor-distance-x gui)))
@@ -105,15 +116,11 @@
     (make-box2 (map-x (box :x1)) (map-y (box :y1))
                (map-x (box :x2)) (map-y (box :y2))))
 
-  (define is-current-seqblock (and (= seqtracknum
-                                      (<ra> :get-curr-seqtrack-under-mouse))
-                                   (= seqblocknum
-                                      (<ra> :get-curr-seqblock-under-mouse))))
+  ;;(c-display seqblockid (<ra> :get-curr-seqblock-id-under-mouse))
+  (define is-current-seqblock (= seqblockid (<ra> :get-curr-seqblock-id-under-mouse)))
   
-  (define is-sample (<ra> :seqblock-holds-sample seqblocknum seqtracknum))
+  (define is-sample (<ra> :seqblock-holds-sample seqblocknum seqtracknum #t))
 
   (call-maybe-paint-box)
 )
-
-
 

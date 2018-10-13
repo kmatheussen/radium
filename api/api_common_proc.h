@@ -139,15 +139,21 @@ extern struct FXs *getFXsFromNum(int windownum,int blocknum,int tracknum,int fxn
 extern struct Patch *getPatchFromNum(int64_t instrument_id);
 extern struct Patch *getAudioPatchFromNum(int64_t instrument_id);
 
+extern struct SeqTrack *getSeqtrackFromNum_R0(int seqtracknum);
 extern struct SeqTrack *getSeqtrackFromNum(int seqtracknum);
 extern struct SeqTrack *getAudioSeqtrackFromNum(int seqtracknum);
 extern struct SeqTrack *getBlockSeqtrackFromNum(int seqtracknum);
 
 extern struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum);
+extern struct SeqBlock *getSeqblockFromNumA_R0(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack, bool use_gfx_if_possible);
 extern struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack, bool use_gfx_if_possible);
 extern struct SeqBlock *getAudioSeqblockFromNum(int seqblocknum, int seqtracknum);
 extern struct SeqBlock *getAudioSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
   
+#ifdef __cplusplus
+  extern struct SeqBlock *getSeqblockFromIdB(int64_t seqblock_id, struct SeqTrack **seqtrack, int &seqblocknum, int &seqtracknum, bool throw_error = true);
+  extern struct SeqBlock *getGfxSeqblockFromIdB(int64_t seqblock_id, struct SeqTrack **seqtrack, int &seqblocknum, int &seqtracknum, bool throw_error = true);
+#endif
 extern struct SeqBlock *getSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getGfxSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getSeqblockFromId(int64_t seqblock_id);
@@ -156,6 +162,16 @@ extern struct SeqBlock *getAudioSeqblockFromIdA(int64_t seqblockid, struct SeqTr
 extern struct SeqBlock *getAudioGfxSeqblockFromIdA(int64_t seqblockid, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getAudioSeqblockFromId(int64_t seqblock_id);
 extern struct SeqBlock *getAudioGfxSeqblockFromId(int64_t seqblock_id);
+
+#ifdef __cplusplus
+#define GET_VARS_FROM_SEQBLOCK_ID(seqblock_id, may_use_gfx, failed_return_value) \
+  int seqblocknum, seqtracknum;                                         \
+  struct SeqTrack *seqtrack;                                            \
+  struct SeqBlock *seqblock = (may_use_gfx) ? getGfxSeqblockFromIdB(seqblockid, &seqtrack, seqblocknum, seqtracknum) : getSeqblockFromIdB(seqblockid, &seqtrack, seqblocknum, seqtracknum); \
+  if (seqblock==NULL)                                                   \
+    return failed_return_value;
+#endif
+  
 
 extern struct SeqBlock *getGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getGfxSeqblockFromNum(int seqblocknum, int seqtracknum);
@@ -167,6 +183,7 @@ extern dyn_t GetNoteId(struct Notes *note);
 
 extern void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, const Place *place, bool last_legal_may_be_next_note);
 extern dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends);
+
   
 #ifdef __cplusplus
 }

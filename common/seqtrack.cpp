@@ -1307,7 +1307,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
     int64_t id = HASH_get_int(state, ":id");
     if(id >= 0){
       seqblock->id = id;
-      g_seqblock_id = R_MAX(g_seqblock_id, seqblock->id);
+      g_seqblock_id = R_MAX(g_seqblock_id, seqblock->id); // When loading song. (id is 64 bit, so we will never run out of ids)
     }else{
       R_ASSERT(id==-1);
     }

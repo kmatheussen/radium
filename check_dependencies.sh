@@ -71,6 +71,36 @@ if grep -e "\ \*" api/protos.conf ; then
     exit 5
 fi
 
+if grep int\ seqblockid api/protos.conf ; then
+    echo "The above line(s) in api/protos.conf is/are wrong. seqblock id is 64 bit"
+    echo
+    exit 5
+fi
+
+if grep int\ seqblock_id api/protos.conf ; then
+    echo "The above line(s) in api/protos.conf is/are wrong. seqblock id is 64 bit"
+    echo
+    exit 5
+fi
+
+if grep int\ instrument_id api/protos.conf ; then
+    echo "The above line(s) in api/protos.conf is/are wrong. instrument id is 64 bit"
+    echo
+    exit 5
+fi
+
+if grep int\ guinum api/protos.conf ; then
+    echo "The above line(s) in api/protos.conf is/are wrong. guinum is 64 bit"
+    echo
+    exit 5
+fi
+
+if grep int\ id api/protos.conf ; then
+    echo "The above line(s) in api/protos.conf is/are wrong. id has so far been 64 bit"
+    echo
+    exit 5
+fi
+
 
 #if [ `uname` == "Linux" ] ; then
 # 
