@@ -718,8 +718,10 @@ public:
 
       } else {
 
+        double org_opacity = p->opacity();
+        
         // 3. stipled line.
-        p->setOpacity(0.35);
+        p->setOpacity(0.35*org_opacity);
 
 #if 0
         QPen pen(color);
@@ -735,7 +737,7 @@ public:
         
         p->setBrush(Qt::NoBrush);
 #endif
-        p->setOpacity(1.0);
+        p->setOpacity(org_opacity);
 
       }
 

@@ -4047,9 +4047,17 @@ bool API_run_custom_gui_paint_function(QWidget *widget, QPainter *p, const QRegi
     }
   }
 
+  QRegion clip_region = p->clipRegion();
+  bool has_clipping = p->hasClipping();
+  
   //printf("seq guinum: %d\n",(int)gui->_gui_num);
   bool ret = gui->paintEvent3(p, region, func);
+
+  p->setClipRegion(clip_region); // restore old clip region
+  p->setClipping(has_clipping);
+  
   p->setFont(QFont()); // 'drawText' doesn't clean up font type afterwards.
+  
   return ret;
 }
 
