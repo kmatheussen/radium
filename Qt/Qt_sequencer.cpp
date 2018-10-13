@@ -1169,32 +1169,47 @@ public:
         bool is_current = seqblock==g_curr_seqblock_under_mouse;
         //printf("draw_all: %d. is_current: %d. x1: %f, x1: %f, x2: %f, x2: %f\n", draw_all, is_current, x1, ni_x1, x2, ni_x2);
 
+        const QRegion org_clip = painter->clipRegion();
+
+        bool has_custom_clip = false;
+        
         // 1. (before start_interior and after end_interior)
         if(is_current && !draw_all){
-          QRegion clip(ni_x1, y1, x1-ni_x1, rect.height());
-          clip = clip.united(QRect(x2, y1, ni_x2-x2, rect.height()));
+
+          qreal clip_x1 = R_MAX(t_x1, ni_x1);
+          
+          QRegion clip(clip_x1, y1, x1-clip_x1, rect.height());
+
+          clip_x1 = R_MAX(t_x1, x2);
+          clip = clip.united(QRect(clip_x1, y1, ni_x2-clip_x1, rect.height()));
+          
           painter->setClipRegion(clip);
-          painter->setClipping(true);
+          has_custom_clip = true;
 
-          painter->setOpacity(0.05);
-          SEQBLOCK_AUTOMATION_paint(painter, automation, ni_x1, y1, ni_x2, y2, true, x1, x2);
-          painter->setOpacity(1.0);
-
-          painter->setClipping(false);
+          {
+            painter->setOpacity(0.05);
+            SEQBLOCK_AUTOMATION_paint(painter, automation, ni_x1, y1, ni_x2, y2, true, x1, x2);
+            painter->setOpacity(1.0);
+          }
         }
 
         // 2. (rect)
-        {
+        if(1){
           if(!draw_all){
-            painter->setClipRect(rect);
-            painter->setClipping(true);
+            
+            qreal clip_x1 = R_MAX(t_x1, rect.x());
+            qreal clip_x2 = rect.x() + rect.width();
+            
+            QRectF cliprect(clip_x1, rect.y(), clip_x2-clip_x1, rect.height());
+            painter->setClipRect(cliprect);
+            has_custom_clip = true;
           }
 
           SEQBLOCK_AUTOMATION_paint(painter, automation, ni_x1, y1, ni_x2, y2, is_current, x1, x2);
-
-          if(!draw_all)
-            painter->setClipping(false);
         }
+
+        if(has_custom_clip)
+          painter->setClipRegion(org_clip);
       }      
     }
   }
@@ -2963,6 +2978,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       p.setRenderHints(QPainter::Antialiasing,true);    
 
       p.setClipRect(QRectF(_seqtracks_widget.t_x1, 0, _seqtracks_widget.t_width, height()));
+      p.setClipping(true);
 
       {
 
