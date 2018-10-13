@@ -1584,15 +1584,16 @@ public:
     // We paint some stuff in scheme as well (seqpaint.scm)
     if (type==Seqblock_Type::REGULAR || type==Seqblock_Type::GFX){
       R_ASSERT(seqblocknum>=0);
+      int seqblockid = seqblock->id;
       API_run_custom_gui_paint_function(SEQUENCER_getWidget(),
                                         &p, &update_region,
-                                        [seqtracknum,seqblocknum](){
-                                          static func_t *seqpaint_func = NULL;
-                                          if (seqpaint_func==NULL || !releaseMode()){
+                                        [seqtracknum,seqblocknum,seqblockid](){
+                                          static func_t *s_seqpaint_func = NULL;
+                                          if (s_seqpaint_func==NULL || !releaseMode()){
                                             //printf("new seqpaintfunc\n");
-                                            seqpaint_func = s7extra_get_func_from_funcname("FROM_C-paint-seqblock-stuff");
+                                            s_seqpaint_func = s7extra_get_func_from_funcname("FROM_C-paint-seqblock-stuff");
                                           }
-                                          S7CALL(void_int_int, seqpaint_func, seqtracknum, seqblocknum);
+                                          S7CALL(void_int_int_int, s_seqpaint_func, seqtracknum, seqblocknum, seqblockid);
                                         });
     }else
       R_ASSERT(seqblocknum==-1);

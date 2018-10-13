@@ -50,7 +50,7 @@
   (set-left-interior-status-bar2 seqblocknum seqtracknum (<ra> :get-seqblock-interior-start seqblocknum seqtracknum #t)))
 
 (define (get-right-interior-string2 seqblocknum seqtracknum right-interior-value)
-  (<-> "|----: " (get-interior-displayable-string (- (get-original-seqblock-duration seqblocknum seqtracknum)
+  (<-> "|----: " (get-interior-displayable-string (- (get-original-seqblock-duration seqblocknum seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                      right-interior-value))))
 
 (define (get-right-interior-string seqblocknum seqtracknum)
@@ -58,7 +58,7 @@
 
 (define (right-interior-touched? seqblocknum seqtracknum)
   (let ((value (<ra> :get-seqblock-interior-end seqblocknum seqtracknum #t)))
-    (not (= value (get-original-seqblock-duration seqblocknum seqtracknum)))))
+    (not (= value (get-original-seqblock-duration seqblocknum seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))))))
 
 (define (set-right-interior-status-bar2 seqblocknum seqtracknum right-interior-value)
   (set-seqblock-selected-box 'interior-right seqblocknum seqtracknum)
@@ -70,21 +70,21 @@
 (define (get-speed-string2 value)
   (<-> "Speed: " (two-decimal-string (/ 1.0 value))))
 
-(define (get-speed-string seqblocknum seqtracknum)
-  (get-speed-string2 (<ra> :get-seqblock-speed seqblocknum seqtracknum #t)))
+(define (get-speed-string seqblockid)
+  (get-speed-string2 (<ra> :get-seqblock-speed seqblockid #t)))
 
-(define (speed-touched? seqblocknum seqtracknum)
-  (let ((speed (<ra> :get-seqblock-speed seqblocknum seqtracknum #t)))
+(define (speed-touched? seqblockid)
+  (let ((speed (<ra> :get-seqblock-speed seqblockid #t)))
     (not (= speed 1.0))))
 
 (define (get-stretch-string2 value)
   (<-> "Stretch: " (two-decimal-string value)))
 
-(define (get-stretch-string seqblocknum seqtracknum)
-  (get-stretch-string2 (<ra> :get-seqblock-stretch seqblocknum seqtracknum #t)))
+(define (get-stretch-string seqblockid)
+  (get-stretch-string2 (<ra> :get-seqblock-stretch seqblockid #t)))
 
-(define (stretch-touched? seqblocknum seqtracknum)
-  (let ((stretch (<ra> :get-seqblock-stretch seqblocknum seqtracknum #t)))
+(define (stretch-touched? seqblockid)
+  (let ((stretch (<ra> :get-seqblock-stretch seqblockid #t)))
     (not (= stretch 1.0))))
 
 (define (get-fade-string value seqblocknum seqtracknum)

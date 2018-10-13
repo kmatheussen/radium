@@ -484,13 +484,20 @@ struct Patch *getAudioPatchFromNum(int64_t instrument_id){ // TODO: Rename to ge
   return patch;
 }
 
-struct SeqTrack *getSeqtrackFromNum(int seqtracknum){
-  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-    handleError("Sequencer track %d not found", seqtracknum);
+struct SeqTrack *getSeqtrackFromNum_R0(int seqtracknum){
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements)
     return NULL;
-  }
   
   return (struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
+}
+
+struct SeqTrack *getSeqtrackFromNum(int seqtracknum){
+  auto *ret = getSeqtrackFromNum_R0(seqtracknum);
+  
+  if (ret==NULL)
+    handleError("Sequencer track %d not found", seqtracknum);
+  
+  return ret;
 }
 
 struct SeqTrack *getAudioSeqtrackFromNum(int seqtracknum){
@@ -532,17 +539,24 @@ struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum){
   return (struct SeqBlock *)seqtrack->seqblocks.elements[seqblocknum];
 }
 
-struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack, bool use_gfx_if_possible){
-  (*seqtrack) = getSeqtrackFromNum(seqtracknum);
+struct SeqBlock *getSeqblockFromNumA_R0(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack, bool use_gfx_if_possible){
+  (*seqtrack) = getSeqtrackFromNum_R0(seqtracknum);
   if ((*seqtrack)==NULL)
     return NULL;
 
-  if (seqblocknum < 0 || seqblocknum >= gfx_seqblocks2(*seqtrack, use_gfx_if_possible)->num_elements){
-    handleError("Seqblock #%d not found in seqtrack %d", seqblocknum, seqtracknum);
+  if (seqblocknum < 0 || seqblocknum >= gfx_seqblocks2(*seqtrack, use_gfx_if_possible)->num_elements)
     return NULL;
-  }
 
   return (struct SeqBlock *)gfx_seqblocks2(*seqtrack, use_gfx_if_possible)->elements[seqblocknum];
+}
+
+struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack, bool use_gfx_if_possible){
+  auto *ret = getSeqblockFromNumA_R0(seqblocknum, seqtracknum, seqtrack, use_gfx_if_possible);
+  
+  if(ret==NULL)
+    handleError("Seqblock #%d not found in seqtrack %d", seqblocknum, seqtracknum);
+  
+  return ret;
 }
 
 struct SeqBlock *getAudioSeqblockFromNum(int seqblocknum, int seqtracknum){
@@ -603,20 +617,20 @@ static void add_to_ids_hash(int64_t seqblock_id, int seqtracknum, int seqblocknu
   g_seqblock_ids_hash[seqblock_id] = QPair<int, int>(seqtracknum, seqblocknum);
 }
 
-static struct SeqBlock *get_seqblock_from_id_a(int64_t seqblock_id, struct SeqTrack **seqtrack, bool use_gfx){
+static struct SeqBlock *get_seqblock_from_id_a(int64_t seqblock_id, struct SeqTrack **seqtrack, bool use_gfx, int &seqblocknum, int &seqtracknum, bool throw_error = true){
   const auto &pair = g_seqblock_ids_hash[seqblock_id];
-  int seqtracknum = pair.first;
-  int seqblocknum = pair.second;
+  seqtracknum = pair.first;
+  seqblocknum = pair.second;
 
-  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, seqtrack, use_gfx);
+  struct SeqBlock *seqblock = getSeqblockFromNumA_R0(seqblocknum, seqtracknum, seqtrack, use_gfx);
 
   if (seqblock==NULL || seqblock->id != seqblock_id){
 
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack2, &root->song->seqtracks){
-      int seqtracknum = iterator666;
+      seqtracknum = iterator666;
       
       VECTOR_FOR_EACH(struct SeqBlock *, seqblock, use_gfx ? gfx_seqblocks(seqtrack2) : &seqtrack2->seqblocks){
-        int seqblocknum = iterator666;
+        seqblocknum = iterator666;
         
         if (seqblock->id == seqblock_id){
           
@@ -630,7 +644,9 @@ static struct SeqBlock *get_seqblock_from_id_a(int64_t seqblock_id, struct SeqTr
       }END_VECTOR_FOR_EACH;
     }END_VECTOR_FOR_EACH;
 
-    handleError("Sequencer block with id #%d not found", (int)seqblock_id);
+    if(throw_error)
+      handleError("Sequencer block with id #%d not found", (int)seqblock_id);
+    
     return NULL;
     
   } else {
@@ -640,11 +656,21 @@ static struct SeqBlock *get_seqblock_from_id_a(int64_t seqblock_id, struct SeqTr
   }
 }
 
+extern struct SeqBlock *getSeqblockFromIdB(int64_t seqblock_id, struct SeqTrack **seqtrack, int &seqblocknum, int &seqtracknum, bool throw_error){
+  return get_seqblock_from_id_a(seqblock_id, seqtrack, false, seqblocknum, seqtracknum, throw_error);
+}
+
+extern struct SeqBlock *getGfxSeqblockFromIdB(int64_t seqblock_id, struct SeqTrack **seqtrack, int &seqblocknum, int &seqtracknum, bool throw_error){
+  return get_seqblock_from_id_a(seqblock_id, seqtrack, true, seqblocknum, seqtracknum, throw_error);
+}
+
 struct SeqBlock *getSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
-  return get_seqblock_from_id_a(seqblock_id, seqtrack, false);
+  int seqblocknum, seqtracknum;
+  return get_seqblock_from_id_a(seqblock_id, seqtrack, false, seqblocknum, seqtracknum);
 }
 struct SeqBlock *getGfxSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
-  return get_seqblock_from_id_a(seqblock_id, seqtrack, true);
+  int seqblocknum, seqtracknum;
+  return get_seqblock_from_id_a(seqblock_id, seqtrack, true, seqblocknum, seqtracknum);
 }
                                       
 struct SeqBlock *getSeqblockFromId(int64_t seqblock_id){
@@ -658,12 +684,14 @@ struct SeqBlock *getGfxSeqblockFromId(int64_t seqblock_id){
 }
 
 static struct SeqBlock *get_audio_seqblock_from_id_a(int64_t seqblock_id, struct SeqTrack **seqtrack, bool use_gfx){
-  struct SeqBlock *seqblock = get_seqblock_from_id_a(seqblock_id, seqtrack, use_gfx);
+  int seqblocknum, seqtracknum;
+    
+  struct SeqBlock *seqblock = get_seqblock_from_id_a(seqblock_id, seqtrack, use_gfx, seqblocknum, seqtracknum);
   if (seqblock==NULL)
     return NULL;
 
   if (seqblock->block!=NULL){
-    handleError("Sequencer block with id #%d is not an audio file", (int)seqblock_id);
+    handleError("Sequencer block with id #%d (seqblock #%d in seqtrack #%d) is not an audio file", (int)seqblock_id, seqblocknum, seqtracknum);
     return NULL;
   }
 

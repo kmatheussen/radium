@@ -109,6 +109,9 @@ extern "C" {
   void s7extra_callFunc_void_int_int(const func_t *func, int64_t arg1, int64_t arg2);
   void s7extra_callFunc2_void_int_int(const char *funcname, int64_t arg1, int64_t arg2);
 
+  void s7extra_callFunc_void_int_int_int(const func_t *func, int64_t arg1, int64_t arg2, int64_t arg3);
+  void s7extra_callFunc2_void_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3);
+
   void s7extra_callFunc_void_int_dyn(const func_t *func, int64_t arg1, const dyn_t arg2);
   void s7extra_callFunc2_void_int_dyn(const char *funcname, int64_t arg1, const dyn_t arg2);
 
