@@ -20,6 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <inttypes.h>
 
+#include <QHash>
+#include <QPair>
+
 
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
@@ -137,7 +140,7 @@ void handleError_internal(const char *fmt,...){
   //printf("HISTORY:\n%s\n",SCHEME_get_history());
 #endif
 
-  vector_t v = {0};
+  vector_t v = {};
 
   int ok = VECTOR_push_back(&v, "Ok");
   (void)ok;
@@ -155,7 +158,7 @@ void handleError_internal(const char *fmt,...){
 
 struct Tracker_Windows *getWindowFromNum(int windownum){
 	if(windownum==-1) return root->song->tracker_windows;
-	struct Tracker_Windows *ret = ListFindElement1_r0(&root->song->tracker_windows->l,(NInt)windownum);
+	struct Tracker_Windows *ret = (struct Tracker_Windows *)ListFindElement1_r0(&root->song->tracker_windows->l,(NInt)windownum);
         if (ret==NULL)
           handleError("Window #%d does not exist", windownum);
         return ret;
@@ -167,7 +170,7 @@ struct WBlocks *getWBlockFromNum(int windownum,int wblocknum){
 	if(window==NULL) return NULL;
 
 	if(wblocknum==-1) return window->wblock;
-	struct WBlocks *ret = ListFindElement1_num(&window->wblocks->l,(NInt)wblocknum);
+	struct WBlocks *ret = (struct WBlocks *)ListFindElement1_num(&window->wblocks->l,(NInt)wblocknum);
         if (ret==NULL)
           handleError("WBlock #%d does not exist", wblocknum);
         return ret;
@@ -183,14 +186,14 @@ struct WBlocks *getWBlockFromNumA(
 	if(*window==NULL) return NULL;
 
 	if(blocknum==-1) return (*window)->wblock;
-	struct WBlocks *ret = ListFindElement1_num(&(*window)->wblocks->l,(NInt)blocknum);
+	struct WBlocks *ret = (struct WBlocks *)ListFindElement1_num(&(*window)->wblocks->l,(NInt)blocknum);
         if (ret==NULL)
           handleError("WBlock #%d does not exist", blocknum);
         return ret;
 }
 
 struct Blocks *getBlockFromNum(int blocknum){
-  struct Blocks *ret = ListFindElement1_r0(&root->song->blocks->l,(NInt)blocknum);
+  struct Blocks *ret = (struct Blocks *)ListFindElement1_r0(&root->song->blocks->l,(NInt)blocknum);
   if (ret==NULL)
     handleError("Block #%d does not exist",blocknum);
   return ret;
@@ -201,7 +204,7 @@ struct Tracks *getTrackFromNum(int blocknum,int tracknum){
 	struct Blocks *block=getBlockFromNum(blocknum);
 	if(block==NULL) return NULL;
 
-	struct Tracks *ret = ListFindElement1_num_r0(&block->tracks->l,(NInt)tracknum);
+	struct Tracks *ret = (struct Tracks *)ListFindElement1_num_r0(&block->tracks->l,(NInt)tracknum);
         if (ret==NULL)
           handleError("Track #%d in Block #%d does not exist",tracknum,blocknum);
         
@@ -216,7 +219,7 @@ struct WTracks *getWTrackFromNum(
 	struct WBlocks *wblock=getWBlockFromNum(windownum,wblocknum);
 	if(wblock==NULL) return NULL;
 	if(wtracknum==-1) return wblock->wtrack;
-	struct WTracks *ret = ListFindElement1_num_r0(&wblock->wtracks->l,(NInt)wtracknum);
+	struct WTracks *ret = (struct WTracks *)ListFindElement1_num_r0(&wblock->wtracks->l,(NInt)wtracknum);
         if (ret==NULL)
           handleError("WTrack #%d in WBlock #%d in window #%d does not exist",wtracknum, wblocknum, windownum);
         return ret;
@@ -240,7 +243,7 @@ struct WTracks *getWTrackFromNumA(
           
 	if(wtracknum==-1) return (*wblock)->wtrack;
 //	printf("So far.. %d,%d\n",wblocknum,wtracknum);
-	struct WTracks *ret = ListFindElement1_num_r0(&(*wblock)->wtracks->l,(NInt)wtracknum);
+	struct WTracks *ret = (struct WTracks *)ListFindElement1_num_r0(&(*wblock)->wtracks->l,(NInt)wtracknum);
         if (ret==NULL)
           handleError("WTrack #%d in WBlock %d does not exist",wtracknum, wblocknum);
         return ret;
@@ -273,7 +276,7 @@ struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int
       if (notenum==-1)
         return getCurrNote(windownum, window, blocknum, tracknum);
 
-      struct Notes *ret = ListFindElement3_num_r0(&track->notes->l,notenum);
+      struct Notes *ret = (struct Notes *)ListFindElement3_num_r0(&track->notes->l,notenum);
       if (ret==NULL)
         handleError("Note #%d in track #%d in block #%d does not exist",notenum,tracknum,blocknum);
       return ret;
@@ -330,7 +333,7 @@ struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, 
   if (pitchnum==num_pitches+1)
     return NULL; // last pitch
       
-  struct Pitches *pitch = ListFindElement3_num_r0(&(*note)->pitches->l, pitchnum-1);
+  struct Pitches *pitch = (struct Pitches *)ListFindElement3_num_r0(&(*note)->pitches->l, pitchnum-1);
   if (pitch==NULL){
     handleError("There is no pitch #%d in note %d in track #%d in block #%d",pitchnum,(int)(*note)->id,tracknum,blocknum);
     return NULL;
@@ -360,7 +363,7 @@ struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **wi
   if (velocitynum==num_velocities+1)
     return NULL; // last velocity
       
-  struct Velocities *velocity = ListFindElement3_num_r0(&(*note)->velocities->l, velocitynum-1);
+  struct Velocities *velocity = (struct Velocities *)ListFindElement3_num_r0(&(*note)->velocities->l, velocitynum-1);
   if (velocity==NULL){
     handleError("There is no velocity #%d in note with id \"%d\" in track #%d in block #%d",velocitynum,(int)(*note)->id,tracknum,blocknum);
     return NULL;
@@ -385,7 +388,7 @@ struct Signatures *getSignatureFromNumA(int windownum,struct Tracker_Windows **w
 
   struct Blocks *block = (*wblock)->block;
   
-  struct Signatures *ret = ListFindElement3_num_r0(&block->signatures->l,(NInt)num);
+  struct Signatures *ret = (struct Signatures *)ListFindElement3_num_r0(&block->signatures->l,(NInt)num);
   if (ret==NULL)
       handleError("Signature #%d in block #%d does not exist",num,blocknum);
     
@@ -405,7 +408,7 @@ struct LPBs *getLPBFromNumA(int windownum,struct Tracker_Windows **window, int b
 
   struct Blocks *block = (*wblock)->block;
   
-  struct LPBs *ret = ListFindElement3_num_r0(&block->signatures->l,(NInt)num);
+  struct LPBs *ret = (struct LPBs *)ListFindElement3_num_r0(&block->signatures->l,(NInt)num);
   if (ret==NULL)
       handleError("LPB #%d in block #%d does not exist",num,blocknum);
     
@@ -425,7 +428,7 @@ struct BPMs *getBPMFromNumA(int windownum,struct Tracker_Windows **window, int b
 
   struct Blocks *block = (*wblock)->block;
   
-  struct BPMs *ret = ListFindElement3_num_r0(&block->tempos->l,(NInt)bpmnum);
+  struct BPMs *ret = (struct BPMs *)ListFindElement3_num_r0(&block->tempos->l,(NInt)bpmnum);
   if (ret==NULL)
       handleError("BPM #%d in block #%d does not exist",bpmnum,blocknum);
     
@@ -444,7 +447,7 @@ struct FXs *getFXsFromNumA(int windownum,struct Tracker_Windows **window, int bl
     return NULL;
 
   struct Tracks *track = (*wtrack)->track;
-  struct FXs *ret = fxnum < 0 ? NULL : VECTOR_get2(&track->fxs,fxnum,"fxs");
+  struct FXs *ret = fxnum < 0 ? NULL : (struct FXs *)VECTOR_get2(&track->fxs,fxnum,"fxs");
   if (ret==NULL)
     return NULL;
   
@@ -487,7 +490,7 @@ struct SeqTrack *getSeqtrackFromNum(int seqtracknum){
     return NULL;
   }
   
-  return root->song->seqtracks.elements[seqtracknum];
+  return (struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
 }
 
 struct SeqTrack *getAudioSeqtrackFromNum(int seqtracknum){
@@ -526,7 +529,7 @@ struct SeqBlock *getSeqblockFromNum(int seqblocknum, int seqtracknum){
     return NULL;
   }
 
-  return seqtrack->seqblocks.elements[seqblocknum];
+  return (struct SeqBlock *)seqtrack->seqblocks.elements[seqblocknum];
 }
 
 struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct SeqTrack **seqtrack, bool use_gfx_if_possible){
@@ -539,7 +542,7 @@ struct SeqBlock *getSeqblockFromNumA(int seqblocknum, int seqtracknum, struct Se
     return NULL;
   }
 
-  return gfx_seqblocks2(*seqtrack, use_gfx_if_possible)->elements[seqblocknum];
+  return (struct SeqBlock *)gfx_seqblocks2(*seqtrack, use_gfx_if_possible)->elements[seqblocknum];
 }
 
 struct SeqBlock *getAudioSeqblockFromNum(int seqblocknum, int seqtracknum){
@@ -552,7 +555,7 @@ struct SeqBlock *getAudioSeqblockFromNum(int seqblocknum, int seqtracknum){
     return NULL;
   }
 
-  struct SeqBlock *seqblock = seqtrack->seqblocks.elements[seqblocknum];
+  struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[seqblocknum];
   if (seqblock->block!=NULL){
     handleError("Seqblock #%d in seqtrack %d is not an audio file", seqblocknum, seqtracknum);
     return NULL;
@@ -571,7 +574,7 @@ struct SeqBlock *getAudioSeqblockFromNumA(int seqblocknum, int seqtracknum, stru
     return NULL;
   }
 
-  struct SeqBlock *seqblock = (*seqtrack)->seqblocks.elements[seqblocknum];
+  struct SeqBlock *seqblock = (struct SeqBlock *)(*seqtrack)->seqblocks.elements[seqblocknum];
   if (seqblock->block!=NULL){
     handleError("Seqblock #%d in seqtrack %d is not an audio file", seqblocknum, seqtracknum);
     return NULL;
@@ -580,29 +583,82 @@ struct SeqBlock *getAudioSeqblockFromNumA(int seqblocknum, int seqtracknum, stru
   return seqblock;
 }
 
-struct SeqBlock *getSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
-  VECTOR_FOR_EACH(struct SeqTrack *seqtrack2, &root->song->seqtracks){
-    VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack2->seqblocks){
-      if (seqblock->id == seqblock_id){
-        *seqtrack = seqtrack2;
-        return seqblock;
-      }
-    }END_VECTOR_FOR_EACH;
-  }END_VECTOR_FOR_EACH;
 
-  handleError("Sequencer block with id #%d not found", (int)seqblock_id);
+static QHash<const int64_t, QPair<int,int>> g_seqblock_ids_hash;
+
+static void add_to_ids_hash(int64_t seqblock_id, int seqtracknum, int seqblocknum){
+
+#if !defined(RELEASE)
+  printf("add_to_ids_hash[%d]: <%d,%d>. Contains: %d. size: %d\n", (int)seqblock_id, seqtracknum, seqblocknum, g_seqblock_ids_hash.contains(seqblock_id), g_seqblock_ids_hash.size());
+#endif
   
-  return NULL;
+  // First check if we should clear the hash table if it hasn grown a lot.
+  // Currently, this is very unlikely to happen, but maybe something changes in the future.
+  if (g_seqblock_ids_hash.size() >= 10000){    
+    printf(" CLEARING: %d\n", g_seqblock_ids_hash.size());
+    R_ASSERT_NON_RELEASE(false);
+    g_seqblock_ids_hash.clear();
+  }
+
+  g_seqblock_ids_hash[seqblock_id] = QPair<int, int>(seqtracknum, seqblocknum);
 }
+
+static struct SeqBlock *get_seqblock_from_id_a(int64_t seqblock_id, struct SeqTrack **seqtrack, bool use_gfx){
+  const auto &pair = g_seqblock_ids_hash[seqblock_id];
+  int seqtracknum = pair.first;
+  int seqblocknum = pair.second;
+
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, seqtrack, use_gfx);
+
+  if (seqblock==NULL || seqblock->id != seqblock_id){
+
+    VECTOR_FOR_EACH(struct SeqTrack *, seqtrack2, &root->song->seqtracks){
+      int seqtracknum = iterator666;
+      
+      VECTOR_FOR_EACH(struct SeqBlock *, seqblock, use_gfx ? gfx_seqblocks(seqtrack2) : &seqtrack2->seqblocks){
+        int seqblocknum = iterator666;
+        
+        if (seqblock->id == seqblock_id){
+          
+          *seqtrack = seqtrack2;
+
+          add_to_ids_hash(seqblock_id, seqtracknum, seqblocknum);
+
+          return seqblock;
+          
+        }
+      }END_VECTOR_FOR_EACH;
+    }END_VECTOR_FOR_EACH;
+
+    handleError("Sequencer block with id #%d not found", (int)seqblock_id);
+    return NULL;
+    
+  } else {
   
+    return seqblock;
+
+  }
+}
+
+struct SeqBlock *getSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
+  return get_seqblock_from_id_a(seqblock_id, seqtrack, false);
+}
+struct SeqBlock *getGfxSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
+  return get_seqblock_from_id_a(seqblock_id, seqtrack, true);
+}
                                       
 struct SeqBlock *getSeqblockFromId(int64_t seqblock_id){
   struct SeqTrack *seqtrack;
   return getSeqblockFromIdA(seqblock_id, &seqtrack);
 }
 
-struct SeqBlock *getAudioSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
-  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblock_id, seqtrack);
+struct SeqBlock *getGfxSeqblockFromId(int64_t seqblock_id){
+  struct SeqTrack *seqtrack;
+  return getGfxSeqblockFromIdA(seqblock_id, &seqtrack);
+}
+
+static struct SeqBlock *get_audio_seqblock_from_id_a(int64_t seqblock_id, struct SeqTrack **seqtrack, bool use_gfx){
+  struct SeqBlock *seqblock = get_seqblock_from_id_a(seqblock_id, seqtrack, use_gfx);
   if (seqblock==NULL)
     return NULL;
 
@@ -612,12 +668,24 @@ struct SeqBlock *getAudioSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **
   }
 
   return seqblock;
+}
 
+struct SeqBlock *getAudioSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
+  return get_audio_seqblock_from_id_a(seqblock_id, seqtrack, false);
+}
+
+struct SeqBlock *getAudioGfxSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
+  return get_audio_seqblock_from_id_a(seqblock_id, seqtrack, true);
 }
 
 struct SeqBlock *getAudioSeqblockFromId(int64_t seqblock_id){
   struct SeqTrack *seqtrack;
   return getAudioSeqblockFromIdA(seqblock_id, &seqtrack);
+}
+
+struct SeqBlock *getAudioGfxSeqblockFromId(int64_t seqblock_id){
+  struct SeqTrack *seqtrack;
+  return getAudioGfxSeqblockFromIdA(seqblock_id, &seqtrack);
 }
 
 
@@ -626,16 +694,14 @@ struct SeqBlock *getGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, struct
   if ((*seqtrack)==NULL)
     return NULL;
 
-  vector_t *seqblocks = (*seqtrack)->gfx_seqblocks;
-  if (seqblocks==NULL)
-    seqblocks = &(*seqtrack)->seqblocks;
+  const vector_t *seqblocks = gfx_seqblocks(*seqtrack);
   
   if (seqblocknum < 0 || seqblocknum >= seqblocks->num_elements){
     handleError("Sequencer gfx block #%d not found in sequencer track %d", seqblocknum, seqtracknum);
     return NULL;
   }
 
-  return seqblocks->elements[seqblocknum];
+  return (struct SeqBlock *)seqblocks->elements[seqblocknum];
 }
 
 struct SeqBlock *getGfxSeqblockFromNum(int seqblocknum, int seqtracknum){  
@@ -654,7 +720,7 @@ struct SeqBlock *getGfxGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, str
     return NULL;
   }
 
-  return (*seqtrack)->gfx_gfx_seqblocks.elements[seqblocknum];
+  return (struct SeqBlock *)(*seqtrack)->gfx_gfx_seqblocks.elements[seqblocknum];
 }
 
 

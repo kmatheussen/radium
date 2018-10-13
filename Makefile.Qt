@@ -1576,8 +1576,8 @@ pitchexpand.o:  $(BUILD_DEPENDENCIES)  $(CD)new/pitchexpand.c
 expand.o:  $(BUILD_DEPENDENCIES)  $(CD)expand.c
 	$(CC)  $(CD)expand.c $(OPT)
 
-api_common.o:  $(BUILD_DEPENDENCIES)  $(API)api_common.c
-	$(CC)  $(API)api_common.c $(OPT)
+api_common.o:  $(BUILD_DEPENDENCIES)  $(API)api_common.cpp
+	$(CCC)  $(API)api_common.cpp $(QTOPT)
 
 api_keyplay.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplay.c $(API)radium_proc.h
 	$(CC)  $(API)api_keyplay.c $(OPT)
