@@ -1144,7 +1144,7 @@ public:
 
   }
   
-  void draw_seqblock_automations(QPainter *painter, const QRectF &rect, const struct SeqBlock *seqblock){
+  void draw_seqblock_automations(const radium::AutomationPainter **automation_painters, unsigned int what_to_paint, QPainter *painter, const QRectF &rect, const struct SeqBlock *seqblock){
     int num_automations = SEQBLOCK_num_automations(seqblock);
 
     for(int i=0 ; i<num_automations;i++){
@@ -1172,6 +1172,11 @@ public:
         const QRegion org_clip = painter->clipRegion();
 
         bool has_custom_clip = false;
+
+        if(automation_painters[i]==NULL)
+          automation_painters[i] = SEQBLOCK_AUTOMATION_get_painter(automation, ni_x1, y1, ni_x2, y2, true, x1, x2);
+
+        const auto *automation_painter = automation_painters[i];
         
         // 1. (before start_interior and after end_interior)
         if(is_current && !draw_all){
@@ -1188,7 +1193,9 @@ public:
 
           {
             painter->setOpacity(0.05);
-            SEQBLOCK_AUTOMATION_paint(painter, automation, ni_x1, y1, ni_x2, y2, true, x1, x2);
+            
+            automation_painter->paint(painter, what_to_paint);
+            
             painter->setOpacity(1.0);
           }
         }
@@ -1205,7 +1212,7 @@ public:
             has_custom_clip = true;
           }
 
-          SEQBLOCK_AUTOMATION_paint(painter, automation, ni_x1, y1, ni_x2, y2, is_current, x1, x2);
+          automation_painter->paint(painter, what_to_paint);
         }
 
         if(has_custom_clip)
@@ -1595,7 +1602,10 @@ public:
       //draw_interface(&p, seqblock, rect_without_header);
     }
 
-
+    const radium::AutomationPainter *automation_painters[NUM_SATS] = {};
+    
+    draw_seqblock_automations(automation_painters, radium::AutomationPainter::What::FILL, &p, rect_without_header, seqblock);
+    
     // We paint some stuff in scheme as well (seqpaint.scm)
     if (type==Seqblock_Type::REGULAR || type==Seqblock_Type::GFX){
       R_ASSERT(seqblocknum>=0);
@@ -1612,8 +1622,8 @@ public:
                                         });
     }else
       R_ASSERT(seqblocknum==-1);
-    
-    draw_seqblock_automations(&p, rect_without_header, seqblock);
+
+    draw_seqblock_automations(automation_painters, radium::AutomationPainter::What::LINES|radium::AutomationPainter::What::NODES, &p, rect_without_header, seqblock);
 
     return true;
   }
