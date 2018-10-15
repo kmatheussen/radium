@@ -441,9 +441,13 @@ public:
   }
 
   // called very often.
-  void set_do_paint_nodes(bool do_paint_nodes){
-    if (do_paint_nodes != _paint_nodes)
+  bool set_do_paint_nodes(bool do_paint_nodes){
+    if (do_paint_nodes != _paint_nodes){
       _paint_nodes = do_paint_nodes;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   int size(void) const {
@@ -642,8 +646,13 @@ public:
     return _curr_nodenum;
   }
   
-  void set_curr_nodenum(int nodenum){
-    _curr_nodenum = nodenum;
+  bool set_curr_nodenum(int nodenum){
+    if(nodenum != _curr_nodenum){
+      _curr_nodenum = nodenum;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   int get_node_num(double time) const {

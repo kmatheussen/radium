@@ -2086,7 +2086,7 @@ void setSeqblockName(const_char* new_name, int seqblocknum, int seqtracknum){
 
   }
 
-  SEQTRACK_update(seqtrack);
+  SEQBLOCK_update(seqtrack, seqblock);
   SEQUENCER_update(SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST);
 }
   
@@ -2432,7 +2432,7 @@ void setSeqblockSelectedBox(int which_one, int seqblocknum, int seqtracknum){
 
   if (old != new_){
     seqblock->selected_box = new_;
-    SEQTRACK_update(seqtrack);
+    SEQBLOCK_update(seqtrack, seqblock);
   }
   
 }
@@ -2479,7 +2479,7 @@ void setSeqblockFadeIn(double fadein, int seqblocknum, int seqtracknum){
     seqblock->fadein = fadein;
   }
 
-  SEQTRACK_update(seqtrack);
+  SEQTRACK_update(seqtrack); // seqblock_update creates a small artifact
 }
 
 void setSeqblockFadeOut(double fadeout, int seqblocknum, int seqtracknum){
@@ -2498,7 +2498,7 @@ void setSeqblockFadeOut(double fadeout, int seqblocknum, int seqtracknum){
     seqblock->fadeout = fadeout;
   }
 
-  SEQTRACK_update(seqtrack);
+  SEQTRACK_update(seqtrack); // seqblock_update creates a small artifact
 }
 
 

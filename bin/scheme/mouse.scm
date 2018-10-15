@@ -1203,7 +1203,10 @@
 (define *old-selected-box-seqtracknum* -1)
 (define (set-seqblock-selected-box which-one seqblocknum seqtracknum)
   ;;(c-display "   setting " which-one seqblocknum seqtracknum " old: " *old-selected-box-seqblocknum* *old-selected-box-seqtracknum*)
-  (when (and #f (>= *old-selected-box-seqtracknum* 0)
+  (when (and #t ;;#f
+             (or (not (= seqblocknum *old-selected-box-seqblocknum*))
+                 (not (= seqtracknum *old-selected-box-seqtracknum*)))
+             (>= *old-selected-box-seqtracknum* 0)
              (< *old-selected-box-seqtracknum* (<ra> :get-num-seqtracks))
              (>= *old-selected-box-seqblocknum* 0)
              (< *old-selected-box-seqblocknum* (<ra> :get-num-seqblocks *old-selected-box-seqtracknum*)))
@@ -1214,8 +1217,11 @@
   (set! *old-selected-box-seqblocknum* seqblocknum)
   (set! *old-selected-box-seqtracknum* seqtracknum)
 
-  (if (>= seqblocknum 0)
-      (<ra> :set-seqblock-selected-box (get-selected-box-num which-one) seqblocknum seqtracknum)))
+  (when (>= seqblocknum 0)
+    ;;(if (eq? which-one 'non)
+    ;;    (c-display "UNSETTING2 " which-one)
+    ;;    (c-display "SETTING2 " which-one))
+    (<ra> :set-seqblock-selected-box (get-selected-box-num which-one) seqblocknum seqtracknum)))
 
 (add-mouse-move-handler
  :move (lambda ($button X Y)
@@ -6357,10 +6363,13 @@
                                                        (< (curr-dist :distance) *seqnode-min-distance*)
                                                        curr-dist))
            (cond ((not *current-seqautomation/distance*)
+                  ;;(c-display "1")
                   (<ra> :cancel-curr-seq-automation)
-                  (<ra> :cancel-curr-seqblock-automation))
+                  (<ra> :cancel-curr-seqblock-automation)
+                  )
 
                  ((not (*current-seqautomation/distance* :seqblock))
+                  ;;(c-display "2")
                   (<ra> :cancel-curr-seqblock-automation)
                   (set-seqblock-selected-box 'non -1 -1)
                   (let* ((automationnum (*current-seqautomation/distance* :automation-num))
@@ -6371,6 +6380,7 @@
                           (*current-seqautomation/distance* :seqtrack))))
 
                  ((*current-seqautomation/distance* :seqblock)
+                  ;;(c-display "3")
                   (<ra> :cancel-curr-seq-automation)
                   (set-seqblock-selected-box 'non -1 -1)
                   (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
@@ -6388,16 +6398,15 @@
                                                                    (<ra> :get-seqblock-stretch-speed seqblockid)))
                                                          automationnum seqblocknum seqtracknum)
                                                    automationnum seqblocknum seqtracknum)))
-                  '(c-display "------------Setting"          
-                              (*current-seqautomation/distance* :automation-num)
-                              (*current-seqautomation/distance* :seqblock)
-                              (*current-seqautomation/distance* :seqtrack))
-
+                  ;;(c-display "------------Setting"          
+                  ;;            (*current-seqautomation/distance* :automation-num)
+                  ;;            (*current-seqautomation/distance* :seqblock)
+                  ;;            (*current-seqautomation/distance* :seqtrack))
                   (<ra> :set-curr-seqblock-automation
                         (*current-seqautomation/distance* :automation-num)
                         (*current-seqautomation/distance* :seqblock)
-                        (*current-seqautomation/distance* :seqtrack)))
-
+                        (*current-seqautomation/distance* :seqtrack))
+                  )
                  (else
                   (assert #f))))))
 

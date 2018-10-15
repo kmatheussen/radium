@@ -381,7 +381,7 @@ public:
     
     int ret = _automation.add_node(create_node(time, value, logtype));
     
-    SEQTRACK_update(_seqtrack);
+    SEQBLOCK_update(_seqtrack, seqblock);
 
     return ret;
   }
@@ -396,21 +396,19 @@ public:
     
     _automation.delete_node(nodenum);
     
-    SEQTRACK_update(_seqtrack);
+    SEQBLOCK_update(_seqtrack, _seqblock);
   }
 
   void set_curr_node(int nodenum){
     R_ASSERT_RETURN_IF_FALSE(islegalnodenum(nodenum));
     
-    if (_automation.get_curr_nodenum() != nodenum){
-      _automation.set_curr_nodenum(nodenum);
-      SEQTRACK_update(_seqtrack);
-    }
+    if (_automation.set_curr_nodenum(nodenum))
+      SEQBLOCK_update(_seqtrack, _seqblock);
   }
 
   void cancel_curr_node(void){
-    _automation.set_curr_nodenum(-1);
-    SEQTRACK_update(_seqtrack);
+    if(_automation.set_curr_nodenum(-1))
+      SEQBLOCK_update(_seqtrack, _seqblock);
   }
 
   void set_node(int nodenum, double seqtime, double value, int logtype){
@@ -439,7 +437,7 @@ public:
     
     _automation.replace_node(nodenum, node);
     
-    SEQTRACK_update(_seqtrack);
+    SEQBLOCK_update(_seqtrack, _seqblock);
   }
 
   static float get_node_x2(const SeqblockAutomation *seqblockenvelope, const radium::AutomationNode &node, double start_time, double end_time, float x1, float x2) {
@@ -583,6 +581,10 @@ void SEQBLOCK_AUTOMATION_cancel_curr_node(struct SeqblockAutomation *seqblockenv
 
 // Legal to call even if there is already a current automation.
 void SEQBLOCK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct SeqblockAutomation *seqblockenvelope){
+  if (g_curr_seqblock_automation_seqtrack == seqtrack)
+    if (g_curr_seqblock_automation_seqblock == seqblock)
+      return;
+  
   SEQBLOCK_AUTOMATION_cancel_curr_automation();
   
   if (seqblockenvelope->_automation.do_paint_nodes()){
@@ -593,8 +595,8 @@ void SEQBLOCK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, struct S
   } else {
 
     //printf("SET DO PAINT NODES\n");
-    seqblockenvelope->_automation.set_do_paint_nodes(true);
-    SEQTRACK_update(seqtrack);
+    if(seqblockenvelope->_automation.set_do_paint_nodes(true))
+      SEQBLOCK_update(seqtrack, seqblock);
     
   }
   
@@ -616,12 +618,20 @@ void SEQBLOCK_AUTOMATION_cancel_curr_automation(void){
     R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
 
     //printf("   CANCELLING curr automation: %s\n", JUCE_get_backtrace());
+    //printf("   CANCELLING curr automation:\n");
 
+    bool do_update = false;
+    
     int num_automations = SEQBLOCK_num_automations(seqblock);
     for(int i=0;i<num_automations;i++){
       SeqblockAutomation *seqblockenvelope = seqblock->automations[i];
-      seqblockenvelope->_automation.set_do_paint_nodes(false);
+      if (seqblockenvelope->_automation.set_do_paint_nodes(false))
+        do_update = true;
+                             
     }
+
+    if(do_update)
+      SEQBLOCK_update(seqtrack, seqblock);
   }
 
   set_no_curr_seqtrack();
@@ -895,7 +905,7 @@ void SEQBLOCK_AUTOMATION_set_enabled(struct SeqblockAutomation *automation, bool
   if (need_to_recalculate_time_conversion_table)
     SEQBLOCK_calculate_time_conversion_table(automation->_seqblock, true);
 
-  SEQTRACK_update(automation->_seqtrack);
+  SEQBLOCK_update(automation->_seqtrack, automation->_seqblock);
 }
 
 bool RT_maybe_get_seqblock_automation_value(struct SeqblockAutomation *automation, double time, double &value){
@@ -972,7 +982,7 @@ dyn_t SEQBLOCK_AUTOMATION_get_state(const struct SeqblockAutomation *seqblockenv
 void SEQBLOCK_AUTOMATION_apply_state(struct SeqblockAutomation *seqblockenvelope, const dyn_t envelope_state, double state_samplerate){
   R_ASSERT(state_samplerate != 0);
   seqblockenvelope->create_from_state(envelope_state, state_samplerate);
-  SEQTRACK_update(seqblockenvelope->_seqtrack);
+  SEQBLOCK_update(seqblockenvelope->_seqtrack, seqblockenvelope->_seqblock);
 }
 
 float SEQBLOCK_AUTOMATION_get_node_x(const struct SeqblockAutomation *seqblockenvelope, int nodenum){
