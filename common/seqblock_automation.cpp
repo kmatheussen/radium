@@ -502,7 +502,8 @@ public:
     return SeqblockAutomation::get_node_y_callback(_automation.at(nodenum), y1, y2, (void*)this);
   }
 
-  void paint(QPainter *p, float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2) {
+  
+  const radium::AutomationPainter *get_painter(float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2) {
     
     //_automation.set_do_paint_nodes(paint_nodes);
     
@@ -512,7 +513,7 @@ public:
 
     QColor color = get_qcolor((enum ColorNums)(AUTOMATION1_COLOR_NUM + _sat));
 
-    _automation.paint(p, x1, y1, x2, y2, 0, 1, color, SeqblockAutomation::get_node_y_callback, SeqblockAutomation::get_node_x_callback, this, fill_color, seqblock_x1, seqblock_x2);
+    return _automation.get_painter(x1, y1, x2, y2, 0, 1, color, SeqblockAutomation::get_node_y_callback, SeqblockAutomation::get_node_x_callback, this, fill_color, seqblock_x1, seqblock_x2);
   }
 };
 
@@ -982,6 +983,6 @@ float SEQBLOCK_AUTOMATION_get_node_y(const struct SeqblockAutomation *seqblocken
   return seqblockenvelope->get_node_y(seqtracknum, nodenum);
 }
 
-void SEQBLOCK_AUTOMATION_paint(QPainter *p, struct SeqblockAutomation *seqblockenvelope, float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2){
-  seqblockenvelope->paint(p, x1, y1, x2, y2, paint_nodes, seqblock_x1, seqblock_x2);
+const radium::AutomationPainter *SEQBLOCK_AUTOMATION_get_painter(struct SeqblockAutomation *seqblockenvelope, float x1, float y1, float x2, float y2, bool paint_nodes, float seqblock_x1, float seqblock_x2){
+  return seqblockenvelope->get_painter(x1, y1, x2, y2, paint_nodes, seqblock_x1, seqblock_x2);
 }

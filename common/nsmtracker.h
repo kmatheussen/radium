@@ -2778,6 +2778,31 @@ struct StretchspeedTimeConversionTable{
   int64_t *array; // Array that maps seqtime -> sample position. (necessary when automating stretch or speed)    
 };
 
+#ifdef __cplusplus
+class QPainter;
+namespace radium{
+struct AutomationPainter{
+  enum What{
+    FILL = 2 << 0,
+    LINES = 2 << 1,
+    NODES = 2 << 2,
+  };
+  virtual ~AutomationPainter() = default; // Crazy c++ stuff. https://www.securecoding.cert.org/confluence/display/cplusplus/OOP52-CPP.+Do+not+delete+a+polymorphic+object+without+a+virtual+destructor
+  virtual void paint_fill(QPainter *p) const = 0;
+  virtual void paint_lines(QPainter *p) const = 0;
+  virtual void paint_nodes(QPainter *p) const = 0;
+  void paint(QPainter *p, unsigned int what) const {
+    if (what & What::FILL)
+      paint_fill(p);
+    if (what & What::LINES)
+      paint_lines(p);
+    if (what & What::NODES)
+      paint_nodes(p);
+  }
+};
+}
+#endif
+
 struct SeqBlock{
   int64_t id;
 

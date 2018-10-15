@@ -80,7 +80,7 @@ dyn_t SEQBLOCK_AUTOMATION_get_state(const struct SeqblockAutomation *seqblockenv
 void SEQBLOCK_AUTOMATION_apply_state(struct SeqblockAutomation *seqblockenvelope, const dyn_t envelope_state, double state_samplerate);
 float SEQBLOCK_AUTOMATION_get_node_x(const struct SeqblockAutomation *seqblockenvelope, int nodenum);
 float SEQBLOCK_AUTOMATION_get_node_y(const struct SeqblockAutomation *seqblockenvelope, int seqtracknum, int nodenum);
-void SEQBLOCK_AUTOMATION_paint(QPainter *p, struct SeqblockAutomation *seqblockenvelope, float x1, float y1, float x2, float y, bool paint_nodes, float seqblock_x1, float seqblock_x2);
+const radium::AutomationPainter *SEQBLOCK_AUTOMATION_get_painter(struct SeqblockAutomation *seqblockenvelope, float x1, float y1, float x2, float y, bool paint_nodes, float seqblock_x1, float seqblock_x2);
 
 #include "SeqAutomation.hpp"
 

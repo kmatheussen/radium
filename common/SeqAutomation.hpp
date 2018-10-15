@@ -62,6 +62,310 @@ enum class SeqAutomationReturnType{
 
 
 
+template <typename T> 
+struct SeqAutomationPainter : AutomationPainter{
+  const QVector<T> &_automation;
+  int _size = 0;
+
+  bool _can_paint = false;
+  bool _paint_lines = false;
+
+  const QColor _color;
+
+  float _x1, _y1, _x2, _y2;
+
+  int _start_i;
+
+  int _curr_nodenum;
+  bool _paint_nodes;
+
+  int _fill_x1, _fill_x2;
+  const QColor _fill_color;
+  
+  QPointF *_points;
+
+  SeqAutomationPainter(const SeqAutomationPainter&) = delete;
+  SeqAutomationPainter& operator=(const SeqAutomationPainter&) = delete;
+
+  SeqAutomationPainter(const QVector<T> &automation,
+                       int curr_nodenum, bool paint_nodes,
+                       float x1, float y1, float x2, float y2,
+                       double start_time, double end_time,
+                       const QColor &color,                       
+                       float (*get_y)(const T &node, float y1, float y2, void *data),
+                       float (*get_x)(const T &node, double start_time, double end_time, float x1, float x2, void *data) = NULL,
+                       void *data = NULL,
+                       const QColor fill_color = QColor(),
+                       float fill_x1 = -1, float fill_x2 = -1                                       
+                       )
+      
+    : _automation(automation)
+    , _color(color)
+    , _x1(x1)
+    , _y1(y1)
+    , _x2(x2)
+    , _y2(y2)
+    , _curr_nodenum(curr_nodenum)
+    , _paint_nodes(paint_nodes)
+    , _fill_x1(fill_x1)
+    , _fill_x2(fill_x2)
+    , _fill_color(fill_color)
+    , _points(new QPointF[4 + _automation.size()*2])
+      
+  {
+    if (_automation.size()==0){
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+      
+    _start_i = -1;
+    int num_after_end = 0;
+    bool next_is_hold = false;
+      
+    // 1. find x+y _points in the gfx coordinate system
+    for(int i = 0; i < _automation.size() ; i++){
+      const T &node1 = _automation.at(i);
+        
+      float x_a;
+        
+      if (get_x != NULL)
+        x_a = get_x(node1, start_time, end_time, x1, x2, data);
+      else
+        x_a = scale(node1.time, start_time, end_time, x1, x2);
+        
+      if (x_a >= x2)
+        num_after_end++;
+        
+      if (num_after_end == 2)
+        break;
+        
+      if (_start_i < 0)
+        _start_i = i;
+        
+      float y_a = get_y(node1, y1, y2, data);
+        
+      if (next_is_hold && x_a>=x1){
+        _points[_size] = QPointF(x_a, _points[_size-1].y());
+        _size++;
+      }
+        
+      //printf("   %d: %f, %f  (x1: %f)\n", _size, x_a, y_a, x1);
+      if (_size > 0 && x_a < x1)
+        _points[_size-1] = QPointF(x_a, y_a);
+      else
+        _points[_size++] = QPointF(x_a, y_a);
+        
+        
+      next_is_hold = node1.logtype==LOGTYPE_HOLD;
+    }
+      
+    //printf("---------------------------. x1: %f\n", x1);
+      
+    if (_size==0)
+      return;
+
+    _paint_lines = _size >= 2;
+      
+    if (_points[_size-1].x() < x1){
+        
+      if (_points[_size-1].x() < x1-get_min_node_size())
+        return;
+        
+      _paint_lines = false;
+    }
+      
+    if (_points[0].x() >= x2){
+        
+      if (_points[0].x() >= x2+get_min_node_size())
+        return;
+        
+      _paint_lines = false;
+    }
+
+    _can_paint = true;
+  }
+
+  ~SeqAutomationPainter(){
+    delete[] _points;
+  }
+                         
+  QColor get_color(QColor col1, QColor col2, int mix, float alpha) const {
+    QColor ret = mix_colors(col1, col2, (float)mix/1000.0);
+    ret.setAlphaF(alpha);
+    return ret;
+  }
+
+  float get_min_node_size(void) const {
+    return root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in getHalfOfNodeWidth in api/api_mouse.c and OpenGL/Render.cpp
+  }
+
+  void paint_node(QPainter *p, float x, float y, int nodenum, QColor color) const {
+    float minnodesize = get_min_node_size();
+    float x1 = x-minnodesize;
+    float x2 = x+minnodesize;
+    float y1 = y-minnodesize;
+    float y2 = y+minnodesize;
+    const float width = 1.2;
+    
+    static QPen pen1,pen2,pen3,pen4;
+    static QBrush fill_brush;
+    static bool has_inited = false;
+    
+    if(has_inited==false){
+      
+      fill_brush = QBrush(get_color(color, Qt::white, 300, 0.7));
+      
+      pen1 = QPen(get_color(color, Qt::white, 100, 0.3));
+      pen1.setWidthF(width);
+      
+      pen2 = QPen(get_color(color, Qt::black, 300, 0.3));
+      pen2.setWidthF(width);
+      
+      pen3 = QPen(get_color(color, Qt::black, 400, 0.3));
+      pen3.setWidthF(width);
+      
+      pen4 = QPen(get_color(color, Qt::white, 300, 0.3));
+      pen4.setWidthF(width);
+      
+      has_inited=true;
+    }
+    
+    if (nodenum == _curr_nodenum) {
+      p->setBrush(fill_brush);
+      p->setPen(Qt::NoPen);
+      QRectF rect(x1,y1,x2-x1-1,y2-y1);
+      p->drawRect(rect);
+    }
+    
+    // vertical left
+    {
+      p->setPen(pen1);
+      QLineF line(x1+1, y1+1,
+                  x1+2,y2-1);
+      p->drawLine(line);
+    }
+    
+    // horizontal bottom
+    {
+      p->setPen(pen2);
+      QLineF line(x1+2,y2-1,
+                  x2-1,y2-2);
+      p->drawLine(line);
+    }
+    
+    // vertical right
+    {
+      p->setPen(pen3);
+      QLineF line(x2-1,y2-2,
+                  x2-2,y1+2);
+      p->drawLine(line);
+    }
+    
+    // horizontal top
+    {
+      p->setPen(pen4);
+      QLineF line(x2-2,y1+2,
+                  x1+1,y1+1);
+      p->drawLine(line);
+    }
+  }
+
+  void paint_fill(QPainter *p) const override {
+    if (_can_paint==false)
+      return;
+      
+    float first_x = _points[0].x();
+    float first_y = _points[0].y();
+    float last_x = _points[_size-1].x();
+    float last_y = _points[_size-1].y();
+      
+    int fill_size;
+      
+    if (_fill_x1 == -1){
+      _points[_size]   = QPointF(last_x, _y2);
+      _points[_size+1] = QPointF(first_x, _y2);
+      fill_size = _size+2;
+    } else {
+      _points[_size]   = QPointF(_x2, last_y);
+      _points[_size+1] = QPointF(_x2, _y2);
+      _points[_size+2] = QPointF(_x1, _y2);
+      _points[_size+3] = QPointF(_x1, first_y);
+      fill_size = _size+4;
+    }
+        
+    //for(int i=0 ; i < _size+2 ; i++)
+    //  printf("  %d/%d: %d , %d  (y1: %f, y2: %f)\n", i, _size, (int)_points[i].x(), (int)_points[i].y(), y1, y2);
+      
+    if (_fill_color.isValid()) {
+
+      // 2. Background fill
+        
+      p->setPen(Qt::NoPen);
+      p->setBrush(_fill_color);
+        
+      p->drawPolygon(_points, fill_size);
+        
+      p->setBrush(Qt::NoBrush);
+
+    } else {
+
+      double org_opacity = p->opacity();
+        
+      // 3. stipled line.
+      p->setOpacity(0.35*org_opacity);
+
+#if 0
+      QPen pen(_color);
+      pen.setWidthF(_paint_nodes ? root->song->tracker_windows->systemfontheight / 3 : root->song->tracker_windows->systemfontheight / 6);
+      p->setPen(pen);
+
+      p->drawPolygon(_points, fill_size);
+#else
+      p->setPen(Qt::NoPen);
+      p->setBrush(_color);
+        
+      p->drawPolygon(_points, fill_size);
+        
+      p->setBrush(Qt::NoBrush);
+#endif
+      p->setOpacity(org_opacity);
+
+    }
+
+  }
+
+  void paint_lines(QPainter *p) const override {
+    if (_can_paint==false || _paint_lines==false)
+      return;
+      
+    QPen pen(_color);
+    pen.setWidthF(_paint_nodes ? root->song->tracker_windows->systemfontheight / 3 : root->song->tracker_windows->systemfontheight / 6);
+    p->setPen(pen);
+    p->drawPolyline(_points, _size);
+  }
+
+  void paint_nodes(QPainter *p) const override {
+    if (_can_paint==false || _paint_nodes==false)
+      return;
+
+    int node_pos = _start_i;
+    for(int i = _start_i; i < _size ; i++){
+      const T &node = _automation.at(node_pos);
+        
+      float x_a = _points[i].x();
+      float y_a = _points[i].y();
+      paint_node(p, x_a, y_a, node_pos, _color);
+        
+      if (node.logtype==LOGTYPE_HOLD)
+        i++;
+        
+      node_pos++;
+    }
+
+  }
+};
+  
+
 template <typename T> class SeqAutomation{
   
 private:
@@ -73,9 +377,11 @@ private:
     T nodes[];
   };
 
-  bool _paint_nodes = false;
   int _curr_nodenum = -1;
+  bool _paint_nodes = false;
 
+  mutable const SeqAutomationPainter<T> *_last_painter = NULL;
+  
   AtomicPointerStorage _rt;
 
   // Double free / using data after free, if trying to copy data.
@@ -90,6 +396,10 @@ public:
   {
   }
 
+  ~SeqAutomation(){
+    delete _last_painter;
+  }
+      
   void *new_rt_data_has_been_created_data = NULL;
   void (*new_rt_data_has_been_created)(void *data) = NULL;
 
@@ -508,89 +818,6 @@ public:
     create_new_rt_data();
   }
 
-private:
-
-  QColor get_color(QColor col1, QColor col2, int mix, float alpha) const {
-    QColor ret = mix_colors(col1, col2, (float)mix/1000.0);
-    ret.setAlphaF(alpha);
-    return ret;
-  }
-
-  float get_min_node_size(void) const {
-    return root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in getHalfOfNodeWidth in api/api_mouse.c and OpenGL/Render.cpp
-  }
-
-  void paint_node(QPainter *p, float x, float y, int nodenum, QColor color) const {
-    float minnodesize = get_min_node_size();
-    float x1 = x-minnodesize;
-    float x2 = x+minnodesize;
-    float y1 = y-minnodesize;
-    float y2 = y+minnodesize;
-    const float width = 1.2;
-    
-    static QPen pen1,pen2,pen3,pen4;
-    static QBrush fill_brush;
-    static bool has_inited = false;
-    
-    if(has_inited==false){
-      
-      fill_brush = QBrush(get_color(color, Qt::white, 300, 0.7));
-      
-      pen1 = QPen(get_color(color, Qt::white, 100, 0.3));
-      pen1.setWidthF(width);
-      
-      pen2 = QPen(get_color(color, Qt::black, 300, 0.3));
-      pen2.setWidthF(width);
-      
-      pen3 = QPen(get_color(color, Qt::black, 400, 0.3));
-      pen3.setWidthF(width);
-      
-      pen4 = QPen(get_color(color, Qt::white, 300, 0.3));
-      pen4.setWidthF(width);
-      
-      has_inited=true;
-    }
-    
-    if (nodenum == _curr_nodenum) {
-      p->setBrush(fill_brush);
-      p->setPen(Qt::NoPen);
-      QRectF rect(x1,y1,x2-x1-1,y2-y1);
-      p->drawRect(rect);
-    }
-    
-    // vertical left
-    {
-      p->setPen(pen1);
-      QLineF line(x1+1, y1+1,
-                  x1+2,y2-1);
-      p->drawLine(line);
-    }
-    
-    // horizontal bottom
-    {
-      p->setPen(pen2);
-      QLineF line(x1+2,y2-1,
-                  x2-1,y2-2);
-      p->drawLine(line);
-    }
-    
-    // vertical right
-    {
-      p->setPen(pen3);
-      QLineF line(x2-1,y2-2,
-                  x2-2,y1+2);
-      p->drawLine(line);
-    }
-    
-    // horizontal top
-    {
-      p->setPen(pen4);
-      QLineF line(x2-2,y1+2,
-                  x1+1,y1+1);
-      p->drawLine(line);
-    }
-  }
-
 public:
 
   void print(void){
@@ -601,172 +828,59 @@ public:
     }
   }
 
-  void paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time, const QColor &color,
+  
+
+  const SeqAutomationPainter<T> *get_painter(float x1, float y1, float x2, float y2,
+                                       double start_time, double end_time,
+                                       const QColor &color,
+                                       float (*get_y)(const T &node, float y1, float y2, void *data),
+                                       float (*get_x)(const T &node, double start_time, double end_time, float x1, float x2, void *data) = NULL,
+                                       void *data = NULL,
+                                       const QColor fill_color = QColor(),
+                                       float fill_x1 = -1, float fill_x2 = -1                                       
+                                       ) const
+  {
+    const SeqAutomationPainter<T> *painter = new SeqAutomationPainter<T>(_automation,
+                                                                         _curr_nodenum, _paint_nodes,
+                                                                         x1, y1, x2, y2,
+                                                                         start_time, end_time,
+                                                                         color,
+                                                                         get_y,
+                                                                         get_x,
+                                                                         data,
+                                                                         fill_color,
+                                                                         fill_x1, fill_x2);
+    if (_last_painter != NULL){
+      delete _last_painter;
+      _last_painter = painter;
+    }
+
+    return painter;
+  }
+
+  void paint(QPainter *p,
+             float x1, float y1, float x2, float y2,
+             double start_time, double end_time,
+             const QColor &color,
              float (*get_y)(const T &node, float y1, float y2, void *data),
              float (*get_x)(const T &node, double start_time, double end_time, float x1, float x2, void *data) = NULL,
              void *data = NULL,
              const QColor fill_color = QColor(),
              float fill_x1 = -1, float fill_x2 = -1
-             ) const {
-
-    if (_automation.size()==0){
-      R_ASSERT_NON_RELEASE(false);
-      return;
-    }
+             ) const
+  {
+    const auto *painter = get_painter(x1, y1, x2, y2,
+                                      start_time, end_time,
+                                      color,
+                                      get_y,
+                                      get_x,
+                                      data,
+                                      fill_color,
+                                      fill_x1, fill_x2);
     
-    int size = 0;
-    QPointF points[4 + _automation.size()*2];
-
-    int start_i = -1;
-    int num_after_end = 0;
-    bool next_is_hold = false;
-
-    // 1. find x+y points in the gfx coordinate system
-    for(int i = 0; i < _automation.size() ; i++){
-      const T &node1 = _automation.at(i);
-
-      float x_a;
-
-      if (get_x != NULL)
-        x_a = get_x(node1, start_time, end_time, x1, x2, data);
-      else
-        x_a = scale(node1.time, start_time, end_time, x1, x2);
-
-      if (x_a >= x2)
-        num_after_end++;
-
-      if (num_after_end == 2)
-        break;
-      
-      if (start_i < 0)
-        start_i = i;
-
-      float y_a = get_y(node1, y1, y2, data);
-
-      if (next_is_hold && x_a>=x1){
-        points[size] = QPointF(x_a, points[size-1].y());
-        size++;
-      }
-
-      //printf("   %d: %f, %f  (x1: %f)\n", size, x_a, y_a, x1);
-      if (size > 0 && x_a < x1)
-        points[size-1] = QPointF(x_a, y_a);
-      else
-        points[size++] = QPointF(x_a, y_a);
-
-
-      next_is_hold = node1.logtype==LOGTYPE_HOLD;
-    }
-
-    //printf("---------------------------. x1: %f\n", x1);
-
-    if (size==0)
-      return;
-
-    bool paint_lines = size >= 2;
-    
-    if (points[size-1].x() < x1){
-
-      if (points[size-1].x() < x1-get_min_node_size())
-        return;
-
-      paint_lines = false;
-    }
-
-    if (points[0].x() >= x2){
-
-      if (points[0].x() >= x2+get_min_node_size())
-        return;
-
-      paint_lines = false;
-    }
-
-    if (paint_lines && true) {
-
-      float first_x = points[0].x();
-      float first_y = points[0].y();
-      float last_x = points[size-1].x();
-      float last_y = points[size-1].y();
-      
-      int fill_size;
-      
-      if (fill_x1 == -1){
-        points[size]   = QPointF(last_x, y2);
-        points[size+1] = QPointF(first_x, y2);
-        fill_size = size+2;
-      } else {
-        points[size]   = QPointF(x2, last_y);
-        points[size+1] = QPointF(x2, y2);
-        points[size+2] = QPointF(x1, y2);
-        points[size+3] = QPointF(x1, first_y);
-        fill_size = size+4;
-      }
-        
-      //for(int i=0 ; i < size+2 ; i++)
-      //  printf("  %d/%d: %d , %d  (y1: %f, y2: %f)\n", i, size, (int)points[i].x(), (int)points[i].y(), y1, y2);
-      
-      if (fill_color.isValid()) {
-
-        // 2. Background fill
-        
-        p->setPen(Qt::NoPen);
-        p->setBrush(fill_color);
-        
-        p->drawPolygon(points, fill_size);
-        
-        p->setBrush(Qt::NoBrush);
-
-      } else {
-
-        double org_opacity = p->opacity();
-        
-        // 3. stipled line.
-        p->setOpacity(0.35*org_opacity);
-
-#if 0
-        QPen pen(color);
-        pen.setWidthF(_paint_nodes ? root->song->tracker_windows->systemfontheight / 3 : root->song->tracker_windows->systemfontheight / 6);
-        p->setPen(pen);
-
-        p->drawPolygon(points, fill_size);
-#else
-        p->setPen(Qt::NoPen);
-        p->setBrush(color);
-        
-        p->drawPolygon(points, fill_size);
-        
-        p->setBrush(Qt::NoBrush);
-#endif
-        p->setOpacity(org_opacity);
-
-      }
-
-    }
-    
-    // 3. Lines
-    if (paint_lines){
-      QPen pen(color);
-      pen.setWidthF(_paint_nodes ? root->song->tracker_windows->systemfontheight / 3 : root->song->tracker_windows->systemfontheight / 6);
-      p->setPen(pen);
-      p->drawPolyline(points, size);
-    }
-    
-    // 4. Nodes
-    if (_paint_nodes){
-      int node_pos = start_i;
-      for(int i = start_i; i < size ; i++){
-        const T &node = _automation.at(node_pos);
-
-        float x_a = points[i].x();
-        float y_a = points[i].y();
-        paint_node(p, x_a, y_a, node_pos, color);
-
-        if (node.logtype==LOGTYPE_HOLD)
-          i++;
-
-        node_pos++;
-      }
-    }
+    painter->paint_fill(p);
+    painter->paint_lines(p);
+    painter->paint_nodes(p);
   }
 
 
