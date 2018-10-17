@@ -1497,7 +1497,7 @@ void SEQTRACK_create_gfx_seqblocks_from_state(const dyn_t seqblocks_state, struc
 #endif
 
   //SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
-  SEQTRACK_update(seqtrack);
+  SEQTRACK_update_with_borders(seqtrack);
   SEQUENCER_update(SEQUPDATE_NAVIGATOR | SEQUPDATE_PLAYLIST);
 }
 
