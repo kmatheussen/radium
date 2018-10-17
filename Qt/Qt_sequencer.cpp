@@ -2795,6 +2795,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
 
+#if 0
   void paintGrid_old(const QRegion &update_region, QPainter &p, enum GridType grid_type) const {
     if (grid_type==NO_GRID)
       return;
@@ -2834,7 +2835,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       }
     }
   }
-      
+#endif
+  
   void paintGrid(const QRegion &update_region, QPainter &p, enum GridType grid_type) const {
     if (grid_type==NO_GRID)
       return;
@@ -2846,10 +2848,29 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     double y1 = _seqtracks_widget.t_y1;
     double y2 = _seqtracks_widget.t_y2;
 
-    QPen pen(get_qcolor(SEQUENCER_GRID_COLOR_NUM));
-    p.setPen(pen);
+    QColor beat_color(get_qcolor(SEQUENCER_GRID_COLOR_NUM));
+    QColor bar_color(get_qcolor(SEQUENCER_GRID_COLOR_NUM));
 
+    if (grid_type==BEAT_GRID)
+      beat_color = beat_color.lighter();
+      
+    QPen beat_pen(beat_color);
+    QPen bar_pen(bar_color);
+
+    if (grid_type==BEAT_GRID){
+      float alpha = beat_color.alphaF();
+      beat_color.setAlphaF(alpha/2);
+      
+      beat_pen.setWidthF(0.6);
+      bar_pen.setWidthF(1.0);
+    }
+  
+    p.setPen(beat_pen);
+    
     double last_painted_x = x1-100;
+
+    int min_width1 = root->song->tracker_windows->systemfontheight / 2;
+    int min_width2 = root->song->tracker_windows->systemfontheight*3;
     
     auto callback = [&](int64_t seqtime, int barnum, int beatnum, int linenum)
       {
@@ -2857,10 +2878,31 @@ struct Sequencer_widget : public MouseTrackerQWidget {
           return false;
         
         double x = scale_double(seqtime, _start_time, _end_time, x1, x2);
-        if (x-last_painted_x >= 1){
+        double diff = x-last_painted_x;
+        
+        if (diff >= 1){
           //printf("x: %f, abstime: %f\n",x,(double)maybe/44100.0);
           QLineF line(x, y1+2, x, y2-2);
+
+          bool is_bar = beatnum==1;
+
+          bool not_so_important = grid_type==BEAT_GRID && !is_bar;
+          
+          if (not_so_important && diff < min_width1)
+            return true;
+          
+          QPen pen = is_bar ? bar_pen : beat_pen;
+          
+          if (diff < min_width2)
+            pen.setWidthF(scale(diff,
+                                0, min_width2,
+                                0.3, pen.widthF()
+                                )
+                          );
+          
+          p.setPen(pen);
           p.drawLine(line);
+
           last_painted_x = x;
         }        
         
