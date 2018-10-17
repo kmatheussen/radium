@@ -48,9 +48,6 @@ static void make_backup(void){
   if (dc.filename==NULL)
     return;
 
-  if (!editor_has_keyboard_focus()) // If showing popup menu, editing text widgets, etc. we don't want to disturb the user.
-    return;
-
   if (g_undo_generation_for_last_backup == g_curr_undo_generation)
     return;
 
@@ -100,6 +97,12 @@ void BACKUP_call_very_often(void){
     has_inited=true;
   }
 
+  if (!editor_has_keyboard_focus()) // If showing popup menu, editing text widgets, etc. we don't want to disturb the user.
+    return;
+
+  if (QApplication::mouseButtons() != Qt::NoButton) // Wait until user doesn't use the mouse.
+    return;
+  
   static bool is_playing = false;
   
   Player_State player_state = ATOMIC_GET(pc->player_state);
