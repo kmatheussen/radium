@@ -182,10 +182,12 @@ var16:
 	wblock->rangex2=DC_LoadN();
 	goto start;
 var17:
-	wblock->rangey1=p_Create(DC_LoadN(), 0, 0);
+	wblock->rangey1=p_Create(DC_LoadN(), 0, 1);
+        wblock->rangey1.dividor=0; // to identify old type. value fixed later
 	goto start;
 var18:
-	wblock->rangey2=p_Create(DC_LoadN(), 0, 0);
+	wblock->rangey2=p_Create(DC_LoadN(), 0, 1);
+        wblock->rangey2.dividor=0; // to identify old type. value fixed later
 	goto start;
 
 obj0:
