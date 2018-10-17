@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>744</width>
-    <height>383</height>
+    <height>385</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -130,7 +130,7 @@
            <string>No sampler instrument will use a lower
 resampler quality than this. Beware that
 low-bits or low-samplerate samples
-could sound very differently when
+can sound very different when
 changing resampler type.</string>
           </property>
          </widget>
@@ -386,6 +386,5 @@ changing resampler type.</string>
  </connections>
  <buttongroups>
   <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>
