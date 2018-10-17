@@ -1045,7 +1045,7 @@ void BS_UpdateBlockList(void){
   } else {
     
     int justify = log10(root->song->num_blocks) + 1;
-    printf("justify: %d\n", justify);
+    //printf("justify: %d\n", justify);
     
     struct Blocks *block=root->song->blocks;
     while(block!=NULL){
@@ -1054,8 +1054,14 @@ void BS_UpdateBlockList(void){
     }
 
     //PyRun_SimpleString(temp);
-    
-    BS_SelectBlock(root->song->tracker_windows->wblock->block);
+
+    if(root != NULL
+       && root->song != NULL
+       && root->song->tracker_windows != NULL
+       && root->song->tracker_windows->wblock != NULL
+       && root->song->tracker_windows->wblock->block != NULL
+       )
+      BS_SelectBlock(root->song->tracker_windows->wblock->block);
   }
 }
 
