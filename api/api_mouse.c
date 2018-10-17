@@ -101,7 +101,7 @@ void cancelIndicatorNode(void){
 
 
 float getHalfOfNodeWidth(void){
-  return root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in OpenGL/Render.cpp and common/SeqAutomation.hpp
+  return get_min_node_size();
 }
 
 float get_scroll_pos(void){

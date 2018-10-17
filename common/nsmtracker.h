@@ -1696,6 +1696,7 @@ struct FXs{
 
 
 
+
 /*********************************************************************
 	swing.h
 *********************************************************************/
@@ -3038,6 +3039,12 @@ static inline int get_system_fontheight(void){
   else
     return 20;
 }
+
+// Both width and height of automation nodes are get_min_node_size()*2
+static inline float get_min_node_size(void) {
+  return root->song->tracker_windows->fontheight / 1.5;
+}
+
 
 // these two contains the same value, but g_is_starting_up can only be accessed from the main thread.
 extern DEFINE_ATOMIC(bool, is_starting_up);

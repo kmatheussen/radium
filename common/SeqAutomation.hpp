@@ -195,10 +195,6 @@ struct SeqAutomationPainter : AutomationPainter{
     return ret;
   }
 
-  float get_min_node_size(void) const {
-    return root->song->tracker_windows->fontheight / 1.5; // if changing 1.5 here, also change 1.5 in getHalfOfNodeWidth in api/api_mouse.c and OpenGL/Render.cpp
-  }
-
   void paint_node(QPainter *p, float x, float y, int nodenum, QColor color) const {
     float minnodesize = get_min_node_size();
     float x1 = x-minnodesize;
