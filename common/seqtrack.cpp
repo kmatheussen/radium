@@ -625,7 +625,7 @@ void SEQUENCER_update_all_seqblock_start_and_end_times(void){
  * Find closest bar start, start
  */
 
-static struct SeqTrack *find_closest_seqtrack_with_barorbeat_start(int seqtracknum){
+static struct SeqTrack *find_closest_seqtrack_with_grid_start(int seqtracknum){
 #if 1
   return (struct SeqTrack*)root->song->seqtracks.elements[0];
 #else
@@ -645,6 +645,9 @@ static struct SeqTrack *find_closest_seqtrack_with_barorbeat_start(int seqtrackn
   return (struct SeqTrack*)root->song->seqtracks.elements[0];
 #endif
 }
+
+#if 0
+
 
 /*
 static int64_t find_bar_start_before(struct SeqBlock *seqblock, int64_t seqtime){
@@ -668,26 +671,18 @@ static int64_t find_bar_start_before(struct SeqBlock *seqblock, int64_t seqtime)
 }
 */
 
-namespace{
-  enum class WhatToFind{
-    NOTHING,
-    LINE,
-    BEAT,
-    BAR
-  };
-}
 
-static int64_t find_barorbeat_start_inside(const struct SeqBlock *seqblock, int64_t seqtime, WhatToFind what){
+static int64_t find_grid_start_inside(const struct SeqBlock *seqblock, int64_t seqtime, GridType what){
   const struct Blocks *block = seqblock->block;
   R_ASSERT_RETURN_IF_FALSE2(block != NULL, seqtime);
   
   int64_t ret = seqblock->t.time;
   int64_t mindist = INT64_MAX;
   
-  if (what==WhatToFind::NOTHING)
+  if (what==GridType::NO_GRID)
     return seqtime;
   
-  if (what==WhatToFind::LINE){
+  if (what==GridType::LINE_GRID){
     for(int line=0;line<block->num_lines;line++){
       int64_t stime = seqblock->t.time + blocktime_to_seqtime(seqblock, block->times[line].time);
       int64_t dist = R_ABS(stime-seqtime);
@@ -705,7 +700,7 @@ static int64_t find_barorbeat_start_inside(const struct SeqBlock *seqblock, int6
   const struct Beats *beat = block->beats;
 
   while (beat != NULL){
-    if (beat->beat_num==1 || what==WhatToFind::BEAT){
+    if (beat->beat_num==1 || what==GridType::BEAT_GRID){
       int64_t beattime = seqblock->t.time + blocktime_to_seqtime(seqblock, Place2STime(block, &beat->l.p));
       int64_t dist = R_ABS(beattime-seqtime);
       //printf("bar/beat: %d/%d. seqtime: %f. bartime: %f. dist: %f\n",beat->bar_num,beat->beat_num,(double)seqtime/44100.0, (double)bartime/44100.0,(double)dist/44100.0);
@@ -723,36 +718,36 @@ static int64_t find_barorbeat_start_inside(const struct SeqBlock *seqblock, int6
   return ret;
 }
 
-static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64_t seqtime, int64_t maxtime, WhatToFind what){
+static int64_t find_grid_start_after(const struct SeqBlock *seqblock, int64_t seqtime, int64_t maxtime, GridType what){
   const struct Blocks *block = seqblock->block;
   R_ASSERT_RETURN_IF_FALSE2(block != NULL, seqtime);
 
   int64_t blocklen = getBlockSTimeLength(block);
   int64_t block_interval_length;
 
-  if (what==WhatToFind::NOTHING) {
+  if (what==GridType::NO_GRID) {
 
     return seqtime;
   
-  } else if (what==WhatToFind::LINE){
+  } else if (what==GridType::LINE_GRID){
     
     block_interval_length = blocklen - block->times[block->num_lines-1].time;
 
   } else {
 
-    const struct Beats *last_barorbeat = NULL;
+    const struct Beats *last_grid = NULL;
     
     const struct Beats *beat = NextBeat(block->beats);
     while (beat != NULL){
-      if (beat->beat_num==1 || what==WhatToFind::BEAT)
-        last_barorbeat = beat;
+      if (beat->beat_num==1 || what==GridType::BEAT_GRID)
+        last_grid = beat;
       beat = NextBeat(beat);
     }
     
-    if (last_barorbeat==NULL)
+    if (last_grid==NULL)
       block_interval_length = blocklen; // no bars in the seqblock
     else
-      block_interval_length = blocklen - Place2STime(block, &last_barorbeat->l.p); // this is arguable not correct if the block stops before the beat should have ended...
+      block_interval_length = blocklen - Place2STime(block, &last_grid->l.p); // this is arguable not correct if the block stops before the beat should have ended...
   }
 
   int64_t interval_length = blocktime_to_seqtime(seqblock, block_interval_length); // / ATOMIC_DOUBLE_GET(block->reltempo));
@@ -781,12 +776,13 @@ static int64_t find_barorbeat_start_after(const struct SeqBlock *seqblock, int64
   return ret;
 }
 
-static int64_t find_closest_barorbeat_start(int seqtracknum, int64_t seqtime, WhatToFind what){
+
+static int64_t find_closest_grid_start(int64_t seqtime, GridType what){
 
   //struct SeqTrack *pos_seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
-  struct SeqTrack *seqtrack = find_closest_seqtrack_with_barorbeat_start(seqtracknum);
+  struct SeqTrack *seqtrack = find_closest_seqtrack_with_grid_start(0);
                          
-  int64_t barorbeat_start_time = 0;
+  int64_t grid_start_time = 0;
 
   struct SeqBlock *last_seqblock = NULL;
   
@@ -800,7 +796,7 @@ static int64_t find_closest_barorbeat_start(int seqtracknum, int64_t seqtime, Wh
     
     if (seqtime >= starttime && seqtime < endtime) {
       //printf("inside:  ");
-      barorbeat_start_time = find_barorbeat_start_inside(seqblock, seqtime, what);
+      grid_start_time = find_grid_start_inside(seqblock, seqtime, what);
       goto gotit;
     }
     
@@ -813,7 +809,7 @@ static int64_t find_closest_barorbeat_start(int seqtracknum, int64_t seqtime, Wh
     
     if (seqtime < starttime) {
       //printf("after:  ");
-      barorbeat_start_time = find_barorbeat_start_after(last_seqblock, seqtime, starttime, what);
+      grid_start_time = find_grid_start_after(last_seqblock, seqtime, starttime, what);
       goto gotit;
     }
     
@@ -825,27 +821,94 @@ static int64_t find_closest_barorbeat_start(int seqtracknum, int64_t seqtime, Wh
     return seqtime;
   } else {
     //printf("after2:  ");
-    barorbeat_start_time = find_barorbeat_start_after(last_seqblock, seqtime, INT64_MAX, what);
+    grid_start_time = find_grid_start_after(last_seqblock, seqtime, INT64_MAX, what);
   }
   
  gotit:
 
   //printf("Converting %f to %f\n",(double)bar_start_time/44100.0, (double)convert_seqtime(seqtrack, pos_seqtrack, bar_start_time)/44100.0);
   //return convert_seqtime(seqtrack, pos_seqtrack, bar_start_time);
-  return barorbeat_start_time;
+  return grid_start_time;
+}
+#endif
+
+static int64_t find_closest_grid_start_start_time(const struct SeqTrack *seqtrack, int64_t goal_seqtime){
+  int64_t ret = 0;
+  VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+    int64_t starttime = seqblock->t.time;
+    if(starttime > goal_seqtime)
+      return ret;
+    else
+      ret = starttime;
+    
+    int64_t endtime = seqblock->t.time2;
+    if(endtime > goal_seqtime)
+      return ret;
+    else
+      ret = endtime;
+    
+  }END_VECTOR_FOR_EACH;
+
+  return ret;
 }
 
-int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t seqtime){
-  return find_closest_barorbeat_start(seqtracknum, seqtime, WhatToFind::BAR);
+static int64_t find_closest_grid_start(int64_t goal_seqtime, GridType what){
+  if (what==NO_GRID)
+    return goal_seqtime;
+  
+  const struct SeqTrack *seqtrack = find_closest_seqtrack_with_grid_start(0);
+  if(seqtrack->for_audiofiles)
+    return goal_seqtime;
+
+  if(seqtrack->seqblocks.num_elements==0)
+    return goal_seqtime;
+  
+  {
+    const struct SeqBlock *first_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[0];
+    if (goal_seqtime <= first_seqblock->t.time)
+      return goal_seqtime;
+  }
+  
+  int64_t ret = goal_seqtime;
+  int64_t mindiff = -1;
+  
+  auto callback = [&](int64_t seqtime, int barnum, int beatnum, int linenum)
+    {
+      int64_t diff = llabs(goal_seqtime-seqtime);
+      //printf("   %f: %f\n", (float)seqtime/pc->pfreq, (float)diff/pc->pfreq);
+      
+      if(diff < mindiff || mindiff==-1){
+        mindiff = diff;
+        ret = seqtime;
+      }
+
+      return seqtime < goal_seqtime;
+    };
+  
+  SEQUENCER_iterate_time(find_closest_grid_start_start_time(seqtrack, goal_seqtime),
+                         SONG_get_length()*pc->pfreq + 100000,
+                         what,
+                         callback);
+
+  return ret;
 }
 
-int64_t SEQUENCER_find_closest_beat_start(int seqtracknum, int64_t seqtime){
-  return find_closest_barorbeat_start(seqtracknum, seqtime, WhatToFind::BEAT);
+
+int64_t SEQUENCER_find_closest_grid_start(int64_t seqtime, GridType what){
+  return find_closest_grid_start(seqtime, what);
+}
+  
+int64_t SEQUENCER_find_closest_bar_start(int64_t seqtime){
+  return find_closest_grid_start(seqtime, GridType::BAR_GRID);
+}
+
+int64_t SEQUENCER_find_closest_beat_start(int64_t seqtime){
+  return find_closest_grid_start(seqtime, GridType::BEAT_GRID);
 }
 
 
-int64_t SEQUENCER_find_closest_line_start(int seqtracknum, int64_t seqstime){
-  return find_closest_barorbeat_start(seqtracknum, seqstime, WhatToFind::LINE);
+int64_t SEQUENCER_find_closest_line_start(int64_t seqstime){
+  return find_closest_grid_start(seqstime, GridType::LINE_GRID);
 }
 
 /**
@@ -3055,7 +3118,8 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
         int64_t new_time2 = seqblock->t.time + (nonstretched_seqblock_duration * seqblock->t.stretch);
         if (new_time2 < seqblock->t.time + 64){
           //R_ASSERT_NON_RELEASE(new_time2 > seqblock->t.time);
-          R_ASSERT_NON_RELEASE(false);
+          //R_ASSERT_NON_RELEASE(false);
+          printf("  Too fast. limiting: %d < %d. Setting new time to %d\n", (int)new_time2, (int)seqblock->t.time + 64, (int)seqblock->t.time + 64);
           new_time2 = seqblock->t.time + 64;
         }
 

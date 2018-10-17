@@ -16,14 +16,6 @@
 #define SEQUENCER_EXTRA_SONG_LENGTH 30.0 // sequencer gui always shows 30 seconds more than the song length
 
 
-enum GridType{  
-  NO_GRID = 0,
-  BAR_GRID = 1,
-  BEAT_GRID = 2
-};
-#define FIRST_LEGAL_GRID NO_GRID
-#define LAST_LEGAL_GRID BEAT_GRID
-
 
 extern LANGSPEC void SEQBLOCK_set_gain(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, float gain);
 extern LANGSPEC float SEQBLOCK_get_gain(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
@@ -161,8 +153,6 @@ extern LANGSPEC double SEQUENCER_get_visible_end_time(void);
 extern LANGSPEC void SEQUENCER_set_visible_start_and_end_time(int64_t start_time, int64_t end_time);
 extern LANGSPEC void SEQUENCER_set_visible_start_time(int64_t val);
 extern LANGSPEC void SEQUENCER_set_visible_end_time(int64_t val);
-
-extern LANGSPEC void SEQUENCER_set_grid_type(enum GridType grid_type);
 
 extern LANGSPEC void SEQUENCER_hide_because_instrument_widget_is_large(void);
 extern LANGSPEC void SEQUENCER_show_because_instrument_widget_is_large(void);
@@ -350,6 +340,54 @@ extern LANGSPEC double SEQTRACK_get_length(struct SeqTrack *seqtrack);
 QVector<struct SeqBlock*> SEQTRACK_get_seqblocks_in_z_order(const struct SeqTrack *seqtrack, bool is_gfx_gfx);
 #endif
 
+
+enum GridType{  
+  NO_GRID = 0,
+  BAR_GRID = 1,
+  BEAT_GRID = 2,
+  LINE_GRID = 3
+};
+#define FIRST_LEGAL_GRID NO_GRID
+#define LAST_LEGAL_GRID LINE_GRID
+
+static inline const char *grid_type_to_string(enum GridType what){
+  switch(what){
+  case NO_GRID: return "no";
+  case BAR_GRID: return "bar";
+  case BEAT_GRID: return "beat";
+  case LINE_GRID: return "line";
+  }
+  R_ASSERT(false);
+  return "";
+}
+
+static inline enum GridType string_to_grid_type(const char *what, bool *is_error){
+  if (!strcmp(what, "no")) return NO_GRID;
+  if (!strcmp(what, "bar")) return BAR_GRID;
+  if (!strcmp(what, "beat")) return BEAT_GRID;
+  if (!strcmp(what, "line")) return LINE_GRID;
+
+  if(is_error!=NULL)
+    *is_error = true;
+  else
+    R_ASSERT(false);
+  
+  return NO_GRID;
+}
+
+#if defined(__cplusplus)
+void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType what_to_find, std::function<bool(int64_t,int,int,int)> callback);
+#endif
+
+extern LANGSPEC void SEQUENCER_set_grid_type(enum GridType grid_type);
+extern LANGSPEC enum GridType SEQUENCER_get_grid_type(void);
+
+extern LANGSPEC int64_t SEQUENCER_find_closest_grid_start(int64_t seqtime, enum GridType what);
+extern LANGSPEC int64_t SEQUENCER_find_closest_bar_start(int64_t pos_seqtime);
+extern LANGSPEC int64_t SEQUENCER_find_closest_beat_start(int64_t pos_seqtime);
+extern LANGSPEC int64_t SEQUENCER_find_closest_line_start(int64_t pos_seqtime);
+
+
 extern LANGSPEC hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool always_get_real_end_time);
 extern LANGSPEC int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowAPIException error_type);
 
@@ -365,9 +403,6 @@ extern LANGSPEC void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, con
 
 // sequencer
 extern LANGSPEC void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block);
-extern LANGSPEC int64_t SEQUENCER_find_closest_bar_start(int seqtracknum, int64_t pos_seqtime);
-extern LANGSPEC int64_t SEQUENCER_find_closest_beat_start(int seqtracknum, int64_t pos_abstime);
-extern LANGSPEC int64_t SEQUENCER_find_closest_line_start(int seqtracknum, int64_t pos_abstime);
 extern LANGSPEC hash_t *SEQUENCER_get_state(void /*bool get_old_format*/);
 extern LANGSPEC void SEQUENCER_create_from_state(hash_t *state, struct Song *song);
 //extern LANGSPEC void SEQUENCER_update_all_seqblock_start_and_end_times(void);

@@ -1817,27 +1817,14 @@ struct SongTempoAutomation_widget {
 
 };
 
-#if 1
-
-#include <functional>
-
-namespace{
-  enum class WhatToFind{
-    NOTHING,
-    LINE,
-    BEAT,
-    BAR
-  };
-}
-
 // Return true if continuing.
-static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtrack,
-                                                   int &barnum,
-                                                   int64_t start_seqtime, int64_t end_seqtime,
-                                                   WhatToFind what_to_find,
-                                                   int64_t end_blockseqtime, int64_t next_blockstarttime,
-                                                   int64_t last_barseqtime, int64_t last_beatseqtime,
-                                                   std::function<bool(int64_t,int,int)> callback
+ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtrack,
+                                                    int &barnum,
+                                                    int64_t start_seqtime, int64_t end_seqtime,
+                                                    GridType what_to_find,
+                                                    int64_t end_blockseqtime, int64_t next_blockstarttime,
+                                                    int64_t last_barseqtime, int64_t last_beatseqtime,
+                                                    std::function<bool(int64_t,int,int,int)> callback
                                                    )
 {
     int64_t bar_seqlength = end_blockseqtime - last_barseqtime;
@@ -1873,14 +1860,15 @@ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtra
 
       barnum++;
       beatnum = 1;
-      callback(bar_seqtime, barnum, 0);
+      callback(bar_seqtime, barnum, beatnum, -1);
 
+      const int64_t next_bartime = bar_seqtime + bar_seqlength;
 
-      if (what_to_find==WhatToFind::BEAT) {
+      if (what_to_find==GridType::BEAT_GRID) {
 
-        int64_t next_bartime = bar_seqtime + bar_seqlength;
-
-        for(int64_t beat_seqtime = bar_seqtime ; beat_seqtime < next_bartime ; beat_seqtime += beat_seqlength){
+        beatnum++;
+        
+        for(int64_t beat_seqtime = bar_seqtime+beat_seqlength ; beat_seqtime < next_bartime ; beat_seqtime += beat_seqlength){
 
           if (next_blockstarttime != -1 && R_ABS(beat_seqtime-next_blockstarttime) < 20)
             return true;
@@ -1888,7 +1876,7 @@ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtra
           if (beat_seqtime >= end_seqtime)
             return false;
 
-          if (callback(beat_seqtime, barnum, beatnum)==false)
+          if (callback(beat_seqtime, barnum, beatnum, -1)==false)
             return false;
 
           beatnum++;
@@ -1897,7 +1885,7 @@ static inline bool iterate_beats_between_seqblocks(const struct SeqTrack *seqtra
 
       //printf("  after. abstime: %f\n",(double)abstime/44100.0);
 
-      bar_seqtime += bar_seqlength;
+      bar_seqtime = next_bartime;
     }
 
     return true;
@@ -1920,10 +1908,14 @@ int get_next_block_seqblocknum(const struct SeqTrack *seqtrack, int seqtracknum)
     return seqtracknum;
 }
 
+} // and anon. namespace
+
+
 // If callback returns false, we stop iterating.
-static inline void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, WhatToFind what_to_find, std::function<bool(int64_t,int,int)> callback){
+void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType what_to_find, std::function<bool(int64_t,int,int,int)> callback){
   int barnum = 0;
-    
+  //printf("Start_seqtime: %f\n", (float)start_seqtime/pc->pfreq);
+  
   const struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[0];
   if (seqtrack->seqblocks.num_elements==0)
     return;
@@ -1937,9 +1929,6 @@ static inline void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seq
     const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[seqblocknum];
     const struct SeqBlock *next_seqblock = next_seqblocknum==-1 ? NULL : (struct SeqBlock *)seqtrack->seqblocks.elements[next_seqblocknum];
 
-    int64_t start_blockseqtime = seqblock->t.time;
-    int64_t end_blockseqtime = seqblock->t.time2;
-
     int64_t next_blockstarttime = next_seqblock==NULL ? -1 : next_seqblock->t.time;
           
     if (next_seqblock!=NULL) {
@@ -1947,50 +1936,113 @@ static inline void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seq
         continue;
     }
 
-    if (start_blockseqtime >= end_seqtime)
+    int64_t start_blockseqtime = seqblock->t.time;
+    int64_t end_blockseqtime = seqblock->t.time2;
+
+    if (start_blockseqtime >= end_seqtime){
+      R_ASSERT_NON_RELEASE(false);
       return;
-
+    }
+    
     const struct Blocks *block = seqblock->block;
-    const struct Beats *beat = block->beats;
+
+    if (what_to_find==GridType::BEAT_GRID || what_to_find==GridType::BAR_GRID){
+      
+      const struct Beats *beat = block->beats;
           
-    int64_t last_barseqtime = -1;
-    int64_t last_beatseqtime = -1;
-    //Ratio *last_signature = NULL;
-
-    while(beat!=NULL){
-      //last_signature = &beat->valid_signature;
-
-      int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime(block, &beat->l.p));
-      //printf("  Beat seqtime: %d. %d/%d\n", (int)seqtime, beat->beat_num, beat->bar_num);
-      last_beatseqtime = seqtime;
-
-      if (beat->beat_num==1){
-        last_barseqtime = seqtime;
+      int64_t last_barseqtime = -1;
+      int64_t last_beatseqtime = -1;
+      //Ratio *last_signature = NULL;
+      
+      while(beat!=NULL){
+        //last_signature = &beat->valid_signature;
         
-        barnum++;
+        int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime(block, &beat->l.p));
+        //printf("  Beat seqtime: %d. %d/%d\n", (int)seqtime, beat->beat_num, beat->bar_num);
+        last_beatseqtime = seqtime;
+
+        bool is_bar = beat->beat_num==1;
+        
+        if (is_bar){
+          last_barseqtime = seqtime;          
+          barnum++;
+        }
+        
+        if (what_to_find==GridType::BEAT_GRID || is_bar){
+          if (callback(seqtime, barnum, beat->beat_num, 0)==false)
+            return;
+        }
+        
+        beat = NextBeat(beat);
+      }
+ 
+      if (iterate_beats_between_seqblocks(seqtrack,
+                                         barnum,
+                                         start_seqtime, end_seqtime,
+                                         what_to_find,
+                                         end_blockseqtime, next_blockstarttime,
+                                         last_barseqtime, last_beatseqtime,
+                                         callback)
+          == false)
+        return;
+     
+    } else {
+
+      R_ASSERT(what_to_find==GridType::LINE_GRID);
+
+      int64_t seqtime = 0;
+      int line = 0;
+
+      while(line < block->num_lines){
+        Place place = {line,0,1};
+        seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime(block, &place));
+        if (callback(seqtime, -1, -1, line)==false)
+          return;
+        line++;
       }
 
-      if (what_to_find==WhatToFind::BEAT){
-        if (callback(seqtime, barnum, beat->beat_num)==false)
-          return;
+      R_ASSERT(line==block->num_lines);
+      
+      int64_t linetime = end_blockseqtime - seqtime;
+
+      if(linetime<=0){ // Playing veery fast.
+        //R_ASSERT_NON_RELEASE(false);
+        //R_ASSERT(linetime==0);
+        return;
       }
       
-      beat = NextBeat(beat);
-    }
+#if 0 //!defined(RELEASE)
+      {
+        Place place1 = {line-1,0,1}; // last line
+        Place place2 = {line,0,1}; // last line + 1
+        int64_t t1 = Place2STime(block, &place1);
+        int64_t t2 = Place2STime(block, &place2);
+        int64_t u1 = blocktime_to_seqtime(seqblock, t1);
+        int64_t u2 = blocktime_to_seqtime(seqblock, t2);
+        int64_t linetime2 = u2-u1;
+        R_ASSERT(llabs(linetime2 - linetime) < 10);
+      }
+#endif
+      
+      seqtime += linetime;
 
-    if (iterate_beats_between_seqblocks(seqtrack,
-                                        barnum,
-                                        start_seqtime, end_seqtime,
-                                        what_to_find,
-                                        end_blockseqtime, next_blockstarttime,
-                                        last_barseqtime, last_beatseqtime,
-                                        callback)
-        == false)
-      return;
+      //printf("Seq: %f. Next: %f\n", (float)seqtime/pc->pfreq, (float)next_blockstarttime/pc->pfreq);
+      
+      while(next_blockstarttime < 0 || seqtime < next_blockstarttime){
+        if (callback(seqtime, -1, -1, line)==false)
+          return;
+        line++;
+        seqtime += linetime;
+      }
+      
+    }
+    
   }
 }
-#endif
 
+
+namespace{
+  
 struct Timeline_widget : public MouseTrackerQWidget {
   const double &_start_time;
   const double &_end_time;
@@ -2107,7 +2159,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
       int64_t end_seqtime = _end_time;
 
       auto callback = [&last_x, &p, &bar_color, &text_color, width_, this, min_pixels_between_text]
-        (int64_t seqtime, int barnum, int beatnum)
+        (int64_t seqtime, int barnum, int beatnum, int linenum)
         {
                                                
           double x = scale_double(seqtime, _start_time, _end_time, 0, width_);
@@ -2142,7 +2194,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
           return true;
         };
     
-      SEQUENCER_iterate_time(start_seqtime, end_seqtime, WhatToFind::BEAT, callback);
+      SEQUENCER_iterate_time(start_seqtime, end_seqtime, GridType::BEAT_GRID, callback);
                              
       
     } else {
@@ -2523,7 +2575,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
                                 );
             createSampleSeqblock(seqtracknum,
                                  STRING_get_chars(STRING_toBase64(STRING_create(url.toLocalFile()))),
-                                 getSeqGriddedTime(pos, seqtracknum, getSeqBlockGridType()),
+                                 getSeqGriddedTime(pos, getSeqBlockGridType()),
                                  -1
                                  );
           }
@@ -2743,7 +2795,10 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
 
-  void paintGrid(const QRegion &update_region, QPainter &p, enum GridType grid_type) const {
+  void paintGrid_old(const QRegion &update_region, QPainter &p, enum GridType grid_type) const {
+    if (grid_type==NO_GRID)
+      return;
+    
     double x1 = _seqtracks_widget.t_x1;
     double x2 = _seqtracks_widget.t_x2;
     double width = x2-x1;
@@ -2751,8 +2806,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     double y1 = _songtempoautomation_widget.t_y1;
     double y2 = _seqtracks_widget.t_y2;
 
-    if (grid_type==BAR_GRID) {
-      
+    {      
       int inc = (_end_time-_start_time) / width;
       
       if (inc > 0) {
@@ -2766,7 +2820,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
         // This code seems very inefficient...
         
         while(abstime < _end_time){
-          int64_t maybe = SEQUENCER_find_closest_bar_start(0, abstime);
+          int64_t maybe = SEQUENCER_find_closest_grid_start(abstime, grid_type);
           if (maybe > last_bar){
             double x = scale_double(maybe, _start_time, _end_time, x1, x2);
             //printf("x: %f, abstime: %f\n",x,(double)maybe/44100.0);
@@ -2781,6 +2835,41 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     }
   }
       
+  void paintGrid(const QRegion &update_region, QPainter &p, enum GridType grid_type) const {
+    if (grid_type==NO_GRID)
+      return;
+    
+    double x1 = _seqtracks_widget.t_x1;
+    double x2 = _seqtracks_widget.t_x2;
+    //double width = x2-x1;
+    
+    double y1 = _seqtracks_widget.t_y1;
+    double y2 = _seqtracks_widget.t_y2;
+
+    QPen pen(get_qcolor(SEQUENCER_GRID_COLOR_NUM));
+    p.setPen(pen);
+
+    double last_painted_x = x1-100;
+    
+    auto callback = [&](int64_t seqtime, int barnum, int beatnum, int linenum)
+      {
+        if(seqtime >= _end_time)
+          return false;
+        
+        double x = scale_double(seqtime, _start_time, _end_time, x1, x2);
+        if (x-last_painted_x >= 1){
+          //printf("x: %f, abstime: %f\n",x,(double)maybe/44100.0);
+          QLineF line(x, y1+2, x, y2-2);
+          p.drawLine(line);
+          last_painted_x = x;
+        }        
+        
+        return true;
+      };
+    
+    SEQUENCER_iterate_time(_start_time, _end_time, _grid_type, callback);
+  }
+  
   void paintCursor(const QRegion &update_region, QPainter &p){
     double y1 = _songtempoautomation_widget.t_y1;
     double y2 = _seqtracks_widget.t_y2;
@@ -2866,7 +2955,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       }
     }
   }
-
+  
   void paintCurrentSeqtrackBorder(QPainter &p) {
     if (root->song->seqtracks.num_elements <= 1)
       return;
@@ -3184,6 +3273,10 @@ void SEQUENCER_set_grid_type(enum GridType grid_type){
     g_sequencer_widget->_grid_type = grid_type;
     SEQUENCER_update(SEQUPDATE_TIME);
   }
+}
+
+enum GridType SEQUENCER_get_grid_type(void){
+  return g_sequencer_widget->_grid_type;
 }
 
 void SEQUENCER_set_selection_rectangle(float x1, float y1, float x2, float y2){
