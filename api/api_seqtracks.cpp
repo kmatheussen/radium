@@ -139,14 +139,6 @@ void setSequencerVisibleEndTime(int64_t value){
   SEQUENCER_set_visible_end_time(value);
 }
 
-void setSequencerGridType(int grid_type){
-  if (grid_type < FIRST_LEGAL_GRID || grid_type > LAST_LEGAL_GRID){
-    handleError("setSequencerGridType: Illegal grid type %d", grid_type);
-    return;
-  }
-  SEQUENCER_set_grid_type((GridType)grid_type);
-}
-
 void setSequencerSelectionRectangle(float x1, float y1, float x2, float y2){
   SEQUENCER_set_selection_rectangle(x1, y1, x2, y2);
 }
@@ -1619,25 +1611,36 @@ void setDoAutoCrossfades(double default_do_auto_crossfades){
 }
 
 
-int64_t getSeqGriddedTime(int64_t pos, int seqtracknum, const_char* type){
+void setSequencerGridType(const_char *grid_type){
+  bool is_error=false;
+  enum GridType what = !strcmp(grid_type, "current") ? SEQUENCER_get_grid_type() : string_to_grid_type(grid_type, &is_error);
+    
+  if(is_error){
+    handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", \"bar\", or \"current\". (\"%s\")", grid_type);
+    return;
+  }
+  
+  SEQUENCER_set_grid_type(what);
+}
+
+const_char *getSequencerGridType(void){
+  enum GridType what = SEQUENCER_get_grid_type();
+
+  return grid_type_to_string(what);
+}
+
+int64_t getSeqGriddedTime(int64_t pos, const_char* type){
   //R_ASSERT_NON_RELEASE(seqtracknum==0);
-  if (seqtracknum != 0)
-    seqtracknum=0;
-  
-  if (!strcmp(type, "no"))
+
+  bool is_error=false;
+  enum GridType what = !strcmp(type, "current") ? SEQUENCER_get_grid_type() : string_to_grid_type(type, &is_error);
+    
+  if(is_error){
+    handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", \"bar\", or \"current\". (\"%s\")", type);
     return pos;
-  
-  else if (!strcmp(type, "line"))
-    return findClosestSeqtrackLineStart(seqtracknum, pos);
-
-  else if (!strcmp(type, "beat"))
-    return findClosestSeqtrackBeatStart(seqtracknum, pos);
-
-  else if (!strcmp(type, "bar"))
-    return findClosestSeqtrackBarStart(seqtracknum, pos);
-
-  handleError("Sequencer grid type must be either \"no\", \"line\", \"beat\", or \"bar\". (\"%s\")", type);
-  return pos;
+  }
+    
+  return SEQUENCER_find_closest_grid_start(pos, what);
 }
 
 int64_t findClosestSeqtrackBarStart(int seqtracknum, int64_t pos){
@@ -1646,7 +1649,7 @@ int64_t findClosestSeqtrackBarStart(int seqtracknum, int64_t pos){
     return 0;
   }
   
-  return SEQUENCER_find_closest_bar_start(seqtracknum, pos);
+  return SEQUENCER_find_closest_bar_start(pos);
 }
 
 int64_t findClosestSeqtrackBeatStart(int seqtracknum, int64_t pos){
@@ -1655,7 +1658,7 @@ int64_t findClosestSeqtrackBeatStart(int seqtracknum, int64_t pos){
     return 0;
   }
   
-  return SEQUENCER_find_closest_beat_start(seqtracknum, pos);
+  return SEQUENCER_find_closest_beat_start(pos);
 }
 
 int64_t findClosestSeqtrackLineStart(int seqtracknum, int64_t pos){
@@ -1664,7 +1667,7 @@ int64_t findClosestSeqtrackLineStart(int seqtracknum, int64_t pos){
     return 0;
   }
   
-  return SEQUENCER_find_closest_line_start(seqtracknum, pos);
+  return SEQUENCER_find_closest_line_start(pos);
 }
 
 
