@@ -75,8 +75,10 @@ static void InsertLines_notes(
                         note->end.line=R_MAX(note->end.line,line);
 		}
 
-		List_InsertLines3(&note->velocities,&note->velocities->l,line,toinsert,NULL);
-		List_InsertLines3(&note->pitches,&note->pitches->l,line,toinsert,NULL);
+                if(note->velocities!=NULL) // need check to avoid ubsan/asan hit
+                  List_InsertLines3(&note->velocities,&note->velocities->l,line,toinsert,NULL);
+                if(note->pitches!=NULL) // need check to avoid ubsan/asan hit
+                  List_InsertLines3(&note->pitches,&note->pitches->l,line,toinsert,NULL);
 	}
 }
 
@@ -138,22 +140,31 @@ void InsertLines(
           blocktobelongtoforinsertlines_notes_a_terrible_hack=block;
           
           block->num_lines=num_lines+toinsert;
+
+          if(block->temponodes!=NULL) // need check to avoid ubsan/asan hit
+            List_InsertLines3(&block->temponodes,block->temponodes->l.next,line,toinsert,NULL);
           
-          List_InsertLines3(&block->temponodes,block->temponodes->l.next,line,toinsert,NULL);
           LegalizeTempoNodes(block);
-          List_InsertLines3(&block->signatures,&block->signatures->l,line,toinsert,NULL);
-          List_InsertLines3(&block->lpbs,&block->lpbs->l,line,toinsert,NULL);
-          List_InsertLines3(&block->tempos,&block->tempos->l,line,toinsert,NULL);
+          
+          if(block->signatures!=NULL) // need check to avoid ubsan/asan hit
+            List_InsertLines3(&block->signatures,&block->signatures->l,line,toinsert,NULL);
+          if(block->lpbs!=NULL) // need check to avoid ubsan/asan hit
+            List_InsertLines3(&block->lpbs,&block->lpbs->l,line,toinsert,NULL);
+          if(block->tempos!=NULL) // need check to avoid ubsan/asan hit
+            List_InsertLines3(&block->tempos,&block->tempos->l,line,toinsert,NULL);
 
           TIME_block_num_lines_have_changed(block);
 
           while(track!=NULL){
-            List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);
+            if(track->notes!=NULL) // need check to avoid ubsan/asan hit
+              List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);
             LegalizeNotes(block,track);
-            List_InsertLines3(&track->stops,&track->stops->l,line,toinsert,NULL);
+            if(track->stops!=NULL) // need check to avoid ubsan/asan hit
+              List_InsertLines3(&track->stops,&track->stops->l,line,toinsert,NULL);
             
             VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
-              List_InsertLines3(&fxs->fxnodelines,&fxs->fxnodelines->l,line,toinsert,NULL);
+              if(fxs->fxnodelines!=NULL) // need check to avoid ubsan/asan hit
+                List_InsertLines3(&fxs->fxnodelines,&fxs->fxnodelines->l,line,toinsert,NULL);
             }END_VECTOR_FOR_EACH;
             
             LegalizeFXlines(block,track);
@@ -162,14 +173,15 @@ void InsertLines(
 
           while(window!=NULL){
             wblock=ListFindElement1(&window->wblocks->l,block->l.num);
-            List_InsertLines3(
-                              &wblock->localzooms,
-                              &wblock->localzooms->l,
-                              line,
-                              toinsert,
-                              InsertLines_localzooms
-                              //			NULL
-                              );
+            if(wblock->localzooms!=NULL) // need check to avoid ubsan/asan hit
+              List_InsertLines3(
+                                &wblock->localzooms,
+                                &wblock->localzooms->l,
+                                line,
+                                toinsert,
+                                InsertLines_localzooms
+                                //			NULL
+                                );
             for(lokke=line;lokke<line+toinsert;lokke++){
               localzoom=talloc(sizeof(struct LocalZooms));
               localzoom->Tline=lokke;
