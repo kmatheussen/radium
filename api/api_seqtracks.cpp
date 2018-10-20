@@ -263,6 +263,12 @@ void setCurrSeqtrack(int seqtracknum){
     struct Patch *patch = seqtrack->patch;
     if(patch!=NULL)
       patch->instrument->PP_Update(patch->instrument, patch, false);
+
+    if(root->song != NULL && root->song->tracker_windows!=NULL)
+      root->song->tracker_windows->must_redraw_editor=true;
+    else{
+      R_ASSERT_NON_RELEASE(false);
+    }
   }
 
 }
