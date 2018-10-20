@@ -95,9 +95,11 @@ class PlayerLock{
 public:
 
   const bool _enable;
-
-  PlayerLock(const bool enable = true)
+  const bool _can_pause;
+  
+  PlayerLock(const bool enable = true, bool can_pause = true)
     : _enable(enable)
+    , _can_pause(can_pause)
   {
     if (enable)
       PLAYER_lock();
@@ -106,6 +108,11 @@ public:
   ~PlayerLock(){
     if (_enable)
       PLAYER_unlock();
+  }
+
+  void maybe_pause_lock_a_little_bit(int i) const {
+    if(_can_pause)
+      PLAYER_maybe_pause_lock_a_little_bit(i);
   }
 };
  
