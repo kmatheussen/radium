@@ -5,7 +5,7 @@
 extern LANGSPEC void closeRequester(void);
 
 #ifdef __cplusplus
-void API_simplePopupMenu(const char *texts, std::function<void(int,bool)> callback3);
+int64_t API_simplePopupMenu(const char *texts, std::function<void(int,bool)> callback3);
 #endif
 
 #endif

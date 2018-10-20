@@ -7560,6 +7560,9 @@
                               ;;        (only-select-one-seqblock seqblocknum seqtracknum)
                               ;;        (<ra> :select-seqblock #t seqblocknum seqtracknum)))
 
+                              (set-grid-type (<ra> :get-seq-block-grid-type))
+                              
+                              (define guinum
                               (popup-menu (if (not for-blocks)
                                               #f
                                               (list
@@ -7952,7 +7955,18 @@
                                           ;;"Append sequencer track" (lambda ()
                                           ;;                           (<ra> :append-seqtrack))
                                           (get-sequencer-conf-menues)
-                                          ))))))))
+                                          ))
+
+                              ;; Popup is an existing widget, so we can't use add-deleted-callback
+                              (<ra> :schedule 100
+                                    (lambda ()
+                                      (if (<gui> :is-open guinum)
+                                          100
+                                          (begin
+                                            (set-grid-type #f)
+                                            #f))))
+                              
+                              )))))))
 
 ;; right size handle in navigator
 (add-horizontal-handler :Get-handler-data (lambda (X Y)

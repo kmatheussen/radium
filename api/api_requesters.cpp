@@ -248,7 +248,7 @@ const_char* requestString(const_char *text, bool standalone, const_char* default
   return ret;
 }
 
-void API_simplePopupMenu(const char *texts, std::function<void(int,bool)> callback3){
+int64_t API_simplePopupMenu(const char *texts, std::function<void(int,bool)> callback3){
   const vector_t vec = GFX_MenuParser(texts, "%");
   return GFX_Menu3(vec,callback3);
 }
@@ -261,12 +261,12 @@ int simplePopupMenu(const char *texts){
 }
 */
 
-void popupMenu(dyn_t strings, func_t* callback){
+int64_t popupMenu(dyn_t strings, func_t* callback){
   struct Tracker_Windows *window=getWindowFromNum(-1);
   
   if (strings.type != ARRAY_TYPE){
     handleError("popupMenu: Excpected array as first argument, found %s", DYN_type_name(strings.type));
-    return;
+    return -1;
   }
   dynvec_t *dynvec = strings.array;
 
@@ -275,14 +275,14 @@ void popupMenu(dyn_t strings, func_t* callback){
   for(int i=0;i<dynvec->num_elements;i++){
     if (dynvec->elements[i].type != STRING_TYPE){
       handleError("popupMenu: Element #%d is not a string. Found: %s", i, DYN_type_name(dynvec->elements[i].type));
-      return;
+      return -1;
     }
     vec.elements[i] = STRING_get_chars(dynvec->elements[i].string);
   }
 
   //printf("   NUM_elements: %d\n", vec.num_elements);
   
-  GFX_Menu2(window, NULL, "", vec, callback, true, true);
+  return GFX_Menu2(window, NULL, "", vec, callback, true, true);
 }
 
 

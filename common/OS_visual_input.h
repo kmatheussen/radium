@@ -98,21 +98,24 @@ extern LANGSPEC char *GFX_GetString(struct Tracker_Windows *tvisual,ReqType reqt
 
 #include <functional>
 
-void GFX_Menu3(
-               const vector_t &v,
-               std::function<void(int,bool)> callback
-               );
+// returns guinum of popup menu
+int64_t GFX_Menu3(
+                  const vector_t &v,
+                  std::function<void(int,bool)> callback
+                  );
 
 #include "../api/api_requesters_proc.h"
 
-static inline void GFX_SimpleMenu(const char *texts, std::function<void(int,bool)> callback3){
+// returns guinum of popup menu
+static inline int64_t GFX_SimpleMenu(const char *texts, std::function<void(int,bool)> callback3){
   return API_simplePopupMenu(texts, callback3);
 }
 
 #endif
 
 
-extern LANGSPEC int GFX_Menu2(
+// is_async: returns guinum. !is_async: returns selection.
+extern LANGSPEC int64_t GFX_Menu2(
                               struct Tracker_Windows *tvisual,
                               ReqType reqtype,
                               const char *seltext,

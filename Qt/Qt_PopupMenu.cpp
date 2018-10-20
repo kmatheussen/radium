@@ -28,7 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
+
 #include "../embedded_scheme/s7extra_proc.h"
+
+#include "../api/api_gui_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -586,13 +589,13 @@ static QMenu *create_qmenu(
 }
 
 
-static int GFX_QtMenu(
-                const vector_t &v,
-                func_t *callback2,
-                std::function<void(int,bool)> callback3,
-                bool is_async,
-                bool program_state_is_valid
-                )
+static int64_t GFX_QtMenu(
+                          const vector_t &v,
+                          func_t *callback2,
+                          std::function<void(int,bool)> callback3,
+                          bool is_async,
+                          bool program_state_is_valid
+                          )
 {
   R_ASSERT_RETURN_IF_FALSE2(is_async==true, -1); // Lots of trouble with non-async menus. (triggers qt bugs)
   
@@ -609,7 +612,7 @@ static int GFX_QtMenu(
   if (is_async){
 
     safeMenuPopup(menu);
-    return -1;
+    return API_get_gui_from_existing_widget(menu);
     
   } else {
     
@@ -624,15 +627,15 @@ static int GFX_QtMenu(
     return result;
   }
 }
-void GFX_Menu3(
+int64_t GFX_Menu3(
               const vector_t &v,
               std::function<void(int,bool)> callback3
               )
 {
-  GFX_QtMenu(v, NULL, callback3, true, true);
+  return GFX_QtMenu(v, NULL, callback3, true, true);
 }
 
-int GFX_Menu2(
+int64_t GFX_Menu2(
               struct Tracker_Windows *tvisual,
               ReqType reqtype,
               const char *seltext,
