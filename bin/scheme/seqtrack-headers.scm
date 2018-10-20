@@ -990,13 +990,30 @@
 (<ra> :toggle-full-screen)
 !!#
 
+(define *show-first-seqtrack-warning* #t)
+
 (def-area-subclass (<sequencer-left-part-buttons> :gui :x1 :y1 :x2 :y2)
 
   (define (callback type)
     (cond ((eq? type '+E)
            (<ra> :insert-seqtrack #f))
           ((eq? type '+A)
-           (<ra> :insert-seqtrack #t))
+           (define seqtracknum (<ra> :get-curr-seqtrack))
+           (if (and *show-first-seqtrack-warning*
+                    (= 0 seqtracknum)
+                    (not (<ra> :seqtrack-for-audiofiles 0)))
+               (show-async-message (<gui> :get-sequencer-gui)
+                                   (<-> "Are you sure?\n"
+                                        "\n"
+                                        "We use the first seqtrack for timing and grid, but audio seqtracks can't provide this information.\n"
+                                        )
+                                   (list "No" "Yes" "Yes, don't show again") #t
+                                   (lambda (res)
+                                     (when (not (string=? "No" res))
+                                       (if (not (string=? "Yes" res))
+                                           (set! *show-first-seqtrack-warning* #f))
+                                       (<ra> :insert-seqtrack #t seqtracknum))))
+               (<ra> :insert-seqtrack #t)))
           ((eq? type '-)
            (when (> (<ra> :get-num-seqtracks) 1)
              (define seqtracknum (<ra> :get-curr-seqtrack))
