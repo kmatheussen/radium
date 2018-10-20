@@ -190,8 +190,8 @@ static void set_seqblock_stretch(const struct SeqTrack *seqtrack, struct SeqBloc
   seqblock->t.stretch = (double)get_seqblock_duration(seqblock) / (double)(seqblock->t.interior_end - seqblock->t.interior_start);
   seqblock->t.stretch /= seqblock->t.speed;
   
-  if (reltempo != 1.0)
-    seqblock->t.stretch_without_tempo_multiplier = seqblock->t.stretch * reltempo;
+  //  if (reltempo != 1.0) // <- Only correct to test for this if seqblock->t.stretch is also not 1.0.
+  seqblock->t.stretch_without_tempo_multiplier = seqblock->t.stretch * reltempo;
 
   //seqblock->t.speed = 1.0;
 }
@@ -3104,7 +3104,8 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
         if (is_loading_old_song)
           new_tempo_multiplier = ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
 
-        //printf("new_tempo_multiplier: %f\n", new_tempo_multiplier);
+        //printf("new_tempo_multiplier: %f. Old: %f. stretch_without: %f\n", new_tempo_multiplier, ATOMIC_DOUBLE_GET(seqblock->block->reltempo), seqblock->t.stretch_without_tempo_multiplier);
+        
         pause.need_it();
         lock.lock();
 
@@ -3119,7 +3120,7 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
         if (new_time2 < seqblock->t.time + 64){
           //R_ASSERT_NON_RELEASE(new_time2 > seqblock->t.time);
           //R_ASSERT_NON_RELEASE(false);
-          printf("  Too fast. limiting: %d < %d. Setting new time to %d\n", (int)new_time2, (int)seqblock->t.time + 64, (int)seqblock->t.time + 64);
+          //printf("  Too fast. limiting: %d < %d. Setting new time to %d\n", (int)new_time2, (int)seqblock->t.time + 64, (int)seqblock->t.time + 64);
           new_time2 = seqblock->t.time + 64;
         }
 
