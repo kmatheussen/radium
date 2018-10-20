@@ -2811,7 +2811,7 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
     }
 
     {
-      static const char *is_pausing_message = "Current sequencer track is pausing.";
+      static const char *is_pausing_message = "Current seqtrack is pausing.";
       const char *old_message = window->message;
       const char *new_message = window->message;
       
