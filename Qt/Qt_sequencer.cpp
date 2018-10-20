@@ -2008,6 +2008,8 @@ int get_next_block_seqblocknum(const struct SeqTrack *seqtrack, int seqtracknum)
 void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType what_to_find, std::function<bool(int64_t,int,int,int)> callback){
   int barnum = 0;
   //printf("Start_seqtime: %f\n", (float)start_seqtime/pc->pfreq);
+
+  R_ASSERT_NON_RELEASE(end_seqtime >= 0);
   
   const struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[0];
   if (seqtrack->seqblocks.num_elements==0)
@@ -2022,11 +2024,16 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
     const struct SeqBlock *seqblock = (struct SeqBlock *)seqtrack->seqblocks.elements[seqblocknum];
     const struct SeqBlock *next_seqblock = next_seqblocknum==-1 ? NULL : (struct SeqBlock *)seqtrack->seqblocks.elements[next_seqblocknum];
 
-    int64_t next_blockstarttime = next_seqblock==NULL ? -1 : next_seqblock->t.time;
+    int64_t next_blockstarttime = -1;
           
     if (next_seqblock!=NULL) {
-      if (next_blockstarttime <= start_seqtime)
+
+      next_blockstarttime = next_seqblock->t.time;
+      
+      if (next_blockstarttime <= start_seqtime){
+        //printf("   1. SEQUENCER_iterate_time. next_blockstarttime <= start_seqtime: %f >= %f\n", (double)next_blockstarttime/pc->pfreq, (double)start_seqtime/pc->pfreq);
         continue;
+      }
     }
 
     int64_t start_blockseqtime = seqblock->t.time;
@@ -2034,6 +2041,9 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
 
     if (start_blockseqtime >= end_seqtime){
       //R_ASSERT_NON_RELEASE(false);
+#if !defined(RELEASE)
+      printf("   2. SEQUENCER_iterate_time. start_blockseqtime >= end_seqtime: %f >= %f\n", (double)start_blockseqtime/pc->pfreq, (double)end_seqtime/pc->pfreq);
+#endif
       return;
     }
     
@@ -2071,7 +2081,9 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
         
         beat = NextBeat(beat);
       }
- 
+
+      //printf("   3. SEQUENCER_iterate_time. start_seqtime: %f. end_seqtime: %f.\n", (double)start_seqtime/pc->pfreq, (double)end_seqtime/pc->pfreq);
+      
       if (iterate_beats_between_seqblocks(seqtrack,
                                          barnum,
                                          start_seqtime, end_seqtime,
