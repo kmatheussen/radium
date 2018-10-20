@@ -4191,6 +4191,17 @@ double gui_getEditorDistanceY(int64_t guinum){
 /////// Callbacks
 //////////////////////////
 
+// Callbacks probably don't work in existing widgets since they are not subclasses of both QWidget and Gui.
+static bool check_existing(Gui *gui){
+#if !defined(RELEASE)
+  if(gui->_created_from_existing_widget){
+    handleError("gui #%d is created from an existing widget\n");
+    return false;
+  }  
+#else
+    return true;
+#endif
+}
 
 void gui_addDeletedCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
@@ -4198,6 +4209,9 @@ void gui_addDeletedCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
+  if(check_existing(gui)==false)
+    return;
+  
   s7extra_protect(func);
   gui->_deleted_callbacks.push_back(func);
 }
@@ -4206,6 +4220,9 @@ void gui_addRealtimeCallback(int64_t guinum, func_t* func){
   Gui *gui = get_gui(guinum);
 
   if (gui==NULL)
+    return;
+
+  if(check_existing(gui)==false)
     return;
 
   gui->addGuiRealtimeCallback(func);
@@ -4217,6 +4234,9 @@ void gui_addCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
+  if(check_existing(gui)==false)
+    return;
+
   gui->addGuiCallback(func);
 }
 
@@ -4226,6 +4246,9 @@ void gui_addMouseCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
+  if(check_existing(gui)==false)
+    return;
+  
   gui->addMouseCallback(func);
 }
 
@@ -4235,6 +4258,9 @@ void gui_addKeyCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
+  if(check_existing(gui)==false)
+    return;
+  
   gui->addKeyCallback(func);
 }
 
@@ -4244,6 +4270,9 @@ void gui_addFocusInCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
+  if(check_existing(gui)==false)
+    return;
+  
   gui->addFocusInCallback(func);
 }
 
@@ -4253,6 +4282,9 @@ void gui_addDoubleClickCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
+  if(check_existing(gui)==false)
+    return;
+  
   gui->addDoubleClickCallback(func);
 }
 
@@ -4262,6 +4294,9 @@ void gui_addCloseCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
+  if(check_existing(gui)==false)
+    return;
+  
   gui->addCloseCallback(func);
 }
 
@@ -4271,6 +4306,9 @@ void gui_addResizeCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
+  if(check_existing(gui)==false)
+    return;
+  
   gui->addResizeCallback(func);
 }
 
@@ -4280,6 +4318,9 @@ void gui_addPaintCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
+  if(check_existing(gui)==false)
+    return;
+  
   gui->addPaintCallback(func);
 }
 
