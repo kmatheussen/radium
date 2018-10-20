@@ -3494,7 +3494,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
             <item row="0" column="3">
              <widget class="QGroupBox" name="groupBox_9">
               <property name="title">
-               <string>Loop Start/Stop</string>
+               <string>Loop/Punch Start/Stop</string>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_14">
                <item>
@@ -7105,8 +7105,8 @@ you should check this box.
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>398</width>
-            <height>28</height>
+            <width>566</width>
+            <height>549</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -9719,8 +9719,8 @@ you should check this box.
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>100</width>
-               <height>30</height>
+               <width>935</width>
+               <height>283</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -9937,8 +9937,8 @@ Optimization level 5 may cause very long compilation time with no apparent benef
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
   <buttongroup name="buttonGroup_3"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

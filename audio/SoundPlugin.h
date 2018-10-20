@@ -429,7 +429,7 @@ typedef struct SystemFilter{
 enum BusDescendantType{
   IS_BUS_DESCENDANT,
   IS_BUS_PROVIDER,
-  MAYBE_A_BUS_DESCENDANT,
+  MAYBE_A_BUS_DESCENDANT, // not used anymore
 };
 
 enum AutoSuspendBehavior{ // The numbers below can not be changed since they are saved in state.

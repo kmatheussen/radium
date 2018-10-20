@@ -245,6 +245,8 @@ static void myFilledPolygon(QPainter &p, QPointF *points, int num_points, const 
   p.setPen(pen);
 }
 
+static void my_update_sequencer_widget(const QRect &rect);
+
 /*
 static void g_position_widgets(void);
 */
@@ -285,6 +287,54 @@ static double get_seqblock_ysplit2(double seqblock_y1, double seqblock_y2){
 static double get_seqblock_ysplit3(double seqblock_y1, double seqblock_y2){
   double y1 = seqblock_y1;
   return seqblock_y2 - (seqblock_y2-y1) / 4;
+}
+
+static void paintCurrBorder(QPainter &p, const QRectF &rect, const QColor &color, int round_x = 3, int round_y = 3) {
+  float b1 = 1.0;
+  float b2 = 1.0;
+  float b = floor(get_seqtrack_border_width());
+
+  // fill
+  {
+    QPen pen(color);
+    pen.setWidthF(b);
+    p.setPen(pen);
+
+    QRect rect2 = rect.toRect();
+    rect2.adjust(b/2.0, 0, 0, 0);
+      
+    p.drawRoundedRect(rect2,round_x,round_y);//rect, round_x, round_y);
+  }
+
+  //p.setRenderHints(QPainter::Antialiasing,false);
+  // outer border
+  {
+    QColor color("black");
+    float width = b1;
+      
+    QPen pen(color);
+    pen.setWidthF(width);
+    p.setPen(pen);
+      
+    QRectF rect2 = rect.toRect();
+    rect2.adjust(0,-b/2,b/2,+b/2);
+    p.drawRoundedRect(rect2,round_x,round_y);//rect, round_x, round_y);
+  }
+    
+  // inner border
+  {
+    QColor color("#222222");
+    float width = b2;
+      
+    QPen pen(color);
+    pen.setWidthF(width);
+    p.setPen(pen);
+      
+    QRectF rect2 = rect.toRect();
+    rect2.adjust(b,b/2,-b/2,-b/2);
+    p.drawRoundedRect(rect2,round_x,round_y);//rect, round_x, round_y);
+  }
+  //p.setRenderHints(QPainter::Antialiasing,true);
 }
 
 QPoint mapFromEditor(QWidget *widget, QPoint point){
@@ -633,10 +683,18 @@ public:
     
     return QRectF(x1,t_y1+1,x2-x1,t_height-2);
   }
-  
+
   void update_seqblock(const struct SeqBlock *seqblock) const {
-    if (seqblock_is_visible(seqblock))
-      SEQUENCER_getWidget()->update(get_seqblock_rect(seqblock).toAlignedRect());
+    if (seqblock_is_visible(seqblock)){
+      QRectF rect = get_seqblock_rect(seqblock);
+
+      if (seqblock==g_curr_seqblock_under_mouse){
+        float min_node_size = get_min_node_size();
+        rect.adjust(-min_node_size,0,min_node_size,min_node_size); // Seqblock nodes can be painted outside the seqblock rectangle.
+      }
+
+      my_update_sequencer_widget(rect.toAlignedRect());
+    }
   }
   
   void set_seqblocks_is_selected(const struct SeqTrack *seqtrack, const QRect &selection_rect){
@@ -1536,6 +1594,15 @@ public:
     draw_fades(p, rect_without_header, seqtrack, seqblock);
   }
 
+  void paint_current_seqblock_border(QPainter &p, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
+    double x1 = get_seqblock_x1(seqblock);
+    double x2 = get_seqblock_x2(seqblock);
+    float b = get_seqtrack_border_width();
+    
+    QRectF rect(x1-b, t_y1-b/2, x2-x1+b+b/2, t_y2-t_y1+b);
+    paintCurrBorder(p, rect, QColor(0,0x60,0x90,0xb0), 0, 0);
+  }
+  
   bool paintSeqBlock(QPainter &p, const QRegion &update_region, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int seqtracknum, int seqblocknum, Seqblock_Type type){
     //QPoint mousep = _sequencer_widget->mapFromGlobal(QCursor::pos());
 
@@ -1625,6 +1692,13 @@ public:
 
     draw_seqblock_automations(automation_painters, radium::AutomationPainter::What::LINES|radium::AutomationPainter::What::NODES, &p, rect_without_header, seqblock);
 
+    /*
+    bool is_current_seqblock = true;
+    if(is_current_seqblock){
+      paint_current_seqblock_border(p, rect, seqtrack, seqblock);
+    }
+    */
+    
     return true;
   }
   
@@ -1657,7 +1731,7 @@ public:
         = type==Seqblock_Type::REGULAR ? SEQTRACK_get_seqblocks_in_z_order(seqtrack, false)
         : type==Seqblock_Type::GFX_GFX ? SEQTRACK_get_seqblocks_in_z_order(seqtrack, true)
         : VECTOR_get_qvector<struct SeqBlock*>(&seqtrack->recording_seqblocks);
-      
+
       //printf("  seqblocks size: %d. (%d %d)\n", seqblocks.size(), _seqtrack->seqblocks.num_elements, _seqtrack->gfx_seqblocks==NULL ? -1 : _seqtrack->gfx_seqblocks->num_elements);
       
       for(int i=seqblocks.size()-1 ; i>=0 ; i--){
@@ -1673,7 +1747,6 @@ public:
       }
     }
   }
-
 
 #define UPDATE_EVERY_5_SECONDS 0
 
@@ -1745,6 +1818,26 @@ public:
     }END_VECTOR_FOR_EACH;
   }
 
+  void paint_curr_seqblock_border(const QRegion &update_region, QPainter &p){
+    if(update_region.intersects(t_rect.toAlignedRect())){
+      
+      VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+        int seqtracknum = iterator666;
+        
+        VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
+
+          if (false && is_current_seqblock(seqblock)){
+            Seqblocks_widget seqblocks_widget = get_seqblocks_widget(seqtracknum, true);
+            seqblocks_widget.paint_current_seqblock_border(p, seqtrack, seqblock);
+            //return;
+          }
+          
+        }END_VECTOR_FOR_EACH;
+      }END_VECTOR_FOR_EACH;
+      
+    }
+  }
+  
   void paint(const QRegion &update_region, QPainter &p){
     if(update_region.intersects(t_rect.toAlignedRect())){
       
@@ -1832,15 +1925,12 @@ struct SongTempoAutomation_widget {
 
     //printf("last_x: %d, width: %d. bar_length: %d. next: %f, end_seqtime: %f\n", (int)last_x, width(),(int)bar_length,((double)end_blockseqtime + bar_length)/44100.0, (double)end_seqtime/44100.0);
 
-    int beatnum = 1;
-    int64_t bar_seqtime = end_blockseqtime;
 
     if (bar_seqlength <= 0){
       R_ASSERT_NON_RELEASE(false);
       return false;
     }
 
-    
     if (beat_seqlength <= 0){
       fprintf(stderr,"BEAT_seqlength: %d. end_blockseqtime: %d. last_beatseqtime: %d\n", (int)beat_seqlength, (int)end_blockseqtime, (int)last_beatseqtime);
       //printf("\n\n");
@@ -1848,6 +1938,9 @@ struct SongTempoAutomation_widget {
       return false;
     }
 
+    
+    int beatnum = 1;
+    int64_t bar_seqtime = end_blockseqtime;
     
 
     for(;;){
@@ -1940,7 +2033,7 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
     int64_t end_blockseqtime = seqblock->t.time2;
 
     if (start_blockseqtime >= end_seqtime){
-      R_ASSERT_NON_RELEASE(false);
+      //R_ASSERT_NON_RELEASE(false);
       return;
     }
     
@@ -1956,8 +2049,11 @@ void SEQUENCER_iterate_time(int64_t start_seqtime, int64_t end_seqtime, GridType
       
       while(beat!=NULL){
         //last_signature = &beat->valid_signature;
+
+        int64_t blocktime = Place2STime(block, &beat->l.p);
+        R_ASSERT_NON_RELEASE(blocktime>=0);
         
-        int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, Place2STime(block, &beat->l.p));
+        int64_t seqtime = start_blockseqtime + blocktime_to_seqtime(seqblock, blocktime);
         //printf("  Beat seqtime: %d. %d/%d\n", (int)seqtime, beat->beat_num, beat->bar_num);
         last_beatseqtime = seqtime;
 
@@ -2525,8 +2621,34 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     my_update(QRectF(x1, y1, x2-x1, y2-y1));
   }
 #endif
+
+  bool _called_from_my_update = false;
   
+  void my_update(const QRegion &region){
+    radium::ScopedBoolean s(_called_from_my_update);
+    
+    update(region);
+    update_cursor();
+  }
+  
+  void my_update(const QRect &rect){
+    radium::ScopedBoolean s(_called_from_my_update);
+    
+    update(rect);
+    update_cursor();
+  }
+  
+  void my_update(const QRectF &rect){
+    my_update(rect.toAlignedRect());
+  }
+    
+  void my_update(qreal x1, qreal y1, qreal x2, qreal y2){
+    my_update(QRectF(x1, y1, x2-x1, y2-y1));
+  }
+
   void my_update_all(void){
+    radium::ScopedBoolean s(_called_from_my_update);
+    
     D(printf("SEQ: my_update_all called\n"));
     int64_t visible_song_length = MIXER_get_sample_rate() * get_visible_song_length();
     if (_end_time > visible_song_length) {
@@ -2632,7 +2754,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
                                  x1_width, timeline_widget_height);
 
 
-    y1 += timeline_widget_height - 2;
+    y1 += timeline_widget_height;
 
     
     // song tempo automation
@@ -2697,6 +2819,65 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   bool _song_tempo_automation_was_visible = false;
   bool _was_playing_smooth_song = false;
 
+  void update_cursor(void){
+    if (is_playing() && pc->playtype==PLAYSONG) {
+
+      double song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
+      double middle = (_start_time+_end_time) / 2.0;
+      
+      if (!smooth_scrolling()){
+        double x = get_curr_cursor_x(1 + MIXER_get_sample_rate() * 60.0 / 1000.0);
+        
+        double x_min = R_MIN(x-cursor_width/2.0, _last_painted_cursor_x-cursor_width/2.0) - 2;
+        double x_max = R_MAX(x+cursor_width/2.0, _last_painted_cursor_x+cursor_width/2.0) + 2;
+        
+        //printf("x_min -> x_max: %f -> %f\n",x_min,x_max);
+        double y1 = _songtempoautomation_widget.t_y1;
+        double y2 = _seqtracks_widget.t_y2;
+        
+        update(x_min, y1, 1+x_max-x_min, y2-y1);
+        
+        if (song_abstime < _start_time) {
+          int64_t diff = _start_time - song_abstime;
+          _start_time -= diff;
+          _end_time -= diff;
+          update();
+        } else if (song_abstime > _end_time){
+          double diff = song_abstime - middle;
+          _start_time += diff;
+          _end_time += diff;
+          update();
+        }
+        
+      } else {
+        
+        // Smooth scrolling
+        
+        _was_playing_smooth_song = true;
+        
+        if (song_abstime != middle){
+          double diff = song_abstime - middle;
+          _start_time += diff;
+          _end_time += diff;
+          update();
+          }
+        
+        return;
+        
+      }
+    }
+    
+    if (_was_playing_smooth_song==true){
+      if (_start_time < 0){
+        _end_time -= _start_time;
+        _start_time = 0;
+        legalize_start_end_times();
+        }
+      update();
+      _was_playing_smooth_song = false;
+    }    
+  }
+  
   void call_very_often(void){
 
     RETURN_IF_DATA_IS_INACCESSIBLE();
@@ -2731,62 +2912,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     // Update cursor
     //
     if (is_called_every_ms(15)){  // call each 15 ms. (i.e. more often than vsync)
-      if (is_playing() && pc->playtype==PLAYSONG) {
-
-        double song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
-        double middle = (_start_time+_end_time) / 2.0;
-        
-        if (!smooth_scrolling()){
-          double x = get_curr_cursor_x(1 + MIXER_get_sample_rate() * 60.0 / 1000.0);
-          
-          double x_min = R_MIN(x-cursor_width/2.0, _last_painted_cursor_x-cursor_width/2.0) - 2;
-          double x_max = R_MAX(x+cursor_width/2.0, _last_painted_cursor_x+cursor_width/2.0) + 2;
-          
-          //printf("x_min -> x_max: %f -> %f\n",x_min,x_max);
-          double y1 = _songtempoautomation_widget.t_y1;
-          double y2 = _seqtracks_widget.t_y2;
-          
-          update(x_min, y1, 1+x_max-x_min, y2-y1);
-          
-          if (song_abstime < _start_time) {
-            int64_t diff = _start_time - song_abstime;
-            _start_time -= diff;
-            _end_time -= diff;
-            update();
-          } else if (song_abstime > _end_time){
-            double diff = song_abstime - middle;
-            _start_time += diff;
-            _end_time += diff;
-            update();
-          }
-
-        } else {
-          
-          // Smooth scrolling
-
-          _was_playing_smooth_song = true;
-
-          if (song_abstime != middle){
-            double diff = song_abstime - middle;
-            _start_time += diff;
-            _end_time += diff;
-            update();
-          }
-
-          return;
-
-        }
-      }
-
-      if (_was_playing_smooth_song==true){
-        if (_start_time < 0){
-          _end_time -= _start_time;
-          _start_time = 0;
-          legalize_start_end_times();
-        }
-        update();
-        _was_playing_smooth_song = false;
-      }
+      update_cursor();
     }
   }
 
@@ -3009,57 +3135,18 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     //const SeqTrack *seqtrack = (const struct SeqTrack*)root->song->seqtracks.elements[curr_seqtracknum];
 
     {
-      float b = get_seqtrack_border_width();
-      float b1 = 1.0;
-      float b2 = 1.0;
-
       const Seqblocks_widget w = get_seqblocks_widget(curr_seqtracknum, false);
 
       //QRectF rect(b/2.0, w.t_y1-b/2.0, this->width()-b, w.t_y2-w.t_y1+b);
-      QRectF rect(b/2.0, w.t_y1, this->width()+200, w.t_y2-w.t_y1);
+      QRectF rect(0, w.t_y1, this->width()+200, w.t_y2-w.t_y1);
 
-      // fill
-      {
-        QColor color = get_qcolor(MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM);
-        
-        QPen pen(color);
-        pen.setWidthF(b);
-        p.setPen(pen);
-        
-        p.drawRoundedRect(rect,3,3);//rect, round_x, round_y);
-      }
-
-      // outer border
-      {
-        QColor color("black");
-        float width = b1;
-        
-        QPen pen(color);
-        pen.setWidthF(width);
-        p.setPen(pen);
-
-        QRectF rect2(rect);
-        rect2.adjust(-b/2,-b/2,0,+b/2);
-        p.drawRoundedRect(rect2,3,3);//rect, round_x, round_y);
-      }
-
-      // inner border
-      {
-        QColor color("#222222");
-        float width = b2;
-        
-        QPen pen(color);
-        pen.setWidthF(width);
-        p.setPen(pen);
-
-        QRectF rect2(rect);
-        rect2.adjust(b/2,b/2,0,-b/2);
-        p.drawRoundedRect(rect2,3,3);//rect, round_x, round_y);
-      }
+      paintCurrBorder(p, rect, get_qcolor(MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM));
     }
   }
 
   void paintEvent (QPaintEvent *ev) override {
+    R_ASSERT(_called_from_my_update==false); // Neven know what Qt might do. Also think I've seen Qt do this before, and if Qt calls paintEvent directly from update(), we can get graphical garbage.
+    
     if (workingQRegionContains(childrenRegion(), ev->region())){ // We get a paint event with the area under the navigator widget when _navigator_widget->update() is called.
       //printf("skipped painting area below children widgets\n");
       return;
@@ -3149,14 +3236,21 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       TRACK_PAINT();
 
       QPainter p(this);
-      
+
       paintSeqtrackBorders(p);
 
       paintCurrentSeqtrackBorder(p);
 
       if (seqtracks_are_painted) {
+
         p.setRenderHints(QPainter::Antialiasing,true);
+
         p.setClipRect(QRectF(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1, _seqtracks_widget.t_width, _seqtracks_widget.t_height));
+
+        p.setRenderHints(QPainter::Antialiasing,false);
+        _seqtracks_widget.paint_curr_seqblock_border(ev->region(), p);
+        p.setRenderHints(QPainter::Antialiasing,true);
+        
         _seqtracks_widget.paint_automation(ev->region(), p);    
         paintCursor(ev->region(), p);
       }
@@ -3362,7 +3456,7 @@ void SEQUENCER_set_selection_rectangle(float x1, float y1, float x2, float y2){
 
   if (was_selected==false){
     
-    g_sequencer_widget->update(new_rect);
+    g_sequencer_widget->my_update(new_rect);
 
   } else {
     
@@ -3388,9 +3482,7 @@ void SEQUENCER_set_selection_rectangle(float x1, float y1, float x2, float y2){
     printf("\n");
     */
     
-    g_sequencer_widget->update(region);
-
-    
+    g_sequencer_widget->my_update(region);
     
   }
   
@@ -3678,7 +3770,7 @@ float SEQTRACK_get_y2(int seqtracknum){
   return mapToEditorY(g_sequencer_widget, w.t_y2);
 }
 
-static void update(const struct SeqTrack *seqtrack, bool also_update_borders, int64_t start_time, int64_t end_time){
+static void update(const struct SeqTrack *seqtrack, bool also_update_borders, bool also_update_nodes, int64_t start_time, int64_t end_time){
   if (g_sequencer_widget == NULL)
     return;
 
@@ -3696,31 +3788,47 @@ static void update(const struct SeqTrack *seqtrack, bool also_update_borders, in
 #if 0
   printf("SEQTRACK_update called %d\n", get_seqtracknum(seqtrack));
 #endif
-  
-  if (also_update_borders) // && (abs(ATOMIC_GET(root->song->curr_seqtracknum)-seqtracknum)<=1))
-    g_sequencer_widget->update(floor(x1), floor(w.t_y1-get_seqtrack_border_width()-1),
-                               ceil(x2-x1), ceil(w.t_height+get_seqtrack_border_width()*2+2));
-  else
-    g_sequencer_widget->update(floor(x1), floor(w.t_y1),
-                               ceil(x2-x1), ceil(w.t_height));
 
+  // Hmm, it might be necessary to update borders as well when updating nodes, and vice versa.
+  
+  if (also_update_nodes){
+    float min_node_size = get_min_node_size();
+    g_sequencer_widget->my_update(QRect(floor(x1-min_node_size-1), floor(w.t_y1-min_node_size-1),
+                                        ceil(x2-x1+min_node_size*2+2), ceil(w.t_height+min_node_size*2+2)));
+  }else if (also_update_borders)
+    g_sequencer_widget->my_update(QRect(floor(x1), floor(w.t_y1-get_seqtrack_border_width()-1),
+                                        ceil(x2-x1), ceil(w.t_height+get_seqtrack_border_width()*2+2)));
+  else
+    g_sequencer_widget->my_update(QRect(floor(x1), floor(w.t_y1),
+                                        ceil(x2-x1), ceil(w.t_height)));
+
+}
+
+void SEQTRACK_update_with_nodes(const struct SeqTrack *seqtrack, int64_t start_time, int64_t end_time){
+  update(seqtrack, true, true, start_time, end_time);
 }
 
 void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack, int64_t start_time, int64_t end_time){
-  update(seqtrack, true, start_time, end_time);
+  update(seqtrack, true, false, start_time, end_time);
 }
 
 void SEQTRACK_update(const struct SeqTrack *seqtrack, int64_t start_time, int64_t end_time){
-  update(seqtrack, false, start_time, end_time);
+  update(seqtrack, false, false, start_time, end_time);
 }
 
 void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack){
-  update(seqtrack, true, -1, -1);
+  update(seqtrack, true, false, -1, -1);
 }
 
 void SEQTRACK_update(const struct SeqTrack *seqtrack){
-  update(seqtrack, false, -1, -1);
+  update(seqtrack, false, false, -1, -1);
 }
+
+
+static void my_update_sequencer_widget(const QRect &rect){
+  g_sequencer_widget->my_update(rect);
+}
+
 
 void SEQBLOCK_update(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){
   int seqtracknum = get_seqtracknum(seqtrack);
@@ -3767,8 +3875,13 @@ void SEQUENCER_update(uint32_t what){
                                  );
 
     if (what & SEQUPDATE_SONGTEMPO){
-      if (g_sequencer_widget->_songtempoautomation_widget.is_visible)
-        g_sequencer_widget->update(g_sequencer_widget->_songtempoautomation_widget.t_rect.toAlignedRect());
+      if (g_sequencer_widget->_songtempoautomation_widget.is_visible){
+        QRectF rect = g_sequencer_widget->_songtempoautomation_widget.t_rect;
+        float min_node_size = get_min_node_size();
+        rect.adjust(-min_node_size,-min_node_size,min_node_size,min_node_size); // songtempo automation nodes can be painted outside the songtemp area.
+        
+        g_sequencer_widget->my_update(rect.toAlignedRect());
+      }
     }
     
     if (what & SEQUPDATE_TIMELINE){
@@ -3776,9 +3889,10 @@ void SEQUENCER_update(uint32_t what){
     }
     
     if (what & SEQUPDATE_TIME){
-      g_sequencer_widget->update(floor(g_sequencer_widget->_seqtracks_widget.t_x1), 0,
-                                 ceil(g_sequencer_widget->_seqtracks_widget.t_width), g_sequencer_widget->height()
-                                 );
+      //printf("SEQUENCER_update called\n%s\n",JUCE_get_backtrace());
+      g_sequencer_widget->my_update(QRect(floor(g_sequencer_widget->_seqtracks_widget.t_x1), 0,
+                                          ceil(g_sequencer_widget->_seqtracks_widget.t_width), g_sequencer_widget->height())
+                                    );
     }
 
     if ((what & SEQUPDATE_NAVIGATOR) || (what & SEQUPDATE_TIME)){
