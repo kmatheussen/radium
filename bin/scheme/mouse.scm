@@ -5362,93 +5362,94 @@
   
   (define new-pos-nongridded (floor Value))
     
-    (define new-pos (if (or (= 1 (num-seqblocks-in-sequencer))
-                            (<ra> :control-pressed))
-                        new-pos-nongridded
-                        (<ra> :get-seq-gridded-time (floor Value) (<ra> :get-seq-block-grid-type))))
-
-    ;; Limit shrinking size
+  (define new-pos (if (or (= 1 (num-seqblocks-in-sequencer))
+                          (<ra> :control-pressed))
+                      new-pos-nongridded
+                      (<ra> :get-seq-gridded-time (floor Value) (<ra> :get-seq-block-grid-type))))
+  
+  ;; Limit shrinking size
+  (if is-left
+      (set! new-pos (min max-left-value new-pos))
+      (set! new-pos (max min-right-value new-pos)))
+  
+  ;; Limit expanding size
+  (when (not allowed-to-overlap)
     (if is-left
-        (set! new-pos (min max-left-value new-pos))
-        (set! new-pos (max min-right-value new-pos)))
+        (let ((prev-end (get-prev-seqblock-end (1+ (seqblock :start-time)) seqblocks seqblocknum)))
+          (set! new-pos (max new-pos
+                             prev-end)))
+        
+        (let ((next-start (get-next-seqblock-start (1+ (seqblock :start-time)) seqblocks seqblocknum)))
+          (if next-start
+              (set! new-pos (min new-pos
+                                 next-start))))))
+  
+  
+  (set! new-pos (max 0 (floor new-pos)))
 
-    ;; Limit expanding size
-    (when (not allowed-to-overlap)
-      (if is-left
-          (let ((prev-end (get-prev-seqblock-end (1+ (seqblock :start-time)) seqblocks seqblocknum)))
-            (set! new-pos (max new-pos
-                               prev-end)))
-          
-          (let ((next-start (get-next-seqblock-start (1+ (seqblock :start-time)) seqblocks seqblocknum)))
-            (if next-start
-                (set! new-pos (min new-pos
-                                   next-start))))))
-    
-    
-    (set! new-pos (max 0 (floor new-pos)))
+  ;;(c-display "---------new-pos:" new-pos ". Value:" Value "min/max-value:" min-right-value max-left-value)
 
-    ;;(c-display "---------new-pos:" new-pos ". Value:" Value "min/max-value:" min-right-value max-left-value)
+  (set-grid-type (<ra> :get-seq-block-grid-type))
 
-    (set-grid-type (<ra> :get-seq-block-grid-type))
+  (define curr-speed (seqblock :speed))
 
-    (define curr-speed (seqblock :speed))
-
-    ;;(c-display "is-overlapping:" (or is-sample
-    ;;                                 (seqblock-is-overlapping-with-another-block-seqblock seqblocks
-    ;;                                                                                      seqblocknum
-    ;;                                                                                      (if is-left new-pos #f)
-    ;;                                                                                      (if is-right new-pos #f))))
-    
-    (when (or #t ;; We don't overlap here since we limited pos in "limit expanding size" above.
-              allowed-to-overlap
-              (not (seqblock-is-overlapping-with-another-block-seqblock seqblocks
-                                                                        seqblocknum
-                                                                        (if is-left new-pos #f)
-                                                                        (if is-right new-pos #f))))
-      (define new-seqblock (if is-left
-                               (copy-hash seqblock
-                                          :start-time new-pos)
-                               (copy-hash seqblock
-                                          :end-time new-pos)))
-      (when is-speed
-        (define old-duration (- (seqblock :end-time)
-                                (seqblock :start-time)))
-        (define new-duration (- (new-seqblock :end-time)
-                                (new-seqblock :start-time)))
-        (define old-speed (seqblock :speed))
-        (set! curr-speed (* (/ new-duration old-duration)
-                            old-speed))
-        (set! (new-seqblock :speed) curr-speed)
-        ;;(c-display "old-speed:" old-speed ". new_speed:" (new-seqblock :speed) ". old-duration:" old-duration ". new-duration:" new-duration)
-        )
-      
-      (define new-seqblocks-state (copy seqblocks))
-      (set! (new-seqblocks-state seqblocknum) new-seqblock)
-      (set! new-seqblocks-state (maybe-add-autofades new-seqblocks-state seqblocknum))
-      
-      ;;(c-display "new-seqblocks-state:" new-seqblocks-state)
-      
-      (when new-seqblocks-state
-        ;;(set! new-seqblocks-state (sort! new-seqblocks-state
-        ;;                                 (lambda (a b)
-        ;;                                   (< (a :start-time)
-        ;;                                      (b :start-time)))))
-        ;;(assert-seqblocks-state new-seqblocks-state)
-        (set! curr-pos new-pos)
-        ;;(if (= 0 seqtracknum)
-        ;;(c-display "state:" (pp new-seqblocks-state)))
-        (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)        
-        (set-seqblock-selected-box (if is-speed
-                                       (if is-left 'speed-left 'speed-right)
-                                       (if is-left 'stretch-left 'stretch-right))
-                                   seqblocknum seqtracknum)
-        (<ra> :set-curr-seqblock-under-mouse (seqblock :id))
-        )
+  ;;(c-display "is-overlapping:" (or is-sample
+  ;;                                 (seqblock-is-overlapping-with-another-block-seqblock seqblocks
+  ;;                                                                                      seqblocknum
+  ;;                                                                                      (if is-left new-pos #f)
+  ;;                                                                                      (if is-right new-pos #f))))
+  
+  (when (or #t ;; We don't overlap here since we limited pos in "limit expanding size" above.
+            allowed-to-overlap
+            (not (seqblock-is-overlapping-with-another-block-seqblock seqblocks
+                                                                      seqblocknum
+                                                                      (if is-left new-pos #f)
+                                                                      (if is-right new-pos #f))))
+    (define new-seqblock (if is-left
+                             (copy-hash seqblock
+                                        :start-time new-pos)
+                             (copy-hash seqblock
+                                        :end-time new-pos)))
+    (when is-speed
+      (define old-duration (- (seqblock :end-time)
+                              (seqblock :start-time)))
+      (define new-duration (- (new-seqblock :end-time)
+                              (new-seqblock :start-time)))
+      (define old-speed (seqblock :speed))
+      (set! curr-speed (* (/ new-duration old-duration)
+                          old-speed))
+      (set! (new-seqblock :speed) curr-speed)
+      ;;(c-display "old-speed:" old-speed ". new_speed:" (new-seqblock :speed) ". old-duration:" old-duration ". new-duration:" new-duration)
       )
     
-    (assert (= (length seqblocks) num-seqblocks))
-    (list curr-pos
-          curr-speed)
+    (define new-seqblocks-state (copy seqblocks))
+    (set! (new-seqblocks-state seqblocknum) new-seqblock)
+    (set! new-seqblocks-state (maybe-add-autofades new-seqblocks-state seqblocknum))
+    
+    ;;(c-display "new-seqblocks-state:" (pp new-seqblocks-state))
+    ;;(c-display "seqblock end time:" (new-seqblock :end-time))
+    
+    (when new-seqblocks-state
+      ;;(set! new-seqblocks-state (sort! new-seqblocks-state
+      ;;                                 (lambda (a b)
+      ;;                                   (< (a :start-time)
+      ;;                                      (b :start-time)))))
+      ;;(assert-seqblocks-state new-seqblocks-state)
+      (set! curr-pos new-pos)
+      ;;(if (= 0 seqtracknum)
+      ;;(c-display "state:" (pp new-seqblocks-state)))
+      (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)        
+      (set-seqblock-selected-box (if is-speed
+                                     (if is-left 'speed-left 'speed-right)
+                                     (if is-left 'stretch-left 'stretch-right))
+                                 seqblocknum seqtracknum)
+      (<ra> :set-curr-seqblock-under-mouse (seqblock :id))
+      )
+    )
+  
+  (assert (= (length seqblocks) num-seqblocks))
+  (list curr-pos
+        curr-speed)
 )
 
 (define-class (<set-seqblock-speedstretch> :seqtracknum
@@ -6441,8 +6442,10 @@
                         (seqtracknum (*current-seqautomation/distance* :seqtrack)))
                    (<ra> :set-normal-mouse-pointer (<gui> :get-sequencer-gui))
                    (set-editor-statusbar (get-seq-automation-display-name automationnum seqtracknum))
-                   (<ra> :set-curr-seq-automation (*current-seqautomation/distance* :automation-num)
-                         (*current-seqautomation/distance* :seqtrack))))
+                   (<ra> :set-curr-seq-automation
+                         (*current-seqautomation/distance* :automation-num)
+                         (*current-seqautomation/distance* :seqtrack))
+                   ))
                 
                 ((*current-seqautomation/distance* :seqblock)
                  ;;(c-display "3")
