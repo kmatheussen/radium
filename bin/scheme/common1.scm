@@ -93,7 +93,7 @@
                          (if (,correct-type? ,v)
                              ,v
                              (error 'wrong-type (list "For " ',name ': ,v)))))
-         (set! (symbol-setter ',name)
+         (set! (setter ',name)
                (lambda (,s ,v)
                  (if (,correct-type? ,v)
                      ,v
