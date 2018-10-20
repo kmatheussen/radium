@@ -705,10 +705,12 @@ void setCurrSeqAutomationNode(int nodenum, int automationnum, int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
     return;
-
+  
   VALIDATE_AUTOMATIONNUM();
   VALIDATE_NODENUM();
 
+  //printf("setCurrSeqAutomationNode\n");
+  
   SEQTRACK_AUTOMATION_set_curr_node(seqtrack->seqtrackautomation, automationnum, nodenum);
 }
 
@@ -719,6 +721,8 @@ void cancelCurrSeqAutomationNode(int automationnum, int seqtracknum){
 
   VALIDATE_AUTOMATIONNUM();
 
+  //printf("cancelCurrSeqAutomationNode\n");
+  
   SEQTRACK_AUTOMATION_cancel_curr_node(seqtrack->seqtrackautomation, automationnum);
 }
 
@@ -729,11 +733,13 @@ void setCurrSeqAutomation(int automationnum, int seqtracknum){
 
   VALIDATE_AUTOMATIONNUM();
 
+  //printf("setCurrSeqAutomation\n");
   SEQTRACK_AUTOMATION_set_curr_automation(seqtrack, automationnum);
 }
 
 void cancelCurrSeqAutomation(void){
   //printf("   cancelCurrSeqAutomation called\n");
+  //printf("cancelCurrSeqAutomation\n");
   SEQTRACK_AUTOMATION_cancel_curr_automation();
 }
 
@@ -3078,12 +3084,12 @@ void pasteSeqblocks(int seqtracknum, int64_t abstime){
   if (seqtracknum==-1)
     seqtracknum = getSeqtrackFromY(tevent.y);
 
-  printf("seqtracknum: %d\n", seqtracknum);
+  //printf("seqtracknum: %d\n", seqtracknum);
 
   if (seqtracknum==-1)
     return;
 
-  printf("abstime: %d\n", (int)abstime);
+  //printf("abstime: %d\n", (int)abstime);
 
   if (abstime < 0){
     abstime = scale_int64(tevent.x, getSequencerX1(), getSequencerX2(), getSequencerVisibleStartTime(), getSequencerVisibleEndTime());

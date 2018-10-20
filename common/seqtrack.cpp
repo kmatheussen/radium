@@ -886,7 +886,7 @@ static int64_t find_closest_grid_start(int64_t goal_seqtime, GridType what){
     };
   
   SEQUENCER_iterate_time(find_closest_grid_start_start_time(seqtrack, goal_seqtime),
-                         SONG_get_length()*pc->pfreq + 100000,
+                         R_MAX(SEQUENCER_get_visible_end_time(), SONG_get_length()*pc->pfreq) + pc->pfreq*60*60*100,
                          what,
                          callback);
 
