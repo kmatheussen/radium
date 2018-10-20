@@ -1995,21 +1995,28 @@ void applyGfxSeqblocks(int seqtracknum){
 static int64_t g_curr_seqblockid_under_mouse = -1;
 
 void setCurrSeqblockUnderMouse(int64_t seqblockid){
-  GET_VARS_FROM_SEQBLOCK_ID(seqblockid, true,)
+  if (seqblockid==g_curr_seqblockid_under_mouse)
+    return;
+  
+  GET_VARS_FROM_SEQBLOCK_ID(seqblockid, true,);
+
+  cancelCurrSeqblockUnderMouse(); // Update GFX of old seqblock.
 
   g_curr_seqblock_under_mouse = seqblock;    
   g_curr_seqblockid_under_mouse = seqblockid;
   
+  /*
   static int s_prev_curr_seqtracknum_under_mouse = -1;
-  
+
   struct SeqTrack *prev_seqtrack_under_mouse = NULL;
   
   if (s_prev_curr_seqtracknum_under_mouse != seqtracknum
       && s_prev_curr_seqtracknum_under_mouse >= 0
       && s_prev_curr_seqtracknum_under_mouse < root->song->seqtracks.num_elements)
     prev_seqtrack_under_mouse = getSeqtrackFromNum(s_prev_curr_seqtracknum_under_mouse);
-
+  
   s_prev_curr_seqtracknum_under_mouse = seqtracknum;
+  */
 
   //printf("   CURR seqblocknum: %d\n", seqblocknum);
   
@@ -2020,11 +2027,13 @@ void setCurrSeqblockUnderMouse(int64_t seqblockid){
   
     S7CALL(void_int_int, func, seqtracknum, seqblocknum);
   }
-  
+
+  SEQBLOCK_update(seqtrack, seqblock);
+  /*
   SEQTRACK_update(seqtrack);
   if (prev_seqtrack_under_mouse != NULL)
     SEQTRACK_update(prev_seqtrack_under_mouse);
-
+  */
 }
 
 int64_t getCurrSeqblockIdUnderMouse(void){
@@ -2052,9 +2061,20 @@ int getCurrSeqtrackUnderMouse(void){
 }
 
 void cancelCurrSeqblockUnderMouse(void){
+  if (g_curr_seqblockid_under_mouse==-1)
+    return;
+  
+  int seqblocknum, seqtracknum;
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblockid_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
+
   g_curr_seqblock_under_mouse = NULL;
   g_curr_seqblockid_under_mouse = -1;
-  SEQUENCER_update(SEQUPDATE_TIME);
+
+  if(seqblock!=NULL)
+    SEQBLOCK_update(seqtrack, seqblock);
+  else
+    SEQUENCER_update(SEQUPDATE_TIME); // A scheme error will be thrown if this happens.
 }
 
 dyn_t getBlockUsageInSequencer(void){

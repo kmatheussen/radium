@@ -2857,6 +2857,11 @@ struct SeqBlock{
 //extern struct SeqBlock *g_curr_seqblock;
 extern struct SeqBlock *g_curr_seqblock_under_mouse;
 
+static inline bool is_current_seqblock(const struct SeqBlock *seqblock){
+  return true;
+  //return g_curr_seqblock_id==seqblock->id;
+}
+
 static inline int SEQBLOCK_num_automations(const struct SeqBlock *seqblock){
   return seqblock->block!=NULL ? NUM_EDITOR_BLOCK_SATS : NUM_SATS;
 }
@@ -3030,7 +3035,6 @@ struct Root{
 };
 
 extern struct Root *root;
-
 
 
 static inline int get_system_fontheight(void){

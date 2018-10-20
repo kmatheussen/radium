@@ -182,6 +182,7 @@ extern void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack, int64_
 extern void SEQTRACK_update(const struct SeqTrack *seqtrack, int64_t start_time, int64_t end_time);
 #endif
 
+extern LANGSPEC void SEQTRACK_update_with_nodes(const struct SeqTrack *seqtrack, int64_t start_time, int64_t end_time);
 extern LANGSPEC void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_update(const struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQBLOCK_update(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);

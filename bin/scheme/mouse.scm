@@ -1390,21 +1390,37 @@
   (<ra> :set-reltempo 1.0))
 
 (define (apply-tempo-multiplier-to-block)
-  (undo-block
-   (lambda ()
-     (let* ((reltempo (<ra> :get-reltempo))
-            (bpms (get-BPMs))
-            (scale-bpm (lambda (bpm)
-                         (round (* reltempo bpm)))))
-       (for-each (lambda (place-and-bpm)
-                   (let ((place (car place-and-bpm))
-                         (bpm (cadr place-and-bpm)))
-                     (<ra> :add-bpm (scale-bpm bpm) place)))
-                 bpms)
-       (if (or (null? bpms)
-               (> (car (car bpms)) 0))
-           (<ra> :add-bpm (scale-bpm (<ra> :get-main-bpm)) 0))
-       (reset-tempo-multiplier)))))
+  (define (apply-it callback)
+    (let* ((reltempo (<ra> :get-reltempo))
+           (bpms (get-BPMs))
+           (scale-bpm (lambda (bpm)
+                        (round (* reltempo bpm)))))
+      (for-each (lambda (place-and-bpm)
+                  (let ((place (car place-and-bpm))
+                        (bpm (cadr place-and-bpm)))
+                    (callback (scale-bpm bpm) place)))
+                bpms)
+      (if (or (null? bpms)
+              (> (car (car bpms)) 0))
+          (callback (scale-bpm (<ra> :get-main-bpm)) 0))))
+  (define lowest 1000)
+  (define highest 0)
+  (apply-it (lambda (value place)
+              (set! highest (max value highest))
+              (set! lowest (min value lowest))))
+  (cond ((> highest 999)
+         (show-async-message (<gui> :get-editor-gui)
+                             (<-> "Can not set BPM higher than 999. (" highest ")")))
+        ((< lowest 1)
+         (show-async-message (<gui> :get-editor-gui)
+                             (<-> "Can not set BPM lower than 1. (" lowest ")")))
+        (else
+         (undo-block
+          (lambda ()
+            (apply-it (lambda (value place)
+                        (<ra> :add-bpm value place)))
+            (reset-tempo-multiplier))))))
+
 
 (define (apply-bpm-glide bpmnum)
   (undo-block
@@ -1459,17 +1475,19 @@
                   :press-func (lambda (Button X Y)                                
                                 (if (and (= Button *right-button*)
                                          (inside-box (<ra> :get-box reltempo-slider) X Y))
-                                    (begin
-                                      (popup-menu "Reset" reset-tempo-multiplier
-                                                  "Apply tempo" apply-tempo-multiplier-to-block
-                                                  (list
-                                                   "Add MIDI learn"
-                                                   :enabled (not (<ra> :has-block-multiplier-midi-learn))
-                                                   ra:add-block-multiplier-midi-learn)
-                                                  (list
-                                                   "Remove MIDI learn"
-                                                   :enabled (<ra> :has-block-multiplier-midi-learn)
-                                                   ra:remove-block-multiplier-midi-learn))
+                                    (let ((reltempo (<ra> :get-reltempo)))
+                                      (popup-menu (list "Reset"
+                                                        :enabled (not (= 1.0 reltempo))
+                                                        reset-tempo-multiplier)
+                                                  (list "Apply tempo (and Reset)"
+                                                        :enabled (not (= 1.0 reltempo))
+                                                        apply-tempo-multiplier-to-block)
+                                                  (list "Add MIDI learn"
+                                                        :enabled (not (<ra> :has-block-multiplier-midi-learn))
+                                                        ra:add-block-multiplier-midi-learn)
+                                                  (list "Remove MIDI learn"
+                                                        :enabled (<ra> :has-block-multiplier-midi-learn)
+                                                        ra:remove-block-multiplier-midi-learn))
                                       #t)
                                     #f))))
 
@@ -5418,7 +5436,7 @@
         ;;(assert-seqblocks-state new-seqblocks-state)
         (set! curr-pos new-pos)
         ;;(if (= 0 seqtracknum)
-        ;;    (c-display "state:" (pp new-seqblocks-state)))
+        ;;(c-display "state:" (pp new-seqblocks-state)))
         (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)        
         (set-seqblock-selected-box (if is-speed
                                        (if is-left 'speed-left 'speed-right)

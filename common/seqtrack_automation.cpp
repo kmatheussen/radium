@@ -65,18 +65,8 @@ static void set_no_curr_seqtrack(void){
   g_curr_seqtrack_automation_num = -1;
 }
 
-static void update(const struct SeqTrack *seqtrack){
-  SEQTRACK_update_with_borders(seqtrack);
-
-  int seqtracknum = get_seqtracknum(seqtrack);
-
-  // prev
-  if (seqtracknum > 0)
-    SEQTRACK_update((const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum-1]);
-
-  // next
-  if (seqtracknum < root->song->seqtracks.num_elements-1)
-    SEQTRACK_update((const struct SeqTrack *)root->song->seqtracks.elements[seqtracknum+1]);
+static void update_seqtrack(const struct SeqTrack *seqtrack, double start_time, double end_time){
+  SEQTRACK_update_with_nodes(seqtrack, floor(start_time), ceil(end_time));
 }
 
 namespace{
@@ -189,6 +179,14 @@ struct Automation{
   ~Automation(){
     assert_no_curr_seqtrack();
   }
+
+  void update(const struct SeqTrack *seqtrack) const {
+    update_seqtrack(seqtrack, automation.at(0).time, automation.last().time);
+  }
+
+  void update(const struct SeqTrack *seqtrack, int nodenum) const {
+    update_seqtrack(seqtrack, automation.at(R_MAX(0, nodenum-1)).time, automation.at(R_MIN(automation.size()-1, nodenum+1)).time);
+  }
 };
 
 }
@@ -278,7 +276,7 @@ public:
     }
   }
   */
-  
+
   int add_automation(struct Patch *patch, int effect_num, double seqtime1, double value1, int logtype, double seqtime2, double value2, int &nodenum1, int &nodenum2){
     Automation *automation = find_automation(patch, effect_num, true);
 
@@ -286,6 +284,7 @@ public:
     
     if (automation != NULL){
       already_here = true;
+      automation->update(_seqtrack);
     } else {
       already_here = false;
       automation = new Automation(patch, effect_num);
@@ -309,7 +308,7 @@ public:
     SEQTRACK_AUTOMATION_set_curr_automation(seqtrack, );
     */
     
-    update(_seqtrack);
+    automation->update(_seqtrack);
     
     return _automations.find_pos(automation);
   }
@@ -350,8 +349,8 @@ public:
       radium::PlayerLock lock;
       automation->_is_enabled = is_enabled;
     }
-    
-    update(_seqtrack);
+
+    automation->update(_seqtrack);
   }
   
   void set_enabled(struct Patch *patch, int effect_num, bool is_enabled){
@@ -587,9 +586,8 @@ int SEQTRACK_AUTOMATION_add_node(struct SeqtrackAutomation *seqtrackautomation, 
   value = R_BOUNDARIES(0.0, value, 1.0);
 
   int ret = automation->automation.add_node(create_node(seqtime, value, logtype));
-  
-  update(seqtrackautomation->_seqtrack);
-  
+  automation->update(seqtrackautomation->_seqtrack, ret);
+    
   return ret;
 }
                               
@@ -599,40 +597,50 @@ void SEQTRACK_AUTOMATION_delete_node(struct SeqtrackAutomation *seqtrackautomati
   struct Automation *automation = seqtrackautomation->_automations[automationnum];
   R_ASSERT_RETURN_IF_FALSE(automation->islegalnodenum(nodenum));
 
+  automation->update(seqtrackautomation->_seqtrack, nodenum);
+  
   if (automation->automation.size()<=2) {
     seqtrackautomation->remove_automation(automation);
   } else {
     automation->automation.delete_node(nodenum);
+    automation->update(seqtrackautomation->_seqtrack);
   }
+}
 
-  update(seqtrackautomation->_seqtrack);
+static void set_curr_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int new_nodenum, bool do_cancel){
+  R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
+
+  struct Automation *automation = seqtrackautomation->_automations[automationnum];
+  if(do_cancel)
+    R_ASSERT_RETURN_IF_FALSE(new_nodenum==-1);
+  else
+    R_ASSERT_RETURN_IF_FALSE(automation->islegalnodenum(new_nodenum));
+
+  int old_nodenum = automation->automation.get_curr_nodenum();
+  
+  if (old_nodenum != new_nodenum){
+    
+    if(old_nodenum >= 0)
+      automation->update(seqtrackautomation->_seqtrack, old_nodenum);
+    
+    automation->automation.set_curr_nodenum(new_nodenum);
+
+    if(new_nodenum >= 0)
+      automation->update(seqtrackautomation->_seqtrack, new_nodenum);
+    
+  }
 }
 
 void SEQTRACK_AUTOMATION_set_curr_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum, int nodenum){
-  R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
-
-  struct Automation *automation = seqtrackautomation->_automations[automationnum];
-  R_ASSERT_RETURN_IF_FALSE(automation->islegalnodenum(nodenum));
-
-  if (automation->automation.get_curr_nodenum() != nodenum){
-    automation->automation.set_curr_nodenum(nodenum);
-    update(seqtrackautomation->_seqtrack);
-  }
+  set_curr_node(seqtrackautomation, automationnum, nodenum, false);
 }
 
 void SEQTRACK_AUTOMATION_cancel_curr_node(struct SeqtrackAutomation *seqtrackautomation, int automationnum){
-  R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
-
-  struct Automation *automation = seqtrackautomation->_automations[automationnum];
-
-  automation->automation.set_curr_nodenum(-1);
-  update(seqtrackautomation->_seqtrack);
+  set_curr_node(seqtrackautomation, automationnum, -1, true);
 }
 
 // Legal to call even if there is already a current automation.
-void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, int automationnum){
-  SEQTRACK_AUTOMATION_cancel_curr_automation();
-  
+void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, int automationnum){  
   struct SeqtrackAutomation *seqtrackautomation = seqtrack->seqtrackautomation;
   
   R_ASSERT_RETURN_IF_FALSE(seqtrackautomation->islegalautomation(automationnum));
@@ -645,8 +653,10 @@ void SEQTRACK_AUTOMATION_set_curr_automation(struct SeqTrack *seqtrack, int auto
     
   } else {
 
+    SEQTRACK_AUTOMATION_cancel_curr_automation(); // Update old graphics.
+
     curr_automation->automation.set_do_paint_nodes(true);
-    update(seqtrack);
+    curr_automation->update(seqtrack);
 
   }
   
@@ -679,7 +689,7 @@ void SEQTRACK_AUTOMATION_cancel_curr_automation(void){
       
       if (automation->automation.do_paint_nodes()){
         automation->automation.set_do_paint_nodes(false);
-        update(seqtrack);
+        automation->update(seqtrackautomation->_seqtrack);
       }else{
         R_ASSERT_NON_RELEASE(false);
       }
@@ -730,9 +740,12 @@ void SEQTRACK_AUTOMATION_set(struct SeqTrack *seqtrack, int automationnum, int n
   node.value = value;
   node.logtype = logtype;
 
+  if(prev==NULL || next==NULL)
+    automation->update(seqtrackautomation->_seqtrack, nodenum); // If node is first or last, and we shrink time span of automation.
+  
   automation->automation.replace_node(nodenum, node);
 
-  update(seqtrack);
+  automation->update(seqtrackautomation->_seqtrack, nodenum);
 }
 
 
