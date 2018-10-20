@@ -875,7 +875,7 @@ static int64_t find_closest_grid_start(int64_t goal_seqtime, GridType what){
   auto callback = [&](int64_t seqtime, int barnum, int beatnum, int linenum)
     {
       int64_t diff = llabs(goal_seqtime-seqtime);
-      //printf("   %f: %f\n", (float)seqtime/pc->pfreq, (float)diff/pc->pfreq);
+      //printf("   find_closest_grid_start. seqtime: %f. diff: %f\n", (float)seqtime/pc->pfreq, (float)diff/pc->pfreq);
       
       if(diff < mindiff || mindiff==-1){
         mindiff = diff;
@@ -886,7 +886,8 @@ static int64_t find_closest_grid_start(int64_t goal_seqtime, GridType what){
     };
   
   SEQUENCER_iterate_time(find_closest_grid_start_start_time(seqtrack, goal_seqtime),
-                         R_MAX(SEQUENCER_get_visible_end_time(), SONG_get_length()*pc->pfreq) + pc->pfreq*60*60*100,
+                         //SONG_get_length()*pc->pfreq,
+                         R_MAX(SEQUENCER_get_visible_end_time(), SONG_get_length()*pc->pfreq) + int64_t(pc->pfreq)*60*60*100,
                          what,
                          callback);
 
