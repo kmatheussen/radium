@@ -922,17 +922,18 @@ public:
       if (target->_bus_descendant_type != IS_BUS_DESCENDANT)
         target->RT_set_descendant_types_to_bus_descendant();
     }
-
   }
     
   static void RT_set_bus_descendant_types(const radium::PlayerLock &lock){
+    R_ASSERT_NON_RELEASE(lock._enable);
+    
     radium::Time time;
-      
+
     const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
 
     // Dummy operation to try warming the cache a little bit since in debug mode we often gets a message about this function taking a long time.
     // Hopefully this does more good than bad.
-    {
+    if(lock._can_pause){
       int i = 0;
       for (SoundProducer *sp : sp_all){
         // Hopefully the compiler doesn't optimize this away.
@@ -951,7 +952,7 @@ public:
 
     buses.bus1->RT_set_descendant_types_to_bus_descendant();
 
-    if (buses.bus2->_bus_descendant_type != IS_BUS_DESCENDANT) // If bus1 linked an output to bus2, bus2 is already done. (and so forth, below)
+    if (buses.bus2->_bus_descendant_type != IS_BUS_DESCENDANT) // If bus1 linked an output to bus2, bus2 is already done. (and so forth, below) (might also avoid infinte loop with this test)
       buses.bus2->RT_set_descendant_types_to_bus_descendant();
 
     if (buses.bus3->_bus_descendant_type != IS_BUS_DESCENDANT)
