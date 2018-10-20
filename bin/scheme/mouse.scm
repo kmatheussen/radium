@@ -7637,41 +7637,6 @@
                                                     (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
                                                                            (lambda (filename)
                                                                              (<ra> :create-sample-seqblock seqtracknum filename pos))))))
-                                               (list
-                                                "Split audio file (S)"
-                                                :enabled (and seqblocknum
-                                                              (not blocknum))
-                                                (lambda ()
-                                                  (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
-                                                    (split-sample-seqblock pos seqtracknum seqblocknum))))
-                                               
-                                               (let ((get-old-gain (lambda ()
-                                                                     (db-to-text (if (and seqblocknum
-                                                                                          (not blocknum))
-                                                                                     (<ra> :gain-to-db (<ra> :get-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum)))
-                                                                                     0.0)
-                                                                                 #t))))
-                                                 (list
-                                                  (<-> "Set gain (now: " (get-old-gain) ")")
-                                                  :enabled (and seqblocknum
-                                                                (not blocknum)) ;; FIX: Need to ensure new envelope values aren't continually sent to the instruments before enabling gain for editor seqblocks.
-                                                  (lambda ()
-                                                    (define new (<ra> :request-float (<-> "New gain (now: " (get-old-gain) ")")
-                                                                      -1000
-                                                                      1000))
-                                                    (<ra> :set-seqblock-gain (<ra> :db-to-gain new) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))
-                                               
-                                               (let* ((is-enabled (and seqblocknum
-                                                                       (not blocknum)))
-                                                      (get-normalized-gain (lambda ()
-                                                                             (if is-enabled
-                                                                                 (get-normalized-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum))
-                                                                                 1.0))))
-                                                 (list
-                                                  (<-> "Set normalized gain (" (db-to-text (<ra> :gain-to-db (get-normalized-gain)) #t) ")")
-                                                  :enabled is-enabled
-                                                  (lambda ()
-                                                    (<ra> :set-seqblock-gain (get-normalized-gain) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))))
                                           
                                           (get-delete-all-pauses-menu-entry seqtracknum)
                                           
@@ -7908,11 +7873,50 @@
                                                          
                                                          (map create-automation-entry
                                                               (iota (<ra> :get-num-seqblock-automations seqblocknum seqtracknum)))
+
+                                                         ;;"---------------------"
+                                                         (list
+                                                          "Split audio file (S)"
+                                                          :enabled (and seqblocknum
+                                                                        (not blocknum))
+                                                          (lambda ()
+                                                            (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
+                                                              (split-sample-seqblock pos seqtracknum seqblocknum))))                                               
                                                          
-                                                         (list "Settings (double click)"
-                                                               :enabled (and seqblocknum (not blocknum))
-                                                               (lambda ()
-                                                                 (create-audio-seqblock-gui seqblocknum seqtracknum))))))))))
+                                                         (let ((get-old-gain (lambda ()
+                                                                               (db-to-text (if (and seqblocknum
+                                                                                                    (not blocknum))
+                                                                                               (<ra> :gain-to-db (<ra> :get-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum)))
+                                                                                               0.0)
+                                                                                           #t))))
+                                                           (list
+                                                            (<-> "Set gain (now: " (get-old-gain) ")")
+                                                            :enabled (and seqblocknum
+                                                                          (not blocknum)) ;; FIX: Need to ensure new envelope values aren't continually sent to the instruments before enabling gain for editor seqblocks.
+                                                            (lambda ()
+                                                              (define new (<ra> :request-float (<-> "New gain (now: " (get-old-gain) ")")
+                                                                                -1000
+                                                                                1000))
+                                                              (if (>= new -1000)
+                                                                  (<ra> :set-seqblock-gain (<ra> :db-to-gain new) (<ra> :get-seqblock-id seqblocknum seqtracknum))))))
+                                                           
+                                                         (let* ((is-enabled (and seqblocknum
+                                                                                 (not blocknum)))
+                                                                (get-normalized-gain (lambda ()
+                                                                                       (if is-enabled
+                                                                                           (get-normalized-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum))
+                                                                                           1.0))))
+                                                           (list
+                                                            (<-> "Set normalized gain (" (db-to-text (<ra> :gain-to-db (get-normalized-gain)) #t) ")")
+                                                            :enabled is-enabled
+                                                            (lambda ()
+                                                              (<ra> :set-seqblock-gain (get-normalized-gain) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))))
+                                                    
+                                                    ;;"---------------------"
+                                                    (list "Settings (double click)"
+                                                          :enabled (and seqblocknum (not blocknum))
+                                                          (lambda ()
+                                                            (create-audio-seqblock-gui seqblocknum seqtracknum))))))))))
                                           
                                           
 
