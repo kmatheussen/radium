@@ -912,43 +912,60 @@ public:
     V_free(_output_sound);
   }
 
+  void RT_set_descendant_types_to_bus_descendant(void){
+    R_ASSERT_NON_RELEASE(_bus_descendant_type == IS_BUS_PROVIDER);
     
-  void RT_set_bus_descendant_type(void){
-    if(_bus_descendant_type != MAYBE_A_BUS_DESCENDANT)
-      return;
+    _bus_descendant_type = IS_BUS_DESCENDANT;
 
-    if(_is_bus){
-      _bus_descendant_type = IS_BUS_DESCENDANT;
-      return;
+    for (SoundProducerLink *link : _output_links){      
+      auto *target = link->target;
+      if (target->_bus_descendant_type != IS_BUS_DESCENDANT)
+        target->RT_set_descendant_types_to_bus_descendant();
     }
 
-    for (SoundProducerLink *link : _input_links){
-      if (!link->is_bus_link){
-        link->source->RT_set_bus_descendant_type();
-        if(link->source->_bus_descendant_type==IS_BUS_DESCENDANT){
-          _bus_descendant_type = IS_BUS_DESCENDANT;
-          return;
-        }
+  }
+    
+  static void RT_set_bus_descendant_types(const radium::PlayerLock &lock){
+    radium::Time time;
+      
+    const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
+
+    // Dummy operation to try warming the cache a little bit since in debug mode we often gets a message about this function taking a long time.
+    // Hopefully this does more good than bad.
+    {
+      int i = 0;
+      for (SoundProducer *sp : sp_all){
+        // Hopefully the compiler doesn't optimize this away.
+        volatile enum BusDescendantType descendant_type = sp->_bus_descendant_type;
+        volatile enum BusDescendantType *to = &sp->_bus_descendant_type;
+        sp->_bus_descendant_type = IS_BUS_PROVIDER;
+        *to = descendant_type;
+        lock.maybe_pause_lock_a_little_bit(i++);
       }
     }
     
-    _bus_descendant_type = IS_BUS_PROVIDER;
-  }
+    for (SoundProducer *sp : sp_all)
+      sp->_bus_descendant_type = IS_BUS_PROVIDER;
+      
+    Buses buses = MIXER_get_buses();
 
-  static void RT_set_bus_descendant_types(void){
-    radium::Time time;
+    buses.bus1->RT_set_descendant_types_to_bus_descendant();
+
+    if (buses.bus2->_bus_descendant_type != IS_BUS_DESCENDANT) // If bus1 linked an output to bus2, bus2 is already done. (and so forth, below)
+      buses.bus2->RT_set_descendant_types_to_bus_descendant();
+
+    if (buses.bus3->_bus_descendant_type != IS_BUS_DESCENDANT)
+      buses.bus3->RT_set_descendant_types_to_bus_descendant();
+
+    if (buses.bus4->_bus_descendant_type != IS_BUS_DESCENDANT)
+      buses.bus4->RT_set_descendant_types_to_bus_descendant();
+
+    if (buses.bus5->_bus_descendant_type != IS_BUS_DESCENDANT)
+      buses.bus5->RT_set_descendant_types_to_bus_descendant();
     
-    const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
-  
-    // First set all descendant types to MAYBE.
-    for (SoundProducer *sp : sp_all)
-      sp->_bus_descendant_type = MAYBE_A_BUS_DESCENDANT;
+    g_rt_set_bus_descendant_types_duration = time.elapsed();
     
-    // Then set one by one.
-    for (SoundProducer *sp : sp_all)
-      sp->RT_set_bus_descendant_type();
-    
-    g_rt_set_bus_descendant_types_duration = time.elapsed();    
+    //printf("Time1: %f. Time2: %f. Diff: %f%%\n", time1, time2, 100*(time1-time2)/time2);
   }
 
   void allocate_sound_buffers(int num_frames){
@@ -1185,7 +1202,7 @@ public:
       }
 
       if (to_add.size() > 0)
-        SoundProducer::RT_set_bus_descendant_types();      
+        SoundProducer::RT_set_bus_descendant_types(lock);
     }
 
 
@@ -1265,7 +1282,7 @@ public:
         link->source->_output_links.remove(link);
       }
 
-      SoundProducer::RT_set_bus_descendant_types(); // We might call RT_set_bus_descendant_types two times now, but I'm not sure if it's safe not to let them be updated immediately after changing the graph.
+      SoundProducer::RT_set_bus_descendant_types(lock); // We might call RT_set_bus_descendant_types two times now, but I'm not sure if it's safe not to let them be updated immediately after changing the graph.
     }
 
     // 8. REMOVING: Deallocate the 'to_remove' links.
