@@ -49,13 +49,14 @@ static int find_next_prime_number(int number){
 static unsigned int oat_hash(const char *key, int i_i)
 {
   unsigned h = 0;
-  int len = (int)strlen(key);
-  int i;
 
   const uint8_t *p = (const unsigned char*) key;
 
-  for ( i = 0; i < len; i++ ) {
-    h += p[i];
+  for (int i = 0; ; i++ ) {
+    uint8_t pi = p[i];
+    if(pi==0)
+      break;
+    h += pi;
     h += ( h << 10 );
     h ^= ( h >> 6 );
   }
