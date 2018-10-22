@@ -53,11 +53,41 @@ extern QSplashScreen *g_splashscreen;
 extern QPointer<QWidget> g_current_parent_before_qmenu_opened; // Only valid if !g_curr_popup_qmenu.isNull()
 extern QPointer<QMenu> g_curr_popup_qmenu;
 
+extern int g_num_running_resize_events;
+extern bool g_qt_is_painting;
+extern bool g_qtgui_has_started,g_qtgui_has_stopped;
+extern bool g_qtgui_has_stopped;
+
 typedef QPointer<QObject> IsAlive;
 
 extern QPoint mapFromEditor(QWidget *widget, QPoint point); // Defined in Qt_sequencer.cpp
 extern QPoint mapToEditor(QWidget *widget, QPoint point); // Defined in Qt_sequencer.cpp
 
+static inline bool safe_to_run_exec(void){
+
+  /*
+  printf("reason: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
+         !is_main_thread , has_player_lock , g_num_running_resize_events > 0 , g_qt_is_painting , g_is_loading , g_qtgui_has_started==false , g_qtgui_has_stopped==true , g_radium_runs_custom_exec , QApplication::activeModalWidget()!=NULL , !g_curr_popup_qmenu.isNull() , QApplication::activePopupWidget()!=NULL , a_modal_widget_is_open());
+  */
+
+  bool not_safe = false
+    || !THREADING_is_main_thread()
+    || PLAYER_current_thread_has_lock()
+    || g_num_running_resize_events > 0
+    || g_qt_is_painting
+    || g_is_loading
+    || g_qtgui_has_started==false
+    || g_qtgui_has_stopped==true
+    || g_radium_runs_custom_exec
+    || QApplication::activeModalWidget()!=NULL
+    || !g_curr_popup_qmenu.isNull()
+    || QApplication::activePopupWidget()!=NULL
+    || a_modal_widget_is_open()
+    ;
+  
+  return !not_safe;  
+}
+  
 // QRegion::contains doesn't work.
 static inline bool workingQRegionContains(const QRegion &region, const QRect &rect2){
   for(const QRect &rect : region){
@@ -397,8 +427,6 @@ static inline void set_widget_takes_care_of_painting_everything(QWidget *widget)
 }
 
 
-extern int g_num_running_resize_events;
-
 namespace radium{
   struct ScopedResizeEventTracker{
     ScopedResizeEventTracker(){
@@ -478,7 +506,6 @@ namespace radium{
 
 }
 
-extern bool g_qt_is_painting;
 extern const char *g_qt_is_painting_where;
 
 namespace radium{
