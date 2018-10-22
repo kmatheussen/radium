@@ -121,6 +121,7 @@ extern LANGSPEC void SEQBLOCK_init(struct SeqTrack *from_seqtrack, struct SeqBlo
 // sequencer gfx
 #ifdef USE_QT4
 #include <QWidget>
+extern QWidget *SEQUENCER_getWidget_r0(void); // does not throw assertion if sequencer widget hasn't been created yet.
 extern QWidget *SEQUENCER_getWidget(void);
 #endif
 
