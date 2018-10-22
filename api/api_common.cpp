@@ -33,8 +33,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/seqtrack_proc.h"
+
+#include "../Qt/helpers.h"
+
 #include "../embedded_scheme/scheme_proc.h"
 #include "../embedded_scheme/s7extra_proc.h"
+
 
 #include "api_gui_proc.h"
 
@@ -140,20 +144,34 @@ void handleError_internal(const char *fmt,...){
   //printf("HISTORY:\n%s\n",SCHEME_get_history());
 #endif
 
-  vector_t v = {};
+  static double last_time = 0;
 
-  int ok = VECTOR_push_back(&v, "Ok");
-  (void)ok;
-  int continue_ = VECTOR_push_back(&v, "Continue");
+  if (safe_to_run_exec() && (TIME_get_ms() - last_time) > 4000) {
+    
+    vector_t v = {};
+    
+    int ok = VECTOR_push_back(&v, "Ok");
+    (void)ok;
+    int continue_ = VECTOR_push_back(&v, "Continue");
+    
+    int ret = GFX_Message(&v, "%s", message);
+    
+    // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above, which is called when exiting an api call.
+    if (ret!=continue_){
+      //const char *old = g_error_message;
+      g_error_message = talloc_strdup(message);
+      //printf("handleError_internal: g: %p. Content: -%s-.\n    Old g: %p. Content: -%s-.\n", g_error_message, g_error_message, old, old);
+    }
+    
+    last_time = TIME_get_ms();
+    
+  } else {
 
-  int ret = GFX_Message(&v, "%s", message);
-
-  // We don't want to throw here since the api code is not written with that in mind. Instead, we throw in 'throwExceptionIfError' above, which is called when exiting an api call.
-  if (ret!=continue_){
-    //const char *old = g_error_message;
+    GFX_addMessage(message);
     g_error_message = talloc_strdup(message);
-    //printf("handleError_internal: g: %p. Content: -%s-.\n    Old g: %p. Content: -%s-.\n", g_error_message, g_error_message, old, old);
+    
   }
+  
 }
 
 struct Tracker_Windows *getWindowFromNum(int windownum){
