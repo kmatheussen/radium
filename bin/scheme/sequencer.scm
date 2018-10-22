@@ -27,7 +27,7 @@
             (let* ((ms (* 1000 seconds))                         
                    (sms (two-decimal-string ms)))
               (if (string=? sms "0.00")
-                  "0.01s"
+                  "0.01ms"
                   (<-> sms "ms")))
             (<-> (two-decimal-string seconds) "s")))))
 
