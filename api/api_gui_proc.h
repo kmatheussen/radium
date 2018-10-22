@@ -15,7 +15,7 @@ extern LANGSPEC void API_remove_child_plugin_gui(int64_t guinum, struct Patch *p
 
 #ifdef __cplusplus
 
-void *API_get_native_gui_handle(int guinum);
+void *API_get_native_gui_handle(int64_t guinum);
 
 
 #if USE_QT5

@@ -1656,8 +1656,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       S7CALL(void_int_float_float,_doubleclick_callback, getMouseButtonEventID(event), point.x(), point.y());
     }
 
+    // Returns true if it uses signal system.
     // Should add everyting here.
-    virtual void addDoubleClickCallback(func_t* func){
+    virtual bool addDoubleClickCallback(func_t* func){
       QTableWidget *qtableWidget = dynamic_cast<QTableWidget*>(_widget.data());
 
       if (qtableWidget!=NULL){
@@ -1665,16 +1666,19 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         Callback *callback = new Callback(func, _widget);
         qtableWidget->connect(qtableWidget, SIGNAL(cellDoubleClicked(int,int)), callback, SLOT(cellDoubleClicked(int,int)));
         _callbacks.push_back(callback);
+
+        return true;
         
       } else {
         
         if (_doubleclick_callback!=NULL){
           handleError("Gui %d already has a doubleclick callback.", (int)_gui_num);
-          return;
-        }        
-        _doubleclick_callback = func;
-        s7extra_protect(_doubleclick_callback);
+        } else {
+          _doubleclick_callback = func;
+          s7extra_protect(_doubleclick_callback);
+        }
         
+        return false;
       }
     }
 
@@ -3931,7 +3935,7 @@ static void perhaps_collect_a_little_bit_of_gui_garbage(int num_guis_to_check){
   }
 }
 
-void *API_get_native_gui_handle(int guinum){
+void *API_get_native_gui_handle(int64_t guinum){
   Gui *gui = get_gui(guinum);
   
   if (gui==NULL)
@@ -4193,14 +4197,17 @@ double gui_getEditorDistanceY(int64_t guinum){
 
 // Callbacks probably don't work in existing widgets since they are not subclasses of both QWidget and Gui.
 static bool check_existing(Gui *gui){
-#if !defined(RELEASE)
   if(gui->_created_from_existing_widget){
-    handleError("gui #%d is created from an existing widget\n");
+    
+    handleError("Can not add callback. Gui #%d of type \"%s\" is created from an existing qt widget, and is not created by the API.\n", (int)gui->_gui_num, gui->_class_name.toUtf8().constData());
+
     return false;
-  }  
-#else
+    
+  } else {
+    
     return true;
-#endif
+    
+  }
 }
 
 void gui_addDeletedCallback(int64_t guinum, func_t* func){
@@ -4222,8 +4229,9 @@ void gui_addRealtimeCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
-  if(check_existing(gui)==false)
-    return;
+  // Uses signal system.
+  //if(check_existing(gui)==false)
+  //  return;
 
   gui->addGuiRealtimeCallback(func);
 }
@@ -4234,8 +4242,9 @@ void gui_addCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
-  if(check_existing(gui)==false)
-    return;
+  // This callback works on non-existing widgets since it uses the signal system of Qt and does not depend on virtual methods.
+  //if(check_existing(gui)==false)
+  //  return;
 
   gui->addGuiCallback(func);
 }
@@ -4246,8 +4255,9 @@ void gui_addMouseCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
-  if(check_existing(gui)==false)
-    return;
+  if (gui->_widget!=SEQUENCER_getWidget_r0()) // we call the mouse callback manually for the sequencer gui
+    if(check_existing(gui)==false)
+      return;
   
   gui->addMouseCallback(func);
 }
@@ -4282,10 +4292,10 @@ void gui_addDoubleClickCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
-  if(check_existing(gui)==false)
-    return;
   
-  gui->addDoubleClickCallback(func);
+  if (gui->addDoubleClickCallback(func)==false)
+    if(check_existing(gui)==false)
+      return;
 }
 
 void gui_addCloseCallback(int64_t guinum, func_t* func){
@@ -4306,8 +4316,9 @@ void gui_addResizeCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
-  if(check_existing(gui)==false)
-    return;
+  if (gui->_widget!=SEQUENCER_getWidget_r0()) // we call the mouse callback manually for the sequencer gui
+    if(check_existing(gui)==false)
+      return;
   
   gui->addResizeCallback(func);
 }
@@ -4318,8 +4329,9 @@ void gui_addPaintCallback(int64_t guinum, func_t* func){
   if (gui==NULL)
     return;
 
-  if(check_existing(gui)==false)
-    return;
+  if (gui->_widget!=SEQUENCER_getWidget_r0()) // we call the mouse callback manually for the sequencer gui
+    if(check_existing(gui)==false)
+      return;
   
   gui->addPaintCallback(func);
 }
@@ -5434,7 +5446,23 @@ void gui_add(int64_t parentnum, int64_t childnum, int x1_or_stretch, int y1, int
     }
     
   }
+
+  /*
+    // A failed attempt to minimize the qt flicker bug.
+
+  parent->_widget->adjustSize();
+  parent->_widget->updateGeometry();
+  parent->_widget->adjustSize();
+  parent->_widget->updateGeometry();
   
+  child->_widget->adjustSize();
+  child->_widget->updateGeometry();
+  child->_widget->adjustSize();
+  child->_widget->updateGeometry();
+
+  parent->_widget->adjustSize();
+  parent->_widget->updateGeometry();
+  */
 }
 
 void gui_replace(int64_t parentnum, int64_t oldchildnum, int64_t newchildnum){
@@ -6200,14 +6228,40 @@ void gui_setMaxHeight(int64_t guinum, int minheight){
   gui->_widget->setMaximumHeight(minheight);
 }
 
+#if 0
+// Attempt to workaround THE Qt bug (i.e. flickering when calculating geometries of widgets in a layout)
+// Didn't work though. Qt insists on waiting to update geometry until the widget is visible (but why?) (the widget system in Qt is probably 99% messy.
+// Probably almost all, or all, Qt programs that resize widgets with layouts have this problem).
+static void minimizeRecursively(QWidget *widget){
+  if (widget != NULL){
+    widget->resize(10,10);
+    widget->adjustSize();
+    widget->updateGeometry();
+
+    for(auto *c : widget->children()){
+      QWidget *w = dynamic_cast<QWidget*>(c);      
+      if (w && w->isWindow()==false){
+        minimizeRecursively(w);
+      }
+    }
+  }
+}
+#endif
+
 void gui_minimizeAsMuchAsPossible(int64_t guinum){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->_widget->resize(10,10);
-  gui->_widget->adjustSize();
-  gui->_widget->updateGeometry();
+  QWidget *widget = gui->_widget;
+  
+#if 1
+  widget->resize(10,10);
+  widget->adjustSize();
+  widget->updateGeometry();
+#else
+  minimizeRecursively(widget);
+#endif
 }
 
 

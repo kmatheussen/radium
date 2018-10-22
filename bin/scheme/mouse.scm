@@ -7566,9 +7566,8 @@
                               (popup-menu (if (not for-blocks)
                                               #f
                                               (list
-                                               "--------------------Editor blocks"
+                                               "--------------------Editor Seqtrack" ;;Editor blocks"
                                                "Insert existing block"
-                                               :enabled for-blocks
                                                (lambda ()
                                                  (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
                                                    (if (= 1 (<ra> :get-num-blocks))
@@ -7591,7 +7590,6 @@
                                                
                                                (list                                          
                                                 "Insert current block"
-                                                :enabled for-blocks
                                                 (lambda ()
                                                   (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type)))
                                                          (blocknum (<ra> :current-block)))
@@ -7599,7 +7597,6 @@
                                                
                                                (list                                           
                                                 "Insert new block"
-                                                :enabled for-blocks
                                                 (lambda ()
                                                   (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type)))
                                                          (blocknum (<ra> :append-block)))
@@ -7607,7 +7604,6 @@
                                                
                                                (list
                                                 "Insert new block from disk (BETA)"
-                                                :enabled for-blocks
                                                 (lambda ()
                                                   (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type)))
                                                          (num-blocks (<ra> :get-num-blocks)))
@@ -7617,29 +7613,27 @@
                                           (if (not for-audiofiles)
                                               #f
                                               (list
-                                               "--------------------Audio files"
+                                               "--------------------Audio Seqtrack"
                                                (if (<ra> :release-mode)
                                                    '()
                                                    (list                                               
                                                     "Insert my soundfile"
-                                                    :enabled for-audiofiles
                                                     (lambda ()
-                                                 (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
-                                                   ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong_24000.wav") pos))))
-                                                   ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
-                                                   ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
-                                                   (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/390514__tylean__counting-1-to-10.wav") pos))))
+                                                      (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
+                                                        ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong_24000.wav") pos))))
+                                                        ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
+                                                        ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
+                                                        (<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/390514__tylean__counting-1-to-10.wav") pos))))
                                                    ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
                                                    )
                                                ;;
                                                (list
                                                 "Insert new audio file"
-                                                :enabled for-audiofiles
                                                 (lambda ()
                                                   (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
                                                     (create-file-requester "Choose audio file" "" "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
                                                                            (lambda (filename)
-                                                                             (<ra> :create-sample-seqblock seqtracknum filename pos))))))
+                                                                             (<ra> :create-sample-seqblock seqtracknum filename pos))))))))
                                           
                                           (get-delete-all-pauses-menu-entry seqtracknum)
                                           
@@ -7654,7 +7648,7 @@
                                                                                        0
                                                                                        1))))
                                                 (list
-                              
+                                                 
                                                  "--------------------Seqblock"
                                                  
                                                  (list (if (> num-selected-with-current 1)
@@ -7728,7 +7722,7 @@
                                                                (<ra> :set-block-color color blocknum)
                                                                (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
                                                                  (<ra> :set-audiofile-color color filename))))))
-
+                                                 
                                                  (let ((create-automation-entry (lambda (automationnum)
                                                                                   (list (<-> (<ra> :get-seqblock-automation-name automationnum) " automation")
                                                                                         :check (and seqblocknum (<ra> :get-seqblock-automation-enabled automationnum (<ra> :get-seqblock-id seqblocknum seqtracknum)))
@@ -7877,7 +7871,8 @@
                                                          (map create-automation-entry
                                                               (iota (<ra> :get-num-seqblock-automations seqblocknum seqtracknum)))
 
-                                                         ;;"---------------------"
+                                                         "---------------------"
+
                                                          (list
                                                           "Split audio file (S)"
                                                           :enabled (and seqblocknum
@@ -7885,6 +7880,8 @@
                                                           (lambda ()
                                                             (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
                                                               (split-sample-seqblock pos seqtracknum seqblocknum))))                                               
+
+                                                         "---------------------"
                                                          
                                                          (let ((get-old-gain (lambda ()
                                                                                (db-to-text (if (and seqblocknum
@@ -7915,14 +7912,15 @@
                                                             (lambda ()
                                                               (<ra> :set-seqblock-gain (get-normalized-gain) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))))
                                                     
-                                                    ;;"---------------------"
+                                                    "---------------------"
+                                                    
                                                     (list "Settings (double click)"
                                                           :enabled (and seqblocknum (not blocknum))
                                                           (lambda ()
-                                                            (create-audio-seqblock-gui seqblocknum seqtracknum))))))))))
+                                                            (create-audio-seqblock-gui seqblocknum seqtracknum))))))))
                                           
                                           
-
+                                          
                                           "-----------------Seqtrack Automation"
 
                                           "New" (lambda ()

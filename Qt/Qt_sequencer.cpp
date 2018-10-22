@@ -3301,11 +3301,14 @@ static void g_position_widgets(void){
 }
 */
 
+QWidget *SEQUENCER_getWidget_r0(void){
+  return g_sequencer_widget;
+}
+
 QWidget *SEQUENCER_getWidget(void){
   R_ASSERT(g_sequencer_widget != NULL);
   return g_sequencer_widget;
 }
-
 
 // sequencer
 
