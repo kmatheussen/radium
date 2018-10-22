@@ -4844,7 +4844,7 @@
   (define new-i2 (between (+ (max 16 (* *min-seqblock-width* samples-per-pixel)) i1) ;;(ceiling stretch) i1)
                           (/ (- (if use-grid
                                     (let ((closest (<ra> :get-seq-gridded-time (round (+ s1 (* stretch mousex))) (<ra> :get-seq-block-grid-type))))
-                                      ;;(c-display "  |||Closest: " closest)
+                                      ;;(c-display "  |||Closest: " closest ". try:" (round (+ s1 (* stretch mousex))))
                                       closest)
                                     (+ s1 (* stretch mousex)))
                                 s1)
@@ -5010,10 +5010,12 @@
                                          (define seqblocknum (seqblock-info :seqblocknum))
                                          (<ra> :get-seqblock-interior-start seqblocknum seqtracknum))
                         
-                        :Get-max-value (lambda (seqblock-info)
-                                         (define seqtracknum (seqblock-info :seqtracknum))
-                                         (define seqblocknum (seqblock-info :seqblocknum))
-                                         (<ra> :get-seqblock-default-duration seqblocknum seqtracknum))
+                        ;:Get-max-value (lambda (seqblock-info)
+                        ;                 (define seqtracknum (seqblock-info :seqtracknum))
+                        ;                 (define seqblocknum (seqblock-info :seqblocknum))
+                        ;                 (+ 9999999 (<ra> :get-seqblock-default-duration seqblocknum seqtracknum))
+                        ;                 #f
+                        ;                 )
 
                         
                         :Get-x (lambda (info) #f)
