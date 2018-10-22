@@ -1249,8 +1249,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       g_guis.remove(_gui_num);
 
       {
+        R_ASSERT(g_valid_guis[_valid_guis_pos] == this);
+        
         if (_valid_guis_pos < g_valid_guis.size()-1){
-          g_valid_guis[g_valid_guis.size()-1]->I_am_the_last_pos_of_valid_guis_move_me_somewhere_else(_valid_guis_pos);
+          g_valid_guis.last()->I_am_the_last_pos_of_valid_guis_move_me_somewhere_else(_valid_guis_pos);
 
           R_ASSERT(g_valid_guis[_valid_guis_pos] != this);
         }
