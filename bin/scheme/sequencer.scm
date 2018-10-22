@@ -111,8 +111,8 @@
   (<-> (if (= value 0)
            "0.00"
            (let* ((ms (* 1000
-                         (/ (* value (- (<ra> :get-seqblock-end-time seqblocknum seqtracknum)
-                                        (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                         (/ (* value (- (<ra> :get-seqblock-end-time seqblocknum seqtracknum #t)
+                                        (<ra> :get-seqblock-start-time seqblocknum seqtracknum #t)))
                             (<ra> :get-sample-rate))))
                   (sms (two-decimal-string ms)))
              (if (string=? sms "0.00")
