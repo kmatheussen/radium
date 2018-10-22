@@ -552,6 +552,7 @@
 
 
 (define (radium-mouse-press $button $x $y)
+  (radium-mouse-move $button $x $y) ;; Workaround for radium-mouse-move not being called while a popup menu is open. (try to left click + right click another seqblock while showing this popup menu)
   (handling-nodes
    (lambda()
      ;;(c-display "%%%%%%%%%%%%%%%%% >> mouse press" $button $x $y *current-mouse-cycle*)
@@ -7519,7 +7520,6 @@
 (add-mouse-cycle
  (make-mouse-cycle
   :press-func (lambda (Button X Y)
-                (radium-mouse-move Button X Y) ;; Workaround for radium-mouse-move not being called while a popup menu is open. (try to left click + right click another seqblock while showing this popup menu)
                 (and (= Button *right-button*)
                      (not (<ra> :shift-pressed))
                      (let ((seqtracknum *current-seqtrack-num*))
