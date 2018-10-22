@@ -1,3 +1,169 @@
+Changes 5.9.5 -> 5.9.8:
+* Sequencer: Make sure the seqblock below mouse is always
+  the selected one when showing the seqblock popup menu.
+* Sequencer: Always make it possible to set right interior
+  to 0, even when we use grid.
+* Sequencer: Update fade values in realtime when changing
+  stretch or speed.
+* Sequencer: Fix right interior handle text in seqblocks
+  sometimes showing "0.01" even if it was really 0.
+* Sequencer: If seqblock interior is less than 0.01ms, write
+  "0.01ms" not "0.01s" in the interior handles.
+* Sequencer: Show seqblock grid when popup menu is open.
+* Sequencer: Move "Split audio"/"Set gain"/"Normalize" from
+  the "Audio files" section to to the "Audio seqblock" section
+  in the seqblock popup menu.
+* Sequencer: Fix cancelling "Set gain" from the seqblock
+  popup menu.
+* Sequencer: Show an are-you-sure dialog if trying to insert an
+  audio seqtrack in first position. (You normally want an editor
+  seqtrack there for grid and timing.)
+* Sequencer: Paint automation nodes after painting seqtrack
+  borders.
+* Sequencer: Make it possible to select an automation node even
+  when parts of the node is painted in the neighbouring seqtrack.
+* Sequencer: Started implementing the concept of
+  "Current seqblock".
+* Sequencer: Fix various situatons where the song cursor left a
+  trail of graphical garbage.
+* Preferences: Rename "Sequencer -> Grid -> Loop start/stop" to
+  "Sequencer -> Grid -> Loop/Punch start/stop".
+* Editor: Cancel the "Apply tempo" operation in the block tempo
+  multiplier popup menu if a BPM entry will become above 999 or
+  below 1.
+* Editor: Disable the "Reset" and "Apply tempo" entries in the
+  block tempo multiplier popup menu if block tempo multiplier
+  is set to 1.0.
+* Editor: Rename "Apply tempo" to "Apply tempo (and Reset)" in
+  the block tempo multiplier popup menu.
+* Audio: Reduce chance of audio overruns when adding or deleting
+  audio connections.
+* Update s7
+* Editor: Write "Current seqtrack is pausing" instead of
+  "Current sequencer track is pausing".
+* Sequencer/Editor: Immediately write "current sequencer track
+  is pausing" in the editor when changing current seqtrack
+  to a pausing seqtrack.
+* Sequencer/Editor: Fix setting block multiplier if seqtrack
+  stretch had already been set to a value not equal to 1.0 and
+  block multiplier was not set to 1.0.
+* Sequencer: Paint grid in a more subtle way. Use thinner lines
+  and a more transparent color.
+* Save: Don't make automatic backup if user is currently
+  pressing a mouse button.
+* Load: Fix crash when loading a song saved before the sequencer
+  was added to the program.
+* Disk: Fix assertion window popping up if loading an older
+  song that had editor range in a block.
+* Sequencer: Paint current grid type that is currently in use.
+  Earlier only the bar grid was painted.
+* Sequencer: Don't paint anything to the left of where grid
+  starts, i.e. before the start time of the first block in the
+  first seqtrack.
+* Sequencer: Same way to find grid for painting grid, painting
+  timeline, and when finding closest position in a grid.
+  Earlier, the different ways could sometimes be
+  noticed/seen.
+* Editor: Fix some situations where the assertion window
+  popped up when a block was set to play ridiculously fast.
+* Sequencer: Possible to select current automation node when
+  parts of the nodes are outside the seqblock or
+  seqtrack area.
+* Soundfilesaver: Change "could sound very differently" to
+  "can sound very different".
+* Sequencer: Fix selection of current seqblock handle when
+  moving mouse away from a seqblock automation.
+* Sequencer: Optimize graphics.
+* Sequencer: Paint seqblock handles on top of the seqblock
+  automation background fill.
+* Sequencer: Fix automation sometimes being drawn above
+  seqtrack headers.
+* Sequencer: Fix Seqblock automation outside the interior
+  boundaries not being drawn more opaquely. Bug introduced
+  a few releases ago.
+* Sequencer: Some smaller changes to the seqblock audio GUI
+  (i.e. "Settings").
+* Sequencer: Fixed a few minor bugs when moving an audio
+  seqblock while the seqblock audio GUI is open.
+* Sequencer: Fixed wrong seqblock sometimes being rendered as
+  being under the mouse while the seqblock is moved by
+  the user.
+* Sequencer: Don't split audio files at grid by default when
+  pressing the "S" key. If you want to split at grid, use the
+  popup menu instead.
+* Sequencer: Never split audio file if pressing Ctrl+S while
+  the mouse pointer is inside the sequencer. Ctrl+S should
+  always be for saving song.
+* Sequencer: Double-clicking a seqblock opens the
+  "enable/disable editor tracks" or the audio seqblock
+  "settings" GUI.
+* Sequencer: Moved various entries from the "Seqblock----"
+  section to the "Editor seqblock---" section.
+* Sequencer: Add pitch slider to the audio seqblock GUI. This
+  is more convenient than to both change "speed" and "stretch".
+* Sequencer: Display inverted value as seqblock speed. This
+  should both feel more natural and be more convenient. E.g 2.0
+  is double speed and 0.5 is half speed. In addition, if both
+  speed and stretch have the same value, seqblock duration
+  is the same as if both speed and stretch had been set to 1.0.
+* Manual: Use the word "seqtrack" instead of
+  "sequencer track".
+* Manual: Document how to record audio.
+* Manual: Updated information on how to add seqtracks.
+* Manual: Document resetting automation (shift + alt +
+  right mouse button).
+* Manual: Fix documentation for "Move all automation nodes".
+  Any alt key should work, not just left alt.
+* Automation: Let Shift + Alt + right mouse button delete all
+  nodes.
+* Sequencer: Fix two undo entries being created when deleting
+  a seqblock automation node using shift + right mouse button.
+* Sequencer: Fix undo entry not being created when deleting
+  first or last node when using the popup menu.
+* Sequencer: Set node value to default, not 0, when deleting
+  first or last seqblock automation node.
+* Sequencer: Show instrument name in statusbar when mouse is
+  above a seqtrack automation node.
+* Sequencer: Draw seqblock interface text in floating point
+  precision when playing song and sequencer cursor is in fixed
+  position.
+* Sequencer: Add "Show GUI" to the seqtrack automation popup
+  menu.
+* Sequencer: Add "Move to a different seqtrack" to the seqtrack
+  automation popup menu.
+* Sequencer: Add "Cut automation", "Copy automation", and
+  "Paste automation" to the seqtrack automation popup menu.
+* Sequencer: Remove the "Remove (delete all nodes)" option from
+  the seqtrack automation popup menu. Use "Cut automation"
+  instead.
+* Automation: Consistently use the word "node", not a mix of
+  "node" and "break point".
+* Sequencer: Fix player not always automatically stopping at song
+  end when there is seqtrack automation (bug introduced maybe
+  a few months ago).
+* Editor: Fix track headers not being redrawn when clicking the
+  undo/redo buttons in the bottom bar.
+* API:
+  * New functions: addSeqAutomation2, getMouseFx, getMs,
+    getCurrSeqblockIdUnderMouse,  getSequencerGridType.
+  * Throw assertion when it won't work to add callback to a GUI.
+  * Fixed the return value of addSeqAutomation
+  * Changed setCurrSeqblockUnderMouse, getSeqblockStretch,
+    getSeqblockSpeed, getSeqblockStretchSpeed, and
+    getSeqblockResampleRatio to take seqblockid as argument
+    instead of seqblocknum+seqtracknum.
+  * Add optional argument 'use_gfx_if_possible' to
+    seqblockHoldsBlock, seqblockHoldsSample,
+    getSeqblockStretchSpeed, and getSeqblockResampleRatio
+  * Removed the "seqtracknum" argument from getSeqGriddedTime.
+  * Let popupMenu return guinum
+  * Only show the "Ok / Continue" error dialog if we are
+    fairly certain it won't block user interaction, possibly
+    making it impossible to continue using the program. If we
+    are not certain, the message will be shown in the message
+    window instead.
+
+
 Changes 5.9.4 -> 5.9.5:
 * Update S7.
 * Sequencer: Fix assertion reporter popping up, and sometimes
