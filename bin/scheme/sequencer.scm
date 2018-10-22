@@ -1,6 +1,13 @@
 
 (provide 'sequencer.scm)
 
+
+(define (get-nonstretched-seqblock-duration seqblocknum seqtracknum)
+  (- (<ra> :get-seqblock-interior-end seqblocknum seqtracknum)
+     (<ra> :get-seqblock-interior-start seqblocknum seqtracknum)))
+      
+
+
 ;; see enum SeqblockBoxSelected in nsmtracker.h
 (define (get-selected-box-num boxname)
   (cond ((eq? boxname 'non) 0)
@@ -50,16 +57,29 @@
   (set-left-interior-status-bar2 seqblocknum seqtracknum (<ra> :get-seqblock-interior-start seqblocknum seqtracknum #t)))
 
 (define (get-right-interior-string2 seqblocknum seqtracknum right-interior-value)
-  (<-> "|----: " (get-interior-displayable-string (- (get-original-seqblock-duration seqblocknum seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
+  (<-> "|----: " (get-interior-displayable-string (- (<ra> :get-seqblock-default-duration seqblocknum seqtracknum)
                                                      right-interior-value))))
 
 (define (get-right-interior-string seqblocknum seqtracknum)
   (get-right-interior-string2 seqblocknum seqtracknum (<ra> :get-seqblock-interior-end seqblocknum seqtracknum #t)))
 
+#!!
+(list :original-duration (<ra> :get-seqblock-default-duration 0 1)
+      :resample-ratio (<ra> :get-seqblock-resample-ratio (<ra> :get-seqblock-id 0 1))
+      :test (* (<ra> :get-sample-length (<ra> :get-seqblock-sample 0 1))
+               (<ra> :get-seqblock-resample-ratio (<ra> :get-seqblock-id 0 1)))
+      :test2 (* (<ra> :get-sample-length (<ra> :get-seqblock-sample 0 1))
+                (/ 44100
+                   96000.0))
+      :interior-end (<ra> :get-seqblock-interior-end 0 1)
+      :stretch-speed (<ra> :get-seqblock-stretch-speed (<ra> :get-seqblock-id 0 1))
+      :sample-length (<ra> :get-sample-length (<ra> :get-seqblock-sample 0 1)))
+!!#
+
 (define (right-interior-touched? seqblocknum seqtracknum)
   (let ((value (<ra> :get-seqblock-interior-end seqblocknum seqtracknum #t)))
-    (not (= value (get-original-seqblock-duration seqblocknum seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))))))
-
+    (not (= value (<ra> :get-seqblock-default-duration seqblocknum seqtracknum)))))
+  
 (define (set-right-interior-status-bar2 seqblocknum seqtracknum right-interior-value)
   (set-seqblock-selected-box 'interior-right seqblocknum seqtracknum)
   (set-editor-statusbar (get-right-interior-string2 seqblocknum seqtracknum right-interior-value)))

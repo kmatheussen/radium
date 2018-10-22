@@ -4834,7 +4834,7 @@
                                 (= 0 seqblocknum))))
   (define use-grid (not not-use-grid))
 
-  (define original-duration (get-original-seqblock-duration seqblocknum seqtracknum seqblockid))
+  (define original-duration (<ra> :get-seqblock-default-duration seqblocknum seqtracknum))
 
   (define stretch (<ra> :get-seqblock-stretch-speed seqblockid))
   (define t1 (seqblock :start-time))
@@ -4903,14 +4903,7 @@
                         :Get-max-value (lambda (seqblock-info)
                                          (define seqtracknum (seqblock-info :seqtracknum))
                                          (define seqblocknum (seqblock-info :seqblocknum))
-                                         (define seqblockid (seqblock-info :id))
-                                         ;;(get-original-seqblock-duration seqblocknum seqtracknum))
-                                         ;;(define seqblock (*current-seqblocks-state* seqblocknum))
-                                         (define original-duration (get-original-seqblock-duration seqblocknum seqtracknum seqblockid))
-                                         original-duration)
-                                        ;(- (seqblock :interior-end)
-                                        ;                   (seqblock :interior-start)))
-
+                                         (<ra> :get-seqblock-default-duration seqblocknum seqtracknum))                                         
                         
                         :Get-x (lambda (info) #f)
                         :Get-y (lambda (info) #f)
@@ -5020,13 +5013,7 @@
                         :Get-max-value (lambda (seqblock-info)
                                          (define seqtracknum (seqblock-info :seqtracknum))
                                          (define seqblocknum (seqblock-info :seqblocknum))
-                                         (define seqblockid (seqblock-info :id))
-                                         ;;(get-original-seqblock-duration seqblocknum seqtracknum))
-                                         ;;(define seqblock (*current-seqblocks-state* seqblocknum))
-                                         (define original-duration (get-original-seqblock-duration seqblocknum seqtracknum seqblockid))
-                                         original-duration)
-                                        ;(- (seqblock :interior-end)
-                                        ;                   (seqblock :interior-start)))
+                                         (<ra> :get-seqblock-default-duration seqblocknum seqtracknum))
 
                         
                         :Get-x (lambda (info) #f)
@@ -7376,17 +7363,6 @@
            (<ra> :seqblock-holds-block seqblocknum seqtracknum))
       (show-seqblock-track-on-off-configuration seqtracknum seqblocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))))
   
-
-(define (get-original-seqblock-duration seqblocknum seqtracknum seqblockid)
-  (if (<ra> :seqblock-holds-block seqblocknum seqtracknum)
-      (<ra> :get-block-length (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
-      (* (<ra> :get-seqblock-resample-ratio seqblockid)
-         (<ra> :get-sample-length (<ra> :get-seqblock-sample seqblocknum seqtracknum)))))
-      
-(define (get-nonstretched-seqblock-duration seqblocknum seqtracknum)
-  (- (<ra> :get-seqblock-interior-end seqblocknum seqtracknum)
-     (<ra> :get-seqblock-interior-start seqblocknum seqtracknum)))
-      
 ;; seqblock stretch handle menu
 (add-mouse-cycle
  (make-mouse-cycle

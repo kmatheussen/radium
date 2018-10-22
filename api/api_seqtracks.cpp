@@ -2179,6 +2179,15 @@ int64_t getSeqblockEndTime(int seqblocknum, int seqtracknum, bool use_gfx_if_pos
   return seqblock->t.time2;
 }
 
+int64_t getSeqblockDefaultDuration(int seqblocknum, int seqtracknum){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromNumA(seqblocknum, seqtracknum, &seqtrack, false);
+  if (seqblock==NULL)
+    return 0;
+
+  return seqblock->t.default_duration;
+}
+
 // seqblock area
 float getSeqblockX1(int seqblocknum, int seqtracknum){
   if (getSeqblockFromNum(seqblocknum, seqtracknum)==NULL)
