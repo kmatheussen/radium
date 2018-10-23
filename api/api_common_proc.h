@@ -167,7 +167,7 @@ extern struct SeqBlock *getAudioGfxSeqblockFromId(int64_t seqblock_id);
 #define GET_VARS_FROM_SEQBLOCK_ID(seqblock_id, may_use_gfx, failed_return_value) \
   int seqblocknum, seqtracknum;                                         \
   struct SeqTrack *seqtrack;                                            \
-  struct SeqBlock *seqblock = (may_use_gfx) ? getGfxSeqblockFromIdB(seqblockid, &seqtrack, seqblocknum, seqtracknum) : getSeqblockFromIdB(seqblockid, &seqtrack, seqblocknum, seqtracknum); \
+  struct SeqBlock *seqblock = (may_use_gfx) ? getGfxSeqblockFromIdB(seqblock_id, &seqtrack, seqblocknum, seqtracknum) : getSeqblockFromIdB(seqblock_id, &seqtrack, seqblocknum, seqtracknum); \
   if (seqblock==NULL)                                                   \
     return failed_return_value;
 #endif
