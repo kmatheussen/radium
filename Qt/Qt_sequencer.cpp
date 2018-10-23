@@ -941,12 +941,30 @@ public:
     return half_alpha(c, type);
   }
 
-  void drawWaveform(QPainter &p, const SoundPlugin *plugin, radium::Peaks **peaks, const struct SeqBlock *seqblock, Seqblock_Type type, const QColor &color, int64_t time1, int64_t time2, double x1, double x2, double w_y1, double w_y2) const {
+  void drawWaveform(QPainter &p, const QRegion &update_region, const SoundPlugin *plugin, radium::Peaks **peaks, const struct SeqBlock *seqblock, Seqblock_Type type, const QColor &color, int64_t time1, int64_t time2, double x1, double x2, double w_y1, double w_y2) const {
 
-    if (x1 >= t_x2)
+    if (false==workingQRegionIntersects(update_region, QRectF(x1, w_y1, x2-x1, w_y2-w_y1).toAlignedRect())){
+      //printf("   drawWaveform: No intersection\n");
+      return;
+    }
+      
+    QRect update_rect = update_region.boundingRect();
+
+    double u_x1 = R_MAX(t_x1, update_rect.x());
+    double u_x2 = R_MIN(t_x2, update_rect.x() + update_rect.width());
+
+    /*
+    if(u_x1 != t_x1)
+      printf("   drawWaveform:    Increased u_x1 from %f to %f\n", t_x1, u_x1);
+
+    if(u_x2 != t_x2)
+      printf("   drawWaveform:    Decreased u_x2 from %f to %f\n", t_x2, u_x2);
+    */
+    
+    if (x1 >= u_x2)
       return;
 
-    if (x2 < t_x1)
+    if (x2 < u_x1)
       return;
 
     if (time1 >= time2){
@@ -954,18 +972,18 @@ public:
       return;
     }
 
-    if (x1 < t_x1) { // if seqblock starts before visible area
-      time1 = R_SCALE(t_x1,
+    if (x1 < u_x1) { // if seqblock starts before visible area
+      time1 = R_SCALE(u_x1,
                       x1, x2,
                       time1, time2);
-      x1 = t_x1;
+      x1 = u_x1;
     }
-          
+    
     if (x2 > t_x2){ // if seqblock ends after visible area
-      time2 = R_SCALE(t_x2,
+      time2 = R_SCALE(u_x2,
                       x1, x2,
                       time1, time2);
-      x2 = t_x2;
+      x2 = u_x2;
     }
 
     R_ASSERT_NON_RELEASE(time2 >= time1);
@@ -1066,8 +1084,9 @@ public:
 
     //printf("  DRAW: %f -> %f\n", (double)time1/pc->pfreq, (double)time2/pc->pfreq);
   }
+
   
-  void paintSampleGraphics(QPainter &p, const QRectF &rect, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type) const {
+  void paintSampleGraphics(QPainter &p, const QRegion &update_region, const QRectF &rect, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type) const {
     const int header_height = get_block_header_height();
 
     QColor waveform_color = get_block_qcolor(SEQUENCER_WAVEFORM_COLOR_NUM, type);
@@ -1124,7 +1143,8 @@ public:
             }
             */
             
-            drawWaveform(p, plugin, peaks, seqblock, type, interior_waveform_color,
+            drawWaveform(p, update_region,
+                         plugin, peaks, seqblock, type, interior_waveform_color,
                          i_time1, time1,
                          i_x1, x1,
                          y1, y2);
@@ -1146,7 +1166,8 @@ public:
             }
             */
             
-            drawWaveform(p, plugin, peaks, seqblock, type, interior_waveform_color,
+            drawWaveform(p, update_region,
+                         plugin, peaks, seqblock, type, interior_waveform_color,
                          time2, i_time2,
                          x2, i_x2,
                          y1, y2);
@@ -1155,7 +1176,8 @@ public:
           
         }
 
-        drawWaveform(p, plugin, peaks, seqblock, type, waveform_color,
+        drawWaveform(p, update_region,
+                     plugin, peaks, seqblock, type, waveform_color,
                      time1, time2,
                      x1, x2,
                      y1, y2);
@@ -1668,9 +1690,9 @@ public:
     }
   }
 
-  void paintSeqBlockElements(QPainter &p, const QRectF &rect, const QRectF &rect_without_header, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type) const {
+  void paintSeqBlockElements(QPainter &p, const QRegion &update_region, const QRectF &rect, const QRectF &rect_without_header, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type) const {
     if (seqblock->block==NULL)
-      paintSampleGraphics(p, rect, seqtrack, seqblock, type);
+      paintSampleGraphics(p, update_region, rect, seqtrack, seqblock, type);
     else
       paintBlockGraphics(p, rect, seqblock, type);
     
@@ -1720,7 +1742,7 @@ public:
 
     if(seqblock->id != g_curr_seqblock_id_under_mouse){ //!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
 
-      paintSeqBlockElements(p, rect, rect_without_header, seqtrack, seqblock, type);
+      paintSeqBlockElements(p, update_region, rect, rect_without_header, seqtrack, seqblock, type);
 
     } else {
 
@@ -1758,7 +1780,7 @@ public:
       
 #else
 
-      paintSeqBlockElements(p, rect, rect_without_header, seqtrack, seqblock, type);
+      paintSeqBlockElements(p, update_region, rect, rect_without_header, seqtrack, seqblock, type);
       
 #endif
       
