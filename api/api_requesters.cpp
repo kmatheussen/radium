@@ -248,6 +248,10 @@ const_char* requestString(const_char *text, bool standalone, const_char* default
   return ret;
 }
 
+bool requesterWasCancelled(void){
+  return g_reqtype_cancelled;
+}
+
 int64_t API_simplePopupMenu(const char *texts, std::function<void(int,bool)> callback3){
   const vector_t vec = GFX_MenuParser(texts, "%");
   return GFX_Menu3(vec,callback3);

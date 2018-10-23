@@ -259,39 +259,47 @@ static void create_undo(struct Tracker_Windows *window){
 void Block_Properties_CurrPos(
 	struct Tracker_Windows *window
 ){
-	NInt num_tracks;
-	int num_lines;
 	char seltext[500];
 	ReqType reqtype;
 
+        bool has_made_undo = false;
+        
 	struct WBlocks *wblock=window->wblock;
 	struct Blocks *block=wblock->block;
 
-	reqtype=GFX_OpenReq(window,33,5,"Edit block properties. Press return to keep old value.");
+        int num_tracks = wblock->block->num_tracks;
+        int num_lines = wblock->block->num_lines;
+        
+	reqtype=GFX_OpenReq(window,33,5,"Edit block properties. Press return to keep old value");
 
 	sprintf(seltext,"Number of tracks (now %d): ",wblock->block->num_tracks);
-	num_tracks=GFX_GetInteger(window,reqtype,seltext,2,200,true);
-	if(num_tracks==1) num_tracks=wblock->block->num_tracks;
+	num_tracks=GFX_GetInteger(window,reqtype,seltext,1,200,true);
+	if(num_tracks==0) num_tracks=wblock->block->num_tracks;
 
-	sprintf(seltext,"Number of lines (now %d): ",wblock->block->num_lines);
-	num_lines=GFX_GetInteger(window,reqtype,seltext,2,2000,true);
-	if(num_lines==1) num_lines=wblock->block->num_lines;
+        if (g_reqtype_cancelled==false){
+          sprintf(seltext,"Number of lines (now %d): ",wblock->block->num_lines);
+          num_lines=GFX_GetInteger(window,reqtype,seltext,2,2000,true);
+          if(num_lines==1) num_lines=wblock->block->num_lines;
+        }
 
-	sprintf(seltext,"Name (now: '%s'): ",wblock->block->name);
-	const char *blockname=GFX_GetString(window,reqtype,seltext,true);
-
-        bool has_made_undo = false;
-
-	if(blockname!=NULL){
-          create_undo(window);
-          has_made_undo = true;
-          Block_set_name(wblock->block, blockname);
+        if (g_reqtype_cancelled==false){
+          sprintf(seltext,"Name (now: '%s'): ",wblock->block->name);
+          const char *blockname=GFX_GetString(window,reqtype,seltext,true);
+          
+          if(blockname!=NULL){
+            create_undo(window);
+            has_made_undo = true;
+            Block_set_name(wblock->block, blockname);
+          }
         }
 
 	GFX_CloseReq(window,reqtype);
 
+        if(g_reqtype_cancelled==true)
+          return;
+          
 	if(num_tracks==wblock->block->num_tracks && num_lines==wblock->block->num_lines){
-		return;
+          return;
 	}
 
         if (has_made_undo==false)
