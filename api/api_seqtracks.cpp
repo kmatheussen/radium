@@ -2010,9 +2010,9 @@ void setCurrSeqblock(int64_t seqblockid){
 
   setCurrSeqtrack(seqtracknum);
     
-  g_curr_seqblock_id = seqblockid;
-
   SEQBLOCK_update_with_borders(seqtrack, seqblock);
+  
+  g_curr_seqblock_id = seqblockid;
 }
 
 int64_t getCurrSeqblockId(void){
@@ -2067,18 +2067,16 @@ int getCurrSeqtrack(void){
 
 
 
-static int64_t g_curr_seqblockid_under_mouse = -1;
-
 void setCurrSeqblockUnderMouse(int64_t seqblockid){
-  if (seqblockid==g_curr_seqblockid_under_mouse)
+  if (seqblockid==g_curr_seqblock_id_under_mouse)
     return;
   
   GET_VARS_FROM_SEQBLOCK_ID(seqblockid, true,);
 
   cancelCurrSeqblockUnderMouse(); // Update GFX of old seqblock.
 
-  g_curr_seqblock_under_mouse = seqblock;    
-  g_curr_seqblockid_under_mouse = seqblockid;
+  //g_curr_seqblock_id_under_mouse = seqblock;    
+  g_curr_seqblock_id_under_mouse = seqblockid;
   
   /*
   static int s_prev_curr_seqtracknum_under_mouse = -1;
@@ -2112,16 +2110,16 @@ void setCurrSeqblockUnderMouse(int64_t seqblockid){
 }
 
 int64_t getCurrSeqblockIdUnderMouse(void){
-  return g_curr_seqblockid_under_mouse;
+  return g_curr_seqblock_id_under_mouse;
 }
   
 int getCurrSeqblockUnderMouse(void){
-  if (g_curr_seqblockid_under_mouse==-1)
+  if (g_curr_seqblock_id_under_mouse==-1)
     return -1;
   
   int seqblocknum, seqtracknum;
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblockid_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
+  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblock_id_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
   if (seqblock==NULL)
     return -1;
 
@@ -2129,12 +2127,12 @@ int getCurrSeqblockUnderMouse(void){
 }
 
 int getCurrSeqtrackUnderMouse(void){
-  if (g_curr_seqblockid_under_mouse==-1)
+  if (g_curr_seqblock_id_under_mouse==-1)
     return -1;
   
   int seqblocknum, seqtracknum;
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblockid_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
+  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblock_id_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
   if (seqblock==NULL)
     return -1;
 
@@ -2142,20 +2140,21 @@ int getCurrSeqtrackUnderMouse(void){
 }
 
 void cancelCurrSeqblockUnderMouse(void){
-  if (g_curr_seqblockid_under_mouse==-1)
+  if (g_curr_seqblock_id_under_mouse==-1)
     return;
   
   int seqblocknum, seqtracknum;
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblockid_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
-
-  g_curr_seqblock_under_mouse = NULL;
-  g_curr_seqblockid_under_mouse = -1;
+  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblock_id_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
 
   if(seqblock!=NULL)
     SEQBLOCK_update(seqtrack, seqblock);
   else
     SEQUENCER_update(SEQUPDATE_TIME); // A scheme error will be thrown if this happens.
+
+  //g_curr_seqblock_under_mouse = NULL;
+  g_curr_seqblock_id_under_mouse = -1;
+
 }
 
 dyn_t getBlockUsageInSequencer(void){
@@ -2557,10 +2556,12 @@ void setSeqblockSelectedBox(int which_one, int seqblocknum, int seqtracknum){
 }
 
 int getSeqblockSelectedBox(void){
-  if (g_curr_seqblock_under_mouse == NULL)
+  if (g_curr_seqblock_id_under_mouse == -1)
     return 0;
-  else
-    return g_curr_seqblock_under_mouse->selected_box;  
+  else{
+    GET_VARS_FROM_SEQBLOCK_ID(g_curr_seqblock_id_under_mouse, true, 0);
+    return seqblock->selected_box;
+  }
 }
   
 
@@ -2765,6 +2766,12 @@ void removeSeqblockDeletedCallback(int64_t seqblockid, func_t *callback){
 
 void API_seqblock_has_been_deleted(int64_t seqblockid){
   QVector<SDC> to_remove;
+
+  if(g_curr_seqblock_id==seqblockid)
+    g_curr_seqblock_id = -1;
+
+  if(g_curr_seqblock_id_under_mouse==seqblockid)
+    g_curr_seqblock_id_under_mouse = -1;
   
   for(auto &sdc : g_seqblock_deleted_callbacks){
     if(seqblockid==sdc.id){
@@ -2778,6 +2785,9 @@ void API_seqblock_has_been_deleted(int64_t seqblockid){
 }
 
 void API_all_seqblocks_have_been_deleted(void){
+  g_curr_seqblock_id = -1;
+  g_curr_seqblock_id_under_mouse = -1;
+  
   while(g_seqblock_deleted_callbacks.size() > 0)
     API_seqblock_has_been_deleted(g_seqblock_deleted_callbacks[0].id);
 }

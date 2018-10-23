@@ -2855,7 +2855,7 @@ struct SeqBlock{
 };
 
 //extern struct SeqBlock *g_curr_seqblock;
-extern struct SeqBlock *g_curr_seqblock_under_mouse;
+extern int64_t g_curr_seqblock_id_under_mouse;
 extern int64_t g_curr_seqblock_id;
 
 static inline bool is_current_seqblock(const struct SeqBlock *seqblock){

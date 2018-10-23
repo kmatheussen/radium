@@ -154,7 +154,7 @@ static bool smooth_scrolling(void){
 
 static bool g_draw_colored_seqblock_tracks = true;
 
-SeqBlock *g_curr_seqblock_under_mouse = NULL;
+int64_t g_curr_seqblock_id_under_mouse = -1;
 
 
 /* Custom font drawing code */
@@ -640,8 +640,19 @@ public:
       return true;
   }
   
-  double get_seqblock_x1(const struct SeqBlock *seqblock) const {
-    return scale_double(seqblock->t.time, _start_time, _end_time, t_x1, t_x2);
+  double get_seqblock_noninterior_x1(const struct SeqBlock *seqblock) const {
+    const double interior_start_length = seqblock->t.interior_start * seqblock->t.stretch  * seqblock->t.speed;
+    const double noninterior_start = seqblock->t.time - interior_start_length;
+    return scale_double(noninterior_start,
+                        _start_time, _end_time,
+                        t_x1, t_x2);      
+  }
+  
+  double get_seqblock_x1(const struct SeqBlock *seqblock, bool for_update = false) const {
+    if (for_update && seqblock->id==g_curr_seqblock_id_under_mouse)
+      return get_seqblock_noninterior_x1(seqblock);
+    else
+      return scale_double(seqblock->t.time, _start_time, _end_time, t_x1, t_x2);
   }
 
   double get_seqblock_x1(const struct SeqTrack *seqtrack, int seqblocknum) const {
@@ -663,10 +674,23 @@ public:
     return get_seqblock_x1((struct SeqTrack*)root->song->seqtracks.elements[seqtracknum], seqblocknum);
   }
 
-  double get_seqblock_x2(const struct SeqBlock *seqblock) const {
-    return scale_double(seqblock->t.time2, _start_time, _end_time, t_x1, t_x2);
-  }
+  double get_seqblock_noninterior_x2(const struct SeqBlock *seqblock) const {
+    const double interior_end_length = (seqblock->t.default_duration - seqblock->t.interior_end) * seqblock->t.stretch * seqblock->t.speed;
+    const double noninterior_end = seqblock->t.time2 + interior_end_length;
 
+    return scale_double(noninterior_end,
+                        _start_time, _end_time,
+                        t_x1, t_x2);
+
+  }
+  
+  double get_seqblock_x2(const struct SeqBlock *seqblock, bool for_update = false) const {
+    if (for_update && seqblock->id==g_curr_seqblock_id_under_mouse)
+      return get_seqblock_noninterior_x2(seqblock);
+    else
+      return scale_double(seqblock->t.time2, _start_time, _end_time, t_x1, t_x2);
+  }
+ 
   double get_seqblock_x2(const struct SeqTrack *seqtrack, int seqblocknum) const {
     R_ASSERT_RETURN_IF_FALSE2(seqblocknum>=0, 0);
 
@@ -686,9 +710,9 @@ public:
     return get_seqblock_x2((struct SeqTrack*)root->song->seqtracks.elements[seqtracknum], seqblocknum);
   }
 
-  QRectF get_seqblock_rect(const struct SeqBlock *seqblock) const {
-    double x1 = get_seqblock_x1(seqblock);
-    double x2 = get_seqblock_x2(seqblock);
+  QRectF get_seqblock_rect(const struct SeqBlock *seqblock, bool for_update = false) const {
+    double x1 = get_seqblock_x1(seqblock, for_update);
+    double x2 = get_seqblock_x2(seqblock, for_update);
     
     return QRectF(x1,t_y1+1,x2-x1,t_height-2);
   }
@@ -697,14 +721,14 @@ public:
     if (force_current || is_current_seqblock(seqblock))
       return get_current_seqblock_rect(seqblock, true);
     else
-      return get_seqblock_rect(seqblock);
+      return get_seqblock_rect(seqblock, true);
   }
   
   void update_seqblock(const struct SeqBlock *seqblock, bool force_current = false) const {
     if (seqblock_is_visible(seqblock)){
       QRectF rect = get_seqblock_update_rect(seqblock, force_current);
 
-      if (seqblock==g_curr_seqblock_under_mouse && !is_current_seqblock(seqblock)){
+      if (seqblock->id==g_curr_seqblock_id_under_mouse && !is_current_seqblock(seqblock)){
         float min_node_size = get_min_node_size();
         rect.adjust(-min_node_size,0,min_node_size,min_node_size); // Seqblock nodes can be painted outside the seqblock rectangle.
       }
@@ -1054,34 +1078,55 @@ public:
         const double y1 = rect.y() + header_height;
         const double y2 = rect.y() + rect.height();
 
-        if (seqblock==g_curr_seqblock_under_mouse){
+        if (seqblock->id==g_curr_seqblock_id_under_mouse){
 
           QColor interior_waveform_color = waveform_color;
           interior_waveform_color.setAlpha(70);
-          
-          const double interior_start_length = seqblock->t.interior_start * seqblock->t.stretch  * seqblock->t.speed;
-          const double noninterior_start = seqblock->t.time - interior_start_length;
 
-          const double interior_end_length = (seqblock->t.default_duration - seqblock->t.interior_end) * seqblock->t.stretch * seqblock->t.speed;
-          const double noninterior_end = seqblock->t.time2 + interior_end_length;
+          if (seqblock->t.interior_start>0) {
+            double i_x1 = get_seqblock_noninterior_x1(seqblock);
+            double i_time1 = 0;
 
-          const double i1_x1 = scale_double(noninterior_start,
-                                            _start_time, _end_time,
-                                            t_x1, t_x2);
+            /*
+            // This optimization is already done in drawWaveform.
+            if (i_x1 < t_x1) {
+              i_time1 = scale_double(t_x1,
+                                     i_x1, x1,
+                                     i_time1, time1);
+              printf("Interior start: Scaling down to %f. i_x1: %f, t_x1: %f\n", i_time1, i_x1, t_x1);
+              i_x1 = t_x1;
+            }
+            */
+            
+            drawWaveform(p, plugin, peaks, seqblock, type, interior_waveform_color,
+                         i_time1, time1,
+                         i_x1, x1,
+                         y1, y2);
+          }
           
-          drawWaveform(p, plugin, peaks, seqblock, type, interior_waveform_color,
-                       0, time1,
-                       i1_x1, rect.x(),
-                       y1, y2);
-          
-          const double i2_x2 = scale_double(noninterior_end,
-                                            _start_time, _end_time,
-                                            t_x1, t_x2);
+          if (seqblock->t.interior_end!=seqblock->t.default_duration) {
 
-          drawWaveform(p, plugin, peaks, seqblock, type, interior_waveform_color,
-                       time2, seqblock->t.default_duration / resample_ratio,
-                       x2, i2_x2,
-                       y1, y2);
+            double i_x2 = get_seqblock_noninterior_x2(seqblock);
+            double i_time2 = seqblock->t.default_duration / resample_ratio;
+
+            /*
+            // This optimization is already done in drawWaveform.
+            if (i_x2 > t_x2) {
+              i_time2 = scale_double(t_x2,
+                                     x2, i_x2,
+                                     time2, i_time2);
+              printf("Interior end: Scaling down to %f. i_x2: %f, t_x2: %f\n", i_time2, i_x2, t_x2);
+              i_x2 = t_x2;
+            }
+            */
+            
+            drawWaveform(p, plugin, peaks, seqblock, type, interior_waveform_color,
+                         time2, i_time2,
+                         x2, i_x2,
+                         y1, y2);
+
+          }
+          
         }
 
         drawWaveform(p, plugin, peaks, seqblock, type, waveform_color,
@@ -1240,7 +1285,7 @@ public:
                                    t_x1, t_x2);
       
         bool draw_all = seqblock->t.interior_start==0 && seqblock->t.interior_end==seqblock->t.default_duration;
-        bool is_current = seqblock==g_curr_seqblock_under_mouse;
+        bool is_current = seqblock->id==g_curr_seqblock_id_under_mouse;
         //printf("draw_all: %d. is_current: %d. x1: %f, x1: %f, x2: %f, x2: %f\n", draw_all, is_current, x1, ni_x1, x2, ni_x2);
 
         const QRegion org_clip = painter->clipRegion();
@@ -1611,8 +1656,8 @@ public:
   }
 
   QRectF get_current_seqblock_rect(const struct SeqBlock *seqblock, bool for_update) const {
-    double x1 = get_seqblock_x1(seqblock);
-    double x2 = get_seqblock_x2(seqblock);
+    double x1 = get_seqblock_x1(seqblock, for_update);
+    double x2 = get_seqblock_x2(seqblock, for_update);
     float b = get_seqtrack_border_width();
 
     if (for_update)
@@ -1647,7 +1692,7 @@ public:
     int header_height = get_block_header_height();
     const QRectF rect_without_header = rect.adjusted(0, header_height, 0, 0);
 
-    if(seqblock != g_curr_seqblock_under_mouse){ //!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
+    if(seqblock->id != g_curr_seqblock_id_under_mouse){ //!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
 
       paintSeqBlockElements(p, rect, rect_without_header, seqtrack, seqblock, type);
 
