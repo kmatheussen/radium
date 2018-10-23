@@ -498,6 +498,7 @@
     FROM_C-show-playlist-popup-menu
     load
     show-note-duplicator-popup-menu
+    FROM_C-set-current-seqblock!
     ))
 
 (define-constant *functions-called-from-evalScheme-that-are-not-available-at-program-startup*

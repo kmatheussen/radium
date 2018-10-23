@@ -248,7 +248,7 @@ const_char* requestString(const_char *text, bool standalone, const_char* default
   return ret;
 }
 
-bool requesterWasCancelled(void){
+bool requestWasCancelled(void){
   return g_reqtype_cancelled;
 }
 

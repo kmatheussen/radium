@@ -2229,8 +2229,12 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
   }
 
   int seqtracknum = get_seqtracknum(seqtrack);
-  if (seqtracknum >= 0)
-    setCurrSeqtrack(seqtracknum);
+  if (seqtracknum >= 0){    
+    //setCurrSeqtrack(seqtracknum);
+    //setCurrSeqblock(seqblock->id); // setCurrSeqblock also sets curr seqtrack    
+    evalScheme(talloc_format("(FROM_C-set-current-seqblock! %d %" PRId64 ")", seqtracknum, seqblock->id)); // This one also fixes the z order.
+  }
+  
   
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST);
 

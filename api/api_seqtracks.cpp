@@ -1998,6 +1998,75 @@ void applyGfxSeqblocks(int seqtracknum){
 
 // seqblocks
 
+int64_t g_curr_seqblock_id = -1;
+
+void setCurrSeqblock(int64_t seqblockid){
+  if (seqblockid==g_curr_seqblock_id)
+    return;
+
+  GET_VARS_FROM_SEQBLOCK_ID(seqblockid, true,);
+
+  cancelCurrSeqblock(); // Update GFX of old seqblock.
+
+  setCurrSeqtrack(seqtracknum);
+    
+  g_curr_seqblock_id = seqblockid;
+
+  SEQBLOCK_update_with_borders(seqtrack, seqblock);
+}
+
+int64_t getCurrSeqblockId(void){
+  return g_curr_seqblock_id;
+}
+
+void cancelCurrSeqblock(void){
+  if (g_curr_seqblock_id==-1)
+    return;
+  
+  int seqblocknum, seqtracknum;
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblock_id, &seqtrack, seqblocknum, seqtracknum, false);
+
+  g_curr_seqblock_id = -1;
+
+  if(seqblock!=NULL)
+    SEQBLOCK_update_with_borders(seqtrack, seqblock);
+  else
+    SEQUENCER_update(SEQUPDATE_TIME); // A scheme error will be thrown if this happens.
+}
+
+/*
+int getCurrSeqblock(void){
+  if (g_curr_seqblock_id==-1)
+    return -1;
+  
+  int seqblocknum, seqtracknum;
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblock_id, &seqtrack, seqblocknum, seqtracknum, false);
+  if (seqblock==NULL)
+    return -1;
+
+  return seqblocknum;
+}
+*/
+
+/*
+int getCurrSeqtrack(void){
+  if (g_curr_seqblock_id==-1)
+    return -1;
+  
+  int seqblocknum, seqtracknum;
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblock_id, &seqtrack, seqblocknum, seqtracknum, false);
+  if (seqblock==NULL)
+    return -1;
+
+  return seqtracknum;
+}
+*/
+
+
+
 static int64_t g_curr_seqblockid_under_mouse = -1;
 
 void setCurrSeqblockUnderMouse(int64_t seqblockid){
@@ -2047,6 +2116,9 @@ int64_t getCurrSeqblockIdUnderMouse(void){
 }
   
 int getCurrSeqblockUnderMouse(void){
+  if (g_curr_seqblockid_under_mouse==-1)
+    return -1;
+  
   int seqblocknum, seqtracknum;
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblockid_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
@@ -2057,6 +2129,9 @@ int getCurrSeqblockUnderMouse(void){
 }
 
 int getCurrSeqtrackUnderMouse(void){
+  if (g_curr_seqblockid_under_mouse==-1)
+    return -1;
+  
   int seqblocknum, seqtracknum;
   struct SeqTrack *seqtrack;
   struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblockid_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);

@@ -552,7 +552,7 @@
 
 
 (define (radium-mouse-press $button $x $y)
-  (radium-mouse-move $button $x $y) ;; Workaround for radium-mouse-move not being called while a popup menu is open. (try to left click + right click another seqblock while showing this popup menu)
+  (radium-mouse-move $button $x $y) ;; Workaround for radium-mouse-move not being called while a popup menu is open. (without this line, try to left click + right click another seqblock while showing a popup menu)
   (handling-nodes
    (lambda()
      ;;(c-display "%%%%%%%%%%%%%%%%% >> mouse press" $button $x $y *current-mouse-cycle*)
@@ -4643,7 +4643,7 @@
                                                     (define start-pos (if is-left
                                                                           (<ra> :get-seqblock-fade-in seqblocknum seqtracknum)
                                                                           (<ra> :get-seqblock-fade-out seqblocknum seqtracknum)))
-                                                    (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
+                                                    (set-current-seqblock! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                     (if is-left                                                        
                                                         (callback seqblock-info start-pos Y)
                                                         (callback seqblock-info (- 1 start-pos) Y)))
@@ -4894,8 +4894,8 @@
                                                   ;;(c-display "START:" (pp *current-seqblocks-state*))
                                                   (define seqblock (*current-seqblocks-state* seqblocknum))
 
-                                                  (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
-
+                                                  (set-current-seqblock! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
+                                                  
                                                   (callback seqblock-info (seqblock :interior-start) Y))
 
                         :Get-min-value (lambda (seqblock-info)
@@ -5002,7 +5002,7 @@
                                                   
                                                   (define seqblock (*current-seqblocks-state* seqblocknum))
 
-                                                  (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
+                                                  (set-current-seqblock! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
 
                                                   (callback seqblock-info (seqblock :interior-end) Y))
 
@@ -5542,7 +5542,7 @@
                                                     (define seqtracknum (seqblock-info :seqtracknum))
                                                     (define seqblocknum (seqblock-info :seqblocknum))
                                                     (define set-speedstretch (<new> :set-seqblock-speedstretch seqtracknum seqblocknum is-stretch is-left))
-                                                    (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))                                                    
+                                                    (set-current-seqblock! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))                                                    
                                                     (callback set-speedstretch
                                                               (if is-left
                                                                   (<ra> :get-seqblock-start-time seqblocknum seqtracknum)
@@ -5602,17 +5602,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-;; sequencer block order
-;;;;;;;;;;;;;;;;;;;;;;;;
+;; Current seqblock, and sequencer block order
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (push-seqblock-to-top! seqtracknum id)
+(define (set-current-seqblock! seqtracknum id)
   (define old-order (to-list (<ra> :get-seqblock-z-order seqtracknum)))
   (define new-order (cons id (delete-maybe id old-order =)))
   ;;(c-display "id:" id "old:" old-order ". new-order: " new-order)
+  (<ra> :set-curr-seqblock id)
   (<ra> :set-seqblock-z-order
         new-order
         seqtracknum))
 
+(define (FROM_C-set-current-seqblock! seqtracknum id)
+  (set-current-seqblock! seqtracknum id))
 
 ;; swap sequencer blocks
 ;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -5776,7 +5779,7 @@
   ;;(pretty-print seqblock)
   (set! *current-seqblocks-state* seqblocks)
 
-  (push-seqblock-to-top! seqtracknum (seqblock :id))
+  (set-current-seqblock! seqtracknum (seqblock :id))
 
   (define start-pos (seqblock :start-time))
   (define curr-pos start-pos)
@@ -6908,7 +6911,7 @@
                                                            (existing-box Num Box) :> (begin
                                                                                        (define Time (get-sequencer-time X))
                                                                                        (set-grid-type (<ra> :get-seq-automation-grid-type))
-                                                                                       (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
+                                                                                       (set-current-seqblock! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                                                        (callback (make-seqautomation-move :nodes (get-seqblock-automation-nodes automationnum seqblocknum seqtracknum)
                                                                                                                           :Num Num
                                                                                                                           :start-Y Y)
@@ -6960,7 +6963,7 @@
                                                #f
                                                (begin
                                                  (set-grid-type (<ra> :get-seq-automation-grid-type))
-                                                 (push-seqblock-to-top! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
+                                                 (set-current-seqblock! seqtracknum (<ra> :get-seqblock-id seqblocknum seqtracknum))
                                                  (<ra> :set-curr-seqblock-automation-node Num automationnum seqblocknum seqtracknum)
                                                  (callback (make-seqautomation-move :nodes (get-seqblock-automation-nodes automationnum seqblocknum seqtracknum)
                                                                                     :Num Num
@@ -7530,6 +7533,8 @@
                               (define for-blocks (not for-audiofiles))
                               (define seqblocknum (and seqblock-info
                                                        (seqblock-info :seqblocknum)))
+                              (define seqblockid (and seqblock-info
+                                                      (seqblock-info :id)))
                               (define blocknum (and seqblock-info
                                                     (<ra> :seqblock-holds-block seqblocknum seqtracknum)
                                                     (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
@@ -7539,6 +7544,9 @@
                               ;;        (only-select-one-seqblock seqblocknum seqtracknum)
                               ;;        (<ra> :select-seqblock #t seqblocknum seqtracknum)))
 
+                              (if seqblockid
+                                  (set-current-seqblock! seqtracknum seqblockid))
+                              
                               (set-grid-type (<ra> :get-seq-block-grid-type))
                               
                               (define guinum
@@ -7704,10 +7712,10 @@
                                                  
                                                  (let ((create-automation-entry (lambda (automationnum)
                                                                                   (list (<-> (<ra> :get-seqblock-automation-name automationnum) " automation")
-                                                                                        :check (and seqblocknum (<ra> :get-seqblock-automation-enabled automationnum (<ra> :get-seqblock-id seqblocknum seqtracknum)))
+                                                                                        :check (and seqblocknum (<ra> :get-seqblock-automation-enabled automationnum seqblockid))
                                                                                         :enabled seqblocknum
                                                                                         (lambda (enable)
-                                                                                          (<ra> :set-seqblock-automation-enabled enable automationnum (<ra> :get-seqblock-id seqblocknum seqtracknum)))))))
+                                                                                          (<ra> :set-seqblock-automation-enabled enable automationnum seqblockid))))))
                                                    (list
                                                     (if (not blocknum)
                                                         '()
@@ -7865,7 +7873,7 @@
                                                          (let ((get-old-gain (lambda ()
                                                                                (db-to-text (if (and seqblocknum
                                                                                                     (not blocknum))
-                                                                                               (<ra> :gain-to-db (<ra> :get-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum)))
+                                                                                               (<ra> :gain-to-db (<ra> :get-seqblock-gain seqblockid))
                                                                                                0.0)
                                                                                            #t))))
                                                            (list
@@ -7877,19 +7885,19 @@
                                                                                 -1000
                                                                                 1000))
                                                               (if (>= new -1000)
-                                                                  (<ra> :set-seqblock-gain (<ra> :db-to-gain new) (<ra> :get-seqblock-id seqblocknum seqtracknum))))))
+                                                                  (<ra> :set-seqblock-gain (<ra> :db-to-gain new) seqblockid)))))
                                                            
                                                          (let* ((is-enabled (and seqblocknum
                                                                                  (not blocknum)))
                                                                 (get-normalized-gain (lambda ()
                                                                                        (if is-enabled
-                                                                                           (get-normalized-seqblock-gain (<ra> :get-seqblock-id seqblocknum seqtracknum))
+                                                                                           (get-normalized-seqblock-gain seqblockid)
                                                                                            1.0))))
                                                            (list
                                                             (<-> "Set normalized gain (" (db-to-text (<ra> :gain-to-db (get-normalized-gain)) #t) ")")
                                                             :enabled is-enabled
                                                             (lambda ()
-                                                              (<ra> :set-seqblock-gain (get-normalized-gain) (<ra> :get-seqblock-id seqblocknum seqtracknum)))))))
+                                                              (<ra> :set-seqblock-gain (get-normalized-gain) seqblockid))))))
                                                     
                                                     "---------------------"
                                                     

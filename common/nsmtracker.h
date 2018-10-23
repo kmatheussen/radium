@@ -2856,10 +2856,10 @@ struct SeqBlock{
 
 //extern struct SeqBlock *g_curr_seqblock;
 extern struct SeqBlock *g_curr_seqblock_under_mouse;
+extern int64_t g_curr_seqblock_id;
 
 static inline bool is_current_seqblock(const struct SeqBlock *seqblock){
-  return true;
-  //return g_curr_seqblock_id==seqblock->id;
+  return g_curr_seqblock_id==seqblock->id;
 }
 
 static inline int SEQBLOCK_num_automations(const struct SeqBlock *seqblock){
