@@ -108,6 +108,10 @@ const wchar_t *DISK_create_non_existant_filename(const wchar_t *filename){
   return filename;
 }
 
+
+static const char *g_last_error = "";
+
+
 struct _radium_os_disk {
   enum Type{
     READ,
@@ -197,11 +201,19 @@ public:
 
     
   failed:
+    
     if (save_file!=NULL) {
+      
+      g_last_error = error_to_string(save_file->error());
+      
       delete save_file;
       save_file = NULL;
     }
+    
     if (read_file!=NULL) {
+
+      g_last_error = error_to_string(read_file->error());
+      
       delete read_file;
       read_file = NULL;
     }
@@ -248,23 +260,23 @@ public:
         return "";
       }
         //case QFile::ConnectError: return "connect error";
-      case QFile::ReadError: return "read error";
-      case QFile::WriteError: return "write error";
-      case QFile::FatalError: return "fatal error";
-      case QFile::ResourceError: return "resource error";
-      case QFile::OpenError: return "open error";
-      case QFile::AbortError: return "abort error";
-      case QFile::TimeOutError: return "timeout error";
-      case QFile::UnspecifiedError: return "unspecified error";
-      case QFile::RemoveError: return "remove error";
-      case QFile::RenameError: return "rename error";
-      case QFile::PositionError: return "position error";
-      case QFile::ResizeError: return "resize error";
-      case QFile::PermissionsError: return "permission error";
-      case QFile::CopyError: return "copy error";
+      case QFile::ReadError: return "Read error";
+      case QFile::WriteError: return "Write error";
+      case QFile::FatalError: return "Fatal error";
+      case QFile::ResourceError: return "No more disk space, too many files open, or out of memory";
+      case QFile::OpenError: return "Could not open file";
+      case QFile::AbortError: return "Operation was aborted";
+      case QFile::TimeOutError: return "Timeout";
+      case QFile::UnspecifiedError: return "Unspecified error";
+      case QFile::RemoveError: return "File could not be removed";
+      case QFile::RenameError: return "File could not be renamed";
+      case QFile::PositionError: return "Could not search to position";
+      case QFile::ResizeError: return "Could not resize file";
+      case QFile::PermissionsError: return "No permission to open file";
+      case QFile::CopyError: return "Could not copy file";
     }
 
-    R_ASSERT(false);
+    R_ASSERT_NON_RELEASE(false);
     return "Unknown error";
   }
 
@@ -405,7 +417,10 @@ disk_t *DISK_open_binary_for_reading(const wchar_t *wfilename){
 }
 
 const char* DISK_get_error(disk_t *disk){
-  return disk->get_error();
+  if(disk==NULL)
+    return g_last_error;
+  else
+    return disk->get_error();
 }
 
 wchar_t *DISK_get_filename(disk_t *disk){

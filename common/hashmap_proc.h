@@ -37,6 +37,7 @@ extern LANGSPEC hash_t *HASH_shallow_copy(const hash_t *hash);
 
 // Can also be used to rehash
 extern LANGSPEC hash_t *HASH_copy(const hash_t *hash);
+#define HASH_REHASH(hash) do{hash = HASH_copy(hash);}while(0)
 
 extern LANGSPEC const char *HASH_get_key(const hash_t *hash, const char *key); // Returns the stored pointed, if it needs to be reused.
 extern LANGSPEC bool HASH_has_key(const hash_t *hash, const char *key);
