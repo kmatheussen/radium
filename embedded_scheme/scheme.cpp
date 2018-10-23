@@ -292,7 +292,7 @@ static hash_t *s7extra_hash(s7_scheme *s7, s7_pointer s_hash){
       
       num_elements++;
       if (num_elements > hash_size*2){
-        r_hash = HASH_copy(r_hash); // rehash
+        HASH_REHASH(r_hash);
         hash_size = num_elements;
       }
       

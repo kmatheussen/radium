@@ -81,7 +81,7 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
 
 	dc.file=DISK_open_for_reading(filename);
 	if(dc.file==NULL){
-          GFX_Message2(NULL,true,"Could not open \"%S\" for loading\n",filename);
+          GFX_Message2(NULL,true,"Could not open \"%S\".\n\nMessage from the system: \"%s\".\n",filename, DISK_get_error(dc.file));
           goto failed;
 	}
 
@@ -162,7 +162,7 @@ bool Load_Initialize(const wchar_t *filename, const char *type){
           
           const char *error = DISK_get_error(dc.file);
           if (error != NULL){
-            GFX_Message2(NULL, true, "Unable to read from file \"%S\": %s", filename, error);
+            GFX_Message2(NULL, true, "Unable to read from file \"%S\".\n\nMessage from the system: \"%s\"", filename, error);
             goto failed;
           }
 

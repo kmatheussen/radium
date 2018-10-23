@@ -42,7 +42,7 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
 
         dc.file=DISK_open_for_writing(filename);
 	if(dc.file==NULL){
-          GFX_Message2(NULL, true, "Could not save song file \"%S\".", filename);
+          GFX_Message2(NULL, true, "Could not save song file \"%S\".\n\nMessage from the system: \"%s\".", filename, DISK_get_error(NULL));
           return false;
 	}
 
@@ -54,7 +54,7 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
         
 	if(length1<0 || length2<0 || length3<0){
           const char *error = DISK_get_error(dc.file);
-          GFX_Message2(NULL, true, "Unable to write to file \"%S\": %s.", filename, error!=NULL ? error : "Unable to write data");
+          GFX_Message2(NULL, true, "Unable to write to file \"%S\".\n\nMessage from the system: \"%s\".", filename, error!=NULL ? error : "(no info)");
           DISK_close_and_delete(dc.file);
           return false;
 	}
@@ -67,7 +67,7 @@ bool Save_Initialize(const wchar_t *filename, const char *type){
         
         const char *error = DISK_get_error(dc.file);
         if (error != NULL){
-          GFX_Message2(NULL, true, "Unable to write to file \"%S\": %s", filename, error);
+          GFX_Message2(NULL, true, "Unable to write to file \"%S\".\n\nMessage from the system: \"%s\"", filename, error);
           DISK_close_and_delete(dc.file);
           return false;
         }

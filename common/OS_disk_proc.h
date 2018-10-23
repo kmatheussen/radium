@@ -24,7 +24,8 @@ extern LANGSPEC disk_t *DISK_open_binary_for_writing(const wchar_t *wfilename);
 extern LANGSPEC disk_t *DISK_open_temp_for_writing(void);
 extern LANGSPEC wchar_t *DISK_close_temp_for_writing(disk_t *disk);
 
-// Returns NULL if there is no error.
+// If disk==NULL, then return reason file couldn't be opened.
+// else, Returns NULL if there is no error.
 extern LANGSPEC const char* DISK_get_error(disk_t *disk);
 
 extern LANGSPEC wchar_t *DISK_get_filename(disk_t *disk);
