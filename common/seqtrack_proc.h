@@ -187,6 +187,7 @@ extern LANGSPEC void SEQTRACK_update_with_nodes(const struct SeqTrack *seqtrack,
 extern LANGSPEC void SEQTRACK_update_with_borders(const struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQTRACK_update(const struct SeqTrack *seqtrack);
 extern LANGSPEC void SEQBLOCK_update(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
+extern LANGSPEC void SEQBLOCK_update_with_borders(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 
 extern LANGSPEC void SEQUENCER_update_seqblocks_holding_editor_block(struct Blocks *block);
 

@@ -1037,9 +1037,10 @@
                  #f))
 
   (define b (max 0 (/ (get-fontheight) 6)))
-  (horizontally-layout-areas x1 y1 x2 y2
+  (horizontally-layout-areas x1 y1 (- x2 2) y2
                              (list '+E '+A '- 'AppendE 'AppendA)
-                             :y1-border (1+ b)
+                             :y1-border 0 ;;(1+ b)
+                             :y2-border 0 ;;(1+ b)
                              :spacing b
                              :callback
                              (lambda (type x1 y1 x2 y2)
