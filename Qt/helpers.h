@@ -106,6 +106,10 @@ static inline bool workingQRegionIntersects(const QRegion &region, const QRect &
   return false;
 }
 
+static inline bool workingQRegionIntersects(const QRegion &region, const QRectF &rect2){
+  return workingQRegionIntersects(region, rect2.toAlignedRect());
+}
+
 static inline bool workingQRegionContains(const QRegion &region, const QRegion &region2){
   for(const QRect &rect2 : region2)
     if(workingQRegionContains(region, rect2)==false)
