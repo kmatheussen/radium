@@ -724,9 +724,35 @@ public:
       return get_seqblock_rect(seqblock, true);
   }
   
-  void update_seqblock(const struct SeqBlock *seqblock, bool force_current = false) const {
+  void update_seqblock(const struct SeqBlock *seqblock, bool force_current = false, int64_t start_time = -1, int64_t end_time = -1) const {
     if (seqblock_is_visible(seqblock)){
       QRectF rect = get_seqblock_update_rect(seqblock, force_current);
+
+#if !defined(RELEASE)
+      if(end_time >= 0 && start_time>=0 && end_time < start_time)
+        abort();
+#endif
+      
+      if(start_time >= 0){
+        
+        double x1 = R_BOUNDARIES(t_x1,
+                                 scale_double(start_time,
+                                           _start_time, _end_time,
+                                              t_x1, t_x2),
+                                 t_x2);
+
+        rect.setX(x1);
+
+      }
+
+      if (end_time >= 0){
+        double x2 = R_BOUNDARIES(t_x1,
+                                 scale_double(end_time,
+                                              _start_time, _end_time,
+                                              t_x1, t_x2),
+                                 t_x2);
+        rect.setWidth(x2 - rect.x());                                 
+      }
 
       if (seqblock->id==g_curr_seqblock_id_under_mouse && !is_current_seqblock(seqblock)){
         float min_node_size = get_min_node_size();
@@ -3927,6 +3953,13 @@ void SEQBLOCK_update(const struct SeqTrack *seqtrack, const struct SeqBlock *seq
   
   const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, seqblock->id==g_curr_seqblock_id);
   w.update_seqblock(seqblock);
+}
+
+void SEQBLOCK_update2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int64_t start_time, int64_t end_time){
+  int seqtracknum = get_seqtracknum(seqtrack);
+  
+  const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, seqblock->id==g_curr_seqblock_id);
+  w.update_seqblock(seqblock, false, start_time, end_time);
 }
 
 void SEQBLOCK_update_with_borders(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock){

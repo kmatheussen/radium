@@ -345,26 +345,40 @@ public:
     return DYN_create_hash(state);
   }
 
-  double get_value(int nodenum){
+  double get_value(int nodenum) const {
     R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), 0.5);
     return _automation.at(nodenum).value;
   }
   
-  double get_value_for_time(int64_t time){
+  double get_value_for_time(int64_t time) const {
     return _automation.get_value(time);
   }
   
-  double get_time(int nodenum){
+  double get_time(int nodenum) const {
     double seqblock_start = get_seqblock_noninterior_start(_seqblock);
     R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), seqblock_start);
     return _automation.at(nodenum).time*_seqblock->t.stretch*_seqblock->t.speed + seqblock_start;
   }
 
-  int get_logtype(int nodenum){    
+  int get_logtype(int nodenum) const {
     R_ASSERT_RETURN_IF_FALSE2(islegalnodenum(nodenum), 0);
     return _automation.at(nodenum).logtype;
   }
 
+  void update_seqblock(int nodenum) const {
+    if (nodenum < 0) {
+      
+      SEQBLOCK_update(_seqtrack, _seqblock);
+      
+    } else {
+
+      SEQBLOCK_update2(_seqtrack, _seqblock,
+                       floor(get_time(R_MAX(0, nodenum-1))),
+                       ceil(get_time(R_MIN(_automation.size()-1, nodenum+1)))
+                       );
+    }
+  }
+  
   int add_node(double seqtime, double value, int logtype){
     if (seqtime < 0)
       seqtime = 0;
@@ -381,7 +395,7 @@ public:
     
     int ret = _automation.add_node(create_node(time, value, logtype));
     
-    SEQBLOCK_update(_seqtrack, seqblock);
+    update_seqblock(ret);
 
     return ret;
   }
@@ -395,20 +409,21 @@ public:
     }
     
     _automation.delete_node(nodenum);
-    
-    SEQBLOCK_update(_seqtrack, _seqblock);
+
+    update_seqblock(nodenum);
   }
 
   void set_curr_node(int nodenum){
     R_ASSERT_RETURN_IF_FALSE(islegalnodenum(nodenum));
     
     if (_automation.set_curr_nodenum(nodenum))
-      SEQBLOCK_update(_seqtrack, _seqblock);
+      update_seqblock(nodenum);
   }
 
   void cancel_curr_node(void){
+    int curr_node = _automation.get_curr_nodenum();
     if(_automation.set_curr_nodenum(-1))
-      SEQBLOCK_update(_seqtrack, _seqblock);
+      update_seqblock(curr_node);
   }
 
   void set_node(int nodenum, double seqtime, double value, int logtype){
@@ -436,8 +451,8 @@ public:
     node.logtype = logtype;
     
     _automation.replace_node(nodenum, node);
-    
-    SEQBLOCK_update(_seqtrack, _seqblock);
+
+    update_seqblock(nodenum);
   }
 
   static float get_node_x2(const SeqblockAutomation *seqblockenvelope, const radium::AutomationNode &node, double start_time, double end_time, float x1, float x2) {
