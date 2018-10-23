@@ -113,7 +113,8 @@
                                 gain-slider
                                 (<gui> :button "Normalize!"
                                        (lambda ()
-                                         (<gui> :set-value gain-slider (get-normalized-seqblock-gain seqblockid))))))
+                                         (when has-started
+                                           (<gui> :set-value gain-slider (get-normalized-seqblock-gain seqblockid)))))))
 ;                                                
 ;                                                <ra> :set-seqblock-gain (get-normalized-seqblock-gain seqblockid) seqblockid)
 ;                                         (
@@ -246,7 +247,8 @@
 
         (set! pitch-text-input (<gui> :float-text -48 (those-things :pitch) 48
                                       (lambda (new-pitch)
-                                        (set-new-pitch! new-pitch)
+                                        (when has-started
+                                          (set-new-pitch! new-pitch))
                                         )))
         )
 
