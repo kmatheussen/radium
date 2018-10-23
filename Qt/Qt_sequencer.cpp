@@ -943,7 +943,7 @@ public:
 
   void drawWaveform(QPainter &p, const QRegion &update_region, const SoundPlugin *plugin, radium::Peaks **peaks, const struct SeqBlock *seqblock, Seqblock_Type type, const QColor &color, int64_t time1, int64_t time2, double x1, double x2, double w_y1, double w_y2) const {
 
-    if (false==workingQRegionIntersects(update_region, QRectF(x1, w_y1, x2-x1, w_y2-w_y1).toAlignedRect())){
+    if (false==workingQRegionIntersects(update_region, QRectF(x1, w_y1, x2-x1, w_y2-w_y1))){
       //printf("   drawWaveform: No intersection\n");
       return;
     }
@@ -1733,7 +1733,7 @@ public:
 
       rect = get_seqblock_rect(seqblock);
       
-      if (false==update_region.intersects(rect.toAlignedRect()))
+      if (false==workingQRegionIntersects(update_region, rect))
         return false;
     }
 
@@ -1937,7 +1937,7 @@ public:
   }
 
   void paint_curr_seqblock_border(const QRegion &update_region, QPainter &p){
-    if(update_region.intersects(t_rect.toAlignedRect())){
+    if(workingQRegionIntersects(update_region, t_rect)){
       
       VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
         int seqtracknum = iterator666;
@@ -1957,7 +1957,7 @@ public:
   }
   
   void paint(const QRegion &update_region, QPainter &p){
-    if(update_region.intersects(t_rect.toAlignedRect())){
+    if(workingQRegionIntersects(update_region, t_rect)){
       
       VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
         Seqblocks_widget seqblocks_widget = get_seqblocks_widget(iterator666, true);
@@ -2018,7 +2018,7 @@ struct SongTempoAutomation_widget {
 
   void paint(const QRegion &update_region, QPainter &p){
     
-    if(update_region.intersects(t_rect.toAlignedRect())){
+    if(workingQRegionIntersects(update_region, t_rect)){
   
       myFillRect(p, t_rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
     
@@ -3202,8 +3202,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     QRectF rect1(_seqtracks_widget.t_x1, y1, x_start - _seqtracks_widget.t_x1,  y2);
     QRectF rect2(x_end, y1, _seqtracks_widget.t_x2 - x_end,  y2);
 
-    bool paintrect1 = x_start > _seqtracks_widget.t_x1 && update_region.intersects(rect1.toAlignedRect());
-    bool paintrect2 = x_end < _seqtracks_widget.t_x2 && update_region.intersects(rect2.toAlignedRect());
+    bool paintrect1 = x_start > _seqtracks_widget.t_x1 && workingQRegionIntersects(update_region, rect1);
+    bool paintrect2 = x_end < _seqtracks_widget.t_x2 && workingQRegionIntersects(update_region, rect2);
     
     if (!paintrect1 && !paintrect2)
       return;
