@@ -2798,6 +2798,9 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
   HASH_put_bool(state, "punching_enabled", SEQUENCER_is_punching());
   HASH_put_int(state, "punch_start", SEQUENCER_get_punch_start());
   HASH_put_int(state, "punch_end", SEQUENCER_get_punch_end());
+
+  HASH_put_int(state, "visible_start", SEQUENCER_get_visible_start_time());
+  HASH_put_int(state, "visible_end", SEQUENCER_get_visible_end_time());
   
   return state;
 }
@@ -2945,6 +2948,12 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     SEQUENCER_block_changes_tempo_multiplier(NULL, -1); // Remove seqtime.
   }
 
+  if(true || g_is_loading)
+    if (HASH_has_key(state, "visible_start"))
+      SEQUENCER_set_visible_start_and_end_time(HASH_get_int(state, "visible_start"),
+                                               HASH_get_int(state, "visible_end")
+                                               );
+  
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
