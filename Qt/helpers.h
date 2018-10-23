@@ -97,6 +97,15 @@ static inline bool workingQRegionContains(const QRegion &region, const QRect &re
   return false;
 }
 
+// Haven't tested, but I don't trust QRegion::intersects to work either
+static inline bool workingQRegionIntersects(const QRegion &region, const QRect &rect2){
+  for(const QRect &rect : region){
+    if (rect.intersects(rect2))
+      return true;
+  }
+  return false;
+}
+
 static inline bool workingQRegionContains(const QRegion &region, const QRegion &region2){
   for(const QRect &rect2 : region2)
     if(workingQRegionContains(region, rect2)==false)
