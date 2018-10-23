@@ -115,8 +115,10 @@ else
     LLVMLIBS=`llvm-config --libs`
 fi
 
+export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_gpl-2.10.1
+
 if env |grep INCLUDE_FAUSTDEV ; then
-    FAUSTLDFLAGS="bin/packages/QScintilla_gpl-2.10.1/Qt4Qt5/libqscintilla2_qt5.a bin/packages/faust2/compiler/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
+    FAUSTLDFLAGS="$QSCINTILLA_PATH/Qt4Qt5/libqscintilla2_qt5.a bin/packages/faust2/compiler/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
 else    
     FAUSTLDFLAGS=""
 fi

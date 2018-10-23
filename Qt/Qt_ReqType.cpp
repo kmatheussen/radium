@@ -63,6 +63,8 @@ extern struct Root *root;
 static const int x_margin = 25;
 static const int y_margin = 10;
 
+bool g_reqtype_cancelled = true;
+
 namespace{
 
 struct MyQFrame : public QDialog{
@@ -81,6 +83,8 @@ struct MyQFrame : public QDialog{
     }
     QDialog::showEvent(e);
   }
+
+  
 };
   
 struct MyReqType{
@@ -125,7 +129,7 @@ ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const c
   MyReqType *reqtype = new MyReqType();
 
   init_reqtype(reqtype);
-
+ 
   if (strcmp(title,"")){
     GFX_WriteString(reqtype, title);
     GFX_WriteString(reqtype, "\n");
@@ -247,6 +251,8 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
     init_reqtype(reqtype); // Something is wrong. Try to make the program running by recreating the frame.
   }
 
+  g_reqtype_cancelled = false;
+  
   int x = x_margin;
 
   QPointer<MyQLineEdit> edit = new MyQLineEdit(reqtype->frame);
@@ -351,6 +357,7 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
         getchar();
 #endif
         init_reqtype(reqtype); // recreate the frame, for next time.
+        g_reqtype_cancelled = true;
         break;
       }
       
@@ -362,20 +369,24 @@ void GFX_ReadString(ReqType das_reqtype, char *buffer, int bufferlength, bool pr
         printf("text: \"%s\"\n",text.toUtf8().constData());
       }
       
-      if(reqtype->frame->isVisible()==false)
+      if(reqtype->frame->isVisible()==false){
+        g_reqtype_cancelled = true;
         break;
+      }
       
       msleep(10);
     }
   }
-  
+
 #endif
 
   if (edit != NULL) {
     edit->setEnabled(false);
 
-    if (edit->pressed_escape)
+    if (edit->pressed_escape){
       text = "";
+      g_reqtype_cancelled = true;
+    }
   }
   
   reqtype->label_text = "";

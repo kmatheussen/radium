@@ -72,6 +72,7 @@ extern LANGSPEC Area GetScreenSize(struct Tracker_Windows *tvisual);
 
 extern LANGSPEC void MouseMoveRelative(float x, float y, float dx, float dy); // Called from windows.
   
+extern bool g_reqtype_cancelled; // Set to true if user pressed Escape or closed the window. Can be checked after calling ReadString/GetInteger/GetFloat/GetString. Variable is valid until next call to any of those functions.
 
 // Note that For the ReqType functions, tvisual might be NULL. The reasons is that it can be called when loading, or when starting up.
 extern LANGSPEC ReqType GFX_OpenReq(struct Tracker_Windows *tvisual,int width,int height,const char *title);

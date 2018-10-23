@@ -103,13 +103,15 @@ SAMPLERATEOPT ?= `$(PKG) --cflags samplerate`
 PYPATH ?=
 QT_SYSTEM_CFLAGS ?=
 
+QSCINTILLA_PATH ?= $(shell pwd)/bin/packages/QScintilla_gpl-2.10.1
+
 # qt4
 ifeq ($(RADIUM_QT_VERSION),4)
 	QT_GUI_CFLAGS ?=`$(PKGqt) --cflags QtGui`
 	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs QtGui`
 	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags QtNetwork`
 	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs QtNetwork`
-	QT_CFLAGS ?= `$(PKGqt) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL --cflags QtWebKit` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.1/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) 
+	QT_CFLAGS ?= `$(PKGqt) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL --cflags QtWebKit` -I$(shell pwd)bin/packages/qhttpserver-master/src -I$(QSCINTILLA_PATH)/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) 
 	QT_LDFLAGS ?= `$(PKGqt) --libs QtGui --libs QtOpenGL --libs QtNetwork --libs QtWebKit`
 endif
 
@@ -128,7 +130,7 @@ ifeq ($(RADIUM_QT_VERSION),5)
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
 
 #	If using QtWebKit:
-	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.1/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
+	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets` -Ibin/packages/qhttpserver-master/src -I$(QSCINTILLA_PATH)/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
 	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets` $(FPIC)
 endif
 
