@@ -737,8 +737,9 @@ public:
         
         double x1 = R_BOUNDARIES(t_x1,
                                  scale_double(start_time,
-                                           _start_time, _end_time,
-                                              t_x1, t_x2),
+                                              _start_time, _end_time,
+                                              t_x1, t_x2)
+                                 - get_min_node_size(),
                                  t_x2);
 
         rect.setX(x1);
@@ -749,7 +750,8 @@ public:
         double x2 = R_BOUNDARIES(t_x1,
                                  scale_double(end_time,
                                               _start_time, _end_time,
-                                              t_x1, t_x2),
+                                              t_x1, t_x2)
+                                 + get_min_node_size(),
                                  t_x2);
         rect.setWidth(x2 - rect.x());                                 
       }
