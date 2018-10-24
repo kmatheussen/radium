@@ -97,6 +97,15 @@ static inline bool workingQRegionContains(const QRegion &region, const QRect &re
   return false;
 }
 
+static inline bool workingQRegionContains(const QRegion &region, const QRegion &region2){
+  for(const QRect &rect2 : region2)
+    if(workingQRegionContains(region, rect2)==false)
+      return false;
+
+  return true;
+}
+
+
 // Haven't tested, but I don't trust QRegion::intersects to work either
 static inline bool workingQRegionIntersects(const QRegion &region, const QRect &rect2){
   for(const QRect &rect : region){
@@ -108,14 +117,6 @@ static inline bool workingQRegionIntersects(const QRegion &region, const QRect &
 
 static inline bool workingQRegionIntersects(const QRegion &region, const QRectF &rect2){
   return workingQRegionIntersects(region, rect2.toAlignedRect());
-}
-
-static inline bool workingQRegionContains(const QRegion &region, const QRegion &region2){
-  for(const QRect &rect2 : region2)
-    if(workingQRegionContains(region, rect2)==false)
-      return false;
-
-  return true;
 }
 
 
@@ -139,6 +140,8 @@ static QPoint getCentrePosition(QWidget *parent, int width, int height, QRect pa
 }
 
 static inline void moveWindowToCentre(QWidget *widget, QRect parentRect = QRect()){
+  R_ASSERT_NON_RELEASE(widget->width()>0);
+  R_ASSERT_NON_RELEASE(widget->height()>0);
   int width = R_MAX(widget->width(), 100);
   int height = R_MAX(widget->height(), 50);
   QPoint point = getCentrePosition(widget->parentWidget(), width, height, parentRect);
