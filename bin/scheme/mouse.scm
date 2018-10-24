@@ -4547,9 +4547,11 @@
   (define skew #f) ;; We want the same skew for all blocks. Use skew for the first block, i.e. the uppermost leftmost one.
   
   (map (lambda (seqblock-info)
-         (define seqtracknum (seqblock-info :seqtracknum))
-         (define seqblocknum (seqblock-info :seqblocknum))
-         (define seqblocknum (seqblock-info :id))
+         ;;(define seqtracknum (seqblock-info :seqtracknum))
+         ;;(define seqblocknum (seqblock-info :seqblocknum))
+         (define seqblockid (seqblock-info :id))
+         (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
+         (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
          (define seqblock (<ra> :get-seqblock-state seqblocknum seqtracknum))
            
          (define start-time (seqblock :start-time))
