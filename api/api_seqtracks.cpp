@@ -2013,6 +2013,14 @@ void setCurrSeqblock(int64_t seqblockid){
   SEQBLOCK_update_with_borders(seqtrack, seqblock);
   
   g_curr_seqblock_id = seqblockid;
+
+  if(seqblock->block != NULL){
+    static func_t *func = NULL;
+    if (func==NULL)
+      func = s7extra_get_func_from_funcname_for_storing("FROM_C-update-seqblock-track-on-off-configuration");
+    
+    S7CALL(void_int_int, func, seqtracknum, seqblocknum);
+  }
 }
 
 int64_t getCurrSeqblockId(void){
@@ -2093,14 +2101,6 @@ void setCurrSeqblockUnderMouse(int64_t seqblockid){
 
   //printf("   CURR seqblocknum: %d\n", seqblocknum);
   
-  if(seqblock->block != NULL){
-    static func_t *func = NULL;
-    if (func==NULL)
-      func = s7extra_get_func_from_funcname_for_storing("FROM_C-update-seqblock-track-on-off-configuration");
-  
-    S7CALL(void_int_int, func, seqtracknum, seqblocknum);
-  }
-
   SEQBLOCK_update(seqtrack, seqblock);
   /*
   SEQTRACK_update(seqtrack);
