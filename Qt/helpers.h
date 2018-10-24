@@ -120,7 +120,7 @@ static inline bool workingQRegionIntersects(const QRegion &region, const QRectF 
 }
 
 
-static QPoint getCentrePosition(QWidget *parent, int width, int height, QRect parentRect = QRect()){
+static inline QPoint getCentrePosition(QWidget *parent, int width, int height, QRect parentRect = QRect()){
 
   if (parentRect.isNull() || parentRect.isEmpty() || !parentRect.isValid()) {
     
@@ -140,8 +140,12 @@ static QPoint getCentrePosition(QWidget *parent, int width, int height, QRect pa
 }
 
 static inline void moveWindowToCentre(QWidget *widget, QRect parentRect = QRect()){
+#ifndef CRASHREPORTER_BIN
+#ifndef COMPILE_EXECUTABLE
   R_ASSERT_NON_RELEASE(widget->width()>0);
   R_ASSERT_NON_RELEASE(widget->height()>0);
+#endif
+#endif
   int width = R_MAX(widget->width(), 100);
   int height = R_MAX(widget->height(), 50);
   QPoint point = getCentrePosition(widget->parentWidget(), width, height, parentRect);
@@ -162,7 +166,7 @@ static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget, QRect parent
 #endif
 
 
-static bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_to_run_custom_exec){
+static inline bool can_widget_be_parent_questionmark(QWidget *w, bool is_going_to_run_custom_exec){
   if (w==NULL)
     return false;
   /*
