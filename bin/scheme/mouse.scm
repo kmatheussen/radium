@@ -4060,7 +4060,7 @@
                                                                         (<ra> :seqblock-holds-block seqblocknum seqtracknum)
                                                                         (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
                                                   (if blocknum
-                                                      (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)
+                                                      (show-seqblock-track-on-off-configuration (<ra> :get-seqblock-id seqblocknum seqtracknum) blocknum)
                                                       (create-audio-seqblock-gui seqblocknum seqtracknum)))
                                                 (set! *clicked-seqblock* (make-clicked-seqblock :seqtracknum seqtracknum
                                                                                                 :seqblocknum seqblocknum
@@ -7307,7 +7307,7 @@
 (define *curr-seqblock-track-on-off-window* #f)
 (define *curr-seqblock-track-on-off-gui* #f)
 
-(define (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)
+(define (show-seqblock-track-on-off-configuration seqblockid blocknum)
   (define starting #t)
   (define gui (<gui> :vertical-layout))
 
@@ -7319,13 +7319,17 @@
                                    (if (< instrument 0)
                                        ""
                                        (<ra> :get-instrument-name instrument))))
-                            (<ra> :is-seqblock-track-enabled tracknum seqblocknum seqtracknum)
+                            (let ((seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
+                                  (seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid)))
+                              (<ra> :is-seqblock-track-enabled tracknum seqblocknum seqtracknum))
                             #t
                             (lambda (enabled)
                               (when (not starting)
-                                (c-display "clicked" tracknum enabled)
-                                (<ra> :set-seqblock-track-enabled enabled tracknum seqblocknum seqtracknum)
-                                )))))
+                                (let ((seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
+                                      (seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid)))
+                                  (c-display "clicked" tracknum enabled)
+                                  (<ra> :set-seqblock-track-enabled enabled tracknum seqblocknum seqtracknum)
+                                  ))))))
             (iota (<ra> :get-num-tracks blocknum)))
   
   (define window (or *curr-seqblock-track-on-off-window*
@@ -7341,6 +7345,20 @@
                                                 (<gui> :close window))))
 
   (<gui> :add gui close-button)
+
+  (begin
+    (define seqblock-deleted-callback-called #f)
+    
+    (define (seqblock-deleted-callback)
+      (set! seqblock-deleted-callback-called #t)
+      (<gui> :close window))
+    
+    (<ra> :add-seqblock-deleted-callback seqblockid seqblock-deleted-callback)
+    
+    (<gui> :add-deleted-callback window
+           (lambda (runs-custom-exec)
+             (if (not seqblock-deleted-callback-called)
+                 (<ra> :remove-seqblock-deleted-callback seqblockid seqblock-deleted-callback)))))
   
   (if *curr-seqblock-track-on-off-gui*
       (begin
@@ -7374,7 +7392,7 @@
            (>= seqtracknum 0)
            (>= seqblocknum 0)
            (<ra> :seqblock-holds-block seqblocknum seqtracknum))
-      (show-seqblock-track-on-off-configuration seqtracknum seqblocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))))
+      (show-seqblock-track-on-off-configuration (<ra> :get-seqblock-id seqblocknum seqtracknum) (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))))
   
 ;; seqblock stretch handle menu
 (add-mouse-cycle
@@ -7839,7 +7857,7 @@
                                                          (list "Enable/disable editor tracks (double click)"
                                                                :enabled (and blocknum seqblocknum)
                                                                (lambda ()
-                                                                 (show-seqblock-track-on-off-configuration seqtracknum seqblocknum blocknum)))))
+                                                                 (show-seqblock-track-on-off-configuration seqblockid blocknum)))))
                                                     
                                                     ;;(list "Reset stretch"
                                                     ;;      :enabled (and seqblocknum
