@@ -7312,7 +7312,11 @@
   (for-each (lambda (tracknum)
               (<gui> :add gui
                      (<gui> :checkbox
-                            (<-> tracknum)
+                            (let ((instrument (<ra> :get-instrument-for-track tracknum blocknum)))
+                              (<-> tracknum ": " 
+                                   (if (< instrument 0)
+                                       ""
+                                       (<ra> :get-instrument-name instrument))))
                             (<ra> :is-seqblock-track-enabled tracknum seqblocknum seqtracknum)
                             #t
                             (lambda (enabled)
