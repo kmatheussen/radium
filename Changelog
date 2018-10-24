@@ -1,3 +1,44 @@
+Changes 5.9.8 -> 5.9.9:
+* Sequencer: Automatically update number of tracks in the
+  track on/off editor when the number of tracks in the
+  block changes.
+* Sequencer: Automatically close the track on/off editor
+  when seqblock is deleted.
+* Sequencer: Fix track on/off editor after moving the
+  seqblock before or after another seqblock.
+* Sequencer: Fix moving several seqblocks at once. (Bug
+  introduced in last release I think.)
+* Sequencer: Display instrument names for the tracks in
+  the track on/off editor.
+* Sequencer: Change seqblock in the track on/off editor
+  when changing current seqblock. Earlier, it was changed
+  when the mouse just hovered it.
+* Sequencer: Set current seqtrack when starting to edit
+  seqtrack automation.
+* Sequencer: Fix error message sometimes popping up right
+  after opening seqblock audio GUI.
+* Sequencer: Optimize drawing waveforms.
+* Sequencer: Optimize drawing seqblock automation.
+* Sequencer: Fix drawing shadowed waveforms (shown when
+  interior values are set).
+* Sequencer: Fix drawing seqblock automation outside start
+  and end of a seqblock.
+* Sequencer: Finished implemented the concept of
+  "current seqblock". The current seqblock has a blue
+  border around it.
+* Sequencer: Various minor rendering tweaks.
+* Disk: Improve error messages when disk access fails.
+* Sequencer: Saving song remembers sequencer visible area.
+* Sequencer: Undo remembers the sequencer visible area.
+* Editor: Pressing Escape or closing the window immediately
+  cancels the block properties window.
+* Editor: Make it possible to set only one track in the
+  block properties window.
+* API: requestWasCancelled, setCurrSeqblock,
+  getCurrSeqblockId, cancelCurrSeqblock
+
+
+
 Changes 5.9.5 -> 5.9.8:
 * Sequencer: Make sure the seqblock below mouse is always
   the selected one when showing the seqblock popup menu.
@@ -162,6 +203,7 @@ Changes 5.9.5 -> 5.9.8:
     making it impossible to continue using the program. If we
     are not certain, the message will be shown in the message
     window instead.
+
 
 
 Changes 5.9.4 -> 5.9.5:
