@@ -7545,7 +7545,8 @@
                               ;;        (<ra> :select-seqblock #t seqblocknum seqtracknum)))
 
                               (if seqblockid
-                                  (set-current-seqblock! seqtracknum seqblockid))
+                                  (set-current-seqblock! seqtracknum seqblockid)
+                                  (<ra> :set-curr-seqtrack seqtracknum))
                               
                               (set-grid-type (<ra> :get-seq-block-grid-type))
                               
