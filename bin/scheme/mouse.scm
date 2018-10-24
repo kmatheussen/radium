@@ -7359,6 +7359,21 @@
            (lambda (runs-custom-exec)
              (if (not seqblock-deleted-callback-called)
                  (<ra> :remove-seqblock-deleted-callback seqblockid seqblock-deleted-callback)))))
+
+  (begin
+    (define num-tracks (<ra> :get-num-tracks blocknum))
+    (<ra> :schedule 100
+          (lambda ()
+            (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
+            (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
+            (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
+            (cond ((not (<gui> :is-open window))
+                   #f)
+                  ((not (= num-tracks (<ra> :get-num-tracks blocknum)))
+                   (show-seqblock-track-on-off-configuration seqblockid blocknum)
+                   #f)
+                  (else
+                   100)))))
   
   (if *curr-seqblock-track-on-off-gui*
       (begin
