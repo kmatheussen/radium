@@ -6522,6 +6522,7 @@
                         :Get-existing-node-info (lambda (X Y callback)
                                                   (let ((automationnum (*current-seqautomation/distance* :automation-num))
                                                         (seqtracknum (*current-seqautomation/distance* :seqtrack)))
+                                                    (<ra> :set-curr-seqtrack seqtracknum)
                                                     (define (get-nodebox $num)
                                                       (get-common-node-box (<ra> :get-seq-automation-node-x $num automationnum seqtracknum)
                                                                            (<ra> :get-seq-automation-node-y $num automationnum seqtracknum)))
