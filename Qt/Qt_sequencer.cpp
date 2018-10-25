@@ -2927,7 +2927,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
     // navigator
     //
-    y1 += get_seqtrack_border_width(); ///2.0;
+    y1 += get_seqtrack_border_width()/2.0;
     _navigator_widget.setGeometry(x1, y1,
                                   x1_width, height()-y1);
 
