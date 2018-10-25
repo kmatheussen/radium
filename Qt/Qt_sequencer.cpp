@@ -2874,7 +2874,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     QFontMetrics fm(QApplication::font());
     double systemfontheight = fm.height();
 
-    const int bottom_height = R_BOUNDARIES(30, root->song->seqtracks.num_elements * (systemfontheight/2), height()/3);
+    const int min_bottom_height = systemfontheight*2;
+    const int max_bottom_height = height() / 3;
+    if(max_bottom_height <= min_bottom_height)
+      return;
+    
+    const int bottom_height = R_BOUNDARIES(min_bottom_height, root->song->seqtracks.num_elements * (systemfontheight/2), max_bottom_height);
 
     const int timeline_widget_height = systemfontheight*1.3 + 2;
  
