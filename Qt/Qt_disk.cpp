@@ -108,6 +108,38 @@ const wchar_t *DISK_create_non_existant_filename(const wchar_t *filename){
   return filename;
 }
 
+bool DISK_copy(const wchar_t *old_file, const wchar_t *new_file){
+  return QFile::copy(STRING_get_qstring(old_file), STRING_get_qstring(new_file));
+}
+
+const wchar_t *DISK_get_temp_dir(void){
+  return STRING_create(QDir::tempPath());
+}
+
+const wchar_t *DISK_copy_to_temp_file(const wchar_t *old_file){
+  QFileInfo info(STRING_get_qstring(old_file));
+
+  QString dirname = info.absoluteDir().absolutePath();
+  QString basename = info.baseName();
+  QString suffix = info.completeSuffix();
+  if (suffix != "")
+    suffix = "." + suffix;
+
+  QString template_ = STRING_get_qstring(DISK_get_temp_dir()) + QDir::separator() + "radium_copied" + suffix;
+  const wchar_t *temp_file = DISK_create_non_existant_filename(STRING_create(template_));
+
+  if (temp_file==NULL)
+    return NULL;
+
+  printf("  TEMP_FILE: -%S-\n", temp_file);
+
+  if (DISK_copy(old_file, temp_file)==false){
+    DISK_delete_file(temp_file);
+    return NULL;
+  }
+
+  return temp_file;
+}
 
 static const char *g_last_error = "";
 
