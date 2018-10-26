@@ -161,7 +161,11 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
 #else
   QString program = OS_get_full_program_file_path(QString("radium_error_message"));
 #endif
-  
+
+#if defined(FOR_WINDOWS)
+  program = QString("\"") + program + "\""; // necessary if path contains spaces.
+#endif
+
   QStringList arguments;
   arguments << QString(QString(message).toUtf8().toBase64().constData());
 

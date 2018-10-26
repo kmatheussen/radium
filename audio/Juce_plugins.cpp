@@ -2212,7 +2212,7 @@ static juce::String get_container_descriptions_filename(const wchar_t *container
 
 static enum PopulateContainerResult launch_program_calling_write_container_descriptions_to_cache_on_disk(const wchar_t *container_filename){
 #if FOR_WINDOWS
-  juce::String executable = juce::String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner.exe")));
+  juce::String executable = juce::String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner.exe"))); // Don't need to surround string with " and " with juce. You need to do that in Qt.
 #else
   juce::String executable = juce::String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner")));
 #endif

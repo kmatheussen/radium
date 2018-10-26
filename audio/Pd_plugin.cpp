@@ -1370,6 +1370,7 @@ void create_pd_plugin(void){
 
 #include "../common/nsmtracker.h"
 #include "SoundPlugin.h"
+#include "SoundPluginRegistry_proc.h"
 #include "Pd_plugin.h"
 #include "Pd_plugin_proc.h"
 

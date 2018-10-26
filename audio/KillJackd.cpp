@@ -254,6 +254,11 @@ bool KILLJACKD_kill_jackd_if_unresponsive(void){
   QString program = OS_get_full_program_file_path("radium_check_jack_status");
 #endif
 
+#if defined(FOR_WINDOWS)
+  program = QString("\"") + program + "\""; // necessary if path contains spaces.
+#endif
+
+  
   myProcess->start(program);
 
 #if defined(RELEASE)

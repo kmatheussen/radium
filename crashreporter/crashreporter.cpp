@@ -45,8 +45,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTemporaryFile>
 #include <QDir>
 
-#include <QProcess>
-
 #include <QNetworkRequest>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -106,7 +104,7 @@ static QString fromBase64(QString encoded){
 #endif
 }
 
-
+#if defined(FOR_LINUX) || defined(CRASHREPORTER_BIN)
 static QString file_to_string(QString filename){
   QFile file(filename);
   bool ret = file.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -118,6 +116,7 @@ static QString file_to_string(QString filename){
     }
   return "(unable to open file -"+filename+"-)";
 }
+#endif
 
 #if defined(CRASHREPORTER_BIN)
 static void delete_file(QString filename){
@@ -742,6 +741,10 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
     QString program = OS_get_full_program_file_path("radium_crashreporter.exe");
 #else
     QString program = OS_get_full_program_file_path("radium_crashreporter");
+#endif
+
+#if defined(FOR_WINDOWS)
+    program = QString("\"") + program + "\""; // necessary if path contains spaces.
 #endif
 
     QTemporaryFile *file;
