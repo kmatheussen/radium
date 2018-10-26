@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/OS_disk_proc.h"
 #include "../common/vector_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/threading.h"
@@ -882,95 +883,54 @@ static void menu_descend(const char * uri,
     PR_add_menu_entry(PluginMenuEntry::level_down());
 }
 
-// This function is copied from jack-rack by Bob Ham. Slightly modified.
-static void get_dir_uris (std::vector<char*> &lrdf_uris, const char * dir){
-  DIR * dir_stream;
-  struct dirent * dir_entry;
-  char * file_name;
-  int err;
-  size_t dirlen;
-  char * extension;
-
-  const char *separator = OS_get_directory_separator();
+static void get_dir_uris (QStringList &lrdf_uris, const QString &dirname){
+  QDir dir(dirname);
+  QFileInfoList filelist = dir.entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
   
-  dir_stream = opendir (dir);
-  if (!dir_stream)
-    return;
-  
-  dirlen = strlen (dir);
-  
-  while ( (dir_entry = readdir (dir_stream)) )
-    {
-      /* check if it's a .rdf or .rdfs */
-      extension = strrchr (dir_entry->d_name, '.');
-      if (!extension)
-        continue;
-      if (strcmp (extension, ".rdf") != 0 &&
-          strcmp (extension, ".rdfs") != 0)
-        continue;
-  
-      file_name = (char*)V_malloc (dirlen + 1 + strlen (dir_entry->d_name) + 1 + 7 + 100);
+  for(QFileInfo file_info : filelist){
     
-      sprintf(file_name,"%s:%s%s%s%s%s",
-              "file",
-              "","",
-              //separator,
-              //separator,
-              dir,
-              dir[strlen(dir)-1]==separator[0] ? "" : separator,
-              dir_entry->d_name);
+    if (file_info.isDir())
+      continue;
     
-      lrdf_uris.push_back(file_name);
-
-      printf("Found LRDF description file '%s'\n", file_name);
-    }
-  
-  err = closedir (dir_stream);
-  if (err)
-    fprintf (stderr, "%s: error closing directory '%s': %s\n", __FUNCTION__, dir, strerror (errno));
+    QString file_name = file_info.fileName();
+    
+    if (file_name.endsWith(".rdf") || file_name.endsWith(".rdfs"))
+      lrdf_uris.push_back(file_info.absoluteFilePath());        
+  }
 }
 
 // This function is copied from jack-rack by Bob Ham. Slightly modified.
-static void get_path_uris (std::vector<char*> &lrdf_uris){
-  char lrdf_path[2000];
+static void get_path_uris (QStringList &lrdf_uris){
+  QStringList lrdf_paths;
+
+  lrdf_paths << OS_get_full_program_file_path("rdf"); // place this one first so that the user doesn't override the rdfs in bin/rdf/
 
 #if __linux__
 
-#if 1
-  sprintf(lrdf_path,"%s:/usr/local/share/ladspa/rdf:/usr/share/ladspa/rdf:%s/rdf",
-          getenv("LADSPA_RDF_PATH")==NULL ? "" : getenv("LADSPA_RDF_PATH"),
-          OS_get_program_path());
+  if(getenv("LADSPA_RDF_PATH")!=NULL){
+    auto d = QString(getenv("LADSPA_RDF_PATH")).split(":");
+    for(QString path : d)
+      lrdf_paths << path;
+  }
+  
+  lrdf_paths << "/usr/local/share/ladspa/rdf";
+  lrdf_paths << "/usr/share/ladspa/rdf";
 
-#else
-
-  sprintf(lrdf_path,"%s/rdf",
-          OS_get_program_path());
 #endif
 
-
-  char *dir = strtok (lrdf_path, ":");
-  do
-    get_dir_uris (lrdf_uris, dir);
-  while ((dir = strtok (NULL, ":")));
-
-#endif // __linux__
-
-#if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
-  sprintf(lrdf_path,"%s%srdf",OS_get_program_path(), OS_get_directory_separator());
-  printf("lrdf_path: -%s-\n",lrdf_path);
-  get_dir_uris(lrdf_uris,lrdf_path);
-#endif
+  for(QString path : lrdf_paths)
+    get_dir_uris(lrdf_uris, path);
 }
 
-static std::vector<char*> filter_out_same_basename_lrdf(std::vector<char*> &lrdf_uris){
+static QStringList filter_out_same_basename_lrdf(QStringList &lrdf_uris){
   QHash<QString,int> basenames;
-  std::vector<char*> ret;
+  QStringList ret;
 
-  for(unsigned int i=0;i<lrdf_uris.size();i++){
-    QFileInfo fileInfo(lrdf_uris.at(i));
+  for(QString lrdf_uri :lrdf_uris){
+    QFileInfo fileInfo(lrdf_uri);
     if(basenames.contains(fileInfo.baseName())==false){
       basenames[fileInfo.baseName()] = 1;
-      ret.push_back(lrdf_uris.at(i));
+      ret.push_back(lrdf_uri);
     }
   }
 
@@ -979,7 +939,7 @@ static std::vector<char*> filter_out_same_basename_lrdf(std::vector<char*> &lrdf
 
 // This function is copied from jack-rack by Bob Ham. Slightly modified.
 static void init_lrdf (){
-  std::vector<char*> lrdf_uris;
+  QStringList lrdf_uris;
   int err;
   
   get_path_uris (lrdf_uris);
@@ -994,15 +954,34 @@ static void init_lrdf (){
   printf("lrdf init\n");
   fflush(stdout);
 
-  for(unsigned int i=0;i<lrdf_uris.size();i++){
+  for(QString lrdf_uri : lrdf_uris){
     //printf("Trying to read %d, size: %d. data: %s\n",i,(int)lrdf_uris.size(),lrdf_uris.at(i));
     fflush(stdout);
-    err = lrdf_read_file (lrdf_uris.at(i));
+
+    const wchar_t *temp_file = DISK_copy_to_temp_file(STRING_create(lrdf_uri));
+    if (temp_file==NULL){
+      GFX_addMessage("Unable to create temp file when reading LRDF file '%s'", lrdf_uri.toUtf8().constData());
+    } else {
+
+      //err = lrdf_read_file((QString("file:")+lrdf_uri).toUtf8().constData());
+
+      err = lrdf_read_file(QFile::encodeName(STRING_get_qstring(STRING_append(STRING_create("file:"),
+                                                                              temp_file)
+                                                                )
+                                             ).constData()
+                           );
+
+
+      if (DISK_delete_file(temp_file)==false){
+        GFX_addMessage("Unable to delete temp file '%S' when reading LRDF file '%s'", temp_file, lrdf_uri.toUtf8().constData());
+      }
+
+    }
     //printf("Finished reading %d. Success? %s\n", i, err ? "no":"yes");
     //fflush(stdout);
 
     if (err)
-      fprintf (stderr, "%s: could not parse LRDF file '%s'\n", __FUNCTION__, lrdf_uris.at(i));
+      fprintf (stderr, "%s: could not parse LRDF file '%s'\n", __FUNCTION__, lrdf_uri.toUtf8().constData());
   }
 }
 
@@ -1070,8 +1049,9 @@ void create_ladspa_plugins(void){
 #if !defined(RELEASE)
   //return; // takes long time to load ladspa plugins in gdb.
 #endif
+
   
-  char ladspa_path[1024];
+  QStringList ladspa_path;
 
 #if FOR_LINUX && !defined(IS_LINUX_BINARY)  // We don't use system ladspa plugins in the binaries because they might use incompatible libraries with the ones included with radium. (happens with guitarix, which links in glib, preventing radium from even starting.)
   
@@ -1083,24 +1063,26 @@ void create_ladspa_plugins(void){
 #else
     QString home_ladspa_path = QDesktopServices::storageLocation(QDesktopServices::HomeLocation) + "/.ladspa";
 #endif
+
+    if(OS_has_full_program_file_path("ladspa"))
+      ladspa_path << OS_get_full_program_file_path("ladspa");
     
-    sprintf(ladspa_path,
-            "%s:%s:%s",
-            QString(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").toUtf8().constData(),
-            home_ladspa_path.toUtf8().constData(),
-            "/usr/lib64/ladspa:/usr/lib/ladspa:/usr/local/lib64/ladspa:/usr/local/lib/ladspa"
-            );
+    ladspa_path << home_ladspa_path;
+    ladspa_path << "/usr/lib64/ladspa";
+    ladspa_path << "/usr/lib/ladspa";
+    ladspa_path << "/usr/local/lib64/ladspa";
+    ladspa_path << "/usr/local/lib/ladspa";
+
   } else 
-    sprintf(ladspa_path,"%s",getenv("LADSPA_PATH"));
+    ladspa_path << getenv("LADSPA_PATH");
 
 #else
   
-  sprintf(ladspa_path,"%s",QString(QString(OS_get_program_path()) + OS_get_directory_separator() + "ladspa").toUtf8().constData());
+  ladspa_path << OS_get_full_program_file_path("ladspa");
   
 #endif
 
-  char *dirname = strtok (ladspa_path, ":");
-  do{
+  for(QString dirname : ladspa_path){
 
     QDir dir(dirname);
 
@@ -1115,7 +1097,7 @@ void create_ladspa_plugins(void){
         add_ladspa_plugin_type(fileInfo);
     }
 
-  }while ((dirname = strtok (NULL, ":")));
+  }
 
   init_menues();
 }

@@ -14,6 +14,9 @@ extern LANGSPEC bool DISK_delete_file(const wchar_t *filename);
 extern LANGSPEC void DISK_delete_all_files_in_dir(const wchar_t *wdirname);
 extern LANGSPEC const wchar_t *DISK_get_dir_separator(void);
 extern LANGSPEC const wchar_t *DISK_create_non_existant_filename(const wchar_t *filename);
+extern LANGSPEC const wchar_t *DISK_get_temp_dir(void);
+extern LANGSPEC bool DISK_copy(const wchar_t *old_file, const wchar_t *new_file);
+extern LANGSPEC const wchar_t *DISK_copy_to_temp_file(const wchar_t *old_file);
 
 // OPEN
 extern LANGSPEC disk_t *DISK_open_for_writing(const wchar_t *filename);
