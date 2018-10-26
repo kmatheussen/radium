@@ -940,7 +940,6 @@ static QStringList filter_out_same_basename_lrdf(QStringList &lrdf_uris){
 // This function is copied from jack-rack by Bob Ham. Slightly modified.
 static void init_lrdf (){
   QStringList lrdf_uris;
-  int err;
   
   get_path_uris (lrdf_uris);
 
@@ -958,19 +957,23 @@ static void init_lrdf (){
     //printf("Trying to read %d, size: %d. data: %s\n",i,(int)lrdf_uris.size(),lrdf_uris.at(i));
     fflush(stdout);
 
+    // Since liblrdf only accepepts char* as filename format, we copy the rdf file to a temporary path to make it load on windows when the program path contains non-ascii characters.
     const wchar_t *temp_file = DISK_copy_to_temp_file(STRING_create(lrdf_uri));
+    
     if (temp_file==NULL){
       GFX_addMessage("Unable to create temp file when reading LRDF file '%s'", lrdf_uri.toUtf8().constData());
     } else {
 
       //err = lrdf_read_file((QString("file:")+lrdf_uri).toUtf8().constData());
 
-      err = lrdf_read_file(QFile::encodeName(STRING_get_qstring(STRING_append(STRING_create("file:"),
+      int err = lrdf_read_file(QFile::encodeName(STRING_get_qstring(STRING_append(STRING_create("file:"),
                                                                               temp_file)
                                                                 )
                                              ).constData()
                            );
 
+      if (err)
+        GFX_addMessage("%s: could not parse LRDF file '%s'\n", __FUNCTION__, lrdf_uri.toUtf8().constData());
 
       if (DISK_delete_file(temp_file)==false){
         GFX_addMessage("Unable to delete temp file '%S' when reading LRDF file '%s'", temp_file, lrdf_uri.toUtf8().constData());
@@ -980,8 +983,6 @@ static void init_lrdf (){
     //printf("Finished reading %d. Success? %s\n", i, err ? "no":"yes");
     //fflush(stdout);
 
-    if (err)
-      fprintf (stderr, "%s: could not parse LRDF file '%s'\n", __FUNCTION__, lrdf_uri.toUtf8().constData());
   }
 }
 
