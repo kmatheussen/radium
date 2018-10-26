@@ -709,19 +709,16 @@ char *DISK_run_program_that_writes_to_temp_file(const char *program, const char 
 
   QString full_path_program = OS_get_full_program_file_path(program);
   
-#if defined(FOR_WINDOWS)
-  full_path_program = QString("\"") + full_path_program + "\""; // necessary if path contains spaces.
-#endif
-
   wchar_t *p = STRING_create(full_path_program, false);
+  wchar_t *p1 = STRING_create(QString("\"") + full_path_program + "\"", false);
   wchar_t *a1 = STRING_create(QString("\"") + arg1 + "\"", false); // _wspawnl is really stupid. (https://blogs.msdn.microsoft.com/twistylittlepassagesallalike/2011/04/23/everyone-quotes-command-line-arguments-the-wrong-way/)
-  wchar_t *a2 = STRING_create(arg2, false);
-  wchar_t *a3 = STRING_create(arg3, false);
+  wchar_t *a2 = STRING_create(QString("\"") + arg2 + "\"", false);
+  wchar_t *a3 = STRING_create(QString("\"") + arg3 + "\"", false);
   wchar_t *a4 = STRING_create("\""+filename+"\"", false);
   printf("   file.fileName(): -%s-\n",filename.toUtf8().constData());
 
 
-  if(_wspawnl(_P_WAIT, p, p, a1, a2, a3, a4, NULL)==-1){
+  if(_wspawnl(_P_WAIT, p, p1, a1, a2, a3, a4, NULL)==-1){
     char *temp = (char*)malloc(strlen(program)+strlen(arg1)+1024);    
     sprintf(temp, "Couldn't launch %s: \"%s\"\n",program,arg1);
     fprintf(stderr,temp);
