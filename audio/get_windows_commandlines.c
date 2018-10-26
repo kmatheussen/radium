@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "get_windows_commandlines_proc.h"
 
-int bstr_length(BSTR bstr){
+static int bstr_length(BSTR bstr){
   WCHAR *c=(WCHAR*)bstr;
   int len=0;
   while(c[len]!=0)
@@ -39,7 +39,7 @@ int bstr_length(BSTR bstr){
   return len+1;
 }
 
-const char *bstr_to_str(BSTR bstr){
+static const char *bstr_to_str(BSTR bstr){
   int len = bstr_length(bstr);
   char *str=talloc(len+10);
 

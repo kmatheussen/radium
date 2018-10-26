@@ -329,6 +329,10 @@ void GFX_OpenProgress(const char *message){
   QString program = OS_get_full_program_file_path("radium_progress_window");
 #endif
 
+#if defined(FOR_WINDOWS)
+  program = QString("\"") + program + "\""; // necessary if path contains spaces.
+#endif
+
 #if defined(FOR_LINUX) || defined(FOR_MACOSX)
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   env.insert("LD_LIBRARY_PATH", getenv("LD_LIBRARY_PATH"));
@@ -359,9 +363,10 @@ void GFX_OpenProgress(const char *message){
   //getchar();
   
   if (g_process->waitForStarted()==false){
-    printf("PROGRESSWINDOWS: Unable to start process\n");
+    printf("PROGRESSWINDOWS: Unable to start process: -%S-\n", STRING_create(program));
 #if !defined(RELEASE)
     getchar();
+    abort();
 #endif
     delete g_process;
     g_process = NULL;

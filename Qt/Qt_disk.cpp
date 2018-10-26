@@ -706,7 +706,14 @@ char *DISK_run_program_that_writes_to_temp_file(const char *program, const char 
   }
   
 #if defined(FOR_WINDOWS)
-  wchar_t *p = STRING_create(OS_get_full_program_file_path(program), false);
+
+  QString full_path_program = OS_get_full_program_file_path(program);
+  
+#if defined(FOR_WINDOWS)
+  full_path_program = QString("\"") + full_path_program + "\""; // necessary if path contains spaces.
+#endif
+
+  wchar_t *p = STRING_create(full_path_program, false);
   wchar_t *a1 = STRING_create(QString("\"") + arg1 + "\"", false); // _wspawnl is really stupid. (https://blogs.msdn.microsoft.com/twistylittlepassagesallalike/2011/04/23/everyone-quotes-command-line-arguments-the-wrong-way/)
   wchar_t *a2 = STRING_create(arg2, false);
   wchar_t *a3 = STRING_create(arg3, false);
