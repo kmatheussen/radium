@@ -483,6 +483,8 @@ int main(int argc, char **argv){
     msgBox.exec();
   }
 #endif
+
+  printf("  main. filename: -%s-. From base64: -%s-\n", argv[1], local::fromBase64(argv[1]).toUtf8().constData());
   
   QString filename = local::fromBase64(argv[1]);
 
@@ -561,14 +563,18 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
 #if defined(FOR_WINDOWS)
 
   wchar_t *p = STRING_create(program, false);
+  wchar_t *p1 = STRING_create(QString("\"") + program + "\"" , false);
   wchar_t *a1 = STRING_create(arg1, false);
   wchar_t *a2 = STRING_create(arg2, false);
   wchar_t *a3 = STRING_create(arg3, false);
   wchar_t *a4 = STRING_create(arg4, false);
 
-  if(_wspawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p, a1, a2, a3, a4, NULL)==-1){
+  printf("  a1: -%S-\n", a1);
+  
+  int ret = _wspawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p1, a1, a2, a3, a4, NULL);
+  if(ret==-1){
     char *temp = (char*)malloc(program.size()+arg1.size()+1024);
-    sprintf(temp, "Couldn't launch crashreporter: \"%s\" \"%s\"\n",program.toUtf8().constData(), arg1.toUtf8().constData());
+    sprintf(temp, "Couldn't launch crashreporter: \"%S\" \"%S\". errno: %d. E2BIG: %d EINVAL: %d. ENOENT: %d. ENOEXEC: %d. ENOMEM: %d\n",p, a1, errno, E2BIG, EINVAL, ENOENT, ENOEXEC, ENOMEM);
     fprintf(stderr,temp);
     SYSTEM_show_error_message(strdup(temp));
     Sleep(3000);
@@ -744,7 +750,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 #endif
 
 #if defined(FOR_WINDOWS)
-    program = QString("\"") + program + "\""; // necessary if path contains spaces.
+    //program = QString("\"") + program + "\""; // necessary if path contains spaces.
 #endif
 
     QTemporaryFile *file;
@@ -815,7 +821,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
     if (dosave)
       emergency_save_file.open();
 
-    //printf("tosend: -%s-. Filename: %s\n",tosend.toUtf8().constData(),file->fileName().toUtf8().constData());
+    printf(" calling run_program. Filename: %S. base64: %S\n",STRING_create(file->fileName(), false), STRING_create(local::toBase64(file->fileName()), false));
     //getchar();
     
     run_program(program,
