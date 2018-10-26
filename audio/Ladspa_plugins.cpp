@@ -899,7 +899,6 @@ static void get_dir_uris (QStringList &lrdf_uris, const QString &dirname){
   }
 }
 
-// This function is copied from jack-rack by Bob Ham. Slightly modified.
 static void get_path_uris (QStringList &lrdf_uris){
   QStringList lrdf_paths;
 
@@ -937,7 +936,6 @@ static QStringList filter_out_same_basename_lrdf(QStringList &lrdf_uris){
   return ret;
 }
 
-// This function is copied from jack-rack by Bob Ham. Slightly modified.
 static void init_lrdf (){
   QStringList lrdf_uris;
   
