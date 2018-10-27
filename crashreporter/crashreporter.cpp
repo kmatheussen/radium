@@ -104,7 +104,7 @@ static QString fromBase64(QString encoded){
 #endif
 }
 
-#if defined(FOR_LINUX) || defined(CRASHREPORTER_BIN)
+#if defined(FOR_LINUX) || defined(FOR_MACOSX) || defined(CRASHREPORTER_BIN)
 static QString file_to_string(QString filename){
   QFile file(filename);
   bool ret = file.open(QIODevice::ReadOnly | QIODevice::Text);

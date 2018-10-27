@@ -193,13 +193,15 @@ wchar_t *STRING_to_lower(const wchar_t *string){
 
 wchar_t *STRING_toBase64(const wchar_t *s){
   QString s2 = STRING_get_qstring(s);
-  QString encoded = s2.toLocal8Bit().toBase64();
+  //QString encoded = s2.toLocal8Bit().toBase64();
+  QString encoded = s2.toUtf8().toBase64();
   return STRING_create(encoded);
 }
 
 wchar_t *STRING_fromBase64(const wchar_t *encoded){
   QString encoded2 = STRING_get_qstring(encoded);
-  QString decoded = QString::fromLocal8Bit(QByteArray::fromBase64(encoded2.toLocal8Bit()).data());
+  //QString decoded = QString::fromLocal8Bit(QByteArray::fromBase64(encoded2.toLocal8Bit()).data());
+  QString decoded = QString::fromUtf8(QByteArray::fromBase64(encoded2.toUtf8()).data());
   return STRING_create(decoded);
 }
 
