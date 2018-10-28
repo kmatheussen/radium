@@ -196,10 +196,13 @@ static const GlyphpathAndWidth &getGlyphpathAndWidth(const QFont &font, const QC
 }
 
 static bool g_is_drawing_sequencer_time = false;
+static bool g_is_drawing_sequencer_gfx_block = false;
 
 void myDrawText(QPainter *painter, QRectF rect, QString text, int flags){
-  if (g_is_drawing_sequencer_time && is_playing() && pc->playtype==PLAYSONG && smooth_scrolling()){
+  if (g_is_drawing_sequencer_gfx_block || (g_is_drawing_sequencer_time && is_playing() && pc->playtype==PLAYSONG && smooth_scrolling())){
 
+    R_ASSERT_NON_RELEASE(g_is_drawing_sequencer_time);
+    
     // Paint glyphs manually. QPainter::drawText doesn't have floating point precision.
     int len=text.length();
 
@@ -216,7 +219,15 @@ void myDrawText(QPainter *painter, QRectF rect, QString text, int flags){
     }
     
     QBrush brush = painter->pen().brush();
+
+    bool was_clipping = painter->hasClipping();
+    const QRegion &old_clipregion = painter->clipRegion();
     
+    painter->setClipRect(rect.toRect());
+
+    if(was_clipping==false)
+      painter->setClipping(true);
+        
     for(int i=0; i<len; i++){
       const GlyphpathAndWidth &g = getGlyphpathAndWidth(font, text.at(i));
       painter->save();
@@ -226,6 +237,12 @@ void myDrawText(QPainter *painter, QRectF rect, QString text, int flags){
       
       x += g.width;
     }
+
+    if (was_clipping)
+      painter->setClipRegion(old_clipregion);
+    else
+      painter->setClipping(false);
+    
   } else {
 
     QTextOption option((Qt::Alignment)flags);
@@ -297,7 +314,7 @@ static double get_seqblock_ysplit3(double seqblock_y1, double seqblock_y2){
   return seqblock_y2 - (seqblock_y2-y1) / 4;
 }
 
-static void paintCurrBorder(QPainter &p, const QRectF &rect, const QColor &color, int round_x = 3, int round_y = 3) {
+static void paintCurrBorder(QPainter &p, const QRectF &rect, const QColor &color, bool paint_float = false, int round_x = 3, int round_y = 3) {
   float b1 = 1.0;
   float b2 = 1.0;
   float b = floor(get_seqtrack_border_width());
@@ -308,10 +325,20 @@ static void paintCurrBorder(QPainter &p, const QRectF &rect, const QColor &color
     pen.setWidthF(b);
     p.setPen(pen);
 
-    QRect rect2 = rect.toRect();
+
+    QRectF rect2 = rect.toRect();
     rect2.adjust(b/2.0, 0, 0, 0);
+    
+    if (paint_float){
+
+      QRectF rect3(rect.x()+b/2, rect2.y(), rect.width()-b/2, rect2.height());
+      p.drawRoundedRect(rect3,round_x,round_y);//rect, round_x, round_y);
       
-    p.drawRoundedRect(rect2,round_x,round_y);//rect, round_x, round_y);
+    } else {
+      
+      p.drawRoundedRect(rect2,round_x,round_y);//rect, round_x, round_y);
+      
+    }
   }
 
   //p.setRenderHints(QPainter::Antialiasing,false);
@@ -324,8 +351,16 @@ static void paintCurrBorder(QPainter &p, const QRectF &rect, const QColor &color
     pen.setWidthF(width);
     p.setPen(pen);
       
-    QRectF rect2 = rect.toRect();
-    rect2.adjust(0,-b/2,b/2,+b/2);
+    QRectF rect3 = rect.toRect();
+    rect3.adjust(0,-b/2,b/2,+b/2);
+    
+    QRectF rect2;
+    
+    if (paint_float)
+      rect2 = QRectF(rect.x(), rect3.y(), rect.width()+b/2, rect3.height());
+    else
+      rect2 = rect3;
+    
     //printf("Outer border y2: %f\n", rect2.y()+rect2.height());
     p.drawRoundedRect(rect2,round_x,round_y);//rect, round_x, round_y);
   }
@@ -339,8 +374,16 @@ static void paintCurrBorder(QPainter &p, const QRectF &rect, const QColor &color
     pen.setWidthF(width);
     p.setPen(pen);
       
-    QRectF rect2 = rect.toRect();
-    rect2.adjust(b,b/2,-b/2,-b/2);
+    QRectF rect3 = rect.toRect();
+    rect3.adjust(b,b/2,-b/2,-b/2);
+    
+    QRectF rect2;
+    
+    if (paint_float)
+      rect2 = QRectF(rect.x() + b, rect3.y(), rect.width() - b - b/2, rect3.height());
+    else
+      rect2 = rect3;
+    
     p.drawRoundedRect(rect2,round_x,round_y);//rect, round_x, round_y);
   }
   //p.setRenderHints(QPainter::Antialiasing,true);
@@ -1718,13 +1761,15 @@ public:
                     x2 - x1 + b + b/2.0, t_y2 - t_y1 + b);
   }
   
-  void paint_current_seqblock_border(QPainter &p, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock) const {
+  void paint_current_seqblock_border(QPainter &p, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, bool paint_float) const {
     //printf("Seqblock: ");
-    paintCurrBorder(p, get_current_seqblock_rect(seqblock, false), QColor(0,0x60,0x90,0xb0), 0, 0);
+    paintCurrBorder(p, get_current_seqblock_rect(seqblock, false), QColor(0,0x60,0x90,0xb0), paint_float, 0, 0);
   }
   
   bool paintSeqBlock(QPainter &p, const QRegion &update_region, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, int seqtracknum, int seqblocknum, Seqblock_Type type){
     //QPoint mousep = _sequencer_widget->mapFromGlobal(QCursor::pos());
+
+    radium::ScopedBoolean scoped_boolean_is_drawing_sequencer_time(g_is_drawing_sequencer_gfx_block, type==Seqblock_Type::GFX_GFX || type==Seqblock_Type::GFX || (type==Seqblock_Type::REGULAR && seqtrack->gfx_seqblocks != NULL));
 
     QRectF rect;
 
@@ -1797,6 +1842,7 @@ public:
     if (type==Seqblock_Type::REGULAR || type==Seqblock_Type::GFX){
       R_ASSERT(seqblocknum>=0);
       int seqblockid = seqblock->id;
+
       API_run_custom_gui_paint_function(SEQUENCER_getWidget(),
                                         &p, &update_region,
                                         [seqtracknum,seqblocknum,seqblockid](){
@@ -1947,8 +1993,18 @@ public:
         VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
 
           if (is_current_seqblock(seqblock)){
+            
+            bool paint_float = seqtrack->gfx_seqblocks != NULL;
+
+            if(false==paint_float)
+              p.setRenderHints(QPainter::Antialiasing,false);
+
             Seqblocks_widget seqblocks_widget = get_seqblocks_widget(seqtracknum, true);
-            seqblocks_widget.paint_current_seqblock_border(p, seqtrack, seqblock);
+            seqblocks_widget.paint_current_seqblock_border(p, seqtrack, seqblock, paint_float);
+
+            if(false==paint_float)
+              p.setRenderHints(QPainter::Antialiasing,true);
+
             return;
           }
           
@@ -3391,9 +3447,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
         p.setClipRect(QRectF(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1, _seqtracks_widget.t_width, _seqtracks_widget.t_height+get_seqtrack_border_width()));
 
-        p.setRenderHints(QPainter::Antialiasing,false);
         _seqtracks_widget.paint_curr_seqblock_border(ev->region(), p);
-        p.setRenderHints(QPainter::Antialiasing,true);
         
         _seqtracks_widget.paint_automation(ev->region(), p);    
         paintCursor(ev->region(), p);

@@ -417,17 +417,24 @@ enum WhetherToDeleteUnusedRecordingTakes{
 namespace radium{
   class ScopedBoolean{
     bool &_abool;
+    const bool _doit;
   public:
-    ScopedBoolean(bool &abool)
+    ScopedBoolean(bool &abool, const bool doit = true)
       : _abool(abool)
+      , _doit(doit)
     {
       R_ASSERT(_abool==false);
-      _abool = true;
+      if(_doit)
+        _abool = true;
     }
 
     ~ScopedBoolean(){
-      R_ASSERT(_abool==true);
-      _abool = false;
+      if(_doit){
+        R_ASSERT(_abool==true);
+        _abool = false;
+      } else {
+        R_ASSERT_NON_RELEASE(_abool==false);
+      }
     }
   };    
 };
