@@ -113,7 +113,8 @@ void DISKPEAKS_delete_file(const wchar_t *wfilename){
 void DISKPEAKS_call_very_often(void){
  again:
   for(auto diskpeaks : g_diskpeaks){
-    if(delete_if_empty(diskpeaks))
+    R_ASSERT(diskpeaks!=NULL);
+    if(diskpeaks!=NULL && delete_if_empty(diskpeaks))
       goto again;
   }
 }

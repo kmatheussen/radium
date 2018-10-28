@@ -1540,8 +1540,6 @@ inline static void CHECKBOX_paint_arc(QPainter *painter, bool is_checked, bool i
 }
 */
 
-extern QHash<int, QColor> custom_colors;
-
 void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
   Q_UNUSED(widget);
@@ -1609,8 +1607,6 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int x1,y1,x2,y2;
     get_name_coordinates(x1,y1,x2,y2);
 
-    //int colornum = patch->colornum;
-    //QColor patchcolor(custom_colors[colornum]);
     QColor patchcolor(patch->color);
 
     QColor c =
