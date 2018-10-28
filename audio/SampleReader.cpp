@@ -697,11 +697,14 @@ public:
 
 static SampleProvider *get_sample_provider(const wchar_t *filename){
   R_ASSERT(THREADING_is_main_thread());
-  
-  auto *maybe = g_sample_providers[STRING_get_qstring(filename)];
-  if (maybe != NULL)
-    return maybe;
 
+  QString key = STRING_get_qstring(filename);
+  auto *maybe = g_sample_providers.value(key);
+  if (maybe!=NULL)
+    return maybe;
+  
+  R_ASSERT_NON_RELEASE(g_sample_providers.contains(key)==false);
+  
   auto *provider = new SampleProvider(filename);
 
   if (provider->_is_valid==false){
@@ -1365,7 +1368,7 @@ vector_t SAMPLEREADER_get_all_filenames(void){
 }
 
 bool SAMPLEREADER_remove_filename_from_filenames(const wchar_t *filename){
-  SampleProvider *provider = g_sample_providers[STRING_get_qstring(filename)];
+  SampleProvider *provider = g_sample_providers.value(STRING_get_qstring(filename));
   //R_ASSERT_RETURN_IF_FALSE(provider!=NULL); Commented out since we might have asked to remove a deletable filename, which could have been deleted in between gathering the filename and calling this function.  
   if(provider==NULL)
     return true;
@@ -1379,7 +1382,7 @@ bool SAMPLEREADER_remove_filename_from_filenames(const wchar_t *filename){
 vector_t SAMPLEREADER_get_all_deletable_filenames(void){
   vector_t ret = {};
   for(const auto *provider : g_sample_providers.values()){
-    R_ASSERT_NON_RELEASE(provider!=NULL); // I have no idea why, but provider was NULL once when exiting the program.
+    R_ASSERT(provider!=NULL);
     if (provider!=NULL && provider->_file_can_be_deleted)
       VECTOR_push_back(&ret, talloc_wcsdup(provider->_filename));
   }
@@ -1438,9 +1441,13 @@ void SAMPLEREADER_maybe_make_audio_file_undeletable(const wchar_t *filename){
 void SAMPLEREADER_delete_all_deletable_audio_files(void){
   R_ASSERT(THREADING_is_main_thread());
 
-  for(auto *provider : g_sample_providers.values())
-    if (provider->_file_can_be_deleted==true)
-      provider->force_file_deletion();
+  for(auto *provider : g_sample_providers.values()){
+    if(provider==NULL)
+      R_ASSERT(false);
+    else
+      if (provider->_file_can_be_deleted==true)
+        provider->force_file_deletion();
+  }
 }
 
 
@@ -1470,8 +1477,19 @@ void SAMPLEREADER_dec_users_undo_callback(void *data){
 bool SAMPLEREADER_has_file(const wchar_t *filename){
   R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
   
-  radium::ScopedMutex lock(g_sample_providers_mutex);
-  return g_sample_providers.contains(STRING_get_qstring(filename));
+  QString key = STRING_get_qstring(filename);
+
+  {
+    radium::ScopedMutex lock(g_sample_providers_mutex);
+
+    auto *maybe = g_sample_providers.value(key);
+    if (maybe!=NULL)
+      return true;
+
+    R_ASSERT(g_sample_providers.contains(key)==false);
+
+    return false;
+  }
 }
    
  
