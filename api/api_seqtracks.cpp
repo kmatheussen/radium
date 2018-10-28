@@ -1935,7 +1935,7 @@ dyn_t getSeqblockState(int seqblocknum, int seqtracknum){
   R_ASSERT_RETURN_IF_FALSE2(state!=NULL, DYN_create_bool(false));
 
   HASH_put_int(state, ":seqtracknum", seqtracknum);
-
+  
   return DYN_create_hash(state);
 }
 

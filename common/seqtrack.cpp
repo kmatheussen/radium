@@ -951,9 +951,13 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
 
     if(g_is_saving || g_is_loading)
       HASH_put_string(state, ":sample", OS_saving_get_relative_path_if_possible(filename));
-    else
+    else {
       HASH_put_string(state, ":sample", filename);
-
+#if defined(FOR_WINDOWS)
+      HASH_put_string(state, ":sample-base64", STRING_toBase64(filename)); // char* can"t be used for filenames in windows
+#endif
+    }
+    
 #if !defined(RELEASE)
     QFileInfo info(STRING_get_qstring(filename));
     if (!info.isAbsolute())
@@ -1187,7 +1191,7 @@ static void prepare_remove_sample_from_seqblock(struct SeqTrack *seqtrack, const
   if (atomic_pointer_read_relaxed((void**)&seqtrack->curr_sample_seqblock)==seqblock)
     atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, NULL);
 }
-  
+
 
 // Is static since seqblocks should only be created in this file.
 static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, enum ShowAssertionOrThrowAPIException error_type, Seqblock_Type type){
@@ -1275,9 +1279,16 @@ static struct SeqBlock *SEQBLOCK_create_from_state(struct SeqTrack *seqtrack, in
   } else {
     
     const wchar_t *filename = L"";
-    if (get_value(state, ":sample", STRING_TYPE, HASH_get_string, error_type, filename)==false)
-      return NULL;
-
+#if defined(FOR_WINDOWS)    
+    if (get_value(state, ":sample-base64", STRING_TYPE, HASH_get_string, error_type, filename, false)){
+      filename = STRING_fromBase64(filename);
+    } else
+#endif
+    {
+      if (get_value(state, ":sample", STRING_TYPE, HASH_get_string, error_type, filename)==false)
+        return NULL;
+    }
+    
     if (g_is_loading || g_is_saving)
       filename = OS_loading_get_resolved_file_path(filename, false);
 
