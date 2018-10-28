@@ -3523,7 +3523,23 @@ int main(int argc, char **argv){
 #if defined(FOR_WINDOWS)
   GC_set_no_dls(1);
 #endif
-  
+
+#if defined(FOR_LINUX)
+  if (getenv("QT_QPA_PLATFORMTHEME")!=NULL){
+    printf("Environment variable QT_QPA_PLATFORMTHEME is set. Will not start program.\n");
+    abort();
+  }
+  if (getenv("QT_QPA_PLATFORM")!=NULL){
+    printf("Environment variable QT_QPA_PLATFORM is set. Will not start program.\n");
+    abort();
+  }
+  if (getenv("QT_PLUGIN_PATH")!=NULL){
+    printf("Environment variable QT_PLUGIN_PATH is set. Will not start program.\n");
+    abort();
+  }
+#endif
+           
+
 #if defined(FOR_MACOSX) || defined(FOR_LINUX)
   GC_register_has_static_roots_callback(gc_has_static_roots_func);
 #endif
