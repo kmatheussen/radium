@@ -366,7 +366,7 @@ public:
   }
 
   void update_seqblock(int nodenum) const {
-    if (nodenum < 0) {
+    if (nodenum < 0 || _sat==SAT_STRETCH || _sat==SAT_SPEED) {
       
       SEQBLOCK_update(_seqtrack, _seqblock);
       
