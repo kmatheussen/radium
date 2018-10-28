@@ -198,7 +198,64 @@ static const GlyphpathAndWidth &getGlyphpathAndWidth(const QFont &font, const QC
 static bool g_is_drawing_sequencer_time = false;
 static bool g_is_drawing_sequencer_gfx_block = false;
 
-void myDrawText(QPainter *painter, QRectF rect, QString text, int flags){
+bool myDrawText(QPainter *painter, QRectF rect, QString text, int flags, bool wrap_lines, int rotate, bool scale_font_size, bool cut_text_to_fit){
+
+  QFont font;
+
+  rect.adjust(0,-1,0,0); // strange.
+  
+  if (scale_font_size) {
+    
+    if (cut_text_to_fit){
+      
+      if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
+        font = GFX_getFittingFont(text, flags, 4096, rect.width());
+      else
+        font = GFX_getFittingFont(text, flags, 4096, rect.height());
+      
+    } else {
+      
+      if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
+        font = GFX_getFittingFont(text, flags, rect.height(), rect.width());
+      else
+        font = GFX_getFittingFont(text, flags, rect.width(), rect.height());
+      
+    }
+    
+    painter->setFont(font);
+  }
+
+  QString org_text = text;
+  QString draw_text = text;
+  
+  if (cut_text_to_fit) {
+    
+    if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
+      draw_text = GFX_getFittingText(font, text, flags, wrap_lines, rect.height(), rect.width()); // vertical
+    else
+      draw_text = GFX_getFittingText(font, text, flags, wrap_lines, rect.width(), rect.height()); // horizontal
+    
+  }
+
+  if (rotate != 0) {
+
+    painter->save();
+    
+    painter->rotate(rotate);
+    
+    // Not good enough. Need some trigonometry here to get it correct for all rotate values, but we have only used 90 and 270 degrees in the code so far.
+    if (rotate==270){
+      painter->translate(-rect.y()-rect.height(), rect.x());
+    } else if (rotate==90){
+      painter->translate(rect.y(), -rect.x()-rect.width());
+    }else{
+      handleError("Only rotate values of 90 and 270 are supported. (It's probably not hard to fix this though.)");
+    }
+    
+    rect = QRect(0,0,rect.height(),rect.width());
+  }
+
+  
   if (g_is_drawing_sequencer_gfx_block || (g_is_drawing_sequencer_time && is_playing() && pc->playtype==PLAYSONG && smooth_scrolling())){
 
     R_ASSERT_NON_RELEASE(g_is_drawing_sequencer_time);
@@ -209,7 +266,7 @@ void myDrawText(QPainter *painter, QRectF rect, QString text, int flags){
     double x = rect.x();
     double y = rect.y();
 
-    const QFont &font = painter->font();
+    //const QFont &font = painter->font();
 
     QFontMetrics fm(font);      
     y += fm.ascent();
@@ -249,7 +306,15 @@ void myDrawText(QPainter *painter, QRectF rect, QString text, int flags){
     option.setWrapMode(QTextOption::NoWrap);
     painter->drawText(rect, text, option);
     
-  } 
+  }
+
+  if (rotate != 0)
+    painter->restore();
+  
+  if(scale_font_size)
+    painter->setFont(QFont());
+
+  return org_text==draw_text;
 }
 
 static void myFillRect(QPainter &p, QRectF rect, const QColor &color){
@@ -1308,10 +1373,28 @@ public:
     }
   }
 
+  void paintSeqblockText(QPainter &p, const QRectF &rect, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type, bool scale_text) const {
+
+    QColor text_color = get_block_qcolor(SEQUENCER_TEXT_COLOR_NUM, type);
+
+    // background
+    QColor header_color = get_seqblock_color(seqtrack, seqblock).lighter(150);
+    header_color.setAlpha(128);
+    myFillRect(p, rect, half_alpha(header_color, type));
+
+    // name
+    p.setPen(text_color);
+    myDrawText(&p, rect.adjusted(2,0,-4,0), get_seqblock_name(seqtrack, seqblock),
+               Qt::AlignLeft | Qt::AlignVCenter,
+               0, // rotate
+               false, // wrap
+               scale_text, // scale
+               true); // cut text to fit
+  }
+  
   void paintSeqblockHeader(QPainter &p, const QRectF &rect, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type) const {
     const int header_height = get_block_header_height();
 
-    QColor text_color = get_block_qcolor(SEQUENCER_TEXT_COLOR_NUM, type);
     QColor header_border_color = get_block_qcolor(SEQUENCER_TRACK_BORDER1_COLOR_NUM, type);
     QColor border_color = get_block_qcolor(SEQUENCER_BLOCK_BORDER_COLOR_NUM, type);
 
@@ -1323,22 +1406,16 @@ public:
 
     // Draw track header
     {
-
-      // background
       QRectF rect1(x1, y1, x2-x1, header_height);
-      QColor header_color = get_seqblock_color(seqtrack, seqblock).lighter(150);
-      header_color.setAlpha(128);
-      myFillRect(p, rect1, half_alpha(header_color, type));
-
-      // horizontal line
-      p.setPen(header_border_pen);
-      p.drawLine(QLineF(x1,y1+header_height,x2,y1+header_height));
-
-      // seqblock name
-      p.setPen(text_color);
-      myDrawText(&p, rect.adjusted(2,1,-4,-(rect.height()-header_height)), get_seqblock_name(seqtrack, seqblock));
+      paintSeqblockText(p, rect1, seqtrack, seqblock, type, false);
     }
 
+    // horizontal line between header and body
+    {
+      p.setPen(header_border_pen);
+      p.drawLine(QLineF(x1,y1+header_height,x2,y1+header_height));
+    }
+    
     // Seqblock border
     {
       bool is_current_block = seqblock->block!=NULL && seqblock->block == root->song->tracker_windows->wblock->block;
@@ -1785,6 +1862,12 @@ public:
     }
 
     int header_height = get_block_header_height();
+
+    if(rect.height() <= header_height){
+      paintSeqblockText(p, rect, seqtrack, seqblock, type, true);
+      return true;
+    }
+    
     const QRectF rect_without_header = rect.adjusted(0, header_height, 0, 0);
 
     if(seqblock->id != g_curr_seqblock_id_under_mouse){ //!rect.contains(mousep)){ // FIX. Must be controlled from bin/scheme/mouse.scm.
@@ -2472,7 +2555,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
             p.setPen(text_color);
             
             QRectF rect(x + 2, 2, width_, height());                 
-            myDrawText(&p, rect, QString::number(barnum));             
+            myDrawText(&p, rect, QString::number(barnum), Qt::AlignVCenter);
             
             last_x = x;
           }
@@ -2535,7 +2618,7 @@ struct Timeline_widget : public MouseTrackerQWidget {
           draw_filled_triangle(p, x-t1, y1, x+t1, y1, x, y2);
         
           QRectF rect(x + t1 + 4, 2, width(), height());
-          myDrawText(&p, rect, seconds_to_timestring(time));
+          myDrawText(&p, rect, seconds_to_timestring(time), Qt::AlignVCenter);
         }
 
         time += inc_time;

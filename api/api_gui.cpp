@@ -2183,74 +2183,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       else
         flags |= Qt::AlignHCenter;
 
-
-      QFont font;
-        
-      if (scale_font_size) {
-
-        if (cut_text_to_fit){
-        
-          if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
-            font = GFX_getFittingFont(text, flags, 4096, x2-x1);
-          else
-            font = GFX_getFittingFont(text, flags, 4096, y2-y1);
-          
-        } else {
-
-          if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
-            font = GFX_getFittingFont(text, flags, y2-y1, x2-x1);
-          else
-            font = GFX_getFittingFont(text, flags, x2-x1, y2-y1);
-
-        }
-
-        painter->setFont(font);
-      }
-
-      QString org_text = text;
-      QString draw_text = text;
+      bool ret = myDrawText(painter, rect, text, flags, wrap_lines, rotate, scale_font_size, cut_text_to_fit);
       
-      if (cut_text_to_fit) {
-        
-        if ( (rotate > 45 && rotate < 90+45) || (rotate > 180+45 && rotate < 270+45))
-          draw_text = GFX_getFittingText(font, text, flags, wrap_lines, y2-y1, x2-x1); // vertical
-        else
-          draw_text = GFX_getFittingText(font, text, flags, wrap_lines, x2-x1, y2-y1); // horizontal
-        
-      }
-      
-      if (rotate != 0) {
-
-        painter->save();
-
-        painter->rotate(rotate);
-
-        // Not good enough. Need some trigonometry here to get it correct for all rotate values, but we have only used 90 and 270 degrees in the code so far.
-        if (rotate==270){
-          painter->translate(-y1-rect.height(), x1);
-        } else if (rotate==90){
-          painter->translate(y1, -x1-rect.width());
-        }else{
-          handleError("Only rotate values of 90 and 270 are supported. (It's probably not hard to fix this though.)");
-        }
-        
-        QRect rect2(0,0,rect.height(),rect.width());
-        //painter->drawText(rect2, flags, draw_text);
-        myDrawText(painter, rect2, draw_text, flags);
-
-        painter->restore();
-
-      } else {
-
-        //painter->drawText(rect, flags, draw_text);
-        myDrawText(painter, rect, draw_text, flags);
-      
-      }
-
       if (_current_painter==NULL)
         myupdate(x1, y1, x2, y2);
 
-      return org_text==draw_text;
+      return ret;
     }
 
 
