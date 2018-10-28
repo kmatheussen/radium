@@ -148,7 +148,7 @@ void API_unblacklist_container(const SoundPluginTypeContainer *container){
 }
 
 bool API_container_is_blacklisted(const SoundPluginTypeContainer *container){
-  const enum BlacklistCached cached = g_blacklisted_cache[STRING_get_qstring(container->filename)];
+  const enum BlacklistCached cached = g_blacklisted_cache.value(STRING_get_qstring(container->filename), NOT_IN_CACHE);
 
 #define Vars()                                                          \
   QString disk_blacklist_filename = get_blacklist_filename(container);  \
