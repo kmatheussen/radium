@@ -10,7 +10,10 @@ fi
 
 # To avoid buggy qt plugins from crashing radium (very common).
 unset QT_QPA_PLATFORMTHEME
+unset QT_QPA_PLATFORM
+unset QT_PLUGIN_PATH
 
 export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+export G_DEBUG="fatal-warnings,gc-friendly"
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG=fatal-criticals gdb --args bin/radium_linux.bin $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG="fatal-warnings,gc-friendly" gdb --args bin/radium_linux.bin $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter
