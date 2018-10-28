@@ -5,7 +5,7 @@
 #if __cplusplus
 extern "C" {
 #endif
-  char *DISK_run_program_that_writes_to_temp_file(const char *program, const char *arg1, const char *arg2, const char *arg3);
+  const wchar_t *DISK_run_program_that_writes_to_temp_file(const wchar_t *program, const wchar_t *arg1, const wchar_t *arg2, const wchar_t *arg3);
 #if __cplusplus
 }
 #endif

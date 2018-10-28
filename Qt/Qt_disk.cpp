@@ -693,35 +693,35 @@ static QString file_to_string(QString filename){
 // The returned value must be manually freed.
 // Can be called from any thread.
 // Leaks memory.
-char *DISK_run_program_that_writes_to_temp_file(const char *program, const char *arg1, const char *arg2, const char *arg3){
+const wchar_t *DISK_run_program_that_writes_to_temp_file(const wchar_t *program, const wchar_t *arg1, const wchar_t *arg2, const wchar_t *arg3){
   QString filename;
 
   {
     QTemporaryFile file(QDir::tempPath() + QDir::separator() + "radium_addr2line");
     bool succ = file.open();
     if (succ==false)
-      return strdup("(Unable to open temporary file)");
+      return L"(Unable to open temporary file)";
     
     filename = file.fileName();
   }
   
 #if defined(FOR_WINDOWS)
 
-  QString full_path_program = OS_get_full_program_file_path(program);
+  QString full_path_program = OS_get_full_program_file_path(QString::fromWCharArray(program));
   
   wchar_t *p = STRING_create(full_path_program, false);
   wchar_t *p1 = STRING_create(QString("\"") + full_path_program + "\"", false);
-  wchar_t *a1 = STRING_create(QString("\"") + arg1 + "\"", false); // _wspawnl is really stupid. (https://blogs.msdn.microsoft.com/twistylittlepassagesallalike/2011/04/23/everyone-quotes-command-line-arguments-the-wrong-way/)
-  wchar_t *a2 = STRING_create(QString("\"") + arg2 + "\"", false);
-  wchar_t *a3 = STRING_create(QString("\"") + arg3 + "\"", false);
+  wchar_t *a1 = STRING_create(QString("\"") + QString::fromWCharArray(arg1) + "\"", false); // _wspawnl is really stupid. (https://blogs.msdn.microsoft.com/twistylittlepassagesallalike/2011/04/23/everyone-quotes-command-line-arguments-the-wrong-way/)
+  wchar_t *a2 = STRING_create(QString("\"") + QString::fromWCharArray(arg2) + "\"", false);
+  wchar_t *a3 = STRING_create(QString("\"") + QString::fromWCharArray(arg3) + "\"", false);
   wchar_t *a4 = STRING_create("\""+filename+"\"", false);
   printf("   file.fileName(): -%s-\n",filename.toUtf8().constData());
 
 
   if(_wspawnl(_P_WAIT, p, p1, a1, a2, a3, a4, NULL)==-1){
-    char *temp = (char*)malloc(strlen(program)+strlen(arg1)+1024);    
-    sprintf(temp, "Couldn't launch %s: \"%s\"\n",program,arg1);
-    fprintf(stderr,temp);
+    wchar_t *temp = (wchar_t*)malloc(1024);
+    swprintf(temp, 1022, L"Couldn't launch %S: \"%S\"\n",program,arg1);
+    fprintf(stderr, "%S", temp);
     //SYSTEM_show_message(strdup(temp));
     //Sleep(3000);
     return temp;
@@ -732,12 +732,12 @@ char *DISK_run_program_that_writes_to_temp_file(const char *program, const char 
   QFile file(filename);
   file.remove();
   
-  return strdup(ret.toUtf8().constData());
+  return STRING_create(ret, false);
   
 #else
   
   RError("Not implemented\n");
-  return strdup("not implemented");
+  return L"not implemented";
   
 #endif
 }

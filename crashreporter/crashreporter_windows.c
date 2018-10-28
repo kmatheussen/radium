@@ -427,7 +427,7 @@ find(struct bfd_ctx * b, DWORD offset, const char **file, const char **func, uns
 		*line = data.line;
 	}
 }
-
+#if 0
 static int
 init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob)
 {
@@ -470,6 +470,7 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob
 
 	return 0;
 }
+#endif
 
 static void
 close_bfd_ctx(struct bfd_ctx *bc)
@@ -484,8 +485,10 @@ close_bfd_ctx(struct bfd_ctx *bc)
 	}
 }
 
+#if 0
+// Using addr2line instead.
 static struct bfd_ctx *
-get_bc(struct output_buffer *ob , struct bfd_set *set , const char *procname)
+get_bc(struct output_buffer *ob , struct bfd_set *set , const wchar_t *procname)
 {
 	while(set->name) {
 		if (strcmp(set->name , procname) == 0) {
@@ -504,6 +507,7 @@ get_bc(struct output_buffer *ob , struct bfd_set *set , const char *procname)
 
 	return set->bc;
 }
+#endif
 
 static void
 release_set(struct bfd_set *set)
@@ -575,7 +579,7 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
         int num_frames = stacktrace(context, stack, NUM_BACKTRACE);
 
 	char symbol_buffer[sizeof(IMAGEHLP_SYMBOL) + 255];
-	char module_name_raw[MAX_PATH];
+	wchar_t module_name_raw[MAX_PATH];
 
         int i = 0;
 
@@ -598,14 +602,16 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 #endif                
                 struct bfd_ctx *bc = NULL;
 
-		const char * module_name = "[unknown module]";
+		const wchar_t * module_name = L"[unknown module]";
 		if (module_base && 
-                    GetModuleFileNameA((HINSTANCE)module_base, module_name_raw, MAX_PATH)
+                    GetModuleFileNameW((HINSTANCE)module_base, module_name_raw, MAX_PATH)
                     ) 
                   {
                     module_name = module_name_raw;
+#if 0
                     if(false) // Using addr2line instead. Don't know exactly why addr2line works, but this file doesn't, but there's some indication that bfd doesn't work if the executable is too big.
                       bc = get_bc(ob, set, module_name);
+#endif
                   }
 
 		const char * file = NULL;
@@ -638,17 +644,17 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 		}
                 
                 {
-                  char temp[1024];
+                  wchar_t temp[1024];
                   /*
                     sprintf(temp,"addr2line.exe -e %s 0x%x\n",module_name,(unsigned int)offset);
                     fprintf(stderr,"Running -%s-\n",temp);
                     system(temp);
                   */
-                  sprintf(temp,"0x%x", (unsigned int)offset);
+                  swprintf(temp, 1022, L"0x%x", (unsigned int)offset);
                   
-                  char *stuff = DISK_run_program_that_writes_to_temp_file("radium_addr2line.exe", "-e", module_name, temp);
-                  output_print(ob, "%d: %s. 0x%x : %s\n", i, stuff, (unsigned int)offset, module_name);
-                  printf("   stuff: -%s-\n", stuff);
+                  const wchar_t *stuff = DISK_run_program_that_writes_to_temp_file(L"radium_addr2line.exe", L"-e", module_name, temp);
+                  output_print(ob, "%d: %S. 0x%x : %S\n", i, stuff, (unsigned int)offset, module_name);
+                  printf("   stuff: -%S-\n", stuff);
                 }
 /*
 		if (func == NULL) {
