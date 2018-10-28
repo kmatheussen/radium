@@ -175,7 +175,7 @@ struct Patch *PATCH_get_from_id(int64_t id){
   //static int num_calls = 0;printf("        num_calls: %d\n",num_calls++);
 
 #if 1
-  return g_patchhash[id];
+  return g_patchhash.value(id);
 #else
 
   vector_t *v=get_all_patches();

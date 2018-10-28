@@ -1851,7 +1851,7 @@ int SEQTRACKPLUGIN_get_num_channels(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
 
   if (id <= HIGHEST_RECORDER_ID){
-    Recorder *recorder = g_recorders[id];
+    Recorder *recorder = g_recorders.value(id);
     
     if (recorder==NULL){
       R_ASSERT_NON_RELEASE(false);
@@ -1898,7 +1898,7 @@ const wchar_t *SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t
     return L"";
 
   if (id <= HIGHEST_RECORDER_ID){
-    Recorder *recorder = g_recorders[id];
+    Recorder *recorder = g_recorders.value(id);
     
     if (recorder==NULL){
       R_ASSERT_NON_RELEASE(false);
@@ -1940,7 +1940,7 @@ radium::Peaks **SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
 
   if (id <= HIGHEST_RECORDER_ID){
-    Recorder *recorder = g_recorders[id];
+    Recorder *recorder = g_recorders.value(id);
     
     if (recorder==NULL){
       R_ASSERT_NON_RELEASE(false);

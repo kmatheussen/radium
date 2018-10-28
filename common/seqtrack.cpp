@@ -2441,7 +2441,7 @@ QVector<struct SeqBlock*> SEQTRACK_get_seqblocks_in_z_order(const struct SeqTrac
   
   // Add ordered seqblocks.
   for(const dyn_t &dyn : seqtrack->seqblocks_z_order){
-    struct SeqBlock *seqblock = seqblocks_hash[dyn.int_number];
+    struct SeqBlock *seqblock = seqblocks_hash.value(dyn.int_number);
     if (seqblock!=NULL){ // seqblocks_z_order is not required to be up to date.
       ret.push_back(seqblock);
       already_added << seqblock->id;
