@@ -10,7 +10,7 @@ QWidget *SEQUENCER_WIDGET_get_widget(void);
 
 class QPainter;
 
-void myDrawText(QPainter *painter, QRectF rect, QString text, int flags = Qt::AlignLeft | Qt::AlignTop);
-
+// returns true if all text was painted
+bool myDrawText(QPainter *painter, QRectF rect, QString text, int flags = Qt::AlignLeft | Qt::AlignTop, bool wrap_lines = false, int rotate = 0, bool scale_font_size = false, bool cut_text_to_fit = false);
 
 #endif
