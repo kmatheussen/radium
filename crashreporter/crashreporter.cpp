@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLabel>
 #include <QLayout>
 #include <QThread>
+#include <QProcessEnvironment>
 
 #if USE_QT5
 #include <QUrlQuery>
@@ -685,6 +686,38 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 }
 */
 
+#if defined(FOR_LINUX)
+static QString find_window_manager(void){
+  QString ret = "\n";
+  if (getenv("WINDOWMANAGER") != NULL)
+    ret += QString("  WINDOWMANAGER: ") + getenv("WINDOWMANAGER") + "\n";
+  if (getenv("WINDOW_MANAGER") != NULL)
+    ret += QString("  WINDOW_MANAGER: ") + getenv("WINDOW_MANAGER") + "\n";
+  if (getenv("DESKTOP_SESSION") != NULL)
+    ret += QString("  DESKTOP_SESSION: ") + getenv("DESKTOP_SESSION") + "\n";
+  if (getenv("GDMSESSION") != NULL)
+    ret += QString("  GDMSESSION: ") + getenv("GDMSESSION") + ". ";
+  if (getenv("XDG_SESSION_TYPE") != NULL)
+    ret += QString("  XDG_SESSION_TYPE: ") + getenv("XDG_SESSION_TYPE") + "\n";
+  if (getenv("WAYLAND_DISPLAY") != NULL)
+    ret += QString("  Using Wayland\n");
+  else
+    ret += QString("  Probably not using Wayland\n");
+  return ret;
+}
+#endif
+
+static QString get_qt_environment_variables(void){
+  QString ret;
+  const QProcessEnvironment envir = QProcessEnvironment::systemEnvironment();
+  for(const QString &element : envir.toStringList()){
+    if(element.contains("qt", Qt::CaseInsensitive))
+      ret += QString("   ") + element + "\n";
+  }
+
+  return ret;
+}
+
 void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, Crash_Type crash_type, double time){
   if (ATOMIC_GET(g_dont_report))
     return;
@@ -739,7 +772,12 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "/proc/version: "+file_to_string("/proc/version");
   tosend += "\n\n";
   tosend += "/proc/cpuinfo: "+file_to_string("/proc/cpuinfo");
+  tosend += "\n\n";
+  tosend += "window manager: "+find_window_manager();
+  tosend += "\n\n";
 #endif
+
+  tosend += "Qt environment variables: \n" + get_qt_environment_variables();
 
   // start process
   {
