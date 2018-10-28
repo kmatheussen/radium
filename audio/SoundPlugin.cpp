@@ -1339,49 +1339,68 @@ namespace{
 
 static boost::lockfree::queue<EffectUndoData, boost::lockfree::capacity<8000> > g_effect_undo_data_buffer;
 
+static void add_eud_undo(QVector<EffectUndoData> &s_euds, QHash<int64_t, QSet<int>> &s_stored_effect_nums, double curr_time, double &s_last_time, int &s_last_undo_num){
+  {
+    radium::ScopedUndo scoped_undo;
+    
+    for(auto &eud : s_euds){
+      
+      struct Patch *patch = PATCH_get_from_id(eud.patch_id);
+      
+      if (patch != NULL) {
+        //printf("    EUD undo %d: %f\n", eud.effect_num, eud.effect_value);
+        ADD_UNDO(AudioEffect_CurrPos2(patch, eud.effect_num, eud.effect_value));
+      }
+    }
+  }
+
+  //printf("  NUM_UNDOS: %d. euds size: %d\n", num_undos, s_euds.size());
+
+  s_euds.clear();
+  s_stored_effect_nums.clear();
+  s_last_time = curr_time;
+  s_last_undo_num = Undo_num_undos();
+}
+
 void PLUGIN_call_me_very_often_from_main_thread(void){
 
-  static double last_time;
-  static int64_t last_patch_id = -1;
-
-  if (g_effect_undo_data_buffer.empty())
-    return;
+  static double s_last_time = 0;
+  //static int64_t s_last_patch_id = -1;
+  static int s_last_undo_num = -1;
+  
+  static QVector<EffectUndoData> s_euds;
+  static QHash<int64_t, QSet<int>> s_stored_effect_nums;
 
   double curr_time = TIME_get_ms();
   //printf("curr_time: %f\n", curr_time/1000.0);
   
-  bool is_old = curr_time > last_time+1000;
-  bool patch_has_changed = false;
-
-  QVector<EffectUndoData> euds;
+  bool is_old = s_last_time > 0 && curr_time > s_last_time+5000;
 
   {
     EffectUndoData eud;
     while(g_effect_undo_data_buffer.pop(eud)==true){
-      patch_has_changed = patch_has_changed || eud.patch_id != last_patch_id;
-      euds.push_back(eud);
-    }
-  }
 
-  if (is_old || patch_has_changed){
-    radium::ScopedUndo scoped_undo;
+      /*
+       * Not much point. And, if two different midi patches have midi learn, we end up with a lot of undo entries.
 
-    for(auto &eud : euds){
-      
-      struct Patch *patch = PATCH_get_from_id(eud.patch_id);
-        
-      if (patch != NULL) {
-          
-        ADD_UNDO(AudioEffect_CurrPos2(patch, eud.effect_num, eud.effect_value));
-          
+      if(eud.patch_id != s_last_patch_id){        
+        add_eud_undo(s_euds, s_stored_effect_nums, curr_time, s_last_time, s_last_undo_num);
+        s_last_patch_id = eud.patch_id;
       }
-        
-      last_patch_id = eud.patch_id;
+      */
+      
+      if(s_stored_effect_nums[eud.patch_id].contains(eud.effect_num)==false){
+        s_stored_effect_nums[eud.patch_id].insert(eud.effect_num);
+        s_euds.push_back(eud);
+        if(s_last_time == 0)
+          s_last_time = curr_time;
+      }
+
     }
-
-    last_time = curr_time;
-
   }
+
+  if (is_old && s_euds.size() > 0) // || Undo_num_undos() != s_last_undo_num)
+    add_eud_undo(s_euds, s_stored_effect_nums, curr_time, s_last_time, s_last_undo_num);    
 }
 
                                                      
@@ -1428,7 +1447,8 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
           //eud.undo_generation = ...;
           eud.effect_num = effect_num;
           eud.effect_value = old_native_value;
-          
+
+          //printf(" ..... Adding eud %f.\n", eud.effect_value);
           if (!g_effect_undo_data_buffer.bounded_push(eud)){
 #if !defined(RELEASE)
             RT_message("g_effect_undo_data buffer full\n");
