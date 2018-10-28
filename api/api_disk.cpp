@@ -104,7 +104,7 @@ int64_t openFileForWriting(const_char* w_path){
 }
 
 bool closeFile(int64_t disknum){
-  disk_t *disk = g_disks[disknum];
+  disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
     handleError("closeFile: No file #%d", (int)disknum);
     return false;
@@ -116,7 +116,7 @@ bool closeFile(int64_t disknum){
 }
 
 int writeToFile(int64_t disknum, const_char* string){
-  disk_t *disk = g_disks[disknum];
+  disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
     handleError("writeToFile: No file #%d", (int)disknum);
     return -1;
@@ -132,7 +132,7 @@ int writeToFile(int64_t disknum, const_char* string){
 }
 
 bool fileAtEnd(int64_t disknum){
-  disk_t *disk = g_disks[disknum];
+  disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
     handleError("writeToFile: No file #%d", (int)disknum);
     return false;
@@ -142,7 +142,7 @@ bool fileAtEnd(int64_t disknum){
 }
 
 const_char* readLineFromFile(int64_t disknum){
-  disk_t *disk = g_disks[disknum];
+  disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
     handleError("writeToFile: No file #%d", (int)disknum);
     return "";
@@ -179,7 +179,7 @@ int64_t openFileForBinaryReading(const_char* w_path){
 
 
 static bool read_binary(const_char* funcname, int64_t disknum, unsigned char dest[], int64_t num_bytes){
-  disk_t *disk = g_disks[disknum];
+  disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
     handleError("%s: No file #%d", funcname, (int)disknum);
     return false;
@@ -280,7 +280,7 @@ int readBeU16FromFile(int64_t disknum){
 // 8 bit
 
 int read8FromFile(int64_t disknum){
-  disk_t *disk = g_disks[disknum];
+  disk_t *disk = g_disks.value(disknum);
   if (disk==NULL){
     handleError("readU8FromFile: No file #%d", (int)disknum);
     return 0;
