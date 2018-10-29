@@ -886,7 +886,7 @@
                                            (<ra> :shift-pressed)
                                            (> (<ra> :get-num-seqtracks) 1))
                                       (begin
-                                        (<ra> :delete-seqtrack seqtracknum)
+                                        (delete-seqtrack-and-maybe-ask seqtracknum)
                                         #t)
                                       #f)))
   (if for-audiofiles
@@ -1007,7 +1007,16 @@
                                 (set! *show-first-seqtrack-warning* #f))                        
                             (callback (or (string=? "Yes" res)
                                           (string=? yes-dont-show-again res)))))))
-  
+
+(define (delete-seqtrack-and-maybe-ask seqtracknum)
+  (if (and (= 0 seqtracknum)
+           (<ra> :seqtrack-for-audiofiles 1))
+      (ask-user-about-first-audio-seqtrack
+       (lambda (doit)
+         (if doit
+             (<ra> :delete-seqtrack seqtracknum))))
+      (<ra> :delete-seqtrack seqtracknum)))
+
 (def-area-subclass (<sequencer-left-part-buttons> :gui :x1 :y1 :x2 :y2)
 
   (define (callback type)
@@ -1026,7 +1035,7 @@
            (when (> (<ra> :get-num-seqtracks) 1)
              (define seqtracknum (<ra> :get-curr-seqtrack))
              (set! *current-seqblock-info* #f)
-             (<ra> :delete-seqtrack seqtracknum)))
+             (delete-seqtrack-and-maybe-ask seqtracknum)))
           ((eq? type 'AppendE)
            (<ra> :append-seqtrack #f))
           ((eq? type 'AppendA)

@@ -7156,7 +7156,7 @@
                      (let ((seqtracknum *current-seqtrack-num*))
                        (and seqtracknum
                             (begin
-                              (<ra> :delete-seqtrack seqtracknum)
+                              (delete-seqtrack-and-maybe-ask seqtracknum)
                               #t)))))))
 
 
