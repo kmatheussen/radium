@@ -992,6 +992,22 @@
 
 (define *show-first-seqtrack-warning* #t)
 
+(define (ask-user-about-first-audio-seqtrack callback)
+  (define yes-dont-show-again "Yes, don't show again")
+  (if (not *show-first-seqtrack-warning*)
+      (callback #t)
+      (show-async-message (<gui> :get-sequencer-gui)
+                          (<-> "Are you sure?\n"
+                               "\n"
+                               "We use the first seqtrack for timing and grid, but audio seqtracks can't provide this information.\n"
+                               )
+                          (list "No" "Yes" yes-dont-show-again) #t
+                          (lambda (res)
+                            (if (string=? yes-dont-show-again res)
+                                (set! *show-first-seqtrack-warning* #f))                        
+                            (callback (or (string=? "Yes" res)
+                                          (string=? yes-dont-show-again res)))))))
+  
 (def-area-subclass (<sequencer-left-part-buttons> :gui :x1 :y1 :x2 :y2)
 
   (define (callback type)
@@ -999,21 +1015,13 @@
            (<ra> :insert-seqtrack #f))
           ((eq? type '+A)
            (define seqtracknum (<ra> :get-curr-seqtrack))
-           (if (and *show-first-seqtrack-warning*
-                    (= 0 seqtracknum)
+           (if (and (= 0 seqtracknum)
                     (not (<ra> :seqtrack-for-audiofiles 0)))
-               (show-async-message (<gui> :get-sequencer-gui)
-                                   (<-> "Are you sure?\n"
-                                        "\n"
-                                        "We use the first seqtrack for timing and grid, but audio seqtracks can't provide this information.\n"
-                                        )
-                                   (list "No" "Yes" "Yes, don't show again") #t
-                                   (lambda (res)
-                                     (when (not (string=? "No" res))
-                                       (if (not (string=? "Yes" res))
-                                           (set! *show-first-seqtrack-warning* #f))
-                                       (<ra> :insert-seqtrack #t seqtracknum))))
-               (<ra> :insert-seqtrack #t)))
+               (ask-user-about-first-audio-seqtrack
+                (lambda (doit)
+                  (if doit
+                      (<ra> :insert-seqtrack #t seqtracknum))))
+               (<ra> :insert-seqtrack #t seqtracknum)))
           ((eq? type '-)
            (when (> (<ra> :get-num-seqtracks) 1)
              (define seqtracknum (<ra> :get-curr-seqtrack))

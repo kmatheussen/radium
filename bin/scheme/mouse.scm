@@ -7664,7 +7664,18 @@
                                                                              (<ra> :create-sample-seqblock seqtracknum filename pos))))))))
                                           
                                           (get-delete-all-pauses-menu-entry seqtracknum)
-                                          
+                                          (list "Swap with next seqtrack"
+                                                :enabled (< seqtracknum (- (<ra> :get-num-seqtracks) 1))
+                                                (lambda ()
+                                                  (define (swapit)
+                                                    (<ra> :swap-seqtracks seqtracknum (1+ seqtracknum)))
+                                                  (if (and (= 0 seqtracknum)
+                                                           (<ra> :seqtrack-for-audiofiles 1))
+                                                      (ask-user-about-first-audio-seqtrack
+                                                       (lambda (doit)
+                                                         (if doit
+                                                             (swapit))))
+                                                      (swapit))))                                          
                                           (if (and #f (not seqblock-info))
                                               #f
                                               (let* ((is-selected (and seqblocknum

@@ -281,6 +281,23 @@ int getNumSeqtracks(void){
   return root->song->seqtracks.num_elements;
 }
 
+void swapSeqtracks(int seqtracknum1, int seqtracknum2){
+  struct SeqTrack *seqtrack1 = getSeqtrackFromNum(seqtracknum1);
+  if (seqtrack1==NULL)
+    return;
+  
+  struct SeqTrack *seqtrack2 = getSeqtrackFromNum(seqtracknum2);
+  if (seqtrack2==NULL)
+    return;
+
+  ADD_UNDO(Sequencer());
+  
+  root->song->seqtracks.elements[seqtracknum1] = seqtrack2;
+  root->song->seqtracks.elements[seqtracknum2] = seqtrack1;
+
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
+}
+
 int64_t getSeqtrackInstrument(int seqtracknum){
   struct SeqTrack *seqtrack = getAudioSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
