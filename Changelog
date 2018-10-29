@@ -1,3 +1,46 @@
+Changes 5.9.9 -> 5.9.10:
+* Sequencer: Fix graphics update when editing stretch or
+  speed automation.
+* Plugins: Fix creating undo  when editing a native GUI.
+* Sequencer: Draw seqblocks properly when seqtrack
+  height is smaller than font height.
+* Sequencer: Paint seqblock text and border in floating
+  point precision when they are moved (to avoid
+  jumpy text).
+* Audio file reader: Fixed code that perhaps could have
+  caused buggy behavior when trying to load a non-
+  existent file.
+* Crashreporter/Linux: Include desktop/window
+  manager info into the report.
+* Crashreporter: Include all environment variables
+  containing "qt" into the report.
+* Menus: Add "Test assertion reporter warning" and
+  "Test assertion reporter error" entries to the
+  Help -> Debugging menu.
+* Linux: Assert during startup that neither of
+  QT_QPA_PLATFORMTHEME, QT_QPA_PLATFORM, nor
+  QT_PLUGIN_PATH are set.
+* Linux:. Unset the QT_QPA_PLATFORM and QT_PLUGIN_PATH
+  environment variables in the startup script. Perhaps
+  this will fix some strange crashes reported by
+  anonymous users via the crashreporter.
+* Windows/crashreporter: Fix backtrace when program path
+  contains non-ascii characters.
+* Windows/sequencer: Fix editing seqblocks for audio
+  files containing non-ascii characters.
+* Windows/qjackctl: Fix starting the server when program
+  path contains spaces.
+* Windows: Fix loading audio files containing non-ascii
+  characters into the sequencer.
+* Windows: Fix problems with Ladspa and rdf when program
+  path contains spaces.
+* Ladspa: Updated included rdf file for calf. (Lots
+  of calf plugins are not placed in the uncategorized
+  category anymore.)
+* Sequencer: Remove gap between last seqtrack and
+  navigator.
+
+
 Changes 5.9.8 -> 5.9.9:
 * Sequencer: Automatically update number of tracks in the
   track on/off editor when the number of tracks in the
