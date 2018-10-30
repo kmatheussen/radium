@@ -561,7 +561,7 @@ void s7extra_callFunc_void_void(const func_t *func){
   ScopedEvalTracker eval_tracker;
 
   catch_call(s7,
-             s7_list(s7, 1, (s7_pointer)func)
+             s7_list_nl(s7, 1, (s7_pointer)func, NULL)
              );
 }
 
@@ -573,7 +573,7 @@ double s7extra_callFunc_double_void(const func_t *func){
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7, 1, (s7_pointer)func)
+                              s7_list_nl(s7, 1, (s7_pointer)func, NULL)
                               );
 
   if (!s7_is_number(ret)){
@@ -593,7 +593,7 @@ bool s7extra_callFunc_bool_void(const func_t *func){
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7, 1, (s7_pointer)func)
+                              s7_list_nl(s7, 1, (s7_pointer)func, NULL)
                               );
 
   if (!s7_is_boolean(ret)){
@@ -628,7 +628,7 @@ dyn_t s7extra_callFunc_dyn_void(const func_t *func){
   //s7_add_to_history(s7, s7_cons(s7, (s7_pointer)func, s7_cons(s7, s7_make_string(s7, "\n\n----------------------s7extra_callFunc_dyn_void222---------------------\n\n"), s7_list(s7, 0))));
     
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7, 1, (s7_pointer)func)
+                              s7_list_nl(s7, 1, (s7_pointer)func, NULL)
                               );
   
   return s7extra_dyn(s7, ret);
@@ -642,11 +642,12 @@ dyn_t s7extra_callFunc_dyn_int(const func_t *func, int64_t arg1){
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      2,
-                                      (s7_pointer)func,
-                                      s7_make_integer(s7, arg1)
-                                      )
+                              s7_list_nl(s7,
+                                         2,
+                                         (s7_pointer)func,
+                                         s7_make_integer(s7, arg1),
+                                         NULL
+                                         )
                               );
   
 
@@ -662,12 +663,13 @@ dyn_t s7extra_callFunc_dyn_int_int_int(const func_t *func, int64_t arg1, int64_t
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      4,
-                                      (s7_pointer)func,
-                                      s7_make_integer(s7, arg1),
-                                      s7_make_integer(s7, arg2),
-                                      s7_make_integer(s7, arg3)
+                              s7_list_nl(s7,
+                                         4,
+                                         (s7_pointer)func,
+                                         s7_make_integer(s7, arg1),
+                                         s7_make_integer(s7, arg2),
+                                         s7_make_integer(s7, arg3),
+                                         NULL
                                       )
                               );
   
@@ -684,15 +686,16 @@ dyn_t s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn(const func_t *func, int64_t a
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      7,
-                                      (s7_pointer)func,
-                                      Protect(s7_make_integer(s7, arg1)).v, // Need to protect everything, even integers, since s7extra_make_dyn may allocate over 256 objects.
-                                      Protect(s7_make_integer(s7, arg2)).v,
-                                      Protect(s7_make_integer(s7, arg3)).v,
-                                      Protect(s7extra_make_dyn(s7, arg4)).v,
-                                      Protect(s7extra_make_dyn(s7, arg5)).v,
-                                      Protect(s7extra_make_dyn(s7, arg6)).v
+                              s7_list_nl(s7,
+                                         7,
+                                         (s7_pointer)func,
+                                         Protect(s7_make_integer(s7, arg1)).v, // Need to protect everything, even integers, since s7extra_make_dyn may allocate over 256 objects.
+                                         Protect(s7_make_integer(s7, arg2)).v,
+                                         Protect(s7_make_integer(s7, arg3)).v,
+                                         Protect(s7extra_make_dyn(s7, arg4)).v,
+                                         Protect(s7extra_make_dyn(s7, arg5)).v,
+                                         Protect(s7extra_make_dyn(s7, arg6)).v,
+                                         NULL
                                       )
                               );
   
@@ -708,17 +711,18 @@ dyn_t s7extra_callFunc_dyn_int_int_int_dyn_dyn_dyn_dyn_dyn(const func_t *func, i
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      9,
-                                      (s7_pointer)func,
-                                      Protect(s7_make_integer(s7, arg1)).v,
-                                      Protect(s7_make_integer(s7, arg2)).v,
-                                      Protect(s7_make_integer(s7, arg3)).v,
-                                      Protect(s7extra_make_dyn(s7, arg4)).v,
-                                      Protect(s7extra_make_dyn(s7, arg5)).v,
-                                      Protect(s7extra_make_dyn(s7, arg6)).v,
-                                      Protect(s7extra_make_dyn(s7, arg7)).v,
-                                      Protect(s7extra_make_dyn(s7, arg8)).v
+                              s7_list_nl(s7,
+                                         9,
+                                         (s7_pointer)func,
+                                         Protect(s7_make_integer(s7, arg1)).v,
+                                         Protect(s7_make_integer(s7, arg2)).v,
+                                         Protect(s7_make_integer(s7, arg3)).v,
+                                         Protect(s7extra_make_dyn(s7, arg4)).v,
+                                         Protect(s7extra_make_dyn(s7, arg5)).v,
+                                         Protect(s7extra_make_dyn(s7, arg6)).v,
+                                         Protect(s7extra_make_dyn(s7, arg7)).v,
+                                         Protect(s7extra_make_dyn(s7, arg8)).v,
+                                         NULL
                                       )
                               );
   
@@ -734,14 +738,15 @@ dyn_t s7extra_callFunc_dyn_dyn_dyn_dyn_int(const func_t *func, const dyn_t arg1,
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      5,
-                                      (s7_pointer)func,
-                                      Protect(s7extra_make_dyn(s7, arg1)).v,
-                                      Protect(s7extra_make_dyn(s7, arg2)).v,
-                                      Protect(s7extra_make_dyn(s7, arg3)).v,
-                                      Protect(s7_make_integer(s7, arg4)).v
-                                      )
+                              s7_list_nl(s7,
+                                         5,
+                                         (s7_pointer)func,
+                                         Protect(s7extra_make_dyn(s7, arg1)).v,
+                                         Protect(s7extra_make_dyn(s7, arg2)).v,
+                                         Protect(s7extra_make_dyn(s7, arg3)).v,
+                                         Protect(s7_make_integer(s7, arg4)).v,
+                                         NULL
+                                         )
                               );
   
 
@@ -757,11 +762,12 @@ dyn_t s7extra_callFunc_dyn_charpointer(const func_t *func, const char *arg1){
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      2,
-                                      (s7_pointer)func,
-                                      s7_make_string(s7, arg1)
-                                      )
+                              s7_list_nl(s7,
+                                         2,
+                                         (s7_pointer)func,
+                                         s7_make_string(s7, arg1),
+                                         NULL
+                                         )
                               );
   
 
@@ -777,12 +783,13 @@ void s7extra_callFunc_void_int_charpointer_dyn(const func_t *func, int64_t arg1,
   ScopedEvalTracker eval_tracker;
     
   catch_call(s7,
-             s7_list(s7,
-                     4,
-                     (s7_pointer)func,
-                     Protect(s7_make_integer(s7, arg1)).v,
-                     Protect(s7_make_string(s7, arg2)).v,
-                     Protect(s7extra_make_dyn(s7, arg3)).v
+             s7_list_nl(s7,
+                        4,
+                        (s7_pointer)func,
+                        Protect(s7_make_integer(s7, arg1)).v,
+                        Protect(s7_make_string(s7, arg2)).v,
+                        Protect(s7extra_make_dyn(s7, arg3)).v,
+                        NULL
                      )
              );
 }
@@ -795,13 +802,14 @@ void s7extra_callFunc_void_int_charpointer_int(const func_t *func, int64_t arg1,
   ScopedEvalTracker eval_tracker;
     
   catch_call(s7,
-             s7_list(s7,
-                     4,
-                     (s7_pointer)func,
-                     s7_make_integer(s7, arg1),
-                     s7_make_string(s7, arg2),
-                     s7_make_integer(s7, arg3)
-                     )
+             s7_list_nl(s7,
+                        4,
+                        (s7_pointer)func,
+                        s7_make_integer(s7, arg1),
+                        s7_make_string(s7, arg2),
+                        s7_make_integer(s7, arg3),
+                        NULL
+                        )
              );
 }
 
@@ -813,12 +821,13 @@ void s7extra_callFunc_void_int_bool(const func_t *func, int64_t arg1, bool arg2)
   ScopedEvalTracker eval_tracker;
     
   catch_call(s7,
-             s7_list(s7,
-                     3,
-                     (s7_pointer)func,
-                     s7_make_integer(s7, arg1),
-                     s7_make_boolean(s7, arg2)
-                     )
+             s7_list_nl(s7,
+                        3,
+                        (s7_pointer)func,
+                        s7_make_integer(s7, arg1),
+                        s7_make_boolean(s7, arg2),
+                        NULL
+                        )
              );
 }
 
@@ -830,10 +839,13 @@ void s7extra_callFunc_void_int(const func_t *func, int64_t arg1){
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     2,
-                     (s7_pointer)func,
-                     s7_make_integer(s7, arg1))
+             s7_list_nl(s7,
+                        2,
+                        (s7_pointer)func,
+                        s7_make_integer(s7, arg1),
+                        NULL
+                        )
+             
              );
 }
 
@@ -845,10 +857,12 @@ void s7extra_callFunc_void_double(const func_t *func, double arg1){
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     2,
-                     (s7_pointer)func,
-                     s7_make_real(s7, arg1))
+             s7_list_nl(s7,
+                        2,
+                        (s7_pointer)func,
+                        s7_make_real(s7, arg1),
+                        NULL
+                        )
              );
 }
 
@@ -860,10 +874,12 @@ void s7extra_callFunc_void_bool(const func_t *func, bool arg1){
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     2,
-                     (s7_pointer)func,
-                     s7_make_boolean(s7, arg1))
+             s7_list_nl(s7,
+                        2,
+                        (s7_pointer)func,
+                        s7_make_boolean(s7, arg1),
+                        NULL
+                        )
              );
 }
 
@@ -875,11 +891,12 @@ void s7extra_callFunc_void_dyn(const func_t *func, const dyn_t arg1){
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     2,
-                     (s7_pointer)func,
-                     Protect(s7extra_make_dyn(s7, arg1)).v
-                     )
+             s7_list_nl(s7,
+                        2,
+                        (s7_pointer)func,
+                        Protect(s7extra_make_dyn(s7, arg1)).v,
+                        NULL
+                        )
              );
 }
 
@@ -891,11 +908,12 @@ void s7extra_callFunc_void_dyn_dyn(const func_t *func, const dyn_t arg1, const d
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     3,
-                     (s7_pointer)func,
-                     Protect(s7extra_make_dyn(s7, arg1)).v,
-                     Protect(s7extra_make_dyn(s7, arg2)).v
+             s7_list_nl(s7,
+                        3,
+                        (s7_pointer)func,
+                        Protect(s7extra_make_dyn(s7, arg1)).v,
+                        Protect(s7extra_make_dyn(s7, arg2)).v,
+                        NULL
                      )
              );
 }
@@ -908,11 +926,12 @@ void s7extra_callFunc_void_charpointer(const func_t *func, const char* arg1){
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     2,
-                     (s7_pointer)func,
-                     s7_make_string(s7, arg1)
-                     )
+             s7_list_nl(s7,
+                        2,
+                        (s7_pointer)func,
+                        s7_make_string(s7, arg1),
+                        NULL
+                        )
              );
 }
 
@@ -925,12 +944,13 @@ void s7extra_callFunc_void_int_charpointer(const func_t *func, int64_t arg1, con
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     3,
-                     (s7_pointer)func,
-                     s7_make_integer(s7, arg1),
-                     s7_make_string(s7, arg2)
-                     )
+             s7_list_nl(s7,
+                        3,
+                        (s7_pointer)func,
+                        s7_make_integer(s7, arg1),
+                        s7_make_string(s7, arg2),
+                        NULL
+                        )
              );
 }
 
@@ -942,12 +962,13 @@ bool s7extra_callFunc_bool_int_charpointer(const func_t *func, int64_t arg1, con
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      3,
-                                      (s7_pointer)func,
-                                      s7_make_integer(s7, arg1),
-                                      s7_make_string(s7, arg2)
-                                      )
+                              s7_list_nl(s7,
+                                         3,
+                                         (s7_pointer)func,
+                                         s7_make_integer(s7, arg1),
+                                         s7_make_string(s7, arg2),
+                                         NULL
+                                         )
                               );
   
   if(!s7_is_boolean(ret)){
@@ -966,14 +987,15 @@ void s7extra_callFunc_void_int_charpointer_bool_bool(const func_t *func, int64_t
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     5,
-                     (s7_pointer)func,
-                     s7_make_integer(s7, arg1),
-                     s7_make_string(s7, arg2),
-                     s7_make_boolean(s7, arg3),
-                     s7_make_boolean(s7, arg4)
-                     )
+             s7_list_nl(s7,
+                        5,
+                        (s7_pointer)func,
+                        s7_make_integer(s7, arg1),
+                        s7_make_string(s7, arg2),
+                        s7_make_boolean(s7, arg3),
+                        s7_make_boolean(s7, arg4),
+                        NULL
+                        )
              );
 }
 
@@ -985,12 +1007,13 @@ void s7extra_callFunc_void_int_int(const func_t *func, int64_t arg1, int64_t arg
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     3,
-                     (s7_pointer)func,
-                     s7_make_integer(s7, arg1),
-                     s7_make_integer(s7, arg2)
-                     )
+             s7_list_nl(s7,
+                        3,
+                        (s7_pointer)func,
+                        s7_make_integer(s7, arg1),
+                        s7_make_integer(s7, arg2),
+                        NULL
+                        )
              );
 }
 
@@ -1002,13 +1025,14 @@ void s7extra_callFunc_void_int_int_int(const func_t *func, int64_t arg1, int64_t
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     4,
-                     (s7_pointer)func,
-                     s7_make_integer(s7, arg1),
-                     s7_make_integer(s7, arg2),
-                     s7_make_integer(s7, arg3)
-                     )
+             s7_list_nl(s7,
+                        4,
+                        (s7_pointer)func,
+                        s7_make_integer(s7, arg1),
+                        s7_make_integer(s7, arg2),
+                        s7_make_integer(s7, arg3),
+                        NULL
+                        )
              );
 }
 
@@ -1020,12 +1044,13 @@ void s7extra_callFunc_void_int_dyn(const func_t *func, int64_t arg1, const dyn_t
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     3,
-                     (s7_pointer)func,
-                     s7_make_integer(s7, arg1),
-                     Protect(s7extra_make_dyn(s7, arg2)).v
-                     )
+             s7_list_nl(s7,
+                        3,
+                        (s7_pointer)func,
+                        s7_make_integer(s7, arg1),
+                        Protect(s7extra_make_dyn(s7, arg2)).v,
+                        NULL
+                        )
              );
 }
 
@@ -1037,13 +1062,14 @@ void s7extra_callFunc_void_int_float_float(const func_t *func, int64_t arg1, flo
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     4,
-                     (s7_pointer)func,
-                     s7_make_integer(s7, arg1),
-                     s7_make_real(s7, arg2),
-                     s7_make_real(s7, arg3)
-                     )
+             s7_list_nl(s7,
+                        4,
+                        (s7_pointer)func,
+                        s7_make_integer(s7, arg1),
+                        s7_make_real(s7, arg2),
+                        s7_make_real(s7, arg3),
+                        NULL
+                        )
              );
 }
 
@@ -1055,14 +1081,15 @@ void s7extra_callFunc_void_int_int_float_float(const func_t *func, int64_t arg1,
   ScopedEvalTracker eval_tracker;
   
   catch_call(s7,
-             s7_list(s7,
-                     5,
-                     (s7_pointer)func,
-                     s7_make_integer(s7, arg1),
-                     s7_make_integer(s7, arg2),
-                     s7_make_real(s7, arg3),
-                     s7_make_real(s7, arg4)
-                     )
+             s7_list_nl(s7,
+                        5,
+                        (s7_pointer)func,
+                        s7_make_integer(s7, arg1),
+                        s7_make_integer(s7, arg2),
+                        s7_make_real(s7, arg3),
+                        s7_make_real(s7, arg4),
+                        NULL
+                        )
              );
 }
 
@@ -1074,14 +1101,15 @@ bool s7extra_callFunc_bool_int_int_float_float(const func_t *func, int64_t arg1,
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      5,
-                                      (s7_pointer)func,
-                                      s7_make_integer(s7, arg1),
-                                      s7_make_integer(s7, arg2),
-                                      s7_make_real(s7, arg3),
-                                      s7_make_real(s7, arg4)
-                                      )
+                              s7_list_nl(s7,
+                                         5,
+                                         (s7_pointer)func,
+                                         s7_make_integer(s7, arg1),
+                                         s7_make_integer(s7, arg2),
+                                         s7_make_real(s7, arg3),
+                                         s7_make_real(s7, arg4),
+                                         NULL
+                                         )
                               );
   if(!s7_is_boolean(ret)){
     handleError("Callback did not return a boolean");
@@ -1099,13 +1127,14 @@ bool s7extra_callFunc_bool_int_float_float(const func_t *func, int64_t arg1, flo
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      4,
-                                      (s7_pointer)func,
-                                      s7_make_integer(s7, arg1),
-                                      s7_make_real(s7, arg2),
-                                      s7_make_real(s7, arg3)
-                                      )
+                              s7_list_nl(s7,
+                                         4,
+                                         (s7_pointer)func,
+                                         s7_make_integer(s7, arg1),
+                                         s7_make_real(s7, arg2),
+                                         s7_make_real(s7, arg3),
+                                         NULL
+                                         )
                               );
   if(!s7_is_boolean(ret)){
     handleError("Callback did not return a boolean");
@@ -1123,11 +1152,12 @@ bool s7extra_callFunc_bool_bool(const func_t *func, bool arg1){
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      2,
-                                      (s7_pointer)func,
-                                      s7_make_boolean(s7, arg1)
-                                      )
+                              s7_list_nl(s7,
+                                         2,
+                                         (s7_pointer)func,
+                                         s7_make_boolean(s7, arg1),
+                                         NULL
+                                         )
                               );
   if(!s7_is_boolean(ret)){
     handleError("Callback did not return a boolean");
@@ -1145,10 +1175,11 @@ int64_t s7extra_callFunc_int_void(const func_t *func){
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      1,
-                                      (s7_pointer)func
-                                      )
+                              s7_list_nl(s7,
+                                         1,
+                                         (s7_pointer)func,
+                                         NULL
+                                         )
                               );
   if(!s7_is_integer(ret)){
     handleError("Callback did not return an integer");
@@ -1166,11 +1197,12 @@ int64_t s7extra_callFunc_int_int(const func_t *func, int64_t arg1){
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      2,
-                                      (s7_pointer)func,
-                                      s7_make_integer(s7, arg1)
-                                      )
+                              s7_list_nl(s7,
+                                         2,
+                                         (s7_pointer)func,
+                                         s7_make_integer(s7, arg1),
+                                         NULL
+                                         )
                               );
   if(!s7_is_integer(ret)){
     handleError("Callback did not return an integer");
@@ -1188,13 +1220,14 @@ int64_t s7extra_callFunc_int_int_int_int(const func_t *func, int64_t arg1, int64
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      4,
-                                      (s7_pointer)func,
-                                      s7_make_integer(s7, arg1),
-                                      s7_make_integer(s7, arg2),
-                                      s7_make_integer(s7, arg3)
-                                      )
+                              s7_list_nl(s7,
+                                         4,
+                                         (s7_pointer)func,
+                                         s7_make_integer(s7, arg1),
+                                         s7_make_integer(s7, arg2),
+                                         s7_make_integer(s7, arg3),
+                                         NULL
+                                         )
                               );
   if(!s7_is_integer(ret)){
     handleError("Callback did not return an integer");
@@ -1212,13 +1245,14 @@ int64_t s7extra_callFunc_int_int_int_int_bool(const func_t *func, int64_t arg1, 
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      5,
-                                      (s7_pointer)func,
-                                      s7_make_integer(s7, arg1),
-                                      s7_make_integer(s7, arg2),
-                                      s7_make_integer(s7, arg3),
-                                      s7_make_boolean(s7, arg4)
+                              s7_list_nl(s7,
+                                         5,
+                                         (s7_pointer)func,
+                                         s7_make_integer(s7, arg1),
+                                         s7_make_integer(s7, arg2),
+                                         s7_make_integer(s7, arg3),
+                                         s7_make_boolean(s7, arg4),
+                                         NULL
                                    )
                               );
   if(!s7_is_integer(ret)){
@@ -1237,12 +1271,13 @@ int64_t s7extra_callFunc_int_int_dyn(const func_t *func, int64_t arg1, const dyn
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      3,
-                                      (s7_pointer)func,
-                                      s7_make_integer(s7, arg1),
-                                      Protect(s7extra_make_dyn(s7, arg2)).v
-                                      )
+                              s7_list_nl(s7,
+                                         3,
+                                         (s7_pointer)func,
+                                         s7_make_integer(s7, arg1),
+                                         Protect(s7extra_make_dyn(s7, arg2)).v,
+                                         NULL
+                                         )
                               );
   if(!s7_is_integer(ret)){
     handleError("Callback did not return an integer");
@@ -1260,11 +1295,12 @@ const char *s7extra_callFunc_charpointer_dyn(const func_t *func, const dyn_t arg
   ScopedEvalTracker eval_tracker;
   
   s7_pointer ret = catch_call(s7,
-                              s7_list(s7,
-                                      2,
-                                      (s7_pointer)func,
-                                      Protect(s7extra_make_dyn(s7, arg1)).v
-                                      )
+                              s7_list_nl(s7,
+                                         2,
+                                         (s7_pointer)func,
+                                         Protect(s7extra_make_dyn(s7, arg1)).v,
+                                         NULL
+                                         )
                               );
   if(!s7_is_string(ret)){
     handleError("Callback did not return an integer");
@@ -1308,14 +1344,15 @@ Place p_Scale(const Place x, const Place x1, const Place x2, const Place y1, con
 
   s7_pointer result = s7_call(s7,
                               scheme_func,
-                              s7_list(s7,
-                                      5,
-                                      place_to_ratio(x),
-                                      place_to_ratio(x1),
-                                      place_to_ratio(x2),
-                                      place_to_ratio(y1),
-                                      place_to_ratio(y2)
-                                      )
+                              s7_list_nl(s7,
+                                         5,
+                                         place_to_ratio(x),
+                                         place_to_ratio(x1),
+                                         place_to_ratio(x2),
+                                         place_to_ratio(y1),
+                                         place_to_ratio(y2),
+                                         NULL
+                                         )
                               );
 
   if (s7_is_ratio(result))
@@ -1344,15 +1381,16 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note) {
   Ratio quant = RATIO_divide(root->quantitize_options.quant, DYN_get_ratio(getLineZoomBlockRatio(block->l.num, -1)));
                            
   s7_pointer result = catch_call(s7,
-                                 s7_list(s7,
-                                         6,
-                                         scheme_func,
-                                         place_to_ratio(&note->l.p),
-                                         place_to_ratio(&note->end),
-                                         s7_make_ratio(s7, quant.numerator, quant.denominator),
-                                         place_to_ratio(&last_place),
-                                         s7_make_integer(s7, root->quantitize_options.type)
-                                         )
+                                 s7_list_nl(s7,
+                                            6,
+                                            scheme_func,
+                                            place_to_ratio(&note->l.p),
+                                            place_to_ratio(&note->end),
+                                            s7_make_ratio(s7, quant.numerator, quant.denominator),
+                                            place_to_ratio(&last_place),
+                                            s7_make_integer(s7, root->quantitize_options.type),
+                                            NULL
+                                            )
                                  );
   
   if (s7_is_boolean(result))
@@ -1382,11 +1420,12 @@ static void place_operation_void_p1_p2(s7_pointer scheme_func, Place *p1,  const
   
   s7_pointer result = s7_call(s7,
                               scheme_func,
-                              s7_list(s7,
-                                      2,
-                                      place_to_ratio(p1),
-                                      place_to_ratio(p2)
-                                      )
+                              s7_list_nl(s7,
+                                         2,
+                                         place_to_ratio(p1),
+                                         place_to_ratio(p2),
+                                         NULL
+                                         )
                               );
   
   if (s7_is_ratio(result))
@@ -1430,11 +1469,12 @@ static Place place_operation_place_p1_p2(s7_pointer scheme_func, const Place p1,
   
   s7_pointer result = s7_call(s7,
                               scheme_func,
-                              s7_list(s7,
-                                      2,
-                                      place_to_ratio(&p1),
-                                      place_to_ratio(&p2)
-                                      )
+                              s7_list_nl(s7,
+                                         2,
+                                         place_to_ratio(&p1),
+                                         place_to_ratio(&p2),
+                                         NULL
+                                         )
                               );
 
   return number_to_place(s7, result, NULL);
@@ -1490,9 +1530,11 @@ void SCHEME_throw(const char *symbol, const char *message){
   //if(g_evals>0){
     s7_error(s7,
              s7_make_symbol(s7, symbol),
-             s7_list(s7,
-                     1,
-                     s7_make_string(s7, message))
+             s7_list_nl(s7,
+                        1,
+                        s7_make_string(s7, message),
+                        NULL
+                        )
              );
     //}
 }
@@ -1581,12 +1623,13 @@ s7_pointer RADIUM_SCHEME_eval2(const char *code){
     
   s7extra_add_history(__func__, CR_FORMATEVENT("========== RADIUM_SCHEME_eval2 (Code from s7webserver.)\n\n"));
   return catch_call(s7,
-                    s7_list(s7,
-                            3,
-                            Protect(find_scheme_value(s7, "eval-string")).v,
-                            Protect(s7_make_string(s7, code)).v,
-                            s7_rootlet(s7) // Eval in global environment
-                            )
+                    s7_list_nl(s7,
+                               3,
+                               Protect(find_scheme_value(s7, "eval-string")).v,
+                               Protect(s7_make_string(s7, code)).v,
+                               s7_rootlet(s7), // Eval in global environment
+                               NULL
+                               )
                     );
 }
 
