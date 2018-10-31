@@ -11,7 +11,7 @@
 
 
 (define (get-fontheight)
-  (+ 4 (<gui> :get-system-fontheight)))
+  (+ 4 (<gui> :get-system-fontheight))) ;; If changing this one, change the "font_height" variable in Seqtracks_widget::get_heights too.
 
 (define-constant *text-color* "#cccccc")
 (define-constant *arrow-text* "↳")

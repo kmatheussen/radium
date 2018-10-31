@@ -2893,6 +2893,47 @@ typedef struct _scheduler_t scheduler_t;
 
 struct SeqtrackAutomation;
 
+// If changing this one, also update documentation in protos.conf (should probably don't change order since that would change the API), and update get-seqtrack-height-type in sequencer.scm.
+enum SeqtrackHeightType{
+  SHT_CUSTOM = 0,
+  SHT_1ROW = 1,
+  SHT_2ROWS = 2,
+  SHT_3ROWS = 3,
+  SHT_UNLIMITED = 4,
+  NUM_SHTs
+};
+
+static inline enum SeqtrackHeightType get_seqtrack_height_type_from_string(const char *s){
+  if(!strcmp(s,"custom"))
+    return SHT_CUSTOM;
+  else if(!strcmp(s,"1 row"))
+    return SHT_1ROW;
+  else if(!strcmp(s,"2 rows"))
+    return SHT_2ROWS;
+  else if(!strcmp(s,"3 rows"))
+    return SHT_3ROWS;
+  else if(!strcmp(s,"unlimited"))
+    return SHT_UNLIMITED;
+  else{
+    R_ASSERT(false);
+    return SHT_1ROW;
+  }
+}
+
+static inline const char *get_string_from_seqtrack_height_type(enum SeqtrackHeightType type){
+  switch(type){
+  case SHT_CUSTOM: return "custom";
+  case SHT_1ROW: return "1 row";
+  case SHT_2ROWS: return "2 rows";
+  case SHT_3ROWS: return "3 rows";
+  case SHT_UNLIMITED: return "unlimited";
+  default:{
+    R_ASSERT(false);
+    return "1 row";
+  }
+  }
+}
+
 struct SeqTrack{
   scheduler_t *scheduler;
 
@@ -2928,6 +2969,14 @@ struct SeqTrack{
   
   const char *name; // Not used when for_audiofiles==true. (then we use patch->name instead)
 
+  enum SeqtrackHeightType min_height_type;
+  enum SeqtrackHeightType max_height_type;
+
+  double custom_min_height; // divided by system font height
+  double custom_max_height; // divided by system font height
+
+  double y1, y2; // in the sequencer.
+  
   // All variables below are only used when for_audiofiles==true.
   struct Patch *patch; // A "Sequencer audio file recorder/player" audio plugin.
   bool is_recording;

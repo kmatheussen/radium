@@ -7558,7 +7558,8 @@
                                        seqpos)))
                          (split-sample-seqblock pos seqtracknum seqblocknum)
                          #t))))))))
-  
+
+
 ;; seqblock menu
 (add-mouse-cycle
  (make-mouse-cycle
@@ -7591,7 +7592,34 @@
                               (set-grid-type (<ra> :get-seq-block-grid-type))
                               
                               (define guinum
-                              (popup-menu (if (not for-blocks)
+                              (popup-menu (list
+                                           "--------------------Seqtrack"
+                                           
+                                           (get-delete-all-pauses-menu-entry seqtracknum)
+                                           (get-seqtrack-popup-menu-entries seqtracknum)
+
+                                           "-------------------"
+                                           
+                                           "New automation" (lambda ()
+                                                   (create-sequencer-automation seqtracknum X Y))
+
+                                          (list (<-> "Paste automation")
+                                                :enabled *clipboard-seqtrack-automation*
+                                                (lambda ()
+                                                  (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
+                                                    (apply-seqtrack-automation seqtracknum pos *clipboard-seqtrack-automation*))))
+
+                                          (map (lambda (automationnum)
+                                                 (list (get-seq-automation-display-name automationnum seqtracknum)
+                                                       :check (<ra> :get-seq-automation-enabled automationnum seqtracknum)
+                                                       (lambda (checked)
+                                                         (<ra> :set-seq-automation-enabled automationnum seqtracknum checked)
+                                                         (c-display "checked" checked)))
+                                                 )
+                                               (iota (<ra> :get-num-seqtrack-automations seqtracknum)))
+
+                                           )
+                                          (if (not for-blocks)
                                               #f
                                               (list
                                                "--------------------Editor Seqtrack" ;;Editor blocks"
@@ -7663,19 +7691,6 @@
                                                                            (lambda (filename)
                                                                              (<ra> :create-sample-seqblock seqtracknum filename pos))))))))
                                           
-                                          (get-delete-all-pauses-menu-entry seqtracknum)
-                                          (list "Swap with next seqtrack"
-                                                :enabled (< seqtracknum (- (<ra> :get-num-seqtracks) 1))
-                                                (lambda ()
-                                                  (define (swapit)
-                                                    (<ra> :swap-seqtracks seqtracknum (1+ seqtracknum)))
-                                                  (if (and (= 0 seqtracknum)
-                                                           (<ra> :seqtrack-for-audiofiles 1))
-                                                      (ask-user-about-first-audio-seqtrack
-                                                       (lambda (doit)
-                                                         (if doit
-                                                             (swapit))))
-                                                      (swapit))))                                          
                                           (if (and #f (not seqblock-info))
                                               #f
                                               (let* ((is-selected (and seqblocknum
@@ -7960,25 +7975,8 @@
                                           
                                           
                                           
-                                          "-----------------Seqtrack Automation"
+                                          ;;"-----------------Seqtrack Automation"
 
-                                          "New" (lambda ()
-                                                  (create-sequencer-automation seqtracknum X Y))
-
-                                          (list (<-> "Paste automation")
-                                                :enabled *clipboard-seqtrack-automation*
-                                                (lambda ()
-                                                  (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)) (<ra> :get-seq-block-grid-type))))
-                                                    (apply-seqtrack-automation seqtracknum pos *clipboard-seqtrack-automation*))))
-
-                                          (map (lambda (automationnum)
-                                                 (list (get-seq-automation-display-name automationnum seqtracknum)
-                                                       :check (<ra> :get-seq-automation-enabled automationnum seqtracknum)
-                                                       (lambda (checked)
-                                                         (<ra> :set-seq-automation-enabled automationnum seqtracknum checked)
-                                                         (c-display "checked" checked)))
-                                                 )
-                                               (iota (<ra> :get-num-seqtrack-automations seqtracknum)))
 
                                           ;;"-----------------"
                                           ;;
