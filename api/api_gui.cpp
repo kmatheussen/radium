@@ -1424,6 +1424,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     void paintVamps(QPainter &p, const bool *vamps_to_paint){
+      bool do_sequencer_clipping = _widget==SEQUENCER_WIDGET_get_widget();
+      
+      if (do_sequencer_clipping){
+        // Hack to avoid vamps to be painted on top of the "+A a" button.
+        float y2 = SEQNAV_get_y1() - SEQUENCER_get_y1();
+        p.setClipRect(QRectF(0, 0, _widget->width(), y2));
+        p.setClipping(true);
+      }
+        
       int i=0;        
       for(auto *vamp : _vamps){
 
@@ -1433,6 +1442,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         
         i++;
       }
+
+      if (do_sequencer_clipping)
+        p.setClipping(false);
     }
     
     /************ MOUSE *******************/

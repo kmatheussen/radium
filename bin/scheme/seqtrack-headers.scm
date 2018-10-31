@@ -1083,7 +1083,15 @@
                                                                                        (else
                                                                                         (assert #f))))
                                                            :callback-release (lambda ()
-                                                                               (callback type)))))))
+                                                                               (callback type))))))
+
+  (define background-color (<gui> :get-background-color gui))
+  
+  (define-override (paint)
+    ;;(c-display "   Scheme: Painting left part")
+    (<gui> :filled-box gui background-color x1 y1 x2 y2)  ;; To avoid the last visible seqtrack header gui to be visible between the buttons.
+    ))
+
 
 
 (def-area-subclass (<sequencer-left-part> :gui :x1 :y1 :x2 :y2)
@@ -1115,29 +1123,32 @@
       (define sy1 (+ ty1 (- (seqtrack-box :y1) seqtrack0-y1)))
       (define sy2 (+ ty1 (- (seqtrack-box :y2) seqtrack0-y1)))
 
-      ;;(set! sy1 (scale seqtracknum 0 num-seqtracks ty1 ty2))
-      ;;(set! sy2 (scale (1+ seqtracknum) 0 num-seqtracks ty1 ty2))
-
-      (set! sy1 (+ sy1
-                   (if (= 0 seqtracknum)
-                       0
-                       b/2)))
-      (set! sy2 (1+ (ceiling (- sy2
-                            (if (= (1- num-seqtracks) seqtracknum)
-                                0
-                                b/2)))))
-      
-      (define use-two-rows (> (seqtrack-box :height)
-                              (* 2.5 (get-fontheight))))
-      
-      (define show-panner (> (seqtrack-box :height)
-                             (* 3.5 (get-fontheight))))
-
-      (if (or (not (<ra> :seqtrack-for-audiofiles seqtracknum))
-              (>= (<ra> :get-seqtrack-instrument seqtracknum) 0))
-          (add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 use-two-rows show-panner seqtracknum)))
-      
-      (loop (1+ seqtracknum))))
+      (if (< sy2 ty1)
+          (loop (1+ seqtracknum))
+          (when (< sy1 ty2)
+            ;;(set! sy1 (scale seqtracknum 0 num-seqtracks ty1 ty2))
+            ;;(set! sy2 (scale (1+ seqtracknum) 0 num-seqtracks ty1 ty2))
+            
+            (set! sy1 (+ sy1
+                         (if (= 0 seqtracknum)
+                             0
+                             b/2)))
+            (set! sy2 (1+ (ceiling (- sy2
+                                      (if (= (1- num-seqtracks) seqtracknum)
+                                          0
+                                          b/2)))))
+            
+            (define use-two-rows (> (seqtrack-box :height)
+                                    (* 2.5 (get-fontheight))))
+            
+            (define show-panner (> (seqtrack-box :height)
+                                   (* 3.5 (get-fontheight))))
+            
+            (if (or (not (<ra> :seqtrack-for-audiofiles seqtracknum))
+                    (>= (<ra> :get-seqtrack-instrument seqtracknum) 0))
+                (add-sub-area-plain! (<new> :seqtrack-header gui x1 sy1 x2 sy2 use-two-rows show-panner seqtracknum)))
+            
+            (loop (1+ seqtracknum))))))
 
   (add-sub-area-plain! (<new> :sequencer-left-part-buttons gui x1 ty2 x2 y2))
 
@@ -1145,7 +1156,8 @@
 
   (define-override (paint)
     ;;(c-display "   Scheme: Painting left part")
-    (<gui> :filled-box gui background-color x1 y1 x2 y2))
+    (<gui> :filled-box gui background-color x1 y1 x2 y2)
+    )
   
   )
 

@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_proc.h"
 #include "../api/api_gui_proc.h"
+#include "../api/api_common_proc.h"
 
 #include "../audio/Mixer_proc.h"
 
@@ -346,6 +347,19 @@ static QPoint skewedPoint(QWidget *widget, const QPoint &p, int dx, int dy){
   return QPoint(p2.x()+dx, p2.y()+dy);
 }
 
+/*
+static int get_seqtracks_total_height(void){
+  const int num_seqtracks = root->song->seqtracks.num_elements;
+  
+  if(num_seqtracks==0)
+    return 0;
+
+  double seqtrack0_y1 = getSeqtrackFromNum(0)->y1;
+  double seqtrackN_y2 = getSeqtrackFromNum(num_seqtracks-1)->y2;
+
+  return seqtrackN_y2 - seqtrack0_y1;
+}
+*/
 
 static double get_seqtrack_border_width(void){
   return floor(root->song->tracker_windows->systemfontheight / 2.5);
@@ -2061,9 +2075,21 @@ public:
   }
 
   void paint_automation(const QRegion &update_region, QPainter &p){
+
+    float y_min = get_seqtracks_y1();
+    float y_max = get_seqtracks_y2();
+        
+
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
       Seqblocks_widget seqblocks_widget = get_seqblocks_widget(iterator666, true);
-      seqblocks_widget.paint_automation(update_region, p, seqtrack);
+
+      if (seqblocks_widget.t_y2 > y_min){
+          
+        if (seqblocks_widget.t_y1 >= y_max)
+          return;
+        
+        seqblocks_widget.paint_automation(update_region, p, seqtrack);
+      }
     }END_VECTOR_FOR_EACH;
   }
 
@@ -2099,10 +2125,20 @@ public:
   
   void paint(const QRegion &update_region, QPainter &p) {
     if(workingQRegionIntersects(update_region, t_rect)){
-      
+
+      float y_min = get_seqtracks_y1();
+      float y_max = get_seqtracks_y2();
+        
       VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
         Seqblocks_widget seqblocks_widget = get_seqblocks_widget(iterator666, true);
-        seqblocks_widget.paint(update_region, p, seqtrack, iterator666);
+        
+        if (seqblocks_widget.t_y2 > y_min){
+          
+          if (seqblocks_widget.t_y1 >= y_max)
+            return;
+          
+          seqblocks_widget.paint(update_region, p, seqtrack, iterator666);
+        }
       }END_VECTOR_FOR_EACH;
       
     }
@@ -2229,21 +2265,32 @@ public:
     return height;
   }
 
+  double get_seqtracks_y1(void) const {
+    const double border_width =  get_seqtrack_border_width() / 2.0;
+    return t_y1+border_width;
+  }
+  
+  double get_seqtracks_y2(void) const {
+    const double border_width =  get_seqtrack_border_width() / 2.0;
+    return t_y2-border_width;
+  }
+  
   void calculate_seqtrack_coordinates(void) const {
     const int num_seqtracks = root->song->seqtracks.num_elements;
     //double seqtrack_height = t_height / num_seqtracks;
 
     // && (abs(ATOMIC_GET(root->song->curr_seqtracknum)-seqtracknum)<=1))
 
-    double border_width =  get_seqtrack_border_width() / 2.0;
-
+    double seqtracks_y1 = get_seqtracks_y1();
+    double seqtracks_y2 = get_seqtracks_y2();
+    
     double heights[num_seqtracks];
-    calculate_heights(heights, num_seqtracks, (t_y2-border_width) - (t_y1+border_width));
+    calculate_heights(heights, num_seqtracks, seqtracks_y2 - seqtracks_y1);
 
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
       int seqtracknum = iterator666;
       
-      const double y1 = t_y1+border_width + get_y1_from_heights(heights, seqtracknum);
+      const double y1 = seqtracks_y1 + get_y1_from_heights(heights, seqtracknum);
       const double y2 = y1 + heights[seqtracknum];
 
       seqtrack->y1 = y1;
@@ -2877,16 +2924,18 @@ public:
     QRect rect1(0,0,width(),height());
     p.fillRect(rect1, get_qcolor(SEQUENCER_BACKGROUND_COLOR_NUM));
 
-    
+
+    int num_seqtracks = root->song->seqtracks.num_elements;
+    if (num_seqtracks==0)
+      return;
+
     // Seqblocks
     {
 
       //QColor block_color = QColor(140,140,140,180);
       QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
       
-      int num_seqtracks = root->song->seqtracks.num_elements;
-
-      VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+      VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
         int seqtracknum = iterator666;
 
         double y1 = scale_double(seqtracknum,   0, num_seqtracks, 3, height()-3);
@@ -2898,7 +2947,7 @@ public:
         //double end_time = _end_time / MIXER_get_sample_rate();
         */
         
-        VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
+        VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
 
           QColor seqblock_color = get_seqblock_color(seqtrack, seqblock).lighter(150);
           seqblock_color.setAlpha(128);
@@ -2931,18 +2980,44 @@ public:
     // Navigator
     //
     {
+      double seqtracks_y1 = _seqtracks_widget.get_seqtracks_y1();
+      double seqtracks_y2 = _seqtracks_widget.get_seqtracks_y2();
+
+      //int total_seqtracks_height = get_seqtracks_total_height();
+      //int visible_seqtracks_height = seqtracks_y2 - seqtracks_y1;
+
       double x1 = get_x1(total);
       double x2 = get_x2(total);
 
-      QRectF rectA(0,  1, x1,         height()-2);
-      QRectF rectB(x2, 1, width()-x2, height()-2);      
-      QRectF rect2(x1, 1, x2-x1,      height()-2);
+      double seqtrack0_y1 = getSeqtrackFromNum(0)->y1;
+      double seqtrackN_y2 = getSeqtrackFromNum(num_seqtracks-1)->y2;
+      
+      double y1 = scale_double(seqtracks_y1,
+                               seqtrack0_y1, seqtrackN_y2,
+                               0, height()
+                               );
+      
+      double y2 = scale_double(seqtracks_y2,
+                               seqtrack0_y1, seqtrackN_y2,
+                               0, height()
+                               );
+      
+      QRectF rectX1(0,  1, x1,         height()-2);
+      QRectF rectX2(x2, 1, width()-x2, height()-2);
 
+      QRectF rectY1(x1, 1,                x2-x1,      (y1+1)-1);
+      QRectF rect2 (x1, y1+1,             x2-x1,      y2-y1-1);
+      QRectF rectY2(x1, y1+1+(y2-y1-1),   x2-x1,      height()-(y1+1+(y2-y1-1))-1); // Really messy when third and fourth arguments for QRect are width and height instead of x2 and y2.
+      
+      
       {
         QColor grayout_color = get_qcolor(SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM);
       
-        p.fillRect(rectA, grayout_color);
-        p.fillRect(rectB, grayout_color);
+        p.fillRect(rectX1, grayout_color);
+        p.fillRect(rectX2, grayout_color);
+        
+        p.fillRect(rectY1, grayout_color);
+        p.fillRect(rectY2, grayout_color);
       }
       
       p.setPen(border_color);
@@ -3639,7 +3714,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       p.eraseRect(ev->rect());
     }
 #endif
-    
+
+    float seqtracks_y_max = _seqtracks_widget.get_seqtracks_y2() + get_seqtrack_border_width();
+
     // Paint seqtrack headers (left part)
     //
     API_run_paint_event_for_custom_widget(this,
@@ -3669,8 +3746,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 #undef ERASE_FIRST
       
       p.setRenderHints(QPainter::Antialiasing,true);    
-
-      p.setClipRect(QRectF(_seqtracks_widget.t_x1, 0, _seqtracks_widget.t_width, height()));
+      
+      p.setClipRect(QRectF(_seqtracks_widget.t_x1, 0, _seqtracks_widget.t_width, seqtracks_y_max));
       p.setClipping(true);
 
       {
@@ -3702,18 +3779,25 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
       QPainter p(this);
 
-      paintSeqtrackBorders(p);
+      {
+        p.setClipRect(QRectF(0, 0, width(), seqtracks_y_max));
+        p.setClipping(true);
+      
+        paintSeqtrackBorders(p);
+        paintCurrentSeqtrackBorder(p);
 
-      paintCurrentSeqtrackBorder(p);
-
+        p.setClipping(false);
+      }
+      
       if (seqtracks_are_painted) {
 
         p.setRenderHints(QPainter::Antialiasing,true);
 
-        p.setClipRect(QRectF(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1, _seqtracks_widget.t_width, _seqtracks_widget.t_height+get_seqtrack_border_width()));
+        p.setClipRect(QRectF(_seqtracks_widget.t_x1, _seqtracks_widget.t_y1, _seqtracks_widget.t_width, seqtracks_y_max - _seqtracks_widget.t_y1));
+        p.setClipping(true);
 
         _seqtracks_widget.paint_curr_seqblock_border(ev->region(), p);
-        
+
         _seqtracks_widget.paint_automation(ev->region(), p);    
         paintCursor(ev->region(), p);
       }
