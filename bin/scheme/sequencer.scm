@@ -1,6 +1,162 @@
 
 (provide 'sequencer.scm)
 
+;; see enum SeqtrackHeightType in nsmtracker.h
+(define (get-seqtrack-height-type boxname)
+  (cond ((eq? boxname 'custom) 0)
+        ((eq? boxname '1-row) 1)
+        ((eq? boxname '2-rows) 2)
+        ((eq? boxname '3-rows) 3)
+        ((eq? boxname 'unlimited) 4)
+        (else
+         (c-display "************** boxname:" boxname)
+         (assert #f))))
+
+(define (get-select-seqtrack-size-type-gui seqtracknum is-min)
+  (define getter (if is-min ra:get-seqtrack-min-height-type ra:get-seqtrack-max-height-type))
+  (define setter (if is-min ra:set-seqtrack-min-height-type ra:set-seqtrack-max-height-type))
+  (define has-started #f)
+  
+  (define gui (<gui> :vertical-layout))
+  
+  (define (gotit type)    
+    (when has-started
+      (if #t
+          (begin
+            (setter seqtracknum type)
+            (show-select-both-seqtrack-size-types-gui seqtracknum))
+          (<ra> :schedule 30
+                (lambda ()
+                  (try-finally :try (lambda ()
+                                      (setter seqtracknum type))
+                               :finally (lambda ()
+                                          (<ra> :schedule 100
+                                                (lambda ()
+                                                  ;;(<gui> :close gui)
+                                                  #f))))
+                  #f)))))
+
+  (define curr-min-type (<ra> :get-seqtrack-min-height-type seqtracknum))
+  (define curr-max-type (<ra> :get-seqtrack-max-height-type seqtracknum))
+  (define custom-type (get-seqtrack-height-type 'custom))
+  (define unlimited-type (get-seqtrack-height-type 'unlimited))
+    
+  (for-each (lambda (name text)
+              (define type (get-seqtrack-height-type
+                            (if (or (eq? 'unlimited1 name)
+                                    (eq? 'unlimited2 name))
+                                'unlimited
+                                name)))
+              (set! text (cond ((eq? 'unlimited1 name)
+                                "1/3 row")
+                               ((eq? 'unlimited2 name)
+                                "Unlimited")
+                               (else
+                                text)))
+              (define is-disabled (or (and (not is-min)
+                                           (eq? 'unlimited1 name))
+                                      (and is-min
+                                           (eq? 'unlimited2 name))))
+              (if (and (not is-disabled)
+                       (not (= type custom-type)))
+                  (if is-min
+                      (if (and (not (= unlimited-type type))
+                               (not (= curr-max-type custom-type))
+                               (> type curr-max-type))
+                          (set! is-disabled #t))
+                      (if (and (not (= curr-min-type unlimited-type))
+                               (not (= curr-min-type custom-type))
+                               (< type curr-min-type))
+                          (set! is-disabled #t))))
+              
+              (define button (<gui> :radiobutton text (and (not is-disabled)
+                                                           (= type (getter seqtracknum)))
+                                    (lambda (val)
+                                      (if val
+                                          (gotit type)))))
+              (<gui> :add gui button)
+                
+              (if is-disabled
+                  (<gui> :set-enabled button #f)))
+            '(unlimited1
+              1-row
+              2-rows
+              3-rows
+              custom
+              unlimited2)
+            '("Unlimited"
+              "1 row"
+              "2 rows"
+              "3 rows"
+              "Current size"
+              "Unlimited"))
+  
+  (set! has-started #t)
+
+  gui)
+  
+
+(define *curr-seqtrack-size-type-gui* #f) ;; only show one at a time.
+(define *curr-seqtrack-size-type-content* #f)
+
+(define (show-select-both-seqtrack-size-types-gui seqtracknum)
+  (define min-gui (get-select-seqtrack-size-type-gui seqtracknum #t))
+  (define max-gui (get-select-seqtrack-size-type-gui seqtracknum #f))
+  (define content (<gui> :vertical-layout
+                     (mid-horizontal-layout (<gui> :text (<-> "               Seqtrack height limits for \"" (<ra> :get-seqtrack-name seqtracknum) "\" (#" seqtracknum ")               ")))
+                     (<gui> :horizontal-layout)
+                     (<gui> :horizontal-layout
+                            (<gui> :group "Minimium size"
+                                   min-gui)
+                            (<gui> :group "Maximum size"
+                                   max-gui))))
+  
+  (<gui> :set-layout-spacing content 5 2 2 2 2)
+  
+  (<gui> :add content (<gui> :button "Close"
+                         (lambda ()
+                           (<gui> :hide *curr-seqtrack-size-type-gui*))))
+
+  (if (or (not *curr-seqtrack-size-type-gui*)
+          (not (<gui> :is-open *curr-seqtrack-size-type-gui*)))
+      (begin
+        (set! *curr-seqtrack-size-type-gui* (<gui> :vertical-layout))
+        (<gui> :set-window-title *curr-seqtrack-size-type-gui* "Seqtrack height limits")
+        (<gui> :add *curr-seqtrack-size-type-gui* content)
+        (<gui> :set-parent *curr-seqtrack-size-type-gui* (<gui> :get-sequencer-gui)))
+      (begin
+        (<gui> :replace *curr-seqtrack-size-type-gui* *curr-seqtrack-size-type-content* content)
+        (<gui> :close *curr-seqtrack-size-type-content*)))
+
+  (set! *curr-seqtrack-size-type-content* content)
+  (<gui> :show *curr-seqtrack-size-type-gui*))
+
+
+#!!
+(show-select-both-seqtrack-size-types-gui 1)
+!!#
+                     
+(define (select-seqtrack-size-type seqtracknum is-min)
+  (define gui (get-select-seqtrack-size-type-gui seqtracknum is-min))
+  (<gui> :set-parent gui (<gui> :get-sequencer-gui))
+  (<gui> :show gui))
+  
+
+#!!
+(select-seqtrack-size-type 0 #t)
+!!#
+
+(define (set-min-seqtrack-size seqtracknum)
+  (select-seqtrack-size-type seqtracknum #t))
+
+(define (set-max-seqtrack-size seqtracknum)
+  (select-seqtrack-size-type seqtracknum #f))
+
+(define (FROM_C-call-me-when-curr-seqtrack-has-changed seqtracknum)
+  (if (and *curr-seqtrack-size-type-gui*
+           (<gui> :is-open *curr-seqtrack-size-type-gui*)
+           (<gui> :is-visible *curr-seqtrack-size-type-gui*))
+      (show-select-both-seqtrack-size-types-gui seqtracknum)))
 
 (define (get-nonstretched-seqblock-duration seqblocknum seqtracknum)
   (- (<ra> :get-seqblock-interior-end seqblocknum seqtracknum)
@@ -151,6 +307,20 @@
         (set-seqblock-selected-box 'fade-right seqblocknum seqtracknum)
         (set-editor-statusbar (get-fade-string-right seqblocknum seqtracknum)))))
 
-
-
-
+(define (get-seqtrack-popup-menu-entries seqtracknum)
+  (list
+   (list "Swap with next seqtrack"
+         :enabled (< seqtracknum (- (<ra> :get-num-seqtracks) 1))
+         (lambda ()
+           (define (swapit)
+             (<ra> :swap-seqtracks seqtracknum (1+ seqtracknum)))
+           (if (and (= 0 seqtracknum)
+                    (<ra> :seqtrack-for-audiofiles 1))
+               (ask-user-about-first-audio-seqtrack
+                (lambda (doit)
+                  (if doit
+                      (swapit))))
+               (swapit))))
+   (list "Set height limits"
+         (lambda ()
+           (show-select-both-seqtrack-size-types-gui seqtracknum)))))

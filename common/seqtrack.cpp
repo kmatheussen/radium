@@ -1464,6 +1464,9 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, double state_sa
   struct SeqTrack *seqtrack = (struct SeqTrack*)talloc(sizeof(struct SeqTrack));
   //memset(seqtrack, 0, sizeof(struct SeqTrack));
 
+  seqtrack->min_height_type = SHT_1ROW;
+  seqtrack->max_height_type = SHT_UNLIMITED;
+  
   seqtrack->for_audiofiles = for_audiofiles;
   reset_recording_config(&seqtrack->custom_recording_config);
   seqtrack->use_custom_recording_config = false;
@@ -1501,6 +1504,13 @@ static hash_t *SEQTRACK_get_state(const struct SeqTrack *seqtrack /* , bool get_
 
   if (seqtrack->name != NULL)
     HASH_put_chars(state, "name", seqtrack->name);
+
+  HASH_put_chars(state, "min_height_type", get_string_from_seqtrack_height_type(seqtrack->min_height_type));
+  HASH_put_chars(state, "max_height_type", get_string_from_seqtrack_height_type(seqtrack->max_height_type));
+  if(seqtrack->min_height_type==SHT_CUSTOM)
+    HASH_put_float(state, "custom_min_height", seqtrack->custom_min_height);
+  if(seqtrack->max_height_type==SHT_CUSTOM)
+    HASH_put_float(state, "custom_max_height", seqtrack->custom_max_height);
 
   if (seqtrack->for_audiofiles){
     HASH_put_bool(state, "use_custom_recording_config", seqtrack->use_custom_recording_config);
@@ -1650,7 +1660,7 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
 
   
 static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double state_samplerate, int seqtracknum, enum ShowAssertionOrThrowAPIException error_type, struct Song *song){
-  const hash_t *automation_state = NULL;
+ const hash_t *automation_state = NULL;
   if (HASH_has_key(state, "automation"))
     automation_state = HASH_get_hash(state, "automation");
 
@@ -1692,6 +1702,15 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, double
   if (HASH_has_key(state, "name"))
     seqtrack->name = HASH_get_chars(state, "name");
 
+  if (HASH_has_key(state, "min_height_type")){
+    seqtrack->min_height_type = get_seqtrack_height_type_from_string(HASH_get_chars(state, "min_height_type"));
+    seqtrack->max_height_type = get_seqtrack_height_type_from_string(HASH_get_chars(state, "max_height_type"));
+    if(seqtrack->min_height_type==SHT_CUSTOM)
+      seqtrack->custom_min_height = HASH_get_float(state, "custom_min_height");
+    if(seqtrack->max_height_type==SHT_CUSTOM)
+      seqtrack->custom_max_height = HASH_get_float(state, "custom_max_height");
+  }
+  
   R_ASSERT(seqtrack->gfx_seqblocks==NULL);  
   vector_t gfx_seqblocks = {};
   seqtrack->gfx_seqblocks = &gfx_seqblocks;

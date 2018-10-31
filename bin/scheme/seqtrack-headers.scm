@@ -5,6 +5,7 @@
 (my-require 'gui.scm)
 (my-require 'instruments.scm)
 (my-require 'area.scm)
+(my-require 'sequencer.scm)
 
 
 ;;(define *curr-seqtrack-color* "#7c3a3a")
@@ -31,7 +32,7 @@
                      0.95)
               background-color)))))
 
-(define (show-sequencer-header-popup-menu instrument-id effect-name parentgui)
+(define (show-sequencer-header-popup-menu seqtracknum instrument-id effect-name parentgui)
   (popup-menu
    (list "Reset volume"
          (lambda ()
@@ -40,7 +41,9 @@
    "-------------"
    (get-effect-popup-entries instrument-id effect-name)
    "------------"
-   (get-instrument-popup-entries instrument-id parentgui)))
+   (get-instrument-popup-entries instrument-id parentgui)
+   "------------"
+   (get-seqtrack-popup-menu-entries seqtracknum)))
 
 
 (define *has-shown-record-message* #t)
@@ -300,9 +303,9 @@
                                                                     (cond ((eq? type 'record)
                                                                            (show-record-popup-menu seqtracknum))
                                                                           ((eq? type 'solo)
-                                                                           (show-sequencer-header-popup-menu instrument-id "System Solo On/Off" gui))
+                                                                           (show-sequencer-header-popup-menu seqtracknum instrument-id "System Solo On/Off" gui))
                                                                           ((eq? type 'mute)
-                                                                           (show-sequencer-header-popup-menu instrument-id "System Volume On/Off" gui))
+                                                                           (show-sequencer-header-popup-menu seqtracknum instrument-id "System Volume On/Off" gui))
                                                                           (else
                                                                            (assert #f))))))
 
@@ -702,7 +705,9 @@
                                                         :pre-undo-block-callback (lambda ()
                                                                                    (enable! #t)))
                               "------------"
-                              (get-instrument-popup-entries instrument-id gui))
+                              (get-instrument-popup-entries instrument-id gui)
+                              "------------"
+                              (get-seqtrack-popup-menu-entries seqtracknum))
                   #f)))
 
   (add-delta-mouse-cycle!
@@ -896,7 +901,7 @@
                                           (begin
                                             (<ra> :schedule 0 ;; Workaround. Opening a popup menu causes Qt to skip the drag and release mouse events.
                                                   (lambda ()
-                                                    (show-sequencer-header-popup-menu instrument-id "System Volume" gui)
+                                                    (show-sequencer-header-popup-menu seqtracknum instrument-id "System Volume" gui)
                                                     #f))
                                             #t)
                                           #f))))
@@ -1104,12 +1109,6 @@
 
   (add-sub-area-plain! (<new> :sequencer-height-dragger gui x1 y1 x2 (+ y1 dragger-height)))
 
-  (define use-two-rows (> (/ (- ty2 ty1) num-seqtracks)
-                          (* 2.5 (get-fontheight))))
-
-  (define show-panner (> (/ (- ty2 ty1) num-seqtracks)
-                         (* 3.5 (get-fontheight))))
-
   (let loop ((seqtracknum 0))
     (when (< seqtracknum num-seqtracks)
       (define seqtrack-box (<ra> :get-box seqtrack seqtracknum))
@@ -1123,10 +1122,16 @@
                    (if (= 0 seqtracknum)
                        0
                        b/2)))
-      (set! sy2 (- sy2
-                   (if (= (1- num-seqtracks) seqtracknum)
-                       0
-                       b/2)))
+      (set! sy2 (1+ (ceiling (- sy2
+                            (if (= (1- num-seqtracks) seqtracknum)
+                                0
+                                b/2)))))
+      
+      (define use-two-rows (> (seqtrack-box :height)
+                              (* 2.5 (get-fontheight))))
+      
+      (define show-panner (> (seqtrack-box :height)
+                             (* 3.5 (get-fontheight))))
 
       (if (or (not (<ra> :seqtrack-for-audiofiles seqtracknum))
               (>= (<ra> :get-seqtrack-instrument seqtracknum) 0))

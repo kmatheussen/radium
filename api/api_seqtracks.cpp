@@ -241,6 +241,17 @@ void deleteSeqtrack(int seqtracknum){
   }UNDO_CLOSE();
 }
 
+void API_curr_seqtrack_has_changed(void){
+  static func_t *func = NULL;
+  
+#if defined(RELEASE)
+  if (func==NULL)
+#endif
+    func = s7extra_get_func_from_funcname_for_storing("FROM_C-call-me-when-curr-seqtrack-has-changed");
+ 
+  S7CALL(void_int, func, ATOMIC_GET(root->song->curr_seqtracknum));
+}
+
 void setCurrSeqtrack(int seqtracknum){
   struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
   if (seqtrack==NULL)
@@ -257,6 +268,7 @@ void setCurrSeqtrack(int seqtracknum){
     }
       
     ATOMIC_SET(root->song->curr_seqtracknum, seqtracknum);
+
     SEQTRACK_update_with_borders(seqtrack);
     SEQUENCER_update(SEQUPDATE_HEADERS|SEQUPDATE_PLAYLIST|SEQUPDATE_BLOCKLIST);
 
@@ -269,6 +281,8 @@ void setCurrSeqtrack(int seqtracknum){
     else{
       R_ASSERT_NON_RELEASE(false);
     }
+
+    API_curr_seqtrack_has_changed();
   }
 
 }
@@ -1520,6 +1534,65 @@ int getSeqtrackFromY(int y){
 
   return -1;
 }
+
+int getSeqtrackMinHeightType(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return 0;
+
+  return (int)seqtrack->min_height_type;
+}
+
+void setSeqtrackMinHeightType(int seqtracknum, int new_type){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  if (new_type < SHT_CUSTOM || new_type >= NUM_SHTs){
+    handleError("setSeqtrackMinHeightType: Illegal type %d", new_type);
+    return;
+  }
+  
+  if (seqtrack->min_height_type==new_type)
+    return;
+
+  if(new_type==SHT_CUSTOM)
+    seqtrack->custom_min_height = double(SEQTRACK_get_y2(seqtracknum) - SEQTRACK_get_y1(seqtracknum)) / (double)root->song->tracker_windows->systemfontheight;
+  
+  seqtrack->min_height_type = (enum SeqtrackHeightType)new_type;
+  
+  SEQUENCER_update(SEQUPDATE_TRACKCOORDINATES);
+}
+
+int getSeqtrackMaxHeightType(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return 0;
+
+  return (int)seqtrack->max_height_type;
+}
+
+void setSeqtrackMaxHeightType(int seqtracknum, int new_type){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return;
+
+  if (new_type < SHT_CUSTOM || new_type >= NUM_SHTs){
+    handleError("setSeqtrackMaxHeightType: Illegal type %d", new_type);
+    return;
+  }
+  
+  if (seqtrack->max_height_type==new_type)
+    return;
+
+  if(new_type==SHT_CUSTOM)
+    seqtrack->custom_max_height = double(SEQTRACK_get_y2(seqtracknum) - SEQTRACK_get_y1(seqtracknum)) / (double)root->song->tracker_windows->systemfontheight;
+  
+  seqtrack->max_height_type = (enum SeqtrackHeightType)new_type;
+  
+  SEQUENCER_update(SEQUPDATE_TRACKCOORDINATES);
+}
+
 
 
 static bool g_smooth_sequencer_scrolling_enabled = false;

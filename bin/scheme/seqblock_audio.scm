@@ -419,7 +419,7 @@
            (set! (*seqblock-guis* seqblockid) #f)))
 
   (<gui> :set-takes-keyboard-focus main-layout #f)
-  (<gui> :set-parent main-layout -1)
+  (<gui> :set-parent main-layout (<gui> :get-sequencer-gui))
 
   #||
   (<gui> :minimize-as-much-as-possible main-layout)
