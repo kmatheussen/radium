@@ -231,6 +231,7 @@
   :press-func 
   :drag-func #f
   :release-func #f
+  :inside? #f ;; used by the nonpress-mouse-cycle in area.scm
   )
 
 (define2 *mouse-cycles* list? '())

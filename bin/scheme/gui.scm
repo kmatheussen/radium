@@ -695,7 +695,8 @@
               (scale i 0 num-tabs 0 height)
               width
               (scale (1+ i) 0 num-tabs 0 height))))
-              
+
+
   (<gui> :add-paint-callback tab-bar
          (lambda (width height)
            (define num-tabs (<gui> :num-tabs tabs))

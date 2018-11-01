@@ -64,14 +64,42 @@
      (define is-alive #t)
 
      ;; Position
+     
      (define (get-position callback)
        (callback x1 y1 x2 y2 width height))
-
+     
+     (define i-x1 #f)
+     (define i-y1 #f)
+     (define i-x2 #f)
+     (define i-y2 #f)
+     
+     ;; optimization to avoid inside? to call parent-area::inside?
+     (define (set-i-variables!)
+       (when (not i-x1)
+         (if parent-area
+             (parent-area :get-i-position
+                          (lambda (px1 py1 px2 py2)
+                            (set! i-x1 (max x1 px1))
+                            (set! i-y1 (max y1 py1))
+                            (set! i-x2 (min x2 px2))
+                            (set! i-y2 (min y2 py2))))
+             (begin
+               (set! i-x1 x1)
+               (set! i-y1 y1)
+               (set! i-x2 x2)
+               (set! i-y2 y2)))))
+       
+     (define (get-i-position callback)
+       (set-i-variables!)
+       (callback i-x1 i-y1 i-x2 i-y2))
+     
+     ;; We return false if x* and y* aren't inside the parent either.
      (define (inside? x* y*)
-       (and (>= x* x1)
-            (< x* x2)
-            (>= y* y1)
-            (< y* y2)))
+       (set-i-variables!)
+       (and (>= x* i-x1)
+            (< x* i-x2)
+            (>= y* i-y1)
+            (< y* i-y2)))
 
      (define (overlaps? x1* y1* x2* y2*)
        (and (> x2* x1)
@@ -260,7 +288,10 @@
                                           :move-func (lambda x #f)
                                           :leave-func (lambda x #f)) ;; Leave area, or button was pressed.
        (push-back! nonpress-mouse-cycles
-                   (list enter-func move-func leave-func inside?))
+                   (make-mouse-cycle enter-func
+                                     move-func
+                                     leave-func
+                                     inside?))
        )
 
      (define (start-nonpress-mouse-cycle! new-cycle)
@@ -271,13 +302,14 @@
        (assert curr-nonpress-mouse-cycle)
        (let ((nonpress-mouse-cycle curr-nonpress-mouse-cycle))
          (set! curr-nonpress-mouse-cycle #f)
-         ((caddr nonpress-mouse-cycle))))
+         ;;(c-display "end-nonpress-mouse-cycle called" (nonpress-mouse-cycle :release-func))
+         ((nonpress-mouse-cycle :release-func))))
   
      (delafina (add-mouse-cycle! :press-func (lambda x #t)
                                  :drag-func (lambda x #f)
                                  :release-func (lambda x #f))
        (push-back! mouse-cycles
-                   (list press-func drag-func release-func))
+                   (make-mouse-cycle press-func drag-func release-func))
        )
 
      (delafina (add-delta-mouse-cycle! :press-func (lambda x #t)
@@ -312,16 +344,16 @@
          (set! prev-y y*))
 
        (push-back! mouse-cycles
-                   (list (lambda (button x* y*)
-                           (set! prev-x x*)
-                           (set! prev-y y*)
-                           (set! inc-x 0)
-                           (set! inc-y 0)
-                           (press-func button x* y*))
-                         call-drag-func
-                         (lambda (button x* y*)
-                           (call-drag-func button x* y*)
-                           (release-func button x* y*)))))
+                   (make-mouse-cycle (lambda (button x* y*)
+                                       (set! prev-x x*)
+                                       (set! prev-y y*)
+                                       (set! inc-x 0)
+                                       (set! inc-y 0)
+                                       (press-func button x* y*))
+                                     call-drag-func
+                                     (lambda (button x* y*)
+                                       (call-drag-func button x* y*)
+                                       (release-func button x* y*)))))
                          
 
      (define (get-nonpress-mouse-cycle x* y*)
@@ -335,7 +367,7 @@
                                   #f))
 		(call-with-exit (lambda (return)                                  
                                   (for-each (lambda (mouse-cycle)
-                                              (and-let* ((res ((car mouse-cycle) x* y*)))
+                                              (and-let* ((res (mouse-cycle :press-func x* y*)))
                                                         (return mouse-cycle)))
                                             nonpress-mouse-cycles)
                                   #f)))))
@@ -353,7 +385,7 @@
                                   #f))
 		(call-with-exit (lambda (return)
                                   (for-each (lambda (mouse-cycle)
-                                              (and-let* ((res ((car mouse-cycle) button x* y*)))
+                                              (and-let* ((res (mouse-cycle :press-func button x* y*)))
                                                         (return mouse-cycle)))
                                             mouse-cycles)
                                   #f)))))
@@ -366,10 +398,11 @@
        (set! curr-mouse-cycle (get-mouse-cycle button x* y*)))
      (define (mouse-move-internal button x* y*)
        (cond (curr-mouse-cycle
-              ((cadr curr-mouse-cycle) button x* y*))
+              (curr-mouse-cycle :drag-func button x* y*))
              (curr-nonpress-mouse-cycle
-              (if ((cadddr curr-nonpress-mouse-cycle) x* y*)
-                  ((cadr curr-nonpress-mouse-cycle) x* y*) ;; still inside
+              ;;(c-display "inside?" class-name y1 y2 (curr-nonpress-mouse-cycle :inside? x* y*))
+              (if (curr-nonpress-mouse-cycle :inside? x* y*)
+                  (curr-nonpress-mouse-cycle :drag-func x* y*) ;; still inside
                   (end-nonpress-mouse-cycle!))) ;; not inside any more
              (else
               (start-nonpress-mouse-cycle! (get-nonpress-mouse-cycle x* y*)))))
@@ -378,7 +411,7 @@
        (let ((mouse-cycle curr-mouse-cycle))
          (set! curr-mouse-cycle #f)
          (if mouse-cycle
-             ((caddr mouse-cycle) button x* y*)))
+             (mouse-cycle :release-func button x* y*)))
        ;;(c-display "mouse-release leave" curr-mouse-cycle)
        )
 
@@ -475,13 +508,15 @@
          (if (not parent-area)
              (<gui> :cancel-clip-rect gui))))
      
-     ;;(define class-name ',(car def))
+     (define class-name ',(car def))
 
      (let () ;; Put body into new scope to avoid accidentally overriding an internal method. (use define-override instead of define to purposefully override)
        #t ;; Added to silence "let has no body" error messages.
        ,@body)
-     
+
      :get-position x (apply get-position x)
+     :get-i-position x (apply get-i-position x)
+     :inside? x (apply inside? x)
      :repaint-me! x (apply repaint-me! x)
      :set-position! x (apply set-position! x)
      :move! x (apply move! x)
